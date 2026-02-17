@@ -98,7 +98,6 @@ export function useProviderReviews(providerId: string | undefined) {
         (reviewers || []).forEach((r: any) => { reviewerMap[r.id] = r; });
       }
       return (data || []).map((r: any) => ({ ...r, reviewer: reviewerMap[r.reviewer_id] || null }));
-      return (data || []) as any[];
     },
     enabled: !!providerId,
   });
