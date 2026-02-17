@@ -1,41 +1,38 @@
-import { useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
-import { useAuth } from "@/contexts/AuthContext";
 import {
-  Home,
   CheckSquare,
   CalendarDays,
   MessageSquare,
   Heart as HeartIcon,
   Users,
   Search,
-  Briefcase,
   MapPin,
   Bell,
   User,
-  Settings,
   LayoutDashboard,
 } from "lucide-react";
 
 const sidebarItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Tasks", url: "/tasks", icon: CheckSquare },
+  { title: "Cared Ones", url: "/cared-ones", icon: HeartIcon },
   { title: "Appointments", url: "/bookings", icon: CalendarDays },
   { title: "Messages", url: "/messages", icon: MessageSquare },
-  { title: "Cared Ones", url: "/cared-ones", icon: HeartIcon },
   { title: "Care Groups", url: "/care-circle", icon: Users },
   { title: "Find Care", url: "/search", icon: Search },
-  { title: "My Bookings", url: "/bookings", icon: Briefcase },
   { title: "GPS Tracking", url: "/gps-tracking", icon: MapPin },
   { title: "Favorites", url: "/favorites", icon: HeartIcon },
   { title: "Notifications", url: "/notifications", icon: Bell },
   { title: "My Profile", url: "/profile", icon: User },
 ];
 
-// Deduplicate by url (keep first occurrence)
-const uniqueSidebarItems = sidebarItems.filter(
-  (item, i, arr) => arr.findIndex((x) => x.url === item.url) === i
-);
+// Key items for mobile bottom bar (max 5)
+const mobileBarItems = [
+  { title: "Home", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Cared Ones", url: "/cared-ones", icon: HeartIcon },
+  { title: "Messages", url: "/messages", icon: MessageSquare },
+  { title: "Groups", url: "/care-circle", icon: Users },
+  { title: "Profile", url: "/profile", icon: User },
+];
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -44,10 +41,10 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className="flex flex-1 overflow-hidden">
-      {/* Sidebar — hidden on mobile */}
-      <aside className="hidden lg:flex flex-col w-56 shrink-0 border-r bg-sidebar-background overflow-y-auto">
+      {/* Sidebar — visible on md+ screens */}
+      <aside className="hidden md:flex flex-col w-56 shrink-0 border-r bg-sidebar-background overflow-y-auto">
         <nav className="flex flex-col gap-0.5 p-3 pt-4">
-          {uniqueSidebarItems.map((item) => (
+          {sidebarItems.map((item) => (
             <NavLink
               key={item.url + item.title}
               to={item.url}
@@ -62,8 +59,24 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </nav>
       </aside>
 
-      {/* Main content */}
-      <div className="flex-1 overflow-y-auto">{children}</div>
+      {/* Main content — add bottom padding on mobile for bottom bar */}
+      <div className="flex-1 overflow-y-auto pb-16 md:pb-0">{children}</div>
+
+      {/* Mobile bottom navigation bar — visible only below md */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t flex items-center justify-around h-14 px-1">
+        {mobileBarItems.map((item) => (
+          <NavLink
+            key={item.url}
+            to={item.url}
+            end={item.url === "/dashboard"}
+            className="flex flex-col items-center gap-0.5 px-2 py-1 text-muted-foreground transition-colors min-w-0"
+            activeClassName="text-primary"
+          >
+            <item.icon className="h-5 w-5" />
+            <span className="text-[10px] leading-tight truncate">{item.title}</span>
+          </NavLink>
+        ))}
+      </nav>
     </div>
   );
 }
