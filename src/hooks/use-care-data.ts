@@ -87,7 +87,6 @@ export function useProviderReviews(providerId: string | undefined) {
         .order("created_at", { ascending: false })
         .limit(20);
       if (error) throw error;
-      // Fetch reviewer profiles separately
       const reviewerIds = [...new Set((data || []).map((r: any) => r.reviewer_id).filter(Boolean))];
       let reviewerMap: Record<string, any> = {};
       if (reviewerIds.length > 0) {
@@ -114,6 +113,24 @@ export function useBookings() {
         .from("booking")
         .select("*, provider:provider_id(id, full_name, avatar_url, hourly_rate)")
         .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+  });
+}
+
+// Bookings where current user is the provider (incoming requests)
+export function useProviderBookings() {
+  return useQuery({
+    queryKey: ["provider-bookings"],
+    queryFn: async () => {
+      const userId = await getCurrentUserId();
+      if (!userId) return [];
+      const { data, error } = await careDb
+        .from("booking")
+        .select("*, client:user_id(id, full_name, avatar_url, email, phone_number)")
+        .eq("provider_id", userId)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data || []) as any[];
@@ -149,7 +166,10 @@ export function useUpdateBookingStatus() {
         .eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["bookings"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["bookings"] });
+      qc.invalidateQueries({ queryKey: ["provider-bookings"] });
+    },
   });
 }
 
@@ -193,7 +213,26 @@ export function useDirectMessages(otherUserId: string | null) {
       return (data || []) as any[];
     },
     enabled: !!otherUserId,
-    refetchInterval: 5000, // poll every 5s as fallback
+    refetchInterval: 5000,
+  });
+}
+
+export function useGroupMessages(groupId: string | null) {
+  return useQuery({
+    queryKey: ["group-messages", groupId],
+    queryFn: async () => {
+      if (!groupId) return [];
+      const { data, error } = await careDb
+        .from("direct_message")
+        .select("*, sender:sender_id(id, full_name, avatar_url)")
+        .eq("group_id", groupId)
+        .order("created_at", { ascending: true })
+        .limit(100);
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!groupId,
+    refetchInterval: 5000,
   });
 }
 
@@ -214,7 +253,10 @@ export function useSendMessage() {
         });
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["messages"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["messages"] });
+      qc.invalidateQueries({ queryKey: ["group-messages"] });
+    },
   });
 }
 
@@ -225,7 +267,6 @@ export function useCareGroups() {
     queryFn: async () => {
       const userId = await getCurrentUserId();
       if (!userId) return [];
-      // Get groups where user is a member
       const { data: memberships, error: mErr } = await careDb
         .from("care_group_member")
         .select("group_id")
@@ -254,6 +295,93 @@ export function useCareGroupMembers(groupId: string | null) {
         .select("*, profile:user_id(id, full_name, avatar_url, email)")
         .eq("group_id", groupId)
         .eq("invitation_status", "accepted");
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!groupId,
+  });
+}
+
+export function useCreateCareGroup() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (group: { name: string; description?: string; is_private?: boolean }) => {
+      const userId = await getCurrentUserId();
+      if (!userId) throw new Error("Not authenticated");
+      const { data, error } = await careDb
+        .from("care_group")
+        .insert({ ...group, created_by: userId })
+        .select()
+        .single();
+      if (error) throw error;
+      // Auto-add creator as owner member
+      await careDb.from("care_group_member").insert({
+        group_id: data.id,
+        user_id: userId,
+        is_owner: true,
+        is_admin: true,
+        invitation_status: "accepted",
+      });
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-groups"] }),
+  });
+}
+
+export function useInviteToGroup() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ groupId, email }: { groupId: string; email: string }) => {
+      const userId = await getCurrentUserId();
+      if (!userId) throw new Error("Not authenticated");
+      const { error } = await careDb
+        .from("care_group_invitation")
+        .insert({ group_id: groupId, invited_by: userId, invited_email: email, status: "pending" });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-group-members"] }),
+  });
+}
+
+export function useUpdateMemberRole() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ memberId, updates }: { memberId: string; updates: { is_admin?: boolean; is_cared_one?: boolean } }) => {
+      const { error } = await careDb
+        .from("care_group_member")
+        .update(updates)
+        .eq("id", memberId);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-group-members"] }),
+  });
+}
+
+export function useRemoveGroupMember() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (memberId: string) => {
+      const { error } = await careDb
+        .from("care_group_member")
+        .delete()
+        .eq("id", memberId);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-group-members"] }),
+  });
+}
+
+// ─── Care Group Gallery ─────────────────────────────────────
+export function useCareGroupGallery(groupId: string | null) {
+  return useQuery({
+    queryKey: ["care-group-gallery", groupId],
+    queryFn: async () => {
+      if (!groupId) return [];
+      const { data, error } = await careDb
+        .from("care_group_gallery")
+        .select("*, uploader:uploaded_by(id, full_name, avatar_url)")
+        .eq("group_id", groupId)
+        .order("created_at", { ascending: false });
       if (error) throw error;
       return (data || []) as any[];
     },
@@ -307,7 +435,7 @@ export function useUpdateTaskStatus() {
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       const { error } = await careDb
         .from("care_task")
-        .update({ status })
+        .update({ status, ...(status === "completed" ? { completed_at: new Date().toISOString() } : {}) })
         .eq("id", id);
       if (error) throw error;
     },
@@ -470,7 +598,7 @@ export function useSubmitProviderApplication() {
         .update({
           ...data,
           is_care_provider: true,
-          provider_is_active: false, // awaiting admin approval
+          provider_is_active: false,
         })
         .eq("id", userId);
       if (error) throw error;
@@ -522,7 +650,6 @@ export function useLocationShares() {
     queryFn: async () => {
       const userId = await getCurrentUserId();
       if (!userId) return [];
-      // Get all location shares from user's care circle
       const { data, error } = await careDb
         .from("location_share")
         .select("*, profile:user_id(id, full_name, avatar_url)")
@@ -561,7 +688,6 @@ export function useUserCaredOnes() {
         .select("*")
         .eq("user_id", userId);
       if (error) throw error;
-      // Fetch cared one profiles
       const caredOneIds = [...new Set((data || []).map((r: any) => r.cared_one_id).filter(Boolean))];
       if (caredOneIds.length === 0) return [];
       const { data: profiles } = await careDb
@@ -571,6 +697,595 @@ export function useUserCaredOnes() {
       const profileMap: Record<string, any> = {};
       (profiles || []).forEach((p: any) => { profileMap[p.id] = p; });
       return (data || []).map((r: any) => ({ ...r, cared_one: profileMap[r.cared_one_id] || null }));
+    },
+  });
+}
+
+// ─── Group Cared Ones (members with is_cared_one = true) ────
+export function useGroupCaredOnes(groupId: string | null) {
+  return useQuery({
+    queryKey: ["group-cared-ones", groupId],
+    queryFn: async () => {
+      if (!groupId) return [];
+      const { data, error } = await careDb
+        .from("care_group_member")
+        .select("*, profile:user_id(id, full_name, first_name, last_name, avatar_url)")
+        .eq("group_id", groupId)
+        .eq("is_cared_one", true)
+        .eq("invitation_status", "accepted");
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!groupId,
+  });
+}
+
+// ─── Check-In Logs ──────────────────────────────────────────
+export function useCheckinLogs(caredOneId: string | null) {
+  return useQuery({
+    queryKey: ["checkin-logs", caredOneId],
+    queryFn: async () => {
+      if (!caredOneId) return [];
+      const { data, error } = await careDb
+        .from("checkin_log")
+        .select("*, reporter:reported_by(id, full_name, avatar_url)")
+        .eq("user_id", caredOneId)
+        .order("created_at", { ascending: false })
+        .limit(30);
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!caredOneId,
+  });
+}
+
+export function useCreateCheckinLog() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (log: { user_id: string; mood?: string; energy_level?: number; pain_level?: number; sleep_hours?: number; note?: string }) => {
+      const userId = await getCurrentUserId();
+      if (!userId) throw new Error("Not authenticated");
+      const { error } = await careDb
+        .from("checkin_log")
+        .insert({ ...log, reported_by: userId });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["checkin-logs"] }),
+  });
+}
+
+// ─── Medicines ──────────────────────────────────────────────
+export function useMedicines(caredOneId: string | null) {
+  return useQuery({
+    queryKey: ["medicines", caredOneId],
+    queryFn: async () => {
+      if (!caredOneId) return [];
+      const { data, error } = await careDb
+        .from("medicine")
+        .select("*")
+        .eq("user_id", caredOneId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!caredOneId,
+  });
+}
+
+export function useCreateMedicine() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (med: { user_id: string; name: string; dosage?: string; frequency?: string; time_of_day?: string; note?: string }) => {
+      const { error } = await careDb
+        .from("medicine")
+        .insert(med);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["medicines"] }),
+  });
+}
+
+export function useDeleteMedicine() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await careDb.from("medicine").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["medicines"] }),
+  });
+}
+
+export function useMedicineLogs(medicineId: string | null) {
+  return useQuery({
+    queryKey: ["medicine-logs", medicineId],
+    queryFn: async () => {
+      if (!medicineId) return [];
+      const { data, error } = await careDb
+        .from("medicine_log")
+        .select("*")
+        .eq("medicine_id", medicineId)
+        .order("logged_at", { ascending: false })
+        .limit(30);
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!medicineId,
+  });
+}
+
+export function useLogMedicine() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (log: { medicine_id: string; status: string; note?: string }) => {
+      const userId = await getCurrentUserId();
+      if (!userId) throw new Error("Not authenticated");
+      const { error } = await careDb
+        .from("medicine_log")
+        .insert({ ...log, logged_by: userId, logged_at: new Date().toISOString() });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["medicine-logs"] }),
+  });
+}
+
+// ─── Health Vitals ──────────────────────────────────────────
+export function useHealthVitals(caredOneId: string | null) {
+  return useQuery({
+    queryKey: ["health-vitals", caredOneId],
+    queryFn: async () => {
+      if (!caredOneId) return [];
+      const { data, error } = await careDb
+        .from("health_vital")
+        .select("*")
+        .eq("user_id", caredOneId)
+        .order("recorded_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!caredOneId,
+  });
+}
+
+export function useCreateHealthVital() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (vital: { user_id: string; vital_type: string; value: number; unit?: string; note?: string }) => {
+      const userId = await getCurrentUserId();
+      if (!userId) throw new Error("Not authenticated");
+      const { error } = await careDb
+        .from("health_vital")
+        .insert({ ...vital, recorded_by: userId, recorded_at: new Date().toISOString() });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["health-vitals"] }),
+  });
+}
+
+// ─── Care Tips ──────────────────────────────────────────────
+export function useCareTips(caredOneId: string | null) {
+  return useQuery({
+    queryKey: ["care-tips", caredOneId],
+    queryFn: async () => {
+      if (!caredOneId) return [];
+      const { data, error } = await careDb
+        .from("care_tip")
+        .select("*")
+        .eq("user_id", caredOneId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!caredOneId,
+  });
+}
+
+export function useCreateCareTip() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (tip: { user_id: string; title: string; content: string; category?: string; is_pinned?: boolean }) => {
+      const userId = await getCurrentUserId();
+      if (!userId) throw new Error("Not authenticated");
+      const { error } = await careDb
+        .from("care_tip")
+        .insert({ ...tip, created_by: userId });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-tips"] }),
+  });
+}
+
+export function useDeleteCareTip() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await careDb.from("care_tip").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-tips"] }),
+  });
+}
+
+// ─── Care Plans ─────────────────────────────────────────────
+export function useCarePlans(caredOneId: string | null) {
+  return useQuery({
+    queryKey: ["care-plans", caredOneId],
+    queryFn: async () => {
+      if (!caredOneId) return [];
+      const { data, error } = await careDb
+        .from("care_plan")
+        .select("*")
+        .eq("user_id", caredOneId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!caredOneId,
+  });
+}
+
+export function useCreateCarePlan() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (plan: { user_id: string; title: string; description?: string; status?: string }) => {
+      const userId = await getCurrentUserId();
+      if (!userId) throw new Error("Not authenticated");
+      const { error } = await careDb
+        .from("care_plan")
+        .insert({ ...plan, created_by: userId });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-plans"] }),
+  });
+}
+
+export function useCarePlanGoals(planId: string | null) {
+  return useQuery({
+    queryKey: ["care-plan-goals", planId],
+    queryFn: async () => {
+      if (!planId) return [];
+      const { data, error } = await careDb
+        .from("care_plan_goal")
+        .select("*")
+        .eq("care_plan_id", planId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!planId,
+  });
+}
+
+export function useCreateCarePlanGoal() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (goal: { care_plan_id: string; title: string; description?: string; status?: string }) => {
+      const { error } = await careDb
+        .from("care_plan_goal")
+        .insert(goal);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-plan-goals"] }),
+  });
+}
+
+export function useUpdateCarePlanGoal() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { error } = await careDb
+        .from("care_plan_goal")
+        .update({ status })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-plan-goals"] }),
+  });
+}
+
+// ─── Care Notes ─────────────────────────────────────────────
+export function useCareNotes(caredOneId: string | null) {
+  return useQuery({
+    queryKey: ["care-notes", caredOneId],
+    queryFn: async () => {
+      if (!caredOneId) return [];
+      const { data, error } = await careDb
+        .from("care_note")
+        .select("*")
+        .eq("user_id", caredOneId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!caredOneId,
+  });
+}
+
+export function useCreateCareNote() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (note: { user_id: string; title?: string; content: string; category?: string }) => {
+      const userId = await getCurrentUserId();
+      if (!userId) throw new Error("Not authenticated");
+      const { error } = await careDb
+        .from("care_note")
+        .insert({ ...note, created_by: userId });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-notes"] }),
+  });
+}
+
+export function useDeleteCareNote() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await careDb.from("care_note").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-notes"] }),
+  });
+}
+
+// ─── Emergency Contacts ─────────────────────────────────────
+export function useEmergencyContacts(caredOneId: string | null) {
+  return useQuery({
+    queryKey: ["emergency-contacts", caredOneId],
+    queryFn: async () => {
+      if (!caredOneId) return [];
+      const { data, error } = await careDb
+        .from("emergency_contact")
+        .select("*")
+        .eq("user_id", caredOneId)
+        .order("is_primary", { ascending: false });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!caredOneId,
+  });
+}
+
+export function useCreateEmergencyContact() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (contact: { user_id: string; name: string; phone: string; relationship?: string; is_primary?: boolean }) => {
+      const { error } = await careDb
+        .from("emergency_contact")
+        .insert(contact);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["emergency-contacts"] }),
+  });
+}
+
+export function useDeleteEmergencyContact() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await careDb.from("emergency_contact").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["emergency-contacts"] }),
+  });
+}
+
+// ─── Activity / Visit Log ───────────────────────────────────
+export function useActivityLog(caredOneId: string | null) {
+  return useQuery({
+    queryKey: ["activity-log", caredOneId],
+    queryFn: async () => {
+      if (!caredOneId) return [];
+      const { data, error } = await careDb
+        .from("activity_log")
+        .select("*")
+        .eq("user_id", caredOneId)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!caredOneId,
+  });
+}
+
+export function useCreateActivityLog() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (log: { user_id: string; activity_type: string; description?: string; duration_minutes?: number }) => {
+      const userId = await getCurrentUserId();
+      if (!userId) throw new Error("Not authenticated");
+      const { error } = await careDb
+        .from("activity_log")
+        .insert({ ...log, logged_by: userId });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["activity-log"] }),
+  });
+}
+
+// ─── Job Board ──────────────────────────────────────────────
+export function useJobPostings(filters?: { source?: string; status?: string }) {
+  return useQuery({
+    queryKey: ["job-postings", filters],
+    queryFn: async () => {
+      let q = careDb
+        .from("job_posting")
+        .select("*, poster:posted_by(id, full_name, avatar_url, location)")
+        .eq("status", filters?.status || "open")
+        .order("created_at", { ascending: false });
+      if (filters?.source) q = q.eq("job_source_type", filters.source);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+  });
+}
+
+export function useCreateJobPosting() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (job: { title: string; description: string; job_source_type?: string; service_type?: string; hourly_rate?: number; location?: string; care_recipient_id?: string; linked_task_id?: string; linked_group_id?: string }) => {
+      const userId = await getCurrentUserId();
+      if (!userId) throw new Error("Not authenticated");
+      const { error } = await careDb
+        .from("job_posting")
+        .insert({ ...job, posted_by: userId, status: "open", job_source_type: job.job_source_type || "general" });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["job-postings"] }),
+  });
+}
+
+export function useJobApplications(jobId: string | null) {
+  return useQuery({
+    queryKey: ["job-applications", jobId],
+    queryFn: async () => {
+      if (!jobId) return [];
+      const { data, error } = await careDb
+        .from("job_application")
+        .select("*, applicant:applicant_id(id, full_name, avatar_url, hourly_rate, rating_average, years_of_experience)")
+        .eq("job_id", jobId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!jobId,
+  });
+}
+
+export function useApplyToJob() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ jobId, coverLetter }: { jobId: string; coverLetter: string }) => {
+      const userId = await getCurrentUserId();
+      if (!userId) throw new Error("Not authenticated");
+      const { error } = await careDb
+        .from("job_application")
+        .insert({ job_id: jobId, applicant_id: userId, cover_letter: coverLetter, status: "pending" });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["job-applications"] }),
+  });
+}
+
+export function useMyJobApplications() {
+  return useQuery({
+    queryKey: ["my-job-applications"],
+    queryFn: async () => {
+      const userId = await getCurrentUserId();
+      if (!userId) return [];
+      const { data, error } = await careDb
+        .from("job_application")
+        .select("*, job:job_id(id, title, status, service_type, hourly_rate, location)")
+        .eq("applicant_id", userId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+  });
+}
+
+// ─── Provider Availability ──────────────────────────────────
+export function useProviderAvailability(providerId: string | null) {
+  return useQuery({
+    queryKey: ["provider-availability", providerId],
+    queryFn: async () => {
+      if (!providerId) return [];
+      const { data, error } = await careDb
+        .from("provider_availability")
+        .select("*")
+        .eq("provider_id", providerId)
+        .order("day_of_week", { ascending: true });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!providerId,
+  });
+}
+
+export function useUpsertProviderAvailability() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (slots: { provider_id: string; day_of_week: number; start_time: string; end_time: string; is_available: boolean; specific_date?: string | null }[]) => {
+      // Delete existing weekly patterns for this provider, then re-insert
+      const providerId = slots[0]?.provider_id;
+      if (!providerId) throw new Error("No provider ID");
+      // Delete only weekly patterns (specific_date is null)
+      await careDb
+        .from("provider_availability")
+        .delete()
+        .eq("provider_id", providerId)
+        .is("specific_date", null);
+      // Insert new slots
+      const { error } = await careDb
+        .from("provider_availability")
+        .insert(slots);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["provider-availability"] }),
+  });
+}
+
+export function useProviderAvailabilitySetting(providerId: string | null) {
+  return useQuery({
+    queryKey: ["provider-availability-setting", providerId],
+    queryFn: async () => {
+      if (!providerId) return null;
+      const { data, error } = await careDb
+        .from("provider_availability_setting")
+        .select("*")
+        .eq("provider_id", providerId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!providerId,
+  });
+}
+
+export function useUpdateProviderAvailabilitySetting() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ providerId, settings }: { providerId: string; settings: Record<string, any> }) => {
+      // Upsert
+      const { data: existing } = await careDb
+        .from("provider_availability_setting")
+        .select("id")
+        .eq("provider_id", providerId)
+        .maybeSingle();
+      if (existing) {
+        const { error } = await careDb
+          .from("provider_availability_setting")
+          .update(settings)
+          .eq("provider_id", providerId);
+        if (error) throw error;
+      } else {
+        const { error } = await careDb
+          .from("provider_availability_setting")
+          .insert({ provider_id: providerId, ...settings });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["provider-availability-setting"] }),
+  });
+}
+
+// ─── Provider Earnings ──────────────────────────────────────
+export function useProviderPayouts() {
+  return useQuery({
+    queryKey: ["provider-payouts"],
+    queryFn: async () => {
+      const userId = await getCurrentUserId();
+      if (!userId) return [];
+      const { data, error } = await careDb
+        .from("provider_payout")
+        .select("*")
+        .eq("provider_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return (data || []) as any[];
     },
   });
 }
@@ -597,5 +1312,41 @@ export function useDashboardStats() {
         careGroups: groupsRes.count || 0,
       };
     },
+  });
+}
+
+// ─── Safe Zones ─────────────────────────────────────────────
+export function useSafeZones(caredOneId: string | null) {
+  return useQuery({
+    queryKey: ["safe-zones", caredOneId],
+    queryFn: async () => {
+      if (!caredOneId) return [];
+      const { data, error } = await careDb
+        .from("safe_zone")
+        .select("*")
+        .eq("user_id", caredOneId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!caredOneId,
+  });
+}
+
+// ─── Cared One Documents ────────────────────────────────────
+export function useCaredOneDocuments(caredOneId: string | null) {
+  return useQuery({
+    queryKey: ["cared-one-documents", caredOneId],
+    queryFn: async () => {
+      if (!caredOneId) return [];
+      const { data, error } = await careDb
+        .from("cared_one_document")
+        .select("*")
+        .eq("user_id", caredOneId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!caredOneId,
   });
 }
