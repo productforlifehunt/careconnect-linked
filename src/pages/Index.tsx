@@ -224,7 +224,7 @@ const Index = () => {
             <Button variant="coral" size="lg" onClick={() => navigate("/search")}>
               Find Caregivers
             </Button>
-            <Button variant="outline" size="lg" className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10" onClick={() => navigate("/auth?mode=signup")}>
+            <Button variant="secondary" size="lg" onClick={() => navigate("/auth?mode=signup")}>
               Create Free Account
             </Button>
           </div>
