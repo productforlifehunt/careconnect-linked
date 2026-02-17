@@ -14,7 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import {
   Users, Plus, CheckCircle, Circle, Clock, UserPlus, BookOpen, ListTodo, Loader2,
   Home, CalendarDays, Megaphone, Heart, ClipboardCheck, MessageSquare, Star,
-  Image, Settings, Send, Pin, Trash2, Shield, Edit, MoreVertical, X, KeyRound, Mail,
+  Image, Settings, Send, Pin, Trash2, Shield, Edit, MoreVertical, X, KeyRound, Mail, Crown,
 } from "lucide-react";
 import {
   useCareGroups, useCreateCareGroup, useCareGroupMembers, useCareTasks, useCreateTask, useUpdateTaskStatus,
@@ -27,7 +27,7 @@ import {
 } from "@/hooks/use-care-data";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export default function CareCircle() {
   const { toast } = useToast();
@@ -71,7 +71,7 @@ export default function CareCircle() {
 
   // Local state
   const [addTaskOpen, setAddTaskOpen] = useState(false);
-  const [newTask, setNewTask] = useState({ title: "", assignee: "", priority: "medium", category: "Daily Living" });
+  const [newTask, setNewTask] = useState({ title: "", description: "", assignee: "", priority: "medium", category: "Daily Living", due_date: "" });
   const [newPostContent, setNewPostContent] = useState("");
   const [newPostType, setNewPostType] = useState("discussion");
   const [newPostTitle, setNewPostTitle] = useState("");
@@ -139,8 +139,21 @@ export default function CareCircle() {
 
   const addTask = () => {
     if (!newTask.title || !activeGroupId) return;
-    createTask.mutate({ title: newTask.title, group_id: activeGroupId, assigned_to: newTask.assignee || undefined, priority: newTask.priority, category: newTask.category, status: "pending" } as any, {
-      onSuccess: () => { setNewTask({ title: "", assignee: "", priority: "medium", category: "Daily Living" }); setAddTaskOpen(false); toast({ title: "Task added" }); },
+    createTask.mutate({
+      title: newTask.title,
+      description: newTask.description || undefined,
+      group_id: activeGroupId,
+      assigned_to: newTask.assignee || undefined,
+      priority: newTask.priority,
+      category: newTask.category,
+      due_date: newTask.due_date || undefined,
+      status: "pending",
+    } as any, {
+      onSuccess: () => {
+        setNewTask({ title: "", description: "", assignee: "", priority: "medium", category: "Daily Living", due_date: "" });
+        setAddTaskOpen(false);
+        toast({ title: "Task added" });
+      },
     });
   };
 
@@ -162,6 +175,7 @@ export default function CareCircle() {
     if (!inviteEmail.trim() || !activeGroupId) return;
     inviteToGroup.mutate({ groupId: activeGroupId, email: inviteEmail }, {
       onSuccess: () => { setInviteEmail(""); toast({ title: "Invitation sent!" }); },
+      onError: (err: any) => { toast({ title: "Failed to invite", description: err.message, variant: "destructive" }); },
     });
   };
 
@@ -274,7 +288,7 @@ export default function CareCircle() {
         </div>
         <div className="flex gap-2">
           {isAdmin && (
-            <Button variant="ghost" size="icon" onClick={openSettings}><Settings className="h-4 w-4" /></Button>
+            <Button variant="ghost" size="icon" onClick={openSettings} title="Group Settings"><Settings className="h-4 w-4" /></Button>
           )}
           <Dialog open={joinCodeOpen} onOpenChange={setJoinCodeOpen}>
             <DialogTrigger asChild><Button variant="outline" size="sm"><KeyRound className="h-4 w-4 mr-1" /> Join</Button></DialogTrigger>
@@ -378,7 +392,7 @@ export default function CareCircle() {
             <TabsTrigger value="checkins" className="gap-1.5 text-xs"><ClipboardCheck className="h-3.5 w-3.5" /> Check-Ins</TabsTrigger>
             <TabsTrigger value="messages" className="gap-1.5 text-xs"><MessageSquare className="h-3.5 w-3.5" /> Messages</TabsTrigger>
             <TabsTrigger value="wishes" className="gap-1.5 text-xs"><Star className="h-3.5 w-3.5" /> Well Wishes</TabsTrigger>
-            <TabsTrigger value="team" className="gap-1.5 text-xs"><Users className="h-3.5 w-3.5" /> Team</TabsTrigger>
+            <TabsTrigger value="members" className="gap-1.5 text-xs"><Users className="h-3.5 w-3.5" /> Members</TabsTrigger>
             <TabsTrigger value="gallery" className="gap-1.5 text-xs"><Image className="h-3.5 w-3.5" /> Gallery</TabsTrigger>
           </TabsList>
         </ScrollArea>
@@ -433,6 +447,7 @@ export default function CareCircle() {
                 </CardContent>
               </Card>
             ))}
+            {(allPosts || []).length === 0 && <p className="text-center py-8 text-muted-foreground">No posts yet. Share an update above!</p>}
           </div>
         </TabsContent>
 
@@ -476,12 +491,31 @@ export default function CareCircle() {
             </Card>
           )}
           <div className="space-y-3">
-            {(announcements || []).map((a: any) => (
+            {/* Pinned first */}
+            {(announcements || []).filter((a: any) => a.is_pinned).map((a: any) => (
+              <Card key={a.id} className="border-transparent card-elevated border-l-4 border-l-primary bg-primary/5">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Pin className="h-3 w-3 text-primary" />
+                      <span className="font-medium text-sm text-foreground">{a.author?.full_name || "Admin"}</span>
+                      <Badge variant="secondary" className="text-[10px]">Pinned</Badge>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-muted-foreground">{new Date(a.created_at).toLocaleDateString("en", { month: "short", day: "numeric" })}</span>
+                      <PostActions post={a} />
+                    </div>
+                  </div>
+                  {a.title && <h4 className="font-semibold text-foreground mb-1">{a.title}</h4>}
+                  <p className="text-sm text-muted-foreground">{a.content}</p>
+                </CardContent>
+              </Card>
+            ))}
+            {(announcements || []).filter((a: any) => !a.is_pinned).map((a: any) => (
               <Card key={a.id} className="border-transparent card-elevated border-l-4 border-l-primary">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      {a.is_pinned && <Pin className="h-3 w-3 text-primary" />}
                       <span className="font-medium text-sm text-foreground">{a.author?.full_name || "Admin"}</span>
                     </div>
                     <div className="flex items-center gap-1">
@@ -501,16 +535,17 @@ export default function CareCircle() {
         {/* ═══ TASKS ═══ */}
         <TabsContent value="tasks" className="mt-4">
           <div className="flex justify-between items-center mb-4">
-            <p className="text-sm text-muted-foreground">{pendingTasks.length} pending tasks</p>
+            <p className="text-sm text-muted-foreground">{pendingTasks.length} pending · {completedTasks.length} completed</p>
             <Dialog open={addTaskOpen} onOpenChange={setAddTaskOpen}>
               <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" /> Add Task</Button></DialogTrigger>
               <DialogContent>
                 <DialogHeader><DialogTitle>Add Care Task</DialogTitle></DialogHeader>
                 <div className="space-y-4 mt-2">
-                  <div><Label>Task</Label><Input value={newTask.title} onChange={e => setNewTask(p => ({ ...p, title: e.target.value }))} placeholder="What needs to be done?" /></div>
+                  <div><Label>Task Title *</Label><Input value={newTask.title} onChange={e => setNewTask(p => ({ ...p, title: e.target.value }))} placeholder="What needs to be done?" /></div>
+                  <div><Label>Description</Label><Textarea value={newTask.description} onChange={e => setNewTask(p => ({ ...p, description: e.target.value }))} placeholder="Add details..." rows={2} /></div>
                   <div><Label>Assign to</Label>
                     <Select value={newTask.assignee} onValueChange={v => setNewTask(p => ({ ...p, assignee: v }))}>
-                      <SelectTrigger><SelectValue placeholder="Select member" /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder="Select member (optional)" /></SelectTrigger>
                       <SelectContent>{(members || []).map((m: any) => <SelectItem key={m.user_id} value={m.user_id}>{m.profile?.full_name || "Member"}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
@@ -528,25 +563,41 @@ export default function CareCircle() {
                       </Select>
                     </div>
                   </div>
-                  <Button variant="coral" className="w-full" onClick={addTask} disabled={createTask.isPending}>Add Task</Button>
+                  <div><Label>Due Date</Label><Input type="date" value={newTask.due_date} onChange={e => setNewTask(p => ({ ...p, due_date: e.target.value }))} /></div>
+                  <Button variant="coral" className="w-full" onClick={addTask} disabled={createTask.isPending || !newTask.title.trim()}>Add Task</Button>
                 </div>
               </DialogContent>
             </Dialog>
           </div>
           {tasksLoading ? <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div> : (
             <div className="space-y-2">
-              {(tasks || []).map((t: any) => (
+              {pendingTasks.map((t: any) => (
                 <div key={t.id} className="flex items-center gap-3 p-3 rounded-lg bg-card border hover:border-primary/30 transition-colors cursor-pointer" onClick={() => toggleTask(t.id, t.status)}>
-                  {t.status === "completed" ? <CheckCircle className="h-5 w-5 text-success shrink-0" /> : <Circle className="h-5 w-5 text-muted-foreground shrink-0" />}
+                  <Circle className="h-5 w-5 text-muted-foreground shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-medium ${t.status === "completed" ? "line-through text-muted-foreground" : "text-foreground"}`}>{t.title}</p>
-                    <p className="text-xs text-muted-foreground">{t.assignee_profile?.full_name || "Unassigned"}{t.due_date && ` · ${new Date(t.due_date).toLocaleDateString("en", { month: "short", day: "numeric" })}`}</p>
+                    <p className="text-sm font-medium text-foreground">{t.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t.assignee_profile?.full_name || "Unassigned"}
+                      {t.due_date && ` · Due ${new Date(t.due_date).toLocaleDateString("en", { month: "short", day: "numeric" })}`}
+                      {t.description && ` · ${t.description.substring(0, 50)}${t.description.length > 50 ? "…" : ""}`}
+                    </p>
                   </div>
                   <Badge variant="outline" className={priorityColors[t.priority] || ""}>{t.priority}</Badge>
                   {t.category && <Badge variant="secondary" className="text-xs hidden sm:inline-flex">{t.category}</Badge>}
                 </div>
               ))}
-              {(tasks || []).length === 0 && <p className="text-center py-8 text-muted-foreground">No tasks yet</p>}
+              {completedTasks.length > 0 && (
+                <>
+                  <p className="text-xs font-medium text-muted-foreground pt-3 pb-1">Completed ({completedTasks.length})</p>
+                  {completedTasks.map((t: any) => (
+                    <div key={t.id} className="flex items-center gap-3 p-3 rounded-lg bg-card/50 border border-transparent cursor-pointer opacity-60 hover:opacity-80" onClick={() => toggleTask(t.id, t.status)}>
+                      <CheckCircle className="h-5 w-5 text-success shrink-0" />
+                      <p className="text-sm line-through text-muted-foreground flex-1">{t.title}</p>
+                    </div>
+                  ))}
+                </>
+              )}
+              {(tasks || []).length === 0 && <p className="text-center py-8 text-muted-foreground">No tasks yet. Click "Add Task" to create one.</p>}
             </div>
           )}
         </TabsContent>
@@ -572,7 +623,13 @@ export default function CareCircle() {
                 </Card>
               ))}
             </div>
-          ) : <p className="text-center py-12 text-muted-foreground">No cared ones in this group. Mark a member as a cared one in the Team tab.</p>}
+          ) : (
+            <div className="text-center py-12">
+              <Heart className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+              <p className="text-muted-foreground mb-2">No cared ones in this group yet.</p>
+              <p className="text-sm text-muted-foreground">Go to the <strong>Members</strong> tab and use the ⋮ menu to mark a member as a "Cared One".</p>
+            </div>
+          )}
         </TabsContent>
 
         {/* ═══ CHECK-INS ═══ */}
@@ -629,7 +686,7 @@ export default function CareCircle() {
               <Card key={w.id} className="border-transparent card-elevated">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <Star className="h-4 w-4 text-yellow-500" />
+                    <Star className="h-4 w-4 text-warning" />
                     <span className="font-medium text-sm text-foreground">{w.author?.full_name || "Someone"}</span>
                     <span className="text-xs text-muted-foreground ml-auto">{new Date(w.created_at).toLocaleDateString("en", { month: "short", day: "numeric" })}</span>
                     <PostActions post={w} />
@@ -642,34 +699,46 @@ export default function CareCircle() {
           </div>
         </TabsContent>
 
-        {/* ═══ TEAM ═══ */}
-        <TabsContent value="team" className="mt-4">
+        {/* ═══ MEMBERS ═══ */}
+        <TabsContent value="members" className="mt-4">
+          {/* Invite section (admin only) */}
           {isAdmin && (
             <Card className="border-transparent card-elevated mb-4">
-              <CardContent className="p-4">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2"><UserPlus className="h-4 w-4" /> Invite Members</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-2">
                 <div className="flex gap-2">
-                  <Input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="Enter email to invite..." />
-                  <Button variant="coral" onClick={handleInvite} disabled={!inviteEmail.trim() || inviteToGroup.isPending}><UserPlus className="h-4 w-4 mr-1" /> Invite</Button>
+                  <Input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="Enter email address to invite..." className="flex-1" />
+                  <Button variant="coral" onClick={handleInvite} disabled={!inviteEmail.trim() || inviteToGroup.isPending}>
+                    <Mail className="h-4 w-4 mr-1" /> Invite
+                  </Button>
                 </div>
+                {activeGroup?.join_code && (
+                  <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+                    <KeyRound className="h-3.5 w-3.5" />
+                    <span>Or share join code: <strong className="font-mono text-foreground">{activeGroup.join_code}</strong></span>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
 
           {/* Pending Invitations */}
           {isAdmin && (pendingInvitations || []).length > 0 && (
-            <div className="mb-4">
-              <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
-                <Mail className="h-4 w-4" /> Pending Invitations ({(pendingInvitations || []).length})
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                <Clock className="h-4 w-4 text-warning" /> Pending Invitations ({(pendingInvitations || []).length})
               </h3>
               <div className="space-y-2">
                 {(pendingInvitations || []).map((inv: any) => (
-                  <Card key={inv.id} className="border-transparent card-elevated border-l-4 border-l-yellow-400">
+                  <Card key={inv.id} className="border-transparent card-elevated border-l-4 border-l-warning">
                     <CardContent className="p-3 flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-foreground">{inv.invited_email}</p>
+                        <p className="text-sm font-medium text-foreground">{inv.invitee_email || inv.invited_email || "Unknown"}</p>
                         <p className="text-xs text-muted-foreground">Invited {new Date(inv.created_at).toLocaleDateString("en", { month: "short", day: "numeric" })}</p>
                       </div>
-                      <Button variant="ghost" size="sm" className="text-destructive" onClick={() => cancelInvitation.mutate(inv.id)}>
+                      <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => cancelInvitation.mutate(inv.id)}>
                         <X className="h-4 w-4 mr-1" /> Cancel
                       </Button>
                     </CardContent>
@@ -680,46 +749,75 @@ export default function CareCircle() {
           )}
 
           {/* Active Members */}
-          <div className="space-y-2">
-            {(members || []).map((m: any) => (
-              <Card key={m.id} className="border-transparent card-elevated">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        {m.profile?.avatar_url ? <img src={m.profile.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" /> : <span className="text-primary font-medium">{(m.profile?.full_name || "?")[0]}</span>}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{m.profile?.full_name || "Member"}</p>
-                        <div className="flex gap-1 mt-0.5">
-                          {m.is_owner && <Badge variant="default" className="text-[10px] h-4">Owner</Badge>}
-                          {m.is_admin && !m.is_owner && <Badge variant="secondary" className="text-[10px] h-4">Admin</Badge>}
-                          {m.is_cared_one && <Badge className="text-[10px] h-4 bg-pink-100 text-pink-700">Cared One</Badge>}
+          <div>
+            <h3 className="text-sm font-semibold text-foreground mb-3">
+              Active Members ({(members || []).length})
+            </h3>
+            <div className="space-y-2">
+              {(members || []).map((m: any) => (
+                <Card key={m.id} className="border-transparent card-elevated">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                          {m.profile?.avatar_url ? <img src={m.profile.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" /> : <span className="text-primary font-medium">{(m.profile?.full_name || "?")[0]}</span>}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{m.profile?.full_name || "Member"}</p>
+                          <p className="text-xs text-muted-foreground">{m.profile?.email || ""}</p>
+                          <div className="flex gap-1 mt-1 flex-wrap">
+                            {m.is_owner && <Badge variant="default" className="text-[10px] h-4 gap-0.5"><Crown className="h-2.5 w-2.5" /> Owner</Badge>}
+                            {m.is_admin && !m.is_owner && <Badge variant="secondary" className="text-[10px] h-4 gap-0.5"><Shield className="h-2.5 w-2.5" /> Admin</Badge>}
+                            {m.is_cared_one && <Badge className="text-[10px] h-4 bg-accent text-accent-foreground"><Heart className="h-2.5 w-2.5 mr-0.5" /> Cared One</Badge>}
+                            {!m.is_owner && !m.is_admin && !m.is_cared_one && <Badge variant="outline" className="text-[10px] h-4">Member</Badge>}
+                          </div>
                         </div>
                       </div>
+                      {/* Actions: don't show for yourself or if not admin */}
+                      {isAdmin && m.user_id !== user?.id && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {/* Toggle cared one (admin+) */}
+                            <DropdownMenuItem onClick={() => updateRole.mutate({ memberId: m.id, updates: { is_cared_one: !m.is_cared_one } })}>
+                              <Heart className="h-3.5 w-3.5 mr-2" /> {m.is_cared_one ? "Remove Cared One" : "Mark as Cared One"}
+                            </DropdownMenuItem>
+                            {/* Toggle admin (admin+) */}
+                            {!m.is_owner && (
+                              <DropdownMenuItem onClick={() => updateRole.mutate({ memberId: m.id, updates: { is_admin: !m.is_admin } })}>
+                                <Shield className="h-3.5 w-3.5 mr-2" /> {m.is_admin ? "Remove Admin" : "Make Admin"}
+                              </DropdownMenuItem>
+                            )}
+                            {/* Toggle owner (owner only) */}
+                            {isOwner && !m.is_owner && (
+                              <DropdownMenuItem onClick={() => updateRole.mutate({ memberId: m.id, updates: { is_owner: true, is_admin: true } })}>
+                                <Crown className="h-3.5 w-3.5 mr-2" /> Transfer Ownership
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuSeparator />
+                            {/* Remove (can't remove owners) */}
+                            {!m.is_owner && (
+                              <DropdownMenuItem className="text-destructive" onClick={() => {
+                                removeMember.mutate(m.id, {
+                                  onSuccess: () => toast({ title: "Member removed" }),
+                                });
+                              }}>
+                                <Trash2 className="h-3.5 w-3.5 mr-2" /> Remove from Group
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                      {m.user_id === user?.id && (
+                        <Badge variant="outline" className="text-[10px]">You</Badge>
+                      )}
                     </div>
-                    {isAdmin && !m.is_owner && m.user_id !== user?.id && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => updateRole.mutate({ memberId: m.id, updates: { is_cared_one: !m.is_cared_one } })}>
-                            <Heart className="h-3.5 w-3.5 mr-2" /> {m.is_cared_one ? "Remove Cared One" : "Mark as Cared One"}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => updateRole.mutate({ memberId: m.id, updates: { is_admin: !m.is_admin } })}>
-                            <Shield className="h-3.5 w-3.5 mr-2" /> {m.is_admin ? "Remove Admin" : "Make Admin"}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive" onClick={() => removeMember.mutate(m.id)}>
-                            <Trash2 className="h-3.5 w-3.5 mr-2" /> Remove
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         </TabsContent>
 
@@ -734,7 +832,13 @@ export default function CareCircle() {
                 </Card>
               ))}
             </div>
-          ) : <p className="text-center py-12 text-muted-foreground">No photos yet</p>}
+          ) : (
+            <div className="text-center py-12">
+              <Image className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+              <p className="text-muted-foreground">No photos yet</p>
+              <p className="text-sm text-muted-foreground mt-1">Gallery uploads coming soon.</p>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>
@@ -757,7 +861,15 @@ function CheckInsTab({ groupCaredOnes, activeGroupId }: { groupCaredOnes: any[];
     });
   };
 
-  if (groupCaredOnes.length === 0) return <p className="text-center py-12 text-muted-foreground">No cared ones to check in on.</p>;
+  if (groupCaredOnes.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <ClipboardCheck className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+        <p className="text-muted-foreground mb-2">No cared ones to check in on.</p>
+        <p className="text-sm text-muted-foreground">Go to the <strong>Members</strong> tab and mark a member as a "Cared One" first.</p>
+      </div>
+    );
+  }
 
   const moodEmoji: Record<string, string> = { great: "😊", good: "🙂", okay: "😐", poor: "😟", bad: "😢" };
 
@@ -771,7 +883,7 @@ function CheckInsTab({ groupCaredOnes, activeGroupId }: { groupCaredOnes: any[];
         </div>
       )}
       <Card className="border-transparent card-elevated mb-4">
-        <CardHeader><CardTitle className="text-base">New Check-In</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base">New Check-In for {groupCaredOnes.find((co: any) => co.user_id === activeCOId)?.profile?.full_name || "Cared One"}</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div><Label className="text-xs">Mood</Label>
