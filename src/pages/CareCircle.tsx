@@ -181,7 +181,7 @@ export default function CareCircle() {
 
   const addPost = () => {
     if (!newPostContent.trim() || !activeGroupId) return;
-    createPost.mutate({ group_id: activeGroupId, content: newPostContent, type: newPostType, title: newPostTitle || undefined }, {
+    createPost.mutate({ group_id: activeGroupId, content: newPostContent, type: newPostType, title: newPostTitle || undefined, visibility: postVisibility }, {
       onSuccess: () => { setNewPostContent(""); setNewPostTitle(""); setPostVisibility("group"); toast({ title: "Posted!" }); },
     });
   };
@@ -604,7 +604,7 @@ export default function CareCircle() {
                   <VisibilitySelect value={postVisibility} onChange={setPostVisibility} />
                   <Button variant="coral" size="sm" onClick={() => {
                     if (!newPostContent.trim() || !activeGroupId) return;
-                    createPost.mutate({ group_id: activeGroupId, content: newPostContent, type: "announcement", title: newPostTitle || undefined }, {
+                    createPost.mutate({ group_id: activeGroupId, content: newPostContent, type: "announcement", title: newPostTitle || undefined, visibility: postVisibility }, {
                       onSuccess: () => { setNewPostContent(""); setNewPostTitle(""); setPostVisibility("group"); toast({ title: "Announcement posted!" }); },
                     });
                   }} disabled={!newPostContent.trim() || createPost.isPending}>
@@ -973,7 +973,17 @@ export default function CareCircle() {
                               </DropdownMenuItem>
                             )}
                             {isOwner && !m.is_owner && (
-                              <DropdownMenuItem onClick={() => updateRole.mutate({ memberId: m.id, updates: { is_owner: true, is_admin: true } })}>
+                              <DropdownMenuItem onClick={() => {
+                                if (currentMember) {
+                                  updateRole.mutate({ memberId: currentMember.id, updates: { is_owner: false } }, {
+                                    onSuccess: () => {
+                                      updateRole.mutate({ memberId: m.id, updates: { is_owner: true, is_admin: true } }, {
+                                        onSuccess: () => toast({ title: "Ownership transferred!" }),
+                                      });
+                                    },
+                                  });
+                                }
+                              }}>
                                 <Crown className="h-3.5 w-3.5 mr-2" /> Transfer Ownership
                               </DropdownMenuItem>
                             )}
