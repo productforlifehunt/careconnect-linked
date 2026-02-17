@@ -387,13 +387,31 @@ export function useRemoveGroupMember() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (memberId: string) => {
+      // Get the member's group_id before deleting
+      const { data: member } = await careDb
+        .from("care_group_member")
+        .select("group_id")
+        .eq("id", memberId)
+        .single();
       const { error } = await careDb
         .from("care_group_member")
         .delete()
         .eq("id", memberId);
       if (error) throw error;
+      // Decrement member_count
+      if (member?.group_id) {
+        try {
+          const { data: g } = await careDb.from("care_group").select("member_count").eq("id", member.group_id).single();
+          if (g && (g as any).member_count > 0) {
+            await careDb.from("care_group").update({ member_count: (g as any).member_count - 1 }).eq("id", member.group_id);
+          }
+        } catch (_) { /* ignore */ }
+      }
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-group-members"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["care-group-members"] });
+      qc.invalidateQueries({ queryKey: ["care-groups"] });
+    },
   });
 }
 
@@ -670,7 +688,7 @@ export function useCareGroupPosts(groupId: string | null, type?: string) {
 export function useCreateGroupPost() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (post: { group_id: string; content: string; type?: string; title?: string }) => {
+    mutationFn: async (post: { group_id: string; content: string; type?: string; title?: string; visibility?: string; visible_to_member_category_id?: string[] }) => {
       const userId = await getCurrentUserId();
       if (!userId) throw new Error("Not authenticated");
       const { error } = await careDb
@@ -765,6 +783,11 @@ export function useJoinGroupByCode() {
         .from("care_group_member")
         .insert({ group_id: group.id, user_id: userId, invitation_status: "accepted" });
       if (error) throw error;
+      // Increment member_count
+      try {
+        const { data: grp } = await careDb.from("care_group").select("member_count").eq("id", group.id).single();
+        await careDb.from("care_group").update({ member_count: ((grp as any)?.member_count || 0) + 1 }).eq("id", group.id);
+      } catch (_) { /* ignore */ }
       return group;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["care-groups"] }),
@@ -935,6 +958,11 @@ export function useAcceptInvitation() {
         .from("care_group_member")
         .insert({ group_id: invitation.care_group_id, user_id: userId, invitation_status: "accepted" });
       if (memErr) throw memErr;
+      // Increment member_count
+      try {
+        const { data: grp } = await careDb.from("care_group").select("member_count").eq("id", invitation.care_group_id).single();
+        await careDb.from("care_group").update({ member_count: ((grp as any)?.member_count || 0) + 1 }).eq("id", invitation.care_group_id);
+      } catch (_) { /* ignore */ }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["my-pending-invitations"] });
