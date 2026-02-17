@@ -356,24 +356,30 @@ export function useInviteToGroup() {
       if (!userId) throw new Error("Not authenticated");
       const { error } = await careDb
         .from("care_group_invitation")
-        .insert({ group_id: groupId, invited_by: userId, invited_email: email, status: "pending" });
+        .insert({ care_group_id: groupId, invited_by: userId, invitee_email: email, status: "pending" });
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-group-members"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["care-group-members"] });
+      qc.invalidateQueries({ queryKey: ["care-group-invitations"] });
+    },
   });
 }
 
 export function useUpdateMemberRole() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ memberId, updates }: { memberId: string; updates: { is_admin?: boolean; is_cared_one?: boolean } }) => {
+    mutationFn: async ({ memberId, updates }: { memberId: string; updates: { is_admin?: boolean; is_cared_one?: boolean; is_owner?: boolean } }) => {
       const { error } = await careDb
         .from("care_group_member")
         .update(updates)
         .eq("id", memberId);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-group-members"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["care-group-members"] });
+      qc.invalidateQueries({ queryKey: ["group-cared-ones"] });
+    },
   });
 }
 
@@ -402,8 +408,11 @@ export function useCareGroupGallery(groupId: string | null) {
         .select("*")
         .eq("group_id", groupId)
         .order("created_at", { ascending: false });
-      if (error) throw error;
-      // Fetch uploader profiles separately (no FK exists)
+      if (error) {
+        // Table may not exist yet
+        console.warn("Gallery table not available:", error.message);
+        return [];
+      }
       const uploaderIds = [...new Set((data || []).map((g: any) => g.uploaded_by).filter(Boolean))];
       let uploaderMap: Record<string, any> = {};
       if (uploaderIds.length > 0) {
@@ -771,10 +780,13 @@ export function useGroupInvitations(groupId: string | null) {
       const { data, error } = await careDb
         .from("care_group_invitation")
         .select("*")
-        .eq("group_id", groupId)
+        .eq("care_group_id", groupId)
         .eq("status", "pending")
         .order("created_at", { ascending: false });
-      if (error) throw error;
+      if (error) {
+        console.warn("Failed to fetch invitations:", error.message);
+        return [];
+      }
       return (data || []) as any[];
     },
     enabled: !!groupId,
