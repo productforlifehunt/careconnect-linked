@@ -549,6 +549,32 @@ export function useServiceCategories() {
   });
 }
 
+// ─── Cared Ones (user_cared_one junction) ───────────────────
+export function useUserCaredOnes() {
+  return useQuery({
+    queryKey: ["user-cared-ones"],
+    queryFn: async () => {
+      const userId = await getCurrentUserId();
+      if (!userId) return [];
+      const { data, error } = await careDb
+        .from("user_cared_one")
+        .select("*")
+        .eq("user_id", userId);
+      if (error) throw error;
+      // Fetch cared one profiles
+      const caredOneIds = [...new Set((data || []).map((r: any) => r.cared_one_id).filter(Boolean))];
+      if (caredOneIds.length === 0) return [];
+      const { data: profiles } = await careDb
+        .from("profile")
+        .select("id, full_name, first_name, last_name, avatar_url")
+        .in("id", caredOneIds);
+      const profileMap: Record<string, any> = {};
+      (profiles || []).forEach((p: any) => { profileMap[p.id] = p; });
+      return (data || []).map((r: any) => ({ ...r, cared_one: profileMap[r.cared_one_id] || null }));
+    },
+  });
+}
+
 // ─── Dashboard Stats ────────────────────────────────────────
 export function useDashboardStats() {
   return useQuery({
