@@ -16,6 +16,10 @@ import Bookings from "./pages/Bookings";
 import Messages from "./pages/Messages";
 import HowItWorks from "./pages/HowItWorks";
 import Favorites from "./pages/Favorites";
+import Profile from "./pages/Profile";
+import TrustSafety from "./pages/TrustSafety";
+import BecomeCaregiver from "./pages/BecomeCaregiver";
+import Notifications from "./pages/Notifications";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +44,10 @@ const App = () => (
               <Route path="/messages" element={<Messages />} />
               <Route path="/how-it-works" element={<HowItWorks />} />
               <Route path="/favorites" element={<Favorites />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/trust-safety" element={<TrustSafety />} />
+              <Route path="/become-caregiver" element={<BecomeCaregiver />} />
+              <Route path="/notifications" element={<Notifications />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AppLayout>
