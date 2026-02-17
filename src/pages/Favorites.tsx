@@ -3,16 +3,23 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Star, MapPin, Shield, Clock, Heart, X } from "lucide-react";
-import { caregivers } from "@/data/mockData";
+import { Star, MapPin, Shield, Heart, Loader2 } from "lucide-react";
+import { useSavedProviders, useToggleSavedProvider } from "@/hooks/use-care-data";
 
 export default function Favorites() {
   const navigate = useNavigate();
-  const [favorites, setFavorites] = useState(caregivers.slice(0, 3));
+  const { data: savedProviders, isLoading } = useSavedProviders();
+  const toggleSaved = useToggleSavedProvider();
 
-  const removeFavorite = (id: string) => {
-    setFavorites(prev => prev.filter(c => c.id !== id));
+  const removeFavorite = (providerId: string) => {
+    toggleSaved.mutate({ providerId, isSaved: true });
   };
+
+  if (isLoading) {
+    return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
+  }
+
+  const favorites = savedProviders || [];
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
@@ -21,35 +28,39 @@ export default function Favorites() {
 
       {favorites.length > 0 ? (
         <div className="space-y-4">
-          {favorites.map(cg => (
-            <Card key={cg.id} className="card-elevated border-transparent">
-              <CardContent className="p-5">
-                <div className="flex gap-4">
-                  <img src={cg.avatar} alt={cg.name} className="w-16 h-16 rounded-xl object-cover cursor-pointer" onClick={() => navigate(`/caregiver/${cg.id}`)} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-foreground">{cg.name}</h3>
-                      {cg.verified && <Shield className="h-4 w-4 text-primary" />}
+          {favorites.map((sp: any) => {
+            const cg = sp.provider;
+            if (!cg) return null;
+            return (
+              <Card key={sp.id} className="card-elevated border-transparent">
+                <CardContent className="p-5">
+                  <div className="flex gap-4">
+                    <img src={cg.avatar_url || "/placeholder.svg"} alt={cg.full_name || ""} className="w-16 h-16 rounded-xl object-cover cursor-pointer" onClick={() => navigate(`/caregiver/${cg.id}`)} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-foreground">{cg.full_name}</h3>
+                        {cg.background_check_status === "passed" && <Shield className="h-4 w-4 text-primary" />}
+                      </div>
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+                        <span className="flex items-center gap-1"><Star className="h-3 w-3 text-warning fill-warning" /> {cg.rating_average?.toFixed(1) || "New"}</span>
+                        {cg.location && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {cg.location}</span>}
+                        <span>${cg.hourly_rate || 0}/hr</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {(cg.specialty || []).map((s: string) => <Badge key={s} variant="secondary" className="bg-accent text-accent-foreground text-xs">{s}</Badge>)}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
-                      <span className="flex items-center gap-1"><Star className="h-3 w-3 text-warning fill-warning" /> {cg.rating}</span>
-                      <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {cg.location}</span>
-                      <span>${cg.hourlyRate}/hr</span>
-                    </div>
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {cg.specialty.map(s => <Badge key={s} variant="secondary" className="bg-accent text-accent-foreground text-xs">{s}</Badge>)}
+                    <div className="flex flex-col gap-2 shrink-0">
+                      <Button variant="coral" size="sm" onClick={() => navigate(`/caregiver/${cg.id}`)}>Book</Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeFavorite(sp.provider_id)}>
+                        <Heart className="h-4 w-4 fill-coral text-coral" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-2 shrink-0">
-                    <Button variant="coral" size="sm" onClick={() => navigate(`/caregiver/${cg.id}`)}>Book</Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeFavorite(cg.id)}>
-                      <Heart className="h-4 w-4 fill-coral text-coral" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       ) : (
         <div className="text-center py-16">

@@ -6,15 +6,20 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Search, MapPin, Star, Shield, Clock, Heart,
-  Users, Stethoscope, Baby, Moon, ArrowRight, CheckCircle
+  Users, Stethoscope, Baby, Moon, ArrowRight, CheckCircle, Loader2
 } from "lucide-react";
-import { caregivers, careCategories } from "@/data/mockData";
+import { useProviders, useServiceCategories } from "@/hooks/use-care-data";
 import heroImage from "@/assets/hero-image.jpg";
+import type { Profile } from "@/types/care-connector";
 
 const Index = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [locationQuery, setLocationQuery] = useState("");
+
+  const { data: topProviders, isLoading } = useProviders({ sortBy: "rating" });
+  const { data: categories } = useServiceCategories();
+  const featuredProviders = (topProviders || []).slice(0, 3);
 
   const handleSearch = () => {
     const params = new URLSearchParams();
@@ -31,6 +36,18 @@ const Index = () => {
     "Companionship": <Users className="h-6 w-6" />,
     "Respite Care": <Moon className="h-6 w-6" />,
   };
+
+  // Use service_category from DB or fallback
+  const displayCategories = categories && categories.length > 0
+    ? categories.slice(0, 6).map(c => ({ name: c.name, count: 0 }))
+    : [
+        { name: "Elder Care", count: 0 },
+        { name: "Child Care", count: 0 },
+        { name: "Special Needs", count: 0 },
+        { name: "Nursing Care", count: 0 },
+        { name: "Companionship", count: 0 },
+        { name: "Respite Care", count: 0 },
+      ];
 
   return (
     <div className="min-h-full">
@@ -50,7 +67,6 @@ const Index = () => {
               Search caregivers, book appointments, coordinate with your care team, and track care in real-time — all in one place.
             </p>
 
-            {/* Search Bar */}
             <div className="bg-card rounded-xl p-2 shadow-xl animate-fade-in" style={{ animationDelay: "0.2s" }}>
               <div className="flex flex-col sm:flex-row gap-2">
                 <div className="flex-1 relative">
@@ -96,7 +112,7 @@ const Index = () => {
         <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">Browse by Category</h2>
         <p className="text-muted-foreground mb-8">Find the right type of care for your needs</p>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {careCategories.map((cat) => (
+          {displayCategories.map((cat) => (
             <Card
               key={cat.name}
               className="card-elevated cursor-pointer group border-transparent"
@@ -104,10 +120,9 @@ const Index = () => {
             >
               <CardContent className="p-6 text-center">
                 <div className="mx-auto w-12 h-12 rounded-xl bg-accent flex items-center justify-center mb-3 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                  {categoryIcons[cat.name]}
+                  {categoryIcons[cat.name] || <Heart className="h-6 w-6" />}
                 </div>
                 <h3 className="font-semibold text-sm text-foreground">{cat.name}</h3>
-                <p className="text-xs text-muted-foreground mt-1">{cat.count} caregivers</p>
               </CardContent>
             </Card>
           ))}
@@ -127,63 +142,63 @@ const Index = () => {
             </Button>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {caregivers.slice(0, 3).map((cg) => (
-              <Card
-                key={cg.id}
-                className="card-elevated cursor-pointer border-transparent overflow-hidden"
-                onClick={() => navigate(`/caregiver/${cg.id}`)}
-              >
-                <CardContent className="p-0">
-                  <div className="p-6">
-                    <div className="flex items-start gap-4">
-                      <img
-                        src={cg.avatar}
-                        alt={cg.name}
-                        className="w-16 h-16 rounded-xl object-cover"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-foreground truncate">{cg.name}</h3>
-                          {cg.verified && (
-                            <Shield className="h-4 w-4 text-primary shrink-0" />
+          {isLoading ? (
+            <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {featuredProviders.map((cg: Profile) => (
+                <Card
+                  key={cg.id}
+                  className="card-elevated cursor-pointer border-transparent overflow-hidden"
+                  onClick={() => navigate(`/caregiver/${cg.id}`)}
+                >
+                  <CardContent className="p-0">
+                    <div className="p-6">
+                      <div className="flex items-start gap-4">
+                        <img src={cg.avatar_url || "/placeholder.svg"} alt={cg.full_name || ""} className="w-16 h-16 rounded-xl object-cover" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold text-foreground truncate">{cg.full_name}</h3>
+                            {cg.background_check_status === "passed" && <Shield className="h-4 w-4 text-primary shrink-0" />}
+                          </div>
+                          <div className="flex items-center gap-1 mt-1">
+                            <Star className="h-4 w-4 text-warning fill-warning" />
+                            <span className="text-sm font-medium">{cg.rating_average?.toFixed(1) || "New"}</span>
+                            <span className="text-xs text-muted-foreground">({cg.rating_count || 0})</span>
+                          </div>
+                          {cg.location && (
+                            <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
+                              <MapPin className="h-3 w-3" />
+                              {cg.location}
+                            </div>
                           )}
                         </div>
-                        <div className="flex items-center gap-1 mt-1">
-                          <Star className="h-4 w-4 text-warning fill-warning" />
-                          <span className="text-sm font-medium">{cg.rating}</span>
-                          <span className="text-xs text-muted-foreground">({cg.reviewCount})</span>
-                        </div>
-                        <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
-                          <MapPin className="h-3 w-3" />
-                          {cg.location}
-                        </div>
                       </div>
-                    </div>
 
-                    <div className="flex flex-wrap gap-1.5 mt-4">
-                      {cg.specialty.slice(0, 3).map((s) => (
-                        <Badge key={s} variant="secondary" className="bg-accent text-accent-foreground text-xs">
-                          {s}
-                        </Badge>
-                      ))}
-                    </div>
+                      <div className="flex flex-wrap gap-1.5 mt-4">
+                        {(cg.specialty || []).slice(0, 3).map((s) => (
+                          <Badge key={s} variant="secondary" className="bg-accent text-accent-foreground text-xs">
+                            {s}
+                          </Badge>
+                        ))}
+                      </div>
 
-                    <div className="flex items-center justify-between mt-4 pt-4 border-t">
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        {cg.responseTime}
-                      </div>
-                      <div className="text-right">
-                        <span className="text-lg font-bold text-foreground">${cg.hourlyRate}</span>
-                        <span className="text-sm text-muted-foreground">/hr</span>
+                      <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <Clock className="h-3 w-3" />
+                          {cg.response_time_minute ? `Under ${cg.response_time_minute < 60 ? cg.response_time_minute + " min" : Math.ceil(cg.response_time_minute / 60) + " hrs"}` : ""}
+                        </div>
+                        <div className="text-right">
+                          <span className="text-lg font-bold text-foreground">${cg.hourly_rate || 0}</span>
+                          <span className="text-sm text-muted-foreground">/hr</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
 
           <div className="mt-6 text-center sm:hidden">
             <Button variant="outline" onClick={() => navigate("/search")}>

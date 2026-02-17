@@ -1,54 +1,111 @@
-import React, { createContext, useContext, useState, useCallback } from "react";
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  avatar?: string;
-  role: "caregiver" | "care-seeker" | "both";
-}
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { careAuth, careDb } from "@/integrations/supabase/external-client";
+import type { User as SupabaseUser, Session } from "@supabase/supabase-js";
+import type { Profile } from "@/types/care-connector";
 
 interface AuthContextType {
-  user: User | null;
+  user: Profile | null;
+  session: Session | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (name: string, email: string, password: string, role: User["role"]) => Promise<void>;
-  logout: () => void;
+  signup: (name: string, email: string, password: string, role: string) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem("cc-user");
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<Profile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const login = useCallback(async (email: string, _password: string) => {
-    // Mock login
-    const mockUser: User = {
-      id: "user-1",
-      name: email.split("@")[0].replace(/\./g, " ").replace(/\b\w/g, l => l.toUpperCase()),
+  const fetchProfile = useCallback(async (userId: string) => {
+    try {
+      const { data, error } = await careDb
+        .from("profile")
+        .select("*")
+        .eq("id", userId)
+        .single();
+      if (error) {
+        console.error("Error fetching profile:", error);
+        return null;
+      }
+      return data as Profile;
+    } catch (err) {
+      console.error("Error fetching profile:", err);
+      return null;
+    }
+  }, []);
+
+  useEffect(() => {
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = careAuth.auth.onAuthStateChange(
+      async (event, newSession) => {
+        setSession(newSession);
+        if (newSession?.user) {
+          // Use setTimeout to avoid Supabase auth deadlock
+          setTimeout(async () => {
+            const profile = await fetchProfile(newSession.user.id);
+            setUser(profile);
+            setIsLoading(false);
+          }, 0);
+        } else {
+          setUser(null);
+          setIsLoading(false);
+        }
+      }
+    );
+
+    // THEN check for existing session
+    careAuth.auth.getSession().then(({ data: { session: existing } }) => {
+      setSession(existing);
+      if (existing?.user) {
+        fetchProfile(existing.user.id).then(profile => {
+          setUser(profile);
+          setIsLoading(false);
+        });
+      } else {
+        setIsLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [fetchProfile]);
+
+  const login = useCallback(async (email: string, password: string) => {
+    const { error } = await careAuth.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+  }, []);
+
+  const signup = useCallback(async (name: string, email: string, password: string, _role: string) => {
+    const { error } = await careAuth.auth.signUp({
       email,
-      role: "both",
-    };
-    setUser(mockUser);
-    localStorage.setItem("cc-user", JSON.stringify(mockUser));
+      password,
+      options: {
+        data: { full_name: name },
+        emailRedirectTo: window.location.origin,
+      },
+    });
+    if (error) throw error;
   }, []);
 
-  const signup = useCallback(async (name: string, email: string, _password: string, role: User["role"]) => {
-    const mockUser: User = { id: "user-" + Date.now(), name, email, role };
-    setUser(mockUser);
-    localStorage.setItem("cc-user", JSON.stringify(mockUser));
-  }, []);
-
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    await careAuth.auth.signOut();
     setUser(null);
-    localStorage.removeItem("cc-user");
+    setSession(null);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, signup, logout }}>
+    <AuthContext.Provider value={{
+      user,
+      session,
+      isAuthenticated: !!session?.user,
+      isLoading,
+      login,
+      signup,
+      logout,
+    }}>
       {children}
     </AuthContext.Provider>
   );

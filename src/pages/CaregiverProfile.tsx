@@ -8,23 +8,34 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Star, MapPin, Shield, Clock, CheckCircle, Calendar, MessageSquare, Heart, ArrowLeft, Phone } from "lucide-react";
-import { caregivers } from "@/data/mockData";
+import { Star, MapPin, Shield, Clock, CheckCircle, Calendar, MessageSquare, Heart, ArrowLeft, Phone, Loader2 } from "lucide-react";
+import { useProvider, useProviderReviews, useCreateBooking, useToggleSavedProvider, useSavedProviders } from "@/hooks/use-care-data";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
 export default function CaregiverProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const caregiver = caregivers.find(c => c.id === id);
+  const { isAuthenticated } = useAuth();
+  const { data: caregiver, isLoading } = useProvider(id);
+  const { data: reviews } = useProviderReviews(id);
+  const { data: savedProviders } = useSavedProviders();
+  const toggleSaved = useToggleSavedProvider();
+  const createBooking = useCreateBooking();
 
   const [bookingDate, setBookingDate] = useState("");
   const [bookingTime, setBookingTime] = useState("");
   const [bookingDuration, setBookingDuration] = useState("2");
   const [bookingNotes, setBookingNotes] = useState("");
   const [bookingType, setBookingType] = useState("");
-  const [isFavorited, setIsFavorited] = useState(false);
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
+
+  const isFavorited = savedProviders?.some((sp: any) => sp.provider_id === id) || false;
+
+  if (isLoading) {
+    return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
+  }
 
   if (!caregiver) {
     return (
@@ -35,22 +46,45 @@ export default function CaregiverProfile() {
     );
   }
 
-  const handleBooking = () => {
+  const handleBooking = async () => {
     if (!bookingDate || !bookingTime || !bookingType) {
       toast({ title: "Please fill all required fields", variant: "destructive" });
       return;
     }
-    toast({
-      title: "Booking Request Sent!",
-      description: `Your booking with ${caregiver.name} on ${bookingDate} at ${bookingTime} has been submitted.`,
-    });
-    setBookingDialogOpen(false);
-    setBookingDate("");
-    setBookingTime("");
-    setBookingNotes("");
+    if (!isAuthenticated) {
+      toast({ title: "Please sign in to book", variant: "destructive" });
+      navigate("/auth");
+      return;
+    }
+    try {
+      await createBooking.mutateAsync({
+        provider_id: caregiver.id,
+        appointment_date: bookingDate,
+        appointment_time: bookingTime,
+        duration_hour: parseInt(bookingDuration),
+        service_type: bookingType,
+        hourly_rate: caregiver.hourly_rate || 0,
+        total_cost: (caregiver.hourly_rate || 0) * parseInt(bookingDuration),
+        special_instruction: bookingNotes || null,
+        status: caregiver.instant_book_enabled ? "confirmed" : "pending",
+        payment_status: "pending",
+      });
+      toast({ title: "Booking Request Sent!", description: `Your booking with ${caregiver.full_name} has been submitted.` });
+      setBookingDialogOpen(false);
+    } catch (err: any) {
+      toast({ title: "Booking failed", description: err.message, variant: "destructive" });
+    }
   };
 
-  const total = caregiver.hourlyRate * parseInt(bookingDuration);
+  const handleToggleFavorite = () => {
+    if (!isAuthenticated) { navigate("/auth"); return; }
+    toggleSaved.mutate({ providerId: caregiver.id, isSaved: isFavorited });
+  };
+
+  const total = (caregiver.hourly_rate || 0) * parseInt(bookingDuration);
+  const responseTime = caregiver.response_time_minute
+    ? caregiver.response_time_minute < 60 ? `Under ${caregiver.response_time_minute} min` : `Under ${Math.ceil(caregiver.response_time_minute / 60)} hours`
+    : "N/A";
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
@@ -59,32 +93,30 @@ export default function CaregiverProfile() {
       </Button>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Main Info */}
         <div className="lg:col-span-2 space-y-6">
           <Card className="border-transparent card-elevated">
             <CardContent className="p-6">
               <div className="flex flex-col sm:flex-row gap-6">
-                <img src={caregiver.avatar} alt={caregiver.name} className="w-28 h-28 rounded-2xl object-cover" />
+                <img src={caregiver.avatar_url || "/placeholder.svg"} alt={caregiver.full_name || ""} className="w-28 h-28 rounded-2xl object-cover" />
                 <div className="flex-1">
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h1 className="text-2xl font-bold text-foreground">{caregiver.name}</h1>
-                        {caregiver.verified && <Shield className="h-5 w-5 text-primary" />}
+                        <h1 className="text-2xl font-bold text-foreground">{caregiver.full_name}</h1>
+                        {caregiver.background_check_status === "passed" && <Shield className="h-5 w-5 text-primary" />}
                       </div>
                       <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1"><Star className="h-4 w-4 text-warning fill-warning" /> {caregiver.rating} ({caregiver.reviewCount} reviews)</span>
-                        <span className="flex items-center gap-1"><MapPin className="h-4 w-4" /> {caregiver.location}</span>
-                        <span className="flex items-center gap-1"><Clock className="h-4 w-4" /> {caregiver.experience} years exp.</span>
+                        <span className="flex items-center gap-1"><Star className="h-4 w-4 text-warning fill-warning" /> {caregiver.rating_average?.toFixed(1) || "New"} ({caregiver.rating_count || 0} reviews)</span>
+                        {caregiver.location && <span className="flex items-center gap-1"><MapPin className="h-4 w-4" /> {caregiver.location}</span>}
+                        {caregiver.years_of_experience && <span className="flex items-center gap-1"><Clock className="h-4 w-4" /> {caregiver.years_of_experience} years exp.</span>}
                       </div>
                     </div>
-                    <Button variant="ghost" size="icon" onClick={() => setIsFavorited(!isFavorited)}>
+                    <Button variant="ghost" size="icon" onClick={handleToggleFavorite}>
                       <Heart className={`h-5 w-5 ${isFavorited ? "fill-coral text-coral" : "text-muted-foreground"}`} />
                     </Button>
                   </div>
-
                   <div className="flex flex-wrap gap-2 mt-4">
-                    {caregiver.specialty.map(s => (
+                    {(caregiver.specialty || []).map(s => (
                       <Badge key={s} variant="secondary" className="bg-accent text-accent-foreground">{s}</Badge>
                     ))}
                   </div>
@@ -93,79 +125,61 @@ export default function CaregiverProfile() {
             </CardContent>
           </Card>
 
-          <Card className="border-transparent card-elevated">
-            <CardHeader><CardTitle>About</CardTitle></CardHeader>
-            <CardContent><p className="text-muted-foreground leading-relaxed">{caregiver.bio}</p></CardContent>
-          </Card>
+          {caregiver.bio && (
+            <Card className="border-transparent card-elevated">
+              <CardHeader><CardTitle>About</CardTitle></CardHeader>
+              <CardContent><p className="text-muted-foreground leading-relaxed">{caregiver.bio}</p></CardContent>
+            </Card>
+          )}
 
-          <Card className="border-transparent card-elevated">
-            <CardHeader><CardTitle>Qualifications</CardTitle></CardHeader>
-            <CardContent>
-              <div className="grid sm:grid-cols-2 gap-4">
+          {((caregiver.certification && caregiver.certification.length > 0)) && (
+            <Card className="border-transparent card-elevated">
+              <CardHeader><CardTitle>Qualifications</CardTitle></CardHeader>
+              <CardContent>
                 <div>
                   <h4 className="font-medium text-sm mb-2">Certifications</h4>
                   <div className="space-y-2">
-                    {caregiver.certifications.map(c => (
+                    {(caregiver.certification || []).map(c => (
                       <div key={c} className="flex items-center gap-2 text-sm text-muted-foreground">
                         <CheckCircle className="h-4 w-4 text-success" /> {c}
                       </div>
                     ))}
                   </div>
                 </div>
-                <div>
-                  <h4 className="font-medium text-sm mb-2">Languages</h4>
-                  <div className="space-y-2">
-                    {caregiver.languages.map(l => (
-                      <div key={l} className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <CheckCircle className="h-4 w-4 text-success" /> {l}
-                      </div>
-                    ))}
+                {caregiver.background_check_status === "passed" && (
+                  <div className="mt-4 p-3 rounded-lg bg-success/10 flex items-center gap-2 text-sm text-success">
+                    <Shield className="h-4 w-4" /> Background check passed
                   </div>
-                </div>
-              </div>
-              {caregiver.backgroundCheck && (
-                <div className="mt-4 p-3 rounded-lg bg-success/10 flex items-center gap-2 text-sm text-success">
-                  <Shield className="h-4 w-4" /> Background check passed
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="border-transparent card-elevated">
-            <CardHeader><CardTitle>Availability</CardTitle></CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(day => (
-                  <Badge key={day} variant={caregiver.availability.includes(day) ? "default" : "outline"} className={caregiver.availability.includes(day) ? "" : "opacity-40"}>
-                    {day}
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Reviews */}
           <Card className="border-transparent card-elevated">
-            <CardHeader><CardTitle>Recent Reviews</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Reviews ({reviews?.length || 0})</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              {[
-                { name: "Maria G.", rating: 5, text: "Sarah was absolutely wonderful with my mother. She's patient, kind, and very professional.", date: "2 weeks ago" },
-                { name: "Tom R.", rating: 5, text: "Highly recommend! Great communication and always on time. My father looks forward to her visits.", date: "1 month ago" },
-                { name: "Jennifer L.", rating: 4, text: "Very reliable and caring. She helped our family through a difficult time with grace.", date: "2 months ago" },
-              ].map((review, i) => (
-                <div key={i} className="border-b last:border-0 pb-4 last:pb-0">
+              {(reviews || []).length > 0 ? (reviews || []).map((review: any) => (
+                <div key={review.id} className="border-b last:border-0 pb-4 last:pb-0">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="font-medium text-sm text-foreground">{review.name}</span>
-                    <span className="text-xs text-muted-foreground">{review.date}</span>
+                    <span className="font-medium text-sm text-foreground">{review.reviewer?.full_name || "Anonymous"}</span>
+                    <span className="text-xs text-muted-foreground">{new Date(review.created_at).toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric" })}</span>
                   </div>
                   <div className="flex gap-0.5 mb-2">
                     {Array.from({ length: review.rating }).map((_, j) => (
                       <Star key={j} className="h-3 w-3 text-warning fill-warning" />
                     ))}
                   </div>
-                  <p className="text-sm text-muted-foreground">{review.text}</p>
+                  {review.comment && <p className="text-sm text-muted-foreground">{review.comment}</p>}
+                  {review.response_text && (
+                    <div className="mt-2 ml-4 p-2 bg-muted/50 rounded text-sm text-muted-foreground">
+                      <span className="font-medium">Provider response:</span> {review.response_text}
+                    </div>
+                  )}
                 </div>
-              ))}
+              )) : (
+                <p className="text-sm text-muted-foreground text-center py-4">No reviews yet</p>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -175,7 +189,7 @@ export default function CaregiverProfile() {
           <Card className="border-transparent card-elevated sticky top-24">
             <CardContent className="p-6">
               <div className="text-center mb-6">
-                <span className="text-3xl font-bold text-foreground">${caregiver.hourlyRate}</span>
+                <span className="text-3xl font-bold text-foreground">${caregiver.hourly_rate || 0}</span>
                 <span className="text-muted-foreground">/hour</span>
               </div>
 
@@ -187,7 +201,7 @@ export default function CaregiverProfile() {
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-md">
                   <DialogHeader>
-                    <DialogTitle>Book {caregiver.name}</DialogTitle>
+                    <DialogTitle>Book {caregiver.full_name}</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4 mt-4">
                     <div>
@@ -195,7 +209,7 @@ export default function CaregiverProfile() {
                       <Select value={bookingType} onValueChange={setBookingType}>
                         <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
                         <SelectContent>
-                          {caregiver.specialty.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                          {(caregiver.specialty || []).map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
@@ -226,12 +240,14 @@ export default function CaregiverProfile() {
                       <span className="text-sm text-muted-foreground">Estimated Total</span>
                       <span className="text-xl font-bold text-foreground">${total}</span>
                     </div>
-                    <Button variant="coral" className="w-full" onClick={handleBooking}>Confirm Booking</Button>
+                    <Button variant="coral" className="w-full" onClick={handleBooking} disabled={createBooking.isPending}>
+                      {createBooking.isPending ? "Submitting..." : "Confirm Booking"}
+                    </Button>
                   </div>
                 </DialogContent>
               </Dialog>
 
-              <Button variant="outline" className="w-full mb-3">
+              <Button variant="outline" className="w-full mb-3" onClick={() => isAuthenticated ? navigate("/messages") : navigate("/auth")}>
                 <MessageSquare className="mr-2 h-4 w-4" /> Send Message
               </Button>
               <Button variant="ghost" className="w-full">
@@ -241,16 +257,23 @@ export default function CaregiverProfile() {
               <div className="mt-6 pt-4 border-t space-y-3 text-sm">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Clock className="h-4 w-4 text-primary" />
-                  <span>Responds {caregiver.responseTime.toLowerCase()}</span>
+                  <span>Responds {responseTime}</span>
                 </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Shield className="h-4 w-4 text-primary" />
-                  <span>Background verified</span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <CheckCircle className="h-4 w-4 text-primary" />
-                  <span>{caregiver.experience} years experience</span>
-                </div>
+                {caregiver.background_check_status === "passed" && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Shield className="h-4 w-4 text-primary" />
+                    <span>Background verified</span>
+                  </div>
+                )}
+                {caregiver.years_of_experience && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <CheckCircle className="h-4 w-4 text-primary" />
+                    <span>{caregiver.years_of_experience} years experience</span>
+                  </div>
+                )}
+                {caregiver.instant_book_enabled && (
+                  <Badge className="bg-success text-success-foreground">Instant Book</Badge>
+                )}
               </div>
             </CardContent>
           </Card>
