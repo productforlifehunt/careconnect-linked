@@ -20,19 +20,9 @@ import { useState } from "react";
 import { useNotifications } from "@/hooks/use-care-data";
 
 const publicNav = [
-  { title: "Find Caregivers", url: "/search", icon: Search },
+  { title: "Care Groups", url: "/care-circle", icon: Users },
+  { title: "Find Care", url: "/search", icon: Search },
   { title: "How It Works", url: "/how-it-works", icon: HelpCircle },
-  { title: "Become a Caregiver", url: "/become-caregiver", icon: UserPlus },
-  { title: "Trust & Safety", url: "/trust-safety", icon: Shield },
-];
-
-const dashboardNav = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Bookings", url: "/bookings", icon: CalendarDays },
-  { title: "Care Circle", url: "/care-circle", icon: Users },
-  { title: "GPS Tracking", url: "/gps-tracking", icon: MapPin },
-  { title: "Messages", url: "/messages", icon: MessageSquare },
-  { title: "Favorites", url: "/favorites", icon: Heart },
 ];
 
 export function AppHeader() {
@@ -46,7 +36,7 @@ export function AppHeader() {
   const displayName = user?.full_name || user?.first_name || user?.email || "User";
   const initials = displayName.charAt(0).toUpperCase();
 
-  const isDashboardRoute = ["/dashboard", "/bookings", "/care-circle", "/gps-tracking", "/messages", "/favorites", "/notifications", "/profile"].some(
+  const isDashboardRoute = ["/dashboard", "/bookings", "/care-circle", "/gps-tracking", "/messages", "/favorites", "/notifications", "/profile", "/cared-ones"].some(
     r => location.pathname.startsWith(r)
   );
 
@@ -93,7 +83,15 @@ export function AppHeader() {
               {isAuthenticated && (
                 <>
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 mt-6 px-3">My Care</p>
-                  {dashboardNav.map(item => (
+                  {[
+                    { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+                    { title: "Cared Ones", url: "/cared-ones", icon: Heart },
+                    { title: "Bookings", url: "/bookings", icon: CalendarDays },
+                    { title: "Care Circle", url: "/care-circle", icon: Users },
+                    { title: "Messages", url: "/messages", icon: MessageSquare },
+                    { title: "Favorites", url: "/favorites", icon: Heart },
+                    { title: "GPS Tracking", url: "/gps-tracking", icon: MapPin },
+                  ].map(item => (
                     <Link
                       key={item.url}
                       to={item.url}
@@ -140,19 +138,13 @@ export function AppHeader() {
         {/* Auth section */}
         {isAuthenticated ? (
           <div className="flex items-center gap-1">
-            <nav className="hidden sm:flex items-center gap-1 mr-2">
-              {dashboardNav.map(item => (
-                <NavLink
-                  key={item.url}
-                  to={item.url}
-                  className="px-2.5 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors flex items-center gap-1.5"
-                  activeClassName="text-primary font-medium bg-accent/50"
-                >
-                  <item.icon className="h-3.5 w-3.5" />
-                  {item.title}
-                </NavLink>
-              ))}
-            </nav>
+            <NavLink
+              to="/dashboard"
+              className="px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+              activeClassName="bg-primary text-primary-foreground rounded-lg"
+            >
+              Dashboard
+            </NavLink>
 
             <Button variant="ghost" size="icon" className="relative" onClick={() => navigate("/notifications")}>
               <Bell className="h-5 w-5" />
