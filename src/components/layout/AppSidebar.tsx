@@ -22,12 +22,16 @@ import {
   Heart,
   HelpCircle,
   Shield,
+  Bell,
+  UserPlus,
+  User,
 } from "lucide-react";
 
 const publicItems = [
   { title: "Home", url: "/", icon: Home },
   { title: "Find Caregivers", url: "/search", icon: Search },
   { title: "How It Works", url: "/how-it-works", icon: HelpCircle },
+  { title: "Become a Caregiver", url: "/become-caregiver", icon: UserPlus },
 ];
 
 const authItems = [
@@ -36,7 +40,9 @@ const authItems = [
   { title: "Care Circle", url: "/care-circle", icon: Users },
   { title: "GPS Tracking", url: "/gps-tracking", icon: MapPin },
   { title: "Messages", url: "/messages", icon: MessageSquare },
+  { title: "Notifications", url: "/notifications", icon: Bell },
   { title: "Favorites", url: "/favorites", icon: Heart },
+  { title: "My Profile", url: "/profile", icon: User },
 ];
 
 export function AppSidebar() {

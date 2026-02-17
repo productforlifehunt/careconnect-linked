@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu, User, LogOut, LayoutDashboard, Bell } from "lucide-react";
+import { Menu, User, LogOut, LayoutDashboard, Bell, Settings, Heart } from "lucide-react";
 import { useSidebar } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
 
@@ -38,7 +38,7 @@ export function AppHeader() {
 
         {isAuthenticated ? (
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="relative" onClick={() => navigate("/messages")}>
+            <Button variant="ghost" size="icon" className="relative" onClick={() => navigate("/notifications")}>
               <Bell className="h-5 w-5" />
               <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-coral text-coral-foreground text-xs">
                 3
@@ -65,8 +65,16 @@ export function AppHeader() {
                   <User className="mr-2 h-4 w-4" />
                   My Profile
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/favorites")}>
+                  <Heart className="mr-2 h-4 w-4" />
+                  Favorites
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/notifications")}>
+                  <Bell className="mr-2 h-4 w-4" />
+                  Notifications
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={logout}>
+                <DropdownMenuItem onClick={() => { logout(); navigate("/"); }}>
                   <LogOut className="mr-2 h-4 w-4" />
                   Sign Out
                 </DropdownMenuItem>
