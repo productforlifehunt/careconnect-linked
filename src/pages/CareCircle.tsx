@@ -5,23 +5,29 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Switch } from "@/components/ui/switch";
 import {
   Users, Plus, CheckCircle, Circle, Clock, UserPlus, BookOpen, ListTodo, Loader2,
   Home, CalendarDays, Megaphone, Heart, ClipboardCheck, MessageSquare, Star,
-  Image, Settings, Send, Pin, Trash2, Shield,
+  Image, Settings, Send, Pin, Trash2, Shield, Edit, MoreVertical, X, KeyRound, Mail,
 } from "lucide-react";
 import {
   useCareGroups, useCreateCareGroup, useCareGroupMembers, useCareTasks, useCreateTask, useUpdateTaskStatus,
-  useCareGroupPosts, useCreateGroupPost, useCareGroupGallery, useGroupCaredOnes,
+  useCareGroupPosts, useCreateGroupPost, useUpdateGroupPost, useDeleteGroupPost,
+  useCareGroupGallery, useGroupCaredOnes,
   useCheckinLogs, useCreateCheckinLog, useGroupMessages, useSendMessage,
   useInviteToGroup, useUpdateMemberRole, useRemoveGroupMember,
+  useUpdateCareGroup, useDeleteCareGroup, useJoinGroupByCode,
+  useGroupInvitations, useCancelInvitation,
 } from "@/hooks/use-care-data";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export default function CareCircle() {
   const { toast } = useToast();
@@ -30,10 +36,16 @@ export default function CareCircle() {
   const createGroup = useCreateCareGroup();
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [createGroupOpen, setCreateGroupOpen] = useState(false);
+  const [joinCodeOpen, setJoinCodeOpen] = useState(false);
+  const [joinCode, setJoinCode] = useState("");
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupDesc, setNewGroupDesc] = useState("");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  const joinGroupByCode = useJoinGroupByCode();
 
   const activeGroupId = selectedGroupId || (groups && groups.length > 0 ? groups[0].id : null);
+  const activeGroup = (groups || []).find((g: any) => g.id === activeGroupId);
 
   const { data: members } = useCareGroupMembers(activeGroupId);
   const { data: tasks, isLoading: tasksLoading } = useCareTasks(activeGroupId);
@@ -43,13 +55,19 @@ export default function CareCircle() {
   const { data: gallery } = useCareGroupGallery(activeGroupId);
   const { data: groupCaredOnes } = useGroupCaredOnes(activeGroupId);
   const { data: groupMessages } = useGroupMessages(activeGroupId);
+  const { data: pendingInvitations } = useGroupInvitations(activeGroupId);
   const createTask = useCreateTask();
   const updateTaskStatus = useUpdateTaskStatus();
   const createPost = useCreateGroupPost();
+  const updatePost = useUpdateGroupPost();
+  const deletePost = useDeleteGroupPost();
   const sendMessage = useSendMessage();
   const inviteToGroup = useInviteToGroup();
   const updateRole = useUpdateMemberRole();
   const removeMember = useRemoveGroupMember();
+  const updateGroup = useUpdateCareGroup();
+  const deleteGroup = useDeleteCareGroup();
+  const cancelInvitation = useCancelInvitation();
 
   // Local state
   const [addTaskOpen, setAddTaskOpen] = useState(false);
@@ -59,9 +77,15 @@ export default function CareCircle() {
   const [newPostTitle, setNewPostTitle] = useState("");
   const [chatMessage, setChatMessage] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
-  const [checkinCaredOneId, setCheckinCaredOneId] = useState<string | null>(null);
-  const [checkinData, setCheckinData] = useState({ mood: "", energy_level: 5, pain_level: 0, sleep_hours: 7, note: "" });
   const [wishContent, setWishContent] = useState("");
+  const [editingPost, setEditingPost] = useState<any>(null);
+  const [editPostContent, setEditPostContent] = useState("");
+  const [editPostTitle, setEditPostTitle] = useState("");
+
+  // Settings form state
+  const [settingsName, setSettingsName] = useState("");
+  const [settingsDesc, setSettingsDesc] = useState("");
+  const [settingsPrivate, setSettingsPrivate] = useState(false);
 
   const handleCreateGroup = () => {
     if (!newGroupName.trim()) return;
@@ -70,6 +94,42 @@ export default function CareCircle() {
         setNewGroupName(""); setNewGroupDesc(""); setCreateGroupOpen(false);
         toast({ title: "Care group created!" });
       },
+    });
+  };
+
+  const handleJoinByCode = () => {
+    if (!joinCode.trim()) return;
+    joinGroupByCode.mutate(joinCode, {
+      onSuccess: () => {
+        setJoinCode(""); setJoinCodeOpen(false);
+        toast({ title: "Joined group successfully!" });
+      },
+      onError: (err: any) => {
+        toast({ title: "Failed to join", description: err.message, variant: "destructive" });
+      },
+    });
+  };
+
+  const openSettings = () => {
+    if (activeGroup) {
+      setSettingsName(activeGroup.name);
+      setSettingsDesc(activeGroup.description || "");
+      setSettingsPrivate(activeGroup.is_private || false);
+      setSettingsOpen(true);
+    }
+  };
+
+  const handleSaveSettings = () => {
+    if (!activeGroupId || !settingsName.trim()) return;
+    updateGroup.mutate({ id: activeGroupId, updates: { name: settingsName, description: settingsDesc || null, is_private: settingsPrivate } }, {
+      onSuccess: () => { setSettingsOpen(false); toast({ title: "Group updated!" }); },
+    });
+  };
+
+  const handleDeleteGroup = () => {
+    if (!activeGroupId) return;
+    deleteGroup.mutate(activeGroupId, {
+      onSuccess: () => { setSettingsOpen(false); setSelectedGroupId(null); toast({ title: "Group deleted" }); },
     });
   };
 
@@ -105,7 +165,30 @@ export default function CareCircle() {
     });
   };
 
-  // Check-in handled directly in CheckInsTab component
+  const handleEditPost = (post: any) => {
+    setEditingPost(post);
+    setEditPostContent(post.content || "");
+    setEditPostTitle(post.title || "");
+  };
+
+  const handleSaveEditPost = () => {
+    if (!editingPost) return;
+    updatePost.mutate({ id: editingPost.id, updates: { content: editPostContent, title: editPostTitle || null } }, {
+      onSuccess: () => { setEditingPost(null); toast({ title: "Post updated!" }); },
+    });
+  };
+
+  const handleTogglePin = (post: any) => {
+    updatePost.mutate({ id: post.id, updates: { is_pinned: !post.is_pinned } }, {
+      onSuccess: () => toast({ title: post.is_pinned ? "Unpinned" : "Pinned!" }),
+    });
+  };
+
+  const handleDeletePost = (postId: string) => {
+    deletePost.mutate(postId, {
+      onSuccess: () => toast({ title: "Post deleted" }),
+    });
+  };
 
   const priorityColors: Record<string, string> = {
     high: "bg-destructive/10 text-destructive", urgent: "bg-destructive/10 text-destructive",
@@ -114,6 +197,7 @@ export default function CareCircle() {
 
   const currentMember = (members || []).find((m: any) => m.user_id === user?.id);
   const isAdmin = currentMember?.is_owner || currentMember?.is_admin;
+  const isOwner = currentMember?.is_owner;
 
   if (groupsLoading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
 
@@ -122,18 +206,30 @@ export default function CareCircle() {
       <div className="max-w-6xl mx-auto px-4 py-6 text-center">
         <Users className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
         <h1 className="text-2xl font-bold text-foreground mb-2">No Care Groups Yet</h1>
-        <p className="text-muted-foreground mb-6">Create a care group to coordinate care with your family and team.</p>
-        <Dialog open={createGroupOpen} onOpenChange={setCreateGroupOpen}>
-          <DialogTrigger asChild><Button variant="coral"><Plus className="h-4 w-4 mr-2" /> Create Care Group</Button></DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Create Care Group</DialogTitle></DialogHeader>
-            <div className="space-y-4 mt-2">
-              <div><Label>Group Name *</Label><Input value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder="e.g. Mom's Care Team" /></div>
-              <div><Label>Description</Label><Textarea value={newGroupDesc} onChange={e => setNewGroupDesc(e.target.value)} placeholder="What is this group for?" /></div>
-              <Button variant="coral" className="w-full" onClick={handleCreateGroup} disabled={createGroup.isPending || !newGroupName.trim()}>Create Group</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <p className="text-muted-foreground mb-6">Create a care group or join one with a code.</p>
+        <div className="flex gap-3 justify-center flex-wrap">
+          <Dialog open={createGroupOpen} onOpenChange={setCreateGroupOpen}>
+            <DialogTrigger asChild><Button variant="coral"><Plus className="h-4 w-4 mr-2" /> Create Care Group</Button></DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Create Care Group</DialogTitle></DialogHeader>
+              <div className="space-y-4 mt-2">
+                <div><Label>Group Name *</Label><Input value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder="e.g. Mom's Care Team" /></div>
+                <div><Label>Description</Label><Textarea value={newGroupDesc} onChange={e => setNewGroupDesc(e.target.value)} placeholder="What is this group for?" /></div>
+                <Button variant="coral" className="w-full" onClick={handleCreateGroup} disabled={createGroup.isPending || !newGroupName.trim()}>Create Group</Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+          <Dialog open={joinCodeOpen} onOpenChange={setJoinCodeOpen}>
+            <DialogTrigger asChild><Button variant="outline"><KeyRound className="h-4 w-4 mr-2" /> Join with Code</Button></DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Join Care Group</DialogTitle></DialogHeader>
+              <div className="space-y-4 mt-2">
+                <div><Label>Join Code</Label><Input value={joinCode} onChange={e => setJoinCode(e.target.value.toUpperCase())} placeholder="Enter group code (e.g. ABC123)" className="uppercase" /></div>
+                <Button variant="coral" className="w-full" onClick={handleJoinByCode} disabled={joinGroupByCode.isPending || !joinCode.trim()}>Join Group</Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
     );
   }
@@ -141,7 +237,6 @@ export default function CareCircle() {
   const pendingTasks = (tasks || []).filter((t: any) => t.status !== "completed");
   const completedTasks = (tasks || []).filter((t: any) => t.status === "completed");
 
-  // Calendar: group tasks by date
   const tasksByDate: Record<string, any[]> = {};
   (tasks || []).filter((t: any) => t.due_date).forEach((t: any) => {
     const d = t.due_date.split("T")[0];
@@ -149,6 +244,26 @@ export default function CareCircle() {
     tasksByDate[d].push(t);
   });
   const sortedDates = Object.keys(tasksByDate).sort();
+
+  // Post action menu component
+  const PostActions = ({ post }: { post: any }) => {
+    const canEdit = post.author_id === user?.id;
+    const canPin = isAdmin && post.type === "announcement";
+    const canDelete = post.author_id === user?.id || isAdmin;
+    if (!canEdit && !canPin && !canDelete) return null;
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-7 w-7"><MoreVertical className="h-3.5 w-3.5" /></Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          {canEdit && <DropdownMenuItem onClick={() => handleEditPost(post)}><Edit className="h-3.5 w-3.5 mr-2" /> Edit</DropdownMenuItem>}
+          {canPin && <DropdownMenuItem onClick={() => handleTogglePin(post)}><Pin className="h-3.5 w-3.5 mr-2" /> {post.is_pinned ? "Unpin" : "Pin"}</DropdownMenuItem>}
+          {canDelete && <DropdownMenuItem className="text-destructive" onClick={() => handleDeletePost(post.id)}><Trash2 className="h-3.5 w-3.5 mr-2" /> Delete</DropdownMenuItem>}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  };
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
@@ -158,6 +273,19 @@ export default function CareCircle() {
           <p className="text-sm text-muted-foreground">Coordinate care with your team</p>
         </div>
         <div className="flex gap-2">
+          {isAdmin && (
+            <Button variant="ghost" size="icon" onClick={openSettings}><Settings className="h-4 w-4" /></Button>
+          )}
+          <Dialog open={joinCodeOpen} onOpenChange={setJoinCodeOpen}>
+            <DialogTrigger asChild><Button variant="outline" size="sm"><KeyRound className="h-4 w-4 mr-1" /> Join</Button></DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Join Care Group</DialogTitle></DialogHeader>
+              <div className="space-y-4 mt-2">
+                <div><Label>Join Code</Label><Input value={joinCode} onChange={e => setJoinCode(e.target.value.toUpperCase())} placeholder="Enter group code (e.g. ABC123)" className="uppercase" /></div>
+                <Button variant="coral" className="w-full" onClick={handleJoinByCode} disabled={joinGroupByCode.isPending || !joinCode.trim()}>Join Group</Button>
+              </div>
+            </DialogContent>
+          </Dialog>
           <Dialog open={createGroupOpen} onOpenChange={setCreateGroupOpen}>
             <DialogTrigger asChild><Button variant="outline" size="sm"><Plus className="h-4 w-4 mr-1" /> New Group</Button></DialogTrigger>
             <DialogContent>
@@ -171,6 +299,64 @@ export default function CareCircle() {
           </Dialog>
         </div>
       </div>
+
+      {/* Group Settings Dialog */}
+      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Group Settings</DialogTitle></DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div><Label>Group Name</Label><Input value={settingsName} onChange={e => setSettingsName(e.target.value)} /></div>
+            <div><Label>Description</Label><Textarea value={settingsDesc} onChange={e => setSettingsDesc(e.target.value)} rows={3} /></div>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Private Group</Label>
+                <p className="text-xs text-muted-foreground">Private groups are hidden and invite-only</p>
+              </div>
+              <Switch checked={settingsPrivate} onCheckedChange={setSettingsPrivate} />
+            </div>
+            {activeGroup?.join_code && (
+              <div className="rounded-lg bg-muted p-3">
+                <Label className="text-xs">Join Code</Label>
+                <p className="text-lg font-mono font-bold text-foreground tracking-widest">{activeGroup.join_code}</p>
+                <p className="text-xs text-muted-foreground">Share this code so others can join</p>
+              </div>
+            )}
+            <Button variant="coral" className="w-full" onClick={handleSaveSettings} disabled={updateGroup.isPending || !settingsName.trim()}>Save Changes</Button>
+            {isOwner && (
+              <div className="border-t pt-4">
+                <h4 className="text-sm font-medium text-destructive mb-2">Danger Zone</h4>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm" className="w-full"><Trash2 className="h-4 w-4 mr-2" /> Delete Group</Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete this care group?</AlertDialogTitle>
+                      <AlertDialogDescription>This action cannot be undone. All group data including posts, tasks, and messages will be permanently deleted.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDeleteGroup} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete Group</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Post Dialog */}
+      <Dialog open={!!editingPost} onOpenChange={(open) => !open && setEditingPost(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Edit Post</DialogTitle></DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div><Label>Title</Label><Input value={editPostTitle} onChange={e => setEditPostTitle(e.target.value)} placeholder="Optional title" /></div>
+            <div><Label>Content</Label><Textarea value={editPostContent} onChange={e => setEditPostContent(e.target.value)} rows={4} /></div>
+            <Button variant="coral" className="w-full" onClick={handleSaveEditPost} disabled={updatePost.isPending || !editPostContent.trim()}>Save Changes</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Group selector */}
       {groups.length > 1 && (
@@ -240,6 +426,7 @@ export default function CareCircle() {
                     <span className="text-sm font-medium text-foreground">{p.author?.full_name || "Member"}</span>
                     <Badge variant="outline" className="text-xs ml-auto">{p.type}</Badge>
                     <span className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString("en", { month: "short", day: "numeric" })}</span>
+                    <PostActions post={p} />
                   </div>
                   {p.title && <p className="font-medium text-sm text-foreground mb-1">{p.title}</p>}
                   <p className="text-sm text-muted-foreground">{p.content}</p>
@@ -297,7 +484,10 @@ export default function CareCircle() {
                       {a.is_pinned && <Pin className="h-3 w-3 text-primary" />}
                       <span className="font-medium text-sm text-foreground">{a.author?.full_name || "Admin"}</span>
                     </div>
-                    <span className="text-xs text-muted-foreground">{new Date(a.created_at).toLocaleDateString("en", { month: "short", day: "numeric" })}</span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-muted-foreground">{new Date(a.created_at).toLocaleDateString("en", { month: "short", day: "numeric" })}</span>
+                      <PostActions post={a} />
+                    </div>
                   </div>
                   {a.title && <h4 className="font-semibold text-foreground mb-1">{a.title}</h4>}
                   <p className="text-sm text-muted-foreground">{a.content}</p>
@@ -442,6 +632,7 @@ export default function CareCircle() {
                     <Star className="h-4 w-4 text-yellow-500" />
                     <span className="font-medium text-sm text-foreground">{w.author?.full_name || "Someone"}</span>
                     <span className="text-xs text-muted-foreground ml-auto">{new Date(w.created_at).toLocaleDateString("en", { month: "short", day: "numeric" })}</span>
+                    <PostActions post={w} />
                   </div>
                   <p className="text-sm text-muted-foreground">{w.content}</p>
                 </CardContent>
@@ -463,6 +654,32 @@ export default function CareCircle() {
               </CardContent>
             </Card>
           )}
+
+          {/* Pending Invitations */}
+          {isAdmin && (pendingInvitations || []).length > 0 && (
+            <div className="mb-4">
+              <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+                <Mail className="h-4 w-4" /> Pending Invitations ({(pendingInvitations || []).length})
+              </h3>
+              <div className="space-y-2">
+                {(pendingInvitations || []).map((inv: any) => (
+                  <Card key={inv.id} className="border-transparent card-elevated border-l-4 border-l-yellow-400">
+                    <CardContent className="p-3 flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{inv.invited_email}</p>
+                        <p className="text-xs text-muted-foreground">Invited {new Date(inv.created_at).toLocaleDateString("en", { month: "short", day: "numeric" })}</p>
+                      </div>
+                      <Button variant="ghost" size="sm" className="text-destructive" onClick={() => cancelInvitation.mutate(inv.id)}>
+                        <X className="h-4 w-4 mr-1" /> Cancel
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Active Members */}
           <div className="space-y-2">
             {(members || []).map((m: any) => (
               <Card key={m.id} className="border-transparent card-elevated">
@@ -482,15 +699,22 @@ export default function CareCircle() {
                       </div>
                     </div>
                     {isAdmin && !m.is_owner && m.user_id !== user?.id && (
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => updateRole.mutate({ memberId: m.id, updates: { is_cared_one: !m.is_cared_one } })}>
-                          {m.is_cared_one ? "Remove Cared One" : "Mark Cared One"}
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => updateRole.mutate({ memberId: m.id, updates: { is_admin: !m.is_admin } })}>
-                          {m.is_admin ? "Remove Admin" : "Make Admin"}
-                        </Button>
-                        <Button variant="ghost" size="icon" className="text-destructive" onClick={() => removeMember.mutate(m.id)}><Trash2 className="h-4 w-4" /></Button>
-                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => updateRole.mutate({ memberId: m.id, updates: { is_cared_one: !m.is_cared_one } })}>
+                            <Heart className="h-3.5 w-3.5 mr-2" /> {m.is_cared_one ? "Remove Cared One" : "Mark as Cared One"}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => updateRole.mutate({ memberId: m.id, updates: { is_admin: !m.is_admin } })}>
+                            <Shield className="h-3.5 w-3.5 mr-2" /> {m.is_admin ? "Remove Admin" : "Make Admin"}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive" onClick={() => removeMember.mutate(m.id)}>
+                            <Trash2 className="h-3.5 w-3.5 mr-2" /> Remove
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     )}
                   </div>
                 </CardContent>

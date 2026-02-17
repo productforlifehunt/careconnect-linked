@@ -203,14 +203,24 @@ export function useDirectMessages(otherUserId: string | null) {
       if (!userId || !otherUserId) return [];
       const { data, error } = await careDb
         .from("direct_message")
-        .select("*, sender:sender_id(id, full_name, avatar_url)")
+        .select("*")
         .or(
           `and(sender_id.eq.${userId},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${userId})`
         )
         .is("group_id", null)
         .order("created_at", { ascending: true });
       if (error) throw error;
-      return (data || []) as any[];
+      // Fetch sender profiles separately (no FK in care_connector schema)
+      const senderIds = [...new Set((data || []).map((m: any) => m.sender_id).filter(Boolean))];
+      let senderMap: Record<string, any> = {};
+      if (senderIds.length > 0) {
+        const { data: senders } = await careDb
+          .from("profile")
+          .select("id, full_name, avatar_url")
+          .in("id", senderIds);
+        (senders || []).forEach((s: any) => { senderMap[s.id] = s; });
+      }
+      return (data || []).map((m: any) => ({ ...m, sender: senderMap[m.sender_id] || null }));
     },
     enabled: !!otherUserId,
     refetchInterval: 5000,
@@ -224,12 +234,22 @@ export function useGroupMessages(groupId: string | null) {
       if (!groupId) return [];
       const { data, error } = await careDb
         .from("direct_message")
-        .select("*, sender:sender_id(id, full_name, avatar_url)")
+        .select("*")
         .eq("group_id", groupId)
         .order("created_at", { ascending: true })
         .limit(100);
       if (error) throw error;
-      return (data || []) as any[];
+      // Fetch sender profiles separately (no FK in care_connector schema)
+      const senderIds = [...new Set((data || []).map((m: any) => m.sender_id).filter(Boolean))];
+      let senderMap: Record<string, any> = {};
+      if (senderIds.length > 0) {
+        const { data: senders } = await careDb
+          .from("profile")
+          .select("id, full_name, avatar_url")
+          .in("id", senderIds);
+        (senders || []).forEach((s: any) => { senderMap[s.id] = s; });
+      }
+      return (data || []).map((m: any) => ({ ...m, sender: senderMap[m.sender_id] || null }));
     },
     enabled: !!groupId,
     refetchInterval: 5000,
@@ -379,11 +399,21 @@ export function useCareGroupGallery(groupId: string | null) {
       if (!groupId) return [];
       const { data, error } = await careDb
         .from("care_group_gallery")
-        .select("*, uploader:uploaded_by(id, full_name, avatar_url)")
+        .select("*")
         .eq("group_id", groupId)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data || []) as any[];
+      // Fetch uploader profiles separately (no FK exists)
+      const uploaderIds = [...new Set((data || []).map((g: any) => g.uploaded_by).filter(Boolean))];
+      let uploaderMap: Record<string, any> = {};
+      if (uploaderIds.length > 0) {
+        const { data: uploaders } = await careDb
+          .from("profile")
+          .select("id, full_name, avatar_url")
+          .in("id", uploaderIds);
+        (uploaders || []).forEach((u: any) => { uploaderMap[u.id] = u; });
+      }
+      return (data || []).map((g: any) => ({ ...g, uploader: uploaderMap[g.uploaded_by] || null }));
     },
     enabled: !!groupId,
   });
@@ -642,6 +672,130 @@ export function useCreateGroupPost() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["care-group-posts"] }),
   });
 }
+
+export function useUpdateGroupPost() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: { content?: string; title?: string; is_pinned?: boolean } }) => {
+      const { error } = await careDb
+        .from("care_group_post")
+        .update(updates)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-group-posts"] }),
+  });
+}
+
+export function useDeleteGroupPost() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await careDb
+        .from("care_group_post")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-group-posts"] }),
+  });
+}
+
+// ─── Group Settings (update & delete) ───────────────────────
+export function useUpdateCareGroup() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: { name?: string; description?: string; is_private?: boolean } }) => {
+      const { error } = await careDb
+        .from("care_group")
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-groups"] }),
+  });
+}
+
+export function useDeleteCareGroup() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await careDb
+        .from("care_group")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-groups"] }),
+  });
+}
+
+// ─── Join by Code ───────────────────────────────────────────
+export function useJoinGroupByCode() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (joinCode: string) => {
+      const userId = await getCurrentUserId();
+      if (!userId) throw new Error("Not authenticated");
+      // Find group with this join code
+      const { data: group, error: gErr } = await careDb
+        .from("care_group")
+        .select("id")
+        .eq("join_code", joinCode.trim().toUpperCase())
+        .single();
+      if (gErr || !group) throw new Error("Invalid join code");
+      // Check if already a member
+      const { data: existing } = await careDb
+        .from("care_group_member")
+        .select("id")
+        .eq("group_id", group.id)
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (existing) throw new Error("You're already a member of this group");
+      const { error } = await careDb
+        .from("care_group_member")
+        .insert({ group_id: group.id, user_id: userId, invitation_status: "accepted" });
+      if (error) throw error;
+      return group;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-groups"] }),
+  });
+}
+
+// ─── Pending Invitations ────────────────────────────────────
+export function useGroupInvitations(groupId: string | null) {
+  return useQuery({
+    queryKey: ["care-group-invitations", groupId],
+    queryFn: async () => {
+      if (!groupId) return [];
+      const { data, error } = await careDb
+        .from("care_group_invitation")
+        .select("*")
+        .eq("group_id", groupId)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!groupId,
+  });
+}
+
+export function useCancelInvitation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (invitationId: string) => {
+      const { error } = await careDb
+        .from("care_group_invitation")
+        .delete()
+        .eq("id", invitationId);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-group-invitations"] }),
+  });
+}
+
+
 
 // ─── Location Shares ────────────────────────────────────────
 export function useLocationShares() {
