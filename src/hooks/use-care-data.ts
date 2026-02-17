@@ -775,7 +775,7 @@ export function useMedicines(caredOneId: string | null) {
 export function useCreateMedicine() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (med: { user_id: string; name: string; dosage?: string; frequency?: string; time_of_day?: string; note?: string }) => {
+    mutationFn: async (med: { user_id: string; name: string; dosage?: string; frequency?: string; time_slot?: string[]; note?: string; form?: string; category?: string }) => {
       const { error } = await careDb
         .from("medicine")
         .insert(med);

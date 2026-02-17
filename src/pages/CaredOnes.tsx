@@ -181,15 +181,19 @@ function MedicineCard({ caredOneId }: { caredOneId: string }) {
   const logMed = useLogMedicine();
   const [addOpen, setAddOpen] = useState(false);
   const [view, setView] = useState<"timeline" | "list">("timeline");
-  const [form, setForm] = useState({ name: "", dosage: "", frequency: "once_daily", time_of_day: "08:00", note: "" });
+  const [form, setForm] = useState({ name: "", dosage: "", frequency: "once_daily", time_slots: ["08:00"] as string[], note: "" });
+
+  const addTimeSlot = () => setForm(p => ({ ...p, time_slots: [...p.time_slots, "12:00"] }));
+  const removeTimeSlot = (idx: number) => setForm(p => ({ ...p, time_slots: p.time_slots.filter((_, i) => i !== idx) }));
+  const updateTimeSlot = (idx: number, val: string) => setForm(p => ({ ...p, time_slots: p.time_slots.map((t, i) => i === idx ? val : t) }));
 
   const handleAdd = () => {
     if (!form.name.trim()) return;
     createMed.mutate(
-      { user_id: caredOneId, name: form.name.trim(), dosage: form.dosage || undefined, frequency: FREQUENCIES.find(f => f.value === form.frequency)?.label || form.frequency, time_of_day: form.time_of_day, note: form.note || undefined },
+      { user_id: caredOneId, name: form.name.trim(), dosage: form.dosage || undefined, frequency: FREQUENCIES.find(f => f.value === form.frequency)?.label || form.frequency, time_slot: form.time_slots.length > 0 ? form.time_slots : ["08:00"], note: form.note || undefined },
       {
         onSuccess: () => {
-          setForm({ name: "", dosage: "", frequency: "once_daily", time_of_day: "08:00", note: "" });
+          setForm({ name: "", dosage: "", frequency: "once_daily", time_slots: ["08:00"], note: "" });
           setAddOpen(false);
           toast({ title: "Medicine added" });
         },
@@ -198,16 +202,23 @@ function MedicineCard({ caredOneId }: { caredOneId: string }) {
     );
   };
 
-  // Group medicines by their scheduled time for the timeline
+  // Group medicines by their scheduled time_slot array for the timeline
   const timelineMeds = useMemo(() => {
     if (!meds) return {};
     const grouped: Record<string, any[]> = {};
     (meds as any[]).forEach((med) => {
-      const time = med.time_of_day || "08:00";
-      // Normalize to HH:00 for timeline grouping
-      const normalizedTime = time.includes(":") ? time.substring(0, 5) : "08:00";
-      if (!grouped[normalizedTime]) grouped[normalizedTime] = [];
-      grouped[normalizedTime].push(med);
+      const slots = med.time_slot || [];
+      if (slots.length === 0) {
+        // Fallback: put in 08:00
+        if (!grouped["08:00"]) grouped["08:00"] = [];
+        grouped["08:00"].push(med);
+      } else {
+        slots.forEach((slot: string) => {
+          const normalizedTime = slot.includes(":") ? slot.substring(0, 5) : "08:00";
+          if (!grouped[normalizedTime]) grouped[normalizedTime] = [];
+          grouped[normalizedTime].push(med);
+        });
+      }
     });
     return grouped;
   }, [meds]);
@@ -253,11 +264,23 @@ function MedicineCard({ caredOneId }: { caredOneId: string }) {
               </div>
             </div>
             <div>
-              <Label>Scheduled Time</Label>
-              <Select value={form.time_of_day} onValueChange={v => setForm(p => ({ ...p, time_of_day: v }))}>
-                <SelectTrigger className="mt-1"><Clock className="h-4 w-4 mr-2 text-muted-foreground" /><SelectValue /></SelectTrigger>
-                <SelectContent>{SCHEDULE_TIMES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
-              </Select>
+              <div className="flex items-center justify-between">
+                <Label>Scheduled Times</Label>
+                <Button type="button" variant="ghost" size="sm" onClick={addTimeSlot} className="text-xs h-7"><Plus className="h-3 w-3 mr-1" /> Add Time</Button>
+              </div>
+              <div className="space-y-2 mt-1">
+                {form.time_slots.map((slot, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <Select value={slot} onValueChange={v => updateTimeSlot(idx, v)}>
+                      <SelectTrigger><Clock className="h-4 w-4 mr-2 text-muted-foreground" /><SelectValue /></SelectTrigger>
+                      <SelectContent>{SCHEDULE_TIMES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
+                    </Select>
+                    {form.time_slots.length > 1 && (
+                      <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive shrink-0" onClick={() => removeTimeSlot(idx)}><X className="h-3 w-3" /></Button>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
             <div>
               <Label>Notes <span className="text-muted-foreground text-xs">(optional)</span></Label>
@@ -334,7 +357,7 @@ function MedicineCard({ caredOneId }: { caredOneId: string }) {
                   <div className="min-w-0">
                     <h3 className="font-semibold text-foreground">{med.name}</h3>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {[med.dosage, med.frequency, med.time_of_day ? SCHEDULE_TIMES.find(t => t.value === med.time_of_day)?.label || med.time_of_day : null].filter(Boolean).join(" · ")}
+                      {[med.dosage, med.frequency, ...(med.time_slot || []).map((t: string) => SCHEDULE_TIMES.find(s => s.value === t)?.label || t)].filter(Boolean).join(" · ")}
                     </p>
                     {med.note && <p className="text-xs text-muted-foreground mt-1 italic">{med.note}</p>}
                   </div>
