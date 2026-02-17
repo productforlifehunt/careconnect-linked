@@ -209,7 +209,15 @@ export default function CaregiverProfile() {
                       <Select value={bookingType} onValueChange={setBookingType}>
                         <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
                         <SelectContent>
-                          {(caregiver.specialty || []).map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                         {(caregiver.specialty && caregiver.specialty.length > 0) ? caregiver.specialty.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>) : (
+                           <>
+                             <SelectItem value="Elder Care">Elder Care</SelectItem>
+                             <SelectItem value="Child Care">Child Care</SelectItem>
+                             <SelectItem value="Companionship">Companionship</SelectItem>
+                             <SelectItem value="Nursing Care">Nursing Care</SelectItem>
+                             <SelectItem value="General Care">General Care</SelectItem>
+                           </>
+                         )}
                         </SelectContent>
                       </Select>
                     </div>

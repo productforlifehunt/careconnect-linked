@@ -1111,13 +1111,23 @@ export function useJobPostings(filters?: { source?: string; status?: string }) {
     queryFn: async () => {
       let q = careDb
         .from("job_posting")
-        .select("*, poster:posted_by(id, full_name, avatar_url, location)")
+        .select("*")
         .eq("status", filters?.status || "open")
         .order("created_at", { ascending: false });
       if (filters?.source) q = q.eq("job_source_type", filters.source);
       const { data, error } = await q;
       if (error) throw error;
-      return (data || []) as any[];
+      // Fetch poster profiles
+      const posterIds = [...new Set((data || []).map((j: any) => j.posted_by).filter(Boolean))];
+      let posterMap: Record<string, any> = {};
+      if (posterIds.length > 0) {
+        const { data: posters } = await careDb
+          .from("profile")
+          .select("id, full_name, avatar_url, location")
+          .in("id", posterIds);
+        (posters || []).forEach((p: any) => { posterMap[p.id] = p; });
+      }
+      return (data || []).map((j: any) => ({ ...j, poster: posterMap[j.posted_by] || null }));
     },
   });
 }
@@ -1144,11 +1154,20 @@ export function useJobApplications(jobId: string | null) {
       if (!jobId) return [];
       const { data, error } = await careDb
         .from("job_application")
-        .select("*, applicant:applicant_id(id, full_name, avatar_url, hourly_rate, rating_average, years_of_experience)")
+        .select("*")
         .eq("job_id", jobId)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data || []) as any[];
+      const applicantIds = [...new Set((data || []).map((a: any) => a.applicant_id).filter(Boolean))];
+      let applicantMap: Record<string, any> = {};
+      if (applicantIds.length > 0) {
+        const { data: applicants } = await careDb
+          .from("profile")
+          .select("id, full_name, avatar_url, hourly_rate, rating_average, years_of_experience")
+          .in("id", applicantIds);
+        (applicants || []).forEach((a: any) => { applicantMap[a.id] = a; });
+      }
+      return (data || []).map((a: any) => ({ ...a, applicant: applicantMap[a.applicant_id] || null }));
     },
     enabled: !!jobId,
   });
@@ -1177,11 +1196,20 @@ export function useMyJobApplications() {
       if (!userId) return [];
       const { data, error } = await careDb
         .from("job_application")
-        .select("*, job:job_id(id, title, status, service_type, hourly_rate, location)")
+        .select("*")
         .eq("applicant_id", userId)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data || []) as any[];
+      const jobIds = [...new Set((data || []).map((a: any) => a.job_id).filter(Boolean))];
+      let jobMap: Record<string, any> = {};
+      if (jobIds.length > 0) {
+        const { data: jobs } = await careDb
+          .from("job_posting")
+          .select("id, title, status, service_type, hourly_rate, location")
+          .in("id", jobIds);
+        (jobs || []).forEach((j: any) => { jobMap[j.id] = j; });
+      }
+      return (data || []).map((a: any) => ({ ...a, job: jobMap[a.job_id] || null }));
     },
   });
 }
@@ -1330,6 +1358,30 @@ export function useSafeZones(caredOneId: string | null) {
       return (data || []) as any[];
     },
     enabled: !!caredOneId,
+  });
+}
+
+export function useCreateSafeZone() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (zone: { user_id: string; name: string; latitude?: number; longitude?: number; radius_meters?: number; zone_type?: string }) => {
+      const { error } = await careDb
+        .from("safe_zone")
+        .insert(zone);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["safe-zones"] }),
+  });
+}
+
+export function useDeleteSafeZone() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await careDb.from("safe_zone").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["safe-zones"] }),
   });
 }
 
