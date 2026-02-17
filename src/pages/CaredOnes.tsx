@@ -1,15 +1,15 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useMemo } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
   Loader2, Plus, Pill, ClipboardCheck, HeartPulse, Lightbulb, Target, FileText,
-  Phone, MapPin, FolderOpen, Activity, Pencil, Trash2, Check, X, ArrowLeft,
+  Phone, MapPin, FolderOpen, Activity, Trash2, Check, X, ArrowLeft, Clock, SkipForward,
 } from "lucide-react";
 import {
   useUserCaredOnes,
@@ -56,10 +56,8 @@ export default function CaredOnes() {
         <h1 className="text-2xl font-bold text-foreground">Cared Ones</h1>
         <p className="text-muted-foreground">Manage and track care for your loved ones</p>
       </div>
-
       {caredOnes && caredOnes.length > 0 ? (
         <>
-          {/* Tabs for each cared one */}
           <div className="flex gap-2 mb-6 flex-wrap">
             {caredOnes.map((co: any) => (
               <button key={co.cared_one_id} onClick={() => { setActiveTab(co.cared_one_id); setOpenCard(null); }}
@@ -68,8 +66,6 @@ export default function CaredOnes() {
               </button>
             ))}
           </div>
-
-          {/* If a card is open, show detail view; otherwise show grid */}
           {openCard ? (
             <div>
               <Button variant="ghost" size="sm" className="mb-4" onClick={() => setOpenCard(null)}>
@@ -114,7 +110,6 @@ function getSubtitle(key: string): string {
   return map[key] || "";
 }
 
-// ─── Feature Detail Router ─────────────────────────────────
 function FeatureDetail({ cardKey, caredOneId, caredOneName }: { cardKey: string; caredOneId: string; caredOneName: string }) {
   switch (cardKey) {
     case "medicine": return <MedicineCard caredOneId={caredOneId} />;
@@ -131,6 +126,52 @@ function FeatureDetail({ cardKey, caredOneId, caredOneName }: { cardKey: string;
   }
 }
 
+// ─── Time slots for 24h timeline (8am-7am next day) ─────────
+const TIMELINE_HOURS = [
+  "08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00",
+  "16:00","17:00","18:00","19:00","20:00","21:00","22:00","23:00",
+  "00:00","01:00","02:00","03:00","04:00","05:00","06:00","07:00",
+];
+
+const SCHEDULE_TIMES = [
+  { value: "06:00", label: "6:00 AM" },
+  { value: "07:00", label: "7:00 AM" },
+  { value: "08:00", label: "8:00 AM" },
+  { value: "09:00", label: "9:00 AM" },
+  { value: "10:00", label: "10:00 AM" },
+  { value: "11:00", label: "11:00 AM" },
+  { value: "12:00", label: "12:00 PM" },
+  { value: "13:00", label: "1:00 PM" },
+  { value: "14:00", label: "2:00 PM" },
+  { value: "15:00", label: "3:00 PM" },
+  { value: "16:00", label: "4:00 PM" },
+  { value: "17:00", label: "5:00 PM" },
+  { value: "18:00", label: "6:00 PM" },
+  { value: "19:00", label: "7:00 PM" },
+  { value: "20:00", label: "8:00 PM" },
+  { value: "21:00", label: "9:00 PM" },
+  { value: "22:00", label: "10:00 PM" },
+  { value: "23:00", label: "11:00 PM" },
+];
+
+const FREQUENCIES = [
+  { value: "once_daily", label: "Once daily" },
+  { value: "twice_daily", label: "Twice daily" },
+  { value: "three_daily", label: "Three times daily" },
+  { value: "four_daily", label: "Four times daily" },
+  { value: "every_other_day", label: "Every other day" },
+  { value: "weekly", label: "Weekly" },
+  { value: "as_needed", label: "As needed" },
+];
+
+function formatHour(h: string): string {
+  const hour = parseInt(h.split(":")[0]);
+  if (hour === 0) return "12 AM";
+  if (hour === 12) return "12 PM";
+  if (hour < 12) return `${hour} AM`;
+  return `${hour - 12} PM`;
+}
+
 // ─── MEDICINE TRACKER ───────────────────────────────────────
 function MedicineCard({ caredOneId }: { caredOneId: string }) {
   const { toast } = useToast();
@@ -139,51 +180,172 @@ function MedicineCard({ caredOneId }: { caredOneId: string }) {
   const deleteMed = useDeleteMedicine();
   const logMed = useLogMedicine();
   const [addOpen, setAddOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", dosage: "", frequency: "", time_of_day: "", note: "" });
+  const [view, setView] = useState<"timeline" | "list">("timeline");
+  const [form, setForm] = useState({ name: "", dosage: "", frequency: "once_daily", time_of_day: "08:00", note: "" });
 
   const handleAdd = () => {
-    if (!form.name) return;
-    createMed.mutate({ user_id: caredOneId, ...form }, { onSuccess: () => { setForm({ name: "", dosage: "", frequency: "", time_of_day: "", note: "" }); setAddOpen(false); toast({ title: "Medicine added" }); } });
+    if (!form.name.trim()) return;
+    createMed.mutate(
+      { user_id: caredOneId, name: form.name.trim(), dosage: form.dosage || undefined, frequency: FREQUENCIES.find(f => f.value === form.frequency)?.label || form.frequency, time_of_day: form.time_of_day, note: form.note || undefined },
+      {
+        onSuccess: () => {
+          setForm({ name: "", dosage: "", frequency: "once_daily", time_of_day: "08:00", note: "" });
+          setAddOpen(false);
+          toast({ title: "Medicine added" });
+        },
+        onError: (err) => toast({ title: "Failed to add", description: String(err.message), variant: "destructive" }),
+      }
+    );
   };
+
+  // Group medicines by their scheduled time for the timeline
+  const timelineMeds = useMemo(() => {
+    if (!meds) return {};
+    const grouped: Record<string, any[]> = {};
+    (meds as any[]).forEach((med) => {
+      const time = med.time_of_day || "08:00";
+      // Normalize to HH:00 for timeline grouping
+      const normalizedTime = time.includes(":") ? time.substring(0, 5) : "08:00";
+      if (!grouped[normalizedTime]) grouped[normalizedTime] = [];
+      grouped[normalizedTime].push(med);
+    });
+    return grouped;
+  }, [meds]);
+
+  const hasScheduledMeds = Object.keys(timelineMeds).length > 0;
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-bold text-foreground">Medicine Tracker</h2>
-        <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> Add Medicine</Button>
+        <div className="flex gap-2">
+          <div className="flex border rounded-lg overflow-hidden">
+            <button onClick={() => setView("timeline")} className={`px-3 py-1.5 text-xs font-medium ${view === "timeline" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground hover:bg-accent"}`}>Timeline</button>
+            <button onClick={() => setView("list")} className={`px-3 py-1.5 text-xs font-medium ${view === "list" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground hover:bg-accent"}`}>List</button>
+          </div>
+          <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> Add</Button>
+        </div>
       </div>
+
+      {/* Add Medicine Dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent>
-            <DialogHeader><DialogTitle>Add Medicine</DialogTitle></DialogHeader>
-            <div className="space-y-3 mt-2">
-              <div><Label>Name *</Label><Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Lisinopril" /></div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label>Dosage</Label><Input value={form.dosage} onChange={e => setForm(p => ({ ...p, dosage: e.target.value }))} placeholder="e.g. 10mg" /></div>
-                <div><Label>Frequency</Label><Input value={form.frequency} onChange={e => setForm(p => ({ ...p, frequency: e.target.value }))} placeholder="e.g. Once daily" /></div>
-              </div>
-              <div><Label>Time of Day</Label><Input value={form.time_of_day} onChange={e => setForm(p => ({ ...p, time_of_day: e.target.value }))} placeholder="e.g. Morning" /></div>
-              <div><Label>Notes</Label><Input value={form.note} onChange={e => setForm(p => ({ ...p, note: e.target.value }))} placeholder="Take with food..." /></div>
-              <Button variant="coral" className="w-full" onClick={handleAdd} disabled={createMed.isPending || !form.name}>Add Medicine</Button>
+          <DialogHeader>
+            <DialogTitle>Add Medicine</DialogTitle>
+            <DialogDescription>Add a medication to the daily schedule</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div>
+              <Label>Medicine Name <span className="text-destructive">*</span></Label>
+              <Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Lisinopril, Aspirin" className="mt-1" />
             </div>
-          </DialogContent>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Dosage</Label>
+                <Input value={form.dosage} onChange={e => setForm(p => ({ ...p, dosage: e.target.value }))} placeholder="e.g. 10mg, 2 tablets" className="mt-1" />
+              </div>
+              <div>
+                <Label>Frequency</Label>
+                <Select value={form.frequency} onValueChange={v => setForm(p => ({ ...p, frequency: v }))}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>{FREQUENCIES.map(f => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <Label>Scheduled Time</Label>
+              <Select value={form.time_of_day} onValueChange={v => setForm(p => ({ ...p, time_of_day: v }))}>
+                <SelectTrigger className="mt-1"><Clock className="h-4 w-4 mr-2 text-muted-foreground" /><SelectValue /></SelectTrigger>
+                <SelectContent>{SCHEDULE_TIMES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Notes <span className="text-muted-foreground text-xs">(optional)</span></Label>
+              <Input value={form.note} onChange={e => setForm(p => ({ ...p, note: e.target.value }))} placeholder="Take with food, before meals..." className="mt-1" />
+            </div>
+            <Button className="w-full" variant="coral" onClick={handleAdd} disabled={createMed.isPending || !form.name.trim()}>
+              {createMed.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+              Add Medicine
+            </Button>
+          </div>
+        </DialogContent>
       </Dialog>
-      {isLoading ? <Loader2 className="h-6 w-6 animate-spin text-muted-foreground mx-auto" /> : (
+
+      {isLoading ? <Loader2 className="h-6 w-6 animate-spin text-muted-foreground mx-auto" /> : view === "timeline" ? (
+        /* ─── 24h Timeline View ─── */
+        <div className="space-y-0">
+          {!hasScheduledMeds ? (
+            <div className="text-center py-12">
+              <Pill className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+              <p className="text-muted-foreground mb-3">No medications scheduled yet</p>
+              <Button variant="coral" size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> Add First Medicine</Button>
+            </div>
+          ) : (
+            TIMELINE_HOURS.map((hour) => {
+              const medsAtTime = timelineMeds[hour];
+              const isCurrentHour = new Date().getHours() === parseInt(hour.split(":")[0]);
+              return (
+                <div key={hour} className={`flex border-b border-border/50 ${isCurrentHour ? "bg-primary/5" : ""}`}>
+                  {/* Time column */}
+                  <div className={`w-20 shrink-0 py-3 px-2 text-xs font-medium ${isCurrentHour ? "text-primary" : "text-muted-foreground"} ${medsAtTime ? "" : "opacity-40"}`}>
+                    {isCurrentHour && <div className="w-2 h-2 rounded-full bg-primary inline-block mr-1" />}
+                    {formatHour(hour)}
+                  </div>
+                  {/* Meds column */}
+                  <div className="flex-1 py-2 px-2">
+                    {medsAtTime ? (
+                      <div className="space-y-2">
+                        {medsAtTime.map((med: any) => (
+                          <div key={med.id} className="flex items-center justify-between bg-card rounded-lg border p-3">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <Pill className="h-4 w-4 text-primary shrink-0" />
+                              <div className="min-w-0">
+                                <p className="font-medium text-foreground text-sm truncate">{med.name}</p>
+                                <p className="text-xs text-muted-foreground">{[med.dosage, med.frequency].filter(Boolean).join(" · ")}</p>
+                              </div>
+                            </div>
+                            <div className="flex gap-1.5 shrink-0 ml-2">
+                              <Button size="sm" variant="outline" className="h-8 text-xs border-green-200 text-green-700 hover:bg-green-50 hover:text-green-800"
+                                onClick={() => logMed.mutate({ medicine_id: med.id, status: "taken" }, { onSuccess: () => toast({ title: `${med.name} marked as taken ✓` }) })}>
+                                <Check className="h-3 w-3 mr-1" /> Taken
+                              </Button>
+                              <Button size="sm" variant="ghost" className="h-8 text-xs text-amber-600 hover:bg-amber-50"
+                                onClick={() => logMed.mutate({ medicine_id: med.id, status: "skipped" }, { onSuccess: () => toast({ title: `${med.name} skipped` }) })}>
+                                <SkipForward className="h-3 w-3 mr-1" /> Skip
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      ) : (
+        /* ─── List View ─── */
         <div className="space-y-3">
           {(meds || []).map((med: any) => (
             <Card key={med.id} className="border-transparent card-elevated">
               <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div>
+                <div className="flex items-center justify-between">
+                  <div className="min-w-0">
                     <h3 className="font-semibold text-foreground">{med.name}</h3>
-                    <p className="text-xs text-muted-foreground">{[med.dosage, med.frequency, med.time_of_day].filter(Boolean).join(" · ")}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {[med.dosage, med.frequency, med.time_of_day ? SCHEDULE_TIMES.find(t => t.value === med.time_of_day)?.label || med.time_of_day : null].filter(Boolean).join(" · ")}
+                    </p>
+                    {med.note && <p className="text-xs text-muted-foreground mt-1 italic">{med.note}</p>}
                   </div>
-                  <div className="flex gap-1">
-                    <Button size="sm" variant="outline" className="text-success" onClick={() => logMed.mutate({ medicine_id: med.id, status: "taken" }, { onSuccess: () => toast({ title: "Logged as taken ✓" }) })}><Check className="h-3 w-3 mr-1" /> Taken</Button>
-                    <Button size="sm" variant="ghost" className="text-warning" onClick={() => logMed.mutate({ medicine_id: med.id, status: "skipped" }, { onSuccess: () => toast({ title: "Logged as skipped" }) })}>Skip</Button>
-                    <Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => deleteMed.mutate(med.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                  <div className="flex gap-1 shrink-0">
+                    <Button size="sm" variant="outline" className="text-green-700 border-green-200" onClick={() => logMed.mutate({ medicine_id: med.id, status: "taken" }, { onSuccess: () => toast({ title: "Taken ✓" }) })}>
+                      <Check className="h-3 w-3 mr-1" /> Taken
+                    </Button>
+                    <Button size="sm" variant="ghost" className="text-amber-600" onClick={() => logMed.mutate({ medicine_id: med.id, status: "skipped" }, { onSuccess: () => toast({ title: "Skipped" }) })}>Skip</Button>
+                    <Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => { if (confirm(`Delete ${med.name}?`)) deleteMed.mutate(med.id); }}><Trash2 className="h-3.5 w-3.5" /></Button>
                   </div>
                 </div>
-                {med.note && <p className="text-xs text-muted-foreground">{med.note}</p>}
               </CardContent>
             </Card>
           ))}
@@ -195,102 +357,211 @@ function MedicineCard({ caredOneId }: { caredOneId: string }) {
 }
 
 // ─── CHECK-IN CARD ──────────────────────────────────────────
+const MOODS = [
+  { value: "great", emoji: "😊", label: "Great" },
+  { value: "good", emoji: "🙂", label: "Good" },
+  { value: "okay", emoji: "😐", label: "Okay" },
+  { value: "poor", emoji: "😟", label: "Poor" },
+  { value: "bad", emoji: "😢", label: "Bad" },
+];
+
 function CheckInCard({ caredOneId }: { caredOneId: string }) {
   const { toast } = useToast();
   const { data: logs } = useCheckinLogs(caredOneId);
   const create = useCreateCheckinLog();
   const [form, setForm] = useState({ mood: "good", energy_level: 7, pain_level: 0, sleep_hours: 7, note: "" });
-  const moodEmoji: Record<string, string> = { great: "😊", good: "🙂", okay: "😐", poor: "😟", bad: "😢" };
+
+  const handleSubmit = () => {
+    create.mutate(
+      { user_id: caredOneId, ...form },
+      { onSuccess: () => { setForm({ mood: "good", energy_level: 7, pain_level: 0, sleep_hours: 7, note: "" }); toast({ title: "Check-in recorded ✓" }); } }
+    );
+  };
 
   return (
     <div>
-      <h2 className="text-lg font-bold text-foreground mb-4">Daily Check-Ins</h2>
-      <Card className="border-transparent card-elevated mb-4">
-        <CardContent className="p-4 space-y-3">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div><Label className="text-xs">Mood</Label><Select value={form.mood} onValueChange={v => setForm(p => ({ ...p, mood: v }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["great","good","okay","poor","bad"].map(m=><SelectItem key={m} value={m}>{moodEmoji[m]} {m}</SelectItem>)}</SelectContent></Select></div>
-            <div><Label className="text-xs">Energy (1-10)</Label><Input type="number" min={1} max={10} value={form.energy_level} onChange={e => setForm(p => ({ ...p, energy_level: parseInt(e.target.value)||0 }))} /></div>
-            <div><Label className="text-xs">Pain (0-10)</Label><Input type="number" min={0} max={10} value={form.pain_level} onChange={e => setForm(p => ({ ...p, pain_level: parseInt(e.target.value)||0 }))} /></div>
-            <div><Label className="text-xs">Sleep (hrs)</Label><Input type="number" min={0} max={24} step={0.5} value={form.sleep_hours} onChange={e => setForm(p => ({ ...p, sleep_hours: parseFloat(e.target.value)||0 }))} /></div>
+      <h2 className="text-lg font-bold text-foreground mb-4">Daily Check-In</h2>
+      <Card className="border-transparent card-elevated mb-6">
+        <CardContent className="p-5 space-y-5">
+          {/* Mood selector as emoji buttons */}
+          <div>
+            <Label className="text-sm font-medium mb-2 block">How are they feeling?</Label>
+            <div className="flex gap-2">
+              {MOODS.map(m => (
+                <button key={m.value} onClick={() => setForm(p => ({ ...p, mood: m.value }))}
+                  className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg border-2 transition-all ${form.mood === m.value ? "border-primary bg-primary/10" : "border-transparent bg-accent/50 hover:bg-accent"}`}>
+                  <span className="text-2xl">{m.emoji}</span>
+                  <span className="text-[10px] font-medium text-muted-foreground">{m.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
-          <Input value={form.note} onChange={e => setForm(p => ({ ...p, note: e.target.value }))} placeholder="Any notes..." />
-          <Button variant="coral" size="sm" onClick={() => create.mutate({ user_id: caredOneId, ...form }, { onSuccess: () => { setForm({ mood: "good", energy_level: 7, pain_level: 0, sleep_hours: 7, note: "" }); toast({ title: "Check-in recorded" }); } })} disabled={create.isPending}>Record Check-In</Button>
+          {/* Sliders row */}
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <Label className="text-xs text-muted-foreground">Energy Level</Label>
+              <div className="flex items-center gap-2 mt-1">
+                <input type="range" min={1} max={10} value={form.energy_level} onChange={e => setForm(p => ({ ...p, energy_level: parseInt(e.target.value) }))} className="flex-1 accent-primary" />
+                <span className="text-sm font-semibold text-foreground w-5 text-center">{form.energy_level}</span>
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Pain Level</Label>
+              <div className="flex items-center gap-2 mt-1">
+                <input type="range" min={0} max={10} value={form.pain_level} onChange={e => setForm(p => ({ ...p, pain_level: parseInt(e.target.value) }))} className="flex-1 accent-destructive" />
+                <span className="text-sm font-semibold text-foreground w-5 text-center">{form.pain_level}</span>
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Sleep (hrs)</Label>
+              <Input type="number" min={0} max={24} step={0.5} value={form.sleep_hours} onChange={e => setForm(p => ({ ...p, sleep_hours: parseFloat(e.target.value) || 0 }))} className="mt-1" />
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs text-muted-foreground">Notes</Label>
+            <Textarea value={form.note} onChange={e => setForm(p => ({ ...p, note: e.target.value }))} placeholder="Any observations, symptoms, or changes..." rows={2} className="mt-1" />
+          </div>
+          <Button variant="coral" className="w-full" onClick={handleSubmit} disabled={create.isPending}>
+            {create.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <ClipboardCheck className="h-4 w-4 mr-2" />}
+            Record Check-In
+          </Button>
         </CardContent>
       </Card>
+      {/* History */}
+      <h3 className="text-sm font-semibold text-muted-foreground mb-2">Recent Check-Ins</h3>
       <div className="space-y-2">
-        {(logs||[]).map((l:any) => (
+        {(logs || []).map((l: any) => (
           <Card key={l.id} className="border-transparent card-elevated"><CardContent className="p-3">
-            <div className="flex justify-between"><span className="text-sm font-medium">{moodEmoji[l.mood]||"🙂"} {l.mood}</span><span className="text-xs text-muted-foreground">{new Date(l.created_at).toLocaleDateString("en",{month:"short",day:"numeric"})}</span></div>
-            <div className="flex gap-3 text-xs text-muted-foreground mt-1">{l.energy_level!=null&&<span>Energy: {l.energy_level}</span>}{l.pain_level!=null&&<span>Pain: {l.pain_level}</span>}{l.sleep_hours!=null&&<span>Sleep: {l.sleep_hours}h</span>}</div>
-            {l.note&&<p className="text-xs text-muted-foreground mt-1">{l.note}</p>}
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">{MOODS.find(m => m.value === l.mood)?.emoji || "🙂"}</span>
+                <div>
+                  <span className="text-sm font-medium text-foreground capitalize">{l.mood}</span>
+                  <div className="flex gap-3 text-xs text-muted-foreground">{l.energy_level != null && <span>⚡ {l.energy_level}/10</span>}{l.pain_level != null && l.pain_level > 0 && <span>🩹 {l.pain_level}/10</span>}{l.sleep_hours != null && <span>😴 {l.sleep_hours}h</span>}</div>
+                </div>
+              </div>
+              <span className="text-xs text-muted-foreground">{new Date(l.created_at).toLocaleDateString("en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+            </div>
+            {l.note && <p className="text-xs text-muted-foreground mt-1 pl-9">{l.note}</p>}
           </CardContent></Card>
         ))}
-        {(logs||[]).length===0&&<p className="text-center py-8 text-muted-foreground">No check-ins yet</p>}
+        {(logs || []).length === 0 && <p className="text-center py-8 text-muted-foreground">No check-ins yet. Record the first one above.</p>}
       </div>
     </div>
   );
 }
 
 // ─── HEALTH TRACKING ────────────────────────────────────────
+const VITAL_TYPES = [
+  { value: "blood_pressure", label: "Blood Pressure", unit: "mmHg", placeholder: "120/80" },
+  { value: "heart_rate", label: "Heart Rate", unit: "bpm", placeholder: "72" },
+  { value: "blood_sugar", label: "Blood Sugar", unit: "mg/dL", placeholder: "100" },
+  { value: "weight", label: "Weight", unit: "lbs", placeholder: "150" },
+  { value: "temperature", label: "Temperature", unit: "°F", placeholder: "98.6" },
+  { value: "oxygen", label: "O2 Saturation", unit: "%", placeholder: "98" },
+];
+
 function HealthCard({ caredOneId }: { caredOneId: string }) {
   const { toast } = useToast();
   const { data: vitals } = useHealthVitals(caredOneId);
   const create = useCreateHealthVital();
-  const [form, setForm] = useState({ vital_type: "blood_pressure", value: "", unit: "", note: "" });
-  const types = [{ v: "blood_pressure", l: "Blood Pressure" },{ v: "heart_rate", l: "Heart Rate" },{ v: "blood_sugar", l: "Blood Sugar" },{ v: "weight", l: "Weight" },{ v: "temperature", l: "Temperature" },{ v: "oxygen", l: "O2 Saturation" }];
+  const [form, setForm] = useState({ vital_type: "blood_pressure", value: "", note: "" });
+
+  const selectedType = VITAL_TYPES.find(t => t.value === form.vital_type)!;
+
+  const handleSubmit = () => {
+    if (!form.value) return;
+    create.mutate(
+      { user_id: caredOneId, vital_type: form.vital_type, value: parseFloat(form.value), unit: selectedType.unit, note: form.note || undefined },
+      { onSuccess: () => { setForm({ vital_type: "blood_pressure", value: "", note: "" }); toast({ title: "Vital recorded ✓" }); } }
+    );
+  };
 
   return (
     <div>
       <h2 className="text-lg font-bold text-foreground mb-4">Health Tracking</h2>
-      <Card className="border-transparent card-elevated mb-4"><CardContent className="p-4 space-y-3">
+      <Card className="border-transparent card-elevated mb-6"><CardContent className="p-5 space-y-4">
         <div className="grid grid-cols-2 gap-3">
-          <div><Label className="text-xs">Vital Type</Label><Select value={form.vital_type} onValueChange={v=>setForm(p=>({...p,vital_type:v}))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{types.map(t=><SelectItem key={t.v} value={t.v}>{t.l}</SelectItem>)}</SelectContent></Select></div>
-          <div><Label className="text-xs">Value</Label><Input type="number" value={form.value} onChange={e=>setForm(p=>({...p,value:e.target.value}))} placeholder="120" /></div>
+          <div>
+            <Label className="text-xs">Vital Type</Label>
+            <Select value={form.vital_type} onValueChange={v => setForm(p => ({ ...p, vital_type: v, value: "" }))}>
+              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+              <SelectContent>{VITAL_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs">Value ({selectedType.unit})</Label>
+            <Input value={form.value} onChange={e => setForm(p => ({ ...p, value: e.target.value }))} placeholder={selectedType.placeholder} className="mt-1" />
+          </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div><Label className="text-xs">Unit</Label><Input value={form.unit} onChange={e=>setForm(p=>({...p,unit:e.target.value}))} placeholder="mmHg, bpm, mg/dL..." /></div>
-          <div><Label className="text-xs">Note</Label><Input value={form.note} onChange={e=>setForm(p=>({...p,note:e.target.value}))} placeholder="Optional" /></div>
+        <div>
+          <Label className="text-xs">Note <span className="text-muted-foreground">(optional)</span></Label>
+          <Input value={form.note} onChange={e => setForm(p => ({ ...p, note: e.target.value }))} placeholder="After meal, resting, etc." className="mt-1" />
         </div>
-        <Button variant="coral" size="sm" onClick={()=>{if(!form.value)return;create.mutate({user_id:caredOneId,vital_type:form.vital_type,value:parseFloat(form.value),unit:form.unit||undefined,note:form.note||undefined},{onSuccess:()=>{setForm({vital_type:"blood_pressure",value:"",unit:"",note:""});toast({title:"Vital recorded"});}});}} disabled={create.isPending||!form.value}>Log Vital</Button>
+        <Button variant="coral" className="w-full" onClick={handleSubmit} disabled={create.isPending || !form.value}>
+          {create.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <HeartPulse className="h-4 w-4 mr-2" />}
+          Log Vital
+        </Button>
       </CardContent></Card>
+      <h3 className="text-sm font-semibold text-muted-foreground mb-2">History</h3>
       <div className="space-y-2">
-        {(vitals||[]).map((v:any)=>(
+        {(vitals || []).map((v: any) => (
           <Card key={v.id} className="border-transparent card-elevated"><CardContent className="p-3 flex items-center justify-between">
-            <div><Badge variant="secondary" className="text-xs mr-2">{v.vital_type?.replace(/_/g," ")}</Badge><span className="font-semibold text-foreground">{v.value}{v.unit?` ${v.unit}`:""}</span></div>
-            <span className="text-xs text-muted-foreground">{new Date(v.recorded_at).toLocaleDateString("en",{month:"short",day:"numeric"})}</span>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-xs">{VITAL_TYPES.find(t => t.value === v.vital_type)?.label || v.vital_type}</Badge>
+              <span className="font-semibold text-foreground">{v.value}{v.unit ? ` ${v.unit}` : ""}</span>
+              {v.note && <span className="text-xs text-muted-foreground">· {v.note}</span>}
+            </div>
+            <span className="text-xs text-muted-foreground">{new Date(v.recorded_at).toLocaleDateString("en", { month: "short", day: "numeric" })}</span>
           </CardContent></Card>
         ))}
-        {(vitals||[]).length===0&&<p className="text-center py-8 text-muted-foreground">No vitals recorded</p>}
+        {(vitals || []).length === 0 && <p className="text-center py-8 text-muted-foreground">No vitals recorded yet</p>}
       </div>
     </div>
   );
 }
 
 // ─── CARE TIPS ──────────────────────────────────────────────
+const TIP_CATEGORIES = ["Nutrition", "Exercise", "Mental Health", "Sleep", "Hygiene", "Social", "Safety", "General"];
+
 function TipsCard({ caredOneId }: { caredOneId: string }) {
   const { toast } = useToast();
   const { data: tips } = useCareTips(caredOneId);
   const create = useCreateCareTip();
   const del = useDeleteCareTip();
-  const [form, setForm] = useState({ title: "", content: "", category: "" });
+  const [form, setForm] = useState({ title: "", content: "", category: "General" });
 
   return (
     <div>
       <h2 className="text-lg font-bold text-foreground mb-4">Care Tips</h2>
-      <Card className="border-transparent card-elevated mb-4"><CardContent className="p-4 space-y-3">
-        <Input value={form.title} onChange={e=>setForm(p=>({...p,title:e.target.value}))} placeholder="Tip title" />
-        <Textarea value={form.content} onChange={e=>setForm(p=>({...p,content:e.target.value}))} placeholder="Describe the tip..." rows={2} />
-        <Input value={form.category} onChange={e=>setForm(p=>({...p,category:e.target.value}))} placeholder="Category (optional)" />
-        <Button variant="coral" size="sm" onClick={()=>{if(!form.title||!form.content)return;create.mutate({user_id:caredOneId,title:form.title,content:form.content,category:form.category||undefined},{onSuccess:()=>{setForm({title:"",content:"",category:""});toast({title:"Tip added"});}});}} disabled={create.isPending}>Add Tip</Button>
+      <Card className="border-transparent card-elevated mb-6"><CardContent className="p-5 space-y-3">
+        <Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="Tip title" />
+        <Textarea value={form.content} onChange={e => setForm(p => ({ ...p, content: e.target.value }))} placeholder="Describe the care tip or reminder..." rows={2} />
+        <Select value={form.category} onValueChange={v => setForm(p => ({ ...p, category: v }))}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>{TIP_CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+        </Select>
+        <Button variant="coral" className="w-full" onClick={() => {
+          if (!form.title || !form.content) return;
+          create.mutate({ user_id: caredOneId, title: form.title, content: form.content, category: form.category }, {
+            onSuccess: () => { setForm({ title: "", content: "", category: "General" }); toast({ title: "Tip added" }); }
+          });
+        }} disabled={create.isPending || !form.title || !form.content}>Add Tip</Button>
       </CardContent></Card>
       <div className="space-y-2">
-        {(tips||[]).map((t:any)=>(
+        {(tips || []).map((t: any) => (
           <Card key={t.id} className="border-transparent card-elevated"><CardContent className="p-3 flex justify-between items-start">
-            <div><h4 className="font-medium text-foreground text-sm">{t.title}</h4><p className="text-xs text-muted-foreground">{t.content}</p>{t.category&&<Badge variant="secondary" className="text-[10px] mt-1">{t.category}</Badge>}</div>
-            <Button variant="ghost" size="icon" className="text-destructive h-7 w-7" onClick={()=>del.mutate(t.id)}><Trash2 className="h-3 w-3" /></Button>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="font-medium text-foreground text-sm">{t.title}</h4>
+                {t.category && <Badge variant="secondary" className="text-[10px]">{t.category}</Badge>}
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">{t.content}</p>
+            </div>
+            <Button variant="ghost" size="icon" className="text-destructive h-7 w-7 shrink-0" onClick={() => del.mutate(t.id)}><Trash2 className="h-3 w-3" /></Button>
           </CardContent></Card>
         ))}
-        {(tips||[]).length===0&&<p className="text-center py-8 text-muted-foreground">No care tips yet</p>}
+        {(tips || []).length === 0 && <p className="text-center py-8 text-muted-foreground">No care tips yet</p>}
       </div>
     </div>
   );
@@ -302,26 +573,31 @@ function CarePlanCard({ caredOneId }: { caredOneId: string }) {
   const { data: plans } = useCarePlans(caredOneId);
   const create = useCreateCarePlan();
   const [form, setForm] = useState({ title: "", description: "" });
-  const [selectedPlan, setSelectedPlan] = useState<string|null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
 
   return (
     <div>
       <h2 className="text-lg font-bold text-foreground mb-4">Care Plans</h2>
-      <Card className="border-transparent card-elevated mb-4"><CardContent className="p-4 space-y-3">
-        <Input value={form.title} onChange={e=>setForm(p=>({...p,title:e.target.value}))} placeholder="Plan title" />
-        <Textarea value={form.description} onChange={e=>setForm(p=>({...p,description:e.target.value}))} placeholder="Plan description..." rows={2} />
-        <Button variant="coral" size="sm" onClick={()=>{if(!form.title)return;create.mutate({user_id:caredOneId,title:form.title,description:form.description||undefined},{onSuccess:()=>{setForm({title:"",description:""});toast({title:"Plan created"});}});}} disabled={create.isPending}>Create Plan</Button>
+      <Card className="border-transparent card-elevated mb-6"><CardContent className="p-5 space-y-3">
+        <Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="Plan title (e.g. Recovery Plan, Daily Routine)" />
+        <Textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Describe the plan goals and approach..." rows={2} />
+        <Button variant="coral" className="w-full" onClick={() => {
+          if (!form.title) return;
+          create.mutate({ user_id: caredOneId, title: form.title, description: form.description || undefined }, {
+            onSuccess: () => { setForm({ title: "", description: "" }); toast({ title: "Plan created" }); }
+          });
+        }} disabled={create.isPending || !form.title}>Create Plan</Button>
       </CardContent></Card>
       {selectedPlan ? (
-        <div><Button variant="ghost" size="sm" onClick={()=>setSelectedPlan(null)} className="mb-2"><ArrowLeft className="h-4 w-4 mr-1" /> Back</Button><GoalsView planId={selectedPlan} /></div>
+        <div><Button variant="ghost" size="sm" onClick={() => setSelectedPlan(null)} className="mb-2"><ArrowLeft className="h-4 w-4 mr-1" /> Back</Button><GoalsView planId={selectedPlan} /></div>
       ) : (
         <div className="space-y-2">
-          {(plans||[]).map((p:any)=>(
-            <Card key={p.id} className="border-transparent card-elevated cursor-pointer hover:border-primary/20" onClick={()=>setSelectedPlan(p.id)}>
-              <CardContent className="p-4"><h4 className="font-medium text-foreground">{p.title}</h4>{p.description&&<p className="text-xs text-muted-foreground mt-1">{p.description}</p>}<Badge variant="secondary" className="text-xs mt-2">{p.status||"active"}</Badge></CardContent>
+          {(plans || []).map((p: any) => (
+            <Card key={p.id} className="border-transparent card-elevated cursor-pointer hover:border-primary/20" onClick={() => setSelectedPlan(p.id)}>
+              <CardContent className="p-4"><h4 className="font-medium text-foreground">{p.title}</h4>{p.description && <p className="text-xs text-muted-foreground mt-1">{p.description}</p>}<Badge variant="secondary" className="text-xs mt-2">{p.status || "active"}</Badge></CardContent>
             </Card>
           ))}
-          {(plans||[]).length===0&&<p className="text-center py-8 text-muted-foreground">No care plans yet</p>}
+          {(plans || []).length === 0 && <p className="text-center py-8 text-muted-foreground">No care plans yet</p>}
         </div>
       )}
     </div>
@@ -335,21 +611,32 @@ function GoalsView({ planId }: { planId: string }) {
   const updateGoal = useUpdateCarePlanGoal();
   const [title, setTitle] = useState("");
 
+  const completed = (goals || []).filter((g: any) => g.status === "completed").length;
+  const total = (goals || []).length;
+
   return (
     <div>
-      <h3 className="font-semibold text-foreground mb-3">Goals</h3>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-semibold text-foreground">Goals</h3>
+        {total > 0 && <span className="text-xs text-muted-foreground">{completed}/{total} completed</span>}
+      </div>
+      {total > 0 && (
+        <div className="w-full bg-accent rounded-full h-2 mb-4">
+          <div className="bg-primary h-2 rounded-full transition-all" style={{ width: `${total > 0 ? (completed / total) * 100 : 0}%` }} />
+        </div>
+      )}
       <div className="flex gap-2 mb-4">
-        <Input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Add a goal..." />
-        <Button size="sm" onClick={()=>{if(!title)return;createGoal.mutate({care_plan_id:planId,title},{onSuccess:()=>{setTitle("");toast({title:"Goal added"});}});}} disabled={createGoal.isPending}><Plus className="h-4 w-4" /></Button>
+        <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Add a goal..." onKeyDown={e => { if (e.key === "Enter" && title.trim()) { createGoal.mutate({ care_plan_id: planId, title: title.trim() }, { onSuccess: () => { setTitle(""); toast({ title: "Goal added" }); } }); } }} />
+        <Button size="sm" onClick={() => { if (!title.trim()) return; createGoal.mutate({ care_plan_id: planId, title: title.trim() }, { onSuccess: () => { setTitle(""); toast({ title: "Goal added" }); } }); }} disabled={createGoal.isPending}><Plus className="h-4 w-4" /></Button>
       </div>
       <div className="space-y-2">
-        {(goals||[]).map((g:any)=>(
-          <div key={g.id} className="flex items-center gap-3 p-3 rounded-lg bg-card border cursor-pointer" onClick={()=>updateGoal.mutate({id:g.id,status:g.status==="completed"?"pending":"completed"})}>
-            {g.status==="completed"?<Check className="h-4 w-4 text-success" />:<div className="h-4 w-4 rounded-full border-2 border-muted-foreground" />}
-            <span className={`text-sm ${g.status==="completed"?"line-through text-muted-foreground":"text-foreground"}`}>{g.title}</span>
+        {(goals || []).map((g: any) => (
+          <div key={g.id} className="flex items-center gap-3 p-3 rounded-lg bg-card border cursor-pointer hover:bg-accent/30 transition-colors" onClick={() => updateGoal.mutate({ id: g.id, status: g.status === "completed" ? "pending" : "completed" })}>
+            {g.status === "completed" ? <Check className="h-4 w-4 text-green-600" /> : <div className="h-4 w-4 rounded-full border-2 border-muted-foreground" />}
+            <span className={`text-sm ${g.status === "completed" ? "line-through text-muted-foreground" : "text-foreground"}`}>{g.title}</span>
           </div>
         ))}
-        {(goals||[]).length===0&&<p className="text-center py-6 text-muted-foreground text-sm">No goals yet</p>}
+        {total === 0 && <p className="text-center py-6 text-muted-foreground text-sm">No goals yet. Add one above.</p>}
       </div>
     </div>
   );
@@ -366,98 +653,149 @@ function NotesCard({ caredOneId }: { caredOneId: string }) {
   return (
     <div>
       <h2 className="text-lg font-bold text-foreground mb-4">Care Notes</h2>
-      <Card className="border-transparent card-elevated mb-4"><CardContent className="p-4 space-y-3">
-        <Input value={form.title} onChange={e=>setForm(p=>({...p,title:e.target.value}))} placeholder="Note title (optional)" />
-        <Textarea value={form.content} onChange={e=>setForm(p=>({...p,content:e.target.value}))} placeholder="Write a note..." rows={3} />
-        <Input value={form.category} onChange={e=>setForm(p=>({...p,category:e.target.value}))} placeholder="Category (optional)" />
-        <Button variant="coral" size="sm" onClick={()=>{if(!form.content)return;create.mutate({user_id:caredOneId,title:form.title||undefined,content:form.content,category:form.category||undefined},{onSuccess:()=>{setForm({title:"",content:"",category:""});toast({title:"Note saved"});}});}} disabled={create.isPending}>Save Note</Button>
+      <Card className="border-transparent card-elevated mb-6"><CardContent className="p-5 space-y-3">
+        <Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="Note title (optional)" />
+        <Textarea value={form.content} onChange={e => setForm(p => ({ ...p, content: e.target.value }))} placeholder="Write observations, instructions, or anything relevant..." rows={3} />
+        <Input value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} placeholder="Category (optional)" />
+        <Button variant="coral" className="w-full" onClick={() => {
+          if (!form.content) return;
+          create.mutate({ user_id: caredOneId, title: form.title || undefined, content: form.content, category: form.category || undefined }, {
+            onSuccess: () => { setForm({ title: "", content: "", category: "" }); toast({ title: "Note saved ✓" }); }
+          });
+        }} disabled={create.isPending || !form.content}>Save Note</Button>
       </CardContent></Card>
       <div className="space-y-2">
-        {(notes||[]).map((n:any)=>(
+        {(notes || []).map((n: any) => (
           <Card key={n.id} className="border-transparent card-elevated"><CardContent className="p-3 flex justify-between items-start">
-            <div>{n.title&&<h4 className="font-medium text-foreground text-sm">{n.title}</h4>}<p className="text-xs text-muted-foreground">{n.content}</p><div className="flex gap-2 mt-1">{n.category&&<Badge variant="secondary" className="text-[10px]">{n.category}</Badge>}<span className="text-[10px] text-muted-foreground">{new Date(n.created_at).toLocaleDateString()}</span></div></div>
-            <Button variant="ghost" size="icon" className="text-destructive h-7 w-7" onClick={()=>del.mutate(n.id)}><Trash2 className="h-3 w-3" /></Button>
+            <div className="min-w-0">
+              {n.title && <h4 className="font-medium text-foreground text-sm">{n.title}</h4>}
+              <p className="text-xs text-muted-foreground whitespace-pre-wrap">{n.content}</p>
+              <div className="flex gap-2 mt-1">
+                {n.category && <Badge variant="secondary" className="text-[10px]">{n.category}</Badge>}
+                <span className="text-[10px] text-muted-foreground">{new Date(n.created_at).toLocaleDateString("en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+              </div>
+            </div>
+            <Button variant="ghost" size="icon" className="text-destructive h-7 w-7 shrink-0" onClick={() => del.mutate(n.id)}><Trash2 className="h-3 w-3" /></Button>
           </CardContent></Card>
         ))}
-        {(notes||[]).length===0&&<p className="text-center py-8 text-muted-foreground">No notes yet</p>}
+        {(notes || []).length === 0 && <p className="text-center py-8 text-muted-foreground">No notes yet</p>}
       </div>
     </div>
   );
 }
 
 // ─── EMERGENCY CONTACTS ─────────────────────────────────────
+const RELATIONSHIPS = ["Spouse", "Parent", "Child", "Sibling", "Doctor", "Nurse", "Caregiver", "Neighbor", "Friend", "Other"];
+
 function EmergencyCard({ caredOneId }: { caredOneId: string }) {
   const { toast } = useToast();
   const { data: contacts } = useEmergencyContacts(caredOneId);
   const create = useCreateEmergencyContact();
   const del = useDeleteEmergencyContact();
-  const [form, setForm] = useState({ name: "", phone: "", relationship: "" });
+  const [form, setForm] = useState({ name: "", phone: "", relationship: "Other" });
 
   return (
     <div>
       <h2 className="text-lg font-bold text-foreground mb-4">Emergency Contacts</h2>
-      <Card className="border-transparent card-elevated mb-4"><CardContent className="p-4 space-y-3">
+      <Card className="border-transparent card-elevated mb-6"><CardContent className="p-5 space-y-3">
         <div className="grid grid-cols-2 gap-3">
-          <div><Label className="text-xs">Name *</Label><Input value={form.name} onChange={e=>setForm(p=>({...p,name:e.target.value}))} placeholder="Contact name" /></div>
-          <div><Label className="text-xs">Phone *</Label><Input value={form.phone} onChange={e=>setForm(p=>({...p,phone:e.target.value}))} placeholder="+1..." /></div>
+          <div><Label className="text-xs">Name <span className="text-destructive">*</span></Label><Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Contact name" className="mt-1" /></div>
+          <div><Label className="text-xs">Phone <span className="text-destructive">*</span></Label><Input type="tel" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} placeholder="+1 (555) 000-0000" className="mt-1" /></div>
         </div>
-        <div><Label className="text-xs">Relationship</Label><Input value={form.relationship} onChange={e=>setForm(p=>({...p,relationship:e.target.value}))} placeholder="e.g. Daughter, Doctor" /></div>
-        <Button variant="coral" size="sm" onClick={()=>{if(!form.name||!form.phone)return;create.mutate({user_id:caredOneId,name:form.name,phone:form.phone,relationship:form.relationship||undefined},{onSuccess:()=>{setForm({name:"",phone:"",relationship:""});toast({title:"Contact added"});}});}} disabled={create.isPending}>Add Contact</Button>
+        <div>
+          <Label className="text-xs">Relationship</Label>
+          <Select value={form.relationship} onValueChange={v => setForm(p => ({ ...p, relationship: v }))}>
+            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+            <SelectContent>{RELATIONSHIPS.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+          </Select>
+        </div>
+        <Button variant="coral" className="w-full" onClick={() => {
+          if (!form.name || !form.phone) return;
+          create.mutate({ user_id: caredOneId, name: form.name, phone: form.phone, relationship: form.relationship }, {
+            onSuccess: () => { setForm({ name: "", phone: "", relationship: "Other" }); toast({ title: "Contact added" }); }
+          });
+        }} disabled={create.isPending || !form.name || !form.phone}>Add Contact</Button>
       </CardContent></Card>
       <div className="space-y-2">
-        {(contacts||[]).map((c:any)=>(
+        {(contacts || []).map((c: any) => (
           <Card key={c.id} className="border-transparent card-elevated"><CardContent className="p-3 flex justify-between items-center">
-            <div><h4 className="font-medium text-foreground text-sm">{c.name}{c.is_primary&&<Badge variant="default" className="ml-2 text-[10px]">Primary</Badge>}</h4><p className="text-xs text-muted-foreground">{c.phone}{c.relationship?` · ${c.relationship}`:""}</p></div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="font-medium text-foreground text-sm">{c.name}</h4>
+                {c.is_primary && <Badge className="text-[10px]">Primary</Badge>}
+                {c.relationship && <Badge variant="secondary" className="text-[10px]">{c.relationship}</Badge>}
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">{c.phone}</p>
+            </div>
             <div className="flex gap-1">
               <Button variant="outline" size="sm" asChild><a href={`tel:${c.phone}`}><Phone className="h-3 w-3 mr-1" /> Call</a></Button>
-              <Button variant="ghost" size="icon" className="text-destructive h-8 w-8" onClick={()=>del.mutate(c.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+              <Button variant="ghost" size="icon" className="text-destructive h-8 w-8" onClick={() => del.mutate(c.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
             </div>
           </CardContent></Card>
         ))}
-        {(contacts||[]).length===0&&<p className="text-center py-8 text-muted-foreground">No emergency contacts yet</p>}
+        {(contacts || []).length === 0 && <p className="text-center py-8 text-muted-foreground">No emergency contacts yet</p>}
       </div>
     </div>
   );
 }
 
-// ─── LOCATION ───────────────────────────────────────────────
+// ─── LOCATION & SAFE ZONES ──────────────────────────────────
 function LocationCard({ caredOneId }: { caredOneId: string }) {
   const { toast } = useToast();
   const { data: zones } = useSafeZones(caredOneId);
   const createZone = useCreateSafeZone();
   const deleteZone = useDeleteSafeZone();
   const [form, setForm] = useState({ name: "", radius_meters: "200", zone_type: "safe", latitude: "", longitude: "" });
+  const [useGPS, setUseGPS] = useState(false);
+
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) { toast({ title: "Geolocation not supported", variant: "destructive" }); return; }
+    setUseGPS(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => { setForm(p => ({ ...p, latitude: pos.coords.latitude.toFixed(6), longitude: pos.coords.longitude.toFixed(6) })); setUseGPS(false); },
+      () => { toast({ title: "Could not get location", variant: "destructive" }); setUseGPS(false); }
+    );
+  };
 
   return (
     <div>
       <h2 className="text-lg font-bold text-foreground mb-4">Location & Safe Zones</h2>
-      <Card className="border-transparent card-elevated mb-4"><CardContent className="p-4 space-y-3">
-        <Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Zone name (e.g. Home, Hospital)" />
+      <Card className="border-transparent card-elevated mb-6"><CardContent className="p-5 space-y-3">
+        <Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Zone name (e.g. Home, Hospital, Park)" />
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleGetLocation} disabled={useGPS}>
+            {useGPS ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <MapPin className="h-3 w-3 mr-1" />}
+            Use Current Location
+          </Button>
+        </div>
         <div className="grid grid-cols-3 gap-3">
-          <div><Label className="text-xs">Latitude</Label><Input type="number" step="any" value={form.latitude} onChange={e => setForm(p => ({ ...p, latitude: e.target.value }))} placeholder="40.7128" /></div>
-          <div><Label className="text-xs">Longitude</Label><Input type="number" step="any" value={form.longitude} onChange={e => setForm(p => ({ ...p, longitude: e.target.value }))} placeholder="-74.006" /></div>
-          <div><Label className="text-xs">Radius (m)</Label><Input type="number" value={form.radius_meters} onChange={e => setForm(p => ({ ...p, radius_meters: e.target.value }))} /></div>
+          <div><Label className="text-xs">Latitude</Label><Input type="number" step="any" value={form.latitude} onChange={e => setForm(p => ({ ...p, latitude: e.target.value }))} placeholder="40.7128" className="mt-1" /></div>
+          <div><Label className="text-xs">Longitude</Label><Input type="number" step="any" value={form.longitude} onChange={e => setForm(p => ({ ...p, longitude: e.target.value }))} placeholder="-74.006" className="mt-1" /></div>
+          <div><Label className="text-xs">Radius (m)</Label><Input type="number" value={form.radius_meters} onChange={e => setForm(p => ({ ...p, radius_meters: e.target.value }))} className="mt-1" /></div>
         </div>
         <Select value={form.zone_type} onValueChange={v => setForm(p => ({ ...p, zone_type: v }))}>
           <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent><SelectItem value="safe">Safe Zone</SelectItem><SelectItem value="danger">Danger Zone</SelectItem></SelectContent>
+          <SelectContent><SelectItem value="safe">✅ Safe Zone</SelectItem><SelectItem value="danger">⚠️ Danger Zone</SelectItem></SelectContent>
         </Select>
-        <Button variant="coral" size="sm" onClick={() => {
+        <Button variant="coral" className="w-full" onClick={() => {
           if (!form.name) return;
           createZone.mutate({
             user_id: caredOneId, name: form.name, radius_meters: parseInt(form.radius_meters) || 200,
             zone_type: form.zone_type,
             latitude: form.latitude ? parseFloat(form.latitude) : undefined,
             longitude: form.longitude ? parseFloat(form.longitude) : undefined,
-          }, { onSuccess: () => { setForm({ name: "", radius_meters: "200", zone_type: "safe", latitude: "", longitude: "" }); toast({ title: "Safe zone added" }); } });
+          }, { onSuccess: () => { setForm({ name: "", radius_meters: "200", zone_type: "safe", latitude: "", longitude: "" }); toast({ title: "Zone added" }); } });
         }} disabled={createZone.isPending || !form.name}>Add Zone</Button>
       </CardContent></Card>
       <div className="space-y-2">
         {(zones || []).map((z: any) => (
           <Card key={z.id} className="border-transparent card-elevated"><CardContent className="p-3 flex justify-between items-center">
             <div>
-              <h4 className="font-medium text-foreground text-sm">{z.name || "Zone"}</h4>
-              <p className="text-xs text-muted-foreground">Radius: {z.radius_meters || 0}m · <Badge variant={z.zone_type === "danger" ? "destructive" : "secondary"} className="text-[10px]">{z.zone_type || "safe"}</Badge></p>
+              <div className="flex items-center gap-2">
+                <span>{z.zone_type === "danger" ? "⚠️" : "✅"}</span>
+                <h4 className="font-medium text-foreground text-sm">{z.name || "Zone"}</h4>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">Radius: {z.radius_meters || 0}m{z.latitude ? ` · ${parseFloat(z.latitude).toFixed(4)}, ${parseFloat(z.longitude).toFixed(4)}` : ""}</p>
             </div>
             <Button variant="ghost" size="icon" className="text-destructive h-7 w-7" onClick={() => deleteZone.mutate(z.id)}><Trash2 className="h-3 w-3" /></Button>
           </CardContent></Card>
@@ -475,13 +813,13 @@ function DocumentsCard({ caredOneId }: { caredOneId: string }) {
     <div>
       <h2 className="text-lg font-bold text-foreground mb-4">Documents</h2>
       <div className="space-y-2">
-        {(docs||[]).map((d:any)=>(
+        {(docs || []).map((d: any) => (
           <Card key={d.id} className="border-transparent card-elevated"><CardContent className="p-3 flex justify-between items-center">
-            <div><h4 className="font-medium text-foreground text-sm">{d.title||d.file_name||"Document"}</h4><p className="text-xs text-muted-foreground">{d.document_type||"General"} · {new Date(d.created_at).toLocaleDateString()}</p></div>
-            {d.file_url&&<Button variant="outline" size="sm" asChild><a href={d.file_url} target="_blank" rel="noopener">View</a></Button>}
+            <div><h4 className="font-medium text-foreground text-sm">{d.title || d.file_name || "Document"}</h4><p className="text-xs text-muted-foreground">{d.document_type || "General"} · {new Date(d.created_at).toLocaleDateString()}</p></div>
+            {d.file_url && <Button variant="outline" size="sm" asChild><a href={d.file_url} target="_blank" rel="noopener">View</a></Button>}
           </CardContent></Card>
         ))}
-        {(docs||[]).length===0&&<p className="text-center py-8 text-muted-foreground">No documents uploaded yet</p>}
+        {(docs || []).length === 0 && <p className="text-center py-8 text-muted-foreground">No documents uploaded yet</p>}
       </div>
     </div>
   );
@@ -497,23 +835,49 @@ function VisitLogCard({ caredOneId }: { caredOneId: string }) {
   return (
     <div>
       <h2 className="text-lg font-bold text-foreground mb-4">Visit Log</h2>
-      <Card className="border-transparent card-elevated mb-4"><CardContent className="p-4 space-y-3">
+      <Card className="border-transparent card-elevated mb-6"><CardContent className="p-5 space-y-3">
         <div className="grid grid-cols-2 gap-3">
-          <div><Label className="text-xs">Visit Type</Label><Select value={form.activity_type} onValueChange={v=>setForm(p=>({...p,activity_type:v}))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="in_person">In-Person</SelectItem><SelectItem value="video">Video Call</SelectItem><SelectItem value="phone">Phone Call</SelectItem></SelectContent></Select></div>
-          <div><Label className="text-xs">Duration (min)</Label><Input type="number" value={form.duration_minutes} onChange={e=>setForm(p=>({...p,duration_minutes:e.target.value}))} placeholder="60" /></div>
+          <div>
+            <Label className="text-xs">Visit Type</Label>
+            <Select value={form.activity_type} onValueChange={v => setForm(p => ({ ...p, activity_type: v }))}>
+              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="in_person">🏠 In-Person Visit</SelectItem>
+                <SelectItem value="video">📹 Video Call</SelectItem>
+                <SelectItem value="phone">📞 Phone Call</SelectItem>
+                <SelectItem value="errand">🛒 Errand / Outing</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs">Duration (minutes)</Label>
+            <Input type="number" value={form.duration_minutes} onChange={e => setForm(p => ({ ...p, duration_minutes: e.target.value }))} placeholder="60" className="mt-1" />
+          </div>
         </div>
-        <Textarea value={form.description} onChange={e=>setForm(p=>({...p,description:e.target.value}))} placeholder="What happened during the visit..." rows={2} />
-        <Button variant="coral" size="sm" onClick={()=>{create.mutate({user_id:caredOneId,activity_type:form.activity_type,description:form.description||undefined,duration_minutes:form.duration_minutes?parseInt(form.duration_minutes):undefined},{onSuccess:()=>{setForm({activity_type:"in_person",description:"",duration_minutes:""});toast({title:"Visit logged"});}});}} disabled={create.isPending}>Log Visit</Button>
+        <Textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="What happened during the visit? Any observations or concerns..." rows={3} />
+        <Button variant="coral" className="w-full" onClick={() => {
+          create.mutate(
+            { user_id: caredOneId, activity_type: form.activity_type, description: form.description || undefined, duration_minutes: form.duration_minutes ? parseInt(form.duration_minutes) : undefined },
+            { onSuccess: () => { setForm({ activity_type: "in_person", description: "", duration_minutes: "" }); toast({ title: "Visit logged ✓" }); } }
+          );
+        }} disabled={create.isPending}>Log Visit</Button>
       </CardContent></Card>
+      <h3 className="text-sm font-semibold text-muted-foreground mb-2">History</h3>
       <div className="space-y-2">
-        {(logs||[]).map((l:any)=>(
+        {(logs || []).map((l: any) => (
           <Card key={l.id} className="border-transparent card-elevated"><CardContent className="p-3">
-            <div className="flex justify-between"><Badge variant="secondary" className="text-xs">{l.activity_type?.replace(/_/g," ")}</Badge><span className="text-xs text-muted-foreground">{new Date(l.created_at).toLocaleDateString("en",{month:"short",day:"numeric"})}</span></div>
-            {l.description&&<p className="text-xs text-muted-foreground mt-1">{l.description}</p>}
-            {l.duration_minutes&&<p className="text-xs text-muted-foreground">{l.duration_minutes} minutes</p>}
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <span>{l.activity_type === "video" ? "📹" : l.activity_type === "phone" ? "📞" : l.activity_type === "errand" ? "🛒" : "🏠"}</span>
+                <Badge variant="secondary" className="text-xs capitalize">{l.activity_type?.replace(/_/g, " ")}</Badge>
+                {l.duration_minutes && <span className="text-xs text-muted-foreground">{l.duration_minutes} min</span>}
+              </div>
+              <span className="text-xs text-muted-foreground">{new Date(l.created_at).toLocaleDateString("en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+            </div>
+            {l.description && <p className="text-xs text-muted-foreground mt-1 pl-7">{l.description}</p>}
           </CardContent></Card>
         ))}
-        {(logs||[]).length===0&&<p className="text-center py-8 text-muted-foreground">No visits logged yet</p>}
+        {(logs || []).length === 0 && <p className="text-center py-8 text-muted-foreground">No visits logged yet</p>}
       </div>
     </div>
   );
