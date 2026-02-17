@@ -374,11 +374,19 @@ export function useSavedProviders() {
       if (!userId) return [];
       const { data, error } = await careDb
         .from("saved_provider")
-        .select("*, provider:provider_id(id, full_name, avatar_url, hourly_rate, specialty, rating_average, rating_count, location, background_check_status, years_of_experience)")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false });
+        .select("*")
+        .eq("user_id", userId);
       if (error) throw error;
-      return (data || []) as any[];
+      const providerIds = [...new Set((data || []).map((s: any) => s.provider_id).filter(Boolean))];
+      let providerMap: Record<string, any> = {};
+      if (providerIds.length > 0) {
+        const { data: providers } = await careDb
+          .from("profile")
+          .select("id, full_name, avatar_url, hourly_rate, specialty, rating_average, rating_count, location, background_check_status, years_of_experience")
+          .in("id", providerIds);
+        (providers || []).forEach((p: any) => { providerMap[p.id] = p; });
+      }
+      return (data || []).map((s: any) => ({ ...s, provider: providerMap[s.provider_id] || null }));
     },
   });
 }
