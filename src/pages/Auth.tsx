@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Heart } from "lucide-react";
@@ -22,7 +21,6 @@ export default function Auth() {
   const [signupName, setSignupName] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
-  const [signupRole, setSignupRole] = useState<"care-seeker" | "caregiver" | "both">("care-seeker");
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
@@ -35,6 +33,8 @@ export default function Auth() {
       await login(loginEmail, loginPassword);
       toast({ title: "Welcome back!" });
       navigate("/dashboard");
+    } catch (err: any) {
+      toast({ title: "Login failed", description: err.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -47,9 +47,10 @@ export default function Auth() {
     }
     setLoading(true);
     try {
-      await signup(signupName, signupEmail, signupPassword, signupRole);
-      toast({ title: "Account created!" });
-      navigate("/dashboard");
+      await signup(signupName, signupEmail, signupPassword, "care-seeker");
+      toast({ title: "Account created! Check your email to verify." });
+    } catch (err: any) {
+      toast({ title: "Signup failed", description: err.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -96,17 +97,6 @@ export default function Auth() {
               <div>
                 <Label>Password</Label>
                 <Input type="password" value={signupPassword} onChange={e => setSignupPassword(e.target.value)} placeholder="••••••••" />
-              </div>
-              <div>
-                <Label>I am a...</Label>
-                <Select value={signupRole} onValueChange={(v: any) => setSignupRole(v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="care-seeker">Care Seeker</SelectItem>
-                    <SelectItem value="caregiver">Caregiver</SelectItem>
-                    <SelectItem value="both">Both</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
               <Button variant="coral" className="w-full" onClick={handleSignup} disabled={loading}>
                 {loading ? "Creating account..." : "Create Account"}

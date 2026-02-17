@@ -13,6 +13,7 @@ export const careDb = createClient(EXTERNAL_SUPABASE_URL, EXTERNAL_SUPABASE_ANON
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
+    storageKey: 'cc-external-auth',
   },
 });
 
@@ -22,5 +23,6 @@ export const careAuth = createClient(EXTERNAL_SUPABASE_URL, EXTERNAL_SUPABASE_AN
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
+    storageKey: 'cc-external-auth',
   },
 });

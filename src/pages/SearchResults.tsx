@@ -7,10 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Star, MapPin, Shield, Clock, Search, SlidersHorizontal, X } from "lucide-react";
-import { caregivers } from "@/data/mockData";
+import { Star, MapPin, Shield, Clock, Search, SlidersHorizontal, X, Loader2 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
+import { useProviders } from "@/hooks/use-care-data";
+import type { Profile } from "@/types/care-connector";
 
 const specialties = ["Elder Care", "Child Care", "Special Needs", "Nursing Care", "Companionship", "Respite Care", "Physical Therapy", "Dementia Care"];
 
@@ -21,48 +22,31 @@ export default function SearchResults() {
 
   const [query, setQuery] = useState(initialQuery);
   const [sortBy, setSortBy] = useState("rating");
-  const [priceRange, setPriceRange] = useState([0, 60]);
+  const [priceRange, setPriceRange] = useState([0, 100]);
   const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>(
     initialQuery ? [initialQuery].filter(q => specialties.includes(q)) : []
   );
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [minRating, setMinRating] = useState(0);
 
-  const filtered = useMemo(() => {
-    let results = [...caregivers];
-
-    if (query) {
-      const q = query.toLowerCase();
-      results = results.filter(c =>
-        c.name.toLowerCase().includes(q) ||
-        c.specialty.some(s => s.toLowerCase().includes(q)) ||
-        c.location.toLowerCase().includes(q) ||
-        c.bio.toLowerCase().includes(q)
-      );
-    }
-
-    if (selectedSpecialties.length > 0) {
-      results = results.filter(c => c.specialty.some(s => selectedSpecialties.includes(s)));
-    }
-
-    results = results.filter(c => c.hourlyRate >= priceRange[0] && c.hourlyRate <= priceRange[1]);
-    if (verifiedOnly) results = results.filter(c => c.verified);
-    if (minRating > 0) results = results.filter(c => c.rating >= minRating);
-
-    results.sort((a, b) => {
-      if (sortBy === "rating") return b.rating - a.rating;
-      if (sortBy === "price-low") return a.hourlyRate - b.hourlyRate;
-      if (sortBy === "price-high") return b.hourlyRate - a.hourlyRate;
-      if (sortBy === "experience") return b.experience - a.experience;
-      if (sortBy === "reviews") return b.reviewCount - a.reviewCount;
-      return 0;
-    });
-
-    return results;
-  }, [query, sortBy, priceRange, selectedSpecialties, verifiedOnly, minRating]);
+  const { data: providers, isLoading } = useProviders({
+    query: query || undefined,
+    specialties: selectedSpecialties.length > 0 ? selectedSpecialties : undefined,
+    minRate: priceRange[0] > 0 ? priceRange[0] : undefined,
+    maxRate: priceRange[1] < 100 ? priceRange[1] : undefined,
+    verifiedOnly,
+    minRating: minRating > 0 ? minRating : undefined,
+    sortBy,
+  });
 
   const toggleSpecialty = (s: string) => {
     setSelectedSpecialties(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
+  };
+
+  const getResponseTime = (minutes: number | null) => {
+    if (!minutes) return "";
+    if (minutes < 60) return `Under ${minutes} min`;
+    return `Under ${Math.ceil(minutes / 60)} hour${minutes > 60 ? "s" : ""}`;
   };
 
   const FilterPanel = () => (
@@ -80,7 +64,7 @@ export default function SearchResults() {
       </div>
       <div>
         <Label className="text-sm font-semibold mb-3 block">Hourly Rate: ${priceRange[0]} - ${priceRange[1]}</Label>
-        <Slider value={priceRange} onValueChange={setPriceRange} min={0} max={60} step={5} className="mt-2" />
+        <Slider value={priceRange} onValueChange={setPriceRange} min={0} max={100} step={5} className="mt-2" />
       </div>
       <div>
         <Label className="text-sm font-semibold mb-3 block">Minimum Rating</Label>
@@ -155,52 +139,58 @@ export default function SearchResults() {
 
         {/* Results */}
         <div className="flex-1">
-          <p className="text-sm text-muted-foreground mb-4">{filtered.length} caregivers found</p>
-          <div className="space-y-4">
-            {filtered.map(cg => (
-              <Card key={cg.id} className="card-elevated cursor-pointer border-transparent" onClick={() => navigate(`/caregiver/${cg.id}`)}>
-                <CardContent className="p-5">
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <img src={cg.avatar} alt={cg.name} className="w-20 h-20 rounded-xl object-cover shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-lg text-foreground">{cg.name}</h3>
-                        {cg.verified && <Shield className="h-4 w-4 text-primary" />}
+          {isLoading ? (
+            <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
+          ) : (
+            <>
+              <p className="text-sm text-muted-foreground mb-4">{(providers || []).length} caregivers found</p>
+              <div className="space-y-4">
+                {(providers || []).map((cg: Profile) => (
+                  <Card key={cg.id} className="card-elevated cursor-pointer border-transparent" onClick={() => navigate(`/caregiver/${cg.id}`)}>
+                    <CardContent className="p-5">
+                      <div className="flex flex-col sm:flex-row gap-4">
+                        <img src={cg.avatar_url || "/placeholder.svg"} alt={cg.full_name || ""} className="w-20 h-20 rounded-xl object-cover shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-semibold text-lg text-foreground">{cg.full_name}</h3>
+                            {cg.background_check_status === "passed" && <Shield className="h-4 w-4 text-primary" />}
+                          </div>
+                          <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-2">
+                            <span className="flex items-center gap-1">
+                              <Star className="h-4 w-4 text-warning fill-warning" /> {cg.rating_average?.toFixed(1) || "New"} ({cg.rating_count || 0})
+                            </span>
+                            {cg.location && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {cg.location}</span>}
+                            {cg.years_of_experience && <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {cg.years_of_experience} yrs exp</span>}
+                          </div>
+                          {cg.bio && <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{cg.bio}</p>}
+                          <div className="flex flex-wrap gap-1.5">
+                            {(cg.specialty || []).map(s => (
+                              <Badge key={s} variant="secondary" className="bg-accent text-accent-foreground text-xs">{s}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="sm:text-right shrink-0 flex sm:flex-col items-center sm:items-end gap-3">
+                          <div>
+                            <span className="text-2xl font-bold text-foreground">${cg.hourly_rate || 0}</span>
+                            <span className="text-sm text-muted-foreground">/hr</span>
+                          </div>
+                          <Button variant="coral" size="sm">Book Now</Button>
+                        </div>
                       </div>
-                      <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-2">
-                        <span className="flex items-center gap-1">
-                          <Star className="h-4 w-4 text-warning fill-warning" /> {cg.rating} ({cg.reviewCount})
-                        </span>
-                        <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {cg.location}</span>
-                        <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {cg.experience} yrs exp</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{cg.bio}</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {cg.specialty.map(s => (
-                          <Badge key={s} variant="secondary" className="bg-accent text-accent-foreground text-xs">{s}</Badge>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="sm:text-right shrink-0 flex sm:flex-col items-center sm:items-end gap-3">
-                      <div>
-                        <span className="text-2xl font-bold text-foreground">${cg.hourlyRate}</span>
-                        <span className="text-sm text-muted-foreground">/hr</span>
-                      </div>
-                      <Button variant="coral" size="sm">Book Now</Button>
-                    </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                {(providers || []).length === 0 && (
+                  <div className="text-center py-16">
+                    <p className="text-lg text-muted-foreground">No caregivers match your criteria.</p>
+                    <Button variant="outline" className="mt-4" onClick={() => { setQuery(""); setSelectedSpecialties([]); setMinRating(0); setPriceRange([0, 100]); }}>
+                      Clear Filters
+                    </Button>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-            {filtered.length === 0 && (
-              <div className="text-center py-16">
-                <p className="text-lg text-muted-foreground">No caregivers match your criteria.</p>
-                <Button variant="outline" className="mt-4" onClick={() => { setQuery(""); setSelectedSpecialties([]); setMinRating(0); setPriceRange([0, 60]); }}>
-                  Clear Filters
-                </Button>
+                )}
               </div>
-            )}
-          </div>
+            </>
+          )}
         </div>
       </div>
     </div>

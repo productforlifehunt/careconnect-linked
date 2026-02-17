@@ -17,6 +17,7 @@ import { NavLink } from "@/components/NavLink";
 import { Menu, User, LogOut, LayoutDashboard, Bell, Heart, Search, HelpCircle, UserPlus, CalendarDays, Users, MapPin, MessageSquare, Shield } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
+import { useNotifications } from "@/hooks/use-care-data";
 
 const publicNav = [
   { title: "Find Caregivers", url: "/search", icon: Search },
@@ -39,10 +40,20 @@ export function AppHeader() {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { data: notifications } = useNotifications();
+  const unreadCount = notifications?.filter(n => !n.is_read).length || 0;
+
+  const displayName = user?.full_name || user?.first_name || user?.email || "User";
+  const initials = displayName.charAt(0).toUpperCase();
 
   const isDashboardRoute = ["/dashboard", "/bookings", "/care-circle", "/gps-tracking", "/messages", "/favorites", "/notifications", "/profile"].some(
     r => location.pathname.startsWith(r)
   );
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/");
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
@@ -129,7 +140,6 @@ export function AppHeader() {
         {/* Auth section */}
         {isAuthenticated ? (
           <div className="flex items-center gap-1">
-            {/* Quick nav for dashboard when on dashboard routes */}
             {isDashboardRoute && (
               <nav className="hidden xl:flex items-center gap-1 mr-2">
                 {dashboardNav.slice(0, 4).map(item => (
@@ -148,25 +158,29 @@ export function AppHeader() {
 
             <Button variant="ghost" size="icon" className="relative" onClick={() => navigate("/notifications")}>
               <Bell className="h-5 w-5" />
-              <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-coral text-coral-foreground text-xs border-2 border-card">
-                3
-              </Badge>
+              {unreadCount > 0 && (
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-coral text-coral-foreground text-xs border-2 border-card">
+                  {unreadCount}
+                </Badge>
+              )}
             </Button>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="gap-2">
-                  <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
-                    <span className="text-primary-foreground text-sm font-medium">
-                      {user?.name?.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                  <span className="hidden md:inline text-sm font-medium">{user?.name}</span>
+                  {user?.avatar_url ? (
+                    <img src={user.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover" />
+                  ) : (
+                    <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+                      <span className="text-primary-foreground text-sm font-medium">{initials}</span>
+                    </div>
+                  )}
+                  <span className="hidden md:inline text-sm font-medium">{displayName}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52 bg-card border shadow-lg z-[60]">
                 <div className="px-3 py-2 border-b">
-                  <p className="text-sm font-medium text-foreground">{user?.name}</p>
+                  <p className="text-sm font-medium text-foreground">{displayName}</p>
                   <p className="text-xs text-muted-foreground">{user?.email}</p>
                 </div>
                 <DropdownMenuItem onClick={() => navigate("/dashboard")}>
@@ -195,7 +209,7 @@ export function AppHeader() {
                   <Bell className="mr-2 h-4 w-4" /> Notifications
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => { logout(); navigate("/"); }} className="text-destructive">
+                <DropdownMenuItem onClick={handleLogout} className="text-destructive">
                   <LogOut className="mr-2 h-4 w-4" /> Sign Out
                 </DropdownMenuItem>
               </DropdownMenuContent>

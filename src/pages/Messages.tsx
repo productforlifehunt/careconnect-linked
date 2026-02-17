@@ -1,71 +1,60 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Send, Search, Phone, Video, MoreVertical } from "lucide-react";
-
-interface Conversation {
-  id: string;
-  name: string;
-  lastMessage: string;
-  time: string;
-  unread: number;
-  avatar: string;
-  online: boolean;
-}
-
-interface Message {
-  id: string;
-  sender: "me" | "them";
-  text: string;
-  time: string;
-}
-
-const conversations: Conversation[] = [
-  { id: "c1", name: "Sarah Johnson", lastMessage: "I'll be there at 9am tomorrow!", time: "2 min ago", unread: 2, avatar: "SJ", online: true },
-  { id: "c2", name: "Dr. Rachel Green", lastMessage: "The new medication is working well", time: "1 hr ago", unread: 1, avatar: "RG", online: false },
-  { id: "c3", name: "David Smith", lastMessage: "I can pick up the prescription", time: "3 hrs ago", unread: 0, avatar: "DS", online: true },
-  { id: "c4", name: "Aisha Williams", lastMessage: "The kids had a great time today!", time: "Yesterday", unread: 0, avatar: "AW", online: false },
-];
-
-const messageHistory: Record<string, Message[]> = {
-  c1: [
-    { id: "m1", sender: "them", text: "Hi! Just wanted to confirm tomorrow's schedule.", time: "10:30 AM" },
-    { id: "m2", sender: "me", text: "Yes, can you come at 9am? Mom has a doctor's appointment at 11.", time: "10:32 AM" },
-    { id: "m3", sender: "them", text: "Of course! I'll help her get ready and drive her there.", time: "10:33 AM" },
-    { id: "m4", sender: "me", text: "Perfect, thank you so much Sarah!", time: "10:35 AM" },
-    { id: "m5", sender: "them", text: "I'll be there at 9am tomorrow!", time: "10:36 AM" },
-  ],
-  c2: [
-    { id: "m6", sender: "them", text: "I've reviewed the latest blood work results.", time: "9:00 AM" },
-    { id: "m7", sender: "me", text: "How does everything look?", time: "9:15 AM" },
-    { id: "m8", sender: "them", text: "The new medication is working well. Let's keep the current dosage.", time: "9:20 AM" },
-  ],
-};
+import { Send, Search, Phone, Video, MoreVertical, Loader2 } from "lucide-react";
+import { useConversations, useDirectMessages, useSendMessage } from "@/hooks/use-care-data";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Messages() {
-  const [selectedConvo, setSelectedConvo] = useState<Conversation | null>(conversations[0]);
-  const [newMessage, setNewMessage] = useState("");
-  const [msgs, setMsgs] = useState(messageHistory);
-  const [searchQuery, setSearchQuery] = useState("");
+  const { user } = useAuth();
+  const { data: conversations, isLoading: convosLoading } = useConversations();
+  const sendMessage = useSendMessage();
 
-  const sendMessage = () => {
-    if (!newMessage.trim() || !selectedConvo) return;
-    const msg: Message = { id: "m-" + Date.now(), sender: "me", text: newMessage, time: new Date().toLocaleTimeString("en", { hour: "numeric", minute: "2-digit" }) };
-    setMsgs(prev => ({
-      ...prev,
-      [selectedConvo.id]: [...(prev[selectedConvo.id] || []), msg],
-    }));
+  const [selectedConvoId, setSelectedConvoId] = useState<string | null>(null);
+  const [selectedOtherUser, setSelectedOtherUser] = useState<any>(null);
+  const [newMessage, setNewMessage] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Derive the other user from the conversation
+  const getOtherUser = (convo: any) => {
+    if (!user) return null;
+    return convo.participant_1?.id === user.id ? convo.participant_2 : convo.participant_1;
+  };
+
+  // Auto-select first conversation
+  useEffect(() => {
+    if (conversations && conversations.length > 0 && !selectedConvoId) {
+      const first = conversations[0];
+      setSelectedConvoId(first.id);
+      setSelectedOtherUser(getOtherUser(first));
+    }
+  }, [conversations, selectedConvoId]);
+
+  const otherUserId = selectedOtherUser?.id || null;
+  const { data: messages, isLoading: msgsLoading } = useDirectMessages(otherUserId);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleSend = () => {
+    if (!newMessage.trim() || !otherUserId) return;
+    sendMessage.mutate({ receiverId: otherUserId, content: newMessage });
     setNewMessage("");
   };
 
-  const filteredConvos = conversations.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredConvos = (conversations || []).filter((c: any) => {
+    const other = getOtherUser(c);
+    return other?.full_name?.toLowerCase().includes(searchQuery.toLowerCase());
+  });
 
   return (
     <div className="h-[calc(100vh-4rem)] flex">
       {/* Conversation List */}
-      <div className={`w-full md:w-80 border-r flex flex-col bg-card ${selectedConvo ? "hidden md:flex" : "flex"}`}>
+      <div className={`w-full md:w-80 border-r flex flex-col bg-card ${selectedConvoId ? "hidden md:flex" : "flex"}`}>
         <div className="p-4 border-b">
           <h2 className="text-lg font-bold text-foreground mb-3">Messages</h2>
           <div className="relative">
@@ -74,53 +63,61 @@ export default function Messages() {
           </div>
         </div>
         <div className="flex-1 overflow-auto">
-          {filteredConvos.map(c => (
-            <div
-              key={c.id}
-              className={`p-4 cursor-pointer border-b transition-colors ${selectedConvo?.id === c.id ? "bg-accent" : "hover:bg-muted/50"}`}
-              onClick={() => setSelectedConvo(c)}
-            >
-              <div className="flex items-center gap-3">
-                <div className="relative shrink-0">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-primary text-sm font-medium">{c.avatar}</span>
-                  </div>
-                  {c.online && <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-card bg-success" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-sm text-foreground">{c.name}</span>
-                    <span className="text-xs text-muted-foreground">{c.time}</span>
-                  </div>
-                  <div className="flex items-center justify-between mt-0.5">
-                    <p className="text-sm text-muted-foreground truncate">{c.lastMessage}</p>
-                    {c.unread > 0 && (
-                      <Badge className="bg-coral text-coral-foreground h-5 w-5 flex items-center justify-center p-0 text-xs shrink-0">{c.unread}</Badge>
+          {convosLoading ? (
+            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+          ) : filteredConvos.length > 0 ? filteredConvos.map((c: any) => {
+            const other = getOtherUser(c);
+            const isSelected = selectedConvoId === c.id;
+            return (
+              <div
+                key={c.id}
+                className={`p-4 cursor-pointer border-b transition-colors ${isSelected ? "bg-accent" : "hover:bg-muted/50"}`}
+                onClick={() => { setSelectedConvoId(c.id); setSelectedOtherUser(other); }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="relative shrink-0">
+                    {other?.avatar_url ? (
+                      <img src={other.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <span className="text-primary text-sm font-medium">{(other?.full_name || "?").charAt(0)}</span>
+                      </div>
                     )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-sm text-foreground">{other?.full_name || "Unknown"}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {c.last_message_at ? new Date(c.last_message_at).toLocaleDateString("en", { month: "short", day: "numeric" }) : ""}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          }) : (
+            <div className="text-center py-8 text-sm text-muted-foreground">No conversations yet</div>
+          )}
         </div>
       </div>
 
       {/* Chat Area */}
-      {selectedConvo ? (
-        <div className={`flex-1 flex flex-col ${selectedConvo ? "flex" : "hidden md:flex"}`}>
-          {/* Chat Header */}
+      {selectedOtherUser ? (
+        <div className={`flex-1 flex flex-col ${selectedConvoId ? "flex" : "hidden md:flex"}`}>
           <div className="p-4 border-b flex items-center justify-between bg-card">
             <div className="flex items-center gap-3">
-              <Button variant="ghost" size="sm" className="md:hidden" onClick={() => setSelectedConvo(null)}>←</Button>
+              <Button variant="ghost" size="sm" className="md:hidden" onClick={() => { setSelectedConvoId(null); setSelectedOtherUser(null); }}>←</Button>
               <div className="relative">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <span className="text-primary text-sm font-medium">{selectedConvo.avatar}</span>
-                </div>
-                {selectedConvo.online && <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-card bg-success" />}
+                {selectedOtherUser.avatar_url ? (
+                  <img src={selectedOtherUser.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-primary text-sm font-medium">{(selectedOtherUser.full_name || "?").charAt(0)}</span>
+                  </div>
+                )}
               </div>
               <div>
-                <p className="font-medium text-foreground">{selectedConvo.name}</p>
-                <p className="text-xs text-muted-foreground">{selectedConvo.online ? "Online" : "Offline"}</p>
+                <p className="font-medium text-foreground">{selectedOtherUser.full_name}</p>
               </div>
             </div>
             <div className="flex gap-1">
@@ -130,29 +127,35 @@ export default function Messages() {
             </div>
           </div>
 
-          {/* Messages */}
           <div className="flex-1 overflow-auto p-4 space-y-3 bg-muted/20">
-            {(msgs[selectedConvo.id] || []).map(m => (
-              <div key={m.id} className={`flex ${m.sender === "me" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[70%] rounded-2xl px-4 py-2 ${m.sender === "me" ? "hero-gradient text-primary-foreground rounded-br-md" : "bg-card border rounded-bl-md text-foreground"}`}>
-                  <p className="text-sm">{m.text}</p>
-                  <p className={`text-xs mt-1 ${m.sender === "me" ? "text-primary-foreground/60" : "text-muted-foreground"}`}>{m.time}</p>
+            {msgsLoading ? (
+              <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+            ) : (messages || []).map((m: any) => {
+              const isMe = m.sender_id === user?.id;
+              return (
+                <div key={m.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+                  <div className={`max-w-[70%] rounded-2xl px-4 py-2 ${isMe ? "hero-gradient text-primary-foreground rounded-br-md" : "bg-card border rounded-bl-md text-foreground"}`}>
+                    <p className="text-sm">{m.message_content}</p>
+                    <p className={`text-xs mt-1 ${isMe ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
+                      {new Date(m.created_at).toLocaleTimeString("en", { hour: "numeric", minute: "2-digit" })}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
+            <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
           <div className="p-4 border-t bg-card">
             <div className="flex gap-2">
               <Input
                 placeholder="Type a message..."
                 value={newMessage}
                 onChange={e => setNewMessage(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && sendMessage()}
+                onKeyDown={e => e.key === "Enter" && handleSend()}
                 className="flex-1"
               />
-              <Button variant="coral" size="icon" onClick={sendMessage} disabled={!newMessage.trim()}>
+              <Button variant="coral" size="icon" onClick={handleSend} disabled={!newMessage.trim() || sendMessage.isPending}>
                 <Send className="h-4 w-4" />
               </Button>
             </div>
