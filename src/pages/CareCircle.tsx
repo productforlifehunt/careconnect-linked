@@ -11,10 +11,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Users, Plus, CheckCircle, Circle, Clock, UserPlus, BookOpen, ListTodo, Loader2,
+  Users, Plus, CheckCircle, Circle, Clock, UserPlus, ListTodo, Loader2,
   Home, CalendarDays, Megaphone, Heart, ClipboardCheck, MessageSquare, Star,
   Image, Settings, Send, Pin, Trash2, Shield, Edit, MoreVertical, X, KeyRound, Mail, Crown,
+  Search, Tag, Eye,
 } from "lucide-react";
 import {
   useCareGroups, useCreateCareGroup, useCareGroupMembers, useCareTasks, useCreateTask, useUpdateTaskStatus,
@@ -24,6 +26,8 @@ import {
   useInviteToGroup, useUpdateMemberRole, useRemoveGroupMember,
   useUpdateCareGroup, useDeleteCareGroup, useJoinGroupByCode,
   useGroupInvitations, useCancelInvitation,
+  useSearchProfiles, useAddCaredOneToGroup,
+  useMemberCategories, useCreateMemberCategory, useDeleteMemberCategory,
 } from "@/hooks/use-care-data";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -56,6 +60,7 @@ export default function CareCircle() {
   const { data: groupCaredOnes } = useGroupCaredOnes(activeGroupId);
   const { data: groupMessages } = useGroupMessages(activeGroupId);
   const { data: pendingInvitations } = useGroupInvitations(activeGroupId);
+  const { data: memberCategories } = useMemberCategories(activeGroupId);
   const createTask = useCreateTask();
   const updateTaskStatus = useUpdateTaskStatus();
   const createPost = useCreateGroupPost();
@@ -68,13 +73,17 @@ export default function CareCircle() {
   const updateGroup = useUpdateCareGroup();
   const deleteGroup = useDeleteCareGroup();
   const cancelInvitation = useCancelInvitation();
+  const addCaredOneToGroup = useAddCaredOneToGroup();
+  const createCategory = useCreateMemberCategory();
+  const deleteCategory = useDeleteMemberCategory();
 
   // Local state
   const [addTaskOpen, setAddTaskOpen] = useState(false);
-  const [newTask, setNewTask] = useState({ title: "", description: "", assignee: "", priority: "medium", category: "Daily Living", due_date: "" });
+  const [newTask, setNewTask] = useState({ title: "", description: "", assignee: "", priority: "medium", category: "Daily Living", due_date: "", visibility: "group" });
   const [newPostContent, setNewPostContent] = useState("");
   const [newPostType, setNewPostType] = useState("discussion");
   const [newPostTitle, setNewPostTitle] = useState("");
+  const [postVisibility, setPostVisibility] = useState("group");
   const [chatMessage, setChatMessage] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [wishContent, setWishContent] = useState("");
@@ -86,6 +95,19 @@ export default function CareCircle() {
   const [settingsName, setSettingsName] = useState("");
   const [settingsDesc, setSettingsDesc] = useState("");
   const [settingsPrivate, setSettingsPrivate] = useState(false);
+
+  // Add Cared One modal
+  const [addCaredOneOpen, setAddCaredOneOpen] = useState(false);
+  const [caredOneSearch, setCaredOneSearch] = useState("");
+  const [selectedPerson, setSelectedPerson] = useState<any>(null);
+  const [skipInvitation, setSkipInvitation] = useState(false);
+  const { data: searchResults } = useSearchProfiles(caredOneSearch);
+
+  // Member category modal
+  const [addCategoryOpen, setAddCategoryOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryDesc, setNewCategoryDesc] = useState("");
+  const [newCategoryColor, setNewCategoryColor] = useState("");
 
   const handleCreateGroup = () => {
     if (!newGroupName.trim()) return;
@@ -150,7 +172,7 @@ export default function CareCircle() {
       status: "pending",
     } as any, {
       onSuccess: () => {
-        setNewTask({ title: "", description: "", assignee: "", priority: "medium", category: "Daily Living", due_date: "" });
+        setNewTask({ title: "", description: "", assignee: "", priority: "medium", category: "Daily Living", due_date: "", visibility: "group" });
         setAddTaskOpen(false);
         toast({ title: "Task added" });
       },
@@ -160,7 +182,7 @@ export default function CareCircle() {
   const addPost = () => {
     if (!newPostContent.trim() || !activeGroupId) return;
     createPost.mutate({ group_id: activeGroupId, content: newPostContent, type: newPostType, title: newPostTitle || undefined }, {
-      onSuccess: () => { setNewPostContent(""); setNewPostTitle(""); toast({ title: "Posted!" }); },
+      onSuccess: () => { setNewPostContent(""); setNewPostTitle(""); setPostVisibility("group"); toast({ title: "Posted!" }); },
     });
   };
 
@@ -201,6 +223,30 @@ export default function CareCircle() {
   const handleDeletePost = (postId: string) => {
     deletePost.mutate(postId, {
       onSuccess: () => toast({ title: "Post deleted" }),
+    });
+  };
+
+  const handleAddCaredOne = () => {
+    if (!selectedPerson || !activeGroupId) return;
+    addCaredOneToGroup.mutate({ groupId: activeGroupId, userId: selectedPerson.id, skipInvitation }, {
+      onSuccess: () => {
+        setAddCaredOneOpen(false);
+        setSelectedPerson(null);
+        setCaredOneSearch("");
+        setSkipInvitation(false);
+        toast({ title: "Cared one added to group!" });
+      },
+      onError: (err: any) => toast({ title: "Failed to add", description: err.message, variant: "destructive" }),
+    });
+  };
+
+  const handleAddCategory = () => {
+    if (!newCategoryName.trim() || !activeGroupId) return;
+    createCategory.mutate({ groupId: activeGroupId, name: newCategoryName, description: newCategoryDesc || undefined, color: newCategoryColor || undefined }, {
+      onSuccess: () => {
+        setNewCategoryName(""); setNewCategoryDesc(""); setNewCategoryColor(""); setAddCategoryOpen(false);
+        toast({ title: "Category created!" });
+      },
     });
   };
 
@@ -259,7 +305,7 @@ export default function CareCircle() {
   });
   const sortedDates = Object.keys(tasksByDate).sort();
 
-  // Post action menu component
+  // Post action menu
   const PostActions = ({ post }: { post: any }) => {
     const canEdit = post.author_id === user?.id;
     const canPin = isAdmin && post.type === "announcement";
@@ -278,6 +324,21 @@ export default function CareCircle() {
       </DropdownMenu>
     );
   };
+
+  // Visibility selector component
+  const VisibilitySelect = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger className="w-36">
+        <Eye className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="group">All Members</SelectItem>
+        <SelectItem value="admins">Admins Only</SelectItem>
+        {(memberCategories || []).length > 0 && <SelectItem value="categories">By Category</SelectItem>}
+      </SelectContent>
+    </Select>
+  );
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
@@ -372,6 +433,63 @@ export default function CareCircle() {
         </DialogContent>
       </Dialog>
 
+      {/* Add Cared One Dialog */}
+      <Dialog open={addCaredOneOpen} onOpenChange={(open) => { setAddCaredOneOpen(open); if (!open) { setSelectedPerson(null); setCaredOneSearch(""); setSkipInvitation(false); } }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Add Cared One to Group</DialogTitle></DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div>
+              <Label>Search by name or email</Label>
+              <div className="relative mt-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input value={caredOneSearch} onChange={e => { setCaredOneSearch(e.target.value); setSelectedPerson(null); }} placeholder="Type at least 2 characters..." className="pl-9" />
+              </div>
+            </div>
+            {/* Search results */}
+            {caredOneSearch.length >= 2 && !selectedPerson && (
+              <div className="border rounded-lg max-h-48 overflow-y-auto">
+                {(searchResults || []).length > 0 ? (searchResults || []).map((p: any) => (
+                  <button key={p.id} className="w-full flex items-center gap-3 p-3 hover:bg-accent text-left border-b last:border-b-0 transition-colors" onClick={() => setSelectedPerson(p)}>
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      {p.avatar_url ? <img src={p.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" /> : <span className="text-primary text-xs font-medium">{(p.full_name || p.email || "?")[0]}</span>}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{p.full_name || p.first_name || "No name"}</p>
+                      <p className="text-xs text-muted-foreground truncate">{p.email || p.user_name || ""}</p>
+                    </div>
+                  </button>
+                )) : <p className="p-3 text-sm text-muted-foreground text-center">No results found</p>}
+              </div>
+            )}
+            {/* Selected person */}
+            {selectedPerson && (
+              <div className="rounded-lg border bg-muted/50 p-3 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  {selectedPerson.avatar_url ? <img src={selectedPerson.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" /> : <span className="text-primary font-medium">{(selectedPerson.full_name || "?")[0]}</span>}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-foreground">{selectedPerson.full_name || "No name"}</p>
+                  <p className="text-xs text-muted-foreground">{selectedPerson.email || ""}</p>
+                </div>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelectedPerson(null)}><X className="h-3.5 w-3.5" /></Button>
+              </div>
+            )}
+            {/* Skip invitation checkbox */}
+            <div className="flex items-start gap-3 p-3 rounded-lg border bg-muted/30">
+              <Checkbox id="skip-inv" checked={skipInvitation} onCheckedChange={(checked) => setSkipInvitation(checked === true)} className="mt-0.5" />
+              <div>
+                <Label htmlFor="skip-inv" className="text-sm font-medium cursor-pointer">Skip invitation</Label>
+                <p className="text-xs text-muted-foreground mt-0.5">Check this for elderly or children who can't operate a phone. They'll be added as active members immediately.</p>
+              </div>
+            </div>
+            <Button variant="coral" className="w-full" onClick={handleAddCaredOne} disabled={!selectedPerson || addCaredOneToGroup.isPending}>
+              {addCaredOneToGroup.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Heart className="h-4 w-4 mr-2" />}
+              Add as Cared One
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Group selector */}
       {groups.length > 1 && (
         <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
@@ -413,19 +531,22 @@ export default function CareCircle() {
               </Card>
             ))}
           </div>
-          {/* Quick post */}
+          {/* Quick post with visibility */}
           <Card className="border-transparent card-elevated mb-6">
             <CardContent className="p-4">
               <Textarea value={newPostContent} onChange={e => setNewPostContent(e.target.value)} placeholder="Share an update with your care team..." className="mb-3" rows={2} />
-              <div className="flex items-center justify-between">
-                <Select value={newPostType} onValueChange={setNewPostType}>
-                  <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="discussion">Discussion</SelectItem>
-                    <SelectItem value="announcement">Announcement</SelectItem>
-                    <SelectItem value="wish">Well Wish</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex gap-2">
+                  <Select value={newPostType} onValueChange={setNewPostType}>
+                    <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="discussion">Discussion</SelectItem>
+                      <SelectItem value="announcement">Announcement</SelectItem>
+                      <SelectItem value="wish">Well Wish</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <VisibilitySelect value={postVisibility} onChange={setPostVisibility} />
+                </div>
                 <Button variant="coral" size="sm" onClick={addPost} disabled={!newPostContent.trim() || createPost.isPending}>Post</Button>
               </div>
             </CardContent>
@@ -479,19 +600,21 @@ export default function CareCircle() {
               <CardContent className="p-4">
                 <Input value={newPostTitle} onChange={e => setNewPostTitle(e.target.value)} placeholder="Announcement title..." className="mb-2" />
                 <Textarea value={newPostContent} onChange={e => setNewPostContent(e.target.value)} placeholder="Write an announcement..." className="mb-3" rows={2} />
-                <Button variant="coral" size="sm" onClick={() => {
-                  if (!newPostContent.trim() || !activeGroupId) return;
-                  createPost.mutate({ group_id: activeGroupId, content: newPostContent, type: "announcement", title: newPostTitle || undefined }, {
-                    onSuccess: () => { setNewPostContent(""); setNewPostTitle(""); toast({ title: "Announcement posted!" }); },
-                  });
-                }} disabled={!newPostContent.trim() || createPost.isPending}>
-                  <Megaphone className="h-3.5 w-3.5 mr-1" /> Post Announcement
-                </Button>
+                <div className="flex items-center justify-between gap-2">
+                  <VisibilitySelect value={postVisibility} onChange={setPostVisibility} />
+                  <Button variant="coral" size="sm" onClick={() => {
+                    if (!newPostContent.trim() || !activeGroupId) return;
+                    createPost.mutate({ group_id: activeGroupId, content: newPostContent, type: "announcement", title: newPostTitle || undefined }, {
+                      onSuccess: () => { setNewPostContent(""); setNewPostTitle(""); setPostVisibility("group"); toast({ title: "Announcement posted!" }); },
+                    });
+                  }} disabled={!newPostContent.trim() || createPost.isPending}>
+                    <Megaphone className="h-3.5 w-3.5 mr-1" /> Post Announcement
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           )}
           <div className="space-y-3">
-            {/* Pinned first */}
             {(announcements || []).filter((a: any) => a.is_pinned).map((a: any) => (
               <Card key={a.id} className="border-transparent card-elevated border-l-4 border-l-primary bg-primary/5">
                 <CardContent className="p-4">
@@ -515,9 +638,7 @@ export default function CareCircle() {
               <Card key={a.id} className="border-transparent card-elevated border-l-4 border-l-primary">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm text-foreground">{a.author?.full_name || "Admin"}</span>
-                    </div>
+                    <span className="font-medium text-sm text-foreground">{a.author?.full_name || "Admin"}</span>
                     <div className="flex items-center gap-1">
                       <span className="text-xs text-muted-foreground">{new Date(a.created_at).toLocaleDateString("en", { month: "short", day: "numeric" })}</span>
                       <PostActions post={a} />
@@ -563,7 +684,10 @@ export default function CareCircle() {
                       </Select>
                     </div>
                   </div>
-                  <div><Label>Due Date</Label><Input type="date" value={newTask.due_date} onChange={e => setNewTask(p => ({ ...p, due_date: e.target.value }))} /></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Due Date</Label><Input type="date" value={newTask.due_date} onChange={e => setNewTask(p => ({ ...p, due_date: e.target.value }))} /></div>
+                    <div><Label>Visibility</Label><VisibilitySelect value={newTask.visibility} onChange={v => setNewTask(p => ({ ...p, visibility: v }))} /></div>
+                  </div>
                   <Button variant="coral" className="w-full" onClick={addTask} disabled={createTask.isPending || !newTask.title.trim()}>Add Task</Button>
                 </div>
               </DialogContent>
@@ -604,6 +728,13 @@ export default function CareCircle() {
 
         {/* ═══ CARED ONES ═══ */}
         <TabsContent value="cared-ones" className="mt-4">
+          {isAdmin && (
+            <div className="mb-4">
+              <Button variant="coral" size="sm" onClick={() => setAddCaredOneOpen(true)}>
+                <Plus className="h-4 w-4 mr-1" /> Add Cared One
+              </Button>
+            </div>
+          )}
           {(groupCaredOnes || []).length > 0 ? (
             <div className="space-y-4">
               {(groupCaredOnes || []).map((co: any) => (
@@ -627,7 +758,13 @@ export default function CareCircle() {
             <div className="text-center py-12">
               <Heart className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
               <p className="text-muted-foreground mb-2">No cared ones in this group yet.</p>
-              <p className="text-sm text-muted-foreground">Go to the <strong>Members</strong> tab and use the ⋮ menu to mark a member as a "Cared One".</p>
+              {isAdmin ? (
+                <Button variant="coral" size="sm" onClick={() => setAddCaredOneOpen(true)}>
+                  <Plus className="h-4 w-4 mr-1" /> Add Cared One
+                </Button>
+              ) : (
+                <p className="text-sm text-muted-foreground">Ask a group admin to add a cared one.</p>
+              )}
             </div>
           )}
         </TabsContent>
@@ -748,6 +885,54 @@ export default function CareCircle() {
             </div>
           )}
 
+          {/* Member Categories (admin only) */}
+          {isAdmin && (
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Tag className="h-4 w-4" /> Member Categories</h3>
+                <Dialog open={addCategoryOpen} onOpenChange={setAddCategoryOpen}>
+                  <DialogTrigger asChild><Button variant="outline" size="sm"><Plus className="h-3.5 w-3.5 mr-1" /> Add</Button></DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader><DialogTitle>Create Member Category</DialogTitle></DialogHeader>
+                    <div className="space-y-4 mt-2">
+                      <div><Label>Name *</Label><Input value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} placeholder="e.g. Medical Team, Night Shift" /></div>
+                      <div><Label>Description</Label><Input value={newCategoryDesc} onChange={e => setNewCategoryDesc(e.target.value)} placeholder="Optional description" /></div>
+                      <div><Label>Color</Label>
+                        <Select value={newCategoryColor} onValueChange={setNewCategoryColor}>
+                          <SelectTrigger><SelectValue placeholder="Choose a color" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="blue">Blue</SelectItem>
+                            <SelectItem value="green">Green</SelectItem>
+                            <SelectItem value="red">Red</SelectItem>
+                            <SelectItem value="purple">Purple</SelectItem>
+                            <SelectItem value="orange">Orange</SelectItem>
+                            <SelectItem value="teal">Teal</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <Button variant="coral" className="w-full" onClick={handleAddCategory} disabled={!newCategoryName.trim() || createCategory.isPending}>Create Category</Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+              {(memberCategories || []).length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {(memberCategories || []).map((cat: any) => (
+                    <Badge key={cat.id} variant="secondary" className="gap-1.5 pr-1">
+                      <Tag className="h-3 w-3" />
+                      {cat.name}
+                      <Button variant="ghost" size="icon" className="h-4 w-4 ml-1 hover:bg-destructive/20" onClick={() => deleteCategory.mutate(cat.id)}>
+                        <X className="h-2.5 w-2.5" />
+                      </Button>
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">No categories yet. Create sub-groups like "Medical Team" or "Night Shift" to organize members.</p>
+              )}
+            </div>
+          )}
+
           {/* Active Members */}
           <div>
             <h3 className="text-sm font-semibold text-foreground mb-3">
@@ -773,36 +958,29 @@ export default function CareCircle() {
                           </div>
                         </div>
                       </div>
-                      {/* Actions: don't show for yourself or if not admin */}
                       {isAdmin && m.user_id !== user?.id && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            {/* Toggle cared one (admin+) */}
                             <DropdownMenuItem onClick={() => updateRole.mutate({ memberId: m.id, updates: { is_cared_one: !m.is_cared_one } })}>
                               <Heart className="h-3.5 w-3.5 mr-2" /> {m.is_cared_one ? "Remove Cared One" : "Mark as Cared One"}
                             </DropdownMenuItem>
-                            {/* Toggle admin (admin+) */}
                             {!m.is_owner && (
                               <DropdownMenuItem onClick={() => updateRole.mutate({ memberId: m.id, updates: { is_admin: !m.is_admin } })}>
                                 <Shield className="h-3.5 w-3.5 mr-2" /> {m.is_admin ? "Remove Admin" : "Make Admin"}
                               </DropdownMenuItem>
                             )}
-                            {/* Toggle owner (owner only) */}
                             {isOwner && !m.is_owner && (
                               <DropdownMenuItem onClick={() => updateRole.mutate({ memberId: m.id, updates: { is_owner: true, is_admin: true } })}>
                                 <Crown className="h-3.5 w-3.5 mr-2" /> Transfer Ownership
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuSeparator />
-                            {/* Remove (can't remove owners) */}
                             {!m.is_owner && (
                               <DropdownMenuItem className="text-destructive" onClick={() => {
-                                removeMember.mutate(m.id, {
-                                  onSuccess: () => toast({ title: "Member removed" }),
-                                });
+                                removeMember.mutate(m.id, { onSuccess: () => toast({ title: "Member removed" }) });
                               }}>
                                 <Trash2 className="h-3.5 w-3.5 mr-2" /> Remove from Group
                               </DropdownMenuItem>
@@ -810,9 +988,7 @@ export default function CareCircle() {
                           </DropdownMenuContent>
                         </DropdownMenu>
                       )}
-                      {m.user_id === user?.id && (
-                        <Badge variant="outline" className="text-[10px]">You</Badge>
-                      )}
+                      {m.user_id === user?.id && <Badge variant="outline" className="text-[10px]">You</Badge>}
                     </div>
                   </CardContent>
                 </Card>
@@ -866,7 +1042,7 @@ function CheckInsTab({ groupCaredOnes, activeGroupId }: { groupCaredOnes: any[];
       <div className="text-center py-12">
         <ClipboardCheck className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
         <p className="text-muted-foreground mb-2">No cared ones to check in on.</p>
-        <p className="text-sm text-muted-foreground">Go to the <strong>Members</strong> tab and mark a member as a "Cared One" first.</p>
+        <p className="text-sm text-muted-foreground">Go to the <strong>Cared Ones</strong> tab and add one first.</p>
       </div>
     );
   }
@@ -918,7 +1094,7 @@ function CheckInsTab({ groupCaredOnes, activeGroupId }: { groupCaredOnes: any[];
             </CardContent>
           </Card>
         ))}
-        {(logs || []).length === 0 && <p className="text-center py-8 text-muted-foreground">No check-ins recorded yet</p>}
+        {(logs || []).length === 0 && <p className="text-center py-8 text-muted-foreground text-sm">No check-ins yet</p>}
       </div>
     </div>
   );
