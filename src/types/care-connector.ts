@@ -201,7 +201,6 @@ export interface LocationShare {
 export interface ServiceCategory {
   id: string;
   name: string;
-  parent_id: string | null;
   description: string | null;
   icon: string | null;
 }

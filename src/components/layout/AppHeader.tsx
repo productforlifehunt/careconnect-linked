@@ -140,21 +140,19 @@ export function AppHeader() {
         {/* Auth section */}
         {isAuthenticated ? (
           <div className="flex items-center gap-1">
-            {isDashboardRoute && (
-              <nav className="hidden xl:flex items-center gap-1 mr-2">
-                {dashboardNav.slice(0, 4).map(item => (
-                  <NavLink
-                    key={item.url}
-                    to={item.url}
-                    className="px-2.5 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors flex items-center gap-1.5"
-                    activeClassName="text-primary font-medium bg-accent/50"
-                  >
-                    <item.icon className="h-3.5 w-3.5" />
-                    {item.title}
-                  </NavLink>
-                ))}
-              </nav>
-            )}
+            <nav className="hidden lg:flex items-center gap-1 mr-2">
+              {dashboardNav.map(item => (
+                <NavLink
+                  key={item.url}
+                  to={item.url}
+                  className="px-2.5 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors flex items-center gap-1.5"
+                  activeClassName="text-primary font-medium bg-accent/50"
+                >
+                  <item.icon className="h-3.5 w-3.5" />
+                  {item.title}
+                </NavLink>
+              ))}
+            </nav>
 
             <Button variant="ghost" size="icon" className="relative" onClick={() => navigate("/notifications")}>
               <Bell className="h-5 w-5" />
