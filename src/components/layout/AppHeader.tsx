@@ -61,7 +61,7 @@ export function AppHeader() {
         {/* Mobile menu */}
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="md:hidden shrink-0">
+            <Button variant="ghost" size="icon" className="sm:hidden shrink-0">
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
@@ -122,7 +122,7 @@ export function AppHeader() {
         </Link>
 
         {/* Desktop horizontal nav */}
-        <nav className="hidden md:flex items-center gap-1 ml-6">
+        <nav className="hidden sm:flex items-center gap-1 ml-4">
           {publicNav.map(item => (
             <NavLink
               key={item.url}
@@ -140,7 +140,7 @@ export function AppHeader() {
         {/* Auth section */}
         {isAuthenticated ? (
           <div className="flex items-center gap-1">
-            <nav className="hidden md:flex items-center gap-1 mr-2">
+            <nav className="hidden sm:flex items-center gap-1 mr-2">
               {dashboardNav.map(item => (
                 <NavLink
                   key={item.url}
