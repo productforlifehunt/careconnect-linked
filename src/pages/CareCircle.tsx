@@ -105,10 +105,7 @@ export default function CareCircle() {
     });
   };
 
-  const handleCheckin = () => {
-    if (!checkinCaredOneId) return;
-    useCreateCheckinLog;
-  };
+  // Check-in handled directly in CheckInsTab component
 
   const priorityColors: Record<string, string> = {
     high: "bg-destructive/10 text-destructive", urgent: "bg-destructive/10 text-destructive",
@@ -280,7 +277,12 @@ export default function CareCircle() {
               <CardContent className="p-4">
                 <Input value={newPostTitle} onChange={e => setNewPostTitle(e.target.value)} placeholder="Announcement title..." className="mb-2" />
                 <Textarea value={newPostContent} onChange={e => setNewPostContent(e.target.value)} placeholder="Write an announcement..." className="mb-3" rows={2} />
-                <Button variant="coral" size="sm" onClick={() => { setNewPostType("announcement"); addPost(); }} disabled={!newPostContent.trim() || createPost.isPending}>
+                <Button variant="coral" size="sm" onClick={() => {
+                  if (!newPostContent.trim() || !activeGroupId) return;
+                  createPost.mutate({ group_id: activeGroupId, content: newPostContent, type: "announcement", title: newPostTitle || undefined }, {
+                    onSuccess: () => { setNewPostContent(""); setNewPostTitle(""); toast({ title: "Announcement posted!" }); },
+                  });
+                }} disabled={!newPostContent.trim() || createPost.isPending}>
                   <Megaphone className="h-3.5 w-3.5 mr-1" /> Post Announcement
                 </Button>
               </CardContent>

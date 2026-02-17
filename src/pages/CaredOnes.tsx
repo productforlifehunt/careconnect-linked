@@ -21,7 +21,8 @@ import {
   useCareNotes, useCreateCareNote, useDeleteCareNote,
   useEmergencyContacts, useCreateEmergencyContact, useDeleteEmergencyContact,
   useActivityLog, useCreateActivityLog,
-  useSafeZones, useCaredOneDocuments,
+  useSafeZones, useCreateSafeZone, useDeleteSafeZone,
+  useCaredOneDocuments,
 } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 
@@ -149,9 +150,10 @@ function MedicineCard({ caredOneId }: { caredOneId: string }) {
     <div>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-bold text-foreground">Medicine Tracker</h2>
-        <Dialog open={addOpen} onOpenChange={setAddOpen}>
-          <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> Add Medicine</Button>
-          <DialogContent>
+        <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> Add Medicine</Button>
+      </div>
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogContent>
             <DialogHeader><DialogTitle>Add Medicine</DialogTitle></DialogHeader>
             <div className="space-y-3 mt-2">
               <div><Label>Name *</Label><Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Lisinopril" /></div>
@@ -164,8 +166,7 @@ function MedicineCard({ caredOneId }: { caredOneId: string }) {
               <Button variant="coral" className="w-full" onClick={handleAdd} disabled={createMed.isPending || !form.name}>Add Medicine</Button>
             </div>
           </DialogContent>
-        </Dialog>
-      </div>
+      </Dialog>
       {isLoading ? <Loader2 className="h-6 w-6 animate-spin text-muted-foreground mx-auto" /> : (
         <div className="space-y-3">
           {(meds || []).map((med: any) => (
@@ -421,18 +422,47 @@ function EmergencyCard({ caredOneId }: { caredOneId: string }) {
 
 // ─── LOCATION ───────────────────────────────────────────────
 function LocationCard({ caredOneId }: { caredOneId: string }) {
+  const { toast } = useToast();
   const { data: zones } = useSafeZones(caredOneId);
+  const createZone = useCreateSafeZone();
+  const deleteZone = useDeleteSafeZone();
+  const [form, setForm] = useState({ name: "", radius_meters: "200", zone_type: "safe", latitude: "", longitude: "" });
+
   return (
     <div>
       <h2 className="text-lg font-bold text-foreground mb-4">Location & Safe Zones</h2>
+      <Card className="border-transparent card-elevated mb-4"><CardContent className="p-4 space-y-3">
+        <Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Zone name (e.g. Home, Hospital)" />
+        <div className="grid grid-cols-3 gap-3">
+          <div><Label className="text-xs">Latitude</Label><Input type="number" step="any" value={form.latitude} onChange={e => setForm(p => ({ ...p, latitude: e.target.value }))} placeholder="40.7128" /></div>
+          <div><Label className="text-xs">Longitude</Label><Input type="number" step="any" value={form.longitude} onChange={e => setForm(p => ({ ...p, longitude: e.target.value }))} placeholder="-74.006" /></div>
+          <div><Label className="text-xs">Radius (m)</Label><Input type="number" value={form.radius_meters} onChange={e => setForm(p => ({ ...p, radius_meters: e.target.value }))} /></div>
+        </div>
+        <Select value={form.zone_type} onValueChange={v => setForm(p => ({ ...p, zone_type: v }))}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent><SelectItem value="safe">Safe Zone</SelectItem><SelectItem value="danger">Danger Zone</SelectItem></SelectContent>
+        </Select>
+        <Button variant="coral" size="sm" onClick={() => {
+          if (!form.name) return;
+          createZone.mutate({
+            user_id: caredOneId, name: form.name, radius_meters: parseInt(form.radius_meters) || 200,
+            zone_type: form.zone_type,
+            latitude: form.latitude ? parseFloat(form.latitude) : undefined,
+            longitude: form.longitude ? parseFloat(form.longitude) : undefined,
+          }, { onSuccess: () => { setForm({ name: "", radius_meters: "200", zone_type: "safe", latitude: "", longitude: "" }); toast({ title: "Safe zone added" }); } });
+        }} disabled={createZone.isPending || !form.name}>Add Zone</Button>
+      </CardContent></Card>
       <div className="space-y-2">
-        {(zones||[]).map((z:any)=>(
-          <Card key={z.id} className="border-transparent card-elevated"><CardContent className="p-3">
-            <h4 className="font-medium text-foreground text-sm">{z.name||"Safe Zone"}</h4>
-            <p className="text-xs text-muted-foreground">Radius: {z.radius_meters||0}m · {z.zone_type||"safe"}</p>
+        {(zones || []).map((z: any) => (
+          <Card key={z.id} className="border-transparent card-elevated"><CardContent className="p-3 flex justify-between items-center">
+            <div>
+              <h4 className="font-medium text-foreground text-sm">{z.name || "Zone"}</h4>
+              <p className="text-xs text-muted-foreground">Radius: {z.radius_meters || 0}m · <Badge variant={z.zone_type === "danger" ? "destructive" : "secondary"} className="text-[10px]">{z.zone_type || "safe"}</Badge></p>
+            </div>
+            <Button variant="ghost" size="icon" className="text-destructive h-7 w-7" onClick={() => deleteZone.mutate(z.id)}><Trash2 className="h-3 w-3" /></Button>
           </CardContent></Card>
         ))}
-        {(zones||[]).length===0&&<p className="text-center py-8 text-muted-foreground">No safe zones configured. Set up GPS tracking for location features.</p>}
+        {(zones || []).length === 0 && <p className="text-center py-8 text-muted-foreground">No safe zones configured yet</p>}
       </div>
     </div>
   );
