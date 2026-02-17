@@ -2,16 +2,22 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bell, CalendarDays, Users, MessageSquare, AlertTriangle, Settings, Loader2 } from "lucide-react";
-import { useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead } from "@/hooks/use-care-data";
+import { Bell, CalendarDays, Users, MessageSquare, AlertTriangle, Settings, Loader2, Check, X, UserPlus } from "lucide-react";
+import { useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead, useMyPendingInvitations, useAcceptInvitation, useDeclineInvitation } from "@/hooks/use-care-data";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Notifications() {
+  const { toast } = useToast();
   const { data: notifications, isLoading } = useNotifications();
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
+  const { data: pendingInvitations } = useMyPendingInvitations();
+  const acceptInvitation = useAcceptInvitation();
+  const declineInvitation = useDeclineInvitation();
 
   const allNotifs = notifications || [];
   const unreadCount = allNotifs.filter(n => !n.is_read).length;
+  const invitationCount = (pendingInvitations || []).length;
 
   const typeIcons: Record<string, React.ReactNode> = {
     booking: <CalendarDays className="h-5 w-5 text-primary" />,
@@ -30,6 +36,19 @@ export default function Notifications() {
     return allNotifs.filter(n => n.type.startsWith(type));
   };
 
+  const handleAccept = (inv: any) => {
+    acceptInvitation.mutate({ id: inv.id, care_group_id: inv.care_group_id }, {
+      onSuccess: () => toast({ title: "Joined group!", description: `You've joined ${inv.group?.name || "the care group"}` }),
+      onError: (err: any) => toast({ title: "Failed to join", description: err.message, variant: "destructive" }),
+    });
+  };
+
+  const handleDecline = (invId: string) => {
+    declineInvitation.mutate(invId, {
+      onSuccess: () => toast({ title: "Invitation declined" }),
+    });
+  };
+
   if (isLoading) {
     return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
   }
@@ -39,12 +58,53 @@ export default function Notifications() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Notifications</h1>
-          <p className="text-muted-foreground">{unreadCount} unread</p>
+          <p className="text-muted-foreground">{unreadCount} unread{invitationCount > 0 ? ` · ${invitationCount} pending invitation${invitationCount > 1 ? "s" : ""}` : ""}</p>
         </div>
         {unreadCount > 0 && (
           <Button variant="ghost" size="sm" onClick={() => markAllRead.mutate()}>Mark all as read</Button>
         )}
       </div>
+
+      {/* Pending Group Invitations */}
+      {invitationCount > 0 && (
+        <div className="mb-6">
+          <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+            <UserPlus className="h-4 w-4 text-primary" /> Group Invitations ({invitationCount})
+          </h2>
+          <div className="space-y-2">
+            {(pendingInvitations || []).map((inv: any) => (
+              <Card key={inv.id} className="border-transparent card-elevated border-l-4 border-l-primary">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <Users className="h-5 w-5 text-primary" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground">{inv.group?.name || "Care Group"}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {inv.group?.description ? inv.group.description.substring(0, 60) + (inv.group.description.length > 60 ? "…" : "") : "You've been invited to join this care group"}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Received {new Date(inv.created_at).toLocaleDateString("en", { month: "short", day: "numeric" })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                      <Button size="sm" variant="coral" onClick={() => handleAccept(inv)} disabled={acceptInvitation.isPending}>
+                        <Check className="h-3.5 w-3.5 mr-1" /> Accept
+                      </Button>
+                      <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => handleDecline(inv.id)} disabled={declineInvitation.isPending}>
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
 
       <Tabs defaultValue="all">
         <TabsList className="mb-4">

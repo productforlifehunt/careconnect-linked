@@ -10,9 +10,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import {
   Loader2, Plus, Pill, ClipboardCheck, HeartPulse, Lightbulb, Target, FileText,
   Phone, MapPin, FolderOpen, Activity, Trash2, Check, X, ArrowLeft, Clock, SkipForward,
+  Search, UserPlus,
 } from "lucide-react";
 import {
-  useUserCaredOnes,
+  useUserCaredOnes, useCreateUserCaredOne, useSearchProfiles,
   useMedicines, useCreateMedicine, useDeleteMedicine, useLogMedicine,
   useCheckinLogs, useCreateCheckinLog,
   useHealthVitals, useCreateHealthVital,
@@ -40,22 +41,115 @@ const featureCards = [
 ];
 
 export default function CaredOnes() {
+  const { toast } = useToast();
   const { data: caredOnes, isLoading } = useUserCaredOnes();
+  const createUserCaredOne = useCreateUserCaredOne();
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const [openCard, setOpenCard] = useState<string | null>(null);
+
+  // Add Cared One modal
+  const [addOpen, setAddOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedPerson, setSelectedPerson] = useState<any>(null);
+  const [relationship, setRelationship] = useState("");
+  const [isPrimary, setIsPrimary] = useState(false);
+  const { data: searchResults } = useSearchProfiles(searchQuery);
 
   const selectedId = activeTab || (caredOnes && caredOnes.length > 0 ? caredOnes[0].cared_one_id : null);
   const selectedCaredOne = caredOnes?.find((c: any) => c.cared_one_id === selectedId);
   const caredOneName = selectedCaredOne?.cared_one?.full_name || selectedCaredOne?.cared_one?.first_name || "Cared One";
 
+  const handleAddCaredOne = () => {
+    if (!selectedPerson) return;
+    createUserCaredOne.mutate({ caredOneId: selectedPerson.id, relationship: relationship || undefined, isPrimary }, {
+      onSuccess: () => {
+        setAddOpen(false); setSelectedPerson(null); setSearchQuery(""); setRelationship(""); setIsPrimary(false);
+        toast({ title: "Cared one added!" });
+      },
+      onError: (err: any) => toast({ title: "Failed", description: err.message, variant: "destructive" }),
+    });
+  };
+
   if (isLoading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Cared Ones</h1>
-        <p className="text-muted-foreground">Manage and track care for your loved ones</p>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Cared Ones</h1>
+          <p className="text-muted-foreground">Manage and track care for your loved ones</p>
+        </div>
+        <Button variant="coral" size="sm" onClick={() => setAddOpen(true)}>
+          <UserPlus className="h-4 w-4 mr-1" /> Add Cared One
+        </Button>
       </div>
+
+      {/* Add Cared One Dialog */}
+      <Dialog open={addOpen} onOpenChange={(open) => { setAddOpen(open); if (!open) { setSelectedPerson(null); setSearchQuery(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add a Cared One</DialogTitle>
+            <DialogDescription>Search for someone to add as a person you care for</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div>
+              <Label>Search by name or email</Label>
+              <div className="relative mt-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input value={searchQuery} onChange={e => { setSearchQuery(e.target.value); setSelectedPerson(null); }} placeholder="Type at least 2 characters..." className="pl-9" />
+              </div>
+            </div>
+            {searchQuery.length >= 2 && !selectedPerson && (
+              <div className="border rounded-lg max-h-48 overflow-y-auto">
+                {(searchResults || []).length > 0 ? (searchResults || []).map((p: any) => (
+                  <button key={p.id} className="w-full flex items-center gap-3 p-3 hover:bg-accent text-left border-b last:border-b-0 transition-colors" onClick={() => setSelectedPerson(p)}>
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      {p.avatar_url ? <img src={p.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" /> : <span className="text-primary text-xs font-medium">{(p.full_name || p.email || "?")[0]}</span>}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{p.full_name || p.first_name || "No name"}</p>
+                      <p className="text-xs text-muted-foreground truncate">{p.email || ""}</p>
+                    </div>
+                  </button>
+                )) : <p className="p-3 text-sm text-muted-foreground text-center">No results found</p>}
+              </div>
+            )}
+            {selectedPerson && (
+              <div className="rounded-lg border bg-muted/50 p-3 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  {selectedPerson.avatar_url ? <img src={selectedPerson.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" /> : <span className="text-primary font-medium">{(selectedPerson.full_name || "?")[0]}</span>}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-foreground">{selectedPerson.full_name || "No name"}</p>
+                  <p className="text-xs text-muted-foreground">{selectedPerson.email || ""}</p>
+                </div>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelectedPerson(null)}><X className="h-3.5 w-3.5" /></Button>
+              </div>
+            )}
+            <div>
+              <Label>Relationship</Label>
+              <Select value={relationship} onValueChange={setRelationship}>
+                <SelectTrigger><SelectValue placeholder="Select relationship" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="mother">Mother</SelectItem>
+                  <SelectItem value="father">Father</SelectItem>
+                  <SelectItem value="grandmother">Grandmother</SelectItem>
+                  <SelectItem value="grandfather">Grandfather</SelectItem>
+                  <SelectItem value="spouse">Spouse</SelectItem>
+                  <SelectItem value="child">Child</SelectItem>
+                  <SelectItem value="sibling">Sibling</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button variant="coral" className="w-full" onClick={handleAddCaredOne} disabled={!selectedPerson || createUserCaredOne.isPending}>
+              {createUserCaredOne.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <HeartPulse className="h-4 w-4 mr-2" />}
+              Add as Cared One
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {caredOnes && caredOnes.length > 0 ? (
         <>
           <div className="flex gap-2 mb-6 flex-wrap">
@@ -63,6 +157,7 @@ export default function CaredOnes() {
               <button key={co.cared_one_id} onClick={() => { setActiveTab(co.cared_one_id); setOpenCard(null); }}
                 className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${selectedId === co.cared_one_id ? "bg-card border-primary text-foreground shadow-sm" : "bg-transparent border-border text-muted-foreground hover:bg-accent/50"}`}>
                 {co.cared_one?.full_name || co.cared_one?.first_name || "Cared One"}
+                {co.relationship && <span className="text-xs text-muted-foreground ml-1">({co.relationship})</span>}
               </button>
             ))}
           </div>
@@ -93,7 +188,10 @@ export default function CaredOnes() {
           <CardContent className="p-8 text-center">
             <HeartPulse className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
             <h3 className="font-semibold text-foreground mb-1">No cared ones yet</h3>
-            <p className="text-sm text-muted-foreground">Add the people you're caring for to track their health, medications, and more.</p>
+            <p className="text-sm text-muted-foreground mb-4">Add the people you're caring for to track their health, medications, and more.</p>
+            <Button variant="coral" onClick={() => setAddOpen(true)}>
+              <UserPlus className="h-4 w-4 mr-1" /> Add Your First Cared One
+            </Button>
           </CardContent>
         </Card>
       )}

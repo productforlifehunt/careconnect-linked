@@ -356,7 +356,7 @@ export function useInviteToGroup() {
       if (!userId) throw new Error("Not authenticated");
       const { error } = await careDb
         .from("care_group_invitation")
-        .insert({ care_group_id: groupId, invited_by: userId, invitee_email: email, status: "pending" });
+        .insert({ care_group_id: groupId, invited_by_user_id: userId, invitee_email: email, status: "pending" });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -807,6 +807,206 @@ export function useCancelInvitation() {
   });
 }
 
+// ─── Search Profiles ────────────────────────────────────────
+export function useSearchProfiles(query: string) {
+  return useQuery({
+    queryKey: ["search-profiles", query],
+    queryFn: async () => {
+      if (!query || query.length < 2) return [];
+      const { data, error } = await careDb
+        .from("profile")
+        .select("id, full_name, first_name, last_name, avatar_url, email, user_name")
+        .or(`full_name.ilike.%${query}%,email.ilike.%${query}%,user_name.ilike.%${query}%`)
+        .limit(10);
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: query.length >= 2,
+  });
+}
+
+// ─── Add Cared One to Group ─────────────────────────────────
+export function useAddCaredOneToGroup() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ groupId, userId, skipInvitation }: { groupId: string; userId: string; skipInvitation: boolean }) => {
+      // Check if already a member
+      const { data: existing } = await careDb
+        .from("care_group_member")
+        .select("id")
+        .eq("group_id", groupId)
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (existing) {
+        // Just update their is_cared_one flag
+        const { error } = await careDb
+          .from("care_group_member")
+          .update({ is_cared_one: true })
+          .eq("id", existing.id);
+        if (error) throw error;
+        return;
+      }
+      const { error } = await careDb
+        .from("care_group_member")
+        .insert({
+          group_id: groupId,
+          user_id: userId,
+          is_cared_one: true,
+          invitation_status: skipInvitation ? "accepted" : "pending",
+        });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["care-group-members"] });
+      qc.invalidateQueries({ queryKey: ["group-cared-ones"] });
+    },
+  });
+}
+
+// ─── Create Personal Cared One (user_cared_one) ─────────────
+export function useCreateUserCaredOne() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ caredOneId, relationship, isPrimary }: { caredOneId: string; relationship?: string; isPrimary?: boolean }) => {
+      const userId = await getCurrentUserId();
+      if (!userId) throw new Error("Not authenticated");
+      const { error } = await careDb
+        .from("user_cared_one")
+        .insert({ user_id: userId, cared_one_id: caredOneId, relationship: relationship || null, is_primary: isPrimary || false });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["user-cared-ones"] }),
+  });
+}
+
+// ─── My Pending Group Invitations ───────────────────────────
+export function useMyPendingInvitations() {
+  return useQuery({
+    queryKey: ["my-pending-invitations"],
+    queryFn: async () => {
+      const userId = await getCurrentUserId();
+      if (!userId) return [];
+      // Get current user's email
+      const { data: profile } = await careDb
+        .from("profile")
+        .select("email")
+        .eq("id", userId)
+        .single();
+      if (!profile?.email) return [];
+      const { data, error } = await careDb
+        .from("care_group_invitation")
+        .select("*")
+        .eq("invitee_email", profile.email)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false });
+      if (error) {
+        console.warn("Failed to fetch my invitations:", error.message);
+        return [];
+      }
+      // Fetch group details
+      const groupIds = [...new Set((data || []).map((i: any) => i.care_group_id).filter(Boolean))];
+      let groupMap: Record<string, any> = {};
+      if (groupIds.length > 0) {
+        const { data: groups } = await careDb
+          .from("care_group")
+          .select("id, name, description")
+          .in("id", groupIds);
+        (groups || []).forEach((g: any) => { groupMap[g.id] = g; });
+      }
+      return (data || []).map((i: any) => ({ ...i, group: groupMap[i.care_group_id] || null }));
+    },
+  });
+}
+
+export function useAcceptInvitation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (invitation: { id: string; care_group_id: string }) => {
+      const userId = await getCurrentUserId();
+      if (!userId) throw new Error("Not authenticated");
+      // Update invitation status
+      const { error: invErr } = await careDb
+        .from("care_group_invitation")
+        .update({ status: "accepted" })
+        .eq("id", invitation.id);
+      if (invErr) throw invErr;
+      // Create member row
+      const { error: memErr } = await careDb
+        .from("care_group_member")
+        .insert({ group_id: invitation.care_group_id, user_id: userId, invitation_status: "accepted" });
+      if (memErr) throw memErr;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["my-pending-invitations"] });
+      qc.invalidateQueries({ queryKey: ["care-groups"] });
+      qc.invalidateQueries({ queryKey: ["care-group-members"] });
+    },
+  });
+}
+
+export function useDeclineInvitation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (invitationId: string) => {
+      const { error } = await careDb
+        .from("care_group_invitation")
+        .update({ status: "declined" })
+        .eq("id", invitationId);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["my-pending-invitations"] }),
+  });
+}
+
+// ─── Member Categories ──────────────────────────────────────
+export function useMemberCategories(groupId: string | null) {
+  return useQuery({
+    queryKey: ["member-categories", groupId],
+    queryFn: async () => {
+      if (!groupId) return [];
+      const { data, error } = await careDb
+        .from("care_group_member_category")
+        .select("*")
+        .eq("group_id", groupId)
+        .order("name");
+      if (error) {
+        console.warn("Failed to fetch member categories:", error.message);
+        return [];
+      }
+      return (data || []) as any[];
+    },
+    enabled: !!groupId,
+  });
+}
+
+export function useCreateMemberCategory() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ groupId, name, description, color }: { groupId: string; name: string; description?: string; color?: string }) => {
+      const userId = await getCurrentUserId();
+      if (!userId) throw new Error("Not authenticated");
+      const { error } = await careDb
+        .from("care_group_member_category")
+        .insert({ group_id: groupId, name, description: description || null, color: color || null, created_by: userId });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["member-categories"] }),
+  });
+}
+
+export function useDeleteMemberCategory() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (categoryId: string) => {
+      const { error } = await careDb
+        .from("care_group_member_category")
+        .delete()
+        .eq("id", categoryId);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["member-categories"] }),
+  });
+}
 
 
 // ─── Location Shares ────────────────────────────────────────
