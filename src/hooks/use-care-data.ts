@@ -82,11 +82,22 @@ export function useProviderReviews(providerId: string | undefined) {
       if (!providerId) return [];
       const { data, error } = await careDb
         .from("review")
-        .select("*, reviewer:reviewer_id(id, full_name, avatar_url)")
+        .select("*")
         .eq("entity_id", providerId)
         .order("created_at", { ascending: false })
         .limit(20);
       if (error) throw error;
+      // Fetch reviewer profiles separately
+      const reviewerIds = [...new Set((data || []).map((r: any) => r.reviewer_id).filter(Boolean))];
+      let reviewerMap: Record<string, any> = {};
+      if (reviewerIds.length > 0) {
+        const { data: reviewers } = await careDb
+          .from("profile")
+          .select("id, full_name, avatar_url")
+          .in("id", reviewerIds);
+        (reviewers || []).forEach((r: any) => { reviewerMap[r.id] = r; });
+      }
+      return (data || []).map((r: any) => ({ ...r, reviewer: reviewerMap[r.reviewer_id] || null }));
       return (data || []) as any[];
     },
     enabled: !!providerId,
@@ -524,7 +535,6 @@ export function useServiceCategories() {
       const { data, error } = await careDb
         .from("service_category")
         .select("*")
-        .is("parent_id", null)
         .order("name");
       if (error) throw error;
       return (data || []) as ServiceCategory[];
