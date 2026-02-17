@@ -22,12 +22,14 @@ import TrustSafety from "./pages/TrustSafety";
 import BecomeCaregiver from "./pages/BecomeCaregiver";
 import Notifications from "./pages/Notifications";
 import CaredOnes from "./pages/CaredOnes";
+import Jobs from "./pages/Jobs";
+import ProviderDashboard from "./pages/ProviderDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 // Dashboard routes that get sidebar
-const dashboardPaths = ["/dashboard", "/bookings", "/care-circle", "/gps-tracking", "/messages", "/favorites", "/notifications", "/profile", "/cared-ones"];
+const dashboardPaths = ["/dashboard", "/bookings", "/care-circle", "/gps-tracking", "/messages", "/favorites", "/notifications", "/profile", "/cared-ones", "/jobs", "/provider-dashboard"];
 
 function AppRoutes() {
   const location = useLocation();
@@ -51,6 +53,8 @@ function AppRoutes() {
       <Route path="/become-caregiver" element={<BecomeCaregiver />} />
       <Route path="/notifications" element={<Notifications />} />
       <Route path="/cared-ones" element={<CaredOnes />} />
+      <Route path="/jobs" element={<Jobs />} />
+      <Route path="/provider-dashboard" element={<ProviderDashboard />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

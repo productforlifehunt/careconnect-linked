@@ -10,6 +10,8 @@ import {
   Bell,
   User,
   LayoutDashboard,
+  Briefcase,
+  Settings,
 } from "lucide-react";
 
 const sidebarItems = [
@@ -18,9 +20,11 @@ const sidebarItems = [
   { title: "Appointments", url: "/bookings", icon: CalendarDays },
   { title: "Messages", url: "/messages", icon: MessageSquare },
   { title: "Care Groups", url: "/care-circle", icon: Users },
+  { title: "Jobs Board", url: "/jobs", icon: Briefcase },
   { title: "Find Care", url: "/search", icon: Search },
   { title: "GPS Tracking", url: "/gps-tracking", icon: MapPin },
   { title: "Favorites", url: "/favorites", icon: HeartIcon },
+  { title: "Provider Dashboard", url: "/provider-dashboard", icon: Settings },
   { title: "Notifications", url: "/notifications", icon: Bell },
   { title: "My Profile", url: "/profile", icon: User },
 ];
