@@ -62,7 +62,7 @@ export const caregivers: Caregiver[] = [
   {
     id: "1",
     name: "Sarah Johnson",
-    avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
+    avatar: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&h=150&fit=crop&crop=face",
     specialty: ["Elder Care", "Dementia Care", "Companionship"],
     rating: 4.9,
     reviewCount: 127,
