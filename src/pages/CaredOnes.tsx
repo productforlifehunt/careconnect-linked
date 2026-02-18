@@ -23,11 +23,11 @@ import {
   useCareNotes, useCreateCareNote, useDeleteCareNote,
   useEmergencyContacts, useCreateEmergencyContact, useDeleteEmergencyContact,
   useActivityLog, useCreateActivityLog,
-  useSafeZones, useCreateSafeZone, useDeleteSafeZone,
   useCaredOneDocuments, useCreateCaredOneDocument, useDeleteCaredOneDocument,
   useDeleteUserCaredOne,
 } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
+import LocationCard from "@/components/care/LocationCard";
 
 const featureCards = [
   { key: "medicine", title: "Medicine Tracker", icon: Pill, color: "text-primary" },
@@ -252,7 +252,7 @@ function FeatureDetail({ cardKey, caredOneId, caredOneName }: { cardKey: string;
     case "plan": return <CarePlanCard caredOneId={caredOneId} />;
     case "notes": return <NotesCard caredOneId={caredOneId} />;
     case "emergency": return <EmergencyCard caredOneId={caredOneId} />;
-    case "location": return <LocationCard caredOneId={caredOneId} />;
+    case "location": return <LocationCard caredOneId={caredOneId} caredOneName={caredOneName} />;
     case "documents": return <DocumentsCard caredOneId={caredOneId} />;
     case "visits": return <VisitLogCard caredOneId={caredOneId} />;
     default: return null;
@@ -905,72 +905,7 @@ function EmergencyCard({ caredOneId }: { caredOneId: string }) {
   );
 }
 
-// ─── LOCATION & SAFE ZONES ──────────────────────────────────
-function LocationCard({ caredOneId }: { caredOneId: string }) {
-  const { toast } = useToast();
-  const { data: zones } = useSafeZones(caredOneId);
-  const createZone = useCreateSafeZone();
-  const deleteZone = useDeleteSafeZone();
-  const [form, setForm] = useState({ name: "", radius_meters: "200", zone_type: "safe", latitude: "", longitude: "" });
-  const [useGPS, setUseGPS] = useState(false);
-
-  const handleGetLocation = () => {
-    if (!navigator.geolocation) { toast({ title: "Geolocation not supported", variant: "destructive" }); return; }
-    setUseGPS(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => { setForm(p => ({ ...p, latitude: pos.coords.latitude.toFixed(6), longitude: pos.coords.longitude.toFixed(6) })); setUseGPS(false); },
-      () => { toast({ title: "Could not get location", variant: "destructive" }); setUseGPS(false); }
-    );
-  };
-
-  return (
-    <div>
-      <h2 className="text-lg font-bold text-foreground mb-4">Location & Safe Zones</h2>
-      <Card className="border-transparent card-elevated mb-6"><CardContent className="p-5 space-y-3">
-        <Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Zone name (e.g. Home, Hospital, Park)" />
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleGetLocation} disabled={useGPS}>
-            {useGPS ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <MapPin className="h-3 w-3 mr-1" />}
-            Use Current Location
-          </Button>
-        </div>
-        <div className="grid grid-cols-3 gap-3">
-          <div><Label className="text-xs">Latitude</Label><Input type="number" step="any" value={form.latitude} onChange={e => setForm(p => ({ ...p, latitude: e.target.value }))} placeholder="40.7128" className="mt-1" /></div>
-          <div><Label className="text-xs">Longitude</Label><Input type="number" step="any" value={form.longitude} onChange={e => setForm(p => ({ ...p, longitude: e.target.value }))} placeholder="-74.006" className="mt-1" /></div>
-          <div><Label className="text-xs">Radius (m)</Label><Input type="number" value={form.radius_meters} onChange={e => setForm(p => ({ ...p, radius_meters: e.target.value }))} className="mt-1" /></div>
-        </div>
-        <Select value={form.zone_type} onValueChange={v => setForm(p => ({ ...p, zone_type: v }))}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent><SelectItem value="safe">✅ Safe Zone</SelectItem><SelectItem value="danger">⚠️ Danger Zone</SelectItem></SelectContent>
-        </Select>
-        <Button variant="coral" className="w-full" onClick={() => {
-          if (!form.name) return;
-          createZone.mutate({
-            user_id: caredOneId, name: form.name, radius_meters: parseInt(form.radius_meters) || 200,
-            zone_type: form.zone_type,
-            latitude: form.latitude ? parseFloat(form.latitude) : undefined,
-            longitude: form.longitude ? parseFloat(form.longitude) : undefined,
-          }, { onSuccess: () => { setForm({ name: "", radius_meters: "200", zone_type: "safe", latitude: "", longitude: "" }); toast({ title: "Zone added" }); } });
-        }} disabled={createZone.isPending || !form.name}>Add Zone</Button>
-      </CardContent></Card>
-      <div className="space-y-2">
-        {(zones || []).map((z: any) => (
-          <Card key={z.id} className="border-transparent card-elevated"><CardContent className="p-3 flex justify-between items-center">
-            <div>
-              <div className="flex items-center gap-2">
-                <span>{z.zone_type === "danger" ? "⚠️" : "✅"}</span>
-                <h4 className="font-medium text-foreground text-sm">{z.name || "Zone"}</h4>
-              </div>
-              <p className="text-xs text-muted-foreground mt-0.5">Radius: {z.radius_meters || 0}m{z.latitude ? ` · ${parseFloat(z.latitude).toFixed(4)}, ${parseFloat(z.longitude).toFixed(4)}` : ""}</p>
-            </div>
-            <Button variant="ghost" size="icon" className="text-destructive h-7 w-7" onClick={() => deleteZone.mutate(z.id)}><Trash2 className="h-3 w-3" /></Button>
-          </CardContent></Card>
-        ))}
-        {(zones || []).length === 0 && <p className="text-center py-8 text-muted-foreground">No safe zones configured yet</p>}
-      </div>
-    </div>
-  );
-}
+// LocationCard is now imported from @/components/care/LocationCard
 
 // ─── DOCUMENTS ──────────────────────────────────────────────
 const DOC_TYPES = ["Medical Record", "Insurance", "Prescription", "Lab Result", "Legal", "ID", "Emergency Plan", "Other"];
