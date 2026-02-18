@@ -462,11 +462,11 @@ function MedicineCard({ caredOneId }: { caredOneId: string }) {
                             </div>
                             <div className="flex gap-1.5 shrink-0 ml-2">
                               <Button size="sm" variant="outline" className="h-8 text-xs border-success/30 text-success hover:bg-success/10"
-                                onClick={() => logMed.mutate({ medicine_id: med.id, status: "taken" }, { onSuccess: () => toast({ title: `${med.name} marked as taken ✓` }) })}>
+                                onClick={() => logMed.mutate({ medicine_id: med.id, status: "taken", user_id: caredOneId }, { onSuccess: () => toast({ title: `${med.name} marked as taken ✓` }) })}>
                                 <Check className="h-3 w-3 mr-1" /> Taken
                               </Button>
                               <Button size="sm" variant="ghost" className="h-8 text-xs text-warning hover:bg-warning/10"
-                                onClick={() => logMed.mutate({ medicine_id: med.id, status: "skipped" }, { onSuccess: () => toast({ title: `${med.name} skipped` }) })}>
+                                onClick={() => logMed.mutate({ medicine_id: med.id, status: "skipped", user_id: caredOneId }, { onSuccess: () => toast({ title: `${med.name} skipped` }) })}>
                                 <SkipForward className="h-3 w-3 mr-1" /> Skip
                               </Button>
                             </div>
@@ -495,10 +495,10 @@ function MedicineCard({ caredOneId }: { caredOneId: string }) {
                     {med.note && <p className="text-xs text-muted-foreground mt-1 italic">{med.note}</p>}
                   </div>
                   <div className="flex gap-1 shrink-0">
-                    <Button size="sm" variant="outline" className="border-success/30 text-success hover:bg-success/10" onClick={() => logMed.mutate({ medicine_id: med.id, status: "taken" }, { onSuccess: () => toast({ title: "Taken ✓" }) })}>
+                    <Button size="sm" variant="outline" className="border-success/30 text-success hover:bg-success/10" onClick={() => logMed.mutate({ medicine_id: med.id, status: "taken", user_id: caredOneId }, { onSuccess: () => toast({ title: "Taken ✓" }) })}>
                       <Check className="h-3 w-3 mr-1" /> Taken
                     </Button>
-                    <Button size="sm" variant="ghost" className="text-warning hover:bg-warning/10" onClick={() => logMed.mutate({ medicine_id: med.id, status: "skipped" }, { onSuccess: () => toast({ title: "Skipped" }) })}>Skip</Button>
+                    <Button size="sm" variant="ghost" className="text-warning hover:bg-warning/10" onClick={() => logMed.mutate({ medicine_id: med.id, status: "skipped", user_id: caredOneId }, { onSuccess: () => toast({ title: "Skipped" }) })}>Skip</Button>
                     <Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => deleteMed.mutate(med.id, { onSuccess: () => toast({ title: `${med.name} deleted` }) })}><Trash2 className="h-3.5 w-3.5" /></Button>
                   </div>
                 </div>
@@ -627,10 +627,13 @@ function HealthCard({ caredOneId }: { caredOneId: string }) {
 
   const handleSubmit = () => {
     if (!form.value) return;
-    // Blood pressure is stored as text (e.g. "120/80"), other vitals as numeric
+    // For blood pressure, store the full text in note; for others parse as number
     const numericValue = form.vital_type === "blood_pressure" ? 0 : parseFloat(form.value);
+    const noteWithBP = form.vital_type === "blood_pressure"
+      ? [form.value, form.note].filter(Boolean).join(" - ")
+      : form.note || undefined;
     create.mutate(
-      { user_id: caredOneId, vital_type: form.vital_type, value: numericValue, unit: selectedType.unit, note: form.note || undefined, raw_value: form.value } as any,
+      { user_id: caredOneId, vital_type: form.vital_type, value: numericValue, unit: selectedType.unit, note: noteWithBP },
       { onSuccess: () => { setForm({ vital_type: "blood_pressure", value: "", note: "" }); toast({ title: "Vital recorded ✓" }); } }
     );
   };
@@ -667,10 +670,10 @@ function HealthCard({ caredOneId }: { caredOneId: string }) {
           <Card key={v.id} className="border-transparent card-elevated"><CardContent className="p-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Badge variant="secondary" className="text-xs">{VITAL_TYPES.find(t => t.value === v.vital_type)?.label || v.vital_type}</Badge>
-              <span className="font-semibold text-foreground">{v.raw_value || v.value}{v.unit ? ` ${v.unit}` : ""}</span>
+              <span className="font-semibold text-foreground">{v.value}{v.unit ? ` ${v.unit}` : ""}</span>
               {v.note && <span className="text-xs text-muted-foreground">· {v.note}</span>}
             </div>
-            <span className="text-xs text-muted-foreground">{new Date(v.recorded_at).toLocaleDateString("en", { month: "short", day: "numeric" })}</span>
+            <span className="text-xs text-muted-foreground">{new Date(v.created_at).toLocaleDateString("en", { month: "short", day: "numeric" })}</span>
           </CardContent></Card>
         ))}
         {(vitals || []).length === 0 && <p className="text-center py-8 text-muted-foreground">No vitals recorded yet</p>}
