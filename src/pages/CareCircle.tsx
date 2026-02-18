@@ -1224,12 +1224,18 @@ function GalleryUploadForm({ groupId }: { groupId: string }) {
         caption: caption.trim() || null,
         uploaded_by: user.id,
       });
-      if (error) throw error;
+      if (error) {
+        if (error.code === "42P01" || error.message?.includes("does not exist") || error.code === "404") {
+           throw new Error("Gallery feature is currently unavailable (table missing)");
+        }
+        throw error;
+      }
       setUrl(""); setCaption("");
       toast({ title: "Photo added!" });
       qc.invalidateQueries({ queryKey: ["care-group-gallery"] });
     } catch (e: any) {
-      toast({ title: "Failed to add photo", description: e.message, variant: "destructive" });
+      console.error("Gallery upload error:", e);
+      toast({ title: "Failed to add photo", description: e.message || "Please try again later", variant: "destructive" });
     } finally {
       setSaving(false);
     }
