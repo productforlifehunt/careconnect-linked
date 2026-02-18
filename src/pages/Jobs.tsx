@@ -35,15 +35,18 @@ export default function Jobs() {
     createJob.mutate({
       title: newJob.title,
       description: newJob.description,
-      service_type: newJob.service_type || undefined,
-      hourly_rate: newJob.hourly_rate ? parseFloat(newJob.hourly_rate) : undefined,
-      location: newJob.location || undefined,
+      service_type: newJob.service_type || "",
+      hourly_rate: newJob.hourly_rate ? parseFloat(newJob.hourly_rate) : 0,
+      location: newJob.location || "",
       job_source_type: newJob.job_source_type,
     }, {
       onSuccess: () => {
         setNewJob({ title: "", description: "", service_type: "", hourly_rate: "", location: "", job_source_type: "general" });
         setCreateOpen(false);
         toast({ title: "Job posted successfully" });
+      },
+      onError: (err: any) => {
+        toast({ title: "Failed to post job", description: err?.message || "Please try again", variant: "destructive" });
       },
     });
   };
@@ -55,6 +58,9 @@ export default function Jobs() {
         setCoverLetter("");
         setApplyOpen(null);
         toast({ title: "Application submitted!" });
+      },
+      onError: (err: any) => {
+        toast({ title: "Failed to apply", description: err?.message || "Please try again", variant: "destructive" });
       },
     });
   };
