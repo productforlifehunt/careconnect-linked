@@ -37,14 +37,14 @@ export default function Notifications() {
   };
 
   const handleAccept = (inv: any) => {
-    acceptInvitation.mutate({ id: inv.id, care_group_id: inv.care_group_id }, {
+    acceptInvitation.mutate({ id: inv.id, care_group_id: inv.care_group_id, source: inv.source }, {
       onSuccess: () => toast({ title: "Joined group!", description: `You've joined ${inv.group?.name || "the care group"}` }),
       onError: (err: any) => toast({ title: "Failed to join", description: err.message, variant: "destructive" }),
     });
   };
 
-  const handleDecline = (invId: string) => {
-    declineInvitation.mutate(invId, {
+  const handleDecline = (inv: any) => {
+    declineInvitation.mutate({ id: inv.id, source: inv.source }, {
       onSuccess: () => toast({ title: "Invitation declined" }),
     });
   };
@@ -94,7 +94,7 @@ export default function Notifications() {
                       <Button size="sm" variant="coral" onClick={() => handleAccept(inv)} disabled={acceptInvitation.isPending}>
                         <Check className="h-3.5 w-3.5 mr-1" /> Accept
                       </Button>
-                      <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => handleDecline(inv.id)} disabled={declineInvitation.isPending}>
+                      <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => handleDecline(inv)} disabled={declineInvitation.isPending}>
                         <X className="h-3.5 w-3.5" />
                       </Button>
                     </div>

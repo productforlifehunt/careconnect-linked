@@ -23,7 +23,7 @@ import {
   useEmergencyContacts, useCreateEmergencyContact, useDeleteEmergencyContact,
   useActivityLog, useCreateActivityLog,
   useSafeZones, useCreateSafeZone, useDeleteSafeZone,
-  useCaredOneDocuments,
+  useCaredOneDocuments, useCreateCaredOneDocument, useDeleteCaredOneDocument,
 } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 
@@ -426,11 +426,11 @@ function MedicineCard({ caredOneId }: { caredOneId: string }) {
                               </div>
                             </div>
                             <div className="flex gap-1.5 shrink-0 ml-2">
-                              <Button size="sm" variant="outline" className="h-8 text-xs border-green-200 text-green-700 hover:bg-green-50 hover:text-green-800"
+                              <Button size="sm" variant="outline" className="h-8 text-xs border-success/30 text-success hover:bg-success/10"
                                 onClick={() => logMed.mutate({ medicine_id: med.id, status: "taken" }, { onSuccess: () => toast({ title: `${med.name} marked as taken ✓` }) })}>
                                 <Check className="h-3 w-3 mr-1" /> Taken
                               </Button>
-                              <Button size="sm" variant="ghost" className="h-8 text-xs text-amber-600 hover:bg-amber-50"
+                              <Button size="sm" variant="ghost" className="h-8 text-xs text-warning hover:bg-warning/10"
                                 onClick={() => logMed.mutate({ medicine_id: med.id, status: "skipped" }, { onSuccess: () => toast({ title: `${med.name} skipped` }) })}>
                                 <SkipForward className="h-3 w-3 mr-1" /> Skip
                               </Button>
@@ -460,11 +460,11 @@ function MedicineCard({ caredOneId }: { caredOneId: string }) {
                     {med.note && <p className="text-xs text-muted-foreground mt-1 italic">{med.note}</p>}
                   </div>
                   <div className="flex gap-1 shrink-0">
-                    <Button size="sm" variant="outline" className="text-green-700 border-green-200" onClick={() => logMed.mutate({ medicine_id: med.id, status: "taken" }, { onSuccess: () => toast({ title: "Taken ✓" }) })}>
+                    <Button size="sm" variant="outline" className="border-success/30 text-success hover:bg-success/10" onClick={() => logMed.mutate({ medicine_id: med.id, status: "taken" }, { onSuccess: () => toast({ title: "Taken ✓" }) })}>
                       <Check className="h-3 w-3 mr-1" /> Taken
                     </Button>
-                    <Button size="sm" variant="ghost" className="text-amber-600" onClick={() => logMed.mutate({ medicine_id: med.id, status: "skipped" }, { onSuccess: () => toast({ title: "Skipped" }) })}>Skip</Button>
-                    <Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => { if (confirm(`Delete ${med.name}?`)) deleteMed.mutate(med.id); }}><Trash2 className="h-3.5 w-3.5" /></Button>
+                    <Button size="sm" variant="ghost" className="text-warning hover:bg-warning/10" onClick={() => logMed.mutate({ medicine_id: med.id, status: "skipped" }, { onSuccess: () => toast({ title: "Skipped" }) })}>Skip</Button>
+                    <Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => deleteMed.mutate(med.id, { onSuccess: () => toast({ title: `${med.name} deleted` }) })}><Trash2 className="h-3.5 w-3.5" /></Button>
                   </div>
                 </div>
               </CardContent>
@@ -753,7 +753,7 @@ function GoalsView({ planId }: { planId: string }) {
       <div className="space-y-2">
         {(goals || []).map((g: any) => (
           <div key={g.id} className="flex items-center gap-3 p-3 rounded-lg bg-card border cursor-pointer hover:bg-accent/30 transition-colors" onClick={() => updateGoal.mutate({ id: g.id, status: g.status === "completed" ? "pending" : "completed" })}>
-            {g.status === "completed" ? <Check className="h-4 w-4 text-green-600" /> : <div className="h-4 w-4 rounded-full border-2 border-muted-foreground" />}
+            {g.status === "completed" ? <Check className="h-4 w-4 text-success" /> : <div className="h-4 w-4 rounded-full border-2 border-muted-foreground" />}
             <span className={`text-sm ${g.status === "completed" ? "line-through text-muted-foreground" : "text-foreground"}`}>{g.title}</span>
           </div>
         ))}
@@ -928,19 +928,53 @@ function LocationCard({ caredOneId }: { caredOneId: string }) {
 }
 
 // ─── DOCUMENTS ──────────────────────────────────────────────
+const DOC_TYPES = ["Medical Record", "Insurance", "Prescription", "Lab Result", "Legal", "ID", "Emergency Plan", "Other"];
+
 function DocumentsCard({ caredOneId }: { caredOneId: string }) {
+  const { toast } = useToast();
   const { data: docs } = useCaredOneDocuments(caredOneId);
+  const create = useCreateCaredOneDocument();
+  const del = useDeleteCaredOneDocument();
+  const [form, setForm] = useState({ title: "", document_type: "Medical Record", file_url: "", notes: "" });
+
   return (
     <div>
       <h2 className="text-lg font-bold text-foreground mb-4">Documents</h2>
+      <Card className="border-transparent card-elevated mb-6"><CardContent className="p-5 space-y-3">
+        <Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="Document title (e.g. Blood Test Results)" />
+        <div className="grid grid-cols-2 gap-3">
+          <Select value={form.document_type} onValueChange={v => setForm(p => ({ ...p, document_type: v }))}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>{DOC_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+          </Select>
+          <Input value={form.file_url} onChange={e => setForm(p => ({ ...p, file_url: e.target.value }))} placeholder="Link URL (optional)" />
+        </div>
+        <Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Notes (optional)" />
+        <Button variant="coral" className="w-full" onClick={() => {
+          if (!form.title) return;
+          create.mutate({ user_id: caredOneId, title: form.title, document_type: form.document_type, file_url: form.file_url || undefined, notes: form.notes || undefined }, {
+            onSuccess: () => { setForm({ title: "", document_type: "Medical Record", file_url: "", notes: "" }); toast({ title: "Document added" }); }
+          });
+        }} disabled={create.isPending || !form.title}>Add Document</Button>
+      </CardContent></Card>
       <div className="space-y-2">
         {(docs || []).map((d: any) => (
           <Card key={d.id} className="border-transparent card-elevated"><CardContent className="p-3 flex justify-between items-center">
-            <div><h4 className="font-medium text-foreground text-sm">{d.title || d.file_name || "Document"}</h4><p className="text-xs text-muted-foreground">{d.document_type || "General"} · {new Date(d.created_at).toLocaleDateString()}</p></div>
-            {d.file_url && <Button variant="outline" size="sm" asChild><a href={d.file_url} target="_blank" rel="noopener">View</a></Button>}
+            <div className="min-w-0">
+              <h4 className="font-medium text-foreground text-sm">{d.title || d.file_name || "Document"}</h4>
+              <div className="flex items-center gap-2 mt-0.5">
+                <Badge variant="secondary" className="text-[10px]">{d.document_type || "General"}</Badge>
+                <span className="text-[10px] text-muted-foreground">{new Date(d.created_at).toLocaleDateString()}</span>
+              </div>
+              {d.notes && <p className="text-xs text-muted-foreground mt-0.5">{d.notes}</p>}
+            </div>
+            <div className="flex gap-1 shrink-0 ml-2">
+              {d.file_url && <Button variant="outline" size="sm" asChild><a href={d.file_url} target="_blank" rel="noopener">View</a></Button>}
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => del.mutate(d.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+            </div>
           </CardContent></Card>
         ))}
-        {(docs || []).length === 0 && <p className="text-center py-8 text-muted-foreground">No documents uploaded yet</p>}
+        {(docs || []).length === 0 && <p className="text-center py-8 text-muted-foreground">No documents added yet</p>}
       </div>
     </div>
   );
@@ -978,7 +1012,7 @@ function VisitLogCard({ caredOneId }: { caredOneId: string }) {
         <Textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="What happened during the visit? Any observations or concerns..." rows={3} />
         <Button variant="coral" className="w-full" onClick={() => {
           create.mutate(
-            { user_id: caredOneId, activity_type: form.activity_type, description: form.description || undefined, duration_minutes: form.duration_minutes ? parseInt(form.duration_minutes) : undefined },
+            { cared_one_id: caredOneId, activity_type: form.activity_type, description: form.description || undefined, duration_minutes: form.duration_minutes ? parseInt(form.duration_minutes) : undefined },
             { onSuccess: () => { setForm({ activity_type: "in_person", description: "", duration_minutes: "" }); toast({ title: "Visit logged ✓" }); } }
           );
         }} disabled={create.isPending}>Log Visit</Button>

@@ -903,40 +903,65 @@ export function useCreateUserCaredOne() {
 }
 
 // ─── My Pending Group Invitations ───────────────────────────
+// ─── My Pending Group Invitations ───────────────────────────
+// Covers both: (a) email invitations from care_group_invitation table
+//              (b) direct membership rows with invitation_status='pending' (cared ones added without skip)
 export function useMyPendingInvitations() {
   return useQuery({
     queryKey: ["my-pending-invitations"],
     queryFn: async () => {
       const userId = await getCurrentUserId();
       if (!userId) return [];
-      // Get current user's email
-      const { data: profile } = await careDb
-        .from("profile")
-        .select("email")
-        .eq("id", userId)
-        .single();
-      if (!profile?.email) return [];
-      const { data, error } = await careDb
-        .from("care_group_invitation")
-        .select("*")
-        .eq("invitee_email", profile.email)
-        .eq("status", "pending")
-        .order("created_at", { ascending: false });
-      if (error) {
-        console.warn("Failed to fetch my invitations:", error.message);
-        return [];
+
+      // (a) Email invitations
+      const { data: profile } = await careDb.from("profile").select("email").eq("id", userId).single();
+      const emailInvitations: any[] = [];
+      if (profile?.email) {
+        const { data, error } = await careDb
+          .from("care_group_invitation")
+          .select("*")
+          .eq("invitee_email", profile.email)
+          .eq("status", "pending")
+          .order("created_at", { ascending: false });
+        if (!error && data) emailInvitations.push(...data);
       }
-      // Fetch group details
-      const groupIds = [...new Set((data || []).map((i: any) => i.care_group_id).filter(Boolean))];
+
+      // (b) Direct pending member rows (e.g. cared ones added without skip)
+      const { data: pendingMemberships, error: mErr } = await careDb
+        .from("care_group_member")
+        .select("id, group_id, created_at")
+        .eq("user_id", userId)
+        .eq("invitation_status", "pending");
+
+      const allGroupIds = [
+        ...emailInvitations.map((i: any) => i.care_group_id),
+        ...((pendingMemberships || []).map((m: any) => m.group_id)),
+      ].filter(Boolean);
+
       let groupMap: Record<string, any> = {};
-      if (groupIds.length > 0) {
-        const { data: groups } = await careDb
-          .from("care_group")
-          .select("id, name, description")
-          .in("id", groupIds);
+      if (allGroupIds.length > 0) {
+        const uniqueIds = [...new Set(allGroupIds)];
+        const { data: groups } = await careDb.from("care_group").select("id, name, description").in("id", uniqueIds);
         (groups || []).forEach((g: any) => { groupMap[g.id] = g; });
       }
-      return (data || []).map((i: any) => ({ ...i, group: groupMap[i.care_group_id] || null }));
+
+      const emailInvRows = emailInvitations.map((i: any) => ({
+        id: i.id,
+        care_group_id: i.care_group_id,
+        created_at: i.created_at,
+        source: "invitation" as const,
+        group: groupMap[i.care_group_id] || null,
+      }));
+
+      const memberRows = (pendingMemberships || []).map((m: any) => ({
+        id: m.id,
+        care_group_id: m.group_id,
+        created_at: m.created_at,
+        source: "membership" as const,
+        group: groupMap[m.group_id] || null,
+      }));
+
+      return [...emailInvRows, ...memberRows].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     },
   });
 }
@@ -944,20 +969,38 @@ export function useMyPendingInvitations() {
 export function useAcceptInvitation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (invitation: { id: string; care_group_id: string }) => {
+    mutationFn: async (invitation: { id: string; care_group_id: string; source?: "invitation" | "membership" }) => {
       const userId = await getCurrentUserId();
       if (!userId) throw new Error("Not authenticated");
-      // Update invitation status
-      const { error: invErr } = await careDb
-        .from("care_group_invitation")
-        .update({ status: "accepted" })
-        .eq("id", invitation.id);
-      if (invErr) throw invErr;
-      // Create member row
-      const { error: memErr } = await careDb
-        .from("care_group_member")
-        .insert({ group_id: invitation.care_group_id, user_id: userId, invitation_status: "accepted" });
-      if (memErr) throw memErr;
+
+      if (invitation.source === "membership") {
+        // Just update the membership row to accepted
+        const { error } = await careDb
+          .from("care_group_member")
+          .update({ invitation_status: "accepted" })
+          .eq("id", invitation.id);
+        if (error) throw error;
+      } else {
+        // Update invitation status
+        const { error: invErr } = await careDb
+          .from("care_group_invitation")
+          .update({ status: "accepted" })
+          .eq("id", invitation.id);
+        if (invErr) throw invErr;
+        // Create member row if not exists
+        const { data: existing } = await careDb
+          .from("care_group_member")
+          .select("id")
+          .eq("group_id", invitation.care_group_id)
+          .eq("user_id", userId)
+          .maybeSingle();
+        if (!existing) {
+          const { error: memErr } = await careDb
+            .from("care_group_member")
+            .insert({ group_id: invitation.care_group_id, user_id: userId, invitation_status: "accepted" });
+          if (memErr) throw memErr;
+        }
+      }
       // Increment member_count
       try {
         const { data: grp } = await careDb.from("care_group").select("member_count").eq("id", invitation.care_group_id).single();
@@ -975,12 +1018,18 @@ export function useAcceptInvitation() {
 export function useDeclineInvitation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (invitationId: string) => {
-      const { error } = await careDb
-        .from("care_group_invitation")
-        .update({ status: "declined" })
-        .eq("id", invitationId);
-      if (error) throw error;
+    mutationFn: async ({ id, source }: { id: string; source?: "invitation" | "membership" }) => {
+      if (source === "membership") {
+        // Delete the pending member row (they don't want to join)
+        const { error } = await careDb.from("care_group_member").delete().eq("id", id);
+        if (error) throw error;
+      } else {
+        const { error } = await careDb
+          .from("care_group_invitation")
+          .update({ status: "declined" })
+          .eq("id", id);
+        if (error) throw error;
+      }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["my-pending-invitations"] }),
   });
@@ -1473,7 +1522,7 @@ export function useActivityLog(caredOneId: string | null) {
       const { data, error } = await careDb
         .from("activity_log")
         .select("*")
-        .eq("user_id", caredOneId)
+        .eq("cared_one_id", caredOneId)
         .order("created_at", { ascending: false })
         .limit(50);
       if (error) throw error;
@@ -1486,7 +1535,7 @@ export function useActivityLog(caredOneId: string | null) {
 export function useCreateActivityLog() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (log: { user_id: string; activity_type: string; description?: string; duration_minutes?: number }) => {
+    mutationFn: async (log: { cared_one_id: string; activity_type: string; description?: string; duration_minutes?: number }) => {
       const userId = await getCurrentUserId();
       if (!userId) throw new Error("Not authenticated");
       const { error } = await careDb
@@ -1495,6 +1544,45 @@ export function useCreateActivityLog() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["activity-log"] }),
+  });
+}
+
+export function useDeleteTask() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await careDb.from("care_task").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-tasks"] }),
+  });
+}
+
+export function useLeaveGroup() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ groupId, userId }: { groupId: string; userId: string }) => {
+      const { data: member } = await careDb
+        .from("care_group_member")
+        .select("id, is_owner")
+        .eq("group_id", groupId)
+        .eq("user_id", userId)
+        .single();
+      if (!member) throw new Error("Not a member");
+      if (member.is_owner) throw new Error("Owners cannot leave. Transfer ownership first.");
+      const { error } = await careDb.from("care_group_member").delete().eq("id", member.id);
+      if (error) throw error;
+      try {
+        const { data: g } = await careDb.from("care_group").select("member_count").eq("id", groupId).single();
+        if (g && (g as any).member_count > 0) {
+          await careDb.from("care_group").update({ member_count: (g as any).member_count - 1 }).eq("id", groupId);
+        }
+      } catch (_) { /* ignore */ }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["care-groups"] });
+      qc.invalidateQueries({ queryKey: ["care-group-members"] });
+    },
   });
 }
 
@@ -1794,5 +1882,31 @@ export function useCaredOneDocuments(caredOneId: string | null) {
       return (data || []) as any[];
     },
     enabled: !!caredOneId,
+  });
+}
+
+export function useCreateCaredOneDocument() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (doc: { user_id: string; title: string; document_type?: string; file_url?: string; notes?: string }) => {
+      const userId = await getCurrentUserId();
+      if (!userId) throw new Error("Not authenticated");
+      const { error } = await careDb
+        .from("cared_one_document")
+        .insert({ ...doc, uploaded_by: userId });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["cared-one-documents"] }),
+  });
+}
+
+export function useDeleteCaredOneDocument() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await careDb.from("cared_one_document").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["cared-one-documents"] }),
   });
 }
