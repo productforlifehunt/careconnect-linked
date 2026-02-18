@@ -1248,7 +1248,7 @@ export function useMedicineLogs(medicineId: string | null) {
         .from("medicine_log")
         .select("*")
         .eq("medicine_id", medicineId)
-        .order("logged_at", { ascending: false })
+        .order("created_at", { ascending: false })
         .limit(30);
       if (error) throw error;
       return (data || []) as any[];
@@ -1265,7 +1265,7 @@ export function useLogMedicine() {
       if (!userId) throw new Error("Not authenticated");
       const { error } = await careDb
         .from("medicine_log")
-        .insert({ ...log, logged_by: userId, logged_at: new Date().toISOString() });
+        .insert({ ...log, logged_by: userId });
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["medicine-logs"] }),
@@ -1282,7 +1282,7 @@ export function useHealthVitals(caredOneId: string | null) {
         .from("health_vital")
         .select("*")
         .eq("user_id", caredOneId)
-        .order("recorded_at", { ascending: false })
+        .order("created_at", { ascending: false })
         .limit(50);
       if (error) throw error;
       return (data || []) as any[];
@@ -1299,7 +1299,7 @@ export function useCreateHealthVital() {
       if (!userId) throw new Error("Not authenticated");
       const { error } = await careDb
         .from("health_vital")
-        .insert({ ...vital, recorded_by: userId, recorded_at: new Date().toISOString() });
+        .insert({ ...vital, recorded_by: userId });
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["health-vitals"] }),
