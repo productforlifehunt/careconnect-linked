@@ -92,6 +92,12 @@ export default function Bookings() {
           rating_average: Math.round(avg * 10) / 10,
           rating_count: existing.length,
         }).eq("id", reviewBooking.provider_id);
+      } else {
+        // First review
+        await careDb.from("profile").update({
+          rating_average: reviewRating,
+          rating_count: 1,
+        }).eq("id", reviewBooking.provider_id);
       }
       toast({ title: "Review submitted! Thank you." });
       setReviewOpen(false);
