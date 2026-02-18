@@ -363,6 +363,22 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
     });
   }, [drawnPoints, cornerRadii, selectedVertex, flashRed, drawMode, zoneForm.zone_type, zoneForm.category]);
 
+  // ─── Radius preview layer (while zone form is open in radius mode)
+  const renderRadiusPreview = useCallback(async () => {
+    const Lx = await getL();
+    const map = leafletMapRef.current;
+    if (!map) return;
+    drawLayersRef.current.forEach(l => { try { l.remove(); } catch (_) {} });
+    drawLayersRef.current = [];
+    const lat = parseFloat(zoneForm.latitude);
+    const lng = parseFloat(zoneForm.longitude);
+    if (isNaN(lat) || isNaN(lng)) return;
+    const color = zoneForm.zone_type === "danger" ? "#EF4444" : (CATEGORY_CONFIG[zoneForm.category]?.color || "#10B981");
+    const c = Lx.circle([lat, lng], { radius: zoneForm.radius, color, fillColor: color, fillOpacity: 0.2, weight: 2, dashArray: "4,4" }).addTo(map);
+    drawLayersRef.current.push(c);
+    try { map.panTo([lat, lng]); } catch (_) {}
+  }, [zoneForm.latitude, zoneForm.longitude, zoneForm.radius, zoneForm.zone_type, zoneForm.category]);
+
   const isMapTab = activeTab === "location" || activeTab === "safezones";
 
   // Init map
@@ -397,10 +413,18 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
     if (mapReadyRef.current) renderMapContent();
   }, [renderMapContent]);
 
-  // Re-render draw layers
+  // Re-render draw layers (polygon editing + radius preview)
   useEffect(() => {
-    if (mapReadyRef.current && showZoneForm && zoneForm.shape_type === "polygon") renderDrawLayers();
-  }, [renderDrawLayers, showZoneForm, zoneForm.shape_type, drawMode]);
+    if (!mapReadyRef.current) return;
+    if (!showZoneForm) {
+      // Clear draw layers when form closes
+      drawLayersRef.current.forEach(l => { try { l.remove(); } catch (_) {} });
+      drawLayersRef.current = [];
+      return;
+    }
+    if (zoneForm.shape_type === "polygon") renderDrawLayers();
+    else renderRadiusPreview();
+  }, [renderDrawLayers, renderRadiusPreview, showZoneForm, zoneForm.shape_type, zoneForm.latitude, zoneForm.longitude, zoneForm.radius, drawMode]);
 
   // Cleanup on unmount
   useEffect(() => () => {
