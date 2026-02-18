@@ -1892,6 +1892,7 @@ export function useSafeZones(caredOneId: string | null) {
         .from("safe_zone")
         .select("*")
         .eq("user_id", caredOneId)
+        .eq("is_active", true)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data || []) as any[];
@@ -1903,10 +1904,42 @@ export function useSafeZones(caredOneId: string | null) {
 export function useCreateSafeZone() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (zone: { user_id: string; name: string; latitude?: number; longitude?: number; radius_meters?: number; zone_type?: string }) => {
-      const { error } = await careDb
-        .from("safe_zone")
-        .insert(zone);
+    mutationFn: async (zone: {
+      user_id: string; name: string; latitude?: number; longitude?: number;
+      radius?: number; radius_meters?: number; zone_type?: string; shape_type?: string;
+      polygon_points?: any; corner_radius?: any; category?: string; color?: string;
+      description?: string; schedule_enabled?: boolean; schedule_start_time?: string;
+      schedule_end_time?: string; schedule_days?: string[]; notify_on_enter?: boolean;
+      notify_on_exit?: boolean; is_active?: boolean;
+    }) => {
+      const userId = await getCurrentUserId();
+      if (!userId) throw new Error("Not authenticated");
+      const { radius_meters, ...rest } = zone;
+      const r = rest.radius ?? radius_meters ?? 200;
+      const { error } = await careDb.from("safe_zone").insert({
+        ...rest,
+        radius: r,
+        is_active: true,
+        created_by: userId,
+        updated_at: new Date().toISOString(),
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["safe-zones"] }),
+  });
+}
+
+export function useUpdateSafeZone() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...zone }: { id: string; [k: string]: any }) => {
+      const { radius_meters, created_by, ...rest } = zone;
+      const r = rest.radius ?? radius_meters;
+      const { error } = await careDb.from("safe_zone").update({
+        ...rest,
+        ...(r !== undefined ? { radius: r } : {}),
+        updated_at: new Date().toISOString(),
+      }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["safe-zones"] }),
@@ -1917,10 +1950,193 @@ export function useDeleteSafeZone() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await careDb.from("safe_zone").delete().eq("id", id);
+      // Soft delete
+      const { error } = await careDb.from("safe_zone").update({ is_active: false, updated_at: new Date().toISOString() }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["safe-zones"] }),
+  });
+}
+
+// ─── Location Share (cared one's GPS) ───────────────────────
+export function useCaredOneLocation(caredOneId: string | null) {
+  return useQuery({
+    queryKey: ["cared-one-location", caredOneId],
+    queryFn: async () => {
+      if (!caredOneId) return null;
+      const { data, error } = await careDb
+        .from("location_share")
+        .select("*")
+        .eq("user_id", caredOneId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data as any;
+    },
+    enabled: !!caredOneId,
+  });
+}
+
+export function useCaredOneLocationHistory(caredOneId: string | null) {
+  return useQuery({
+    queryKey: ["cared-one-location-history", caredOneId],
+    queryFn: async () => {
+      if (!caredOneId) return [];
+      const { data, error } = await careDb
+        .from("location_share")
+        .select("*")
+        .eq("user_id", caredOneId)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!caredOneId,
+  });
+}
+
+export function useShareMyLocation() {
+  return useMutation({
+    mutationFn: async ({ latitude, longitude, accuracy }: { latitude: number; longitude: number; accuracy?: number }) => {
+      const userId = await getCurrentUserId();
+      if (!userId) throw new Error("Not authenticated");
+      const { error } = await careDb.from("location_share").insert({
+        user_id: userId,
+        latitude,
+        longitude,
+        accuracy: accuracy ?? null,
+        timestamp: new Date().toISOString(),
+        is_emergency: false,
+      });
+      if (error) throw error;
+    },
+  });
+}
+
+// ─── Safe Zone Alerts ────────────────────────────────────────
+export function useSafeZoneAlerts(caredOneId: string | null) {
+  return useQuery({
+    queryKey: ["safe-zone-alerts", caredOneId],
+    queryFn: async () => {
+      if (!caredOneId) return [];
+      const { data, error } = await careDb
+        .from("safe_zone_alert")
+        .select("*, safe_zone:safe_zone_id(name, zone_type)")
+        .eq("user_id", caredOneId)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!caredOneId,
+  });
+}
+
+export function useAcknowledgeAlert() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ alertId, userId }: { alertId: string; userId: string }) => {
+      const currentUser = await getCurrentUserId();
+      const { error } = await careDb.from("safe_zone_alert").update({
+        is_read: true,
+        acknowledged_by: currentUser,
+        acknowledged_at: new Date().toISOString(),
+      }).eq("id", alertId);
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => qc.invalidateQueries({ queryKey: ["safe-zone-alerts"] }),
+  });
+}
+
+export function useAcknowledgeAllAlerts() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (caredOneId: string) => {
+      const currentUser = await getCurrentUserId();
+      const { error } = await careDb.from("safe_zone_alert").update({
+        is_read: true,
+        acknowledged_by: currentUser,
+        acknowledged_at: new Date().toISOString(),
+      }).eq("user_id", caredOneId).eq("is_read", false);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["safe-zone-alerts"] }),
+  });
+}
+
+// ─── Location Requests ───────────────────────────────────────
+export function useLocationRequests(caredOneId: string | null) {
+  return useQuery({
+    queryKey: ["location-requests", caredOneId],
+    queryFn: async () => {
+      if (!caredOneId) return [];
+      const userId = await getCurrentUserId();
+      if (!userId) return [];
+      const { data, error } = await careDb
+        .from("location_request")
+        .select("*")
+        .eq("requester_id", userId)
+        .eq("user_id", caredOneId)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!caredOneId,
+  });
+}
+
+export function useSendLocationRequest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ caredOneId, message, isEmergency }: { caredOneId: string; message?: string; isEmergency: boolean }) => {
+      const userId = await getCurrentUserId();
+      if (!userId) throw new Error("Not authenticated");
+      const expireAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+      const { error } = await careDb.from("location_request").insert({
+        user_id: caredOneId,
+        requester_id: userId,
+        status: isEmergency ? "emergency_approved" : "pending",
+        message: message?.trim() || null,
+        expire_at: expireAt,
+        is_emergency: isEmergency,
+      });
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => qc.invalidateQueries({ queryKey: ["location-requests", v.caredOneId] }),
+  });
+}
+
+export function useCancelLocationRequest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ requestId, caredOneId }: { requestId: string; caredOneId: string }) => {
+      const { error } = await careDb.from("location_request").update({
+        status: "cancelled",
+        updated_at: new Date().toISOString(),
+      }).eq("id", requestId);
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => qc.invalidateQueries({ queryKey: ["location-requests", v.caredOneId] }),
+  });
+}
+
+// ─── Cared One Location Sharing Settings (read-only for caregiver) ──
+export function useCaredOneLocationSettings(caredOneId: string | null) {
+  return useQuery({
+    queryKey: ["cared-one-location-settings", caredOneId],
+    queryFn: async () => {
+      if (!caredOneId) return null;
+      const { data, error } = await careDb
+        .from("cared_one_location_sharing")
+        .select("*")
+        .eq("user_id", caredOneId)
+        .maybeSingle();
+      if (error) throw error;
+      return data as any;
+    },
+    enabled: !!caredOneId,
   });
 }
 
