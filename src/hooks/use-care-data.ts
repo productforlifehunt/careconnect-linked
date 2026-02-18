@@ -1171,7 +1171,7 @@ export function useCheckinLogs(caredOneId: string | null) {
       if (!caredOneId) return [];
       const { data, error } = await careDb
         .from("checkin_log")
-        .select("*, reporter:reported_by(id, full_name, avatar_url)")
+        .select("*")
         .eq("user_id", caredOneId)
         .order("created_at", { ascending: false })
         .limit(30);
@@ -1190,7 +1190,7 @@ export function useCreateCheckinLog() {
       if (!userId) throw new Error("Not authenticated");
       const { error } = await careDb
         .from("checkin_log")
-        .insert({ ...log, reported_by: userId });
+        .insert({ ...log });
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["checkin-logs"] }),
