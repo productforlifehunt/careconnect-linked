@@ -669,9 +669,14 @@ function HealthCard({ caredOneId }: { caredOneId: string }) {
         {(vitals || []).map((v: any) => (
           <Card key={v.id} className="border-transparent card-elevated"><CardContent className="p-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="text-xs">{VITAL_TYPES.find(t => t.value === v.vital_type)?.label || v.vital_type}</Badge>
-              <span className="font-semibold text-foreground">{v.value}{v.unit ? ` ${v.unit}` : ""}</span>
-              {v.note && <span className="text-xs text-muted-foreground">· {v.note}</span>}
+            <Badge variant="secondary" className="text-xs">{VITAL_TYPES.find(t => t.value === v.vital_type)?.label || v.vital_type}</Badge>
+              <span className="font-semibold text-foreground">
+                {v.vital_type === "blood_pressure"
+                  ? (v.note ? v.note.split(" - ")[0] : `${v.value} mmHg`)
+                  : `${v.value}${v.unit ? ` ${v.unit}` : ""}`}
+              </span>
+              {v.note && v.vital_type !== "blood_pressure" && <span className="text-xs text-muted-foreground">· {v.note}</span>}
+              {v.vital_type === "blood_pressure" && v.note && v.note.includes(" - ") && <span className="text-xs text-muted-foreground">· {v.note.split(" - ").slice(1).join(" - ")}</span>}
             </div>
             <span className="text-xs text-muted-foreground">{new Date(v.created_at).toLocaleDateString("en", { month: "short", day: "numeric" })}</span>
           </CardContent></Card>

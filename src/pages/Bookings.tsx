@@ -72,15 +72,27 @@ export default function Bookings() {
     try {
       const { data: { session } } = await careAuth.auth.getSession();
       if (!session) throw new Error("Not authenticated");
+      // Insert review (no entity_type column in care_connector schema)
       const { error } = await careDb.from("review").insert({
         reviewer_id: session.user.id,
         entity_id: reviewBooking.provider_id,
-        entity_type: "provider",
         rating: reviewRating,
         comment: reviewComment || null,
-        booking_id: reviewBooking.id,
       });
       if (error) throw error;
+      // Update provider's rating_average and rating_count manually
+      const { data: existing } = await careDb
+        .from("review")
+        .select("rating")
+        .eq("entity_id", reviewBooking.provider_id);
+      if (existing && existing.length > 0) {
+        const total = existing.reduce((sum: number, r: any) => sum + r.rating, 0);
+        const avg = total / existing.length;
+        await careDb.from("profile").update({
+          rating_average: Math.round(avg * 10) / 10,
+          rating_count: existing.length,
+        }).eq("id", reviewBooking.provider_id);
+      }
       toast({ title: "Review submitted! Thank you." });
       setReviewOpen(false);
     } catch (e: any) {
