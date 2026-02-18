@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Star, MapPin, Shield, Clock, CheckCircle, Calendar, MessageSquare, Heart, ArrowLeft, Phone, Loader2 } from "lucide-react";
-import { useProvider, useProviderReviews, useCreateBooking, useToggleSavedProvider, useSavedProviders } from "@/hooks/use-care-data";
+import { useProvider, useProviderReviews, useCreateBooking, useToggleSavedProvider, useSavedProviders, useStartConversation } from "@/hooks/use-care-data";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
@@ -23,6 +23,7 @@ export default function CaregiverProfile() {
   const { data: savedProviders } = useSavedProviders();
   const toggleSaved = useToggleSavedProvider();
   const createBooking = useCreateBooking();
+  const startConversation = useStartConversation();
 
   const [bookingDate, setBookingDate] = useState("");
   const [bookingTime, setBookingTime] = useState("");
@@ -255,8 +256,14 @@ export default function CaregiverProfile() {
                 </DialogContent>
               </Dialog>
 
-              <Button variant="outline" className="w-full mb-3" onClick={() => isAuthenticated ? navigate("/messages") : navigate("/auth")}>
-                <MessageSquare className="mr-2 h-4 w-4" /> Send Message
+              <Button variant="outline" className="w-full mb-3" onClick={() => {
+                if (!isAuthenticated) { navigate("/auth"); return; }
+                startConversation.mutate(caregiver.id, {
+                  onSuccess: () => navigate("/messages", { state: { targetUserId: caregiver.id, targetUserName: caregiver.full_name, targetUserAvatar: caregiver.avatar_url } }),
+                  onError: () => navigate("/messages"),
+                });
+              }} disabled={startConversation.isPending}>
+                <MessageSquare className="mr-2 h-4 w-4" /> {startConversation.isPending ? "Opening..." : "Send Message"}
               </Button>
               <Button variant="ghost" className="w-full">
                 <Phone className="mr-2 h-4 w-4" /> Request Call

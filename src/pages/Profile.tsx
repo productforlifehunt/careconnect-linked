@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMyProfile, useUpdateProfile } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
-import { User, Bell, Shield, CreditCard, MapPin, Camera, Loader2 } from "lucide-react";
+import { User, Bell, Shield, MapPin, Loader2 } from "lucide-react";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -22,6 +22,7 @@ export default function Profile() {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [bio, setBio] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
 
   // Notification preferences
   const [emailNotifs, setEmailNotifs] = useState(true);
@@ -34,6 +35,7 @@ export default function Profile() {
       setPhone(profile.phone_number || "");
       setAddress(profile.address || "");
       setBio(profile.bio || "");
+      setAvatarUrl(profile.avatar_url || "");
       setEmailNotifs(profile.email_notification ?? true);
       setPushNotifs(profile.push_notification ?? true);
     }
@@ -46,6 +48,7 @@ export default function Profile() {
         phone_number: phone,
         address,
         bio,
+        avatar_url: avatarUrl || null,
         email_notification: emailNotifs,
         push_notification: pushNotifs,
       });
@@ -85,9 +88,6 @@ export default function Profile() {
                       <span className="text-primary-foreground text-2xl font-bold">{displayName.charAt(0).toUpperCase()}</span>
                     </div>
                   )}
-                  <button className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-coral flex items-center justify-center">
-                    <Camera className="h-3.5 w-3.5 text-coral-foreground" />
-                  </button>
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold text-foreground">{displayName}</h2>
@@ -114,6 +114,11 @@ export default function Profile() {
                   <Label>Phone</Label>
                   <Input value={phone} onChange={e => setPhone(e.target.value)} />
                 </div>
+              </div>
+              <div>
+                <Label>Avatar URL</Label>
+                <Input value={avatarUrl} onChange={e => setAvatarUrl(e.target.value)} placeholder="https://..." className="mt-1" />
+                <p className="text-xs text-muted-foreground mt-1">Paste a direct image link (e.g. from Gravatar or Unsplash)</p>
               </div>
               <div>
                 <Label>Address</Label>

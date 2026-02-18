@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 export default function Messages() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const location = useLocation();
   const { data: conversations, isLoading: convosLoading } = useConversations();
   const sendMessage = useSendMessage();
   const startConversation = useStartConversation();
@@ -23,6 +25,8 @@ export default function Messages() {
   const [newConvoSearch, setNewConvoSearch] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { data: newConvoResults } = useSearchProfiles(newConvoSearch);
+  // Track if we've handled the incoming navigation state
+  const [handledNavState, setHandledNavState] = useState(false);
 
   // Derive the other user from the conversation
   const getOtherUser = (convo: any) => {
@@ -30,9 +34,29 @@ export default function Messages() {
     return convo.participant_1?.id === user.id ? convo.participant_2 : convo.participant_1;
   };
 
-  // Auto-select first conversation
+  // If navigated from caregiver profile, auto-open/start that conversation
   useEffect(() => {
-    if (conversations && conversations.length > 0 && !selectedConvoId) {
+    const navState = location.state as any;
+    if (navState?.targetUserId && !handledNavState) {
+      setHandledNavState(true);
+      const targetUser = {
+        id: navState.targetUserId,
+        full_name: navState.targetUserName,
+        avatar_url: navState.targetUserAvatar,
+      };
+      startConversation.mutate(navState.targetUserId, {
+        onSuccess: (convoId: string) => {
+          setSelectedConvoId(convoId);
+          setSelectedOtherUser(targetUser);
+        },
+      });
+    }
+  }, [location.state, handledNavState]);
+
+  // Auto-select first conversation (only if no conversation is selected and not handling nav state)
+  useEffect(() => {
+    const navState = location.state as any;
+    if (conversations && conversations.length > 0 && !selectedConvoId && !navState?.targetUserId) {
       const first = conversations[0];
       setSelectedConvoId(first.id);
       setSelectedOtherUser(getOtherUser(first));
@@ -54,8 +78,9 @@ export default function Messages() {
 
   const handleStartConversation = (person: any) => {
     startConversation.mutate(person.id, {
-      onSuccess: () => {
+      onSuccess: (convoId: string) => {
         setSelectedOtherUser(person);
+        setSelectedConvoId(convoId);
         setNewConvoOpen(false);
         setNewConvoSearch("");
       },
