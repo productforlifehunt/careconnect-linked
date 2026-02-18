@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Briefcase, Plus, MapPin, Clock, DollarSign, Search, Loader2, Send, User,
+  Briefcase, Plus, MapPin, Search, Loader2, Send, User,
 } from "lucide-react";
 import { useJobPostings, useCreateJobPosting, useApplyToJob, useMyJobApplications } from "@/hooks/use-care-data";
 import { useAuth } from "@/contexts/AuthContext";
@@ -36,7 +36,6 @@ export default function Jobs() {
       title: newJob.title,
       description: newJob.description,
       service_type: newJob.service_type || "",
-      hourly_rate: newJob.hourly_rate ? parseFloat(newJob.hourly_rate) : 0,
       location: newJob.location || "",
       job_source_type: newJob.job_source_type,
     }, {
@@ -94,12 +93,7 @@ export default function Jobs() {
               <DialogHeader><DialogTitle>Post a Care Job</DialogTitle></DialogHeader>
               <div className="space-y-4 mt-2">
                 <div><Label>Job Title *</Label><Input value={newJob.title} onChange={e => setNewJob(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Part-time caregiver needed" /></div>
-                <div><Label>Description *</Label><Textarea value={newJob.description} onChange={e => setNewJob(p => ({ ...p, description: e.target.value }))} placeholder="Describe the care needs, schedule, and requirements..." rows={4} /></div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Service Type</Label><Input value={newJob.service_type} onChange={e => setNewJob(p => ({ ...p, service_type: e.target.value }))} placeholder="e.g. Senior Care" /></div>
-                  <div><Label>Hourly Rate ($)</Label><Input type="number" value={newJob.hourly_rate} onChange={e => setNewJob(p => ({ ...p, hourly_rate: e.target.value }))} placeholder="25" /></div>
-                </div>
-                <div><Label>Location</Label><Input value={newJob.location} onChange={e => setNewJob(p => ({ ...p, location: e.target.value }))} placeholder="City, State" /></div>
+                <div><Label>Description *</Label><Textarea value={newJob.description} onChange={e => setNewJob(p => ({ ...p, description: e.target.value }))} placeholder="Describe the care needs, schedule, requirements, rate, and location..." rows={5} /></div>
                 <div>
                   <Label>Job Type</Label>
                   <Select value={newJob.job_source_type} onValueChange={v => setNewJob(p => ({ ...p, job_source_type: v }))}>
@@ -158,9 +152,7 @@ export default function Jobs() {
                     </div>
                     <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-2">
                       {job.poster?.full_name && <span className="flex items-center gap-1"><User className="h-3 w-3" /> {job.poster.full_name}</span>}
-                      {job.location && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {job.location}</span>}
-                      {job.hourly_rate && <span className="flex items-center gap-1"><DollarSign className="h-3 w-3" /> ${job.hourly_rate}/hr</span>}
-                      {job.service_type && <span className="flex items-center gap-1"><Briefcase className="h-3 w-3" /> {job.service_type}</span>}
+                      {job.poster?.location && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {job.poster.location}</span>}
                     </div>
                   </div>
                   <span className="text-xs text-muted-foreground shrink-0">
@@ -211,11 +203,6 @@ export default function Jobs() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-semibold text-foreground">{app.job?.title || "Job"}</h3>
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
-                      {app.job?.service_type && <span>{app.job.service_type}</span>}
-                      {app.job?.location && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {app.job.location}</span>}
-                      {app.job?.hourly_rate && <span>${app.job.hourly_rate}/hr</span>}
-                    </div>
                   </div>
                   <Badge variant={app.status === "accepted" ? "default" : app.status === "rejected" ? "destructive" : "secondary"}>
                     {app.status}

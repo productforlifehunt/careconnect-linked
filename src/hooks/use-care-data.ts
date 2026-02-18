@@ -1620,9 +1620,23 @@ export function useCreateJobPosting() {
     mutationFn: async (job: { title: string; description: string; job_source_type?: string; service_type?: string; hourly_rate?: number; location?: string; care_recipient_id?: string; linked_task_id?: string; linked_group_id?: string }) => {
       const userId = await getCurrentUserId();
       if (!userId) throw new Error("Not authenticated");
+      // Only include columns that exist on the job_posting table
+      const insertData: Record<string, any> = {
+        title: job.title,
+        description: job.description,
+        posted_by: userId,
+        status: "open",
+        job_source_type: job.job_source_type || "general",
+        location: job.location || "",
+        service_type: job.service_type || "",
+      };
+      // Optional FK columns
+      if (job.care_recipient_id) insertData.care_recipient_id = job.care_recipient_id;
+      if (job.linked_task_id) insertData.linked_task_id = job.linked_task_id;
+      if (job.linked_group_id) insertData.linked_group_id = job.linked_group_id;
       const { error } = await careDb
         .from("job_posting")
-        .insert({ ...job, posted_by: userId, status: "open", job_source_type: job.job_source_type || "general" });
+        .insert(insertData);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["job-postings"] }),
