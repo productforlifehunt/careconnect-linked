@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -729,7 +730,7 @@ export default function CareCircle() {
           {tasksLoading ? <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div> : (
             <div className="space-y-2">
               {pendingTasks.map((t: any) => (
-                <div key={t.id} className="flex items-center gap-3 p-3 rounded-lg bg-card border hover:border-primary/30 transition-colors">
+                <div key={t.id} className="group flex items-center gap-3 p-3 rounded-lg bg-card border hover:border-primary/30 transition-colors">
                   <button onClick={() => toggleTask(t.id, t.status)} className="shrink-0">
                     <Circle className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
                   </button>
@@ -1058,6 +1059,12 @@ export default function CareCircle() {
 
         {/* ═══ GALLERY ═══ */}
         <TabsContent value="gallery" className="mt-4">
+          {/* Upload form */}
+          <Card className="border-transparent card-elevated mb-4">
+            <CardContent className="p-4">
+              <GalleryUploadForm groupId={activeGroupId!} />
+            </CardContent>
+          </Card>
           {(gallery || []).length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {(gallery || []).map((img: any) => (
@@ -1070,8 +1077,7 @@ export default function CareCircle() {
           ) : (
             <div className="text-center py-12">
               <Image className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-muted-foreground">No photos yet</p>
-              <p className="text-sm text-muted-foreground mt-1">Gallery uploads coming soon.</p>
+              <p className="text-muted-foreground">No photos yet. Add an image URL above!</p>
             </div>
           )}
         </TabsContent>
@@ -1154,6 +1160,51 @@ function CheckInsTab({ groupCaredOnes, activeGroupId }: { groupCaredOnes: any[];
           </Card>
         ))}
         {(logs || []).length === 0 && <p className="text-center py-8 text-muted-foreground text-sm">No check-ins yet</p>}
+      </div>
+    </div>
+  );
+}
+
+// ─── Gallery Upload Form ─────────────────────────────────────
+function GalleryUploadForm({ groupId }: { groupId: string }) {
+  const { toast } = useToast();
+  const qc = useQueryClient();
+  const [url, setUrl] = useState("");
+  const [caption, setCaption] = useState("");
+  const [saving, setSaving] = useState(false);
+  const { user } = useAuth();
+
+  const handleAdd = async () => {
+    if (!url.trim() || !groupId || !user?.id) return;
+    setSaving(true);
+    try {
+      const { careDb } = await import("@/integrations/supabase/external-client");
+      const { error } = await careDb.from("care_group_gallery").insert({
+        group_id: groupId,
+        image_url: url.trim(),
+        caption: caption.trim() || null,
+        uploaded_by: user.id,
+      });
+      if (error) throw error;
+      setUrl(""); setCaption("");
+      toast({ title: "Photo added!" });
+      qc.invalidateQueries({ queryKey: ["care-group-gallery"] });
+    } catch (e: any) {
+      toast({ title: "Failed to add photo", description: e.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <p className="text-sm font-medium text-foreground">Add a Photo</p>
+      <Input value={url} onChange={e => setUrl(e.target.value)} placeholder="Image URL (e.g. https://...)" />
+      <div className="flex gap-2">
+        <Input value={caption} onChange={e => setCaption(e.target.value)} placeholder="Caption (optional)" className="flex-1" />
+        <Button size="sm" variant="coral" onClick={handleAdd} disabled={saving || !url.trim()}>
+          {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : "Add"}
+        </Button>
       </div>
     </div>
   );

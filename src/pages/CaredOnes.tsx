@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import {
   Loader2, Plus, Pill, ClipboardCheck, HeartPulse, Lightbulb, Target, FileText,
   Phone, MapPin, FolderOpen, Activity, Trash2, Check, X, ArrowLeft, Clock, SkipForward,
@@ -24,6 +25,7 @@ import {
   useActivityLog, useCreateActivityLog,
   useSafeZones, useCreateSafeZone, useDeleteSafeZone,
   useCaredOneDocuments, useCreateCaredOneDocument, useDeleteCaredOneDocument,
+  useDeleteUserCaredOne,
 } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 
@@ -44,6 +46,7 @@ export default function CaredOnes() {
   const { toast } = useToast();
   const { data: caredOnes, isLoading } = useUserCaredOnes();
   const createUserCaredOne = useCreateUserCaredOne();
+  const deleteUserCaredOne = useDeleteUserCaredOne();
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const [openCard, setOpenCard] = useState<string | null>(null);
 
@@ -67,6 +70,17 @@ export default function CaredOnes() {
         toast({ title: "Cared one added!" });
       },
       onError: (err: any) => toast({ title: "Failed", description: err.message, variant: "destructive" }),
+    });
+  };
+
+  const handleRemoveCaredOne = (id: string, name: string) => {
+    deleteUserCaredOne.mutate(id, {
+      onSuccess: () => {
+        setActiveTab(null);
+        setOpenCard(null);
+        toast({ title: `${name} removed from your cared ones` });
+      },
+      onError: (err: any) => toast({ title: "Failed to remove", description: err.message, variant: "destructive" }),
     });
   };
 
@@ -152,14 +166,35 @@ export default function CaredOnes() {
 
       {caredOnes && caredOnes.length > 0 ? (
         <>
-          <div className="flex gap-2 mb-6 flex-wrap">
-            {caredOnes.map((co: any) => (
-              <button key={co.cared_one_id} onClick={() => { setActiveTab(co.cared_one_id); setOpenCard(null); }}
-                className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${selectedId === co.cared_one_id ? "bg-card border-primary text-foreground shadow-sm" : "bg-transparent border-border text-muted-foreground hover:bg-accent/50"}`}>
-                {co.cared_one?.full_name || co.cared_one?.first_name || "Cared One"}
-                {co.relationship && <span className="text-xs text-muted-foreground ml-1">({co.relationship})</span>}
-              </button>
-            ))}
+          <div className="flex gap-2 mb-6 flex-wrap items-center">
+            {caredOnes.map((co: any) => {
+              const name = co.cared_one?.full_name || co.cared_one?.first_name || "Cared One";
+              return (
+                <div key={co.cared_one_id} className={`group relative flex items-center gap-1 rounded-lg border transition-colors ${selectedId === co.cared_one_id ? "bg-card border-primary shadow-sm" : "bg-transparent border-border hover:bg-accent/50"}`}>
+                  <button onClick={() => { setActiveTab(co.cared_one_id); setOpenCard(null); }} className="px-4 py-2 text-sm font-medium">
+                    {name}
+                    {co.relationship && <span className="text-xs text-muted-foreground ml-1">({co.relationship})</span>}
+                  </button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <button className="pr-2 pl-0 py-2 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive">
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Remove {name}?</AlertDialogTitle>
+                        <AlertDialogDescription>This will remove {name} from your cared ones list. Their data will not be deleted, and you can add them again later.</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleRemoveCaredOne(co.id, name)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Remove</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              );
+            })}
           </div>
           {openCard ? (
             <div>
@@ -592,8 +627,10 @@ function HealthCard({ caredOneId }: { caredOneId: string }) {
 
   const handleSubmit = () => {
     if (!form.value) return;
+    // Blood pressure is stored as text (e.g. "120/80"), other vitals as numeric
+    const numericValue = form.vital_type === "blood_pressure" ? 0 : parseFloat(form.value);
     create.mutate(
-      { user_id: caredOneId, vital_type: form.vital_type, value: parseFloat(form.value), unit: selectedType.unit, note: form.note || undefined },
+      { user_id: caredOneId, vital_type: form.vital_type, value: numericValue, unit: selectedType.unit, note: form.note || undefined, raw_value: form.value } as any,
       { onSuccess: () => { setForm({ vital_type: "blood_pressure", value: "", note: "" }); toast({ title: "Vital recorded ✓" }); } }
     );
   };
@@ -630,7 +667,7 @@ function HealthCard({ caredOneId }: { caredOneId: string }) {
           <Card key={v.id} className="border-transparent card-elevated"><CardContent className="p-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Badge variant="secondary" className="text-xs">{VITAL_TYPES.find(t => t.value === v.vital_type)?.label || v.vital_type}</Badge>
-              <span className="font-semibold text-foreground">{v.value}{v.unit ? ` ${v.unit}` : ""}</span>
+              <span className="font-semibold text-foreground">{v.raw_value || v.value}{v.unit ? ` ${v.unit}` : ""}</span>
               {v.note && <span className="text-xs text-muted-foreground">· {v.note}</span>}
             </div>
             <span className="text-xs text-muted-foreground">{new Date(v.recorded_at).toLocaleDateString("en", { month: "short", day: "numeric" })}</span>
