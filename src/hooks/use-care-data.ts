@@ -1910,3 +1910,43 @@ export function useDeleteCaredOneDocument() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["cared-one-documents"] }),
   });
 }
+
+// ─── Delete User Cared One relationship ─────────────────────
+export function useDeleteUserCaredOne() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await careDb.from("user_cared_one").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["user-cared-ones"] }),
+  });
+}
+
+// ─── Start or get conversation ──────────────────────────────
+export function useStartConversation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (otherUserId: string) => {
+      const userId = await getCurrentUserId();
+      if (!userId) throw new Error("Not authenticated");
+      // Check if conversation already exists
+      const { data: existing } = await careDb
+        .from("conversation")
+        .select("id")
+        .or(
+          `and(participant_1_id.eq.${userId},participant_2_id.eq.${otherUserId}),and(participant_1_id.eq.${otherUserId},participant_2_id.eq.${userId})`
+        )
+        .maybeSingle();
+      if (existing) return existing.id;
+      const { data, error } = await careDb
+        .from("conversation")
+        .insert({ participant_1_id: userId, participant_2_id: otherUserId })
+        .select("id")
+        .single();
+      if (error) throw error;
+      return data.id;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["conversations"] }),
+  });
+}

@@ -2,21 +2,27 @@ import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Send, Search, Phone, Video, MoreVertical, Loader2 } from "lucide-react";
-import { useConversations, useDirectMessages, useSendMessage } from "@/hooks/use-care-data";
+import { Send, Search, Phone, Video, MoreVertical, Loader2, Plus, X } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useConversations, useDirectMessages, useSendMessage, useSearchProfiles, useStartConversation } from "@/hooks/use-care-data";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Messages() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const { data: conversations, isLoading: convosLoading } = useConversations();
   const sendMessage = useSendMessage();
+  const startConversation = useStartConversation();
 
   const [selectedConvoId, setSelectedConvoId] = useState<string | null>(null);
   const [selectedOtherUser, setSelectedOtherUser] = useState<any>(null);
   const [newMessage, setNewMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [newConvoOpen, setNewConvoOpen] = useState(false);
+  const [newConvoSearch, setNewConvoSearch] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { data: newConvoResults } = useSearchProfiles(newConvoSearch);
 
   // Derive the other user from the conversation
   const getOtherUser = (convo: any) => {
@@ -46,6 +52,17 @@ export default function Messages() {
     setNewMessage("");
   };
 
+  const handleStartConversation = (person: any) => {
+    startConversation.mutate(person.id, {
+      onSuccess: () => {
+        setSelectedOtherUser(person);
+        setNewConvoOpen(false);
+        setNewConvoSearch("");
+      },
+      onError: (err: any) => toast({ title: "Failed", description: err.message, variant: "destructive" }),
+    });
+  };
+
   const filteredConvos = (conversations || []).filter((c: any) => {
     const other = getOtherUser(c);
     return other?.full_name?.toLowerCase().includes(searchQuery.toLowerCase());
@@ -56,7 +73,12 @@ export default function Messages() {
       {/* Conversation List */}
       <div className={`w-full md:w-80 border-r flex flex-col bg-card ${selectedConvoId ? "hidden md:flex" : "flex"}`}>
         <div className="p-4 border-b">
-          <h2 className="text-lg font-bold text-foreground mb-3">Messages</h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-bold text-foreground">Messages</h2>
+            <Button variant="ghost" size="icon" onClick={() => setNewConvoOpen(true)} title="New Conversation">
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Search conversations..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9" />
@@ -96,7 +118,12 @@ export default function Messages() {
               </div>
             );
           }) : (
-            <div className="text-center py-8 text-sm text-muted-foreground">No conversations yet</div>
+            <div className="text-center py-8 px-4">
+              <p className="text-sm text-muted-foreground mb-3">No conversations yet</p>
+              <Button size="sm" variant="coral" onClick={() => setNewConvoOpen(true)}>
+                <Plus className="h-3.5 w-3.5 mr-1" /> Start a Conversation
+              </Button>
+            </div>
           )}
         </div>
       </div>
@@ -130,6 +157,11 @@ export default function Messages() {
           <div className="flex-1 overflow-auto p-4 space-y-3 bg-muted/20">
             {msgsLoading ? (
               <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+            ) : (messages || []).length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-center">
+                <p className="text-muted-foreground text-sm">No messages yet.</p>
+                <p className="text-xs text-muted-foreground mt-1">Send a message below to start the conversation!</p>
+              </div>
             ) : (messages || []).map((m: any) => {
               const isMe = m.sender_id === user?.id;
               return (
@@ -162,10 +194,48 @@ export default function Messages() {
           </div>
         </div>
       ) : (
-        <div className="flex-1 hidden md:flex items-center justify-center text-muted-foreground">
-          Select a conversation to start messaging
+        <div className="flex-1 hidden md:flex flex-col items-center justify-center text-muted-foreground gap-3">
+          <p>Select a conversation or start a new one</p>
+          <Button size="sm" variant="coral" onClick={() => setNewConvoOpen(true)}>
+            <Plus className="h-3.5 w-3.5 mr-1" /> New Message
+          </Button>
         </div>
       )}
+
+      {/* New Conversation Dialog */}
+      <Dialog open={newConvoOpen} onOpenChange={(o) => { setNewConvoOpen(o); if (!o) setNewConvoSearch(""); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>New Message</DialogTitle></DialogHeader>
+          <div className="space-y-3 mt-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input value={newConvoSearch} onChange={e => setNewConvoSearch(e.target.value)} placeholder="Search by name or email..." className="pl-9" autoFocus />
+            </div>
+            {newConvoSearch.length >= 2 && (
+              <div className="border rounded-lg max-h-64 overflow-y-auto">
+                {(newConvoResults || []).length > 0 ? (newConvoResults || []).filter((p: any) => p.id !== user?.id).map((p: any) => (
+                  <button key={p.id} className="w-full flex items-center gap-3 p-3 hover:bg-accent text-left border-b last:border-b-0 transition-colors"
+                    onClick={() => handleStartConversation(p)} disabled={startConversation.isPending}>
+                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      {p.avatar_url ? <img src={p.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover" /> : <span className="text-primary text-xs font-medium">{(p.full_name || "?")[0]}</span>}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground">{p.full_name || "No name"}</p>
+                      <p className="text-xs text-muted-foreground">{p.email || p.user_name || ""}</p>
+                    </div>
+                    {startConversation.isPending && <Loader2 className="h-4 w-4 animate-spin ml-auto" />}
+                  </button>
+                )) : (
+                  <p className="p-3 text-sm text-muted-foreground text-center">No users found</p>
+                )}
+              </div>
+            )}
+            {newConvoSearch.length < 2 && (
+              <p className="text-xs text-muted-foreground text-center py-4">Type at least 2 characters to search</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
