@@ -265,9 +265,13 @@ export default function CaregiverProfile() {
               }} disabled={startConversation.isPending}>
                 <MessageSquare className="mr-2 h-4 w-4" /> {startConversation.isPending ? "Opening..." : "Send Message"}
               </Button>
-              <Button variant="ghost" className="w-full">
-                <Phone className="mr-2 h-4 w-4" /> Request Call
-              </Button>
+              {caregiver.phone_number && (
+                <Button variant="ghost" className="w-full" asChild>
+                  <a href={`tel:${caregiver.phone_number}`}>
+                    <Phone className="mr-2 h-4 w-4" /> Call {caregiver.full_name?.split(" ")[0]}
+                  </a>
+                </Button>
+              )}
 
               <div className="mt-6 pt-4 border-t space-y-3 text-sm">
                 <div className="flex items-center gap-2 text-muted-foreground">

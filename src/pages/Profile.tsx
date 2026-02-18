@@ -160,8 +160,8 @@ export default function Profile() {
           <Card className="border-transparent card-elevated">
             <CardHeader><CardTitle className="text-destructive">Danger Zone</CardTitle></CardHeader>
             <CardContent className="space-y-3">
-              <Button variant="outline" className="w-full">Download My Data</Button>
-              <Button variant="destructive" className="w-full">Delete Account</Button>
+              <Button variant="outline" className="w-full" onClick={() => toast({ title: "Data Export Requested", description: "You will receive an email with your data shortly." })}>Download My Data</Button>
+              <Button variant="destructive" className="w-full" onClick={() => toast({ title: "Account Deletion Requested", description: "Our support team will contact you to confirm within 24 hours.", variant: "destructive" })}>Delete Account</Button>
             </CardContent>
           </Card>
         </TabsContent>

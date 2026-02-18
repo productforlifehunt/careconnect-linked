@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,14 +7,60 @@ import { Label } from "@/components/ui/label";
 import { MapPin, Navigation, Clock, Shield, Phone, AlertTriangle, RefreshCw, Loader2 } from "lucide-react";
 import { useLocationShares } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
+import { careDb, careAuth } from "@/integrations/supabase/external-client";
 
 export default function GPSTracking() {
   const { toast } = useToast();
   const { data: locationShares, isLoading, refetch } = useLocationShares();
   const [selectedPerson, setSelectedPerson] = useState<any>(null);
-  const [shareMyLocation, setShareMyLocation] = useState(true);
+  const [shareMyLocation, setShareMyLocation] = useState(false);
   const [geofenceAlerts, setGeofenceAlerts] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [updatingShare, setUpdatingShare] = useState(false);
+
+  // Check if current user has a location_share row
+  useEffect(() => {
+    (async () => {
+      const { data: { session } } = await careAuth.auth.getSession();
+      if (!session) return;
+      const { data } = await careDb.from("location_share").select("is_sharing").eq("user_id", session.user.id).maybeSingle();
+      if (data) setShareMyLocation(data.is_sharing);
+    })();
+  }, []);
+
+  const handleToggleShare = async (checked: boolean) => {
+    setShareMyLocation(checked);
+    setUpdatingShare(true);
+    try {
+      const { data: { session } } = await careAuth.auth.getSession();
+      if (!session) return;
+      const userId = session.user.id;
+      if (checked && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(async (pos) => {
+          const { data: existing } = await careDb.from("location_share").select("id").eq("user_id", userId).maybeSingle();
+          if (existing) {
+            await careDb.from("location_share").update({ is_sharing: true, latitude: pos.coords.latitude, longitude: pos.coords.longitude, updated_at: new Date().toISOString() }).eq("user_id", userId);
+          } else {
+            await careDb.from("location_share").insert({ user_id: userId, is_sharing: true, latitude: pos.coords.latitude, longitude: pos.coords.longitude });
+          }
+          refetch();
+          setUpdatingShare(false);
+          toast({ title: "Location sharing enabled" });
+        }, () => {
+          setUpdatingShare(false);
+          toast({ title: "Could not get location", variant: "destructive" });
+          setShareMyLocation(false);
+        });
+      } else {
+        await careDb.from("location_share").update({ is_sharing: false }).eq("user_id", userId);
+        refetch();
+        setUpdatingShare(false);
+        toast({ title: "Location sharing disabled" });
+      }
+    } catch {
+      setUpdatingShare(false);
+    }
+  };
 
   const people = (locationShares || []).map((ls: any) => ({
     id: ls.id,
@@ -159,11 +205,10 @@ export default function GPSTracking() {
                   <p className="font-mono text-xs text-foreground">{selectedPerson.coordinates.lat?.toFixed(4)}, {selectedPerson.coordinates.lng?.toFixed(4)}</p>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1">
-                    <Navigation className="h-3 w-3 mr-1" /> Directions
-                  </Button>
-                  <Button variant="outline" size="sm" className="flex-1">
-                    <Phone className="h-3 w-3 mr-1" /> Call
+                  <Button variant="outline" size="sm" className="flex-1" asChild>
+                    <a href={`https://www.google.com/maps/dir/?api=1&destination=${selectedPerson.coordinates.lat},${selectedPerson.coordinates.lng}`} target="_blank" rel="noopener noreferrer">
+                      <Navigation className="h-3 w-3 mr-1" /> Directions
+                    </a>
                   </Button>
                 </div>
               </CardContent>
@@ -175,7 +220,7 @@ export default function GPSTracking() {
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <Label className="text-sm">Share my location</Label>
-                <Switch checked={shareMyLocation} onCheckedChange={setShareMyLocation} />
+                <Switch checked={shareMyLocation} onCheckedChange={handleToggleShare} disabled={updatingShare} />
               </div>
               <div className="flex items-center justify-between">
                 <Label className="text-sm">Geofence alerts</Label>
