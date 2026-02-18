@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -43,15 +43,17 @@ export default function ProviderDashboard() {
   const [scheduleLoaded, setScheduleLoaded] = useState(false);
 
   // Load availability into local state once
-  if (availability && availability.length > 0 && !scheduleLoaded) {
-    const loaded: Record<number, { enabled: boolean; start: string; end: string }> = {};
-    for (let i = 0; i < 7; i++) loaded[i] = { enabled: false, start: "09:00", end: "17:00" };
-    (availability || []).filter((a: any) => !a.specific_date).forEach((a: any) => {
-      loaded[a.day_of_week] = { enabled: a.is_available, start: a.start_time || "09:00", end: a.end_time || "17:00" };
-    });
-    setSchedule(loaded);
-    setScheduleLoaded(true);
-  }
+  useEffect(() => {
+    if (availability && availability.length > 0 && !scheduleLoaded) {
+      const loaded: Record<number, { enabled: boolean; start: string; end: string }> = {};
+      for (let i = 0; i < 7; i++) loaded[i] = { enabled: false, start: "09:00", end: "17:00" };
+      (availability || []).filter((a: any) => !a.specific_date).forEach((a: any) => {
+        loaded[a.day_of_week] = { enabled: a.is_available, start: a.start_time || "09:00", end: a.end_time || "17:00" };
+      });
+      setSchedule(loaded);
+      setScheduleLoaded(true);
+    }
+  }, [availability, scheduleLoaded]);
 
   const handleSaveSchedule = () => {
     if (!providerId) return;

@@ -127,7 +127,11 @@ export default function Notifications() {
                 className={`cursor-pointer transition-colors border-transparent ${n.is_read ? "opacity-70" : "card-elevated"}`}
                 onClick={() => {
                   if (!n.is_read) markRead.mutate(n.id);
-                  if (n.link_url) navigate(n.link_url);
+                  // Fix legacy paths
+                  let url = n.link_url;
+                  if (url?.includes("/dashboard/appointments")) url = "/bookings";
+                  if (url?.includes("/dashboard/booking-history")) url = "/bookings";
+                  if (url) navigate(url);
                 }}
               >
                 <CardContent className="p-4 flex items-start gap-3">
