@@ -197,7 +197,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
   const { data: zones, refetch: refetchZones } = useSafeZones(caredOneId);
   const { data: alerts, refetch: refetchAlerts } = useSafeZoneAlerts(caredOneId);
   const { data: locationRequests, refetch: refetchRequests } = useLocationRequests(caredOneId);
-  const { data: locationSettings } = useCaredOneLocationSettings(caredOneId);
+  const { data: locationSettings, refetch: refetchSettings } = useCaredOneLocationSettings(caredOneId);
 
   // ─── Mutations
   const createZone = useCreateSafeZone();
@@ -295,15 +295,15 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
       const zIcon = Lx.divIcon({
         className: "",
         html: zone.zone_type === "danger"
-          ? `<div style="width:18px;height:18px;border-radius:50%;background:#EF4444;border:2px solid white;display:flex;align-items:center;justify-content:center;color:white;font-size:10px;font-weight:bold">✕</div>`
-          : `<div style="width:18px;height:18px;border-radius:50%;background:${color};border:2px solid white;"></div>`,
-        iconSize: [18, 18], iconAnchor: [9, 9],
+          ? `<div style="width:28px;height:28px;border-radius:50%;background:#EF4444;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;color:white;font-size:13px;font-weight:bold;line-height:1">✕</div>`
+          : `<div style="width:28px;height:28px;border-radius:50%;background:${color};border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;"><svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z'/><circle cx='12' cy='10' r='3'/></svg></div>`,
+        iconSize: [28, 28], iconAnchor: [14, 14],
       });
       mapLayersRef.current.push(Lx.marker([zLat, zLng], { icon: zIcon }).addTo(map));
     });
 
     if (bounds.length > 0) {
-      try { map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 }); } catch (_) {}
+      try { map.fitBounds(bounds, { paddingTopLeft: [30, 30], paddingBottomRight: [30, 30], maxZoom: 16 }); } catch (_) {}
     } else {
       map.setView([37.0902, -95.7129], 4);
     }
@@ -327,6 +327,38 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
         color, fillColor: color, fillOpacity: 0.1, weight: 2, dashArray: "4,4",
       }).addTo(map);
       drawLayersRef.current.push(poly);
+    }
+
+    // Edge-click insertion: invisible 18px weight polylines between adjacent vertices
+    if (drawMode === "editing" && drawnPoints.length >= 3) {
+      drawnPoints.forEach((pt, i) => {
+        const j = (i + 1) % drawnPoints.length;
+        const next = drawnPoints[j];
+        const midLat = (pt[0] + next[0]) / 2;
+        const midLng = (pt[1] + next[1]) / 2;
+        const edgeIcon = Lx.divIcon({
+          className: "",
+          html: `<div style="width:12px;height:12px;border-radius:50%;background:white;border:2px solid ${color};opacity:0.7;cursor:copy;"></div>`,
+          iconSize: [12, 12], iconAnchor: [6, 6],
+        });
+        const midMarker = Lx.marker([midLat, midLng], { icon: edgeIcon, zIndexOffset: 500 }).addTo(map);
+        midMarker.on("click", (e: any) => {
+          Lx.DomEvent.stopPropagation(e);
+          const insertAt = i + 1;
+          setDrawnPoints(prev => {
+            const n = [...prev];
+            n.splice(insertAt, 0, [midLat, midLng]);
+            return n;
+          });
+          setCornerRadii(prev => {
+            const n = [...prev];
+            n.splice(insertAt, 0, 0);
+            return n;
+          });
+          setSelectedVertex(insertAt);
+        });
+        drawLayersRef.current.push(midMarker);
+      });
     }
 
     drawnPoints.forEach((pt, i) => {
@@ -634,7 +666,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([refetchLocation(), refetchHistory(), refetchZones(), refetchAlerts(), refetchRequests()]);
+    await Promise.all([refetchLocation(), refetchHistory(), refetchZones(), refetchAlerts(), refetchRequests(), refetchSettings()]);
     setRefreshing(false);
     toast({ title: "Refreshed" });
   };
