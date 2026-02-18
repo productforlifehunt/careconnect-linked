@@ -136,9 +136,7 @@ export default function Bookings() {
                 <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {booking.status === "pending" && <DropdownMenuItem onClick={() => handleStatusUpdate(booking.id, "confirmed")}><Check className="mr-2 h-4 w-4" /> Confirm</DropdownMenuItem>}
-                {["pending", "confirmed"].includes(booking.status) && <DropdownMenuItem onClick={() => handleStatusUpdate(booking.id, "cancelled_by_user")} className="text-destructive"><X className="mr-2 h-4 w-4" /> Cancel</DropdownMenuItem>}
-                {booking.status === "confirmed" && <DropdownMenuItem onClick={() => handleStatusUpdate(booking.id, "completed")}><Check className="mr-2 h-4 w-4" /> Mark Complete</DropdownMenuItem>}
+                {["pending", "confirmed"].includes(booking.status) && <DropdownMenuItem onClick={() => handleStatusUpdate(booking.id, "cancelled_by_user")} className="text-destructive"><X className="mr-2 h-4 w-4" /> Cancel Booking</DropdownMenuItem>}
                 {booking.status === "completed" && <DropdownMenuItem onClick={() => openReview(booking)}><Star className="mr-2 h-4 w-4" /> Leave Review</DropdownMenuItem>}
                 <DropdownMenuItem onClick={() => handleMessage(booking)} disabled={messagingId === booking.provider_id}>
                   <MessageSquare className="mr-2 h-4 w-4" /> Message Provider
