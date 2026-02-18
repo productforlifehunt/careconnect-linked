@@ -30,8 +30,9 @@ import {
   useGroupInvitations, useCancelInvitation,
   useSearchProfiles, useAddCaredOneToGroup,
   useMemberCategories, useCreateMemberCategory, useDeleteMemberCategory,
-  useDeleteTask, useLeaveGroup,
+  useDeleteTask, useLeaveGroup, useCreateJobPosting,
 } from "@/hooks/use-care-data";
+import { Briefcase } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -83,6 +84,7 @@ export default function CareCircle() {
   const createCategory = useCreateMemberCategory();
   const deleteCategory = useDeleteMemberCategory();
   const leaveGroup = useLeaveGroup();
+  const createJob = useCreateJobPosting();
 
   // Local state
   const [addTaskOpen, setAddTaskOpen] = useState(false);
@@ -747,12 +749,29 @@ export default function CareCircle() {
                   </div>
                   <Badge variant="outline" className={priorityColors[t.priority] || ""}>{t.priority}</Badge>
                   {t.category && <Badge variant="secondary" className="text-xs hidden sm:inline-flex">{t.category}</Badge>}
-                  {(isAdmin || t.created_by === user?.id) && (
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive opacity-0 group-hover:opacity-100 hover:bg-destructive/10 shrink-0"
-                      onClick={(e) => { e.stopPropagation(); deleteTask.mutate(t.id, { onSuccess: () => toast({ title: "Task deleted" }) }); }}>
-                      <Trash2 className="h-3.5 w-3.5" />
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-primary opacity-0 group-hover:opacity-100 hover:bg-primary/10"
+                      title="Find help for this task"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        createJob.mutate({
+                          title: t.title,
+                          description: t.description || `Help needed with: ${t.title}`,
+                          job_source_type: "group_task",
+                          linked_task_id: t.id,
+                          linked_group_id: activeGroupId!,
+                          location: user?.location || ""
+                        }, { onSuccess: () => toast({ title: "Posted to Job Board" }) });
+                      }}>
+                      <Briefcase className="h-3.5 w-3.5" />
                     </Button>
-                  )}
+                    {(isAdmin || t.created_by === user?.id) && (
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive opacity-0 group-hover:opacity-100 hover:bg-destructive/10"
+                        onClick={(e) => { e.stopPropagation(); deleteTask.mutate(t.id, { onSuccess: () => toast({ title: "Task deleted" }) }); }}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               ))}
               {completedTasks.length > 0 && (
