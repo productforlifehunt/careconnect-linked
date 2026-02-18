@@ -1540,7 +1540,7 @@ export function useCreateActivityLog() {
       if (!userId) throw new Error("Not authenticated");
       const { error } = await careDb
         .from("activity_log")
-        .insert({ ...log, logged_by: userId });
+        .insert({ ...log, user_id: userId });
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["activity-log"] }),
