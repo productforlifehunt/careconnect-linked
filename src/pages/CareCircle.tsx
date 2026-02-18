@@ -28,6 +28,7 @@ import {
   useGroupInvitations, useCancelInvitation,
   useSearchProfiles, useAddCaredOneToGroup,
   useMemberCategories, useCreateMemberCategory, useDeleteMemberCategory,
+  useDeleteTask, useLeaveGroup,
 } from "@/hooks/use-care-data";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -63,6 +64,7 @@ export default function CareCircle() {
   const { data: memberCategories } = useMemberCategories(activeGroupId);
   const createTask = useCreateTask();
   const updateTaskStatus = useUpdateTaskStatus();
+  const deleteTask = useDeleteTask();
   const createPost = useCreateGroupPost();
   const updatePost = useUpdateGroupPost();
   const deletePost = useDeleteGroupPost();
@@ -76,6 +78,7 @@ export default function CareCircle() {
   const addCaredOneToGroup = useAddCaredOneToGroup();
   const createCategory = useCreateMemberCategory();
   const deleteCategory = useDeleteMemberCategory();
+  const leaveGroup = useLeaveGroup();
 
   // Local state
   const [addTaskOpen, setAddTaskOpen] = useState(false);
@@ -170,12 +173,21 @@ export default function CareCircle() {
       category: newTask.category,
       due_date: newTask.due_date || undefined,
       status: "pending",
+      visibility: newTask.visibility,
     } as any, {
       onSuccess: () => {
         setNewTask({ title: "", description: "", assignee: "", priority: "medium", category: "Daily Living", due_date: "", visibility: "group" });
         setAddTaskOpen(false);
         toast({ title: "Task added" });
       },
+    });
+  };
+
+  const handleLeaveGroup = () => {
+    if (!activeGroupId || !user?.id) return;
+    leaveGroup.mutate({ groupId: activeGroupId, userId: user.id }, {
+      onSuccess: () => { setSelectedGroupId(null); toast({ title: "Left group" }); },
+      onError: (err: any) => toast({ title: "Cannot leave", description: err.message, variant: "destructive" }),
     });
   };
 
@@ -397,6 +409,27 @@ export default function CareCircle() {
               </div>
             )}
             <Button variant="coral" className="w-full" onClick={handleSaveSettings} disabled={updateGroup.isPending || !settingsName.trim()}>Save Changes</Button>
+            {/* Leave Group (non-owners) */}
+            {!isOwner && (
+              <div className="border-t pt-4">
+                <h4 className="text-sm font-medium text-muted-foreground mb-2">Membership</h4>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="w-full text-destructive border-destructive/30 hover:bg-destructive/10">Leave Group</Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Leave this care group?</AlertDialogTitle>
+                      <AlertDialogDescription>You will lose access to all group content. You can rejoin with a join code or invitation.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleLeaveGroup} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Leave Group</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            )}
             {isOwner && (
               <div className="border-t pt-4">
                 <h4 className="text-sm font-medium text-destructive mb-2">Danger Zone</h4>
@@ -696,9 +729,11 @@ export default function CareCircle() {
           {tasksLoading ? <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div> : (
             <div className="space-y-2">
               {pendingTasks.map((t: any) => (
-                <div key={t.id} className="flex items-center gap-3 p-3 rounded-lg bg-card border hover:border-primary/30 transition-colors cursor-pointer" onClick={() => toggleTask(t.id, t.status)}>
-                  <Circle className="h-5 w-5 text-muted-foreground shrink-0" />
-                  <div className="flex-1 min-w-0">
+                <div key={t.id} className="flex items-center gap-3 p-3 rounded-lg bg-card border hover:border-primary/30 transition-colors">
+                  <button onClick={() => toggleTask(t.id, t.status)} className="shrink-0">
+                    <Circle className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
+                  </button>
+                  <div className="flex-1 min-w-0 cursor-pointer" onClick={() => toggleTask(t.id, t.status)}>
                     <p className="text-sm font-medium text-foreground">{t.title}</p>
                     <p className="text-xs text-muted-foreground">
                       {t.assignee_profile?.full_name || "Unassigned"}
@@ -708,15 +743,29 @@ export default function CareCircle() {
                   </div>
                   <Badge variant="outline" className={priorityColors[t.priority] || ""}>{t.priority}</Badge>
                   {t.category && <Badge variant="secondary" className="text-xs hidden sm:inline-flex">{t.category}</Badge>}
+                  {(isAdmin || t.created_by === user?.id) && (
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive opacity-0 group-hover:opacity-100 hover:bg-destructive/10 shrink-0"
+                      onClick={(e) => { e.stopPropagation(); deleteTask.mutate(t.id, { onSuccess: () => toast({ title: "Task deleted" }) }); }}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
                 </div>
               ))}
               {completedTasks.length > 0 && (
                 <>
                   <p className="text-xs font-medium text-muted-foreground pt-3 pb-1">Completed ({completedTasks.length})</p>
                   {completedTasks.map((t: any) => (
-                    <div key={t.id} className="flex items-center gap-3 p-3 rounded-lg bg-card/50 border border-transparent cursor-pointer opacity-60 hover:opacity-80" onClick={() => toggleTask(t.id, t.status)}>
-                      <CheckCircle className="h-5 w-5 text-success shrink-0" />
-                      <p className="text-sm line-through text-muted-foreground flex-1">{t.title}</p>
+                    <div key={t.id} className="flex items-center gap-3 p-3 rounded-lg bg-card/50 border border-transparent opacity-60 hover:opacity-80">
+                      <button onClick={() => toggleTask(t.id, t.status)} className="shrink-0">
+                        <CheckCircle className="h-5 w-5 text-success" />
+                      </button>
+                      <p className="text-sm line-through text-muted-foreground flex-1 cursor-pointer" onClick={() => toggleTask(t.id, t.status)}>{t.title}</p>
+                      {(isAdmin || t.created_by === user?.id) && (
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10 shrink-0"
+                          onClick={() => deleteTask.mutate(t.id, { onSuccess: () => toast({ title: "Task deleted" }) })}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
                     </div>
                   ))}
                 </>
