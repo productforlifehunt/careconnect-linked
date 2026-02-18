@@ -1260,12 +1260,12 @@ export function useMedicineLogs(medicineId: string | null) {
 export function useLogMedicine() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (log: { medicine_id: string; status: string; note?: string }) => {
+    mutationFn: async (log: { medicine_id: string; status: string; note?: string; user_id: string }) => {
       const userId = await getCurrentUserId();
       if (!userId) throw new Error("Not authenticated");
       const { error } = await careDb
         .from("medicine_log")
-        .insert({ ...log, logged_by: userId });
+        .insert({ medicine_id: log.medicine_id, status: log.status, note: log.note, user_id: log.user_id, logged_by: userId, log_date: new Date().toISOString().split('T')[0] });
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["medicine-logs"] }),
@@ -1299,7 +1299,7 @@ export function useCreateHealthVital() {
       if (!userId) throw new Error("Not authenticated");
       const { error } = await careDb
         .from("health_vital")
-        .insert({ ...vital, recorded_by: userId });
+        .insert({ user_id: vital.user_id, vital_type: vital.vital_type, value: vital.value, unit: vital.unit, note: vital.note, recorded_by: userId });
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["health-vitals"] }),
