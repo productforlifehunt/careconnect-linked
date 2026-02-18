@@ -992,7 +992,7 @@ function DocumentsCard({ caredOneId }: { caredOneId: string }) {
         <Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Notes (optional)" />
         <Button variant="coral" className="w-full" onClick={() => {
           if (!form.title) return;
-          create.mutate({ user_id: caredOneId, title: form.title, document_type: form.document_type, file_url: form.file_url || undefined, notes: form.notes || undefined }, {
+          create.mutate({ user_id: caredOneId, title: form.title, document_type: form.document_type, file_url: form.file_url || "", notes: form.notes || undefined }, {
             onSuccess: () => { setForm({ title: "", document_type: "Medical Record", file_url: "", notes: "" }); toast({ title: "Document added" }); }
           });
         }} disabled={create.isPending || !form.title}>Add Document</Button>
