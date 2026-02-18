@@ -1190,7 +1190,7 @@ export function useCreateCheckinLog() {
       if (!userId) throw new Error("Not authenticated");
       const { error } = await careDb
         .from("checkin_log")
-        .insert({ ...log });
+        .insert({ ...log, recorded_by: userId });
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["checkin-logs"] }),
