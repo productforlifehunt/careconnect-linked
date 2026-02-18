@@ -272,10 +272,20 @@ export function useSendMessage() {
           message_type: "text",
         });
       if (error) throw error;
+      // Update conversation last_message_at for DMs
+      if (receiverId) {
+        try {
+          await careDb
+            .from("conversation")
+            .update({ last_message_at: new Date().toISOString() })
+            .or(`and(participant_1_id.eq.${userId},participant_2_id.eq.${receiverId}),and(participant_1_id.eq.${receiverId},participant_2_id.eq.${userId})`);
+        } catch (_) { /* ignore */ }
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["messages"] });
       qc.invalidateQueries({ queryKey: ["group-messages"] });
+      qc.invalidateQueries({ queryKey: ["conversations"] });
     },
   });
 }
@@ -334,14 +344,8 @@ export function useCreateCareGroup() {
         .select()
         .single();
       if (error) throw error;
-      // Auto-add creator as owner member
-      await careDb.from("care_group_member").insert({
-        group_id: data.id,
-        user_id: userId,
-        is_owner: true,
-        is_admin: true,
-        invitation_status: "accepted",
-      });
+      // NOTE: Owner membership row is auto-created by a database trigger.
+      // Do NOT insert a duplicate member row here.
       return data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["care-groups"] }),
