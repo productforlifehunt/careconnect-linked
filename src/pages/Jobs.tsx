@@ -27,7 +27,7 @@ export default function Jobs() {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [applyOpen, setApplyOpen] = useState<string | null>(null);
-  const [newJob, setNewJob] = useState({ title: "", description: "", service_type: "", hourly_rate: "", location: "", job_source_type: "general" });
+  const [newJob, setNewJob] = useState({ title: "", description: "", job_source_type: "general" });
   const [coverLetter, setCoverLetter] = useState("");
 
   const handleCreateJob = () => {
@@ -35,12 +35,10 @@ export default function Jobs() {
     createJob.mutate({
       title: newJob.title,
       description: newJob.description,
-      service_type: newJob.service_type || "",
-      location: newJob.location || "",
       job_source_type: newJob.job_source_type,
     }, {
       onSuccess: () => {
-        setNewJob({ title: "", description: "", service_type: "", hourly_rate: "", location: "", job_source_type: "general" });
+        setNewJob({ title: "", description: "", job_source_type: "general" });
         setCreateOpen(false);
         toast({ title: "Job posted successfully" });
       },

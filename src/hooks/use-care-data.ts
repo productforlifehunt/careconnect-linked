@@ -1617,10 +1617,9 @@ export function useJobPostings(filters?: { source?: string; status?: string }) {
 export function useCreateJobPosting() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (job: { title: string; description: string; job_source_type?: string; service_type?: string; hourly_rate?: number; location?: string; care_recipient_id?: string; linked_task_id?: string; linked_group_id?: string }) => {
+    mutationFn: async (job: { title: string; description: string; job_source_type?: string; location?: string; care_recipient_id?: string; linked_task_id?: string; linked_group_id?: string }) => {
       const userId = await getCurrentUserId();
       if (!userId) throw new Error("Not authenticated");
-      // Only include columns that exist on the job_posting table
       const insertData: Record<string, any> = {
         title: job.title,
         description: job.description,
@@ -1628,9 +1627,8 @@ export function useCreateJobPosting() {
         status: "open",
         job_source_type: job.job_source_type || "general",
         location: job.location || "",
-        service_type: job.service_type || "",
+        start_date: new Date().toISOString().split('T')[0],
       };
-      // Optional FK columns
       if (job.care_recipient_id) insertData.care_recipient_id = job.care_recipient_id;
       if (job.linked_task_id) insertData.linked_task_id = job.linked_task_id;
       if (job.linked_group_id) insertData.linked_group_id = job.linked_group_id;
@@ -1701,7 +1699,7 @@ export function useMyJobApplications() {
       if (jobIds.length > 0) {
         const { data: jobs } = await careDb
           .from("job_posting")
-          .select("id, title, status, service_type, hourly_rate, location")
+          .select("id, title, status, location")
           .in("id", jobIds);
         (jobs || []).forEach((j: any) => { jobMap[j.id] = j; });
       }
