@@ -633,7 +633,7 @@ function HealthCard({ caredOneId }: { caredOneId: string }) {
       ? [form.value, form.note].filter(Boolean).join(" - ")
       : form.note || undefined;
     create.mutate(
-      { user_id: caredOneId, vital_type: form.vital_type, value: numericValue, unit: selectedType.unit, note: noteWithBP },
+      { user_id: caredOneId, vital_type: form.vital_type, value: numericValue, unit: selectedType.unit, note: noteWithBP || undefined },
       { onSuccess: () => { setForm({ vital_type: "blood_pressure", value: "", note: "" }); toast({ title: "Vital recorded ✓" }); } }
     );
   };

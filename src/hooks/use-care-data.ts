@@ -1867,7 +1867,7 @@ export function useDashboardStats() {
 
       const [bookingsRes, msgsRes, tasksRes, groupsRes] = await Promise.all([
         careDb.from("booking").select("id", { count: "exact", head: true }).eq("user_id", userId).in("status", ["confirmed", "pending"]),
-        careDb.from("direct_message").select("id", { count: "exact", head: true }).eq("receiver_id", userId).is("read_at", null),
+        careDb.from("direct_message").select("id", { count: "exact", head: true }).or(`receiver_id.eq.${userId},group_id.not.is.null`).is("read_at", null),
         careDb.from("care_task").select("id", { count: "exact", head: true }).or(`created_by.eq.${userId},assigned_to.eq.${userId}`).neq("status", "completed"),
         careDb.from("care_group_member").select("id", { count: "exact", head: true }).eq("user_id", userId).eq("invitation_status", "accepted"),
       ]);

@@ -6,7 +6,10 @@ import { Bell, CalendarDays, Users, MessageSquare, AlertTriangle, Settings, Load
 import { useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead, useMyPendingInvitations, useAcceptInvitation, useDeclineInvitation } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 
+import { useNavigate } from "react-router-dom";
+
 export default function Notifications() {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { data: notifications, isLoading } = useNotifications();
   const markRead = useMarkNotificationRead();
@@ -21,8 +24,10 @@ export default function Notifications() {
 
   const typeIcons: Record<string, React.ReactNode> = {
     booking: <CalendarDays className="h-5 w-5 text-primary" />,
-    booking_confirmed: <CalendarDays className="h-5 w-5 text-primary" />,
+    booking_confirmed: <Check className="h-5 w-5 text-success" />,
+    booking_approved: <Check className="h-5 w-5 text-success" />,
     booking_request: <CalendarDays className="h-5 w-5 text-primary" />,
+    appointment: <CalendarDays className="h-5 w-5 text-primary" />,
     "care-circle": <Users className="h-5 w-5 text-success" />,
     care_group: <Users className="h-5 w-5 text-success" />,
     task: <Users className="h-5 w-5 text-success" />,
@@ -120,7 +125,10 @@ export default function Notifications() {
               <Card
                 key={n.id}
                 className={`cursor-pointer transition-colors border-transparent ${n.is_read ? "opacity-70" : "card-elevated"}`}
-                onClick={() => !n.is_read && markRead.mutate(n.id)}
+                onClick={() => {
+                  if (!n.is_read) markRead.mutate(n.id);
+                  if (n.link_url) navigate(n.link_url);
+                }}
               >
                 <CardContent className="p-4 flex items-start gap-3">
                   <div className="mt-0.5 shrink-0">{typeIcons[n.type] || <Bell className="h-5 w-5 text-muted-foreground" />}</div>
