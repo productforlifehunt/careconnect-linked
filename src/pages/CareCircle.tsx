@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +39,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 export default function CareCircle() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const { data: groups, isLoading: groupsLoading } = useCareGroups();
   const createGroup = useCreateCareGroup();
@@ -800,7 +802,9 @@ export default function CareCircle() {
                         <p className="text-xs text-muted-foreground">{co.relationship || "Cared One"}</p>
                       </div>
                     </div>
-                    <p className="text-sm text-muted-foreground">View their health cards, medications, and care plans from the Cared Ones page.</p>
+                    <Button variant="outline" size="sm" onClick={() => navigate("/cared-ones")}>
+                      View Health Cards →
+                    </Button>
                   </CardContent>
                 </Card>
               ))}
