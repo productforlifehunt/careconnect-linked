@@ -1171,7 +1171,7 @@ export function useCheckinLogs(caredOneId: string | null) {
       if (!caredOneId) return [];
       const { data, error } = await careDb
         .from("checkin_log")
-        .select("*")
+        .select("*, reporter:recorded_by(id, full_name)")
         .eq("user_id", caredOneId)
         .order("created_at", { ascending: false })
         .limit(30);
