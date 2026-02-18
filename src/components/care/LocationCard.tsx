@@ -9,9 +9,9 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import {
   MapPin, Navigation, RefreshCw, X, Plus, Trash2, Edit2,
-  Bell, BellOff, Clock, Shield, AlertTriangle, CheckCircle2,
+  Bell, Clock, Shield, AlertTriangle, CheckCircle2,
   Home, Building2, GraduationCap, Heart, Target, Ban,
-  Loader2, Send, ChevronDown, ChevronUp, Radio,
+  Loader2, Send, Radio,
 } from "lucide-react";
 import {
   useSafeZones, useCreateSafeZone, useUpdateSafeZone, useDeleteSafeZone,
@@ -23,10 +23,36 @@ import {
 import { careAuth } from "@/integrations/supabase/external-client";
 import { useToast } from "@/hooks/use-toast";
 
-// ─── Leaflet dynamic import to avoid SSR issues ────────────
-let L: any = null;
+// ─── Inject Leaflet CSS once ────────────────────────────────
+if (typeof document !== "undefined" && !document.getElementById("leaflet-css")) {
+  const link = document.createElement("link");
+  link.id = "leaflet-css";
+  link.rel = "stylesheet";
+  link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+  document.head.appendChild(link);
+}
+if (typeof document !== "undefined" && !document.getElementById("pulse-kf")) {
+  const s = document.createElement("style");
+  s.id = "pulse-kf";
+  s.textContent = `@keyframes locPulse{0%,100%{box-shadow:0 0 0 3px rgba(16,185,129,.3)}50%{box-shadow:0 0 0 9px rgba(16,185,129,0)}}`;
+  document.head.appendChild(s);
+}
 
-// ─── Utility: Haversine distance in meters ─────────────────
+// ─── Leaflet singleton ──────────────────────────────────────
+let L: any = null;
+async function getL() {
+  if (L) return L;
+  L = await import("leaflet");
+  delete (L.Icon.Default.prototype as any)._getIconUrl;
+  L.Icon.Default.mergeOptions({
+    iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+    iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+    shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  });
+  return L;
+}
+
+// ─── Haversine distance (meters) ───────────────────────────
 function haversine(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371000;
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -35,7 +61,7 @@ function haversine(lat1: number, lon1: number, lat2: number, lon2: number): numb
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-// ─── Utility: Ray-casting point-in-polygon ─────────────────
+// ─── Ray-casting point-in-polygon ──────────────────────────
 function pointInPolygon(lat: number, lng: number, polygon: [number, number][]): boolean {
   let inside = false;
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
@@ -50,16 +76,16 @@ function pointInPolygon(lat: number, lng: number, polygon: [number, number][]): 
 
 // ─── Zone category config ───────────────────────────────────
 const CATEGORY_CONFIG: Record<string, { color: string; icon: any; label: string }> = {
-  home: { color: "#10B981", icon: Home, label: "Home" },
-  work: { color: "#3B82F6", icon: Building2, label: "Work" },
-  school: { color: "#8B5CF6", icon: GraduationCap, label: "School" },
-  medical: { color: "#EF4444", icon: Heart, label: "Medical" },
-  custom: { color: "#F59E0B", icon: Target, label: "Custom" },
+  home:    { color: "#10B981", icon: Home,          label: "Home" },
+  work:    { color: "#3B82F6", icon: Building2,     label: "Work" },
+  school:  { color: "#8B5CF6", icon: GraduationCap, label: "School" },
+  medical: { color: "#EF4444", icon: Heart,         label: "Medical" },
+  custom:  { color: "#F59E0B", icon: Target,        label: "Custom" },
 };
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-// ─── Check if zone is currently active (schedule-aware) ────
+// ─── Schedule-aware zone activation ────────────────────────
 function isZoneActive(zone: any): boolean {
   if (!zone.schedule_enabled) return true;
   const now = new Date();
@@ -75,12 +101,11 @@ function isZoneActive(zone: any): boolean {
   return curMin >= start || curMin <= end; // overnight
 }
 
-// ─── Check breach for a single zone ───────────────────────
+// ─── Breach check for a single zone ───────────────────────
 function checkZoneBreach(zone: any, lat: number, lng: number): { breached: boolean; distance: number } {
   if (!isZoneActive(zone)) return { breached: false, distance: 0 };
   let inside = false;
   let distance = 0;
-
   if (zone.shape_type === "polygon" && zone.polygon_points?.length >= 3) {
     inside = pointInPolygon(lat, lng, zone.polygon_points);
     distance = haversine(lat, lng, zone.latitude, zone.longitude);
@@ -88,8 +113,6 @@ function checkZoneBreach(zone: any, lat: number, lng: number): { breached: boole
     distance = haversine(lat, lng, zone.latitude, zone.longitude);
     inside = distance <= (zone.radius || 200);
   }
-
-  // safe zone: breach = being outside; danger zone: breach = being inside
   const breached = zone.zone_type === "danger" ? inside : !inside;
   return { breached, distance: Math.round(distance) };
 }
@@ -101,15 +124,40 @@ interface Props {
   caredOneName: string;
 }
 
+// ─── Map container (stable, not unmounted between tabs) ─────
+function MapContainer({ mapRef, showAddButton, onAddZone }: {
+  mapRef: React.RefObject<HTMLDivElement>;
+  showAddButton: boolean;
+  onAddZone: () => void;
+}) {
+  return (
+    <div className="relative mb-4">
+      <div ref={mapRef} style={{ height: 300, borderRadius: 8, overflow: "hidden", background: "hsl(var(--muted))" }} />
+      {showAddButton && (
+        <Button
+          size="sm"
+          className="absolute top-2 right-2 z-[1000] shadow-md bg-primary text-primary-foreground hover:bg-primary/90"
+          onClick={onAddZone}
+        >
+          <Plus className="h-3 w-3 mr-1" /> Add Zone
+        </Button>
+      )}
+    </div>
+  );
+}
+
 export default function LocationCard({ caredOneId, caredOneName }: Props) {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<Tab>("location");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // Single map ref — never unmounted, hidden when not on map tabs
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMapRef = useRef<any>(null);
-  const markersRef = useRef<any[]>([]);
+  const mapLayersRef = useRef<any[]>([]);
+  const mapReadyRef = useRef(false);
 
-  // Queries
+  // ─── Queries
   const { data: currentLocation, refetch: refetchLocation, isLoading: loadingLocation } = useCaredOneLocation(caredOneId);
   const { data: locationHistory, refetch: refetchHistory } = useCaredOneLocationHistory(caredOneId);
   const { data: zones, refetch: refetchZones } = useSafeZones(caredOneId);
@@ -117,7 +165,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
   const { data: locationRequests, refetch: refetchRequests } = useLocationRequests(caredOneId);
   const { data: locationSettings } = useCaredOneLocationSettings(caredOneId);
 
-  // Mutations
+  // ─── Mutations
   const createZone = useCreateSafeZone();
   const updateZone = useUpdateSafeZone();
   const deleteZone = useDeleteSafeZone();
@@ -127,11 +175,11 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
   const cancelRequest = useCancelLocationRequest();
   const shareLocation = useShareMyLocation();
 
-  // Zone form state
+  // ─── Zone form state
   const [showZoneForm, setShowZoneForm] = useState(false);
   const [editingZone, setEditingZone] = useState<any>(null);
   const [zoneForm, setZoneForm] = useState({
-    name: "", zone_type: "safe", category: "home", shape_type: "radius",
+    name: "", zone_type: "safe", category: "home",
     latitude: "", longitude: "", radius: 200,
     description: "", notify_on_enter: true, notify_on_exit: true,
     schedule_enabled: false, schedule_start_time: "08:00", schedule_end_time: "20:00",
@@ -140,13 +188,13 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
   const [pickingOnMap, setPickingOnMap] = useState(false);
   const [gettingGPS, setGettingGPS] = useState(false);
 
-  // Request form state
+  // ─── Request form state
   const [requestMessage, setRequestMessage] = useState("");
   const [isEmergency, setIsEmergency] = useState(false);
   const [emergencyConfirm, setEmergencyConfirm] = useState(false);
   const [sendingRequest, setSendingRequest] = useState(false);
 
-  // Sharing state
+  // ─── Sharing state
   const [sharingMyLocation, setSharingMyLocation] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -156,62 +204,15 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
     });
   }, []);
 
-  // ─── Leaflet map init ──────────────────────────────────────
-  useEffect(() => {
-    if (activeTab !== "location" && activeTab !== "safezones") return;
-    if (!mapRef.current) return;
+  // ─── Render map content (idempotent — clears old layers first)
+  const renderMapContent = useCallback(async () => {
+    const Lx = await getL();
+    const map = leafletMapRef.current;
+    if (!map) return;
 
-    const initMap = async () => {
-      if (!L) {
-        L = await import("leaflet");
-        // Fix default icon paths
-        delete (L.Icon.Default.prototype as any)._getIconUrl;
-        L.Icon.Default.mergeOptions({
-          iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-          iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-          shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-        });
-      }
-
-      if (leafletMapRef.current) {
-        leafletMapRef.current.remove();
-        leafletMapRef.current = null;
-      }
-
-      const map = L.map(mapRef.current, { zoomControl: true, attributionControl: false });
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "© OpenStreetMap contributors",
-        maxZoom: 19,
-      }).addTo(map);
-      leafletMapRef.current = map;
-
-      renderMapContent(map);
-
-      if (pickingOnMap) {
-        map.getContainer().style.cursor = "crosshair";
-        map.once("click", (e: any) => {
-          setZoneForm(p => ({ ...p, latitude: e.latlng.lat.toFixed(6), longitude: e.latlng.lng.toFixed(6) }));
-          setPickingOnMap(false);
-          map.getContainer().style.cursor = "";
-        });
-      }
-    };
-
-    initMap();
-
-    return () => {
-      if (leafletMapRef.current) {
-        leafletMapRef.current.remove();
-        leafletMapRef.current = null;
-      }
-    };
-  }, [activeTab, currentLocation, zones, pickingOnMap]);
-
-  const renderMapContent = useCallback((map: any) => {
-    if (!L || !map) return;
-    // Clear old markers
-    markersRef.current.forEach(m => m.remove());
-    markersRef.current = [];
+    // Clear old layers
+    mapLayersRef.current.forEach(l => { try { l.remove(); } catch (_) {} });
+    mapLayersRef.current = [];
 
     const bounds: [number, number][] = [];
 
@@ -219,18 +220,18 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
     if (currentLocation?.latitude && currentLocation?.longitude) {
       const lat = parseFloat(currentLocation.latitude);
       const lng = parseFloat(currentLocation.longitude);
-      bounds.push([lat, lng]);
-
-      const personIcon = L.divIcon({
-        className: "",
-        html: `<div style="width:22px;height:22px;border-radius:50%;background:#10B981;border:3px solid white;box-shadow:0 0 0 3px rgba(16,185,129,0.3);animation:pulse 2s infinite"></div>`,
-        iconSize: [22, 22],
-        iconAnchor: [11, 11],
-      });
-      const m = L.marker([lat, lng], { icon: personIcon })
-        .addTo(map)
-        .bindPopup(`<b>${caredOneName}</b><br>${currentLocation.address || `${lat.toFixed(4)}, ${lng.toFixed(4)}`}`);
-      markersRef.current.push(m);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        bounds.push([lat, lng]);
+        const personIcon = Lx.divIcon({
+          className: "",
+          html: `<div style="width:22px;height:22px;border-radius:50%;background:#10B981;border:3px solid white;box-shadow:0 0 0 3px rgba(16,185,129,.3);animation:locPulse 2s infinite"></div>`,
+          iconSize: [22, 22], iconAnchor: [11, 11],
+        });
+        const m = Lx.marker([lat, lng], { icon: personIcon })
+          .addTo(map)
+          .bindPopup(`<b>${caredOneName}</b><br>${currentLocation.address || `${lat.toFixed(4)}, ${lng.toFixed(4)}`}`);
+        mapLayersRef.current.push(m);
+      }
     }
 
     // Zone overlays
@@ -238,33 +239,114 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
       if (!zone.latitude || !zone.longitude) return;
       const zLat = parseFloat(zone.latitude);
       const zLng = parseFloat(zone.longitude);
+      if (isNaN(zLat) || isNaN(zLng)) return;
       const color = zone.zone_type === "danger" ? "#EF4444" : (CATEGORY_CONFIG[zone.category]?.color || "#10B981");
 
       if (zone.shape_type === "polygon" && zone.polygon_points?.length >= 3) {
-        const poly = L.polygon(zone.polygon_points, {
+        const poly = Lx.polygon(zone.polygon_points, {
           color, fillColor: color, fillOpacity: 0.15, weight: 2,
           dashArray: zone.zone_type === "danger" ? "6,4" : undefined,
         }).addTo(map).bindPopup(`<b>${zone.name}</b><br>${zone.zone_type} zone`);
-        markersRef.current.push(poly);
+        mapLayersRef.current.push(poly);
         zone.polygon_points.forEach((pt: [number, number]) => bounds.push(pt));
-      } else if (zone.latitude && zone.longitude) {
-        const circle = L.circle([zLat, zLng], {
+      } else {
+        const circle = Lx.circle([zLat, zLng], {
           radius: zone.radius || 200, color, fillColor: color, fillOpacity: 0.15, weight: 2,
           dashArray: zone.zone_type === "danger" ? "6,4" : undefined,
         }).addTo(map).bindPopup(`<b>${zone.name}</b><br>${zone.zone_type} zone · ${zone.radius || 200}m`);
-        markersRef.current.push(circle);
+        mapLayersRef.current.push(circle);
         bounds.push([zLat, zLng]);
       }
+
+      // Zone center marker
+      const zIcon = Lx.divIcon({
+        className: "",
+        html: zone.zone_type === "danger"
+          ? `<div style="width:18px;height:18px;border-radius:50%;background:#EF4444;border:2px solid white;display:flex;align-items:center;justify-content:center;color:white;font-size:10px;font-weight:bold">✕</div>`
+          : `<div style="width:18px;height:18px;border-radius:50%;background:${color};border:2px solid white;"></div>`,
+        iconSize: [18, 18], iconAnchor: [9, 9],
+      });
+      const zm = Lx.marker([zLat, zLng], { icon: zIcon }).addTo(map);
+      mapLayersRef.current.push(zm);
     });
 
     if (bounds.length > 0) {
-      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+      try { map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 }); } catch (_) {}
     } else {
       map.setView([37.0902, -95.7129], 4);
     }
   }, [currentLocation, zones, caredOneName]);
 
-  // Breach computation
+  // ─── Initialize map once when first shown ─────────────────
+  const isMapTab = activeTab === "location" || activeTab === "safezones";
+
+  useEffect(() => {
+    if (!isMapTab) return;
+    const container = mapRef.current;
+    if (!container) return;
+
+    let cancelled = false;
+    (async () => {
+      const Lx = await getL();
+      if (cancelled) return;
+
+      if (!leafletMapRef.current) {
+        const map = Lx.map(container, { zoomControl: true, attributionControl: false });
+        Lx.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: "© OpenStreetMap", maxZoom: 19,
+        }).addTo(map);
+        leafletMapRef.current = map;
+        mapReadyRef.current = true;
+      } else {
+        // Map exists — just invalidate size (tab may have changed visibility)
+        setTimeout(() => {
+          try { leafletMapRef.current?.invalidateSize(); } catch (_) {}
+        }, 100);
+      }
+
+      if (!cancelled) renderMapContent();
+    })();
+
+    return () => { cancelled = true; };
+  }, [isMapTab]);
+
+  // Re-render map content whenever data changes (zones or location)
+  useEffect(() => {
+    if (mapReadyRef.current && leafletMapRef.current) {
+      renderMapContent();
+    }
+  }, [renderMapContent]);
+
+  // Cleanup map on unmount
+  useEffect(() => {
+    return () => {
+      if (leafletMapRef.current) {
+        try { leafletMapRef.current.remove(); } catch (_) {}
+        leafletMapRef.current = null;
+        mapReadyRef.current = false;
+      }
+    };
+  }, []);
+
+  // "Pick on map" mode
+  useEffect(() => {
+    const map = leafletMapRef.current;
+    if (!map || !pickingOnMap) return;
+    map.getContainer().style.cursor = "crosshair";
+    const handler = (e: any) => {
+      setZoneForm(p => ({ ...p, latitude: e.latlng.lat.toFixed(6), longitude: e.latlng.lng.toFixed(6) }));
+      setPickingOnMap(false);
+    };
+    map.once("click", handler);
+    return () => {
+      if (map) {
+        map.off("click", handler);
+        map.getContainer().style.cursor = "";
+      }
+    };
+  }, [pickingOnMap]);
+
+  // ─── Breach computation
   const breaches = (zones || []).filter((z: any) => {
     if (!currentLocation?.latitude || !currentLocation?.longitude) return false;
     const { breached } = checkZoneBreach(z, parseFloat(currentLocation.latitude), parseFloat(currentLocation.longitude));
@@ -296,17 +378,18 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
     );
   };
 
-  const handleGetGPS = () => {
-    if (!navigator.geolocation) return;
-    setGettingGPS(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setZoneForm(p => ({ ...p, latitude: pos.coords.latitude.toFixed(6), longitude: pos.coords.longitude.toFixed(6) }));
-        setGettingGPS(false);
-      },
-      () => { setGettingGPS(false); toast({ title: "Could not get location", variant: "destructive" }); },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
+  // Use the CARED ONE's stored location coordinates (not browser GPS)
+  const handleUseCaredOneLocation = () => {
+    if (currentLocation?.latitude && currentLocation?.longitude) {
+      setZoneForm(p => ({
+        ...p,
+        latitude: parseFloat(currentLocation.latitude).toFixed(6),
+        longitude: parseFloat(currentLocation.longitude).toFixed(6),
+      }));
+      toast({ title: `Using ${caredOneName}'s last known location` });
+    } else {
+      toast({ title: `No location data for ${caredOneName}`, description: "Request their location first", variant: "destructive" });
+    }
   };
 
   const openZoneForm = (zone?: any) => {
@@ -314,7 +397,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
       setEditingZone(zone);
       setZoneForm({
         name: zone.name || "", zone_type: zone.zone_type || "safe", category: zone.category || "home",
-        shape_type: zone.shape_type || "radius", latitude: zone.latitude?.toString() || "", longitude: zone.longitude?.toString() || "",
+        latitude: zone.latitude?.toString() || "", longitude: zone.longitude?.toString() || "",
         radius: zone.radius || 200, description: zone.description || "",
         notify_on_enter: zone.notify_on_enter ?? true, notify_on_exit: zone.notify_on_exit ?? true,
         schedule_enabled: zone.schedule_enabled ?? false, schedule_start_time: zone.schedule_start_time || "08:00",
@@ -323,7 +406,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
     } else {
       setEditingZone(null);
       setZoneForm({
-        name: "", zone_type: "safe", category: "home", shape_type: "radius",
+        name: "", zone_type: "safe", category: "home",
         latitude: "", longitude: "", radius: 200, description: "",
         notify_on_enter: true, notify_on_exit: true, schedule_enabled: false,
         schedule_start_time: "08:00", schedule_end_time: "20:00", schedule_days: [],
@@ -336,13 +419,13 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
     if (!zoneForm.name.trim()) { toast({ title: "Zone name required", variant: "destructive" }); return; }
     const lat = parseFloat(zoneForm.latitude);
     const lng = parseFloat(zoneForm.longitude);
-    if (isNaN(lat) || isNaN(lng)) { toast({ title: "Valid coordinates required", variant: "destructive" }); return; }
+    if (isNaN(lat) || isNaN(lng)) { toast({ title: "Valid coordinates required. Use 'Pick on Map' or cared one's location.", variant: "destructive" }); return; }
 
     const color = zoneForm.zone_type === "danger" ? "#EF4444" : (CATEGORY_CONFIG[zoneForm.category]?.color || "#10B981");
     const payload = {
       user_id: caredOneId, name: zoneForm.name.trim(), zone_type: zoneForm.zone_type,
-      shape_type: zoneForm.shape_type, category: zoneForm.zone_type === "danger" ? "custom" : zoneForm.category,
-      color, latitude: lat, longitude: lng, radius: zoneForm.shape_type === "polygon" ? 0 : zoneForm.radius,
+      shape_type: "radius", category: zoneForm.zone_type === "danger" ? "custom" : zoneForm.category,
+      color, latitude: lat, longitude: lng, radius: zoneForm.radius,
       description: zoneForm.description || null, notify_on_enter: zoneForm.notify_on_enter,
       notify_on_exit: zoneForm.notify_on_exit, schedule_enabled: zoneForm.schedule_enabled,
       schedule_start_time: zoneForm.schedule_enabled ? zoneForm.schedule_start_time : null,
@@ -364,6 +447,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
   };
 
   const handleDeleteZone = (id: string, name: string) => {
+    if (!confirm(`Delete zone "${name}"?`)) return;
     deleteZone.mutate(id, {
       onSuccess: () => toast({ title: `Zone "${name}" deleted` }),
       onError: (e: any) => toast({ title: "Failed to delete", description: e.message, variant: "destructive" }),
@@ -377,6 +461,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
       onSuccess: () => {
         setSendingRequest(false); setRequestMessage(""); setIsEmergency(false); setEmergencyConfirm(false);
         toast({ title: isEmergency ? "Emergency request sent 🚨" : "Location request sent ✓" });
+        refetchRequests();
       },
       onError: (e: any) => { setSendingRequest(false); toast({ title: "Failed to send", description: e.message, variant: "destructive" }); },
     });
@@ -395,50 +480,17 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
     });
   };
 
-  // CSS for Leaflet
-  useEffect(() => {
-    if (!document.getElementById("leaflet-css")) {
-      const link = document.createElement("link");
-      link.id = "leaflet-css";
-      link.rel = "stylesheet";
-      link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
-      document.head.appendChild(link);
-    }
-    if (!document.getElementById("pulse-style")) {
-      const style = document.createElement("style");
-      style.id = "pulse-style";
-      style.textContent = `@keyframes pulse{0%,100%{box-shadow:0 0 0 3px rgba(16,185,129,0.3)}50%{box-shadow:0 0 0 8px rgba(16,185,129,0)}}`;
-      document.head.appendChild(style);
-    }
-  }, []);
-
   const tabs: { key: Tab; label: string; badge?: number }[] = [
     { key: "location", label: "Map" },
-    { key: "safezones", label: "Zones", badge: (zones || []).length },
+    { key: "safezones", label: "Zones", badge: (zones || []).length || undefined },
     { key: "alerts", label: "Alerts", badge: unreadAlerts || undefined },
     { key: "requests", label: "Requests", badge: pendingRequests || undefined },
     { key: "history", label: "History" },
   ];
 
-  // ─── Map area (shared between map and zones tab) ───────────
-  const MapArea = () => (
-    <div className="relative mb-4">
-      <div ref={mapRef} style={{ height: 300, borderRadius: 8, overflow: "hidden", background: "hsl(var(--muted))" }} />
-      {activeTab === "safezones" && (
-        <Button
-          size="sm" variant={"coral" as any}
-          className="absolute top-2 right-2 z-[1000] shadow-md"
-          onClick={() => openZoneForm()}
-        >
-          <Plus className="h-3 w-3 mr-1" /> Add Zone
-        </Button>
-      )}
-    </div>
-  );
-
   return (
     <div>
-      {/* Header */}
+      {/* ─── Header ─────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
         <div>
           <h2 className="text-lg font-bold text-foreground">Location & Safe Zones</h2>
@@ -449,7 +501,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
             {sharingMyLocation ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Radio className="h-3 w-3 mr-1" />}
             Share My Location
           </Button>
-          <Button variant="outline" size="sm" onClick={() => { setActiveTab("requests"); }}>
+          <Button variant="outline" size="sm" onClick={() => setActiveTab("requests")}>
             <Send className="h-3 w-3 mr-1" /> Request Location
           </Button>
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleRefresh} disabled={refreshing}>
@@ -458,7 +510,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
         </div>
       </div>
 
-      {/* Breach banner */}
+      {/* ─── Breach banner ──────────────────────────────────── */}
       {breaches.length > 0 && (
         <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
           <div className="flex items-center gap-2 text-destructive font-semibold text-sm mb-1">
@@ -466,23 +518,27 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
           </div>
           {breaches.map((z: any) => (
             <p key={z.id} className="text-xs text-destructive/80">
-              {z.zone_type === "danger" ? `⚠ ${caredOneName} is inside danger zone "${z.name}"` : `⚠ ${caredOneName} is outside safe zone "${z.name}"`}
+              {z.zone_type === "danger"
+                ? `⚠ ${caredOneName} is inside danger zone "${z.name}"`
+                : `⚠ ${caredOneName} is outside safe zone "${z.name}"`}
             </p>
           ))}
         </div>
       )}
 
-      {/* Tabs */}
+      {/* ─── Tabs ───────────────────────────────────────────── */}
       <div className="flex gap-1 mb-4 border-b border-border overflow-x-auto">
         {tabs.map(t => (
           <button
             key={t.key}
             onClick={() => setActiveTab(t.key)}
-            className={`px-3 py-2 text-sm font-medium whitespace-nowrap flex items-center gap-1.5 border-b-2 transition-colors ${activeTab === t.key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+            className={`px-3 py-2 text-sm font-medium whitespace-nowrap flex items-center gap-1.5 border-b-2 transition-colors
+              ${activeTab === t.key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
           >
             {t.label}
             {t.badge ? (
-              <span className={`text-[10px] rounded-full px-1.5 py-0.5 font-bold ${t.key === "alerts" ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"}`}>
+              <span className={`text-[10px] rounded-full px-1.5 py-0.5 font-bold
+                ${t.key === "alerts" ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"}`}>
                 {t.badge}
               </span>
             ) : null}
@@ -490,16 +546,25 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
         ))}
       </div>
 
-      {/* ─── MAP TAB ─────────────────────────────────────────── */}
+      {/* ─── SHARED MAP (always mounted, hidden when not on map tabs) ── */}
+      <div style={{ display: isMapTab ? "block" : "none" }}>
+        <MapContainer
+          mapRef={mapRef}
+          showAddButton={activeTab === "safezones"}
+          onAddZone={() => openZoneForm()}
+        />
+      </div>
+
+      {/* ─── MAP TAB content ────────────────────────────────── */}
       {activeTab === "location" && (
         <div>
-          <MapArea />
-
-          {/* Location sharing settings (read-only) */}
+          {/* Sharing settings (read-only) */}
           {locationSettings && (
             <Card className="border-transparent card-elevated mb-4">
               <CardContent className="p-4">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Sharing Settings (set by {caredOneName})</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                  Sharing Settings (set by {caredOneName})
+                </p>
                 <div className="flex gap-4 flex-wrap">
                   <div className="flex items-center gap-2">
                     <div className={`w-2 h-2 rounded-full ${locationSettings.is_sharing_enabled ? "bg-success" : "bg-muted-foreground"}`} />
@@ -543,6 +608,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
             <div className="text-center py-8 text-muted-foreground">
               <MapPin className="h-10 w-10 mx-auto mb-2 opacity-40" />
               <p className="text-sm">No location data available</p>
+              <p className="text-xs mt-1">Request {caredOneName}'s location to see it here</p>
               <Button variant="outline" size="sm" className="mt-3" onClick={() => setActiveTab("requests")}>
                 <Send className="h-3 w-3 mr-1" /> Request Location
               </Button>
@@ -551,38 +617,48 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
         </div>
       )}
 
-      {/* ─── ZONES TAB ───────────────────────────────────────── */}
+      {/* ─── ZONES TAB content ──────────────────────────────── */}
       {activeTab === "safezones" && (
         <div>
-          <MapArea />
-
           {/* Zone form */}
           {showZoneForm && (
             <Card className="border-primary/20 card-elevated mb-4">
               <CardContent className="p-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold text-foreground">{editingZone ? "Edit Zone" : "New Zone"}</h3>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setShowZoneForm(false); setEditingZone(null); }}><X className="h-3.5 w-3.5" /></Button>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setShowZoneForm(false); setEditingZone(null); }}>
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
 
                 {/* Zone type toggle */}
                 <div className="flex rounded-lg border overflow-hidden">
-                  {["safe", "danger"].map(t => (
+                  {(["safe", "danger"] as const).map(t => (
                     <button key={t} onClick={() => setZoneForm(p => ({ ...p, zone_type: t }))}
-                      className={`flex-1 py-2 text-sm font-medium transition-colors ${zoneForm.zone_type === t ? (t === "danger" ? "bg-destructive text-destructive-foreground" : "bg-success text-white") : "bg-transparent text-muted-foreground"}`}
+                      className={`flex-1 py-2 text-sm font-medium transition-colors
+                        ${zoneForm.zone_type === t
+                          ? t === "danger" ? "bg-destructive text-destructive-foreground" : "bg-emerald-500 text-white"
+                          : "bg-transparent text-muted-foreground hover:bg-accent"}`}
                     >
                       {t === "safe" ? "✅ Safe Zone" : "⚠️ Danger Zone"}
                     </button>
                   ))}
                 </div>
                 {zoneForm.zone_type === "danger" && (
-                  <p className="text-xs text-destructive bg-destructive/10 rounded p-2">Alert when {caredOneName} enters this area (e.g. casino, restricted area)</p>
+                  <p className="text-xs text-destructive bg-destructive/10 rounded p-2">
+                    Alert when {caredOneName} enters this area (e.g. casino, restricted area)
+                  </p>
                 )}
 
                 {/* Name */}
                 <div>
                   <Label className="text-xs">Zone Name *</Label>
-                  <Input value={zoneForm.name} onChange={e => setZoneForm(p => ({ ...p, name: e.target.value }))} placeholder='e.g. "Home", "Casino"' className="mt-1" />
+                  <Input
+                    value={zoneForm.name}
+                    onChange={e => setZoneForm(p => ({ ...p, name: e.target.value }))}
+                    placeholder='e.g. "Home", "Casino"'
+                    className="mt-1"
+                  />
                 </div>
 
                 {/* Category (safe only) */}
@@ -592,10 +668,16 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                     <div className="flex gap-2 mt-1 flex-wrap">
                       {Object.entries(CATEGORY_CONFIG).map(([key, cfg]) => {
                         const Icon = cfg.icon;
+                        const active = zoneForm.category === key;
                         return (
-                          <button key={key} onClick={() => setZoneForm(p => ({ ...p, category: key }))}
-                            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-colors ${zoneForm.category === key ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-accent"}`}
-                            style={{ borderColor: zoneForm.category === key ? cfg.color : undefined, color: zoneForm.category === key ? cfg.color : undefined, backgroundColor: zoneForm.category === key ? `${cfg.color}20` : undefined }}
+                          <button key={key}
+                            onClick={() => setZoneForm(p => ({ ...p, category: key }))}
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-colors"
+                            style={{
+                              borderColor: active ? cfg.color : undefined,
+                              color: active ? cfg.color : undefined,
+                              backgroundColor: active ? `${cfg.color}20` : undefined,
+                            }}
                           >
                             <Icon className="h-3 w-3" /> {cfg.label}
                           </button>
@@ -607,25 +689,38 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
 
                 {/* Coordinates */}
                 <div>
-                  <Label className="text-xs">Center Coordinates</Label>
-                  <div className="flex gap-2 mt-1">
-                    <Button variant="outline" size="sm" onClick={handleGetGPS} disabled={gettingGPS}>
-                      {gettingGPS ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <MapPin className="h-3 w-3 mr-1" />}
+                  <Label className="text-xs">Zone Center</Label>
+                  <div className="flex gap-2 mt-1 flex-wrap">
+                    <Button variant="outline" size="sm" onClick={() => setPickingOnMap(!pickingOnMap)}>
+                      <Navigation className="h-3 w-3 mr-1" />
+                      {pickingOnMap ? "Cancel picking" : "Pick on Map"}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handleUseCaredOneLocation}>
+                      <MapPin className="h-3 w-3 mr-1" />
                       Use {caredOneName}'s Location
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => setPickingOnMap(true)}>
-                      <Navigation className="h-3 w-3 mr-1" /> Pick on Map
-                    </Button>
                   </div>
-                  {pickingOnMap && <p className="text-xs text-primary mt-1">👆 Click on the map above to set the zone center</p>}
+                  {pickingOnMap && (
+                    <p className="text-xs text-primary mt-1 font-medium">👆 Click on the map above to set the zone center</p>
+                  )}
                   <div className="grid grid-cols-2 gap-2 mt-2">
                     <div>
                       <Label className="text-[10px] text-muted-foreground">Latitude</Label>
-                      <Input value={zoneForm.latitude} onChange={e => setZoneForm(p => ({ ...p, latitude: e.target.value }))} placeholder="40.71280" className="mt-0.5 font-mono text-xs" />
+                      <Input
+                        value={zoneForm.latitude}
+                        onChange={e => setZoneForm(p => ({ ...p, latitude: e.target.value }))}
+                        placeholder="40.71280"
+                        className="mt-0.5 font-mono text-xs"
+                      />
                     </div>
                     <div>
                       <Label className="text-[10px] text-muted-foreground">Longitude</Label>
-                      <Input value={zoneForm.longitude} onChange={e => setZoneForm(p => ({ ...p, longitude: e.target.value }))} placeholder="-74.00600" className="mt-0.5 font-mono text-xs" />
+                      <Input
+                        value={zoneForm.longitude}
+                        onChange={e => setZoneForm(p => ({ ...p, longitude: e.target.value }))}
+                        placeholder="-74.00600"
+                        className="mt-0.5 font-mono text-xs"
+                      />
                     </div>
                   </div>
                 </div>
@@ -636,15 +731,26 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                     <Label className="text-xs">Radius</Label>
                     <span className="text-xs text-muted-foreground font-mono">{zoneForm.radius}m</span>
                   </div>
-                  <Slider min={50} max={5000} step={50} value={[zoneForm.radius]}
-                    onValueChange={([v]) => setZoneForm(p => ({ ...p, radius: v }))} />
-                  <div className="flex justify-between text-[10px] text-muted-foreground mt-0.5"><span>50m</span><span>5km</span></div>
+                  <Slider
+                    min={50} max={5000} step={50}
+                    value={[zoneForm.radius]}
+                    onValueChange={([v]) => setZoneForm(p => ({ ...p, radius: v }))}
+                  />
+                  <div className="flex justify-between text-[10px] text-muted-foreground mt-0.5">
+                    <span>50m</span><span>5km</span>
+                  </div>
                 </div>
 
                 {/* Description */}
                 <div>
                   <Label className="text-xs">Description (optional)</Label>
-                  <Input value={zoneForm.description} onChange={e => setZoneForm(p => ({ ...p, description: e.target.value }))} placeholder="Optional notes..." className="mt-1" />
+                  <Textarea
+                    value={zoneForm.description}
+                    onChange={e => setZoneForm(p => ({ ...p, description: e.target.value }))}
+                    placeholder="Optional notes about this zone..."
+                    rows={2}
+                    className="mt-1"
+                  />
                 </div>
 
                 {/* Notifications */}
@@ -670,17 +776,28 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                       <div className="flex gap-2">
                         <div className="flex-1">
                           <Label className="text-[10px]">Start</Label>
-                          <Input type="time" value={zoneForm.schedule_start_time} onChange={e => setZoneForm(p => ({ ...p, schedule_start_time: e.target.value }))} className="mt-0.5" />
+                          <Input type="time" value={zoneForm.schedule_start_time}
+                            onChange={e => setZoneForm(p => ({ ...p, schedule_start_time: e.target.value }))}
+                            className="mt-0.5" />
                         </div>
                         <div className="flex-1">
                           <Label className="text-[10px]">End</Label>
-                          <Input type="time" value={zoneForm.schedule_end_time} onChange={e => setZoneForm(p => ({ ...p, schedule_end_time: e.target.value }))} className="mt-0.5" />
+                          <Input type="time" value={zoneForm.schedule_end_time}
+                            onChange={e => setZoneForm(p => ({ ...p, schedule_end_time: e.target.value }))}
+                            className="mt-0.5" />
                         </div>
                       </div>
                       <div className="flex gap-1 flex-wrap">
                         {DAYS.map(d => (
-                          <button key={d} onClick={() => setZoneForm(p => ({ ...p, schedule_days: p.schedule_days.includes(d) ? p.schedule_days.filter(x => x !== d) : [...p.schedule_days, d] }))}
-                            className={`px-2 py-1 rounded text-xs font-medium border transition-colors ${zoneForm.schedule_days.includes(d) ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground"}`}
+                          <button key={d}
+                            onClick={() => setZoneForm(p => ({
+                              ...p,
+                              schedule_days: p.schedule_days.includes(d)
+                                ? p.schedule_days.filter(x => x !== d)
+                                : [...p.schedule_days, d]
+                            }))}
+                            className={`px-2 py-1 rounded text-xs font-medium border transition-colors
+                              ${zoneForm.schedule_days.includes(d) ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground"}`}
                           >
                             {d}
                           </button>
@@ -691,14 +808,16 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                 </div>
 
                 <div className="flex gap-2 pt-1">
-                  <Button variant="outline" className="flex-1" onClick={() => { setShowZoneForm(false); setEditingZone(null); }}>Cancel</Button>
+                  <Button variant="outline" className="flex-1" onClick={() => { setShowZoneForm(false); setEditingZone(null); }}>
+                    Cancel
+                  </Button>
                   <Button
-                    className="flex-1"
-                    style={{ background: zoneForm.zone_type === "danger" ? "#EF4444" : "#10B981", color: "white" }}
+                    className="flex-1 text-white"
+                    style={{ background: zoneForm.zone_type === "danger" ? "#EF4444" : "#10B981" }}
                     onClick={handleSaveZone}
                     disabled={createZone.isPending || updateZone.isPending || !zoneForm.name.trim()}
                   >
-                    {(createZone.isPending || updateZone.isPending) ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                    {(createZone.isPending || updateZone.isPending) && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
                     {editingZone ? "Save Changes" : "Create Zone"}
                   </Button>
                 </div>
@@ -713,6 +832,9 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                 <MapPin className="h-10 w-10 mx-auto mb-2 opacity-40" />
                 <p className="text-sm">No zones configured</p>
                 <p className="text-xs">Add safe zones like Home or Work, or danger zones to avoid</p>
+                <Button variant="outline" size="sm" className="mt-3" onClick={() => openZoneForm()}>
+                  <Plus className="h-3 w-3 mr-1" /> Add First Zone
+                </Button>
               </div>
             )}
             {(zones || []).map((zone: any) => {
@@ -724,19 +846,19 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
               if (currentLocation?.latitude && currentLocation?.longitude) {
                 breachInfo = checkZoneBreach(zone, parseFloat(currentLocation.latitude), parseFloat(currentLocation.longitude));
               }
-
               return (
                 <Card key={zone.id} className="border-transparent card-elevated">
                   <CardContent className="p-3">
                     <div className="flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: `${color}20`, color }}>
+                      <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                        style={{ background: `${color}20`, color }}>
                         <Icon className="h-4 w-4" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-semibold text-foreground text-sm">{zone.name}</span>
                           {zone.zone_type === "danger" && <Badge variant="destructive" className="text-[10px]">DANGER</Badge>}
-                          {!active && <Badge variant="secondary" className="text-[10px]">⏰ Scheduled</Badge>}
+                          {!active && <Badge variant="secondary" className="text-[10px]">⏰ Scheduled (inactive)</Badge>}
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">
                           {zone.shape_type === "polygon" ? "Custom shape" : `${zone.radius || 200}m radius`} · {catCfg.label}
@@ -748,21 +870,25 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                           </p>
                         )}
                         {currentLocation && active && (
-                          <p className={`text-xs mt-1 font-medium ${breachInfo.breached ? "text-destructive" : "text-success"}`}>
+                          <p className={`text-xs mt-1 font-medium ${breachInfo.breached ? "text-destructive" : "text-emerald-600"}`}>
                             {zone.zone_type === "safe"
                               ? (breachInfo.breached ? `⚠ Outside (${breachInfo.distance}m away)` : `✓ Inside (${breachInfo.distance}m from center)`)
                               : (breachInfo.breached ? `⚠ INSIDE danger zone! (${breachInfo.distance}m from center)` : `✓ Away (${breachInfo.distance}m)`)}
                           </p>
                         )}
                         <div className="flex gap-1 mt-1.5 flex-wrap">
-                          {zone.notify_on_enter && <Badge variant="outline" className="text-[10px]">Enter alert</Badge>}
-                          {zone.notify_on_exit && <Badge variant="outline" className="text-[10px]">Exit alert</Badge>}
-                          {zone.schedule_enabled && <Badge variant="outline" className="text-[10px]">Scheduled</Badge>}
+                          {zone.notify_on_enter && <Badge variant="outline" className="text-[10px]"><Bell className="h-2.5 w-2.5 mr-0.5" />Enter alert</Badge>}
+                          {zone.notify_on_exit && <Badge variant="outline" className="text-[10px]"><Bell className="h-2.5 w-2.5 mr-0.5" />Exit alert</Badge>}
+                          {zone.schedule_enabled && <Badge variant="outline" className="text-[10px]"><Clock className="h-2.5 w-2.5 mr-0.5" />Scheduled</Badge>}
                         </div>
                       </div>
                       <div className="flex gap-1 shrink-0">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openZoneForm(zone)}><Edit2 className="h-3 w-3" /></Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteZone(zone.id, zone.name)}><Trash2 className="h-3 w-3" /></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openZoneForm(zone)}>
+                          <Edit2 className="h-3 w-3" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteZone(zone.id, zone.name)}>
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
                       </div>
                     </div>
                   </CardContent>
@@ -773,7 +899,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
         </div>
       )}
 
-      {/* ─── ALERTS TAB ──────────────────────────────────────── */}
+      {/* ─── ALERTS TAB ─────────────────────────────────────── */}
       {activeTab === "alerts" && (
         <div>
           {unreadAlerts > 0 && (
@@ -787,19 +913,21 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
             <div className="text-center py-10 text-muted-foreground">
               <Bell className="h-10 w-10 mx-auto mb-2 opacity-40" />
               <p className="text-sm">No zone alerts</p>
+              <p className="text-xs mt-1">Alerts appear when {caredOneName} enters or exits a zone</p>
             </div>
           ) : (
             <div className="space-y-2">
               {(alerts || []).map((alert: any) => {
                 const typeConfig: Record<string, { label: string; color: string }> = {
-                  exited_safe_zone: { label: "Left Safe Zone", color: "text-destructive" },
-                  entered_safe_zone: { label: "Entered Safe Zone", color: "text-success" },
+                  exited_safe_zone:    { label: "Left Safe Zone",      color: "text-destructive" },
+                  entered_safe_zone:   { label: "Entered Safe Zone",   color: "text-emerald-600" },
                   entered_danger_zone: { label: "Entered Danger Zone", color: "text-destructive" },
-                  exited_danger_zone: { label: "Left Danger Zone", color: "text-success" },
+                  exited_danger_zone:  { label: "Left Danger Zone",    color: "text-emerald-600" },
                 };
                 const cfg = typeConfig[alert.alert_type] || { label: alert.alert_type, color: "text-muted-foreground" };
                 return (
-                  <Card key={alert.id} className={`border-transparent card-elevated ${!alert.is_read ? "border-l-2 border-l-destructive" : "opacity-70"}`}>
+                  <Card key={alert.id}
+                    className={`border-transparent card-elevated ${!alert.is_read ? "border-l-2 border-l-destructive" : "opacity-70"}`}>
                     <CardContent className="p-3">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
@@ -813,12 +941,14 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                           )}
                           <p className="text-xs text-muted-foreground mt-1">{new Date(alert.created_at).toLocaleString()}</p>
                         </div>
-                        {!alert.is_read && (
-                          <Button variant="outline" size="sm" className="text-xs h-7 shrink-0" onClick={() => handleAcknowledge(alert.id)} disabled={acknowledgeAlert.isPending}>
+                        {!alert.is_read ? (
+                          <Button variant="outline" size="sm" className="text-xs h-7 shrink-0"
+                            onClick={() => handleAcknowledge(alert.id)} disabled={acknowledgeAlert.isPending}>
                             <CheckCircle2 className="h-3 w-3 mr-1" /> Ack
                           </Button>
+                        ) : (
+                          <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
                         )}
-                        {alert.is_read && <CheckCircle2 className="h-4 w-4 text-success shrink-0" />}
                       </div>
                     </CardContent>
                   </Card>
@@ -829,7 +959,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
         </div>
       )}
 
-      {/* ─── REQUESTS TAB ────────────────────────────────────── */}
+      {/* ─── REQUESTS TAB ───────────────────────────────────── */}
       {activeTab === "requests" && (
         <div className="space-y-4">
           {/* Send form */}
@@ -842,8 +972,9 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                 placeholder="Optional message (why you need their location)..."
                 rows={2}
               />
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-destructive/5 border border-destructive/20">
-                <div className="flex items-center gap-2 flex-1">
+              {/* Emergency toggle */}
+              <div className={`flex flex-col gap-2 p-3 rounded-lg border ${isEmergency ? "bg-destructive/10 border-destructive/30" : "bg-muted/30 border-border"}`}>
+                <div className="flex items-center gap-3">
                   <input
                     type="checkbox" id="emergency-check"
                     checked={isEmergency}
@@ -851,11 +982,13 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                     className="rounded"
                   />
                   <label htmlFor="emergency-check" className="text-sm font-medium text-foreground cursor-pointer">
-                    🚨 Emergency
+                    🚨 Emergency request
                   </label>
                 </div>
                 {isEmergency && (
-                  <p className="text-xs text-destructive">Bypasses approval — {caredOneName}'s location will be shared immediately without their consent. They will be notified.</p>
+                  <p className="text-xs text-destructive pl-5">
+                    Bypasses approval — {caredOneName}'s location will be shared immediately without their consent. They will be notified.
+                  </p>
                 )}
               </div>
               {emergencyConfirm && (
@@ -865,8 +998,8 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
               )}
               <Button
                 className="w-full"
-                style={{ background: isEmergency ? "#EF4444" : undefined }}
-                variant={isEmergency ? "default" : ("coral" as any)}
+                style={isEmergency ? { background: "#EF4444", color: "white" } : undefined}
+                variant={isEmergency ? "default" : "default"}
                 onClick={handleSendRequest}
                 disabled={sendingRequest || sendRequest.isPending}
               >
@@ -894,7 +1027,8 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                           <p className="text-xs text-muted-foreground">{new Date(req.created_at).toLocaleString()}</p>
                         </div>
                         <Button variant="ghost" size="sm" className="text-destructive text-xs h-7"
-                          onClick={() => cancelRequest.mutate({ requestId: req.id, caredOneId })}>
+                          onClick={() => cancelRequest.mutate({ requestId: req.id, caredOneId })}
+                          disabled={cancelRequest.isPending}>
                           Cancel
                         </Button>
                       </div>
@@ -912,11 +1046,11 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
               <div className="space-y-2">
                 {(locationRequests || []).filter((r: any) => r.status !== "pending").map((req: any) => {
                   const statusConfig: Record<string, { icon: string; label: string; color: string }> = {
-                    accepted: { icon: "✓", label: "Accepted", color: "text-success" },
+                    accepted:           { icon: "✓",  label: "Accepted",               color: "text-emerald-600" },
                     emergency_approved: { icon: "🚨", label: "Emergency — Auto-shared", color: "text-destructive" },
-                    declined: { icon: "✗", label: "Declined", color: "text-destructive" },
-                    cancelled: { icon: "—", label: "Cancelled", color: "text-muted-foreground" },
-                    pending: { icon: "⏳", label: "Pending", color: "text-amber-500" },
+                    declined:           { icon: "✗",  label: "Declined",               color: "text-destructive" },
+                    cancelled:          { icon: "—",  label: "Cancelled",              color: "text-muted-foreground" },
+                    pending:            { icon: "⏳", label: "Pending",                color: "text-amber-500" },
                   };
                   const sc = statusConfig[req.status] || statusConfig.pending;
                   return (
@@ -924,7 +1058,9 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                       <CardContent className="p-3">
                         <div className="flex items-center gap-2">
                           <span className={`text-xs font-medium ${sc.color}`}>{sc.icon} {sc.label}</span>
-                          {req.is_emergency && req.status !== "emergency_approved" && <Badge variant="destructive" className="text-[10px]">Emergency</Badge>}
+                          {req.is_emergency && req.status !== "emergency_approved" && (
+                            <Badge variant="destructive" className="text-[10px]">Emergency</Badge>
+                          )}
                         </div>
                         {req.message && <p className="text-xs text-muted-foreground mt-0.5">"{req.message}"</p>}
                         <p className="text-xs text-muted-foreground">{new Date(req.created_at).toLocaleString()}</p>
@@ -945,23 +1081,24 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
         </div>
       )}
 
-      {/* ─── HISTORY TAB ─────────────────────────────────────── */}
+      {/* ─── HISTORY TAB ────────────────────────────────────── */}
       {activeTab === "history" && (
         <div className="space-y-2">
           {(locationHistory || []).length === 0 ? (
             <div className="text-center py-10 text-muted-foreground">
               <Clock className="h-10 w-10 mx-auto mb-2 opacity-40" />
               <p className="text-sm">No location history</p>
+              <p className="text-xs mt-1">Location history appears after {caredOneName} shares their location</p>
             </div>
           ) : (
             (locationHistory || []).map((entry: any, idx: number) => (
               <Card key={entry.id} className="border-transparent card-elevated">
                 <CardContent className="p-3">
                   <div className="flex items-start gap-3">
-                    <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${idx === 0 ? "bg-success" : "bg-muted-foreground/40"}`} />
+                    <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${idx === 0 ? "bg-emerald-500" : "bg-muted-foreground/40"}`} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className={`text-xs font-medium ${idx === 0 ? "text-success" : "text-muted-foreground"}`}>
+                        <span className={`text-xs font-medium ${idx === 0 ? "text-emerald-600" : "text-muted-foreground"}`}>
                           {idx === 0 ? "Current" : "Previous"}
                         </span>
                         <span className="text-xs text-muted-foreground">{new Date(entry.created_at).toLocaleString()}</span>
