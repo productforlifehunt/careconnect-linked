@@ -1673,12 +1673,57 @@ export function useApplyToJob() {
     mutationFn: async ({ jobId, coverLetter }: { jobId: string; coverLetter: string }) => {
       const userId = await getCurrentUserId();
       if (!userId) throw new Error("Not authenticated");
+      // Check if already applied
+      const { data: existing } = await careDb
+        .from("job_application")
+        .select("id")
+        .eq("job_id", jobId)
+        .eq("applicant_id", userId)
+        .maybeSingle();
+      if (existing) throw new Error("You've already applied to this job");
       const { error } = await careDb
         .from("job_application")
         .insert({ job_id: jobId, applicant_id: userId, cover_letter: coverLetter, status: "pending" });
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["job-applications"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["job-applications"] });
+      qc.invalidateQueries({ queryKey: ["my-job-applications"] });
+    },
+  });
+}
+
+export function useUpdateJobApplication() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: "accepted" | "rejected" }) => {
+      const { error } = await careDb
+        .from("job_application")
+        .update({ status })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["job-applications"] });
+      qc.invalidateQueries({ queryKey: ["my-job-applications"] });
+    },
+  });
+}
+
+export function useMyJobPostings() {
+  return useQuery({
+    queryKey: ["my-job-postings"],
+    queryFn: async () => {
+      const userId = await getCurrentUserId();
+      if (!userId) return [];
+      const { data, error } = await careDb
+        .from("job_posting")
+        .select("*")
+        .eq("posted_by", userId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
   });
 }
 
