@@ -1378,6 +1378,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                         accepted:           { icon: "✓",  label: "Accepted",               color: "text-emerald-600" },
                         emergency_approved: { icon: "🚨", label: "Emergency — Auto-shared", color: "text-destructive" },
                         declined:           { icon: "✗",  label: "Declined",               color: "text-destructive" },
+                        rejected:           { icon: "✗",  label: "Declined",               color: "text-destructive" },
                         cancelled:          { icon: "—",  label: "Cancelled",              color: "text-muted-foreground" },
                       };
                       const s = sc[req.status] || { icon: "?", label: req.status, color: "text-muted-foreground" };
