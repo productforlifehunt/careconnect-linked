@@ -38,6 +38,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 export default function CareCircle() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const qc = useQueryClient();
   const { data: groups, isLoading: groupsLoading } = useCareGroups();
   const createGroup = useCreateCareGroup();
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
@@ -1068,8 +1069,23 @@ export default function CareCircle() {
           {(gallery || []).length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {(gallery || []).map((img: any) => (
-                <Card key={img.id} className="border-transparent card-elevated overflow-hidden">
+                <Card key={img.id} className="border-transparent card-elevated overflow-hidden group relative">
                   <img src={img.image_url} alt={img.caption || ""} className="w-full aspect-square object-cover" />
+                  <button
+                    className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 rounded-full p-1 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                    onClick={async () => {
+                      try {
+                        const { careDb: db } = await import("@/integrations/supabase/external-client");
+                        await db.from("care_group_gallery").delete().eq("id", img.id);
+                        toast({ title: "Photo removed" });
+                        qc.invalidateQueries({ queryKey: ["care-group-gallery"] });
+                      } catch (e: any) {
+                        toast({ title: "Failed to remove", description: e.message, variant: "destructive" });
+                      }
+                    }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
                   {img.caption && <CardContent className="p-2"><p className="text-xs text-muted-foreground truncate">{img.caption}</p></CardContent>}
                 </Card>
               ))}
