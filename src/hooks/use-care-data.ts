@@ -154,6 +154,21 @@ export function useCreateBooking() {
         .select()
         .single();
       if (error) throw error;
+      // Notify provider about new booking
+      if (booking.provider_id) {
+        try {
+          const { data: profile } = await careDb.from("profile").select("full_name").eq("id", userId).single();
+          const clientName = profile?.full_name || "A client";
+          const dateStr = booking.appointment_date ? new Date(booking.appointment_date).toLocaleDateString("en", { month: "short", day: "numeric" }) : "";
+          await careDb.from("notification").insert({
+            user_id: booking.provider_id,
+            type: "booking_request",
+            title: "New Booking Request",
+            content: `${clientName} requested a ${booking.service_type || "care"} session${dateStr ? ` on ${dateStr}` : ""} at ${booking.appointment_time || ""}`,
+            link_url: "/provider-dashboard",
+          });
+        } catch (_) { /* notification is best-effort */ }
+      }
       return data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["bookings"] }),
@@ -169,6 +184,26 @@ export function useUpdateBookingStatus() {
         .update({ status })
         .eq("id", id);
       if (error) throw error;
+      // Notify the other party about status change
+      try {
+        const { data: booking } = await careDb.from("booking").select("user_id, provider_id, service_type, appointment_date").eq("id", id).single();
+        if (booking) {
+          const userId = await getCurrentUserId();
+          const isProvider = userId === booking.provider_id;
+          const targetId = isProvider ? booking.user_id : booking.provider_id;
+          const { data: actorProfile } = await careDb.from("profile").select("full_name").eq("id", userId!).single();
+          const actorName = actorProfile?.full_name || "Someone";
+          const statusLabel = status.replace(/_/g, " ");
+          const dateStr = booking.appointment_date ? new Date(booking.appointment_date).toLocaleDateString("en", { month: "short", day: "numeric" }) : "";
+          await careDb.from("notification").insert({
+            user_id: targetId,
+            type: status.startsWith("cancelled") ? "booking_cancelled" : status === "confirmed" ? "booking_confirmed" : "booking_update",
+            title: `Booking ${statusLabel.charAt(0).toUpperCase() + statusLabel.slice(1)}`,
+            content: `${actorName} ${statusLabel} the ${booking.service_type || "care"} booking${dateStr ? ` on ${dateStr}` : ""}.`,
+            link_url: isProvider ? "/bookings" : "/provider-dashboard",
+          });
+        }
+      } catch (_) { /* notification is best-effort */ }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["bookings"] });
@@ -1151,17 +1186,34 @@ export function useDeleteMemberCategory() {
 }
 
 
-// ─── Location Shares ────────────────────────────────────────
+// ─── Location Shares (scoped to care circle members) ────────
 export function useLocationShares() {
   return useQuery({
     queryKey: ["location-shares"],
     queryFn: async () => {
       const userId = await getCurrentUserId();
       if (!userId) return [];
+      // Get user's care group member IDs to scope GPS visibility
+      const { data: memberships } = await careDb
+        .from("care_group_member")
+        .select("group_id")
+        .eq("user_id", userId)
+        .eq("invitation_status", "accepted");
+      const groupIds = (memberships || []).map((m: any) => m.group_id);
+      let allowedUserIds = [userId]; // Always include self
+      if (groupIds.length > 0) {
+        const { data: groupMembers } = await careDb
+          .from("care_group_member")
+          .select("user_id")
+          .in("group_id", groupIds)
+          .eq("invitation_status", "accepted");
+        const memberIds = (groupMembers || []).map((m: any) => m.user_id);
+        allowedUserIds = [...new Set([userId, ...memberIds])];
+      }
       const { data, error } = await careDb
         .from("location_share")
         .select("*, profile:user_id(id, full_name, avatar_url)")
-        .eq("is_sharing", true)
+        .in("user_id", allowedUserIds)
         .order("updated_at", { ascending: false });
       if (error) throw error;
       return (data || []) as any[];

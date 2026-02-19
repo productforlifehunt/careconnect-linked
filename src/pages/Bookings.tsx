@@ -12,12 +12,13 @@ import { CalendarDays, Clock, MoreHorizontal, X, Check, MessageSquare, Loader2, 
 import { useBookings, useUpdateBookingStatus, useStartConversation } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { careDb } from "@/integrations/supabase/external-client";
-import { careAuth } from "@/integrations/supabase/external-client";
+import { careDb, careAuth } from "@/integrations/supabase/external-client";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function Bookings() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const qc = useQueryClient();
   const { data: bookings, isLoading } = useBookings();
   const updateStatus = useUpdateBookingStatus();
   const startConversation = useStartConversation();
@@ -110,8 +111,7 @@ export default function Bookings() {
       }
       toast({ title: "Booking rescheduled", description: "The provider will need to re-confirm." });
       setRescheduleOpen(false);
-      // Refresh bookings - use window location to force refetch
-      window.location.reload();
+      qc.invalidateQueries({ queryKey: ["bookings"] });
     } catch (e: any) {
       toast({ title: "Reschedule failed", description: e.message, variant: "destructive" });
     } finally {

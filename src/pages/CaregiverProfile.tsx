@@ -97,6 +97,22 @@ export default function CaregiverProfile() {
       toast({ title: "Time slot unavailable", description: availabilityWarning, variant: "destructive" });
       return;
     }
+    // Validate duration doesn't exceed provider's end time
+    if (bookingTime && availability && availability.length > 0) {
+      const dayOfWeek = new Date(bookingDate + "T12:00:00").getDay();
+      const specificSlot = availability.find((s: any) => s.specific_date === bookingDate);
+      const slot = specificSlot || availability.find((s: any) => !s.specific_date && s.day_of_week === dayOfWeek && s.is_available);
+      if (slot?.end_time) {
+        const [bh, bm] = bookingTime.split(":").map(Number);
+        const endMinutes = bh * 60 + bm + parseInt(bookingDuration) * 60;
+        const [eh, em] = slot.end_time.split(":").map(Number);
+        const slotEndMinutes = eh * 60 + em;
+        if (endMinutes > slotEndMinutes) {
+          toast({ title: "Duration exceeds availability", description: `Session would end at ${Math.floor(endMinutes / 60)}:${String(endMinutes % 60).padStart(2, "0")} but provider is available until ${slot.end_time}.`, variant: "destructive" });
+          return;
+        }
+      }
+    }
     if (!isAuthenticated) {
       toast({ title: "Please sign in to book", variant: "destructive" });
       navigate("/auth");
