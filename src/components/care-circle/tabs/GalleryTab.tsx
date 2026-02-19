@@ -23,10 +23,7 @@ function GalleryUploadForm({ groupId }: { groupId: string }) {
       const { error } = await careDb.from("care_group_gallery").insert({
         group_id: groupId, image_url: url.trim(), caption: caption.trim() || null, uploaded_by: user.id,
       });
-      if (error) {
-        if (error.code === "42P01" || error.message?.includes("does not exist") || error.code === "404") throw new Error("Gallery feature is currently unavailable (table missing)");
-        throw error;
-      }
+      if (error) throw error;
       setUrl(""); setCaption("");
       toast({ title: "Photo added!" });
       qc.invalidateQueries({ queryKey: ["care-group-gallery"] });
