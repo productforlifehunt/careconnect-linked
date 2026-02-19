@@ -7,6 +7,7 @@ import { useBookings, useCareTasks, useDashboardStats } from "@/hooks/use-care-d
 import {
   CalendarDays, Users, MapPin, Clock, ArrowRight, CheckCircle, AlertCircle, MessageSquare, Loader2
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -74,7 +75,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent className="space-y-3">
             {bookingsLoading ? (
-              <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+              <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50"><Skeleton className="w-10 h-12 rounded" /><div className="flex-1 space-y-2"><Skeleton className="h-4 w-32" /><Skeleton className="h-3 w-48" /></div><Skeleton className="h-6 w-16 rounded-full" /></div>)}</div>
             ) : upcomingBookings.length > 0 ? upcomingBookings.map((b: any) => (
               <div key={b.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                 <div className="text-center shrink-0">
@@ -101,7 +102,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent className="space-y-3">
             {tasksLoading ? (
-              <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+              <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50"><Skeleton className="h-4 w-4 rounded-full" /><div className="flex-1 space-y-2"><Skeleton className="h-4 w-36" /><Skeleton className="h-3 w-24" /></div><Skeleton className="h-5 w-14 rounded-full" /></div>)}</div>
             ) : pendingTasks.length > 0 ? pendingTasks.map((t: any) => (
               <div key={t.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                 <CheckCircle className={`h-4 w-4 shrink-0 ${t.status === "completed" ? "text-success" : "text-muted-foreground"}`} />

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Star, MapPin, Shield, Clock, Search, SlidersHorizontal, X, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
 import { useProviders } from "@/hooks/use-care-data";
@@ -19,8 +20,10 @@ export default function SearchResults() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
+  const initialLocation = searchParams.get("location") || "";
 
   const [query, setQuery] = useState(initialQuery);
+  const [locationFilter, setLocationFilter] = useState(initialLocation);
   const [sortBy, setSortBy] = useState("rating");
   const [priceRange, setPriceRange] = useState([0, 100]);
   const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>(
@@ -33,6 +36,7 @@ export default function SearchResults() {
 
   const { data: providers, isLoading } = useProviders({
     query: query || undefined,
+    location: locationFilter || undefined,
     specialties: selectedSpecialties.length > 0 ? selectedSpecialties : undefined,
     minRate: priceRange[0] > 0 ? priceRange[0] : undefined,
     maxRate: priceRange[1] < 100 ? priceRange[1] : undefined,
@@ -53,6 +57,13 @@ export default function SearchResults() {
 
   const FilterPanel = () => (
     <div className="space-y-6">
+      <div>
+        <Label className="text-sm font-semibold mb-3 block">Location</Label>
+        <div className="relative">
+          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="City or ZIP..." value={locationFilter} onChange={e => { setLocationFilter(e.target.value); setCurrentPage(1); }} className="pl-9" />
+        </div>
+      </div>
       <div>
         <Label className="text-sm font-semibold mb-3 block">Specialty</Label>
         <div className="space-y-2">
@@ -142,7 +153,25 @@ export default function SearchResults() {
         {/* Results */}
         <div className="flex-1">
           {isLoading ? (
-            <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
+            <div className="space-y-4">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="bg-card rounded-xl border p-5">
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <Skeleton className="w-20 h-20 rounded-xl shrink-0" />
+                    <div className="flex-1 space-y-3">
+                      <Skeleton className="h-5 w-40" />
+                      <Skeleton className="h-4 w-56" />
+                      <Skeleton className="h-3 w-full" />
+                      <div className="flex gap-2"><Skeleton className="h-5 w-16 rounded-full" /><Skeleton className="h-5 w-20 rounded-full" /></div>
+                    </div>
+                    <div className="space-y-2 shrink-0">
+                      <Skeleton className="h-8 w-16" />
+                      <Skeleton className="h-9 w-24 rounded-md" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (() => {
             const allResults = providers || [];
             const totalPages = Math.max(1, Math.ceil(allResults.length / PAGE_SIZE));
@@ -190,7 +219,7 @@ export default function SearchResults() {
                   {allResults.length === 0 && (
                     <div className="text-center py-16">
                       <p className="text-lg text-muted-foreground">No caregivers match your criteria.</p>
-                      <Button variant="outline" className="mt-4" onClick={() => { setQuery(""); setSelectedSpecialties([]); setMinRating(0); setPriceRange([0, 100]); setCurrentPage(1); }}>
+                      <Button variant="outline" className="mt-4" onClick={() => { setQuery(""); setLocationFilter(""); setSelectedSpecialties([]); setMinRating(0); setPriceRange([0, 100]); setCurrentPage(1); }}>
                         Clear Filters
                       </Button>
                     </div>

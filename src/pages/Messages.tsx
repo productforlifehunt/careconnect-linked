@@ -1,18 +1,22 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, Search, Phone, Video, MoreVertical, Loader2, Plus, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useConversations, useDirectMessages, useSendMessage, useSearchProfiles, useStartConversation, useMarkMessagesRead } from "@/hooks/use-care-data";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
+import { careDb } from "@/integrations/supabase/external-client";
 
 export default function Messages() {
   const { user } = useAuth();
   const { toast } = useToast();
   const location = useLocation();
+  const qc = useQueryClient();
   const { data: conversations, isLoading: convosLoading } = useConversations();
   const sendMessage = useSendMessage();
   const startConversation = useStartConversation();
@@ -26,16 +30,33 @@ export default function Messages() {
   const [newConvoSearch, setNewConvoSearch] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { data: newConvoResults } = useSearchProfiles(newConvoSearch);
-  // Track if we've handled the incoming navigation state
   const [handledNavState, setHandledNavState] = useState(false);
 
-  // Derive the other user from the conversation
   const getOtherUser = (convo: any) => {
     if (!user) return null;
     return convo.participant_1?.id === user.id ? convo.participant_2 : convo.participant_1;
   };
 
-  // If navigated from caregiver profile, auto-open/start that conversation
+  // Realtime subscription for new messages
+  useEffect(() => {
+    if (!user?.id) return;
+    const channel = careDb
+      .channel('dm-realtime')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'care_connector',
+        table: 'direct_message',
+      }, (payload: any) => {
+        const msg = payload.new;
+        if (msg.sender_id === user.id || msg.receiver_id === user.id) {
+          qc.invalidateQueries({ queryKey: ["messages"] });
+          qc.invalidateQueries({ queryKey: ["conversations"] });
+        }
+      })
+      .subscribe();
+    return () => { careDb.removeChannel(channel); };
+  }, [user?.id, qc]);
+
   useEffect(() => {
     const navState = location.state as any;
     if (navState?.targetUserId && !handledNavState) {
@@ -54,7 +75,6 @@ export default function Messages() {
     }
   }, [location.state, handledNavState]);
 
-  // Auto-select first conversation (only if no conversation is selected and not handling nav state)
   useEffect(() => {
     const navState = location.state as any;
     if (conversations && conversations.length > 0 && !selectedConvoId && !navState?.targetUserId) {
@@ -94,6 +114,21 @@ export default function Messages() {
     return other?.full_name?.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
+  // Skeleton for conversation list
+  const ConvoSkeleton = () => (
+    <div className="space-y-0">
+      {[1, 2, 3, 4, 5].map(i => (
+        <div key={i} className="p-4 border-b flex items-center gap-3">
+          <Skeleton className="w-10 h-10 rounded-full shrink-0" />
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-3 w-40" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <div className="h-[calc(100vh-4rem)] flex">
       {/* Conversation List */}
@@ -112,7 +147,7 @@ export default function Messages() {
         </div>
         <div className="flex-1 overflow-auto">
           {convosLoading ? (
-            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+            <ConvoSkeleton />
           ) : filteredConvos.length > 0 ? filteredConvos.map((c: any) => {
             const other = getOtherUser(c);
             const isSelected = selectedConvoId === c.id;
@@ -190,7 +225,13 @@ export default function Messages() {
 
           <div className="flex-1 overflow-auto p-4 space-y-3 bg-muted/20">
             {msgsLoading ? (
-              <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+              <div className="space-y-3">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className={`flex ${i % 2 === 0 ? "justify-end" : "justify-start"}`}>
+                    <Skeleton className={`h-12 rounded-2xl ${i % 2 === 0 ? "w-48" : "w-56"}`} />
+                  </div>
+                ))}
+              </div>
             ) : (messages || []).length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center">
                 <p className="text-muted-foreground text-sm">No messages yet.</p>
