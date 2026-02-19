@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { RequireAuth } from "@/components/auth/RequireAuth";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import SearchResults from "./pages/SearchResults";
 import CaregiverProfile from "./pages/CaregiverProfile";
@@ -79,7 +80,9 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <AppLayout>
-              <AppRoutes />
+              <ErrorBoundary>
+                <AppRoutes />
+              </ErrorBoundary>
             </AppLayout>
           </BrowserRouter>
         </AuthProvider>

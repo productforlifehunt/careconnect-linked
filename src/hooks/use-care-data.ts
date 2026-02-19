@@ -304,7 +304,7 @@ export function useGroupMessages(groupId: string | null) {
 export function useSendMessage() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ receiverId, content, groupId }: { receiverId?: string; content: string; groupId?: string }) => {
+    mutationFn: async ({ receiverId, content, groupId, attachmentUrl, messageType }: { receiverId?: string; content: string; groupId?: string; attachmentUrl?: string; messageType?: string }) => {
       const userId = await getCurrentUserId();
       if (!userId) throw new Error("Not authenticated");
       const { error } = await careDb
@@ -314,7 +314,8 @@ export function useSendMessage() {
           receiver_id: receiverId || null,
           group_id: groupId || null,
           message_content: content,
-          message_type: "text",
+          message_type: messageType || "text",
+          attachment_url: attachmentUrl || null,
         });
       if (error) throw error;
       // Update conversation last_message_at for DMs

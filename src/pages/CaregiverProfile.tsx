@@ -32,6 +32,7 @@ export default function CaregiverProfile() {
   const [bookingType, setBookingType] = useState("");
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
   const [availabilityWarning, setAvailabilityWarning] = useState("");
+  const [recurringPattern, setRecurringPattern] = useState("none");
 
   const { data: availability } = useProviderAvailability(id);
   const isFavorited = savedProviders?.some((sp: any) => sp.provider_id === id) || false;
@@ -102,6 +103,7 @@ export default function CaregiverProfile() {
       return;
     }
     try {
+      const recurringNote = recurringPattern !== "none" ? `[Recurring: ${recurringPattern}] ` : "";
       await createBooking.mutateAsync({
         provider_id: caregiver.id,
         appointment_date: bookingDate,
@@ -110,7 +112,7 @@ export default function CaregiverProfile() {
         service_type: bookingType,
         hourly_rate: caregiver.hourly_rate || 0,
         total_cost: (caregiver.hourly_rate || 0) * parseInt(bookingDuration),
-        special_instruction: bookingNotes || null,
+        special_instruction: recurringNote + (bookingNotes || "") || null,
         status: caregiver.instant_book_enabled ? "confirmed" : "pending",
         payment_status: "pending",
       });
@@ -292,12 +294,24 @@ export default function CaregiverProfile() {
                       </Select>
                     </div>
                     <div>
+                      <Label>Recurring</Label>
+                      <Select value={recurringPattern} onValueChange={setRecurringPattern}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">One-time</SelectItem>
+                          <SelectItem value="weekly">Weekly</SelectItem>
+                          <SelectItem value="biweekly">Bi-weekly</SelectItem>
+                          <SelectItem value="monthly">Monthly</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
                       <Label>Notes</Label>
                       <Textarea value={bookingNotes} onChange={e => setBookingNotes(e.target.value)} placeholder="Any special requirements..." />
                     </div>
                     <div className="flex justify-between items-center pt-2 border-t">
                       <span className="text-sm text-muted-foreground">Estimated Total</span>
-                      <span className="text-xl font-bold text-foreground">${total}</span>
+                      <span className="text-xl font-bold text-foreground">${total}{recurringPattern !== "none" ? `/${recurringPattern === "weekly" ? "wk" : recurringPattern === "biweekly" ? "2wk" : "mo"}` : ""}</span>
                     </div>
                     <Button variant="coral" className="w-full" onClick={handleBooking} disabled={createBooking.isPending}>
                       {createBooking.isPending ? "Submitting..." : "Confirm Booking"}

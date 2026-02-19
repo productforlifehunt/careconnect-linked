@@ -6,8 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarDays, Clock, MoreHorizontal, X, Check, MessageSquare, Loader2, Star, AlertTriangle } from "lucide-react";
+import { CalendarDays, Clock, MoreHorizontal, X, Check, MessageSquare, Loader2, Star, AlertTriangle, RefreshCw } from "lucide-react";
 import { useBookings, useUpdateBookingStatus, useStartConversation } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -30,7 +31,11 @@ export default function Bookings() {
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
   const [cancelTargetId, setCancelTargetId] = useState<string | null>(null);
   const [cancelTargetName, setCancelTargetName] = useState("");
-
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
+  const [rescheduleBooking, setRescheduleBooking] = useState<any>(null);
+  const [rescheduleDate, setRescheduleDate] = useState("");
+  const [rescheduleTime, setRescheduleTime] = useState("");
+  const [rescheduleSaving, setRescheduleSaving] = useState(false);
   const statusColors: Record<string, string> = {
     confirmed: "bg-success text-success-foreground",
     pending: "bg-warning text-warning-foreground",
@@ -67,6 +72,51 @@ export default function Bookings() {
     setReviewRating(5);
     setReviewComment("");
     setReviewOpen(true);
+  };
+
+  const openReschedule = (booking: any) => {
+    setRescheduleBooking(booking);
+    setRescheduleDate(booking.appointment_date || "");
+    setRescheduleTime(booking.appointment_time || "");
+    setRescheduleOpen(true);
+  };
+
+  const handleReschedule = async () => {
+    if (!rescheduleBooking || !rescheduleDate || !rescheduleTime) return;
+    const selectedDate = new Date(rescheduleDate + "T" + rescheduleTime);
+    if (selectedDate < new Date()) {
+      toast({ title: "Cannot reschedule to a past date", variant: "destructive" });
+      return;
+    }
+    setRescheduleSaving(true);
+    try {
+      const { error } = await careDb.from("booking").update({
+        appointment_date: rescheduleDate,
+        appointment_time: rescheduleTime,
+        status: "pending", // requires re-confirmation after reschedule
+      }).eq("id", rescheduleBooking.id);
+      if (error) throw error;
+      // Notify provider via notification
+      if (rescheduleBooking.provider_id) {
+        const { data: { session } } = await careAuth.auth.getSession();
+        const userName = session?.user?.user_metadata?.full_name || "A client";
+        await careDb.from("notification").insert({
+          user_id: rescheduleBooking.provider_id,
+          type: "booking_rescheduled",
+          title: "Booking Rescheduled",
+          content: `${userName} rescheduled to ${new Date(rescheduleDate).toLocaleDateString("en", { month: "short", day: "numeric" })} at ${rescheduleTime}`,
+          link_url: "/provider-dashboard",
+        }).then(() => {});
+      }
+      toast({ title: "Booking rescheduled", description: "The provider will need to re-confirm." });
+      setRescheduleOpen(false);
+      // Refresh bookings - use window location to force refetch
+      window.location.reload();
+    } catch (e: any) {
+      toast({ title: "Reschedule failed", description: e.message, variant: "destructive" });
+    } finally {
+      setRescheduleSaving(false);
+    }
   };
 
   const handleSubmitReview = async () => {
@@ -152,6 +202,7 @@ export default function Bookings() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {["pending", "confirmed"].includes(booking.status) && <DropdownMenuItem onClick={() => { setCancelTargetId(booking.id); setCancelTargetName(booking.provider?.full_name || "Provider"); setCancelConfirmOpen(true); }} className="text-destructive"><X className="mr-2 h-4 w-4" /> Cancel Booking</DropdownMenuItem>}
+                {["pending", "confirmed"].includes(booking.status) && <DropdownMenuItem onClick={() => openReschedule(booking)}><RefreshCw className="mr-2 h-4 w-4" /> Reschedule</DropdownMenuItem>}
                 {booking.status === "completed" && <DropdownMenuItem onClick={() => openReview(booking)}><Star className="mr-2 h-4 w-4" /> Leave Review</DropdownMenuItem>}
                 <DropdownMenuItem onClick={() => handleMessage(booking)} disabled={messagingId === booking.provider_id}>
                   <MessageSquare className="mr-2 h-4 w-4" /> Message Provider
@@ -252,6 +303,37 @@ export default function Bookings() {
               }
             }}>Yes, Cancel</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reschedule Dialog */}
+      <Dialog open={rescheduleOpen} onOpenChange={setRescheduleOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><RefreshCw className="h-5 w-5 text-primary" /> Reschedule Booking</DialogTitle>
+            <DialogDescription>
+              Choose a new date and time for your booking with {rescheduleBooking?.provider?.full_name || "the provider"}. They'll need to re-confirm.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>New Date</Label>
+                <Input type="date" value={rescheduleDate} onChange={e => setRescheduleDate(e.target.value)} min={new Date().toISOString().split("T")[0]} />
+              </div>
+              <div>
+                <Label>New Time</Label>
+                <Input type="time" value={rescheduleTime} onChange={e => setRescheduleTime(e.target.value)} />
+              </div>
+            </div>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button variant="outline" onClick={() => setRescheduleOpen(false)}>Cancel</Button>
+              <Button variant="coral" onClick={handleReschedule} disabled={rescheduleSaving || !rescheduleDate || !rescheduleTime}>
+                {rescheduleSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+                Reschedule
+              </Button>
+            </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
