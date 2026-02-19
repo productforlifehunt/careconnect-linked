@@ -4,6 +4,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, Search, Phone, Video, MoreVertical, Loader2, Plus, X } from "lucide-react";
+import { MessageAttachment } from "@/components/messages/MessageAttachment";
+import { MessageBubble } from "@/components/messages/MessageBubble";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useConversations, useDirectMessages, useSendMessage, useSearchProfiles, useStartConversation, useMarkMessagesRead } from "@/hooks/use-care-data";
@@ -25,6 +27,7 @@ export default function Messages() {
   const [selectedConvoId, setSelectedConvoId] = useState<string | null>(null);
   const [selectedOtherUser, setSelectedOtherUser] = useState<any>(null);
   const [newMessage, setNewMessage] = useState("");
+  const [pendingAttachment, setPendingAttachment] = useState<{ url: string; type: "image" | "file" } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [newConvoOpen, setNewConvoOpen] = useState(false);
   const [newConvoSearch, setNewConvoSearch] = useState("");
@@ -92,9 +95,15 @@ export default function Messages() {
   }, [messages]);
 
   const handleSend = () => {
-    if (!newMessage.trim() || !otherUserId) return;
-    sendMessage.mutate({ receiverId: otherUserId, content: newMessage });
+    if ((!newMessage.trim() && !pendingAttachment) || !otherUserId) return;
+    sendMessage.mutate({
+      receiverId: otherUserId,
+      content: newMessage || (pendingAttachment ? (pendingAttachment.type === "image" ? "📷 Image" : "📎 File") : ""),
+      attachmentUrl: pendingAttachment?.url,
+      messageType: pendingAttachment?.type || "text",
+    });
     setNewMessage("");
+    setPendingAttachment(null);
   };
 
   const handleStartConversation = (person: any) => {
@@ -237,24 +246,25 @@ export default function Messages() {
                 <p className="text-muted-foreground text-sm">No messages yet.</p>
                 <p className="text-xs text-muted-foreground mt-1">Send a message below to start the conversation!</p>
               </div>
-            ) : (messages || []).map((m: any) => {
-              const isMe = m.sender_id === user?.id;
-              return (
-                <div key={m.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
-                  <div className={`max-w-[70%] rounded-2xl px-4 py-2 ${isMe ? "hero-gradient text-primary-foreground rounded-br-md" : "bg-card border rounded-bl-md text-foreground"}`}>
-                    <p className="text-sm">{m.message_content}</p>
-                    <p className={`text-xs mt-1 ${isMe ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
-                      {new Date(m.created_at).toLocaleTimeString("en", { hour: "numeric", minute: "2-digit" })}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
+            ) : (messages || []).map((m: any) => (
+              <MessageBubble key={m.id} message={m} isMe={m.sender_id === user?.id} />
+            ))}
             <div ref={messagesEndRef} />
           </div>
 
           <div className="p-4 border-t bg-card">
+            {pendingAttachment && (
+              <div className="flex items-center gap-2 mb-2 p-2 rounded-lg bg-muted/50 text-sm">
+                <span className="text-muted-foreground truncate flex-1">
+                  {pendingAttachment.type === "image" ? "📷" : "📎"} {pendingAttachment.url.split("/").pop()}
+                </span>
+                <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => setPendingAttachment(null)}>
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
             <div className="flex gap-2">
+              <MessageAttachment onAttach={(url, type) => setPendingAttachment({ url, type })} disabled={sendMessage.isPending} />
               <Input
                 placeholder="Type a message..."
                 value={newMessage}
@@ -262,7 +272,7 @@ export default function Messages() {
                 onKeyDown={e => e.key === "Enter" && handleSend()}
                 className="flex-1"
               />
-              <Button variant="coral" size="icon" onClick={handleSend} disabled={!newMessage.trim() || sendMessage.isPending}>
+              <Button variant="coral" size="icon" onClick={handleSend} disabled={(!newMessage.trim() && !pendingAttachment) || sendMessage.isPending}>
                 <Send className="h-4 w-4" />
               </Button>
             </div>
