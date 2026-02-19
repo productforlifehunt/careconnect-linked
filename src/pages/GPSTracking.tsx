@@ -1,13 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { MapPin, Navigation, Clock, Shield, Phone, AlertTriangle, RefreshCw, Loader2 } from "lucide-react";
 import { useLocationShares } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { careDb, careAuth } from "@/integrations/supabase/external-client";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 export default function GPSTracking() {
   const { toast } = useToast();
@@ -17,6 +20,12 @@ export default function GPSTracking() {
   const [geofenceAlerts, setGeofenceAlerts] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [updatingShare, setUpdatingShare] = useState(false);
+  const [sosDialogOpen, setSosDialogOpen] = useState(false);
+  const [sosSending, setSosSending] = useState(false);
+
+  const mapRef = useRef<HTMLDivElement>(null);
+  const leafletMap = useRef<L.Map | null>(null);
+  const markersRef = useRef<L.Marker[]>([]);
 
   // Check if current user has a location_share row
   useEffect(() => {
@@ -27,6 +36,75 @@ export default function GPSTracking() {
       if (data) setShareMyLocation(data.is_sharing);
     })();
   }, []);
+
+  const people = (locationShares || []).map((ls: any) => ({
+    id: ls.id,
+    userId: ls.user_id,
+    name: ls.profile?.full_name || "Unknown",
+    avatar_url: ls.profile?.avatar_url,
+    lastLocation: ls.address || `${ls.latitude?.toFixed(4)}, ${ls.longitude?.toFixed(4)}`,
+    coordinates: { lat: ls.latitude, lng: ls.longitude },
+    lastUpdated: new Date(ls.updated_at).toLocaleTimeString("en", { hour: "numeric", minute: "2-digit" }),
+    status: "active" as const,
+    isSharing: ls.is_sharing,
+  }));
+
+  const sharingPeople = people.filter(p => p.isSharing && p.coordinates.lat && p.coordinates.lng);
+
+  // Initialize Leaflet map
+  useEffect(() => {
+    if (!mapRef.current || leafletMap.current) return;
+    const map = L.map(mapRef.current, { zoomControl: true }).setView([39.8283, -98.5795], 4);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    }).addTo(map);
+    leafletMap.current = map;
+    return () => {
+      map.remove();
+      leafletMap.current = null;
+    };
+  }, []);
+
+  // Update markers when data changes
+  useEffect(() => {
+    const map = leafletMap.current;
+    if (!map) return;
+    // Clear existing markers
+    markersRef.current.forEach(m => m.remove());
+    markersRef.current = [];
+
+    if (sharingPeople.length === 0) return;
+
+    sharingPeople.forEach(person => {
+      const initials = person.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2);
+      const icon = L.divIcon({
+        className: "custom-marker",
+        html: `<div style="width:36px;height:36px;border-radius:50%;background:hsl(var(--primary));color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);cursor:pointer">${initials}</div>`,
+        iconSize: [36, 36],
+        iconAnchor: [18, 18],
+      });
+      const marker = L.marker([person.coordinates.lat, person.coordinates.lng], { icon })
+        .addTo(map)
+        .bindPopup(`<b>${person.name}</b><br/>Last seen: ${person.lastUpdated}<br/>${person.lastLocation}`);
+      marker.on("click", () => setSelectedPerson(person));
+      markersRef.current.push(marker);
+    });
+
+    // Fit bounds
+    if (sharingPeople.length === 1) {
+      map.setView([sharingPeople[0].coordinates.lat, sharingPeople[0].coordinates.lng], 14);
+    } else {
+      const bounds = L.latLngBounds(sharingPeople.map(p => [p.coordinates.lat, p.coordinates.lng] as [number, number]));
+      map.fitBounds(bounds, { padding: [50, 50] });
+    }
+  }, [sharingPeople.length, locationShares]);
+
+  // Focus map on selected person
+  useEffect(() => {
+    if (selectedPerson?.coordinates?.lat && leafletMap.current) {
+      leafletMap.current.setView([selectedPerson.coordinates.lat, selectedPerson.coordinates.lng], 15);
+    }
+  }, [selectedPerson]);
 
   const handleToggleShare = async (checked: boolean) => {
     setShareMyLocation(checked);
@@ -48,7 +126,7 @@ export default function GPSTracking() {
           toast({ title: "Location sharing enabled" });
         }, () => {
           setUpdatingShare(false);
-          toast({ title: "Could not get location", variant: "destructive" });
+          toast({ title: "Could not get location", description: "Please enable location access in your browser settings.", variant: "destructive" });
           setShareMyLocation(false);
         });
       } else {
@@ -62,23 +140,6 @@ export default function GPSTracking() {
     }
   };
 
-  const people = (locationShares || []).map((ls: any) => ({
-    id: ls.id,
-    name: ls.profile?.full_name || "Unknown",
-    avatar_url: ls.profile?.avatar_url,
-    lastLocation: ls.address || `${ls.latitude?.toFixed(4)}, ${ls.longitude?.toFixed(4)}`,
-    coordinates: { lat: ls.latitude, lng: ls.longitude },
-    lastUpdated: new Date(ls.updated_at).toLocaleTimeString("en", { hour: "numeric", minute: "2-digit" }),
-    status: "active" as const,
-    isSharing: ls.is_sharing,
-  }));
-
-  const statusColors: Record<string, string> = {
-    active: "bg-success",
-    idle: "bg-warning",
-    offline: "bg-muted-foreground/30",
-  };
-
   const handleRefresh = () => {
     setRefreshing(true);
     refetch().then(() => {
@@ -87,11 +148,89 @@ export default function GPSTracking() {
     });
   };
 
-  const handleEmergency = () => {
-    toast({
-      title: "🚨 Emergency Alert Sent",
-      description: "All care circle members have been notified with your current location.",
-    });
+  const handleSOS = async () => {
+    setSosSending(true);
+    try {
+      const { data: { session } } = await careAuth.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+      const userId = session.user.id;
+
+      // Get current location
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000 });
+      });
+
+      // Update location share with emergency flag
+      const { data: existing } = await careDb.from("location_share").select("id").eq("user_id", userId).maybeSingle();
+      const locationData = {
+        is_sharing: true,
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        updated_at: new Date().toISOString(),
+        is_emergency: true,
+      };
+      if (existing) {
+        await careDb.from("location_share").update(locationData).eq("user_id", userId);
+      } else {
+        await careDb.from("location_share").insert({ user_id: userId, ...locationData });
+      }
+
+      // Get all care group members to notify
+      const { data: memberships } = await careDb
+        .from("care_group_member")
+        .select("group_id")
+        .eq("user_id", userId)
+        .eq("invitation_status", "accepted");
+      
+      const groupIds = (memberships || []).map((m: any) => m.group_id);
+      if (groupIds.length > 0) {
+        const { data: groupMembers } = await careDb
+          .from("care_group_member")
+          .select("user_id")
+          .in("group_id", groupIds)
+          .eq("invitation_status", "accepted")
+          .neq("user_id", userId);
+        
+        const memberIds = [...new Set((groupMembers || []).map((m: any) => m.user_id))];
+        
+        // Get user profile for the notification
+        const { data: profile } = await careDb.from("profile").select("full_name").eq("id", userId).single();
+        const senderName = profile?.full_name || "A care circle member";
+
+        // Create notifications for all members
+        if (memberIds.length > 0) {
+          const notifications = memberIds.map(mid => ({
+            user_id: mid,
+            type: "safety",
+            title: "🚨 Emergency SOS Alert",
+            content: `${senderName} has triggered an emergency SOS alert. Their current location has been shared.`,
+            link_url: "/gps-tracking",
+          }));
+          await careDb.from("notification").insert(notifications);
+        }
+      }
+
+      refetch();
+      setSosDialogOpen(false);
+      toast({
+        title: "🚨 Emergency Alert Sent",
+        description: "All care circle members have been notified with your current location.",
+      });
+    } catch (err: any) {
+      toast({
+        title: "SOS failed",
+        description: err.message || "Could not send emergency alert. Please call 911 directly.",
+        variant: "destructive",
+      });
+    } finally {
+      setSosSending(false);
+    }
+  };
+
+  const statusColors: Record<string, string> = {
+    active: "bg-success",
+    idle: "bg-warning",
+    offline: "bg-muted-foreground/30",
   };
 
   return (
@@ -105,55 +244,46 @@ export default function GPSTracking() {
           <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
             <RefreshCw className={`h-4 w-4 mr-1 ${refreshing ? "animate-spin" : ""}`} /> Refresh
           </Button>
-          <Button variant="destructive" size="sm" onClick={handleEmergency}>
+          <Button variant="destructive" size="sm" onClick={() => setSosDialogOpen(true)}>
             <AlertTriangle className="h-4 w-4 mr-1" /> SOS
           </Button>
         </div>
       </div>
 
+      {/* SOS Confirmation Dialog */}
+      <Dialog open={sosDialogOpen} onOpenChange={setSosDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" /> Emergency SOS Alert
+            </DialogTitle>
+            <DialogDescription>
+              This will immediately share your current location and send an emergency notification to all members of your care circles. Only use this in a real emergency.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setSosDialogOpen(false)} disabled={sosSending}>Cancel</Button>
+            <Button variant="destructive" onClick={handleSOS} disabled={sosSending}>
+              {sosSending ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Sending...</> : "Send SOS Alert"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <Card className="border-transparent card-elevated overflow-hidden">
             <CardContent className="p-0">
-              <div className="relative bg-accent/30 h-[500px] flex items-center justify-center">
-                <div className="absolute inset-0 bg-gradient-to-br from-accent/50 to-primary/5">
-                  <div className="absolute inset-0 opacity-20" style={{
-                    backgroundImage: "linear-gradient(hsl(var(--border)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--border)) 1px, transparent 1px)",
-                    backgroundSize: "40px 40px"
-                  }} />
-                  {people.filter(p => p.isSharing).map((person, i) => {
-                    const positions = [
-                      { top: "40%", left: "35%" },
-                      { top: "30%", left: "55%" },
-                      { top: "60%", left: "65%" },
-                      { top: "50%", left: "45%" },
-                    ];
-                    const pos = positions[i % positions.length];
-                    return (
-                      <button
-                        key={person.id}
-                        className="absolute transform -translate-x-1/2 -translate-y-1/2 z-10 group cursor-pointer"
-                        style={{ top: pos.top, left: pos.left }}
-                        onClick={() => setSelectedPerson(person)}
-                      >
-                        <div className="relative">
-                          <div className={`w-4 h-4 rounded-full ${statusColors[person.status]} animate-pulse`} />
-                          <div className={`absolute -inset-2 rounded-full ${statusColors[person.status]} opacity-20 animate-ping`} style={{ animationDuration: "3s" }} />
-                        </div>
-                        <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-card shadow-lg rounded-lg px-3 py-1.5 text-xs font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity border">
-                          <p className="text-foreground">{person.name}</p>
-                          <p className="text-muted-foreground">{person.lastUpdated}</p>
-                        </div>
-                      </button>
-                    );
-                  })}
+              <div ref={mapRef} className="h-[500px] w-full" />
+              {sharingPeople.length === 0 && !isLoading && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[400]">
+                  <div className="text-center bg-card/80 backdrop-blur-sm rounded-xl p-6">
+                    <MapPin className="h-12 w-12 text-primary/30 mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">No one is currently sharing their location</p>
+                    <p className="text-xs text-muted-foreground mt-1">Enable location sharing below to appear on the map</p>
+                  </div>
                 </div>
-                <div className="relative z-20 text-center pointer-events-none">
-                  <MapPin className="h-12 w-12 text-primary/20 mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">Interactive map view</p>
-                  <p className="text-xs text-muted-foreground">{people.length} people sharing location</p>
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -179,16 +309,19 @@ export default function GPSTracking() {
                           <span className="text-primary text-sm font-medium">{p.name.charAt(0)}</span>
                         </div>
                       )}
-                      <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-card ${statusColors[p.status]}`} />
+                      <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-card ${p.isSharing ? statusColors.active : statusColors.offline}`} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground">{p.name}</p>
+                      {!p.isSharing && <Badge variant="secondary" className="text-[10px] mt-0.5">Not sharing</Badge>}
                     </div>
                   </div>
-                  <div className="mt-2 text-xs text-muted-foreground">
-                    <p className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {p.lastLocation}</p>
-                    <p className="flex items-center gap-1 mt-1"><Clock className="h-3 w-3" /> {p.lastUpdated}</p>
-                  </div>
+                  {p.isSharing && (
+                    <div className="mt-2 text-xs text-muted-foreground">
+                      <p className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {p.lastLocation}</p>
+                      <p className="flex items-center gap-1 mt-1"><Clock className="h-3 w-3" /> {p.lastUpdated}</p>
+                    </div>
+                  )}
                 </div>
               )) : (
                 <p className="text-sm text-muted-foreground text-center py-4">No location shares found</p>
@@ -196,13 +329,17 @@ export default function GPSTracking() {
             </CardContent>
           </Card>
 
-          {selectedPerson && (
+          {selectedPerson && selectedPerson.coordinates?.lat && (
             <Card className="border-transparent card-elevated">
               <CardHeader><CardTitle className="text-lg">{selectedPerson.name}</CardTitle></CardHeader>
               <CardContent className="space-y-3">
                 <div className="p-2 rounded bg-muted/50 text-sm">
                   <p className="text-muted-foreground text-xs">Coordinates</p>
-                  <p className="font-mono text-xs text-foreground">{selectedPerson.coordinates.lat?.toFixed(4)}, {selectedPerson.coordinates.lng?.toFixed(4)}</p>
+                  <p className="font-mono text-xs text-foreground">{selectedPerson.coordinates.lat?.toFixed(6)}, {selectedPerson.coordinates.lng?.toFixed(6)}</p>
+                </div>
+                <div className="p-2 rounded bg-muted/50 text-sm">
+                  <p className="text-muted-foreground text-xs">Last Updated</p>
+                  <p className="text-xs text-foreground">{selectedPerson.lastUpdated}</p>
                 </div>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" className="flex-1" asChild>

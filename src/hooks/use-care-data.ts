@@ -195,29 +195,45 @@ export function useConversations() {
         .order("last_message_at", { ascending: false });
       if (error) throw error;
       const conversations = (data || []) as any[];
-      // Fetch last message and unread count for each conversation
+      if (conversations.length === 0) return conversations;
+
+      // Batch: get all other user IDs
+      const otherIds = conversations.map(c => {
+        return c.participant_1?.id === userId ? c.participant_2?.id : c.participant_1?.id;
+      }).filter(Boolean);
+
+      // Batch fetch last messages for all conversations at once
+      // We get recent DMs involving this user and group by other user
+      const { data: recentMsgs } = await careDb
+        .from("direct_message")
+        .select("id, message_content, sender_id, receiver_id, created_at, read_at")
+        .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+        .is("group_id", null)
+        .order("created_at", { ascending: false })
+        .limit(500);
+
+      // Build maps for last message and unread count per other user
+      const lastMsgMap: Record<string, any> = {};
+      const unreadMap: Record<string, number> = {};
+
+      for (const msg of (recentMsgs || [])) {
+        const otherId = msg.sender_id === userId ? msg.receiver_id : msg.sender_id;
+        if (!otherId) continue;
+        // Last message (first occurrence = most recent due to ordering)
+        if (!lastMsgMap[otherId]) {
+          lastMsgMap[otherId] = msg;
+        }
+        // Unread count (messages FROM other TO me that are unread)
+        if (msg.sender_id === otherId && msg.receiver_id === userId && !msg.read_at) {
+          unreadMap[otherId] = (unreadMap[otherId] || 0) + 1;
+        }
+      }
+
+      // Attach to conversations
       for (const convo of conversations) {
         const otherId = convo.participant_1?.id === userId ? convo.participant_2?.id : convo.participant_1?.id;
-        if (otherId) {
-          // Last message
-          const { data: lastMsgs } = await careDb
-            .from("direct_message")
-            .select("message_content, sender_id, created_at")
-            .or(`and(sender_id.eq.${userId},receiver_id.eq.${otherId}),and(sender_id.eq.${otherId},receiver_id.eq.${userId})`)
-            .is("group_id", null)
-            .order("created_at", { ascending: false })
-            .limit(1);
-          convo.last_message = lastMsgs?.[0] || null;
-          // Unread count
-          const { count } = await careDb
-            .from("direct_message")
-            .select("id", { count: "exact", head: true })
-            .eq("sender_id", otherId)
-            .eq("receiver_id", userId)
-            .is("group_id", null)
-            .is("read_at", null);
-          convo.unread_count = count || 0;
-        }
+        convo.last_message = lastMsgMap[otherId] || null;
+        convo.unread_count = unreadMap[otherId] || 0;
       }
       return conversations;
     },
