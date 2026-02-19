@@ -27,6 +27,22 @@ export default function Auth() {
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotLoading, setForgotLoading] = useState(false);
 
+  const passwordStrength = (pw: string) => {
+    if (!pw) return { score: 0, label: "", color: "" };
+    let score = 0;
+    if (pw.length >= 8) score++;
+    if (pw.length >= 12) score++;
+    if (/[A-Z]/.test(pw)) score++;
+    if (/[0-9]/.test(pw)) score++;
+    if (/[^A-Za-z0-9]/.test(pw)) score++;
+    if (score <= 1) return { score, label: "Weak", color: "bg-destructive" };
+    if (score <= 2) return { score, label: "Fair", color: "bg-warning" };
+    if (score <= 3) return { score, label: "Good", color: "bg-primary" };
+    return { score, label: "Strong", color: "bg-success" };
+  };
+
+  const pwStrength = passwordStrength(signupPassword);
+
   const handleLogin = async () => {
     if (!loginEmail || !loginPassword) {
       toast({ title: "Please fill all fields", variant: "destructive" });
@@ -47,6 +63,14 @@ export default function Auth() {
   const handleSignup = async () => {
     if (!signupName || !signupEmail || !signupPassword) {
       toast({ title: "Please fill all fields", variant: "destructive" });
+      return;
+    }
+    if (signupPassword.length < 8) {
+      toast({ title: "Password too short", description: "Minimum 8 characters required.", variant: "destructive" });
+      return;
+    }
+    if (pwStrength.score < 2) {
+      toast({ title: "Password too weak", description: "Use uppercase, numbers, and special characters.", variant: "destructive" });
       return;
     }
     setLoading(true);
@@ -127,7 +151,17 @@ export default function Auth() {
               </div>
               <div>
                 <Label>Password</Label>
-                <Input type="password" value={signupPassword} onChange={e => setSignupPassword(e.target.value)} placeholder="••••••••" />
+                <Input type="password" value={signupPassword} onChange={e => setSignupPassword(e.target.value)} placeholder="Min 8 chars, uppercase, number, symbol" />
+                {signupPassword && (
+                  <div className="mt-2 space-y-1">
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map(i => (
+                        <div key={i} className={`h-1.5 flex-1 rounded-full ${i <= pwStrength.score ? pwStrength.color : "bg-muted"}`} />
+                      ))}
+                    </div>
+                    <p className={`text-xs ${pwStrength.score <= 1 ? "text-destructive" : pwStrength.score <= 2 ? "text-warning" : "text-success"}`}>{pwStrength.label}</p>
+                  </div>
+                )}
               </div>
               <Button variant="coral" className="w-full" onClick={handleSignup} disabled={loading}>
                 {loading ? "Creating account..." : "Create Account"}

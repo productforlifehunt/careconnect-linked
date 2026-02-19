@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,8 +23,21 @@ export default function SearchResults() {
   const initialLocation = searchParams.get("location") || "";
 
   const [query, setQuery] = useState(initialQuery);
+  const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
   const [locationFilter, setLocationFilter] = useState(initialLocation);
+  const [debouncedLocation, setDebouncedLocation] = useState(initialLocation);
   const [sortBy, setSortBy] = useState("rating");
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // Debounce search query
+  useEffect(() => {
+    debounceRef.current = setTimeout(() => {
+      setDebouncedQuery(query);
+      setDebouncedLocation(locationFilter);
+      setCurrentPage(1);
+    }, 400);
+    return () => clearTimeout(debounceRef.current);
+  }, [query, locationFilter]);
   const [priceRange, setPriceRange] = useState([0, 100]);
   const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>(
     initialQuery ? [initialQuery].filter(q => specialties.includes(q)) : []
@@ -35,8 +48,8 @@ export default function SearchResults() {
   const PAGE_SIZE = 20;
 
   const { data: providers, isLoading } = useProviders({
-    query: query || undefined,
-    location: locationFilter || undefined,
+    query: debouncedQuery || undefined,
+    location: debouncedLocation || undefined,
     specialties: selectedSpecialties.length > 0 ? selectedSpecialties : undefined,
     minRate: priceRange[0] > 0 ? priceRange[0] : undefined,
     maxRate: priceRange[1] < 100 ? priceRange[1] : undefined,
