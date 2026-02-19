@@ -14,9 +14,10 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { NavLink } from "@/components/NavLink";
-import { Menu, User, LogOut, LayoutDashboard, Bell, Heart, Search, HelpCircle, UserPlus, CalendarDays, Users, MapPin, MessageSquare, Shield } from "lucide-react";
+import { Menu, User, LogOut, LayoutDashboard, Bell, Heart, Search, HelpCircle, UserPlus, CalendarDays, Users, MapPin, MessageSquare, Shield, Sun, Moon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
+import { useTheme } from "next-themes";
 import { useNotifications } from "@/hooks/use-care-data";
 
 const publicNav = [
@@ -30,6 +31,7 @@ export function AppHeader() {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { theme, setTheme } = useTheme();
   const { data: notifications } = useNotifications();
   const unreadCount = notifications?.filter(n => !n.is_read).length || 0;
 
@@ -134,6 +136,18 @@ export function AppHeader() {
         </nav>
 
         <div className="flex-1" />
+
+        {/* Dark mode toggle */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          title="Toggle dark mode"
+        >
+          <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+          <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+          <span className="sr-only">Toggle theme</span>
+        </Button>
 
         {/* Auth section */}
         {isAuthenticated ? (

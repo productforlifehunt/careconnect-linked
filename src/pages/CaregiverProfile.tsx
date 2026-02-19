@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Star, MapPin, Shield, Clock, CheckCircle, Calendar, MessageSquare, Heart, ArrowLeft, Phone, Loader2 } from "lucide-react";
-import { useProvider, useProviderReviews, useCreateBooking, useToggleSavedProvider, useSavedProviders, useStartConversation } from "@/hooks/use-care-data";
+import { useProvider, useProviderReviews, useCreateBooking, useToggleSavedProvider, useSavedProviders, useStartConversation, useProviderAvailability } from "@/hooks/use-care-data";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
@@ -31,8 +31,41 @@ export default function CaregiverProfile() {
   const [bookingNotes, setBookingNotes] = useState("");
   const [bookingType, setBookingType] = useState("");
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
+  const [availabilityWarning, setAvailabilityWarning] = useState("");
 
+  const { data: availability } = useProviderAvailability(id);
   const isFavorited = savedProviders?.some((sp: any) => sp.provider_id === id) || false;
+
+  // Check availability when date/time changes
+  const checkAvailability = (date: string, time: string) => {
+    setAvailabilityWarning("");
+    if (!date || !time || !availability || availability.length === 0) return;
+    const dayOfWeek = new Date(date + "T12:00:00").getDay(); // 0=Sun
+    // Check for specific_date override first
+    const specificSlot = availability.find((s: any) => s.specific_date === date);
+    if (specificSlot) {
+      if (!specificSlot.is_available) {
+        setAvailabilityWarning("Provider is not available on this date.");
+        return;
+      }
+      if (time < specificSlot.start_time || time >= specificSlot.end_time) {
+        setAvailabilityWarning(`Provider is available ${specificSlot.start_time}–${specificSlot.end_time} on this date.`);
+        return;
+      }
+      return;
+    }
+    // Check weekly pattern
+    const weeklySlots = availability.filter((s: any) => !s.specific_date && s.day_of_week === dayOfWeek);
+    if (weeklySlots.length === 0) {
+      setAvailabilityWarning("Provider has no availability set for this day.");
+      return;
+    }
+    const available = weeklySlots.some((s: any) => s.is_available && time >= s.start_time && time < s.end_time);
+    if (!available) {
+      const slots = weeklySlots.filter((s: any) => s.is_available).map((s: any) => `${s.start_time}–${s.end_time}`).join(", ");
+      setAvailabilityWarning(slots ? `Provider is available: ${slots}` : "Provider is not available on this day.");
+    }
+  };
 
   if (isLoading) {
     return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
@@ -231,13 +264,19 @@ export default function CaregiverProfile() {
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <Label>Date *</Label>
-                        <Input type="date" value={bookingDate} onChange={e => setBookingDate(e.target.value)} min={new Date().toISOString().split("T")[0]} />
+                        <Input type="date" value={bookingDate} onChange={e => { setBookingDate(e.target.value); checkAvailability(e.target.value, bookingTime); }} min={new Date().toISOString().split("T")[0]} />
                       </div>
                       <div>
                         <Label>Time *</Label>
-                        <Input type="time" value={bookingTime} onChange={e => setBookingTime(e.target.value)} />
+                        <Input type="time" value={bookingTime} onChange={e => { setBookingTime(e.target.value); checkAvailability(bookingDate, e.target.value); }} />
                       </div>
                     </div>
+                    {availabilityWarning && (
+                      <div className="text-sm text-warning bg-warning/10 rounded-lg p-2.5 flex items-center gap-2">
+                        <Clock className="h-4 w-4 shrink-0" />
+                        {availabilityWarning}
+                      </div>
+                    )}
                     <div>
                       <Label>Duration (hours)</Label>
                       <Select value={bookingDuration} onValueChange={setBookingDuration}>

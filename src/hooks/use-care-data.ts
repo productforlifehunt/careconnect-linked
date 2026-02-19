@@ -21,6 +21,7 @@ export function useProviders(filters?: {
   verifiedOnly?: boolean;
   minRating?: number;
   sortBy?: string;
+  location?: string;
 }) {
   return useQuery({
     queryKey: ["providers", filters],
@@ -35,6 +36,9 @@ export function useProviders(filters?: {
         q = q.or(
           `full_name.ilike.%${filters.query}%,bio.ilike.%${filters.query}%,location.ilike.%${filters.query}%`
         );
+      }
+      if (filters?.location) {
+        q = q.ilike("location", `%${filters.location}%`);
       }
       if (filters?.specialties && filters.specialties.length > 0) {
         q = q.overlaps("specialty", filters.specialties);
@@ -248,7 +252,7 @@ export function useDirectMessages(otherUserId: string | null) {
       return (data || []).map((m: any) => ({ ...m, sender: senderMap[m.sender_id] || null }));
     },
     enabled: !!otherUserId,
-    refetchInterval: 5000,
+    refetchInterval: 10000,
   });
 }
 
@@ -277,7 +281,7 @@ export function useGroupMessages(groupId: string | null) {
       return (data || []).map((m: any) => ({ ...m, sender: senderMap[m.sender_id] || null }));
     },
     enabled: !!groupId,
-    refetchInterval: 5000,
+    refetchInterval: 10000,
   });
 }
 

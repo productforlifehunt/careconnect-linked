@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,14 +7,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMyProfile, useUpdateProfile } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
-import { careAuth } from "@/integrations/supabase/external-client";
-import { User, Bell, Shield, MapPin, Loader2, Upload, Camera } from "lucide-react";
+import { careAuth, careDb } from "@/integrations/supabase/external-client";
+import { User, Bell, Shield, MapPin, Loader2, Upload, Camera, Download, Trash2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Profile() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const { data: profile, isLoading } = useMyProfile();
   const updateProfile = useUpdateProfile();
   const { toast } = useToast();
@@ -25,9 +29,10 @@ export default function Profile() {
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [downloadingData, setDownloadingData] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Notification preferences
   const [emailNotifs, setEmailNotifs] = useState(true);
   const [pushNotifs, setPushNotifs] = useState(true);
 
@@ -61,8 +66,98 @@ export default function Profile() {
     }
   };
 
+  const handleDownloadData = async () => {
+    setDownloadingData(true);
+    try {
+      const { data: { session } } = await careAuth.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+      const userId = session.user.id;
+
+      const [profileRes, bookingsRes, messagesRes, tasksRes, notificationsRes, savedRes] = await Promise.all([
+        careDb.from("profile").select("*").eq("id", userId).single(),
+        careDb.from("booking").select("*").eq("user_id", userId),
+        careDb.from("direct_message").select("id, message_content, created_at, receiver_id, group_id").or(`sender_id.eq.${userId},receiver_id.eq.${userId}`).limit(500),
+        careDb.from("care_task").select("*").or(`created_by.eq.${userId},assigned_to.eq.${userId}`),
+        careDb.from("notification").select("*").eq("user_id", userId).limit(200),
+        careDb.from("saved_provider").select("*").eq("user_id", userId),
+      ]);
+
+      const exportData = {
+        exported_at: new Date().toISOString(),
+        profile: profileRes.data,
+        bookings: bookingsRes.data || [],
+        messages_count: (messagesRes.data || []).length,
+        messages: (messagesRes.data || []).map((m: any) => ({ id: m.id, content: m.message_content, created_at: m.created_at })),
+        tasks: tasksRes.data || [],
+        notifications: notificationsRes.data || [],
+        saved_providers: savedRes.data || [],
+      };
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `careconnected-data-${new Date().toISOString().split("T")[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast({ title: "Data downloaded", description: "Your data has been exported as JSON." });
+    } catch (err: any) {
+      toast({ title: "Download failed", description: err.message, variant: "destructive" });
+    } finally {
+      setDownloadingData(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeletingAccount(true);
+    try {
+      const { data: { session } } = await careAuth.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+      const userId = session.user.id;
+
+      // Anonymize profile data
+      await careDb.from("profile").update({
+        full_name: "Deleted User",
+        first_name: null,
+        last_name: null,
+        email: null,
+        phone_number: null,
+        avatar_url: null,
+        bio: null,
+        address: null,
+        location: null,
+        is_care_provider: false,
+        provider_is_active: false,
+      }).eq("id", userId);
+
+      // Delete saved providers
+      await careDb.from("saved_provider").delete().eq("user_id", userId);
+
+      // Sign out
+      await logout();
+      navigate("/");
+      toast({ title: "Account deleted", description: "Your profile data has been removed and you've been signed out." });
+    } catch (err: any) {
+      toast({ title: "Deletion failed", description: err.message, variant: "destructive" });
+    } finally {
+      setDeletingAccount(false);
+    }
+  };
+
   if (isLoading) {
-    return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+        <Skeleton className="h-8 w-40" />
+        <Skeleton className="h-10 w-full" />
+        <div className="space-y-4">
+          <Skeleton className="h-32 w-full rounded-xl" />
+          <Skeleton className="h-48 w-full rounded-xl" />
+        </div>
+      </div>
+    );
   }
 
   const displayName = name || user?.full_name || "User";
@@ -117,7 +212,6 @@ export default function Profile() {
                         if (!session) throw new Error("Not authenticated");
                         const ext = file.name.split(".").pop();
                         const filePath = `${session.user.id}/avatar.${ext}`;
-                        // Upload to the external Supabase's avatars bucket
                         const { createClient } = await import("@supabase/supabase-js");
                         const storageClient = createClient("https://yekarqanirdkdckimpna.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlla2FycWFuaXJka2Rja2ltcG5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyNzUwOTQsImV4cCI6MjA1OTg1MTA5NH0.WQlbyilIuH_Vz_Oit-M5MZ9II9oqO7tg-ThkZ5GCtfc", {
                           auth: { storage: localStorage, persistSession: true, autoRefreshToken: true, storageKey: "cc-external-auth" },
@@ -130,7 +224,6 @@ export default function Profile() {
                         await updateProfile.mutateAsync({ avatar_url: newUrl });
                         toast({ title: "Avatar updated!" });
                       } catch (err: any) {
-                        // Fallback: if storage not available, show URL input
                         toast({ title: "Upload failed", description: "Try pasting an image URL instead. " + (err.message || ""), variant: "destructive" });
                       } finally {
                         setAvatarUploading(false);
@@ -212,10 +305,42 @@ export default function Profile() {
 
         <TabsContent value="privacy" className="space-y-6">
           <Card className="border-transparent card-elevated">
+            <CardHeader><CardTitle>Your Data</CardTitle></CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-muted-foreground">Download a copy of all your data including profile, bookings, messages, tasks, and notifications.</p>
+              <Button variant="outline" className="w-full" onClick={handleDownloadData} disabled={downloadingData}>
+                {downloadingData ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Download className="h-4 w-4 mr-2" />}
+                {downloadingData ? "Preparing download..." : "Download My Data"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-transparent card-elevated border-destructive/20">
             <CardHeader><CardTitle className="text-destructive">Danger Zone</CardTitle></CardHeader>
             <CardContent className="space-y-3">
-              <Button variant="outline" className="w-full" onClick={() => toast({ title: "Data Export Requested", description: "You will receive an email with your data shortly." })}>Download My Data</Button>
-              <Button variant="destructive" className="w-full" onClick={() => toast({ title: "Account Deletion Requested", description: "Our support team will contact you to confirm within 24 hours.", variant: "destructive" })}>Delete Account</Button>
+              <p className="text-sm text-muted-foreground">Permanently delete your account. This will anonymize your profile data and sign you out. This action cannot be undone.</p>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" className="w-full" disabled={deletingAccount}>
+                    {deletingAccount ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                    Delete Account
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently anonymize your profile, remove your saved providers, and sign you out. Your bookings and messages will remain but will no longer be linked to your identity. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      Yes, delete my account
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </CardContent>
           </Card>
         </TabsContent>
