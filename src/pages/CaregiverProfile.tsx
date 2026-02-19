@@ -52,6 +52,12 @@ export default function CaregiverProfile() {
       toast({ title: "Please fill all required fields", variant: "destructive" });
       return;
     }
+    // Prevent past date bookings
+    const selectedDate = new Date(bookingDate + "T" + bookingTime);
+    if (selectedDate < new Date()) {
+      toast({ title: "Cannot book in the past", description: "Please select a future date and time.", variant: "destructive" });
+      return;
+    }
     if (!isAuthenticated) {
       toast({ title: "Please sign in to book", variant: "destructive" });
       navigate("/auth");
@@ -225,7 +231,7 @@ export default function CaregiverProfile() {
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <Label>Date *</Label>
-                        <Input type="date" value={bookingDate} onChange={e => setBookingDate(e.target.value)} />
+                        <Input type="date" value={bookingDate} onChange={e => setBookingDate(e.target.value)} min={new Date().toISOString().split("T")[0]} />
                       </div>
                       <div>
                         <Label>Time *</Label>

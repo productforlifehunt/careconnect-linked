@@ -4,10 +4,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarDays, Clock, MoreHorizontal, X, Check, MessageSquare, Loader2, Star } from "lucide-react";
+import { CalendarDays, Clock, MoreHorizontal, X, Check, MessageSquare, Loader2, Star, AlertTriangle } from "lucide-react";
 import { useBookings, useUpdateBookingStatus, useStartConversation } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -27,6 +27,9 @@ export default function Bookings() {
   const [reviewComment, setReviewComment] = useState("");
   const [reviewSaving, setReviewSaving] = useState(false);
   const [messagingId, setMessagingId] = useState<string | null>(null);
+  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
+  const [cancelTargetId, setCancelTargetId] = useState<string | null>(null);
+  const [cancelTargetName, setCancelTargetName] = useState("");
 
   const statusColors: Record<string, string> = {
     confirmed: "bg-success text-success-foreground",
@@ -136,7 +139,7 @@ export default function Bookings() {
                 <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {["pending", "confirmed"].includes(booking.status) && <DropdownMenuItem onClick={() => handleStatusUpdate(booking.id, "cancelled_by_user")} className="text-destructive"><X className="mr-2 h-4 w-4" /> Cancel Booking</DropdownMenuItem>}
+                {["pending", "confirmed"].includes(booking.status) && <DropdownMenuItem onClick={() => { setCancelTargetId(booking.id); setCancelTargetName(booking.provider?.full_name || "Provider"); setCancelConfirmOpen(true); }} className="text-destructive"><X className="mr-2 h-4 w-4" /> Cancel Booking</DropdownMenuItem>}
                 {booking.status === "completed" && <DropdownMenuItem onClick={() => openReview(booking)}><Star className="mr-2 h-4 w-4" /> Leave Review</DropdownMenuItem>}
                 <DropdownMenuItem onClick={() => handleMessage(booking)} disabled={messagingId === booking.provider_id}>
                   <MessageSquare className="mr-2 h-4 w-4" /> Message Provider
@@ -218,38 +221,25 @@ export default function Bookings() {
         </TabsContent>
       </Tabs>
 
-      {/* Review Dialog */}
-      <Dialog open={reviewOpen} onOpenChange={setReviewOpen}>
+      {/* Cancel Confirmation Dialog */}
+      <Dialog open={cancelConfirmOpen} onOpenChange={setCancelConfirmOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Review {reviewBooking?.provider?.full_name || "Provider"}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2"><AlertTriangle className="h-5 w-5 text-destructive" /> Cancel Booking?</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to cancel your booking with {cancelTargetName}? This action cannot be undone.
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 mt-2">
-            <div>
-              <Label>Rating</Label>
-              <div className="flex gap-1 mt-2">
-                {[1, 2, 3, 4, 5].map(n => (
-                  <button key={n} onClick={() => setReviewRating(n)} className="transition-transform hover:scale-110">
-                    <Star className={`h-8 w-8 ${n <= reviewRating ? "text-warning fill-warning" : "text-muted-foreground"}`} />
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <Label>Share your experience</Label>
-              <Textarea
-                value={reviewComment}
-                onChange={e => setReviewComment(e.target.value)}
-                placeholder="How was your experience with this caregiver? Share details to help others..."
-                rows={4}
-                className="mt-1"
-              />
-            </div>
-            <Button variant="coral" className="w-full" onClick={handleSubmitReview} disabled={reviewSaving}>
-              {reviewSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Star className="h-4 w-4 mr-2" />}
-              Submit Review
-            </Button>
-          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setCancelConfirmOpen(false)}>Keep Booking</Button>
+            <Button variant="destructive" onClick={() => {
+              if (cancelTargetId) {
+                handleStatusUpdate(cancelTargetId, "cancelled_by_user");
+                setCancelConfirmOpen(false);
+                setCancelTargetId(null);
+              }
+            }}>Yes, Cancel</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

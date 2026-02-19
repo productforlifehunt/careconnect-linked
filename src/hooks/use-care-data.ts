@@ -190,7 +190,32 @@ export function useConversations() {
         .or(`participant_1_id.eq.${userId},participant_2_id.eq.${userId}`)
         .order("last_message_at", { ascending: false });
       if (error) throw error;
-      return (data || []) as any[];
+      const conversations = (data || []) as any[];
+      // Fetch last message and unread count for each conversation
+      for (const convo of conversations) {
+        const otherId = convo.participant_1?.id === userId ? convo.participant_2?.id : convo.participant_1?.id;
+        if (otherId) {
+          // Last message
+          const { data: lastMsgs } = await careDb
+            .from("direct_message")
+            .select("message_content, sender_id, created_at")
+            .or(`and(sender_id.eq.${userId},receiver_id.eq.${otherId}),and(sender_id.eq.${otherId},receiver_id.eq.${userId})`)
+            .is("group_id", null)
+            .order("created_at", { ascending: false })
+            .limit(1);
+          convo.last_message = lastMsgs?.[0] || null;
+          // Unread count
+          const { count } = await careDb
+            .from("direct_message")
+            .select("id", { count: "exact", head: true })
+            .eq("sender_id", otherId)
+            .eq("receiver_id", userId)
+            .is("group_id", null)
+            .is("read_at", null);
+          convo.unread_count = count || 0;
+        }
+      }
+      return conversations;
     },
   });
 }
@@ -287,6 +312,25 @@ export function useSendMessage() {
       qc.invalidateQueries({ queryKey: ["group-messages"] });
       qc.invalidateQueries({ queryKey: ["conversations"] });
     },
+  });
+}
+
+// ─── Mark Messages Read ─────────────────────────────────────
+export function useMarkMessagesRead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (otherUserId: string) => {
+      const userId = await getCurrentUserId();
+      if (!userId || !otherUserId) return;
+      const { error } = await careDb
+        .from("direct_message")
+        .update({ read_at: new Date().toISOString() })
+        .eq("sender_id", otherUserId)
+        .eq("receiver_id", userId)
+        .is("read_at", null);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["conversations"] }),
   });
 }
 

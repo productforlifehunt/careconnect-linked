@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, Search, Phone, Video, MoreVertical, Loader2, Plus, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useConversations, useDirectMessages, useSendMessage, useSearchProfiles, useStartConversation } from "@/hooks/use-care-data";
+import { useConversations, useDirectMessages, useSendMessage, useSearchProfiles, useStartConversation, useMarkMessagesRead } from "@/hooks/use-care-data";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
@@ -16,6 +16,7 @@ export default function Messages() {
   const { data: conversations, isLoading: convosLoading } = useConversations();
   const sendMessage = useSendMessage();
   const startConversation = useStartConversation();
+  const markRead = useMarkMessagesRead();
 
   const [selectedConvoId, setSelectedConvoId] = useState<string | null>(null);
   const [selectedOtherUser, setSelectedOtherUser] = useState<any>(null);
@@ -119,7 +120,7 @@ export default function Messages() {
               <div
                 key={c.id}
                 className={`p-4 cursor-pointer border-b transition-colors ${isSelected ? "bg-accent" : "hover:bg-muted/50"}`}
-                onClick={() => { setSelectedConvoId(c.id); setSelectedOtherUser(other); }}
+                onClick={() => { setSelectedConvoId(c.id); setSelectedOtherUser(other); if (other?.id && c.unread_count > 0) markRead.mutate(other.id); }}
               >
                 <div className="flex items-center gap-3">
                   <div className="relative shrink-0">
@@ -133,10 +134,18 @@ export default function Messages() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <span className="font-medium text-sm text-foreground">{other?.full_name || "Unknown"}</span>
+                      <span className={`font-medium text-sm ${c.unread_count > 0 ? "text-foreground font-semibold" : "text-foreground"}`}>{other?.full_name || "Unknown"}</span>
                       <span className="text-xs text-muted-foreground">
                         {c.last_message_at ? new Date(c.last_message_at).toLocaleDateString("en", { month: "short", day: "numeric" }) : ""}
                       </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs text-muted-foreground truncate">
+                        {c.last_message ? (c.last_message.sender_id === user?.id ? "You: " : "") + (c.last_message.message_content || "").substring(0, 50) : "No messages yet"}
+                      </p>
+                      {c.unread_count > 0 && (
+                        <span className="shrink-0 w-5 h-5 rounded-full bg-coral text-coral-foreground text-xs flex items-center justify-center font-semibold">{c.unread_count > 9 ? "9+" : c.unread_count}</span>
+                      )}
                     </div>
                   </div>
                 </div>

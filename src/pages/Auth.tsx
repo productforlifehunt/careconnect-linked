@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { careAuth } from "@/integrations/supabase/external-client";
 import { Heart } from "lucide-react";
 
 export default function Auth() {
@@ -22,6 +23,9 @@ export default function Auth() {
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
 
   const handleLogin = async () => {
     if (!loginEmail || !loginPassword) {
@@ -84,6 +88,33 @@ export default function Auth() {
               <Button variant="coral" className="w-full" onClick={handleLogin} disabled={loading}>
                 {loading ? "Signing in..." : "Sign In"}
               </Button>
+              <div className="text-center">
+                <button type="button" className="text-sm text-primary hover:underline" onClick={() => setForgotOpen(true)}>Forgot password?</button>
+              </div>
+              {forgotOpen && (
+                <div className="border rounded-lg p-4 mt-2 space-y-3 bg-muted/30">
+                  <p className="text-sm text-foreground font-medium">Reset your password</p>
+                  <Input type="email" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} placeholder="Enter your email" />
+                  <Button variant="outline" className="w-full" disabled={forgotLoading} onClick={async () => {
+                    if (!forgotEmail) { toast({ title: "Enter your email", variant: "destructive" }); return; }
+                    setForgotLoading(true);
+                    try {
+                      const { error } = await careAuth.auth.resetPasswordForEmail(forgotEmail, {
+                        redirectTo: `${window.location.origin}/reset-password`,
+                      });
+                      if (error) throw error;
+                      toast({ title: "Reset link sent!", description: "Check your email for a password reset link." });
+                      setForgotOpen(false);
+                    } catch (err: any) {
+                      toast({ title: "Failed", description: err.message, variant: "destructive" });
+                    } finally {
+                      setForgotLoading(false);
+                    }
+                  }}>
+                    {forgotLoading ? "Sending..." : "Send Reset Link"}
+                  </Button>
+                </div>
+              )}
             </TabsContent>
             <TabsContent value="signup" className="space-y-4 mt-4">
               <div>
