@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Star, MapPin, Shield, Clock, Search, SlidersHorizontal, X, Loader2 } from "lucide-react";
+import { Star, MapPin, Shield, Clock, Search, SlidersHorizontal, X, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
 import { useProviders } from "@/hooks/use-care-data";
@@ -28,6 +28,8 @@ export default function SearchResults() {
   );
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [minRating, setMinRating] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 20;
 
   const { data: providers, isLoading } = useProviders({
     query: query || undefined,
@@ -141,56 +143,74 @@ export default function SearchResults() {
         <div className="flex-1">
           {isLoading ? (
             <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
-          ) : (
-            <>
-              <p className="text-sm text-muted-foreground mb-4">{(providers || []).length} caregivers found</p>
-              <div className="space-y-4">
-                {(providers || []).map((cg: Profile) => (
-                  <Card key={cg.id} className="card-elevated cursor-pointer border-transparent" onClick={() => navigate(`/caregiver/${cg.id}`)}>
-                    <CardContent className="p-5">
-                      <div className="flex flex-col sm:flex-row gap-4">
-                        <img src={cg.avatar_url || "/placeholder.svg"} alt={cg.full_name || ""} className="w-20 h-20 rounded-xl object-cover shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold text-lg text-foreground">{cg.full_name}</h3>
-                            {cg.background_check_status === "passed" && <Shield className="h-4 w-4 text-primary" />}
+          ) : (() => {
+            const allResults = providers || [];
+            const totalPages = Math.max(1, Math.ceil(allResults.length / PAGE_SIZE));
+            const safePage = Math.min(currentPage, totalPages);
+            const paged = allResults.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+            return (
+              <>
+                <p className="text-sm text-muted-foreground mb-4">{allResults.length} caregivers found</p>
+                <div className="space-y-4">
+                  {paged.map((cg: Profile) => (
+                    <Card key={cg.id} className="card-elevated cursor-pointer border-transparent" onClick={() => navigate(`/caregiver/${cg.id}`)}>
+                      <CardContent className="p-5">
+                        <div className="flex flex-col sm:flex-row gap-4">
+                          <img src={cg.avatar_url || "/placeholder.svg"} alt={cg.full_name || ""} className="w-20 h-20 rounded-xl object-cover shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-semibold text-lg text-foreground">{cg.full_name}</h3>
+                              {cg.background_check_status === "passed" && <Shield className="h-4 w-4 text-primary" />}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-2">
+                              <span className="flex items-center gap-1">
+                                <Star className="h-4 w-4 text-warning fill-warning" /> {cg.rating_average?.toFixed(1) || "New"} ({cg.rating_count || 0})
+                              </span>
+                              {cg.location && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {cg.location}</span>}
+                              {cg.years_of_experience && <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {cg.years_of_experience} yrs exp</span>}
+                            </div>
+                            {cg.bio && <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{cg.bio}</p>}
+                            <div className="flex flex-wrap gap-1.5">
+                              {(cg.specialty || []).map(s => (
+                                <Badge key={s} variant="secondary" className="bg-accent text-accent-foreground text-xs">{s}</Badge>
+                              ))}
+                            </div>
                           </div>
-                          <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-2">
-                            <span className="flex items-center gap-1">
-                              <Star className="h-4 w-4 text-warning fill-warning" /> {cg.rating_average?.toFixed(1) || "New"} ({cg.rating_count || 0})
-                            </span>
-                            {cg.location && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {cg.location}</span>}
-                            {cg.years_of_experience && <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {cg.years_of_experience} yrs exp</span>}
-                          </div>
-                          {cg.bio && <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{cg.bio}</p>}
-                          <div className="flex flex-wrap gap-1.5">
-                            {(cg.specialty || []).map(s => (
-                              <Badge key={s} variant="secondary" className="bg-accent text-accent-foreground text-xs">{s}</Badge>
-                            ))}
+                          <div className="sm:text-right shrink-0 flex sm:flex-col items-center sm:items-end gap-3">
+                            <div>
+                              <span className="text-2xl font-bold text-foreground">${cg.hourly_rate || 0}</span>
+                              <span className="text-sm text-muted-foreground">/hr</span>
+                            </div>
+                            <Button variant="coral" size="sm">Book Now</Button>
                           </div>
                         </div>
-                        <div className="sm:text-right shrink-0 flex sm:flex-col items-center sm:items-end gap-3">
-                          <div>
-                            <span className="text-2xl font-bold text-foreground">${cg.hourly_rate || 0}</span>
-                            <span className="text-sm text-muted-foreground">/hr</span>
-                          </div>
-                          <Button variant="coral" size="sm">Book Now</Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-                {(providers || []).length === 0 && (
-                  <div className="text-center py-16">
-                    <p className="text-lg text-muted-foreground">No caregivers match your criteria.</p>
-                    <Button variant="outline" className="mt-4" onClick={() => { setQuery(""); setSelectedSpecialties([]); setMinRating(0); setPriceRange([0, 100]); }}>
-                      Clear Filters
+                      </CardContent>
+                    </Card>
+                  ))}
+                  {allResults.length === 0 && (
+                    <div className="text-center py-16">
+                      <p className="text-lg text-muted-foreground">No caregivers match your criteria.</p>
+                      <Button variant="outline" className="mt-4" onClick={() => { setQuery(""); setSelectedSpecialties([]); setMinRating(0); setPriceRange([0, 100]); setCurrentPage(1); }}>
+                        Clear Filters
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-6">
+                    <Button variant="outline" size="sm" disabled={safePage <= 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span className="text-sm text-muted-foreground">Page {safePage} of {totalPages}</span>
+                    <Button variant="outline" size="sm" disabled={safePage >= totalPages} onClick={() => setCurrentPage(p => p + 1)}>
+                      <ChevronRight className="h-4 w-4" />
                     </Button>
                   </div>
                 )}
-              </div>
-            </>
-          )}
+              </>
+            );
+          })()}
         </div>
       </div>
     </div>

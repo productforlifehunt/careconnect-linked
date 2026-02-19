@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMyProfile, useUpdateProfile } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
-import { User, Bell, Shield, MapPin, Loader2 } from "lucide-react";
+import { careAuth } from "@/integrations/supabase/external-client";
+import { User, Bell, Shield, MapPin, Loader2, Upload, Camera } from "lucide-react";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -23,6 +24,8 @@ export default function Profile() {
   const [address, setAddress] = useState("");
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Notification preferences
   const [emailNotifs, setEmailNotifs] = useState(true);
@@ -80,7 +83,7 @@ export default function Profile() {
           <Card className="border-transparent card-elevated">
             <CardContent className="p-6">
               <div className="flex items-center gap-6">
-                <div className="relative">
+                <div className="relative group">
                   {profile?.avatar_url ? (
                     <img src={profile.avatar_url} alt="" className="w-20 h-20 rounded-2xl object-cover" />
                   ) : (
@@ -88,6 +91,53 @@ export default function Profile() {
                       <span className="text-primary-foreground text-2xl font-bold">{displayName.charAt(0).toUpperCase()}</span>
                     </div>
                   )}
+                  <button
+                    type="button"
+                    className="absolute inset-0 rounded-2xl bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={avatarUploading}
+                  >
+                    {avatarUploading ? <Loader2 className="h-5 w-5 text-white animate-spin" /> : <Camera className="h-5 w-5 text-white" />}
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      if (file.size > 5 * 1024 * 1024) {
+                        toast({ title: "File too large", description: "Max 5MB", variant: "destructive" });
+                        return;
+                      }
+                      setAvatarUploading(true);
+                      try {
+                        const { data: { session } } = await careAuth.auth.getSession();
+                        if (!session) throw new Error("Not authenticated");
+                        const ext = file.name.split(".").pop();
+                        const filePath = `${session.user.id}/avatar.${ext}`;
+                        // Upload to the external Supabase's avatars bucket
+                        const { createClient } = await import("@supabase/supabase-js");
+                        const storageClient = createClient("https://yekarqanirdkdckimpna.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlla2FycWFuaXJka2Rja2ltcG5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyNzUwOTQsImV4cCI6MjA1OTg1MTA5NH0.WQlbyilIuH_Vz_Oit-M5MZ9II9oqO7tg-ThkZ5GCtfc", {
+                          auth: { storage: localStorage, persistSession: true, autoRefreshToken: true, storageKey: "cc-external-auth" },
+                        });
+                        const { error: uploadErr } = await storageClient.storage.from("avatars").upload(filePath, file, { upsert: true });
+                        if (uploadErr) throw uploadErr;
+                        const { data: publicData } = storageClient.storage.from("avatars").getPublicUrl(filePath);
+                        const newUrl = publicData.publicUrl + "?t=" + Date.now();
+                        setAvatarUrl(newUrl);
+                        await updateProfile.mutateAsync({ avatar_url: newUrl });
+                        toast({ title: "Avatar updated!" });
+                      } catch (err: any) {
+                        // Fallback: if storage not available, show URL input
+                        toast({ title: "Upload failed", description: "Try pasting an image URL instead. " + (err.message || ""), variant: "destructive" });
+                      } finally {
+                        setAvatarUploading(false);
+                        if (fileInputRef.current) fileInputRef.current.value = "";
+                      }
+                    }}
+                  />
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold text-foreground">{displayName}</h2>
@@ -116,9 +166,13 @@ export default function Profile() {
                 </div>
               </div>
               <div>
-                <Label>Avatar URL</Label>
-                <Input value={avatarUrl} onChange={e => setAvatarUrl(e.target.value)} placeholder="https://..." className="mt-1" />
-                <p className="text-xs text-muted-foreground mt-1">Paste a direct image link (e.g. from Gravatar or Unsplash)</p>
+                <Label>Avatar</Label>
+                <div className="flex gap-2 items-center mt-1">
+                  <Input value={avatarUrl} onChange={e => setAvatarUrl(e.target.value)} placeholder="https://... or upload above" className="flex-1" />
+                  <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={avatarUploading}>
+                    <Upload className="h-4 w-4 mr-1" /> Upload
+                  </Button>
+                </div>
               </div>
               <div>
                 <Label>Address</Label>

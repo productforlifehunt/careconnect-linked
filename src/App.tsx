@@ -6,10 +6,12 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { RequireAuth } from "@/components/auth/RequireAuth";
 import Index from "./pages/Index";
 import SearchResults from "./pages/SearchResults";
 import CaregiverProfile from "./pages/CaregiverProfile";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import CareCircle from "./pages/CareCircle";
 import GPSTracking from "./pages/GPSTracking";
@@ -37,24 +39,29 @@ function AppRoutes() {
 
   const routes = (
     <Routes>
+      {/* Public routes */}
       <Route path="/" element={<Index />} />
       <Route path="/search" element={<SearchResults />} />
       <Route path="/caregiver/:id" element={<CaregiverProfile />} />
       <Route path="/auth" element={<Auth />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/care-circle" element={<CareCircle />} />
-      <Route path="/gps-tracking" element={<GPSTracking />} />
-      <Route path="/bookings" element={<Bookings />} />
-      <Route path="/messages" element={<Messages />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/how-it-works" element={<HowItWorks />} />
-      <Route path="/favorites" element={<Favorites />} />
-      <Route path="/profile" element={<Profile />} />
       <Route path="/trust-safety" element={<TrustSafety />} />
       <Route path="/become-caregiver" element={<BecomeCaregiver />} />
-      <Route path="/notifications" element={<Notifications />} />
-      <Route path="/cared-ones" element={<CaredOnes />} />
-      <Route path="/jobs" element={<Jobs />} />
-      <Route path="/provider-dashboard" element={<ProviderDashboard />} />
+
+      {/* Protected routes */}
+      <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
+      <Route path="/care-circle" element={<RequireAuth><CareCircle /></RequireAuth>} />
+      <Route path="/gps-tracking" element={<RequireAuth><GPSTracking /></RequireAuth>} />
+      <Route path="/bookings" element={<RequireAuth><Bookings /></RequireAuth>} />
+      <Route path="/messages" element={<RequireAuth><Messages /></RequireAuth>} />
+      <Route path="/favorites" element={<RequireAuth><Favorites /></RequireAuth>} />
+      <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
+      <Route path="/notifications" element={<RequireAuth><Notifications /></RequireAuth>} />
+      <Route path="/cared-ones" element={<RequireAuth><CaredOnes /></RequireAuth>} />
+      <Route path="/jobs" element={<RequireAuth><Jobs /></RequireAuth>} />
+      <Route path="/provider-dashboard" element={<RequireAuth><ProviderDashboard /></RequireAuth>} />
+
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
