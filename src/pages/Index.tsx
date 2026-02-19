@@ -260,16 +260,31 @@ const Index = () => {
               <p className="text-sm text-muted-foreground">Connecting families with trusted caregivers since 2024.</p>
             </div>
             {[
-              { title: "For Families", links: ["Find Caregivers", "How It Works", "Pricing", "Safety"] },
-              { title: "For Caregivers", links: ["Join as Caregiver", "Resources", "Insurance", "Support"] },
-              { title: "Company", links: ["About Us", "Blog", "Careers", "Contact"] },
+              { title: "For Families", links: [
+                { label: "Find Caregivers", href: "/search" },
+                { label: "How It Works", href: "/how-it-works" },
+                { label: "Trust & Safety", href: "/trust-safety" },
+                { label: "Care Circle", href: "/care-circle" },
+              ] },
+              { title: "For Caregivers", links: [
+                { label: "Join as Caregiver", href: "/become-caregiver" },
+                { label: "Jobs Board", href: "/jobs" },
+                { label: "Provider Dashboard", href: "/provider-dashboard" },
+                { label: "Trust & Safety", href: "/trust-safety" },
+              ] },
+              { title: "Company", links: [
+                { label: "How It Works", href: "/how-it-works" },
+                { label: "Trust & Safety", href: "/trust-safety" },
+                { label: "Sign Up", href: "/auth?mode=signup" },
+                { label: "Sign In", href: "/auth" },
+              ] },
             ].map((col) => (
               <div key={col.title}>
                 <h4 className="font-semibold text-foreground mb-3 text-sm">{col.title}</h4>
                 <ul className="space-y-2">
                   {col.links.map((link) => (
-                    <li key={link}>
-                      <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">{link}</a>
+                    <li key={link.label}>
+                      <a href={link.href} className="text-sm text-muted-foreground hover:text-primary transition-colors">{link.label}</a>
                     </li>
                   ))}
                 </ul>

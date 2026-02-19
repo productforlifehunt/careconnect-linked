@@ -75,6 +75,18 @@ export default function Bookings() {
     try {
       const { data: { session } } = await careAuth.auth.getSession();
       if (!session) throw new Error("Not authenticated");
+      // Check for duplicate review
+      const { data: existingReview } = await careDb.from("review")
+        .select("id")
+        .eq("reviewer_id", session.user.id)
+        .eq("entity_id", reviewBooking.provider_id)
+        .maybeSingle();
+      if (existingReview) {
+        toast({ title: "Already reviewed", description: "You've already left a review for this provider.", variant: "destructive" });
+        setReviewOpen(false);
+        setReviewSaving(false);
+        return;
+      }
       // Insert review (no entity_type column in care_connector schema)
       const { error } = await careDb.from("review").insert({
         reviewer_id: session.user.id,

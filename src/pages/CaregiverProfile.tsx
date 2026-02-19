@@ -91,6 +91,11 @@ export default function CaregiverProfile() {
       toast({ title: "Cannot book in the past", description: "Please select a future date and time.", variant: "destructive" });
       return;
     }
+    // HARD BLOCK if availability conflict
+    if (availabilityWarning) {
+      toast({ title: "Time slot unavailable", description: availabilityWarning, variant: "destructive" });
+      return;
+    }
     if (!isAuthenticated) {
       toast({ title: "Please sign in to book", variant: "destructive" });
       navigate("/auth");
