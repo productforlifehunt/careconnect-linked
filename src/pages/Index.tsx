@@ -37,17 +37,7 @@ const Index = () => {
     "Respite Care": <Moon className="h-6 w-6" />,
   };
 
-  // Use service_category from DB or fallback
-  const displayCategories = categories && categories.length > 0
-    ? categories.slice(0, 6).map(c => ({ name: c.name, count: 0 }))
-    : [
-        { name: "Elder Care", count: 0 },
-        { name: "Child Care", count: 0 },
-        { name: "Special Needs", count: 0 },
-        { name: "Nursing Care", count: 0 },
-        { name: "Companionship", count: 0 },
-        { name: "Respite Care", count: 0 },
-      ];
+  const displayCategories = (categories || []).slice(0, 6).map(c => ({ name: c.name, count: 0 }));
 
   return (
     <div className="min-h-full">

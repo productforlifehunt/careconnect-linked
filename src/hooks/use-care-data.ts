@@ -495,11 +495,7 @@ export function useCareGroupGallery(groupId: string | null) {
         .select("*")
         .eq("group_id", groupId)
         .order("created_at", { ascending: false });
-      if (error) {
-        // Table may not exist yet
-        console.warn("Gallery table not available:", error.message);
-        return [];
-      }
+      if (error) throw error;
       const uploaderIds = [...new Set((data || []).map((g: any) => g.uploaded_by).filter(Boolean))];
       let uploaderMap: Record<string, any> = {};
       if (uploaderIds.length > 0) {
