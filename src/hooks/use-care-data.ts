@@ -1456,6 +1456,17 @@ export function useCreateCareTip() {
   });
 }
 
+export function useUpdateCareTip() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string; title?: string; content?: string; category?: string }) => {
+      const { error } = await careDb.from("care_tip").update(updates).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-tips"] }),
+  });
+}
+
 export function useDeleteCareTip() {
   const qc = useQueryClient();
   return useMutation({
@@ -1494,6 +1505,28 @@ export function useCreateCarePlan() {
       const { error } = await careDb
         .from("care_plan")
         .insert({ ...plan, created_by: userId });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-plans"] }),
+  });
+}
+
+export function useUpdateCarePlan() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string; title?: string; description?: string; status?: string }) => {
+      const { error } = await careDb.from("care_plan").update(updates).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-plans"] }),
+  });
+}
+
+export function useDeleteCarePlan() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await careDb.from("care_plan").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["care-plans"] }),
@@ -1577,6 +1610,17 @@ export function useCreateCareNote() {
   });
 }
 
+export function useUpdateCareNote() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string; title?: string; content?: string; category?: string }) => {
+      const { error } = await careDb.from("care_note").update(updates).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-notes"] }),
+  });
+}
+
 export function useDeleteCareNote() {
   const qc = useQueryClient();
   return useMutation({
@@ -1613,6 +1657,17 @@ export function useCreateEmergencyContact() {
       const { error } = await careDb
         .from("emergency_contact")
         .insert(contact);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["emergency-contacts"] }),
+  });
+}
+
+export function useUpdateEmergencyContact() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string; name?: string; phone?: string; relationship?: string; is_primary?: boolean }) => {
+      const { error } = await careDb.from("emergency_contact").update(updates).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["emergency-contacts"] }),
@@ -1658,6 +1713,17 @@ export function useCreateActivityLog() {
       const { error } = await careDb
         .from("activity_log")
         .insert({ ...log, user_id: userId });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["activity-log"] }),
+  });
+}
+
+export function useDeleteActivityLog() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await careDb.from("activity_log").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["activity-log"] }),
@@ -2284,6 +2350,17 @@ export function useCreateCaredOneDocument() {
       const { error } = await careDb
         .from("cared_one_document")
         .insert({ ...doc, uploaded_by: userId });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["cared-one-documents"] }),
+  });
+}
+
+export function useUpdateCaredOneDocument() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string; title?: string; document_type?: string; file_url?: string; notes?: string }) => {
+      const { error } = await careDb.from("cared_one_document").update(updates).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["cared-one-documents"] }),
