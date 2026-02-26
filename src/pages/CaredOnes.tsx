@@ -27,6 +27,7 @@ import {
   useDeleteUserCaredOne,
 } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
+import { useSite } from "@/contexts/SiteContext";
 import LocationCard from "@/components/care/LocationCard";
 
 // Feature card definitions
@@ -80,6 +81,7 @@ function FeatureDetail({ cardKey, caredOneId, caredOneName }: { cardKey: string;
 
 export default function CaredOnes() {
   const { toast } = useToast();
+  const site = useSite();
   const { data: caredOnes, isLoading } = useUserCaredOnes();
   const createUserCaredOne = useCreateUserCaredOne();
   const deleteUserCaredOne = useDeleteUserCaredOne();
@@ -121,7 +123,7 @@ export default function CaredOnes() {
     <div className="max-w-5xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Cared Ones</h1>
+          <h1 className="text-2xl font-bold text-foreground">{site.navLabels.caredOnes}</h1>
           <p className="text-muted-foreground">Manage and track care for your loved ones</p>
         </div>
         <Button variant="coral" size="sm" onClick={() => setAddOpen(true)}>

@@ -5,12 +5,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Bell, CalendarDays, Users, MessageSquare, AlertTriangle, Settings, Loader2, Check, X, UserPlus } from "lucide-react";
 import { useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead, useMyPendingInvitations, useAcceptInvitation, useDeclineInvitation } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
+import { useSite } from "@/contexts/SiteContext";
 
 import { useNavigate } from "react-router-dom";
 
 export default function Notifications() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const site = useSite();
   const { data: notifications, isLoading } = useNotifications();
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
@@ -115,7 +117,7 @@ export default function Notifications() {
         <TabsList className="mb-4">
           <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger value="booking">Bookings</TabsTrigger>
-          <TabsTrigger value="care">Care Circle</TabsTrigger>
+          <TabsTrigger value="care">{site.navLabels.careGroups}</TabsTrigger>
           <TabsTrigger value="message">Messages</TabsTrigger>
         </TabsList>
 

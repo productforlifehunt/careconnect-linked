@@ -1,16 +1,18 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useSite } from "@/contexts/SiteContext";
 import { Search, CalendarDays, Users, MapPin, Shield, Star, CheckCircle, Heart } from "lucide-react";
 
 export default function HowItWorks() {
   const navigate = useNavigate();
+  const site = useSite();
 
   const steps = [
     { icon: Search, title: "Search & Discover", desc: "Browse verified caregivers by specialty, location, ratings, and availability. Filter by experience, certifications, languages, and more. No account required to search." },
     { icon: CalendarDays, title: "Book with Confidence", desc: "View real-time availability, read verified reviews, and book care sessions instantly. Set your schedule, specify needs, and get matched with the right caregiver." },
-    { icon: Users, title: "Build Your Care Circle", desc: "Invite family members, doctors, and caregivers to collaborate. Share updates, assign tasks, and maintain a care journal everyone can access." },
-    { icon: MapPin, title: "Track in Real-Time", desc: "Know where your loved ones and caregivers are with GPS tracking. Set geofence alerts, share locations with your care circle, and use the SOS feature for emergencies." },
+    { icon: Users, title: "Build Your Care Team", desc: "Invite family members, doctors, and caregivers to collaborate. Share updates, assign tasks, and maintain a care journal everyone can access." },
+    { icon: MapPin, title: "Track in Real-Time", desc: "Know where your loved ones and caregivers are with GPS tracking. Set geofence alerts, share locations with your care team, and use the SOS feature for emergencies." },
   ];
 
   const features = [
@@ -23,7 +25,7 @@ export default function HowItWorks() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">
       <div className="text-center mb-16">
-        <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">How Care·Connected Works</h1>
+        <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">{site.howItWorksTitle}</h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">From finding the perfect caregiver to coordinating with your care team — everything you need in one place.</p>
       </div>
 
@@ -70,7 +72,7 @@ export default function HowItWorks() {
         <h2 className="text-2xl font-bold text-primary-foreground mb-4">Ready to get started?</h2>
         <p className="text-primary-foreground/80 mb-6">Search caregivers for free — no account required.</p>
         <div className="flex gap-3 justify-center">
-          <Button variant="coral" size="lg" onClick={() => navigate("/search")}>Find Caregivers</Button>
+          <Button variant="coral" size="lg" onClick={() => navigate("/search")}>{site.ctaButton}</Button>
           <Button variant="outline" size="lg" className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10" onClick={() => navigate("/auth?mode=signup")}>Create Account</Button>
         </div>
       </div>

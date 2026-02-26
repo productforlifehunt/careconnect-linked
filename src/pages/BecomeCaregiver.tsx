@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSite } from "@/contexts/SiteContext";
 import { useSubmitProviderApplication } from "@/hooks/use-care-data";
 import {
   ArrowLeft, ArrowRight, CheckCircle, Upload, Shield, DollarSign, Heart
@@ -34,6 +35,7 @@ export default function BecomeCaregiver() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isAuthenticated } = useAuth();
+  const site = useSite();
   const submitApplication = useSubmitProviderApplication();
   const [step, setStep] = useState(1);
   const totalSteps = 4;
@@ -100,8 +102,8 @@ export default function BecomeCaregiver() {
         <div className="mx-auto w-14 h-14 rounded-2xl hero-gradient flex items-center justify-center mb-4">
           <Heart className="h-7 w-7 text-primary-foreground" />
         </div>
-        <h1 className="text-2xl md:text-3xl font-bold text-foreground">Become a Caregiver</h1>
-        <p className="text-muted-foreground mt-2">Join thousands of caregivers making a difference</p>
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground">{site.id === "challenged" ? "Join as a Dementia Caregiver" : "Become a Caregiver"}</h1>
+        <p className="text-muted-foreground mt-2">{site.id === "challenged" ? "Help families navigating dementia care" : "Join thousands of caregivers making a difference"}</p>
       </div>
 
       <div className="mb-8">

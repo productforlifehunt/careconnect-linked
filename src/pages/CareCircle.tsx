@@ -25,6 +25,7 @@ import {
   useDeleteTask, useLeaveGroup, useCreateJobPosting,
 } from "@/hooks/use-care-data";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSite } from "@/contexts/SiteContext";
 import { useToast } from "@/hooks/use-toast";
 
 // Sub-components
@@ -42,6 +43,7 @@ import { GalleryTab } from "@/components/care-circle/tabs/GalleryTab";
 
 export default function CareCircle() {
   const { toast } = useToast();
+  const site = useSite();
   const { user } = useAuth();
   const qc = useQueryClient();
   const { data: groups, isLoading: groupsLoading } = useCareGroups();
@@ -169,7 +171,7 @@ export default function CareCircle() {
     <div className="max-w-6xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Care Circle</h1>
+          <h1 className="text-2xl font-bold text-foreground">{site.navLabels.careGroups}</h1>
           <p className="text-sm text-muted-foreground">Coordinate care with your team</p>
         </div>
         <div className="flex gap-2">
