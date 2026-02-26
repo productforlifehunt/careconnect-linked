@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSite } from "@/contexts/SiteContext";
 import { useToast } from "@/hooks/use-toast";
 import { careAuth } from "@/integrations/supabase/external-client";
 import { Heart } from "lucide-react";
@@ -15,6 +16,7 @@ export default function Auth() {
   const initialMode = searchParams.get("mode") === "signup" ? "signup" : "login";
   const navigate = useNavigate();
   const { login, signup } = useAuth();
+  const site = useSite();
   const { toast } = useToast();
 
   const [loginEmail, setLoginEmail] = useState("");
@@ -91,8 +93,8 @@ export default function Auth() {
           <div className="mx-auto w-12 h-12 rounded-xl hero-gradient flex items-center justify-center mb-3">
             <Heart className="h-6 w-6 text-primary-foreground" />
           </div>
-          <CardTitle className="text-2xl">Care·Connected</CardTitle>
-          <CardDescription>Find and manage trusted care</CardDescription>
+          <CardTitle className="text-2xl">{site.name}</CardTitle>
+          <CardDescription>{site.id === "challenged" ? "Dementia care, together" : "Find and manage trusted care"}</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue={initialMode}>

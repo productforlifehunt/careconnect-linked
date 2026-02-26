@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSite } from "@/contexts/SiteContext";
 import { useBookings, useCareTasks, useDashboardStats } from "@/hooks/use-care-data";
 import {
   CalendarDays, Users, MapPin, Clock, ArrowRight, CheckCircle, AlertCircle, MessageSquare, Loader2
@@ -12,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const site = useSite();
   const { data: bookings, isLoading: bookingsLoading } = useBookings();
   const { data: tasks, isLoading: tasksLoading } = useCareTasks();
   const { data: stats } = useDashboardStats();
@@ -48,7 +50,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
           { label: "Upcoming Bookings", value: stats?.upcomingBookings ?? 0, icon: CalendarDays, color: "text-primary" },
-          { label: "Care Groups", value: stats?.careGroups ?? 0, icon: Users, color: "text-success" },
+          { label: site.navLabels.careGroups, value: stats?.careGroups ?? 0, icon: Users, color: "text-success" },
           { label: "Pending Tasks", value: stats?.pendingTasks ?? 0, icon: AlertCircle, color: "text-warning" },
           { label: "Unread Messages", value: stats?.unreadMessages ?? 0, icon: MessageSquare, color: "text-coral" },
         ].map(stat => (
@@ -131,7 +133,7 @@ export default function Dashboard() {
             </Button>
             <Button variant="outline" className="h-auto py-4 flex-col gap-2" onClick={() => navigate("/care-circle")}>
               <Users className="h-5 w-5 text-primary" />
-              <span className="text-xs">Care Circle</span>
+              <span className="text-xs">{site.navLabels.careGroups}</span>
             </Button>
             <Button variant="outline" className="h-auto py-4 flex-col gap-2" onClick={() => navigate("/gps-tracking")}>
               <MapPin className="h-5 w-5 text-primary" />

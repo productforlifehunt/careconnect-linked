@@ -196,7 +196,7 @@ export function AppHeader() {
                   <CalendarDays className="mr-2 h-4 w-4" /> My Bookings
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/care-circle")}>
-                  <Users className="mr-2 h-4 w-4" /> Care Circle
+                  <Users className="mr-2 h-4 w-4" /> {site.navLabels.careGroups}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/gps-tracking")}>
                   <MapPin className="mr-2 h-4 w-4" /> GPS Tracking

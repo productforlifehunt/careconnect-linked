@@ -252,7 +252,7 @@ const Index = () => {
                 { label: "Find Caregivers", href: "/search" },
                 { label: "How It Works", href: "/how-it-works" },
                 { label: "Trust & Safety", href: "/trust-safety" },
-                { label: "Care Circle", href: "/care-circle" },
+                { label: site.navLabels.careGroups, href: "/care-circle" },
               ] },
               { title: "For Caregivers", links: [
                 { label: "Join as Caregiver", href: "/become-caregiver" },
