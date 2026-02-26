@@ -88,9 +88,9 @@ export default function Notifications() {
                         <Users className="h-5 w-5 text-primary" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-foreground">{inv.group?.name || "Care Group"}</p>
+                        <p className="text-sm font-medium text-foreground">{inv.group?.name || site.careGroupSingular}</p>
                         <p className="text-xs text-muted-foreground">
-                          {inv.group?.description ? inv.group.description.substring(0, 60) + (inv.group.description.length > 60 ? "…" : "") : "You've been invited to join this care group"}
+                          {inv.group?.description ? inv.group.description.substring(0, 60) + (inv.group.description.length > 60 ? "…" : "") : `You've been invited to join this ${site.careGroupSingular.toLowerCase()}`}
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
                           Received {new Date(inv.created_at).toLocaleDateString("en", { month: "short", day: "numeric" })}

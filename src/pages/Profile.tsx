@@ -14,9 +14,11 @@ import { useToast } from "@/hooks/use-toast";
 import { careAuth, careDb } from "@/integrations/supabase/external-client";
 import { User, Bell, Shield, MapPin, Loader2, Upload, Camera, Download, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useSite } from "@/contexts/SiteContext";
 
 export default function Profile() {
   const { user, logout } = useAuth();
+  const site = useSite();
   const navigate = useNavigate();
   const { data: profile, isLoading } = useMyProfile();
   const updateProfile = useUpdateProfile();
@@ -97,7 +99,7 @@ export default function Profile() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `careconnected-data-${new Date().toISOString().split("T")[0]}.json`;
+      a.download = `${site.brandSlug}-data-${new Date().toISOString().split("T")[0]}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

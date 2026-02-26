@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ClipboardCheck } from "lucide-react";
 import { useCheckinLogs, useCreateCheckinLog } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
+import { useSite } from "@/contexts/SiteContext";
 
 interface CheckInsTabProps {
   groupCaredOnes: any[];
@@ -16,6 +17,7 @@ interface CheckInsTabProps {
 
 export function CheckInsTab({ groupCaredOnes, activeGroupId }: CheckInsTabProps) {
   const { toast } = useToast();
+  const site = useSite();
   const [selectedCaredOne, setSelectedCaredOne] = useState<string | null>(null);
   const activeCOId = selectedCaredOne || (groupCaredOnes.length > 0 ? groupCaredOnes[0].user_id : null);
   const { data: logs } = useCheckinLogs(activeCOId);
@@ -46,12 +48,12 @@ export function CheckInsTab({ groupCaredOnes, activeGroupId }: CheckInsTabProps)
       {groupCaredOnes.length > 1 && (
         <div className="flex gap-2 mb-4">
           {groupCaredOnes.map((co: any) => (
-            <Badge key={co.user_id} variant={activeCOId === co.user_id ? "default" : "outline"} className="cursor-pointer" onClick={() => setSelectedCaredOne(co.user_id)}>{co.profile?.full_name || "Cared One"}</Badge>
+            <Badge key={co.user_id} variant={activeCOId === co.user_id ? "default" : "outline"} className="cursor-pointer" onClick={() => setSelectedCaredOne(co.user_id)}>{co.profile?.full_name || site.caredOneSingular}</Badge>
           ))}
         </div>
       )}
       <Card className="border-transparent card-elevated mb-4">
-        <CardHeader><CardTitle className="text-base">New Check-In for {groupCaredOnes.find((co: any) => co.user_id === activeCOId)?.profile?.full_name || "Cared One"}</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base">New Check-In for {groupCaredOnes.find((co: any) => co.user_id === activeCOId)?.profile?.full_name || site.caredOneSingular}</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div><Label className="text-xs">Mood</Label>

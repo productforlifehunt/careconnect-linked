@@ -101,7 +101,7 @@ export default function CareCircle() {
   const handleCreateGroup = () => {
     if (!newGroupName.trim()) return;
     createGroup.mutate({ name: newGroupName, description: newGroupDesc || undefined }, {
-      onSuccess: () => { setNewGroupName(""); setNewGroupDesc(""); setCreateGroupOpen(false); toast({ title: "Care group created!" }); },
+      onSuccess: () => { setNewGroupName(""); setNewGroupDesc(""); setCreateGroupOpen(false); toast({ title: `${site.careGroupSingular} created!` }); },
     });
   };
 
@@ -138,15 +138,15 @@ export default function CareCircle() {
     return (
       <div className="max-w-6xl mx-auto px-4 py-6 text-center">
         <Users className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
-        <h1 className="text-2xl font-bold text-foreground mb-2">No Care Groups Yet</h1>
-        <p className="text-muted-foreground mb-6">Create a care group or join one with a code.</p>
+        <h1 className="text-2xl font-bold text-foreground mb-2">No {site.navLabels.careGroups} Yet</h1>
+        <p className="text-muted-foreground mb-6">Create a {site.careGroupSingular.toLowerCase()} or join one with a code.</p>
         <div className="flex gap-3 justify-center flex-wrap">
           <Dialog open={createGroupOpen} onOpenChange={setCreateGroupOpen}>
-            <DialogTrigger asChild><Button variant="coral"><Plus className="h-4 w-4 mr-2" /> Create Care Group</Button></DialogTrigger>
+            <DialogTrigger asChild><Button variant="coral"><Plus className="h-4 w-4 mr-2" /> Create {site.careGroupSingular}</Button></DialogTrigger>
             <DialogContent>
-              <DialogHeader><DialogTitle>Create Care Group</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle>Create {site.careGroupSingular}</DialogTitle></DialogHeader>
               <div className="space-y-4 mt-2">
-                <div><Label>Group Name *</Label><Input value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder="e.g. Mom's Care Team" /></div>
+                <div><Label>Group Name *</Label><Input value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder={site.id === "challenged" ? "e.g. Dad's Dementia Team" : "e.g. Mom's Care Team"} /></div>
                 <div><Label>Description</Label><Textarea value={newGroupDesc} onChange={e => setNewGroupDesc(e.target.value)} placeholder="What is this group for?" /></div>
                 <Button variant="coral" className="w-full" onClick={handleCreateGroup} disabled={createGroup.isPending || !newGroupName.trim()}>Create Group</Button>
               </div>
@@ -155,7 +155,7 @@ export default function CareCircle() {
           <Dialog open={joinCodeOpen} onOpenChange={setJoinCodeOpen}>
             <DialogTrigger asChild><Button variant="outline"><KeyRound className="h-4 w-4 mr-2" /> Join with Code</Button></DialogTrigger>
             <DialogContent>
-              <DialogHeader><DialogTitle>Join Care Group</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle>Join {site.careGroupSingular}</DialogTitle></DialogHeader>
               <div className="space-y-4 mt-2">
                 <div><Label>Join Code</Label><Input value={joinCode} onChange={e => setJoinCode(e.target.value.toUpperCase())} placeholder="Enter group code (e.g. ABC123)" className="uppercase" /></div>
                 <Button variant="coral" className="w-full" onClick={handleJoinByCode} disabled={joinGroupByCode.isPending || !joinCode.trim()}>Join Group</Button>
@@ -181,7 +181,7 @@ export default function CareCircle() {
           <Dialog open={joinCodeOpen} onOpenChange={setJoinCodeOpen}>
             <DialogTrigger asChild><Button variant="outline" size="sm"><KeyRound className="h-4 w-4 mr-1" /> Join</Button></DialogTrigger>
             <DialogContent>
-              <DialogHeader><DialogTitle>Join Care Group</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle>Join {site.careGroupSingular}</DialogTitle></DialogHeader>
               <div className="space-y-4 mt-2">
                 <div><Label>Join Code</Label><Input value={joinCode} onChange={e => setJoinCode(e.target.value.toUpperCase())} placeholder="Enter group code (e.g. ABC123)" className="uppercase" /></div>
                 <Button variant="coral" className="w-full" onClick={handleJoinByCode} disabled={joinGroupByCode.isPending || !joinCode.trim()}>Join Group</Button>
@@ -191,9 +191,9 @@ export default function CareCircle() {
           <Dialog open={createGroupOpen} onOpenChange={setCreateGroupOpen}>
             <DialogTrigger asChild><Button variant="outline" size="sm"><Plus className="h-4 w-4 mr-1" /> New Group</Button></DialogTrigger>
             <DialogContent>
-              <DialogHeader><DialogTitle>Create Care Group</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle>Create {site.careGroupSingular}</DialogTitle></DialogHeader>
               <div className="space-y-4 mt-2">
-                <div><Label>Group Name *</Label><Input value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder="e.g. Mom's Care Team" /></div>
+                <div><Label>Group Name *</Label><Input value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder={site.id === "challenged" ? "e.g. Dad's Dementia Team" : "e.g. Mom's Care Team"} /></div>
                 <div><Label>Description</Label><Textarea value={newGroupDesc} onChange={e => setNewGroupDesc(e.target.value)} placeholder="What is this group for?" /></div>
                 <Button variant="coral" className="w-full" onClick={handleCreateGroup} disabled={createGroup.isPending || !newGroupName.trim()}>Create Group</Button>
               </div>
@@ -228,7 +228,7 @@ export default function CareCircle() {
             <TabsTrigger value="calendar" className="gap-1.5 text-xs"><CalendarDays className="h-3.5 w-3.5" /> Calendar</TabsTrigger>
             <TabsTrigger value="announcements" className="gap-1.5 text-xs"><Megaphone className="h-3.5 w-3.5" /> Announcements</TabsTrigger>
             <TabsTrigger value="tasks" className="gap-1.5 text-xs"><ListTodo className="h-3.5 w-3.5" /> Tasks</TabsTrigger>
-            <TabsTrigger value="cared-ones" className="gap-1.5 text-xs"><Heart className="h-3.5 w-3.5" /> Cared Ones</TabsTrigger>
+            <TabsTrigger value="cared-ones" className="gap-1.5 text-xs"><Heart className="h-3.5 w-3.5" /> {site.navLabels.caredOnes}</TabsTrigger>
             <TabsTrigger value="checkins" className="gap-1.5 text-xs"><ClipboardCheck className="h-3.5 w-3.5" /> Check-Ins</TabsTrigger>
             <TabsTrigger value="messages" className="gap-1.5 text-xs"><MessageSquare className="h-3.5 w-3.5" /> Messages</TabsTrigger>
             <TabsTrigger value="wishes" className="gap-1.5 text-xs"><Star className="h-3.5 w-3.5" /> Well Wishes</TabsTrigger>

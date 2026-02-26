@@ -21,6 +21,12 @@ export interface SiteConfig {
   metaTitle: string;
   metaDescription: string;
   cssClass: string;
+  contactEmail: string;
+  brandSlug: string;
+  /** Singular label for a cared-one, e.g. "Cared One" or "Loved One" */
+  caredOneSingular: string;
+  /** Singular label for a care group, e.g. "Care Group" or "Care Team" */
+  careGroupSingular: string;
   /** Override nav labels if needed */
   navLabels: {
     careGroups: string;
@@ -51,6 +57,10 @@ const careConnectedConfig: SiteConfig = {
   metaTitle: "Care·Connected — Find Trusted Caregivers",
   metaDescription: "Search caregivers, book appointments, and coordinate care in one place.",
   cssClass: "site-careconnected",
+  contactEmail: "safety@careconnected.com",
+  brandSlug: "careconnected",
+  caredOneSingular: "Cared One",
+  careGroupSingular: "Care Group",
   navLabels: {
     careGroups: "Care Groups",
     findCare: "Find Care",
@@ -84,6 +94,10 @@ const challengedConfig: SiteConfig = {
   metaTitle: "Challenged — Dementia Care Together",
   metaDescription: "Coordinate dementia care, find specialized caregivers, and keep your loved one safe.",
   cssClass: "site-challenged",
+  contactEmail: "safety@challenged.com",
+  brandSlug: "challenged",
+  caredOneSingular: "Loved One",
+  careGroupSingular: "Care Team",
   navLabels: {
     careGroups: "Care Teams",
     findCare: "Find Help",
