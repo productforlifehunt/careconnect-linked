@@ -14,6 +14,9 @@ import { EmergencySOS } from "@/components/challenged/EmergencySOS";
 import { DailyTimeline } from "@/components/challenged/DailyTimeline";
 import { LovedOneSimpleView } from "@/components/challenged/LovedOneSimpleView";
 import { DementiaAssistant } from "@/components/challenged/DementiaAssistant";
+import { AIInsightsPanel } from "@/components/challenged/AIInsightsPanel";
+import { AICareTips } from "@/components/challenged/AICareTips";
+import { AIDailySummary } from "@/components/challenged/AIDailySummary";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -58,7 +61,6 @@ export default function Dashboard() {
     low: "bg-muted text-muted-foreground",
   };
 
-  // First cared one for timeline
   const firstCaredOne = caredOnes?.[0];
 
   return (
@@ -70,7 +72,7 @@ export default function Dashboard() {
         </p>
       </div>
 
-      {/* Emergency SOS — Challenged site only, for caregivers */}
+      {/* Emergency SOS — Challenged site only */}
       {isChallenged && (
         <div className="mb-6">
           <EmergencySOS />
@@ -121,10 +123,30 @@ export default function Dashboard() {
       )}
 
       <div className="grid lg:grid-cols-2 gap-6">
+        {/* AI Insights — Challenged site, for caregivers */}
+        {isChallenged && (
+          <AIInsightsPanel caredOnes={caredOnes} tasks={tasks} bookings={bookings} />
+        )}
+
         {/* Daily Timeline — Challenged site, first cared one */}
         {isChallenged && firstCaredOne && (
           <DailyTimeline
             caredOneId={firstCaredOne.cared_one_id}
+            caredOneName={firstCaredOne.cared_one?.full_name || firstCaredOne.cared_one?.first_name || site.caredOneSingular}
+          />
+        )}
+
+        {/* AI Daily Summary — Challenged site */}
+        {isChallenged && firstCaredOne && (
+          <AIDailySummary
+            caredOneName={firstCaredOne.cared_one?.full_name || firstCaredOne.cared_one?.first_name || site.caredOneSingular}
+            tasks={tasks}
+          />
+        )}
+
+        {/* AI Care Tips — Challenged site */}
+        {isChallenged && firstCaredOne && (
+          <AICareTips
             caredOneName={firstCaredOne.cared_one?.full_name || firstCaredOne.cared_one?.first_name || site.caredOneSingular}
           />
         )}

@@ -10,9 +10,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSite } from "@/contexts/SiteContext";
 import { useMedicines, useCareTasks, useEmergencyContacts } from "@/hooks/use-care-data";
 import {
-  Pill, Phone, MapPin, MessageSquare, Users, Calendar, AlertTriangle, Heart
+  Pill, Phone, MapPin, MessageSquare, Users, Calendar, Heart
 } from "lucide-react";
 import { EmergencySOS } from "./EmergencySOS";
+import { CognitiveExercises } from "./CognitiveExercises";
+import { AICareTips } from "./AICareTips";
 
 export function LovedOneSimpleView() {
   const navigate = useNavigate();
@@ -89,6 +91,12 @@ export function LovedOneSimpleView() {
           </CardContent>
         </Card>
       )}
+
+      {/* Cognitive Exercises — for the loved one */}
+      <CognitiveExercises />
+
+      {/* AI Care Tips — personalized for the loved one */}
+      <AICareTips caredOneName={displayName} />
     </div>
   );
 }
