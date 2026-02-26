@@ -6,6 +6,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bot, Send, Loader2, X, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
+// Edge function is on Lovable Cloud, so we use the Lovable Cloud client here
+
 interface Message {
   role: "user" | "assistant";
   content: string;
