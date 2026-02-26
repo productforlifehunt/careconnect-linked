@@ -1288,12 +1288,23 @@ export function useCheckinLogs(caredOneId: string | null) {
       if (!caredOneId) return [];
       const { data, error } = await careDb
         .from("checkin_log")
-        .select("*, reporter:recorded_by(id, full_name)")
+        .select("*")
         .eq("user_id", caredOneId)
         .order("created_at", { ascending: false })
         .limit(30);
       if (error) throw error;
-      return (data || []) as any[];
+      // Fetch reporter profiles separately (no FK relationship)
+      const logs = (data || []) as any[];
+      const reporterIds = [...new Set(logs.map((l: any) => l.recorded_by).filter(Boolean))];
+      let reporterMap: Record<string, any> = {};
+      if (reporterIds.length > 0) {
+        const { data: reporters } = await careDb
+          .from("profile")
+          .select("id, full_name")
+          .in("id", reporterIds);
+        (reporters || []).forEach((r: any) => { reporterMap[r.id] = r; });
+      }
+      return logs.map((l: any) => ({ ...l, reporter: reporterMap[l.recorded_by] || null }));
     },
     enabled: !!caredOneId,
   });
