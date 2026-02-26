@@ -1,4 +1,5 @@
 import { NavLink } from "@/components/NavLink";
+import { useSite } from "@/contexts/SiteContext";
 import {
   CheckSquare,
   CalendarDays,
@@ -14,35 +15,43 @@ import {
   Settings,
 } from "lucide-react";
 
-const sidebarItems = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Cared Ones", url: "/cared-ones", icon: HeartIcon },
-  { title: "Appointments", url: "/bookings", icon: CalendarDays },
-  { title: "Messages", url: "/messages", icon: MessageSquare },
-  { title: "Care Groups", url: "/care-circle", icon: Users },
-  { title: "Jobs Board", url: "/jobs", icon: Briefcase },
-  { title: "Find Care", url: "/search", icon: Search },
-  { title: "GPS Tracking", url: "/gps-tracking", icon: MapPin },
-  { title: "Favorites", url: "/favorites", icon: HeartIcon },
-  { title: "Provider Dashboard", url: "/provider-dashboard", icon: Settings },
-  { title: "Notifications", url: "/notifications", icon: Bell },
-  { title: "My Profile", url: "/profile", icon: User },
-];
+function useSidebarItems() {
+  const site = useSite();
+  return [
+    { title: site.navLabels.dashboard, url: "/dashboard", icon: LayoutDashboard },
+    { title: site.navLabels.caredOnes, url: "/cared-ones", icon: HeartIcon },
+    { title: "Appointments", url: "/bookings", icon: CalendarDays },
+    { title: "Messages", url: "/messages", icon: MessageSquare },
+    { title: site.navLabels.careGroups, url: "/care-circle", icon: Users },
+    { title: "Jobs Board", url: "/jobs", icon: Briefcase },
+    { title: site.navLabels.findCare, url: "/search", icon: Search },
+    { title: "GPS Tracking", url: "/gps-tracking", icon: MapPin },
+    { title: "Favorites", url: "/favorites", icon: HeartIcon },
+    { title: "Provider Dashboard", url: "/provider-dashboard", icon: Settings },
+    { title: "Notifications", url: "/notifications", icon: Bell },
+    { title: "My Profile", url: "/profile", icon: User },
+  ];
+}
 
 // Key items for mobile bottom bar (max 5)
-const mobileBarItems = [
-  { title: "Home", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Cared Ones", url: "/cared-ones", icon: HeartIcon },
-  { title: "Messages", url: "/messages", icon: MessageSquare },
-  { title: "Groups", url: "/care-circle", icon: Users },
-  { title: "Profile", url: "/profile", icon: User },
-];
+function useMobileBarItems() {
+  const site = useSite();
+  return [
+    { title: "Home", url: "/dashboard", icon: LayoutDashboard },
+    { title: site.navLabels.caredOnes, url: "/cared-ones", icon: HeartIcon },
+    { title: "Messages", url: "/messages", icon: MessageSquare },
+    { title: site.navLabels.careGroups.split(" ")[0], url: "/care-circle", icon: Users },
+    { title: "Profile", url: "/profile", icon: User },
+  ];
+}
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
+  const sidebarItems = useSidebarItems();
+  const mobileBarItems = useMobileBarItems();
   return (
     <div className="flex flex-1 overflow-hidden">
       {/* Sidebar — visible on md+ screens */}

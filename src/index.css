@@ -145,3 +145,55 @@
     background-clip: text;
   }
 }
+
+/* ===== Challenged (Dementia) site theme ===== */
+@layer base {
+  .site-challenged {
+    --primary: 262 52% 47%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 330 65% 52%;
+    --secondary-foreground: 0 0% 100%;
+    --accent: 262 30% 92%;
+    --accent-foreground: 262 52% 30%;
+    --muted: 262 15% 94%;
+    --ring: 262 52% 47%;
+    --border: 262 15% 88%;
+    --input: 262 15% 88%;
+
+    --sidebar-primary: 262 52% 47%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 262 30% 92%;
+    --sidebar-accent-foreground: 262 52% 30%;
+    --sidebar-border: 262 15% 90%;
+    --sidebar-ring: 262 52% 47%;
+
+    --coral: 330 65% 52%;
+    --coral-foreground: 0 0% 100%;
+    --hero-gradient: linear-gradient(135deg, hsl(262 52% 47%), hsl(262 52% 35%));
+    --coral-gradient: linear-gradient(135deg, hsl(330 65% 52%), hsl(340 65% 46%));
+    --card-shadow: 0 2px 12px -2px hsl(262 52% 47% / 0.08);
+    --card-shadow-hover: 0 8px 30px -4px hsl(262 52% 47% / 0.15);
+  }
+
+  .site-challenged.dark {
+    --primary: 262 52% 58%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 330 55% 55%;
+    --secondary-foreground: 0 0% 100%;
+    --accent: 262 30% 20%;
+    --accent-foreground: 262 50% 75%;
+    --ring: 262 52% 58%;
+    --border: 220 15% 20%;
+    --input: 220 15% 20%;
+
+    --sidebar-primary: 262 52% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 262 30% 18%;
+    --sidebar-accent-foreground: 262 50% 75%;
+    --sidebar-border: 220 15% 18%;
+    --sidebar-ring: 262 52% 58%;
+
+    --coral: 330 55% 58%;
+    --coral-foreground: 0 0% 100%;
+  }
+}
