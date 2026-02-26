@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useSite } from "@/contexts/SiteContext";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -29,6 +30,7 @@ export function HomeTab({
   createPost, onEditPost, onTogglePin, onDeletePost,
 }: HomeTabProps) {
   const { toast } = useToast();
+  const site = useSite();
   const [content, setContent] = useState("");
   const [postType, setPostType] = useState("discussion");
   const [title, setTitle] = useState("");
@@ -47,7 +49,7 @@ export function HomeTab({
         {[
           { label: "Pending Tasks", value: pendingTasksCount, icon: ListTodo },
           { label: "Members", value: membersCount, icon: Users },
-          { label: "Cared Ones", value: caredOnesCount, icon: Heart },
+          { label: site.navLabels.caredOnes, value: caredOnesCount, icon: Heart },
         ].map(s => (
           <Card key={s.label} className="border-transparent card-elevated">
             <CardContent className="p-4 flex items-center gap-3">

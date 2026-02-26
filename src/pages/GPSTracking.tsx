@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useSite } from "@/contexts/SiteContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -14,6 +15,7 @@ import "leaflet/dist/leaflet.css";
 
 export default function GPSTracking() {
   const { toast } = useToast();
+  const site = useSite();
   const { data: locationShares, isLoading, refetch } = useLocationShares();
   const [selectedPerson, setSelectedPerson] = useState<any>(null);
   const [shareMyLocation, setShareMyLocation] = useState(false);
@@ -195,7 +197,7 @@ export default function GPSTracking() {
         
         // Get user profile for the notification
         const { data: profile } = await careDb.from("profile").select("full_name").eq("id", userId).single();
-        const senderName = profile?.full_name || "A care circle member";
+        const senderName = profile?.full_name || `A ${site.careGroupSingular.toLowerCase()} member`;
 
         // Create notifications for all members
         if (memberIds.length > 0) {
@@ -214,7 +216,7 @@ export default function GPSTracking() {
       setSosDialogOpen(false);
       toast({
         title: "🚨 Emergency Alert Sent",
-        description: "All care circle members have been notified with your current location.",
+        description: `All ${site.navLabels.careGroups.toLowerCase()} members have been notified with your current location.`,
       });
     } catch (err: any) {
       toast({
@@ -258,7 +260,7 @@ export default function GPSTracking() {
               <AlertTriangle className="h-5 w-5" /> Emergency SOS Alert
             </DialogTitle>
             <DialogDescription>
-              This will immediately share your current location and send an emergency notification to all members of your care circles. Only use this in a real emergency.
+              This will immediately share your current location and send an emergency notification to all members of your {site.navLabels.careGroups.toLowerCase()}. Only use this in a real emergency.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
@@ -364,7 +366,7 @@ export default function GPSTracking() {
                 <Switch checked={geofenceAlerts} onCheckedChange={setGeofenceAlerts} />
               </div>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <Shield className="h-3 w-3" /> Location data is encrypted and only shared with your care circle
+                <Shield className="h-3 w-3" /> Location data is encrypted and only shared with your {site.navLabels.careGroups.toLowerCase()}
               </p>
             </CardContent>
           </Card>

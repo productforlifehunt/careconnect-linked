@@ -97,14 +97,14 @@ export default function CaredOnes() {
 
   const selectedId = activeTab || (caredOnes && caredOnes.length > 0 ? caredOnes[0].cared_one_id : null);
   const selectedCaredOne = caredOnes?.find((c: any) => c.cared_one_id === selectedId);
-  const caredOneName = selectedCaredOne?.cared_one?.full_name || selectedCaredOne?.cared_one?.first_name || "Cared One";
+  const caredOneName = selectedCaredOne?.cared_one?.full_name || selectedCaredOne?.cared_one?.first_name || site.caredOneSingular;
 
   const handleAddCaredOne = () => {
     if (!selectedPerson) return;
     createUserCaredOne.mutate({ caredOneId: selectedPerson.id, relationship: relationship || undefined, isPrimary }, {
       onSuccess: () => {
         setAddOpen(false); setSelectedPerson(null); setSearchQuery(""); setRelationship(""); setIsPrimary(false);
-        toast({ title: "Cared one added!" });
+        toast({ title: `${site.caredOneSingular} added!` });
       },
       onError: (err: any) => toast({ title: "Failed", description: err.message, variant: "destructive" }),
     });
@@ -112,7 +112,7 @@ export default function CaredOnes() {
 
   const handleRemoveCaredOne = (id: string, name: string) => {
     deleteUserCaredOne.mutate(id, {
-      onSuccess: () => { setActiveTab(null); setOpenCard(null); toast({ title: `${name} removed from your cared ones` }); },
+      onSuccess: () => { setActiveTab(null); setOpenCard(null); toast({ title: `${name} removed from your ${site.navLabels.caredOnes.toLowerCase()}` }); },
       onError: (err: any) => toast({ title: "Failed to remove", description: err.message, variant: "destructive" }),
     });
   };
@@ -127,7 +127,7 @@ export default function CaredOnes() {
           <p className="text-muted-foreground">Manage and track care for your loved ones</p>
         </div>
         <Button variant="coral" size="sm" onClick={() => setAddOpen(true)}>
-          <UserPlus className="h-4 w-4 mr-1" /> Add Cared One
+          <UserPlus className="h-4 w-4 mr-1" /> Add {site.caredOneSingular}
         </Button>
       </div>
 
@@ -135,7 +135,7 @@ export default function CaredOnes() {
       <Dialog open={addOpen} onOpenChange={(open) => { setAddOpen(open); if (!open) { setSelectedPerson(null); setSearchQuery(""); } }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add a Cared One</DialogTitle>
+            <DialogTitle>Add a {site.caredOneSingular}</DialogTitle>
             <DialogDescription>Search for someone to add as a person you care for</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-2">
@@ -187,7 +187,7 @@ export default function CaredOnes() {
             </div>
             <Button variant="coral" className="w-full" onClick={handleAddCaredOne} disabled={!selectedPerson || createUserCaredOne.isPending}>
               {createUserCaredOne.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <HeartPulse className="h-4 w-4 mr-2" />}
-              Add as Cared One
+              Add as {site.caredOneSingular}
             </Button>
           </div>
         </DialogContent>
@@ -197,7 +197,7 @@ export default function CaredOnes() {
         <>
           <div className="flex gap-2 mb-6 flex-wrap items-center">
             {caredOnes.map((co: any) => {
-              const name = co.cared_one?.full_name || co.cared_one?.first_name || "Cared One";
+              const name = co.cared_one?.full_name || co.cared_one?.first_name || site.caredOneSingular;
               return (
                 <div key={co.cared_one_id} className={`group relative flex items-center gap-1 rounded-lg border transition-colors ${selectedId === co.cared_one_id ? "bg-card border-primary shadow-sm" : "bg-transparent border-border hover:bg-accent/50"}`}>
                   <button onClick={() => { setActiveTab(co.cared_one_id); setOpenCard(null); }} className="px-4 py-2 text-sm font-medium">
@@ -210,7 +210,7 @@ export default function CaredOnes() {
                     <AlertDialogContent>
                       <AlertDialogHeader>
                         <AlertDialogTitle>Remove {name}?</AlertDialogTitle>
-                        <AlertDialogDescription>This will remove {name} from your cared ones list. Their data will not be deleted.</AlertDialogDescription>
+                        <AlertDialogDescription>This will remove {name} from your {site.navLabels.caredOnes.toLowerCase()} list. Their data will not be deleted.</AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -246,9 +246,9 @@ export default function CaredOnes() {
         <Card className="border-transparent card-elevated">
           <CardContent className="p-8 text-center">
             <HeartPulse className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <h3 className="font-semibold text-foreground mb-1">No cared ones yet</h3>
+            <h3 className="font-semibold text-foreground mb-1">No {site.navLabels.caredOnes.toLowerCase()} yet</h3>
             <p className="text-sm text-muted-foreground mb-4">Add the people you're caring for to track their health, medications, and more.</p>
-            <Button variant="coral" onClick={() => setAddOpen(true)}><UserPlus className="h-4 w-4 mr-1" /> Add Your First Cared One</Button>
+            <Button variant="coral" onClick={() => setAddOpen(true)}><UserPlus className="h-4 w-4 mr-1" /> Add Your First {site.caredOneSingular}</Button>
           </CardContent>
         </Card>
       )}

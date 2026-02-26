@@ -2,8 +2,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Shield, CheckCircle, Lock, Eye, FileCheck, AlertTriangle, Phone, Mail } from "lucide-react";
+import { useSite } from "@/contexts/SiteContext";
 
 export default function TrustSafety() {
+  const site = useSite();
   const safeguards = [
     {
       icon: FileCheck,
@@ -108,7 +110,7 @@ export default function TrustSafety() {
               <Phone className="h-4 w-4" /> Call Safety Line: 1-800-CARE-SAFE
             </Button>
             <Button variant="outline" className="gap-2">
-              <Mail className="h-4 w-4" /> Email: safety@careconnected.com
+              <Mail className="h-4 w-4" /> Email: {site.contactEmail}
             </Button>
           </div>
         </CardContent>
