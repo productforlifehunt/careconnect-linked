@@ -17,6 +17,9 @@ import { DementiaAssistant } from "@/components/challenged/DementiaAssistant";
 import { AIInsightsPanel } from "@/components/challenged/AIInsightsPanel";
 import { AICareTips } from "@/components/challenged/AICareTips";
 import { AIDailySummary } from "@/components/challenged/AIDailySummary";
+import { SymptomTracker } from "@/components/challenged/SymptomTracker";
+import { CaregiverWellness } from "@/components/challenged/CaregiverWellness";
+import { DementiaStageSelector } from "@/components/challenged/DementiaStageSelector";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -123,6 +126,15 @@ export default function Dashboard() {
       )}
 
       <div className="grid lg:grid-cols-2 gap-6">
+        {/* Dementia Stage Selector — Challenged site, first cared one */}
+        {isChallenged && firstCaredOne && (
+          <DementiaStageSelector
+            caredOneId={firstCaredOne.cared_one_id}
+            caredOneName={firstCaredOne.cared_one?.full_name || firstCaredOne.cared_one?.first_name || site.caredOneSingular}
+            currentStage={firstCaredOne.cared_one?.dementia_stage}
+          />
+        )}
+
         {/* AI Insights — Challenged site, for caregivers */}
         {isChallenged && (
           <AIInsightsPanel caredOnes={caredOnes} tasks={tasks} bookings={bookings} />
@@ -134,6 +146,19 @@ export default function Dashboard() {
             caredOneId={firstCaredOne.cared_one_id}
             caredOneName={firstCaredOne.cared_one?.full_name || firstCaredOne.cared_one?.first_name || site.caredOneSingular}
           />
+        )}
+
+        {/* Symptom & Behavior Tracker — Challenged site */}
+        {isChallenged && firstCaredOne && (
+          <SymptomTracker
+            caredOneId={firstCaredOne.cared_one_id}
+            caredOneName={firstCaredOne.cared_one?.full_name || firstCaredOne.cared_one?.first_name || site.caredOneSingular}
+          />
+        )}
+
+        {/* Caregiver Wellness — Challenged site */}
+        {isChallenged && (
+          <CaregiverWellness />
         )}
 
         {/* AI Daily Summary — Challenged site */}

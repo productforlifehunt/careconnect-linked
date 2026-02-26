@@ -2417,3 +2417,89 @@ export function useStartConversation() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["conversations"] }),
   });
 }
+
+// ─── Symptom Logs ───────────────────────────────────────────
+export function useSymptomLogs(caredOneId: string | null) {
+  return useQuery({
+    queryKey: ["symptom-logs", caredOneId],
+    queryFn: async () => {
+      if (!caredOneId) return [];
+      const { data, error } = await careDb
+        .from("symptom_log")
+        .select("*")
+        .eq("cared_one_id", caredOneId)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!caredOneId,
+  });
+}
+
+export function useCreateSymptomLog() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (entry: { cared_one_id: string; symptom_type: string; severity: number; notes?: string | null; trigger?: string | null }) => {
+      const userId = await getCurrentUserId();
+      if (!userId) throw new Error("Not authenticated");
+      const { error } = await careDb
+        .from("symptom_log")
+        .insert({ ...entry, recorded_by: userId });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["symptom-logs"] }),
+  });
+}
+
+// ─── Caregiver Wellness Logs ────────────────────────────────
+export function useCaregiverWellnessLogs() {
+  return useQuery({
+    queryKey: ["caregiver-wellness"],
+    queryFn: async () => {
+      const userId = await getCurrentUserId();
+      if (!userId) return [];
+      const { data, error } = await careDb
+        .from("caregiver_wellness_log")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(30);
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+  });
+}
+
+export function useCreateCaregiverWellnessLog() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (entry: { mood: string; stress_level: number; sleep_hours: number; notes?: string | null }) => {
+      const userId = await getCurrentUserId();
+      if (!userId) throw new Error("Not authenticated");
+      const { error } = await careDb
+        .from("caregiver_wellness_log")
+        .insert({ ...entry, user_id: userId });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["caregiver-wellness"] }),
+  });
+}
+
+// ─── Dementia Stage ─────────────────────────────────────────
+export function useUpdateDementiaStage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ caredOneId, stage }: { caredOneId: string; stage: string }) => {
+      const { error } = await careDb
+        .from("profile")
+        .update({ dementia_stage: stage })
+        .eq("id", caredOneId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["user-cared-ones"] });
+      qc.invalidateQueries({ queryKey: ["provider"] });
+    },
+  });
+}
