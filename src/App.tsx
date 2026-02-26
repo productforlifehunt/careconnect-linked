@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { SiteProvider } from "@/contexts/SiteContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { RequireAuth } from "@/components/auth/RequireAuth";
@@ -72,23 +73,25 @@ function AppRoutes() {
 }
 
 const App = () => (
-  <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AppLayout>
-              <ErrorBoundary>
-                <AppRoutes />
-              </ErrorBoundary>
-            </AppLayout>
-          </BrowserRouter>
-        </AuthProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </ThemeProvider>
+  <SiteProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <AuthProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <AppLayout>
+                <ErrorBoundary>
+                  <AppRoutes />
+                </ErrorBoundary>
+              </AppLayout>
+            </BrowserRouter>
+          </AuthProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
+  </SiteProvider>
 );
 
 export default App;

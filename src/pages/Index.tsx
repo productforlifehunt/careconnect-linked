@@ -9,11 +9,13 @@ import {
   Users, Stethoscope, Baby, Moon, ArrowRight, CheckCircle, Loader2
 } from "lucide-react";
 import { useProviders, useServiceCategories } from "@/hooks/use-care-data";
+import { useSite } from "@/contexts/SiteContext";
 import heroImage from "@/assets/hero-image.jpg";
 import type { Profile } from "@/types/care-connector";
 
 const Index = () => {
   const navigate = useNavigate();
+  const site = useSite();
   const [searchQuery, setSearchQuery] = useState("");
   const [locationQuery, setLocationQuery] = useState("");
 
@@ -50,11 +52,11 @@ const Index = () => {
         <div className="relative max-w-6xl mx-auto px-4 py-20 md:py-32">
           <div className="max-w-2xl">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground mb-6 leading-tight animate-fade-in">
-              Find Trusted Care,{" "}
-              <span className="text-coral">Stay Connected</span>
+              {site.heroTitle}{" "}
+              <span className="text-coral">{site.heroHighlight}</span>
             </h1>
             <p className="text-lg md:text-xl text-primary-foreground/90 mb-8 animate-fade-in" style={{ animationDelay: "0.1s" }}>
-              Search caregivers, book appointments, coordinate with your care team, and track care in real-time — all in one place.
+              {site.heroSubtitle}
             </p>
 
             <div className="bg-card rounded-xl p-2 shadow-xl animate-fade-in" style={{ animationDelay: "0.2s" }}>
@@ -62,7 +64,7 @@ const Index = () => {
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="What type of care do you need?"
+                    placeholder={site.searchPlaceholder}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-9 border-0 bg-muted/50 h-12"
@@ -86,7 +88,7 @@ const Index = () => {
             </div>
 
             <div className="flex flex-wrap gap-4 mt-6 animate-fade-in" style={{ animationDelay: "0.3s" }}>
-              {["Background Checked", "Verified Reviews", "GPS Tracking"].map((feat) => (
+              {site.trustBadges.map((feat) => (
                 <div key={feat} className="flex items-center gap-2 text-primary-foreground/80 text-sm">
                   <CheckCircle className="h-4 w-4" />
                   <span>{feat}</span>
@@ -200,13 +202,9 @@ const Index = () => {
 
       {/* How It Works */}
       <section className="max-w-6xl mx-auto px-4 py-16">
-        <h2 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-12">How Care·Connected Works</h2>
+        <h2 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-12">{site.howItWorksTitle}</h2>
         <div className="grid md:grid-cols-3 gap-8">
-          {[
-            { step: "1", title: "Search & Compare", desc: "Browse verified caregivers by specialty, location, ratings, and availability. No account needed to search." },
-            { step: "2", title: "Book & Manage", desc: "Book care sessions, manage schedules, and coordinate with your care team all in one place." },
-            { step: "3", title: "Track & Connect", desc: "Use GPS tracking, care journals, and team coordination to stay connected and informed." },
-          ].map((item) => (
+          {site.howItWorksSteps.map((item) => (
             <div key={item.step} className="text-center">
               <div className="mx-auto w-14 h-14 rounded-2xl hero-gradient flex items-center justify-center mb-4">
                 <span className="text-primary-foreground font-bold text-xl">{item.step}</span>
@@ -221,13 +219,13 @@ const Index = () => {
       {/* CTA */}
       <section className="hero-gradient py-16">
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="text-2xl md:text-3xl font-bold text-primary-foreground mb-4">Ready to find the perfect caregiver?</h2>
+          <h2 className="text-2xl md:text-3xl font-bold text-primary-foreground mb-4">{site.ctaTitle}</h2>
           <p className="text-primary-foreground/80 mb-8 max-w-xl mx-auto">
-            Join thousands of families who trust Care·Connected for their caregiving needs.
+            {site.ctaSubtitle}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button variant="coral" size="lg" onClick={() => navigate("/search")}>
-              Find Caregivers
+              {site.ctaButton}
             </Button>
             <Button variant="secondary" size="lg" onClick={() => navigate("/auth?mode=signup")}>
               Create Free Account
@@ -243,11 +241,11 @@ const Index = () => {
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 rounded-lg hero-gradient flex items-center justify-center">
-                  <span className="text-primary-foreground font-bold text-xs">C·C</span>
+                  <span className="text-primary-foreground font-bold text-xs">{site.logoText}</span>
                 </div>
-                <span className="font-bold text-foreground">Care·Connected</span>
+                <span className="font-bold text-foreground">{site.footerBrand}</span>
               </div>
-              <p className="text-sm text-muted-foreground">Connecting families with trusted caregivers since 2024.</p>
+              <p className="text-sm text-muted-foreground">{site.footerTagline}</p>
             </div>
             {[
               { title: "For Families", links: [
@@ -282,7 +280,7 @@ const Index = () => {
             ))}
           </div>
           <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
-            © 2026 Care·Connected. All rights reserved.
+            © 2026 {site.footerBrand}. All rights reserved.
           </div>
         </div>
       </footer>

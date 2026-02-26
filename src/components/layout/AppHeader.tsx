@@ -1,6 +1,7 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSite } from "@/contexts/SiteContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,20 +21,21 @@ import { useState } from "react";
 import { useTheme } from "next-themes";
 import { useNotifications } from "@/hooks/use-care-data";
 
-const publicNav = [
-  { title: "Care Groups", url: "/care-circle", icon: Users },
-  { title: "Find Care", url: "/search", icon: Search },
-  { title: "How It Works", url: "/how-it-works", icon: HelpCircle },
-];
-
 export function AppHeader() {
   const { user, isAuthenticated, logout } = useAuth();
+  const site = useSite();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { theme, setTheme } = useTheme();
   const { data: notifications } = useNotifications();
   const unreadCount = notifications?.filter(n => !n.is_read).length || 0;
+
+  const publicNav = [
+    { title: site.navLabels.careGroups, url: "/care-circle", icon: Users },
+    { title: site.navLabels.findCare, url: "/search", icon: Search },
+    { title: "How It Works", url: "/how-it-works", icon: HelpCircle },
+  ];
 
   const displayName = user?.full_name || user?.first_name || user?.email || "User";
   const initials = displayName.charAt(0).toUpperCase();
@@ -61,11 +63,11 @@ export function AppHeader() {
             <div className="p-4 border-b">
               <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-2">
                 <div className="w-9 h-9 rounded-lg hero-gradient flex items-center justify-center">
-                  <span className="text-primary-foreground font-bold text-sm">C·C</span>
+                  <span className="text-primary-foreground font-bold text-sm">{site.logoText}</span>
                 </div>
                 <span className="font-bold text-lg">
-                  <span className="text-primary">Care</span>
-                  <span className="text-muted-foreground">Connected</span>
+                  <span className="text-primary">{site.id === "challenged" ? "Ch" : "Care"}</span>
+                  <span className="text-muted-foreground">{site.logoAccent}</span>
                 </span>
               </Link>
             </div>
@@ -86,10 +88,10 @@ export function AppHeader() {
                 <>
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 mt-6 px-3">My Care</p>
                   {[
-                    { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-                    { title: "Cared Ones", url: "/cared-ones", icon: Heart },
+                    { title: site.navLabels.dashboard, url: "/dashboard", icon: LayoutDashboard },
+                    { title: site.navLabels.caredOnes, url: "/cared-ones", icon: Heart },
                     { title: "Bookings", url: "/bookings", icon: CalendarDays },
-                    { title: "Care Circle", url: "/care-circle", icon: Users },
+                    { title: site.navLabels.careGroups, url: "/care-circle", icon: Users },
                     { title: "Messages", url: "/messages", icon: MessageSquare },
                     { title: "Favorites", url: "/favorites", icon: Heart },
                     { title: "GPS Tracking", url: "/gps-tracking", icon: MapPin },
@@ -113,11 +115,11 @@ export function AppHeader() {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 shrink-0">
           <div className="w-9 h-9 rounded-lg hero-gradient flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-sm">C·C</span>
+            <span className="text-primary-foreground font-bold text-sm">{site.logoText}</span>
           </div>
           <span className="font-bold text-lg hidden sm:inline">
-            <span className="text-primary">Care</span>
-            <span className="text-muted-foreground">Connected</span>
+            <span className="text-primary">{site.id === "challenged" ? "Ch" : "Care"}</span>
+            <span className="text-muted-foreground">{site.logoAccent}</span>
           </span>
         </Link>
 
