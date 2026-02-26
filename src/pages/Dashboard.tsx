@@ -4,11 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSite } from "@/contexts/SiteContext";
-import { useBookings, useCareTasks, useDashboardStats } from "@/hooks/use-care-data";
+import { useBookings, useCareTasks, useDashboardStats, useUserCaredOnes } from "@/hooks/use-care-data";
 import {
   CalendarDays, Users, MapPin, Clock, ArrowRight, CheckCircle, AlertCircle, MessageSquare, Loader2
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PatientSummaryCard } from "@/components/challenged/PatientSummaryCard";
+import { EmergencySOS } from "@/components/challenged/EmergencySOS";
+import { DailyTimeline } from "@/components/challenged/DailyTimeline";
+import { LovedOneSimpleView } from "@/components/challenged/LovedOneSimpleView";
+import { DementiaAssistant } from "@/components/challenged/DementiaAssistant";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -17,6 +22,20 @@ export default function Dashboard() {
   const { data: bookings, isLoading: bookingsLoading } = useBookings();
   const { data: tasks, isLoading: tasksLoading } = useCareTasks();
   const { data: stats } = useDashboardStats();
+  const { data: caredOnes } = useUserCaredOnes();
+
+  const isChallenged = site.id === "challenged";
+  const isLovedOne = user?.is_cared_one === true;
+
+  // If Challenged site and user is a loved one, show simplified view
+  if (isChallenged && isLovedOne) {
+    return (
+      <>
+        <LovedOneSimpleView />
+        <DementiaAssistant />
+      </>
+    );
+  }
 
   const displayName = user?.full_name || user?.first_name || "there";
   const upcomingBookings = (bookings || []).filter((b: any) => ["confirmed", "pending"].includes(b.status)).slice(0, 3);
@@ -39,12 +58,24 @@ export default function Dashboard() {
     low: "bg-muted text-muted-foreground",
   };
 
+  // First cared one for timeline
+  const firstCaredOne = caredOnes?.[0];
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-foreground">Welcome back, {displayName.split(" ")[0]}!</h1>
-        <p className="text-muted-foreground">Here's your care overview</p>
+        <p className="text-muted-foreground">
+          {isChallenged ? "Your dementia care overview" : "Here's your care overview"}
+        </p>
       </div>
+
+      {/* Emergency SOS — Challenged site only, for caregivers */}
+      {isChallenged && (
+        <div className="mb-6">
+          <EmergencySOS />
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -68,7 +99,36 @@ export default function Dashboard() {
         ))}
       </div>
 
+      {/* Patient Summaries — Challenged site only */}
+      {isChallenged && caredOnes && caredOnes.length > 0 && (
+        <div className="mb-6">
+          <h2 className="text-lg font-bold text-foreground mb-3">
+            {site.navLabels.caredOnes} — At a Glance
+          </h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {caredOnes.map((co: any) => (
+              <PatientSummaryCard
+                key={co.cared_one_id}
+                caredOneId={co.cared_one_id}
+                name={co.cared_one?.full_name || co.cared_one?.first_name || site.caredOneSingular}
+                avatarUrl={co.cared_one?.avatar_url}
+                relationship={co.relationship}
+                onClick={() => navigate("/cared-ones")}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="grid lg:grid-cols-2 gap-6">
+        {/* Daily Timeline — Challenged site, first cared one */}
+        {isChallenged && firstCaredOne && (
+          <DailyTimeline
+            caredOneId={firstCaredOne.cared_one_id}
+            caredOneName={firstCaredOne.cared_one?.full_name || firstCaredOne.cared_one?.first_name || site.caredOneSingular}
+          />
+        )}
+
         {/* Upcoming Bookings */}
         <Card className="border-transparent card-elevated">
           <CardHeader className="flex-row items-center justify-between">
@@ -129,7 +189,7 @@ export default function Dashboard() {
           <CardContent className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <Button variant="outline" className="h-auto py-4 flex-col gap-2" onClick={() => navigate("/search")}>
               <CalendarDays className="h-5 w-5 text-primary" />
-              <span className="text-xs">Book Care</span>
+              <span className="text-xs">{isChallenged ? "Find Help" : "Book Care"}</span>
             </Button>
             <Button variant="outline" className="h-auto py-4 flex-col gap-2" onClick={() => navigate("/care-circle")}>
               <Users className="h-5 w-5 text-primary" />
@@ -146,6 +206,9 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* AI Dementia Assistant — Challenged site only */}
+      {isChallenged && <DementiaAssistant />}
     </div>
   );
 }
