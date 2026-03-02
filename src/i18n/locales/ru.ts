@@ -1,0 +1,11 @@
+import en from "./en";
+const ru: typeof en = JSON.parse(JSON.stringify(en));
+Object.assign(ru.common, { signIn: "Войти", signUp: "Регистрация", signOut: "Выйти", getStarted: "Начать", search: "Поиск", save: "Сохранить", cancel: "Отмена", delete: "Удалить", edit: "Редактировать", back: "Назад", next: "Далее", submit: "Отправить", confirm: "Подтвердить", send: "Отправить", loading: "Загрузка...", viewAll: "Показать все", noResults: "Нет результатов", email: "Эл. почта", password: "Пароль", fullName: "Полное имя", phone: "Телефон", bookNow: "Забронировать", accept: "Принять", decline: "Отклонить", pending: "Ожидает", confirmed: "Подтверждено", completed: "Завершено", cancelled: "Отменено", caregiver: "Сиделка", date: "Дата", time: "Время", settings: "Настройки", notifications: "Уведомления", reviews: "Отзывы", message: "Сообщение", verified: "Проверено", copyright: "© 2026 {{brand}}. Все права защищены." });
+Object.assign(ru.nav, { dashboard: "Панель", messages: "Сообщения", favorites: "Избранное", gpsTracking: "GPS-отслеживание", myBookings: "Мои бронирования", careGroups: "Группы ухода", careTeams: "Команды ухода", findCare: "Найти уход", findHelp: "Найти помощь", caredOnes: "Подопечные", myLovedOnes: "Мои близкие", howItWorks: "Как это работает", trustSafety: "Доверие и безопасность", myProfile: "Мой профиль", becomeCaregiver: "Стать сиделкой", toggleTheme: "Сменить тему" });
+ru.site.challenged = { ...ru.site.challenged, heroTitle: "Уход при деменции,", heroHighlight: "Вместе", ctaButton: "Найти сиделок", authSubtitle: "Уход при деменции, вместе", caredOneSingular: "Близкий человек", careGroupSingular: "Команда ухода" };
+ru.site.careconnected = { ...ru.site.careconnected, heroTitle: "Найдите надёжный уход,", heroHighlight: "Оставайтесь на связи", ctaButton: "Найти сиделок", authSubtitle: "Найдите и управляйте уходом", caredOneSingular: "Подопечный", careGroupSingular: "Группа ухода" };
+Object.assign(ru.auth, { signingIn: "Вход...", welcomeBack: "С возвращением!", loginFailed: "Ошибка входа", forgotPassword: "Забыли пароль?" });
+Object.assign(ru.dashboard, { welcomeBack: "С возвращением, {{name}}!", customizeDashboard: "Настроить панель" });
+ru.notFound = { title: "404", subtitle: "Страница не найдена!", returnHome: "Вернуться на главную" };
+ru.language = { ...en.language, label: "Язык" };
+export default ru;
