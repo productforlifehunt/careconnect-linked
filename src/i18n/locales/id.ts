@@ -1,0 +1,11 @@
+import en from "./en";
+const id: typeof en = JSON.parse(JSON.stringify(en));
+Object.assign(id.common, { signIn: "Masuk", signUp: "Daftar", signOut: "Keluar", getStarted: "Mulai", search: "Cari", save: "Simpan", cancel: "Batal", delete: "Hapus", edit: "Edit", back: "Kembali", next: "Berikutnya", submit: "Kirim", confirm: "Konfirmasi", send: "Kirim", loading: "Memuat...", viewAll: "Lihat semua", noResults: "Tidak ada hasil", email: "Email", password: "Kata sandi", fullName: "Nama lengkap", phone: "Telepon", bookNow: "Pesan sekarang", accept: "Terima", decline: "Tolak", pending: "Menunggu", confirmed: "Dikonfirmasi", completed: "Selesai", cancelled: "Dibatalkan", caregiver: "Pengasuh", date: "Tanggal", time: "Waktu", settings: "Pengaturan", notifications: "Notifikasi", reviews: "Ulasan", message: "Pesan", verified: "Terverifikasi", copyright: "© 2026 {{brand}}. Hak cipta dilindungi." });
+Object.assign(id.nav, { dashboard: "Dasbor", messages: "Pesan", favorites: "Favorit", gpsTracking: "Pelacakan GPS", myBookings: "Pesanan saya", careGroups: "Grup perawatan", careTeams: "Tim perawatan", findCare: "Cari perawatan", findHelp: "Cari bantuan", caredOnes: "Yang dirawat", myLovedOnes: "Orang tersayang", howItWorks: "Cara kerja", trustSafety: "Kepercayaan & Keamanan", myProfile: "Profil saya", becomeCaregiver: "Jadi pengasuh", toggleTheme: "Ganti tema" });
+id.site.challenged = { ...id.site.challenged, heroTitle: "Perawatan demensia,", heroHighlight: "Bersama", ctaButton: "Cari pengasuh demensia", authSubtitle: "Perawatan demensia, bersama", caredOneSingular: "Orang tersayang", careGroupSingular: "Tim perawatan" };
+id.site.careconnected = { ...id.site.careconnected, heroTitle: "Temukan perawatan terpercaya,", heroHighlight: "Tetap terhubung", ctaButton: "Cari pengasuh", authSubtitle: "Temukan dan kelola perawatan", caredOneSingular: "Yang dirawat", careGroupSingular: "Grup perawatan" };
+Object.assign(id.auth, { signingIn: "Masuk...", welcomeBack: "Selamat datang kembali!", loginFailed: "Gagal masuk", forgotPassword: "Lupa kata sandi?" });
+Object.assign(id.dashboard, { welcomeBack: "Selamat datang, {{name}}!", customizeDashboard: "Sesuaikan dasbor" });
+id.notFound = { title: "404", subtitle: "Halaman tidak ditemukan!", returnHome: "Kembali ke beranda" };
+id.language = { ...en.language, label: "Bahasa" };
+export default id;

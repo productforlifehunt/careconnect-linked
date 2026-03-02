@@ -1,0 +1,11 @@
+import en from "./en";
+const th: typeof en = JSON.parse(JSON.stringify(en));
+Object.assign(th.common, { signIn: "เข้าสู่ระบบ", signUp: "สมัครสมาชิก", signOut: "ออกจากระบบ", getStarted: "เริ่มต้น", search: "ค้นหา", save: "บันทึก", cancel: "ยกเลิก", delete: "ลบ", edit: "แก้ไข", back: "กลับ", next: "ถัดไป", submit: "ส่ง", confirm: "ยืนยัน", send: "ส่ง", loading: "กำลังโหลด...", viewAll: "ดูทั้งหมด", noResults: "ไม่พบผลลัพธ์", email: "อีเมล", password: "รหัสผ่าน", fullName: "ชื่อเต็ม", phone: "โทรศัพท์", bookNow: "จองเลย", accept: "ยอมรับ", decline: "ปฏิเสธ", pending: "รอดำเนินการ", confirmed: "ยืนยันแล้ว", completed: "เสร็จสิ้น", cancelled: "ยกเลิกแล้ว", caregiver: "ผู้ดูแล", date: "วันที่", time: "เวลา", settings: "ตั้งค่า", notifications: "การแจ้งเตือน", reviews: "รีวิว", message: "ข้อความ", verified: "ยืนยันแล้ว", copyright: "© 2026 {{brand}} สงวนลิขสิทธิ์" });
+Object.assign(th.nav, { dashboard: "แดชบอร์ด", messages: "ข้อความ", favorites: "รายการโปรด", gpsTracking: "ติดตาม GPS", myBookings: "การจองของฉัน", careGroups: "กลุ่มดูแล", careTeams: "ทีมดูแล", findCare: "ค้นหาการดูแล", findHelp: "ค้นหาความช่วยเหลือ", caredOnes: "ผู้ถูกดูแล", myLovedOnes: "คนที่ฉันรัก", howItWorks: "วิธีการทำงาน", trustSafety: "ความน่าเชื่อถือ", myProfile: "โปรไฟล์", becomeCaregiver: "เป็นผู้ดูแล", toggleTheme: "เปลี่ยนธีม" });
+th.site.challenged = { ...th.site.challenged, heroTitle: "การดูแลภาวะสมองเสื่อม,", heroHighlight: "ร่วมกัน", ctaButton: "ค้นหาผู้ดูแล", authSubtitle: "การดูแลภาวะสมองเสื่อม ร่วมกัน", caredOneSingular: "คนที่รัก", careGroupSingular: "ทีมดูแล" };
+th.site.careconnected = { ...th.site.careconnected, heroTitle: "ค้นหาการดูแลที่ไว้ใจได้,", heroHighlight: "เชื่อมต่อ", ctaButton: "ค้นหาผู้ดูแล", authSubtitle: "ค้นหาและจัดการการดูแล", caredOneSingular: "ผู้ถูกดูแล", careGroupSingular: "กลุ่มดูแล" };
+Object.assign(th.auth, { signingIn: "กำลังเข้าสู่ระบบ...", welcomeBack: "ยินดีต้อนรับกลับ!", loginFailed: "เข้าสู่ระบบล้มเหลว", forgotPassword: "ลืมรหัสผ่าน?" });
+Object.assign(th.dashboard, { welcomeBack: "ยินดีต้อนรับ {{name}}!", customizeDashboard: "ปรับแต่งแดชบอร์ด" });
+th.notFound = { title: "404", subtitle: "ไม่พบหน้า!", returnHome: "กลับหน้าแรก" };
+th.language = { ...en.language, label: "ภาษา" };
+export default th;
