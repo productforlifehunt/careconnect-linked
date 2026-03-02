@@ -138,7 +138,7 @@ function detectSite(): SiteId {
   if (DOMAIN_MAP[hostname]) return DOMAIN_MAP[hostname];
 
   // Default
-  return "careconnected";
+  return "challenged";
 }
 
 const SITE_CONFIGS: Record<SiteId, SiteConfig> = {
