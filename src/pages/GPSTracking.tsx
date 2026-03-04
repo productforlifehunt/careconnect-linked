@@ -12,8 +12,10 @@ import { useToast } from "@/hooks/use-toast";
 import { careDb, careAuth } from "@/integrations/supabase/external-client";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { useTranslation } from "react-i18next";
 
 export default function GPSTracking() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const site = useSite();
   const { data: locationShares, isLoading, refetch } = useLocationShares();
@@ -42,7 +44,7 @@ export default function GPSTracking() {
   const people = (locationShares || []).map((ls: any) => ({
     id: ls.id,
     userId: ls.user_id,
-    name: ls.profile?.full_name || "Unknown",
+    name: ls.profile?.full_name || t("common.unknown"),
     avatar_url: ls.profile?.avatar_url,
     lastLocation: ls.address || `${ls.latitude?.toFixed(4)}, ${ls.longitude?.toFixed(4)}`,
     coordinates: { lat: ls.latitude, lng: ls.longitude },
@@ -125,17 +127,17 @@ export default function GPSTracking() {
           }
           refetch();
           setUpdatingShare(false);
-          toast({ title: "Location sharing enabled" });
+          toast({ title: t("gps.locationSharingEnabled") });
         }, () => {
           setUpdatingShare(false);
-          toast({ title: "Could not get location", description: "Please enable location access in your browser settings.", variant: "destructive" });
+          toast({ title: t("gps.couldNotGetLocation"), description: t("gps.enableLocationAccess"), variant: "destructive" });
           setShareMyLocation(false);
         });
       } else {
         await careDb.from("location_share").update({ is_sharing: false }).eq("user_id", userId);
         refetch();
         setUpdatingShare(false);
-        toast({ title: "Location sharing disabled" });
+        toast({ title: t("gps.locationSharingDisabled") });
       }
     } catch {
       setUpdatingShare(false);
@@ -146,7 +148,7 @@ export default function GPSTracking() {
     setRefreshing(true);
     refetch().then(() => {
       setRefreshing(false);
-      toast({ title: "Locations updated" });
+      toast({ title: t("gps.locationsUpdated") });
     });
   };
 
@@ -215,13 +217,13 @@ export default function GPSTracking() {
       refetch();
       setSosDialogOpen(false);
       toast({
-        title: "🚨 Emergency Alert Sent",
-        description: `All ${site.navLabels.careGroups.toLowerCase()} members have been notified with your current location.`,
+        title: t("gps.sosSuccess"),
+        description: t("gps.sosSuccessDesc", { groups: site.navLabels.careGroups.toLowerCase() }),
       });
     } catch (err: any) {
       toast({
-        title: "SOS failed",
-        description: err.message || "Could not send emergency alert. Please call 911 directly.",
+        title: t("gps.sosFailed"),
+        description: err.message || t("gps.sosFailedDesc"),
         variant: "destructive",
       });
     } finally {
@@ -239,15 +241,15 @@ export default function GPSTracking() {
     <div className="max-w-6xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">GPS Tracking</h1>
-          <p className="text-muted-foreground">Real-time location of your care team</p>
+          <h1 className="text-2xl font-bold text-foreground">{t("gps.gpsTracking")}</h1>
+          <p className="text-muted-foreground">{t("gps.realtimeLocation")}</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
-            <RefreshCw className={`h-4 w-4 mr-1 ${refreshing ? "animate-spin" : ""}`} /> Refresh
+            <RefreshCw className={`h-4 w-4 mr-1 ${refreshing ? "animate-spin" : ""}`} /> {t("common.refresh")}
           </Button>
           <Button variant="destructive" size="sm" onClick={() => setSosDialogOpen(true)}>
-            <AlertTriangle className="h-4 w-4 mr-1" /> SOS
+            <AlertTriangle className="h-4 w-4 mr-1" /> {t("gps.sos")}
           </Button>
         </div>
       </div>
@@ -257,16 +259,18 @@ export default function GPSTracking() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="h-5 w-5" /> Emergency SOS Alert
+              <AlertTriangle className="h-5 w-5" /> {t("gps.emergencySOS")}
             </DialogTitle>
             <DialogDescription>
-              This will immediately share your current location and send an emergency notification to all members of your {site.navLabels.careGroups.toLowerCase()}. Only use this in a real emergency.
+              {t("gps.sosDesc", { groups: site.navLabels.careGroups.toLowerCase() })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setSosDialogOpen(false)} disabled={sosSending}>Cancel</Button>
+            <Button variant="outline" onClick={() => setSosDialogOpen(false)} disabled={sosSending}>
+              {t("common.cancel")}
+            </Button>
             <Button variant="destructive" onClick={handleSOS} disabled={sosSending}>
-              {sosSending ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Sending...</> : "Send SOS Alert"}
+              {sosSending ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> {t("gps.sosConfirmSending")}</> : t("gps.sendSOS")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -281,8 +285,8 @@ export default function GPSTracking() {
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[400]">
                   <div className="text-center bg-card/80 backdrop-blur-sm rounded-xl p-6">
                     <MapPin className="h-12 w-12 text-primary/30 mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">No one is currently sharing their location</p>
-                    <p className="text-xs text-muted-foreground mt-1">Enable location sharing below to appear on the map</p>
+                    <p className="text-sm text-muted-foreground">{t("gps.noSharingDesc")}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{t("gps.enableSharingDesc")}</p>
                   </div>
                 </div>
               )}
@@ -292,7 +296,7 @@ export default function GPSTracking() {
 
         <div className="space-y-4">
           <Card className="border-transparent card-elevated">
-            <CardHeader><CardTitle className="text-lg">Tracked People</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-lg">{t("gps.trackedPeople")}</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               {isLoading ? (
                 <div className="flex justify-center py-4"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
@@ -315,7 +319,7 @@ export default function GPSTracking() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground">{p.name}</p>
-                      {!p.isSharing && <Badge variant="secondary" className="text-[10px] mt-0.5">Not sharing</Badge>}
+                      {!p.isSharing && <Badge variant="secondary" className="text-[10px] mt-0.5">{t("gps.notSharing")}</Badge>}
                     </div>
                   </div>
                   {p.isSharing && (
@@ -326,7 +330,7 @@ export default function GPSTracking() {
                   )}
                 </div>
               )) : (
-                <p className="text-sm text-muted-foreground text-center py-4">No location shares found</p>
+                <p className="text-sm text-muted-foreground text-center py-4">{t("gps.noLocationShares")}</p>
               )}
             </CardContent>
           </Card>
@@ -336,17 +340,17 @@ export default function GPSTracking() {
               <CardHeader><CardTitle className="text-lg">{selectedPerson.name}</CardTitle></CardHeader>
               <CardContent className="space-y-3">
                 <div className="p-2 rounded bg-muted/50 text-sm">
-                  <p className="text-muted-foreground text-xs">Coordinates</p>
+                  <p className="text-muted-foreground text-xs">{t("gps.coordinates")}</p>
                   <p className="font-mono text-xs text-foreground">{selectedPerson.coordinates.lat?.toFixed(6)}, {selectedPerson.coordinates.lng?.toFixed(6)}</p>
                 </div>
                 <div className="p-2 rounded bg-muted/50 text-sm">
-                  <p className="text-muted-foreground text-xs">Last Updated</p>
+                  <p className="text-muted-foreground text-xs">{t("gps.lastUpdated")}</p>
                   <p className="text-xs text-foreground">{selectedPerson.lastUpdated}</p>
                 </div>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" className="flex-1" asChild>
                     <a href={`https://www.google.com/maps/dir/?api=1&destination=${selectedPerson.coordinates.lat},${selectedPerson.coordinates.lng}`} target="_blank" rel="noopener noreferrer">
-                      <Navigation className="h-3 w-3 mr-1" /> Directions
+                      <Navigation className="h-3 w-3 mr-1" /> {t("common.directions")}
                     </a>
                   </Button>
                 </div>
@@ -355,18 +359,18 @@ export default function GPSTracking() {
           )}
 
           <Card className="border-transparent card-elevated">
-            <CardHeader><CardTitle className="text-lg">Settings</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-lg">{t("common.settings")}</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
-                <Label className="text-sm">Share my location</Label>
+                <Label className="text-sm">{t("gps.shareMyLocation")}</Label>
                 <Switch checked={shareMyLocation} onCheckedChange={handleToggleShare} disabled={updatingShare} />
               </div>
               <div className="flex items-center justify-between">
-                <Label className="text-sm">Geofence alerts</Label>
+                <Label className="text-sm">{t("gps.geofenceAlerts")}</Label>
                 <Switch checked={geofenceAlerts} onCheckedChange={setGeofenceAlerts} />
               </div>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <Shield className="h-3 w-3" /> Location data is encrypted and only shared with your {site.navLabels.careGroups.toLowerCase()}
+                <Shield className="h-3 w-3" /> {t("gps.locationEncrypted", { groups: site.navLabels.careGroups.toLowerCase() })}
               </p>
             </CardContent>
           </Card>

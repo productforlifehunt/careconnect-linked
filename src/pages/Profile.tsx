@@ -15,8 +15,10 @@ import { careAuth, careDb } from "@/integrations/supabase/external-client";
 import { User, Bell, Shield, MapPin, Loader2, Upload, Camera, Download, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSite } from "@/contexts/SiteContext";
+import { useTranslation } from "react-i18next";
 
 export default function Profile() {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const site = useSite();
   const navigate = useNavigate();
@@ -62,9 +64,9 @@ export default function Profile() {
         email_notification: emailNotifs,
         push_notification: pushNotifs,
       });
-      toast({ title: "Profile updated successfully" });
+      toast({ title: t("profile.profileUpdated") });
     } catch (err: any) {
-      toast({ title: "Update failed", description: err.message, variant: "destructive" });
+      toast({ title: t("profile.updateFailed"), description: err.message, variant: "destructive" });
     }
   };
 
@@ -74,7 +76,6 @@ export default function Profile() {
       const { data: { session } } = await careAuth.auth.getSession();
       if (!session) throw new Error("Not authenticated");
       const userId = session.user.id;
-
       const [profileRes, bookingsRes, messagesRes, tasksRes, notificationsRes, savedRes] = await Promise.all([
         careDb.from("profile").select("*").eq("id", userId).single(),
         careDb.from("booking").select("*").eq("user_id", userId),
@@ -83,7 +84,6 @@ export default function Profile() {
         careDb.from("notification").select("*").eq("user_id", userId).limit(200),
         careDb.from("saved_provider").select("*").eq("user_id", userId),
       ]);
-
       const exportData = {
         exported_at: new Date().toISOString(),
         profile: profileRes.data,
@@ -94,7 +94,6 @@ export default function Profile() {
         notifications: notificationsRes.data || [],
         saved_providers: savedRes.data || [],
       };
-
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -104,10 +103,9 @@ export default function Profile() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-
-      toast({ title: "Data downloaded", description: "Your data has been exported as JSON." });
+      toast({ title: t("profile.dataDownloaded"), description: t("profile.dataDownloadedDesc") });
     } catch (err: any) {
-      toast({ title: "Download failed", description: err.message, variant: "destructive" });
+      toast({ title: t("profile.downloadFailed"), description: err.message, variant: "destructive" });
     } finally {
       setDownloadingData(false);
     }
@@ -119,31 +117,15 @@ export default function Profile() {
       const { data: { session } } = await careAuth.auth.getSession();
       if (!session) throw new Error("Not authenticated");
       const userId = session.user.id;
-
-      // Anonymize profile data
       await careDb.from("profile").update({
-        full_name: "Deleted User",
-        first_name: null,
-        last_name: null,
-        email: null,
-        phone_number: null,
-        avatar_url: null,
-        bio: null,
-        address: null,
-        location: null,
-        is_care_provider: false,
-        provider_is_active: false,
+        full_name: "Deleted User", first_name: null, last_name: null, email: null, phone_number: null, avatar_url: null, bio: null, address: null, location: null, is_care_provider: false, provider_is_active: false,
       }).eq("id", userId);
-
-      // Delete saved providers
       await careDb.from("saved_provider").delete().eq("user_id", userId);
-
-      // Sign out
       await logout();
       navigate("/");
-      toast({ title: "Account deleted", description: "Your profile data has been removed and you've been signed out." });
+      toast({ title: t("profile.accountDeleted"), description: t("profile.accountDeletedDesc") });
     } catch (err: any) {
-      toast({ title: "Deletion failed", description: err.message, variant: "destructive" });
+      toast({ title: t("profile.deletionFailed"), description: err.message, variant: "destructive" });
     } finally {
       setDeletingAccount(false);
     }
@@ -154,26 +136,23 @@ export default function Profile() {
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
         <Skeleton className="h-8 w-40" />
         <Skeleton className="h-10 w-full" />
-        <div className="space-y-4">
-          <Skeleton className="h-32 w-full rounded-xl" />
-          <Skeleton className="h-48 w-full rounded-xl" />
-        </div>
+        <div className="space-y-4"><Skeleton className="h-32 w-full rounded-xl" /><Skeleton className="h-48 w-full rounded-xl" /></div>
       </div>
     );
   }
 
   const displayName = name || user?.full_name || "User";
-  const roleLabel = profile?.is_care_provider ? "Care Provider" : "Care Seeker";
+  const roleLabel = profile?.is_care_provider ? t("profile.careProvider") : t("profile.careSeeker");
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold text-foreground mb-6">My Profile</h1>
+      <h1 className="text-2xl font-bold text-foreground mb-6">{t("profile.myProfile")}</h1>
 
       <Tabs defaultValue="personal">
         <TabsList className="mb-6">
-          <TabsTrigger value="personal" className="gap-2"><User className="h-4 w-4" /> Personal</TabsTrigger>
-          <TabsTrigger value="notifications" className="gap-2"><Bell className="h-4 w-4" /> Notifications</TabsTrigger>
-          <TabsTrigger value="privacy" className="gap-2"><Shield className="h-4 w-4" /> Privacy</TabsTrigger>
+          <TabsTrigger value="personal" className="gap-2"><User className="h-4 w-4" /> {t("common.personal")}</TabsTrigger>
+          <TabsTrigger value="notifications" className="gap-2"><Bell className="h-4 w-4" /> {t("common.notifications")}</TabsTrigger>
+          <TabsTrigger value="privacy" className="gap-2"><Shield className="h-4 w-4" /> {t("common.privacy")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="personal" className="space-y-6">
@@ -188,51 +167,34 @@ export default function Profile() {
                       <span className="text-primary-foreground text-2xl font-bold">{displayName.charAt(0).toUpperCase()}</span>
                     </div>
                   )}
-                  <button
-                    type="button"
-                    className="absolute inset-0 rounded-2xl bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={avatarUploading}
-                  >
+                  <button type="button" className="absolute inset-0 rounded-2xl bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer" onClick={() => fileInputRef.current?.click()} disabled={avatarUploading}>
                     {avatarUploading ? <Loader2 className="h-5 w-5 text-white animate-spin" /> : <Camera className="h-5 w-5 text-white" />}
                   </button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      if (file.size > 5 * 1024 * 1024) {
-                        toast({ title: "File too large", description: "Max 5MB", variant: "destructive" });
-                        return;
-                      }
-                      setAvatarUploading(true);
-                      try {
-                        const { data: { session } } = await careAuth.auth.getSession();
-                        if (!session) throw new Error("Not authenticated");
-                        const ext = file.name.split(".").pop();
-                        const filePath = `${session.user.id}/avatar.${ext}`;
-                        const { createClient } = await import("@supabase/supabase-js");
-                        const storageClient = createClient("https://yekarqanirdkdckimpna.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlla2FycWFuaXJka2Rja2ltcG5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyNzUwOTQsImV4cCI6MjA1OTg1MTA5NH0.WQlbyilIuH_Vz_Oit-M5MZ9II9oqO7tg-ThkZ5GCtfc", {
-                          auth: { storage: localStorage, persistSession: true, autoRefreshToken: true, storageKey: "cc-external-auth" },
-                        });
-                        const { error: uploadErr } = await storageClient.storage.from("avatars").upload(filePath, file, { upsert: true });
-                        if (uploadErr) throw uploadErr;
-                        const { data: publicData } = storageClient.storage.from("avatars").getPublicUrl(filePath);
-                        const newUrl = publicData.publicUrl + "?t=" + Date.now();
-                        setAvatarUrl(newUrl);
-                        await updateProfile.mutateAsync({ avatar_url: newUrl });
-                        toast({ title: "Avatar updated!" });
-                      } catch (err: any) {
-                        toast({ title: "Upload failed", description: "Try pasting an image URL instead. " + (err.message || ""), variant: "destructive" });
-                      } finally {
-                        setAvatarUploading(false);
-                        if (fileInputRef.current) fileInputRef.current.value = "";
-                      }
-                    }}
-                  />
+                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (file.size > 5 * 1024 * 1024) { toast({ title: t("profile.fileTooLarge"), description: t("profile.maxSize"), variant: "destructive" }); return; }
+                    setAvatarUploading(true);
+                    try {
+                      const { data: { session } } = await careAuth.auth.getSession();
+                      if (!session) throw new Error("Not authenticated");
+                      const ext = file.name.split(".").pop();
+                      const filePath = `${session.user.id}/avatar.${ext}`;
+                      const { createClient } = await import("@supabase/supabase-js");
+                      const storageClient = createClient("https://yekarqanirdkdckimpna.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlla2FycWFuaXJka2Rja2ltcG5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyNzUwOTQsImV4cCI6MjA1OTg1MTA5NH0.WQlbyilIuH_Vz_Oit-M5MZ9II9oqO7tg-ThkZ5GCtfc", {
+                        auth: { storage: localStorage, persistSession: true, autoRefreshToken: true, storageKey: "cc-external-auth" },
+                      });
+                      const { error: uploadErr } = await storageClient.storage.from("avatars").upload(filePath, file, { upsert: true });
+                      if (uploadErr) throw uploadErr;
+                      const { data: publicData } = storageClient.storage.from("avatars").getPublicUrl(filePath);
+                      const newUrl = publicData.publicUrl + "?t=" + Date.now();
+                      setAvatarUrl(newUrl);
+                      await updateProfile.mutateAsync({ avatar_url: newUrl });
+                      toast({ title: t("profile.avatarUpdated") });
+                    } catch (err: any) {
+                      toast({ title: t("profile.uploadFailed"), description: err.message, variant: "destructive" });
+                    } finally { setAvatarUploading(false); if (fileInputRef.current) fileInputRef.current.value = ""; }
+                  }} />
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold text-foreground">{displayName}</h2>
@@ -244,102 +206,75 @@ export default function Profile() {
           </Card>
 
           <Card className="border-transparent card-elevated">
-            <CardHeader><CardTitle>Personal Information</CardTitle></CardHeader>
+            <CardHeader><CardTitle>{t("profile.personalInfo")}</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <Label>Full Name</Label>
-                  <Input value={name} onChange={e => setName(e.target.value)} />
-                </div>
-                <div>
-                  <Label>Email</Label>
-                  <Input value={email} disabled className="opacity-60" />
-                </div>
-                <div>
-                  <Label>Phone</Label>
-                  <Input value={phone} onChange={e => setPhone(e.target.value)} />
-                </div>
+                <div><Label>{t("common.fullName")}</Label><Input value={name} onChange={e => setName(e.target.value)} /></div>
+                <div><Label>{t("common.email")}</Label><Input value={email} disabled className="opacity-60" /></div>
+                <div><Label>{t("common.phone")}</Label><Input value={phone} onChange={e => setPhone(e.target.value)} /></div>
               </div>
               <div>
-                <Label>Avatar</Label>
+                <Label>{t("profile.avatar")}</Label>
                 <div className="flex gap-2 items-center mt-1">
-                  <Input value={avatarUrl} onChange={e => setAvatarUrl(e.target.value)} placeholder="https://... or upload above" className="flex-1" />
-                  <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={avatarUploading}>
-                    <Upload className="h-4 w-4 mr-1" /> Upload
-                  </Button>
+                  <Input value={avatarUrl} onChange={e => setAvatarUrl(e.target.value)} placeholder={t("profile.avatarUrlPlaceholder")} className="flex-1" />
+                  <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={avatarUploading}><Upload className="h-4 w-4 mr-1" /> {t("common.upload")}</Button>
                 </div>
               </div>
               <div>
-                <Label>Address</Label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input value={address} onChange={e => setAddress(e.target.value)} className="pl-9" />
-                </div>
+                <Label>{t("common.address")}</Label>
+                <div className="relative"><MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input value={address} onChange={e => setAddress(e.target.value)} className="pl-9" /></div>
               </div>
-              <div>
-                <Label>About Me</Label>
-                <Textarea value={bio} onChange={e => setBio(e.target.value)} rows={3} />
-              </div>
+              <div><Label>{t("profile.aboutMe")}</Label><Textarea value={bio} onChange={e => setBio(e.target.value)} rows={3} /></div>
             </CardContent>
           </Card>
 
           <Button variant="coral" onClick={handleSave} disabled={updateProfile.isPending}>
-            {updateProfile.isPending ? "Saving..." : "Save Changes"}
+            {updateProfile.isPending ? t("common.saving") : t("profile.saveChanges")}
           </Button>
         </TabsContent>
 
         <TabsContent value="notifications" className="space-y-6">
           <Card className="border-transparent card-elevated">
-            <CardHeader><CardTitle>Notification Preferences</CardTitle></CardHeader>
+            <CardHeader><CardTitle>{t("profile.notificationPrefs")}</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label>Email notifications</Label>
-                <Switch checked={emailNotifs} onCheckedChange={setEmailNotifs} />
-              </div>
-              <div className="flex items-center justify-between">
-                <Label>Push notifications</Label>
-                <Switch checked={pushNotifs} onCheckedChange={setPushNotifs} />
-              </div>
+              <div className="flex items-center justify-between"><Label>{t("profile.emailNotifications")}</Label><Switch checked={emailNotifs} onCheckedChange={setEmailNotifs} /></div>
+              <div className="flex items-center justify-between"><Label>{t("profile.pushNotifications")}</Label><Switch checked={pushNotifs} onCheckedChange={setPushNotifs} /></div>
             </CardContent>
           </Card>
-          <Button variant="coral" onClick={handleSave} disabled={updateProfile.isPending}>Save Preferences</Button>
+          <Button variant="coral" onClick={handleSave} disabled={updateProfile.isPending}>{t("profile.savePreferences")}</Button>
         </TabsContent>
 
         <TabsContent value="privacy" className="space-y-6">
           <Card className="border-transparent card-elevated">
-            <CardHeader><CardTitle>Your Data</CardTitle></CardHeader>
+            <CardHeader><CardTitle>{t("profile.yourData")}</CardTitle></CardHeader>
             <CardContent className="space-y-3">
-              <p className="text-sm text-muted-foreground">Download a copy of all your data including profile, bookings, messages, tasks, and notifications.</p>
+              <p className="text-sm text-muted-foreground">{t("profile.downloadDesc")}</p>
               <Button variant="outline" className="w-full" onClick={handleDownloadData} disabled={downloadingData}>
                 {downloadingData ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Download className="h-4 w-4 mr-2" />}
-                {downloadingData ? "Preparing download..." : "Download My Data"}
+                {downloadingData ? t("profile.preparingDownload") : t("profile.downloadMyData")}
               </Button>
             </CardContent>
           </Card>
 
           <Card className="border-transparent card-elevated border-destructive/20">
-            <CardHeader><CardTitle className="text-destructive">Danger Zone</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-destructive">{t("profile.dangerZone")}</CardTitle></CardHeader>
             <CardContent className="space-y-3">
-              <p className="text-sm text-muted-foreground">Permanently delete your account. This will anonymize your profile data and sign you out. This action cannot be undone.</p>
+              <p className="text-sm text-muted-foreground">{t("profile.deleteConfirmDesc")}</p>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" className="w-full" disabled={deletingAccount}>
                     {deletingAccount ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
-                    Delete Account
+                    {t("profile.deleteAccount")}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will permanently anonymize your profile, remove your saved providers, and sign you out. Your bookings and messages will remain but will no longer be linked to your identity. This action cannot be undone.
-                    </AlertDialogDescription>
+                    <AlertDialogTitle>{t("profile.deleteConfirmTitle")}</AlertDialogTitle>
+                    <AlertDialogDescription>{t("profile.deleteConfirmDesc")}</AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                      Yes, delete my account
-                    </AlertDialogAction>
+                    <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t("profile.yesDeleteAccount")}</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>

@@ -13,10 +13,12 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Label } from "@/components/ui/label";
 import { useProviders } from "@/hooks/use-care-data";
 import type { Profile } from "@/types/care-connector";
+import { useTranslation } from "react-i18next";
 
 const specialties = ["Elder Care", "Child Care", "Special Needs", "Nursing Care", "Companionship", "Respite Care", "Physical Therapy", "Dementia Care"];
 
 export default function SearchResults() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
@@ -29,56 +31,38 @@ export default function SearchResults() {
   const [sortBy, setSortBy] = useState("rating");
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
-  // Debounce search query
   useEffect(() => {
-    debounceRef.current = setTimeout(() => {
-      setDebouncedQuery(query);
-      setDebouncedLocation(locationFilter);
-      setCurrentPage(1);
-    }, 400);
+    debounceRef.current = setTimeout(() => { setDebouncedQuery(query); setDebouncedLocation(locationFilter); setCurrentPage(1); }, 400);
     return () => clearTimeout(debounceRef.current);
   }, [query, locationFilter]);
+
   const [priceRange, setPriceRange] = useState([0, 100]);
-  const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>(
-    initialQuery ? [initialQuery].filter(q => specialties.includes(q)) : []
-  );
+  const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>(initialQuery ? [initialQuery].filter(q => specialties.includes(q)) : []);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [minRating, setMinRating] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 20;
 
   const { data: providers, isLoading } = useProviders({
-    query: debouncedQuery || undefined,
-    location: debouncedLocation || undefined,
+    query: debouncedQuery || undefined, location: debouncedLocation || undefined,
     specialties: selectedSpecialties.length > 0 ? selectedSpecialties : undefined,
-    minRate: priceRange[0] > 0 ? priceRange[0] : undefined,
-    maxRate: priceRange[1] < 100 ? priceRange[1] : undefined,
-    verifiedOnly,
-    minRating: minRating > 0 ? minRating : undefined,
-    sortBy,
+    minRate: priceRange[0] > 0 ? priceRange[0] : undefined, maxRate: priceRange[1] < 100 ? priceRange[1] : undefined,
+    verifiedOnly, minRating: minRating > 0 ? minRating : undefined, sortBy,
   });
 
-  const toggleSpecialty = (s: string) => {
-    setSelectedSpecialties(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
-  };
-
-  const getResponseTime = (minutes: number | null) => {
-    if (!minutes) return "";
-    if (minutes < 60) return `Under ${minutes} min`;
-    return `Under ${Math.ceil(minutes / 60)} hour${minutes > 60 ? "s" : ""}`;
-  };
+  const toggleSpecialty = (s: string) => setSelectedSpecialties(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
 
   const FilterPanel = () => (
     <div className="space-y-6">
       <div>
-        <Label className="text-sm font-semibold mb-3 block">Location</Label>
+        <Label className="text-sm font-semibold mb-3 block">{t("common.location")}</Label>
         <div className="relative">
           <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="City or ZIP..." value={locationFilter} onChange={e => { setLocationFilter(e.target.value); setCurrentPage(1); }} className="pl-9" />
+          <Input placeholder={t("home.cityOrZip")} value={locationFilter} onChange={e => { setLocationFilter(e.target.value); setCurrentPage(1); }} className="pl-9" />
         </div>
       </div>
       <div>
-        <Label className="text-sm font-semibold mb-3 block">Specialty</Label>
+        <Label className="text-sm font-semibold mb-3 block">{t("search.specialty")}</Label>
         <div className="space-y-2">
           {specialties.map(s => (
             <label key={s} className="flex items-center gap-2 cursor-pointer">
@@ -89,81 +73,71 @@ export default function SearchResults() {
         </div>
       </div>
       <div>
-        <Label className="text-sm font-semibold mb-3 block">Hourly Rate: ${priceRange[0]} - ${priceRange[1]}</Label>
+        <Label className="text-sm font-semibold mb-3 block">{t("search.hourlyRate")}: ${priceRange[0]} - ${priceRange[1]}</Label>
         <Slider value={priceRange} onValueChange={setPriceRange} min={0} max={100} step={5} className="mt-2" />
       </div>
       <div>
-        <Label className="text-sm font-semibold mb-3 block">Minimum Rating</Label>
+        <Label className="text-sm font-semibold mb-3 block">{t("search.minimumRating")}</Label>
         <div className="flex gap-2">
           {[0, 4, 4.5, 4.8].map(r => (
             <Button key={r} variant={minRating === r ? "default" : "outline"} size="sm" onClick={() => setMinRating(r)}>
-              {r === 0 ? "Any" : `${r}+`}
+              {r === 0 ? t("search.any") : `${r}+`}
             </Button>
           ))}
         </div>
       </div>
       <label className="flex items-center gap-2 cursor-pointer">
         <Checkbox checked={verifiedOnly} onCheckedChange={(c) => setVerifiedOnly(!!c)} />
-        <span className="text-sm font-medium">Verified Only</span>
+        <span className="text-sm font-medium">{t("search.verifiedOnly")}</span>
       </label>
     </div>
   );
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
-      {/* Search bar + controls */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search caregivers..." value={query} onChange={e => setQuery(e.target.value)} className="pl-9 h-11" />
+          <Input placeholder={t("search.searchCaregivers")} value={query} onChange={e => setQuery(e.target.value)} className="pl-9 h-11" />
         </div>
         <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="w-[180px] h-11">
-            <SelectValue placeholder="Sort by" />
-          </SelectTrigger>
+          <SelectTrigger className="w-[180px] h-11"><SelectValue placeholder={t("search.sortBy")} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="rating">Highest Rated</SelectItem>
-            <SelectItem value="price-low">Price: Low to High</SelectItem>
-            <SelectItem value="price-high">Price: High to Low</SelectItem>
-            <SelectItem value="experience">Most Experienced</SelectItem>
-            <SelectItem value="reviews">Most Reviews</SelectItem>
+            <SelectItem value="rating">{t("search.highestRated")}</SelectItem>
+            <SelectItem value="price-low">{t("search.priceLowHigh")}</SelectItem>
+            <SelectItem value="price-high">{t("search.priceHighLow")}</SelectItem>
+            <SelectItem value="experience">{t("search.mostExperienced")}</SelectItem>
+            <SelectItem value="reviews">{t("search.mostReviews")}</SelectItem>
           </SelectContent>
         </Select>
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="outline" className="h-11 lg:hidden">
-              <SlidersHorizontal className="h-4 w-4 mr-2" /> Filters
-            </Button>
+            <Button variant="outline" className="h-11 lg:hidden"><SlidersHorizontal className="h-4 w-4 mr-2" /> {t("search.filters")}</Button>
           </SheetTrigger>
           <SheetContent>
-            <SheetHeader><SheetTitle>Filters</SheetTitle></SheetHeader>
+            <SheetHeader><SheetTitle>{t("search.filters")}</SheetTitle></SheetHeader>
             <div className="mt-6"><FilterPanel /></div>
           </SheetContent>
         </Sheet>
       </div>
 
-      {/* Active filters */}
       {selectedSpecialties.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-4">
           {selectedSpecialties.map(s => (
-            <Badge key={s} variant="secondary" className="gap-1 cursor-pointer" onClick={() => toggleSpecialty(s)}>
-              {s} <X className="h-3 w-3" />
-            </Badge>
+            <Badge key={s} variant="secondary" className="gap-1 cursor-pointer" onClick={() => toggleSpecialty(s)}>{s} <X className="h-3 w-3" /></Badge>
           ))}
-          <Button variant="ghost" size="sm" onClick={() => setSelectedSpecialties([])}>Clear all</Button>
+          <Button variant="ghost" size="sm" onClick={() => setSelectedSpecialties([])}>{t("common.clearAll")}</Button>
         </div>
       )}
 
       <div className="flex gap-8">
-        {/* Desktop filters */}
         <aside className="hidden lg:block w-64 shrink-0">
           <div className="sticky top-24 bg-card rounded-xl border p-5">
-            <h3 className="font-semibold mb-4">Filters</h3>
+            <h3 className="font-semibold mb-4">{t("search.filters")}</h3>
             <FilterPanel />
           </div>
         </aside>
 
-        {/* Results */}
         <div className="flex-1">
           {isLoading ? (
             <div className="space-y-4">
@@ -171,16 +145,8 @@ export default function SearchResults() {
                 <div key={i} className="bg-card rounded-xl border p-5">
                   <div className="flex flex-col sm:flex-row gap-4">
                     <Skeleton className="w-20 h-20 rounded-xl shrink-0" />
-                    <div className="flex-1 space-y-3">
-                      <Skeleton className="h-5 w-40" />
-                      <Skeleton className="h-4 w-56" />
-                      <Skeleton className="h-3 w-full" />
-                      <div className="flex gap-2"><Skeleton className="h-5 w-16 rounded-full" /><Skeleton className="h-5 w-20 rounded-full" /></div>
-                    </div>
-                    <div className="space-y-2 shrink-0">
-                      <Skeleton className="h-8 w-16" />
-                      <Skeleton className="h-9 w-24 rounded-md" />
-                    </div>
+                    <div className="flex-1 space-y-3"><Skeleton className="h-5 w-40" /><Skeleton className="h-4 w-56" /><Skeleton className="h-3 w-full" /><div className="flex gap-2"><Skeleton className="h-5 w-16 rounded-full" /><Skeleton className="h-5 w-20 rounded-full" /></div></div>
+                    <div className="space-y-2 shrink-0"><Skeleton className="h-8 w-16" /><Skeleton className="h-9 w-24 rounded-md" /></div>
                   </div>
                 </div>
               ))}
@@ -192,7 +158,7 @@ export default function SearchResults() {
             const paged = allResults.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
             return (
               <>
-                <p className="text-sm text-muted-foreground mb-4">{allResults.length} caregivers found</p>
+                <p className="text-sm text-muted-foreground mb-4">{t("search.caregiversFound", { count: allResults.length })}</p>
                 <div className="space-y-4">
                   {paged.map((cg: Profile) => (
                     <Card key={cg.id} className="card-elevated cursor-pointer border-transparent" onClick={() => navigate(`/caregiver/${cg.id}`)}>
@@ -205,25 +171,18 @@ export default function SearchResults() {
                               {cg.background_check_status === "passed" && <Shield className="h-4 w-4 text-primary" />}
                             </div>
                             <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-2">
-                              <span className="flex items-center gap-1">
-                                <Star className="h-4 w-4 text-warning fill-warning" /> {cg.rating_average?.toFixed(1) || "New"} ({cg.rating_count || 0})
-                              </span>
+                              <span className="flex items-center gap-1"><Star className="h-4 w-4 text-warning fill-warning" /> {cg.rating_average?.toFixed(1) || t("common.new")} ({cg.rating_count || 0})</span>
                               {cg.location && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {cg.location}</span>}
-                              {cg.years_of_experience && <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {cg.years_of_experience} yrs exp</span>}
+                              {cg.years_of_experience && <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {cg.years_of_experience} {t("common.yearsExp")}</span>}
                             </div>
                             {cg.bio && <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{cg.bio}</p>}
                             <div className="flex flex-wrap gap-1.5">
-                              {(cg.specialty || []).map(s => (
-                                <Badge key={s} variant="secondary" className="bg-accent text-accent-foreground text-xs">{s}</Badge>
-                              ))}
+                              {(cg.specialty || []).map(s => (<Badge key={s} variant="secondary" className="bg-accent text-accent-foreground text-xs">{s}</Badge>))}
                             </div>
                           </div>
                           <div className="sm:text-right shrink-0 flex sm:flex-col items-center sm:items-end gap-3">
-                            <div>
-                              <span className="text-2xl font-bold text-foreground">${cg.hourly_rate || 0}</span>
-                              <span className="text-sm text-muted-foreground">/hr</span>
-                            </div>
-                            <Button variant="coral" size="sm">Book Now</Button>
+                            <div><span className="text-2xl font-bold text-foreground">${cg.hourly_rate || 0}</span><span className="text-sm text-muted-foreground">{t("common.perHour")}</span></div>
+                            <Button variant="coral" size="sm">{t("common.bookNow")}</Button>
                           </div>
                         </div>
                       </CardContent>
@@ -231,23 +190,16 @@ export default function SearchResults() {
                   ))}
                   {allResults.length === 0 && (
                     <div className="text-center py-16">
-                      <p className="text-lg text-muted-foreground">No caregivers match your criteria.</p>
-                      <Button variant="outline" className="mt-4" onClick={() => { setQuery(""); setLocationFilter(""); setSelectedSpecialties([]); setMinRating(0); setPriceRange([0, 100]); setCurrentPage(1); }}>
-                        Clear Filters
-                      </Button>
+                      <p className="text-lg text-muted-foreground">{t("search.noMatch")}</p>
+                      <Button variant="outline" className="mt-4" onClick={() => { setQuery(""); setLocationFilter(""); setSelectedSpecialties([]); setMinRating(0); setPriceRange([0, 100]); setCurrentPage(1); }}>{t("common.clearFilters")}</Button>
                     </div>
                   )}
                 </div>
-                {/* Pagination */}
                 {totalPages > 1 && (
                   <div className="flex items-center justify-center gap-2 mt-6">
-                    <Button variant="outline" size="sm" disabled={safePage <= 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <span className="text-sm text-muted-foreground">Page {safePage} of {totalPages}</span>
-                    <Button variant="outline" size="sm" disabled={safePage >= totalPages} onClick={() => setCurrentPage(p => p + 1)}>
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
+                    <Button variant="outline" size="sm" disabled={safePage <= 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}><ChevronLeft className="h-4 w-4" /></Button>
+                    <span className="text-sm text-muted-foreground">{t("common.page")} {safePage} {t("common.of")} {totalPages}</span>
+                    <Button variant="outline" size="sm" disabled={safePage >= totalPages} onClick={() => setCurrentPage(p => p + 1)}><ChevronRight className="h-4 w-4" /></Button>
                   </div>
                 )}
               </>
