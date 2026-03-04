@@ -53,36 +53,78 @@ These are hard rules. Break them and the app will break or connect to the wrong 
 
 ---
 
-## 3. TWO BRANDS, ONE CODEBASE — THE MULTI-SITE SYSTEM / 两个品牌，一套代码——多站点系统
+## 3. TWO SUB-APPS, ONE CODEBASE / 两个子应用，一套代码
 
-The most important architectural concept to understand first: this single React app shows completely different branding, terminology, and some features depending on which "site" is active. There is NO separate repo or build — it's all runtime detection.
+This is NOT just "two themes" or "two brands". Think of it as **two separate sub-apps** — CareConnected (general caregiving) and Challenged (dementia care) — that happen to share one React codebase and one database. They share most pages but each sub-app has its own landing page personality, its own terminology, and Challenged has extra dementia-specific features that CareConnected doesn't show at all.
 
-首先要理解的最重要的架构概念：这个单一的 React 应用根据哪个"站点"处于活跃状态，显示完全不同的品牌、术语和部分功能。没有单独的仓库或构建——全是运行时检测。
+这不仅仅是"两个主题"或"两个品牌"。把它想成**两个独立的子应用** —— CareConnected（通用护理）和 Challenged（失智症护理）—— 恰好共享一套 React 代码库和一个数据库。它们共享大部分页面，但每个子应用有自己的首页风格、自己的术语，而且 Challenged 有额外的失智症专属功能，CareConnected 完全不显示。
 
-### 3a. The two brands / 两个品牌
+### 3a. How the switch works / 切换逻辑
+
+The detection logic lives in `src/contexts/SiteContext.tsx`. On every page load it decides which sub-app you're in:
+
+检测逻辑在 `src/contexts/SiteContext.tsx` 中。每次页面加载时决定你在哪个子应用：
+
+1. **URL param override / URL 参数覆盖:** `?__site=challenged` or `?__site=careconnected` — for dev testing.
+2. **Hostname match / 域名匹配:** `DOMAIN_MAP` maps hostnames → site IDs (e.g. `challenged.com` → challenged, `localhost:5174` → challenged).
+3. **Fallback / 回退:** Defaults to `"challenged"`.
+
+- **Challenged is the default.** Opening the root URL with no params gives you Challenged.
+- **Challenged 是默认子应用。** 不带参数打开根 URL 时显示 Challenged。
+
+### 3b. Terminology differences / 术语差异
 
 | | **CareConnected** | **Challenged** (DEFAULT) |
 |---|---|---|
 | **Focus / 定位** | General caregiving / 通用护理 | Dementia care / 失智症护理 |
-| **"Care Group" label / 小组标签** | "Care Group" / "护理小组" | "Care Team" / "护理团队" |
-| **"Cared One" label / 被照顾者标签** | "Cared One" / "被照顾者" | "Loved One" / "亲人" |
-| **"Find Care" label / 寻找护理标签** | "Find Care" / "寻找护理" | "Find Help" / "寻找帮助" |
-| **Extra features / 额外功能** | None / 无 | Symptom tracker, wellness log, SOS, AI assistant, cognitive exercises / 症状追踪、健康日志、紧急SOS、AI助手、认知训练 |
+| **Group label / 小组标签** | "Care Group" | "Care Team" |
+| **Patient label / 被照顾者标签** | "Cared One" | "Loved One" |
+| **Search label / 搜索标签** | "Find Care" | "Find Help" |
 
-- **Challenged is the default.** When you open the root URL with no special parameters, you get Challenged. This is intentional.
-- **Challenged 是默认品牌。** 打开根 URL 不带特殊参数时，显示的是 Challenged。这是故意的。
+Use `useSite()` to get the right label. Never hardcode these strings.
 
-### 3b. How site detection works / 站点检测如何工作
+用 `useSite()` 获取正确标签。永远不要硬编码这些字符串。
 
-The detection logic lives in `src/contexts/SiteContext.tsx`. It checks in this order:
+### 3c. Page-by-page breakdown — shared vs. site-specific / 逐页分析——共享还是专属
 
-检测逻辑在 `src/contexts/SiteContext.tsx` 中。按以下顺序检查：
+All pages use the same routes. The difference is **what renders inside them** depending on `site.id`.
 
-1. **URL parameter override / URL 参数覆盖:** `?__site=challenged` or `?__site=careconnected` — useful for development testing.
-2. **Hostname match / 域名匹配:** `DOMAIN_MAP` maps specific hostnames to site IDs (e.g. `challenged.com` → challenged, `localhost:5174` → challenged).
-3. **Fallback / 回退:** If nothing matches, defaults to `"challenged"`.
+所有页面使用相同路由。区别在于根据 `site.id`，**内部渲染的内容不同**。
 
-### 3c. How to use it in components / 如何在组件中使用
+**PUBLIC PAGES / 公开页面:**
+
+| Route | Page | Shared? | Notes |
+|---|---|---|---|
+| `/` | `Index.tsx` | ⚠️ Partially | Same layout structure, but hero text, CTA, trust badges, "how it works" steps all come from `SiteConfig` — so they look totally different per sub-app. / 相同布局结构，但主标题、CTA、信任徽章、步骤说明都来自 `SiteConfig`——所以每个子应用看起来完全不同。 |
+| `/search` | `SearchResults.tsx` | ✅ Shared | Same search UI. Provider cards are the same. / 相同搜索界面，服务商卡片相同。 |
+| `/caregiver/:id` | `CaregiverProfile.tsx` | ✅ Shared | Same provider profile page. / 相同的服务商个人页面。 |
+| `/auth` | `Auth.tsx` | ✅ Shared | Same login/signup flow. / 相同登录注册流程。 |
+| `/reset-password` | `ResetPassword.tsx` | ✅ Shared | Same. / 相同。 |
+| `/how-it-works` | `HowItWorks.tsx` | ⚠️ Partially | Same structure, but steps content comes from `SiteConfig.howItWorksSteps`. / 相同结构，但步骤内容来自 `SiteConfig`。 |
+| `/trust-safety` | `TrustSafety.tsx` | ⚠️ Partially | Same structure, contact email from `site.contactEmail`. / 相同结构，联系邮箱来自 `site.contactEmail`。 |
+| `/become-caregiver` | `BecomeCaregiver.tsx` | ✅ Shared | Same provider signup page. / 相同的服务商注册页面。 |
+
+**PROTECTED PAGES (require login) / 受保护页面（需要登录）:**
+
+| Route | Page | Shared? | Notes |
+|---|---|---|---|
+| `/dashboard` | `Dashboard.tsx` | ⚠️ MAJOR DIFFERENCES | This is where the two sub-apps diverge the most. Both show stats, bookings, tasks. But **Challenged adds**: Emergency SOS, Patient Summary Cards, Dementia Stage Selector, Symptom Tracker, Caregiver Wellness, AI Insights, AI Daily Summary, AI Care Tips, Daily Timeline, and the floating Dementia Assistant. If user `is_cared_one`, Challenged shows a completely different simplified `LovedOneSimpleView`. / 这是两个子应用差异最大的地方。两者都显示统计、预约、任务。但 **Challenged 额外有**：紧急SOS、患者摘要卡、失智阶段选择器、症状追踪、照顾者健康、AI洞察、AI日报、AI护理建议、每日时间线和悬浮失智助手。如果用户 `is_cared_one`，Challenged 显示完全不同的简化 `LovedOneSimpleView`。 |
+| `/care-circle` | `CareCircle.tsx` | ✅ Shared | Same care group management UI. / 相同的护理小组管理界面。 |
+| `/cared-ones` | `CaredOnes.tsx` | ✅ Shared | Same cared-ones management. / 相同的被照顾者管理。 |
+| `/bookings` | `Bookings.tsx` | ✅ Shared | Same booking management. / 相同的预约管理。 |
+| `/messages` | `Messages.tsx` | ✅ Shared | Same messaging UI. / 相同的消息界面。 |
+| `/gps-tracking` | `GPSTracking.tsx` | ✅ Shared | Same GPS tracking. / 相同的GPS追踪。 |
+| `/favorites` | `Favorites.tsx` | ✅ Shared | Same favorites list. / 相同的收藏列表。 |
+| `/profile` | `Profile.tsx` | ✅ Shared | Same profile editor. / 相同的个人资料编辑。 |
+| `/notifications` | `Notifications.tsx` | ✅ Shared | Same notifications. / 相同的通知。 |
+| `/jobs` | `Jobs.tsx` | ✅ Shared | Provider job board. / 服务商工作板。 |
+| `/provider-dashboard` | `ProviderDashboard.tsx` | ✅ Shared | Provider-specific dashboard. / 服务商专属仪表板。 |
+
+**KEY TAKEAWAY / 关键要点:** Most pages are fully shared — the sub-app difference is mainly branding/labels (via `useSite()`) and the Dashboard, which conditionally renders ~10 extra Challenged-only widgets from `src/components/challenged/`.
+
+**关键要点：** 大部分页面完全共享——子应用的区别主要在品牌/标签（通过 `useSite()`）和仪表板，仪表板会根据条件渲染 `src/components/challenged/` 中约10个 Challenged 专属组件。
+
+### 3d. How to use SiteContext in code / 如何在代码中使用 SiteContext
 
 ```tsx
 import { useSite } from "@/contexts/SiteContext";
@@ -99,8 +141,8 @@ const site = useSite();
 - CSS theming uses a class on `<html>`: `.site-challenged` or `.site-careconnected`. Override styles with `.site-challenged .your-class { ... }`.
 - CSS 主题在 `<html>` 上使用类：`.site-challenged` 或 `.site-careconnected`。用 `.site-challenged .your-class { ... }` 覆盖样式。
 
-- Challenged-only UI components live in `src/components/challenged/`. They should only render when `site.id === "challenged"`.
-- Challenged 专属 UI 组件在 `src/components/challenged/` 中。它们只在 `site.id === "challenged"` 时渲染。
+- Challenged-only components live in `src/components/challenged/`. They should only render when `site.id === "challenged"`.
+- Challenged 专属组件在 `src/components/challenged/` 中。只在 `site.id === "challenged"` 时渲染。
 
 ---
 
