@@ -42,9 +42,6 @@ These are hard rules. Break them and the app will break or connect to the wrong 
 - **NEVER** import from `src/integrations/supabase/client.ts`. That file connects to an empty Lovable Cloud database we don't use. Always use `careDb` and `careAuth` from `src/integrations/supabase/external-client.ts`.
 - **永远不要**从 `src/integrations/supabase/client.ts` 导入。那个文件连接到我们不使用的空 Lovable Cloud 数据库。始终使用 `src/integrations/supabase/external-client.ts` 中的 `careDb` 和 `careAuth`。
 
-- **NEVER** run Lovable's built-in migration tools (`supabase--migration`, `supabase--read-query`, `supabase--insert`, `supabase--analytics-query`). They all hit the wrong database. If you need a schema change, write the SQL and tell the developer to run it on the real Supabase dashboard.
-- **永远不要**运行 Lovable 内置的迁移工具。它们都操作错误的数据库。如果需要 schema 更改，写出 SQL 并告诉开发者在真正的 Supabase 控制台运行。
-
 - **NEVER** create mock data, fallback data, hardcoded workarounds, or fake anything. The app is production-ready. If you can't access something, ASK the developer.
 - **永远不要**创建模拟数据、回退数据、硬编码变通或伪造任何东西。应用是生产就绪的。如果无法访问某些东西，问开发者。
 
@@ -531,7 +528,7 @@ These components live in `src/components/challenged/` and render only when `site
 |---|---|
 | Schema / 数据库架构 | All data in `care_connector` schema. Not `public`. | 
 | Clients / 客户端 | `careDb` for data, `careAuth` for auth. Both from `external-client.ts`. |
-| Migrations / 迁移 | NEVER use Lovable tools. Tell developer to run SQL manually. |
+| Migrations / 迁移 | If schema changes are needed, write SQL and tell developer to run it manually. |
 | Mocks / 模拟 | NEVER fake data. Ask for access if blocked. |
 | Timestamps / 时间戳 | All tables use `created_at` and `updated_at`. |
 | Performer tracking / 执行者追踪 | Always pass current user ID to `recorded_by` / `logged_by` / `user_id`. Never rely on DB defaults. |
