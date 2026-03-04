@@ -29,8 +29,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useSite } from "@/contexts/SiteContext";
 import LocationCard from "@/components/care/LocationCard";
+import { useTranslation } from "react-i18next";
 
-// Feature card definitions
 import { MedicineCard } from "@/components/cared-ones/MedicineCard";
 import { CheckInCard } from "@/components/cared-ones/CheckInCard";
 import { HealthCard } from "@/components/cared-ones/HealthCard";
@@ -40,28 +40,6 @@ import { NotesCard } from "@/components/cared-ones/NotesCard";
 import { EmergencyCard } from "@/components/cared-ones/EmergencyCard";
 import { DocumentsCard } from "@/components/cared-ones/DocumentsCard";
 import { VisitLogCard } from "@/components/cared-ones/VisitLogCard";
-
-const featureCards = [
-  { key: "medicine", title: "Medicine Tracker", icon: Pill, color: "text-primary" },
-  { key: "checkin", title: "Daily Check-Ins", icon: ClipboardCheck, color: "text-primary" },
-  { key: "health", title: "Health Tracking", icon: HeartPulse, color: "text-primary" },
-  { key: "tips", title: "Care Tips", icon: Lightbulb, color: "text-primary" },
-  { key: "plan", title: "Care Plan", icon: Target, color: "text-primary" },
-  { key: "notes", title: "Care Notes", icon: FileText, color: "text-primary" },
-  { key: "emergency", title: "Emergency Contacts", icon: Phone, color: "text-primary" },
-  { key: "location", title: "Location & Safe Zones", icon: MapPin, color: "text-primary" },
-  { key: "documents", title: "Documents", icon: FolderOpen, color: "text-primary" },
-  { key: "visits", title: "Visit Log", icon: Activity, color: "text-primary" },
-];
-
-function getSubtitle(key: string): string {
-  const map: Record<string, string> = {
-    medicine: "Track medications & doses", checkin: "Daily wellness monitoring", health: "Vitals & health records",
-    tips: "Helpful care reminders", plan: "Structured care goals", notes: "Free-form care notes",
-    emergency: "Emergency contact list", location: "GPS & safe zones", documents: "Medical records & docs", visits: "Caregiver visit history",
-  };
-  return map[key] || "";
-}
 
 function FeatureDetail({ cardKey, caredOneId, caredOneName }: { cardKey: string; caredOneId: string; caredOneName: string }) {
   switch (cardKey) {
@@ -80,6 +58,7 @@ function FeatureDetail({ cardKey, caredOneId, caredOneName }: { cardKey: string;
 }
 
 export default function CaredOnes() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const site = useSite();
   const { data: caredOnes, isLoading } = useUserCaredOnes();
@@ -99,21 +78,31 @@ export default function CaredOnes() {
   const selectedCaredOne = caredOnes?.find((c: any) => c.cared_one_id === selectedId);
   const caredOneName = selectedCaredOne?.cared_one?.full_name || selectedCaredOne?.cared_one?.first_name || site.caredOneSingular;
 
+  const featureCards = [
+    { key: "medicine", title: t("caredOnes.medicineTracker"), icon: Pill, subtitle: t("caredOnes.trackMedications") },
+    { key: "checkin", title: t("caredOnes.dailyCheckIns"), icon: ClipboardCheck, subtitle: t("caredOnes.dailyWellness") },
+    { key: "health", title: t("caredOnes.healthTracking"), icon: HeartPulse, subtitle: t("caredOnes.vitalsHealth") },
+    { key: "tips", title: t("caredOnes.careTips"), icon: Lightbulb, subtitle: t("caredOnes.helpfulReminders") },
+    { key: "plan", title: t("caredOnes.carePlan"), icon: Target, subtitle: t("caredOnes.structuredGoals") },
+    { key: "notes", title: t("caredOnes.careNotes"), icon: FileText, subtitle: t("caredOnes.freeFormNotes") },
+    { key: "emergency", title: t("caredOnes.emergencyContacts"), icon: Phone, subtitle: t("caredOnes.emergencyList") },
+    { key: "location", title: t("caredOnes.locationSafeZones"), icon: MapPin, subtitle: t("caredOnes.gpsSafeZones") },
+    { key: "documents", title: t("caredOnes.documents"), icon: FolderOpen, subtitle: t("caredOnes.medicalDocs") },
+    { key: "visits", title: t("caredOnes.visitLog"), icon: Activity, subtitle: t("caredOnes.visitHistory") },
+  ];
+
   const handleAddCaredOne = () => {
     if (!selectedPerson) return;
     createUserCaredOne.mutate({ caredOneId: selectedPerson.id, relationship: relationship || undefined, isPrimary }, {
-      onSuccess: () => {
-        setAddOpen(false); setSelectedPerson(null); setSearchQuery(""); setRelationship(""); setIsPrimary(false);
-        toast({ title: `${site.caredOneSingular} added!` });
-      },
+      onSuccess: () => { setAddOpen(false); setSelectedPerson(null); setSearchQuery(""); setRelationship(""); setIsPrimary(false); toast({ title: t("caredOnes.added", { caredOne: site.caredOneSingular }) }); },
       onError: (err: any) => toast({ title: "Failed", description: err.message, variant: "destructive" }),
     });
   };
 
   const handleRemoveCaredOne = (id: string, name: string) => {
     deleteUserCaredOne.mutate(id, {
-      onSuccess: () => { setActiveTab(null); setOpenCard(null); toast({ title: `${name} removed from your ${site.navLabels.caredOnes.toLowerCase()}` }); },
-      onError: (err: any) => toast({ title: "Failed to remove", description: err.message, variant: "destructive" }),
+      onSuccess: () => { setActiveTab(null); setOpenCard(null); toast({ title: t("caredOnes.removed", { name, caredOnes: site.navLabels.caredOnes.toLowerCase() }) }); },
+      onError: (err: any) => toast({ title: t("caredOnes.failedToRemove"), description: err.message, variant: "destructive" }),
     });
   };
 
@@ -124,27 +113,21 @@ export default function CaredOnes() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground">{site.navLabels.caredOnes}</h1>
-          <p className="text-muted-foreground">Manage and track care for your loved ones</p>
+          <p className="text-muted-foreground">{t("caredOnes.manageAndTrack")}</p>
         </div>
-        <Button variant="coral" size="sm" onClick={() => setAddOpen(true)}>
-          <UserPlus className="h-4 w-4 mr-1" /> Add {site.caredOneSingular}
-        </Button>
+        <Button variant="coral" size="sm" onClick={() => setAddOpen(true)}><UserPlus className="h-4 w-4 mr-1" /> {t("caredOnes.addCaredOne", { caredOne: site.caredOneSingular })}</Button>
       </div>
 
-      {/* Add Cared One Dialog */}
       <Dialog open={addOpen} onOpenChange={(open) => { setAddOpen(open); if (!open) { setSelectedPerson(null); setSearchQuery(""); } }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add a {site.caredOneSingular}</DialogTitle>
-            <DialogDescription>Search for someone to add as a person you care for</DialogDescription>
+            <DialogTitle>{t("caredOnes.addCaredOne", { caredOne: site.caredOneSingular })}</DialogTitle>
+            <DialogDescription>{t("caredOnes.searchDesc")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <div>
-              <Label>Search by name or email</Label>
-              <div className="relative mt-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input value={searchQuery} onChange={e => { setSearchQuery(e.target.value); setSelectedPerson(null); }} placeholder="Type at least 2 characters..." className="pl-9" />
-              </div>
+              <Label>{t("caredOnes.searchByNameEmail")}</Label>
+              <div className="relative mt-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input value={searchQuery} onChange={e => { setSearchQuery(e.target.value); setSelectedPerson(null); }} placeholder={t("common.minCharsToSearch")} className="pl-9" /></div>
             </div>
             {searchQuery.length >= 2 && !selectedPerson && (
               <div className="border rounded-lg max-h-48 overflow-y-auto">
@@ -153,12 +136,9 @@ export default function CaredOnes() {
                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                       {p.avatar_url ? <img src={p.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" /> : <span className="text-primary text-xs font-medium">{(p.full_name || p.email || "?")[0]}</span>}
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{p.full_name || p.first_name || "No name"}</p>
-                      <p className="text-xs text-muted-foreground truncate">{p.email || ""}</p>
-                    </div>
+                    <div className="min-w-0"><p className="text-sm font-medium text-foreground truncate">{p.full_name || p.first_name || t("common.noName")}</p><p className="text-xs text-muted-foreground truncate">{p.email || ""}</p></div>
                   </button>
-                )) : <p className="p-3 text-sm text-muted-foreground text-center">No results found</p>}
+                )) : <p className="p-3 text-sm text-muted-foreground text-center">{t("common.noResults")}</p>}
               </div>
             )}
             {selectedPerson && (
@@ -166,28 +146,25 @@ export default function CaredOnes() {
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                   {selectedPerson.avatar_url ? <img src={selectedPerson.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" /> : <span className="text-primary font-medium">{(selectedPerson.full_name || "?")[0]}</span>}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-foreground">{selectedPerson.full_name || "No name"}</p>
-                  <p className="text-xs text-muted-foreground">{selectedPerson.email || ""}</p>
-                </div>
+                <div className="flex-1 min-w-0"><p className="font-medium text-foreground">{selectedPerson.full_name || t("common.noName")}</p><p className="text-xs text-muted-foreground">{selectedPerson.email || ""}</p></div>
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelectedPerson(null)}><X className="h-3.5 w-3.5" /></Button>
               </div>
             )}
             <div>
-              <Label>Relationship</Label>
+              <Label>{t("caredOnes.relationship")}</Label>
               <Select value={relationship} onValueChange={setRelationship}>
-                <SelectTrigger><SelectValue placeholder="Select relationship" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t("caredOnes.selectRelationship")} /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="mother">Mother</SelectItem><SelectItem value="father">Father</SelectItem>
-                  <SelectItem value="grandmother">Grandmother</SelectItem><SelectItem value="grandfather">Grandfather</SelectItem>
-                  <SelectItem value="spouse">Spouse</SelectItem><SelectItem value="child">Child</SelectItem>
-                  <SelectItem value="sibling">Sibling</SelectItem><SelectItem value="other">Other</SelectItem>
+                  <SelectItem value="mother">{t("caredOnes.mother")}</SelectItem><SelectItem value="father">{t("caredOnes.father")}</SelectItem>
+                  <SelectItem value="grandmother">{t("caredOnes.grandmother")}</SelectItem><SelectItem value="grandfather">{t("caredOnes.grandfather")}</SelectItem>
+                  <SelectItem value="spouse">{t("caredOnes.spouse")}</SelectItem><SelectItem value="child">{t("caredOnes.child")}</SelectItem>
+                  <SelectItem value="sibling">{t("caredOnes.sibling")}</SelectItem><SelectItem value="other">{t("caredOnes.other")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <Button variant="coral" className="w-full" onClick={handleAddCaredOne} disabled={!selectedPerson || createUserCaredOne.isPending}>
               {createUserCaredOne.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <HeartPulse className="h-4 w-4 mr-2" />}
-              Add as {site.caredOneSingular}
+              {t("caredOnes.addCaredOne", { caredOne: site.caredOneSingular })}
             </Button>
           </div>
         </DialogContent>
@@ -204,17 +181,12 @@ export default function CaredOnes() {
                     {name}{co.relationship && <span className="text-xs text-muted-foreground ml-1">({co.relationship})</span>}
                   </button>
                   <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <button className="pr-2 pl-0 py-2 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"><X className="h-3.5 w-3.5" /></button>
-                    </AlertDialogTrigger>
+                    <AlertDialogTrigger asChild><button className="pr-2 pl-0 py-2 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"><X className="h-3.5 w-3.5" /></button></AlertDialogTrigger>
                     <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Remove {name}?</AlertDialogTitle>
-                        <AlertDialogDescription>This will remove {name} from your {site.navLabels.caredOnes.toLowerCase()} list. Their data will not be deleted.</AlertDialogDescription>
-                      </AlertDialogHeader>
+                      <AlertDialogHeader><AlertDialogTitle>{t("common.remove")} {name}?</AlertDialogTitle><AlertDialogDescription>{t("caredOnes.removed", { name, caredOnes: site.navLabels.caredOnes.toLowerCase() })}</AlertDialogDescription></AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleRemoveCaredOne(co.id, name)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Remove</AlertDialogAction>
+                        <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleRemoveCaredOne(co.id, name)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t("common.remove")}</AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
@@ -224,7 +196,7 @@ export default function CaredOnes() {
           </div>
           {openCard ? (
             <div>
-              <Button variant="ghost" size="sm" className="mb-4" onClick={() => setOpenCard(null)}><ArrowLeft className="h-4 w-4 mr-1" /> Back to cards</Button>
+              <Button variant="ghost" size="sm" className="mb-4" onClick={() => setOpenCard(null)}><ArrowLeft className="h-4 w-4 mr-1" /> {t("caredOnes.backToCards")}</Button>
               <FeatureDetail cardKey={openCard} caredOneId={selectedId!} caredOneName={caredOneName} />
             </div>
           ) : (
@@ -233,8 +205,8 @@ export default function CaredOnes() {
                 <Card key={card.key} className="border-transparent card-elevated cursor-pointer hover:border-primary/20 transition-all" onClick={() => setOpenCard(card.key)}>
                   <CardContent className="p-5">
                     <div className="flex items-center gap-3">
-                      <div className={card.color}><card.icon className="h-5 w-5" /></div>
-                      <div><h3 className="font-semibold text-foreground text-sm">{card.title}</h3><p className="text-xs text-muted-foreground">{getSubtitle(card.key)}</p></div>
+                      <div className="text-primary"><card.icon className="h-5 w-5" /></div>
+                      <div><h3 className="font-semibold text-foreground text-sm">{card.title}</h3><p className="text-xs text-muted-foreground">{card.subtitle}</p></div>
                     </div>
                   </CardContent>
                 </Card>
@@ -246,9 +218,9 @@ export default function CaredOnes() {
         <Card className="border-transparent card-elevated">
           <CardContent className="p-8 text-center">
             <HeartPulse className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <h3 className="font-semibold text-foreground mb-1">No {site.navLabels.caredOnes.toLowerCase()} yet</h3>
-            <p className="text-sm text-muted-foreground mb-4">Add the people you're caring for to track their health, medications, and more.</p>
-            <Button variant="coral" onClick={() => setAddOpen(true)}><UserPlus className="h-4 w-4 mr-1" /> Add Your First {site.caredOneSingular}</Button>
+            <h3 className="font-semibold text-foreground mb-1">{t("caredOnes.noCaredOnesYet", { caredOnes: site.navLabels.caredOnes.toLowerCase() })}</h3>
+            <p className="text-sm text-muted-foreground mb-4">{t("caredOnes.addPeopleDesc")}</p>
+            <Button variant="coral" onClick={() => setAddOpen(true)}><UserPlus className="h-4 w-4 mr-1" /> {t("caredOnes.addFirst", { caredOne: site.caredOneSingular })}</Button>
           </CardContent>
         </Card>
       )}

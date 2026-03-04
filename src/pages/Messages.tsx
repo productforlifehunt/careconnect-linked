@@ -13,8 +13,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { careDb } from "@/integrations/supabase/external-client";
+import { useTranslation } from "react-i18next";
 
 export default function Messages() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { toast } = useToast();
   const location = useLocation();
@@ -123,7 +125,6 @@ export default function Messages() {
     return other?.full_name?.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
-  // Skeleton for conversation list
   const ConvoSkeleton = () => (
     <div className="space-y-0">
       {[1, 2, 3, 4, 5].map(i => (
@@ -144,14 +145,14 @@ export default function Messages() {
       <div className={`w-full md:w-80 border-r flex flex-col bg-card ${selectedConvoId ? "hidden md:flex" : "flex"}`}>
         <div className="p-4 border-b">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold text-foreground">Messages</h2>
-            <Button variant="ghost" size="icon" onClick={() => setNewConvoOpen(true)} title="New Conversation">
+            <h2 className="text-lg font-bold text-foreground">{t("messages.messages")}</h2>
+            <Button variant="ghost" size="icon" onClick={() => setNewConvoOpen(true)} title={t("messages.newConversation")}>
               <Plus className="h-4 w-4" />
             </Button>
           </div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search conversations..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9" />
+            <Input placeholder={t("messages.searchConversations")} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9" />
           </div>
         </div>
         <div className="flex-1 overflow-auto">
@@ -178,14 +179,14 @@ export default function Messages() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <span className={`font-medium text-sm ${c.unread_count > 0 ? "text-foreground font-semibold" : "text-foreground"}`}>{other?.full_name || "Unknown"}</span>
+                      <span className={`font-medium text-sm ${c.unread_count > 0 ? "text-foreground font-semibold" : "text-foreground"}`}>{other?.full_name || t("common.unknown")}</span>
                       <span className="text-xs text-muted-foreground">
                         {c.last_message_at ? new Date(c.last_message_at).toLocaleDateString("en", { month: "short", day: "numeric" }) : ""}
                       </span>
                     </div>
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-xs text-muted-foreground truncate">
-                        {c.last_message ? (c.last_message.sender_id === user?.id ? "You: " : "") + (c.last_message.message_content || "").substring(0, 50) : "No messages yet"}
+                        {c.last_message ? (c.last_message.sender_id === user?.id ? `${t("common.you")}: ` : "") + (c.last_message.message_content || "").substring(0, 50) : t("messages.noMessages")}
                       </p>
                       {c.unread_count > 0 && (
                         <span className="shrink-0 w-5 h-5 rounded-full bg-coral text-coral-foreground text-xs flex items-center justify-center font-semibold">{c.unread_count > 9 ? "9+" : c.unread_count}</span>
@@ -197,9 +198,9 @@ export default function Messages() {
             );
           }) : (
             <div className="text-center py-8 px-4">
-              <p className="text-sm text-muted-foreground mb-3">No conversations yet</p>
+              <p className="text-sm text-muted-foreground mb-3">{t("messages.noConversations")}</p>
               <Button size="sm" variant="coral" onClick={() => setNewConvoOpen(true)}>
-                <Plus className="h-3.5 w-3.5 mr-1" /> Start a Conversation
+                <Plus className="h-3.5 w-3.5 mr-1" /> {t("messages.startConversation")}
               </Button>
             </div>
           )}
@@ -243,8 +244,8 @@ export default function Messages() {
               </div>
             ) : (messages || []).length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center">
-                <p className="text-muted-foreground text-sm">No messages yet.</p>
-                <p className="text-xs text-muted-foreground mt-1">Send a message below to start the conversation!</p>
+                <p className="text-muted-foreground text-sm">{t("messages.noMessages")}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t("messages.startConversationBelow")}</p>
               </div>
             ) : (messages || []).map((m: any) => (
               <MessageBubble key={m.id} message={m} isMe={m.sender_id === user?.id} />
@@ -266,7 +267,7 @@ export default function Messages() {
             <div className="flex gap-2">
               <MessageAttachment onAttach={(url, type) => setPendingAttachment({ url, type })} disabled={sendMessage.isPending} />
               <Input
-                placeholder="Type a message..."
+                placeholder={t("messages.typeMessage")}
                 value={newMessage}
                 onChange={e => setNewMessage(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && handleSend()}
@@ -280,9 +281,9 @@ export default function Messages() {
         </div>
       ) : (
         <div className="flex-1 hidden md:flex flex-col items-center justify-center text-muted-foreground gap-3">
-          <p>Select a conversation or start a new one</p>
+          <p>{t("messages.selectConversation")}</p>
           <Button size="sm" variant="coral" onClick={() => setNewConvoOpen(true)}>
-            <Plus className="h-3.5 w-3.5 mr-1" /> New Message
+            <Plus className="h-3.5 w-3.5 mr-1" /> {t("messages.newMessage")}
           </Button>
         </div>
       )}
@@ -290,11 +291,11 @@ export default function Messages() {
       {/* New Conversation Dialog */}
       <Dialog open={newConvoOpen} onOpenChange={(o) => { setNewConvoOpen(o); if (!o) setNewConvoSearch(""); }}>
         <DialogContent>
-          <DialogHeader><DialogTitle>New Message</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("messages.newMessage")}</DialogTitle></DialogHeader>
           <div className="space-y-3 mt-2">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input value={newConvoSearch} onChange={e => setNewConvoSearch(e.target.value)} placeholder="Search by name or email..." className="pl-9" autoFocus />
+              <Input value={newConvoSearch} onChange={e => setNewConvoSearch(e.target.value)} placeholder={t("messages.searchByNameEmail")} className="pl-9" autoFocus />
             </div>
             {newConvoSearch.length >= 2 && (
               <div className="border rounded-lg max-h-64 overflow-y-auto">
@@ -305,18 +306,18 @@ export default function Messages() {
                       {p.avatar_url ? <img src={p.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover" /> : <span className="text-primary text-xs font-medium">{(p.full_name || "?")[0]}</span>}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground">{p.full_name || "No name"}</p>
+                      <p className="text-sm font-medium text-foreground">{p.full_name || t("common.noName")}</p>
                       <p className="text-xs text-muted-foreground">{p.email || p.user_name || ""}</p>
                     </div>
                     {startConversation.isPending && <Loader2 className="h-4 w-4 animate-spin ml-auto" />}
                   </button>
                 )) : (
-                  <p className="p-3 text-sm text-muted-foreground text-center">No users found</p>
+                  <p className="p-3 text-sm text-muted-foreground text-center">{t("common.noResults")}</p>
                 )}
               </div>
             )}
             {newConvoSearch.length < 2 && (
-              <p className="text-xs text-muted-foreground text-center py-4">Type at least 2 characters to search</p>
+              <p className="text-xs text-muted-foreground text-center py-4">{t("common.minCharsToSearch")}</p>
             )}
           </div>
         </DialogContent>

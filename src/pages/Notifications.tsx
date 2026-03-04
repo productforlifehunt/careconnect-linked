@@ -6,10 +6,11 @@ import { Bell, CalendarDays, Users, MessageSquare, AlertTriangle, Settings, Load
 import { useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead, useMyPendingInvitations, useAcceptInvitation, useDeclineInvitation } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useSite } from "@/contexts/SiteContext";
-
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 export default function Notifications() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { toast } = useToast();
   const site = useSite();
@@ -45,14 +46,14 @@ export default function Notifications() {
 
   const handleAccept = (inv: any) => {
     acceptInvitation.mutate({ id: inv.id, care_group_id: inv.care_group_id, source: inv.source }, {
-      onSuccess: () => toast({ title: "Joined group!", description: `You've joined ${inv.group?.name || "the care group"}` }),
-      onError: (err: any) => toast({ title: "Failed to join", description: err.message, variant: "destructive" }),
+      onSuccess: () => toast({ title: t("notifs.joined"), description: t("notifs.joinedDesc", { name: inv.group?.name || site.careGroupSingular }) }),
+      onError: (err: any) => toast({ title: t("notifs.failedToJoin"), description: err.message, variant: "destructive" }),
     });
   };
 
   const handleDecline = (inv: any) => {
     declineInvitation.mutate({ id: inv.id, source: inv.source }, {
-      onSuccess: () => toast({ title: "Invitation declined" }),
+      onSuccess: () => toast({ title: t("notifs.invitationDeclined") }),
     });
   };
 
@@ -64,19 +65,18 @@ export default function Notifications() {
     <div className="max-w-3xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Notifications</h1>
-          <p className="text-muted-foreground">{unreadCount} unread{invitationCount > 0 ? ` · ${invitationCount} pending invitation${invitationCount > 1 ? "s" : ""}` : ""}</p>
+          <h1 className="text-2xl font-bold text-foreground">{t("notifs.notifications")}</h1>
+          <p className="text-muted-foreground">{t("notifs.unread", { count: unreadCount })}{invitationCount > 0 ? ` · ${t("notifs.pendingInvitations", { count: invitationCount, s: invitationCount > 1 ? "s" : "" })}` : ""}</p>
         </div>
         {unreadCount > 0 && (
-          <Button variant="ghost" size="sm" onClick={() => markAllRead.mutate()}>Mark all as read</Button>
+          <Button variant="ghost" size="sm" onClick={() => markAllRead.mutate()}>{t("notifs.markAllRead")}</Button>
         )}
       </div>
 
-      {/* Pending Group Invitations */}
       {invitationCount > 0 && (
         <div className="mb-6">
           <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-            <UserPlus className="h-4 w-4 text-primary" /> Group Invitations ({invitationCount})
+            <UserPlus className="h-4 w-4 text-primary" /> {t("notifs.groupInvitations")} ({invitationCount})
           </h2>
           <div className="space-y-2">
             {(pendingInvitations || []).map((inv: any) => (
@@ -93,13 +93,13 @@ export default function Notifications() {
                           {inv.group?.description ? inv.group.description.substring(0, 60) + (inv.group.description.length > 60 ? "…" : "") : `You've been invited to join this ${site.careGroupSingular.toLowerCase()}`}
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          Received {new Date(inv.created_at).toLocaleDateString("en", { month: "short", day: "numeric" })}
+                          {t("notifs.received")} {new Date(inv.created_at).toLocaleDateString("en", { month: "short", day: "numeric" })}
                         </p>
                       </div>
                     </div>
                     <div className="flex gap-2 shrink-0">
                       <Button size="sm" variant="coral" onClick={() => handleAccept(inv)} disabled={acceptInvitation.isPending}>
-                        <Check className="h-3.5 w-3.5 mr-1" /> Accept
+                        <Check className="h-3.5 w-3.5 mr-1" /> {t("common.accept")}
                       </Button>
                       <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => handleDecline(inv)} disabled={declineInvitation.isPending}>
                         <X className="h-3.5 w-3.5" />
@@ -115,10 +115,10 @@ export default function Notifications() {
 
       <Tabs defaultValue="all">
         <TabsList className="mb-4">
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="booking">Bookings</TabsTrigger>
+          <TabsTrigger value="all">{t("common.all")}</TabsTrigger>
+          <TabsTrigger value="booking">{t("bookings.myBookings")}</TabsTrigger>
           <TabsTrigger value="care">{site.navLabels.careGroups}</TabsTrigger>
-          <TabsTrigger value="message">Messages</TabsTrigger>
+          <TabsTrigger value="message">{t("messages.messages")}</TabsTrigger>
         </TabsList>
 
         {["all", "booking", "care", "message"].map(tab => (
@@ -129,7 +129,6 @@ export default function Notifications() {
                 className={`cursor-pointer transition-colors border-transparent ${n.is_read ? "opacity-70" : "card-elevated"}`}
                 onClick={() => {
                   if (!n.is_read) markRead.mutate(n.id);
-                  // Fix legacy paths
                   let url = n.link_url;
                   if (url?.includes("/dashboard/appointments")) url = "/bookings";
                   if (url?.includes("/dashboard/booking-history")) url = "/bookings";
@@ -145,7 +144,7 @@ export default function Notifications() {
                     </div>
                     {n.content && <p className="text-sm text-muted-foreground mt-0.5">{n.content}</p>}
                     <p className="text-xs text-muted-foreground mt-1">
-                      {new Date(n.created_at).toLocaleDateString("en", { month: "short", day: "numeric" })} at{" "}
+                      {new Date(n.created_at).toLocaleDateString("en", { month: "short", day: "numeric" })} {t("common.at")}{" "}
                       {new Date(n.created_at).toLocaleTimeString("en", { hour: "numeric", minute: "2-digit" })}
                     </p>
                   </div>
@@ -154,7 +153,7 @@ export default function Notifications() {
             )) : (
               <div className="text-center py-12">
                 <Bell className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-muted-foreground">No notifications in this category</p>
+                <p className="text-muted-foreground">{t("notifs.noNotifications")}</p>
               </div>
             )}
           </TabsContent>
