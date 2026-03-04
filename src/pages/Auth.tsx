@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSite } from "@/contexts/SiteContext";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import { careAuth } from "@/integrations/supabase/external-client";
 import { Heart } from "lucide-react";
 
@@ -18,6 +19,7 @@ export default function Auth() {
   const { login, signup } = useAuth();
   const site = useSite();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -37,26 +39,26 @@ export default function Auth() {
     if (/[A-Z]/.test(pw)) score++;
     if (/[0-9]/.test(pw)) score++;
     if (/[^A-Za-z0-9]/.test(pw)) score++;
-    if (score <= 1) return { score, label: "Weak", color: "bg-destructive" };
-    if (score <= 2) return { score, label: "Fair", color: "bg-warning" };
-    if (score <= 3) return { score, label: "Good", color: "bg-primary" };
-    return { score, label: "Strong", color: "bg-success" };
+    if (score <= 1) return { score, label: t("common.weak"), color: "bg-destructive" };
+    if (score <= 2) return { score, label: t("common.fair"), color: "bg-warning" };
+    if (score <= 3) return { score, label: t("common.good"), color: "bg-primary" };
+    return { score, label: t("common.strong"), color: "bg-success" };
   };
 
   const pwStrength = passwordStrength(signupPassword);
 
   const handleLogin = async () => {
     if (!loginEmail || !loginPassword) {
-      toast({ title: "Please fill all fields", variant: "destructive" });
+      toast({ title: t("auth.fillAllFields"), variant: "destructive" });
       return;
     }
     setLoading(true);
     try {
       await login(loginEmail, loginPassword);
-      toast({ title: "Welcome back!" });
+      toast({ title: t("auth.welcomeBack") });
       navigate("/dashboard");
     } catch (err: any) {
-      toast({ title: "Login failed", description: err.message, variant: "destructive" });
+      toast({ title: t("auth.loginFailed"), description: err.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -64,23 +66,23 @@ export default function Auth() {
 
   const handleSignup = async () => {
     if (!signupName || !signupEmail || !signupPassword) {
-      toast({ title: "Please fill all fields", variant: "destructive" });
+      toast({ title: t("auth.fillAllFields"), variant: "destructive" });
       return;
     }
     if (signupPassword.length < 8) {
-      toast({ title: "Password too short", description: "Minimum 8 characters required.", variant: "destructive" });
+      toast({ title: t("auth.passwordTooShort"), description: t("auth.passwordTooShortDesc"), variant: "destructive" });
       return;
     }
     if (pwStrength.score < 2) {
-      toast({ title: "Password too weak", description: "Use uppercase, numbers, and special characters.", variant: "destructive" });
+      toast({ title: t("auth.passwordTooWeak"), description: t("auth.passwordTooWeakDesc"), variant: "destructive" });
       return;
     }
     setLoading(true);
     try {
       await signup(signupName, signupEmail, signupPassword, "care-seeker");
-      toast({ title: "Account created! Check your email to verify." });
+      toast({ title: t("auth.accountCreated") });
     } catch (err: any) {
-      toast({ title: "Signup failed", description: err.message, variant: "destructive" });
+      toast({ title: t("auth.signupFailed"), description: err.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -94,66 +96,66 @@ export default function Auth() {
             <Heart className="h-6 w-6 text-primary-foreground" />
           </div>
           <CardTitle className="text-2xl">{site.name}</CardTitle>
-          <CardDescription>{site.id === "challenged" ? "Dementia care, together" : "Find and manage trusted care"}</CardDescription>
+          <CardDescription>{t(`site.${site.id}.authSubtitle`)}</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue={initialMode}>
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              <TabsTrigger value="login">{t("common.signIn")}</TabsTrigger>
+              <TabsTrigger value="signup">{t("common.signUp")}</TabsTrigger>
             </TabsList>
             <TabsContent value="login" className="space-y-4 mt-4">
               <div>
-                <Label>Email</Label>
-                <Input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} placeholder="you@example.com" onKeyDown={e => e.key === "Enter" && handleLogin()} />
+                <Label>{t("common.email")}</Label>
+                <Input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} placeholder={t("auth.emailPlaceholder")} onKeyDown={e => e.key === "Enter" && handleLogin()} />
               </div>
               <div>
-                <Label>Password</Label>
-                <Input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} placeholder="••••••••" onKeyDown={e => e.key === "Enter" && handleLogin()} />
+                <Label>{t("common.password")}</Label>
+                <Input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} placeholder={t("auth.passwordPlaceholder")} onKeyDown={e => e.key === "Enter" && handleLogin()} />
               </div>
               <Button variant="coral" className="w-full" onClick={handleLogin} disabled={loading}>
-                {loading ? "Signing in..." : "Sign In"}
+                {loading ? t("auth.signingIn") : t("common.signIn")}
               </Button>
               <div className="text-center">
-                <button type="button" className="text-sm text-primary hover:underline" onClick={() => setForgotOpen(true)}>Forgot password?</button>
+                <button type="button" className="text-sm text-primary hover:underline" onClick={() => setForgotOpen(true)}>{t("auth.forgotPassword")}</button>
               </div>
               {forgotOpen && (
                 <div className="border rounded-lg p-4 mt-2 space-y-3 bg-muted/30">
-                  <p className="text-sm text-foreground font-medium">Reset your password</p>
-                  <Input type="email" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} placeholder="Enter your email" />
+                  <p className="text-sm text-foreground font-medium">{t("auth.resetPassword")}</p>
+                  <Input type="email" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} placeholder={t("auth.enterEmail")} />
                   <Button variant="outline" className="w-full" disabled={forgotLoading} onClick={async () => {
-                    if (!forgotEmail) { toast({ title: "Enter your email", variant: "destructive" }); return; }
+                    if (!forgotEmail) { toast({ title: t("auth.enterEmail"), variant: "destructive" }); return; }
                     setForgotLoading(true);
                     try {
                       const { error } = await careAuth.auth.resetPasswordForEmail(forgotEmail, {
                         redirectTo: `${window.location.origin}/reset-password`,
                       });
                       if (error) throw error;
-                      toast({ title: "Reset link sent!", description: "Check your email for a password reset link." });
+                      toast({ title: t("auth.resetLinkSent"), description: t("auth.resetLinkSentDesc") });
                       setForgotOpen(false);
                     } catch (err: any) {
-                      toast({ title: "Failed", description: err.message, variant: "destructive" });
+                      toast({ title: t("common.errorOccurred"), description: err.message, variant: "destructive" });
                     } finally {
                       setForgotLoading(false);
                     }
                   }}>
-                    {forgotLoading ? "Sending..." : "Send Reset Link"}
+                    {forgotLoading ? t("auth.sendingResetLink") : t("auth.sendResetLink")}
                   </Button>
                 </div>
               )}
             </TabsContent>
             <TabsContent value="signup" className="space-y-4 mt-4">
               <div>
-                <Label>Full Name</Label>
-                <Input value={signupName} onChange={e => setSignupName(e.target.value)} placeholder="Jane Doe" />
+                <Label>{t("common.fullName")}</Label>
+                <Input value={signupName} onChange={e => setSignupName(e.target.value)} placeholder={t("auth.namePlaceholder")} />
               </div>
               <div>
-                <Label>Email</Label>
-                <Input type="email" value={signupEmail} onChange={e => setSignupEmail(e.target.value)} placeholder="you@example.com" />
+                <Label>{t("common.email")}</Label>
+                <Input type="email" value={signupEmail} onChange={e => setSignupEmail(e.target.value)} placeholder={t("auth.emailPlaceholder")} />
               </div>
               <div>
-                <Label>Password</Label>
-                <Input type="password" value={signupPassword} onChange={e => setSignupPassword(e.target.value)} placeholder="Min 8 chars, uppercase, number, symbol" />
+                <Label>{t("common.password")}</Label>
+                <Input type="password" value={signupPassword} onChange={e => setSignupPassword(e.target.value)} placeholder={t("auth.passwordHint")} />
                 {signupPassword && (
                   <div className="mt-2 space-y-1">
                     <div className="flex gap-1">
@@ -166,7 +168,7 @@ export default function Auth() {
                 )}
               </div>
               <Button variant="coral" className="w-full" onClick={handleSignup} disabled={loading}>
-                {loading ? "Creating account..." : "Create Account"}
+                {loading ? t("auth.creatingAccount") : t("common.signUp")}
               </Button>
             </TabsContent>
           </Tabs>

@@ -10,12 +10,14 @@ import {
 } from "lucide-react";
 import { useProviders, useServiceCategories } from "@/hooks/use-care-data";
 import { useSite } from "@/contexts/SiteContext";
+import { useTranslation } from "react-i18next";
 import heroImage from "@/assets/hero-image.jpg";
 import type { Profile } from "@/types/care-connector";
 
 const Index = () => {
   const navigate = useNavigate();
   const site = useSite();
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [locationQuery, setLocationQuery] = useState("");
 
@@ -52,8 +54,8 @@ const Index = () => {
         <div className="relative max-w-6xl mx-auto px-4 py-20 md:py-32">
           <div className="max-w-2xl">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground mb-6 leading-tight animate-fade-in">
-              {site.heroTitle}{" "}
-              <span className="text-coral">{site.heroHighlight}</span>
+              {t(`site.${site.id}.heroTitle`)}{" "}
+              <span className="text-coral">{t(`site.${site.id}.heroHighlight`)}</span>
             </h1>
             <p className="text-lg md:text-xl text-primary-foreground/90 mb-8 animate-fade-in" style={{ animationDelay: "0.1s" }}>
               {site.heroSubtitle}
@@ -64,7 +66,7 @@ const Index = () => {
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder={site.searchPlaceholder}
+                    placeholder={t(`site.${site.id}.searchPlaceholder`)}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-9 border-0 bg-muted/50 h-12"
@@ -74,7 +76,7 @@ const Index = () => {
                 <div className="flex-1 relative">
                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="City or ZIP code"
+                    placeholder={t("home.cityOrZip")}
                     value={locationQuery}
                     onChange={(e) => setLocationQuery(e.target.value)}
                     className="pl-9 border-0 bg-muted/50 h-12"
@@ -82,7 +84,7 @@ const Index = () => {
                   />
                 </div>
                 <Button variant="coral" size="lg" className="h-12 px-8" onClick={handleSearch}>
-                  Search
+                  {t("common.search")}
                 </Button>
               </div>
             </div>
@@ -101,15 +103,11 @@ const Index = () => {
 
       {/* Categories */}
       <section className="max-w-6xl mx-auto px-4 py-16">
-        <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">Browse by Category</h2>
-        <p className="text-muted-foreground mb-8">Find the right type of care for your needs</p>
+        <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">{t("home.browseByCategory")}</h2>
+        <p className="text-muted-foreground mb-8">{t("home.findRightCare")}</p>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {displayCategories.map((cat) => (
-            <Card
-              key={cat.name}
-              className="card-elevated cursor-pointer group border-transparent"
-              onClick={() => navigate(`/search?q=${encodeURIComponent(cat.name)}`)}
-            >
+            <Card key={cat.name} className="card-elevated cursor-pointer group border-transparent" onClick={() => navigate(`/search?q=${encodeURIComponent(cat.name)}`)}>
               <CardContent className="p-6 text-center">
                 <div className="mx-auto w-12 h-12 rounded-xl bg-accent flex items-center justify-center mb-3 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                   {categoryIcons[cat.name] || <Heart className="h-6 w-6" />}
@@ -126,11 +124,11 @@ const Index = () => {
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground">Top-Rated Caregivers</h2>
-              <p className="text-muted-foreground mt-1">Trusted professionals near you</p>
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground">{t("home.topRatedCaregivers")}</h2>
+              <p className="text-muted-foreground mt-1">{t("home.trustedProfessionals")}</p>
             </div>
             <Button variant="outline" onClick={() => navigate("/search")} className="hidden sm:flex">
-              View All <ArrowRight className="ml-2 h-4 w-4" />
+              {t("home.viewAllCaregivers")} <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </div>
 
@@ -139,11 +137,7 @@ const Index = () => {
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {featuredProviders.map((cg: Profile) => (
-                <Card
-                  key={cg.id}
-                  className="card-elevated cursor-pointer border-transparent overflow-hidden"
-                  onClick={() => navigate(`/caregiver/${cg.id}`)}
-                >
+                <Card key={cg.id} className="card-elevated cursor-pointer border-transparent overflow-hidden" onClick={() => navigate(`/caregiver/${cg.id}`)}>
                   <CardContent className="p-0">
                     <div className="p-6">
                       <div className="flex items-start gap-4">
@@ -155,7 +149,7 @@ const Index = () => {
                           </div>
                           <div className="flex items-center gap-1 mt-1">
                             <Star className="h-4 w-4 text-warning fill-warning" />
-                            <span className="text-sm font-medium">{cg.rating_average?.toFixed(1) || "New"}</span>
+                            <span className="text-sm font-medium">{cg.rating_average?.toFixed(1) || t("common.new")}</span>
                             <span className="text-xs text-muted-foreground">({cg.rating_count || 0})</span>
                           </div>
                           {cg.location && (
@@ -166,23 +160,19 @@ const Index = () => {
                           )}
                         </div>
                       </div>
-
                       <div className="flex flex-wrap gap-1.5 mt-4">
                         {(cg.specialty || []).slice(0, 3).map((s) => (
-                          <Badge key={s} variant="secondary" className="bg-accent text-accent-foreground text-xs">
-                            {s}
-                          </Badge>
+                          <Badge key={s} variant="secondary" className="bg-accent text-accent-foreground text-xs">{s}</Badge>
                         ))}
                       </div>
-
                       <div className="flex items-center justify-between mt-4 pt-4 border-t">
                         <div className="flex items-center gap-1 text-sm text-muted-foreground">
                           <Clock className="h-3 w-3" />
-                          {cg.response_time_minute ? `Under ${cg.response_time_minute < 60 ? cg.response_time_minute + " min" : Math.ceil(cg.response_time_minute / 60) + " hrs"}` : ""}
+                          {cg.response_time_minute ? `${t("search.under")} ${cg.response_time_minute < 60 ? cg.response_time_minute + " " + t("common.minutes") : Math.ceil(cg.response_time_minute / 60) + " " + t("common.hours")}` : ""}
                         </div>
                         <div className="text-right">
                           <span className="text-lg font-bold text-foreground">${cg.hourly_rate || 0}</span>
-                          <span className="text-sm text-muted-foreground">/hr</span>
+                          <span className="text-sm text-muted-foreground">{t("common.perHour")}</span>
                         </div>
                       </div>
                     </div>
@@ -194,7 +184,7 @@ const Index = () => {
 
           <div className="mt-6 text-center sm:hidden">
             <Button variant="outline" onClick={() => navigate("/search")}>
-              View All Caregivers <ArrowRight className="ml-2 h-4 w-4" />
+              {t("home.viewAllCaregivers")} <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </div>
         </div>
@@ -202,7 +192,7 @@ const Index = () => {
 
       {/* How It Works */}
       <section className="max-w-6xl mx-auto px-4 py-16">
-        <h2 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-12">{site.howItWorksTitle}</h2>
+        <h2 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-12">{t(`site.${site.id}.howItWorksTitle`)}</h2>
         <div className="grid md:grid-cols-3 gap-8">
           {site.howItWorksSteps.map((item) => (
             <div key={item.step} className="text-center">
@@ -219,16 +209,14 @@ const Index = () => {
       {/* CTA */}
       <section className="hero-gradient py-16">
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="text-2xl md:text-3xl font-bold text-primary-foreground mb-4">{site.ctaTitle}</h2>
-          <p className="text-primary-foreground/80 mb-8 max-w-xl mx-auto">
-            {site.ctaSubtitle}
-          </p>
+          <h2 className="text-2xl md:text-3xl font-bold text-primary-foreground mb-4">{t(`site.${site.id}.ctaTitle`)}</h2>
+          <p className="text-primary-foreground/80 mb-8 max-w-xl mx-auto">{t(`site.${site.id}.ctaSubtitle`)}</p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button variant="coral" size="lg" onClick={() => navigate("/search")}>
-              {site.ctaButton}
+              {t(`site.${site.id}.ctaButton`)}
             </Button>
             <Button variant="secondary" size="lg" onClick={() => navigate("/auth?mode=signup")}>
-              Create Free Account
+              {t("home.createFreeAccount")}
             </Button>
           </div>
         </div>
@@ -243,28 +231,28 @@ const Index = () => {
                 <div className="w-8 h-8 rounded-lg hero-gradient flex items-center justify-center">
                   <span className="text-primary-foreground font-bold text-xs">{site.logoText}</span>
                 </div>
-                <span className="font-bold text-foreground">{site.footerBrand}</span>
+                <span className="font-bold text-foreground">{t(`site.${site.id}.footerBrand`)}</span>
               </div>
-              <p className="text-sm text-muted-foreground">{site.footerTagline}</p>
+              <p className="text-sm text-muted-foreground">{t(`site.${site.id}.footerTagline`)}</p>
             </div>
             {[
-              { title: "For Families", links: [
-                { label: "Find Caregivers", href: "/search" },
-                { label: "How It Works", href: "/how-it-works" },
-                { label: "Trust & Safety", href: "/trust-safety" },
+              { title: t("home.forFamilies"), links: [
+                { label: t("home.findCaregivers"), href: "/search" },
+                { label: t("nav.howItWorks"), href: "/how-it-works" },
+                { label: t("nav.trustSafety"), href: "/trust-safety" },
                 { label: site.navLabels.careGroups, href: "/care-circle" },
               ] },
-              { title: "For Caregivers", links: [
-                { label: "Join as Caregiver", href: "/become-caregiver" },
-                { label: "Jobs Board", href: "/jobs" },
-                { label: "Provider Dashboard", href: "/provider-dashboard" },
-                { label: "Trust & Safety", href: "/trust-safety" },
+              { title: t("home.forCaregivers"), links: [
+                { label: t("home.joinAsCaregiver"), href: "/become-caregiver" },
+                { label: t("nav.jobsBoard"), href: "/jobs" },
+                { label: t("nav.providerDashboard"), href: "/provider-dashboard" },
+                { label: t("nav.trustSafety"), href: "/trust-safety" },
               ] },
-              { title: "Company", links: [
-                { label: "How It Works", href: "/how-it-works" },
-                { label: "Trust & Safety", href: "/trust-safety" },
-                { label: "Sign Up", href: "/auth?mode=signup" },
-                { label: "Sign In", href: "/auth" },
+              { title: t("home.company"), links: [
+                { label: t("nav.howItWorks"), href: "/how-it-works" },
+                { label: t("nav.trustSafety"), href: "/trust-safety" },
+                { label: t("common.signUp"), href: "/auth?mode=signup" },
+                { label: t("common.signIn"), href: "/auth" },
               ] },
             ].map((col) => (
               <div key={col.title}>
@@ -280,7 +268,7 @@ const Index = () => {
             ))}
           </div>
           <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
-            © 2026 {site.footerBrand}. All rights reserved.
+            {t("common.copyright", { brand: t(`site.${site.id}.footerBrand`) })}
           </div>
         </div>
       </footer>

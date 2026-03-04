@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Star, MapPin, Shield, Heart, Loader2 } from "lucide-react";
 import { useSavedProviders, useToggleSavedProvider } from "@/hooks/use-care-data";
+import { useTranslation } from "react-i18next";
 
 export default function Favorites() {
   const navigate = useNavigate();
   const { data: savedProviders, isLoading } = useSavedProviders();
   const toggleSaved = useToggleSavedProvider();
+  const { t } = useTranslation();
 
   const removeFavorite = (providerId: string) => {
     toggleSaved.mutate({ providerId, isSaved: true });
@@ -23,8 +25,8 @@ export default function Favorites() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold text-foreground mb-2">Favorites</h1>
-      <p className="text-muted-foreground mb-6">Caregivers you've saved</p>
+      <h1 className="text-2xl font-bold text-foreground mb-2">{t("favorites.favorites")}</h1>
+      <p className="text-muted-foreground mb-6">{t("favorites.caregiversSaved")}</p>
 
       {favorites.length > 0 ? (
         <div className="space-y-4">
@@ -42,16 +44,16 @@ export default function Favorites() {
                         {cg.background_check_status === "passed" && <Shield className="h-4 w-4 text-primary" />}
                       </div>
                       <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
-                        <span className="flex items-center gap-1"><Star className="h-3 w-3 text-warning fill-warning" /> {cg.rating_average?.toFixed(1) || "New"}</span>
+                        <span className="flex items-center gap-1"><Star className="h-3 w-3 text-warning fill-warning" /> {cg.rating_average?.toFixed(1) || t("common.new")}</span>
                         {cg.location && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {cg.location}</span>}
-                        <span>${cg.hourly_rate || 0}/hr</span>
+                        <span>${cg.hourly_rate || 0}{t("common.perHour")}</span>
                       </div>
                       <div className="flex flex-wrap gap-1 mt-2">
                         {(cg.specialty || []).map((s: string) => <Badge key={s} variant="secondary" className="bg-accent text-accent-foreground text-xs">{s}</Badge>)}
                       </div>
                     </div>
                     <div className="flex flex-col gap-2 shrink-0">
-                      <Button variant="coral" size="sm" onClick={() => navigate(`/caregiver/${cg.id}`)}>Book</Button>
+                      <Button variant="coral" size="sm" onClick={() => navigate(`/caregiver/${cg.id}`)}>{t("common.book")}</Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeFavorite(sp.provider_id)}>
                         <Heart className="h-4 w-4 fill-coral text-coral" />
                       </Button>
@@ -65,8 +67,8 @@ export default function Favorites() {
       ) : (
         <div className="text-center py-16">
           <Heart className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="text-muted-foreground">No favorites yet</p>
-          <Button variant="coral" className="mt-4" onClick={() => navigate("/search")}>Browse Caregivers</Button>
+          <p className="text-muted-foreground">{t("favorites.noFavorites")}</p>
+          <Button variant="coral" className="mt-4" onClick={() => navigate("/search")}>{t("favorites.browseCaregivers")}</Button>
         </div>
       )}
     </div>
