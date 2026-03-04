@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +27,7 @@ import { getAvailableWidgets, getDefaultVisibility } from "@/components/dashboar
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { user } = useAuth();
   const site = useSite();
   const { data: bookings, isLoading: bookingsLoading } = useBookings();
@@ -101,9 +103,9 @@ export default function Dashboard() {
       {/* Header with customize button */}
       <div className="flex items-start justify-between mb-6 gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Welcome back, {displayName.split(" ")[0]}!</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t("dashboard.welcomeBack", { name: displayName.split(" ")[0] })}</h1>
           <p className="text-muted-foreground">
-            {isChallenged ? "Your dementia care overview" : "Here's your care overview"}
+            {t(`site.${site.id}.dashboardSubtitle`)}
           </p>
         </div>
         <DashboardWidgetConfig
@@ -122,10 +124,10 @@ export default function Dashboard() {
       {show("stats") && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {[
-            { label: "Upcoming Bookings", value: stats?.upcomingBookings ?? 0, icon: CalendarDays, color: "text-primary" },
+            { label: t("dashboard.upcomingBookings"), value: stats?.upcomingBookings ?? 0, icon: CalendarDays, color: "text-primary" },
             { label: site.navLabels.careGroups, value: stats?.careGroups ?? 0, icon: Users, color: "text-success" },
-            { label: "Pending Tasks", value: stats?.pendingTasks ?? 0, icon: AlertCircle, color: "text-warning" },
-            { label: "Unread Messages", value: stats?.unreadMessages ?? 0, icon: MessageSquare, color: "text-coral" },
+            { label: t("dashboard.pendingTasks"), value: stats?.pendingTasks ?? 0, icon: AlertCircle, color: "text-warning" },
+            { label: t("dashboard.unreadMessages"), value: stats?.unreadMessages ?? 0, icon: MessageSquare, color: "text-coral" },
           ].map((stat) => (
             <Card key={stat.label} className="border-transparent card-elevated">
               <CardContent className="p-4">
@@ -207,8 +209,8 @@ export default function Dashboard() {
         {show("upcoming-bookings") && (
           <Card className="border-transparent card-elevated">
             <CardHeader className="flex-row items-center justify-between">
-              <CardTitle className="text-lg">Upcoming Bookings</CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/bookings")}>View all <ArrowRight className="ml-1 h-3 w-3" /></Button>
+              <CardTitle className="text-lg">{t("dashboard.upcomingBookings")}</CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => navigate("/bookings")}>{t("common.viewAll")} <ArrowRight className="ml-1 h-3 w-3" /></Button>
             </CardHeader>
             <CardContent className="space-y-3">
               {bookingsLoading ? (
@@ -226,7 +228,7 @@ export default function Dashboard() {
                   <Badge className={statusColors[b.status] || "bg-muted text-muted-foreground"}>{b.status}</Badge>
                 </div>
               )) : (
-                <p className="text-sm text-muted-foreground text-center py-4">No upcoming bookings</p>
+                <p className="text-sm text-muted-foreground text-center py-4">{t("dashboard.noUpcomingBookings")}</p>
               )}
             </CardContent>
           </Card>
@@ -236,8 +238,8 @@ export default function Dashboard() {
         {show("care-tasks") && (
           <Card className="border-transparent card-elevated">
             <CardHeader className="flex-row items-center justify-between">
-              <CardTitle className="text-lg">Care Tasks</CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/care-circle")}>View all <ArrowRight className="ml-1 h-3 w-3" /></Button>
+              <CardTitle className="text-lg">{t("dashboard.careTasks")}</CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => navigate("/care-circle")}>{t("common.viewAll")} <ArrowRight className="ml-1 h-3 w-3" /></Button>
             </CardHeader>
             <CardContent className="space-y-3">
               {tasksLoading ? (
@@ -255,7 +257,7 @@ export default function Dashboard() {
                   <Badge variant="outline" className={priorityColors[t.priority] || ""}>{t.priority}</Badge>
                 </div>
               )) : (
-                <p className="text-sm text-muted-foreground text-center py-4">No pending tasks</p>
+                <p className="text-sm text-muted-foreground text-center py-4">{t("dashboard.noPendingTasks")}</p>
               )}
             </CardContent>
           </Card>
@@ -264,11 +266,11 @@ export default function Dashboard() {
         {/* Quick Actions */}
         {show("quick-actions") && (
           <Card className="border-transparent card-elevated lg:col-span-2">
-            <CardHeader><CardTitle className="text-lg">Quick Actions</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-lg">{t("dashboard.quickActions")}</CardTitle></CardHeader>
             <CardContent className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <Button variant="outline" className="h-auto py-4 flex-col gap-2" onClick={() => navigate("/search")}>
                 <CalendarDays className="h-5 w-5 text-primary" />
-                <span className="text-xs">{isChallenged ? "Find Help" : "Book Care"}</span>
+                <span className="text-xs">{isChallenged ? t("nav.findHelp") : t("dashboard.bookCare")}</span>
               </Button>
               <Button variant="outline" className="h-auto py-4 flex-col gap-2" onClick={() => navigate("/care-circle")}>
                 <Users className="h-5 w-5 text-primary" />
@@ -276,11 +278,11 @@ export default function Dashboard() {
               </Button>
               <Button variant="outline" className="h-auto py-4 flex-col gap-2" onClick={() => navigate("/gps-tracking")}>
                 <MapPin className="h-5 w-5 text-primary" />
-                <span className="text-xs">GPS Track</span>
+                <span className="text-xs">{t("dashboard.gpsTrack")}</span>
               </Button>
               <Button variant="outline" className="h-auto py-4 flex-col gap-2" onClick={() => navigate("/messages")}>
                 <MessageSquare className="h-5 w-5 text-primary" />
-                <span className="text-xs">Messages</span>
+                <span className="text-xs">{t("nav.messages")}</span>
               </Button>
             </CardContent>
           </Card>

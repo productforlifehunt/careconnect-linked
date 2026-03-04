@@ -2,6 +2,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSite } from "@/contexts/SiteContext";
+import { useTranslation } from "react-i18next";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,11 +16,12 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { NavLink } from "@/components/NavLink";
-import { Menu, User, LogOut, LayoutDashboard, Bell, Heart, Search, HelpCircle, UserPlus, CalendarDays, Users, MapPin, MessageSquare, Shield, Sun, Moon } from "lucide-react";
+import { Menu, User, LogOut, LayoutDashboard, Bell, Heart, Search, HelpCircle, CalendarDays, Users, MapPin, MessageSquare, Sun, Moon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { useTheme } from "next-themes";
 import { useNotifications } from "@/hooks/use-care-data";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 export function AppHeader() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -30,19 +32,16 @@ export function AppHeader() {
   const { theme, setTheme } = useTheme();
   const { data: notifications } = useNotifications();
   const unreadCount = notifications?.filter(n => !n.is_read).length || 0;
+  const { t } = useTranslation();
 
   const publicNav = [
     { title: site.navLabels.careGroups, url: "/care-circle", icon: Users },
     { title: site.navLabels.findCare, url: "/search", icon: Search },
-    { title: "How It Works", url: "/how-it-works", icon: HelpCircle },
+    { title: t("nav.howItWorks"), url: "/how-it-works", icon: HelpCircle },
   ];
 
-  const displayName = user?.full_name || user?.first_name || user?.email || "User";
+  const displayName = user?.full_name || user?.first_name || user?.email || t("common.anonymous");
   const initials = displayName.charAt(0).toUpperCase();
-
-  const isDashboardRoute = ["/dashboard", "/bookings", "/care-circle", "/gps-tracking", "/messages", "/favorites", "/notifications", "/profile", "/cared-ones"].some(
-    r => location.pathname.startsWith(r)
-  );
 
   const handleLogout = async () => {
     await logout();
@@ -72,7 +71,7 @@ export function AppHeader() {
               </Link>
             </div>
             <nav className="p-4 space-y-1">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-3">Browse</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-3">{t("nav.browse")}</p>
               {publicNav.map(item => (
                 <Link
                   key={item.url}
@@ -86,15 +85,15 @@ export function AppHeader() {
               ))}
               {isAuthenticated && (
                 <>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 mt-6 px-3">My Care</p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 mt-6 px-3">{t("nav.myCare")}</p>
                   {[
                     { title: site.navLabels.dashboard, url: "/dashboard", icon: LayoutDashboard },
                     { title: site.navLabels.caredOnes, url: "/cared-ones", icon: Heart },
-                    { title: "Bookings", url: "/bookings", icon: CalendarDays },
+                    { title: t("nav.myBookings"), url: "/bookings", icon: CalendarDays },
                     { title: site.navLabels.careGroups, url: "/care-circle", icon: Users },
-                    { title: "Messages", url: "/messages", icon: MessageSquare },
-                    { title: "Favorites", url: "/favorites", icon: Heart },
-                    { title: "GPS Tracking", url: "/gps-tracking", icon: MapPin },
+                    { title: t("nav.messages"), url: "/messages", icon: MessageSquare },
+                    { title: t("nav.favorites"), url: "/favorites", icon: Heart },
+                    { title: t("nav.gpsTracking"), url: "/gps-tracking", icon: MapPin },
                   ].map(item => (
                     <Link
                       key={item.url}
@@ -139,16 +138,19 @@ export function AppHeader() {
 
         <div className="flex-1" />
 
+        {/* Language switcher */}
+        <LanguageSwitcher />
+
         {/* Dark mode toggle */}
         <Button
           variant="ghost"
           size="icon"
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          title="Toggle dark mode"
+          title={t("nav.toggleTheme")}
         >
           <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
           <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          <span className="sr-only">Toggle theme</span>
+          <span className="sr-only">{t("nav.toggleTheme")}</span>
         </Button>
 
         {/* Auth section */}
@@ -159,7 +161,7 @@ export function AppHeader() {
               className="px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
               activeClassName="bg-primary text-primary-foreground rounded-lg"
             >
-              Dashboard
+              {t("nav.dashboard")}
             </NavLink>
 
             <Button variant="ghost" size="icon" className="relative" onClick={() => navigate("/notifications")}>
@@ -190,33 +192,33 @@ export function AppHeader() {
                   <p className="text-xs text-muted-foreground">{user?.email}</p>
                 </div>
                 <DropdownMenuItem onClick={() => navigate("/dashboard")}>
-                  <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
+                  <LayoutDashboard className="mr-2 h-4 w-4" /> {t("nav.dashboard")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/bookings")}>
-                  <CalendarDays className="mr-2 h-4 w-4" /> My Bookings
+                  <CalendarDays className="mr-2 h-4 w-4" /> {t("nav.myBookings")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/care-circle")}>
                   <Users className="mr-2 h-4 w-4" /> {site.navLabels.careGroups}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/gps-tracking")}>
-                  <MapPin className="mr-2 h-4 w-4" /> GPS Tracking
+                  <MapPin className="mr-2 h-4 w-4" /> {t("nav.gpsTracking")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/messages")}>
-                  <MessageSquare className="mr-2 h-4 w-4" /> Messages
+                  <MessageSquare className="mr-2 h-4 w-4" /> {t("nav.messages")}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate("/profile")}>
-                  <User className="mr-2 h-4 w-4" /> My Profile
+                  <User className="mr-2 h-4 w-4" /> {t("nav.myProfile")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/favorites")}>
-                  <Heart className="mr-2 h-4 w-4" /> Favorites
+                  <Heart className="mr-2 h-4 w-4" /> {t("nav.favorites")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/notifications")}>
-                  <Bell className="mr-2 h-4 w-4" /> Notifications
+                  <Bell className="mr-2 h-4 w-4" /> {t("nav.notifications")}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="text-destructive">
-                  <LogOut className="mr-2 h-4 w-4" /> Sign Out
+                  <LogOut className="mr-2 h-4 w-4" /> {t("common.signOut")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -224,10 +226,10 @@ export function AppHeader() {
         ) : (
           <div className="flex items-center gap-2">
             <Button variant="ghost" onClick={() => navigate("/auth")} className="hidden sm:inline-flex">
-              Sign In
+              {t("common.signIn")}
             </Button>
             <Button variant="coral" onClick={() => navigate("/auth?mode=signup")}>
-              Get Started
+              {t("common.getStarted")}
             </Button>
           </div>
         )}

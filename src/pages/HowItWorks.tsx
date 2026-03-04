@@ -2,34 +2,34 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useSite } from "@/contexts/SiteContext";
+import { useTranslation } from "react-i18next";
 import { Search, CalendarDays, Users, MapPin, Shield, Star, CheckCircle, Heart } from "lucide-react";
 
 export default function HowItWorks() {
   const navigate = useNavigate();
   const site = useSite();
+  const { t } = useTranslation();
 
   const steps = [
-    { icon: Search, title: "Search & Discover", desc: "Browse verified caregivers by specialty, location, ratings, and availability. Filter by experience, certifications, languages, and more. No account required to search." },
-    { icon: CalendarDays, title: "Book with Confidence", desc: "View real-time availability, read verified reviews, and book care sessions instantly. Set your schedule, specify needs, and get matched with the right caregiver." },
-    { icon: Users, title: "Build Your Care Team", desc: "Invite family members, doctors, and caregivers to collaborate. Share updates, assign tasks, and maintain a care journal everyone can access." },
-    { icon: MapPin, title: "Track in Real-Time", desc: "Know where your loved ones and caregivers are with GPS tracking. Set geofence alerts, share locations with your care team, and use the SOS feature for emergencies." },
+    { icon: Search, title: t("howItWorks.step1Title"), desc: t("howItWorks.step1Desc") },
+    { icon: CalendarDays, title: t("howItWorks.step2Title"), desc: t("howItWorks.step2Desc") },
+    { icon: Users, title: t("howItWorks.step3Title"), desc: t("howItWorks.step3Desc") },
+    { icon: MapPin, title: t("howItWorks.step4Title"), desc: t("howItWorks.step4Desc") },
   ];
 
   const features = [
-    { icon: Shield, title: "Background Verified", desc: "All caregivers undergo thorough background checks and identity verification." },
-    { icon: Star, title: "Verified Reviews", desc: "Only families who've booked can leave reviews, ensuring authenticity." },
-    { icon: CheckCircle, title: "Certified Professionals", desc: "View certifications, licenses, and training for every caregiver." },
-    { icon: Heart, title: "Care Matching", desc: "Our algorithm matches you with caregivers best suited to your needs." },
+    { icon: Shield, title: t("howItWorks.bgVerified"), desc: t("howItWorks.bgVerifiedDesc") },
+    { icon: Star, title: t("howItWorks.verifiedReviews"), desc: t("howItWorks.verifiedReviewsDesc") },
+    { icon: CheckCircle, title: t("howItWorks.certifiedPros"), desc: t("howItWorks.certifiedProsDesc") },
+    { icon: Heart, title: t("howItWorks.careMatching"), desc: t("howItWorks.careMatchingDesc") },
   ];
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">
       <div className="text-center mb-16">
-        <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">{site.howItWorksTitle}</h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">From finding the perfect caregiver to coordinating with your care team — everything you need in one place.</p>
+        <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">{t(`site.${site.id}.howItWorksTitle`)}</h1>
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">{t("howItWorks.subtitle")}</p>
       </div>
-
-      {/* Steps */}
       <div className="space-y-12 mb-20">
         {steps.map((step, i) => (
           <div key={i} className={`flex flex-col md:flex-row gap-8 items-center ${i % 2 === 1 ? "md:flex-row-reverse" : ""}`}>
@@ -38,7 +38,7 @@ export default function HowItWorks() {
             </div>
             <div className="flex-1 text-center md:text-left">
               <div className="flex items-center gap-3 justify-center md:justify-start mb-2">
-                <span className="text-sm font-bold text-primary">Step {i + 1}</span>
+                <span className="text-sm font-bold text-primary">{t("common.step")} {i + 1}</span>
               </div>
               <h2 className="text-2xl font-bold text-foreground mb-2">{step.title}</h2>
               <p className="text-muted-foreground leading-relaxed">{step.desc}</p>
@@ -46,10 +46,8 @@ export default function HowItWorks() {
           </div>
         ))}
       </div>
-
-      {/* Trust features */}
       <div className="mb-16">
-        <h2 className="text-2xl font-bold text-foreground text-center mb-8">Why Families Trust Us</h2>
+        <h2 className="text-2xl font-bold text-foreground text-center mb-8">{t("howItWorks.whyTrust")}</h2>
         <div className="grid md:grid-cols-2 gap-6">
           {features.map((f, i) => (
             <Card key={i} className="border-transparent card-elevated">
@@ -66,14 +64,12 @@ export default function HowItWorks() {
           ))}
         </div>
       </div>
-
-      {/* CTA */}
       <div className="text-center hero-gradient rounded-2xl p-12">
-        <h2 className="text-2xl font-bold text-primary-foreground mb-4">Ready to get started?</h2>
-        <p className="text-primary-foreground/80 mb-6">Search caregivers for free — no account required.</p>
+        <h2 className="text-2xl font-bold text-primary-foreground mb-4">{t("howItWorks.readyToStart")}</h2>
+        <p className="text-primary-foreground/80 mb-6">{t("howItWorks.searchForFree")}</p>
         <div className="flex gap-3 justify-center">
-          <Button variant="coral" size="lg" onClick={() => navigate("/search")}>{site.ctaButton}</Button>
-          <Button variant="outline" size="lg" className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10" onClick={() => navigate("/auth?mode=signup")}>Create Account</Button>
+          <Button variant="coral" size="lg" onClick={() => navigate("/search")}>{t(`site.${site.id}.ctaButton`)}</Button>
+          <Button variant="outline" size="lg" className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10" onClick={() => navigate("/auth?mode=signup")}>{t("howItWorks.createAccount")}</Button>
         </div>
       </div>
     </div>
