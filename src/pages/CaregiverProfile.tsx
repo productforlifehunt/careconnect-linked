@@ -150,9 +150,6 @@ export default function CaregiverProfile() {
   };
 
   const total = (caregiver.hourly_rate || 0) * parseInt(bookingDuration);
-  const responseTime = caregiver.response_time_minute
-    ? caregiver.response_time_minute < 60 ? `Under ${caregiver.response_time_minute} min` : `Under ${Math.ceil(caregiver.response_time_minute / 60)} hours`
-    : "N/A";
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
@@ -408,10 +405,6 @@ export default function CaregiverProfile() {
               )}
 
               <div className="mt-6 pt-4 border-t space-y-3 text-sm">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Clock className="h-4 w-4 text-primary" />
-                  <span>Responds {responseTime}</span>
-                </div>
                 {caregiver.background_check_status === "passed" && (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Shield className="h-4 w-4 text-primary" />
