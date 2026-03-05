@@ -8,8 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
-  CalendarDays, DollarSign, Clock, Check, X, Loader2, User, Briefcase, TrendingUp, Plus, Trash2,
+  CalendarDays, DollarSign, Clock, Check, X, Loader2, User, Briefcase, TrendingUp, Plus, Trash2, Settings,
 } from "lucide-react";
+import ProviderSettingsTab from "@/components/provider/ProviderSettingsTab";
 import {
   useProviderBookings, useUpdateBookingStatus, useMyProfile,
   useProviderAvailability, useUpsertProviderAvailability,
@@ -153,6 +154,7 @@ export default function ProviderDashboard() {
           <TabsTrigger value="schedule">My Schedule</TabsTrigger>
           <TabsTrigger value="availability">Availability</TabsTrigger>
           <TabsTrigger value="earnings">Earnings</TabsTrigger>
+          <TabsTrigger value="settings"><Settings className="h-3.5 w-3.5 mr-1" /> My Profile</TabsTrigger>
         </TabsList>
 
         <TabsContent value="requests" className="mt-4 space-y-4">
@@ -296,6 +298,10 @@ export default function ProviderDashboard() {
               )) : <p className="text-center py-8 text-muted-foreground">No payouts yet</p>}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="settings" className="mt-4">
+          <ProviderSettingsTab />
         </TabsContent>
       </Tabs>
     </div>
