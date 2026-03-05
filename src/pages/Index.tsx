@@ -165,11 +165,7 @@ const Index = () => {
                           <Badge key={s} variant="secondary" className="bg-accent text-accent-foreground text-xs">{s}</Badge>
                         ))}
                       </div>
-                      <div className="flex items-center justify-between mt-4 pt-4 border-t">
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <Clock className="h-3 w-3" />
-                          {cg.response_time_minute ? `${t("search.under")} ${cg.response_time_minute < 60 ? cg.response_time_minute + " " + t("common.minutes") : Math.ceil(cg.response_time_minute / 60) + " " + t("common.hours")}` : ""}
-                        </div>
+                      <div className="flex items-center justify-end mt-4 pt-4 border-t">
                         <div className="text-right">
                           <span className="text-lg font-bold text-foreground">${cg.hourly_rate || 0}</span>
                           <span className="text-sm text-muted-foreground">{t("common.perHour")}</span>
