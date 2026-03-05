@@ -106,6 +106,43 @@ export function useProviderReviews(providerId: string | undefined) {
   });
 }
 
+export function useCreateReview() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ entityId, rating, comment }: { entityId: string; rating: number; comment: string }) => {
+      const userId = await getCurrentUserId();
+      if (!userId) throw new Error("Not authenticated");
+      // Prevent duplicate reviews
+      const { data: existing } = await careDb
+        .from("review")
+        .select("id")
+        .eq("entity_id", entityId)
+        .eq("reviewer_id", userId)
+        .maybeSingle();
+      if (existing) throw new Error("You have already reviewed this provider");
+      const { error } = await careDb
+        .from("review")
+        .insert({ entity_id: entityId, reviewer_id: userId, rating, comment: comment || null });
+      if (error) throw error;
+      // Recalculate rating_average and rating_count on provider profile
+      const { data: allReviews } = await careDb
+        .from("review")
+        .select("rating")
+        .eq("entity_id", entityId);
+      if (allReviews && allReviews.length > 0) {
+        const count = allReviews.length;
+        const avg = allReviews.reduce((sum: number, r: any) => sum + r.rating, 0) / count;
+        await careDb.from("profile").update({ rating_average: Math.round(avg * 10) / 10, rating_count: count }).eq("id", entityId);
+      }
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ["reviews", vars.entityId] });
+      qc.invalidateQueries({ queryKey: ["provider", vars.entityId] });
+      qc.invalidateQueries({ queryKey: ["providers"] });
+    },
+  });
+}
+
 // ─── Bookings ───────────────────────────────────────────────
 export function useBookings() {
   return useQuery({

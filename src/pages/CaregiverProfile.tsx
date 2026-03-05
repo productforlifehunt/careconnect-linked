@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Star, MapPin, Shield, Clock, CheckCircle, Calendar, MessageSquare, Heart, ArrowLeft, Phone, Loader2 } from "lucide-react";
-import { useProvider, useProviderReviews, useCreateBooking, useToggleSavedProvider, useSavedProviders, useStartConversation, useProviderAvailability } from "@/hooks/use-care-data";
+import { useProvider, useProviderReviews, useCreateReview, useCreateBooking, useToggleSavedProvider, useSavedProviders, useStartConversation, useProviderAvailability } from "@/hooks/use-care-data";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
@@ -23,6 +23,7 @@ export default function CaregiverProfile() {
   const { data: savedProviders } = useSavedProviders();
   const toggleSaved = useToggleSavedProvider();
   const createBooking = useCreateBooking();
+  const createReview = useCreateReview();
   const startConversation = useStartConversation();
 
   const [bookingDate, setBookingDate] = useState("");
@@ -33,6 +34,9 @@ export default function CaregiverProfile() {
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
   const [availabilityWarning, setAvailabilityWarning] = useState("");
   const [recurringPattern, setRecurringPattern] = useState("none");
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
 
   const { data: availability } = useProviderAvailability(id);
   const isFavorited = savedProviders?.some((sp: any) => sp.provider_id === id) || false;
@@ -220,7 +224,50 @@ export default function CaregiverProfile() {
 
           {/* Reviews */}
           <Card className="border-transparent card-elevated">
-            <CardHeader><CardTitle>Reviews ({reviews?.length || 0})</CardTitle></CardHeader>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Reviews ({reviews?.length || 0})</CardTitle>
+                {isAuthenticated && (
+                  <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="coral" size="sm"><Star className="h-3.5 w-3.5 mr-1" /> Write Review</Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader><DialogTitle>Review {caregiver.full_name}</DialogTitle></DialogHeader>
+                      <div className="space-y-4 mt-4">
+                        <div>
+                          <Label className="mb-2 block">Rating</Label>
+                          <div className="flex gap-1">
+                            {[1, 2, 3, 4, 5].map(s => (
+                              <button key={s} type="button" onClick={() => setReviewRating(s)} className="focus:outline-none">
+                                <Star className={`h-7 w-7 cursor-pointer transition-colors ${s <= reviewRating ? "text-warning fill-warning" : "text-muted-foreground/30"}`} />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <Label>Comment</Label>
+                          <Textarea value={reviewComment} onChange={e => setReviewComment(e.target.value)} placeholder="Share your experience..." rows={4} />
+                        </div>
+                        <Button variant="coral" className="w-full" disabled={createReview.isPending} onClick={async () => {
+                          try {
+                            await createReview.mutateAsync({ entityId: caregiver.id, rating: reviewRating, comment: reviewComment });
+                            toast({ title: "Review submitted!", description: "Thank you for your feedback." });
+                            setReviewDialogOpen(false);
+                            setReviewRating(5);
+                            setReviewComment("");
+                          } catch (err: any) {
+                            toast({ title: "Failed to submit review", description: err.message, variant: "destructive" });
+                          }
+                        }}>
+                          {createReview.isPending ? "Submitting..." : "Submit Review"}
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                )}
+              </div>
+            </CardHeader>
             <CardContent className="space-y-4">
               {(reviews || []).length > 0 ? (reviews || []).map((review: any) => (
                 <div key={review.id} className="border-b last:border-0 pb-4 last:pb-0">
