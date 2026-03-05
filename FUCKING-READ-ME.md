@@ -337,18 +337,24 @@ The `booking` table stores appointments between a client (family) and a provider
 
 ## 11. PROVIDER DASHBOARD — The Provider's Command Center / 提供者仪表板——提供者的指挥中心
 
-Route: `/provider-dashboard`. Only visible to users with `is_care_provider = true`.
+Route: `/provider-dashboard`. Only visible to users with `is_care_provider = true`. Five tabs:
 
-路由：`/provider-dashboard`。仅对 `is_care_provider = true` 的用户可见。
+路由：`/provider-dashboard`。仅对 `is_care_provider = true` 的用户可见。五个标签页：
 
-- **Incoming bookings:** Uses `useProviderBookings()` — queries bookings where current user is `provider_id`. Provider can confirm or complete.
-- **收到的预约:** 使用 `useProviderBookings()` — 查询当前用户是 `provider_id` 的预约。提供者可以确认或完成。
+- **Tab 1 — Booking Requests:** Uses `useProviderBookings()` — queries bookings where current user is `provider_id`. Provider can Accept (→ confirmed) or Decline (→ cancelled_by_provider).
+- **标签1 — 预约请求:** 使用 `useProviderBookings()` — 查询当前用户是 `provider_id` 的预约。提供者可以接受或拒绝。
 
-- **Availability:** Two tables: `provider_availability` (weekly recurring slots with `day_of_week`, `start_time`, `end_time`, `is_available`, optional `specific_date` for overrides) and `provider_availability_setting` (general settings like buffer time, advance booking limits).
-- **可用性:** 两个表：`provider_availability`（每周循环时段）和 `provider_availability_setting`（通用设置如缓冲时间、提前预约限制）。
+- **Tab 2 — My Schedule:** Shows confirmed bookings with a "Complete" action.
+- **标签2 — 我的日程:** 显示已确认的预约，带"完成"操作。
 
-- **Earnings:** `provider_payout` table tracks payments. Queried by `provider_id`.
-- **收入:** `provider_payout` 表追踪支付。通过 `provider_id` 查询。
+- **Tab 3 — Availability:** Two tables: `provider_availability` (weekly recurring slots with `day_of_week`, `start_time`, `end_time`, `is_available`, optional `specific_date` for overrides) and `provider_availability_setting` (general settings like buffer time, advance booking limits). Includes date-specific override management (add/delete).
+- **标签3 — 可用性:** 两个表：`provider_availability`（每周循环时段，可选 `specific_date` 用于覆盖）和 `provider_availability_setting`（通用设置）。包括特定日期覆盖管理（添加/删除）。
+
+- **Tab 4 — Earnings:** `provider_payout` table tracks payments. Queried by `provider_id`. Shows total earned (85% of completed bookings) and payout history.
+- **标签4 — 收入:** `provider_payout` 表追踪支付。通过 `provider_id` 查询。显示总收入（已完成预约的85%）和支付历史。
+
+- **Tab 5 — My Profile (Settings):** Lets provider edit all marketplace-facing profile fields directly: `location`, `hourly_rate`, `phone_number`, `years_of_experience`, `bio`, `specialty` (multi-select), `certification` (multi-select), and `provider_is_active` (marketplace visibility toggle). Uses `useUpdateProfile()` mutation. Component: `src/components/provider/ProviderSettingsTab.tsx`.
+- **标签5 — 我的资料（设置）:** 让提供者直接编辑所有面向市场的资料字段：`location`、`hourly_rate`、`phone_number`、`years_of_experience`、`bio`、`specialty`（多选）、`certification`（多选）和 `provider_is_active`（市场可见性开关）。使用 `useUpdateProfile()` 突变。组件：`src/components/provider/ProviderSettingsTab.tsx`。
 
 - **Become a provider:** Route `/become-caregiver`. A form that sets `is_care_provider = true` (initially `provider_is_active = false`) plus provider fields.
 - **成为提供者:** 路由 `/become-caregiver`。表单将 `is_care_provider` 设为 true（初始 `provider_is_active = false`）加上提供者字段。
