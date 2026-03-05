@@ -1,19 +1,19 @@
 # FUCKING READ ME / 他妈的必读文档
 
 > FUCKING READ ME AND KEEP IN YOUR CONTEXT IF POSSIBLE.  
-> 他妈的读这个文档并尽可能保持在你的上下文中。  
+> 他妈的读这个文档并尽可能保持在你的上下文中。
 
 > WHEN IN DOUBT, FUCKING READ ME.  
-> 有疑问时，他妈的读这个文档。  
+> 有疑问时，他妈的读这个文档。
 
 > NEVER FUCKING GUESS.  
-> 永远不要他妈的猜测。  
+> 永远不要他妈的猜测。
 
 > THESE ARE THINGS YOU FREQUENTLY GUESSED WRONG ALMOST EACH AND EVERY TIME.  
-> 这些是你几乎每次都猜错的东西。  
+> 这些是你几乎每次都猜错的东西。
 
 > NEVER FUCKING GUESS. FUCKING READ ME!!!  
-> 永远不要他妈的猜测。他妈的读这个文档！！！  
+> 永远不要他妈的猜测。他妈的读这个文档！！！
 
 > This file is designed as a transferable system prompt to be fully pasted to any AI workspace. Only write in brief bullet point paragraphs!  
 > 这个文件被设计为可转移的系统提示，可以完整粘贴到任何AI工作空间。只用简短的要点段落写作！
@@ -71,12 +71,12 @@ The detection logic lives in `src/contexts/SiteContext.tsx`. On every page load 
 
 ### 3b. Terminology differences / 术语差异
 
-| | **CareConnected** | **Challenged** (DEFAULT) |
-|---|---|---|
-| **Focus / 定位** | General caregiving / 通用护理 | Dementia care / 失智症护理 |
-| **Group label / 小组标签** | "Care Group" | "Care Team" |
-| **Patient label / 被照顾者标签** | "Cared One" | "Loved One" |
-| **Search label / 搜索标签** | "Find Care" | "Find Help" |
+|                                  | **CareConnected**             | **Challenged** (DEFAULT)   |
+| -------------------------------- | ----------------------------- | -------------------------- |
+| **Focus / 定位**                 | General caregiving / 通用护理 | Dementia care / 失智症护理 |
+| **Group label / 小组标签**       | "Care Group"                  | "Care Team"                |
+| **Patient label / 被照顾者标签** | "Cared One"                   | "Loved One"                |
+| **Search label / 搜索标签**      | "Find Care"                   | "Find Help"                |
 
 Use `useSite()` to get the right label. Never hardcode these strings.
 
@@ -90,32 +90,32 @@ All pages use the same routes. The difference is **what renders inside them** de
 
 **PUBLIC PAGES / 公开页面:**
 
-| Route | Page | Shared? | Notes |
-|---|---|---|---|
-| `/` | `Index.tsx` | ⚠️ Partially | Same layout structure, but hero text, CTA, trust badges, "how it works" steps all come from `SiteConfig` — so they look totally different per sub-app. / 相同布局结构，但主标题、CTA、信任徽章、步骤说明都来自 `SiteConfig`——所以每个子应用看起来完全不同。 |
-| `/search` | `SearchResults.tsx` | ✅ Shared | Same search UI. Provider cards are the same. / 相同搜索界面，服务商卡片相同。 |
-| `/caregiver/:id` | `CaregiverProfile.tsx` | ✅ Shared | Same provider profile page. / 相同的服务商个人页面。 |
-| `/auth` | `Auth.tsx` | ✅ Shared | Same login/signup flow. / 相同登录注册流程。 |
-| `/reset-password` | `ResetPassword.tsx` | ✅ Shared | Same. / 相同。 |
-| `/how-it-works` | `HowItWorks.tsx` | ⚠️ Partially | Same structure, but steps content comes from `SiteConfig.howItWorksSteps`. / 相同结构，但步骤内容来自 `SiteConfig`。 |
-| `/trust-safety` | `TrustSafety.tsx` | ⚠️ Partially | Same structure, contact email from `site.contactEmail`. / 相同结构，联系邮箱来自 `site.contactEmail`。 |
-| `/become-caregiver` | `BecomeCaregiver.tsx` | ✅ Shared | Same provider signup page. / 相同的服务商注册页面。 |
+| Route               | Page                   | Shared?      | Notes                                                                                                                                                                                                                                                       |
+| ------------------- | ---------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`                 | `Index.tsx`            | ⚠️ Partially | Same layout structure, but hero text, CTA, trust badges, "how it works" steps all come from `SiteConfig` — so they look totally different per sub-app. / 相同布局结构，但主标题、CTA、信任徽章、步骤说明都来自 `SiteConfig`——所以每个子应用看起来完全不同。 |
+| `/search`           | `SearchResults.tsx`    | ✅ Shared    | Same search UI. Provider cards are the same. / 相同搜索界面，服务商卡片相同。                                                                                                                                                                               |
+| `/caregiver/:id`    | `CaregiverProfile.tsx` | ✅ Shared    | Same provider profile page. / 相同的服务商个人页面。                                                                                                                                                                                                        |
+| `/auth`             | `Auth.tsx`             | ✅ Shared    | Same login/signup flow. / 相同登录注册流程。                                                                                                                                                                                                                |
+| `/reset-password`   | `ResetPassword.tsx`    | ✅ Shared    | Same. / 相同。                                                                                                                                                                                                                                              |
+| `/how-it-works`     | `HowItWorks.tsx`       | ⚠️ Partially | Same structure, but steps content comes from `SiteConfig.howItWorksSteps`. / 相同结构，但步骤内容来自 `SiteConfig`。                                                                                                                                        |
+| `/trust-safety`     | `TrustSafety.tsx`      | ⚠️ Partially | Same structure, contact email from `site.contactEmail`. / 相同结构，联系邮箱来自 `site.contactEmail`。                                                                                                                                                      |
+| `/become-caregiver` | `BecomeCaregiver.tsx`  | ✅ Shared    | Same provider signup page. / 相同的服务商注册页面。                                                                                                                                                                                                         |
 
 **PROTECTED PAGES (require login) / 受保护页面（需要登录）:**
 
-| Route | Page | Shared? | Notes |
-|---|---|---|---|
-| `/dashboard` | `Dashboard.tsx` | ⚠️ MAJOR DIFFERENCES | This is where the two sub-apps diverge the most. Both show stats, bookings, tasks. But **Challenged adds**: Emergency SOS, Patient Summary Cards, Dementia Stage Selector, Symptom Tracker, Caregiver Wellness, AI Insights, AI Daily Summary, AI Care Tips, Daily Timeline, and the floating Dementia Assistant. If user `is_cared_one`, Challenged shows a completely different simplified `LovedOneSimpleView`. / 这是两个子应用差异最大的地方。两者都显示统计、预约、任务。但 **Challenged 额外有**：紧急SOS、患者摘要卡、失智阶段选择器、症状追踪、照顾者健康、AI洞察、AI日报、AI护理建议、每日时间线和悬浮失智助手。如果用户 `is_cared_one`，Challenged 显示完全不同的简化 `LovedOneSimpleView`。 |
-| `/care-circle` | `CareCircle.tsx` | ✅ Shared | Same care group management UI. / 相同的护理小组管理界面。 |
-| `/cared-ones` | `CaredOnes.tsx` | ✅ Shared | Same cared-ones management. / 相同的被照顾者管理。 |
-| `/bookings` | `Bookings.tsx` | ✅ Shared | Same booking management. / 相同的预约管理。 |
-| `/messages` | `Messages.tsx` | ✅ Shared | Same messaging UI. / 相同的消息界面。 |
-| `/gps-tracking` | `GPSTracking.tsx` | ✅ Shared | Same GPS tracking. / 相同的GPS追踪。 |
-| `/favorites` | `Favorites.tsx` | ✅ Shared | Same favorites list. / 相同的收藏列表。 |
-| `/profile` | `Profile.tsx` | ✅ Shared | Same profile editor. / 相同的个人资料编辑。 |
-| `/notifications` | `Notifications.tsx` | ✅ Shared | Same notifications. / 相同的通知。 |
-| `/jobs` | `Jobs.tsx` | ✅ Shared | Provider job board. / 服务商工作板。 |
-| `/provider-dashboard` | `ProviderDashboard.tsx` | ✅ Shared | Provider-specific dashboard. / 服务商专属仪表板。 |
+| Route                 | Page                    | Shared?              | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| --------------------- | ----------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/dashboard`          | `Dashboard.tsx`         | ⚠️ MAJOR DIFFERENCES | This is where the two sub-apps diverge the most. Both show stats, bookings, tasks. But **Challenged adds**: Emergency SOS, Patient Summary Cards, Dementia Stage Selector, Symptom Tracker, Caregiver Wellness, AI Insights, AI Daily Summary, AI Care Tips, Daily Timeline, and the floating Dementia Assistant. If user `is_cared_one`, Challenged shows a completely different simplified `LovedOneSimpleView`. / 这是两个子应用差异最大的地方。两者都显示统计、预约、任务。但 **Challenged 额外有**：紧急SOS、患者摘要卡、失智阶段选择器、症状追踪、照顾者健康、AI洞察、AI日报、AI护理建议、每日时间线和悬浮失智助手。如果用户 `is_cared_one`，Challenged 显示完全不同的简化 `LovedOneSimpleView`。 |
+| `/care-circle`        | `CareCircle.tsx`        | ✅ Shared            | Same care group management UI. / 相同的护理小组管理界面。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `/cared-ones`         | `CaredOnes.tsx`         | ✅ Shared            | Same cared-ones management. / 相同的被照顾者管理。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `/bookings`           | `Bookings.tsx`          | ✅ Shared            | Same booking management. / 相同的预约管理。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `/messages`           | `Messages.tsx`          | ✅ Shared            | Same messaging UI. / 相同的消息界面。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `/gps-tracking`       | `GPSTracking.tsx`       | ✅ Shared            | Same GPS tracking. / 相同的GPS追踪。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `/favorites`          | `Favorites.tsx`         | ✅ Shared            | Same favorites list. / 相同的收藏列表。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `/profile`            | `Profile.tsx`           | ✅ Shared            | Same profile editor. / 相同的个人资料编辑。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `/notifications`      | `Notifications.tsx`     | ✅ Shared            | Same notifications. / 相同的通知。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `/jobs`               | `Jobs.tsx`              | ✅ Shared            | Provider job board. / 服务商工作板。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `/provider-dashboard` | `ProviderDashboard.tsx` | ✅ Shared            | Provider-specific dashboard. / 服务商专属仪表板。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 
 **KEY TAKEAWAY / 关键要点:** Most pages are fully shared — the sub-app difference is mainly branding/labels (via `useSite()`) and the Dashboard, which conditionally renders ~10 extra Challenged-only widgets from `src/components/challenged/`.
 
@@ -379,34 +379,43 @@ Route: `/cared-ones`. A comprehensive dashboard for managing each care recipient
 路由：`/cared-ones`。管理每个护理接受者的综合仪表板。用户选择一个被照顾者档案，然后访问十个专业 CRUD 卡片。
 
 ### 13a. Medications / 用药管理
+
 - **`medicine`:** Prescriptions for a cared one. `user_id` = the cared one. Fields: `name`, `dosage`, `frequency`, `time_slot` (text[] for scheduled times), `note`, `form` (pill/liquid/etc), `category`.
-- **`medicine_log`:** Tracks whether meds were taken. `medicine_id` → links to medicine, `status` (taken/skipped/missed), `log_date`, `logged_by` (who recorded), `user_id` (cared one).
+- **`medicine_log`:** Tracks whether meds were taken. `medicine_id` → links to medicine, `status` (taken/skipped/missed), `log_date`, `logged_by` (who recorded), `user_id` (cared one), note (note)
 
 ### 13b. Wellness Check-Ins / 健康签到
+
 - **`checkin_log`:** Mood, energy, pain, sleep tracking. `user_id` = cared one, `recorded_by` = who did the check-in. Fields: `mood` (emoji), `energy_level`, `pain_level`, `sleep_hours`, `note`.
 - NOTE: `recorded_by` lacks a native FK, so app code must manually join reporter profiles.
 - 注意：`recorded_by` 缺少原生外键，应用代码必须手动 join 记录者档案。
 
 ### 13c. Health Vitals / 健康体征
+
 - **`health_vital`:** Vital signs (blood pressure, temperature, weight, blood sugar). `user_id` = cared one, `recorded_by` = recorder. Fields: `vital_type`, `value`, `unit`, `note`.
 
 ### 13d. Care Tips / 护理提示
+
 - **`care_tip`:** Notes and tips for caring for the patient. `user_id` = cared one, `created_by` = author. Fields: `title`, `content`, `category`, `is_pinned`.
 
 ### 13e. Care Plans & Goals / 护理计划和目标
+
 - **`care_plan`:** Plans with goals. `user_id` = cared one. Fields: `title`, `description`, `status`.
 - **`care_plan_goal`:** Individual goals within a plan. `care_plan_id` → links to plan. Fields: `title`, `description`, `status`.
 
 ### 13f. Care Notes / 护理笔记
+
 - **`care_note`:** Free-form notes about condition. `user_id` = cared one, `created_by` = author. Fields: `title`, `content`, `category`.
 
 ### 13g. Emergency Contacts / 紧急联系人
+
 - **`emergency_contact`:** `user_id` = cared one. Fields: `name`, `phone`, `relationship`, `is_primary`.
 
 ### 13h. Documents / 文档
+
 - **`cared_one_document`:** Uploaded files (medical records, insurance). `user_id` = cared one, `uploaded_by` = uploader. Fields: `title`, `document_type`, `file_url`, `notes`.
 
 ### 13i. Visit Log / 访问日志
+
 - **`activity_log`:** Activity/visit tracking. `cared_one_id` = cared one, `user_id` = who performed it (NOTE: this table uses `user_id`, not `recorded_by`). Fields: `activity_type`, `description`, `duration_minutes`.
 
 ---
@@ -489,33 +498,36 @@ These components live in `src/components/challenged/` and render only when `site
 ## 20. APP ROUTES & LAYOUT / 应用路由和布局
 
 ### Public routes (no login) / 公开路由
-| Route | Purpose / 用途 |
-|---|---|
-| `/` | Landing page / 首页 |
-| `/search` | Marketplace search / 市场搜索 |
-| `/caregiver/:id` | Provider profile / 提供者详情 |
-| `/auth` | Login & signup / 登录注册 |
-| `/reset-password` | Password reset / 重置密码 |
-| `/how-it-works` | How platform works / 平台介绍 |
-| `/trust-safety` | Trust & safety info / 信任与安全 |
+
+| Route               | Purpose / 用途                    |
+| ------------------- | --------------------------------- |
+| `/`                 | Landing page / 首页               |
+| `/search`           | Marketplace search / 市场搜索     |
+| `/caregiver/:id`    | Provider profile / 提供者详情     |
+| `/auth`             | Login & signup / 登录注册         |
+| `/reset-password`   | Password reset / 重置密码         |
+| `/how-it-works`     | How platform works / 平台介绍     |
+| `/trust-safety`     | Trust & safety info / 信任与安全  |
 | `/become-caregiver` | Provider application / 提供者申请 |
 
 ### Protected routes (must be logged in) / 受保护路由
-| Route | Purpose / 用途 |
-|---|---|
-| `/dashboard` | Main dashboard / 主仪表板 |
-| `/care-circle` | Care Groups (10 tabs) / 护理小组（10个标签页） |
-| `/cared-ones` | Cared-one management (10 cards) / 被照顾者管理 |
-| `/bookings` | My bookings / 我的预约 |
-| `/messages` | Direct messages / 私信 |
-| `/gps-tracking` | GPS & safe zones / GPS和安全区域 |
-| `/notifications` | Notifications / 通知 |
-| `/favorites` | Saved providers / 收藏的提供者 |
-| `/profile` | User settings / 用户设置 |
-| `/jobs` | Job board / 工作板 |
-| `/provider-dashboard` | Provider management / 提供者管理 |
+
+| Route                 | Purpose / 用途                                 |
+| --------------------- | ---------------------------------------------- |
+| `/dashboard`          | Main dashboard / 主仪表板                      |
+| `/care-circle`        | Care Groups (10 tabs) / 护理小组（10个标签页） |
+| `/cared-ones`         | Cared-one management (10 cards) / 被照顾者管理 |
+| `/bookings`           | My bookings / 我的预约                         |
+| `/messages`           | Direct messages / 私信                         |
+| `/gps-tracking`       | GPS & safe zones / GPS和安全区域               |
+| `/notifications`      | Notifications / 通知                           |
+| `/favorites`          | Saved providers / 收藏的提供者                 |
+| `/profile`            | User settings / 用户设置                       |
+| `/jobs`               | Job board / 工作板                             |
+| `/provider-dashboard` | Provider management / 提供者管理               |
 
 ### Layout system / 布局系统
+
 - Protected dashboard routes get `DashboardLayout` with `AppSidebar` (sidebar navigation).
 - Public pages get `AppLayout` only (header + content, no sidebar).
 - 受保护的仪表板路由使用 `DashboardLayout`（带侧边栏导航）。公开页面仅使用 `AppLayout`（标题 + 内容，无侧边栏）。
@@ -524,13 +536,13 @@ These components live in `src/components/challenged/` and render only when `site
 
 ## 21. KEY RULES SUMMARY / 关键规则总结
 
-| Rule / 规则 | Details / 详情 |
-|---|---|
-| Schema / 数据库架构 | All data in `care_connector` schema. Not `public`. | 
-| Clients / 客户端 | `careDb` for data, `careAuth` for auth. Both from `external-client.ts`. |
-| Migrations / 迁移 | If schema changes are needed, write SQL and tell developer to run it manually. |
-| Mocks / 模拟 | NEVER fake data. Ask for access if blocked. |
-| Timestamps / 时间戳 | All tables use `created_at` and `updated_at`. |
+| Rule / 规则                     | Details / 详情                                                                                     |
+| ------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Schema / 数据库架构             | All data in `care_connector` schema. Not `public`.                                                 |
+| Clients / 客户端                | `careDb` for data, `careAuth` for auth. Both from `external-client.ts`.                            |
+| Migrations / 迁移               | If schema changes are needed, write SQL and tell developer to run it manually.                     |
+| Mocks / 模拟                    | NEVER fake data. Ask for access if blocked.                                                        |
+| Timestamps / 时间戳             | All tables use `created_at` and `updated_at`.                                                      |
 | Performer tracking / 执行者追踪 | Always pass current user ID to `recorded_by` / `logged_by` / `user_id`. Never rely on DB defaults. |
-| Owner membership / 所有者成员 | Auto-created by DB trigger when creating a care group. Do NOT insert duplicate. |
-| Brand text / 品牌文本 | Always from `useSite()` or `t()`. Never hardcode. |
+| Owner membership / 所有者成员   | Auto-created by DB trigger when creating a care group. Do NOT insert duplicate.                    |
+| Brand text / 品牌文本           | Always from `useSite()` or `t()`. Never hardcode.                                                  |
