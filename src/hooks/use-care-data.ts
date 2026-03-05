@@ -1385,6 +1385,25 @@ export function useMedicineLogs(medicineId: string | null) {
   });
 }
 
+export function useTodayMedicineLogs(caredOneId: string | null) {
+  const today = new Date().toISOString().split('T')[0];
+  return useQuery({
+    queryKey: ["medicine-logs-today", caredOneId, today],
+    queryFn: async () => {
+      if (!caredOneId) return [];
+      const { data, error } = await careDb
+        .from("medicine_log")
+        .select("*")
+        .eq("user_id", caredOneId)
+        .eq("log_date", today)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!caredOneId,
+  });
+}
+
 export function useLogMedicine() {
   const qc = useQueryClient();
   return useMutation({
@@ -1396,7 +1415,21 @@ export function useLogMedicine() {
         .insert({ medicine_id: log.medicine_id, status: log.status, note: log.note, user_id: log.user_id, logged_by: userId, log_date: new Date().toISOString().split('T')[0] });
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["medicine-logs"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["medicine-logs"] });
+      qc.invalidateQueries({ queryKey: ["medicine-logs-today"] });
+    },
+  });
+}
+
+export function useUpdateMedicine() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string; name?: string; dosage?: string; frequency?: string; time_slot?: string[]; note?: string; form?: string; category?: string; is_active?: boolean }) => {
+      const { error } = await careDb.from("medicine").update(updates).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["medicines"] }),
   });
 }
 

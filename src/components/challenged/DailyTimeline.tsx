@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Pill, ClipboardCheck, CheckSquare, Clock } from "lucide-react";
-import { useMedicines, useCareTasks, useCheckinLogs } from "@/hooks/use-care-data";
+import { useMedicines, useCareTasks, useCheckinLogs, useTodayMedicineLogs } from "@/hooks/use-care-data";
 import { useMemo } from "react";
 
 interface DailyTimelineProps {
@@ -20,6 +20,7 @@ interface TimelineItem {
 
 export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) {
   const { data: medicines } = useMedicines(caredOneId);
+  const { data: todayLogs } = useTodayMedicineLogs(caredOneId);
   const { data: tasks } = useCareTasks();
   const { data: checkins } = useCheckinLogs(caredOneId);
 
@@ -31,6 +32,8 @@ export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) 
 
     // Add medicine time slots
     (medicines || []).forEach((med: any) => {
+      const medLog = (todayLogs || []).find((l: any) => l.medicine_id === med.id);
+      const medStatus = medLog?.status === "taken" ? "done" : medLog?.status === "skipped" ? "missed" : "pending";
       const slots = med.time_slot || [];
       if (slots.length === 0) {
         items.push({
@@ -38,7 +41,7 @@ export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) 
           sortTime: 1200,
           label: `${med.name} ${med.dosage ? `(${med.dosage})` : ""}`,
           type: "medicine",
-          status: "pending",
+          status: medStatus,
           icon: Pill,
         });
       } else {
@@ -52,7 +55,7 @@ export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) 
             sortTime: hour * 100 + minute,
             label: `${med.name} ${med.dosage ? `(${med.dosage})` : ""}`,
             type: "medicine",
-            status: "pending",
+            status: medStatus,
             icon: Pill,
           });
         });
@@ -87,7 +90,7 @@ export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) 
     });
 
     return items.sort((a, b) => a.sortTime - b.sortTime);
-  }, [medicines, tasks, checkins, caredOneId, hasCheckinToday, today]);
+  }, [medicines, todayLogs, tasks, checkins, caredOneId, hasCheckinToday, today]);
 
   const statusColor = {
     done: "bg-success/10 text-success border-success/30",
