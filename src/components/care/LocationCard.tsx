@@ -12,6 +12,7 @@ import {
   Bell, Clock, Shield, AlertTriangle, CheckCircle2,
   Home, Building2, GraduationCap, Heart, Target, Ban,
   Loader2, Send, Radio, Pencil, RotateCcw, Layers,
+  ExternalLink,
 } from "lucide-react";
 import {
   useSafeZones, useCreateSafeZone, useUpdateSafeZone, useDeleteSafeZone,
@@ -171,11 +172,10 @@ function checkZoneBreach(zone: any, lat: number, lng: number): { breached: boole
   return { breached: zone.zone_type === "danger" ? inside : !inside, distance: Math.round(distance) };
 }
 
-type Tab = "location" | "safezones" | "alerts" | "requests" | "history";
+type Tab = "location" | "requests" | "alerts" | "safezones" | "history";
 
 interface Props { caredOneId: string; caredOneName: string; }
 
-// ─── Default zone form ───────────────────────────────────────
 const defaultForm = () => ({
   name: "", zone_type: "safe", category: "home", shape_type: "radius",
   latitude: "", longitude: "", radius: 200,
@@ -188,7 +188,6 @@ const defaultForm = () => ({
 
 export default function LocationCard({ caredOneId, caredOneName }: Props) {
   const { toast } = useToast();
-  const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("location");
 
   // ─── Data
@@ -309,7 +308,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
     }
   }, [currentLocation, zones, caredOneName]);
 
-  // ─── Draw layers refresh (polygon preview while drawing/editing)
+  // ─── Draw layers refresh
   const renderDrawLayers = useCallback(async () => {
     const Lx = await getL();
     const map = leafletMapRef.current;
@@ -329,7 +328,6 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
       drawLayersRef.current.push(poly);
     }
 
-    // Edge-click insertion: invisible 18px weight polylines between adjacent vertices
     if (drawMode === "editing" && drawnPoints.length >= 3) {
       drawnPoints.forEach((pt, i) => {
         const j = (i + 1) % drawnPoints.length;
@@ -345,16 +343,8 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
         midMarker.on("click", (e: any) => {
           Lx.DomEvent.stopPropagation(e);
           const insertAt = i + 1;
-          setDrawnPoints(prev => {
-            const n = [...prev];
-            n.splice(insertAt, 0, [midLat, midLng]);
-            return n;
-          });
-          setCornerRadii(prev => {
-            const n = [...prev];
-            n.splice(insertAt, 0, 0);
-            return n;
-          });
+          setDrawnPoints(prev => { const n = [...prev]; n.splice(insertAt, 0, [midLat, midLng]); return n; });
+          setCornerRadii(prev => { const n = [...prev]; n.splice(insertAt, 0, 0); return n; });
           setSelectedVertex(insertAt);
         });
         drawLayersRef.current.push(midMarker);
@@ -372,10 +362,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
       const vm = Lx.marker(pt, { icon: vIcon, draggable: drawMode === "editing", zIndexOffset: 1000 }).addTo(map);
 
       if (drawMode === "editing") {
-        vm.on("click", (e: any) => {
-          Lx.DomEvent.stopPropagation(e);
-          setSelectedVertex(prev => prev === i ? null : i);
-        });
+        vm.on("click", (e: any) => { Lx.DomEvent.stopPropagation(e); setSelectedVertex(prev => prev === i ? null : i); });
         vm.on("dblclick", (e: any) => {
           Lx.DomEvent.stopPropagation(e);
           setDrawnPoints(prev => {
@@ -395,7 +382,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
     });
   }, [drawnPoints, cornerRadii, selectedVertex, flashRed, drawMode, zoneForm.zone_type, zoneForm.category]);
 
-  // ─── Radius preview layer (while zone form is open in radius mode)
+  // ─── Radius preview layer
   const renderRadiusPreview = useCallback(async () => {
     const Lx = await getL();
     const map = leafletMapRef.current;
@@ -413,9 +400,8 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
 
   const isMapTab = activeTab === "location" || activeTab === "safezones";
 
-  // Init map
+  // Init map immediately
   useEffect(() => {
-    if (!open) return;
     let cancelled = false;
     const init = async () => {
       const Lx = await getL();
@@ -431,25 +417,21 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
     };
     init();
     return () => { cancelled = true; };
-  }, [open]);
+  }, []);
 
-  // Invalidate on tab switch
   useEffect(() => {
     if (isMapTab && leafletMapRef.current) {
       setTimeout(() => { try { leafletMapRef.current?.invalidateSize(); } catch (_) {} }, 100);
     }
   }, [activeTab, isMapTab]);
 
-  // Re-render map when data changes
   useEffect(() => {
     if (mapReadyRef.current) renderMapContent();
   }, [renderMapContent]);
 
-  // Re-render draw layers (polygon editing + radius preview)
   useEffect(() => {
     if (!mapReadyRef.current) return;
     if (!showZoneForm) {
-      // Clear draw layers when form closes
       drawLayersRef.current.forEach(l => { try { l.remove(); } catch (_) {} });
       drawLayersRef.current = [];
       return;
@@ -458,7 +440,6 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
     else renderRadiusPreview();
   }, [renderDrawLayers, renderRadiusPreview, showZoneForm, zoneForm.shape_type, zoneForm.latitude, zoneForm.longitude, zoneForm.radius, drawMode]);
 
-  // Cleanup on unmount
   useEffect(() => () => {
     if (leafletMapRef.current) {
       try { leafletMapRef.current.remove(); } catch (_) {}
@@ -475,7 +456,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
         if (e.key === "Escape") { setDrawMode("idle"); setDrawnPoints([]); setCornerRadii([]); }
         if ((e.key === "z" || e.key === "Z") && (e.ctrlKey || e.metaKey)) {
           e.preventDefault();
-          setDrawnPoints(prev => { if (prev.length === 0) return prev; return prev.slice(0, -1); });
+          setDrawnPoints(prev => prev.length === 0 ? prev : prev.slice(0, -1));
           setCornerRadii(prev => prev.length > 0 ? prev.slice(0, -1) : prev);
         }
       }
@@ -498,7 +479,6 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
     const map = leafletMapRef.current;
     if (!map || !showZoneForm) return;
 
-    // Pick-on-map for radius mode
     if (pickingOnMap && zoneForm.shape_type === "radius") {
       map.getContainer().style.cursor = "crosshair";
       const h = (e: any) => {
@@ -509,7 +489,6 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
       return () => { map.off("click", h); map.getContainer().style.cursor = ""; };
     }
 
-    // Polygon drawing mode
     if (drawMode === "drawing") {
       map.getContainer().style.cursor = "crosshair";
       const onMouseDown = (e: any) => { dragStartRef.current = { x: e.originalEvent.clientX, y: e.originalEvent.clientY }; freehandRef.current = [[e.latlng.lat, e.latlng.lng]]; };
@@ -525,7 +504,6 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
         const dy = e.originalEvent.clientY - dragStartRef.current.y;
         dragStartRef.current = null;
         if (Math.hypot(dx, dy) > 8 && freehandRef.current.length > 2) {
-          // freehand
           const simplified = douglasPeucker(freehandRef.current, 0.00003);
           setDrawnPoints(prev => { const n = [...prev, ...simplified]; setCornerRadii(Array(n.length).fill(0)); return n; });
           freehandRef.current = [];
@@ -565,7 +543,6 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
     setSelectedVertex(null);
   }
 
-  // ─── Open zone form
   const openZoneForm = (zone?: any) => {
     if (zone) {
       setEditingZone(zone);
@@ -695,553 +672,274 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
     }
   };
 
-  const tabs: { key: Tab; label: string; badge?: number }[] = [
-    { key: "location", label: "Map" },
-    { key: "safezones", label: "Zones", badge: (zones || []).length || undefined },
-    { key: "alerts", label: "Alerts", badge: unreadAlerts || undefined },
-    { key: "requests", label: "Requests", badge: pendingRequests || undefined },
-    { key: "history", label: "History" },
+  const tabs: { key: Tab; label: string; icon: any; badge?: number }[] = [
+    { key: "location", label: "Live Location", icon: MapPin },
+    { key: "requests", label: "Requests", icon: Send, badge: pendingRequests || undefined },
+    { key: "alerts", label: "Alerts", icon: Bell, badge: unreadAlerts || undefined },
+    { key: "safezones", label: "Safe Zones", icon: Shield, badge: (zones || []).length || undefined },
+    { key: "history", label: "History", icon: Clock },
   ];
 
-  // ─── Drawing status bar text
   const drawStatusText = useMemo(() => {
     if (drawMode === "drawing") return `Click to place · Drag to freehand · ⌘Z undo · Esc cancel · ${drawnPoints.length} pts`;
     if (drawMode === "editing") return "Drag vertices · Click edge to insert · Dbl-click to delete · Esc deselect";
     return "";
   }, [drawMode, drawnPoints.length]);
 
-  // ─── Card Preview (collapsed state)
   const lastSeen = currentLocation ? new Date(currentLocation.created_at).toLocaleString() : null;
-  const zoneCount = (zones || []).length;
 
-  if (!open) {
-    return (
-      <Card
-        className="border-transparent card-elevated cursor-pointer hover:shadow-md transition-shadow"
-        onClick={() => setOpen(true)}
-      >
-        <CardContent className="p-4">
-          {/* Header */}
-          <div className="flex items-start justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <MapPin className="h-5 w-5 text-primary" />
-                {(unreadAlerts + pendingRequests) > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center">
-                    {unreadAlerts + pendingRequests}
-                  </span>
-                )}
-              </div>
-              <div>
-                <p className="font-semibold text-sm text-foreground">Location & Safe Zones</p>
-                <p className="text-xs text-muted-foreground">
-                  {locationSettings && !locationSettings.is_sharing_enabled
-                    ? "Sharing disabled"
-                    : zoneCount > 0
-                    ? `${zoneCount} zone${zoneCount !== 1 ? "s" : ""}`
-                    : lastSeen ? "Last location known" : "No location data"}
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-1 flex-wrap justify-end">
-              <Badge variant={locationSettings?.is_sharing_enabled ? "default" : "secondary"} className="text-[10px]">
-                {locationSettings?.is_sharing_enabled ? "Sharing On" : "Sharing Off"}
-              </Badge>
-              {zoneCount > 0 && <Badge variant="outline" className="text-[10px]">{zoneCount} zones</Badge>}
-              {unreadAlerts > 0 && <Badge variant="destructive" className="text-[10px]">{unreadAlerts} alerts</Badge>}
-            </div>
-          </div>
-
-          {/* Breach banner */}
-          {breaches.length > 0 && (
-            <div className="mb-2 p-2 rounded bg-destructive/10 border border-destructive/20">
-              {breaches.map((z: any) => (
-                <p key={z.id} className="text-xs text-destructive">
-                  {z.zone_type === "danger" ? `⚠ Inside danger zone "${z.name}"` : `⚠ Outside safe zone "${z.name}"`}
-                </p>
-              ))}
-            </div>
-          )}
-
-          {/* Last seen */}
-          {lastSeen && (
-            <div className="flex items-center gap-1.5 mb-3">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-xs text-muted-foreground">Last seen {lastSeen}</span>
-              {currentLocation?.address && <span className="text-xs text-muted-foreground">· {currentLocation.address}</span>}
-            </div>
-          )}
-
-          {/* Action buttons */}
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="text-xs h-7"
-              onClick={e => { e.stopPropagation(); setOpen(true); setActiveTab("safezones"); }}>
-              <Layers className="h-3 w-3 mr-1" /> Zones
-            </Button>
-            <Button variant="outline" size="sm" className="text-xs h-7"
-              onClick={e => { e.stopPropagation(); setOpen(true); setActiveTab("requests"); }}>
-              <Send className="h-3 w-3 mr-1" /> Request Location
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // ─── Full Modal ──────────────────────────────────────────────
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={e => { if (e.target === e.currentTarget) setOpen(false); }}>
-      <div className="bg-background rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
-        {/* Modal header */}
-        <div className="flex items-center justify-between p-4 border-b border-border shrink-0">
-          <div>
-            <h2 className="text-lg font-bold text-foreground">Location & Safe Zones</h2>
-            <p className="text-xs text-muted-foreground">For {caredOneName}</p>
-          </div>
-          <div className="flex gap-2 items-center flex-wrap">
-            <Button variant="outline" size="sm" onClick={handleShareMyLocation} disabled={sharingMyLocation}>
-              {sharingMyLocation ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Radio className="h-3 w-3 mr-1" />}
-              Share My Location
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setActiveTab("requests")}>
-              <Send className="h-3 w-3 mr-1" /> Request Location
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleRefresh} disabled={refreshing}>
-              <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setOpen(false)}>
-              <X className="h-4 w-4" />
-            </Button>
+    <div className="space-y-4">
+      {/* ─── Header with status + actions ─── */}
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+            <MapPin className="h-5 w-5 text-primary" />
+            {caredOneName}'s Location
+          </h2>
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            <Badge variant={locationSettings?.is_sharing_enabled ? "default" : "secondary"} className="text-xs">
+              {locationSettings?.is_sharing_enabled ? "📍 Sharing On" : "Sharing Off"}
+            </Badge>
+            {lastSeen && (
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Last seen {lastSeen}
+              </span>
+            )}
           </div>
         </div>
+        <div className="flex gap-2 items-center flex-wrap">
+          <Button variant="outline" size="sm" onClick={handleShareMyLocation} disabled={sharingMyLocation}>
+            {sharingMyLocation ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Radio className="h-3 w-3 mr-1" />}
+            Share My Location
+          </Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleRefresh} disabled={refreshing}>
+            <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
+          </Button>
+        </div>
+      </div>
 
-        {/* Breach banner */}
-        {breaches.length > 0 && (
-          <div className="mx-4 mt-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20 shrink-0">
-            <div className="flex items-center gap-2 text-destructive font-semibold text-sm mb-1">
-              <AlertTriangle className="h-4 w-4" /> Zone Breach Detected
-            </div>
-            {breaches.map((z: any) => (
-              <p key={z.id} className="text-xs text-destructive/80">
-                {z.zone_type === "danger" ? `⚠ ${caredOneName} is inside danger zone "${z.name}"` : `⚠ ${caredOneName} is outside safe zone "${z.name}"`}
-              </p>
-            ))}
+      {/* ─── Breach banner ─── */}
+      {breaches.length > 0 && (
+        <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+          <div className="flex items-center gap-2 text-destructive font-semibold text-sm mb-1">
+            <AlertTriangle className="h-4 w-4" /> Zone Breach Detected
           </div>
-        )}
-
-        {/* Tabs */}
-        <div className="flex gap-1 px-4 border-b border-border overflow-x-auto shrink-0 mt-2">
-          {tabs.map(t => (
-            <button key={t.key} onClick={() => setActiveTab(t.key)}
-              className={`px-3 py-2 text-sm font-medium whitespace-nowrap flex items-center gap-1.5 border-b-2 transition-colors
-                ${activeTab === t.key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
-              {t.label}
-              {t.badge ? (
-                <span className={`text-[10px] rounded-full px-1.5 py-0.5 font-bold
-                  ${t.key === "alerts" ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"}`}>
-                  {t.badge}
-                </span>
-              ) : null}
-            </button>
+          {breaches.map((z: any) => (
+            <p key={z.id} className="text-xs text-destructive/80">
+              {z.zone_type === "danger" ? `⚠ ${caredOneName} is inside danger zone "${z.name}"` : `⚠ ${caredOneName} is outside safe zone "${z.name}"`}
+            </p>
           ))}
         </div>
+      )}
 
-        {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto p-4">
-          {/* ─── Shared map (always mounted, hidden when not map tabs) */}
-          <div style={{ display: isMapTab ? "block" : "none" }} className="relative mb-4">
-            <div ref={mapRef} style={{ height: 300, borderRadius: 8, overflow: "hidden", background: "hsl(var(--muted))" }} />
-            {activeTab === "safezones" && (
-              <Button size="sm"
-                className="absolute top-2 right-2 z-[1000] shadow-md bg-primary text-primary-foreground hover:bg-primary/90"
-                onClick={() => openZoneForm()}>
-                <Plus className="h-3 w-3 mr-1" /> Add Zone
-              </Button>
-            )}
-            {drawStatusText && (
-              <div className="absolute bottom-2 left-2 right-2 z-[1000] bg-black/70 text-white text-[11px] rounded px-2 py-1 text-center">
-                {drawStatusText}
-              </div>
-            )}
+      {/* ─── Map (always visible on map tabs) ─── */}
+      <div style={{ display: isMapTab ? "block" : "none" }} className="relative">
+        <div ref={mapRef} style={{ height: 350, borderRadius: 12, overflow: "hidden", background: "hsl(var(--muted))" }} />
+        {activeTab === "location" && currentLocation?.latitude && (
+          <Button variant="outline" size="sm" className="absolute top-2 right-2 z-[1000] shadow-md bg-background/90 backdrop-blur-sm" asChild>
+            <a href={`https://www.google.com/maps?q=${currentLocation.latitude},${currentLocation.longitude}`} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="h-3 w-3 mr-1" /> Open in Maps
+            </a>
+          </Button>
+        )}
+        {activeTab === "safezones" && (
+          <Button size="sm"
+            className="absolute top-2 right-2 z-[1000] shadow-md bg-primary text-primary-foreground hover:bg-primary/90"
+            onClick={() => openZoneForm()}>
+            <Plus className="h-3 w-3 mr-1" /> Add Zone
+          </Button>
+        )}
+        {drawStatusText && (
+          <div className="absolute bottom-2 left-2 right-2 z-[1000] bg-black/70 text-white text-[11px] rounded px-2 py-1 text-center">
+            {drawStatusText}
           </div>
+        )}
+      </div>
 
-          {/* ─── MAP TAB */}
-          {activeTab === "location" && (
-            <div>
-              {locationSettings && (
-                <Card className="border-transparent card-elevated mb-4">
-                  <CardContent className="p-4">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                      Sharing Settings (set by {caredOneName})
-                    </p>
-                    <div className="flex gap-4 flex-wrap">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${locationSettings.is_sharing_enabled ? "bg-emerald-500" : "bg-muted-foreground"}`} />
-                        <span className="text-sm">{locationSettings.is_sharing_enabled ? "Sharing enabled" : "Sharing disabled"}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Shield className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-sm">{locationSettings.require_approval ? "Approval required" : "No approval needed"}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-              {loadingLocation ? (
-                <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
-              ) : currentLocation ? (
-                <Card className="border-transparent card-elevated">
-                  <CardContent className="p-4 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="text-xs text-muted-foreground">Last seen {new Date(currentLocation.created_at).toLocaleString()}</span>
-                    </div>
-                    {currentLocation.address && <p className="text-sm font-medium">{currentLocation.address}</p>}
-                    <p className="text-xs text-muted-foreground font-mono">
-                      {parseFloat(currentLocation.latitude).toFixed(6)}, {parseFloat(currentLocation.longitude).toFixed(6)}
-                      {currentLocation.accuracy && ` ± ${Math.round(currentLocation.accuracy)}m`}
-                    </p>
-                    {currentLocation.battery_level != null && <p className="text-xs text-muted-foreground">🔋 {currentLocation.battery_level}%</p>}
-                    <Button variant="outline" size="sm" asChild>
-                      <a href={`https://www.google.com/maps?q=${currentLocation.latitude},${currentLocation.longitude}`} target="_blank" rel="noopener noreferrer">
-                        <Navigation className="h-3 w-3 mr-1" /> Open in Maps
-                      </a>
-                    </Button>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <MapPin className="h-10 w-10 mx-auto mb-2 opacity-40" />
-                  <p className="text-sm">No location data available</p>
-                  <p className="text-xs mt-1">Request {caredOneName}'s location to see it here</p>
-                  <Button variant="outline" size="sm" className="mt-3" onClick={() => setActiveTab("requests")}>
-                    <Send className="h-3 w-3 mr-1" /> Request Location
-                  </Button>
+      {/* ─── Tabs ─── */}
+      <div className="flex gap-1 border-b border-border overflow-x-auto -mx-1 px-1">
+        {tabs.map(t => (
+          <button key={t.key} onClick={() => setActiveTab(t.key)}
+            className={`px-3 py-2.5 text-sm font-medium whitespace-nowrap flex items-center gap-1.5 border-b-2 transition-colors
+              ${activeTab === t.key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+            <t.icon className="h-3.5 w-3.5" />
+            {t.label}
+            {t.badge ? (
+              <span className={`text-[10px] rounded-full px-1.5 py-0.5 font-bold
+                ${t.key === "alerts" ? "bg-destructive text-destructive-foreground" : "bg-primary/10 text-primary"}`}>
+                {t.badge}
+              </span>
+            ) : null}
+          </button>
+        ))}
+      </div>
+
+      {/* ─── TAB CONTENT ─── */}
+
+      {/* LIVE LOCATION */}
+      {activeTab === "location" && (
+        <div className="space-y-4">
+          {/* Sharing settings */}
+          {locationSettings && (
+            <Card className="border-transparent card-elevated">
+              <CardContent className="p-4">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                  Sharing Settings (set by {caredOneName})
+                </p>
+                <div className="flex gap-4 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${locationSettings.is_sharing_enabled ? "bg-emerald-500" : "bg-muted-foreground"}`} />
+                    <span className="text-sm">{locationSettings.is_sharing_enabled ? "Sharing enabled" : "Sharing disabled"}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Shield className="h-3 w-3 text-muted-foreground" />
+                    <span className="text-sm">{locationSettings.require_approval ? "Approval required" : "No approval needed"}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Current location details */}
+          {loadingLocation ? (
+            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+          ) : currentLocation ? (
+            <Card className="border-transparent card-elevated">
+              <CardContent className="p-4 space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-sm font-semibold text-foreground">Current Location</span>
+                  <span className="text-xs text-muted-foreground">· {new Date(currentLocation.created_at).toLocaleString()}</span>
+                </div>
+                {currentLocation.address && <p className="text-sm text-foreground">{currentLocation.address}</p>}
+                <p className="text-xs text-muted-foreground font-mono">
+                  {parseFloat(currentLocation.latitude).toFixed(6)}, {parseFloat(currentLocation.longitude).toFixed(6)}
+                  {currentLocation.accuracy && ` ± ${Math.round(currentLocation.accuracy)}m`}
+                </p>
+                {currentLocation.battery_level != null && <p className="text-xs text-muted-foreground">🔋 {currentLocation.battery_level}%</p>}
+
+                {/* Quick zone status */}
+                {(zones || []).length > 0 && (
+                  <div className="pt-2 border-t border-border mt-2 space-y-1">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Zone Status</p>
+                    {(zones || []).map((zone: any) => {
+                      const breach = checkZoneBreach(zone, parseFloat(currentLocation.latitude), parseFloat(currentLocation.longitude));
+                      const catCfg = CATEGORY_CONFIG[zone.category] || CATEGORY_CONFIG.custom;
+                      return (
+                        <div key={zone.id} className="flex items-center gap-2 text-xs">
+                          <div className="w-2 h-2 rounded-full" style={{ background: catCfg.color }} />
+                          <span className="font-medium">{zone.name}</span>
+                          <span className={breach.breached ? "text-destructive font-semibold" : "text-emerald-600"}>
+                            {zone.zone_type === "safe"
+                              ? (breach.breached ? `⚠ Outside (${breach.distance}m)` : `✓ Inside (${breach.distance}m)`)
+                              : (breach.breached ? `⚠ INSIDE danger zone!` : `✓ Away (${breach.distance}m)`)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="border-transparent card-elevated">
+              <CardContent className="p-8 text-center">
+                <MapPin className="h-10 w-10 mx-auto mb-2 text-muted-foreground/30" />
+                <p className="text-sm font-medium text-foreground mb-1">No location data available</p>
+                <p className="text-xs text-muted-foreground mb-3">Request {caredOneName}'s location to see it on the map</p>
+                <Button variant="coral" size="sm" onClick={() => setActiveTab("requests")}>
+                  <Send className="h-3 w-3 mr-1" /> Request Location
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* REQUESTS */}
+      {activeTab === "requests" && (
+        <div className="space-y-4">
+          <Card className="border-transparent card-elevated">
+            <CardContent className="p-4 space-y-3">
+              <h3 className="font-semibold text-sm">Request {caredOneName}'s Location</h3>
+              <Textarea value={requestMessage} onChange={e => setRequestMessage(e.target.value)}
+                placeholder="Optional message (why you need their location)..." rows={2} />
+              <div className={`flex flex-col gap-2 p-3 rounded-lg border ${isEmergency ? "bg-destructive/10 border-destructive/30" : "bg-muted/30 border-border"}`}>
+                <div className="flex items-center gap-3">
+                  <input type="checkbox" id="emerg-chk" checked={isEmergency}
+                    onChange={e => { setIsEmergency(e.target.checked); setEmergencyConfirm(false); }} className="rounded" />
+                  <label htmlFor="emerg-chk" className="text-sm font-medium cursor-pointer">🚨 Emergency request</label>
+                </div>
+                {isEmergency && (
+                  <p className="text-xs text-destructive pl-5">
+                    Bypasses approval — {caredOneName}'s location will be shared immediately without their consent. They will be notified.
+                  </p>
+                )}
+              </div>
+              {emergencyConfirm && (
+                <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-sm text-destructive font-medium">
+                  ⚠️ Are you sure? Click Send again to confirm.
                 </div>
               )}
+              <Button className="w-full" style={isEmergency ? { background: "#EF4444", color: "white" } : undefined}
+                onClick={handleSendRequest} disabled={sendingRequest || sendRequest.isPending}>
+                {(sendingRequest || sendRequest.isPending) ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
+                {isEmergency && emergencyConfirm ? "Confirm Emergency Request" : isEmergency ? "Send Emergency Request" : "Send Request"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {(locationRequests || []).filter((r: any) => r.status === "pending").length > 0 && (
+            <div>
+              <h3 className="text-sm font-semibold text-muted-foreground mb-2">Pending</h3>
+              <div className="space-y-2">
+                {(locationRequests || []).filter((r: any) => r.status === "pending").map((req: any) => (
+                  <Card key={req.id} className="border-transparent card-elevated border-l-2 border-l-amber-400">
+                    <CardContent className="p-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium text-amber-500">⏳ Awaiting response</span>
+                            {req.is_emergency && <Badge variant="destructive" className="text-[10px]">EMERGENCY</Badge>}
+                          </div>
+                          {req.message && <p className="text-xs text-muted-foreground mt-0.5">"{req.message}"</p>}
+                          <p className="text-xs text-muted-foreground">{new Date(req.created_at).toLocaleString()}</p>
+                        </div>
+                        <Button variant="ghost" size="sm" className="text-destructive text-xs h-7"
+                          onClick={() => cancelRequest.mutate({ requestId: req.id, caredOneId })}
+                          disabled={cancelRequest.isPending}>Cancel</Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
           )}
 
-          {/* ─── ZONES TAB */}
-          {activeTab === "safezones" && (
+          {(locationRequests || []).filter((r: any) => r.status !== "pending").length > 0 && (
             <div>
-              {showZoneForm && (
-                <Card className="border-primary/20 card-elevated mb-4">
-                  <CardContent className="p-4 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold">{editingZone ? "Edit Zone" : "New Zone"}</h3>
-                      <Button variant="ghost" size="icon" className="h-7 w-7"
-                        onClick={() => { setShowZoneForm(false); setEditingZone(null); setDrawMode("idle"); setDrawnPoints([]); setCornerRadii([]); }}>
-                        <X className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-
-                    {/* Zone type toggle */}
-                    <div className="flex rounded-lg border overflow-hidden">
-                      {(["safe", "danger"] as const).map(t => (
-                        <button key={t} onClick={() => setZoneForm(p => ({ ...p, zone_type: t }))}
-                          className={`flex-1 py-2 text-sm font-medium transition-colors
-                            ${zoneForm.zone_type === t
-                              ? t === "danger" ? "bg-destructive text-destructive-foreground" : "bg-emerald-500 text-white"
-                              : "bg-transparent text-muted-foreground hover:bg-accent"}`}>
-                          {t === "safe" ? "✅ Safe Zone" : "⚠️ Danger Zone"}
-                        </button>
-                      ))}
-                    </div>
-                    {zoneForm.zone_type === "danger" && (
-                      <p className="text-xs text-destructive bg-destructive/10 rounded p-2">
-                        Alert when {caredOneName} enters this area (e.g. casino, restricted area)
-                      </p>
-                    )}
-
-                    {/* Zone name */}
-                    <div>
-                      <Label className="text-xs">Zone Name *</Label>
-                      <Input value={zoneForm.name} onChange={e => setZoneForm(p => ({ ...p, name: e.target.value }))}
-                        placeholder='e.g. "Home", "Casino"' className="mt-1" />
-                    </div>
-
-                    {/* Category (safe only) */}
-                    {zoneForm.zone_type === "safe" && (
-                      <div>
-                        <Label className="text-xs">Category</Label>
-                        <div className="flex gap-2 mt-1 flex-wrap">
-                          {Object.entries(CATEGORY_CONFIG).map(([key, cfg]) => {
-                            const Icon = cfg.icon; const active = zoneForm.category === key;
-                            return (
-                              <button key={key} onClick={() => setZoneForm(p => ({ ...p, category: key }))}
-                                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-colors"
-                                style={{ borderColor: active ? cfg.color : undefined, color: active ? cfg.color : undefined, backgroundColor: active ? `${cfg.color}20` : undefined }}>
-                                <Icon className="h-3 w-3" /> {cfg.label}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Shape type toggle */}
-                    <div>
-                      <Label className="text-xs">Shape Type</Label>
-                      <div className="flex rounded-lg border overflow-hidden mt-1">
-                        {(["radius", "polygon"] as const).map(st => (
-                          <button key={st} onClick={() => {
-                            setZoneForm(p => ({ ...p, shape_type: st }));
-                            if (st === "polygon" && drawMode === "idle") { /* ready to draw */ }
-                            if (st === "radius") { setDrawMode("idle"); setDrawnPoints([]); setCornerRadii([]); }
-                          }}
-                            className={`flex-1 py-1.5 text-sm font-medium transition-colors
-                              ${zoneForm.shape_type === st ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground hover:bg-accent"}`}>
-                            {st === "radius" ? "⬤ Radius" : "⬡ Precise Border"}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Radius mode */}
-                    {zoneForm.shape_type === "radius" && (
-                      <>
-                        <div>
-                          <Label className="text-xs">Zone Center</Label>
-                          <div className="flex gap-2 mt-1 flex-wrap">
-                            <Button variant="outline" size="sm" onClick={() => setPickingOnMap(!pickingOnMap)}>
-                              <Navigation className="h-3 w-3 mr-1" />{pickingOnMap ? "Cancel picking" : "Pick on Map"}
-                            </Button>
-                            <Button variant="outline" size="sm" onClick={handleUseCaredOneLocation}>
-                              <MapPin className="h-3 w-3 mr-1" />Use {caredOneName}'s Location
-                            </Button>
-                          </div>
-                          {pickingOnMap && <p className="text-xs text-primary mt-1 font-medium">👆 Click on the map above to set center</p>}
-                          <div className="grid grid-cols-2 gap-2 mt-2">
-                            <div>
-                              <Label className="text-[10px] text-muted-foreground">Latitude</Label>
-                              <Input value={zoneForm.latitude} onChange={e => setZoneForm(p => ({ ...p, latitude: e.target.value }))}
-                                placeholder="40.71280" className="mt-0.5 font-mono text-xs" />
-                            </div>
-                            <div>
-                              <Label className="text-[10px] text-muted-foreground">Longitude</Label>
-                              <Input value={zoneForm.longitude} onChange={e => setZoneForm(p => ({ ...p, longitude: e.target.value }))}
-                                placeholder="-74.00600" className="mt-0.5 font-mono text-xs" />
-                            </div>
-                          </div>
-                        </div>
-                        <div>
-                          <div className="flex justify-between items-center mb-1">
-                            <Label className="text-xs">Radius</Label>
-                            <span className="text-xs text-muted-foreground font-mono">{zoneForm.radius}m</span>
-                          </div>
-                          <Slider min={50} max={5000} step={50} value={[zoneForm.radius]}
-                            onValueChange={([v]) => setZoneForm(p => ({ ...p, radius: v }))} />
-                          <div className="flex justify-between text-[10px] text-muted-foreground mt-0.5"><span>50m</span><span>5km</span></div>
-                        </div>
-                      </>
-                    )}
-
-                    {/* Polygon mode */}
-                    {zoneForm.shape_type === "polygon" && (
-                      <div className="space-y-2">
-                        {drawMode === "idle" && (
-                          <Button className="w-full" variant="outline" onClick={() => { setDrawnPoints([]); setCornerRadii([]); setDrawMode("drawing"); }}>
-                            <Pencil className="h-3 w-3 mr-1" /> Start Drawing
-                          </Button>
-                        )}
-                        {drawMode === "drawing" && (
-                          <div className="space-y-2">
-                            <div className="text-xs text-muted-foreground bg-muted/50 rounded p-2 font-mono">
-                              {drawnPoints.length} point{drawnPoints.length !== 1 ? "s" : ""} placed
-                              {drawnPoints.length >= 3 && " · Press Enter to finish"}
-                            </div>
-                            <div className="flex gap-2">
-                              <Button size="sm" variant="outline" className="flex-1"
-                                onClick={() => { setDrawMode("idle"); setDrawnPoints([]); setCornerRadii([]); }}>
-                                <X className="h-3 w-3 mr-1" /> Cancel
-                              </Button>
-                              <Button size="sm" className="flex-1" disabled={drawnPoints.length < 3} onClick={finishDrawing}>
-                                ✓ Finish ({drawnPoints.length} pts)
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                        {drawMode === "editing" && (
-                          <div className="space-y-2">
-                            <p className="text-xs text-emerald-600 font-medium">
-                              ✓ {drawnPoints.length} vertices · Drag to reposition · Dbl-click to delete
-                            </p>
-
-                            {/* Per-vertex corner rounding slider */}
-                            {selectedVertex !== null && drawnPoints[selectedVertex] && (
-                              <div className="p-3 rounded-lg bg-muted/50 border border-border">
-                                <div className="flex justify-between mb-1">
-                                  <Label className="text-xs">Corner Rounding (Vertex {selectedVertex + 1})</Label>
-                                  <span className="text-xs text-muted-foreground">
-                                    {cornerRadii[selectedVertex] === 0 ? "Sharp" : `${(cornerRadii[selectedVertex] || 0).toFixed(1)}`}
-                                  </span>
-                                </div>
-                                <Slider min={0} max={3} step={0.1}
-                                  value={[cornerRadii[selectedVertex] || 0]}
-                                  onValueChange={([v]) => setCornerRadii(prev => { const n = [...prev]; n[selectedVertex] = v; return n; })} />
-                                <div className="flex justify-between text-[10px] text-muted-foreground mt-0.5"><span>Sharp</span><span>Round</span></div>
-                              </div>
-                            )}
-                            {selectedVertex === null && (
-                              <p className="text-xs text-muted-foreground">Click a vertex to adjust its corner rounding</p>
-                            )}
-
-                            <div className="flex gap-2">
-                              <Button size="sm" variant="outline" className="flex-1"
-                                onClick={() => { setDrawMode("drawing"); setDrawnPoints([]); setCornerRadii([]); }}>
-                                <RotateCcw className="h-3 w-3 mr-1" /> Redraw
-                              </Button>
-                              <Button size="sm" variant="outline" className="flex-1 text-destructive"
-                                onClick={() => { setDrawMode("idle"); setDrawnPoints([]); setCornerRadii([]); }}>
-                                Clear All
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Description */}
-                    <div>
-                      <Label className="text-xs">Description (optional)</Label>
-                      <Textarea value={zoneForm.description} onChange={e => setZoneForm(p => ({ ...p, description: e.target.value }))}
-                        placeholder="Optional notes..." rows={2} className="mt-1" />
-                    </div>
-
-                    {/* Notifications */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-xs">Notify on enter</Label>
-                        <Switch checked={zoneForm.notify_on_enter} onCheckedChange={v => setZoneForm(p => ({ ...p, notify_on_enter: v }))} />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <Label className="text-xs">Notify on exit</Label>
-                        <Switch checked={zoneForm.notify_on_exit} onCheckedChange={v => setZoneForm(p => ({ ...p, notify_on_exit: v }))} />
-                      </div>
-                    </div>
-
-                    {/* Schedule */}
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <Label className="text-xs font-semibold">Schedule</Label>
-                        <Switch checked={zoneForm.schedule_enabled} onCheckedChange={v => setZoneForm(p => ({ ...p, schedule_enabled: v }))} />
-                      </div>
-                      {zoneForm.schedule_enabled && (
-                        <div className="space-y-2">
-                          <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <Label className="text-[10px] text-muted-foreground">Start</Label>
-                              <Input type="time" value={zoneForm.schedule_start_time}
-                                onChange={e => setZoneForm(p => ({ ...p, schedule_start_time: e.target.value }))} className="mt-0.5" />
-                            </div>
-                            <div>
-                              <Label className="text-[10px] text-muted-foreground">End</Label>
-                              <Input type="time" value={zoneForm.schedule_end_time}
-                                onChange={e => setZoneForm(p => ({ ...p, schedule_end_time: e.target.value }))} className="mt-0.5" />
-                            </div>
-                          </div>
-                          <div className="flex gap-1 flex-wrap">
-                            {DAYS.map(d => (
-                              <button key={d}
-                                onClick={() => setZoneForm(p => ({
-                                  ...p,
-                                  schedule_days: p.schedule_days.includes(d) ? p.schedule_days.filter(x => x !== d) : [...p.schedule_days, d],
-                                }))}
-                                className={`px-2 py-1 rounded text-xs border font-medium transition-colors
-                                  ${zoneForm.schedule_days.includes(d) ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground"}`}>
-                                {d}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex gap-2 pt-1">
-                      <Button variant="outline" className="flex-1"
-                        onClick={() => { setShowZoneForm(false); setEditingZone(null); setDrawMode("idle"); setDrawnPoints([]); setCornerRadii([]); }}>
-                        Cancel
-                      </Button>
-                      <Button className="flex-1 text-white"
-                        style={{ background: zoneForm.zone_type === "danger" ? "#EF4444" : "#10B981" }}
-                        onClick={handleSaveZone}
-                        disabled={createZone.isPending || updateZone.isPending || !zoneForm.name.trim()}>
-                        {(createZone.isPending || updateZone.isPending) && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-                        {editingZone ? "Save Changes" : "Create Zone"}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Zone list */}
+              <h3 className="text-sm font-semibold text-muted-foreground mb-2">Past Requests</h3>
               <div className="space-y-2">
-                {(zones || []).length === 0 && !showZoneForm && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <MapPin className="h-10 w-10 mx-auto mb-2 opacity-40" />
-                    <p className="text-sm">No zones configured</p>
-                    <p className="text-xs">Add safe zones like Home or Work, or danger zones to avoid</p>
-                    <Button variant="outline" size="sm" className="mt-3" onClick={() => openZoneForm()}>
-                      <Plus className="h-3 w-3 mr-1" /> Add First Zone
-                    </Button>
-                  </div>
-                )}
-                {(zones || []).map((zone: any) => {
-                  const catCfg = CATEGORY_CONFIG[zone.category] || CATEGORY_CONFIG.custom;
-                  const Icon = zone.zone_type === "danger" ? Ban : catCfg.icon;
-                  const color = zone.zone_type === "danger" ? "#EF4444" : catCfg.color;
-                  const active = isZoneActive(zone);
-                  let breachInfo = { breached: false, distance: 0 };
-                  if (currentLocation?.latitude && currentLocation?.longitude)
-                    breachInfo = checkZoneBreach(zone, parseFloat(currentLocation.latitude), parseFloat(currentLocation.longitude));
-
+                {(locationRequests || []).filter((r: any) => r.status !== "pending").map((req: any) => {
+                  const sc: Record<string, { icon: string; label: string; color: string }> = {
+                    accepted:           { icon: "✓",  label: "Accepted",               color: "text-emerald-600" },
+                    emergency_approved: { icon: "🚨", label: "Emergency — Auto-shared", color: "text-destructive" },
+                    declined:           { icon: "✗",  label: "Declined",               color: "text-destructive" },
+                    rejected:           { icon: "✗",  label: "Declined",               color: "text-destructive" },
+                    cancelled:          { icon: "—",  label: "Cancelled",              color: "text-muted-foreground" },
+                  };
+                  const s = sc[req.status] || { icon: "?", label: req.status, color: "text-muted-foreground" };
                   return (
-                    <Card key={zone.id} className="border-transparent card-elevated">
+                    <Card key={req.id} className="border-transparent card-elevated opacity-80">
                       <CardContent className="p-3">
-                        <div className="flex items-start gap-3">
-                          <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-                            style={{ background: `${color}20`, color }}>
-                            <Icon className="h-4 w-4" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-semibold text-sm">{zone.name}</span>
-                              {zone.zone_type === "danger" && <Badge variant="destructive" className="text-[10px]">DANGER</Badge>}
-                              {!active && <Badge variant="secondary" className="text-[10px]">⏰ Scheduled (inactive)</Badge>}
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              {zone.shape_type === "polygon" ? "Custom shape" : `${zone.radius || 200}m radius`} · {catCfg.label}
-                            </p>
-                            {zone.description && <p className="text-xs text-muted-foreground">{zone.description}</p>}
-                            {zone.schedule_enabled && zone.schedule_start_time && (
-                              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                <Clock className="h-3 w-3" /> {zone.schedule_start_time}–{zone.schedule_end_time} {zone.schedule_days?.join(", ")}
-                              </p>
-                            )}
-                            {currentLocation && active && (
-                              <p className={`text-xs mt-1 font-medium ${breachInfo.breached ? "text-destructive" : "text-emerald-600"}`}>
-                                {zone.zone_type === "safe"
-                                  ? (breachInfo.breached ? `⚠ Outside (${breachInfo.distance}m away)` : `✓ Inside (${breachInfo.distance}m from center)`)
-                                  : (breachInfo.breached ? `⚠ INSIDE danger zone! (${breachInfo.distance}m)` : `✓ Away (${breachInfo.distance}m)`)}
-                              </p>
-                            )}
-                            <div className="flex gap-1 mt-1.5 flex-wrap">
-                              {zone.shape_type === "polygon" && <Badge variant="outline" className="text-[10px]">Custom Shape</Badge>}
-                              {zone.notify_on_enter && <Badge variant="outline" className="text-[10px]"><Bell className="h-2.5 w-2.5 mr-0.5" />Enter alert</Badge>}
-                              {zone.notify_on_exit && <Badge variant="outline" className="text-[10px]"><Bell className="h-2.5 w-2.5 mr-0.5" />Exit alert</Badge>}
-                              {zone.schedule_enabled && <Badge variant="outline" className="text-[10px]"><Clock className="h-2.5 w-2.5 mr-0.5" />Scheduled</Badge>}
-                            </div>
-                          </div>
-                          <div className="flex gap-1 shrink-0">
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openZoneForm(zone)}>
-                              <Edit2 className="h-3 w-3" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteZone(zone.id, zone.name)}>
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs font-medium ${s.color}`}>{s.icon} {s.label}</span>
+                          {req.is_emergency && req.status !== "emergency_approved" && <Badge variant="destructive" className="text-[10px]">Emergency</Badge>}
                         </div>
+                        {req.message && <p className="text-xs text-muted-foreground mt-0.5">"{req.message}"</p>}
+                        <p className="text-xs text-muted-foreground">{new Date(req.created_at).toLocaleString()}</p>
                       </CardContent>
                     </Card>
                   );
@@ -1250,200 +948,423 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
             </div>
           )}
 
-          {/* ─── ALERTS TAB */}
-          {activeTab === "alerts" && (
-            <div>
-              {unreadAlerts > 0 && (
-                <div className="flex justify-end mb-3">
-                  <Button variant="outline" size="sm" onClick={() => acknowledgeAll.mutate(caredOneId, { onSuccess: () => toast({ title: "All alerts acknowledged ✓" }) })} disabled={acknowledgeAll.isPending}>
-                    <CheckCircle2 className="h-3 w-3 mr-1" /> Mark all read
-                  </Button>
-                </div>
-              )}
-              {(alerts || []).length === 0 ? (
-                <div className="text-center py-10 text-muted-foreground">
-                  <Bell className="h-10 w-10 mx-auto mb-2 opacity-40" />
-                  <p className="text-sm">No zone alerts</p>
-                  <p className="text-xs mt-1">Alerts appear when {caredOneName} enters or exits a zone</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {(alerts || []).map((alert: any) => {
-                    const typeConfig: Record<string, { label: string; color: string }> = {
-                      exited_safe_zone:    { label: "Left Safe Zone",      color: "text-destructive" },
-                      entered_safe_zone:   { label: "Entered Safe Zone",   color: "text-emerald-600" },
-                      entered_danger_zone: { label: "Entered Danger Zone", color: "text-destructive" },
-                      exited_danger_zone:  { label: "Left Danger Zone",    color: "text-emerald-600" },
-                    };
-                    const cfg = typeConfig[alert.alert_type] || { label: alert.alert_type, color: "text-muted-foreground" };
-                    return (
-                      <Card key={alert.id}
-                        className={`border-transparent card-elevated ${!alert.is_read ? "border-l-2 border-l-destructive" : "opacity-70"}`}>
-                        <CardContent className="p-3">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className={`text-sm font-semibold ${cfg.color}`}>{cfg.label}</span>
-                                {alert.safe_zone?.name && <Badge variant="secondary" className="text-[10px]">{alert.safe_zone.name}</Badge>}
-                              </div>
-                              {alert.message && <p className="text-xs text-muted-foreground mt-0.5">{alert.message}</p>}
-                              {alert.distance_from_center != null && (
-                                <p className="text-xs text-muted-foreground">{Math.round(alert.distance_from_center)}m from center</p>
-                              )}
-                              <p className="text-xs text-muted-foreground mt-1">{new Date(alert.created_at).toLocaleString()}</p>
-                            </div>
-                            {!alert.is_read ? (
-                              <Button variant="outline" size="sm" className="text-xs h-7 shrink-0"
-                                onClick={() => acknowledgeAlert.mutate({ alertId: alert.id, userId: caredOneId })}
-                                disabled={acknowledgeAlert.isPending}>
-                                <CheckCircle2 className="h-3 w-3 mr-1" /> Ack
-                              </Button>
-                            ) : <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              )}
+          {(locationRequests || []).length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              <Send className="h-10 w-10 mx-auto mb-2 opacity-40" />
+              <p className="text-sm">No location requests yet</p>
             </div>
           )}
+        </div>
+      )}
 
-          {/* ─── REQUESTS TAB */}
-          {activeTab === "requests" && (
-            <div className="space-y-4">
-              <Card className="border-transparent card-elevated">
-                <CardContent className="p-4 space-y-3">
-                  <h3 className="font-semibold text-sm">Request {caredOneName}'s Location</h3>
-                  <Textarea value={requestMessage} onChange={e => setRequestMessage(e.target.value)}
-                    placeholder="Optional message (why you need their location)..." rows={2} />
-                  <div className={`flex flex-col gap-2 p-3 rounded-lg border ${isEmergency ? "bg-destructive/10 border-destructive/30" : "bg-muted/30 border-border"}`}>
-                    <div className="flex items-center gap-3">
-                      <input type="checkbox" id="emerg-chk" checked={isEmergency}
-                        onChange={e => { setIsEmergency(e.target.checked); setEmergencyConfirm(false); }} className="rounded" />
-                      <label htmlFor="emerg-chk" className="text-sm font-medium cursor-pointer">🚨 Emergency request</label>
-                    </div>
-                    {isEmergency && (
-                      <p className="text-xs text-destructive pl-5">
-                        Bypasses approval — {caredOneName}'s location will be shared immediately without their consent. They will be notified.
-                      </p>
-                    )}
-                  </div>
-                  {emergencyConfirm && (
-                    <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-sm text-destructive font-medium">
-                      ⚠️ Are you sure? Click Send again to confirm.
-                    </div>
-                  )}
-                  <Button className="w-full" style={isEmergency ? { background: "#EF4444", color: "white" } : undefined}
-                    onClick={handleSendRequest} disabled={sendingRequest || sendRequest.isPending}>
-                    {(sendingRequest || sendRequest.isPending) ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
-                    {isEmergency && emergencyConfirm ? "Confirm Emergency Request" : isEmergency ? "Send Emergency Request" : "Send Request"}
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {(locationRequests || []).filter((r: any) => r.status === "pending").length > 0 && (
-                <div>
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-2">Pending</h3>
-                  <div className="space-y-2">
-                    {(locationRequests || []).filter((r: any) => r.status === "pending").map((req: any) => (
-                      <Card key={req.id} className="border-transparent card-elevated border-l-2 border-l-amber-400">
-                        <CardContent className="p-3">
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-medium text-amber-500">⏳ Awaiting response</span>
-                                {req.is_emergency && <Badge variant="destructive" className="text-[10px]">EMERGENCY</Badge>}
-                              </div>
-                              {req.message && <p className="text-xs text-muted-foreground mt-0.5">"{req.message}"</p>}
-                              <p className="text-xs text-muted-foreground">{new Date(req.created_at).toLocaleString()}</p>
-                            </div>
-                            <Button variant="ghost" size="sm" className="text-destructive text-xs h-7"
-                              onClick={() => cancelRequest.mutate({ requestId: req.id, caredOneId })}
-                              disabled={cancelRequest.isPending}>Cancel</Button>
+      {/* ALERTS */}
+      {activeTab === "alerts" && (
+        <div>
+          {unreadAlerts > 0 && (
+            <div className="flex justify-end mb-3">
+              <Button variant="outline" size="sm" onClick={() => acknowledgeAll.mutate(caredOneId, { onSuccess: () => toast({ title: "All alerts acknowledged ✓" }) })} disabled={acknowledgeAll.isPending}>
+                <CheckCircle2 className="h-3 w-3 mr-1" /> Mark all read
+              </Button>
+            </div>
+          )}
+          {(alerts || []).length === 0 ? (
+            <div className="text-center py-10 text-muted-foreground">
+              <Bell className="h-10 w-10 mx-auto mb-2 opacity-40" />
+              <p className="text-sm">No zone alerts</p>
+              <p className="text-xs mt-1">Alerts appear when {caredOneName} enters or exits a zone</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {(alerts || []).map((alert: any) => {
+                const typeConfig: Record<string, { label: string; color: string }> = {
+                  exited_safe_zone:    { label: "Left Safe Zone",      color: "text-destructive" },
+                  entered_safe_zone:   { label: "Entered Safe Zone",   color: "text-emerald-600" },
+                  entered_danger_zone: { label: "Entered Danger Zone", color: "text-destructive" },
+                  exited_danger_zone:  { label: "Left Danger Zone",    color: "text-emerald-600" },
+                };
+                const cfg = typeConfig[alert.alert_type] || { label: alert.alert_type, color: "text-muted-foreground" };
+                return (
+                  <Card key={alert.id}
+                    className={`border-transparent card-elevated ${!alert.is_read ? "border-l-2 border-l-destructive" : "opacity-70"}`}>
+                    <CardContent className="p-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`text-sm font-semibold ${cfg.color}`}>{cfg.label}</span>
+                            {alert.safe_zone?.name && <Badge variant="secondary" className="text-[10px]">{alert.safe_zone.name}</Badge>}
                           </div>
-                        </CardContent>
-                      </Card>
+                          {alert.message && <p className="text-xs text-muted-foreground mt-0.5">{alert.message}</p>}
+                          {alert.distance_from_center != null && (
+                            <p className="text-xs text-muted-foreground">{Math.round(alert.distance_from_center)}m from center</p>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-1">{new Date(alert.created_at).toLocaleString()}</p>
+                        </div>
+                        {!alert.is_read ? (
+                          <Button variant="outline" size="sm" className="text-xs h-7 shrink-0"
+                            onClick={() => acknowledgeAlert.mutate({ alertId: alert.id, userId: caredOneId })}
+                            disabled={acknowledgeAlert.isPending}>
+                            <CheckCircle2 className="h-3 w-3 mr-1" /> Ack
+                          </Button>
+                        ) : <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* SAFE ZONES */}
+      {activeTab === "safezones" && (
+        <div>
+          {showZoneForm && (
+            <Card className="border-primary/20 card-elevated mb-4">
+              <CardContent className="p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold">{editingZone ? "Edit Zone" : "New Zone"}</h3>
+                  <Button variant="ghost" size="icon" className="h-7 w-7"
+                    onClick={() => { setShowZoneForm(false); setEditingZone(null); setDrawMode("idle"); setDrawnPoints([]); setCornerRadii([]); }}>
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+
+                {/* Zone type toggle */}
+                <div className="flex rounded-lg border overflow-hidden">
+                  {(["safe", "danger"] as const).map(t => (
+                    <button key={t} onClick={() => setZoneForm(p => ({ ...p, zone_type: t }))}
+                      className={`flex-1 py-2 text-sm font-medium transition-colors
+                        ${zoneForm.zone_type === t
+                          ? t === "danger" ? "bg-destructive text-destructive-foreground" : "bg-emerald-500 text-white"
+                          : "bg-transparent text-muted-foreground hover:bg-accent"}`}>
+                      {t === "safe" ? "✅ Safe Zone" : "⚠️ Danger Zone"}
+                    </button>
+                  ))}
+                </div>
+                {zoneForm.zone_type === "danger" && (
+                  <p className="text-xs text-destructive bg-destructive/10 rounded p-2">
+                    Alert when {caredOneName} enters this area (e.g. casino, restricted area)
+                  </p>
+                )}
+
+                <div>
+                  <Label className="text-xs">Zone Name *</Label>
+                  <Input value={zoneForm.name} onChange={e => setZoneForm(p => ({ ...p, name: e.target.value }))}
+                    placeholder='e.g. "Home", "Casino"' className="mt-1" />
+                </div>
+
+                {zoneForm.zone_type === "safe" && (
+                  <div>
+                    <Label className="text-xs">Category</Label>
+                    <div className="flex gap-2 mt-1 flex-wrap">
+                      {Object.entries(CATEGORY_CONFIG).map(([key, cfg]) => {
+                        const Icon = cfg.icon; const active = zoneForm.category === key;
+                        return (
+                          <button key={key} onClick={() => setZoneForm(p => ({ ...p, category: key }))}
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-colors"
+                            style={{ borderColor: active ? cfg.color : undefined, color: active ? cfg.color : undefined, backgroundColor: active ? `${cfg.color}20` : undefined }}>
+                            <Icon className="h-3 w-3" /> {cfg.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <Label className="text-xs">Shape Type</Label>
+                  <div className="flex rounded-lg border overflow-hidden mt-1">
+                    {(["radius", "polygon"] as const).map(st => (
+                      <button key={st} onClick={() => {
+                        setZoneForm(p => ({ ...p, shape_type: st }));
+                        if (st === "radius") { setDrawMode("idle"); setDrawnPoints([]); setCornerRadii([]); }
+                      }}
+                        className={`flex-1 py-1.5 text-sm font-medium transition-colors
+                          ${zoneForm.shape_type === st ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground hover:bg-accent"}`}>
+                        {st === "radius" ? "⬤ Radius" : "⬡ Precise Border"}
+                      </button>
                     ))}
                   </div>
                 </div>
-              )}
 
-              {(locationRequests || []).filter((r: any) => r.status !== "pending").length > 0 && (
-                <div>
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-2">History</h3>
+                {zoneForm.shape_type === "radius" && (
+                  <>
+                    <div>
+                      <Label className="text-xs">Zone Center</Label>
+                      <div className="flex gap-2 mt-1 flex-wrap">
+                        <Button variant="outline" size="sm" onClick={() => setPickingOnMap(!pickingOnMap)}>
+                          <Navigation className="h-3 w-3 mr-1" />{pickingOnMap ? "Cancel picking" : "Pick on Map"}
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={handleUseCaredOneLocation}>
+                          <MapPin className="h-3 w-3 mr-1" />Use {caredOneName}'s Location
+                        </Button>
+                      </div>
+                      {pickingOnMap && <p className="text-xs text-primary mt-1 font-medium">👆 Click on the map above to set center</p>}
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        <div>
+                          <Label className="text-[10px] text-muted-foreground">Latitude</Label>
+                          <Input value={zoneForm.latitude} onChange={e => setZoneForm(p => ({ ...p, latitude: e.target.value }))}
+                            placeholder="40.71280" className="mt-0.5 font-mono text-xs" />
+                        </div>
+                        <div>
+                          <Label className="text-[10px] text-muted-foreground">Longitude</Label>
+                          <Input value={zoneForm.longitude} onChange={e => setZoneForm(p => ({ ...p, longitude: e.target.value }))}
+                            placeholder="-74.00600" className="mt-0.5 font-mono text-xs" />
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <Label className="text-xs">Radius</Label>
+                        <span className="text-xs text-muted-foreground font-mono">{zoneForm.radius}m</span>
+                      </div>
+                      <Slider min={50} max={5000} step={50} value={[zoneForm.radius]}
+                        onValueChange={([v]) => setZoneForm(p => ({ ...p, radius: v }))} />
+                      <div className="flex justify-between text-[10px] text-muted-foreground mt-0.5"><span>50m</span><span>5km</span></div>
+                    </div>
+                  </>
+                )}
+
+                {zoneForm.shape_type === "polygon" && (
                   <div className="space-y-2">
-                    {(locationRequests || []).filter((r: any) => r.status !== "pending").map((req: any) => {
-                      const sc: Record<string, { icon: string; label: string; color: string }> = {
-                        accepted:           { icon: "✓",  label: "Accepted",               color: "text-emerald-600" },
-                        emergency_approved: { icon: "🚨", label: "Emergency — Auto-shared", color: "text-destructive" },
-                        declined:           { icon: "✗",  label: "Declined",               color: "text-destructive" },
-                        rejected:           { icon: "✗",  label: "Declined",               color: "text-destructive" },
-                        cancelled:          { icon: "—",  label: "Cancelled",              color: "text-muted-foreground" },
-                      };
-                      const s = sc[req.status] || { icon: "?", label: req.status, color: "text-muted-foreground" };
-                      return (
-                        <Card key={req.id} className="border-transparent card-elevated opacity-80">
-                          <CardContent className="p-3">
-                            <div className="flex items-center gap-2">
-                              <span className={`text-xs font-medium ${s.color}`}>{s.icon} {s.label}</span>
-                              {req.is_emergency && req.status !== "emergency_approved" && <Badge variant="destructive" className="text-[10px]">Emergency</Badge>}
+                    {drawMode === "idle" && (
+                      <Button className="w-full" variant="outline" onClick={() => { setDrawnPoints([]); setCornerRadii([]); setDrawMode("drawing"); }}>
+                        <Pencil className="h-3 w-3 mr-1" /> Start Drawing
+                      </Button>
+                    )}
+                    {drawMode === "drawing" && (
+                      <div className="space-y-2">
+                        <div className="text-xs text-muted-foreground bg-muted/50 rounded p-2 font-mono">
+                          {drawnPoints.length} point{drawnPoints.length !== 1 ? "s" : ""} placed
+                          {drawnPoints.length >= 3 && " · Press Enter to finish"}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" className="flex-1"
+                            onClick={() => { setDrawMode("idle"); setDrawnPoints([]); setCornerRadii([]); }}>
+                            <X className="h-3 w-3 mr-1" /> Cancel
+                          </Button>
+                          <Button size="sm" className="flex-1" disabled={drawnPoints.length < 3} onClick={finishDrawing}>
+                            ✓ Finish ({drawnPoints.length} pts)
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    {drawMode === "editing" && (
+                      <div className="space-y-2">
+                        <p className="text-xs text-emerald-600 font-medium">
+                          ✓ {drawnPoints.length} vertices · Drag to reposition · Dbl-click to delete
+                        </p>
+                        {selectedVertex !== null && drawnPoints[selectedVertex] && (
+                          <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                            <div className="flex justify-between mb-1">
+                              <Label className="text-xs">Corner Rounding (Vertex {selectedVertex + 1})</Label>
+                              <span className="text-xs text-muted-foreground">
+                                {cornerRadii[selectedVertex] === 0 ? "Sharp" : `${(cornerRadii[selectedVertex] || 0).toFixed(1)}`}
+                              </span>
                             </div>
-                            {req.message && <p className="text-xs text-muted-foreground mt-0.5">"{req.message}"</p>}
-                            <p className="text-xs text-muted-foreground">{new Date(req.created_at).toLocaleString()}</p>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
+                            <Slider min={0} max={3} step={0.1}
+                              value={[cornerRadii[selectedVertex] || 0]}
+                              onValueChange={([v]) => setCornerRadii(prev => { const n = [...prev]; n[selectedVertex] = v; return n; })} />
+                            <div className="flex justify-between text-[10px] text-muted-foreground mt-0.5"><span>Sharp</span><span>Round</span></div>
+                          </div>
+                        )}
+                        {selectedVertex === null && (
+                          <p className="text-xs text-muted-foreground">Click a vertex to adjust its corner rounding</p>
+                        )}
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" className="flex-1"
+                            onClick={() => { setDrawMode("drawing"); setDrawnPoints([]); setCornerRadii([]); }}>
+                            <RotateCcw className="h-3 w-3 mr-1" /> Redraw
+                          </Button>
+                          <Button size="sm" variant="outline" className="flex-1 text-destructive"
+                            onClick={() => { setDrawMode("idle"); setDrawnPoints([]); setCornerRadii([]); }}>
+                            Clear All
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div>
+                  <Label className="text-xs">Description (optional)</Label>
+                  <Textarea value={zoneForm.description} onChange={e => setZoneForm(p => ({ ...p, description: e.target.value }))}
+                    placeholder="Optional notes..." rows={2} className="mt-1" />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs">Notify on enter</Label>
+                    <Switch checked={zoneForm.notify_on_enter} onCheckedChange={v => setZoneForm(p => ({ ...p, notify_on_enter: v }))} />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs">Notify on exit</Label>
+                    <Switch checked={zoneForm.notify_on_exit} onCheckedChange={v => setZoneForm(p => ({ ...p, notify_on_exit: v }))} />
                   </div>
                 </div>
-              )}
 
-              {(locationRequests || []).length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Send className="h-10 w-10 mx-auto mb-2 opacity-40" />
-                  <p className="text-sm">No location requests yet</p>
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label className="text-xs font-semibold">Schedule</Label>
+                    <Switch checked={zoneForm.schedule_enabled} onCheckedChange={v => setZoneForm(p => ({ ...p, schedule_enabled: v }))} />
+                  </div>
+                  {zoneForm.schedule_enabled && (
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-[10px] text-muted-foreground">Start</Label>
+                          <Input type="time" value={zoneForm.schedule_start_time}
+                            onChange={e => setZoneForm(p => ({ ...p, schedule_start_time: e.target.value }))} className="mt-0.5" />
+                        </div>
+                        <div>
+                          <Label className="text-[10px] text-muted-foreground">End</Label>
+                          <Input type="time" value={zoneForm.schedule_end_time}
+                            onChange={e => setZoneForm(p => ({ ...p, schedule_end_time: e.target.value }))} className="mt-0.5" />
+                        </div>
+                      </div>
+                      <div className="flex gap-1 flex-wrap">
+                        {DAYS.map(d => (
+                          <button key={d}
+                            onClick={() => setZoneForm(p => ({
+                              ...p,
+                              schedule_days: p.schedule_days.includes(d) ? p.schedule_days.filter(x => x !== d) : [...p.schedule_days, d],
+                            }))}
+                            className={`px-2 py-1 rounded text-xs border font-medium transition-colors
+                              ${zoneForm.schedule_days.includes(d) ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground"}`}>
+                            {d}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+
+                <div className="flex gap-2 pt-1">
+                  <Button variant="outline" className="flex-1"
+                    onClick={() => { setShowZoneForm(false); setEditingZone(null); setDrawMode("idle"); setDrawnPoints([]); setCornerRadii([]); }}>
+                    Cancel
+                  </Button>
+                  <Button className="flex-1 text-white"
+                    style={{ background: zoneForm.zone_type === "danger" ? "#EF4444" : "#10B981" }}
+                    onClick={handleSaveZone}
+                    disabled={createZone.isPending || updateZone.isPending || !zoneForm.name.trim()}>
+                    {(createZone.isPending || updateZone.isPending) && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+                    {editingZone ? "Save Changes" : "Create Zone"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           )}
 
-          {/* ─── HISTORY TAB */}
-          {activeTab === "history" && (
-            <div className="space-y-2">
-              {(locationHistory || []).length === 0 ? (
-                <div className="text-center py-10 text-muted-foreground">
-                  <Clock className="h-10 w-10 mx-auto mb-2 opacity-40" />
-                  <p className="text-sm">No location history</p>
-                  <p className="text-xs mt-1">Location history appears after {caredOneName} shares their location</p>
-                </div>
-              ) : (locationHistory || []).map((entry: any, idx: number) => (
-                <Card key={entry.id} className="border-transparent card-elevated">
+          {/* Zone list */}
+          <div className="space-y-2">
+            {(zones || []).length === 0 && !showZoneForm && (
+              <div className="text-center py-8 text-muted-foreground">
+                <Shield className="h-10 w-10 mx-auto mb-2 opacity-40" />
+                <p className="text-sm">No zones configured</p>
+                <p className="text-xs">Add safe zones like Home or Work, or danger zones to avoid</p>
+                <Button variant="outline" size="sm" className="mt-3" onClick={() => openZoneForm()}>
+                  <Plus className="h-3 w-3 mr-1" /> Add First Zone
+                </Button>
+              </div>
+            )}
+            {(zones || []).map((zone: any) => {
+              const catCfg = CATEGORY_CONFIG[zone.category] || CATEGORY_CONFIG.custom;
+              const color = zone.zone_type === "danger" ? "#EF4444" : catCfg.color;
+              const Icon = zone.zone_type === "danger" ? Ban : catCfg.icon;
+              const active = isZoneActive(zone);
+              const breachInfo = currentLocation
+                ? checkZoneBreach(zone, parseFloat(currentLocation.latitude), parseFloat(currentLocation.longitude))
+                : { breached: false, distance: 0 };
+              return (
+                <Card key={zone.id} className="border-transparent card-elevated">
                   <CardContent className="p-3">
                     <div className="flex items-start gap-3">
-                      <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${idx === 0 ? "bg-emerald-500" : "bg-muted-foreground/40"}`} />
+                      <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                        style={{ background: `${color}20`, color }}>
+                        <Icon className="h-4 w-4" />
+                      </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className={`text-xs font-medium ${idx === 0 ? "text-emerald-600" : "text-muted-foreground"}`}>
-                            {idx === 0 ? "Current" : "Previous"}
-                          </span>
-                          <span className="text-xs text-muted-foreground">{new Date(entry.created_at).toLocaleString()}</span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold text-sm">{zone.name}</span>
+                          {zone.zone_type === "danger" && <Badge variant="destructive" className="text-[10px]">DANGER</Badge>}
+                          {!active && <Badge variant="secondary" className="text-[10px]">⏰ Scheduled (inactive)</Badge>}
                         </div>
-                        {entry.address && <p className="text-sm mt-0.5">{entry.address}</p>}
-                        {entry.location_name && !entry.address && <p className="text-sm">{entry.location_name}</p>}
-                        <p className="text-xs text-muted-foreground font-mono">
-                          {parseFloat(entry.latitude).toFixed(4)}, {parseFloat(entry.longitude).toFixed(4)}
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {zone.shape_type === "polygon" ? "Custom shape" : `${zone.radius || 200}m radius`} · {catCfg.label}
                         </p>
-                        {entry.battery_level != null && <p className="text-xs text-muted-foreground">🔋 {entry.battery_level}%</p>}
+                        {zone.description && <p className="text-xs text-muted-foreground">{zone.description}</p>}
+                        {zone.schedule_enabled && zone.schedule_start_time && (
+                          <p className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Clock className="h-3 w-3" /> {zone.schedule_start_time}–{zone.schedule_end_time} {zone.schedule_days?.join(", ")}
+                          </p>
+                        )}
+                        {currentLocation && active && (
+                          <p className={`text-xs mt-1 font-medium ${breachInfo.breached ? "text-destructive" : "text-emerald-600"}`}>
+                            {zone.zone_type === "safe"
+                              ? (breachInfo.breached ? `⚠ Outside (${breachInfo.distance}m away)` : `✓ Inside (${breachInfo.distance}m from center)`)
+                              : (breachInfo.breached ? `⚠ INSIDE danger zone! (${breachInfo.distance}m)` : `✓ Away (${breachInfo.distance}m)`)}
+                          </p>
+                        )}
+                        <div className="flex gap-1 mt-1.5 flex-wrap">
+                          {zone.shape_type === "polygon" && <Badge variant="outline" className="text-[10px]">Custom Shape</Badge>}
+                          {zone.notify_on_enter && <Badge variant="outline" className="text-[10px]"><Bell className="h-2.5 w-2.5 mr-0.5" />Enter alert</Badge>}
+                          {zone.notify_on_exit && <Badge variant="outline" className="text-[10px]"><Bell className="h-2.5 w-2.5 mr-0.5" />Exit alert</Badge>}
+                          {zone.schedule_enabled && <Badge variant="outline" className="text-[10px]"><Clock className="h-2.5 w-2.5 mr-0.5" />Scheduled</Badge>}
+                        </div>
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openZoneForm(zone)}>
+                          <Edit2 className="h-3 w-3" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteZone(zone.id, zone.name)}>
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
-          )}
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* HISTORY */}
+      {activeTab === "history" && (
+        <div className="space-y-2">
+          {(locationHistory || []).length === 0 ? (
+            <div className="text-center py-10 text-muted-foreground">
+              <Clock className="h-10 w-10 mx-auto mb-2 opacity-40" />
+              <p className="text-sm">No location history</p>
+              <p className="text-xs mt-1">Location history appears after {caredOneName} shares their location</p>
+            </div>
+          ) : (locationHistory || []).map((entry: any, idx: number) => (
+            <Card key={entry.id} className="border-transparent card-elevated">
+              <CardContent className="p-3">
+                <div className="flex items-start gap-3">
+                  <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${idx === 0 ? "bg-emerald-500" : "bg-muted-foreground/40"}`} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-medium ${idx === 0 ? "text-emerald-600" : "text-muted-foreground"}`}>
+                        {idx === 0 ? "Current" : "Previous"}
+                      </span>
+                      <span className="text-xs text-muted-foreground">{new Date(entry.created_at).toLocaleString()}</span>
+                    </div>
+                    {entry.address && <p className="text-sm mt-0.5">{entry.address}</p>}
+                    {entry.location_name && !entry.address && <p className="text-sm">{entry.location_name}</p>}
+                    <p className="text-xs text-muted-foreground font-mono">
+                      {parseFloat(entry.latitude).toFixed(4)}, {parseFloat(entry.longitude).toFixed(4)}
+                    </p>
+                    {entry.battery_level != null && <p className="text-xs text-muted-foreground">🔋 {entry.battery_level}%</p>}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
