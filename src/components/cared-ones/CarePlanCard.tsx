@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, ArrowLeft, Check, Pencil, Trash2, X } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Plus, ArrowLeft, Check, Pencil, Trash2, X, ClipboardList, Loader2 } from "lucide-react";
 import { useCarePlans, useCreateCarePlan, useUpdateCarePlan, useDeleteCarePlan, useCarePlanGoals, useCreateCarePlanGoal, useUpdateCarePlanGoal } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 
@@ -44,15 +44,15 @@ function GoalsView({ planId }: { planId: string }) {
 
 export function CarePlanCard({ caredOneId }: { caredOneId: string }) {
   const { toast } = useToast();
-  const { data: plans } = useCarePlans(caredOneId);
+  const { data: plans, isLoading } = useCarePlans(caredOneId);
   const create = useCreateCarePlan();
   const update = useUpdateCarePlan();
   const del = useDeleteCarePlan();
+  const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState({ title: "", description: "" });
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ title: "", description: "" });
-  const [tab, setTab] = useState("view");
 
   const startEdit = (p: any) => { setEditId(p.id); setEditForm({ title: p.title, description: p.description || "" }); };
   const cancelEdit = () => setEditId(null);
@@ -63,10 +63,19 @@ export function CarePlanCard({ caredOneId }: { caredOneId: string }) {
     });
   };
 
+  const handleAdd = () => {
+    if (!form.title) return;
+    create.mutate({ user_id: caredOneId, title: form.title, description: form.description || undefined }, {
+      onSuccess: () => { setForm({ title: "", description: "" }); setAddOpen(false); toast({ title: "Plan created" }); }
+    });
+  };
+
   if (selectedPlan) {
     return (
       <div>
-        <h2 className="text-lg font-bold text-foreground mb-4">Care Plans</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-foreground">Care Plans</h2>
+        </div>
         <Button variant="ghost" size="sm" onClick={() => setSelectedPlan(null)} className="mb-2"><ArrowLeft className="h-4 w-4 mr-1" /> Back</Button>
         <GoalsView planId={selectedPlan} />
       </div>
@@ -75,58 +84,69 @@ export function CarePlanCard({ caredOneId }: { caredOneId: string }) {
 
   return (
     <div>
-      <h2 className="text-lg font-bold text-foreground mb-4">Care Plans</h2>
-      <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="w-full mb-4">
-          <TabsTrigger value="view" className="flex-1">View Plans ({(plans || []).length})</TabsTrigger>
-          <TabsTrigger value="add" className="flex-1">Add New</TabsTrigger>
-        </TabsList>
-        <TabsContent value="view">
-          <div className="space-y-2">
-            {(plans || []).map((p: any) => (
-              <Card key={p.id} className="border-transparent card-elevated">
-                <CardContent className="p-4">
-                  {editId === p.id ? (
-                    <div className="space-y-2">
-                      <Input value={editForm.title} onChange={e => setEditForm(prev => ({ ...prev, title: e.target.value }))} placeholder="Plan title" />
-                      <Textarea value={editForm.description} onChange={e => setEditForm(prev => ({ ...prev, description: e.target.value }))} rows={2} />
-                      <div className="flex gap-2 justify-end">
-                        <Button variant="ghost" size="sm" onClick={cancelEdit}><X className="h-3.5 w-3.5 mr-1" /> Cancel</Button>
-                        <Button variant="coral" size="sm" onClick={saveEdit} disabled={update.isPending}><Check className="h-3.5 w-3.5 mr-1" /> Save</Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex justify-between items-start gap-2">
-                      <div className="min-w-0 cursor-pointer flex-1" onClick={() => setSelectedPlan(p.id)}>
-                        <h4 className="font-medium text-foreground">{p.title}</h4>
-                        {p.description && <p className="text-xs text-muted-foreground mt-1">{p.description}</p>}
-                        <Badge variant="secondary" className="text-xs mt-2">{p.status || "active"}</Badge>
-                      </div>
-                      <div className="flex gap-1 shrink-0">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); startEdit(p); }}><Pencil className="h-3 w-3" /></Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={(e) => { e.stopPropagation(); del.mutate(p.id); }}><Trash2 className="h-3 w-3" /></Button>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-            {(plans || []).length === 0 && <p className="text-center py-8 text-muted-foreground">No care plans yet. Add one from the "Add New" tab.</p>}
-          </div>
-        </TabsContent>
-        <TabsContent value="add">
-          <Card className="border-transparent card-elevated"><CardContent className="p-5 space-y-3">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-bold text-foreground">Care Plans</h2>
+        <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> Add</Button>
+      </div>
+
+      {/* Add Dialog */}
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Care Plan</DialogTitle>
+            <DialogDescription>Define a care plan with goals to track progress</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
             <Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="Plan title (e.g. Recovery Plan)" />
-            <Textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Describe the plan goals..." rows={2} />
-            <Button variant="coral" className="w-full" onClick={() => {
-              if (!form.title) return;
-              create.mutate({ user_id: caredOneId, title: form.title, description: form.description || undefined }, {
-                onSuccess: () => { setForm({ title: "", description: "" }); setTab("view"); toast({ title: "Plan created" }); }
-              });
-            }} disabled={create.isPending || !form.title}>Create Plan</Button>
-          </CardContent></Card>
-        </TabsContent>
-      </Tabs>
+            <Textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Describe the plan goals..." rows={3} />
+            <Button variant="coral" className="w-full" onClick={handleAdd} disabled={create.isPending || !form.title}>
+              {create.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />} Create Plan
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* List */}
+      {isLoading ? (
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground mx-auto my-8" />
+      ) : (plans || []).length === 0 ? (
+        <div className="text-center py-12">
+          <ClipboardList className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+          <p className="text-muted-foreground mb-3">No care plans yet</p>
+          <Button variant="coral" size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> Add First Plan</Button>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {(plans || []).map((p: any) => (
+            <Card key={p.id} className="border-transparent card-elevated">
+              <CardContent className="p-4">
+                {editId === p.id ? (
+                  <div className="space-y-2">
+                    <Input value={editForm.title} onChange={e => setEditForm(prev => ({ ...prev, title: e.target.value }))} placeholder="Plan title" />
+                    <Textarea value={editForm.description} onChange={e => setEditForm(prev => ({ ...prev, description: e.target.value }))} rows={2} />
+                    <div className="flex gap-2 justify-end">
+                      <Button variant="ghost" size="sm" onClick={cancelEdit}><X className="h-3.5 w-3.5 mr-1" /> Cancel</Button>
+                      <Button variant="coral" size="sm" onClick={saveEdit} disabled={update.isPending}><Check className="h-3.5 w-3.5 mr-1" /> Save</Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="min-w-0 cursor-pointer flex-1" onClick={() => setSelectedPlan(p.id)}>
+                      <h4 className="font-medium text-foreground">{p.title}</h4>
+                      {p.description && <p className="text-xs text-muted-foreground mt-1">{p.description}</p>}
+                      <Badge variant="secondary" className="text-xs mt-2">{p.status || "active"}</Badge>
+                    </div>
+                    <div className="flex gap-1 shrink-0">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); startEdit(p); }}><Pencil className="h-3 w-3" /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={(e) => { e.stopPropagation(); del.mutate(p.id); }}><Trash2 className="h-3 w-3" /></Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
