@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Pin, Megaphone } from "lucide-react";
 import { PostActions, VisibilitySelect } from "../PostActions";
+import { CommentsSection } from "@/components/comments/CommentsSection";
 import { useToast } from "@/hooks/use-toast";
 
 interface AnnouncementsTabProps {
@@ -62,6 +63,7 @@ export function AnnouncementsTab({
               </div>
               {a.title && <h4 className="font-semibold text-foreground mb-1">{a.title}</h4>}
               <p className="text-sm text-muted-foreground">{a.content}</p>
+              <CommentsSection entityType="post" entityId={a.id} compact />
             </CardContent>
           </Card>
         ))}

@@ -2584,3 +2584,80 @@ export function useUpdateDementiaStage() {
     },
   });
 }
+
+// ─── Unified Comments (posts, reviews, gallery, tasks) ──────
+export function useComments(entityType: string, entityId: string | null) {
+  return useQuery({
+    queryKey: ["comments", entityType, entityId],
+    queryFn: async () => {
+      if (!entityId) return [];
+      const { data, error } = await careDb
+        .from("comment")
+        .select("*")
+        .eq("entity_type", entityType)
+        .eq("entity_id", entityId)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      // Fetch author profiles
+      const authorIds = [...new Set((data || []).map((c: any) => c.author_id).filter(Boolean))];
+      let authorMap: Record<string, any> = {};
+      if (authorIds.length > 0) {
+        const { data: authors } = await careDb
+          .from("profile")
+          .select("id, full_name, avatar_url")
+          .in("id", authorIds);
+        (authors || []).forEach((a: any) => { authorMap[a.id] = a; });
+      }
+      // Build tree: top-level + replies
+      const all = (data || []).map((c: any) => ({ ...c, author: authorMap[c.author_id] || null, replies: [] as any[] }));
+      const topLevel: any[] = [];
+      const replyMap: Record<string, any[]> = {};
+      for (const c of all) {
+        if (!c.parent_id) {
+          topLevel.push(c);
+        } else {
+          if (!replyMap[c.parent_id]) replyMap[c.parent_id] = [];
+          replyMap[c.parent_id].push(c);
+        }
+      }
+      for (const tl of topLevel) {
+        tl.replies = replyMap[tl.id] || [];
+      }
+      return topLevel;
+    },
+    enabled: !!entityId,
+  });
+}
+
+export function useCreateComment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ entityType, entityId, content, parentId }: { entityType: string; entityId: string; content: string; parentId?: string }) => {
+      const userId = await getCurrentUserId();
+      if (!userId) throw new Error("Not authenticated");
+      const { error } = await careDb
+        .from("comment")
+        .insert({ entity_type: entityType, entity_id: entityId, author_id: userId, content, parent_id: parentId || null });
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ["comments", vars.entityType, vars.entityId] });
+    },
+  });
+}
+
+export function useDeleteComment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, entityType, entityId }: { id: string; entityType: string; entityId: string }) => {
+      const { error } = await careDb
+        .from("comment")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ["comments", vars.entityType, vars.entityId] });
+    },
+  });
+}

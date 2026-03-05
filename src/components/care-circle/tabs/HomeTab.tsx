@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ListTodo, Users, Heart } from "lucide-react";
 import { PostActions, VisibilitySelect } from "../PostActions";
+import { CommentsSection } from "@/components/comments/CommentsSection";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -91,6 +92,7 @@ export function HomeTab({
               </div>
               {p.title && <p className="font-medium text-sm text-foreground mb-1">{p.title}</p>}
               <p className="text-sm text-muted-foreground">{p.content}</p>
+              <CommentsSection entityType="post" entityId={p.id} compact />
             </CardContent>
           </Card>
         ))}
