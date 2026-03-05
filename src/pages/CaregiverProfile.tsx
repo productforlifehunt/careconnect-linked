@@ -227,8 +227,14 @@ export default function CaregiverProfile() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Reviews ({reviews?.length || 0})</CardTitle>
-                {isAuthenticated && (
-                  <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
+                <Dialog open={reviewDialogOpen} onOpenChange={(open) => {
+                    if (open && !isAuthenticated) {
+                      toast({ title: "Please sign in to write a review", variant: "destructive" });
+                      navigate("/auth");
+                      return;
+                    }
+                    setReviewDialogOpen(open);
+                  }}>
                     <DialogTrigger asChild>
                       <Button variant="coral" size="sm"><Star className="h-3.5 w-3.5 mr-1" /> Write Review</Button>
                     </DialogTrigger>
@@ -265,7 +271,6 @@ export default function CaregiverProfile() {
                       </div>
                     </DialogContent>
                   </Dialog>
-                )}
               </div>
             </CardHeader>
             <CardContent className="space-y-4">

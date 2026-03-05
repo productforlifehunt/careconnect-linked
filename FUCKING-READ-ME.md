@@ -468,8 +468,11 @@ The `review` table stores provider ratings. `entity_id` = provider being reviewe
 `review` 表存储提供者评分。`entity_id` = 被评价的提供者，`reviewer_id` = 评价者。
 
 - Fields: `rating` (1-5), `comment`, `response_text` (provider's reply).
-- **IMPORTANT:** `rating_average` and `rating_count` on the profile are NOT auto-calculated. They must be manually recalculated when reviews change.
-- **重要:** profile 上的 `rating_average` 和 `rating_count` 不会自动计算。评价变更时必须手动重新计算。
+- **IMPORTANT:** `rating_average` and `rating_count` on the profile are NOT auto-calculated by DB triggers. Instead, `useCreateReview()` in `use-care-data.ts` recalculates them client-side after each insert: it fetches all reviews for the provider, computes the new average and count, and updates the `profile` row. Query invalidation (`["reviews"]`, `["provider"]`, `["providers"]`) ensures the UI reflects changes immediately.
+- **重要:** profile 上的 `rating_average` 和 `rating_count` 不是由数据库触发器自动计算的。而是由 `useCreateReview()` 在每次插入后客户端重新计算：获取该提供者的所有评价，计算新的平均值和数量，更新 `profile` 行。查询失效（`["reviews"]`, `["provider"]`, `["providers"]`）确保 UI 立即反映变化。
+
+- **Frontend flow:** The "Write Review" button is visible on `/caregiver/:id` for ALL users (not hidden behind auth). If not authenticated, clicking it redirects to `/auth`. Duplicate reviews are prevented in code (`maybeSingle()` check). The review dialog includes a 1-5 star picker and comment textarea.
+- **前端流程:** "写评价"按钮在 `/caregiver/:id` 页面对所有用户可见（不隐藏在登录后面）。未登录时点击会重定向到 `/auth`。代码中防止重复评价（`maybeSingle()` 检查）。评价对话框包含1-5星评分选择器和评论文本框。
 
 ---
 
