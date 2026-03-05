@@ -496,6 +496,11 @@ const en = {
     alreadyReviewedDesc: "You've already left a review for this provider.",
     reviewSubmitted: "Review submitted! Thank you.",
     reviewFailed: "Failed to submit review",
+    reviewDesc: "Share your experience with {{name}}",
+    rating: "Rating",
+    comment: "Comment (optional)",
+    reviewPlaceholder: "How was your experience?",
+    submitReview: "Submit Review",
     specialInstructions: "Special Instructions",
   },
 

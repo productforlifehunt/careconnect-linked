@@ -230,6 +230,39 @@ export default function Bookings() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Review Dialog */}
+      <Dialog open={reviewOpen} onOpenChange={setReviewOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Star className="h-5 w-5 text-warning" /> {t("bookings.leaveReview")}</DialogTitle>
+            <DialogDescription>{t("bookings.reviewDesc", { name: reviewBooking?.provider?.full_name || t("common.provider") })}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div>
+              <Label>{t("bookings.rating")}</Label>
+              <div className="flex gap-1 mt-1">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <button key={s} type="button" onClick={() => setReviewRating(s)} className="p-1 transition-colors">
+                    <Star className={`h-6 w-6 ${s <= reviewRating ? "text-warning fill-warning" : "text-muted-foreground"}`} />
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <Label>{t("bookings.comment")}</Label>
+              <Textarea value={reviewComment} onChange={e => setReviewComment(e.target.value)} placeholder={t("bookings.reviewPlaceholder")} rows={3} />
+            </div>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button variant="outline" onClick={() => setReviewOpen(false)}>{t("common.cancel")}</Button>
+              <Button variant="coral" onClick={handleSubmitReview} disabled={reviewSaving}>
+                {reviewSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Star className="h-4 w-4 mr-2" />}
+                {t("bookings.submitReview")}
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

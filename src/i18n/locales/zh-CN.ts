@@ -194,6 +194,8 @@ const zhCN = {
     rescheduleFailed: "改期失败", cannotPastDate: "不能改期到过去的日期",
     alreadyReviewed: "已评价过", alreadyReviewedDesc: "您已经为此服务提供者留下了评价。",
     reviewSubmitted: "评价已提交！谢谢。", reviewFailed: "提交评价失败",
+    reviewDesc: "分享您与{{name}}的体验", rating: "评分", comment: "评论（可选）",
+    reviewPlaceholder: "您的体验如何？", submitReview: "提交评价",
     specialInstructions: "特殊说明",
   },
   favorites: {
