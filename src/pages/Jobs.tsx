@@ -25,6 +25,7 @@ export default function Jobs() {
   const { isAuthenticated, user } = useAuth();
   const [sourceFilter, setSourceFilter] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState("browse");
   const { data: jobs, isLoading } = useJobPostings({ source: sourceFilter || undefined });
   const { data: myApps } = useMyJobApplications();
   const { data: myPostedJobs, isLoading: myPostsLoading } = useMyJobPostings();
@@ -85,6 +86,7 @@ export default function Jobs() {
 
   const myPostedCount = (myPostedJobs || []).length;
   const myAppsCount = (myApps || []).length;
+  const availableToApplyCount = filteredJobs.filter((job: any) => !myPostedJobIds.has(job.id) && job.status === "open" && !appliedJobIds.has(job.id)).length;
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
@@ -142,7 +144,7 @@ export default function Jobs() {
         </Select>
       </div>
 
-      <Tabs defaultValue="browse">
+      <Tabs value={activeTab} onValueChange={setActiveTab} defaultValue="browse">
         <TabsList>
           <TabsTrigger value="browse">Browse Jobs ({filteredJobs.length})</TabsTrigger>
           <TabsTrigger value="my-applications">My Applications ({myAppsCount})</TabsTrigger>
@@ -153,56 +155,84 @@ export default function Jobs() {
         <TabsContent value="browse" className="mt-4 space-y-4">
           {isLoading ? (
             <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
-          ) : filteredJobs.length > 0 ? filteredJobs.map((job: any) => (
-            <Card key={job.id} className="border-transparent card-elevated">
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-lg text-foreground">{job.title}</h3>
-                      <Badge variant="secondary" className="text-xs">{sourceLabels[job.job_source_type] || job.job_source_type}</Badge>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-2">
-                      {job.poster?.full_name && <span className="flex items-center gap-1"><User className="h-3 w-3" /> {job.poster.full_name}</span>}
-                      {(job.location || job.poster?.location) && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {job.location || job.poster?.location}</span>}
-                    </div>
-                  </div>
-                  <span className="text-xs text-muted-foreground shrink-0">
-                    {new Date(job.created_at).toLocaleDateString("en", { month: "short", day: "numeric" })}
-                  </span>
+          ) : filteredJobs.length > 0 ? (
+            <>
+              {isAuthenticated && availableToApplyCount === 0 && (
+                <div className="rounded-md border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+                  No open jobs from other users right now. You can manage your own posts in{" "}
+                  <button
+                    type="button"
+                    className="font-medium text-primary hover:underline"
+                    onClick={() => setActiveTab("my-posts")}
+                  >
+                    My Posted Jobs
+                  </button>
+                  .
                 </div>
-                <p className="text-sm text-muted-foreground mb-4 line-clamp-3">{job.description}</p>
-                <div className="flex items-center justify-between">
-                  <Badge variant={job.status === "open" ? "default" : "secondary"}>{job.status}</Badge>
-                  {isAuthenticated && (
-                    myPostedJobIds.has(job.id) ? (
-                      <Badge variant="outline" className="text-muted-foreground">Your Job</Badge>
-                    ) : appliedJobIds.has(job.id) ? (
-                      <Badge variant="outline" className="text-success border-success">Applied ✓</Badge>
-                    ) : job.status === "open" ? (
-                      <Dialog open={applyOpen === job.id} onOpenChange={open => { setApplyOpen(open ? job.id : null); if (!open) setCoverLetter(""); }}>
-                        <DialogTrigger asChild>
-                          <Button size="sm" variant="coral"><Send className="h-3 w-3 mr-1" /> Apply</Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader><DialogTitle>Apply to: {job.title}</DialogTitle></DialogHeader>
-                          <div className="space-y-4 mt-2">
-                            <div>
-                              <Label>Cover Letter *</Label>
-                              <Textarea value={coverLetter} onChange={e => setCoverLetter(e.target.value)} placeholder="Introduce yourself, explain your experience and why you're a good fit..." rows={5} className="mt-1" />
-                            </div>
-                            <Button variant="coral" className="w-full" onClick={() => handleApply(job.id)} disabled={applyToJob.isPending || !coverLetter.trim()}>
-                              {applyToJob.isPending ? "Submitting..." : "Submit Application"}
-                            </Button>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    ) : null
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )) : (
+              )}
+
+              {filteredJobs.map((job: any) => (
+                <Card key={job.id} className="border-transparent card-elevated">
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-lg text-foreground">{job.title}</h3>
+                          <Badge variant="secondary" className="text-xs">{sourceLabels[job.job_source_type] || job.job_source_type}</Badge>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-2">
+                          {job.poster?.full_name && <span className="flex items-center gap-1"><User className="h-3 w-3" /> {job.poster.full_name}</span>}
+                          {(job.location || job.poster?.location) && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {job.location || job.poster?.location}</span>}
+                        </div>
+                      </div>
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        {new Date(job.created_at).toLocaleDateString("en", { month: "short", day: "numeric" })}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-4 line-clamp-3">{job.description}</p>
+                    <div className="flex items-center justify-between gap-3">
+                      <Badge variant={job.status === "open" ? "default" : "secondary"}>{job.status}</Badge>
+                      <div className="flex items-center gap-2">
+                        {isAuthenticated ? (
+                          myPostedJobIds.has(job.id) ? (
+                            <>
+                              <Badge variant="outline" className="text-muted-foreground">Your Job</Badge>
+                              <Button size="sm" variant="outline" onClick={() => setActiveTab("my-posts")}>Manage</Button>
+                            </>
+                          ) : appliedJobIds.has(job.id) ? (
+                            <>
+                              <Badge variant="outline" className="text-success border-success">Applied ✓</Badge>
+                              <Button size="sm" variant="outline" onClick={() => setActiveTab("my-applications")}>View</Button>
+                            </>
+                          ) : job.status === "open" ? (
+                            <Dialog open={applyOpen === job.id} onOpenChange={open => { setApplyOpen(open ? job.id : null); if (!open) setCoverLetter(""); }}>
+                              <DialogTrigger asChild>
+                                <Button size="sm" variant="coral"><Send className="h-3 w-3 mr-1" /> Apply</Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader><DialogTitle>Apply to: {job.title}</DialogTitle></DialogHeader>
+                                <div className="space-y-4 mt-2">
+                                  <div>
+                                    <Label>Cover Letter *</Label>
+                                    <Textarea value={coverLetter} onChange={e => setCoverLetter(e.target.value)} placeholder="Introduce yourself, explain your experience and why you're a good fit..." rows={5} className="mt-1" />
+                                  </div>
+                                  <Button variant="coral" className="w-full" onClick={() => handleApply(job.id)} disabled={applyToJob.isPending || !coverLetter.trim()}>
+                                    {applyToJob.isPending ? "Submitting..." : "Submit Application"}
+                                  </Button>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                          ) : null
+                        ) : (
+                          <Badge variant="outline">Sign in to apply</Badge>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </>
+          ) : (
             <div className="text-center py-16">
               <Briefcase className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
               <p className="text-muted-foreground">No jobs found</p>
