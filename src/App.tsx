@@ -1,10 +1,11 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useMemo } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { SiteProvider } from "@/contexts/SiteContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -33,12 +34,21 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-// Dashboard routes that get sidebar
-const dashboardPaths = ["/dashboard", "/bookings", "/care-circle", "/gps-tracking", "/messages", "/favorites", "/notifications", "/profile", "/cared-ones", "/jobs", "/provider-dashboard"];
+// Dashboard routes that always get sidebar
+const baseDashboardPaths = ["/dashboard", "/bookings", "/care-circle", "/gps-tracking", "/messages", "/favorites", "/notifications", "/profile", "/cared-ones", "/jobs", "/provider-dashboard"];
+// Routes that get sidebar only when authenticated
+const authDashboardPaths = ["/search", "/caregiver"];
 
 function AppRoutes() {
   const location = useLocation();
-  const isDashboard = dashboardPaths.some((p) => location.pathname.startsWith(p));
+  const { isAuthenticated } = useAuth();
+
+  const isDashboard = useMemo(() => {
+    const allPaths = isAuthenticated
+      ? [...baseDashboardPaths, ...authDashboardPaths]
+      : baseDashboardPaths;
+    return allPaths.some((p) => location.pathname.startsWith(p));
+  }, [location.pathname, isAuthenticated]);
 
   const routes = (
     <Routes>
