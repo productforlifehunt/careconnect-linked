@@ -1957,6 +1957,49 @@ export function useApplyToJob() {
   });
 }
 
+export function useCreateExternalTestJob() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const userId = await getCurrentUserId();
+      if (!userId) throw new Error("Not authenticated");
+
+      const { data: candidates, error: candidateError } = await careDb
+        .from("profile")
+        .select("id, full_name, location")
+        .neq("id", userId)
+        .order("created_at", { ascending: true })
+        .limit(25);
+
+      if (candidateError) throw candidateError;
+
+      const poster = (candidates || []).find((p: any) => p?.id);
+      if (!poster) throw new Error("No other profile found to create a test job.");
+
+      const today = new Date().toISOString().split("T")[0];
+      const { error } = await careDb
+        .from("job_posting")
+        .insert({
+          posted_by: poster.id,
+          title: `Coverage needed this week (${today})`,
+          description: "Need caregiver support for weekdays. This is a real test posting created to validate apply flow.",
+          location: poster.location || "Local area",
+          status: "open",
+          job_source_type: "general",
+          start_date: today,
+        });
+
+      if (error) {
+        throw new Error(error.message || "Could not create test job from another profile.");
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["job-postings"] });
+      qc.invalidateQueries({ queryKey: ["my-job-postings"] });
+    },
+  });
+}
+
 export function useUpdateJobApplication() {
   const qc = useQueryClient();
   return useMutation({
