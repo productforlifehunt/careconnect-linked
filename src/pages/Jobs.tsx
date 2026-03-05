@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import {
   useJobPostings, useCreateJobPosting, useApplyToJob, useMyJobApplications,
-  useMyJobPostings, useJobApplications, useUpdateJobApplication,
+  useMyJobPostings, useJobApplications, useUpdateJobApplication, useCreateExternalTestJob,
 } from "@/hooks/use-care-data";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -31,6 +31,8 @@ export default function Jobs() {
   const { data: myPostedJobs, isLoading: myPostsLoading } = useMyJobPostings();
   const createJob = useCreateJobPosting();
   const applyToJob = useApplyToJob();
+  const createExternalTestJob = useCreateExternalTestJob();
+
 
   const [createOpen, setCreateOpen] = useState(false);
   const [applyOpen, setApplyOpen] = useState<string | null>(null);
@@ -167,6 +169,22 @@ export default function Jobs() {
                   >
                     My Posted Jobs
                   </button>
+                  {user?.is_admin && (
+                    <>
+                      {" "}or create a test external job{" "}
+                      <button
+                        type="button"
+                        className="font-medium text-primary hover:underline disabled:opacity-60"
+                        onClick={() => createExternalTestJob.mutate(undefined, {
+                          onSuccess: () => toast({ title: "Test job created", description: "A job from another profile is now available for apply testing." }),
+                          onError: (err: any) => toast({ title: "Could not create test job", description: err?.message || "Please check database policies", variant: "destructive" }),
+                        })}
+                        disabled={createExternalTestJob.isPending}
+                      >
+                        {createExternalTestJob.isPending ? "creating..." : "create one now"}
+                      </button>
+                    </>
+                  )}
                   .
                 </div>
               )}
