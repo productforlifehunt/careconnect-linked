@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { careAuth } from "@/integrations/supabase/external-client";
@@ -28,7 +29,7 @@ export default function ResetPassword() {
   }, []);
 
   const handleReset = async () => {
-    if (!password || password.length < 6) {
+    if (!password || password.length < 8) {
       toast({ title: t("resetPw.passwordMinLength"), variant: "destructive" });
       return;
     }
@@ -77,11 +78,11 @@ export default function ResetPassword() {
         <CardContent className="space-y-4">
           <div>
             <Label>{t("resetPw.newPassword")}</Label>
-            <Input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" onKeyDown={e => e.key === "Enter" && handleReset()} />
+            <PasswordInput value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" onKeyDown={e => e.key === "Enter" && handleReset()} />
           </div>
           <div>
             <Label>{t("resetPw.confirmPassword")}</Label>
-            <Input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="••••••••" onKeyDown={e => e.key === "Enter" && handleReset()} />
+            <PasswordInput value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="••••••••" onKeyDown={e => e.key === "Enter" && handleReset()} />
           </div>
           <Button variant="coral" className="w-full" onClick={handleReset} disabled={loading}>
             {loading ? t("resetPw.updating") : t("resetPw.updatePassword")}

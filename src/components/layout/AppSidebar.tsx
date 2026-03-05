@@ -9,6 +9,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { useTranslation } from "react-i18next";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSite } from "@/contexts/SiteContext";
@@ -51,6 +52,7 @@ export function AppSidebar() {
   const site = useSite();
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
+  const { t } = useTranslation();
 
   const getTitle = (item: any) => item.titleKey ? (site.navLabels as any)[item.titleKey] : item.title;
 
@@ -58,7 +60,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r">
       <SidebarContent className="pt-2">
         <SidebarGroup>
-          <SidebarGroupLabel>Browse</SidebarGroupLabel>
+          <SidebarGroupLabel>{t("nav.browse")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {publicItems.map((item) => {
@@ -80,7 +82,7 @@ export function AppSidebar() {
 
         {isAuthenticated && (
           <SidebarGroup>
-            <SidebarGroupLabel>My Care</SidebarGroupLabel>
+            <SidebarGroupLabel>{t("nav.myCare")}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {authItems.map((item) => {
@@ -105,10 +107,10 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Trust & Safety">
+                <SidebarMenuButton asChild tooltip={t("nav.trustSafety")}>
                   <NavLink to="/trust-safety" className="hover:bg-accent/50" activeClassName="bg-accent text-accent-foreground font-medium">
                     <Shield className="h-4 w-4" />
-                    {!collapsed && <span>Trust & Safety</span>}
+                    {!collapsed && <span>{t("nav.trustSafety")}</span>}
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>

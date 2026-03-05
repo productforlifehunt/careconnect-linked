@@ -199,6 +199,8 @@ const ja: typeof en = {
     cannotPastDate: "過去の日付には変更できません", alreadyReviewed: "レビュー済み",
     alreadyReviewedDesc: "このプロバイダーのレビューは既に投稿済みです。",
     reviewSubmitted: "レビューが送信されました！ありがとうございます。", reviewFailed: "レビューの送信に失敗",
+    reviewDesc: "{{name}}との体験を共有してください", rating: "評価", comment: "コメント（任意）",
+    reviewPlaceholder: "体験はいかがでしたか？", submitReview: "レビューを送信",
     specialInstructions: "特別な指示",
   },
   favorites: {

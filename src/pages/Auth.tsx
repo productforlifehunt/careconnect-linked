@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -111,7 +112,7 @@ export default function Auth() {
               </div>
               <div>
                 <Label>{t("common.password")}</Label>
-                <Input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} placeholder={t("auth.passwordPlaceholder")} onKeyDown={e => e.key === "Enter" && handleLogin()} />
+                <PasswordInput value={loginPassword} onChange={e => setLoginPassword(e.target.value)} placeholder={t("auth.passwordPlaceholder")} onKeyDown={e => e.key === "Enter" && handleLogin()} />
               </div>
               <Button variant="coral" className="w-full" onClick={handleLogin} disabled={loading}>
                 {loading ? t("auth.signingIn") : t("common.signIn")}
@@ -155,7 +156,7 @@ export default function Auth() {
               </div>
               <div>
                 <Label>{t("common.password")}</Label>
-                <Input type="password" value={signupPassword} onChange={e => setSignupPassword(e.target.value)} placeholder={t("auth.passwordHint")} />
+                <PasswordInput value={signupPassword} onChange={e => setSignupPassword(e.target.value)} placeholder={t("auth.passwordHint")} />
                 {signupPassword && (
                   <div className="mt-2 space-y-1">
                     <div className="flex gap-1">
