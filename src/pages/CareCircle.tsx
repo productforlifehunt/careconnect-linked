@@ -211,7 +211,7 @@ export default function CareCircle() {
       )}
 
       <Tabs defaultValue="home" className="w-full">
-        <ScrollArea className="w-full">
+        <div className="w-full overflow-x-auto scrollbar-thin pb-2">
           <TabsList className="flex w-max gap-1 mb-1">
             <TabsTrigger value="home" className="gap-1.5 text-xs"><Home className="h-3.5 w-3.5" /> {t("careCircle.home")}</TabsTrigger>
             <TabsTrigger value="calendar" className="gap-1.5 text-xs"><CalendarDays className="h-3.5 w-3.5" /> {t("careCircle.calendar")}</TabsTrigger>
@@ -224,7 +224,7 @@ export default function CareCircle() {
             <TabsTrigger value="members" className="gap-1.5 text-xs"><Users className="h-3.5 w-3.5" /> {t("careCircle.members")}</TabsTrigger>
             <TabsTrigger value="gallery" className="gap-1.5 text-xs"><Image className="h-3.5 w-3.5" /> {t("careCircle.gallery")}</TabsTrigger>
           </TabsList>
-        </ScrollArea>
+        </div>
 
         <TabsContent value="home" className="mt-4">
           <HomeTab pendingTasksCount={pendingTasks.length} membersCount={(members || []).length} caredOnesCount={(groupCaredOnes || []).length} allPosts={allPosts || []} activeGroupId={activeGroupId} userId={user?.id} isAdmin={!!isAdmin} memberCategories={memberCategories || []} createPost={createPost} onEditPost={setEditingPost} onTogglePin={handleTogglePin} onDeletePost={handleDeletePost} />
