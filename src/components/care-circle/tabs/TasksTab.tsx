@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, CheckCircle, Circle, Loader2, Trash2, Briefcase } from "lucide-react";
 import { VisibilitySelect } from "../PostActions";
+import { CommentsSection } from "@/components/comments/CommentsSection";
 import { useToast } from "@/hooks/use-toast";
 
 interface TasksTabProps {
@@ -119,29 +120,32 @@ export function TasksTab({
       ) : (
         <div className="space-y-2">
           {pendingTasks.map((t: any) => (
-            <div key={t.id} className="flex items-center gap-3 p-3 rounded-lg bg-card border group hover:shadow-sm transition-shadow">
-              <button onClick={() => toggleTask(t.id, t.status)} className="shrink-0"><Circle className="h-5 w-5 text-muted-foreground hover:text-primary" /></button>
-              <div className="flex-1 min-w-0 cursor-pointer" onClick={() => toggleTask(t.id, t.status)}>
-                <p className="text-sm font-medium text-foreground">{t.title}</p>
-                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                  {t.assignee_profile?.full_name && <span className="text-xs text-muted-foreground">{t.assignee_profile.full_name}</span>}
-                  {t.due_date && <span className="text-xs text-muted-foreground">Due: {new Date(t.due_date).toLocaleDateString("en", { month: "short", day: "numeric" })}</span>}
-                  {t.category && <Badge variant="outline" className="text-[10px] h-4">{t.category}</Badge>}
+            <div key={t.id} className="p-3 rounded-lg bg-card border group hover:shadow-sm transition-shadow">
+              <div className="flex items-center gap-3">
+                <button onClick={() => toggleTask(t.id, t.status)} className="shrink-0"><Circle className="h-5 w-5 text-muted-foreground hover:text-primary" /></button>
+                <div className="flex-1 min-w-0 cursor-pointer" onClick={() => toggleTask(t.id, t.status)}>
+                  <p className="text-sm font-medium text-foreground">{t.title}</p>
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                    {t.assignee_profile?.full_name && <span className="text-xs text-muted-foreground">{t.assignee_profile.full_name}</span>}
+                    {t.due_date && <span className="text-xs text-muted-foreground">Due: {new Date(t.due_date).toLocaleDateString("en", { month: "short", day: "numeric" })}</span>}
+                    {t.category && <Badge variant="outline" className="text-[10px] h-4">{t.category}</Badge>}
+                  </div>
+                </div>
+                <Badge variant="outline" className={priorityColors[t.priority] || ""}>{t.priority}</Badge>
+                <div className="flex gap-1 shrink-0">
+                  <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" title="Post to Job Board"
+                    onClick={(e) => { e.stopPropagation(); createJob.mutate({ title: t.title, description: t.description || `Help needed with: ${t.title}`, job_source_type: "group_task", linked_task_id: t.id, linked_group_id: activeGroupId!, location: "" }, { onSuccess: () => toast({ title: "Posted to Job Board" }) }); }}>
+                    <Briefcase className="h-3.5 w-3.5" />
+                  </Button>
+                  {(isAdmin || t.created_by === userId) && (
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive opacity-0 group-hover:opacity-100 hover:bg-destructive/10"
+                      onClick={(e) => { e.stopPropagation(); deleteTask.mutate(t.id, { onSuccess: () => toast({ title: "Task deleted" }) }); }}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
                 </div>
               </div>
-              <Badge variant="outline" className={priorityColors[t.priority] || ""}>{t.priority}</Badge>
-              <div className="flex gap-1 shrink-0">
-                <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" title="Post to Job Board"
-                  onClick={(e) => { e.stopPropagation(); createJob.mutate({ title: t.title, description: t.description || `Help needed with: ${t.title}`, job_source_type: "group_task", linked_task_id: t.id, linked_group_id: activeGroupId!, location: "" }, { onSuccess: () => toast({ title: "Posted to Job Board" }) }); }}>
-                  <Briefcase className="h-3.5 w-3.5" />
-                </Button>
-                {(isAdmin || t.created_by === userId) && (
-                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive opacity-0 group-hover:opacity-100 hover:bg-destructive/10"
-                    onClick={(e) => { e.stopPropagation(); deleteTask.mutate(t.id, { onSuccess: () => toast({ title: "Task deleted" }) }); }}>
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                )}
-              </div>
+              <CommentsSection entityType="task" entityId={t.id} compact />
             </div>
           ))}
           {completedTasks.length > 0 && (

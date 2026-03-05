@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Star, MapPin, Shield, Clock, CheckCircle, Calendar, MessageSquare, Heart, ArrowLeft, Phone, Loader2 } from "lucide-react";
+import { CommentsSection } from "@/components/comments/CommentsSection";
 import { useProvider, useProviderReviews, useCreateReview, useCreateBooking, useToggleSavedProvider, useSavedProviders, useStartConversation, useProviderAvailability } from "@/hooks/use-care-data";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -291,6 +292,7 @@ export default function CaregiverProfile() {
                       <span className="font-medium">Provider response:</span> {review.response_text}
                     </div>
                   )}
+                  <CommentsSection entityType="review" entityId={review.id} compact />
                 </div>
               )) : (
                 <p className="text-sm text-muted-foreground text-center py-4">No reviews yet</p>

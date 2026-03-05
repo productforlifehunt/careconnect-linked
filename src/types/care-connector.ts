@@ -204,3 +204,16 @@ export interface ServiceCategory {
   description: string | null;
   icon: string | null;
 }
+
+export interface Comment {
+  id: string;
+  entity_type: string;
+  entity_id: string;
+  parent_id: string | null;
+  author_id: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  author?: Profile;
+  replies?: Comment[];
+}

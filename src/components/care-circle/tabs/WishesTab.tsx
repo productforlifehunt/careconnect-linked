@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Star } from "lucide-react";
 import { PostActions } from "../PostActions";
+import { CommentsSection } from "@/components/comments/CommentsSection";
 import { useToast } from "@/hooks/use-toast";
 
 interface WishesTabProps {
@@ -45,6 +46,7 @@ export function WishesTab({ wishes, activeGroupId, userId, isAdmin, createPost, 
                 <PostActions post={w} userId={userId} isAdmin={isAdmin} onEdit={onEditPost} onTogglePin={onTogglePin} onDelete={onDeletePost} />
               </div>
               <p className="text-sm text-muted-foreground">{w.content}</p>
+              <CommentsSection entityType="post" entityId={w.id} compact />
             </CardContent>
           </Card>
         ))}

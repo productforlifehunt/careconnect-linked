@@ -299,6 +299,57 @@ All group posts live in one table: `care_group_post`. The `type` column says wha
 - **Gallery:** `care_group_gallery` table stores photos/media shared in a group. Each has `group_id`, `uploaded_by`, file URL, caption.
 - **相册:** `care_group_gallery` 表存储组内分享的照片/媒体。
 
+- **Comments:** All posts (discussion, announcement, wish), tasks, gallery items, and reviews support threaded comments via the unified `comment` table. See §8b for details.
+- **评论:** 所有帖子（讨论、公告、祝福）、任务、相册项目和评价都通过统一的 `comment` 表支持线程评论。详见 §8b。
+
+---
+
+## 8b. UNIFIED COMMENT SYSTEM / 统一评论系统
+
+The app uses a single `comment` table for all threaded replies across every entity type. This avoids duplicating comment logic per feature.
+
+应用使用单一的 `comment` 表为所有实体类型提供线程回复。避免每个功能重复评论逻辑。
+
+### Table: `comment`
+
+| Column        | Type         | Description                                                                 |
+| ------------- | ------------ | --------------------------------------------------------------------------- |
+| `id`          | UUID (PK)    | Auto-generated                                                              |
+| `entity_type` | TEXT         | One of: `post`, `review`, `gallery`, `task`                                 |
+| `entity_id`   | UUID         | The ID of the parent entity (e.g. a `care_group_post.id` or `review.id`)    |
+| `parent_id`   | UUID (nullable) | NULL = top-level comment. Set to a comment ID = reply to that comment (max 2 levels) |
+| `author_id`   | UUID         | The user who wrote the comment                                              |
+| `content`     | TEXT         | Comment body                                                                |
+| `created_at`  | TIMESTAMPTZ  | Auto-set                                                                    |
+| `updated_at`  | TIMESTAMPTZ  | Auto-set                                                                    |
+
+### Nesting rules / 嵌套规则
+
+- **Two levels max:** Top-level comments (parent_id = NULL) can have replies (parent_id = top-level comment ID). Replies to replies are NOT allowed (the UI only shows reply buttons on top-level comments).
+- **两层最大:** 顶级评论可以有回复。不允许回复的回复（UI 只在顶级评论上显示回复按钮）。
+
+### Where it's used / 使用位置
+
+| Entity Type | Where in UI                          | `entity_id` points to        |
+| ----------- | ------------------------------------ | ----------------------------- |
+| `post`      | HomeTab, AnnouncementsTab, WishesTab | `care_group_post.id`          |
+| `task`      | TasksTab (pending tasks)             | `care_task.id`                |
+| `gallery`   | GalleryTab (each photo)              | `care_group_gallery.id`       |
+| `review`    | CaregiverProfile reviews             | `review.id`                   |
+
+### Frontend component / 前端组件
+
+`src/components/comments/CommentsSection.tsx` — reusable component accepting `entityType` and `entityId`. Two modes:
+- **Compact mode** (`compact` prop): Shows a "Reply" button that expands to show comments. Used inline on cards.
+- **Full mode**: Shows all comments with input box. Used for standalone views.
+
+Hooks: `useComments(entityType, entityId)`, `useCreateComment()`, `useDeleteComment()` — all in `use-care-data.ts`.
+
+### RLS / 行级安全
+
+- Authenticated users can read all comments, insert their own (`author_id = auth.uid()`), update their own, and delete their own.
+- 认证用户可以读取所有评论，插入自己的，更新自己的，删除自己的。
+
 ---
 
 ## 9. CARE TASKS — A Standalone Task System / 护理任务——独立任务系统
@@ -312,6 +363,9 @@ Tasks live in the `care_task` table. They are completely separate from posts. Do
 
 - **Task → Job bridge:** Tasks can be promoted to the public Job Board. When a family needs outside help, they use "Find Help" to create a `job_posting` linked via `job_id`.
 - **任务 → 工作桥接:** 任务可以推广到公开工作板。当家庭需要外部帮助时，通过"寻找帮助"创建通过 `job_id` 链接的 `job_posting`。
+
+- **Comments:** Tasks support threaded comments via the unified comment system (entity_type = 'task'). See §8b.
+- **评论:** 任务通过统一评论系统支持线程评论（entity_type = 'task'）。见 §8b。
 
 ---
 
@@ -473,6 +527,9 @@ The `review` table stores provider ratings. `entity_id` = provider being reviewe
 
 - **Frontend flow:** The "Write Review" button is visible on `/caregiver/:id` for ALL users (not hidden behind auth). If not authenticated, clicking it redirects to `/auth`. Duplicate reviews are prevented in code (`maybeSingle()` check). The review dialog includes a 1-5 star picker and comment textarea.
 - **前端流程:** "写评价"按钮在 `/caregiver/:id` 页面对所有用户可见（不隐藏在登录后面）。未登录时点击会重定向到 `/auth`。代码中防止重复评价（`maybeSingle()` 检查）。评价对话框包含1-5星评分选择器和评论文本框。
+
+- **Comments on reviews:** Each review supports threaded comments via the unified comment system (entity_type = 'review', entity_id = review.id). See §8b.
+- **评价上的评论:** 每条评价通过统一评论系统支持线程评论（entity_type = 'review'，entity_id = review.id）。见 §8b。
 
 ---
 
