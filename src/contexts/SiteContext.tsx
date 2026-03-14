@@ -77,10 +77,10 @@ const careConnectedConfig: SiteConfig = {
 
 const challengedConfig: SiteConfig = {
   id: "challenged",
-  name: "Challenged",
+  name: "ChallengeD",
   tagline: "Together in dementia care",
   logoText: "Ch",
-  logoAccent: "allenged",
+  logoAccent: "allengeD",
   heroTitle: "Dementia Care,",
   heroHighlight: "Together",
   heroSubtitle: "Coordinate dementia care with your family, find specialized caregivers, and keep your loved one safe — one team, one platform.",
