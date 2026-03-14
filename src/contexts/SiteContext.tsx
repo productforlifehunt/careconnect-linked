@@ -85,7 +85,7 @@ const challengedConfig: SiteConfig = {
   heroHighlight: "Together",
   heroSubtitle: "Coordinate dementia care with your family, find specialized caregivers, and keep your loved one safe — one team, one platform.",
   ctaTitle: "Your dementia care journey starts here",
-  ctaSubtitle: "Join families who trust Challenged to coordinate compassionate dementia care.",
+  ctaSubtitle: "Join families who trust ChallengeD to coordinate compassionate dementia care.",
   ctaButton: "Find Dementia Caregivers",
   searchPlaceholder: "What dementia care do you need?",
   howItWorksTitle: "How Challenged Works",
