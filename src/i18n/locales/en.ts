@@ -153,7 +153,7 @@ const en = {
   // ═══ SITE-SPECIFIC ═══
   site: {
     challenged: {
-      name: "Challenged",
+      name: "ChallengeD",
       tagline: "Together in dementia care",
       heroTitle: "Dementia Care,",
       heroHighlight: "Together",
