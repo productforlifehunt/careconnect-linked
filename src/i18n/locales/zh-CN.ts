@@ -40,7 +40,7 @@ const zhCN = {
   },
   site: {
     challenged: {
-      name: "Challenged", tagline: "共同面对痴呆症护理",
+      name: "ChallengeD", tagline: "共同面对痴呆症护理",
       heroTitle: "痴呆症护理，", heroHighlight: "携手同行",
       heroSubtitle: "与家人协调痴呆症护理，找到专业护理人员，确保亲人安全——一个团队，一个平台。",
       ctaTitle: "您的痴呆症护理之旅从这里开始",

@@ -41,7 +41,7 @@ const ja: typeof en = {
   },
   site: {
     challenged: {
-      name: "Challenged", tagline: "認知症ケアを共に",
+      name: "ChallengeD", tagline: "認知症ケアを共に",
       heroTitle: "認知症ケア、", heroHighlight: "共に",
       heroSubtitle: "家族と認知症ケアを調整し、専門の介護者を見つけ、大切な人を安全に保ちましょう。",
       ctaTitle: "認知症ケアの旅はここから", ctaSubtitle: "Challengedを信頼する家族に加わりましょう。",
