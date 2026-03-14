@@ -153,17 +153,17 @@ const en = {
   // ═══ SITE-SPECIFIC ═══
   site: {
     challenged: {
-      name: "Challenged",
+      name: "ChallengeD",
       tagline: "Together in dementia care",
       heroTitle: "Dementia Care,",
       heroHighlight: "Together",
       heroSubtitle: "Coordinate dementia care with your family, find specialized caregivers, and keep your loved one safe — one team, one platform.",
       ctaTitle: "Your dementia care journey starts here",
-      ctaSubtitle: "Join families who trust Challenged to coordinate compassionate dementia care.",
+      ctaSubtitle: "Join families who trust ChallengeD to coordinate compassionate dementia care.",
       ctaButton: "Find Dementia Caregivers",
       searchPlaceholder: "What dementia care do you need?",
-      howItWorksTitle: "How Challenged Works",
-      footerBrand: "Challenged",
+      howItWorksTitle: "How ChallengeD Works",
+      footerBrand: "ChallengeD",
       footerTagline: "Supporting dementia caregivers and families since 2024.",
       authSubtitle: "Dementia care, together",
       dashboardSubtitle: "Your dementia care overview",

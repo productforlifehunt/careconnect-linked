@@ -41,12 +41,12 @@ const ja: typeof en = {
   },
   site: {
     challenged: {
-      name: "Challenged", tagline: "認知症ケアを共に",
+      name: "ChallengeD", tagline: "認知症ケアを共に",
       heroTitle: "認知症ケア、", heroHighlight: "共に",
       heroSubtitle: "家族と認知症ケアを調整し、専門の介護者を見つけ、大切な人を安全に保ちましょう。",
-      ctaTitle: "認知症ケアの旅はここから", ctaSubtitle: "Challengedを信頼する家族に加わりましょう。",
+      ctaTitle: "認知症ケアの旅はここから", ctaSubtitle: "ChallengeDを信頼する家族に加わりましょう。",
       ctaButton: "認知症介護者を探す", searchPlaceholder: "どのような認知症ケアが必要ですか？",
-      howItWorksTitle: "Challengedの仕組み", footerBrand: "Challenged",
+      howItWorksTitle: "ChallengeDの仕組み", footerBrand: "ChallengeD",
       footerTagline: "2024年から認知症介護者と家族を支援。", authSubtitle: "認知症ケアを共に",
       dashboardSubtitle: "認知症ケアの概要", caredOneSingular: "大切な人", careGroupSingular: "ケアチーム",
       becomeTitle: "認知症介護者として参加", becomeSubtitle: "認知症ケアに取り組む家族を支援",

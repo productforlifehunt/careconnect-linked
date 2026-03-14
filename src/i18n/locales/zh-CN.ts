@@ -40,13 +40,13 @@ const zhCN = {
   },
   site: {
     challenged: {
-      name: "Challenged", tagline: "共同面对痴呆症护理",
+      name: "ChallengeD", tagline: "共同面对痴呆症护理",
       heroTitle: "痴呆症护理，", heroHighlight: "携手同行",
       heroSubtitle: "与家人协调痴呆症护理，找到专业护理人员，确保亲人安全——一个团队，一个平台。",
       ctaTitle: "您的痴呆症护理之旅从这里开始",
-      ctaSubtitle: "加入信任Challenged的家庭，协调充满爱心的痴呆症护理。",
+      ctaSubtitle: "加入信任ChallengeD的家庭，协调充满爱心的痴呆症护理。",
       ctaButton: "寻找痴呆症护理人员", searchPlaceholder: "您需要什么痴呆症护理？",
-      howItWorksTitle: "Challenged如何运作", footerBrand: "Challenged",
+      howItWorksTitle: "ChallengeD如何运作", footerBrand: "ChallengeD",
       footerTagline: "自2024年起，支持痴呆症护理者和家庭。",
       authSubtitle: "痴呆症护理，携手同行", dashboardSubtitle: "您的痴呆症护理概览",
       caredOneSingular: "亲人", careGroupSingular: "照护团队",
