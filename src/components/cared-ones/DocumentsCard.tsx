@@ -34,7 +34,7 @@ export function DocumentsCard({ caredOneId }: { caredOneId: string }) {
 
   const handleAdd = () => {
     if (!form.title) return;
-    create.mutate({ user_id: caredOneId, title: form.title, document_type: form.document_type, file_url: form.file_url || "", notes: form.notes || undefined }, {
+    create.mutate({ user_id: caredOneId, title: form.title, document_type: form.document_type, file_url: form.file_url || "", description: form.notes || undefined }, {
       onSuccess: () => { setForm({ title: "", document_type: "Medical Record", file_url: "", notes: "" }); setAddOpen(false); toast({ title: "Document added" }); }
     });
   };

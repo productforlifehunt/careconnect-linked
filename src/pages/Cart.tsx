@@ -25,7 +25,7 @@ export default function Cart() {
 
   const items = cart?.items || [];
   const total = cart?.totals?.total_price ? (parseInt(cart.totals.total_price) / 100).toFixed(2) : "0.00";
-  const sym = cart?.totals?.currency_symbol || "$";
+  const sym = (cart?.totals as any)?.currency_symbol || "$";
 
   if (isLoading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
 

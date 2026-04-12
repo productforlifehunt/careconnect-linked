@@ -162,7 +162,7 @@ export function AddCaredOneDialog({
 
   const handleAdd = () => {
     if (!selectedPerson || !activeGroupId) return;
-    addCaredOne.mutate({ groupId: activeGroupId, userId: selectedPerson.id, skipInvitation }, {
+    addCaredOne.mutate({ groupId: activeGroupId, caredOneId: selectedPerson.id }, {
       onSuccess: () => {
         onOpenChange(false); setSelectedPerson(null); setSearch(""); setSkipInvitation(false);
         toast({ title: "Cared one added to group!" });

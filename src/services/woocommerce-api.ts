@@ -507,7 +507,7 @@ export async function getProviderOrders(providerId: string) {
   }
 }
 
-async function getProviderAvailability(providerId: string): Promise<NormalizedBookingAvailabilityRule[]> {
+export async function getProviderAvailability(providerId: string): Promise<NormalizedBookingAvailabilityRule[]> {
   try {
     const product = await getProviderProduct(providerId);
     if (!product) return [];

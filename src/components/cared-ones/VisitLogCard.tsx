@@ -28,7 +28,7 @@ export function VisitLogCard({ caredOneId }: { caredOneId: string }) {
   const [form, setForm] = useState({ activity_type: "in_person", description: "", duration_minutes: "" });
 
   const handleAdd = () => {
-    create.mutate({ user_id: caredOneId, activity_type: form.activity_type, description: form.description || undefined, duration_minutes: form.duration_minutes ? parseInt(form.duration_minutes) : undefined }, {
+    create.mutate({ user_id: caredOneId, activity_type: form.activity_type, description: form.description || undefined }, {
       onSuccess: () => { setForm({ activity_type: "in_person", description: "", duration_minutes: "" }); setAddOpen(false); toast({ title: "Visit logged ✓" }); }
     });
   };
