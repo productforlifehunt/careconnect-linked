@@ -5,7 +5,7 @@
 import { wordpressCCTFetch } from "@/features/shared/wordpress-client";
 
 export interface ChallengedContentItem {
-  _ID: number;
+  id: string;
   cct_status: string;
   title: string;
   content: string;
@@ -14,11 +14,11 @@ export interface ChallengedContentItem {
   subcategory: string;
   featured_image: string;
   sort_order: number;
-  is_published: string; // "1" or "0"
+  is_published: string;
   author_name: string;
   reading_time: string;
-  cct_created: string;
-  cct_modified: string;
+  created_at: string;
+  updated_at: string;
 }
 
 const CCT_SLUG = "challenged_content";
@@ -31,17 +31,19 @@ export async function fetchChallengedContent(
   if (category) params.category = category;
   if (subcategory) params.subcategory = subcategory;
 
-  const items = await wordpressCCTFetch<ChallengedContentItem[]>(CCT_SLUG, params);
+  const items = await wordpressCCTFetch<ChallengedContentItem[]>(CCT_SLUG, { params });
   return (items || [])
     .filter((item) => item.is_published !== "0")
     .sort((a, b) => (Number(a.sort_order) || 999) - (Number(b.sort_order) || 999));
 }
 
 export async function fetchChallengedContentById(
-  id: number
+  id: string | number
 ): Promise<ChallengedContentItem | null> {
-  const items = await wordpressCCTFetch<ChallengedContentItem[]>(CCT_SLUG, {
-    _ID: String(id),
-  });
-  return items?.[0] ?? null;
+  try {
+    const item = await wordpressCCTFetch<ChallengedContentItem>(CCT_SLUG, { id });
+    return item ?? null;
+  } catch {
+    return null;
+  }
 }
