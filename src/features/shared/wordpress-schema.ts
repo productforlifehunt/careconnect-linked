@@ -1032,7 +1032,6 @@ export const wordpressSchema: Record<WordPressFeatureKey, WordPressSchemaEntry<a
       job_id: input.job_id, cover_letter: input.cover_letter || "", status: "pending",
     }),
   },
-  },
   job_application: {
     status: "confirmed",
     endpoint: ({ id }: { id: string }) => `jet-cct/job_application/${id}`,
