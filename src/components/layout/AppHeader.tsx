@@ -132,10 +132,10 @@ export function AppHeader() {
                     { title: t("nav.dashboard"), url: "/dashboard", icon: LayoutDashboard },
                     { title: t(site.id === "challenged" ? "nav.myLovedOnes" : "nav.caredOnes"), url: "/cared-ones", icon: Heart },
                     { title: t("nav.myBookings"), url: "/bookings", icon: CalendarDays },
-                    { title: t(site.id === "challenged" ? "nav.careTeams" : "nav.careGroups"), url: "/care-circle", icon: Users },
+                    { title: t(isChallenged ? "nav.united" : (site.id === "challenged" ? "nav.careTeams" : "nav.careGroups")), url: "/care-circle", icon: Users },
                     { title: t("nav.messages"), url: "/messages", icon: MessageSquare },
                     { title: t("nav.favorites"), url: "/favorites", icon: Heart },
-                    { title: t("nav.gpsTracking"), url: "/gps-tracking", icon: MapPin },
+                    { title: isChallenged ? t("nav.find") : t("nav.gpsTracking"), url: "/gps-tracking", icon: MapPin },
                   ].map(item => (
                     <Link
                       key={item.url}
@@ -261,10 +261,10 @@ export function AppHeader() {
                   <CalendarDays className="mr-2 h-4 w-4" /> {t("nav.myBookings")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/care-circle")}>
-                  <Users className="mr-2 h-4 w-4" /> {t(site.id === "challenged" ? "nav.careTeams" : "nav.careGroups")}
+                  <Users className="mr-2 h-4 w-4" /> {isChallenged ? t("nav.united") : t(site.id === "challenged" ? "nav.careTeams" : "nav.careGroups")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/gps-tracking")}>
-                  <MapPin className="mr-2 h-4 w-4" /> {t("nav.gpsTracking")}
+                  <MapPin className="mr-2 h-4 w-4" /> {isChallenged ? t("nav.find") : t("nav.gpsTracking")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/messages")}>
                   <MessageSquare className="mr-2 h-4 w-4" /> {t("nav.messages")}
