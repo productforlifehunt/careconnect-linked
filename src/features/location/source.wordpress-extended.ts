@@ -440,6 +440,17 @@ export async function sendLocationRequestWordPress(input: { caredOneId: string; 
     is_emergency: input.isEmergency || false,
     status: input.isEmergency ? "emergency_approved" : "pending",
   });
+  // Notify the target user about the location request
+  try {
+    await createNotificationWordPress({
+      user_id: caredOneUserId,
+      type: input.isEmergency ? "emergency_location_request" : "location_request",
+      title: input.isEmergency ? "🚨 Emergency Location Request" : "📍 Location Request",
+      message: `${storedUser.user_display_name || "Someone"} ${input.isEmergency ? "urgently needs" : "is requesting"} your location.${input.message ? ` "${input.message}"` : ""}`,
+      related_id: storedUser.user_id,
+      related_type: "user",
+    });
+  } catch {}
 }
 
 export async function cancelLocationRequestWordPress(requestId: string): Promise<void> {
