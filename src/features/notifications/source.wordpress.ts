@@ -1,11 +1,9 @@
-import { wordpressCCTFetch, wordpressFetchRaw } from "@/features/shared/wordpress-client";
+import { wordpressCCTFetch } from "@/features/shared/wordpress-client";
 
 // CCT slug: cc_notification | flat fields
 export async function fetchNotificationsWordPress(): Promise<any[]> {
   try {
-    const response = await wordpressFetchRaw("cc/v1/notifications");
-    const text = await response.text();
-    const notifs = text ? JSON.parse(text) : [];
+    const notifs = await wordpressCCTFetch("cc_notification", { params: { _limit: 100 } });
     if (!Array.isArray(notifs)) return [];
     return notifs.map((n: any) => ({
       id: String(n.id),

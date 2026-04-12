@@ -1,4 +1,4 @@
-import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
+import { wordpressCCTFetch } from "@/features/shared/wordpress-client";
 
 // CCT slugs: job_posting, job_application | flat fields
 export async function fetchJobPostingsWordPress(filters?: { source?: string; status?: string }): Promise<any[]> {
@@ -27,12 +27,14 @@ export async function createJobPostingWordPress(job: { title: string; descriptio
 export async function fetchJobApplicationsWordPress(jobId: string): Promise<any[]> {
   try {
     const normalizedJobId = String(jobId).replace(/^wp-/, "");
-    const apps = await wordpressFetch<any[]>(`cc/v1/job-applicants/${normalizedJobId}`);
+    const apps = await wordpressCCTFetch<any[]>("job_application", {
+      params: { job_id: normalizedJobId, _limit: 50 },
+    });
     if (!Array.isArray(apps)) return [];
     return apps.map((a: any) => ({
-      id: String(a.id),
+      id: String(a.id || a._ID),
       job_id: a.job_id || normalizedJobId,
-      applicant_id: a.applicant_id || null,
+      applicant_id: a.applicant_id || a.author_id || null,
       cover_letter: a.cover_letter || null,
       status: a.status || "pending",
       created_at: a.created_at,
@@ -65,10 +67,12 @@ export async function fetchMyJobPostingsWordPress(): Promise<any[]> {
 
 export async function fetchMyJobApplicationsWordPress(): Promise<any[]> {
   try {
-    const apps = await wordpressFetch<any[]>("cc/v1/my-applications");
+    const apps = await wordpressCCTFetch<any[]>("job_application", {
+      params: { _limit: 50 },
+    });
     if (!Array.isArray(apps)) return [];
     return apps.map((a: any) => ({
-      id: String(a.id),
+      id: String(a.id || a._ID),
       job_id: a.job_id || null,
       cover_letter: a.cover_letter || null,
       status: a.status || "pending",

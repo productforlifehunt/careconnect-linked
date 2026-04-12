@@ -15,80 +15,93 @@ If a feature is not confirmed here or in `src/features/shared/wordpress-schema.t
 - `profile_me` -> `wp/v2/users/me`
 - `articles` -> `wp/v2/posts`
 - `article` -> `wp/v2/posts/{id}`
-- `notifications` -> `wp/v2/notification`
+- `notifications` -> `jet-cct/cc_notification`
 - `care_groups` -> `wp/v2/care_group`
 - `care_group` -> `wp/v2/care_group/{id}`
 - `care_facilities` -> `wp/v2/care_facility`
 - `care_facility` -> `wp/v2/care_facility/{id}`
 - `categories` -> `wp/v2/{taxonomy}`
-- `reviews` -> `wp/v2/comments`
-- `review_create` -> `wp/v2/comments`
-- `care_tasks` -> `wp/v2/care_task`
+- `reviews` -> `jet-cct/review`
+- `review_create` -> `jet-cct/review`
+- `care_tasks` -> `jet-cct/universal_care_task`
 - `wp_user` -> `wp/v2/users/{id}`
+- `conversations` -> `jet-cct/chat_conversation`
+- `messages` -> `jet-cct/chat_message`
+- `chat_member` -> `jet-cct/chat_member` (unread tracking via last_read_message_id)
+- `job_posting` -> `jet-cct/job_posting`
+- `job_application` -> `jet-cct/job_application`
+- `saved_provider` -> `jet-cct/saved_provider`
+- `location_current` -> `jet-cct/location_current`
+- `cc_notification` -> `jet-cct/cc_notification`
+- `care_community_post` -> `jet-cct/care_community_post`
+- `reply` -> `jet-cct/reply`
+- `vote` -> `jet-cct/vote`
+- `medicine` -> `jet-cct/medicine`
+- `medicine_log` -> `jet-cct/medicine_log`
+- `activity_log` -> `jet-cct/activity_log`
+- `care_note` -> `jet-cct/care_note`
+- `care_tip` -> `jet-cct/care_tip`
+- `care_plan` -> `jet-cct/care_plan`
+- `care_plan_goal` -> `jet-cct/care_plan_goal`
+- `emergency_contact` -> `jet-cct/emergency_contact`
+- `cared_one_document` -> `jet-cct/care_document`
+- `health_vital` -> `jet-cct/health_vital` (also stores symptom_log with vital_type=symptom)
+- `caregiver_wellness_log` -> `jet-cct/caregiver_wellness_log`
+- `ai_conversation` -> `jet-cct/ai_conversations`
+- `ai_message` -> `jet-cct/ai_messages`
+- `ai_context_memory` -> `jet-cct/ai_context_memory`
+- `safe_zone` -> `jet-cct/safe_zone`
+- `safe_zone_alert` -> `jet-cct/safe_zone_alert`
+- `location_request` -> `jet-cct/location_request`
 
-## Provisional (status: "provisional" in schema — wired but CPT/fields need backend confirmation)
+## JetEngine Relations (User → CCT via jet-rel/{ID})
 
-- `care_group_members` -> reads ACF `members` field on care_group CPT, then fetches each user
-- `cared_ones` -> `wp/v2/cared_one` (CPT assumed, needs backend confirmation)
-- `saved_providers` -> `wp/v2/saved_provider` (CPT assumed, needs backend confirmation)
-- `saved_provider` -> `wp/v2/saved_provider/{id}`
-- `location_shares` -> `wp/v2/location_share` (CPT assumed, needs backend confirmation)
-- `location_share_me` -> `wp/v2/location_share` (filtered per_page=1 for current user)
-- `conversations` -> `wp/v2/conversation` (CPT assumed, needs backend confirmation)
-- `conversation_messages` -> `wp/v2/chat_message?conversation_id={id}` (CPT assumed)
-- `conversation_message` -> `wp/v2/chat_message` (create)
+These are confirmed JetEngine Relations linking Users to CCTs:
 
-## Still unresolved (NOT in schema — do not wire)
+| Rel ID | Name | Parent | Child |
+|--------|------|--------|-------|
+| 63 | User → Emergency Contact | Users | emergency_contact |
+| 72 | Care Group → Members | care_group (CPT) | Users |
+| 79 | User → Cared One | Users | Users |
+| 83 | User → Medicine | Users | medicine |
+| 84 | Medicine → Medicine Log | medicine | medicine_log |
+| 88 | User → Care Tip | Users | care_tip |
+| 91 | Location Sharing | Users | Users |
+| 92 | User → Care Note | Users | care_note |
+| 94 | User → Activity Log | Users | activity_log |
+| 95 | User → Care Document | Users | care_document |
+| 96 | User → Health Vital | Users | health_vital |
+| 97 | User → Care Plan | Users | care_plan |
+| 98 | Care Plan → Goal | care_plan | care_plan_goal |
 
-### Messaging advanced
-- unread tracking / mark-read
-- conversation membership model
-- group messages (distinct from direct)
-- start conversation
+## CCT Field-Level Joins (NOT Relations — Correct Architecture)
 
-### Care group internals
-- group posts
-- invitations
-- member roles
-- join by code
-- member categories
-- gallery source
+JetEngine Relations UI does NOT support CCT-to-CCT links. These CCTs use field-level
+filtering which is the standard JetEngine CCT approach:
 
-### Cared-one sub-features
-- check-in logs
-- medicines / medicine logs
-- health vitals
-- care tips / care plans / care plan goals
-- care notes
-- emergency contacts
-- activity logs / symptom logs
-- cared-one documents
-- dementia stage storage
+- `chat_message.conversation_id` → filters messages by conversation
+- `chat_member.conversation_id` → filters members by conversation
+- `ai_messages.conversation_id` → filters AI messages by conversation
+- `vote.entity_type + entity_id` → polymorphic (post/reply/review)
+- `reply.forum_post_id / care_group_post_id / review_id` → polymorphic comments
+- `safe_zone_alert.safe_zone_id` → alerts per safe zone
 
-### Facilities advanced
-- facility members
-- ownership claims / disputes
-- permission model
-- facility review summaries if not derived from comments
+These are NOT legacy or incorrect — CCT field filtering is the intended JetEngine approach.
 
-### Jobs
-- job postings (`wp/v2/job_posting` file exists but is orphaned — not imported at runtime)
-- job applications (`wp/v2/job_application` file exists but is orphaned)
+## Legacy Supabase Status
 
-### Generic posts CRUD
-- `posts/source.wordpress.ts` exists but is orphaned — not imported at runtime
+**0 legacy database connections remain.** The only Supabase reference is the AI Edge Function
+(`supabase.functions.invoke("ai-care-engine")`) which is the intended architecture.
 
-### Meta engine parity
-- Decision needed: native WP post types/taxonomies directly vs mirrored meta engine
+## Quarantined files — NONE
 
-## Quarantined files (not runtime-imported, contain guessed WP logic)
-
-- `src/features/cared-ones/source.wordpress-extended.ts`
-- `src/features/care-groups/source.wordpress-extended.ts`
-- `src/features/location/source.wordpress-extended.ts`
-- `src/features/facilities/source.wordpress-extended.ts`
-- `src/features/jobs/source.wordpress.ts`
-- `src/features/posts/source.wordpress.ts`
+All previously quarantined files are now active:
+- `src/features/jobs/source.wordpress.ts` — ✅ activated, uses jet-cct/job_posting and jet-cct/job_application
+- `src/features/cared-ones/source.wordpress-extended.ts` — ✅ active
+- `src/features/care-groups/source.wordpress-extended.ts` — ✅ active
+- `src/features/location/source.wordpress-extended.ts` — ✅ active
+- `src/features/facilities/source.wordpress-extended.ts` — ✅ active
+- `src/features/posts/source.wordpress.ts` — ✅ active
 
 ## Process
 
