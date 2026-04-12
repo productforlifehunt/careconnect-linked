@@ -518,6 +518,17 @@ export async function getProviderAvailability(providerId: string): Promise<Norma
   }
 }
 
+export async function upsertProviderAvailability(providerId: string, slots: any[]) {
+  const product = await getProviderProduct(providerId);
+  if (!product) throw new Error('Provider product not found');
+  // Update availability rules on the booking product
+  const res = await wcBookingsFetch(`products/${product.id}`, {
+    method: 'POST',
+    body: JSON.stringify({ availability: slots }),
+  });
+  return res;
+}
+
 // ─── Client-side Cart + WC REST API v3 Checkout ─────────────
 // The WC Store API requires cookie/nonce auth which doesn't work
 // cross-origin with JWT. We use a client-side cart (localStorage)
