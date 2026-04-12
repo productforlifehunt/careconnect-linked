@@ -1,8 +1,9 @@
 /**
- * WordPress data source for ChallengeD content articles
- * Fetches from the `challenged_content` JetEngine CCT
+ * WordPress data source for ChallengeD content articles.
+ * Falls back to static content when WordPress is unavailable.
  */
 import { wordpressCCTFetch } from "@/features/shared/wordpress-client";
+import { getStaticContent, getStaticContentById } from "@/data/challenged-content-data";
 
 export interface ChallengedContentItem {
   id: string;
@@ -10,7 +11,7 @@ export interface ChallengedContentItem {
   title: string;
   content: string;
   excerpt: string;
-  category: string; // aware | care | cope | safe | accompany
+  category: string;
   subcategory: string;
   featured_image: string;
   sort_order: number;
@@ -27,14 +28,20 @@ export async function fetchChallengedContent(
   category?: string,
   subcategory?: string
 ): Promise<ChallengedContentItem[]> {
-  const params: Record<string, string> = {};
-  if (category) params.category = category;
-  if (subcategory) params.subcategory = subcategory;
-
-  const items = await wordpressCCTFetch<ChallengedContentItem[]>(CCT_SLUG, { params });
-  return (items || [])
-    .filter((item) => item.is_published !== "0")
-    .sort((a, b) => (Number(a.sort_order) || 999) - (Number(b.sort_order) || 999));
+  try {
+    const params: Record<string, string> = {};
+    if (category) params.category = category;
+    if (subcategory) params.subcategory = subcategory;
+    const items = await wordpressCCTFetch<ChallengedContentItem[]>(CCT_SLUG, { params });
+    if (items && items.length > 0) {
+      return items
+        .filter((item) => item.is_published !== "0")
+        .sort((a, b) => (Number(a.sort_order) || 999) - (Number(b.sort_order) || 999));
+    }
+  } catch {
+    // WordPress unavailable — fall through to static content
+  }
+  return getStaticContent(category, subcategory);
 }
 
 export async function fetchChallengedContentById(
@@ -42,8 +49,9 @@ export async function fetchChallengedContentById(
 ): Promise<ChallengedContentItem | null> {
   try {
     const item = await wordpressCCTFetch<ChallengedContentItem>(CCT_SLUG, { id });
-    return item ?? null;
+    if (item) return item;
   } catch {
-    return null;
+    // fall through
   }
+  return getStaticContentById(String(id));
 }
