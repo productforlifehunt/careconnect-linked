@@ -14,11 +14,19 @@ import {
   Briefcase,
   Settings,
   ShoppingCart,
+  Lightbulb,
+  HeartPulse,
+  Brain,
+  ShieldCheck,
+  HandHeart,
+  Sliders,
 } from "lucide-react";
 
 function useSidebarItems() {
   const site = useSite();
-  return [
+  const isChallenged = site.id === "challenged";
+
+  const base = [
     { title: site.navLabels.dashboard, url: "/dashboard", icon: LayoutDashboard },
     { title: site.navLabels.caredOnes, url: "/cared-ones", icon: HeartIcon },
     { title: "Appointments", url: "/bookings", icon: CalendarDays },
@@ -26,13 +34,29 @@ function useSidebarItems() {
     { title: site.navLabels.careGroups, url: "/care-circle", icon: Users },
     { title: "Jobs Board", url: "/jobs", icon: Briefcase },
     { title: site.navLabels.findCare, url: "/search", icon: Search },
-    { title: "GPS Tracking", url: "/gps-tracking", icon: MapPin },
+    { title: site.navLabels.gpsTracking, url: "/gps-tracking", icon: MapPin },
     { title: "Favorites", url: "/favorites", icon: HeartIcon },
     { title: "Provider Dashboard", url: "/provider-dashboard", icon: Settings },
     { title: "Cart", url: "/cart", icon: ShoppingCart },
+  ];
+
+  // ChallengeD content sections
+  if (isChallenged) {
+    base.push(
+      { title: site.navLabels.awareD || "AwareD", url: "/aware", icon: Lightbulb },
+      { title: site.navLabels.careD || "CareD", url: "/care-guides", icon: HeartPulse },
+      { title: site.navLabels.copeD || "CopeD", url: "/coping", icon: Brain },
+      { title: site.navLabels.safeD || "SafeD", url: "/safety-guides", icon: ShieldCheck },
+      { title: site.navLabels.accompanieD || "AccompanieD", url: "/accompanied", icon: HandHeart },
+    );
+  }
+
+  base.push(
     { title: "Notifications", url: "/notifications", icon: Bell },
     { title: "My Profile", url: "/profile", icon: User },
-  ];
+  );
+
+  return base;
 }
 
 // Key items for mobile bottom bar (max 5)
