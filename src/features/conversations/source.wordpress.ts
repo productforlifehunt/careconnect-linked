@@ -67,5 +67,6 @@ export async function startConversationWordPress(otherUserId: string): Promise<s
     method: "POST",
     body: { participant_ids: otherUserId, type: "direct" },
   });
-  return String(result?.id || result?._item_id || "");
+  const r = result as any;
+  return String(r?.id || r?._item_id || "");
 }

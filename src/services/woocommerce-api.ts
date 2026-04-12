@@ -507,7 +507,7 @@ export async function getProviderOrders(providerId: string) {
   }
 }
 
-async function getProviderAvailability(providerId: string): Promise<NormalizedBookingAvailabilityRule[]> {
+export async function getProviderAvailability(providerId: string): Promise<NormalizedBookingAvailabilityRule[]> {
   try {
     const product = await getProviderProduct(providerId);
     if (!product) return [];
@@ -516,6 +516,17 @@ async function getProviderAvailability(providerId: string): Promise<NormalizedBo
   } catch {
     return [];
   }
+}
+
+export async function upsertProviderAvailability(providerId: string, slots: any[]) {
+  const product = await getProviderProduct(providerId);
+  if (!product) throw new Error('Provider product not found');
+  // Update availability rules on the booking product
+  const res = await wcBookingsFetch(`products/${product.id}`, {
+    method: 'POST',
+    body: JSON.stringify({ availability: slots }),
+  });
+  return res;
 }
 
 // ─── Client-side Cart + WC REST API v3 Checkout ─────────────

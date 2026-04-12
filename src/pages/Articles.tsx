@@ -97,7 +97,7 @@ export default function Articles() {
       return;
     }
     createPost.mutate(
-      { title: newTitle.trim(), content: newContent.trim(), postType: articlePostType, area, childPostType: selectedSubtype === "all" ? "challenged_user_article" : selectedSubtype },
+      { title: newTitle.trim(), content: newContent.trim(), postType: articlePostType, area },
       {
         onSuccess: () => {
           setDialogOpen(false);

@@ -45,7 +45,6 @@ export default function Jobs() {
       title: newJob.title,
       description: newJob.description,
       location: newJob.location || "",
-      job_source_type: newJob.job_source_type,
     }, {
       onSuccess: () => {
         setNewJob({ title: "", description: "", location: "", job_source_type: "general" });

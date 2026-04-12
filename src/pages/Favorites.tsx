@@ -14,7 +14,7 @@ export default function Favorites() {
   const { t } = useTranslation();
 
   const removeFavorite = (providerId: string) => {
-    toggleSaved.mutate({ providerId, isSaved: true });
+    toggleSaved.mutate(providerId);
   };
 
   if (isLoading) {

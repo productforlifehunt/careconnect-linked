@@ -908,7 +908,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                           <p className="text-xs text-muted-foreground">{new Date(req.created_at).toLocaleString()}</p>
                         </div>
                         <Button variant="ghost" size="sm" className="text-destructive text-xs h-7"
-                          onClick={() => cancelRequest.mutate({ requestId: req.id, caredOneId })}
+                          onClick={() => cancelRequest.mutate(req.id)}
                           disabled={cancelRequest.isPending}>Cancel</Button>
                       </div>
                     </CardContent>
@@ -1001,7 +1001,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                         </div>
                         {!alert.is_read ? (
                           <Button variant="outline" size="sm" className="text-xs h-7 shrink-0"
-                            onClick={() => acknowledgeAlert.mutate({ alertId: alert.id, userId: caredOneId })}
+                            onClick={() => acknowledgeAlert.mutate(alert.id)}
                             disabled={acknowledgeAlert.isPending}>
                             <CheckCircle2 className="h-3 w-3 mr-1" /> Ack
                           </Button>

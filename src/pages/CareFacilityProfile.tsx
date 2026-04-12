@@ -305,7 +305,7 @@ export default function CareFacilityProfile() {
                         disabled={createReview.isPending}
                         onClick={async () => {
                           try {
-                            await createReview.mutateAsync({ entityId: facility.id, rating: reviewRating, comment: reviewComment, entityType: "facility" });
+                            await createReview.mutateAsync({ entity_id: facility.id, rating: reviewRating, comment: reviewComment, entity_type: "facility" });
                             toast({ title: isZh ? "评价已提交" : "Review submitted", description: isZh ? "感谢您的反馈。" : "Thank you for your feedback." });
                             setReviewDialogOpen(false);
                             setReviewRating(5);
@@ -450,9 +450,7 @@ export default function CareFacilityProfile() {
                           try {
                             await claimFacilityOwnership.mutateAsync({
                               facilityId: facility.id,
-                              role: claimRole.trim() || null,
-                              claim: claimProof.trim() || null,
-                              attachmentUrls: claimAttachmentUrls.trim() || null,
+                              evidenceText: [claimRole.trim(), claimProof.trim(), claimAttachmentUrls.trim()].filter(Boolean).join('\n') || undefined,
                             });
                             toast({ title: isZh ? "已自动批准认领" : "Ownership claim approved" });
                             setClaimDialogOpen(false);
@@ -502,8 +500,7 @@ export default function CareFacilityProfile() {
                           try {
                             await createOwnershipDispute.mutateAsync({
                               facilityId: facility.id,
-                              claim: disputeProof.trim() || null,
-                              attachmentUrls: disputeAttachmentUrls.trim() || null,
+                              reason: [disputeProof.trim(), disputeAttachmentUrls.trim()].filter(Boolean).join('\n'),
                             });
                             toast({ title: isZh ? "争议已提交，等待站主处理" : "Dispute submitted for manual review" });
                             setDisputeDialogOpen(false);
