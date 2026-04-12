@@ -44,9 +44,36 @@ export async function sendMessageWordPress(conversationId: string, content: stri
   });
 }
 
-export async function markMessagesReadWordPress(_conversationId: string): Promise<void> {
-  // WP CCT has no native unread tracking. This is a no-op unless a custom field exists.
-  return;
+export async function markMessagesReadWordPress(conversationId: string): Promise<void> {
+  try {
+    // Find the chat_member record for this conversation + current user
+    const members = await wordpressCCTFetch<any[]>("chat_member", {
+      params: { conversation_id: conversationId, _limit: 50 },
+    });
+    if (!Array.isArray(members) || members.length === 0) return;
+
+    // Get the latest message ID in this conversation
+    const messages = await wordpressCCTFetch<any[]>("chat_message", {
+      params: { conversation_id: conversationId, _limit: 1, _order: "DESC" },
+    });
+    const lastMsgId = Array.isArray(messages) && messages.length > 0
+      ? String(messages[0]._ID || messages[0].id)
+      : null;
+    if (!lastMsgId) return;
+
+    // Update all member records for this conversation (server filters by auth user)
+    await Promise.all(
+      members.map((m: any) =>
+        wordpressCCTFetch("chat_member", {
+          id: m.id || m._ID,
+          method: "PUT",
+          body: { last_read_message_id: lastMsgId },
+        })
+      )
+    );
+  } catch {
+    // Silently fail — unread tracking is non-critical
+  }
 }
 
 export async function startConversationWordPress(otherUserId: string): Promise<string> {
