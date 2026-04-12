@@ -864,19 +864,17 @@ export const wordpressSchema: Record<WordPressFeatureKey, WordPressSchemaEntry<a
   },
   care_tips: {
     status: "confirmed",
-    endpoint: "wp/v2/care_tip",
-    defaultParams: { per_page: 50 },
-    mapList: (items: WPPostEntity[]) => (Array.isArray(items) ? items.map(mapAcfPost) : []),
+    endpoint: "jet-cct/care_tip",
+    defaultParams: { _limit: 50 },
+    mapList: (items: any[]) => (Array.isArray(items) ? items : []),
   },
   care_documents: {
     status: "confirmed",
-    endpoint: "wp/v2/care_document",
-    defaultParams: { per_page: 50 },
-    mapList: (items: WPPostEntity[]) => (Array.isArray(items) ? items.map(mapAcfPost) : []),
+    endpoint: "jet-cct/care_document",
+    defaultParams: { _limit: 50 },
+    mapList: (items: any[]) => (Array.isArray(items) ? items : []),
     buildCreateBody: (input: { document_type?: string; file_url?: number; title: string }) => ({
-      title: input.title,
-      status: "publish",
-      acf: { document_type: input.document_type, ...(input.file_url ? { file_url: input.file_url } : {}) },
+      title: input.title, document_type: input.document_type, ...(input.file_url ? { file_url: input.file_url } : {}),
     }),
   },
   activity_logs: {
