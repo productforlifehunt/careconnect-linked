@@ -55,17 +55,21 @@ export default function GPSTracking() {
     })();
   }, []);
 
-  const people = (locationShares || []).map((ls: any) => ({
-    id: ls.id,
-    userId: ls.user_id,
-    name: ls.profile?.full_name || t("common.unknown"),
-    avatar_url: ls.profile?.avatar_url,
-    lastLocation: ls.address_text || `${ls.latitude?.toFixed(4)}, ${ls.longitude?.toFixed(4)}`,
-    coordinates: { lat: ls.latitude, lng: ls.longitude },
-    lastUpdated: new Date(ls.updated_at).toLocaleTimeString("en", { hour: "numeric", minute: "2-digit" }),
-    status: "active" as const,
-    isSharing: ls.sharing_status !== "off",
-  }));
+  const people = (locationShares || []).map((ls: any) => {
+    const lat = parseFloat(ls.latitude) || 0;
+    const lng = parseFloat(ls.longitude) || 0;
+    return {
+      id: ls.id,
+      userId: ls.user_id,
+      name: ls.profile?.full_name || t("common.unknown"),
+      avatar_url: ls.profile?.avatar_url,
+      lastLocation: ls.address_text || `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
+      coordinates: { lat, lng },
+      lastUpdated: ls.updated_at ? new Date(ls.updated_at).toLocaleTimeString("en", { hour: "numeric", minute: "2-digit" }) : "",
+      status: "active" as const,
+      isSharing: ls.sharing_status !== "off",
+    };
+  });
 
   const sharingPeople = people.filter(p => p.isSharing && p.coordinates.lat && p.coordinates.lng);
 

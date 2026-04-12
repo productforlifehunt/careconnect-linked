@@ -7,7 +7,8 @@
 import { getWPToken } from "./wp-auth";
 
 const WP_SITE_PATH = import.meta.env.VITE_WP_SITE_PATH || "careconnected";
-const WP_BASE_URL = import.meta.env.VITE_WP_BASE_URL || `http://170.106.171.59:8080/${WP_SITE_PATH}`;
+const REMOTE_WP_BASE_URL = import.meta.env.VITE_WP_BASE_URL || `http://170.106.171.59:8080/${WP_SITE_PATH}`;
+const WP_BASE_URL = import.meta.env.DEV ? `/wp-proxy/${WP_SITE_PATH}` : REMOTE_WP_BASE_URL;
 
 interface WPFetchOptions {
   method?: string;
