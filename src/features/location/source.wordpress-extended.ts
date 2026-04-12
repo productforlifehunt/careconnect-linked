@@ -375,7 +375,7 @@ export async function shareMyLocationWordPress(latitude: number, longitude: numb
       const groups = await fetchCareGroupsWordPress();
       const notifiedUserIds = new Set<string>();
       for (const group of groups) {
-        const members = group.members || [];
+        const members = (group as any).members || [];
         for (const member of members) {
           const memberId = String(member.user_id || member.id || "");
           if (memberId && memberId !== String(storedUser.user_id) && !notifiedUserIds.has(memberId)) {
@@ -384,7 +384,7 @@ export async function shareMyLocationWordPress(latitude: number, longitude: numb
               user_id: memberId,
               type: "sos_emergency",
               title: "🚨 SOS Emergency Alert",
-              message: `${storedUser.display_name || "A care circle member"} triggered an SOS emergency alert. Location shared.`,
+              message: `${storedUser.user_display_name || "A care circle member"} triggered an SOS emergency alert. Location shared.`,
               related_id: storedUser.user_id,
               related_type: "user",
             });
