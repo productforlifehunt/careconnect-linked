@@ -1,5 +1,5 @@
 import { listWordPressFeature } from "@/features/shared/wordpress-adapter";
-import { wordpressCCTFetch, wordpressFetchRaw } from "@/features/shared/wordpress-client";
+import { wordpressCCTFetch } from "@/features/shared/wordpress-client";
 
 export interface DashboardStats {
   upcomingBookings: number;
@@ -34,9 +34,7 @@ export async function fetchDashboardStatsWordPress(): Promise<DashboardStats> {
   } catch { /* */ }
 
   try {
-    const response = await wordpressFetchRaw("cc/v1/notifications");
-    const text = await response.text();
-    const notifs = text ? JSON.parse(text) : [];
+    const notifs = await wordpressCCTFetch("cc_notification", { params: { _limit: 100 } });
     if (Array.isArray(notifs)) {
       unreadMessages = notifs.filter((n: any) => n.is_read !== true && n.is_read !== "yes").length;
     }

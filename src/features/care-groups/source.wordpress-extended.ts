@@ -162,9 +162,21 @@ export async function declineInvitationWordPress(invitationId: string): Promise<
 
 // ─── Member Roles & Removal ─────────────────────────────────
 // Uses JetEngine relation 72 (care_group → users)
-export async function updateMemberRoleWordPress(_memberId: string, _role: string): Promise<void> {
-  // Role updates are managed via relation 73 meta (care_groups_special_role_type)
-  // For now this is a no-op since relation meta updates require specific JetEngine calls
+export async function updateMemberRoleWordPress(memberId: string, role: string, groupId?: string): Promise<void> {
+  // Update member role via JetEngine relation 72 meta field (care_groups_special_role_type)
+  const normalizedGroupId = normalizeWpObjectId(groupId);
+  const normalizedMemberId = normalizeWpObjectId(memberId);
+  if (!normalizedGroupId || !normalizedMemberId) return;
+  await wordpressFetch(`jet-rel/${REL_GROUP_MEMBER}`, {
+    method: "POST",
+    body: {
+      parent_id: normalizedGroupId,
+      child_id: normalizedMemberId,
+      context: "child",
+      store_items_type: "update",
+      meta: { care_groups_special_role_type: role },
+    },
+  });
 }
 
 export async function removeGroupMemberWordPress(memberId: string, groupId?: string): Promise<void> {
