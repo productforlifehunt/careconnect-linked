@@ -319,6 +319,17 @@ async function createSafeZoneAlertsForLocation(userId: string, lat: number, lng:
       if (dup) continue;
       const msg = result.alertType === "entered_danger_zone" ? `Entered danger zone: ${zone.name}` : result.alertType === "exited_safe_zone" ? `Left safe zone: ${zone.name}` : `Entered safe zone: ${zone.name}`;
       await createWordPressFeature("safe_zone_alerts", { user_id: userId, safe_zone_id: zone.id, alert_type: result.alertType, latitude: lat, longitude: lng, message: msg });
+      // Create in-app notification for the zone breach
+      try {
+        await createNotificationWordPress({
+          user_id: userId,
+          type: "safe_zone_breach",
+          title: result.alertType === "entered_danger_zone" ? "⚠️ Danger Zone Alert" : "📍 Safe Zone Alert",
+          message: msg,
+          related_id: zone.id,
+          related_type: "safe_zone",
+        });
+      } catch {}
     }
   } catch {}
 }
