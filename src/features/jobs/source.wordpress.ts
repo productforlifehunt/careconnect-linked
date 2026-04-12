@@ -67,10 +67,12 @@ export async function fetchMyJobPostingsWordPress(): Promise<any[]> {
 
 export async function fetchMyJobApplicationsWordPress(): Promise<any[]> {
   try {
-    const apps = await wordpressFetch<any[]>("cc/v1/my-applications");
+    const apps = await wordpressCCTFetch<any[]>("job_application", {
+      params: { _limit: 50 },
+    });
     if (!Array.isArray(apps)) return [];
     return apps.map((a: any) => ({
-      id: String(a.id),
+      id: String(a.id || a._ID),
       job_id: a.job_id || null,
       cover_letter: a.cover_letter || null,
       status: a.status || "pending",
