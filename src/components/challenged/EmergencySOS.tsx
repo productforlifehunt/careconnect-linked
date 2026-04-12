@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Phone, AlertTriangle, MapPin, Loader2 } from "lucide-react";
+import { AlertTriangle, MapPin, Loader2, WifiOff } from "lucide-react";
 import { useShareMyLocation } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
@@ -16,41 +16,53 @@ export function EmergencySOS() {
   const handleEmergency = async () => {
     setSending(true);
     try {
+      // Try to get location, but proceed even without it
+      let latitude = 0;
+      let longitude = 0;
+      let accuracy: number | null = null;
+      let locationAvailable = false;
+
       if ("geolocation" in navigator) {
-        navigator.geolocation.getCurrentPosition(
-          async (pos) => {
-            try {
-              await shareLocation.mutateAsync({
-                latitude: pos.coords.latitude,
-                longitude: pos.coords.longitude,
-                accuracy: pos.coords.accuracy,
-                isEmergency: true,
-              });
-              toast({
-                title: t("emergencySOS.locationShared"),
-                description: t("emergencySOS.locationSharedDesc"),
-              });
-            } catch (err: any) {
-              toast({ title: t("emergencySOS.locationShared"), description: err.message, variant: "destructive" });
-            }
-            setSending(false);
-            setOpen(false);
-          },
-          () => {
-            toast({
-              title: t("emergencySOS.locationUnavailable"),
-              description: t("emergencySOS.enableLocation"),
-              variant: "destructive",
+        try {
+          const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: true,
+              timeout: 8000,
+              maximumAge: 60000,
             });
-            setSending(false);
-          },
-          { enableHighAccuracy: true, timeout: 10000 }
-        );
-      } else {
-        toast({ title: t("emergencySOS.geoNotSupported"), variant: "destructive" });
-        setSending(false);
+          });
+          latitude = pos.coords.latitude;
+          longitude = pos.coords.longitude;
+          accuracy = pos.coords.accuracy;
+          locationAvailable = true;
+        } catch {
+          // Location denied or unavailable — continue without it
+        }
       }
-    } catch {
+
+      // Always send the SOS alert, with or without location
+      await shareLocation.mutateAsync({
+        latitude,
+        longitude,
+        accuracy,
+        isEmergency: true,
+      });
+
+      toast({
+        title: t("emergencySOS.locationShared"),
+        description: locationAvailable
+          ? t("emergencySOS.locationSharedDesc")
+          : t("emergencySOS.sosWithoutLocation", "SOS alert sent to your care circle. Location was unavailable."),
+      });
+
+      setOpen(false);
+    } catch (err: any) {
+      toast({
+        title: t("emergencySOS.sosFailed", "SOS Failed"),
+        description: err.message || t("emergencySOS.sosFailedDesc", "Could not send SOS alert. Please try again."),
+        variant: "destructive",
+      });
+    } finally {
       setSending(false);
     }
   };
@@ -91,12 +103,10 @@ export function EmergencySOS() {
               )}
               {t("emergencySOS.shareEmergencyLocation")}
             </Button>
-            <a href="tel:911" className="block">
-              <Button variant="outline" className="w-full h-14 text-base font-bold gap-2 border-destructive text-destructive hover:bg-destructive/10">
-                <Phone className="h-5 w-5" />
-                {t("emergencySOS.call911")}
-              </Button>
-            </a>
+            <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1">
+              <WifiOff className="h-3 w-3" />
+              {t("emergencySOS.worksWithoutGPS", "Works even without GPS permission")}
+            </p>
             <Button variant="ghost" className="w-full" onClick={() => setOpen(false)}>
               {t("common.cancel")}
             </Button>

@@ -168,17 +168,32 @@ export default function GPSTracking() {
   const handleSOS = async () => {
     setSosSending(true);
     try {
-      const profileId = await getCurrentProfileId();
       const authUserId = await getCurrentAuthUserId();
-      if (!profileId || !authUserId) throw new Error("Not authenticated");
+      if (!authUserId) throw new Error("Not authenticated");
 
-      // Get current location
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000 });
-      });
+      // Try to get location, but proceed even without it
+      let latitude = 0;
+      let longitude = 0;
+      let accuracy: number | null = null;
+      let locationAvailable = false;
 
-      await shareMyLocationWordPress(position.coords.latitude, position.coords.longitude, {
-        accuracy: position.coords.accuracy ?? null,
+      if ("geolocation" in navigator) {
+        try {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 });
+          });
+          latitude = position.coords.latitude;
+          longitude = position.coords.longitude;
+          accuracy = position.coords.accuracy ?? null;
+          locationAvailable = true;
+        } catch {
+          // Location denied or unavailable — proceed without it
+        }
+      }
+
+      // Always send SOS, even without location
+      await shareMyLocationWordPress(latitude, longitude, {
+        accuracy,
         isEmergency: true,
       });
 
@@ -186,7 +201,9 @@ export default function GPSTracking() {
       setSosDialogOpen(false);
       toast({
         title: t("gps.sosSuccess"),
-        description: t("gps.sosSuccessDesc", { groups: site.navLabels.careGroups.toLowerCase() }),
+        description: locationAvailable
+          ? t("gps.sosSuccessDesc", { groups: site.navLabels.careGroups.toLowerCase() })
+          : t("gps.sosWithoutLocation", "SOS alert sent without location. Your care circle has been notified."),
       });
     } catch (err: any) {
       toast({
