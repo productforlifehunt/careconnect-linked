@@ -86,10 +86,10 @@ export default function ChallengedArticleDetail() {
             <Clock className="h-3.5 w-3.5" />
             {readTime}
           </span>
-          {article.cct_created && (
+          {article.created_at && (
             <span className="text-sm text-muted-foreground flex items-center gap-1">
               <Calendar className="h-3.5 w-3.5" />
-              {new Date(article.cct_created).toLocaleDateString()}
+              {new Date(article.created_at).toLocaleDateString()}
             </span>
           )}
         </div>
