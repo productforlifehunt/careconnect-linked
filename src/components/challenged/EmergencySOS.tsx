@@ -5,6 +5,7 @@ import { AlertTriangle, MapPin, Loader2, WifiOff } from "lucide-react";
 import { useShareMyLocation } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { getCurrentPosition } from "@/lib/geolocation";
 
 export function EmergencySOS() {
   const { t } = useTranslation();
@@ -16,31 +17,12 @@ export function EmergencySOS() {
   const handleEmergency = async () => {
     setSending(true);
     try {
-      // Try to get location, but proceed even without it
-      let latitude = 0;
-      let longitude = 0;
-      let accuracy: number | null = null;
-      let locationAvailable = false;
+      const pos = await getCurrentPosition({ timeout: 8000 });
+      const latitude = pos?.latitude ?? 0;
+      const longitude = pos?.longitude ?? 0;
+      const accuracy = pos?.accuracy ?? null;
+      const locationAvailable = pos !== null;
 
-      if ("geolocation" in navigator) {
-        try {
-          const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, {
-              enableHighAccuracy: true,
-              timeout: 8000,
-              maximumAge: 60000,
-            });
-          });
-          latitude = pos.coords.latitude;
-          longitude = pos.coords.longitude;
-          accuracy = pos.coords.accuracy;
-          locationAvailable = true;
-        } catch {
-          // Location denied or unavailable — continue without it
-        }
-      }
-
-      // Always send the SOS alert, with or without location
       await shareLocation.mutateAsync({
         latitude,
         longitude,
