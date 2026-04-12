@@ -660,9 +660,9 @@ export const wordpressSchema: Record<WordPressFeatureKey, WordPressSchemaEntry<a
   },
   member_categories: {
     status: "confirmed",
-    endpoint: "wp/v2/member_category",
-    defaultParams: { per_page: 100 },
-    mapList: (items: WPPostEntity[]) => (Array.isArray(items) ? items.map(mapAcfPost) : []),
+    endpoint: "jet-cct/member_category",
+    defaultParams: { _limit: 100 },
+    mapList: (items: any[]) => (Array.isArray(items) ? items : []),
   },
   care_facilities: {
     status: "confirmed",
