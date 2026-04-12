@@ -41,11 +41,17 @@ import AICompanion from "./pages/AICompanion";
 import BrandCompare from "./pages/BrandCompare";
 import Cart from "./pages/Cart";
 import OrderConfirmation from "./pages/OrderConfirmation";
+import AwareD from "./pages/AwareD";
+import CareD from "./pages/CareD";
+import CopeD from "./pages/CopeD";
+import SafeD from "./pages/SafeD";
+import AccompanieD from "./pages/AccompanieD";
+import ChallengedArticleDetail from "./pages/ChallengedArticleDetail";
 
 const queryClient = new QueryClient();
 
 // Dashboard routes that always get sidebar
-const baseDashboardPaths = ["/dashboard", "/bookings", "/care-circle", "/gps-tracking", "/messages", "/favorites", "/notifications", "/profile", "/cared-ones", "/jobs", "/provider-dashboard", "/community", "/articles", "/cart", "/order-confirmation"];
+const baseDashboardPaths = ["/dashboard", "/bookings", "/care-circle", "/gps-tracking", "/messages", "/favorites", "/notifications", "/profile", "/cared-ones", "/jobs", "/provider-dashboard", "/community", "/articles", "/cart", "/order-confirmation", "/aware", "/care-guides", "/coping", "/safety-guides", "/accompanied"];
 // Routes that get sidebar only when authenticated
 const authDashboardPaths = ["/search", "/caregiver"];
 
@@ -78,6 +84,17 @@ function AppRoutes() {
       <Route path="/articles/:id" element={<ArticlePost />} />
       <Route path="/ai-companion" element={<AICompanion />} />
       <Route path="/brand-compare" element={<BrandCompare />} />
+      {/* ChallengeD content sections */}
+      <Route path="/aware" element={<AwareD />} />
+      <Route path="/aware/:id" element={<ChallengedArticleDetail />} />
+      <Route path="/care-guides" element={<CareD />} />
+      <Route path="/care-guides/:id" element={<ChallengedArticleDetail />} />
+      <Route path="/coping" element={<CopeD />} />
+      <Route path="/coping/:id" element={<ChallengedArticleDetail />} />
+      <Route path="/safety-guides" element={<SafeD />} />
+      <Route path="/safety-guides/:id" element={<ChallengedArticleDetail />} />
+      <Route path="/accompanied" element={<AccompanieD />} />
+      <Route path="/accompanied/:id" element={<ChallengedArticleDetail />} />
       <Route path="/facilities/new" element={<RequireAuth><CareFacilityForm /></RequireAuth>} />
       <Route path="/facilities/:id/edit" element={<RequireAuth><CareFacilityForm /></RequireAuth>} />
 
