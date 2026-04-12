@@ -38,3 +38,26 @@ export async function markAllNotificationsReadWordPress(): Promise<void> {
     );
   } catch {}
 }
+
+/** Create a notification in the cc_notification CCT */
+export async function createNotificationWordPress(input: {
+  user_id: string | number;
+  type: string;
+  title: string;
+  message: string;
+  related_id?: string | number | null;
+  related_type?: string | null;
+}): Promise<void> {
+  await wordpressCCTFetch("cc_notification", {
+    method: "POST",
+    body: {
+      user_id: String(input.user_id),
+      type: input.type,
+      title: input.title,
+      message: input.message,
+      is_read: "no",
+      related_id: input.related_id ? String(input.related_id) : "",
+      related_type: input.related_type || "",
+    },
+  });
+}

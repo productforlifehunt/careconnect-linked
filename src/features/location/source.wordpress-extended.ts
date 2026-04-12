@@ -1,6 +1,7 @@
 import { createWordPressFeature, deleteWordPressFeature, listWordPressFeature, updateWordPressFeature } from "@/features/shared/wordpress-adapter";
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
+import { createNotificationWordPress } from "@/features/notifications/source.wordpress";
 
 const REL_USER_SAFE_ZONE = 90;
 const REL_USER_LOCATION_SHARING = 91;
@@ -318,6 +319,17 @@ async function createSafeZoneAlertsForLocation(userId: string, lat: number, lng:
       if (dup) continue;
       const msg = result.alertType === "entered_danger_zone" ? `Entered danger zone: ${zone.name}` : result.alertType === "exited_safe_zone" ? `Left safe zone: ${zone.name}` : `Entered safe zone: ${zone.name}`;
       await createWordPressFeature("safe_zone_alerts", { user_id: userId, safe_zone_id: zone.id, alert_type: result.alertType, latitude: lat, longitude: lng, message: msg });
+      // Create in-app notification for the zone breach
+      try {
+        await createNotificationWordPress({
+          user_id: userId,
+          type: "safe_zone_breach",
+          title: result.alertType === "entered_danger_zone" ? "⚠️ Danger Zone Alert" : "📍 Safe Zone Alert",
+          message: msg,
+          related_id: zone.id,
+          related_type: "safe_zone",
+        });
+      } catch {}
     }
   } catch {}
 }
@@ -355,6 +367,32 @@ export async function shareMyLocationWordPress(latitude: number, longitude: numb
       is_emergency: options?.isEmergency || false,
     });
   } catch {}
+  // If emergency SOS, create notification for the user's care circle
+  if (options?.isEmergency) {
+    try {
+      // Notify all care group members via care_group relations
+      const { fetchCareGroupsWordPress } = await import("@/features/care-groups/source.wordpress");
+      const groups = await fetchCareGroupsWordPress();
+      const notifiedUserIds = new Set<string>();
+      for (const group of groups) {
+        const members = (group as any).members || [];
+        for (const member of members) {
+          const memberId = String(member.user_id || member.id || "");
+          if (memberId && memberId !== String(storedUser.user_id) && !notifiedUserIds.has(memberId)) {
+            notifiedUserIds.add(memberId);
+            await createNotificationWordPress({
+              user_id: memberId,
+              type: "sos_emergency",
+              title: "🚨 SOS Emergency Alert",
+              message: `${storedUser.user_display_name || "A care circle member"} triggered an SOS emergency alert. Location shared.`,
+              related_id: storedUser.user_id,
+              related_type: "user",
+            });
+          }
+        }
+      }
+    } catch {}
+  }
   await createSafeZoneAlertsForLocation(String(storedUser.user_id), latitude, longitude);
 }
 
@@ -402,6 +440,17 @@ export async function sendLocationRequestWordPress(input: { caredOneId: string; 
     is_emergency: input.isEmergency || false,
     status: input.isEmergency ? "emergency_approved" : "pending",
   });
+  // Notify the target user about the location request
+  try {
+    await createNotificationWordPress({
+      user_id: caredOneUserId,
+      type: input.isEmergency ? "emergency_location_request" : "location_request",
+      title: input.isEmergency ? "🚨 Emergency Location Request" : "📍 Location Request",
+      message: `${storedUser.user_display_name || "Someone"} ${input.isEmergency ? "urgently needs" : "is requesting"} your location.${input.message ? ` "${input.message}"` : ""}`,
+      related_id: storedUser.user_id,
+      related_type: "user",
+    });
+  } catch {}
 }
 
 export async function cancelLocationRequestWordPress(requestId: string): Promise<void> {
