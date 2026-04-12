@@ -1,0 +1,178 @@
+<!-- wp:html -->
+<div id="provider-app">
+  <div style="border-bottom:1px solid #e5e7eb; margin-bottom:1.5rem;">
+    <div style="display:flex; gap:0.5rem;">
+      <button class="prov-tab active" data-tab="requests" style="padding:0.75rem 1.5rem; border:none; background:none; cursor:pointer; font-weight:500; color:#0d9488; border-bottom:2px solid #0d9488;">Booking Requests</button>
+      <button class="prov-tab" data-tab="schedule" style="padding:0.75rem 1.5rem; border:none; background:none; cursor:pointer; font-weight:500; color:#6b7280; border-bottom:2px solid transparent;">Schedule</button>
+      <button class="prov-tab" data-tab="earnings" style="padding:0.75rem 1.5rem; border:none; background:none; cursor:pointer; font-weight:500; color:#6b7280; border-bottom:2px solid transparent;">Earnings</button>
+    </div>
+  </div>
+
+  <!-- Booking Requests Panel -->
+  <div id="prov-requests" class="prov-panel">
+    <div id="prov-requests-list" style="min-height:200px;">
+      <div style="text-align:center; padding:3rem; color:#9ca3af;">⏳ Loading requests...</div>
+    </div>
+  </div>
+
+  <!-- Schedule Panel -->
+  <div id="prov-schedule" class="prov-panel" style="display:none;">
+    <div style="background:#fff; border-radius:12px; padding:1.5rem; box-shadow:0 1px 3px rgba(0,0,0,0.1); margin-bottom:1.5rem;">
+      <h3 style="font-size:1rem; font-weight:600; margin:0 0 1rem;">Weekly Availability</h3>
+      <div id="weekly-schedule" style="display:flex; flex-direction:column; gap:0.5rem;"></div>
+      <div style="margin-top:1rem; display:flex; justify-content:flex-end;">
+        <button id="save-schedule" style="padding:0.5rem 1.5rem; background:#0d9488; color:white; border:none; border-radius:6px; font-size:0.875rem; cursor:pointer;">Save Schedule</button>
+      </div>
+    </div>
+    <div style="background:#fff; border-radius:12px; padding:1.5rem; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+      <h3 style="font-size:1rem; font-weight:600; margin:0 0 1rem;">Date-Specific Overrides</h3>
+      <div style="display:flex; gap:0.75rem; margin-bottom:1rem; flex-wrap:wrap;">
+        <input id="override-date" type="date" style="padding:0.5rem; border:1px solid #d1d5db; border-radius:6px; font-size:0.875rem;">
+        <select id="override-type" style="padding:0.5rem; border:1px solid #d1d5db; border-radius:6px; font-size:0.875rem; background:white;">
+          <option value="available">Available</option>
+          <option value="unavailable">Unavailable</option>
+        </select>
+        <input id="override-start" type="time" style="padding:0.5rem; border:1px solid #d1d5db; border-radius:6px; font-size:0.875rem;">
+        <input id="override-end" type="time" style="padding:0.5rem; border:1px solid #d1d5db; border-radius:6px; font-size:0.875rem;">
+        <button id="add-override" style="padding:0.5rem 1rem; background:#0d9488; color:white; border:none; border-radius:6px; font-size:0.875rem; cursor:pointer;">Add</button>
+      </div>
+      <div id="overrides-list" style="font-size:0.85rem; color:#6b7280;">No overrides set</div>
+    </div>
+  </div>
+
+  <!-- Earnings Panel -->
+  <div id="prov-earnings" class="prov-panel" style="display:none;">
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:1rem; margin-bottom:1.5rem;">
+      <div style="background:#fff; border-radius:12px; padding:1.25rem; box-shadow:0 1px 3px rgba(0,0,0,0.1); text-align:center;">
+        <div style="font-size:0.8rem; color:#6b7280; margin-bottom:0.5rem;">This Month</div>
+        <div id="earnings-month" style="font-size:1.5rem; font-weight:700; color:#0d9488;">$0</div>
+      </div>
+      <div style="background:#fff; border-radius:12px; padding:1.25rem; box-shadow:0 1px 3px rgba(0,0,0,0.1); text-align:center;">
+        <div style="font-size:0.8rem; color:#6b7280; margin-bottom:0.5rem;">Total Earnings</div>
+        <div id="earnings-total" style="font-size:1.5rem; font-weight:700; color:#0d9488;">$0</div>
+      </div>
+      <div style="background:#fff; border-radius:12px; padding:1.25rem; box-shadow:0 1px 3px rgba(0,0,0,0.1); text-align:center;">
+        <div style="font-size:0.8rem; color:#6b7280; margin-bottom:0.5rem;">Completed Bookings</div>
+        <div id="earnings-completed" style="font-size:1.5rem; font-weight:700; color:#111827;">0</div>
+      </div>
+    </div>
+    <div style="background:#fff; border-radius:12px; padding:1.5rem; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+      <h3 style="font-size:1rem; font-weight:600; margin:0 0 1rem;">Recent Transactions</h3>
+      <div id="transactions-list">
+        <div style="text-align:center; padding:2rem; color:#9ca3af;">No transactions yet</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const baseUrl = '/careconnected/wp-json/wp/v2';
+  let currentUserId = null;
+  const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+
+  async function getUser() {
+    if (currentUserId) return currentUserId;
+    try { const r = await fetch(baseUrl+'/users/me',{credentials:'include'}); if(!r.ok) return null; currentUserId=(await r.json()).id; return currentUserId; } catch(e) { return null; }
+  }
+
+  function empty(msg,icon) { return '<div style="text-align:center; padding:3rem; color:#9ca3af;"><div style="font-size:2rem; margin-bottom:0.5rem;">'+icon+'</div><div>'+msg+'</div></div>'; }
+
+  function requestCard(b) {
+    const title = b.title?.rendered||'Booking Request';
+    const date = b.meta?._booking_start||b.date;
+    const customer = b.meta?.customer_name||'Customer';
+    const cost = b.meta?._booking_cost||'0';
+    const status = b.status||'pending';
+    const d = new Date(date);
+    const dateStr = d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+
+    let actions = '';
+    if (status === 'pending') {
+      actions = '<button onclick="window._acceptBooking('+b.id+')" style="padding:0.4rem 0.75rem; background:#22c55e; color:white; border:none; border-radius:6px; font-size:0.8rem; cursor:pointer;">Accept</button>'
+        + ' <button onclick="window._declineBooking('+b.id+')" style="padding:0.4rem 0.75rem; background:#ef4444; color:white; border:none; border-radius:6px; font-size:0.8rem; cursor:pointer;">Decline</button>';
+    }
+
+    return '<div style="background:#fff; border-radius:12px; padding:1.25rem; box-shadow:0 1px 3px rgba(0,0,0,0.1); margin-bottom:1rem;">'
+      +'<div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:0.5rem;">'
+      +'<div><div style="font-weight:600; color:#111827;">'+title+'</div>'
+      +'<div style="font-size:0.85rem; color:#6b7280;">👤 '+customer+' • '+dateStr+'</div></div>'
+      +'<div style="font-weight:600; color:#0d9488;">$'+cost+'</div></div>'
+      +'<div style="display:flex; gap:0.5rem;">'+actions+'</div></div>';
+  }
+
+  async function loadRequests() {
+    const userId = await getUser();
+    if (!userId) { document.getElementById('prov-requests-list').innerHTML = empty('Please log in','🔒'); return; }
+    try {
+      const r = await fetch(baseUrl+'/wc_booking?per_page=20&orderby=date&order=desc',{credentials:'include'});
+      const bookings = r.ok ? await r.json() : [];
+      const el = document.getElementById('prov-requests-list');
+      if (bookings.length===0) { el.innerHTML = empty('No booking requests','📅'); return; }
+      el.innerHTML = bookings.map(requestCard).join('');
+    } catch(e) { document.getElementById('prov-requests-list').innerHTML = empty('Failed to load','❌'); }
+  }
+
+  window._acceptBooking = async function(id) {
+    try {
+      const nonce = document.querySelector('meta[name="wp-nonce"]')?.content||'';
+      await fetch(baseUrl+'/wc_booking/'+id,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json','X-WP-Nonce':nonce},body:JSON.stringify({status:'confirmed'})});
+      loadRequests();
+    } catch(e) { alert('Failed'); }
+  };
+  window._declineBooking = async function(id) {
+    try {
+      const nonce = document.querySelector('meta[name="wp-nonce"]')?.content||'';
+      await fetch(baseUrl+'/wc_booking/'+id,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json','X-WP-Nonce':nonce},body:JSON.stringify({status:'cancelled'})});
+      loadRequests();
+    } catch(e) { alert('Failed'); }
+  };
+
+  // Weekly schedule
+  function renderSchedule() {
+    const container = document.getElementById('weekly-schedule');
+    container.innerHTML = days.map(day => {
+      return '<div style="display:flex; align-items:center; gap:0.75rem; padding:0.5rem; border:1px solid #e5e7eb; border-radius:6px;">'
+        +'<label style="display:flex; align-items:center; gap:0.5rem; min-width:120px; cursor:pointer;">'
+        +'<input type="checkbox" class="day-check" data-day="'+day+'" checked style="accent-color:#0d9488;">'
+        +'<span style="font-size:0.875rem; font-weight:500;">'+day+'</span></label>'
+        +'<input type="time" class="day-start" data-day="'+day+'" value="09:00" style="padding:0.25rem; border:1px solid #d1d5db; border-radius:4px; font-size:0.8rem;">'
+        +'<span style="color:#6b7280;">to</span>'
+        +'<input type="time" class="day-end" data-day="'+day+'" value="17:00" style="padding:0.25rem; border:1px solid #d1d5db; border-radius:4px; font-size:0.8rem;">'
+        +'</div>';
+    }).join('');
+  }
+
+  document.getElementById('save-schedule').addEventListener('click', function() {
+    this.textContent = '✓ Saved!'; setTimeout(() => { this.textContent = 'Save Schedule'; }, 2000);
+  });
+
+  document.getElementById('add-override').addEventListener('click', function() {
+    const date = document.getElementById('override-date').value;
+    if (!date) { alert('Please select a date'); return; }
+    const type = document.getElementById('override-type').value;
+    const start = document.getElementById('override-start').value;
+    const end = document.getElementById('override-end').value;
+    const list = document.getElementById('overrides-list');
+    if (list.textContent === 'No overrides set') list.innerHTML = '';
+    const color = type === 'available' ? '#22c55e' : '#ef4444';
+    list.innerHTML += '<div style="padding:0.5rem; border:1px solid #e5e7eb; border-radius:6px; margin-bottom:0.5rem; display:flex; justify-content:space-between; align-items:center;">'
+      +'<div><span style="color:'+color+'; font-weight:500;">'+type.charAt(0).toUpperCase()+type.slice(1)+'</span> — '+date+(start?' '+start+'-'+end:'')+'</div>'
+      +'<button onclick="this.parentElement.remove()" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:1rem;">×</button></div>';
+  });
+
+  // Tab switching
+  document.querySelectorAll('.prov-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+      document.querySelectorAll('.prov-tab').forEach(t => { t.style.color='#6b7280'; t.style.borderBottomColor='transparent'; });
+      this.style.color='#0d9488'; this.style.borderBottomColor='#0d9488';
+      document.querySelectorAll('.prov-panel').forEach(p => p.style.display='none');
+      document.getElementById('prov-'+this.dataset.tab).style.display='block';
+    });
+  });
+
+  renderSchedule();
+  loadRequests();
+})();
+</script>
+<!-- /wp:html -->

@@ -1,0 +1,65 @@
+<!-- wp:html -->
+<style>
+#jobs70-browse{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+#jobs70-browse .j70-card{background:#fff;border-radius:.75rem;box-shadow:0 1px 3px rgba(0,0,0,.1);border:1px solid transparent;padding:1.25rem;margin-bottom:1rem}
+#jobs70-browse .j70-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem;margin-bottom:.75rem}
+#jobs70-browse .j70-title{margin:0;font-size:1.125rem;font-weight:600;color:#0f172a}
+#jobs70-browse .j70-badges{display:flex;gap:.5rem;flex-wrap:wrap;margin:.25rem 0}
+#jobs70-browse .j70-badge{display:inline-block;padding:.125rem .5rem;border-radius:9999px;font-size:.7rem;font-weight:500}
+#jobs70-browse .j70-badge-type{background:#f1f5f9;color:#475569}
+#jobs70-browse .j70-badge-open{background:#0d9488;color:#fff}
+#jobs70-browse .j70-badge-closed{background:#e2e8f0;color:#64748b}
+#jobs70-browse .j70-badge-applied{background:#dcfce7;color:#166534;border:1px solid #bbf7d0}
+#jobs70-browse .j70-meta{display:flex;flex-wrap:wrap;gap:.75rem;font-size:.8125rem;color:#64748b;margin-bottom:.5rem}
+#jobs70-browse .j70-meta span{display:flex;align-items:center;gap:.25rem}
+#jobs70-browse .j70-meta svg{width:12px;height:12px}
+#jobs70-browse .j70-desc{font-size:.875rem;color:#64748b;margin-bottom:1rem;display:-webkit-box;display:box;line-clamp:3;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+#jobs70-browse .j70-footer{display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
+#jobs70-browse .j70-date{font-size:.75rem;color:#94a3b8}
+#jobs70-browse .j70-btn{display:inline-flex;align-items:center;gap:.375rem;padding:.375rem .75rem;border:none;border-radius:.5rem;font-size:.8125rem;font-weight:500;cursor:pointer}
+#jobs70-browse .j70-btn-primary{background:#0d9488;color:#fff}
+#jobs70-browse .j70-btn-outline{background:#fff;color:#334155;border:1px solid #e2e8f0}
+#jobs70-browse .j70-empty{text-align:center;padding:3rem 1rem;color:#94a3b8;font-size:.875rem}
+</style>
+<div id="jobs70-browse" class="j70-panel active" data-panel="browse">
+  <div class="j70-empty">Loading jobs...</div>
+</div>
+<script>
+(function(){
+  const root=document.getElementById('jobs70-browse');
+  const sourceLabels={general:'General',group_task:'Group Task',cared_one_checkin:'Check-In',cared_one_care:'Ongoing Care'};
+  function fmtDate(d){return new Date(d).toLocaleDateString('en',{month:'short',day:'numeric',year:'numeric'})}
+  function strip(html){return (html||'').replace(/<[^>]*>/g,'')}
+  function render(){
+    const api=window.__jobs70;if(!api)return;
+    const s=api.state;
+    const appliedIds=new Set((s.applications||[]).map(a=>a.meta?.job_id));
+    const postedIds=new Set((s.posted||[]).map(j=>j.id));
+    let jobs=(s.jobs||[]).filter(j=>{
+      const q=s.search||''; const type=s.type||'';
+      const title=(j.title?.rendered||'').toLowerCase();
+      const body=strip(j.content?.rendered||'').toLowerCase();
+      if(q && !title.includes(q) && !body.includes(q)) return false;
+      if(type && (j.meta?.job_source_type||'general')!==type) return false;
+      return true;
+    });
+    if(!jobs.length){root.innerHTML='<div class="j70-empty">No jobs found</div>';return}
+    root.innerHTML=jobs.map(j=>{
+      const id=j.id; const title=j.title?.rendered||'Job'; const desc=strip(j.content?.rendered||'');
+      const status=j.meta?.status||j.status||'open'; const type=j.meta?.job_source_type||'general';
+      const loc=j.meta?.location||''; const poster=j.meta?.poster_name||''; const date=fmtDate(j.date);
+      let action='';
+      if(postedIds.has(id)) action='<button class="j70-btn j70-btn-outline" type="button" onclick="window.__jobs70.setTab(\'posted\')">Manage</button>';
+      else if(appliedIds.has(id)) action='<span class="j70-badge j70-badge-applied">Applied ✓</span>';
+      else if(status==='open') action='<button class="j70-btn j70-btn-primary" type="button" onclick="window.__jobs70.openApply({jobId:'+id+',title:'+JSON.stringify(title)+'})">Apply</button>';
+      return '<div class="j70-card"><div class="j70-card-top"><div style="flex:1"><h3 class="j70-title">'+title+'</h3><div class="j70-badges"><span class="j70-badge j70-badge-type">'+(sourceLabels[type]||type)+'</span><span class="j70-badge '+(status==='open'?'j70-badge-open':'j70-badge-closed')+'">'+status+'</span></div><div class="j70-meta">'
+        +(poster?'<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>'+poster+'</span>':'')
+        +(loc?'<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>'+loc+'</span>':'')
+        +'</div></div><div class="j70-date">'+date+'</div></div><div class="j70-desc">'+desc+'</div><div class="j70-footer"><div></div><div>'+action+'</div></div></div>';
+    }).join('');
+  }
+  function bind(){const api=window.__jobs70;if(!api)return false;api.on('data',render);api.on('filter',render);api.on('tab',render);render();return true}
+  if(!bind()){const t=setInterval(()=>{if(bind())clearInterval(t)},200)}
+})();
+</script>
+<!-- /wp:html -->

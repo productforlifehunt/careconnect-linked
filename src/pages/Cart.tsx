@@ -1,0 +1,100 @@
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ShoppingCart, Trash2, Loader2, ArrowLeft } from "lucide-react";
+import { useCart, useRemoveCartItem, useClearCart, useCheckout } from "@/hooks/use-cart";
+import { useAuth } from "@/contexts/AuthContext";
+import { useEffect, useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+export default function Cart() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { data: cart, isLoading } = useCart();
+  const removeItem = useRemoveCartItem();
+  const clearAll = useClearCart();
+  const doCheckout = useCheckout();
+  const [email, setEmail] = useState("");
+
+  useEffect(() => {
+    const u = user as any;
+    if (!email && u?.email) setEmail(u.email);
+  }, [user, email]);
+
+  const items = cart?.items || [];
+  const total = cart?.totals?.total_price ? (parseInt(cart.totals.total_price) / 100).toFixed(2) : "0.00";
+  const sym = cart?.totals?.currency_symbol || "$";
+
+  if (isLoading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
+
+  return (
+    <div className="max-w-3xl mx-auto px-4 py-6">
+      <Button variant="ghost" className="mb-4 gap-2" onClick={() => navigate(-1)}><ArrowLeft className="h-4 w-4" /> Back</Button>
+      <h1 className="text-2xl font-bold mb-6 flex items-center gap-2"><ShoppingCart className="h-6 w-6" /> Your Cart</h1>
+
+      {items.length === 0 ? (
+        <Card className="border-transparent card-elevated">
+          <CardContent className="p-8 text-center">
+            <ShoppingCart className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <p className="text-lg text-muted-foreground mb-4">Your cart is empty</p>
+            <Button variant="coral" onClick={() => navigate("/search")}>Browse Care Services</Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          <Card className="border-transparent card-elevated">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Items ({items.length})</CardTitle>
+                <Button variant="ghost" size="sm" className="text-destructive" onClick={() => clearAll.mutate()} disabled={clearAll.isPending}>Clear All</Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {items.map((item: any) => (
+                <div key={item.key} className="flex items-center justify-between border-b last:border-0 pb-3 last:pb-0">
+                  <div>
+                    <p className="font-semibold">{item.name}</p>
+                    <p className="text-sm text-muted-foreground">Qty: {item.quantity} × {sym}{(parseInt(item.prices?.price || "0") / 100).toFixed(2)}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">{sym}{(parseInt(item.totals?.line_total || "0") / 100).toFixed(2)}</Badge>
+                    <Button variant="ghost" size="icon" onClick={() => removeItem.mutate(item.key)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card className="border-transparent card-elevated">
+            <CardContent className="p-5 space-y-4">
+              <div className="flex justify-between text-lg font-bold"><span>Total</span><span>{sym}{total}</span></div>
+              <div><Label>Billing Email</Label><Input value={email} onChange={e => setEmail(e.target.value)} placeholder={(user as any)?.email || "email@example.com"} /></div>
+              <div className="rounded-lg bg-muted/40 p-3 text-sm text-muted-foreground">
+                Payment method: Cash on delivery / offline payment as configured in WooCommerce.
+              </div>
+              <Button variant="coral" className="w-full" size="lg" disabled={doCheckout.isPending || !email.trim()} onClick={async () => {
+                const u = user as any;
+                const displayName = u?.full_name || u?.user_display_name || "";
+                const parts = displayName.split(" ").filter(Boolean);
+                const result = await doCheckout.mutateAsync({ first_name: parts[0] || "", last_name: parts.slice(1).join(" "), email: email.trim(), phone: u?.phone_number || "" });
+                const orderId = (result as any)?.order_id || (result as any)?.id || "";
+                const orderKey = (result as any)?.order_key || "";
+                const orderTotal = (result as any)?.totals?.total_price ? (parseInt((result as any).totals.total_price) / 100).toFixed(2) : total;
+                const params = new URLSearchParams();
+                if (orderId) params.set("order_id", String(orderId));
+                if (orderKey) params.set("order_key", orderKey);
+                if (orderTotal) params.set("total", orderTotal);
+                params.set("status", "processing");
+                navigate(`/order-confirmation?${params.toString()}`);
+              }}>
+                {doCheckout.isPending ? "Processing..." : "Checkout & Pay"}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+}

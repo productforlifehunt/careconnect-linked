@@ -14,6 +14,8 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import SearchResults from "./pages/SearchResults";
 import CaregiverProfile from "./pages/CaregiverProfile";
+import CareFacilityProfile from "./pages/CareFacilityProfile";
+import CareFacilityForm from "./pages/CareFacilityForm";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
@@ -31,11 +33,19 @@ import CaredOnes from "./pages/CaredOnes";
 import Jobs from "./pages/Jobs";
 import ProviderDashboard from "./pages/ProviderDashboard";
 import NotFound from "./pages/NotFound";
+import Community from "./pages/Community";
+import CommunityPost from "./pages/CommunityPost";
+import Articles from "./pages/Articles";
+import ArticlePost from "./pages/ArticlePost";
+import AICompanion from "./pages/AICompanion";
+import BrandCompare from "./pages/BrandCompare";
+import Cart from "./pages/Cart";
+import OrderConfirmation from "./pages/OrderConfirmation";
 
 const queryClient = new QueryClient();
 
 // Dashboard routes that always get sidebar
-const baseDashboardPaths = ["/dashboard", "/bookings", "/care-circle", "/gps-tracking", "/messages", "/favorites", "/notifications", "/profile", "/cared-ones", "/jobs", "/provider-dashboard"];
+const baseDashboardPaths = ["/dashboard", "/bookings", "/care-circle", "/gps-tracking", "/messages", "/favorites", "/notifications", "/profile", "/cared-ones", "/jobs", "/provider-dashboard", "/community", "/articles", "/cart", "/order-confirmation"];
 // Routes that get sidebar only when authenticated
 const authDashboardPaths = ["/search", "/caregiver"];
 
@@ -56,11 +66,20 @@ function AppRoutes() {
       <Route path="/" element={<Index />} />
       <Route path="/search" element={<SearchResults />} />
       <Route path="/caregiver/:id" element={<CaregiverProfile />} />
+      <Route path="/facility/:id" element={<CareFacilityProfile />} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/how-it-works" element={<HowItWorks />} />
       <Route path="/trust-safety" element={<TrustSafety />} />
       <Route path="/become-caregiver" element={<BecomeCaregiver />} />
+      <Route path="/community" element={<Community />} />
+      <Route path="/community/:id" element={<CommunityPost />} />
+      <Route path="/articles" element={<Articles />} />
+      <Route path="/articles/:id" element={<ArticlePost />} />
+      <Route path="/ai-companion" element={<AICompanion />} />
+      <Route path="/brand-compare" element={<BrandCompare />} />
+      <Route path="/facilities/new" element={<RequireAuth><CareFacilityForm /></RequireAuth>} />
+      <Route path="/facilities/:id/edit" element={<RequireAuth><CareFacilityForm /></RequireAuth>} />
 
       {/* Protected routes */}
       <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
@@ -74,6 +93,8 @@ function AppRoutes() {
       <Route path="/cared-ones" element={<RequireAuth><CaredOnes /></RequireAuth>} />
       <Route path="/jobs" element={<RequireAuth><Jobs /></RequireAuth>} />
       <Route path="/provider-dashboard" element={<RequireAuth><ProviderDashboard /></RequireAuth>} />
+      <Route path="/cart" element={<RequireAuth><Cart /></RequireAuth>} />
+      <Route path="/order-confirmation" element={<RequireAuth><OrderConfirmation /></RequireAuth>} />
 
       <Route path="*" element={<NotFound />} />
     </Routes>

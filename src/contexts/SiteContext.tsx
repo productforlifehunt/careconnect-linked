@@ -34,7 +34,7 @@ export interface SiteConfig {
     caredOnes: string;
     dashboard: string;
   };
-  howItWorksSteps: { step: string; title: string; desc: string }[];
+  howItWorksSteps: { step: string; titleKey: string; descKey: string }[];
   trustBadges: string[];
 }
 
@@ -68,11 +68,11 @@ const careConnectedConfig: SiteConfig = {
     dashboard: "Dashboard",
   },
   howItWorksSteps: [
-    { step: "1", title: "Search & Compare", desc: "Browse verified caregivers by specialty, location, ratings, and availability. No account needed to search." },
-    { step: "2", title: "Book & Manage", desc: "Book care sessions, manage schedules, and coordinate with your care team all in one place." },
-    { step: "3", title: "Track & Connect", desc: "Use GPS tracking, care journals, and team coordination to stay connected and informed." },
+    { step: "1", titleKey: "step1Title", descKey: "step1Desc" },
+    { step: "2", titleKey: "step2Title", descKey: "step2Desc" },
+    { step: "3", titleKey: "step3Title", descKey: "step3Desc" },
   ],
-  trustBadges: ["Background Checked", "Verified Reviews", "GPS Tracking"],
+  trustBadges: ["badge1", "badge2", "badge3"],
 };
 
 const challengedConfig: SiteConfig = {
@@ -105,11 +105,11 @@ const challengedConfig: SiteConfig = {
     dashboard: "Dashboard",
   },
   howItWorksSteps: [
-    { step: "1", title: "Find Specialized Help", desc: "Browse dementia-trained caregivers with verified experience in memory care, sundowning, and daily living support." },
-    { step: "2", title: "Coordinate as a Team", desc: "Invite family members, assign tasks, share updates, and manage medications together." },
-    { step: "3", title: "Stay Safe & Informed", desc: "GPS tracking, wandering alerts, health vitals, and daily check-ins keep everyone in the loop." },
+    { step: "1", titleKey: "step1Title", descKey: "step1Desc" },
+    { step: "2", titleKey: "step2Title", descKey: "step2Desc" },
+    { step: "3", titleKey: "step3Title", descKey: "step3Desc" },
   ],
-  trustBadges: ["Dementia Trained", "Background Checked", "GPS & Wandering Alerts"],
+  trustBadges: ["badge1", "badge2", "badge3", "badge4", "badge5"],
 };
 
 /** Map hostnames to site IDs */

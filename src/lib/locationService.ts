@@ -4,8 +4,6 @@
  * Also provides breach-detection algorithms and the full save-and-check pipeline.
  */
 
-import { careDb } from "@/integrations/supabase/external-client";
-
 // ─── Types ────────────────────────────────────────────────────
 
 export interface GPSCoords {
@@ -209,7 +207,7 @@ export function checkBreaches(lat: number, lng: number, zones: any[]): ZoneBreac
       distance = Math.round(getDistanceMeters(lat, lng, zone.latitude, zone.longitude));
     } else {
       distance = Math.round(getDistanceMeters(lat, lng, zone.latitude, zone.longitude));
-      inside = distance <= (zone.radius || 200);
+      inside = distance <= (zone.radius_meters || 200);
     }
     const breached = zone.zone_type === "danger" ? inside : !inside;
     if (breached) {
@@ -224,48 +222,7 @@ export function checkBreaches(lat: number, lng: number, zones: any[]): ZoneBreac
 
 // ─── Full pipeline: save location + check zones + create dedup'd alerts ───
 
-export async function saveLocationAndCheckZones(userId: string, coords: GPSCoords): Promise<void> {
-  // 1. Reverse geocode
-  const address = await reverseGeocode(coords.latitude, coords.longitude);
-  // 2. Get battery
-  const battery_level = await getBatteryLevel();
-  // 3. Save to DB
-  const { error: saveError } = await careDb.from("location_share").insert({
-    user_id: userId,
-    latitude: coords.latitude,
-    longitude: coords.longitude,
-    accuracy: coords.accuracy ?? null,
-    address: address || null,
-    battery_level,
-    timestamp: new Date().toISOString(),
-    is_emergency: false,
-  });
-  if (saveError) throw saveError;
-  // 4. Fetch active zones
-  const { data: zones } = await careDb.from("safe_zone").select("*").eq("user_id", userId).eq("is_active", true);
-  if (!zones?.length) return;
-  // 5. Check breaches
-  const breaches = checkBreaches(coords.latitude, coords.longitude, zones);
-  // 6. Create alerts with 5-min dedup
-  const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-  for (const breach of breaches) {
-    const { data: existing } = await careDb.from("safe_zone_alert")
-      .select("id")
-      .eq("safe_zone_id", breach.zoneId)
-      .eq("user_id", userId)
-      .eq("alert_type", breach.alertType)
-      .gte("created_at", fiveMinAgo)
-      .limit(1);
-    if (existing?.length) continue; // dedup
-    await careDb.from("safe_zone_alert").insert({
-      safe_zone_id: breach.zoneId,
-      user_id: userId,
-      alert_type: breach.alertType,
-      latitude: coords.latitude,
-      longitude: coords.longitude,
-      distance_from_center: breach.distance,
-      message: `${breach.alertType.replace(/_/g, " ")} "${breach.zoneName}"`,
-      is_read: false,
-    });
-  }
+export async function saveLocationAndCheckZones(_userId: string, coords: GPSCoords): Promise<void> {
+  const { shareMyLocationWordPress } = await import("@/features/location/source.wordpress-extended");
+  await shareMyLocationWordPress(coords.latitude, coords.longitude, { accuracy: coords.accuracy ?? null });
 }

@@ -1,0 +1,411 @@
+<div id="co-app"><p style="text-align:center;padding:5rem 0;color:#999">Loading…</p></div>
+<style>
+:root{--P:#e8764b;--PF:#fff;--C:#fff;--SH:0 1px 3px rgba(0,0,0,.06);--B:#e5e7eb;--F:#1a1a2e;--M:#6b7280;--MB:#f3f4f6;--OK:#22c55e;--WN:#f59e0b;--DN:#ef4444;--R:.5rem}
+#co-app{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;max-width:64rem;margin:0 auto;padding:1.5rem 1rem;color:var(--F);line-height:1.5}
+#co-app *{box-sizing:border-box}
+.ci{display:inline-flex;align-items:center;vertical-align:middle}.ci svg{width:100%;height:100%;stroke-linecap:round;stroke-linejoin:round}
+.ch1{font-size:1.5rem;font-weight:700;margin:0}.csub{font-size:.875rem;color:var(--M);margin:.125rem 0 0}
+.ccard{background:var(--C);border-radius:var(--R);box-shadow:var(--SH);border:1px solid transparent;padding:1rem;margin-bottom:.5rem;transition:all .15s}
+.ccard-hover:hover{border-color:rgba(232,118,75,.2);box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer}
+.cbtn{display:inline-flex;align-items:center;justify-content:center;gap:.375rem;padding:.5rem 1rem;font-size:.875rem;font-weight:500;border-radius:var(--R);border:1px solid transparent;cursor:pointer;transition:all .15s;font-family:inherit}
+.cbtn:disabled{opacity:.5;cursor:not-allowed}
+.cb-coral{background:var(--P);color:var(--PF);border-color:var(--P)}.cb-coral:hover:not(:disabled){filter:brightness(.9)}
+.cb-outline{background:transparent;color:var(--F);border-color:var(--B)}.cb-outline:hover:not(:disabled){background:var(--MB)}
+.cb-ghost{background:transparent;color:var(--F);border:none;padding:.375rem}.cb-ghost:hover:not(:disabled){background:var(--MB)}
+.cb-danger{background:var(--DN);color:#fff}.cb-sm{padding:.375rem .75rem;font-size:.8125rem}.cb-icon{padding:.375rem;width:2rem;height:2rem}
+.cbadge{display:inline-flex;align-items:center;gap:.25rem;padding:.125rem .5rem;font-size:.75rem;font-weight:500;border-radius:9999px;white-space:nowrap}
+.cbd{background:var(--F);color:#fff}.cbo{background:transparent;border:1px solid var(--B);color:var(--F)}.cbs{background:var(--MB);color:var(--F)}
+.cinput,.ctarea,.csel{width:100%;padding:.5rem .75rem;font-size:.875rem;border:1px solid var(--B);border-radius:var(--R);background:var(--C);color:var(--F);font-family:inherit}
+.cinput:focus,.ctarea:focus,.csel:focus{outline:none;border-color:var(--P);box-shadow:0 0 0 2px rgba(232,118,75,.15)}
+.ctarea{resize:vertical;min-height:4rem}.clbl{display:block;font-size:.875rem;font-weight:500;margin-bottom:.25rem}
+.covl{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem}
+.cdlg{background:var(--C);border-radius:.75rem;padding:1.5rem;width:100%;max-width:28rem;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+.cflex{display:flex;align-items:center}.cbet{display:flex;align-items:center;justify-content:space-between}
+.g1{gap:.25rem}.g2{gap:.5rem}.g3{gap:.75rem}.g4{gap:1rem}
+.gr2{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem}
+    h+='<div class="cflex g2 mb6" style="flex-wrap:wrap">';
+    S.caredOnes.forEach(co=>{
+      h+='<span class="co-tab'+(S.activeId===co.id?' on':'')+'">';
+      h+='<span data-cotab="'+co.id+'" style="cursor:pointer">'+co.name;
+      if(co.relationship)h+=' <span style="font-size:.75rem;color:var(--M)">('+co.relationship+')</span>';
+      h+='</span>';
+      h+='<button class="co-x" data-removeco="'+co.id+'" title="Remove">'+ic('x',12)+'</button>';
+      h+='</span>';
+    });
+    h+='</div>';
+
+    if(S.openCard){
+      // Detail view
+      h+='<button class="cbtn cb-ghost cb-sm mb4" id="btn-back">'+ic('arrowLeft',16)+' Back to cards</button>';
+      h+=renderCardDetail();
+    }else{
+      // Feature card grid
+      h+='<div class="gr2">';
+      CARDS.forEach(c=>{
+        h+='<div class="ccard ccard-hover" data-opencard="'+c.key+'" style="padding:1.25rem"><div class="cflex g3">';
+        h+='<div style="color:var(--P)">'+ic(c.icon,20)+'</div>';
+        h+='<div><h3 style="font-size:.875rem;font-weight:600">'+c.title+'</h3><p style="font-size:.75rem;color:var(--M)">'+c.sub+'</p></div>';
+        h+='</div></div>';
+      });
+      h+='</div>';
+    }
+  }else{
+    // Empty state
+    h+='<div class="ccard" style="padding:2.5rem;text-align:center;border:none">';
+    h+='<div style="color:#d1d5db;margin-bottom:.75rem">'+ic('heartPulse',48)+'</div>';
+    h+='<h3 style="font-weight:600;margin-bottom:.25rem">No cared ones yet</h3>';
+    h+='<p style="font-size:.875rem;color:var(--M);margin-bottom:1rem">Add people you care for to start tracking their health and wellbeing.</p>';
+    h+='<button class="cbtn cb-coral" id="btn-add-co2">'+ic('userPlus',16)+' Add First Cared One</button></div>';
+  }
+
+  if(S.dlg)h+=renderDialog();
+  if(S.toast)h+='<div class="ctoast">'+S.toast+'</div>';
+  el.innerHTML=h;
+  bindAll();
+}
+
+/* ── Card Detail Views ── */
+function renderCardDetail(){
+  switch(S.openCard){
+    case 'medicine':return renderMedicine();
+    case 'checkin':return renderCheckin();
+    case 'health':return renderHealth();
+    case 'tips':return renderTips();
+    case 'plan':return renderPlan();
+    case 'notes':return renderNotes();
+    case 'emergency':return renderEmergency();
+    case 'location':return renderLocation();
+    case 'documents':return renderDocuments();
+    case 'visits':return renderVisits();
+    default:return '';
+  }
+}
+
+function renderMedicine(){
+  let h='<div class="cbet mb4"><h2 style="font-size:1.125rem;font-weight:600;display:flex;align-items:center;gap:.5rem">'+ic('pill',20)+' Medicine Tracker</h2>';
+  h+='<button class="cbtn cb-coral cb-sm" id="btn-add-med">'+ic('plus',16)+' Add Medicine</button></div>';
+  if(!S.meds.length)return h+'<p class="tc" style="padding:2rem 0;color:var(--M)">No medicines tracked yet.</p>';
+  h+='<div class="sy3">';
+  S.meds.forEach(m=>{
+    h+='<div class="ccard" style="padding:1rem"><div class="cbet"><div>';
+    h+='<h4 style="font-weight:600;font-size:.9375rem">'+m.name+'</h4>';
+    h+='<div class="cflex g2" style="margin-top:.25rem;flex-wrap:wrap">';
+    if(m.dosage)h+='<span class="cbadge cbo" style="font-size:.6875rem">'+m.dosage+'</span>';
+    if(m.frequency)h+='<span class="cbadge cbo" style="font-size:.6875rem">'+m.frequency+'</span>';
+    if(m.time_of_day)h+='<span class="cbadge cbs" style="font-size:.6875rem">'+ic('clock',10)+' '+m.time_of_day+'</span>';
+    h+='</div>';
+    if(m.notes)h+='<p style="font-size:.75rem;color:var(--M);margin-top:.375rem">'+m.notes+'</p>';
+    h+='</div><div class="cflex g1">';
+    h+='<button class="cbtn cb-ghost cb-icon" style="color:var(--DN)" data-delmed="'+m.id+'">'+ic('trash',14)+'</button>';
+    h+='</div></div></div>';
+  });
+  h+='</div>';return h;
+}
+
+function renderCheckin(){
+  let h='<h2 style="font-size:1.125rem;font-weight:600;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">'+ic('clipCheck',20)+' Daily Check-Ins</h2>';
+  h+='<div class="ccard mb4" style="padding:1rem"><h3 style="font-size:.9375rem;font-weight:600;margin-bottom:.75rem">New Check-In</h3>';
+  h+='<div class="gr2 mb3"><div><label class="clbl" style="font-size:.75rem">Mood</label><select class="csel" id="ci-mood"><option value="great">😊 Great</option><option value="good" selected>🙂 Good</option><option value="okay">😐 Okay</option><option value="poor">😟 Poor</option><option value="bad">😢 Bad</option></select></div>';
+  h+='<div><label class="clbl" style="font-size:.75rem">Energy (1-10)</label><input class="cinput" type="number" min="1" max="10" value="7" id="ci-energy"></div></div>';
+  h+='<div class="gr2 mb3"><div><label class="clbl" style="font-size:.75rem">Pain (0-10)</label><input class="cinput" type="number" min="0" max="10" value="0" id="ci-pain"></div>';
+  h+='<div><label class="clbl" style="font-size:.75rem">Sleep (hrs)</label><input class="cinput" type="number" min="0" max="24" step="0.5" value="7" id="ci-sleep"></div></div>';
+  h+='<div class="mb3"><label class="clbl" style="font-size:.75rem">Notes</label><input class="cinput" id="ci-notes" placeholder="Any observations..."></div>';
+  h+='<button class="cbtn cb-coral cb-sm" id="ci-submit">Record Check-In</button></div>';
+  if(S.checkins.length){
+    h+='<h3 style="font-size:.875rem;font-weight:600;margin-bottom:.5rem">History</h3><div class="sy2">';
+    S.checkins.slice(0,10).forEach(c=>{
+      h+='<div class="ccard" style="padding:.75rem"><div class="cflex g3"><span style="font-size:1.25rem">'+(
+        c.mood==='great'?'😊':c.mood==='good'?'🙂':c.mood==='okay'?'😐':c.mood==='poor'?'😟':'😢'
+      )+'</span><div style="flex:1"><div class="cflex g2" style="flex-wrap:wrap">';
+      h+='<span class="cbadge cbo" style="font-size:.625rem">Energy: '+(c.energy||'?')+'</span>';
+      h+='<span class="cbadge cbo" style="font-size:.625rem">Pain: '+(c.pain||'0')+'</span>';
+      h+='<span class="cbadge cbo" style="font-size:.625rem">Sleep: '+(c.sleep||'?')+'h</span>';
+      h+='</div>';
+      if(c.notes)h+='<p style="font-size:.75rem;color:var(--M);margin-top:.25rem">'+c.notes+'</p>';
+      h+='</div><span style="font-size:.75rem;color:var(--M)">'+fdate(c.created_at)+'</span></div></div>';
+    });
+    h+='</div>';
+  }
+  return h;
+}
+
+function renderHealth(){
+  let h='<div class="cbet mb4"><h2 style="font-size:1.125rem;font-weight:600;display:flex;align-items:center;gap:.5rem">'+ic('heartPulse',20)+' Health Tracking</h2>';
+  h+='<button class="cbtn cb-coral cb-sm" id="btn-add-vital">'+ic('plus',16)+' Record Vital</button></div>';
+  if(!S.vitals.length)return h+'<p class="tc" style="padding:2rem 0;color:var(--M)">No health vitals recorded yet.</p>';
+  h+='<div class="sy2">';
+  S.vitals.forEach(v=>{
+    h+='<div class="ccard" style="padding:.75rem"><div class="cbet"><div><span style="font-weight:600;font-size:.875rem">'+(v.type||'Vital')+'</span>';
+    h+=' <span style="font-size:1rem;font-weight:700;color:var(--P)">'+v.value+(v.unit?' '+v.unit:'')+'</span>';
+    if(v.notes)h+='<p style="font-size:.75rem;color:var(--M);margin-top:.125rem">'+v.notes+'</p>';
+    h+='</div><span style="font-size:.75rem;color:var(--M)">'+fdate(v.recorded_at)+'</span></div></div>';
+  });
+  h+='</div>';return h;
+}
+
+function renderTips(){
+  let h='<div class="cbet mb4"><h2 style="font-size:1.125rem;font-weight:600;display:flex;align-items:center;gap:.5rem">'+ic('lightbulb',20)+' Care Tips</h2>';
+  h+='<button class="cbtn cb-coral cb-sm" id="btn-add-tip">'+ic('plus',16)+' Add Tip</button></div>';
+  if(!S.tips.length)return h+'<p class="tc" style="padding:2rem 0;color:var(--M)">No care tips yet.</p>';
+  h+='<div class="sy3">';
+  S.tips.forEach(t=>{
+    h+='<div class="ccard" style="padding:1rem"><div class="cbet"><div>';
+    h+='<h4 style="font-weight:600;font-size:.875rem">'+t.title+'</h4>';
+    if(t.content)h+='<p style="font-size:.8125rem;color:var(--M);margin-top:.25rem">'+t.content+'</p>';
+    if(t.category)h+='<span class="cbadge cbo" style="font-size:.625rem;margin-top:.375rem;display:inline-flex">'+t.category+'</span>';
+    h+='</div><button class="cbtn cb-ghost cb-icon" style="color:var(--DN)" data-deltip="'+t.id+'">'+ic('trash',14)+'</button></div></div>';
+  });
+  h+='</div>';return h;
+}
+
+function renderPlan(){
+  let h='<div class="cbet mb4"><h2 style="font-size:1.125rem;font-weight:600;display:flex;align-items:center;gap:.5rem">'+ic('target',20)+' Care Plan</h2>';
+  h+='<button class="cbtn cb-coral cb-sm" id="btn-add-plan">'+ic('plus',16)+' New Plan</button></div>';
+  if(!S.plans.length)return h+'<p class="tc" style="padding:2rem 0;color:var(--M)">No care plans yet. Create one to set goals and milestones.</p>';
+  h+='<div class="sy3">';
+  S.plans.forEach(p=>{
+    h+='<div class="ccard" style="padding:1rem"><h4 style="font-weight:600;margin-bottom:.25rem">'+p.title+'</h4>';
+    if(p.description)h+='<p style="font-size:.8125rem;color:var(--M);margin-bottom:.5rem">'+p.description+'</p>';
+    h+='<span class="cbadge '+(p.status==='active'?'cbd':'cbo')+'">'+p.status+'</span></div>';
+  });
+  h+='</div>';return h;
+}
+
+function renderNotes(){
+  let h='<div class="cbet mb4"><h2 style="font-size:1.125rem;font-weight:600;display:flex;align-items:center;gap:.5rem">'+ic('fileText',20)+' Care Notes</h2>';
+  h+='<button class="cbtn cb-coral cb-sm" id="btn-add-note">'+ic('plus',16)+' Add Note</button></div>';
+  if(!S.notes.length)return h+'<p class="tc" style="padding:2rem 0;color:var(--M)">No notes yet.</p>';
+  h+='<div class="sy3">';
+  S.notes.forEach(n=>{
+    h+='<div class="ccard" style="padding:1rem"><div class="cbet"><div>';
+    if(n.title)h+='<h4 style="font-weight:600;font-size:.875rem;margin-bottom:.25rem">'+n.title+'</h4>';
+    h+='<p style="font-size:.8125rem;color:var(--M)">'+n.content+'</p>';
+    h+='<div class="cflex g2" style="margin-top:.375rem">';
+    if(n.category)h+='<span class="cbadge cbo" style="font-size:.625rem">'+n.category+'</span>';
+    h+='<span style="font-size:.75rem;color:var(--M)">'+fdate(n.created_at)+'</span></div>';
+    h+='</div><button class="cbtn cb-ghost cb-icon" style="color:var(--DN)" data-delnote="'+n.id+'">'+ic('trash',14)+'</button></div></div>';
+  });
+  h+='</div>';return h;
+}
+
+function renderEmergency(){
+  let h='<div class="cbet mb4"><h2 style="font-size:1.125rem;font-weight:600;display:flex;align-items:center;gap:.5rem">'+ic('phone',20)+' Emergency Contacts</h2>';
+  h+='<button class="cbtn cb-coral cb-sm" id="btn-add-contact">'+ic('plus',16)+' Add Contact</button></div>';
+  if(!S.contacts.length)return h+'<p class="tc" style="padding:2rem 0;color:var(--M)">No emergency contacts yet.</p>';
+  h+='<div class="sy3">';
+  S.contacts.forEach(c=>{
+    h+='<div class="ccard" style="padding:1rem'+(c.is_primary?';border-left:3px solid var(--P)':'')+'"><div class="cbet"><div class="cflex g3">';
+    h+='<div class="cav">'+(c.name||'?')[0].toUpperCase()+'</div><div>';
+    h+='<h4 style="font-weight:600;font-size:.875rem">'+(c.name||'Contact')+'</h4>';
+    h+='<div class="cflex g2" style="margin-top:.25rem;flex-wrap:wrap">';
+    if(c.phone)h+='<span style="font-size:.8125rem;color:var(--P)">'+ic('phone',12)+' '+c.phone+'</span>';
+    if(c.relationship)h+='<span class="cbadge cbo" style="font-size:.625rem">'+c.relationship+'</span>';
+    if(c.is_primary)h+='<span class="cbadge cbd" style="font-size:.625rem">Primary</span>';
+    h+='</div>';
+    if(c.notes)h+='<p style="font-size:.75rem;color:var(--M);margin-top:.25rem">'+c.notes+'</p>';
+    h+='</div></div><button class="cbtn cb-ghost cb-icon" style="color:var(--DN)" data-delcontact="'+c.id+'">'+ic('trash',14)+'</button></div></div>';
+  });
+  h+='</div>';return h;
+}
+
+function renderLocation(){
+  return '<div style="padding:3rem 0;text-align:center"><div style="color:#d1d5db;margin-bottom:.75rem">'+ic('mapPin',48)+'</div><h3 style="font-weight:600;margin-bottom:.25rem">Location & Safe Zones</h3><p style="font-size:.875rem;color:var(--M)">Location tracking requires device GPS integration.<br>This feature works with the mobile app.</p></div>';
+}
+
+function renderDocuments(){
+  let h='<div class="cbet mb4"><h2 style="font-size:1.125rem;font-weight:600;display:flex;align-items:center;gap:.5rem">'+ic('folder',20)+' Documents</h2>';
+  h+='<button class="cbtn cb-coral cb-sm" id="btn-add-doc">'+ic('plus',16)+' Add Document</button></div>';
+  if(!S.docs.length)return h+'<p class="tc" style="padding:2rem 0;color:var(--M)">No documents uploaded yet.</p>';
+  h+='<div class="sy2">';
+  S.docs.forEach(d=>{
+    h+='<div class="ccard" style="padding:.75rem"><div class="cbet"><div>';
+    h+='<h4 style="font-weight:600;font-size:.875rem">'+(d.name||'Document')+'</h4>';
+    h+='<div class="cflex g2" style="margin-top:.25rem">';
+    if(d.type)h+='<span class="cbadge cbo" style="font-size:.625rem">'+d.type+'</span>';
+    h+='<span style="font-size:.75rem;color:var(--M)">'+fdate(d.created_at)+'</span></div>';
+    if(d.url)h+='<a href="'+d.url+'" target="_blank" style="font-size:.75rem;color:var(--P);text-decoration:none;margin-top:.25rem;display:inline-block">View →</a>';
+    h+='</div><button class="cbtn cb-ghost cb-icon" style="color:var(--DN)" data-deldoc="'+d.id+'">'+ic('trash',14)+'</button></div></div>';
+  });
+  h+='</div>';return h;
+}
+
+function renderVisits(){
+  let h='<div class="cbet mb4"><h2 style="font-size:1.125rem;font-weight:600;display:flex;align-items:center;gap:.5rem">'+ic('activity',20)+' Visit Log</h2>';
+  h+='<button class="cbtn cb-coral cb-sm" id="btn-add-visit">'+ic('plus',16)+' Log Visit</button></div>';
+  if(!S.visits.length)return h+'<p class="tc" style="padding:2rem 0;color:var(--M)">No visits logged yet.</p>';
+  h+='<div class="sy2">';
+  S.visits.forEach(v=>{
+    h+='<div class="ccard" style="padding:.75rem"><div class="cbet"><div>';
+    h+='<h4 style="font-weight:600;font-size:.875rem">'+(v.visitor||'Visitor')+'</h4>';
+    h+='<div class="cflex g2" style="margin-top:.25rem">';
+    if(v.visit_type)h+='<span class="cbadge cbo" style="font-size:.625rem">'+v.visit_type+'</span>';
+    h+='<span style="font-size:.75rem;color:var(--M)">'+fdate(v.visit_date)+'</span></div>';
+    if(v.notes)h+='<p style="font-size:.75rem;color:var(--M);margin-top:.25rem">'+v.notes+'</p>';
+    h+='</div></div></div>';
+  });
+  h+='</div>';return h;
+}
+
+/* ── Dialogs ── */
+function renderDialog(){
+  let inner='';
+  switch(S.dlg){
+    case 'addCaredOne':
+      inner='<h2 style="font-size:1.125rem;font-weight:600;margin-bottom:1rem">Add Cared One</h2>';
+      inner+='<div class="sy3"><div><label class="clbl">Name *</label><input class="cinput" id="dlg-coname" placeholder="Full name"></div>';
+      inner+='<div><label class="clbl">Relationship</label><select class="csel" id="dlg-corel"><option value="">Select...</option><option>Mother</option><option>Father</option><option>Grandmother</option><option>Grandfather</option><option>Spouse</option><option>Child</option><option>Sibling</option><option>Other</option></select></div>';
+      inner+='<button class="cbtn cb-coral wf" id="dlg-coadd">'+ic('heartPulse',16)+' Add Cared One</button></div>';
+      break;
+    case 'addMedicine':
+      inner='<h2 style="font-size:1.125rem;font-weight:600;margin-bottom:1rem">Add Medicine</h2>';
+      inner+='<div class="sy3"><div><label class="clbl">Medicine Name *</label><input class="cinput" id="dlg-mname" placeholder="e.g. Aspirin"></div>';
+      inner+='<div class="gr2"><div><label class="clbl">Dosage</label><input class="cinput" id="dlg-mdose" placeholder="e.g. 100mg"></div>';
+      inner+='<div><label class="clbl">Frequency</label><select class="csel" id="dlg-mfreq"><option>Once daily</option><option>Twice daily</option><option>Three times daily</option><option>As needed</option><option>Weekly</option></select></div></div>';
+      inner+='<div><label class="clbl">Time of Day</label><select class="csel" id="dlg-mtime"><option>Morning</option><option>Afternoon</option><option>Evening</option><option>Bedtime</option><option>With meals</option></select></div>';
+      inner+='<div><label class="clbl">Notes</label><input class="cinput" id="dlg-mnotes" placeholder="Optional notes..."></div>';
+      inner+='<button class="cbtn cb-coral wf" id="dlg-madd">Add Medicine</button></div>';
+      break;
+    case 'addNote':
+      inner='<h2 style="font-size:1.125rem;font-weight:600;margin-bottom:1rem">Add Note</h2>';
+      inner+='<div class="sy3"><div><label class="clbl">Title</label><input class="cinput" id="dlg-ntitle" placeholder="Optional title"></div>';
+      inner+='<div><label class="clbl">Content *</label><textarea class="ctarea" id="dlg-ncontent" rows="4" placeholder="Write your note..."></textarea></div>';
+      inner+='<div><label class="clbl">Category</label><select class="csel" id="dlg-ncat"><option value="">None</option><option>Medical</option><option>Behavioral</option><option>Daily Care</option><option>Communication</option><option>Other</option></select></div>';
+      inner+='<button class="cbtn cb-coral wf" id="dlg-nadd">Add Note</button></div>';
+      break;
+    case 'addContact':
+      inner='<h2 style="font-size:1.125rem;font-weight:600;margin-bottom:1rem">Add Emergency Contact</h2>';
+      inner+='<div class="sy3"><div><label class="clbl">Name *</label><input class="cinput" id="dlg-cname" placeholder="Contact name"></div>';
+      inner+='<div><label class="clbl">Phone *</label><input class="cinput" id="dlg-cphone" placeholder="Phone number"></div>';
+      inner+='<div><label class="clbl">Relationship</label><input class="cinput" id="dlg-crel" placeholder="e.g. Doctor, Neighbor"></div>';
+      inner+='<div class="cflex g2"><input type="checkbox" id="dlg-cprimary"><label for="dlg-cprimary" style="font-size:.875rem">Primary contact</label></div>';
+      inner+='<button class="cbtn cb-coral wf" id="dlg-cadd">Add Contact</button></div>';
+      break;
+    case 'addDocument':
+      inner='<h2 style="font-size:1.125rem;font-weight:600;margin-bottom:1rem">Add Document</h2>';
+      inner+='<div class="sy3"><div><label class="clbl">Document Name *</label><input class="cinput" id="dlg-dname" placeholder="e.g. Lab Results"></div>';
+      inner+='<div><label class="clbl">Type</label><select class="csel" id="dlg-dtype"><option>Medical Record</option><option>Lab Results</option><option>Prescription</option><option>Insurance</option><option>Legal</option><option>Other</option></select></div>';
+      inner+='<div><label class="clbl">URL</label><input class="cinput" id="dlg-durl" placeholder="https://..."></div>';
+      inner+='<div><label class="clbl">Notes</label><input class="cinput" id="dlg-dnotes" placeholder="Optional notes"></div>';
+      inner+='<button class="cbtn cb-coral wf" id="dlg-dadd">Add Document</button></div>';
+      break;
+    case 'addVital':
+      inner='<h2 style="font-size:1.125rem;font-weight:600;margin-bottom:1rem">Record Vital</h2>';
+      inner+='<div class="sy3"><div><label class="clbl">Vital Type *</label><select class="csel" id="dlg-vtype"><option>Blood Pressure</option><option>Heart Rate</option><option>Temperature</option><option>Blood Sugar</option><option>Weight</option><option>Oxygen Level</option><option>Other</option></select></div>';
+      inner+='<div class="gr2"><div><label class="clbl">Value *</label><input class="cinput" id="dlg-vval" placeholder="e.g. 120/80"></div>';
+      inner+='<div><label class="clbl">Unit</label><input class="cinput" id="dlg-vunit" placeholder="e.g. mmHg, bpm"></div></div>';
+      inner+='<div><label class="clbl">Notes</label><input class="cinput" id="dlg-vnotes" placeholder="Optional notes"></div>';
+      inner+='<button class="cbtn cb-coral wf" id="dlg-vadd">Record Vital</button></div>';
+      break;
+    case 'addTip':
+      inner='<h2 style="font-size:1.125rem;font-weight:600;margin-bottom:1rem">Add Care Tip</h2>';
+      inner+='<div class="sy3"><div><label class="clbl">Title *</label><input class="cinput" id="dlg-ttitle" placeholder="Tip title"></div>';
+      inner+='<div><label class="clbl">Content</label><textarea class="ctarea" id="dlg-tcontent" rows="3" placeholder="Details..."></textarea></div>';
+      inner+='<div><label class="clbl">Category</label><select class="csel" id="dlg-tcat"><option value="">None</option><option>Nutrition</option><option>Exercise</option><option>Mental Health</option><option>Medication</option><option>Safety</option><option>Other</option></select></div>';
+      inner+='<button class="cbtn cb-coral wf" id="dlg-tadd">Add Tip</button></div>';
+      break;
+    case 'addPlan':
+      inner='<h2 style="font-size:1.125rem;font-weight:600;margin-bottom:1rem">New Care Plan</h2>';
+      inner+='<div class="sy3"><div><label class="clbl">Plan Title *</label><input class="cinput" id="dlg-ptitle" placeholder="e.g. Weekly Therapy Plan"></div>';
+      inner+='<div><label class="clbl">Description</label><textarea class="ctarea" id="dlg-pdesc" rows="3" placeholder="Plan details..."></textarea></div>';
+      inner+='<button class="cbtn cb-coral wf" id="dlg-padd">Create Plan</button></div>';
+      break;
+    case 'addVisit':
+      inner='<h2 style="font-size:1.125rem;font-weight:600;margin-bottom:1rem">Log Visit</h2>';
+      inner+='<div class="sy3"><div><label class="clbl">Visitor Name</label><input class="cinput" id="dlg-vname" placeholder="Who visited?"></div>';
+      inner+='<div><label class="clbl">Visit Type</label><select class="csel" id="dlg-vvtype"><option>In-person</option><option>Phone call</option><option>Video call</option><option>Medical</option><option>Other</option></select></div>';
+      inner+='<div><label class="clbl">Date</label><input class="cinput" type="date" id="dlg-vdate"></div>';
+      inner+='<div><label class="clbl">Notes</label><textarea class="ctarea" id="dlg-vnote" rows="2" placeholder="Visit notes..."></textarea></div>';
+      inner+='<button class="cbtn cb-coral wf" id="dlg-visadd">Log Visit</button></div>';
+      break;
+  }
+  return '<div class="covl" id="dlg-overlay"><div class="cdlg">'+
+    '<div class="cbet mb3"><div></div><button class="cbtn cb-ghost cb-icon" id="dlg-close">'+ic('x',16)+'</button></div>'+
+    inner+'</div></div>';
+}
+
+/* ── Event Binding ── */
+function bindAll(){
+  const ac=document.getElementById('btn-add-co');if(ac)ac.onclick=()=>showDlg('addCaredOne');
+  const ac2=document.getElementById('btn-add-co2');if(ac2)ac2.onclick=()=>showDlg('addCaredOne');
+  // Tab switching
+  document.querySelectorAll('[data-cotab]').forEach(el=>el.onclick=function(){S.activeId=Number(this.dataset.cotab);S.openCard=null;loadCaredOneData().then(render);});
+  // Remove cared one
+  document.querySelectorAll('[data-removeco]').forEach(el=>el.onclick=function(e){e.stopPropagation();if(confirm('Remove this cared one?'))removeCaredOne(Number(this.dataset.removeco));});
+  // Card grid
+  document.querySelectorAll('[data-opencard]').forEach(el=>el.onclick=function(){S.openCard=this.dataset.opencard;render();});
+  const bb=document.getElementById('btn-back');if(bb)bb.onclick=function(){S.openCard=null;render();};
+  // Card-specific
+  const am=document.getElementById('btn-add-med');if(am)am.onclick=()=>showDlg('addMedicine');
+  const an=document.getElementById('btn-add-note');if(an)an.onclick=()=>showDlg('addNote');
+  const aec=document.getElementById('btn-add-contact');if(aec)aec.onclick=()=>showDlg('addContact');
+  const ad=document.getElementById('btn-add-doc');if(ad)ad.onclick=()=>showDlg('addDocument');
+  const av=document.getElementById('btn-add-vital');if(av)av.onclick=()=>showDlg('addVital');
+  const at=document.getElementById('btn-add-tip');if(at)at.onclick=()=>showDlg('addTip');
+  const ap=document.getElementById('btn-add-plan');if(ap)ap.onclick=()=>showDlg('addPlan');
+  const avi=document.getElementById('btn-add-visit');if(avi)avi.onclick=()=>showDlg('addVisit');
+  // Delete actions
+  document.querySelectorAll('[data-delmed]').forEach(el=>el.onclick=function(){if(confirm('Delete medicine?'))deleteMedicine(Number(this.dataset.delmed));});
+  document.querySelectorAll('[data-delnote]').forEach(el=>el.onclick=function(){if(confirm('Delete note?'))deleteNote(Number(this.dataset.delnote));});
+  document.querySelectorAll('[data-delcontact]').forEach(el=>el.onclick=function(){if(confirm('Delete contact?'))deleteContact(Number(this.dataset.delcontact));});
+  document.querySelectorAll('[data-deldoc]').forEach(el=>el.onclick=function(){if(confirm('Delete document?'))deleteDocument(Number(this.dataset.deldoc));});
+  document.querySelectorAll('[data-deltip]').forEach(el=>el.onclick=function(){if(confirm('Delete tip?'))deleteTip(Number(this.dataset.deltip));});
+  // Check-in
+  const cis=document.getElementById('ci-submit');if(cis)cis.onclick=function(){
+    addCheckin({mood:document.getElementById('ci-mood')?.value,energy:document.getElementById('ci-energy')?.value,pain:document.getElementById('ci-pain')?.value,sleep:document.getElementById('ci-sleep')?.value,notes:document.getElementById('ci-notes')?.value});
+  };
+  // Dialog
+  bindDialog();
+}
+
+function bindDialog(){
+  const close=document.getElementById('dlg-close');if(close)close.onclick=closeDlg;
+  const ov=document.getElementById('dlg-overlay');if(ov)ov.onclick=function(e){if(e.target===ov)closeDlg();};
+  // Add cared one
+  const coa=document.getElementById('dlg-coadd');if(coa)coa.onclick=function(){
+    const n=document.getElementById('dlg-coname'),r=document.getElementById('dlg-corel');
+    if(n&&n.value.trim()){coa.disabled=true;addCaredOne(n.value.trim(),r?r.value:'').then(closeDlg).catch(e=>{toast('Error');coa.disabled=false;});}
+  };
+  // Add medicine
+  const ma=document.getElementById('dlg-madd');if(ma)ma.onclick=function(){
+    const n=document.getElementById('dlg-mname');
+    if(n&&n.value.trim()){ma.disabled=true;addMedicine({name:n.value.trim(),dosage:document.getElementById('dlg-mdose')?.value||'',frequency:document.getElementById('dlg-mfreq')?.value||'',time_of_day:document.getElementById('dlg-mtime')?.value||'',notes:document.getElementById('dlg-mnotes')?.value||''}).then(closeDlg).catch(()=>{ma.disabled=false;});}
+  };
+  // Add note
+  const na=document.getElementById('dlg-nadd');if(na)na.onclick=function(){
+    const c=document.getElementById('dlg-ncontent');
+    if(c&&c.value.trim()){na.disabled=true;addNote({title:document.getElementById('dlg-ntitle')?.value||'',content:c.value.trim(),category:document.getElementById('dlg-ncat')?.value||''}).then(closeDlg).catch(()=>{na.disabled=false;});}
+  };
+  // Add contact
+  const ca=document.getElementById('dlg-cadd');if(ca)ca.onclick=function(){
+    const n=document.getElementById('dlg-cname'),p=document.getElementById('dlg-cphone');
+    if(n&&n.value.trim()){ca.disabled=true;addContact({name:n.value.trim(),phone:p?p.value:'',relationship:document.getElementById('dlg-crel')?.value||'',is_primary:document.getElementById('dlg-cprimary')?.checked||false}).then(closeDlg).catch(()=>{ca.disabled=false;});}
+  };
+  // Add document
+  const da=document.getElementById('dlg-dadd');if(da)da.onclick=function(){
+    const n=document.getElementById('dlg-dname');
+    if(n&&n.value.trim()){da.disabled=true;addDocument({name:n.value.trim(),type:document.getElementById('dlg-dtype')?.value||'',url:document.getElementById('dlg-durl')?.value||'',notes:document.getElementById('dlg-dnotes')?.value||''}).then(closeDlg).catch(()=>{da.disabled=false;});}
+  };
+  // Add vital
+  const va=document.getElementById('dlg-vadd');if(va)va.onclick=function(){
+    const v=document.getElementById('dlg-vval');
+    if(v&&v.value.trim()){va.disabled=true;addVital({type:document.getElementById('dlg-vtype')?.value||'',value:v.value.trim(),unit:document.getElementById('dlg-vunit')?.value||'',notes:document.getElementById('dlg-vnotes')?.value||''}).then(closeDlg).catch(()=>{va.disabled=false;});}
+  };
+  // Add tip
+  const ta=document.getElementById('dlg-tadd');if(ta)ta.onclick=function(){
+    const t=document.getElementById('dlg-ttitle');
+    if(t&&t.value.trim()){ta.disabled=true;addTip({title:t.value.trim(),content:document.getElementById('dlg-tcontent')?.value||'',category:document.getElementById('dlg-tcat')?.value||''}).then(closeDlg).catch(()=>{ta.disabled=false;});}
+  };
+  // Add plan
+  const pa=document.getElementById('dlg-padd');if(pa)pa.onclick=function(){
+    const t=document.getElementById('dlg-ptitle');
+    if(t&&t.value.trim()){pa.disabled=true;api('/care_plan','POST',{title:t.value.trim(),status:'publish',meta:{cared_one_id:String(S.activeId),cared_one:String(S.activeId),description:document.getElementById('dlg-pdesc')?.value||'',status:'active'}}).then(()=>loadCaredOneData()).then(()=>{toast('Plan created');closeDlg();}).catch(()=>{pa.disabled=false;});}
+  };
+  // Add visit
+  const vis=document.getElementById('dlg-visadd');if(vis)vis.onclick=function(){
+    vis.disabled=true;addVisit({visitor:document.getElementById('dlg-vname')?.value||UNAME,type:document.getElementById('dlg-vvtype')?.value||'',date:document.getElementById('dlg-vdate')?.value||'',notes:document.getElementById('dlg-vnote')?.value||''}).then(closeDlg).catch(()=>{vis.disabled=false;});
+  };
+}
+
+init();
+})();
+</script>

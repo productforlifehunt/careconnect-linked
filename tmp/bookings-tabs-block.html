@@ -1,0 +1,67 @@
+<!-- wp:html -->
+<div id="bookings-tabs-container">
+  <div style="border-bottom: 1px solid #e5e7eb; margin-bottom: 1.5rem;">
+    <div style="display: flex; gap: 0.5rem;">
+      <button id="tab-upcoming" class="booking-tab active" style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; font-weight: 500; color: #0d9488; border-bottom: 2px solid #0d9488; transition: all 0.2s;">
+        Upcoming
+      </button>
+      <button id="tab-past" class="booking-tab" style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; font-weight: 500; color: #6b7280; border-bottom: 2px solid transparent; transition: all 0.2s;">
+        Past
+      </button>
+    </div>
+  </div>
+  
+  <div id="tab-content-upcoming" class="tab-content" style="display: block;">
+    <!-- Upcoming bookings will be loaded here by the bookings list block -->
+  </div>
+  
+  <div id="tab-content-past" class="tab-content" style="display: none;">
+    <!-- Past bookings will be loaded here by the bookings list block -->
+  </div>
+</div>
+
+<style>
+.booking-tab:hover {
+  color: #0d9488 !important;
+}
+.booking-tab.active {
+  color: #0d9488 !important;
+  border-bottom-color: #0d9488 !important;
+}
+</style>
+
+<script>
+(function() {
+  const tabs = document.querySelectorAll('.booking-tab');
+  const contents = document.querySelectorAll('.tab-content');
+  
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      // Remove active from all tabs
+      tabs.forEach(t => {
+        t.classList.remove('active');
+        t.style.color = '#6b7280';
+        t.style.borderBottomColor = 'transparent';
+      });
+      
+      // Hide all content
+      contents.forEach(c => c.style.display = 'none');
+      
+      // Activate clicked tab
+      tab.classList.add('active');
+      tab.style.color = '#0d9488';
+      tab.style.borderBottomColor = '#0d9488';
+      
+      // Show corresponding content
+      const targetId = 'tab-content-' + tab.id.replace('tab-', '');
+      document.getElementById(targetId).style.display = 'block';
+      
+      // Trigger custom event for other blocks to listen to
+      window.dispatchEvent(new CustomEvent('bookingTabChange', { 
+        detail: { tab: tab.id.replace('tab-', '') } 
+      }));
+    });
+  });
+})();
+</script>
+<!-- /wp:html -->

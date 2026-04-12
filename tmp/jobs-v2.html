@@ -1,0 +1,296 @@
+<!-- wp:html -->
+<style>
+#jobs-app{max-width:64rem;margin:0 auto;padding:1.5rem 1rem;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+#jobs-app *{box-sizing:border-box}
+.jb-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:0.75rem}
+.jb-hdr h1{font-size:1.5rem;font-weight:700;color:#0f172a;margin:0}
+.jb-hdr p{color:#64748b;font-size:0.875rem;margin:0.25rem 0 0}
+.jb-btn{display:inline-flex;align-items:center;gap:0.5rem;padding:0.5rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;cursor:pointer;border:none;text-decoration:none;transition:opacity .15s}
+.jb-btn-coral{background:#0d9488;color:#fff}.jb-btn-coral:hover{opacity:0.9}
+.jb-btn-outline{background:#fff;color:#334155;border:1px solid #e2e8f0}.jb-btn-outline:hover{background:#f8fafc}
+.jb-btn-sm{padding:0.375rem 0.75rem;font-size:0.8125rem}
+.jb-btn-success{background:#22c55e;color:#fff}
+.jb-btn-danger-outline{background:#fff;color:#ef4444;border:1px solid rgba(239,68,68,0.3)}.jb-btn-danger-outline:hover{background:rgba(239,68,68,0.05)}
+.jb-search-row{display:flex;gap:0.75rem;margin-bottom:1.5rem}
+.jb-search-wrap{position:relative;flex:1}
+.jb-search-wrap svg{position:absolute;left:0.75rem;top:50%;transform:translateY(-50%);width:16px;height:16px;color:#94a3b8}
+.jb-search-wrap input{width:100%;padding:0.5rem 0.5rem 0.5rem 2.25rem;border:1px solid #e2e8f0;border-radius:0.5rem;font-size:0.875rem;outline:none}
+.jb-search-wrap input:focus{border-color:#0d9488}
+.jb-filter select{padding:0.5rem;border:1px solid #e2e8f0;border-radius:0.5rem;font-size:0.875rem;min-width:140px;background:#fff}
+.jb-tabs{display:flex;gap:0;background:#f1f5f9;border-radius:0.5rem;padding:0.25rem;margin-bottom:1rem;width:fit-content}
+.jb-tab{padding:0.5rem 1rem;border-radius:0.375rem;font-size:0.8125rem;font-weight:500;cursor:pointer;border:none;background:transparent;color:#64748b;white-space:nowrap}
+.jb-tab.active{background:#fff;color:#0f172a;box-shadow:0 1px 2px rgba(0,0,0,0.05)}
+.jb-card{background:#fff;border-radius:0.75rem;box-shadow:0 1px 3px rgba(0,0,0,0.1);border:1px solid transparent;padding:1.25rem;margin-bottom:1rem}
+.jb-card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:0.75rem;gap:0.5rem}
+.jb-card-title{font-size:1.125rem;font-weight:600;color:#0f172a;margin:0 0 0.25rem}
+.jb-badge{display:inline-block;padding:0.125rem 0.5rem;border-radius:9999px;font-size:0.7rem;font-weight:500;margin-left:0.5rem}
+.jb-badge-type{background:#f1f5f9;color:#475569}
+.jb-badge-open{background:#0d9488;color:#fff}
+.jb-badge-closed{background:#f1f5f9;color:#64748b}
+.jb-badge-applied{background:#dcfce7;color:#166534;border:1px solid #bbf7d0}
+.jb-badge-pending{background:#fef3c7;color:#92400e}
+.jb-badge-accepted{background:#0d9488;color:#fff}
+.jb-badge-rejected{background:#ef4444;color:#fff}
+.jb-card-meta{display:flex;flex-wrap:wrap;gap:0.75rem;font-size:0.8125rem;color:#64748b;margin-bottom:0.5rem}
+.jb-card-meta span{display:flex;align-items:center;gap:0.25rem}
+.jb-card-meta svg{width:12px;height:12px}
+.jb-card-desc{font-size:0.875rem;color:#64748b;margin-bottom:1rem;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.jb-card-footer{display:flex;align-items:center;justify-content:space-between;gap:0.75rem}
+.jb-card-date{font-size:0.75rem;color:#94a3b8}
+.jb-empty{text-align:center;padding:4rem 1rem;color:#94a3b8}
+.jb-empty svg{width:48px;height:48px;margin:0 auto 0.75rem;opacity:0.3}
+.jb-panel{display:none}.jb-panel.active{display:block}
+/* Applicants section */
+.jb-applicants-toggle{display:flex;align-items:center;gap:0.375rem;font-size:0.875rem;font-weight:500;color:#0d9488;cursor:pointer;background:none;border:none;padding:0}
+.jb-applicants-toggle:hover{opacity:0.8}
+.jb-applicant-card{border:1px solid #e2e8f0;border-radius:0.5rem;padding:1rem;background:#fafafa;margin-top:0.75rem}
+.jb-applicant-top{display:flex;align-items:flex-start;justify-content:space-between;gap:0.75rem;margin-bottom:0.5rem}
+.jb-applicant-info{display:flex;align-items:center;gap:0.75rem}
+.jb-applicant-avatar{width:36px;height:36px;border-radius:50%;background:rgba(13,148,136,0.1);display:flex;align-items:center;justify-content:center;color:#0d9488;font-weight:500;font-size:0.75rem;flex-shrink:0}
+.jb-applicant-name{font-size:0.875rem;font-weight:500;color:#0f172a}
+.jb-applicant-meta{font-size:0.7rem;color:#64748b;display:flex;gap:0.5rem;flex-wrap:wrap}
+.jb-applicant-letter{font-size:0.8125rem;color:#64748b;background:#fff;padding:0.5rem;border-radius:0.375rem;margin:0.5rem 0}
+.jb-applicant-actions{display:flex;gap:0.5rem;margin-top:0.5rem}
+/* Modal */
+.jb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;align-items:center;justify-content:center}
+.jb-overlay.show{display:flex}
+.jb-modal{background:#fff;border-radius:0.75rem;padding:1.5rem;max-width:28rem;width:90%;max-height:90vh;overflow-y:auto;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25)}
+.jb-modal h3{font-size:1.125rem;font-weight:600;margin:0 0 1rem;color:#0f172a}
+.jb-modal label{font-size:0.8125rem;font-weight:500;color:#334155;display:block;margin-bottom:0.25rem;margin-top:0.75rem}
+.jb-modal input,.jb-modal textarea,.jb-modal select{width:100%;padding:0.5rem;border:1px solid #e2e8f0;border-radius:0.375rem;font-size:0.875rem;font-family:inherit}
+.jb-modal textarea{resize:vertical}
+</style>
+
+<div id="jobs-app">
+  <div class="jb-hdr">
+    <div><h1>Jobs Board</h1><p>Find and post caregiving opportunities</p></div>
+    <button class="jb-btn jb-btn-coral" onclick="document.getElementById('jb-create-modal').classList.add('show')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Post Job
+    </button>
+  </div>
+
+  <div class="jb-search-row">
+    <div class="jb-search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search jobs..." id="jb-search" oninput="filterJobs()">
+    </div>
+    <div class="jb-filter">
+      <select id="jb-type-filter" onchange="filterJobs()">
+        <option value="">All Sources</option>
+        <option value="general">General</option>
+        <option value="group_task">Group Task</option>
+        <option value="cared_one_checkin">Check-In</option>
+        <option value="cared_one_care">Ongoing Care</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="jb-tabs">
+    <button class="jb-tab active" onclick="switchJobTab('browse',this)">Browse Jobs</button>
+    <button class="jb-tab" onclick="switchJobTab('applications',this)">My Applications</button>
+    <button class="jb-tab" onclick="switchJobTab('posted',this)">My Posted Jobs</button>
+  </div>
+
+  <div class="jb-panel active" id="jb-browse"></div>
+  <div class="jb-panel" id="jb-applications"></div>
+  <div class="jb-panel" id="jb-posted"></div>
+
+  <!-- Create Job Modal -->
+  <div class="jb-overlay" id="jb-create-modal">
+    <div class="jb-modal">
+      <h3>Post a Care Job</h3>
+      <label>Job Title *</label><input id="jb-new-title" placeholder="e.g. Part-time caregiver needed">
+      <label>Description *</label><textarea id="jb-new-desc" rows="5" placeholder="Describe the care needs, schedule, requirements..."></textarea>
+      <label>Location</label><input id="jb-new-loc" placeholder="e.g. Brooklyn, NY">
+      <label>Job Type</label>
+      <select id="jb-new-type"><option value="general">General</option><option value="cared_one_checkin">Check-In Care</option><option value="cared_one_care">Ongoing Care</option></select>
+      <div style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:1.25rem">
+        <button class="jb-btn jb-btn-outline" onclick="document.getElementById('jb-create-modal').classList.remove('show')">Cancel</button>
+        <button class="jb-btn jb-btn-coral" id="jb-create-submit" onclick="createJob()">Post Job</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Apply Modal -->
+  <div class="jb-overlay" id="jb-apply-modal">
+    <div class="jb-modal">
+      <h3 id="jb-apply-title">Apply to Job</h3>
+      <label>Cover Letter *</label>
+      <textarea id="jb-apply-letter" rows="5" placeholder="Introduce yourself and explain why you're a good fit..."></textarea>
+      <div style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:1.25rem">
+        <button class="jb-btn jb-btn-outline" onclick="document.getElementById('jb-apply-modal').classList.remove('show')">Cancel</button>
+        <button class="jb-btn jb-btn-coral" id="jb-apply-submit" onclick="submitApplication()">Submit Application</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const base='/careconnected/wp-json/wp/v2';
+  let uid=null,allJobs=[],myApps=[],myPosted=[];
+  const sourceLabels={general:'General',group_task:'Group Task',cared_one_checkin:'Check-In',cared_one_care:'Ongoing Care'};
+  let applyJobId=null;
+
+  async function getUid(){if(uid)return uid;try{const r=await fetch(base+'/users/me',{credentials:'include'});if(!r.ok)return null;uid=(await r.json()).id;return uid;}catch(e){return null;}}
+
+  function fmtDate(d){return new Date(d).toLocaleDateString('en',{month:'short',day:'numeric',year:'numeric'});}
+
+  window.switchJobTab=function(tab,btn){
+    document.querySelectorAll('.jb-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');
+    document.querySelectorAll('.jb-panel').forEach(p=>p.classList.remove('active'));
+    document.getElementById('jb-'+tab).classList.add('active');
+  };
+
+  window.filterJobs=function(){renderBrowse();};
+
+  function renderBrowse(){
+    const el=document.getElementById('jb-browse');
+    const q=(document.getElementById('jb-search').value||'').toLowerCase();
+    const tf=document.getElementById('jb-type-filter').value;
+    let filtered=allJobs.filter(j=>{
+      if(q&&!(j.title?.rendered||'').toLowerCase().includes(q)&&!(j.content?.rendered||'').toLowerCase().includes(q))return false;
+      if(tf&&j.meta?.job_source_type!==tf)return false;
+      return true;
+    });
+    const appliedIds=new Set(myApps.map(a=>a.meta?.job_id));
+    const postedIds=new Set(myPosted.map(j=>j.id));
+
+    if(!filtered.length){el.innerHTML='<div class="jb-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg><div>No jobs found</div></div>';return;}
+
+    el.innerHTML=filtered.map(j=>{
+      const title=j.title?.rendered||'Job';const desc=(j.content?.rendered||'').replace(/<[^>]*>/g,'');
+      const st=j.meta?.status||j.status||'open';const type=j.meta?.job_source_type||'general';
+      const loc=j.meta?.location||'';const poster=j.meta?.poster_name||'';const date=fmtDate(j.date);
+      const id=j.id;
+      let actionHtml='';
+      if(postedIds.has(id)){
+        actionHtml='<span class="jb-badge jb-badge-type">Your Job</span><button class="jb-btn jb-btn-outline jb-btn-sm" onclick="switchJobTab(\'posted\',document.querySelectorAll(\'.jb-tab\')[2])">Manage</button>';
+      }else if(appliedIds.has(id)){
+        actionHtml='<span class="jb-badge jb-badge-applied">Applied ✓</span>';
+      }else if(st==='open'){
+        actionHtml='<button class="jb-btn jb-btn-coral jb-btn-sm" onclick="openApply('+id+',\''+title.replace(/'/g,"\\'")+'\')">'
+          +'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Apply</button>';
+      }
+
+      return '<div class="jb-card"><div class="jb-card-top"><div style="flex:1"><div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.25rem"><h3 class="jb-card-title" style="margin:0">'+title+'</h3><span class="jb-badge jb-badge-type">'+(sourceLabels[type]||type)+'</span></div>'
+        +'<div class="jb-card-meta">'
+        +(poster?'<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'+poster+'</span>':'')
+        +(loc?'<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>'+loc+'</span>':'')
+        +'</div></div><span class="jb-card-date">'+date+'</span></div>'
+        +'<div class="jb-card-desc">'+desc+'</div>'
+        +'<div class="jb-card-footer"><span class="jb-badge jb-badge-'+(st==='open'?'open':'closed')+'">'+st+'</span><div style="display:flex;align-items:center;gap:0.5rem">'+actionHtml+'</div></div></div>';
+    }).join('');
+  }
+
+  function renderApplications(){
+    const el=document.getElementById('jb-applications');
+    if(!myApps.length){el.innerHTML='<div class="jb-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg><div>No applications yet</div><p style="font-size:0.8125rem;margin-top:0.25rem">Browse available jobs and apply to get started</p></div>';return;}
+    el.innerHTML=myApps.map(a=>{
+      const title=a.title?.rendered||'Application';const st=a.meta?.status||'pending';
+      const letter=a.meta?.cover_letter||'';const date=fmtDate(a.date);
+      const badgeCls=st==='accepted'?'jb-badge-accepted':st==='rejected'?'jb-badge-rejected':'jb-badge-pending';
+      const label=st==='accepted'?'✓ Accepted':st==='rejected'?'✗ Rejected':'Pending';
+      return '<div class="jb-card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem"><div><h3 style="font-weight:600;color:#0f172a;margin:0;font-size:0.9375rem">'+title+'</h3></div><span class="jb-badge '+badgeCls+'">'+label+'</span></div>'
+        +'<p class="jb-card-desc" style="-webkit-line-clamp:2">'+letter+'</p>'
+        +'<p class="jb-card-date">Applied '+date+'</p></div>';
+    }).join('');
+  }
+
+  function renderPosted(){
+    const el=document.getElementById('jb-posted');
+    if(!myPosted.length){el.innerHTML='<div class="jb-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg><div>You haven\'t posted any jobs yet</div><button class="jb-btn jb-btn-coral" onclick="document.getElementById(\'jb-create-modal\').classList.add(\'show\')" style="margin-top:1rem"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Post Your First Job</button></div>';return;}
+    el.innerHTML=myPosted.map(j=>{
+      const title=j.title?.rendered||'Job';const desc=(j.content?.rendered||'').replace(/<[^>]*>/g,'');
+      const st=j.meta?.status||j.status||'open';const type=j.meta?.job_source_type||'general';
+      const loc=j.meta?.location||'';const date=fmtDate(j.date);
+      return '<div class="jb-card"><div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:0.5rem"><div style="flex:1"><div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.25rem"><h3 class="jb-card-title" style="margin:0">'+title+'</h3><span class="jb-badge jb-badge-type">'+(sourceLabels[type]||type)+'</span><span class="jb-badge jb-badge-'+(st==='open'?'open':'closed')+'">'+st+'</span></div>'
+        +(loc?'<div class="jb-card-meta"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>'+loc+'</span></div>':'')
+        +'<p class="jb-card-date">Posted '+date+'</p></div></div>'
+        +'<div class="jb-card-desc" style="-webkit-line-clamp:2">'+desc+'</div>'
+        +'<button class="jb-applicants-toggle" onclick="toggleApplicants(this,'+j.id+')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg> View Applicants</button>'
+        +'<div class="jb-applicants-area" data-job="'+j.id+'" style="display:none"></div></div>';
+    }).join('');
+  }
+
+  window.toggleApplicants=function(btn,jobId){
+    const area=btn.nextElementSibling;
+    if(area.style.display==='none'){
+      area.style.display='block';btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg> Hide Applicants';
+      loadApplicants(area,jobId);
+    }else{
+      area.style.display='none';btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg> View Applicants';
+    }
+  };
+
+  async function loadApplicants(area,jobId){
+    area.innerHTML='<div style="text-align:center;padding:1rem;color:#94a3b8;font-size:0.875rem">Loading applicants...</div>';
+    try{
+      const r=await fetch(base+'/job_application?meta_key=job_id&meta_value='+jobId+'&per_page=20',{credentials:'include'});
+      const apps=r.ok?await r.json():[];
+      if(!apps.length){area.innerHTML='<div style="text-align:center;padding:1.5rem;color:#94a3b8"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 0.5rem;display:block;opacity:0.3"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><p style="font-size:0.875rem">No applications yet</p></div>';return;}
+      area.innerHTML='<div style="border-top:1px solid #e2e8f0;padding-top:1rem;margin-top:0.75rem"><p style="font-size:0.875rem;font-weight:500;color:#0f172a;margin:0 0 0.75rem">'+apps.length+' Applicant'+(apps.length!==1?'s':'')+'</p>'
+        +apps.map(a=>{
+          const nm=a.title?.rendered||'Applicant';const init=nm.charAt(0);const st=a.meta?.status||'pending';
+          const letter=a.meta?.cover_letter||'';const date=fmtDate(a.date);
+          const badgeCls=st==='accepted'?'jb-badge-accepted':st==='rejected'?'jb-badge-rejected':'jb-badge-pending';
+          let actions='';
+          if(st==='pending'){actions='<div class="jb-applicant-actions"><button class="jb-btn jb-btn-success jb-btn-sm" onclick="updateApp('+a.id+',\'accepted\',this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Accept</button><button class="jb-btn jb-btn-danger-outline jb-btn-sm" onclick="updateApp('+a.id+',\'rejected\',this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Decline</button></div>';}
+          return '<div class="jb-applicant-card"><div class="jb-applicant-top"><div class="jb-applicant-info"><div class="jb-applicant-avatar">'+init+'</div><div><div class="jb-applicant-name">'+nm+'</div></div></div><span class="jb-badge '+badgeCls+'">'+st+'</span></div>'
+            +'<div class="jb-applicant-letter">'+letter+'</div><p class="jb-card-date">Applied '+date+'</p>'+actions+'</div>';
+        }).join('')+'</div>';
+    }catch(e){area.innerHTML='<div style="color:#ef4444;text-align:center;padding:1rem;font-size:0.875rem">Failed to load applicants</div>';}
+  }
+
+  window.updateApp=function(appId,status,btn){
+    btn.textContent='Updating...';
+    const nonce=document.querySelector('meta[name="wp-nonce"]')?.content||'';
+    fetch(base+'/job_application/'+appId,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json','X-WP-Nonce':nonce},body:JSON.stringify({meta:{status:status}})})
+      .then(()=>{const area=btn.closest('.jb-applicants-area');const jobId=area?.dataset.job;if(jobId)loadApplicants(area,parseInt(jobId));})
+      .catch(e=>alert('Failed to update'));
+  };
+
+  window.openApply=function(jobId,title){
+    applyJobId=jobId;document.getElementById('jb-apply-title').textContent='Apply to: '+title;
+    document.getElementById('jb-apply-letter').value='';document.getElementById('jb-apply-modal').classList.add('show');
+  };
+
+  window.submitApplication=function(){
+    const letter=document.getElementById('jb-apply-letter').value.trim();if(!letter||!applyJobId)return;
+    const btn=document.getElementById('jb-apply-submit');btn.textContent='Submitting...';
+    const nonce=document.querySelector('meta[name="wp-nonce"]')?.content||'';
+    fetch(base+'/job_application',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json','X-WP-Nonce':nonce},body:JSON.stringify({title:'Application',status:'publish',meta:{job_id:applyJobId,cover_letter:letter,status:'pending'}})})
+      .then(()=>{document.getElementById('jb-apply-modal').classList.remove('show');btn.textContent='Submit Application';loadAll();})
+      .catch(e=>{alert('Failed to submit');btn.textContent='Submit Application';});
+  };
+
+  window.createJob=function(){
+    const t=document.getElementById('jb-new-title').value.trim(),d=document.getElementById('jb-new-desc').value.trim(),l=document.getElementById('jb-new-loc').value.trim(),tp=document.getElementById('jb-new-type').value;
+    if(!t||!d)return;
+    const btn=document.getElementById('jb-create-submit');btn.textContent='Posting...';
+    const nonce=document.querySelector('meta[name="wp-nonce"]')?.content||'';
+    fetch(base+'/care_job',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json','X-WP-Nonce':nonce},body:JSON.stringify({title:t,content:d,status:'publish',meta:{location:l,job_source_type:tp,status:'open'}})})
+      .then(()=>{document.getElementById('jb-create-modal').classList.remove('show');btn.textContent='Post Job';loadAll();})
+      .catch(e=>{alert('Failed to post');btn.textContent='Post Job';});
+  };
+
+  // Close modals on overlay click
+  document.querySelectorAll('.jb-overlay').forEach(o=>o.addEventListener('click',function(e){if(e.target===this)this.classList.remove('show');}));
+
+  async function loadAll(){
+    const u=await getUid();
+    try{
+      const r=await fetch(base+'/care_job?per_page=50&orderby=date&order=desc',{credentials:'include'});
+      allJobs=r.ok?await r.json():[];
+    }catch(e){allJobs=[];}
+    if(u){
+      try{const r=await fetch(base+'/job_application?author='+u+'&per_page=50',{credentials:'include'});myApps=r.ok?await r.json():[];}catch(e){myApps=[];}
+      myPosted=allJobs.filter(j=>j.author===u);
+    }
+    renderBrowse();renderApplications();renderPosted();
+  }
+  loadAll();
+})();
+</script>
+<!-- /wp:html -->

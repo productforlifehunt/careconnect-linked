@@ -4,8 +4,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Phone, AlertTriangle, MapPin, Loader2 } from "lucide-react";
 import { useShareMyLocation } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 export function EmergencySOS() {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const shareLocation = useShareMyLocation();
@@ -14,7 +16,6 @@ export function EmergencySOS() {
   const handleEmergency = async () => {
     setSending(true);
     try {
-      // Try to get current position and share it as emergency
       if ("geolocation" in navigator) {
         navigator.geolocation.getCurrentPosition(
           async (pos) => {
@@ -23,21 +24,22 @@ export function EmergencySOS() {
                 latitude: pos.coords.latitude,
                 longitude: pos.coords.longitude,
                 accuracy: pos.coords.accuracy,
+                isEmergency: true,
               });
               toast({
-                title: "Emergency location shared",
-                description: "Your current location has been shared with your care team.",
+                title: t("emergencySOS.locationShared"),
+                description: t("emergencySOS.locationSharedDesc"),
               });
             } catch (err: any) {
-              toast({ title: "Location shared with errors", description: err.message, variant: "destructive" });
+              toast({ title: t("emergencySOS.locationShared"), description: err.message, variant: "destructive" });
             }
             setSending(false);
             setOpen(false);
           },
           () => {
             toast({
-              title: "Location unavailable",
-              description: "Could not get your location. Please enable location services.",
+              title: t("emergencySOS.locationUnavailable"),
+              description: t("emergencySOS.enableLocation"),
               variant: "destructive",
             });
             setSending(false);
@@ -45,7 +47,7 @@ export function EmergencySOS() {
           { enableHighAccuracy: true, timeout: 10000 }
         );
       } else {
-        toast({ title: "Geolocation not supported", variant: "destructive" });
+        toast({ title: t("emergencySOS.geoNotSupported"), variant: "destructive" });
         setSending(false);
       }
     } catch {
@@ -62,17 +64,17 @@ export function EmergencySOS() {
         onClick={() => setOpen(true)}
       >
         <AlertTriangle className="h-6 w-6" />
-        Emergency SOS
+        {t("emergencySOS.emergencySOS")}
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-destructive flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5" /> Emergency SOS
+              <AlertTriangle className="h-5 w-5" /> {t("emergencySOS.emergencySOS")}
             </DialogTitle>
             <DialogDescription>
-              This will share your emergency location with your care team and alert them immediately.
+              {t("emergencySOS.shareEmergencyDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 mt-2">
@@ -87,16 +89,16 @@ export function EmergencySOS() {
               ) : (
                 <MapPin className="h-5 w-5" />
               )}
-              Share Emergency Location
+              {t("emergencySOS.shareEmergencyLocation")}
             </Button>
             <a href="tel:911" className="block">
               <Button variant="outline" className="w-full h-14 text-base font-bold gap-2 border-destructive text-destructive hover:bg-destructive/10">
                 <Phone className="h-5 w-5" />
-                Call 911
+                {t("emergencySOS.call911")}
               </Button>
             </a>
             <Button variant="ghost" className="w-full" onClick={() => setOpen(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
           </div>
         </DialogContent>

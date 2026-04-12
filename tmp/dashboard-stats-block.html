@@ -1,0 +1,104 @@
+<!-- wp:html -->
+<div id="dashboard-stats-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+  <div class="stat-card" style="background: #fff; border-radius: 12px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 0.75rem;">
+    <div style="font-size: 1.5rem; color: #0d9488;">📅</div>
+    <div>
+      <div id="stat-bookings" style="font-size: 1.5rem; font-weight: 700; margin: 0;">-</div>
+      <div style="color: #6b7280; font-size: 0.75rem;">Upcoming Bookings</div>
+    </div>
+  </div>
+  
+  <div class="stat-card" style="background: #fff; border-radius: 12px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 0.75rem;">
+    <div style="font-size: 1.5rem; color: #22c55e;">👥</div>
+    <div>
+      <div id="stat-groups" style="font-size: 1.5rem; font-weight: 700; margin: 0;">-</div>
+      <div style="color: #6b7280; font-size: 0.75rem;">Care Groups</div>
+    </div>
+  </div>
+  
+  <div class="stat-card" style="background: #fff; border-radius: 12px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 0.75rem;">
+    <div style="font-size: 1.5rem; color: #f59e0b;">⚠️</div>
+    <div>
+      <div id="stat-tasks" style="font-size: 1.5rem; font-weight: 700; margin: 0;">-</div>
+      <div style="color: #6b7280; font-size: 0.75rem;">Pending Tasks</div>
+    </div>
+  </div>
+  
+  <div class="stat-card" style="background: #fff; border-radius: 12px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 0.75rem;">
+    <div style="font-size: 1.5rem; color: #f97316;">💬</div>
+    <div>
+      <div id="stat-messages" style="font-size: 1.5rem; font-weight: 700; margin: 0;">-</div>
+      <div style="color: #6b7280; font-size: 0.75rem;">Unread Messages</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const baseUrl = '/careconnected/wp-json/wp/v2';
+  
+  // Get current user ID from WordPress
+  async function getCurrentUserId() {
+    try {
+      const res = await fetch('/careconnected/wp-json/wp/v2/users/me', {
+        credentials: 'include'
+      });
+      if (!res.ok) return null;
+      const user = await res.json();
+      return user.id;
+    } catch (e) {
+      console.error('Failed to get current user:', e);
+      return null;
+    }
+  }
+  
+  async function loadStats() {
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      console.log('User not logged in');
+      return;
+    }
+    
+    try {
+      // Fetch bookings count (wc_booking CPT, author = current user)
+      const bookingsRes = await fetch(`${baseUrl}/wc_booking?author=${userId}&status=confirmed,pending&per_page=1`, {
+        credentials: 'include'
+      });
+      const bookingsTotal = bookingsRes.headers.get('X-WP-Total') || '0';
+      document.getElementById('stat-bookings').textContent = bookingsTotal;
+      
+      // Fetch care groups count (care_group CPT, author = current user)
+      const groupsRes = await fetch(`${baseUrl}/care_group?author=${userId}&per_page=1`, {
+        credentials: 'include'
+      });
+      const groupsTotal = groupsRes.headers.get('X-WP-Total') || '0';
+      document.getElementById('stat-groups').textContent = groupsTotal;
+      
+      // Fetch pending tasks count (care_task CPT, author = current user, status = pending)
+      const tasksRes = await fetch(`${baseUrl}/care_task?author=${userId}&status=pending&per_page=1`, {
+        credentials: 'include'
+      });
+      const tasksTotal = tasksRes.headers.get('X-WP-Total') || '0';
+      document.getElementById('stat-tasks').textContent = tasksTotal;
+      
+      // Fetch unread messages count (chat_message CPT)
+      const messagesRes = await fetch(`${baseUrl}/chat_message?per_page=1&meta_key=is_read&meta_value=0`, {
+        credentials: 'include'
+      });
+      const messagesTotal = messagesRes.headers.get('X-WP-Total') || '0';
+      document.getElementById('stat-messages').textContent = messagesTotal;
+      
+    } catch (e) {
+      console.error('Failed to load stats:', e);
+    }
+  }
+  
+  // Load stats on page load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadStats);
+  } else {
+    loadStats();
+  }
+})();
+</script>
+<!-- /wp:html -->

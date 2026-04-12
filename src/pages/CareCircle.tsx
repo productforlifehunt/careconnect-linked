@@ -22,9 +22,8 @@ import {
   useUpdateCareGroup, useDeleteCareGroup, useJoinGroupByCode,
   useGroupInvitations, useCancelInvitation,
   useMemberCategories, useCreateMemberCategory, useDeleteMemberCategory,
-  useDeleteTask, useLeaveGroup, useCreateJobPosting,
+  useDeleteTask, useLeaveGroup, useCreateJobPosting, useMyProfile,
 } from "@/hooks/use-care-data";
-import { useAuth } from "@/contexts/AuthContext";
 import { useSite } from "@/contexts/SiteContext";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
@@ -46,7 +45,7 @@ export default function CareCircle() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const site = useSite();
-  const { user } = useAuth();
+  const { data: profile } = useMyProfile();
   const qc = useQueryClient();
   const { data: groups, isLoading: groupsLoading } = useCareGroups();
   const createGroup = useCreateCareGroup();
@@ -94,7 +93,7 @@ export default function CareCircle() {
   const leaveGroup = useLeaveGroup();
   const createJob = useCreateJobPosting();
 
-  const currentMember = (members || []).find((m: any) => m.user_id === user?.id);
+  const currentMember = (members || []).find((m: any) => m.user_id === profile?.id);
   const isAdmin = currentMember?.is_owner || currentMember?.is_admin;
   const isOwner = currentMember?.is_owner;
   const pendingTasks = (tasks || []).filter((t: any) => t.status !== "completed");
@@ -115,15 +114,15 @@ export default function CareCircle() {
   };
 
   const handleLeaveGroup = () => {
-    if (!activeGroupId || !user?.id) return;
-    leaveGroup.mutate({ groupId: activeGroupId, userId: user.id }, {
+    if (!activeGroupId || !profile?.id) return;
+    leaveGroup.mutate(activeGroupId, {
       onSuccess: () => { setSelectedGroupId(null); toast({ title: t("careCircle.leftGroup") }); },
-      onError: (err: any) => toast({ title: t("careCircle.cannotLeave"), description: err.message, variant: "destructive" }),
+      onError: (err: any) => toast({ title: t("common.error"), description: err.message, variant: "destructive" }),
     });
   };
 
   const handleTogglePin = (post: any) => {
-    updatePost.mutate({ id: post.id, updates: { is_pinned: !post.is_pinned } }, {
+    updatePost.mutate({ id: post.id, is_pinned: !post.is_pinned }, {
       onSuccess: () => toast({ title: post.is_pinned ? t("careCircle.unpinned") : t("careCircle.pinned") }),
     });
   };
@@ -227,16 +226,16 @@ export default function CareCircle() {
         </div>
 
         <TabsContent value="home" className="mt-4">
-          <HomeTab pendingTasksCount={pendingTasks.length} membersCount={(members || []).length} caredOnesCount={(groupCaredOnes || []).length} allPosts={allPosts || []} activeGroupId={activeGroupId} userId={user?.id} isAdmin={!!isAdmin} memberCategories={memberCategories || []} createPost={createPost} onEditPost={setEditingPost} onTogglePin={handleTogglePin} onDeletePost={handleDeletePost} />
+          <HomeTab pendingTasksCount={pendingTasks.length} membersCount={(members || []).length} caredOnesCount={(groupCaredOnes || []).length} allPosts={allPosts || []} activeGroupId={activeGroupId} userId={profile?.id} isAdmin={!!isAdmin} memberCategories={memberCategories || []} createPost={createPost} onEditPost={setEditingPost} onTogglePin={handleTogglePin} onDeletePost={handleDeletePost} />
         </TabsContent>
         <TabsContent value="calendar" className="mt-4"><CalendarTab tasks={tasks || []} /></TabsContent>
-        <TabsContent value="announcements" className="mt-4"><AnnouncementsTab announcements={announcements || []} activeGroupId={activeGroupId} userId={user?.id} isAdmin={!!isAdmin} memberCategories={memberCategories || []} createPost={createPost} onEditPost={setEditingPost} onTogglePin={handleTogglePin} onDeletePost={handleDeletePost} /></TabsContent>
-        <TabsContent value="tasks" className="mt-4"><TasksTab tasks={tasks || []} tasksLoading={tasksLoading} members={members || []} activeGroupId={activeGroupId} userId={user?.id} isAdmin={!!isAdmin} memberCategories={memberCategories || []} createTask={createTask} updateTaskStatus={updateTaskStatus} deleteTask={deleteTask} createJob={createJob} /></TabsContent>
+        <TabsContent value="announcements" className="mt-4"><AnnouncementsTab announcements={announcements || []} activeGroupId={activeGroupId} userId={profile?.id} isAdmin={!!isAdmin} memberCategories={memberCategories || []} createPost={createPost} onEditPost={setEditingPost} onTogglePin={handleTogglePin} onDeletePost={handleDeletePost} /></TabsContent>
+        <TabsContent value="tasks" className="mt-4"><TasksTab tasks={tasks || []} tasksLoading={tasksLoading} members={members || []} activeGroupId={activeGroupId} userId={profile?.id} isAdmin={!!isAdmin} memberCategories={memberCategories || []} createTask={createTask} updateTaskStatus={updateTaskStatus} deleteTask={deleteTask} createJob={createJob} /></TabsContent>
         <TabsContent value="cared-ones" className="mt-4"><CaredOnesTab groupCaredOnes={groupCaredOnes || []} isAdmin={!!isAdmin} onAddCaredOne={() => setAddCaredOneOpen(true)} /></TabsContent>
         <TabsContent value="checkins" className="mt-4"><CheckInsTab groupCaredOnes={groupCaredOnes || []} activeGroupId={activeGroupId} /></TabsContent>
-        <TabsContent value="messages" className="mt-4"><MessagesTab groupMessages={groupMessages || []} userId={user?.id} activeGroupId={activeGroupId} sendMessage={sendMessage} /></TabsContent>
-        <TabsContent value="wishes" className="mt-4"><WishesTab wishes={wishes || []} activeGroupId={activeGroupId} userId={user?.id} isAdmin={!!isAdmin} createPost={createPost} onEditPost={setEditingPost} onTogglePin={handleTogglePin} onDeletePost={handleDeletePost} /></TabsContent>
-        <TabsContent value="members" className="mt-4"><MembersTab members={members || []} activeGroup={activeGroup} activeGroupId={activeGroupId} userId={user?.id} isAdmin={!!isAdmin} isOwner={!!isOwner} currentMember={currentMember} pendingInvitations={pendingInvitations || []} memberCategories={memberCategories || []} inviteToGroup={inviteToGroup} updateRole={updateRole} removeMember={removeMember} cancelInvitation={cancelInvitation} createCategory={createCategory} deleteCategory={deleteCategory} /></TabsContent>
+        <TabsContent value="messages" className="mt-4"><MessagesTab groupMessages={groupMessages || []} userId={profile?.id} activeGroupId={activeGroupId} sendMessage={sendMessage} /></TabsContent>
+        <TabsContent value="wishes" className="mt-4"><WishesTab wishes={wishes || []} activeGroupId={activeGroupId} userId={profile?.id} isAdmin={!!isAdmin} createPost={createPost} onEditPost={setEditingPost} onTogglePin={handleTogglePin} onDeletePost={handleDeletePost} /></TabsContent>
+        <TabsContent value="members" className="mt-4"><MembersTab members={members || []} activeGroup={activeGroup} activeGroupId={activeGroupId} userId={profile?.id} isAdmin={!!isAdmin} isOwner={!!isOwner} currentMember={currentMember} pendingInvitations={pendingInvitations || []} memberCategories={memberCategories || []} inviteToGroup={inviteToGroup} updateRole={updateRole} removeMember={removeMember} cancelInvitation={cancelInvitation} createCategory={createCategory} deleteCategory={deleteCategory} /></TabsContent>
         <TabsContent value="gallery" className="mt-4"><GalleryTab gallery={gallery || []} activeGroupId={activeGroupId} /></TabsContent>
       </Tabs>
     </div>

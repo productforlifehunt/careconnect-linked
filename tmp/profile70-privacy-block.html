@@ -1,0 +1,30 @@
+<!-- wp:html -->
+<style>
+#profile70-privacy{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+#profile70-privacy .p70-card{background:#fff;border-radius:.75rem;box-shadow:0 1px 3px rgba(0,0,0,.1);border:1px solid transparent;margin-bottom:1rem}
+#profile70-privacy .p70-danger{border-color:rgba(239,68,68,.2)}
+#profile70-privacy .p70-card-hdr{padding:1.25rem 1.5rem 0;font-weight:600;font-size:1rem;color:#0f172a}
+#profile70-privacy .p70-danger .p70-card-hdr{color:#ef4444}
+#profile70-privacy .p70-card-body{padding:1.5rem}
+#profile70-privacy .p70-desc{font-size:.8125rem;color:#64748b;margin:0 0 .75rem}
+#profile70-privacy .p70-btn{display:inline-flex;align-items:center;gap:.5rem;padding:.5rem 1rem;border:none;border-radius:.5rem;font-size:.875rem;font-weight:500;cursor:pointer}
+#profile70-privacy .p70-outline{background:#fff;color:#334155;border:1px solid #e2e8f0;width:100%}
+#profile70-privacy .p70-destructive{background:#ef4444;color:#fff;width:100%}
+</style>
+<div id="profile70-privacy" class="p70-panel" data-panel="privacy">
+  <div class="p70-card"><div class="p70-card-hdr">Your Data</div><div class="p70-card-body"><p class="p70-desc">Download a copy of your account data.</p><button class="p70-btn p70-outline" type="button" id="p70-download">Download My Data</button></div></div>
+  <div class="p70-card p70-danger"><div class="p70-card-hdr">Danger Zone</div><div class="p70-card-body"><p class="p70-desc">Permanently delete your account and associated data. This action cannot be undone.</p><button class="p70-btn p70-destructive" type="button" id="p70-delete">Delete Account</button></div></div>
+</div>
+<script>
+(function(){
+  const root=document.getElementById('profile70-privacy');
+  function bind(){const api=window.__profile70;if(!api)return false;
+    root.querySelector('#p70-download').addEventListener('click',()=>{
+      const u=api.state.user||{}; const blob=new Blob([JSON.stringify({exported_at:new Date().toISOString(),profile:u},null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='careconnected-data-'+new Date().toISOString().split('T')[0]+'.json'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    });
+    root.querySelector('#p70-delete').addEventListener('click',()=>{alert('Account deletion must be completed through the configured backend flow.');});
+    return true}
+  if(!bind()){const t=setInterval(()=>{if(bind())clearInterval(t)},200)}
+})();
+</script>
+<!-- /wp:html -->

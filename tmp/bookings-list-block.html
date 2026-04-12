@@ -1,0 +1,192 @@
+<!-- wp:html -->
+<div id="bookings-list-container">
+  <div id="bookings-upcoming-list">
+    <div style="text-align: center; padding: 3rem; color: #9ca3af;">
+      <div style="font-size: 2rem; margin-bottom: 0.5rem;">⏳</div>
+      <div>Loading upcoming bookings...</div>
+    </div>
+  </div>
+  <div id="bookings-past-list" style="display: none;">
+    <div style="text-align: center; padding: 3rem; color: #9ca3af;">
+      <div style="font-size: 2rem; margin-bottom: 0.5rem;">⏳</div>
+      <div>Loading past bookings...</div>
+    </div>
+  </div>
+  
+  <!-- Cancel/Reschedule Modal -->
+  <div id="booking-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:white; border-radius:12px; padding:2rem; max-width:400px; width:90%; margin:auto; position:relative; top:50%; transform:translateY(-50%);">
+      <h3 id="modal-title" style="font-size:1.125rem; font-weight:600; margin:0 0 1rem 0;"></h3>
+      <p id="modal-message" style="color:#6b7280; font-size:0.875rem; margin-bottom:1.5rem;"></p>
+      <div id="modal-body"></div>
+      <div style="display:flex; gap:0.75rem; justify-content:flex-end; margin-top:1.5rem;">
+        <button onclick="closeModal()" style="padding:0.5rem 1rem; background:#e5e7eb; color:#374151; border:none; border-radius:6px; cursor:pointer;">Cancel</button>
+        <button id="modal-confirm" style="padding:0.5rem 1rem; background:#0d9488; color:white; border:none; border-radius:6px; cursor:pointer;">Confirm</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const baseUrl = '/careconnected/wp-json/wp/v2';
+  let currentUserId = null;
+
+  async function getCurrentUserId() {
+    if (currentUserId) return currentUserId;
+    try {
+      const res = await fetch(baseUrl + '/users/me', { credentials: 'include' });
+      if (!res.ok) return null;
+      const user = await res.json();
+      currentUserId = user.id;
+      return user.id;
+    } catch (e) { return null; }
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return 'N/A';
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+  }
+
+  function statusBadge(status) {
+    const colors = { confirmed:'#22c55e', pending:'#f59e0b', completed:'#6b7280', cancelled:'#ef4444', paid:'#3b82f6' };
+    const c = colors[status] || '#6b7280';
+    return '<span style="background:'+c+'; color:white; padding:0.25rem 0.75rem; border-radius:9999px; font-size:0.75rem; font-weight:500; text-transform:capitalize;">'+status+'</span>';
+  }
+
+  function bookingCard(b) {
+    const title = b.title?.rendered || 'Booking';
+    const date = b.meta?._booking_start || b.date;
+    const status = b.status || 'pending';
+    const cost = b.meta?._booking_cost || '0';
+    const isPast = ['completed','cancelled'].includes(status);
+
+    let actions = '';
+    if (status === 'confirmed' || status === 'pending') {
+      actions = '<button onclick="window._cancelBooking('+b.id+')" style="padding:0.5rem 1rem; background:#ef4444; color:white; border:none; border-radius:6px; font-size:0.8rem; cursor:pointer;">Cancel</button>';
+      actions += ' <button onclick="window._rescheduleBooking('+b.id+')" style="padding:0.5rem 1rem; background:#0d9488; color:white; border:none; border-radius:6px; font-size:0.8rem; cursor:pointer;">Reschedule</button>';
+    }
+    if (status === 'completed') {
+      actions = '<button onclick="window._leaveReview('+b.id+')" style="padding:0.5rem 1rem; background:#f59e0b; color:white; border:none; border-radius:6px; font-size:0.8rem; cursor:pointer;">Leave Review</button>';
+    }
+    actions += ' <a href="/careconnected/inbox/" style="padding:0.5rem 1rem; background:white; color:#0d9488; border:1px solid #0d9488; border-radius:6px; font-size:0.8rem; cursor:pointer; text-decoration:none; display:inline-block;">Message</a>';
+
+    return '<div style="background:#fff; border-radius:12px; padding:1.25rem; box-shadow:0 1px 3px rgba(0,0,0,0.1); margin-bottom:1rem;">'
+      + '<div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:0.75rem;">'
+      + '<div><div style="font-weight:600; color:#111827; margin-bottom:0.25rem;">'+title+'</div>'
+      + '<div style="font-size:0.85rem; color:#6b7280;">'+formatDate(date)+'</div></div>'
+      + statusBadge(status) + '</div>'
+      + '<div style="border-top:1px solid #e5e7eb; padding-top:0.75rem; display:flex; justify-content:space-between; align-items:center;">'
+      + '<div style="font-weight:600; color:#0d9488;">$'+cost+'</div>'
+      + '<div style="display:flex; gap:0.5rem; flex-wrap:wrap;">'+actions+'</div></div></div>';
+  }
+
+  function emptyState(msg, icon) {
+    return '<div style="text-align:center; padding:3rem; color:#9ca3af;"><div style="font-size:2rem; margin-bottom:0.5rem;">'+icon+'</div><div>'+msg+'</div></div>';
+  }
+
+  async function loadBookings(type) {
+    const userId = await getCurrentUserId();
+    const listEl = document.getElementById('bookings-' + type + '-list');
+    if (!userId) {
+      listEl.innerHTML = emptyState('Please log in to view bookings', '🔒');
+      return;
+    }
+    try {
+      let statusFilter = type === 'upcoming' ? '&status=confirmed,pending,paid' : '&status=completed,cancelled';
+      const res = await fetch(baseUrl + '/wc_booking?author=' + userId + '&per_page=20&orderby=date&order=' + (type==='upcoming'?'asc':'desc') + statusFilter, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed');
+      const bookings = await res.json();
+      if (bookings.length === 0) {
+        listEl.innerHTML = emptyState(type === 'upcoming' ? 'No upcoming bookings' : 'No past bookings', '📅');
+        return;
+      }
+      listEl.innerHTML = bookings.map(bookingCard).join('');
+    } catch (e) {
+      console.error('Failed to load ' + type + ' bookings:', e);
+      listEl.innerHTML = emptyState('Failed to load bookings', '❌');
+    }
+  }
+
+  // Modal helpers
+  window.closeModal = function() {
+    document.getElementById('booking-modal').style.display = 'none';
+  };
+
+  window._cancelBooking = function(id) {
+    const modal = document.getElementById('booking-modal');
+    document.getElementById('modal-title').textContent = 'Cancel Booking';
+    document.getElementById('modal-message').textContent = 'Are you sure you want to cancel this booking? This cannot be undone.';
+    document.getElementById('modal-body').innerHTML = '';
+    document.getElementById('modal-confirm').textContent = 'Yes, Cancel';
+    document.getElementById('modal-confirm').style.background = '#ef4444';
+    document.getElementById('modal-confirm').onclick = async function() {
+      try {
+        const nonce = document.querySelector('meta[name="wp-nonce"]')?.content;
+        await fetch(baseUrl + '/wc_booking/' + id, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': nonce || '' },
+          body: JSON.stringify({ status: 'cancelled' })
+        });
+        closeModal();
+        loadBookings('upcoming');
+        loadBookings('past');
+      } catch (e) { alert('Failed to cancel booking'); }
+    };
+    modal.style.display = 'flex';
+  };
+
+  window._rescheduleBooking = function(id) {
+    const modal = document.getElementById('booking-modal');
+    document.getElementById('modal-title').textContent = 'Reschedule Booking';
+    document.getElementById('modal-message').textContent = 'Select a new date and time:';
+    document.getElementById('modal-body').innerHTML = '<input type="datetime-local" id="reschedule-date" style="width:100%; padding:0.5rem; border:1px solid #d1d5db; border-radius:6px; font-size:0.875rem;">';
+    document.getElementById('modal-confirm').textContent = 'Reschedule';
+    document.getElementById('modal-confirm').style.background = '#0d9488';
+    document.getElementById('modal-confirm').onclick = async function() {
+      const newDate = document.getElementById('reschedule-date').value;
+      if (!newDate) { alert('Please select a date'); return; }
+      try {
+        const nonce = document.querySelector('meta[name="wp-nonce"]')?.content;
+        await fetch(baseUrl + '/wc_booking/' + id, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': nonce || '' },
+          body: JSON.stringify({ meta: { _booking_start: newDate } })
+        });
+        closeModal();
+        loadBookings('upcoming');
+      } catch (e) { alert('Failed to reschedule'); }
+    };
+    modal.style.display = 'flex';
+  };
+
+  window._leaveReview = function(id) {
+    const modal = document.getElementById('booking-modal');
+    document.getElementById('modal-title').textContent = 'Leave a Review';
+    document.getElementById('modal-message').textContent = 'How was your experience?';
+    document.getElementById('modal-body').innerHTML = '<div style="margin-bottom:1rem;"><label style="font-size:0.875rem; color:#374151;">Rating</label><div id="star-rating" style="font-size:1.5rem; cursor:pointer; margin-top:0.25rem;">★★★★★</div></div><textarea id="review-text" placeholder="Write your review..." style="width:100%; padding:0.5rem; border:1px solid #d1d5db; border-radius:6px; min-height:80px; font-size:0.875rem; resize:vertical;"></textarea>';
+    document.getElementById('modal-confirm').textContent = 'Submit Review';
+    document.getElementById('modal-confirm').style.background = '#0d9488';
+    document.getElementById('modal-confirm').onclick = function() {
+      alert('Review submitted! Thank you.');
+      closeModal();
+    };
+    modal.style.display = 'flex';
+  };
+
+  // Listen for tab changes from the tabs block
+  window.addEventListener('bookingTabChange', function(e) {
+    const tab = e.detail.tab;
+    document.getElementById('bookings-upcoming-list').style.display = tab === 'upcoming' ? 'block' : 'none';
+    document.getElementById('bookings-past-list').style.display = tab === 'past' ? 'block' : 'none';
+  });
+
+  // Initial load
+  loadBookings('upcoming');
+  loadBookings('past');
+})();
+</script>
+<!-- /wp:html -->

@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
   CalendarDays, DollarSign, Clock, Check, X, Loader2, User, Briefcase, TrendingUp, Plus, Trash2, Settings,
@@ -17,23 +18,22 @@ import {
   useProviderAvailabilitySetting, useUpdateProviderAvailabilitySetting,
   useProviderPayouts,
 } from "@/hooks/use-care-data";
-import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { careDb } from "@/integrations/supabase/external-client";
 import { useQueryClient } from "@tanstack/react-query";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 export default function ProviderDashboard() {
   const { toast } = useToast();
-  const { user } = useAuth();
   const qc = useQueryClient();
-  const providerId = user?.id || null;
   const { data: profile } = useMyProfile();
+  const providerId = profile?.id || null;
   const { data: bookings, isLoading: bookingsLoading } = useProviderBookings();
   const updateBookingStatus = useUpdateBookingStatus();
   const { data: availability } = useProviderAvailability(providerId);
   const upsertAvailability = useUpsertProviderAvailability();
+  const { data: availabilitySetting } = useProviderAvailabilitySetting(providerId);
+  const updateAvailabilitySetting = useUpdateProviderAvailabilitySetting();
   const { data: payouts } = useProviderPayouts();
 
   const [schedule, setSchedule] = useState<Record<number, { enabled: boolean; start: string; end: string }>>(() => {
@@ -47,6 +47,15 @@ export default function ProviderDashboard() {
   const [addOverrideOpen, setAddOverrideOpen] = useState(false);
   const [newOverride, setNewOverride] = useState({ date: "", start: "09:00", end: "17:00", available: true });
   const [savingOverrides, setSavingOverrides] = useState(false);
+  const [availabilityRules, setAvailabilityRules] = useState({
+    min_notice_hours: 24,
+    booking_window_days: 60,
+    allow_same_day: false,
+    requires_confirmation: true,
+    buffer_period: 0,
+    default_date_availability: "available",
+  });
+  const [rulesLoaded, setRulesLoaded] = useState(false);
 
   useEffect(() => {
     if (availability && availability.length > 0 && !scheduleLoaded) {
@@ -70,12 +79,43 @@ export default function ProviderDashboard() {
     }
   }, [availability, overridesLoaded]);
 
+  useEffect(() => {
+    if (availabilitySetting && !rulesLoaded) {
+      setAvailabilityRules({
+        min_notice_hours: Number(availabilitySetting.min_notice_hours ?? 24),
+        booking_window_days: Number(availabilitySetting.booking_window_days ?? 60),
+        allow_same_day: Boolean(availabilitySetting.allow_same_day ?? false),
+        requires_confirmation: Boolean(availabilitySetting.requires_confirmation ?? true),
+        buffer_period: Number(availabilitySetting.buffer_period ?? 0),
+        default_date_availability: availabilitySetting.default_date_availability ?? "available",
+      });
+      setRulesLoaded(true);
+    }
+    if (!availabilitySetting && !rulesLoaded) {
+      setRulesLoaded(true);
+    }
+  }, [availabilitySetting, rulesLoaded]);
+
+  const handleSaveAvailabilityRules = async () => {
+    if (!providerId) return;
+    try {
+      await updateAvailabilitySetting.mutateAsync({ providerId, setting: availabilityRules });
+      qc.invalidateQueries({ queryKey: ["providerAvailabilitySetting", providerId] });
+      toast({ title: "Availability rules saved" });
+    } catch (e: any) {
+      toast({ title: "Failed", description: e.message, variant: "destructive" });
+    }
+  };
+
   const handleSaveSchedule = () => {
     if (!providerId) return;
-    const slots = Object.entries(schedule).map(([day, s]) => ({
-      provider_id: providerId, day_of_week: parseInt(day), start_time: s.start, end_time: s.end, is_available: s.enabled,
+    const weeklySlots = Object.entries(schedule).map(([day, s]) => ({
+      day_of_week: parseInt(day), start_time: s.start, end_time: s.end, is_available: s.enabled,
     }));
-    upsertAvailability.mutate(slots, {
+    const overrideSlots = dateOverrides.map((o) => ({
+      specific_date: o.date, start_time: o.start, end_time: o.end, is_available: o.available,
+    }));
+    upsertAvailability.mutate({ providerId, slots: [...weeklySlots, ...overrideSlots] }, {
       onSuccess: () => toast({ title: "Schedule saved" }),
       onError: (e: any) => toast({ title: "Save failed", description: e.message, variant: "destructive" }),
     });
@@ -85,16 +125,18 @@ export default function ProviderDashboard() {
     if (!newOverride.date || !providerId) return;
     setSavingOverrides(true);
     try {
-      await careDb.from("provider_availability").delete().eq("provider_id", providerId).eq("specific_date", newOverride.date);
-      const { error } = await careDb.from("provider_availability").insert({
-        provider_id: providerId, day_of_week: new Date(newOverride.date + "T12:00:00").getDay(),
-        specific_date: newOverride.date, start_time: newOverride.start, end_time: newOverride.end, is_available: newOverride.available,
-      });
-      if (error) throw error;
-      setDateOverrides(prev => [...prev.filter(o => o.date !== newOverride.date), newOverride]);
+      const nextOverrides = [...dateOverrides.filter(o => o.date !== newOverride.date), newOverride];
+      const weeklySlots = Object.entries(schedule).map(([day, s]) => ({
+        day_of_week: parseInt(day), start_time: s.start, end_time: s.end, is_available: s.enabled,
+      }));
+      const overrideSlots = nextOverrides.map((o) => ({
+        specific_date: o.date, start_time: o.start, end_time: o.end, is_available: o.available,
+      }));
+      await upsertAvailability.mutateAsync({ providerId, slots: [...weeklySlots, ...overrideSlots] });
+      setDateOverrides(nextOverrides);
       setAddOverrideOpen(false);
       setNewOverride({ date: "", start: "09:00", end: "17:00", available: true });
-      qc.invalidateQueries({ queryKey: ["provider-availability"] });
+      qc.invalidateQueries({ queryKey: ["providerAvailability", providerId] });
       toast({ title: "Date override saved" });
     } catch (e: any) {
       toast({ title: "Failed", description: e.message, variant: "destructive" });
@@ -104,9 +146,16 @@ export default function ProviderDashboard() {
   const handleDeleteOverride = async (date: string) => {
     if (!providerId) return;
     try {
-      await careDb.from("provider_availability").delete().eq("provider_id", providerId).eq("specific_date", date);
-      setDateOverrides(prev => prev.filter(o => o.date !== date));
-      qc.invalidateQueries({ queryKey: ["provider-availability"] });
+      const nextOverrides = dateOverrides.filter(o => o.date !== date);
+      const weeklySlots = Object.entries(schedule).map(([day, s]) => ({
+        day_of_week: parseInt(day), start_time: s.start, end_time: s.end, is_available: s.enabled,
+      }));
+      const overrideSlots = nextOverrides.map((o) => ({
+        specific_date: o.date, start_time: o.start, end_time: o.end, is_available: o.available,
+      }));
+      await upsertAvailability.mutateAsync({ providerId, slots: [...weeklySlots, ...overrideSlots] });
+      setDateOverrides(nextOverrides);
+      qc.invalidateQueries({ queryKey: ["providerAvailability", providerId] });
       toast({ title: "Override removed" });
     } catch (e: any) { toast({ title: "Failed", description: e.message, variant: "destructive" }); }
   };
@@ -236,6 +285,78 @@ export default function ProviderDashboard() {
               ))}
               <Button variant="coral" className="w-full mt-4" onClick={handleSaveSchedule} disabled={upsertAvailability.isPending}>
                 {upsertAvailability.isPending ? "Saving..." : "Save Weekly Schedule"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-transparent card-elevated">
+            <CardHeader><CardTitle>Booking Rules</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <Label>Minimum notice (hours)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={availabilityRules.min_notice_hours}
+                    onChange={e => setAvailabilityRules(prev => ({ ...prev, min_notice_hours: Number(e.target.value || 0) }))}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label>Booking window (days)</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={availabilityRules.booking_window_days}
+                    onChange={e => setAvailabilityRules(prev => ({ ...prev, booking_window_days: Number(e.target.value || 1) }))}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <Label>Buffer between bookings (minutes)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={availabilityRules.buffer_period}
+                    onChange={e => setAvailabilityRules(prev => ({ ...prev, buffer_period: Number(e.target.value || 0) }))}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label>Default calendar availability</Label>
+                  <Select
+                    value={availabilityRules.default_date_availability}
+                    onValueChange={value => setAvailabilityRules(prev => ({ ...prev, default_date_availability: value === "non-available" ? "non-available" : "available" }))}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="available">Available by default</SelectItem>
+                      <SelectItem value="non-available">Not available by default</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex items-center justify-between rounded-lg bg-muted/30 p-3">
+                <div>
+                  <p className="text-sm font-medium text-foreground">Allow same-day bookings</p>
+                  <p className="text-xs text-muted-foreground">Enable customers to book for the current day when a slot is available.</p>
+                </div>
+                <Switch checked={availabilityRules.allow_same_day} onCheckedChange={c => setAvailabilityRules(prev => ({ ...prev, allow_same_day: c }))} />
+              </div>
+              <div className="flex items-center justify-between rounded-lg bg-muted/30 p-3">
+                <div>
+                  <p className="text-sm font-medium text-foreground">Require provider confirmation</p>
+                  <p className="text-xs text-muted-foreground">Match Woo Bookings confirmation behavior for new booking requests.</p>
+                </div>
+                <Switch checked={availabilityRules.requires_confirmation} onCheckedChange={c => setAvailabilityRules(prev => ({ ...prev, requires_confirmation: c }))} />
+              </div>
+              <Button variant="outline" className="w-full" onClick={handleSaveAvailabilityRules} disabled={updateAvailabilitySetting.isPending}>
+                {updateAvailabilitySetting.isPending ? "Saving..." : "Save Booking Rules"}
               </Button>
             </CardContent>
           </Card>

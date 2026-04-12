@@ -8,17 +8,15 @@ import { MessageAttachment } from "@/components/messages/MessageAttachment";
 import { MessageBubble } from "@/components/messages/MessageBubble";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useConversations, useDirectMessages, useSendMessage, useSearchProfiles, useStartConversation, useMarkMessagesRead } from "@/hooks/use-care-data";
-import { useAuth } from "@/contexts/AuthContext";
+import { useConversations, useDirectMessages, useSendMessage, useSearchProfiles, useStartConversation, useMarkMessagesRead, useMyProfile } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { careDb } from "@/integrations/supabase/external-client";
 import { useTranslation } from "react-i18next";
 
 export default function Messages() {
   const { t } = useTranslation();
-  const { user } = useAuth();
   const { toast } = useToast();
+  const { data: profile } = useMyProfile();
   const location = useLocation();
   const qc = useQueryClient();
   const { data: conversations, isLoading: convosLoading } = useConversations();
@@ -38,29 +36,18 @@ export default function Messages() {
   const [handledNavState, setHandledNavState] = useState(false);
 
   const getOtherUser = (convo: any) => {
-    if (!user) return null;
-    return convo.participant_1?.id === user.id ? convo.participant_2 : convo.participant_1;
+    if (!profile?.id) return null;
+    return convo.participant_1?.id === profile.id ? convo.participant_2 : convo.participant_1;
   };
 
-  // Realtime subscription for new messages
+  // Poll conversations every 15 seconds (WordPress CCT has no WebSocket support)
   useEffect(() => {
-    if (!user?.id) return;
-    const channel = careDb
-      .channel('dm-realtime')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'care_connector',
-        table: 'direct_message',
-      }, (payload: any) => {
-        const msg = payload.new;
-        if (msg.sender_id === user.id || msg.receiver_id === user.id) {
-          qc.invalidateQueries({ queryKey: ["messages"] });
-          qc.invalidateQueries({ queryKey: ["conversations"] });
-        }
-      })
-      .subscribe();
-    return () => { careDb.removeChannel(channel); };
-  }, [user?.id, qc]);
+    const interval = setInterval(() => {
+      qc.invalidateQueries({ queryKey: ["messages"] });
+      qc.invalidateQueries({ queryKey: ["conversations"] });
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [qc]);
 
   useEffect(() => {
     const navState = location.state as any;
@@ -87,7 +74,7 @@ export default function Messages() {
       setSelectedConvoId(first.id);
       setSelectedOtherUser(getOtherUser(first));
     }
-  }, [conversations, selectedConvoId]);
+  }, [conversations, selectedConvoId, profile?.id]);
 
   const otherUserId = selectedOtherUser?.id || null;
   const { data: messages, isLoading: msgsLoading } = useDirectMessages(otherUserId);
@@ -97,12 +84,10 @@ export default function Messages() {
   }, [messages]);
 
   const handleSend = () => {
-    if ((!newMessage.trim() && !pendingAttachment) || !otherUserId) return;
+    if ((!newMessage.trim() && !pendingAttachment) || !selectedConvoId) return;
     sendMessage.mutate({
-      receiverId: otherUserId,
+      conversationId: selectedConvoId,
       content: newMessage || (pendingAttachment ? (pendingAttachment.type === "image" ? "📷 Image" : "📎 File") : ""),
-      attachmentUrl: pendingAttachment?.url,
-      messageType: pendingAttachment?.type || "text",
     });
     setNewMessage("");
     setPendingAttachment(null);
@@ -186,7 +171,7 @@ export default function Messages() {
                     </div>
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-xs text-muted-foreground truncate">
-                        {c.last_message ? (c.last_message.sender_id === user?.id ? `${t("common.you")}: ` : "") + (c.last_message.message_content || "").substring(0, 50) : t("messages.noMessages")}
+                        {c.last_message ? (c.last_message.sender_id === profile?.id ? `${t("common.you")}: ` : "") + (c.last_message.message_content || "").substring(0, 50) : t("messages.noMessages")}
                       </p>
                       {c.unread_count > 0 && (
                         <span className="shrink-0 w-5 h-5 rounded-full bg-coral text-coral-foreground text-xs flex items-center justify-center font-semibold">{c.unread_count > 9 ? "9+" : c.unread_count}</span>
@@ -248,7 +233,7 @@ export default function Messages() {
                 <p className="text-xs text-muted-foreground mt-1">{t("messages.startConversationBelow")}</p>
               </div>
             ) : (messages || []).map((m: any) => (
-              <MessageBubble key={m.id} message={m} isMe={m.sender_id === user?.id} />
+              <MessageBubble key={m.id} message={m} isMe={m.sender_id === profile?.id} />
             ))}
             <div ref={messagesEndRef} />
           </div>
@@ -299,7 +284,7 @@ export default function Messages() {
             </div>
             {newConvoSearch.length >= 2 && (
               <div className="border rounded-lg max-h-64 overflow-y-auto">
-                {(newConvoResults || []).length > 0 ? (newConvoResults || []).filter((p: any) => p.id !== user?.id).map((p: any) => (
+                {(newConvoResults || []).length > 0 ? (newConvoResults || []).filter((p: any) => p.id !== profile?.id).map((p: any) => (
                   <button key={p.id} className="w-full flex items-center gap-3 p-3 hover:bg-accent text-left border-b last:border-b-0 transition-colors"
                     onClick={() => handleStartConversation(p)} disabled={startConversation.isPending}>
                     <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">

@@ -1,0 +1,42 @@
+<!-- wp:html -->
+<style>
+#notif70-all{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+#notif70-all .n70-card{background:#fff;border-radius:.75rem;box-shadow:0 1px 3px rgba(0,0,0,.1);border:1px solid transparent;padding:1rem 1.25rem;margin-bottom:.75rem;display:flex;align-items:flex-start;gap:.75rem}
+#notif70-all .n70-card.unread{border-left:3px solid #0d9488;background:#f0fdf4}
+#notif70-all .n70-icon{width:40px;height:40px;border-radius:.75rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.125rem}
+#notif70-all .n70-system{background:rgba(100,116,139,.1);color:#64748b}
+#notif70-all .n70-booking{background:rgba(59,130,246,.1);color:#3b82f6}
+#notif70-all .n70-task{background:rgba(245,158,11,.1);color:#f59e0b}
+#notif70-all .n70-message{background:rgba(13,148,136,.1);color:#0d9488}
+#notif70-all .n70-invite{background:rgba(168,85,247,.1);color:#a855f7}
+#notif70-all .n70-body{flex:1;min-width:0}
+#notif70-all .n70-title{font-size:.9375rem;font-weight:500;color:#0f172a;margin:0 0 .25rem}
+#notif70-all .n70-desc{font-size:.8125rem;color:#64748b;margin:0}
+#notif70-all .n70-time{font-size:.7rem;color:#94a3b8;margin-top:.25rem}
+#notif70-all .n70-action{margin-top:.5rem;background:none;border:none;color:#64748b;font-size:.75rem;cursor:pointer;padding:0}
+#notif70-all .n70-empty{text-align:center;padding:3rem 1rem;color:#94a3b8;font-size:.875rem}
+</style>
+<div id="notif70-all" class="n70-panel active" data-panel="all">
+  <div class="n70-empty">Loading notifications...</div>
+</div>
+<script>
+(function(){
+  const root=document.getElementById('notif70-all');
+  const typeClass={booking:'n70-booking',booking_rescheduled:'n70-booking',task:'n70-task',message:'n70-message',care_group_invite:'n70-invite',default:'n70-system'};
+  const typeEmoji={booking:'📅',booking_rescheduled:'📅',task:'✅',message:'💬',care_group_invite:'👥',default:'🔔'};
+  function timeAgo(d){const s=Math.floor((Date.now()-new Date(d).getTime())/1000);if(s<60)return'Just now';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago'}
+  function strip(v){return (v||'').replace(/<[^>]*>/g,'')}
+  function render(){
+    const api=window.__notif70;if(!api)return; const items=(api.state.items||[]);
+    if(!items.length){root.innerHTML='<div class="n70-empty">No notifications yet</div>';return}
+    root.innerHTML=items.map(n=>{
+      const type=n.meta?.type||'default'; const isRead=!!n.meta?.is_read;
+      const mark=!isRead?'<button class="n70-action" type="button" onclick="window.__notif70.update('+n.id+',{meta:{...(window.__notif70.state.items.find(x=>x.id=='+n.id+')?.meta||{}),is_read:true}})">Mark as read</button>':'';
+      return '<div class="n70-card '+(isRead?'':'unread')+'"><div class="n70-icon '+(typeClass[type]||'n70-system')+'">'+(typeEmoji[type]||'🔔')+'</div><div class="n70-body"><h3 class="n70-title">'+(n.title?.rendered||'Notification')+'</h3><p class="n70-desc">'+strip(n.content?.rendered||'')+'</p><div class="n70-time">'+timeAgo(n.date)+'</div>'+mark+'</div></div>';
+    }).join('');
+  }
+  function bind(){const api=window.__notif70;if(!api)return false;api.on('data',render);api.on('tab',render);render();return true}
+  if(!bind()){const t=setInterval(()=>{if(bind())clearInterval(t)},200)}
+})();
+</script>
+<!-- /wp:html -->

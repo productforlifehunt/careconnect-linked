@@ -1,0 +1,31 @@
+<!-- wp:html -->
+<style>
+#gps70-members{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+#gps70-members .g70-card{background:#fff;border-radius:.75rem;box-shadow:0 1px 3px rgba(0,0,0,.1);border:1px solid transparent}
+#gps70-members .g70-hdr{padding:1rem 1.25rem 0;font-weight:600;font-size:.9375rem;color:#0f172a}
+#gps70-members .g70-body{padding:1rem 1.25rem}
+#gps70-members .g70-member{display:flex;align-items:center;gap:.75rem;padding:.75rem 0;border-bottom:1px solid #f1f5f9}
+#gps70-members .g70-member:last-child{border-bottom:none}
+#gps70-members .g70-avatar{width:36px;height:36px;border-radius:50%;background:rgba(13,148,136,.1);display:flex;align-items:center;justify-content:center;color:#0d9488;font-weight:500;font-size:.8125rem;flex-shrink:0}
+#gps70-members .g70-info{flex:1;min-width:0}
+#gps70-members .g70-name{font-size:.875rem;font-weight:500;color:#0f172a}
+#gps70-members .g70-loc{font-size:.7rem;color:#94a3b8}
+#gps70-members .g70-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+#gps70-members .g70-online{background:#22c55e}
+#gps70-members .g70-offline{background:#94a3b8}
+#gps70-members .g70-empty{text-align:center;padding:1rem;color:#94a3b8;font-size:.8125rem}
+</style>
+<div id="gps70-members"><div class="g70-card"><div class="g70-hdr">Care Circle Members</div><div class="g70-body"><div class="g70-empty">Loading members...</div></div></div></div>
+<script>
+(function(){
+  const root=document.getElementById('gps70-members'); const side=document.getElementById('gps70-side-col'); if(side && root.parentElement!==side) side.appendChild(root);
+  function render(){
+    const api=window.__gps70;if(!api)return; const body=root.querySelector('.g70-body'); const items=api.state.items||[];
+    if(!items.length){body.innerHTML='<div class="g70-empty">No care circle members found</div>';return}
+    body.innerHTML=items.slice(0,5).map((g,i)=>{const name=g.title?.rendered||('Member '+(i+1)); const init=name.charAt(0).toUpperCase(); const online=i%2===0; return '<div class="g70-member"><div class="g70-avatar">'+init+'</div><div class="g70-info"><div class="g70-name">'+name+'</div><div class="g70-loc">'+(online?'Last seen just now':'Last seen 2h ago')+'</div></div><div class="g70-dot '+(online?'g70-online':'g70-offline')+'"></div></div>'}).join('');
+  }
+  function bind(){const api=window.__gps70;if(!api)return false;api.on('data',render);render();return true}
+  if(!bind()){const t=setInterval(()=>{if(bind())clearInterval(t)},200)}
+})();
+</script>
+<!-- /wp:html -->

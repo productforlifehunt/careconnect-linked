@@ -21,7 +21,7 @@ import {
   useLocationRequests, useSendLocationRequest, useCancelLocationRequest,
   useCaredOneLocationSettings, useShareMyLocation,
 } from "@/hooks/use-care-data";
-import { careAuth } from "@/integrations/supabase/external-client";
+
 import { useToast } from "@/hooks/use-toast";
 
 // ─── Inject Leaflet CSS once ────────────────────────────────
@@ -167,7 +167,7 @@ function checkZoneBreach(zone: any, lat: number, lng: number): { breached: boole
     distance = haversine(lat, lng, zone.latitude, zone.longitude);
   } else {
     distance = haversine(lat, lng, zone.latitude, zone.longitude);
-    inside = distance <= (zone.radius || 200);
+    inside = distance <= (zone.radius_meters || 200);
   }
   return { breached: zone.zone_type === "danger" ? inside : !inside, distance: Math.round(distance) };
 }
@@ -268,7 +268,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
           iconSize: [22, 22], iconAnchor: [11, 11],
         });
         mapLayersRef.current.push(Lx.marker([lat, lng], { icon }).addTo(map)
-          .bindPopup(`<b>${caredOneName}</b><br>${currentLocation.address || `${lat.toFixed(4)}, ${lng.toFixed(4)}`}`));
+          .bindPopup(`<b>${caredOneName}</b><br>${currentLocation.address_text || `${lat.toFixed(4)}, ${lng.toFixed(4)}`}`));
       }
     }
 
@@ -286,8 +286,8 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
         mapLayersRef.current.push(poly);
         pts.forEach((pt: [number, number]) => bounds.push(pt));
       } else {
-        const c = Lx.circle([zLat, zLng], { radius: zone.radius || 200, color, fillColor: color, fillOpacity: 0.15, weight: 2, dashArray: zone.zone_type === "danger" ? "6,4" : undefined })
-          .addTo(map).bindPopup(`<b>${zone.name}</b><br>${zone.radius || 200}m`);
+        const c = Lx.circle([zLat, zLng], { radius: zone.radius_meters || 200, color, fillColor: color, fillOpacity: 0.15, weight: 2, dashArray: zone.zone_type === "danger" ? "6,4" : undefined })
+          .addTo(map).bindPopup(`<b>${zone.name}</b><br>${zone.radius_meters || 200}m`);
         mapLayersRef.current.push(c);
         bounds.push([zLat, zLng]);
       }
@@ -550,7 +550,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
         name: zone.name || "", zone_type: zone.zone_type || "safe", category: zone.category || "home",
         shape_type: zone.shape_type || "radius",
         latitude: zone.latitude?.toString() || "", longitude: zone.longitude?.toString() || "",
-        radius: zone.radius || 200, description: zone.description || "",
+        radius: zone.radius_meters || 200, description: zone.description || "",
         polygon_points: zone.polygon_points || [], corner_radius: zone.corner_radius || [],
         notify_on_enter: zone.notify_on_enter ?? true, notify_on_exit: zone.notify_on_exit ?? true,
         schedule_enabled: zone.schedule_enabled ?? false,
@@ -595,7 +595,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
       shape_type: isPolygon ? "polygon" : "radius",
       category: zoneForm.zone_type === "danger" ? "custom" : zoneForm.category,
       color, latitude: lat, longitude: lng,
-      radius: isPolygon ? 0 : zoneForm.radius,
+      radius_meters: isPolygon ? 0 : zoneForm.radius,
       polygon_points: isPolygon ? drawnPoints : null,
       corner_radius: isPolygon ? cornerRadii : null,
       description: zoneForm.description || null,
@@ -813,10 +813,10 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                   <span className="text-sm font-semibold text-foreground">Current Location</span>
                   <span className="text-xs text-muted-foreground">· {new Date(currentLocation.created_at).toLocaleString()}</span>
                 </div>
-                {currentLocation.address && <p className="text-sm text-foreground">{currentLocation.address}</p>}
+                {currentLocation.address_text && <p className="text-sm text-foreground">{currentLocation.address_text}</p>}
                 <p className="text-xs text-muted-foreground font-mono">
                   {parseFloat(currentLocation.latitude).toFixed(6)}, {parseFloat(currentLocation.longitude).toFixed(6)}
-                  {currentLocation.accuracy && ` ± ${Math.round(currentLocation.accuracy)}m`}
+                  {currentLocation.accuracy_meters && ` ± ${Math.round(currentLocation.accuracy_meters)}m`}
                 </p>
                 {currentLocation.battery_level != null && <p className="text-xs text-muted-foreground">🔋 {currentLocation.battery_level}%</p>}
 
@@ -1292,7 +1292,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                           {!active && <Badge variant="secondary" className="text-[10px]">⏰ Scheduled (inactive)</Badge>}
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {zone.shape_type === "polygon" ? "Custom shape" : `${zone.radius || 200}m radius`} · {catCfg.label}
+                          {zone.shape_type === "polygon" ? "Custom shape" : `${zone.radius_meters || 200}m radius`} · {catCfg.label}
                         </p>
                         {zone.description && <p className="text-xs text-muted-foreground">{zone.description}</p>}
                         {zone.schedule_enabled && zone.schedule_start_time && (

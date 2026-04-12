@@ -1,0 +1,37 @@
+<!-- wp:html -->
+<style>
+#provider70-requests{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+#provider70-requests .pv70-card{background:#fff;border-radius:.75rem;box-shadow:0 1px 3px rgba(0,0,0,.1);border:1px solid #e2e8f0;padding:1rem;margin-bottom:.75rem;background:#fafafa}
+#provider70-requests .pv70-top{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:.5rem}
+#provider70-requests .pv70-info{display:flex;align-items:center;gap:.75rem}
+#provider70-requests .pv70-avatar{width:40px;height:40px;border-radius:.75rem;background:rgba(13,148,136,.1);display:flex;align-items:center;justify-content:center;color:#0d9488;font-weight:500;flex-shrink:0}
+#provider70-requests .pv70-name{font-weight:500;font-size:.9375rem;color:#0f172a}
+#provider70-requests .pv70-service{font-size:.8125rem;color:#64748b}
+#provider70-requests .pv70-meta{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;font-size:.8125rem;color:#64748b;margin:.5rem 0}
+#provider70-requests .pv70-badge{display:inline-block;padding:.125rem .5rem;border-radius:9999px;font-size:.7rem;font-weight:500}
+#provider70-requests .pv70-pending{background:#fef3c7;color:#92400e}
+#provider70-requests .pv70-confirmed{background:#dcfce7;color:#166534}
+#provider70-requests .pv70-completed{background:#f1f5f9;color:#64748b}
+#provider70-requests .pv70-actions{display:flex;gap:.5rem}
+#provider70-requests .pv70-btn{display:inline-flex;align-items:center;gap:.375rem;padding:.375rem .75rem;border:none;border-radius:.5rem;font-size:.8125rem;font-weight:500;cursor:pointer}
+#provider70-requests .pv70-accept{background:#22c55e;color:#fff}
+#provider70-requests .pv70-decline{background:#fff;color:#ef4444;border:1px solid rgba(239,68,68,.3)}
+#provider70-requests .pv70-empty{text-align:center;padding:3rem 1rem;color:#94a3b8;font-size:.875rem}
+</style>
+<div id="provider70-requests" class="pv70-panel active" data-panel="requests">
+  <div class="pv70-empty">Loading booking requests...</div>
+</div>
+<script>
+(function(){
+  const root=document.getElementById('provider70-requests');
+  function fmtDate(d){return new Date(d).toLocaleDateString('en',{month:'short',day:'numeric',year:'numeric'})}
+  function render(){
+    const api=window.__provider70;if(!api)return; const items=api.state.bookings||[];
+    if(!items.length){root.innerHTML='<div class="pv70-empty">No booking requests at the moment</div>';return}
+    root.innerHTML=items.map(b=>{const name=b.title?.rendered||'Client'; const init=name.charAt(0).toUpperCase(); const status=b.status||'pending'; const service=b.meta?.service_type||'Care'; const cost=b.meta?._booking_cost||'0'; const badge=status==='confirmed'?'pv70-confirmed':status==='completed'?'pv70-completed':'pv70-pending'; const actions=status==='pending'?'<div class="pv70-actions"><button class="pv70-btn pv70-accept" type="button" onclick="window.__provider70.updateBooking('+b.id+',{status:\'confirmed\'})">Accept</button><button class="pv70-btn pv70-decline" type="button" onclick="window.__provider70.updateBooking('+b.id+',{status:\'cancelled\'})">Decline</button></div>':''; return '<div class="pv70-card"><div class="pv70-top"><div class="pv70-info"><div class="pv70-avatar">'+init+'</div><div><div class="pv70-name">'+name+'</div><div class="pv70-service">'+service+'</div></div></div><span class="pv70-badge '+badge+'">'+status+'</span></div><div class="pv70-meta"><span>'+fmtDate(b.date)+'</span><span>'+(b.meta?._booking_start||'')+'</span><span style="font-weight:600;color:#0f172a">$'+cost+'</span></div>'+actions+'</div>'}).join('');
+  }
+  function bind(){const api=window.__provider70;if(!api)return false;api.on('data',render);api.on('tab',render);render();return true}
+  if(!bind()){const t=setInterval(()=>{if(bind())clearInterval(t)},200)}
+})();
+</script>
+<!-- /wp:html -->

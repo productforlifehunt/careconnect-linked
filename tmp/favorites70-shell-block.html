@@ -1,0 +1,28 @@
+<!-- wp:html -->
+<style>
+#fav70-shell{max-width:48rem;margin:0 auto;padding:1.5rem 1rem;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+#fav70-shell *{box-sizing:border-box}
+#fav70-shell .f70-header{margin-bottom:1.5rem}
+#fav70-shell .f70-header h1{font-size:1.5rem;font-weight:700;color:#0f172a;margin:0}
+#fav70-shell .f70-header p{margin:.25rem 0 0;font-size:.875rem;color:#64748b}
+</style>
+<div id="fav70-shell">
+  <div class="f70-header">
+    <h1>Saved Providers</h1>
+    <p>Your favorite care providers</p>
+  </div>
+</div>
+<script>
+(function(){
+  const base='/careconnected/wp-json/wp/v2';
+  const state={items:[],listeners:{}};
+  function emit(name){(state.listeners[name]||[]).forEach(fn=>{try{fn(state)}catch(e){}})}
+  function on(name,fn){state.listeners[name]=state.listeners[name]||[];state.listeners[name].push(fn);return()=>state.listeners[name]=(state.listeners[name]||[]).filter(x=>x!==fn)}
+  function nonce(){return document.querySelector('meta[name="wp-nonce"]')?.content||''}
+  async function load(){try{const r=await fetch(base+'/saved_provider?per_page=50',{credentials:'include'});state.items=r.ok?await r.json():[]}catch(e){state.items=[]}emit('data')}
+  async function remove(id){await fetch(base+'/saved_provider/'+id+'?force=true',{method:'DELETE',credentials:'include',headers:{'X-WP-Nonce':nonce()}});await load()}
+  window.__fav70={state,on,emit,load,remove};
+  load();
+})();
+</script>
+<!-- /wp:html -->

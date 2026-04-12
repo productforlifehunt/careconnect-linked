@@ -74,8 +74,8 @@ export default function CaredOnes() {
   const [isPrimary, setIsPrimary] = useState(false);
   const { data: searchResults } = useSearchProfiles(searchQuery);
 
-  const selectedId = activeTab || (caredOnes && caredOnes.length > 0 ? caredOnes[0].cared_one_id : null);
-  const selectedCaredOne = caredOnes?.find((c: any) => c.cared_one_id === selectedId);
+  const selectedId = activeTab || (caredOnes && caredOnes.length > 0 ? caredOnes[0].user_id : null);
+  const selectedCaredOne = caredOnes?.find((c: any) => c.user_id === selectedId);
   const caredOneName = selectedCaredOne?.cared_one?.full_name || selectedCaredOne?.cared_one?.first_name || site.caredOneSingular;
 
   const featureCards = [
@@ -176,8 +176,8 @@ export default function CaredOnes() {
             {caredOnes.map((co: any) => {
               const name = co.cared_one?.full_name || co.cared_one?.first_name || site.caredOneSingular;
               return (
-                <div key={co.cared_one_id} className={`group relative flex items-center gap-1 rounded-lg border transition-colors ${selectedId === co.cared_one_id ? "bg-card border-primary shadow-sm" : "bg-transparent border-border hover:bg-accent/50"}`}>
-                  <button onClick={() => { setActiveTab(co.cared_one_id); setOpenCard(null); }} className="px-4 py-2 text-sm font-medium">
+                <div key={co.user_id} className={`group relative flex items-center gap-1 rounded-lg border transition-colors ${selectedId === co.user_id ? "bg-card border-primary shadow-sm" : "bg-transparent border-border hover:bg-accent/50"}`}>
+                  <button onClick={() => { setActiveTab(co.user_id); setOpenCard(null); }} className="px-4 py-2 text-sm font-medium">
                     {name}{co.relationship && <span className="text-xs text-muted-foreground ml-1">({co.relationship})</span>}
                   </button>
                   <AlertDialog>

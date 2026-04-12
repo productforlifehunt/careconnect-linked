@@ -13,6 +13,7 @@ import {
   LayoutDashboard,
   Briefcase,
   Settings,
+  ShoppingCart,
 } from "lucide-react";
 
 function useSidebarItems() {
@@ -28,6 +29,7 @@ function useSidebarItems() {
     { title: "GPS Tracking", url: "/gps-tracking", icon: MapPin },
     { title: "Favorites", url: "/favorites", icon: HeartIcon },
     { title: "Provider Dashboard", url: "/provider-dashboard", icon: Settings },
+    { title: "Cart", url: "/cart", icon: ShoppingCart },
     { title: "Notifications", url: "/notifications", icon: Bell },
     { title: "My Profile", url: "/profile", icon: User },
   ];

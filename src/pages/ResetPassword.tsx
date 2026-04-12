@@ -5,8 +5,8 @@ import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { careAuth } from "@/integrations/supabase/external-client";
 import { useToast } from "@/hooks/use-toast";
+import { wpChangePassword } from "@/services/wp-auth";
 import { useTranslation } from "react-i18next";
 import { Heart, Loader2 } from "lucide-react";
 
@@ -20,12 +20,9 @@ export default function ResetPassword() {
   const [isRecovery, setIsRecovery] = useState(false);
 
   useEffect(() => {
-    const { data: { subscription } } = careAuth.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") setIsRecovery(true);
-    });
+    // Password reset is managed via WordPress
     const hash = window.location.hash;
     if (hash.includes("type=recovery")) setIsRecovery(true);
-    return () => subscription.unsubscribe();
   }, []);
 
   const handleReset = async () => {
@@ -39,10 +36,9 @@ export default function ResetPassword() {
     }
     setLoading(true);
     try {
-      const { error } = await careAuth.auth.updateUser({ password });
-      if (error) throw error;
-      toast({ title: t("resetPw.passwordUpdated") });
-      navigate("/dashboard");
+      await wpChangePassword(password);
+      toast({ title: t("resetPw.passwordUpdated", "Password Updated"), description: t("resetPw.passwordUpdatedDesc", "Your password has been changed successfully.") });
+      navigate("/auth");
     } catch (err: any) {
       toast({ title: t("resetPw.resetFailed"), description: err.message, variant: "destructive" });
     } finally {

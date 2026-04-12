@@ -45,14 +45,14 @@ export default function Notifications() {
   };
 
   const handleAccept = (inv: any) => {
-    acceptInvitation.mutate({ id: inv.id, care_group_id: inv.care_group_id, source: inv.source }, {
+    acceptInvitation.mutate(inv.id, {
       onSuccess: () => toast({ title: t("notifs.joined"), description: t("notifs.joinedDesc", { name: inv.group?.name || site.careGroupSingular }) }),
       onError: (err: any) => toast({ title: t("notifs.failedToJoin"), description: err.message, variant: "destructive" }),
     });
   };
 
   const handleDecline = (inv: any) => {
-    declineInvitation.mutate({ id: inv.id, source: inv.source }, {
+    declineInvitation.mutate(inv.id, {
       onSuccess: () => toast({ title: t("notifs.invitationDeclined") }),
     });
   };

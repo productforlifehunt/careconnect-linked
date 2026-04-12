@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileText, Loader2, RefreshCw } from "lucide-react";
 import { invokeAI } from "@/lib/ai-service";
+import { useTranslation } from "react-i18next";
 
 interface AIDailySummaryProps {
   caredOneName: string;
@@ -12,6 +13,7 @@ interface AIDailySummaryProps {
 }
 
 export function AIDailySummary({ caredOneName, medicines, tasks, checkins }: AIDailySummaryProps) {
+  const { t } = useTranslation();
   const [summary, setSummary] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -38,7 +40,7 @@ export function AIDailySummary({ caredOneName, medicines, tasks, checkins }: AID
       setSummary(reply);
     } catch (err) {
       console.error("Daily summary error:", err);
-      setSummary("Unable to generate summary right now.");
+      setSummary(t("common.tryAgain"));
     } finally {
       setLoading(false);
     }
@@ -49,27 +51,27 @@ export function AIDailySummary({ caredOneName, medicines, tasks, checkins }: AID
       <CardHeader className="flex-row items-center justify-between pb-2">
         <CardTitle className="text-base flex items-center gap-2">
           <FileText className="h-4 w-4 text-primary" />
-          AI Daily Summary
+          {t("ai.aiDailySummary")}
         </CardTitle>
         <Button variant="ghost" size="sm" onClick={generate} disabled={loading} className="h-7 text-xs">
           {loading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <RefreshCw className="h-3 w-3 mr-1" />}
-          {summary ? "Refresh" : "Generate"}
+          {summary ? t("common.refresh") : t("ai.generate")}
         </Button>
       </CardHeader>
       <CardContent>
         {loading && !summary ? (
           <div className="py-4 text-center text-xs text-muted-foreground animate-pulse">
-            Analyzing today's care data...
+            {t("ai.analyzingData")}
           </div>
         ) : summary ? (
           <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{summary}</p>
         ) : (
           <div className="text-center py-4">
             <p className="text-xs text-muted-foreground mb-2">
-              Get an AI-generated summary of {caredOneName}'s care today
+              {t("ai.getSummaryDesc", { name: caredOneName })}
             </p>
             <Button size="sm" variant="outline" onClick={generate}>
-              Generate Summary
+              {t("ai.generateSummary")}
             </Button>
           </div>
         )}

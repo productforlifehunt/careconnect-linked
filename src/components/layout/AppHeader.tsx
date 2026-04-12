@@ -16,15 +16,16 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { NavLink } from "@/components/NavLink";
-import { Menu, User, LogOut, LayoutDashboard, Bell, Heart, Search, HelpCircle, CalendarDays, Users, MapPin, MessageSquare, Sun, Moon } from "lucide-react";
+import { Menu, User, LogOut, LayoutDashboard, Bell, Heart, Search, HelpCircle, CalendarDays, Users, MapPin, MessageSquare, Sun, Moon, Newspaper, Bot, Building2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { useTheme } from "next-themes";
 import { useNotifications } from "@/hooks/use-care-data";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import yichangIcon from "@/assets/yichang-icon.png";
 
 export function AppHeader() {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout, authSource } = useAuth();
   const site = useSite();
   const navigate = useNavigate();
   const location = useLocation();
@@ -32,13 +33,30 @@ export function AppHeader() {
   const { theme, setTheme } = useTheme();
   const { data: notifications } = useNotifications();
   const unreadCount = notifications?.filter(n => !n.is_read).length || 0;
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isChinese = i18n.language?.startsWith("zh");
 
-  const publicNav = [
-    { title: site.navLabels.careGroups, url: "/care-circle", icon: Users },
-    { title: site.navLabels.findCare, url: "/search", icon: Search },
-    { title: t("nav.howItWorks"), url: "/how-it-works", icon: HelpCircle },
-  ];
+  const isChallengedChinese = site.id === "challenged" && isChinese;
+
+  const publicNav = isChallengedChinese
+    ? [
+        { title: t("nav.findCaregivers"), url: "/search?service_category=care", icon: Search },
+        { title: t("nav.findLocalCompanion"), url: "/search?service_type=local&service_category=companionship", icon: Heart },
+        { title: t("nav.findRemoteCompanion"), url: "/search?service_type=remote&service_category=companionship", icon: MessageSquare },
+        { title: t("nav.aiCompanion"), url: "/ai-companion", icon: Bot, badge: "小忆AI" },
+        { title: t("nav.seniorFacilities"), url: "/search?service_category=facility", icon: Building2 },
+        { title: t("nav.community"), url: "/community", icon: Newspaper },
+        { title: t("nav.articles"), url: "/articles", icon: Newspaper },
+        { title: t("nav.careTeams"), url: "/care-circle", icon: Users },
+        { title: t("nav.howItWorks"), url: "/how-it-works", icon: HelpCircle },
+      ]
+    : [
+        { title: t(site.id === "challenged" ? "nav.careTeams" : "nav.careGroups"), url: "/care-circle", icon: Users },
+        { title: t(site.id === "challenged" ? "nav.findHelp" : "nav.findCare"), url: "/search", icon: Search },
+        { title: t("nav.community"), url: "/community", icon: Newspaper },
+        { title: t("nav.articles"), url: "/articles", icon: Newspaper },
+        { title: t("nav.howItWorks"), url: "/how-it-works", icon: HelpCircle },
+      ];
 
   const displayName = user?.full_name || user?.first_name || user?.email || t("common.anonymous");
   const initials = displayName.charAt(0).toUpperCase();
@@ -61,13 +79,22 @@ export function AppHeader() {
           <SheetContent side="left" className="w-72 p-0">
             <div className="p-4 border-b">
               <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-lg hero-gradient flex items-center justify-center">
-                  <span className="text-primary-foreground font-bold text-sm">{site.logoText}</span>
-                </div>
-                <span className="font-bold text-lg">
-                  <span className="text-primary">{site.id === "challenged" ? "Ch" : "Care"}</span>
-                  <span className="text-muted-foreground">{site.logoAccent}</span>
-                </span>
+                {site.id === "challenged" && isChinese ? (
+                  <>
+                    <img src={yichangIcon} alt="忆畅" className="w-12 h-12 rounded-xl" />
+                    <span className="font-bold text-lg text-primary">忆畅</span>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-9 h-9 rounded-lg hero-gradient flex items-center justify-center">
+                      <span className="text-primary-foreground font-bold text-sm">{site.logoText}</span>
+                    </div>
+                    <span className="font-bold text-lg">
+                      <span className="text-primary">{site.id === "challenged" ? "Ch" : "Care"}</span>
+                      <span className="text-muted-foreground">{site.logoAccent}</span>
+                    </span>
+                  </>
+                )}
               </Link>
             </div>
             <nav className="p-4 space-y-1">
@@ -87,10 +114,10 @@ export function AppHeader() {
                 <>
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 mt-6 px-3">{t("nav.myCare")}</p>
                   {[
-                    { title: site.navLabels.dashboard, url: "/dashboard", icon: LayoutDashboard },
-                    { title: site.navLabels.caredOnes, url: "/cared-ones", icon: Heart },
+                    { title: t("nav.dashboard"), url: "/dashboard", icon: LayoutDashboard },
+                    { title: t(site.id === "challenged" ? "nav.myLovedOnes" : "nav.caredOnes"), url: "/cared-ones", icon: Heart },
                     { title: t("nav.myBookings"), url: "/bookings", icon: CalendarDays },
-                    { title: site.navLabels.careGroups, url: "/care-circle", icon: Users },
+                    { title: t(site.id === "challenged" ? "nav.careTeams" : "nav.careGroups"), url: "/care-circle", icon: Users },
                     { title: t("nav.messages"), url: "/messages", icon: MessageSquare },
                     { title: t("nav.favorites"), url: "/favorites", icon: Heart },
                     { title: t("nav.gpsTracking"), url: "/gps-tracking", icon: MapPin },
@@ -113,13 +140,22 @@ export function AppHeader() {
 
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 shrink-0">
-          <div className="w-9 h-9 rounded-lg hero-gradient flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-sm">{site.logoText}</span>
-          </div>
-          <span className="font-bold text-lg hidden sm:inline">
-            <span className="text-primary">{site.id === "challenged" ? "Ch" : "Care"}</span>
-            <span className="text-muted-foreground">{site.logoAccent}</span>
-          </span>
+          {site.id === "challenged" && isChinese ? (
+            <>
+              <img src={yichangIcon} alt="忆畅" className="w-12 h-12 rounded-xl" />
+              <span className="font-bold text-lg text-primary hidden sm:inline">忆畅</span>
+            </>
+          ) : (
+            <>
+              <div className="w-9 h-9 rounded-lg hero-gradient flex items-center justify-center">
+                <span className="text-primary-foreground font-bold text-sm">{site.logoText}</span>
+              </div>
+              <span className="font-bold text-lg hidden sm:inline">
+                <span className="text-primary">{site.id === "challenged" ? "Ch" : "Care"}</span>
+                <span className="text-muted-foreground">{site.logoAccent}</span>
+              </span>
+            </>
+          )}
         </Link>
 
         {/* Desktop horizontal nav */}
@@ -128,10 +164,17 @@ export function AppHeader() {
             <NavLink
               key={item.url}
               to={item.url}
-              className="px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+              className="px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors flex items-center gap-1"
               activeClassName="text-primary font-medium bg-accent/50"
             >
-              {item.title}
+              <span className="relative">
+                {item.title}
+                {"badge" in item && item.badge && (
+                  <span className="absolute -top-2.5 -right-8 px-1 py-px text-[9px] font-bold text-coral bg-coral/10 border border-coral/30 rounded-full whitespace-nowrap leading-tight">
+                    {item.badge}
+                  </span>
+                )}
+              </span>
             </NavLink>
           ))}
         </nav>
@@ -184,6 +227,11 @@ export function AppHeader() {
                     </div>
                   )}
                   <span className="hidden md:inline text-sm font-medium">{displayName}</span>
+                  {authSource === "wordpress" && (
+                    <Badge variant="outline" className="ml-1 text-[10px] px-1.5 py-0 h-4 border-amber-400 text-amber-600 dark:text-amber-400 font-medium">
+                      WP
+                    </Badge>
+                  )}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52 bg-card border shadow-lg z-[60]">
@@ -198,7 +246,7 @@ export function AppHeader() {
                   <CalendarDays className="mr-2 h-4 w-4" /> {t("nav.myBookings")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/care-circle")}>
-                  <Users className="mr-2 h-4 w-4" /> {site.navLabels.careGroups}
+                  <Users className="mr-2 h-4 w-4" /> {t(site.id === "challenged" ? "nav.careTeams" : "nav.careGroups")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/gps-tracking")}>
                   <MapPin className="mr-2 h-4 w-4" /> {t("nav.gpsTracking")}
@@ -212,6 +260,9 @@ export function AppHeader() {
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/favorites")}>
                   <Heart className="mr-2 h-4 w-4" /> {t("nav.favorites")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/facilities/new")}>
+                  <Building2 className="mr-2 h-4 w-4" /> {isChinese ? "提交养老院" : "Submit Facility"}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/notifications")}>
                   <Bell className="mr-2 h-4 w-4" /> {t("nav.notifications")}

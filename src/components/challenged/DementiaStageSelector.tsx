@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Brain, Check, ChevronRight } from "lucide-react";
 import { useUpdateDementiaStage } from "@/hooks/use-care-data";
 import { toast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 interface DementiaStageSelectorProps {
   caredOneId: string;
@@ -16,44 +17,45 @@ interface DementiaStageSelectorProps {
   currentStage?: string | null;
 }
 
-const STAGES = [
-  {
-    value: "early",
-    label: "Early Stage",
-    description: "Mild memory loss, some confusion. Independent in daily activities.",
-    color: "border-success/50 bg-success/5",
-    badgeClass: "bg-success/10 text-success",
-  },
-  {
-    value: "middle",
-    label: "Middle Stage",
-    description: "Increased assistance needed. Behavioral changes, wandering risk.",
-    color: "border-warning/50 bg-warning/5",
-    badgeClass: "bg-warning/10 text-warning",
-  },
-  {
-    value: "late",
-    label: "Late Stage",
-    description: "Full-time care required. Limited communication and mobility.",
-    color: "border-destructive/50 bg-destructive/5",
-    badgeClass: "bg-destructive/10 text-destructive",
-  },
-];
-
 export function DementiaStageSelector({ caredOneId, caredOneName, currentStage }: DementiaStageSelectorProps) {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState(currentStage || "");
   const updateStage = useUpdateDementiaStage();
+
+  const STAGES = [
+    {
+      value: "early",
+      label: t("dementiaStage.earlyStage"),
+      description: t("dementiaStage.earlyDesc"),
+      color: "border-success/50 bg-success/5",
+      badgeClass: "bg-success/10 text-success",
+    },
+    {
+      value: "middle",
+      label: t("dementiaStage.middleStage"),
+      description: t("dementiaStage.middleDesc"),
+      color: "border-warning/50 bg-warning/5",
+      badgeClass: "bg-warning/10 text-warning",
+    },
+    {
+      value: "late",
+      label: t("dementiaStage.lateStage"),
+      description: t("dementiaStage.lateDesc"),
+      color: "border-destructive/50 bg-destructive/5",
+      badgeClass: "bg-destructive/10 text-destructive",
+    },
+  ];
 
   const handleSave = async (stage: string) => {
     setSelected(stage);
     try {
       await updateStage.mutateAsync({ caredOneId, stage });
       toast({
-        title: "Stage updated",
-        description: `${caredOneName}'s care plan will adjust to ${stage} stage recommendations.`,
+        title: t("dementiaStage.stageUpdated"),
+        description: t("dementiaStage.stageUpdatedDesc", { name: caredOneName, stage }),
       });
     } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+      toast({ title: t("common.errorOccurred"), description: err.message, variant: "destructive" });
     }
   };
 
@@ -62,7 +64,7 @@ export function DementiaStageSelector({ caredOneId, caredOneName, currentStage }
       <CardHeader className="pb-2">
         <CardTitle className="text-base flex items-center gap-2">
           <Brain className="h-4 w-4 text-primary" />
-          Cognitive Stage — {caredOneName}
+          {t("dementiaStage.cognitiveStage")} — {caredOneName}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
@@ -83,7 +85,7 @@ export function DementiaStageSelector({ caredOneId, caredOneName, currentStage }
                     <span className="text-sm font-semibold text-foreground">{stage.label}</span>
                     {isActive && (
                       <Badge variant="outline" className={`text-[9px] px-1.5 ${stage.badgeClass}`}>
-                        <Check className="h-2.5 w-2.5 mr-0.5" /> Current
+                        <Check className="h-2.5 w-2.5 mr-0.5" /> {t("dementiaStage.current")}
                       </Badge>
                     )}
                   </div>
@@ -95,7 +97,7 @@ export function DementiaStageSelector({ caredOneId, caredOneName, currentStage }
           );
         })}
         <p className="text-[10px] text-muted-foreground text-center pt-1">
-          This adjusts AI recommendations, UI complexity, and care alerts.
+          {t("dementiaStage.adjustsNote")}
         </p>
       </CardContent>
     </Card>

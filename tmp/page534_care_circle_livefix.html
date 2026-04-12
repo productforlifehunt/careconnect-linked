@@ -1,0 +1,131 @@
+<div id="cc-livefix"><div style="padding:3rem 0;text-align:center;color:#6b7280">Loading...</div></div>
+<style>
+#cc-livefix{max-width:72rem;margin:0 auto;padding:1.5rem 1rem;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#111827}
+#cc-livefix *{box-sizing:border-box}
+#cc-livefix .row{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1rem}
+#cc-livefix .sub{font-size:.875rem;color:#6b7280;margin:0}
+#cc-livefix .btns{display:flex;gap:.5rem;flex-wrap:wrap}
+#cc-livefix .btn{display:inline-flex;align-items:center;justify-content:center;padding:.55rem 1rem;border-radius:8px;border:1px solid #e5e7eb;background:#fff;color:#374151;font-size:.875rem;font-weight:600;cursor:pointer}
+#cc-livefix .btn.primary{background:#0d9488;border-color:#0d9488;color:#fff}
+#cc-livefix .tabs{display:flex;gap:.25rem;overflow:auto;padding-bottom:.5rem;margin-bottom:1rem;border-bottom:1px solid #e5e7eb}
+#cc-livefix .tab{padding:.5rem .75rem;border:0;background:transparent;color:#6b7280;border-radius:8px 8px 0 0;font-size:.75rem;font-weight:600;white-space:nowrap}
+#cc-livefix .tab.on{background:#f0fdfa;color:#0d9488}
+#cc-livefix .card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:1rem;margin-bottom:1rem}
+#cc-livefix .empty{padding:3rem 1rem;text-align:center;color:#6b7280}
+#cc-livefix .group-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem}
+#cc-livefix .meta{font-size:.75rem;color:#6b7280;margin-top:.5rem}
+#cc-livefix .notice{padding:.875rem 1rem;border-radius:10px;background:#f9fafb;border:1px solid #e5e7eb;color:#374151;margin-bottom:1rem}
+@media (max-width:640px){#cc-livefix{padding:1rem}}
+</style>
+<script>
+(function(){
+const root=document.getElementById('cc-livefix');
+const BASE='/careconnected';
+let nonce='';
+let me=null;
+let groups=[];
+let memberships=[];
+let activeTab='home';
+
+function getMeta(item,key){
+  if(item && item.meta && item.meta[key] != null) return item.meta[key];
+  if(item && item.acf && item.acf[key] != null) return item.acf[key];
+  return '';
+}
+
+async function getNonce(){
+  if(nonce) return nonce;
+  const r=await fetch(BASE+'/wp-admin/admin-ajax.php?action=rest-nonce',{credentials:'include'});
+  nonce=(await r.text()).trim();
+  return nonce;
+}
+
+async function api(path, options){
+  const headers={'Content-Type':'application/json'};
+  const n=await getNonce();
+  if(n) headers['X-WP-Nonce']=n;
+  const res=await fetch(BASE+'/wp-json/'+path,{credentials:'include',headers,...(options||{})});
+  if(!res.ok) throw new Error('Request failed: '+res.status);
+  return res.json();
+}
+
+async function load(){
+  try{
+    me=await api('wp/v2/users/me');
+  }catch(e){
+    root.innerHTML='<div class="empty"><h2 style="margin:0 0 .5rem">Care Groups</h2><p class="sub" style="margin-bottom:1rem">Please sign in to access your care groups.</p><a class="btn primary" href="'+BASE+'/my-account/">Sign in</a></div>';
+    return;
+  }
+
+  const allGroups=await api('wp/v2/care_group?per_page=100&status=publish').catch(()=>[]);
+  const allMembers=await api('wp/v2/care_group_member?per_page=100&status=publish').catch(()=>[]);
+  memberships=allMembers.filter(function(m){
+    const uid=String(getMeta(m,'user_id')||getMeta(m,'user_wp_id')||m.author||'');
+    return uid===String(me.id);
+  });
+  const allowedGroupIds=new Set(memberships.map(function(m){ return String(getMeta(m,'group_id')||getMeta(m,'care_group_id')||''); }).filter(Boolean));
+  groups=allGroups.filter(function(g){ return allowedGroupIds.has(String(g.id)); }).map(function(g){
+    return {
+      id:g.id,
+      name:(g.title && g.title.rendered) || 'Care Group',
+      description:getMeta(g,'description') || '',
+      joinCode:getMeta(g,'join_code') || ''
+    };
+  });
+  render();
+}
+
+function render(){
+  const tabs=['Home','Calendar','Announcements','Tasks','Cared Ones','Check-Ins','Messages','Well Wishes','Members','Gallery'];
+  let html='';
+  html+='<div class="row"><div><h1 style="font-size:1.5rem;font-weight:700;margin:0 0 .25rem">Care Groups</h1><p class="sub">Coordinate care with your family and caregivers.</p></div><div class="btns"><button class="btn" id="cc-join">Join with Code</button><button class="btn primary" id="cc-create">New Group</button></div></div>';
+  html+='<div class="tabs">'+tabs.map(function(t){ return '<button class="tab'+(activeTab===t.toLowerCase()?' on':'')+'" data-tab="'+t.toLowerCase()+'">'+t+'</button>'; }).join('')+'</div>';
+  if(!groups.length){
+    html+='<div class="card empty"><div style="font-size:2rem;opacity:.3;margin-bottom:.75rem">Groups</div><h2 style="font-size:1.125rem;margin:0 0 .5rem">No Care Groups Yet</h2><p class="sub" style="margin-bottom:1rem">Create a care group to start coordinating care with your family and caregivers.</p><div class="btns" style="justify-content:center"><button class="btn primary" id="cc-create-empty">Create Care Group</button><button class="btn" id="cc-join-empty">Join with Code</button></div></div>';
+  } else {
+    html+='<div class="notice">You are a member of <strong>'+groups.length+'</strong> care group'+(groups.length===1?'':'s')+'.</div>';
+    html+='<div class="group-grid">'+groups.map(function(g){ return '<div class="card"><h3 style="margin:0 0 .5rem;font-size:1rem">'+g.name+'</h3><p class="sub">'+(g.description || 'Open this team from the WordPress editor or extend this page with task/member views next.')+'</p><div class="meta">Join code: '+(g.joinCode || 'Not set')+'</div></div>'; }).join('')+'</div>';
+  }
+  root.innerHTML=html;
+  bind();
+}
+
+function bind(){
+  Array.from(root.querySelectorAll('[data-tab]')).forEach(function(btn){
+    btn.onclick=function(){ activeTab=this.getAttribute('data-tab'); render(); };
+  });
+  const createIds=['cc-create','cc-create-empty'];
+  createIds.forEach(function(id){ const el=document.getElementById(id); if(el) el.onclick=createGroup; });
+  const joinIds=['cc-join','cc-join-empty'];
+  joinIds.forEach(function(id){ const el=document.getElementById(id); if(el) el.onclick=joinGroup; });
+}
+
+async function createGroup(){
+  const name=window.prompt('Group name');
+  if(!name || !name.trim()) return;
+  const description=window.prompt('Group description') || '';
+  const joinCode=Math.random().toString(36).slice(2,8).toUpperCase();
+  const created=await api('wp/v2/care_group',{method:'POST',body:JSON.stringify({title:name.trim(),status:'publish',meta:{description:description,join_code:joinCode,is_private:'0',created_by_wp_id:String(me.id)}})});
+  await api('wp/v2/care_group_member',{method:'POST',body:JSON.stringify({title:me.name || 'Owner',status:'publish',meta:{group_id:String(created.id),care_group_id:String(created.id),user_id:String(me.id),user_wp_id:String(me.id),member_name:me.name || '',is_admin:'1',is_owner:'1',is_cared_one:'0'}})});
+  await load();
+  window.alert('Care Group created. Join code: '+joinCode);
+}
+
+async function joinGroup(){
+  const code=(window.prompt('Enter join code') || '').trim().toUpperCase();
+  if(!code) return;
+  const allGroups=await api('wp/v2/care_group?per_page=100&status=publish');
+  const found=allGroups.find(function(g){ return String(getMeta(g,'join_code') || '').toUpperCase()===code; });
+  if(!found){ window.alert('Invalid join code'); return; }
+  const already=memberships.find(function(m){ return String(getMeta(m,'group_id')||getMeta(m,'care_group_id')||'')===String(found.id); });
+  if(already){ window.alert('You are already a member of this group'); return; }
+  await api('wp/v2/care_group_member',{method:'POST',body:JSON.stringify({title:me.name || 'Member',status:'publish',meta:{group_id:String(found.id),care_group_id:String(found.id),user_id:String(me.id),user_wp_id:String(me.id),member_name:me.name || '',is_admin:'0',is_owner:'0',is_cared_one:'0'}})});
+  await load();
+  window.alert('Joined group successfully');
+}
+
+load().catch(function(e){
+  root.innerHTML='<div class="empty"><h2 style="margin:0 0 .5rem">Care Groups</h2><p class="sub">Failed to load care groups.</p><p class="sub" style="margin-top:.5rem">'+String(e.message || e)+'</p></div>';
+});
+})();
+</script>

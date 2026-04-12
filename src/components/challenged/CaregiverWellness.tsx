@@ -11,18 +11,10 @@ import { Heart, Plus, Brain, SmilePlus, X } from "lucide-react";
 import { useCaregiverWellnessLogs, useCreateCaregiverWellnessLog } from "@/hooks/use-care-data";
 import { invokeAI } from "@/lib/ai-service";
 import { toast } from "@/hooks/use-toast";
-
-const MOOD_OPTIONS = [
-  { value: "great", emoji: "😊", label: "Great" },
-  { value: "good", emoji: "🙂", label: "Good" },
-  { value: "okay", emoji: "😐", label: "Okay" },
-  { value: "stressed", emoji: "😰", label: "Stressed" },
-  { value: "overwhelmed", emoji: "😩", label: "Overwhelmed" },
-];
-
-const STRESS_LEVELS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+import { useTranslation } from "react-i18next";
 
 export function CaregiverWellness() {
+  const { t } = useTranslation();
   const { data: logs, isLoading } = useCaregiverWellnessLogs();
   const createLog = useCreateCaregiverWellnessLog();
   const [showForm, setShowForm] = useState(false);
@@ -33,6 +25,14 @@ export function CaregiverWellness() {
   const [aiTip, setAiTip] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
 
+  const MOOD_OPTIONS = [
+    { value: "great", emoji: "😊", label: t("wellness.moods.great") },
+    { value: "good", emoji: "🙂", label: t("wellness.moods.good") },
+    { value: "okay", emoji: "😐", label: t("wellness.moods.okay") },
+    { value: "stressed", emoji: "😰", label: t("wellness.moods.stressed") },
+    { value: "overwhelmed", emoji: "😩", label: t("wellness.moods.overwhelmed") },
+  ];
+
   const handleSubmit = async () => {
     if (!mood) return;
     try {
@@ -42,19 +42,17 @@ export function CaregiverWellness() {
         sleep_hours: sleepHours,
         notes: notes || null,
       });
-      toast({ title: "Wellness logged", description: "Take care of yourself too! 💛" });
+      toast({ title: t("wellness.wellnessLogged"), description: t("wellness.wellnessLoggedDesc") });
       setShowForm(false);
       setMood("");
       setStressLevel(5);
       setSleepHours(7);
       setNotes("");
-
-      // Auto-trigger AI if stress is high
       if (stressLevel >= 7) {
         generateAISupport();
       }
     } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+      toast({ title: t("common.errorOccurred"), description: err.message, variant: "destructive" });
     }
   };
 
@@ -86,24 +84,23 @@ export function CaregiverWellness() {
       <CardHeader className="flex-row items-center justify-between pb-2">
         <CardTitle className="text-base flex items-center gap-2">
           <Heart className="h-4 w-4 text-primary" />
-          Your Wellness
+          {t("wellness.yourWellness")}
         </CardTitle>
         <div className="flex gap-1">
           <Button variant="ghost" size="sm" onClick={generateAISupport} disabled={aiLoading} className="h-7 text-xs">
             <Brain className={`h-3 w-3 mr-1 ${aiLoading ? "animate-spin" : ""}`} />
-            AI Support
+            {t("ai.aiSupport")}
           </Button>
           <Button variant="ghost" size="sm" onClick={() => setShowForm(!showForm)} className="h-7 text-xs">
-            {showForm ? <X className="h-3 w-3" /> : <><SmilePlus className="h-3 w-3 mr-1" /> Check-in</>}
+            {showForm ? <X className="h-3 w-3" /> : <><SmilePlus className="h-3 w-3 mr-1" /> {t("wellness.checkInBtn")}</>}
           </Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
         {showForm && (
           <div className="p-3 rounded-lg bg-muted/50 space-y-3">
-            {/* Mood selection */}
             <div>
-              <p className="text-xs font-medium text-foreground mb-1.5">How are you feeling?</p>
+              <p className="text-xs font-medium text-foreground mb-1.5">{t("wellness.howAreYou")}</p>
               <div className="flex gap-1.5">
                 {MOOD_OPTIONS.map(m => (
                   <button
@@ -119,58 +116,31 @@ export function CaregiverWellness() {
                 ))}
               </div>
             </div>
-
-            {/* Stress slider */}
             <div>
-              <p className="text-xs font-medium text-foreground mb-1">Stress Level: {stressLevel}/10</p>
-              <input
-                type="range"
-                min={1}
-                max={10}
-                value={stressLevel}
-                onChange={e => setStressLevel(parseInt(e.target.value))}
-                className="w-full h-1.5 accent-primary"
-              />
+              <p className="text-xs font-medium text-foreground mb-1">{t("wellness.stressLevel")}: {stressLevel}/10</p>
+              <input type="range" min={1} max={10} value={stressLevel} onChange={e => setStressLevel(parseInt(e.target.value))} className="w-full h-1.5 accent-primary" />
             </div>
-
-            {/* Sleep hours */}
             <div>
-              <p className="text-xs font-medium text-foreground mb-1">Sleep Last Night: {sleepHours}hrs</p>
-              <input
-                type="range"
-                min={0}
-                max={12}
-                step={0.5}
-                value={sleepHours}
-                onChange={e => setSleepHours(parseFloat(e.target.value))}
-                className="w-full h-1.5 accent-primary"
-              />
+              <p className="text-xs font-medium text-foreground mb-1">{t("wellness.sleepLastNight")}: {sleepHours}hrs</p>
+              <input type="range" min={0} max={12} step={0.5} value={sleepHours} onChange={e => setSleepHours(parseFloat(e.target.value))} className="w-full h-1.5 accent-primary" />
             </div>
-
-            <Textarea
-              className="text-xs min-h-[40px]"
-              placeholder="Any thoughts or notes..."
-              value={notes}
-              onChange={e => setNotes(e.target.value)}
-            />
+            <Textarea className="text-xs min-h-[40px]" placeholder={t("wellness.anyThoughts")} value={notes} onChange={e => setNotes(e.target.value)} />
             <Button size="sm" className="w-full h-7 text-xs" onClick={handleSubmit} disabled={createLog.isPending || !mood}>
-              {createLog.isPending ? "Saving..." : "Log Wellness"}
+              {createLog.isPending ? t("common.saving") : t("wellness.logWellness")}
             </Button>
           </div>
         )}
 
-        {/* AI Support */}
         {aiTip && (
           <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
             <div className="flex items-center gap-1.5 mb-1.5">
               <Heart className="h-3.5 w-3.5 text-primary" />
-              <span className="text-xs font-semibold text-foreground">AI Wellness Support</span>
+              <span className="text-xs font-semibold text-foreground">{t("ai.aiWellnessSupport")}</span>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line">{aiTip}</p>
           </div>
         )}
 
-        {/* Recent logs */}
         {isLoading ? (
           <div className="space-y-2">
             {[1, 2, 3].map(i => <Skeleton key={i} className="h-10 w-full rounded-lg" />)}
@@ -184,13 +154,13 @@ export function CaregiverWellness() {
                   <span className="text-sm">{moodInfo?.emoji || "😐"}</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-medium text-foreground">{moodInfo?.label || log.mood}</p>
-                    <p className="text-[10px] text-muted-foreground">{log.sleep_hours}hrs sleep</p>
+                    <p className="text-[10px] text-muted-foreground">{log.sleep_hours}hrs</p>
                   </div>
                   <Badge variant="outline" className={`text-[9px] px-1.5 ${stressColor(log.stress_level)}`}>
-                    Stress {log.stress_level}/10
+                    {t("wellness.stress")} {log.stress_level}/10
                   </Badge>
                   <span className="text-[10px] text-muted-foreground shrink-0">
-                    {new Date(log.created_at).toLocaleDateString("en", { month: "short", day: "numeric" })}
+                    {new Date(log.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
                   </span>
                 </div>
               );
@@ -198,7 +168,7 @@ export function CaregiverWellness() {
           </div>
         ) : (
           <p className="text-xs text-muted-foreground text-center py-3">
-            How are you doing today? Check in to track your wellness.
+            {t("wellness.howDoingToday")}
           </p>
         )}
       </CardContent>

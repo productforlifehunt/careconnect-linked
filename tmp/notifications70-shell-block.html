@@ -1,0 +1,46 @@
+<!-- wp:html -->
+<style>
+#notif70-shell{max-width:48rem;margin:0 auto;padding:1.5rem 1rem;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+#notif70-shell *{box-sizing:border-box}
+#notif70-shell .n70-header{display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;margin-bottom:1.5rem}
+#notif70-shell .n70-header h1{font-size:1.5rem;font-weight:700;color:#0f172a;margin:0}
+#notif70-shell .n70-header p{margin:.25rem 0 0;font-size:.875rem;color:#64748b}
+#notif70-shell .n70-link{font-size:.8125rem;color:#0d9488;background:none;border:none;cursor:pointer;font-weight:500}
+#notif70-shell .n70-tabs{display:flex;gap:0;background:#f1f5f9;border-radius:.5rem;padding:.25rem;margin-bottom:1rem;width:fit-content}
+#notif70-shell .n70-tab{padding:.5rem 1rem;border:none;border-radius:.375rem;background:transparent;color:#64748b;font-size:.8125rem;font-weight:500;cursor:pointer}
+#notif70-shell .n70-tab.active{background:#fff;color:#0f172a;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.n70-panel{display:none}
+.n70-panel.active{display:block}
+</style>
+<div id="notif70-shell">
+  <div class="n70-header">
+    <div>
+      <h1>Notifications</h1>
+      <p>Stay updated on your care activities</p>
+    </div>
+    <button class="n70-link" type="button" id="notif70-mark-all">Mark all as read</button>
+  </div>
+  <div class="n70-tabs">
+    <button class="n70-tab active" data-tab="all" type="button">All</button>
+    <button class="n70-tab" data-tab="invitations" type="button">Invitations</button>
+  </div>
+</div>
+<script>
+(function(){
+  const base='/careconnected/wp-json/wp/v2';
+  const state={tab:'all',items:[],listeners:{}};
+  function emit(name){(state.listeners[name]||[]).forEach(fn=>{try{fn(state)}catch(e){}})}
+  function on(name,fn){state.listeners[name]=state.listeners[name]||[];state.listeners[name].push(fn);return()=>state.listeners[name]=(state.listeners[name]||[]).filter(x=>x!==fn)}
+  function setTab(tab){state.tab=tab;document.querySelectorAll('#notif70-shell .n70-tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));document.querySelectorAll('.n70-panel').forEach(p=>p.classList.toggle('active',p.dataset-panel===tab));emit('tab')}
+  function nonce(){return document.querySelector('meta[name="wp-nonce"]')?.content||''}
+  async function load(){try{const r=await fetch(base+'/notification?per_page=50&orderby=date&order=desc',{credentials:'include'});state.items=r.ok?await r.json():[]}catch(e){state.items=[]}emit('data')}
+  async function update(id,payload){await fetch(base+'/notification/'+id,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json','X-WP-Nonce':nonce()},body:JSON.stringify(payload)});await load()}
+  async function markAll(){const unread=(state.items||[]).filter(n=>!n.meta?.is_read);for(const item of unread){await update(item.id,{meta:{...(item.meta||{}),is_read:true}})}}
+  window.__notif70={state,on,emit,setTab,load,update,markAll};
+  document.querySelectorAll('#notif70-shell .n70-tab').forEach(btn=>btn.addEventListener('click',()=>setTab(btn.dataset.tab)));
+  document.getElementById('notif70-mark-all').addEventListener('click',()=>markAll());
+  setTab('all');
+  load();
+})();
+</script>
+<!-- /wp:html -->

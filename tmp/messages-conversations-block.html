@@ -1,0 +1,302 @@
+<!-- wp:html -->
+<div id="messages-app" style="display:flex; height:calc(100vh - 200px); min-height:500px; background:#fff; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,0.1); overflow:hidden;">
+  
+  <!-- Conversation List Sidebar -->
+  <div id="convo-sidebar" style="width:300px; border-right:1px solid #e5e7eb; display:flex; flex-direction:column; flex-shrink:0;">
+    <div style="padding:1rem; border-bottom:1px solid #e5e7eb;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+        <h2 style="font-size:1.125rem; font-weight:600; margin:0;">Messages</h2>
+        <button id="new-convo-btn" style="background:#0d9488; color:white; border:none; border-radius:6px; padding:0.375rem 0.75rem; font-size:0.8rem; cursor:pointer;">+ New</button>
+      </div>
+      <input id="convo-search" type="text" placeholder="Search conversations..." style="width:100%; padding:0.5rem 0.75rem; border:1px solid #d1d5db; border-radius:6px; font-size:0.875rem; box-sizing:border-box;">
+    </div>
+    <div id="convo-list" style="flex:1; overflow-y:auto;">
+      <div style="text-align:center; padding:2rem; color:#9ca3af;">⏳ Loading...</div>
+    </div>
+  </div>
+  
+  <!-- Chat Area -->
+  <div id="chat-area" style="flex:1; display:flex; flex-direction:column;">
+    <div id="chat-placeholder" style="flex:1; display:flex; align-items:center; justify-content:center; color:#9ca3af;">
+      <div style="text-align:center;">
+        <div style="font-size:3rem; margin-bottom:1rem;">💬</div>
+        <div style="font-size:1.125rem;">Select a conversation to start messaging</div>
+      </div>
+    </div>
+    
+    <div id="chat-active" style="display:none; flex:1; flex-direction:column;">
+      <!-- Chat Header -->
+      <div id="chat-header" style="padding:1rem; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; gap:0.75rem;">
+        <button id="chat-back-btn" style="display:none; background:none; border:none; font-size:1.25rem; cursor:pointer; padding:0.25rem;">←</button>
+        <div id="chat-avatar" style="width:40px; height:40px; border-radius:50%; background:#0d9488; color:white; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:1rem;"></div>
+        <div>
+          <div id="chat-name" style="font-weight:600; color:#111827;"></div>
+          <div id="chat-status" style="font-size:0.75rem; color:#22c55e;">Online</div>
+        </div>
+      </div>
+      
+      <!-- Messages -->
+      <div id="chat-messages" style="flex:1; overflow-y:auto; padding:1rem; display:flex; flex-direction:column; gap:0.5rem;"></div>
+      
+      <!-- Input -->
+      <div style="padding:1rem; border-top:1px solid #e5e7eb; display:flex; gap:0.5rem; align-items:center;">
+        <input id="chat-input" type="text" placeholder="Type a message..." style="flex:1; padding:0.625rem 1rem; border:1px solid #d1d5db; border-radius:9999px; font-size:0.875rem;">
+        <button id="chat-send" style="background:#0d9488; color:white; border:none; border-radius:50%; width:40px; height:40px; cursor:pointer; font-size:1.125rem; display:flex; align-items:center; justify-content:center;">➤</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- New Conversation Modal -->
+<div id="new-convo-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999;">
+  <div style="background:white; border-radius:12px; padding:2rem; max-width:400px; width:90%; margin:auto; position:relative; top:50%; transform:translateY(-50%);">
+    <h3 style="font-size:1.125rem; font-weight:600; margin:0 0 1rem;">New Conversation</h3>
+    <input id="new-convo-search" type="text" placeholder="Search users..." style="width:100%; padding:0.5rem 0.75rem; border:1px solid #d1d5db; border-radius:6px; font-size:0.875rem; box-sizing:border-box; margin-bottom:1rem;">
+    <div id="new-convo-results" style="max-height:200px; overflow-y:auto;"></div>
+    <div style="display:flex; justify-content:flex-end; margin-top:1rem;">
+      <button onclick="document.getElementById('new-convo-modal').style.display='none'" style="padding:0.5rem 1rem; background:#e5e7eb; color:#374151; border:none; border-radius:6px; cursor:pointer;">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const baseUrl = '/careconnected/wp-json/wp/v2';
+  let currentUserId = null;
+  let activeConvoId = null;
+  let conversations = [];
+  let pollInterval = null;
+
+  async function getUser() {
+    if (currentUserId) return currentUserId;
+    try {
+      const res = await fetch(baseUrl + '/users/me', { credentials:'include' });
+      if (!res.ok) return null;
+      const u = await res.json();
+      currentUserId = u.id;
+      return u.id;
+    } catch(e) { return null; }
+  }
+
+  function timeAgo(dateStr) {
+    const now = new Date();
+    const d = new Date(dateStr);
+    const diff = Math.floor((now - d) / 1000);
+    if (diff < 60) return 'Just now';
+    if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+    if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+    return Math.floor(diff/86400) + 'd ago';
+  }
+
+  function convoItem(c, isActive) {
+    const name = c.title?.rendered || 'Conversation';
+    const initial = name.charAt(0).toUpperCase();
+    const lastMsg = c.meta?.last_message || 'No messages yet';
+    const lastDate = c.meta?.last_message_date || c.date;
+    const unread = c.meta?.unread_count || 0;
+    const bg = isActive ? '#f0fdfa' : 'transparent';
+    const border = isActive ? '2px solid #0d9488' : '1px solid transparent';
+    return '<div class="convo-item" data-id="'+c.id+'" data-name="'+name+'" style="padding:0.75rem 1rem; cursor:pointer; border-left:'+border+'; background:'+bg+'; border-bottom:1px solid #f3f4f6; transition:all 0.15s;" onmouseover="this.style.background=\'#f9fafb\'" onmouseout="this.style.background=\''+(isActive?'#f0fdfa':'transparent')+'\'"">'
+      + '<div style="display:flex; align-items:center; gap:0.75rem;">'
+      + '<div style="width:40px; height:40px; border-radius:50%; background:#0d9488; color:white; display:flex; align-items:center; justify-content:center; font-weight:600; flex-shrink:0;">'+initial+'</div>'
+      + '<div style="flex:1; min-width:0;">'
+      + '<div style="display:flex; justify-content:space-between; align-items:center;">'
+      + '<div style="font-weight:'+(unread>0?'700':'500')+'; color:#111827; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'+name+'</div>'
+      + '<div style="font-size:0.7rem; color:#9ca3af; flex-shrink:0;">'+timeAgo(lastDate)+'</div></div>'
+      + '<div style="font-size:0.8rem; color:#6b7280; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'+lastMsg+'</div>'
+      + '</div>'
+      + (unread > 0 ? '<div style="background:#0d9488; color:white; border-radius:50%; min-width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:0.7rem; font-weight:600;">'+unread+'</div>' : '')
+      + '</div></div>';
+  }
+
+  function msgBubble(m, isMine) {
+    const text = m.content?.rendered || m.meta?.message_text || '';
+    const time = new Date(m.date).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
+    const align = isMine ? 'flex-end' : 'flex-start';
+    const bg = isMine ? '#0d9488' : '#f3f4f6';
+    const color = isMine ? 'white' : '#111827';
+    return '<div style="display:flex; justify-content:'+align+';">'
+      + '<div style="max-width:70%; padding:0.625rem 1rem; border-radius:1rem; background:'+bg+'; color:'+color+'; font-size:0.875rem;">'
+      + '<div>'+text+'</div>'
+      + '<div style="font-size:0.65rem; opacity:0.7; margin-top:0.25rem; text-align:right;">'+time+'</div>'
+      + '</div></div>';
+  }
+
+  async function loadConversations() {
+    const userId = await getUser();
+    if (!userId) {
+      document.getElementById('convo-list').innerHTML = '<div style="text-align:center; padding:2rem; color:#9ca3af;">🔒 Please log in</div>';
+      return;
+    }
+    try {
+      const res = await fetch(baseUrl + '/chat_conversation?author='+userId+'&per_page=50&orderby=modified&order=desc', { credentials:'include' });
+      if (!res.ok) throw new Error('Failed');
+      conversations = await res.json();
+      renderConversations();
+    } catch(e) {
+      document.getElementById('convo-list').innerHTML = '<div style="text-align:center; padding:2rem; color:#9ca3af;">💬 No conversations yet</div>';
+    }
+  }
+
+  function renderConversations(filter) {
+    const list = document.getElementById('convo-list');
+    let filtered = conversations;
+    if (filter) {
+      const q = filter.toLowerCase();
+      filtered = conversations.filter(c => (c.title?.rendered || '').toLowerCase().includes(q));
+    }
+    if (filtered.length === 0) {
+      list.innerHTML = '<div style="text-align:center; padding:2rem; color:#9ca3af;">No conversations found</div>';
+      return;
+    }
+    list.innerHTML = filtered.map(c => convoItem(c, c.id === activeConvoId)).join('');
+    list.querySelectorAll('.convo-item').forEach(el => {
+      el.addEventListener('click', () => openConversation(parseInt(el.dataset.id), el.dataset.name));
+    });
+  }
+
+  async function openConversation(convoId, name) {
+    activeConvoId = convoId;
+    renderConversations();
+    document.getElementById('chat-placeholder').style.display = 'none';
+    const chatActive = document.getElementById('chat-active');
+    chatActive.style.display = 'flex';
+    document.getElementById('chat-avatar').textContent = name.charAt(0).toUpperCase();
+    document.getElementById('chat-name').textContent = name;
+
+    // Load messages for this conversation
+    try {
+      const res = await fetch(baseUrl + '/chat_message?meta_key=conversation_id&meta_value='+convoId+'&per_page=50&orderby=date&order=asc', { credentials:'include' });
+      const messages = res.ok ? await res.json() : [];
+      const container = document.getElementById('chat-messages');
+      if (messages.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:2rem; color:#9ca3af; font-size:0.875rem;">No messages yet. Say hello!</div>';
+      } else {
+        container.innerHTML = messages.map(m => msgBubble(m, m.author === currentUserId)).join('');
+      }
+      container.scrollTop = container.scrollHeight;
+    } catch(e) {
+      document.getElementById('chat-messages').innerHTML = '<div style="text-align:center; padding:2rem; color:#ef4444;">Failed to load messages</div>';
+    }
+
+    // Start polling for new messages
+    if (pollInterval) clearInterval(pollInterval);
+    pollInterval = setInterval(() => refreshMessages(convoId), 5000);
+  }
+
+  async function refreshMessages(convoId) {
+    if (convoId !== activeConvoId) return;
+    try {
+      const res = await fetch(baseUrl + '/chat_message?meta_key=conversation_id&meta_value='+convoId+'&per_page=50&orderby=date&order=asc', { credentials:'include' });
+      if (!res.ok) return;
+      const messages = await res.json();
+      const container = document.getElementById('chat-messages');
+      const wasAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 50;
+      container.innerHTML = messages.map(m => msgBubble(m, m.author === currentUserId)).join('');
+      if (wasAtBottom) container.scrollTop = container.scrollHeight;
+    } catch(e) {}
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text || !activeConvoId) return;
+    input.value = '';
+
+    // Optimistic render
+    const container = document.getElementById('chat-messages');
+    const placeholder = document.getElementById('chat-messages').querySelector('[data-empty]');
+    if (placeholder) placeholder.remove();
+    const time = new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
+    container.innerHTML += '<div style="display:flex; justify-content:flex-end;"><div style="max-width:70%; padding:0.625rem 1rem; border-radius:1rem; background:#0d9488; color:white; font-size:0.875rem;"><div>'+text+'</div><div style="font-size:0.65rem; opacity:0.7; margin-top:0.25rem; text-align:right;">'+time+'</div></div></div>';
+    container.scrollTop = container.scrollHeight;
+
+    try {
+      const nonce = document.querySelector('meta[name="wp-nonce"]')?.content || '';
+      await fetch(baseUrl + '/chat_message', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type':'application/json', 'X-WP-Nonce': nonce },
+        body: JSON.stringify({
+          title: 'Message',
+          status: 'publish',
+          meta: { conversation_id: activeConvoId, message_text: text }
+        })
+      });
+    } catch(e) { console.error('Failed to send:', e); }
+  }
+
+  // Event listeners
+  document.getElementById('chat-send').addEventListener('click', sendMessage);
+  document.getElementById('chat-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') sendMessage();
+  });
+  document.getElementById('convo-search').addEventListener('input', function() {
+    renderConversations(this.value);
+  });
+  document.getElementById('new-convo-btn').addEventListener('click', function() {
+    document.getElementById('new-convo-modal').style.display = 'block';
+    loadUsers();
+  });
+
+  // New conversation: search users
+  let searchTimeout;
+  document.getElementById('new-convo-search').addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => loadUsers(this.value), 300);
+  });
+
+  async function loadUsers(search) {
+    const container = document.getElementById('new-convo-results');
+    try {
+      let url = baseUrl + '/users?per_page=10';
+      if (search) url += '&search=' + encodeURIComponent(search);
+      const res = await fetch(url, { credentials:'include' });
+      const users = await res.json();
+      container.innerHTML = users.filter(u => u.id !== currentUserId).map(u => {
+        const name = u.name || 'User';
+        return '<div style="padding:0.75rem; cursor:pointer; border-bottom:1px solid #f3f4f6; display:flex; align-items:center; gap:0.75rem;" onmouseover="this.style.background=\'#f9fafb\'" onmouseout="this.style.background=\'transparent\'" onclick="window._startConvo('+u.id+',\''+name.replace(/'/g,"\\'")+'\')"><div style="width:32px; height:32px; border-radius:50%; background:#0d9488; color:white; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:0.8rem;">'+name.charAt(0).toUpperCase()+'</div><div style="font-weight:500; font-size:0.875rem;">'+name+'</div></div>';
+      }).join('') || '<div style="padding:1rem; text-align:center; color:#9ca3af;">No users found</div>';
+    } catch(e) {
+      container.innerHTML = '<div style="padding:1rem; text-align:center; color:#ef4444;">Failed to search users</div>';
+    }
+  }
+
+  window._startConvo = async function(userId, userName) {
+    document.getElementById('new-convo-modal').style.display = 'none';
+    try {
+      const nonce = document.querySelector('meta[name="wp-nonce"]')?.content || '';
+      const res = await fetch(baseUrl + '/chat_conversation', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type':'application/json', 'X-WP-Nonce': nonce },
+        body: JSON.stringify({
+          title: userName,
+          status: 'publish',
+          meta: { participant_id: userId }
+        })
+      });
+      if (res.ok) {
+        const convo = await res.json();
+        await loadConversations();
+        openConversation(convo.id, userName);
+      }
+    } catch(e) { alert('Failed to create conversation'); }
+  };
+
+  // Responsive: show back button on mobile
+  if (window.innerWidth < 768) {
+    document.getElementById('chat-back-btn').style.display = 'block';
+    document.getElementById('chat-back-btn').addEventListener('click', function() {
+      document.getElementById('chat-active').style.display = 'none';
+      document.getElementById('chat-placeholder').style.display = 'flex';
+      document.getElementById('convo-sidebar').style.display = 'flex';
+      activeConvoId = null;
+    });
+  }
+
+  // Initial load
+  loadConversations();
+})();
+</script>
+<!-- /wp:html -->

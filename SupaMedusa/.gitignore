@@ -1,0 +1,7 @@
+node_modules/
+_upstream/
+.env
+.env.local
+dist/
+*.log
+.DS_Store

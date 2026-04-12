@@ -1,0 +1,203 @@
+<!-- wp:html -->
+<style>
+#art-app{max-width:48rem;margin:0 auto;padding:1.5rem 1rem;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+#art-app *{box-sizing:border-box}
+.at-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:0.75rem}
+.at-hdr h1{font-size:1.5rem;font-weight:700;color:#0f172a;margin:0}
+.at-hdr p{color:#64748b;font-size:0.875rem;margin:0.25rem 0 0}
+.at-btn{display:inline-flex;align-items:center;gap:0.5rem;padding:0.5rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;cursor:pointer;border:none;transition:opacity .15s}
+.at-btn-coral{background:#0d9488;color:#fff}.at-btn-coral:hover{opacity:0.9}
+.at-btn-outline{background:#fff;color:#334155;border:1px solid #e2e8f0}.at-btn-outline:hover{background:#f8fafc}
+.at-btn-sm{padding:0.375rem 0.75rem;font-size:0.8125rem}
+.at-filter-row{display:flex;gap:0.5rem;margin-bottom:1.5rem;flex-wrap:wrap}
+.at-filter{padding:0.375rem 0.75rem;border-radius:9999px;font-size:0.8125rem;font-weight:500;cursor:pointer;border:1px solid #e2e8f0;background:#fff;color:#64748b}
+.at-filter.active{background:#0d9488;color:#fff;border-color:#0d9488}
+.at-card{background:#fff;border-radius:0.75rem;box-shadow:0 1px 3px rgba(0,0,0,0.1);border:1px solid transparent;padding:1.25rem;margin-bottom:1rem}
+.at-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem}
+.at-author{display:flex;align-items:center;gap:0.75rem}
+.at-author-avatar{width:40px;height:40px;border-radius:50%;background:rgba(13,148,136,0.1);display:flex;align-items:center;justify-content:center;color:#0d9488;font-weight:500;font-size:0.875rem;flex-shrink:0}
+.at-author-name{font-weight:500;font-size:0.9375rem;color:#0f172a}
+.at-author-time{font-size:0.7rem;color:#94a3b8}
+.at-badge{display:inline-block;padding:0.125rem 0.5rem;border-radius:9999px;font-size:0.65rem;font-weight:500;margin-left:0.5rem}
+.at-badge-user{background:#dbeafe;color:#1e40af}
+.at-badge-expert{background:#fef3c7;color:#92400e}
+.at-badge-official{background:#dcfce7;color:#166534}
+.at-title{font-size:1rem;font-weight:600;color:#0f172a;margin:0 0 0.5rem}
+.at-body{font-size:0.875rem;color:#475569;line-height:1.5;margin-bottom:0.75rem;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.at-footer{display:flex;align-items:center;gap:1rem;padding-top:0.75rem;border-top:1px solid #f1f5f9}
+.at-vote{display:flex;align-items:center;gap:0.25rem}
+.at-vote-btn{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border:none;background:transparent;cursor:pointer;border-radius:0.25rem;color:#94a3b8;font-size:1rem}
+.at-vote-btn:hover{background:#f1f5f9;color:#0d9488}
+.at-vote-count{font-size:0.875rem;font-weight:600;color:#0f172a;min-width:24px;text-align:center}
+.at-menu-wrap{position:relative}
+.at-menu-btn{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border:none;background:transparent;cursor:pointer;border-radius:0.25rem;color:#94a3b8}
+.at-menu-btn:hover{background:#f1f5f9}
+.at-dropdown{position:absolute;right:0;top:100%;z-index:50;min-width:120px;background:#fff;border-radius:0.5rem;box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);border:1px solid #e2e8f0;padding:0.25rem;display:none}
+.at-dropdown.show{display:block}
+.at-dropdown-item{display:block;width:100%;padding:0.5rem 0.75rem;font-size:0.8125rem;cursor:pointer;border:none;background:none;text-align:left;border-radius:0.25rem;color:#334155}
+.at-dropdown-item:hover{background:#f1f5f9}
+.at-dropdown-item.danger{color:#ef4444}
+.at-empty{text-align:center;padding:4rem 1rem;color:#94a3b8}
+.at-empty svg{width:48px;height:48px;margin:0 auto 0.75rem;opacity:0.3}
+/* Modal */
+.at-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;align-items:center;justify-content:center}
+.at-overlay.show{display:flex}
+.at-modal{background:#fff;border-radius:0.75rem;padding:1.5rem;max-width:32rem;width:90%;max-height:90vh;overflow-y:auto;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25)}
+.at-modal h3{font-size:1.125rem;font-weight:600;margin:0 0 1rem;color:#0f172a}
+.at-modal label{font-size:0.8125rem;font-weight:500;color:#334155;display:block;margin-bottom:0.25rem;margin-top:0.75rem}
+.at-modal input,.at-modal textarea,.at-modal select{width:100%;padding:0.5rem;border:1px solid #e2e8f0;border-radius:0.375rem;font-size:0.875rem;font-family:inherit}
+.at-modal textarea{resize:vertical}
+</style>
+
+<div id="art-app">
+  <div class="at-hdr">
+    <div><h1>Articles</h1><p>Read and share care knowledge</p></div>
+    <button class="at-btn at-btn-coral" onclick="openAtModal()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Write Article
+    </button>
+  </div>
+
+  <div class="at-filter-row">
+    <button class="at-filter active" onclick="setAtFilter('all',this)">All</button>
+    <button class="at-filter" onclick="setAtFilter('mine',this)">My Articles</button>
+    <button class="at-filter" onclick="setAtFilter('user',this)">User</button>
+    <button class="at-filter" onclick="setAtFilter('expert',this)">Expert</button>
+    <button class="at-filter" onclick="setAtFilter('official',this)">Official</button>
+  </div>
+
+  <div id="at-posts"><div class="at-empty">Loading articles...</div></div>
+
+  <!-- Create/Edit Modal -->
+  <div class="at-overlay" id="at-modal">
+    <div class="at-modal">
+      <h3 id="at-modal-title">Write Article</h3>
+      <label>Title *</label><input id="at-art-title" placeholder="Article title">
+      <label>Content *</label><textarea id="at-art-content" rows="8" placeholder="Write your article content..."></textarea>
+      <label>Type</label>
+      <select id="at-art-type"><option value="user">User</option><option value="expert">Expert</option><option value="official">Official</option></select>
+      <div style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:1.25rem">
+        <button class="at-btn at-btn-outline" onclick="closeAtModal()">Cancel</button>
+        <button class="at-btn at-btn-coral" id="at-submit-btn" onclick="submitAtPost()">Publish</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirm -->
+  <div class="at-overlay" id="at-delete-modal">
+    <div class="at-modal" style="max-width:24rem">
+      <h3>Delete Article</h3>
+      <p style="font-size:0.8125rem;color:#64748b;margin:0 0 1.25rem">Are you sure? This cannot be undone.</p>
+      <div style="display:flex;gap:0.5rem;justify-content:flex-end">
+        <button class="at-btn at-btn-outline" onclick="document.getElementById('at-delete-modal').classList.remove('show')">Cancel</button>
+        <button class="at-btn" style="background:#ef4444;color:#fff" onclick="confirmDeleteAt()">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const base='/careconnected/wp-json/wp/v2';
+  let uid=null,allArticles=[],filter='all',editingId=null,deleteId=null;
+  const typeBadge={user:'at-badge-user',expert:'at-badge-expert',official:'at-badge-official'};
+
+  async function getUid(){if(uid)return uid;try{const r=await fetch(base+'/users/me',{credentials:'include'});if(!r.ok)return null;uid=(await r.json()).id;return uid;}catch(e){return null;}}
+
+  function timeAgo(d){const s=Math.floor((Date.now()-new Date(d).getTime())/1000);if(s<60)return 'Just now';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago';}
+
+  function articleCard(a){
+    const title=a.title?.rendered||'';const body=(a.content?.rendered||'').replace(/<[^>]*>/g,'');
+    const authorName=a._embedded?.author?.[0]?.name||'User';const init=authorName.charAt(0);
+    const time=timeAgo(a.date);const votes=a.meta?.vote_count||0;
+    const aType=a.meta?.article_type||'user';
+    const isOwner=a.author===uid;
+
+    let menuHtml='';
+    if(isOwner){
+      menuHtml='<div class="at-menu-wrap"><button class="at-menu-btn" onclick="toggleAtMenu(this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button><div class="at-dropdown"><button class="at-dropdown-item" onclick="editAtPost('+a.id+')">Edit</button><button class="at-dropdown-item danger" onclick="deleteAtPost('+a.id+')">Delete</button></div></div>';
+    }
+
+    return '<div class="at-card"><div class="at-card-top"><div class="at-author"><div class="at-author-avatar">'+init+'</div><div><div class="at-author-name">'+authorName+'<span class="at-badge '+(typeBadge[aType]||'at-badge-user')+'">'+aType+'</span></div><div class="at-author-time">'+time+'</div></div></div>'+menuHtml+'</div>'
+      +(title?'<h3 class="at-title">'+title+'</h3>':'')
+      +'<div class="at-body">'+body+'</div>'
+      +'<div class="at-footer"><div class="at-vote"><button class="at-vote-btn" onclick="voteAt('+a.id+',1)">▲</button><span class="at-vote-count">'+votes+'</span><button class="at-vote-btn" onclick="voteAt('+a.id+',-1)">▼</button></div></div></div>';
+  }
+
+  function render(){
+    const el=document.getElementById('at-posts');
+    let filtered=allArticles;
+    if(filter==='mine'&&uid)filtered=allArticles.filter(a=>a.author===uid);
+    else if(filter!=='all'&&filter!=='mine')filtered=allArticles.filter(a=>(a.meta?.article_type||'user')===filter);
+    if(!filtered.length){el.innerHTML='<div class="at-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><div>No articles found</div></div>';return;}
+    el.innerHTML=filtered.map(articleCard).join('');
+  }
+
+  async function load(){
+    await getUid();
+    try{
+      const r=await fetch(base+'/care_article?per_page=50&orderby=date&order=desc&_embed',{credentials:'include'});
+      allArticles=r.ok?await r.json():[];
+    }catch(e){allArticles=[];}
+    render();
+  }
+
+  window.setAtFilter=function(f,btn){
+    filter=f;document.querySelectorAll('.at-filter').forEach(b=>b.classList.remove('active'));btn.classList.add('active');render();
+  };
+
+  window.toggleAtMenu=function(btn){
+    const dd=btn.nextElementSibling;const isOpen=dd.classList.contains('show');
+    document.querySelectorAll('.at-dropdown.show').forEach(d=>d.classList.remove('show'));
+    if(!isOpen)dd.classList.add('show');
+  };
+  document.addEventListener('click',function(e){if(!e.target.closest('.at-menu-wrap'))document.querySelectorAll('.at-dropdown.show').forEach(d=>d.classList.remove('show'));});
+
+  window.openAtModal=function(){editingId=null;document.getElementById('at-modal-title').textContent='Write Article';document.getElementById('at-art-title').value='';document.getElementById('at-art-content').value='';document.getElementById('at-art-type').value='user';document.getElementById('at-submit-btn').textContent='Publish';document.getElementById('at-modal').classList.add('show');};
+  window.closeAtModal=function(){document.getElementById('at-modal').classList.remove('show');};
+
+  window.editAtPost=function(id){
+    const a=allArticles.find(x=>x.id===id);if(!a)return;
+    editingId=id;
+    document.getElementById('at-modal-title').textContent='Edit Article';
+    document.getElementById('at-art-title').value=a.title?.rendered||'';
+    document.getElementById('at-art-content').value=(a.content?.rendered||'').replace(/<[^>]*>/g,'');
+    document.getElementById('at-art-type').value=a.meta?.article_type||'user';
+    document.getElementById('at-submit-btn').textContent='Update';
+    document.getElementById('at-modal').classList.add('show');
+  };
+
+  window.submitAtPost=function(){
+    const title=document.getElementById('at-art-title').value.trim();
+    const content=document.getElementById('at-art-content').value.trim();
+    const type=document.getElementById('at-art-type').value;
+    if(!title||!content)return;
+    const btn=document.getElementById('at-submit-btn');btn.textContent='Saving...';
+    const nonce=document.querySelector('meta[name="wp-nonce"]')?.content||'';
+    const url=editingId?base+'/care_article/'+editingId:base+'/care_article';
+    fetch(url,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json','X-WP-Nonce':nonce},body:JSON.stringify({title,content,status:'publish',meta:{article_type:type}})})
+      .then(()=>{closeAtModal();load();}).catch(()=>{alert('Failed');btn.textContent=editingId?'Update':'Publish';});
+  };
+
+  window.deleteAtPost=function(id){deleteId=id;document.getElementById('at-delete-modal').classList.add('show');};
+  window.confirmDeleteAt=function(){
+    if(!deleteId)return;
+    const nonce=document.querySelector('meta[name="wp-nonce"]')?.content||'';
+    fetch(base+'/care_article/'+deleteId+'?force=true',{method:'DELETE',credentials:'include',headers:{'X-WP-Nonce':nonce}})
+      .then(()=>{document.getElementById('at-delete-modal').classList.remove('show');load();}).catch(()=>alert('Failed'));
+  };
+
+  window.voteAt=function(id,dir){
+    const nonce=document.querySelector('meta[name="wp-nonce"]')?.content||'';
+    const a=allArticles.find(x=>x.id===id);if(!a)return;
+    const newCount=(a.meta?.vote_count||0)+dir;
+    fetch(base+'/care_article/'+id,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json','X-WP-Nonce':nonce},body:JSON.stringify({meta:{vote_count:newCount}})})
+      .then(()=>load()).catch(()=>{});
+  };
+
+  document.querySelectorAll('.at-overlay').forEach(o=>o.addEventListener('click',function(e){if(e.target===this)this.classList.remove('show');}));
+
+  load();
+})();
+</script>
+<!-- /wp:html -->

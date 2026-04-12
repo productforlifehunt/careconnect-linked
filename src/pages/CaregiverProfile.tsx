@@ -10,22 +10,28 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Star, MapPin, Shield, Clock, CheckCircle, Calendar, MessageSquare, Heart, ArrowLeft, Phone, Loader2 } from "lucide-react";
 import { CommentsSection } from "@/components/comments/CommentsSection";
-import { useProvider, useProviderReviews, useCreateReview, useCreateBooking, useToggleSavedProvider, useSavedProviders, useStartConversation, useProviderAvailability } from "@/hooks/use-care-data";
+import { useProvider, useProviderReviews, useCreateReview, useToggleSavedProvider, useSavedProviders, useStartConversation, useProviderAvailability, useProviderAvailabilitySetting } from "@/hooks/use-care-data";
+import { useCreateBookingWithWooCommerce } from "@/hooks/use-booking-woocommerce";
+import { useAddToCart } from "@/hooks/use-cart";
+import { getAvailabilityConflictMessage, getProviderBookingConflictMessage, getProviderProduct } from "@/services/woocommerce-api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 export default function CaregiverProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const { isAuthenticated } = useAuth();
   const { data: caregiver, isLoading } = useProvider(id);
   const { data: reviews } = useProviderReviews(id);
   const { data: savedProviders } = useSavedProviders();
   const toggleSaved = useToggleSavedProvider();
-  const createBooking = useCreateBooking();
   const createReview = useCreateReview();
   const startConversation = useStartConversation();
+  const createBooking = useCreateBookingWithWooCommerce();
+  const addToCart = useAddToCart();
 
   const [bookingDate, setBookingDate] = useState("");
   const [bookingTime, setBookingTime] = useState("");
@@ -40,37 +46,13 @@ export default function CaregiverProfile() {
   const [reviewComment, setReviewComment] = useState("");
 
   const { data: availability } = useProviderAvailability(id);
+  const { data: availabilitySetting } = useProviderAvailabilitySetting(id || null);
   const isFavorited = savedProviders?.some((sp: any) => sp.provider_id === id) || false;
 
   // Check availability when date/time changes
   const checkAvailability = (date: string, time: string) => {
-    setAvailabilityWarning("");
-    if (!date || !time || !availability || availability.length === 0) return;
-    const dayOfWeek = new Date(date + "T12:00:00").getDay(); // 0=Sun
-    // Check for specific_date override first
-    const specificSlot = availability.find((s: any) => s.specific_date === date);
-    if (specificSlot) {
-      if (!specificSlot.is_available) {
-        setAvailabilityWarning("Provider is not available on this date.");
-        return;
-      }
-      if (time < specificSlot.start_time || time >= specificSlot.end_time) {
-        setAvailabilityWarning(`Provider is available ${specificSlot.start_time}–${specificSlot.end_time} on this date.`);
-        return;
-      }
-      return;
-    }
-    // Check weekly pattern
-    const weeklySlots = availability.filter((s: any) => !s.specific_date && s.day_of_week === dayOfWeek);
-    if (weeklySlots.length === 0) {
-      setAvailabilityWarning("Provider has no availability set for this day.");
-      return;
-    }
-    const available = weeklySlots.some((s: any) => s.is_available && time >= s.start_time && time < s.end_time);
-    if (!available) {
-      const slots = weeklySlots.filter((s: any) => s.is_available).map((s: any) => `${s.start_time}–${s.end_time}`).join(", ");
-      setAvailabilityWarning(slots ? `Provider is available: ${slots}` : "Provider is not available on this day.");
-    }
+    const warning = getAvailabilityConflictMessage(availability || [], date, time, Number(bookingDuration));
+    setAvailabilityWarning(warning || "");
   };
 
   if (isLoading) {
@@ -91,32 +73,31 @@ export default function CaregiverProfile() {
       toast({ title: "Please fill all required fields", variant: "destructive" });
       return;
     }
-    // Prevent past date bookings
     const selectedDate = new Date(bookingDate + "T" + bookingTime);
     if (selectedDate < new Date()) {
       toast({ title: "Cannot book in the past", description: "Please select a future date and time.", variant: "destructive" });
       return;
     }
-    // HARD BLOCK if availability conflict
-    if (availabilityWarning) {
-      toast({ title: "Time slot unavailable", description: availabilityWarning, variant: "destructive" });
+    const minNoticeHours = Number(availabilitySetting?.min_notice_hours ?? 0);
+    if (minNoticeHours > 0) {
+      const earliestBookable = new Date(Date.now() + minNoticeHours * 60 * 60 * 1000);
+      if (selectedDate < earliestBookable) {
+        toast({ title: "Minimum notice required", description: `This caregiver requires at least ${minNoticeHours} hours notice.`, variant: "destructive" });
+        return;
+      }
+    }
+    const durationHours = parseInt(bookingDuration);
+    const scheduleConflictMessage = getAvailabilityConflictMessage(availability || [], bookingDate, bookingTime, durationHours);
+    if (scheduleConflictMessage) {
+      setAvailabilityWarning(scheduleConflictMessage);
+      toast({ title: "Time slot unavailable", description: scheduleConflictMessage, variant: "destructive" });
       return;
     }
-    // Validate duration doesn't exceed provider's end time
-    if (bookingTime && availability && availability.length > 0) {
-      const dayOfWeek = new Date(bookingDate + "T12:00:00").getDay();
-      const specificSlot = availability.find((s: any) => s.specific_date === bookingDate);
-      const slot = specificSlot || availability.find((s: any) => !s.specific_date && s.day_of_week === dayOfWeek && s.is_available);
-      if (slot?.end_time) {
-        const [bh, bm] = bookingTime.split(":").map(Number);
-        const endMinutes = bh * 60 + bm + parseInt(bookingDuration) * 60;
-        const [eh, em] = slot.end_time.split(":").map(Number);
-        const slotEndMinutes = eh * 60 + em;
-        if (endMinutes > slotEndMinutes) {
-          toast({ title: "Duration exceeds availability", description: `Session would end at ${Math.floor(endMinutes / 60)}:${String(endMinutes % 60).padStart(2, "0")} but provider is available until ${slot.end_time}.`, variant: "destructive" });
-          return;
-        }
-      }
+    const conflictMessage = await getProviderBookingConflictMessage(caregiver.id, bookingDate, bookingTime, durationHours);
+    if (conflictMessage) {
+      setAvailabilityWarning(conflictMessage);
+      toast({ title: "Time slot unavailable", description: conflictMessage, variant: "destructive" });
+      return;
     }
     if (!isAuthenticated) {
       toast({ title: "Please sign in to book", variant: "destructive" });
@@ -129,12 +110,12 @@ export default function CaregiverProfile() {
         provider_id: caregiver.id,
         appointment_date: bookingDate,
         appointment_time: bookingTime,
-        duration_hour: parseInt(bookingDuration),
+        duration_hour: durationHours,
         service_type: bookingType,
         hourly_rate: caregiver.hourly_rate || 0,
-        total_cost: (caregiver.hourly_rate || 0) * parseInt(bookingDuration),
+        total_cost: (caregiver.hourly_rate || 0) * durationHours,
         special_instruction: recurringNote + (bookingNotes || "") || null,
-        status: caregiver.instant_book_enabled ? "confirmed" : "pending",
+        status: availabilitySetting?.requires_confirmation === false || caregiver.instant_book_enabled ? "confirmed" : "pending",
         payment_status: "pending",
       });
       toast({ title: "Booking Request Sent!", description: `Your booking with ${caregiver.full_name} has been submitted.` });
@@ -146,10 +127,11 @@ export default function CaregiverProfile() {
 
   const handleToggleFavorite = () => {
     if (!isAuthenticated) { navigate("/auth"); return; }
-    toggleSaved.mutate({ providerId: caregiver.id, isSaved: isFavorited });
+    toggleSaved.mutate(caregiver.id);
   };
 
   const total = (caregiver.hourly_rate || 0) * parseInt(bookingDuration);
+  const hasAvailabilityConflict = Boolean(availabilityWarning);
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
@@ -213,7 +195,7 @@ export default function CaregiverProfile() {
                 </div>
                 {caregiver.background_check_status === "passed" && (
                   <div className="mt-4 p-3 rounded-lg bg-success/10 flex items-center gap-2 text-sm text-success">
-                    <Shield className="h-4 w-4" /> Background check passed
+                    <Shield className="h-4 w-4" /> {t("caregiverProfile.bgCheckPassed")}
                   </div>
                 )}
               </CardContent>
@@ -255,7 +237,7 @@ export default function CaregiverProfile() {
                         </div>
                         <Button variant="coral" className="w-full" disabled={createReview.isPending} onClick={async () => {
                           try {
-                            await createReview.mutateAsync({ entityId: caregiver.id, rating: reviewRating, comment: reviewComment });
+                            await createReview.mutateAsync({ entity_id: caregiver.id, entity_type: "provider", rating: reviewRating, comment: reviewComment });
                             toast({ title: "Review submitted!", description: "Thank you for your feedback." });
                             setReviewDialogOpen(false);
                             setReviewRating(5);
@@ -283,7 +265,7 @@ export default function CaregiverProfile() {
                       <Star key={j} className="h-3 w-3 text-warning fill-warning" />
                     ))}
                   </div>
-                  {review.comment && <p className="text-sm text-muted-foreground">{review.comment}</p>}
+                  {review.content && <p className="text-sm text-muted-foreground">{review.content}</p>}
                   {review.response_text && (
                     <div className="mt-2 ml-4 p-2 bg-muted/50 rounded text-sm text-muted-foreground">
                       <span className="font-medium">Provider response:</span> {review.response_text}
@@ -380,16 +362,28 @@ export default function CaregiverProfile() {
                       <span className="text-sm text-muted-foreground">Estimated Total</span>
                       <span className="text-xl font-bold text-foreground">${total}{recurringPattern !== "none" ? `/${recurringPattern === "weekly" ? "wk" : recurringPattern === "biweekly" ? "2wk" : "mo"}` : ""}</span>
                     </div>
-                    <Button variant="coral" className="w-full" onClick={handleBooking} disabled={createBooking.isPending}>
+                    <Button variant="coral" className="w-full" onClick={handleBooking} disabled={createBooking.isPending || hasAvailabilityConflict}>
                       {createBooking.isPending ? "Submitting..." : "Confirm Booking"}
                     </Button>
                   </div>
                 </DialogContent>
               </Dialog>
 
+              <Button variant="outline" className="w-full mb-3" disabled={addToCart.isPending} onClick={async () => {
+                if (!isAuthenticated) { navigate("/auth"); return; }
+                try {
+                  const product = await getProviderProduct(caregiver.id);
+                  if (!product) { toast({ title: "Service not listed yet", variant: "destructive" }); return; }
+                  await addToCart.mutateAsync({ productId: product.id });
+                  toast({ title: "Added to cart", description: `${caregiver.full_name}'s service added.` });
+                } catch (e: any) { toast({ title: "Failed", description: e.message, variant: "destructive" }); }
+              }}>
+                {addToCart.isPending ? "Adding..." : "Add to Cart"}
+              </Button>
+
               <Button variant="outline" className="w-full mb-3" onClick={() => {
                 if (!isAuthenticated) { navigate("/auth"); return; }
-                startConversation.mutate(caregiver.id, {
+                startConversation.mutate({ otherUserId: caregiver.id }, {
                   onSuccess: () => navigate("/messages", { state: { targetUserId: caregiver.id, targetUserName: caregiver.full_name, targetUserAvatar: caregiver.avatar_url } }),
                   onError: () => navigate("/messages"),
                 });

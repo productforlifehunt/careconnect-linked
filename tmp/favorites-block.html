@@ -1,0 +1,77 @@
+<!-- wp:html -->
+<div id="favorites-app">
+  <div id="favorites-list" style="min-height:200px;">
+    <div style="text-align:center; padding:3rem; color:#9ca3af;">⏳ Loading favorites...</div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const baseUrl = '/careconnected/wp-json/wp/v2';
+  let currentUserId = null;
+
+  async function getUser() {
+    if (currentUserId) return currentUserId;
+    try { const r = await fetch(baseUrl+'/users/me',{credentials:'include'}); if(!r.ok) return null; currentUserId=(await r.json()).id; return currentUserId; } catch(e) { return null; }
+  }
+
+  function empty(msg,icon) { return '<div style="text-align:center; padding:3rem; color:#9ca3af;"><div style="font-size:2rem; margin-bottom:0.5rem;">'+icon+'</div><div>'+msg+'</div></div>'; }
+
+  function providerCard(p) {
+    const name = p.store_name || p.title?.rendered || 'Provider';
+    const rating = p.meta?.rating || '4.5';
+    const specialty = p.meta?.specialty || 'Caregiver';
+    const location = p.meta?.location || '';
+    const initial = name.charAt(0).toUpperCase();
+    const stars = '★'.repeat(Math.round(parseFloat(rating))) + '☆'.repeat(5 - Math.round(parseFloat(rating)));
+
+    return '<div style="background:#fff; border-radius:12px; padding:1.25rem; box-shadow:0 1px 3px rgba(0,0,0,0.1); margin-bottom:1rem; display:flex; gap:1rem; align-items:center;">'
+      +'<div style="width:60px; height:60px; border-radius:50%; background:linear-gradient(135deg,#0d9488,#14b8a6); color:white; display:flex; align-items:center; justify-content:center; font-size:1.5rem; font-weight:700; flex-shrink:0;">'+initial+'</div>'
+      +'<div style="flex:1; min-width:0;">'
+      +'<div style="font-weight:600; color:#111827;">'+name+'</div>'
+      +'<div style="font-size:0.85rem; color:#6b7280;">'+specialty+(location?' • 📍 '+location:'')+'</div>'
+      +'<div style="color:#f59e0b; font-size:0.85rem; margin-top:0.25rem;">'+stars+' <span style="color:#6b7280;">'+rating+'</span></div>'
+      +'</div>'
+      +'<div style="display:flex; flex-direction:column; gap:0.5rem; flex-shrink:0;">'
+      +'<a href="/careconnected/store-listing/" style="padding:0.4rem 0.75rem; background:#0d9488; color:white; border:none; border-radius:6px; font-size:0.8rem; cursor:pointer; text-decoration:none; text-align:center;">Book</a>'
+      +'<button onclick="window._removeFav('+p.id+')" style="padding:0.4rem 0.75rem; background:white; color:#ef4444; border:1px solid #ef4444; border-radius:6px; font-size:0.8rem; cursor:pointer;">Remove</button>'
+      +'</div></div>';
+  }
+
+  async function loadFavorites() {
+    const userId = await getUser();
+    if (!userId) { document.getElementById('favorites-list').innerHTML = empty('Please log in to view favorites','🔒'); return; }
+    try {
+      // Try to load from a favorites/saved-providers CPT or user meta
+      // For now, use the Dokan store reviews or a generic approach
+      const r = await fetch(baseUrl+'/dokan_store_reviews?author='+userId+'&per_page=20',{credentials:'include'});
+      if (r.ok) {
+        const favs = await r.json();
+        if (favs.length === 0) {
+          document.getElementById('favorites-list').innerHTML = empty('No saved providers yet. Browse caregivers to add favorites!','⭐')
+            + '<div style="text-align:center; margin-top:1rem;"><a href="/careconnected/store-listing/" style="padding:0.5rem 1.5rem; background:#0d9488; color:white; border-radius:8px; text-decoration:none; display:inline-block;">Find Caregivers</a></div>';
+          return;
+        }
+        document.getElementById('favorites-list').innerHTML = favs.map(providerCard).join('');
+      } else {
+        document.getElementById('favorites-list').innerHTML = empty('No saved providers yet','⭐')
+          + '<div style="text-align:center; margin-top:1rem;"><a href="/careconnected/store-listing/" style="padding:0.5rem 1.5rem; background:#0d9488; color:white; border-radius:8px; text-decoration:none; display:inline-block;">Find Caregivers</a></div>';
+      }
+    } catch(e) {
+      document.getElementById('favorites-list').innerHTML = empty('Failed to load favorites','❌');
+    }
+  }
+
+  window._removeFav = async function(id) {
+    if (!confirm('Remove this provider from favorites?')) return;
+    try {
+      const nonce = document.querySelector('meta[name="wp-nonce"]')?.content||'';
+      await fetch(baseUrl+'/dokan_store_reviews/'+id,{method:'DELETE',credentials:'include',headers:{'X-WP-Nonce':nonce}});
+      loadFavorites();
+    } catch(e) { alert('Failed to remove'); }
+  };
+
+  loadFavorites();
+})();
+</script>
+<!-- /wp:html -->

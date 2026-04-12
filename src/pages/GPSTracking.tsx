@@ -8,8 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { MapPin, Navigation, Clock, Shield, Phone, AlertTriangle, RefreshCw, Loader2 } from "lucide-react";
 import { useLocationShares } from "@/hooks/use-care-data";
+import { shareMyLocationWordPress, disableMyLocationSharingWordPress } from "@/features/location/source.wordpress-extended";
+import { fetchCaredOneLocationSettingsWordPress } from "@/features/location/source.wordpress-extended";
 import { useToast } from "@/hooks/use-toast";
-import { careDb, careAuth } from "@/integrations/supabase/external-client";
+import { useAuth } from "@/contexts/AuthContext";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useTranslation } from "react-i18next";
@@ -31,13 +33,25 @@ export default function GPSTracking() {
   const leafletMap = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
 
-  // Check if current user has a location_share row
+  const { user } = useAuth();
+
+  const getCurrentAuthUserId = async () => {
+    return user?.user_id ?? null;
+  };
+
+  const getCurrentProfileId = async () => {
+    return user?.id ?? null;
+  };
+
+  // Check if current user has a location_current row
   useEffect(() => {
     (async () => {
-      const { data: { session } } = await careAuth.auth.getSession();
-      if (!session) return;
-      const { data } = await careDb.from("location_share").select("is_sharing").eq("user_id", session.user.id).maybeSingle();
-      if (data) setShareMyLocation(data.is_sharing);
+      const authUserId = await getCurrentAuthUserId();
+      if (!authUserId) return;
+      try {
+        const settings = await fetchCaredOneLocationSettingsWordPress(String(authUserId));
+        if (settings?.sharing_enabled) setShareMyLocation(true);
+      } catch {}
     })();
   }, []);
 
@@ -46,11 +60,11 @@ export default function GPSTracking() {
     userId: ls.user_id,
     name: ls.profile?.full_name || t("common.unknown"),
     avatar_url: ls.profile?.avatar_url,
-    lastLocation: ls.address || `${ls.latitude?.toFixed(4)}, ${ls.longitude?.toFixed(4)}`,
+    lastLocation: ls.address_text || `${ls.latitude?.toFixed(4)}, ${ls.longitude?.toFixed(4)}`,
     coordinates: { lat: ls.latitude, lng: ls.longitude },
     lastUpdated: new Date(ls.updated_at).toLocaleTimeString("en", { hour: "numeric", minute: "2-digit" }),
     status: "active" as const,
-    isSharing: ls.is_sharing,
+    isSharing: ls.sharing_status !== "off",
   }));
 
   const sharingPeople = people.filter(p => p.isSharing && p.coordinates.lat && p.coordinates.lng);
@@ -114,17 +128,12 @@ export default function GPSTracking() {
     setShareMyLocation(checked);
     setUpdatingShare(true);
     try {
-      const { data: { session } } = await careAuth.auth.getSession();
-      if (!session) return;
-      const userId = session.user.id;
+      const authUserId = await getCurrentAuthUserId();
+      if (!authUserId) return;
       if (checked && navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(async (pos) => {
-          const { data: existing } = await careDb.from("location_share").select("id").eq("user_id", userId).maybeSingle();
-          if (existing) {
-            await careDb.from("location_share").update({ is_sharing: true, latitude: pos.coords.latitude, longitude: pos.coords.longitude, updated_at: new Date().toISOString() }).eq("user_id", userId);
-          } else {
-            await careDb.from("location_share").insert({ user_id: userId, is_sharing: true, latitude: pos.coords.latitude, longitude: pos.coords.longitude });
-          }
+          const timestamp = new Date().toISOString();
+          await shareMyLocationWordPress(pos.coords.latitude, pos.coords.longitude);
           refetch();
           setUpdatingShare(false);
           toast({ title: t("gps.locationSharingEnabled") });
@@ -134,7 +143,7 @@ export default function GPSTracking() {
           setShareMyLocation(false);
         });
       } else {
-        await careDb.from("location_share").update({ is_sharing: false }).eq("user_id", userId);
+        await disableMyLocationSharingWordPress();
         refetch();
         setUpdatingShare(false);
         toast({ title: t("gps.locationSharingDisabled") });
@@ -155,64 +164,19 @@ export default function GPSTracking() {
   const handleSOS = async () => {
     setSosSending(true);
     try {
-      const { data: { session } } = await careAuth.auth.getSession();
-      if (!session) throw new Error("Not authenticated");
-      const userId = session.user.id;
+      const profileId = await getCurrentProfileId();
+      const authUserId = await getCurrentAuthUserId();
+      if (!profileId || !authUserId) throw new Error("Not authenticated");
 
       // Get current location
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000 });
       });
 
-      // Update location share with emergency flag
-      const { data: existing } = await careDb.from("location_share").select("id").eq("user_id", userId).maybeSingle();
-      const locationData = {
-        is_sharing: true,
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-        updated_at: new Date().toISOString(),
-        is_emergency: true,
-      };
-      if (existing) {
-        await careDb.from("location_share").update(locationData).eq("user_id", userId);
-      } else {
-        await careDb.from("location_share").insert({ user_id: userId, ...locationData });
-      }
-
-      // Get all care group members to notify
-      const { data: memberships } = await careDb
-        .from("care_group_member")
-        .select("group_id")
-        .eq("user_id", userId)
-        .eq("invitation_status", "accepted");
-      
-      const groupIds = (memberships || []).map((m: any) => m.group_id);
-      if (groupIds.length > 0) {
-        const { data: groupMembers } = await careDb
-          .from("care_group_member")
-          .select("user_id")
-          .in("group_id", groupIds)
-          .eq("invitation_status", "accepted")
-          .neq("user_id", userId);
-        
-        const memberIds = [...new Set((groupMembers || []).map((m: any) => m.user_id))];
-        
-        // Get user profile for the notification
-        const { data: profile } = await careDb.from("profile").select("full_name").eq("id", userId).single();
-        const senderName = profile?.full_name || `A ${site.careGroupSingular.toLowerCase()} member`;
-
-        // Create notifications for all members
-        if (memberIds.length > 0) {
-          const notifications = memberIds.map(mid => ({
-            user_id: mid,
-            type: "safety",
-            title: "🚨 Emergency SOS Alert",
-            content: `${senderName} has triggered an emergency SOS alert. Their current location has been shared.`,
-            link_url: "/gps-tracking",
-          }));
-          await careDb.from("notification").insert(notifications);
-        }
-      }
+      await shareMyLocationWordPress(position.coords.latitude, position.coords.longitude, {
+        accuracy: position.coords.accuracy ?? null,
+        isEmergency: true,
+      });
 
       refetch();
       setSosDialogOpen(false);

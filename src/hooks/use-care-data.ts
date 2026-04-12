@@ -1,18 +1,122 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { careDb, careAuth } from "@/integrations/supabase/external-client";
+import { getStoredWPUser } from "@/services/wp-auth";
+// ─── Feature source modules (backend-specific) ─────────────
+import { fetchProvidersWordPress, fetchProviderByIdWordPress } from "@/features/providers/source.wordpress";
+import { fetchBookingsWordPress, fetchProviderBookingsWordPress, createBookingWordPress, updateBookingStatusWordPress } from "@/features/bookings/source.wordpress";
+import { fetchCareGroupsWordPress, fetchCareGroupMembersWordPress, createCareGroupWordPress } from "@/features/care-groups/source.wordpress";
+import { fetchUserCaredOnesWordPress } from "@/features/cared-ones/source.wordpress";
+import { fetchMyProfileWordPress, updateProfileWordPress } from "@/features/profile/source.wordpress";
+import { fetchDashboardStatsWordPress } from "@/features/dashboard/source.wordpress";
+import { fetchNotificationsWordPress, markNotificationReadWordPress, markAllNotificationsReadWordPress } from "@/features/notifications/source.wordpress";
+import { fetchCareFacilitiesWordPress, fetchCareFacilityByIdWordPress } from "@/features/facilities/source.wordpress";
+import {
+  createCareFacilityWordPress, updateCareFacilityWordPress,
+  fetchFacilityMembersWordPress, fetchFacilityOwnershipClaimsWordPress,
+  claimFacilityOwnershipWordPress, fetchFacilityOwnershipDisputesWordPress,
+  createFacilityOwnershipDisputeWordPress, getMyFacilityPermissionWordPress,
+  fetchFacilityReviewSummariesWordPress,
+} from "@/features/facilities/source.wordpress-extended";
+import {
+  fetchCareGroupPostsWordPress, createGroupPostWordPress, updateGroupPostWordPress, deleteGroupPostWordPress,
+  updateCareGroupWordPress, deleteCareGroupWordPress,
+  inviteToGroupWordPress, fetchGroupInvitationsWordPress, cancelInvitationWordPress,
+  fetchMyPendingInvitationsWordPress, acceptInvitationWordPress, declineInvitationWordPress,
+  updateMemberRoleWordPress, removeGroupMemberWordPress,
+  joinGroupByCodeWordPress, fetchCareGroupGalleryWordPress,
+  fetchMemberCategoriesWordPress, createMemberCategoryWordPress, deleteMemberCategoryWordPress,
+  searchProfilesWordPress, addCaredOneToGroupWordPress, leaveGroupWordPress,
+} from "@/features/care-groups/source.wordpress-extended";
+import {
+  fetchSafeZonesWordPress, createSafeZoneWordPress, updateSafeZoneWordPress, deleteSafeZoneWordPress,
+  fetchSafeZoneAlertsWordPress, acknowledgeAlertWordPress, acknowledgeAllAlertsWordPress,
+  fetchCaredOneLocationWordPress, fetchCaredOneLocationHistoryWordPress,
+  shareMyLocationWordPress, disableMyLocationSharingWordPress,
+  fetchLocationRequestsWordPress, sendLocationRequestWordPress, cancelLocationRequestWordPress,
+  fetchCaredOneLocationSettingsWordPress,
+} from "@/features/location/source.wordpress-extended";
+import {
+  fetchJobPostingsWordPress, createJobPostingWordPress, fetchJobApplicationsWordPress,
+  applyToJobWordPress, fetchMyJobPostingsWordPress, fetchMyJobApplicationsWordPress,
+  updateJobApplicationWordPress,
+} from "@/features/jobs/source.wordpress";
+import {
+  fetchPostsWordPress, fetchPostByIdWordPress, createPostWordPress, updatePostWordPress, deletePostWordPress,
+} from "@/features/posts/source.wordpress";
+import {
+  fetchCommunityPostsWordPress, fetchCommunityPostByIdWordPress,
+  createCommunityPostWordPress, updateCommunityPostWordPress, deleteCommunityPostWordPress,
+  fetchPostCommentsWordPress, createPostCommentWordPress,
+  fetchCommentRepliesWordPress, createCommentReplyWordPress,
+  updateCommentCCTWordPress, deleteCommentCCTWordPress,
+} from "@/features/community-posts/source.wordpress";
+import { fetchCareTasksWordPress, createCareTaskWordPress, updateCareTaskWordPress, deleteCareTaskWordPress } from "@/features/care-tasks/source.wordpress";
+import { fetchCategoriesWordPress } from "@/features/categories/source.wordpress";
+import { fetchArticlesWordPress } from "@/features/articles/source.wordpress";
+import { fetchEntityReviewsWordPress, createReviewWordPress } from "@/features/reviews/source.wordpress";
+import { fetchConversationsWordPress, fetchDirectMessagesWordPress, sendMessageWordPress, markMessagesReadWordPress, startConversationWordPress } from "@/features/conversations/source.wordpress";
+import { fetchSavedProvidersWordPress, toggleSavedProviderWordPress } from "@/features/saved-providers/source.wordpress";
+import { fetchCommentsWordPress, createCommentWordPress, updateCommentWordPress, deleteCommentWordPress } from "@/features/comments/source.wordpress";
+import { fetchVotesWordPress, fetchEntityVoteWordPress, toggleVoteWordPress } from "@/features/votes/source.wordpress";
+import { fetchLocationSharesWordPress } from "@/features/location/source.wordpress";
+import { listWordPressFeature, createWordPressFeature } from "@/features/shared/wordpress-adapter";
+import { getDokanVendorWithdrawals } from "@/services/woocommerce-api";
+import {
+  createUserCaredOneWordPress, deleteUserCaredOneWordPress, fetchGroupCaredOnesWordPress,
+  fetchCheckinsWordPress, createCheckinWordPress, fetchCheckinLogsWordPress, fetchTodayCheckinLogsWordPress, logCheckinWordPress,
+  fetchMedicinesWordPress, createMedicineWordPress, updateMedicineWordPress, deleteMedicineWordPress,
+  fetchMedicineLogsWordPress, fetchTodayMedicineLogsWordPress, logMedicineWordPress,
+  fetchHealthVitalsWordPress, createHealthVitalWordPress,
+  fetchCareTipsWordPress, createCareTipWordPress, updateCareTipWordPress, deleteCareTipWordPress,
+  fetchCarePlansWordPress, createCarePlanWordPress, updateCarePlanWordPress, deleteCarePlanWordPress,
+  fetchCarePlanGoalsWordPress, createCarePlanGoalWordPress, updateCarePlanGoalWordPress,
+  fetchCareNotesWordPress, createCareNoteWordPress, updateCareNoteWordPress, deleteCareNoteWordPress,
+  fetchEmergencyContactsWordPress, createEmergencyContactWordPress, updateEmergencyContactWordPress, deleteEmergencyContactWordPress,
+  fetchActivityLogWordPress, createActivityLogWordPress, deleteActivityLogWordPress,
+  fetchCaredOneDocumentsWordPress, createCaredOneDocumentWordPress, updateCaredOneDocumentWordPress, deleteCaredOneDocumentWordPress,
+  fetchSymptomLogsWordPress, createSymptomLogWordPress,
+  updateDementiaStageWordPress,
+} from "@/features/cared-ones/source.wordpress-extended";
 import type {
   Profile, Booking, Review, CareGroup, CareGroupMember,
-  CareTask, DirectMessage, Conversation, Notification,
-  SavedProvider, CareGroupPost, LocationShare, ServiceCategory,
+  CareTask, Notification,
+  SavedProvider, CareGroupPost, LocationShare, ServiceCategory, PostType,
+  CategoryType, CategoryOption, EntityCategoryOption, CustomFieldType, EntityCustomFieldValue,
+  Post, Comment, CareFacility, FacilityMember, FacilityMemberWithProfile, LocationRecord,
+  FacilityOwnershipClaim, FacilityOwnershipDispute,
 } from "@/types/care-connector";
 
 // ─── Helpers ────────────────────────────────────────────────
-async function getCurrentUserId(): Promise<string | null> {
-  const { data } = await careAuth.auth.getSession();
-  return data.session?.user?.id ?? null;
+
+export function usePostTypes(_level?: 1 | 2 | 3 | 4, _parentId?: string | null) {
+  return useQuery({ queryKey: ["postTypes"], queryFn: async () => [] as any[] });
 }
 
-// ─── Providers ──────────────────────────────────────────────
+export function useCategoryTypes() {
+  return useQuery({ queryKey: ["categoryTypes"], queryFn: async () => [] as any[] });
+}
+
+export function useCategoryOptions(_categoryTypeId: string | null) {
+  return useQuery({ queryKey: ["categoryOptions", _categoryTypeId], queryFn: async () => [] as any[], enabled: !!_categoryTypeId });
+}
+
+export function useEntityCategoryOptions(_postId: string | null) {
+  return useQuery({ queryKey: ["entityCategoryOptions", _postId], queryFn: async () => [] as any[], enabled: !!_postId });
+}
+
+export function useCustomFieldTypes() {
+  return useQuery({ queryKey: ["customFieldTypes"], queryFn: async () => [] as any[] });
+}
+
+export function useEntityCustomFieldValues(_postId: string | null) {
+  return useQuery({ queryKey: ["entityCustomFieldValues", _postId], queryFn: async () => [] as any[], enabled: !!_postId });
+}
+
+function dedupeFacilities(list: CareFacility[]) {
+  const map = new Map<string, CareFacility>();
+  list.forEach((item) => map.set(item.id, item));
+  return Array.from(map.values());
+}
+
 export function useProviders(filters?: {
   query?: string;
   specialties?: string[];
@@ -25,121 +129,146 @@ export function useProviders(filters?: {
 }) {
   return useQuery({
     queryKey: ["providers", filters],
-    queryFn: async () => {
-      let q = careDb
-        .from("profile")
-        .select("*")
-        .eq("is_care_provider", true)
-        .eq("provider_is_active", true);
-
-      if (filters?.query) {
-        q = q.or(
-          `full_name.ilike.%${filters.query}%,bio.ilike.%${filters.query}%,location.ilike.%${filters.query}%`
-        );
-      }
-      if (filters?.location) {
-        q = q.ilike("location", `%${filters.location}%`);
-      }
-      if (filters?.specialties && filters.specialties.length > 0) {
-        q = q.overlaps("specialty", filters.specialties);
-      }
-      if (filters?.minRate != null) q = q.gte("hourly_rate", filters.minRate);
-      if (filters?.maxRate != null) q = q.lte("hourly_rate", filters.maxRate);
-      if (filters?.verifiedOnly) q = q.eq("background_check_status", "passed");
-      if (filters?.minRating) q = q.gte("rating_average", filters.minRating);
-
-      if (filters?.sortBy === "rating") q = q.order("rating_average", { ascending: false, nullsFirst: false });
-      else if (filters?.sortBy === "price-low") q = q.order("hourly_rate", { ascending: true });
-      else if (filters?.sortBy === "price-high") q = q.order("hourly_rate", { ascending: false });
-      else if (filters?.sortBy === "experience") q = q.order("years_of_experience", { ascending: false, nullsFirst: false });
-      else if (filters?.sortBy === "reviews") q = q.order("rating_count", { ascending: false, nullsFirst: false });
-      else q = q.order("rating_average", { ascending: false, nullsFirst: false });
-
-      const { data, error } = await q;
-      if (error) throw error;
-      return (data || []) as Profile[];
-    },
+    queryFn: () => fetchProvidersWordPress(filters),
   });
 }
 
 export function useProvider(id: string | undefined) {
   return useQuery({
     queryKey: ["provider", id],
-    queryFn: async () => {
-      if (!id) return null;
-      const { data, error } = await careDb
-        .from("profile")
-        .select("*")
-        .eq("id", id)
-        .single();
-      if (error) throw error;
-      return data as Profile;
-    },
+    queryFn: () => fetchProviderByIdWordPress(id!),
     enabled: !!id,
   });
 }
 
-export function useProviderReviews(providerId: string | undefined) {
+export function useCareFacilities(filters?: {
+  query?: string;
+  location?: string;
+  minRating?: number;
+  sortBy?: string;
+  serviceTypes?: string[];
+  facilityTypes?: string[];
+  area?: "china" | "global";
+}) {
   return useQuery({
-    queryKey: ["reviews", providerId],
+    queryKey: ["facilities", filters],
     queryFn: async () => {
-      if (!providerId) return [];
-      const { data, error } = await careDb
-        .from("review")
-        .select("*")
-        .eq("entity_id", providerId)
-        .order("created_at", { ascending: false })
-        .limit(20);
-      if (error) throw error;
-      const reviewerIds = [...new Set((data || []).map((r: any) => r.reviewer_id).filter(Boolean))];
-      let reviewerMap: Record<string, any> = {};
-      if (reviewerIds.length > 0) {
-        const { data: reviewers } = await careDb
-          .from("profile")
-          .select("id, full_name, avatar_url")
-          .in("id", reviewerIds);
-        (reviewers || []).forEach((r: any) => { reviewerMap[r.id] = r; });
+      const raw = await fetchCareFacilitiesWordPress();
+      let results = dedupeFacilities(raw as unknown as CareFacility[]);
+      if (filters?.query) {
+        const q = filters.query.toLowerCase();
+        results = results.filter((f) => f.name?.toLowerCase().includes(q) || (f as any).description?.toLowerCase().includes(q));
       }
-      return (data || []).map((r: any) => ({ ...r, reviewer: reviewerMap[r.reviewer_id] || null }));
+      if (filters?.location) {
+        const loc = filters.location.toLowerCase();
+        results = results.filter((f) => (f as any).location?.toLowerCase().includes(loc) || (f as any).address?.toLowerCase().includes(loc));
+      }
+      return results;
     },
-    enabled: !!providerId,
   });
+}
+
+export function useCareFacility(id: string | undefined) {
+  return useQuery({
+    queryKey: ["facility", id],
+    queryFn: () => fetchCareFacilityByIdWordPress(id!),
+    enabled: !!id,
+  });
+}
+
+export function useFacilityReviewSummaries(facilityIds: string[]) {
+  return useQuery({
+    queryKey: ["facilityReviewSummaries", facilityIds],
+    queryFn: () => fetchFacilityReviewSummariesWordPress(facilityIds),
+    enabled: facilityIds.length > 0,
+  });
+}
+
+export function useFacilityMembers(facilityId: string | undefined) {
+  return useQuery({
+    queryKey: ["facilityMembers", facilityId],
+    queryFn: () => fetchFacilityMembersWordPress(facilityId!),
+    enabled: !!facilityId,
+  });
+}
+
+export function useFacilityOwnershipClaims(facilityId: string | undefined) {
+  return useQuery({
+    queryKey: ["facilityOwnershipClaims", facilityId],
+    queryFn: () => fetchFacilityOwnershipClaimsWordPress(facilityId!),
+    enabled: !!facilityId,
+  });
+}
+
+export function useMyFacilityPermission(facilityId: string | undefined) {
+  return useQuery({
+    queryKey: ["myFacilityPermission", facilityId],
+    queryFn: () => getMyFacilityPermissionWordPress(facilityId!),
+    enabled: !!facilityId,
+  });
+}
+
+export function useCreateCareFacility() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { title: string; content?: string; address?: string; location?: string; phone?: string; email?: string; website?: string }) => createCareFacilityWordPress(input),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["facilities"] }); },
+  });
+}
+
+export function useClaimFacilityOwnership() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ facilityId, evidenceText }: { facilityId: string; evidenceText?: string }) => claimFacilityOwnershipWordPress(facilityId, evidenceText),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["facilityOwnershipClaims"] }); },
+  });
+}
+
+export function useCreateFacilityOwnershipDispute() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ facilityId, reason }: { facilityId: string; reason: string }) => createFacilityOwnershipDisputeWordPress(facilityId, reason),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["facilityOwnershipDisputes"] }); },
+  });
+}
+
+export function useFacilityOwnershipDisputes(facilityId: string | undefined) {
+  return useQuery({
+    queryKey: ["facilityOwnershipDisputes", facilityId],
+    queryFn: () => fetchFacilityOwnershipDisputesWordPress(facilityId!),
+    enabled: !!facilityId,
+  });
+}
+
+export function useUpdateCareFacility() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...updates }: { id: string; [key: string]: any }) => updateCareFacilityWordPress(id, updates),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["facilities"] }); qc.invalidateQueries({ queryKey: ["facility"] }); },
+  });
+}
+
+export function useEntityReviews(entityId: string | undefined) {
+  return useQuery({
+    queryKey: ["entityReviews", entityId],
+    queryFn: () => fetchEntityReviewsWordPress(entityId!),
+    enabled: !!entityId,
+  });
+}
+
+export function useProviderReviews(providerId: string | undefined) {
+  return useEntityReviews(providerId);
+}
+
+export function useFacilityReviews(facilityId: string | undefined) {
+  return useEntityReviews(facilityId);
 }
 
 export function useCreateReview() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ entityId, rating, comment }: { entityId: string; rating: number; comment: string }) => {
-      const userId = await getCurrentUserId();
-      if (!userId) throw new Error("Not authenticated");
-      // Prevent duplicate reviews
-      const { data: existing } = await careDb
-        .from("review")
-        .select("id")
-        .eq("entity_id", entityId)
-        .eq("reviewer_id", userId)
-        .maybeSingle();
-      if (existing) throw new Error("You have already reviewed this provider");
-      const { error } = await careDb
-        .from("review")
-        .insert({ entity_id: entityId, reviewer_id: userId, rating, comment: comment || null });
-      if (error) throw error;
-      // Recalculate rating_average and rating_count on provider profile
-      const { data: allReviews } = await careDb
-        .from("review")
-        .select("rating")
-        .eq("entity_id", entityId);
-      if (allReviews && allReviews.length > 0) {
-        const count = allReviews.length;
-        const avg = allReviews.reduce((sum: number, r: any) => sum + r.rating, 0) / count;
-        await careDb.from("profile").update({ rating_average: Math.round(avg * 10) / 10, rating_count: count }).eq("id", entityId);
-      }
-    },
-    onSuccess: (_, vars) => {
-      qc.invalidateQueries({ queryKey: ["reviews", vars.entityId] });
-      qc.invalidateQueries({ queryKey: ["provider", vars.entityId] });
-      qc.invalidateQueries({ queryKey: ["providers"] });
-    },
+    mutationFn: (review: { entity_id: string; entity_type: string; rating: number; comment?: string }) => createReviewWordPress(review),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["entityReviews"] }); },
   });
 }
 
@@ -147,264 +276,55 @@ export function useCreateReview() {
 export function useBookings() {
   return useQuery({
     queryKey: ["bookings"],
-    queryFn: async () => {
-      const userId = await getCurrentUserId();
-      if (!userId) return [];
-      const { data, error } = await careDb
-        .from("booking")
-        .select("*, provider:provider_id(id, full_name, avatar_url, hourly_rate)")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data || []) as any[];
-    },
+    queryFn: () => fetchBookingsWordPress(),
   });
 }
 
 // Bookings where current user is the provider (incoming requests)
 export function useProviderBookings() {
   return useQuery({
-    queryKey: ["provider-bookings"],
-    queryFn: async () => {
-      const userId = await getCurrentUserId();
-      if (!userId) return [];
-      const { data, error } = await careDb
-        .from("booking")
-        .select("*, client:user_id(id, full_name, avatar_url, email, phone_number)")
-        .eq("provider_id", userId)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data || []) as any[];
-    },
+    queryKey: ["providerBookings"],
+    queryFn: () => fetchProviderBookingsWordPress(),
   });
 }
 
 export function useCreateBooking() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (booking: Partial<Booking>) => {
-      const userId = await getCurrentUserId();
-      if (!userId) throw new Error("Not authenticated");
-      const { data, error } = await careDb
-        .from("booking")
-        .insert({ ...booking, user_id: userId })
-        .select()
-        .single();
-      if (error) throw error;
-      // Notify provider about new booking
-      if (booking.provider_id) {
-        try {
-          const { data: profile } = await careDb.from("profile").select("full_name").eq("id", userId).single();
-          const clientName = profile?.full_name || "A client";
-          const dateStr = booking.appointment_date ? new Date(booking.appointment_date).toLocaleDateString("en", { month: "short", day: "numeric" }) : "";
-          await careDb.from("notification").insert({
-            user_id: booking.provider_id,
-            type: "booking_request",
-            title: "New Booking Request",
-            content: `${clientName} requested a ${booking.service_type || "care"} session${dateStr ? ` on ${dateStr}` : ""} at ${booking.appointment_time || ""}`,
-            link_url: "/provider-dashboard",
-          });
-        } catch (_) { /* notification is best-effort */ }
-      }
-      return data;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["bookings"] }),
+    mutationFn: (booking: Partial<Booking>) => createBookingWordPress(booking),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["bookings"] }); },
   });
 }
 
-export function useUpdateBookingStatus() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await careDb
-        .from("booking")
-        .update({ status })
-        .eq("id", id);
-      if (error) throw error;
-      // Notify the other party about status change
-      try {
-        const { data: booking } = await careDb.from("booking").select("user_id, provider_id, service_type, appointment_date").eq("id", id).single();
-        if (booking) {
-          const userId = await getCurrentUserId();
-          const isProvider = userId === booking.provider_id;
-          const targetId = isProvider ? booking.user_id : booking.provider_id;
-          const { data: actorProfile } = await careDb.from("profile").select("full_name").eq("id", userId!).single();
-          const actorName = actorProfile?.full_name || "Someone";
-          const statusLabel = status.replace(/_/g, " ");
-          const dateStr = booking.appointment_date ? new Date(booking.appointment_date).toLocaleDateString("en", { month: "short", day: "numeric" }) : "";
-          await careDb.from("notification").insert({
-            user_id: targetId,
-            type: status.startsWith("cancelled") ? "booking_cancelled" : status === "confirmed" ? "booking_confirmed" : "booking_update",
-            title: `Booking ${statusLabel.charAt(0).toUpperCase() + statusLabel.slice(1)}`,
-            content: `${actorName} ${statusLabel} the ${booking.service_type || "care"} booking${dateStr ? ` on ${dateStr}` : ""}.`,
-            link_url: isProvider ? "/bookings" : "/provider-dashboard",
-          });
-        }
-      } catch (_) { /* notification is best-effort */ }
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["bookings"] });
-      qc.invalidateQueries({ queryKey: ["provider-bookings"] });
-    },
-  });
-}
-
-// ─── Messages ───────────────────────────────────────────────
+// ─── Messages ───────────────────────────────────────────────@@
 export function useConversations() {
   return useQuery({
     queryKey: ["conversations"],
-    queryFn: async () => {
-      const userId = await getCurrentUserId();
-      if (!userId) return [];
-      const { data, error } = await careDb
-        .from("conversation")
-        .select(`
-          *,
-          participant_1:participant_1_id(id, full_name, avatar_url),
-          participant_2:participant_2_id(id, full_name, avatar_url)
-        `)
-        .or(`participant_1_id.eq.${userId},participant_2_id.eq.${userId}`)
-        .order("last_message_at", { ascending: false });
-      if (error) throw error;
-      const conversations = (data || []) as any[];
-      if (conversations.length === 0) return conversations;
-
-      // Batch: get all other user IDs
-      const otherIds = conversations.map(c => {
-        return c.participant_1?.id === userId ? c.participant_2?.id : c.participant_1?.id;
-      }).filter(Boolean);
-
-      // Batch fetch last messages for all conversations at once
-      // We get recent DMs involving this user and group by other user
-      const { data: recentMsgs } = await careDb
-        .from("direct_message")
-        .select("id, message_content, sender_id, receiver_id, created_at, read_at")
-        .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
-        .is("group_id", null)
-        .order("created_at", { ascending: false })
-        .limit(500);
-
-      // Build maps for last message and unread count per other user
-      const lastMsgMap: Record<string, any> = {};
-      const unreadMap: Record<string, number> = {};
-
-      for (const msg of (recentMsgs || [])) {
-        const otherId = msg.sender_id === userId ? msg.receiver_id : msg.sender_id;
-        if (!otherId) continue;
-        // Last message (first occurrence = most recent due to ordering)
-        if (!lastMsgMap[otherId]) {
-          lastMsgMap[otherId] = msg;
-        }
-        // Unread count (messages FROM other TO me that are unread)
-        if (msg.sender_id === otherId && msg.receiver_id === userId && !msg.read_at) {
-          unreadMap[otherId] = (unreadMap[otherId] || 0) + 1;
-        }
-      }
-
-      // Attach to conversations
-      for (const convo of conversations) {
-        const otherId = convo.participant_1?.id === userId ? convo.participant_2?.id : convo.participant_1?.id;
-        convo.last_message = lastMsgMap[otherId] || null;
-        convo.unread_count = unreadMap[otherId] || 0;
-      }
-      return conversations;
-    },
+    queryFn: () => fetchConversationsWordPress(),
   });
 }
 
 export function useDirectMessages(otherUserId: string | null) {
   return useQuery({
     queryKey: ["messages", otherUserId],
-    queryFn: async () => {
-      const userId = await getCurrentUserId();
-      if (!userId || !otherUserId) return [];
-      const { data, error } = await careDb
-        .from("direct_message")
-        .select("*")
-        .or(
-          `and(sender_id.eq.${userId},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${userId})`
-        )
-        .is("group_id", null)
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      // Fetch sender profiles separately (no FK in care_connector schema)
-      const senderIds = [...new Set((data || []).map((m: any) => m.sender_id).filter(Boolean))];
-      let senderMap: Record<string, any> = {};
-      if (senderIds.length > 0) {
-        const { data: senders } = await careDb
-          .from("profile")
-          .select("id, full_name, avatar_url")
-          .in("id", senderIds);
-        (senders || []).forEach((s: any) => { senderMap[s.id] = s; });
-      }
-      return (data || []).map((m: any) => ({ ...m, sender: senderMap[m.sender_id] || null }));
-    },
+    queryFn: () => fetchDirectMessagesWordPress(otherUserId!),
     enabled: !!otherUserId,
-    refetchInterval: 10000,
   });
 }
 
 export function useGroupMessages(groupId: string | null) {
   return useQuery({
-    queryKey: ["group-messages", groupId],
-    queryFn: async () => {
-      if (!groupId) return [];
-      const { data, error } = await careDb
-        .from("direct_message")
-        .select("*")
-        .eq("group_id", groupId)
-        .order("created_at", { ascending: true })
-        .limit(100);
-      if (error) throw error;
-      // Fetch sender profiles separately (no FK in care_connector schema)
-      const senderIds = [...new Set((data || []).map((m: any) => m.sender_id).filter(Boolean))];
-      let senderMap: Record<string, any> = {};
-      if (senderIds.length > 0) {
-        const { data: senders } = await careDb
-          .from("profile")
-          .select("id, full_name, avatar_url")
-          .in("id", senderIds);
-        (senders || []).forEach((s: any) => { senderMap[s.id] = s; });
-      }
-      return (data || []).map((m: any) => ({ ...m, sender: senderMap[m.sender_id] || null }));
-    },
+    queryKey: ["groupMessages", groupId],
+    queryFn: () => fetchDirectMessagesWordPress(groupId!),
     enabled: !!groupId,
-    refetchInterval: 10000,
   });
 }
 
 export function useSendMessage() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ receiverId, content, groupId, attachmentUrl, messageType }: { receiverId?: string; content: string; groupId?: string; attachmentUrl?: string; messageType?: string }) => {
-      const userId = await getCurrentUserId();
-      if (!userId) throw new Error("Not authenticated");
-      const { error } = await careDb
-        .from("direct_message")
-        .insert({
-          sender_id: userId,
-          receiver_id: receiverId || null,
-          group_id: groupId || null,
-          message_content: content,
-          message_type: messageType || "text",
-          attachment_url: attachmentUrl || null,
-        });
-      if (error) throw error;
-      // Update conversation last_message_at for DMs
-      if (receiverId) {
-        try {
-          await careDb
-            .from("conversation")
-            .update({ last_message_at: new Date().toISOString() })
-            .or(`and(participant_1_id.eq.${userId},participant_2_id.eq.${receiverId}),and(participant_1_id.eq.${receiverId},participant_2_id.eq.${userId})`);
-        } catch (_) { /* ignore */ }
-      }
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["messages"] });
-      qc.invalidateQueries({ queryKey: ["group-messages"] });
-      qc.invalidateQueries({ queryKey: ["conversations"] });
-    },
+    mutationFn: ({ conversationId, content }: { conversationId: string; content: string }) => sendMessageWordPress(conversationId, content),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["messages"] }); qc.invalidateQueries({ queryKey: ["conversations"] }); },
   });
 }
 
@@ -412,59 +332,34 @@ export function useSendMessage() {
 export function useMarkMessagesRead() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (otherUserId: string) => {
-      const userId = await getCurrentUserId();
-      if (!userId || !otherUserId) return;
-      const { error } = await careDb
-        .from("direct_message")
-        .update({ read_at: new Date().toISOString() })
-        .eq("sender_id", otherUserId)
-        .eq("receiver_id", userId)
-        .is("read_at", null);
-      if (error) throw error;
+    mutationFn: (conversationId: string) => markMessagesReadWordPress(conversationId),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["conversations"] }); },
+  });
+}
+
+export function useStartConversation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (otherUserId: string | { otherUserId: string }) => {
+      const uid = typeof otherUserId === 'string' ? otherUserId : otherUserId.otherUserId;
+      return startConversationWordPress(uid);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["conversations"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["conversations"] }); },
   });
 }
 
 // ─── Care Groups ────────────────────────────────────────────
 export function useCareGroups() {
   return useQuery({
-    queryKey: ["care-groups"],
-    queryFn: async () => {
-      const userId = await getCurrentUserId();
-      if (!userId) return [];
-      const { data: memberships, error: mErr } = await careDb
-        .from("care_group_member")
-        .select("group_id")
-        .eq("user_id", userId)
-        .eq("invitation_status", "accepted");
-      if (mErr) throw mErr;
-      const groupIds = (memberships || []).map((m: any) => m.group_id);
-      if (groupIds.length === 0) return [];
-      const { data, error } = await careDb
-        .from("care_group")
-        .select("*")
-        .in("id", groupIds);
-      if (error) throw error;
-      return (data || []) as CareGroup[];
-    },
+    queryKey: ["careGroups"],
+    queryFn: () => fetchCareGroupsWordPress(),
   });
 }
 
 export function useCareGroupMembers(groupId: string | null) {
   return useQuery({
-    queryKey: ["care-group-members", groupId],
-    queryFn: async () => {
-      if (!groupId) return [];
-      const { data, error } = await careDb
-        .from("care_group_member")
-        .select("*, profile:user_id(id, full_name, avatar_url, email)")
-        .eq("group_id", groupId)
-        .eq("invitation_status", "accepted");
-      if (error) throw error;
-      return (data || []) as any[];
-    },
+    queryKey: ["careGroupMembers", groupId],
+    queryFn: () => fetchCareGroupMembersWordPress(groupId!),
     enabled: !!groupId,
   });
 }
@@ -472,113 +367,40 @@ export function useCareGroupMembers(groupId: string | null) {
 export function useCreateCareGroup() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (group: { name: string; description?: string; is_private?: boolean }) => {
-      const userId = await getCurrentUserId();
-      if (!userId) throw new Error("Not authenticated");
-      const { data, error } = await careDb
-        .from("care_group")
-        .insert({ ...group, created_by: userId })
-        .select()
-        .single();
-      if (error) throw error;
-      // NOTE: Owner membership row is auto-created by a database trigger.
-      // Do NOT insert a duplicate member row here.
-      return data;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-groups"] }),
+    mutationFn: (group: { name: string; description?: string; is_private?: boolean }) => createCareGroupWordPress(group),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["careGroups"] }); },
   });
 }
 
 export function useInviteToGroup() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ groupId, email }: { groupId: string; email: string }) => {
-      const userId = await getCurrentUserId();
-      if (!userId) throw new Error("Not authenticated");
-      const { error } = await careDb
-        .from("care_group_invitation")
-        .insert({ care_group_id: groupId, invited_by_user_id: userId, invitee_email: email, status: "pending" });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["care-group-members"] });
-      qc.invalidateQueries({ queryKey: ["care-group-invitations"] });
-    },
+    mutationFn: ({ groupId, userId, role }: { groupId: string; userId: string; role?: string }) => inviteToGroupWordPress(groupId, userId, role),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["careGroupMembers"] }); qc.invalidateQueries({ queryKey: ["groupInvitations"] }); },
   });
 }
 
 export function useUpdateMemberRole() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ memberId, updates }: { memberId: string; updates: { is_admin?: boolean; is_cared_one?: boolean; is_owner?: boolean } }) => {
-      const { error } = await careDb
-        .from("care_group_member")
-        .update(updates)
-        .eq("id", memberId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["care-group-members"] });
-      qc.invalidateQueries({ queryKey: ["group-cared-ones"] });
-    },
+    mutationFn: ({ memberId, role }: { memberId: string; role: string }) => updateMemberRoleWordPress(memberId, role),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["careGroupMembers"] }); },
   });
 }
 
 export function useRemoveGroupMember() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (memberId: string) => {
-      // Get the member's group_id before deleting
-      const { data: member } = await careDb
-        .from("care_group_member")
-        .select("group_id")
-        .eq("id", memberId)
-        .single();
-      const { error } = await careDb
-        .from("care_group_member")
-        .delete()
-        .eq("id", memberId);
-      if (error) throw error;
-      // Decrement member_count
-      if (member?.group_id) {
-        try {
-          const { data: g } = await careDb.from("care_group").select("member_count").eq("id", member.group_id).single();
-          if (g && (g as any).member_count > 0) {
-            await careDb.from("care_group").update({ member_count: (g as any).member_count - 1 }).eq("id", member.group_id);
-          }
-        } catch (_) { /* ignore */ }
-      }
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["care-group-members"] });
-      qc.invalidateQueries({ queryKey: ["care-groups"] });
-    },
+    mutationFn: ({ memberId, groupId }: { memberId: string; groupId?: string }) => removeGroupMemberWordPress(memberId, groupId),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["careGroupMembers"] }); },
   });
 }
 
 // ─── Care Group Gallery ─────────────────────────────────────
 export function useCareGroupGallery(groupId: string | null) {
   return useQuery({
-    queryKey: ["care-group-gallery", groupId],
-    queryFn: async () => {
-      if (!groupId) return [];
-      const { data, error } = await careDb
-        .from("care_group_gallery")
-        .select("*")
-        .eq("group_id", groupId)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      const uploaderIds = [...new Set((data || []).map((g: any) => g.uploaded_by).filter(Boolean))];
-      let uploaderMap: Record<string, any> = {};
-      if (uploaderIds.length > 0) {
-        const { data: uploaders } = await careDb
-          .from("profile")
-          .select("id, full_name, avatar_url")
-          .in("id", uploaderIds);
-        (uploaders || []).forEach((u: any) => { uploaderMap[u.id] = u; });
-      }
-      return (data || []).map((g: any) => ({ ...g, uploader: uploaderMap[g.uploaded_by] || null }));
-    },
+    queryKey: ["careGroupGallery", groupId],
+    queryFn: () => fetchCareGroupGalleryWordPress(groupId!),
     enabled: !!groupId,
   });
 }
@@ -586,54 +408,24 @@ export function useCareGroupGallery(groupId: string | null) {
 // ─── Care Tasks ─────────────────────────────────────────────
 export function useCareTasks(groupId?: string | null) {
   return useQuery({
-    queryKey: ["care-tasks", groupId],
-    queryFn: async () => {
-      const userId = await getCurrentUserId();
-      if (!userId) return [];
-      let q = careDb
-        .from("care_task")
-        .select("*, assignee_profile:assigned_to(id, full_name, avatar_url)")
-        .order("created_at", { ascending: false });
-
-      if (groupId) {
-        q = q.eq("group_id", groupId);
-      } else {
-        q = q.or(`created_by.eq.${userId},assigned_to.eq.${userId}`);
-      }
-
-      const { data, error } = await q;
-      if (error) throw error;
-      return (data || []) as any[];
-    },
+    queryKey: ["careTasks", groupId],
+    queryFn: () => fetchCareTasksWordPress(groupId),
   });
 }
 
 export function useCreateTask() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (task: Partial<CareTask>) => {
-      const userId = await getCurrentUserId();
-      if (!userId) throw new Error("Not authenticated");
-      const { error } = await careDb
-        .from("care_task")
-        .insert({ ...task, created_by: userId });
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-tasks"] }),
+    mutationFn: (task: { group_id?: string; care_group_id?: string; title: string; description?: string; priority?: string; assigned_to?: string; due_date?: string }) => createCareTaskWordPress(task),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["careTasks"] }); },
   });
 }
 
 export function useUpdateTaskStatus() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await careDb
-        .from("care_task")
-        .update({ status, ...(status === "completed" ? { completed_at: new Date().toISOString() } : {}) })
-        .eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-tasks"] }),
+    mutationFn: ({ id, status, updates }: { id: string; status?: string; updates?: Record<string, any> }) => updateCareTaskWordPress(id, updates ?? { status }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["careTasks"] }); },
   });
 }
 
@@ -641,133 +433,55 @@ export function useUpdateTaskStatus() {
 export function useNotifications() {
   return useQuery({
     queryKey: ["notifications"],
-    queryFn: async () => {
-      const userId = await getCurrentUserId();
-      if (!userId) return [];
-      const { data, error } = await careDb
-        .from("notification")
-        .select("*")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false })
-        .limit(50);
-      if (error) throw error;
-      return (data || []) as Notification[];
-    },
+    queryFn: () => fetchNotificationsWordPress(),
   });
 }
 
 export function useMarkNotificationRead() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await careDb
-        .from("notification")
-        .update({ is_read: true })
-        .eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
+    mutationFn: (id: string) => markNotificationReadWordPress(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["notifications"] }); },
   });
 }
 
 export function useMarkAllNotificationsRead() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async () => {
-      const userId = await getCurrentUserId();
-      if (!userId) return;
-      const { error } = await careDb
-        .from("notification")
-        .update({ is_read: true })
-        .eq("user_id", userId)
-        .eq("is_read", false);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
+    mutationFn: () => markAllNotificationsReadWordPress(),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["notifications"] }); },
   });
 }
 
 // ─── Favorites / Saved Providers ────────────────────────────
 export function useSavedProviders() {
   return useQuery({
-    queryKey: ["saved-providers"],
-    queryFn: async () => {
-      const userId = await getCurrentUserId();
-      if (!userId) return [];
-      const { data, error } = await careDb
-        .from("saved_provider")
-        .select("*")
-        .eq("user_id", userId);
-      if (error) throw error;
-      const providerIds = [...new Set((data || []).map((s: any) => s.provider_id).filter(Boolean))];
-      let providerMap: Record<string, any> = {};
-      if (providerIds.length > 0) {
-        const { data: providers } = await careDb
-          .from("profile")
-          .select("id, full_name, avatar_url, hourly_rate, specialty, rating_average, rating_count, location, background_check_status, years_of_experience")
-          .in("id", providerIds);
-        (providers || []).forEach((p: any) => { providerMap[p.id] = p; });
-      }
-      return (data || []).map((s: any) => ({ ...s, provider: providerMap[s.provider_id] || null }));
-    },
+    queryKey: ["savedProviders"],
+    queryFn: () => fetchSavedProvidersWordPress(),
   });
 }
 
 export function useToggleSavedProvider() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ providerId, isSaved }: { providerId: string; isSaved: boolean }) => {
-      const userId = await getCurrentUserId();
-      if (!userId) throw new Error("Not authenticated");
-      if (isSaved) {
-        const { error } = await careDb
-          .from("saved_provider")
-          .delete()
-          .eq("user_id", userId)
-          .eq("provider_id", providerId);
-        if (error) throw error;
-      } else {
-        const { error } = await careDb
-          .from("saved_provider")
-          .insert({ user_id: userId, provider_id: providerId });
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["saved-providers"] }),
+    mutationFn: (providerId: string) => toggleSavedProviderWordPress(providerId),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["savedProviders"] }); },
   });
 }
 
 // ─── Profile ────────────────────────────────────────────────
 export function useMyProfile() {
   return useQuery({
-    queryKey: ["my-profile"],
-    queryFn: async () => {
-      const userId = await getCurrentUserId();
-      if (!userId) return null;
-      const { data, error } = await careDb
-        .from("profile")
-        .select("*")
-        .eq("id", userId)
-        .single();
-      if (error) throw error;
-      return data as Profile;
-    },
+    queryKey: ["myProfile"],
+    queryFn: () => fetchMyProfileWordPress(),
   });
 }
 
 export function useUpdateProfile() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (updates: Partial<Profile>) => {
-      const userId = await getCurrentUserId();
-      if (!userId) throw new Error("Not authenticated");
-      const { error } = await careDb
-        .from("profile")
-        .update(updates)
-        .eq("id", userId);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["my-profile"] }),
+    mutationFn: (updates: Partial<Profile>) => updateProfileWordPress(updates),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["myProfile"] }); },
   });
 }
 
@@ -775,49 +489,27 @@ export function useUpdateProfile() {
 export function useSubmitProviderApplication() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (data: {
-      bio?: string;
-      specialty?: string[];
-      certification?: string[];
-      years_of_experience?: number;
-      hourly_rate?: number;
-      service_area?: string[];
-      phone_number?: string;
-      location?: string;
-    }) => {
-      const userId = await getCurrentUserId();
-      if (!userId) throw new Error("Not authenticated");
-      const { error } = await careDb
-        .from("profile")
-        .update({
-          ...data,
-          is_care_provider: true,
-          provider_is_active: false,
-        })
-        .eq("id", userId);
-      if (error) throw error;
+    mutationFn: async (input: any) => {
+      return updateProfileWordPress({
+        is_care_provider: true,
+        provider_is_active: true,
+        specialty: input.specialties || input.specialty || [],
+        certification: input.certifications || input.certification || [],
+        hourly_rate: input.hourlyRate || input.hourly_rate || 0,
+        bio: input.bio || '',
+        location: input.location || '',
+        years_of_experience: input.yearsOfExperience || input.years_of_experience || 0,
+      });
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["my-profile"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["myProfile"] }); },
   });
 }
 
 // ─── Care Group Posts ───────────────────────────────────────
 export function useCareGroupPosts(groupId: string | null, type?: string) {
   return useQuery({
-    queryKey: ["care-group-posts", groupId, type],
-    queryFn: async () => {
-      if (!groupId) return [];
-      let q = careDb
-        .from("care_group_post")
-        .select("*, author:author_id(id, full_name, avatar_url)")
-        .eq("group_id", groupId)
-        .order("created_at", { ascending: false })
-        .limit(50);
-      if (type) q = q.eq("type", type);
-      const { data, error } = await q;
-      if (error) throw error;
-      return (data || []) as any[];
-    },
+    queryKey: ["careGroupPosts", groupId, type],
+    queryFn: () => fetchCareGroupPostsWordPress(groupId!, type),
     enabled: !!groupId,
   });
 }
@@ -825,43 +517,24 @@ export function useCareGroupPosts(groupId: string | null, type?: string) {
 export function useCreateGroupPost() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (post: { group_id: string; content: string; type?: string; title?: string; visibility?: string; visible_to_member_category_id?: string[] }) => {
-      const userId = await getCurrentUserId();
-      if (!userId) throw new Error("Not authenticated");
-      const { error } = await careDb
-        .from("care_group_post")
-        .insert({ ...post, author_id: userId, type: post.type || "discussion" });
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-group-posts"] }),
+    mutationFn: (post: { group_id: string; content: string; type?: string; title?: string }) => createGroupPostWordPress(post),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["careGroupPosts"] }); },
   });
 }
 
 export function useUpdateGroupPost() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: { content?: string; title?: string; is_pinned?: boolean } }) => {
-      const { error } = await careDb
-        .from("care_group_post")
-        .update(updates)
-        .eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-group-posts"] }),
+    mutationFn: ({ id, ...updates }: { id: string; content?: string; title?: string; is_pinned?: boolean }) => updateGroupPostWordPress(id, updates),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["careGroupPosts"] }); },
   });
 }
 
 export function useDeleteGroupPost() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await careDb
-        .from("care_group_post")
-        .delete()
-        .eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-group-posts"] }),
+    mutationFn: (id: string) => deleteGroupPostWordPress(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["careGroupPosts"] }); },
   });
 }
 
@@ -869,28 +542,16 @@ export function useDeleteGroupPost() {
 export function useUpdateCareGroup() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: { name?: string; description?: string; is_private?: boolean } }) => {
-      const { error } = await careDb
-        .from("care_group")
-        .update({ ...updates, updated_at: new Date().toISOString() })
-        .eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-groups"] }),
+    mutationFn: ({ id, ...updates }: { id: string; name?: string; description?: string; is_private?: boolean }) => updateCareGroupWordPress(id, updates),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["careGroups"] }); },
   });
 }
 
 export function useDeleteCareGroup() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await careDb
-        .from("care_group")
-        .delete()
-        .eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-groups"] }),
+    mutationFn: (id: string) => deleteCareGroupWordPress(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["careGroups"] }); },
   });
 }
 
@@ -898,57 +559,16 @@ export function useDeleteCareGroup() {
 export function useJoinGroupByCode() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (joinCode: string) => {
-      const userId = await getCurrentUserId();
-      if (!userId) throw new Error("Not authenticated");
-      // Find group with this join code
-      const { data: group, error: gErr } = await careDb
-        .from("care_group")
-        .select("id")
-        .eq("join_code", joinCode.trim().toUpperCase())
-        .single();
-      if (gErr || !group) throw new Error("Invalid join code");
-      // Check if already a member
-      const { data: existing } = await careDb
-        .from("care_group_member")
-        .select("id")
-        .eq("group_id", group.id)
-        .eq("user_id", userId)
-        .maybeSingle();
-      if (existing) throw new Error("You're already a member of this group");
-      const { error } = await careDb
-        .from("care_group_member")
-        .insert({ group_id: group.id, user_id: userId, invitation_status: "accepted" });
-      if (error) throw error;
-      // Increment member_count
-      try {
-        const { data: grp } = await careDb.from("care_group").select("member_count").eq("id", group.id).single();
-        await careDb.from("care_group").update({ member_count: ((grp as any)?.member_count || 0) + 1 }).eq("id", group.id);
-      } catch (_) { /* ignore */ }
-      return group;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-groups"] }),
+    mutationFn: (code: string) => joinGroupByCodeWordPress(code),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["careGroups"] }); },
   });
 }
 
 // ─── Pending Invitations ────────────────────────────────────
 export function useGroupInvitations(groupId: string | null) {
   return useQuery({
-    queryKey: ["care-group-invitations", groupId],
-    queryFn: async () => {
-      if (!groupId) return [];
-      const { data, error } = await careDb
-        .from("care_group_invitation")
-        .select("*")
-        .eq("care_group_id", groupId)
-        .eq("status", "pending")
-        .order("created_at", { ascending: false });
-      if (error) {
-        console.warn("Failed to fetch invitations:", error.message);
-        return [];
-      }
-      return (data || []) as any[];
-    },
+    queryKey: ["groupInvitations", groupId],
+    queryFn: () => fetchGroupInvitationsWordPress(groupId!),
     enabled: !!groupId,
   });
 }
@@ -956,31 +576,16 @@ export function useGroupInvitations(groupId: string | null) {
 export function useCancelInvitation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (invitationId: string) => {
-      const { error } = await careDb
-        .from("care_group_invitation")
-        .delete()
-        .eq("id", invitationId);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-group-invitations"] }),
+    mutationFn: (invitationId: string) => cancelInvitationWordPress(invitationId),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["groupInvitations"] }); },
   });
 }
 
 // ─── Search Profiles ────────────────────────────────────────
 export function useSearchProfiles(query: string) {
   return useQuery({
-    queryKey: ["search-profiles", query],
-    queryFn: async () => {
-      if (!query || query.length < 2) return [];
-      const { data, error } = await careDb
-        .from("profile")
-        .select("id, full_name, first_name, last_name, avatar_url, email, user_name")
-        .or(`full_name.ilike.%${query}%,email.ilike.%${query}%,user_name.ilike.%${query}%`)
-        .limit(10);
-      if (error) throw error;
-      return (data || []) as any[];
-    },
+    queryKey: ["searchProfiles", query],
+    queryFn: () => searchProfilesWordPress(query),
     enabled: query.length >= 2,
   });
 }
@@ -989,37 +594,8 @@ export function useSearchProfiles(query: string) {
 export function useAddCaredOneToGroup() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ groupId, userId, skipInvitation }: { groupId: string; userId: string; skipInvitation: boolean }) => {
-      // Check if already a member
-      const { data: existing } = await careDb
-        .from("care_group_member")
-        .select("id")
-        .eq("group_id", groupId)
-        .eq("user_id", userId)
-        .maybeSingle();
-      if (existing) {
-        // Just update their is_cared_one flag
-        const { error } = await careDb
-          .from("care_group_member")
-          .update({ is_cared_one: true })
-          .eq("id", existing.id);
-        if (error) throw error;
-        return;
-      }
-      const { error } = await careDb
-        .from("care_group_member")
-        .insert({
-          group_id: groupId,
-          user_id: userId,
-          is_cared_one: true,
-          invitation_status: skipInvitation ? "accepted" : "pending",
-        });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["care-group-members"] });
-      qc.invalidateQueries({ queryKey: ["group-cared-ones"] });
-    },
+    mutationFn: ({ groupId, caredOneId }: { groupId: string; caredOneId: string }) => addCaredOneToGroupWordPress(groupId, caredOneId),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["careGroupMembers"] }); },
   });
 }
 
@@ -1027,168 +603,40 @@ export function useAddCaredOneToGroup() {
 export function useCreateUserCaredOne() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ caredOneId, relationship, isPrimary }: { caredOneId: string; relationship?: string; isPrimary?: boolean }) => {
-      const userId = await getCurrentUserId();
-      if (!userId) throw new Error("Not authenticated");
-      const { error } = await careDb
-        .from("user_cared_one")
-        .insert({ user_id: userId, cared_one_id: caredOneId, relationship: relationship || null, is_primary: isPrimary || false });
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["user-cared-ones"] }),
+    mutationFn: (caredOne: { caredOneId: string; relationship?: string; isPrimary?: boolean }) => createUserCaredOneWordPress(caredOne),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["userCaredOnes"] }); },
   });
 }
 
 // ─── My Pending Group Invitations ───────────────────────────
-// ─── My Pending Group Invitations ───────────────────────────
-// Covers both: (a) email invitations from care_group_invitation table
-//              (b) direct membership rows with invitation_status='pending' (cared ones added without skip)
 export function useMyPendingInvitations() {
   return useQuery({
-    queryKey: ["my-pending-invitations"],
-    queryFn: async () => {
-      const userId = await getCurrentUserId();
-      if (!userId) return [];
-
-      // (a) Email invitations
-      const { data: profile } = await careDb.from("profile").select("email").eq("id", userId).single();
-      const emailInvitations: any[] = [];
-      if (profile?.email) {
-        const { data, error } = await careDb
-          .from("care_group_invitation")
-          .select("*")
-          .eq("invitee_email", profile.email)
-          .eq("status", "pending")
-          .order("created_at", { ascending: false });
-        if (!error && data) emailInvitations.push(...data);
-      }
-
-      // (b) Direct pending member rows (e.g. cared ones added without skip)
-      const { data: pendingMemberships, error: mErr } = await careDb
-        .from("care_group_member")
-        .select("id, group_id, created_at")
-        .eq("user_id", userId)
-        .eq("invitation_status", "pending");
-
-      const allGroupIds = [
-        ...emailInvitations.map((i: any) => i.care_group_id),
-        ...((pendingMemberships || []).map((m: any) => m.group_id)),
-      ].filter(Boolean);
-
-      let groupMap: Record<string, any> = {};
-      if (allGroupIds.length > 0) {
-        const uniqueIds = [...new Set(allGroupIds)];
-        const { data: groups } = await careDb.from("care_group").select("id, name, description").in("id", uniqueIds);
-        (groups || []).forEach((g: any) => { groupMap[g.id] = g; });
-      }
-
-      const emailInvRows = emailInvitations.map((i: any) => ({
-        id: i.id,
-        care_group_id: i.care_group_id,
-        created_at: i.created_at,
-        source: "invitation" as const,
-        group: groupMap[i.care_group_id] || null,
-      }));
-
-      const memberRows = (pendingMemberships || []).map((m: any) => ({
-        id: m.id,
-        care_group_id: m.group_id,
-        created_at: m.created_at,
-        source: "membership" as const,
-        group: groupMap[m.group_id] || null,
-      }));
-
-      return [...emailInvRows, ...memberRows].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    },
+    queryKey: ["myPendingInvitations"],
+    queryFn: () => fetchMyPendingInvitationsWordPress(),
   });
 }
 
 export function useAcceptInvitation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (invitation: { id: string; care_group_id: string; source?: "invitation" | "membership" }) => {
-      const userId = await getCurrentUserId();
-      if (!userId) throw new Error("Not authenticated");
-
-      if (invitation.source === "membership") {
-        // Just update the membership row to accepted
-        const { error } = await careDb
-          .from("care_group_member")
-          .update({ invitation_status: "accepted" })
-          .eq("id", invitation.id);
-        if (error) throw error;
-      } else {
-        // Update invitation status
-        const { error: invErr } = await careDb
-          .from("care_group_invitation")
-          .update({ status: "accepted" })
-          .eq("id", invitation.id);
-        if (invErr) throw invErr;
-        // Create member row if not exists
-        const { data: existing } = await careDb
-          .from("care_group_member")
-          .select("id")
-          .eq("group_id", invitation.care_group_id)
-          .eq("user_id", userId)
-          .maybeSingle();
-        if (!existing) {
-          const { error: memErr } = await careDb
-            .from("care_group_member")
-            .insert({ group_id: invitation.care_group_id, user_id: userId, invitation_status: "accepted" });
-          if (memErr) throw memErr;
-        }
-      }
-      // Increment member_count
-      try {
-        const { data: grp } = await careDb.from("care_group").select("member_count").eq("id", invitation.care_group_id).single();
-        await careDb.from("care_group").update({ member_count: ((grp as any)?.member_count || 0) + 1 }).eq("id", invitation.care_group_id);
-      } catch (_) { /* ignore */ }
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["my-pending-invitations"] });
-      qc.invalidateQueries({ queryKey: ["care-groups"] });
-      qc.invalidateQueries({ queryKey: ["care-group-members"] });
-    },
+    mutationFn: (invitationId: string) => acceptInvitationWordPress(invitationId),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["myPendingInvitations"] }); qc.invalidateQueries({ queryKey: ["careGroups"] }); },
   });
 }
 
 export function useDeclineInvitation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, source }: { id: string; source?: "invitation" | "membership" }) => {
-      if (source === "membership") {
-        // Delete the pending member row (they don't want to join)
-        const { error } = await careDb.from("care_group_member").delete().eq("id", id);
-        if (error) throw error;
-      } else {
-        const { error } = await careDb
-          .from("care_group_invitation")
-          .update({ status: "declined" })
-          .eq("id", id);
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["my-pending-invitations"] }),
+    mutationFn: (invitationId: string) => declineInvitationWordPress(invitationId),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["myPendingInvitations"] }); },
   });
 }
 
 // ─── Member Categories ──────────────────────────────────────
 export function useMemberCategories(groupId: string | null) {
   return useQuery({
-    queryKey: ["member-categories", groupId],
-    queryFn: async () => {
-      if (!groupId) return [];
-      const { data, error } = await careDb
-        .from("care_group_member_category")
-        .select("*")
-        .eq("group_id", groupId)
-        .order("name");
-      if (error) {
-        console.warn("Failed to fetch member categories:", error.message);
-        return [];
-      }
-      return (data || []) as any[];
-    },
+    queryKey: ["memberCategories", groupId],
+    queryFn: () => fetchMemberCategoriesWordPress(groupId!),
     enabled: !!groupId,
   });
 }
@@ -1196,186 +644,149 @@ export function useMemberCategories(groupId: string | null) {
 export function useCreateMemberCategory() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ groupId, name, description, color }: { groupId: string; name: string; description?: string; color?: string }) => {
-      const userId = await getCurrentUserId();
-      if (!userId) throw new Error("Not authenticated");
-      const { error } = await careDb
-        .from("care_group_member_category")
-        .insert({ group_id: groupId, name, description: description || null, color: color || null, created_by: userId });
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["member-categories"] }),
+    mutationFn: ({ groupId, name, color }: { groupId: string; name: string; color?: string }) => createMemberCategoryWordPress(groupId, name, color),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["memberCategories"] }); },
   });
 }
 
 export function useDeleteMemberCategory() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (categoryId: string) => {
-      const { error } = await careDb
-        .from("care_group_member_category")
-        .delete()
-        .eq("id", categoryId);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["member-categories"] }),
+    mutationFn: (categoryId: string) => deleteMemberCategoryWordPress(categoryId),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["memberCategories"] }); },
   });
 }
 
+// ─── Shared Posts (SupaPress community usage) ──────────────
+export function usePosts(postType: string, area?: string, childPostType?: string | null) {
+  return useQuery({
+    queryKey: ["posts", postType, area, childPostType],
+    queryFn: () => fetchPostsWordPress(postType, area, childPostType),
+  });
+}
+
+export function usePost(id: string | null, postType?: string) {
+  return useQuery({
+    queryKey: ["post", id, postType],
+    queryFn: () => fetchPostByIdWordPress(id!, postType),
+    enabled: !!id,
+  });
+}
+
+export function useCreatePost() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (post: { title: string; content?: string; post_type?: string; postType?: string; status?: string; area?: string }) => createPostWordPress(post),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["posts"] }); },
+  });
+}
+
+export function useUpdatePost() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...updates }: { id: string; title?: string; content?: string; status?: string }) => updatePostWordPress(id, updates),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["posts"] }); qc.invalidateQueries({ queryKey: ["post"] }); },
+  });
+}
+
+export function useDeletePost() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deletePostWordPress(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["posts"] }); },
+  });
+}
 
 // ─── Location Shares (scoped to care circle members) ────────
 export function useLocationShares() {
   return useQuery({
-    queryKey: ["location-shares"],
-    queryFn: async () => {
-      const userId = await getCurrentUserId();
-      if (!userId) return [];
-      // Get user's care group member IDs to scope GPS visibility
-      const { data: memberships } = await careDb
-        .from("care_group_member")
-        .select("group_id")
-        .eq("user_id", userId)
-        .eq("invitation_status", "accepted");
-      const groupIds = (memberships || []).map((m: any) => m.group_id);
-      let allowedUserIds = [userId]; // Always include self
-      if (groupIds.length > 0) {
-        const { data: groupMembers } = await careDb
-          .from("care_group_member")
-          .select("user_id")
-          .in("group_id", groupIds)
-          .eq("invitation_status", "accepted");
-        const memberIds = (groupMembers || []).map((m: any) => m.user_id);
-        allowedUserIds = [...new Set([userId, ...memberIds])];
-      }
-      const { data, error } = await careDb
-        .from("location_share")
-        .select("*, profile:user_id(id, full_name, avatar_url)")
-        .in("user_id", allowedUserIds)
-        .order("updated_at", { ascending: false });
-      if (error) throw error;
-      return (data || []) as any[];
-    },
+    queryKey: ["locationShares"],
+    queryFn: () => fetchLocationSharesWordPress(),
   });
 }
 
 // ─── Service Categories ─────────────────────────────────────
 export function useServiceCategories() {
   return useQuery({
-    queryKey: ["service-categories"],
-    queryFn: async () => {
-      const { data, error } = await careDb
-        .from("service_category")
-        .select("*")
-        .order("name");
-      if (error) throw error;
-      return (data || []) as ServiceCategory[];
-    },
+    queryKey: ["serviceCategories"],
+    queryFn: () => fetchCategoriesWordPress("product_cat"),
   });
 }
 
 // ─── Cared Ones (user_cared_one junction) ───────────────────
 export function useUserCaredOnes() {
   return useQuery({
-    queryKey: ["user-cared-ones"],
-    queryFn: async () => {
-      const userId = await getCurrentUserId();
-      if (!userId) return [];
-      const { data, error } = await careDb
-        .from("user_cared_one")
-        .select("*")
-        .eq("user_id", userId);
-      if (error) throw error;
-      const caredOneIds = [...new Set((data || []).map((r: any) => r.cared_one_id).filter(Boolean))];
-      if (caredOneIds.length === 0) return [];
-      const { data: profiles } = await careDb
-        .from("profile")
-        .select("id, full_name, first_name, last_name, avatar_url")
-        .in("id", caredOneIds);
-      const profileMap: Record<string, any> = {};
-      (profiles || []).forEach((p: any) => { profileMap[p.id] = p; });
-      return (data || []).map((r: any) => ({ ...r, cared_one: profileMap[r.cared_one_id] || null }));
-    },
+    queryKey: ["userCaredOnes"],
+    queryFn: () => fetchUserCaredOnesWordPress(),
   });
 }
 
 // ─── Group Cared Ones (members with is_cared_one = true) ────
 export function useGroupCaredOnes(groupId: string | null) {
   return useQuery({
-    queryKey: ["group-cared-ones", groupId],
-    queryFn: async () => {
-      if (!groupId) return [];
-      const { data, error } = await careDb
-        .from("care_group_member")
-        .select("*, profile:user_id(id, full_name, first_name, last_name, avatar_url)")
-        .eq("group_id", groupId)
-        .eq("is_cared_one", true)
-        .eq("invitation_status", "accepted");
-      if (error) throw error;
-      return (data || []) as any[];
-    },
+    queryKey: ["groupCaredOnes", groupId],
+    queryFn: () => fetchGroupCaredOnesWordPress(groupId!),
     enabled: !!groupId,
   });
 }
 
-// ─── Check-In Logs ──────────────────────────────────────────
-export function useCheckinLogs(caredOneId: string | null) {
+// ─── Check-Ins (schedule) ────────────────────────────────────
+export function useCheckins(caredOneId: string | null) {
   return useQuery({
-    queryKey: ["checkin-logs", caredOneId],
-    queryFn: async () => {
-      if (!caredOneId) return [];
-      const { data, error } = await careDb
-        .from("checkin_log")
-        .select("*")
-        .eq("user_id", caredOneId)
-        .order("created_at", { ascending: false })
-        .limit(30);
-      if (error) throw error;
-      // Fetch reporter profiles separately (no FK relationship)
-      const logs = (data || []) as any[];
-      const reporterIds = [...new Set(logs.map((l: any) => l.recorded_by).filter(Boolean))];
-      let reporterMap: Record<string, any> = {};
-      if (reporterIds.length > 0) {
-        const { data: reporters } = await careDb
-          .from("profile")
-          .select("id, full_name")
-          .in("id", reporterIds);
-        (reporters || []).forEach((r: any) => { reporterMap[r.id] = r; });
-      }
-      return logs.map((l: any) => ({ ...l, reporter: reporterMap[l.recorded_by] || null }));
-    },
+    queryKey: ["checkins", caredOneId],
+    queryFn: () => fetchCheckinsWordPress(caredOneId!),
     enabled: !!caredOneId,
   });
 }
 
-export function useCreateCheckinLog() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (log: { user_id: string; mood?: string; energy_level?: number; pain_level?: number; sleep_hours?: number; note?: string }) => {
-      const userId = await getCurrentUserId();
-      if (!userId) throw new Error("Not authenticated");
-      const { error } = await careDb
-        .from("checkin_log")
-        .insert({ ...log, recorded_by: userId });
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["checkin-logs"] }),
+export function useCheckinLogs(caredOneId: string | null) {
+  return useQuery({
+    queryKey: ["checkinLogs", caredOneId],
+    queryFn: () => fetchCheckinLogsWordPress(caredOneId!),
+    enabled: !!caredOneId,
   });
 }
 
-// ─── Medicines ──────────────────────────────────────────────
+export function useTodayCheckinLogs(caredOneId: string | null) {
+  const today = new Date().toISOString().split('T')[0];
+  return useQuery({
+    queryKey: ["todayCheckinLogs", caredOneId, today],
+    queryFn: () => fetchTodayCheckinLogsWordPress(caredOneId!),
+    enabled: !!caredOneId,
+  });
+}
+
+export function useCreateCheckin() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (checkin: { user_id: string; name: string; frequency?: string; time_slot?: string[]; note?: string }) => createCheckinWordPress(checkin),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["checkins"] });
+      qc.invalidateQueries({ queryKey: ["checkinLogs"] });
+      qc.invalidateQueries({ queryKey: ["todayCheckinLogs"] });
+    },
+  });
+}
+
+export function useLogCheckin() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (log: { medicine_id: string; status?: string; note?: string }) => logCheckinWordPress(log),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["checkinLogs"] });
+      qc.invalidateQueries({ queryKey: ["todayCheckinLogs"] });
+    },
+  });
+}
+
+export function useCreateCheckinLog() {
+  return useCreateCheckin();
+}
+
 export function useMedicines(caredOneId: string | null) {
   return useQuery({
     queryKey: ["medicines", caredOneId],
-    queryFn: async () => {
-      if (!caredOneId) return [];
-      const { data, error } = await careDb
-        .from("medicine")
-        .select("*")
-        .eq("user_id", caredOneId)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data || []) as any[];
-    },
+    queryFn: () => fetchMedicinesWordPress(caredOneId!),
     enabled: !!caredOneId,
   });
 }
@@ -1383,41 +794,23 @@ export function useMedicines(caredOneId: string | null) {
 export function useCreateMedicine() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (med: { user_id: string; name: string; dosage?: string; frequency?: string; time_slot?: string[]; note?: string; form?: string; category?: string }) => {
-      const { error } = await careDb
-        .from("medicine")
-        .insert(med);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["medicines"] }),
+    mutationFn: (med: { user_id: string; name: string; dosage?: string; frequency?: string; time_slot?: string[]; note?: string }) => createMedicineWordPress(med),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["medicines"] }); },
   });
 }
 
 export function useDeleteMedicine() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await careDb.from("medicine").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["medicines"] }),
+    mutationFn: (id: string) => deleteMedicineWordPress(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["medicines"] }); },
   });
 }
 
 export function useMedicineLogs(medicineId: string | null) {
   return useQuery({
-    queryKey: ["medicine-logs", medicineId],
-    queryFn: async () => {
-      if (!medicineId) return [];
-      const { data, error } = await careDb
-        .from("medicine_log")
-        .select("*")
-        .eq("medicine_id", medicineId)
-        .order("created_at", { ascending: false })
-        .limit(30);
-      if (error) throw error;
-      return (data || []) as any[];
-    },
+    queryKey: ["medicineLogs", medicineId],
+    queryFn: () => fetchMedicineLogsWordPress(medicineId!),
     enabled: !!medicineId,
   });
 }
@@ -1425,18 +818,8 @@ export function useMedicineLogs(medicineId: string | null) {
 export function useTodayMedicineLogs(caredOneId: string | null) {
   const today = new Date().toISOString().split('T')[0];
   return useQuery({
-    queryKey: ["medicine-logs-today", caredOneId, today],
-    queryFn: async () => {
-      if (!caredOneId) return [];
-      const { data, error } = await careDb
-        .from("medicine_log")
-        .select("*")
-        .eq("user_id", caredOneId)
-        .eq("log_date", today)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data || []) as any[];
-    },
+    queryKey: ["todayMedicineLogs", caredOneId, today],
+    queryFn: () => fetchTodayMedicineLogsWordPress(caredOneId!),
     enabled: !!caredOneId,
   });
 }
@@ -1444,47 +827,23 @@ export function useTodayMedicineLogs(caredOneId: string | null) {
 export function useLogMedicine() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (log: { medicine_id: string; status: string; note?: string; user_id: string }) => {
-      const userId = await getCurrentUserId();
-      if (!userId) throw new Error("Not authenticated");
-      const { error } = await careDb
-        .from("medicine_log")
-        .insert({ medicine_id: log.medicine_id, status: log.status, note: log.note, user_id: log.user_id, logged_by: userId, log_date: new Date().toISOString().split('T')[0] });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["medicine-logs"] });
-      qc.invalidateQueries({ queryKey: ["medicine-logs-today"] });
-    },
+    mutationFn: (log: { medicine_id: string; status?: string; note?: string; user_id?: string }) => logMedicineWordPress(log),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["medicineLogs"] }); qc.invalidateQueries({ queryKey: ["todayMedicineLogs"] }); },
   });
 }
 
 export function useUpdateMedicine() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string; name?: string; dosage?: string; frequency?: string; time_slot?: string[]; note?: string; form?: string; category?: string; is_active?: boolean }) => {
-      const { error } = await careDb.from("medicine").update(updates).eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["medicines"] }),
+    mutationFn: ({ id, ...updates }: { id: string; [key: string]: any }) => updateMedicineWordPress(id, updates),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["medicines"] }); },
   });
 }
 
-// ─── Health Vitals ──────────────────────────────────────────
 export function useHealthVitals(caredOneId: string | null) {
   return useQuery({
-    queryKey: ["health-vitals", caredOneId],
-    queryFn: async () => {
-      if (!caredOneId) return [];
-      const { data, error } = await careDb
-        .from("health_vital")
-        .select("*")
-        .eq("user_id", caredOneId)
-        .order("created_at", { ascending: false })
-        .limit(50);
-      if (error) throw error;
-      return (data || []) as any[];
-    },
+    queryKey: ["healthVitals", caredOneId],
+    queryFn: () => fetchHealthVitalsWordPress(caredOneId!),
     enabled: !!caredOneId,
   });
 }
@@ -1492,32 +851,15 @@ export function useHealthVitals(caredOneId: string | null) {
 export function useCreateHealthVital() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (vital: { user_id: string; vital_type: string; value: number; unit?: string; note?: string }) => {
-      const userId = await getCurrentUserId();
-      if (!userId) throw new Error("Not authenticated");
-      const { error } = await careDb
-        .from("health_vital")
-        .insert({ user_id: vital.user_id, vital_type: vital.vital_type, value: vital.value, unit: vital.unit, note: vital.note, recorded_by: userId });
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["health-vitals"] }),
+    mutationFn: (vital: { user_id: string; vital_type: string; value: number; unit?: string; notes?: string }) => createHealthVitalWordPress(vital),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["healthVitals"] }); },
   });
 }
 
-// ─── Care Tips ──────────────────────────────────────────────
 export function useCareTips(caredOneId: string | null) {
   return useQuery({
-    queryKey: ["care-tips", caredOneId],
-    queryFn: async () => {
-      if (!caredOneId) return [];
-      const { data, error } = await careDb
-        .from("care_tip")
-        .select("*")
-        .eq("user_id", caredOneId)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data || []) as any[];
-    },
+    queryKey: ["careTips", caredOneId],
+    queryFn: () => fetchCareTipsWordPress(caredOneId!),
     enabled: !!caredOneId,
   });
 }
@@ -1525,54 +867,31 @@ export function useCareTips(caredOneId: string | null) {
 export function useCreateCareTip() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (tip: { user_id: string; title: string; content: string; category?: string; is_pinned?: boolean }) => {
-      const userId = await getCurrentUserId();
-      if (!userId) throw new Error("Not authenticated");
-      const { error } = await careDb
-        .from("care_tip")
-        .insert({ ...tip, created_by: userId });
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-tips"] }),
+    mutationFn: (tip: { user_id: string; title?: string; content: string; category?: string }) => createCareTipWordPress(tip),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["careTips"] }); },
   });
 }
 
 export function useUpdateCareTip() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string; title?: string; content?: string; category?: string }) => {
-      const { error } = await careDb.from("care_tip").update(updates).eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-tips"] }),
+    mutationFn: ({ id, ...updates }: { id: string; [key: string]: any }) => updateCareTipWordPress(id, updates),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["careTips"] }); },
   });
 }
 
 export function useDeleteCareTip() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await careDb.from("care_tip").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-tips"] }),
+    mutationFn: (id: string) => deleteCareTipWordPress(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["careTips"] }); },
   });
 }
 
-// ─── Care Plans ─────────────────────────────────────────────
 export function useCarePlans(caredOneId: string | null) {
   return useQuery({
-    queryKey: ["care-plans", caredOneId],
-    queryFn: async () => {
-      if (!caredOneId) return [];
-      const { data, error } = await careDb
-        .from("care_plan")
-        .select("*")
-        .eq("user_id", caredOneId)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data || []) as any[];
-    },
+    queryKey: ["carePlans", caredOneId],
+    queryFn: () => fetchCarePlansWordPress(caredOneId!),
     enabled: !!caredOneId,
   });
 }
@@ -1580,53 +899,31 @@ export function useCarePlans(caredOneId: string | null) {
 export function useCreateCarePlan() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (plan: { user_id: string; title: string; description?: string; status?: string }) => {
-      const userId = await getCurrentUserId();
-      if (!userId) throw new Error("Not authenticated");
-      const { error } = await careDb
-        .from("care_plan")
-        .insert({ ...plan, created_by: userId });
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-plans"] }),
+    mutationFn: (plan: { user_id: string; title: string; description?: string }) => createCarePlanWordPress(plan),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["carePlans"] }); },
   });
 }
 
 export function useUpdateCarePlan() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string; title?: string; description?: string; status?: string }) => {
-      const { error } = await careDb.from("care_plan").update(updates).eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-plans"] }),
+    mutationFn: ({ id, ...updates }: { id: string; [key: string]: any }) => updateCarePlanWordPress(id, updates),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["carePlans"] }); },
   });
 }
 
 export function useDeleteCarePlan() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await careDb.from("care_plan").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-plans"] }),
+    mutationFn: (id: string) => deleteCarePlanWordPress(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["carePlans"] }); },
   });
 }
 
 export function useCarePlanGoals(planId: string | null) {
   return useQuery({
-    queryKey: ["care-plan-goals", planId],
-    queryFn: async () => {
-      if (!planId) return [];
-      const { data, error } = await careDb
-        .from("care_plan_goal")
-        .select("*")
-        .eq("care_plan_id", planId)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data || []) as any[];
-    },
+    queryKey: ["carePlanGoals", planId],
+    queryFn: () => fetchCarePlanGoalsWordPress(planId!),
     enabled: !!planId,
   });
 }
@@ -1634,44 +931,23 @@ export function useCarePlanGoals(planId: string | null) {
 export function useCreateCarePlanGoal() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (goal: { care_plan_id: string; title: string; description?: string; status?: string }) => {
-      const { error } = await careDb
-        .from("care_plan_goal")
-        .insert(goal);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-plan-goals"] }),
+    mutationFn: (goal: { care_plan_id: string; title: string; description?: string }) => createCarePlanGoalWordPress(goal),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["carePlanGoals"] }); },
   });
 }
 
 export function useUpdateCarePlanGoal() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await careDb
-        .from("care_plan_goal")
-        .update({ status })
-        .eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-plan-goals"] }),
+    mutationFn: ({ id, ...updates }: { id: string; [key: string]: any }) => updateCarePlanGoalWordPress(id, updates),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["carePlanGoals"] }); },
   });
 }
 
-// ─── Care Notes ─────────────────────────────────────────────
 export function useCareNotes(caredOneId: string | null) {
   return useQuery({
-    queryKey: ["care-notes", caredOneId],
-    queryFn: async () => {
-      if (!caredOneId) return [];
-      const { data, error } = await careDb
-        .from("care_note")
-        .select("*")
-        .eq("user_id", caredOneId)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data || []) as any[];
-    },
+    queryKey: ["careNotes", caredOneId],
+    queryFn: () => fetchCareNotesWordPress(caredOneId!),
     enabled: !!caredOneId,
   });
 }
@@ -1679,54 +955,31 @@ export function useCareNotes(caredOneId: string | null) {
 export function useCreateCareNote() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (note: { user_id: string; title?: string; content: string; category?: string }) => {
-      const userId = await getCurrentUserId();
-      if (!userId) throw new Error("Not authenticated");
-      const { error } = await careDb
-        .from("care_note")
-        .insert({ ...note, created_by: userId });
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-notes"] }),
+    mutationFn: (note: { user_id: string; title?: string; content: string; category?: string }) => createCareNoteWordPress(note),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["careNotes"] }); },
   });
 }
 
 export function useUpdateCareNote() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string; title?: string; content?: string; category?: string }) => {
-      const { error } = await careDb.from("care_note").update(updates).eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-notes"] }),
+    mutationFn: ({ id, ...updates }: { id: string; [key: string]: any }) => updateCareNoteWordPress(id, updates),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["careNotes"] }); },
   });
 }
 
 export function useDeleteCareNote() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await careDb.from("care_note").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-notes"] }),
+    mutationFn: (id: string) => deleteCareNoteWordPress(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["careNotes"] }); },
   });
 }
 
-// ─── Emergency Contacts ─────────────────────────────────────
 export function useEmergencyContacts(caredOneId: string | null) {
   return useQuery({
-    queryKey: ["emergency-contacts", caredOneId],
-    queryFn: async () => {
-      if (!caredOneId) return [];
-      const { data, error } = await careDb
-        .from("emergency_contact")
-        .select("*")
-        .eq("user_id", caredOneId)
-        .order("is_primary", { ascending: false });
-      if (error) throw error;
-      return (data || []) as any[];
-    },
+    queryKey: ["emergencyContacts", caredOneId],
+    queryFn: () => fetchEmergencyContactsWordPress(caredOneId!),
     enabled: !!caredOneId,
   });
 }
@@ -1734,53 +987,31 @@ export function useEmergencyContacts(caredOneId: string | null) {
 export function useCreateEmergencyContact() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (contact: { user_id: string; name: string; phone: string; relationship?: string; is_primary?: boolean }) => {
-      const { error } = await careDb
-        .from("emergency_contact")
-        .insert(contact);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["emergency-contacts"] }),
+    mutationFn: (contact: { user_id: string; name: string; phone?: string; email?: string; relationship?: string }) => createEmergencyContactWordPress(contact),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["emergencyContacts"] }); },
   });
 }
 
 export function useUpdateEmergencyContact() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string; name?: string; phone?: string; relationship?: string; is_primary?: boolean }) => {
-      const { error } = await careDb.from("emergency_contact").update(updates).eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["emergency-contacts"] }),
+    mutationFn: ({ id, ...updates }: { id: string; [key: string]: any }) => updateEmergencyContactWordPress(id, updates),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["emergencyContacts"] }); },
   });
 }
 
 export function useDeleteEmergencyContact() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await careDb.from("emergency_contact").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["emergency-contacts"] }),
+    mutationFn: (id: string) => deleteEmergencyContactWordPress(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["emergencyContacts"] }); },
   });
 }
 
-// ─── Activity / Visit Log ───────────────────────────────────
 export function useActivityLog(caredOneId: string | null) {
   return useQuery({
-    queryKey: ["activity-log", caredOneId],
-    queryFn: async () => {
-      if (!caredOneId) return [];
-      const { data, error } = await careDb
-        .from("activity_log")
-        .select("*")
-        .eq("cared_one_id", caredOneId)
-        .order("created_at", { ascending: false })
-        .limit(50);
-      if (error) throw error;
-      return (data || []) as any[];
-    },
+    queryKey: ["activityLog", caredOneId],
+    queryFn: () => fetchActivityLogWordPress(caredOneId!),
     enabled: !!caredOneId,
   });
 }
@@ -1788,291 +1019,231 @@ export function useActivityLog(caredOneId: string | null) {
 export function useCreateActivityLog() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (log: { cared_one_id: string; activity_type: string; description?: string; duration_minutes?: number }) => {
-      const userId = await getCurrentUserId();
-      if (!userId) throw new Error("Not authenticated");
-      const { error } = await careDb
-        .from("activity_log")
-        .insert({ ...log, user_id: userId });
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["activity-log"] }),
+    mutationFn: (log: { user_id: string; activity_type?: string; description?: string }) => createActivityLogWordPress(log),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["activityLog"] }); },
   });
 }
 
 export function useDeleteActivityLog() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await careDb.from("activity_log").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["activity-log"] }),
+    mutationFn: (id: string) => deleteActivityLogWordPress(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["activityLog"] }); },
   });
 }
 
+export function useSafeZones(caredOneId: string | null) {
+  return useQuery({
+    queryKey: ["safeZones", caredOneId],
+    queryFn: () => fetchSafeZonesWordPress(caredOneId!),
+    enabled: !!caredOneId,
+  });
+}
+
+export function useCreateSafeZone() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (zone: { user_id: string; name: string; latitude: number; longitude: number; radius_meters?: number }) => createSafeZoneWordPress(zone),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["safeZones"] }); },
+  });
+}
+
+export function useUpdateSafeZone() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...updates }: { id: string; [key: string]: any }) => updateSafeZoneWordPress(id, updates),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["safeZones"] }); },
+  });
+}
+
+export function useDeleteSafeZone() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteSafeZoneWordPress(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["safeZones"] }); },
+  });
+}
+
+export function useCaredOneDocuments(caredOneId: string | null) {
+  return useQuery({
+    queryKey: ["caredOneDocuments", caredOneId],
+    queryFn: () => fetchCaredOneDocumentsWordPress(caredOneId!),
+    enabled: !!caredOneId,
+  });
+}
+
+export function useCreateCaredOneDocument() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (doc: { user_id: string; title: string; description?: string; file_url?: string; document_type?: string }) => createCaredOneDocumentWordPress(doc),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["caredOneDocuments"] }); },
+  });
+}
+
+export function useUpdateCaredOneDocument() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...updates }: { id: string; [key: string]: any }) => updateCaredOneDocumentWordPress(id, updates),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["caredOneDocuments"] }); },
+  });
+}
+
+export function useDeleteCaredOneDocument() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteCaredOneDocumentWordPress(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["caredOneDocuments"] }); },
+  });
+}
+
+export function useCreateSymptomLog() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (log: { user_id: string; symptom: string; severity?: number; notes?: string }) => createSymptomLogWordPress(log),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["symptomLogs"] }); },
+  });
+}
+
+export function useCreateCaregiverWellnessLog() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (log: any) => createWordPressFeature("wellness_logs", log),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["caregiverWellnessLogs"] }); },
+  });
+}
+
+// ─── Dementia Stage ─────────────────────────────────────────
+export function useUpdateDementiaStage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ caredOneId, stage }: { caredOneId: string; stage: string }) => updateDementiaStageWordPress(caredOneId, stage),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["userCaredOnes"] }); },
+  });
+}
+
+// ─── Unified Comments ───────────────────────────────────────
+
+export function useComments(entityType: string, entityId: string | null) {
+  return useQuery({
+    queryKey: ["comments", entityType, entityId],
+    queryFn: () => fetchCommentsWordPress(entityType, entityId!),
+    enabled: !!entityId,
+  });
+}
+
+export function useCreateComment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ entityType, entityId, content, parentId }: { entityType: string; entityId: string; content: string; parentId?: string }) => createCommentWordPress({ entity_type: entityType, entity_id: entityId, content, parent_id: parentId }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["comments"] }); },
+  });
+}
+
+export function useUpdateComment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, content }: { id: string; content: string }) => updateCommentWordPress(id, content),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["comments"] }); },
+  });
+}
+
+export function useDeleteComment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteCommentWordPress(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["comments"] }); },
+  });
+}
+
+// ─── Unified Votes ──────────────────────────────────────────
+
+function normalizeVoteValue(value: string | null | undefined) {
+  if (value === "downvote") return -1;
+  if (value === "upvote") return 1;
+  return 0;
+}
+
+export function useVoteSummary(entityType: string, entityIds: string[]) {
+  return useQuery({
+    queryKey: ["voteSummary", entityType, entityIds],
+    queryFn: () => fetchVotesWordPress(entityType, entityIds),
+    enabled: entityIds.length > 0,
+  });
+}
+
+export function useVoteCount(entityType: string, entityId: string | null) {
+  return useQuery({
+    queryKey: ["voteCount", entityType, entityId],
+    queryFn: async () => {
+      const vote = await fetchEntityVoteWordPress(entityType, entityId!);
+      return vote;
+    },
+    enabled: !!entityId,
+  });
+}
+
+export function useToggleVote() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ entityType, entityId, value }: { entityType: string; entityId: string; value: -1 | 1 }) => toggleVoteWordPress(entityType, entityId, value),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["voteSummary"] }); qc.invalidateQueries({ queryKey: ["voteCount"] }); },
+  });
+}
+
+// ─── Dashboard Stats ─────────────────────────────────────────
+export function useDashboardStats() {
+  return useQuery({
+    queryKey: ["dashboard-stats"],
+    queryFn: () => fetchDashboardStatsWordPress(),
+  });
+}
+
+// ─── Task / Cared-One / Booking mutations ────────────────────
 export function useDeleteTask() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await careDb.from("care_task").delete().eq("id", id);
-      if (error) throw error;
+    mutationFn: (id: string) => deleteCareTaskWordPress(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["care-tasks"] }); },
+  });
+}
+
+export function useDeleteUserCaredOne() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteUserCaredOneWordPress(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["userCaredOnes"] });
+      qc.invalidateQueries({ queryKey: ["groupCaredOnes"] });
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["care-tasks"] }),
+  });
+}
+
+export function useUpdateBookingStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) => updateBookingStatusWordPress(id, status),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["bookings"] });
+      qc.invalidateQueries({ queryKey: ["providerBookings"] });
+    },
   });
 }
 
 export function useLeaveGroup() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ groupId, userId }: { groupId: string; userId: string }) => {
-      const { data: member } = await careDb
-        .from("care_group_member")
-        .select("id, is_owner")
-        .eq("group_id", groupId)
-        .eq("user_id", userId)
-        .single();
-      if (!member) throw new Error("Not a member");
-      if (member.is_owner) throw new Error("Owners cannot leave. Transfer ownership first.");
-      const { error } = await careDb.from("care_group_member").delete().eq("id", member.id);
-      if (error) throw error;
-      try {
-        const { data: g } = await careDb.from("care_group").select("member_count").eq("id", groupId).single();
-        if (g && (g as any).member_count > 0) {
-          await careDb.from("care_group").update({ member_count: (g as any).member_count - 1 }).eq("id", groupId);
-        }
-      } catch (_) { /* ignore */ }
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["care-groups"] });
-      qc.invalidateQueries({ queryKey: ["care-group-members"] });
-    },
+    mutationFn: (groupId: string) => leaveGroupWordPress(groupId),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["careGroups"] }); qc.invalidateQueries({ queryKey: ["careGroupMembers"] }); },
   });
 }
 
-// ─── Job Board ──────────────────────────────────────────────
-export function useJobPostings(filters?: { source?: string; status?: string }) {
-  return useQuery({
-    queryKey: ["job-postings", filters],
-    queryFn: async () => {
-      let q = careDb
-        .from("job_posting")
-        .select("*")
-        .eq("status", filters?.status || "open")
-        .order("created_at", { ascending: false });
-      if (filters?.source) q = q.eq("job_source_type", filters.source);
-      const { data, error } = await q;
-      if (error) throw error;
-      // Fetch poster profiles
-      const posterIds = [...new Set((data || []).map((j: any) => j.posted_by).filter(Boolean))];
-      let posterMap: Record<string, any> = {};
-      if (posterIds.length > 0) {
-        const { data: posters } = await careDb
-          .from("profile")
-          .select("id, full_name, avatar_url, location")
-          .in("id", posterIds);
-        (posters || []).forEach((p: any) => { posterMap[p.id] = p; });
-      }
-      return (data || []).map((j: any) => ({ ...j, poster: posterMap[j.posted_by] || null }));
-    },
-  });
-}
-
-export function useCreateJobPosting() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (job: { title: string; description: string; job_source_type?: string; location?: string; care_recipient_id?: string; linked_task_id?: string; linked_group_id?: string }) => {
-      const userId = await getCurrentUserId();
-      if (!userId) throw new Error("Not authenticated");
-      const insertData: Record<string, any> = {
-        title: job.title,
-        description: job.description,
-        posted_by: userId,
-        status: "open",
-        job_source_type: job.job_source_type || "general",
-        location: job.location || "",
-        start_date: new Date().toISOString().split('T')[0],
-      };
-      if (job.care_recipient_id) insertData.care_recipient_id = job.care_recipient_id;
-      if (job.linked_task_id) insertData.linked_task_id = job.linked_task_id;
-      if (job.linked_group_id) insertData.linked_group_id = job.linked_group_id;
-      const { error } = await careDb
-        .from("job_posting")
-        .insert(insertData);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["job-postings"] }),
-  });
-}
-
-export function useJobApplications(jobId: string | null) {
-  return useQuery({
-    queryKey: ["job-applications", jobId],
-    queryFn: async () => {
-      if (!jobId) return [];
-      const { data, error } = await careDb
-        .from("job_application")
-        .select("*")
-        .eq("job_id", jobId)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      const applicantIds = [...new Set((data || []).map((a: any) => a.applicant_id).filter(Boolean))];
-      let applicantMap: Record<string, any> = {};
-      if (applicantIds.length > 0) {
-        const { data: applicants } = await careDb
-          .from("profile")
-          .select("id, full_name, avatar_url, hourly_rate, rating_average, years_of_experience")
-          .in("id", applicantIds);
-        (applicants || []).forEach((a: any) => { applicantMap[a.id] = a; });
-      }
-      return (data || []).map((a: any) => ({ ...a, applicant: applicantMap[a.applicant_id] || null }));
-    },
-    enabled: !!jobId,
-  });
-}
-
-export function useApplyToJob() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ jobId, coverLetter }: { jobId: string; coverLetter: string }) => {
-      const userId = await getCurrentUserId();
-      if (!userId) throw new Error("Not authenticated");
-      // Check if already applied
-      const { data: existing } = await careDb
-        .from("job_application")
-        .select("id")
-        .eq("job_id", jobId)
-        .eq("applicant_id", userId)
-        .maybeSingle();
-      if (existing) throw new Error("You've already applied to this job");
-      const { error } = await careDb
-        .from("job_application")
-        .insert({ job_id: jobId, applicant_id: userId, cover_letter: coverLetter, status: "pending" });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["job-applications"] });
-      qc.invalidateQueries({ queryKey: ["my-job-applications"] });
-    },
-  });
-}
-
-export function useCreateExternalTestJob() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async () => {
-      const userId = await getCurrentUserId();
-      if (!userId) throw new Error("Not authenticated");
-
-      const { data: candidates, error: candidateError } = await careDb
-        .from("profile")
-        .select("id, full_name, location")
-        .neq("id", userId)
-        .order("created_at", { ascending: true })
-        .limit(25);
-
-      if (candidateError) throw candidateError;
-
-      const poster = (candidates || []).find((p: any) => p?.id);
-      if (!poster) throw new Error("No other profile found to create a test job.");
-
-      const today = new Date().toISOString().split("T")[0];
-      const { error } = await careDb
-        .from("job_posting")
-        .insert({
-          posted_by: poster.id,
-          title: `Coverage needed this week (${today})`,
-          description: "Need caregiver support for weekdays. This is a real test posting created to validate apply flow.",
-          location: poster.location || "Local area",
-          status: "open",
-          job_source_type: "general",
-          start_date: today,
-        });
-
-      if (error) {
-        throw new Error(error.message || "Could not create test job from another profile.");
-      }
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["job-postings"] });
-      qc.invalidateQueries({ queryKey: ["my-job-postings"] });
-    },
-  });
-}
-
-export function useUpdateJobApplication() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: "accepted" | "rejected" }) => {
-      const { error } = await careDb
-        .from("job_application")
-        .update({ status })
-        .eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["job-applications"] });
-      qc.invalidateQueries({ queryKey: ["my-job-applications"] });
-    },
-  });
-}
-
-export function useMyJobPostings() {
-  return useQuery({
-    queryKey: ["my-job-postings"],
-    queryFn: async () => {
-      const userId = await getCurrentUserId();
-      if (!userId) return [];
-      const { data, error } = await careDb
-        .from("job_posting")
-        .select("*")
-        .eq("posted_by", userId)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data || []) as any[];
-    },
-  });
-}
-
-export function useMyJobApplications() {
-  return useQuery({
-    queryKey: ["my-job-applications"],
-    queryFn: async () => {
-      const userId = await getCurrentUserId();
-      if (!userId) return [];
-      const { data, error } = await careDb
-        .from("job_application")
-        .select("*")
-        .eq("applicant_id", userId)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      const jobIds = [...new Set((data || []).map((a: any) => a.job_id).filter(Boolean))];
-      let jobMap: Record<string, any> = {};
-      if (jobIds.length > 0) {
-        const { data: jobs } = await careDb
-          .from("job_posting")
-          .select("id, title, status, location")
-          .in("id", jobIds);
-        (jobs || []).forEach((j: any) => { jobMap[j.id] = j; });
-      }
-      return (data || []).map((a: any) => ({ ...a, job: jobMap[a.job_id] || null }));
-    },
-  });
-}
-
-// ─── Provider Availability ──────────────────────────────────
+// ─── Provider Availability (WooCommerce product meta) ───────
 export function useProviderAvailability(providerId: string | null) {
   return useQuery({
-    queryKey: ["provider-availability", providerId],
+    queryKey: ["providerAvailability", providerId],
     queryFn: async () => {
-      if (!providerId) return [];
-      const { data, error } = await careDb
-        .from("provider_availability")
-        .select("*")
-        .eq("provider_id", providerId)
-        .order("day_of_week", { ascending: true });
-      if (error) throw error;
-      return (data || []) as any[];
+      const { getProviderAvailability } = await import("@/services/woocommerce-api");
+      return getProviderAvailability(providerId!);
     },
     enabled: !!providerId,
   });
@@ -2081,38 +1252,20 @@ export function useProviderAvailability(providerId: string | null) {
 export function useUpsertProviderAvailability() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (slots: { provider_id: string; day_of_week: number; start_time: string; end_time: string; is_available: boolean; specific_date?: string | null }[]) => {
-      // Delete existing weekly patterns for this provider, then re-insert
-      const providerId = slots[0]?.provider_id;
-      if (!providerId) throw new Error("No provider ID");
-      // Delete only weekly patterns (specific_date is null)
-      await careDb
-        .from("provider_availability")
-        .delete()
-        .eq("provider_id", providerId)
-        .is("specific_date", null);
-      // Insert new slots
-      const { error } = await careDb
-        .from("provider_availability")
-        .insert(slots);
-      if (error) throw error;
+    mutationFn: async (data: { providerId: string; slots: any[] }) => {
+      const { upsertProviderAvailability } = await import("@/services/woocommerce-api");
+      return upsertProviderAvailability(data.providerId, data.slots);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["provider-availability"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["providerAvailability"] }); },
   });
 }
 
 export function useProviderAvailabilitySetting(providerId: string | null) {
   return useQuery({
-    queryKey: ["provider-availability-setting", providerId],
+    queryKey: ["providerAvailabilitySetting", providerId],
     queryFn: async () => {
-      if (!providerId) return null;
-      const { data, error } = await careDb
-        .from("provider_availability_setting")
-        .select("*")
-        .eq("provider_id", providerId)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
+      const { getProviderAvailabilitySetting } = await import("@/services/woocommerce-api");
+      return getProviderAvailabilitySetting(providerId!);
     },
     enabled: !!providerId,
   });
@@ -2121,221 +1274,150 @@ export function useProviderAvailabilitySetting(providerId: string | null) {
 export function useUpdateProviderAvailabilitySetting() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ providerId, settings }: { providerId: string; settings: Record<string, any> }) => {
-      // Upsert
-      const { data: existing } = await careDb
-        .from("provider_availability_setting")
-        .select("id")
-        .eq("provider_id", providerId)
-        .maybeSingle();
-      if (existing) {
-        const { error } = await careDb
-          .from("provider_availability_setting")
-          .update(settings)
-          .eq("provider_id", providerId);
-        if (error) throw error;
-      } else {
-        const { error } = await careDb
-          .from("provider_availability_setting")
-          .insert({ provider_id: providerId, ...settings });
-        if (error) throw error;
-      }
+    mutationFn: async (data: { providerId: string; setting: any }) => {
+      const { updateProviderAvailabilitySetting } = await import("@/services/woocommerce-api");
+      return updateProviderAvailabilitySetting(data.providerId, data.setting);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["provider-availability-setting"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["providerAvailabilitySetting"] }); },
   });
 }
 
-// ─── Provider Earnings ──────────────────────────────────────
 export function useProviderPayouts() {
   return useQuery({
-    queryKey: ["provider-payouts"],
-    queryFn: async () => {
-      const userId = await getCurrentUserId();
-      if (!userId) return [];
-      const { data, error } = await careDb
-        .from("provider_payout")
-        .select("*")
-        .eq("provider_id", userId)
-        .order("created_at", { ascending: false })
-        .limit(50);
-      if (error) throw error;
-      return (data || []) as any[];
+    queryKey: ["providerPayouts"],
+    queryFn: () => getDokanVendorWithdrawals(),
+  });
+}
+
+// ─── Jobs ────────────────────────────────────────────────────
+export function useJobPostings(filters?: { source?: string; status?: string }) {
+  return useQuery({
+    queryKey: ["jobPostings", filters],
+    queryFn: () => fetchJobPostingsWordPress(filters),
+  });
+}
+
+export function useCreateJobPosting() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (job: { title: string; description: string; location?: string; start_date?: string }) => createJobPostingWordPress(job),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["jobPostings"] });
+      qc.invalidateQueries({ queryKey: ["myJobPostings"] });
     },
   });
 }
 
-// ─── Dashboard Stats ────────────────────────────────────────
-export function useDashboardStats() {
-  return useQuery({
-    queryKey: ["dashboard-stats"],
-    queryFn: async () => {
-      const userId = await getCurrentUserId();
-      if (!userId) return { upcomingBookings: 0, unreadMessages: 0, pendingTasks: 0, careGroups: 0 };
-
-      const [bookingsRes, msgsRes, tasksRes, groupsRes] = await Promise.all([
-        careDb.from("booking").select("id", { count: "exact", head: true }).eq("user_id", userId).in("status", ["confirmed", "pending"]),
-        careDb.from("direct_message").select("id", { count: "exact", head: true }).eq("receiver_id", userId).is("read_at", null),
-        careDb.from("care_task").select("id", { count: "exact", head: true }).or(`created_by.eq.${userId},assigned_to.eq.${userId}`).neq("status", "completed"),
-        careDb.from("care_group_member").select("id", { count: "exact", head: true }).eq("user_id", userId).eq("invitation_status", "accepted"),
-      ]);
-
-      return {
-        upcomingBookings: bookingsRes.count || 0,
-        unreadMessages: msgsRes.count || 0,
-        pendingTasks: tasksRes.count || 0,
-        careGroups: groupsRes.count || 0,
-      };
-    },
+export function useApplyToJob() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ jobId, coverLetter }: { jobId: string; coverLetter?: string }) => applyToJobWordPress(jobId, coverLetter),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["jobApplications"] }); qc.invalidateQueries({ queryKey: ["myJobApplications"] }); },
   });
 }
 
-// ─── Safe Zones ─────────────────────────────────────────────
-export function useSafeZones(caredOneId: string | null) {
+export function useMyJobApplications() {
   return useQuery({
-    queryKey: ["safe-zones", caredOneId],
-    queryFn: async () => {
-      if (!caredOneId) return [];
-      const { data, error } = await careDb
-        .from("safe_zone")
-        .select("*")
-        .eq("user_id", caredOneId)
-        .eq("is_active", true)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data || []) as any[];
+    queryKey: ["myJobApplications"],
+    queryFn: () => fetchMyJobApplicationsWordPress(),
+  });
+}
+
+export function useMyJobPostings() {
+  return useQuery({
+    queryKey: ["myJobPostings"],
+    queryFn: () => fetchMyJobPostingsWordPress(),
+  });
+}
+
+export function useJobApplications(jobId: string | null) {
+  return useQuery({
+    queryKey: ["jobApplications", jobId],
+    queryFn: () => fetchJobApplicationsWordPress(jobId!),
+    enabled: !!jobId,
+  });
+}
+
+export function useUpdateJobApplication() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) => updateJobApplicationWordPress(id, status),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["jobApplications"] }); },
+  });
+}
+
+export function useCreateExternalTestJob() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (job: { title: string; description: string; location?: string }) => {
+      await createJobPostingWordPress({ ...job, start_date: new Date().toISOString() });
     },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["jobPostings"] }); },
+  });
+}
+
+// ─── Caregiver Wellness & Symptom Logs (queries) ─────────────
+export function useCaregiverWellnessLogs() {
+  return useQuery({
+    queryKey: ["caregiverWellnessLogs"],
+    queryFn: () => listWordPressFeature("wellness_logs"),
+  });
+}
+
+export function useSymptomLogs(caredOneId: string | null) {
+  return useQuery({
+    queryKey: ["symptomLogs", caredOneId],
+    queryFn: () => fetchSymptomLogsWordPress(caredOneId!),
     enabled: !!caredOneId,
   });
 }
 
-export function useCreateSafeZone() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (zone: {
-      user_id: string; name: string; latitude?: number; longitude?: number;
-      radius?: number; radius_meters?: number; zone_type?: string; shape_type?: string;
-      polygon_points?: any; corner_radius?: any; category?: string; color?: string;
-      description?: string; schedule_enabled?: boolean; schedule_start_time?: string;
-      schedule_end_time?: string; schedule_days?: string[]; notify_on_enter?: boolean;
-      notify_on_exit?: boolean; is_active?: boolean;
-    }) => {
-      const userId = await getCurrentUserId();
-      if (!userId) throw new Error("Not authenticated");
-      const { radius_meters, ...rest } = zone;
-      const r = rest.radius ?? radius_meters ?? 200;
-      const { error } = await careDb.from("safe_zone").insert({
-        ...rest,
-        radius: r,
-        is_active: true,
-        created_by: userId,
-        updated_at: new Date().toISOString(),
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["safe-zones"] }),
-  });
-}
-
-export function useUpdateSafeZone() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, ...zone }: { id: string; [k: string]: any }) => {
-      const { radius_meters, created_by, ...rest } = zone;
-      const r = rest.radius ?? radius_meters;
-      const { error } = await careDb.from("safe_zone").update({
-        ...rest,
-        ...(r !== undefined ? { radius: r } : {}),
-        updated_at: new Date().toISOString(),
-      }).eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["safe-zones"] }),
-  });
-}
-
-export function useDeleteSafeZone() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      // Soft delete
-      const { error } = await careDb.from("safe_zone").update({ is_active: false, updated_at: new Date().toISOString() }).eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["safe-zones"] }),
-  });
-}
-
-// ─── Location Share (cared one's GPS) ───────────────────────
+// ─── Location: cared-one location, history, settings, sharing ─
 export function useCaredOneLocation(caredOneId: string | null) {
   return useQuery({
-    queryKey: ["cared-one-location", caredOneId],
-    queryFn: async () => {
-      if (!caredOneId) return null;
-      const { data, error } = await careDb
-        .from("location_share")
-        .select("*")
-        .eq("user_id", caredOneId)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (error) throw error;
-      return data as any;
-    },
+    queryKey: ["caredOneLocation", caredOneId],
+    queryFn: () => fetchCaredOneLocationWordPress(caredOneId!),
     enabled: !!caredOneId,
   });
 }
 
 export function useCaredOneLocationHistory(caredOneId: string | null) {
   return useQuery({
-    queryKey: ["cared-one-location-history", caredOneId],
-    queryFn: async () => {
-      if (!caredOneId) return [];
-      const { data, error } = await careDb
-        .from("location_share")
-        .select("*")
-        .eq("user_id", caredOneId)
-        .order("created_at", { ascending: false })
-        .limit(20);
-      if (error) throw error;
-      return (data || []) as any[];
-    },
+    queryKey: ["caredOneLocationHistory", caredOneId],
+    queryFn: () => fetchCaredOneLocationHistoryWordPress(caredOneId!),
+    enabled: !!caredOneId,
+  });
+}
+
+export function useCaredOneLocationSettings(caredOneId: string | null) {
+  return useQuery({
+    queryKey: ["caredOneLocationSettings", caredOneId],
+    queryFn: () => fetchCaredOneLocationSettingsWordPress(caredOneId!),
     enabled: !!caredOneId,
   });
 }
 
 export function useShareMyLocation() {
+  const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ latitude, longitude, accuracy }: { latitude: number; longitude: number; accuracy?: number }) => {
-      const userId = await getCurrentUserId();
-      if (!userId) throw new Error("Not authenticated");
-      const { error } = await careDb.from("location_share").insert({
-        user_id: userId,
-        latitude,
-        longitude,
-        accuracy: accuracy ?? null,
-        timestamp: new Date().toISOString(),
-        is_emergency: false,
-      });
-      if (error) throw error;
-    },
+    mutationFn: (data: { latitude: number; longitude: number; accuracy?: number | null; batteryLevel?: number | null; addressText?: string | null; isEmergency?: boolean; enabled?: boolean }) =>
+      shareMyLocationWordPress(data.latitude, data.longitude, { accuracy: data.accuracy, batteryLevel: data.batteryLevel, addressText: data.addressText, isEmergency: data.isEmergency, enabled: data.enabled }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["caredOneLocation"] }); qc.invalidateQueries({ queryKey: ["locationHistory"] }); },
   });
 }
 
-// ─── Safe Zone Alerts ────────────────────────────────────────
+export function useDisableMyLocationSharing() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => disableMyLocationSharingWordPress(),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["caredOneLocation"] }); qc.invalidateQueries({ queryKey: ["caredOneLocationSettings"] }); },
+  });
+}
+
 export function useSafeZoneAlerts(caredOneId: string | null) {
   return useQuery({
-    queryKey: ["safe-zone-alerts", caredOneId],
-    queryFn: async () => {
-      if (!caredOneId) return [];
-      const { data, error } = await careDb
-        .from("safe_zone_alert")
-        .select("*, safe_zone:safe_zone_id(name, zone_type)")
-        .eq("user_id", caredOneId)
-        .order("created_at", { ascending: false })
-        .limit(50);
-      if (error) throw error;
-      return (data || []) as any[];
-    },
+    queryKey: ["safeZoneAlerts", caredOneId],
+    queryFn: () => fetchSafeZoneAlertsWordPress(caredOneId!),
     enabled: !!caredOneId,
   });
 }
@@ -2343,53 +1425,23 @@ export function useSafeZoneAlerts(caredOneId: string | null) {
 export function useAcknowledgeAlert() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ alertId, userId }: { alertId: string; userId: string }) => {
-      const currentUser = await getCurrentUserId();
-      const { error } = await careDb.from("safe_zone_alert").update({
-        is_read: true,
-        acknowledged_by: currentUser,
-        acknowledged_at: new Date().toISOString(),
-      }).eq("id", alertId);
-      if (error) throw error;
-    },
-    onSuccess: (_d, v) => qc.invalidateQueries({ queryKey: ["safe-zone-alerts"] }),
+    mutationFn: (alertId: string) => acknowledgeAlertWordPress(alertId),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["safeZoneAlerts"] }); },
   });
 }
 
 export function useAcknowledgeAllAlerts() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (caredOneId: string) => {
-      const currentUser = await getCurrentUserId();
-      const { error } = await careDb.from("safe_zone_alert").update({
-        is_read: true,
-        acknowledged_by: currentUser,
-        acknowledged_at: new Date().toISOString(),
-      }).eq("user_id", caredOneId).eq("is_read", false);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["safe-zone-alerts"] }),
+    mutationFn: (caredOneId: string) => acknowledgeAllAlertsWordPress(caredOneId),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["safeZoneAlerts"] }); },
   });
 }
 
-// ─── Location Requests ───────────────────────────────────────
 export function useLocationRequests(caredOneId: string | null) {
   return useQuery({
-    queryKey: ["location-requests", caredOneId],
-    queryFn: async () => {
-      if (!caredOneId) return [];
-      const userId = await getCurrentUserId();
-      if (!userId) return [];
-      const { data, error } = await careDb
-        .from("location_request")
-        .select("*")
-        .eq("requester_id", userId)
-        .eq("user_id", caredOneId)
-        .order("created_at", { ascending: false })
-        .limit(20);
-      if (error) throw error;
-      return (data || []) as any[];
-    },
+    queryKey: ["locationRequests", caredOneId],
+    queryFn: () => fetchLocationRequestsWordPress(caredOneId!),
     enabled: !!caredOneId,
   });
 }
@@ -2397,310 +1449,18 @@ export function useLocationRequests(caredOneId: string | null) {
 export function useSendLocationRequest() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ caredOneId, message, isEmergency }: { caredOneId: string; message?: string; isEmergency: boolean }) => {
-      const userId = await getCurrentUserId();
-      if (!userId) throw new Error("Not authenticated");
-      const expireAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
-      const { error } = await careDb.from("location_request").insert({
-        user_id: caredOneId,
-        requester_id: userId,
-        status: isEmergency ? "emergency_approved" : "pending",
-        message: message?.trim() || null,
-        expire_at: expireAt,
-        is_emergency: isEmergency,
-      });
-      if (error) throw error;
+    mutationFn: (input: string | { caredOneId: string; message?: string; isEmergency?: boolean }) => {
+      const normalized = typeof input === "string" ? { caredOneId: input } : input;
+      return sendLocationRequestWordPress(normalized);
     },
-    onSuccess: (_d, v) => qc.invalidateQueries({ queryKey: ["location-requests", v.caredOneId] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["locationRequests"] }); },
   });
 }
 
 export function useCancelLocationRequest() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ requestId, caredOneId }: { requestId: string; caredOneId: string }) => {
-      const { error } = await careDb.from("location_request").update({
-        status: "cancelled",
-        updated_at: new Date().toISOString(),
-      }).eq("id", requestId);
-      if (error) throw error;
-    },
-    onSuccess: (_d, v) => qc.invalidateQueries({ queryKey: ["location-requests", v.caredOneId] }),
-  });
-}
-
-// ─── Cared One Location Sharing Settings (read-only for caregiver) ──
-export function useCaredOneLocationSettings(caredOneId: string | null) {
-  return useQuery({
-    queryKey: ["cared-one-location-settings", caredOneId],
-    queryFn: async () => {
-      if (!caredOneId) return null;
-      const { data, error } = await careDb
-        .from("cared_one_location_sharing")
-        .select("*")
-        .eq("user_id", caredOneId)
-        .maybeSingle();
-      if (error) throw error;
-      return data as any;
-    },
-    enabled: !!caredOneId,
-  });
-}
-
-// ─── Cared One Documents ────────────────────────────────────
-export function useCaredOneDocuments(caredOneId: string | null) {
-  return useQuery({
-    queryKey: ["cared-one-documents", caredOneId],
-    queryFn: async () => {
-      if (!caredOneId) return [];
-      const { data, error } = await careDb
-        .from("cared_one_document")
-        .select("*")
-        .eq("user_id", caredOneId)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data || []) as any[];
-    },
-    enabled: !!caredOneId,
-  });
-}
-
-export function useCreateCaredOneDocument() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (doc: { user_id: string; title: string; document_type?: string; file_url?: string; notes?: string }) => {
-      const userId = await getCurrentUserId();
-      if (!userId) throw new Error("Not authenticated");
-      const { error } = await careDb
-        .from("cared_one_document")
-        .insert({ ...doc, uploaded_by: userId });
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["cared-one-documents"] }),
-  });
-}
-
-export function useUpdateCaredOneDocument() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string; title?: string; document_type?: string; file_url?: string; notes?: string }) => {
-      const { error } = await careDb.from("cared_one_document").update(updates).eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["cared-one-documents"] }),
-  });
-}
-
-export function useDeleteCaredOneDocument() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await careDb.from("cared_one_document").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["cared-one-documents"] }),
-  });
-}
-
-// ─── Delete User Cared One relationship ─────────────────────
-export function useDeleteUserCaredOne() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await careDb.from("user_cared_one").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["user-cared-ones"] }),
-  });
-}
-
-// ─── Start or get conversation ──────────────────────────────
-export function useStartConversation() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (otherUserId: string) => {
-      const userId = await getCurrentUserId();
-      if (!userId) throw new Error("Not authenticated");
-      // Check if conversation already exists
-      const { data: existing } = await careDb
-        .from("conversation")
-        .select("id")
-        .or(
-          `and(participant_1_id.eq.${userId},participant_2_id.eq.${otherUserId}),and(participant_1_id.eq.${otherUserId},participant_2_id.eq.${userId})`
-        )
-        .maybeSingle();
-      if (existing) return existing.id;
-      const { data, error } = await careDb
-        .from("conversation")
-        .insert({ participant_1_id: userId, participant_2_id: otherUserId })
-        .select("id")
-        .single();
-      if (error) throw error;
-      return data.id;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["conversations"] }),
-  });
-}
-
-// ─── Symptom Logs ───────────────────────────────────────────
-export function useSymptomLogs(caredOneId: string | null) {
-  return useQuery({
-    queryKey: ["symptom-logs", caredOneId],
-    queryFn: async () => {
-      if (!caredOneId) return [];
-      const { data, error } = await careDb
-        .from("symptom_log")
-        .select("*")
-        .eq("cared_one_id", caredOneId)
-        .order("created_at", { ascending: false })
-        .limit(50);
-      if (error) throw error;
-      return (data || []) as any[];
-    },
-    enabled: !!caredOneId,
-  });
-}
-
-export function useCreateSymptomLog() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (entry: { cared_one_id: string; symptom_type: string; severity: number; notes?: string | null; trigger?: string | null }) => {
-      const userId = await getCurrentUserId();
-      if (!userId) throw new Error("Not authenticated");
-      const { error } = await careDb
-        .from("symptom_log")
-        .insert({ ...entry, recorded_by: userId });
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["symptom-logs"] }),
-  });
-}
-
-// ─── Caregiver Wellness Logs ────────────────────────────────
-export function useCaregiverWellnessLogs() {
-  return useQuery({
-    queryKey: ["caregiver-wellness"],
-    queryFn: async () => {
-      const userId = await getCurrentUserId();
-      if (!userId) return [];
-      const { data, error } = await careDb
-        .from("caregiver_wellness_log")
-        .select("*")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false })
-        .limit(30);
-      if (error) throw error;
-      return (data || []) as any[];
-    },
-  });
-}
-
-export function useCreateCaregiverWellnessLog() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (entry: { mood: string; stress_level: number; sleep_hours: number; notes?: string | null }) => {
-      const userId = await getCurrentUserId();
-      if (!userId) throw new Error("Not authenticated");
-      const { error } = await careDb
-        .from("caregiver_wellness_log")
-        .insert({ ...entry, user_id: userId });
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["caregiver-wellness"] }),
-  });
-}
-
-// ─── Dementia Stage ─────────────────────────────────────────
-export function useUpdateDementiaStage() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ caredOneId, stage }: { caredOneId: string; stage: string }) => {
-      const { error } = await careDb
-        .from("profile")
-        .update({ dementia_stage: stage })
-        .eq("id", caredOneId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["user-cared-ones"] });
-      qc.invalidateQueries({ queryKey: ["provider"] });
-    },
-  });
-}
-
-// ─── Unified Comments (posts, reviews, gallery, tasks) ──────
-export function useComments(entityType: string, entityId: string | null) {
-  return useQuery({
-    queryKey: ["comments", entityType, entityId],
-    queryFn: async () => {
-      if (!entityId) return [];
-      const { data, error } = await careDb
-        .from("comment")
-        .select("*")
-        .eq("entity_type", entityType)
-        .eq("entity_id", entityId)
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      // Fetch author profiles
-      const authorIds = [...new Set((data || []).map((c: any) => c.author_id).filter(Boolean))];
-      let authorMap: Record<string, any> = {};
-      if (authorIds.length > 0) {
-        const { data: authors } = await careDb
-          .from("profile")
-          .select("id, full_name, avatar_url")
-          .in("id", authorIds);
-        (authors || []).forEach((a: any) => { authorMap[a.id] = a; });
-      }
-      // Build tree: top-level + replies
-      const all = (data || []).map((c: any) => ({ ...c, author: authorMap[c.author_id] || null, replies: [] as any[] }));
-      const topLevel: any[] = [];
-      const replyMap: Record<string, any[]> = {};
-      for (const c of all) {
-        if (!c.parent_id) {
-          topLevel.push(c);
-        } else {
-          if (!replyMap[c.parent_id]) replyMap[c.parent_id] = [];
-          replyMap[c.parent_id].push(c);
-        }
-      }
-      for (const tl of topLevel) {
-        tl.replies = replyMap[tl.id] || [];
-      }
-      return topLevel;
-    },
-    enabled: !!entityId,
-  });
-}
-
-export function useCreateComment() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ entityType, entityId, content, parentId }: { entityType: string; entityId: string; content: string; parentId?: string }) => {
-      const userId = await getCurrentUserId();
-      if (!userId) throw new Error("Not authenticated");
-      const { error } = await careDb
-        .from("comment")
-        .insert({ entity_type: entityType, entity_id: entityId, author_id: userId, content, parent_id: parentId || null });
-      if (error) throw error;
-    },
-    onSuccess: (_, vars) => {
-      qc.invalidateQueries({ queryKey: ["comments", vars.entityType, vars.entityId] });
-    },
-  });
-}
-
-export function useDeleteComment() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, entityType, entityId }: { id: string; entityType: string; entityId: string }) => {
-      const { error } = await careDb
-        .from("comment")
-        .delete()
-        .eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: (_, vars) => {
-      qc.invalidateQueries({ queryKey: ["comments", vars.entityType, vars.entityId] });
-    },
+    mutationFn: (requestId: string) => cancelLocationRequestWordPress(requestId),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["locationRequests"] }); },
   });
 }

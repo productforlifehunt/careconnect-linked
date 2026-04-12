@@ -1,0 +1,33 @@
+{
+  "name": "supamedusa",
+  "version": "0.1.0",
+  "description": "Medusa v2 commerce engine on Supabase — 100% data model match, zero extra servers",
+  "main": "index.js",
+  "bin": {
+    "supamedusa": "./bin/cli.js"
+  },
+  "scripts": {
+    "install-schema": "node bin/cli.js install",
+    "generate-migration": "node bin/cli.js generate-migration",
+    "deploy-functions": "node bin/cli.js deploy-functions"
+  },
+  "keywords": [
+    "medusa",
+    "supabase",
+    "ecommerce",
+    "commerce",
+    "headless",
+    "postgresql"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/supamedusa"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0"
+  }
+}

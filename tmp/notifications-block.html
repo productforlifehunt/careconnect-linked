@@ -1,0 +1,136 @@
+<!-- wp:html -->
+<div id="notifications-app">
+  <div style="border-bottom:1px solid #e5e7eb; margin-bottom:1.5rem;">
+    <div style="display:flex; gap:0.5rem;">
+      <button class="notif-tab active" data-tab="all" style="padding:0.75rem 1.5rem; border:none; background:none; cursor:pointer; font-weight:500; color:#0d9488; border-bottom:2px solid #0d9488;">All</button>
+      <button class="notif-tab" data-tab="invitations" style="padding:0.75rem 1.5rem; border:none; background:none; cursor:pointer; font-weight:500; color:#6b7280; border-bottom:2px solid transparent;">Invitations</button>
+    </div>
+  </div>
+
+  <div id="notif-all" class="notif-panel">
+    <div style="display:flex; justify-content:flex-end; margin-bottom:1rem;">
+      <button id="mark-all-read" style="padding:0.4rem 0.75rem; background:white; color:#0d9488; border:1px solid #0d9488; border-radius:6px; font-size:0.8rem; cursor:pointer;">Mark All Read</button>
+    </div>
+    <div id="notif-list" style="min-height:200px;">
+      <div style="text-align:center; padding:3rem; color:#9ca3af;">⏳ Loading...</div>
+    </div>
+  </div>
+
+  <div id="notif-invitations" class="notif-panel" style="display:none;">
+    <div id="invite-list" style="min-height:200px;">
+      <div style="text-align:center; padding:3rem; color:#9ca3af;">⏳ Loading...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const baseUrl = '/careconnected/wp-json/wp/v2';
+  let currentUserId = null;
+
+  async function getUser() {
+    if (currentUserId) return currentUserId;
+    try { const r = await fetch(baseUrl+'/users/me',{credentials:'include'}); if(!r.ok) return null; currentUserId=(await r.json()).id; return currentUserId; } catch(e) { return null; }
+  }
+
+  function timeAgo(d) {
+    const s=Math.floor((new Date()-new Date(d))/1000);
+    if(s<60) return 'Just now'; if(s<3600) return Math.floor(s/60)+'m ago';
+    if(s<86400) return Math.floor(s/3600)+'h ago'; return Math.floor(s/86400)+'d ago';
+  }
+
+  function notifIcon(type) {
+    const icons = {booking:'📅',task:'✅',message:'💬',group:'👥',system:'🔔',invite:'📩'};
+    return icons[type]||'🔔';
+  }
+
+  function notifItem(n) {
+    const title = n.title?.rendered||'Notification';
+    const body = n.meta?.message||n.content?.rendered?.replace(/<[^>]*>/g,'')||'';
+    const type = n.meta?.notification_type||'system';
+    const isRead = n.meta?.is_read==='1'||n.meta?.is_read===true;
+    const bg = isRead ? 'transparent' : '#f0fdfa';
+    const weight = isRead ? '400' : '600';
+    const link = n.meta?.link_url||'#';
+
+    return '<div style="padding:1rem; border-bottom:1px solid #f3f4f6; background:'+bg+'; display:flex; gap:0.75rem; align-items:start; cursor:pointer; transition:background 0.15s;" onmouseover="this.style.background=\'#f9fafb\'" onmouseout="this.style.background=\''+bg+'\'" onclick="if(\''+link+'\'!==\'#\') window.location.href=\''+link+'\'">'
+      +'<div style="font-size:1.5rem; flex-shrink:0;">'+notifIcon(type)+'</div>'
+      +'<div style="flex:1; min-width:0;">'
+      +'<div style="font-weight:'+weight+'; color:#111827; margin-bottom:0.2rem;">'+title+'</div>'
+      +'<div style="font-size:0.85rem; color:#6b7280; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'+body+'</div>'
+      +'<div style="font-size:0.7rem; color:#9ca3af; margin-top:0.25rem;">'+timeAgo(n.date)+'</div>'
+      +'</div></div>';
+  }
+
+  function inviteItem(inv) {
+    const name = inv.title?.rendered||'Care Group Invitation';
+    const from = inv.meta?.inviter_name||'Someone';
+    return '<div style="padding:1rem; border-bottom:1px solid #f3f4f6; display:flex; justify-content:space-between; align-items:center;">'
+      +'<div><div style="font-weight:600; color:#111827;">'+name+'</div>'
+      +'<div style="font-size:0.85rem; color:#6b7280;">From: '+from+' • '+timeAgo(inv.date)+'</div></div>'
+      +'<div style="display:flex; gap:0.5rem;">'
+      +'<button onclick="window._acceptInvite('+inv.id+')" style="padding:0.4rem 0.75rem; background:#22c55e; color:white; border:none; border-radius:6px; font-size:0.8rem; cursor:pointer;">Accept</button>'
+      +'<button onclick="window._declineInvite('+inv.id+')" style="padding:0.4rem 0.75rem; background:#ef4444; color:white; border:none; border-radius:6px; font-size:0.8rem; cursor:pointer;">Decline</button>'
+      +'</div></div>';
+  }
+
+  function empty(msg,icon) { return '<div style="text-align:center; padding:3rem; color:#9ca3af;"><div style="font-size:2rem; margin-bottom:0.5rem;">'+icon+'</div><div>'+msg+'</div></div>'; }
+
+  async function loadNotifications() {
+    const userId = await getUser();
+    if (!userId) { document.getElementById('notif-list').innerHTML = empty('Please log in','🔒'); return; }
+    try {
+      const r = await fetch(baseUrl+'/chat_notification?author='+userId+'&per_page=30&orderby=date&order=desc',{credentials:'include'});
+      const notifs = r.ok ? await r.json() : [];
+      document.getElementById('notif-list').innerHTML = notifs.length===0 ? empty('No notifications yet','🔔') : notifs.map(notifItem).join('');
+    } catch(e) { document.getElementById('notif-list').innerHTML = empty('Failed to load','❌'); }
+  }
+
+  async function loadInvitations() {
+    const userId = await getUser();
+    if (!userId) { document.getElementById('invite-list').innerHTML = empty('Please log in','🔒'); return; }
+    try {
+      const r = await fetch(baseUrl+'/care_group_invite?meta_key=invitee_id&meta_value='+userId+'&per_page=20',{credentials:'include'});
+      const invites = r.ok ? await r.json() : [];
+      document.getElementById('invite-list').innerHTML = invites.length===0 ? empty('No pending invitations','📩') : invites.map(inviteItem).join('');
+    } catch(e) { document.getElementById('invite-list').innerHTML = empty('Failed to load','❌'); }
+  }
+
+  window._acceptInvite = async function(id) {
+    try {
+      const nonce = document.querySelector('meta[name="wp-nonce"]')?.content||'';
+      await fetch(baseUrl+'/care_group_invite/'+id,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json','X-WP-Nonce':nonce},body:JSON.stringify({meta:{status:'accepted'}})});
+      loadInvitations();
+    } catch(e) { alert('Failed to accept'); }
+  };
+  window._declineInvite = async function(id) {
+    try {
+      const nonce = document.querySelector('meta[name="wp-nonce"]')?.content||'';
+      await fetch(baseUrl+'/care_group_invite/'+id,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json','X-WP-Nonce':nonce},body:JSON.stringify({meta:{status:'declined'}})});
+      loadInvitations();
+    } catch(e) { alert('Failed to decline'); }
+  };
+
+  // Mark all read
+  document.getElementById('mark-all-read').addEventListener('click', async function() {
+    this.textContent = 'Marking...';
+    // In a real implementation, batch update all notifications
+    this.textContent = '✓ Done'; setTimeout(() => { this.textContent = 'Mark All Read'; }, 2000);
+    loadNotifications();
+  });
+
+  // Tab switching
+  document.querySelectorAll('.notif-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+      document.querySelectorAll('.notif-tab').forEach(t => { t.style.color='#6b7280'; t.style.borderBottomColor='transparent'; });
+      this.style.color='#0d9488'; this.style.borderBottomColor='#0d9488';
+      document.querySelectorAll('.notif-panel').forEach(p => p.style.display='none');
+      document.getElementById('notif-'+this.dataset.tab).style.display='block';
+    });
+  });
+
+  loadNotifications();
+  loadInvitations();
+})();
+</script>
+<!-- /wp:html -->

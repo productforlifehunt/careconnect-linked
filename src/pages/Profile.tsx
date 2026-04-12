@@ -11,7 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useAuth } from "@/contexts/AuthContext";
 import { useMyProfile, useUpdateProfile } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
-import { careAuth, careDb } from "@/integrations/supabase/external-client";
+import { wpUploadMedia, wpDeleteAccount } from "@/services/wp-auth";
 import { User, Bell, Shield, MapPin, Loader2, Upload, Camera, Download, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSite } from "@/contexts/SiteContext";
@@ -73,37 +73,26 @@ export default function Profile() {
   const handleDownloadData = async () => {
     setDownloadingData(true);
     try {
-      const { data: { session } } = await careAuth.auth.getSession();
-      if (!session) throw new Error("Not authenticated");
-      const userId = session.user.id;
-      const [profileRes, bookingsRes, messagesRes, tasksRes, notificationsRes, savedRes] = await Promise.all([
-        careDb.from("profile").select("*").eq("id", userId).single(),
-        careDb.from("booking").select("*").eq("user_id", userId),
-        careDb.from("direct_message").select("id, message_content, created_at, receiver_id, group_id").or(`sender_id.eq.${userId},receiver_id.eq.${userId}`).limit(500),
-        careDb.from("care_task").select("*").or(`created_by.eq.${userId},assigned_to.eq.${userId}`),
-        careDb.from("notification").select("*").eq("user_id", userId).limit(200),
-        careDb.from("saved_provider").select("*").eq("user_id", userId),
-      ]);
       const exportData = {
         exported_at: new Date().toISOString(),
-        profile: profileRes.data,
-        bookings: bookingsRes.data || [],
-        messages_count: (messagesRes.data || []).length,
-        messages: (messagesRes.data || []).map((m: any) => ({ id: m.id, content: m.message_content, created_at: m.created_at })),
-        tasks: tasksRes.data || [],
-        notifications: notificationsRes.data || [],
-        saved_providers: savedRes.data || [],
+        profile: {
+          full_name: profile?.full_name,
+          email: profile?.email,
+          phone_number: profile?.phone_number,
+          address: profile?.address,
+          bio: profile?.bio,
+          avatar_url: profile?.avatar_url,
+          is_care_provider: profile?.is_care_provider,
+        },
       };
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
+      const a = document.createElement('a');
       a.href = url;
-      a.download = `${site.brandSlug}-data-${new Date().toISOString().split("T")[0]}.json`;
-      document.body.appendChild(a);
+      a.download = `careconnected-data-${new Date().toISOString().split('T')[0]}.json`;
       a.click();
-      document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      toast({ title: t("profile.dataDownloaded"), description: t("profile.dataDownloadedDesc") });
+      toast({ title: t("profile.dataDownloaded", "Your data has been downloaded") });
     } catch (err: any) {
       toast({ title: t("profile.downloadFailed"), description: err.message, variant: "destructive" });
     } finally {
@@ -114,16 +103,12 @@ export default function Profile() {
   const handleDeleteAccount = async () => {
     setDeletingAccount(true);
     try {
-      const { data: { session } } = await careAuth.auth.getSession();
-      if (!session) throw new Error("Not authenticated");
-      const userId = session.user.id;
-      await careDb.from("profile").update({
-        full_name: "Deleted User", first_name: null, last_name: null, email: null, phone_number: null, avatar_url: null, bio: null, address: null, location: null, is_care_provider: false, provider_is_active: false,
-      }).eq("id", userId);
-      await careDb.from("saved_provider").delete().eq("user_id", userId);
-      await logout();
+      await wpDeleteAccount();
+      toast({
+        title: t("profile.accountDeleted", "Account Deleted"),
+        description: t("profile.accountDeletedDesc", "Your account data has been anonymized and you have been logged out."),
+      });
       navigate("/");
-      toast({ title: t("profile.accountDeleted"), description: t("profile.accountDeletedDesc") });
     } catch (err: any) {
       toast({ title: t("profile.deletionFailed"), description: err.message, variant: "destructive" });
     } finally {
@@ -176,21 +161,9 @@ export default function Profile() {
                     if (file.size > 5 * 1024 * 1024) { toast({ title: t("profile.fileTooLarge"), description: t("profile.maxSize"), variant: "destructive" }); return; }
                     setAvatarUploading(true);
                     try {
-                      const { data: { session } } = await careAuth.auth.getSession();
-                      if (!session) throw new Error("Not authenticated");
-                      const ext = file.name.split(".").pop();
-                      const filePath = `${session.user.id}/avatar.${ext}`;
-                      const { createClient } = await import("@supabase/supabase-js");
-                      const storageClient = createClient("https://yekarqanirdkdckimpna.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlla2FycWFuaXJka2Rja2ltcG5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyNzUwOTQsImV4cCI6MjA1OTg1MTA5NH0.WQlbyilIuH_Vz_Oit-M5MZ9II9oqO7tg-ThkZ5GCtfc", {
-                        auth: { storage: localStorage, persistSession: true, autoRefreshToken: true, storageKey: "cc-external-auth" },
-                      });
-                      const { error: uploadErr } = await storageClient.storage.from("avatars").upload(filePath, file, { upsert: true });
-                      if (uploadErr) throw uploadErr;
-                      const { data: publicData } = storageClient.storage.from("avatars").getPublicUrl(filePath);
-                      const newUrl = publicData.publicUrl + "?t=" + Date.now();
-                      setAvatarUrl(newUrl);
-                      await updateProfile.mutateAsync({ avatar_url: newUrl });
-                      toast({ title: t("profile.avatarUpdated") });
+                      const url = await wpUploadMedia(file);
+                      setAvatarUrl(url);
+                      toast({ title: t("profile.avatarUploaded", "Avatar uploaded") });
                     } catch (err: any) {
                       toast({ title: t("profile.uploadFailed"), description: err.message, variant: "destructive" });
                     } finally { setAvatarUploading(false); if (fileInputRef.current) fileInputRef.current.value = ""; }

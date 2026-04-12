@@ -1,0 +1,87 @@
+<!-- wp:html -->
+<style>
+#jobs70-modals{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+#jobs70-modals .j70-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center}
+#jobs70-modals .j70-overlay.show{display:flex}
+#jobs70-modals .j70-modal{background:#fff;border-radius:.75rem;padding:1.5rem;max-width:32rem;width:90%;max-height:90vh;overflow-y:auto;box-shadow:0 25px 50px -12px rgba(0,0,0,.25)}
+#jobs70-modals .j70-modal h3{margin:0 0 1rem;font-size:1.125rem;font-weight:600;color:#0f172a}
+#jobs70-modals .j70-label{display:block;margin:.75rem 0 .25rem;font-size:.8125rem;font-weight:500;color:#334155}
+#jobs70-modals .j70-input,#jobs70-modals .j70-textarea,#jobs70-modals .j70-select{width:100%;padding:.5rem .75rem;border:1px solid #e2e8f0;border-radius:.5rem;font-size:.875rem;outline:none;background:#fff;font-family:inherit}
+#jobs70-modals .j70-textarea{resize:vertical}
+#jobs70-modals .j70-input:focus,#jobs70-modals .j70-textarea:focus,#jobs70-modals .j70-select:focus{border-color:#0d9488;box-shadow:0 0 0 2px rgba(13,148,136,.08)}
+#jobs70-modals .j70-actions{display:flex;gap:.5rem;justify-content:flex-end;margin-top:1.25rem}
+#jobs70-modals .j70-btn{display:inline-flex;align-items:center;gap:.375rem;padding:.5rem 1rem;border:none;border-radius:.5rem;font-size:.875rem;font-weight:500;cursor:pointer}
+#jobs70-modals .j70-btn-primary{background:#0d9488;color:#fff}
+#jobs70-modals .j70-btn-outline{background:#fff;color:#334155;border:1px solid #e2e8f0}
+</style>
+<div id="jobs70-modals">
+  <div class="j70-overlay" id="jobs70-create-overlay">
+    <div class="j70-modal">
+      <h3>Post a Care Job</h3>
+      <label class="j70-label" for="jobs70-create-title">Job Title *</label>
+      <input class="j70-input" id="jobs70-create-title" type="text" placeholder="e.g. Part-time caregiver needed">
+      <label class="j70-label" for="jobs70-create-desc">Description *</label>
+      <textarea class="j70-textarea" id="jobs70-create-desc" rows="5" placeholder="Describe the care needs, schedule, requirements..."></textarea>
+      <label class="j70-label" for="jobs70-create-location">Location</label>
+      <input class="j70-input" id="jobs70-create-location" type="text" placeholder="e.g. Brooklyn, NY">
+      <label class="j70-label" for="jobs70-create-type">Job Type</label>
+      <select class="j70-select" id="jobs70-create-type">
+        <option value="general">General</option>
+        <option value="cared_one_checkin">Check-In Care</option>
+        <option value="cared_one_care">Ongoing Care</option>
+      </select>
+      <div class="j70-actions">
+        <button class="j70-btn j70-btn-outline" type="button" id="jobs70-create-cancel">Cancel</button>
+        <button class="j70-btn j70-btn-primary" type="button" id="jobs70-create-submit">Post Job</button>
+      </div>
+    </div>
+  </div>
+  <div class="j70-overlay" id="jobs70-apply-overlay">
+    <div class="j70-modal">
+      <h3 id="jobs70-apply-title">Apply to Job</h3>
+      <label class="j70-label" for="jobs70-apply-letter">Cover Letter *</label>
+      <textarea class="j70-textarea" id="jobs70-apply-letter" rows="5" placeholder="Introduce yourself and explain why you're a good fit..."></textarea>
+      <div class="j70-actions">
+        <button class="j70-btn j70-btn-outline" type="button" id="jobs70-apply-cancel">Cancel</button>
+        <button class="j70-btn j70-btn-primary" type="button" id="jobs70-apply-submit">Submit Application</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  let applyJobId=null;
+  const createOverlay=document.getElementById('jobs70-create-overlay');
+  const applyOverlay=document.getElementById('jobs70-apply-overlay');
+  function open(el){el.classList.add('show')}
+  function close(el){el.classList.remove('show')}
+  function bind(){const api=window.__jobs70;if(!api)return false;
+    window.addEventListener('jobs70:create-open',()=>open(createOverlay));
+    window.addEventListener('jobs70:apply-open',e=>{applyJobId=e.detail?.jobId||null;document.getElementById('jobs70-apply-title').textContent='Apply to: '+(e.detail?.title||'Job');document.getElementById('jobs70-apply-letter').value='';open(applyOverlay)});
+    document.getElementById('jobs70-create-cancel').addEventListener('click',()=>close(createOverlay));
+    document.getElementById('jobs70-apply-cancel').addEventListener('click',()=>close(applyOverlay));
+    createOverlay.addEventListener('click',e=>{if(e.target===createOverlay)close(createOverlay)});
+    applyOverlay.addEventListener('click',e=>{if(e.target===applyOverlay)close(applyOverlay)});
+    document.getElementById('jobs70-create-submit').addEventListener('click',async()=>{
+      const btn=document.getElementById('jobs70-create-submit');
+      const title=document.getElementById('jobs70-create-title').value.trim();
+      const content=document.getElementById('jobs70-create-desc').value.trim();
+      const location=document.getElementById('jobs70-create-location').value.trim();
+      const type=document.getElementById('jobs70-create-type').value;
+      if(!title||!content)return;
+      btn.textContent='Posting...';
+      try{await api.createJob({title,content,status:'publish',meta:{location,job_source_type:type,status:'open'}});close(createOverlay);document.getElementById('jobs70-create-title').value='';document.getElementById('jobs70-create-desc').value='';document.getElementById('jobs70-create-location').value='';document.getElementById('jobs70-create-type').value='general'}catch(e){alert('Failed to post job')}finally{btn.textContent='Post Job'}
+    });
+    document.getElementById('jobs70-apply-submit').addEventListener('click',async()=>{
+      const btn=document.getElementById('jobs70-apply-submit');
+      const letter=document.getElementById('jobs70-apply-letter').value.trim();
+      if(!letter||!applyJobId)return;
+      btn.textContent='Submitting...';
+      try{await api.createApplication({title:'Application',status:'publish',meta:{job_id:applyJobId,cover_letter:letter,status:'pending'}});close(applyOverlay)}catch(e){alert('Failed to submit application')}finally{btn.textContent='Submit Application'}
+    });
+    return true;
+  }
+  if(!bind()){const t=setInterval(()=>{if(bind())clearInterval(t)},200)}
+})();
+</script>
+<!-- /wp:html -->

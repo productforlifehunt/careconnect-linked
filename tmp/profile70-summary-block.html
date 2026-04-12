@@ -1,0 +1,31 @@
+<!-- wp:html -->
+<style>
+#profile70-summary{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+#profile70-summary .p70-card{background:#fff;border-radius:.75rem;box-shadow:0 1px 3px rgba(0,0,0,.1);border:1px solid transparent;margin-bottom:1rem}
+#profile70-summary .p70-card-body{padding:1.5rem}
+#profile70-summary .p70-row{display:flex;align-items:center;gap:1.5rem}
+#profile70-summary .p70-avatar{width:80px;height:80px;border-radius:1rem;background:#0d9488;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden}
+#profile70-summary .p70-avatar img{width:100%;height:100%;object-fit:cover}
+#profile70-summary .p70-name{font-size:1.125rem;font-weight:600;color:#0f172a}
+#profile70-summary .p70-email{font-size:.875rem;color:#64748b}
+#profile70-summary .p70-role{font-size:.75rem;color:#94a3b8;margin-top:.25rem}
+#profile70-summary .p70-empty{padding:1rem;color:#94a3b8;font-size:.875rem}
+</style>
+<div id="profile70-summary" class="p70-panel active" data-panel="personal">
+  <div class="p70-card"><div class="p70-card-body"><div class="p70-empty">Loading profile...</div></div></div>
+</div>
+<script>
+(function(){
+  const root=document.getElementById('profile70-summary');
+  function render(){
+    const api=window.__profile70;if(!api)return; const u=api.state.user;
+    if(!u){root.innerHTML='<div class="p70-card"><div class="p70-card-body"><div class="p70-empty">Unable to load profile</div></div></div>';return}
+    const name=u.name||'User'; const email=u.email||''; const roles=u.roles||[]; const role=(roles.includes('seller')||roles.includes('vendor'))?'Care Provider':'Care Seeker';
+    const avatar=u.avatar_urls?.['96']||'';
+    root.innerHTML='<div class="p70-card"><div class="p70-card-body"><div class="p70-row"><div class="p70-avatar">'+(avatar?'<img src="'+avatar+'" alt="">':name.charAt(0).toUpperCase())+'</div><div><div class="p70-name">'+name+'</div><div class="p70-email">'+email+'</div><div class="p70-role">'+role+'</div></div></div></div></div>';
+  }
+  function bind(){const api=window.__profile70;if(!api)return false;api.on('data',render);api.on('tab',render);render();return true}
+  if(!bind()){const t=setInterval(()=>{if(bind())clearInterval(t)},200)}
+})();
+</script>
+<!-- /wp:html -->

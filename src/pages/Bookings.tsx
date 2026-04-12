@@ -8,11 +8,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarDays, Clock, MoreHorizontal, X, Check, MessageSquare, Loader2, Star, AlertTriangle, RefreshCw } from "lucide-react";
-import { useBookings, useUpdateBookingStatus, useStartConversation } from "@/hooks/use-care-data";
+import { CalendarDays, Clock, MoreHorizontal, X, Check, MessageSquare, Loader2, Star, AlertTriangle, RefreshCw, DollarSign } from "lucide-react";
+import { useBookings, useCreateReview, useUpdateBookingStatus, useStartConversation } from "@/hooks/use-care-data";
+import { useRequestRefund } from "@/hooks/use-cart";
+import { getProviderBookingConflictMessage, updateOrderBookingDetails } from "@/services/woocommerce-api";
 import { useToast } from "@/hooks/use-toast";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { careDb, careAuth } from "@/integrations/supabase/external-client";
+import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
@@ -21,9 +23,12 @@ export default function Bookings() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const qc = useQueryClient();
+  const { user: authUser } = useAuth();
   const { data: bookings, isLoading } = useBookings();
+  const createReview = useCreateReview();
   const updateStatus = useUpdateBookingStatus();
   const startConversation = useStartConversation();
+  const requestRefund = useRequestRefund();
 
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewBooking, setReviewBooking] = useState<any>(null);
@@ -39,6 +44,9 @@ export default function Bookings() {
   const [rescheduleDate, setRescheduleDate] = useState("");
   const [rescheduleTime, setRescheduleTime] = useState("");
   const [rescheduleSaving, setRescheduleSaving] = useState(false);
+  const [refundOpen, setRefundOpen] = useState(false);
+  const [refundBooking, setRefundBooking] = useState<any>(null);
+  const [refundReason, setRefundReason] = useState("");
 
   const statusColors: Record<string, string> = {
     confirmed: "bg-success text-success-foreground", pending: "bg-warning text-warning-foreground", completed: "bg-muted text-muted-foreground",
@@ -73,16 +81,27 @@ export default function Bookings() {
     if (selectedDate < new Date()) { toast({ title: t("bookings.cannotPastDate"), variant: "destructive" }); return; }
     setRescheduleSaving(true);
     try {
-      const { error } = await careDb.from("booking").update({ appointment_date: rescheduleDate, appointment_time: rescheduleTime, status: "pending" }).eq("id", rescheduleBooking.id);
-      if (error) throw error;
-      if (rescheduleBooking.provider_id) {
-        const { data: { session } } = await careAuth.auth.getSession();
-        const userName = session?.user?.user_metadata?.full_name || "A client";
-        await careDb.from("notification").insert({ user_id: rescheduleBooking.provider_id, type: "booking_rescheduled", title: "Booking Rescheduled", content: `${userName} rescheduled to ${new Date(rescheduleDate).toLocaleDateString("en", { month: "short", day: "numeric" })} at ${rescheduleTime}`, link_url: "/provider-dashboard" }).then(() => {});
+      const conflictMessage = await getProviderBookingConflictMessage(
+        String(rescheduleBooking.provider_id || ""),
+        rescheduleDate,
+        rescheduleTime,
+        Number(rescheduleBooking.duration_hour || 1),
+        { excludeOrderId: Number(rescheduleBooking.id) },
+      );
+      if (conflictMessage) {
+        toast({ title: t("bookings.rescheduleFailed"), description: conflictMessage, variant: "destructive" });
+        return;
       }
+      await updateOrderBookingDetails(Number(rescheduleBooking.id), {
+        appointmentDate: rescheduleDate,
+        appointmentTime: rescheduleTime,
+        durationHours: Number(rescheduleBooking.duration_hour || 1),
+        specialInstructions: rescheduleBooking.special_instruction || "",
+      });
       toast({ title: t("bookings.rescheduled"), description: t("bookings.rescheduledDesc") });
       setRescheduleOpen(false);
       qc.invalidateQueries({ queryKey: ["bookings"] });
+      qc.invalidateQueries({ queryKey: ["providerBookings"] });
     } catch (e: any) { toast({ title: t("bookings.rescheduleFailed"), description: e.message, variant: "destructive" }); }
     finally { setRescheduleSaving(false); }
   };
@@ -91,22 +110,18 @@ export default function Bookings() {
     if (!reviewBooking) return;
     setReviewSaving(true);
     try {
-      const { data: { session } } = await careAuth.auth.getSession();
-      if (!session) throw new Error("Not authenticated");
-      const { data: existingReview } = await careDb.from("review").select("id").eq("reviewer_id", session.user.id).eq("entity_id", reviewBooking.provider_id).maybeSingle();
-      if (existingReview) { toast({ title: t("bookings.alreadyReviewed"), description: t("bookings.alreadyReviewedDesc"), variant: "destructive" }); setReviewOpen(false); setReviewSaving(false); return; }
-      const { error } = await careDb.from("review").insert({ reviewer_id: session.user.id, entity_id: reviewBooking.provider_id, rating: reviewRating, comment: reviewComment || null });
-      if (error) throw error;
-      const { data: existing } = await careDb.from("review").select("rating").eq("entity_id", reviewBooking.provider_id);
-      if (existing && existing.length > 0) {
-        const total = existing.reduce((sum: number, r: any) => sum + r.rating, 0);
-        const avg = total / existing.length;
-        await careDb.from("profile").update({ rating_average: Math.round(avg * 10) / 10, rating_count: existing.length }).eq("id", reviewBooking.provider_id);
-      } else {
-        await careDb.from("profile").update({ rating_average: reviewRating, rating_count: 1 }).eq("id", reviewBooking.provider_id);
-      }
+      if (!authUser) throw new Error("Not authenticated");
+      await createReview.mutateAsync({
+        entity_id: String(reviewBooking.provider_id),
+        entity_type: "provider",
+        rating: reviewRating,
+        comment: reviewComment,
+      });
       toast({ title: t("bookings.reviewSubmitted") });
       setReviewOpen(false);
+      setReviewBooking(null);
+      setReviewRating(5);
+      setReviewComment("");
     } catch (e: any) { toast({ title: t("bookings.reviewFailed"), description: e.message, variant: "destructive" }); }
     finally { setReviewSaving(false); }
   };
@@ -140,6 +155,9 @@ export default function Bookings() {
                 {["pending", "confirmed"].includes(booking.status) && <DropdownMenuItem onClick={() => { setCancelTargetId(booking.id); setCancelTargetName(booking.provider?.full_name || t("common.provider")); setCancelConfirmOpen(true); }} className="text-destructive"><X className="mr-2 h-4 w-4" /> {t("bookings.cancelBooking")}</DropdownMenuItem>}
                 {["pending", "confirmed"].includes(booking.status) && <DropdownMenuItem onClick={() => openReschedule(booking)}><RefreshCw className="mr-2 h-4 w-4" /> {t("bookings.reschedule")}</DropdownMenuItem>}
                 {booking.status === "completed" && <DropdownMenuItem onClick={() => openReview(booking)}><Star className="mr-2 h-4 w-4" /> {t("bookings.leaveReview")}</DropdownMenuItem>}
+                {["completed", "confirmed", "processing"].includes(booking.status) && Number(booking.total_cost || 0) > 0 && (
+                  <DropdownMenuItem onClick={() => { setRefundBooking(booking); setRefundReason(""); setRefundOpen(true); }}><DollarSign className="mr-2 h-4 w-4" /> {t("bookings.requestRefund", "Request Refund")}</DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={() => handleMessage(booking)} disabled={messagingId === booking.provider_id}><MessageSquare className="mr-2 h-4 w-4" /> {t("bookings.messageProvider")}</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -258,6 +276,43 @@ export default function Bookings() {
               <Button variant="coral" onClick={handleSubmitReview} disabled={reviewSaving}>
                 {reviewSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Star className="h-4 w-4 mr-2" />}
                 {t("bookings.submitReview")}
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* Refund Request Dialog */}
+      <Dialog open={refundOpen} onOpenChange={setRefundOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><DollarSign className="h-5 w-5 text-warning" /> {t("bookings.requestRefund", "Request Refund")}</DialogTitle>
+            <DialogDescription>{t("bookings.refundDesc", `Request a refund for your booking with ${refundBooking?.provider?.full_name || "provider"}.`)}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div className="rounded-lg bg-muted/40 p-3 text-sm">
+              <div className="flex justify-between"><span className="text-muted-foreground">{t("bookings.orderTotal", "Order Total")}</span><span className="font-bold">${refundBooking?.total_cost || 0}</span></div>
+            </div>
+            <div>
+              <Label>{t("bookings.refundReason", "Reason for refund")}</Label>
+              <Textarea value={refundReason} onChange={e => setRefundReason(e.target.value)} placeholder={t("bookings.refundReasonPlaceholder", "Please describe why you are requesting a refund...")} rows={3} />
+            </div>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button variant="outline" onClick={() => setRefundOpen(false)}>{t("common.cancel")}</Button>
+              <Button variant="coral" disabled={requestRefund.isPending || !refundReason.trim()} onClick={async () => {
+                if (!refundBooking) return;
+                try {
+                  await requestRefund.mutateAsync({
+                    orderId: Number(refundBooking.id),
+                    amount: String(refundBooking.total_cost || ""),
+                    reason: refundReason.trim(),
+                  });
+                  setRefundOpen(false);
+                  setRefundBooking(null);
+                  setRefundReason("");
+                } catch { /* error handled by hook */ }
+              }}>
+                {requestRefund.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <DollarSign className="h-4 w-4 mr-2" />}
+                {t("bookings.submitRefund", "Submit Refund Request")}
               </Button>
             </DialogFooter>
           </div>

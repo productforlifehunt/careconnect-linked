@@ -1,0 +1,86 @@
+<!-- wp:html -->
+<div style="background: #fff; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 1.5rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <h2 style="font-size: 1.125rem; font-weight: 600; margin: 0;">My Loved Ones</h2>
+    <a href="/careconnected/cared-ones/" style="font-size: 0.875rem; color: #0d9488; text-decoration: none;">View All →</a>
+  </div>
+  
+  <div id="cared-ones-list" style="min-height: 100px;">
+    <div style="text-align: center; padding: 2rem; color: #9ca3af;">
+      <div style="font-size: 2rem; margin-bottom: 0.5rem;">⏳</div>
+      <div>Loading loved ones...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const baseUrl = '/careconnected/wp-json/wp/v2';
+  
+  async function getCurrentUserId() {
+    try {
+      const res = await fetch('/careconnected/wp-json/wp/v2/users/me', {
+        credentials: 'include'
+      });
+      if (!res.ok) return null;
+      const user = await res.json();
+      return user.id;
+    } catch (e) {
+      return null;
+    }
+  }
+  
+  async function loadCaredOnes() {
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      document.getElementById('cared-ones-list').innerHTML = '<div style="text-align: center; padding: 2rem; color: #9ca3af;"><div style="font-size: 2rem; margin-bottom: 0.5rem;">🔒</div><div>Please log in to view loved ones</div></div>';
+      return;
+    }
+    
+    try {
+      const res = await fetch(`${baseUrl}/cared_one?author=${userId}&per_page=4&orderby=date&order=desc&_embed`, {
+        credentials: 'include'
+      });
+      
+      if (!res.ok) throw new Error('Failed to fetch cared ones');
+      
+      const caredOnes = await res.json();
+      
+      if (caredOnes.length === 0) {
+        document.getElementById('cared-ones-list').innerHTML = '<div style="text-align: center; padding: 2rem; color: #9ca3af;"><div style="font-size: 2rem; margin-bottom: 0.5rem;">❤️</div><div>No loved ones added yet</div><a href="/careconnected/add-cared-one/" style="display: inline-block; margin-top: 1rem; padding: 0.5rem 1rem; background: #0d9488; color: white; border-radius: 8px; text-decoration: none; font-size: 0.875rem;">Add Your First Loved One</a></div>';
+        return;
+      }
+      
+      const html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">' + caredOnes.map(person => {
+        const name = person.title?.rendered || 'Loved One';
+        const age = person.meta?.age || '';
+        const relationship = person.meta?.relationship || '';
+        const condition = person.meta?.primary_condition || '';
+        
+        return `
+          <div style="padding: 1rem; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center;">
+            <div style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700; margin: 0 auto 0.75rem;">${name.charAt(0).toUpperCase()}</div>
+            <div style="font-weight: 600; color: #111827; margin-bottom: 0.25rem;">${name}</div>
+            ${age ? `<div style="font-size: 0.75rem; color: #6b7280;">Age ${age}</div>` : ''}
+            ${relationship ? `<div style="font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem;">${relationship}</div>` : ''}
+            ${condition ? `<div style="font-size: 0.75rem; color: #0d9488; margin-top: 0.5rem; padding: 0.25rem 0.5rem; background: #f0fdfa; border-radius: 4px;">${condition}</div>` : ''}
+          </div>
+        `;
+      }).join('') + '</div>';
+      
+      document.getElementById('cared-ones-list').innerHTML = html;
+      
+    } catch (e) {
+      console.error('Failed to load cared ones:', e);
+      document.getElementById('cared-ones-list').innerHTML = '<div style="text-align: center; padding: 2rem; color: #ef4444;"><div>Failed to load loved ones</div></div>';
+    }
+  }
+  
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadCaredOnes);
+  } else {
+    loadCaredOnes();
+  }
+})();
+</script>
+<!-- /wp:html -->

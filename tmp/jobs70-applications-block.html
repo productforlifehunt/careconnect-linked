@@ -1,0 +1,35 @@
+<!-- wp:html -->
+<style>
+#jobs70-applications{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+#jobs70-applications .j70-card{background:#fff;border-radius:.75rem;box-shadow:0 1px 3px rgba(0,0,0,.1);border:1px solid transparent;padding:1.25rem;margin-bottom:1rem}
+#jobs70-applications .j70-top{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:.5rem}
+#jobs70-applications .j70-title{margin:0;font-size:.95rem;font-weight:600;color:#0f172a}
+#jobs70-applications .j70-letter{font-size:.875rem;color:#64748b;display:-webkit-box;display:box;line-clamp:2;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin:.5rem 0}
+#jobs70-applications .j70-badge{display:inline-block;padding:.125rem .5rem;border-radius:9999px;font-size:.7rem;font-weight:500}
+#jobs70-applications .j70-pending{background:#fef3c7;color:#92400e}
+#jobs70-applications .j70-accepted{background:#0d9488;color:#fff}
+#jobs70-applications .j70-rejected{background:#ef4444;color:#fff}
+#jobs70-applications .j70-date{font-size:.75rem;color:#94a3b8}
+#jobs70-applications .j70-empty{text-align:center;padding:3rem 1rem;color:#94a3b8;font-size:.875rem}
+</style>
+<div id="jobs70-applications" class="j70-panel" data-panel="applications">
+  <div class="j70-empty">Loading applications...</div>
+</div>
+<script>
+(function(){
+  const root=document.getElementById('jobs70-applications');
+  function render(){
+    const api=window.__jobs70;if(!api)return; const items=api.state.applications||[];
+    if(!items.length){root.innerHTML='<div class="j70-empty">No applications yet</div>';return}
+    root.innerHTML=items.map(a=>{
+      const title=a.title?.rendered||'Application'; const status=a.meta?.status||'pending'; const letter=a.meta?.cover_letter||'';
+      const badgeClass=status==='accepted'?'j70-accepted':status==='rejected'?'j70-rejected':'j70-pending';
+      const date=new Date(a.date).toLocaleDateString('en',{month:'short',day:'numeric',year:'numeric'});
+      return '<div class="j70-card"><div class="j70-top"><h3 class="j70-title">'+title+'</h3><span class="j70-badge '+badgeClass+'">'+status+'</span></div><div class="j70-letter">'+letter+'</div><div class="j70-date">Applied '+date+'</div></div>';
+    }).join('');
+  }
+  function bind(){const api=window.__jobs70;if(!api)return false;api.on('data',render);api.on('tab',render);render();return true}
+  if(!bind()){const t=setInterval(()=>{if(bind())clearInterval(t)},200)}
+})();
+</script>
+<!-- /wp:html -->

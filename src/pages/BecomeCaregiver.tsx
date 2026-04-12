@@ -15,9 +15,10 @@ import { useSite } from "@/contexts/SiteContext";
 import { useSubmitProviderApplication } from "@/hooks/use-care-data";
 import { ArrowLeft, ArrowRight, CheckCircle, Upload, Shield, DollarSign, Heart } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { ALL_SPECIALTIES, ALL_CERTIFICATIONS, getSpecialtyKey, getCertificationKey } from "@/lib/specialty-i18n";
 
-const allSpecialties = ["Elder Care", "Child Care", "Special Needs", "Nursing Care", "Companionship", "Respite Care", "Physical Therapy", "Dementia Care", "Palliative Support", "Post-Surgery Care", "Meal Preparation", "Transportation", "Medication Management", "Wound Care", "Mobility Support", "Tutoring", "Overnight Care"];
-const allCertifications = ["CNA", "RN", "LPN", "CPR", "First Aid", "Home Health Aide", "Child Development Associate", "Special Ed Certificate", "PTA License", "BSN", "IV Certification", "Wound Care", "Alzheimer's Care", "Hospice Care", "Food Safety"];
+const allSpecialties = ALL_SPECIALTIES;
+const allCertifications = ALL_CERTIFICATIONS;
 
 export default function BecomeCaregiver() {
   const { t } = useTranslation();
@@ -105,11 +106,11 @@ export default function BecomeCaregiver() {
           <CardContent className="space-y-6">
             <div>
               <Label className="mb-3 block">{t("becomeCaregiver.specialties")} * ({t("becomeCaregiver.selectAllApply")})</Label>
-              <div className="flex flex-wrap gap-2">{allSpecialties.map(s => (<Badge key={s} variant={selectedSpecialties.includes(s) ? "default" : "outline"} className="cursor-pointer text-sm py-1.5 px-3" onClick={() => toggleItem(selectedSpecialties, s, setSelectedSpecialties)}>{s}</Badge>))}</div>
+              <div className="flex flex-wrap gap-2">{allSpecialties.map(s => (<Badge key={s} variant={selectedSpecialties.includes(s) ? "default" : "outline"} className="cursor-pointer text-sm py-1.5 px-3" onClick={() => toggleItem(selectedSpecialties, s, setSelectedSpecialties)}>{t(getSpecialtyKey(s))}</Badge>))}</div>
             </div>
             <div>
               <Label className="mb-3 block">{t("becomeCaregiver.certifications")}</Label>
-              <div className="flex flex-wrap gap-2">{allCertifications.map(c => (<Badge key={c} variant={selectedCerts.includes(c) ? "default" : "outline"} className="cursor-pointer text-sm py-1.5 px-3" onClick={() => toggleItem(selectedCerts, c, setSelectedCerts)}>{c}</Badge>))}</div>
+              <div className="flex flex-wrap gap-2">{allCertifications.map(c => (<Badge key={c} variant={selectedCerts.includes(c) ? "default" : "outline"} className="cursor-pointer text-sm py-1.5 px-3" onClick={() => toggleItem(selectedCerts, c, setSelectedCerts)}>{t(getCertificationKey(c))}</Badge>))}</div>
             </div>
             <div>
               <Label>{t("becomeCaregiver.yearsOfExperience")} *</Label>

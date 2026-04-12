@@ -1,108 +1,168 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { careAuth, careDb } from "@/integrations/supabase/external-client";
-import type { User as SupabaseUser, Session } from "@supabase/supabase-js";
 import type { Profile } from "@/types/care-connector";
+import {
+  wpLogin as wpAuthLogin,
+  wpRegister as wpAuthRegister,
+  wpValidateToken,
+  wpLogout as wpAuthLogout,
+  getStoredWPUser,
+  type WPUser,
+  type WPAuthResult,
+} from "@/services/wp-auth";
+
+export type AuthSource = "wordpress" | null;
 
 interface AuthContextType {
   user: Profile | null;
-  session: Session | null;
+  session: null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  authSource: AuthSource;
   login: (email: string, password: string) => Promise<void>;
+  loginWithWP: (username: string, password: string) => Promise<void>;
   signup: (name: string, email: string, password: string, role: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/** Convert a WP user into a Profile-compatible object so the whole app works */
+function wpUserToProfile(wp: WPUser): Profile {
+  const nameParts = (wp.user_display_name || wp.user_login).split(" ");
+  return {
+    id: `wp-${wp.user_id}`,
+    user_id: `wp-${wp.user_id}`,
+    email: wp.user_email,
+    first_name: nameParts[0] || null,
+    last_name: nameParts.slice(1).join(" ") || null,
+    full_name: wp.user_display_name || wp.user_login,
+    user_name: wp.user_login,
+    phone_number: null,
+    avatar_url: null,
+    bio: null,
+    location: null,
+    address: null,
+    address_latitude: null,
+    address_longitude: null,
+    timezone: null,
+    currency: null,
+    email_notification: true,
+    push_notification: true,
+    quiet_hour_start: null,
+    quiet_hour_end: null,
+    is_care_provider: false,
+    is_cared_one: false,
+    is_admin: false,
+    provider_type: null,
+    hourly_rate: null,
+    specialty: null,
+    service_offered: null,
+    years_of_experience: null,
+    certification: null,
+    background_check_status: null,
+    stripe_account_id: null,
+    stripe_onboarding_complete: null,
+    instant_book_enabled: null,
+    provider_is_active: null,
+    rating_average: null,
+    rating_count: null,
+    total_booking_count: null,
+    response_time_minute: null,
+    cancellation_policy: null,
+    service_area: null,
+    created_by_user_id: null,
+    relationship_to_creator: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
-  const fetchProfile = useCallback(async (userId: string) => {
-    try {
-      const { data, error } = await careDb
-        .from("profile")
-        .select("*")
-        .eq("id", userId)
-        .single();
-      if (error) {
-        console.error("Error fetching profile:", error);
-        return null;
-      }
-      return data as Profile;
-    } catch (err) {
-      console.error("Error fetching profile:", err);
-      return null;
-    }
-  }, []);
+  const [authSource, setAuthSource] = useState<AuthSource>(null);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = careAuth.auth.onAuthStateChange(
-      async (event, newSession) => {
-        setSession(newSession);
-        if (newSession?.user) {
-          // Use setTimeout to avoid Supabase auth deadlock
-          setTimeout(async () => {
-            const profile = await fetchProfile(newSession.user.id);
-            setUser(profile);
-            setIsLoading(false);
-          }, 0);
-        } else {
-          setUser(null);
-          setIsLoading(false);
+    let cancelled = false;
+
+    // Restore WP session from localStorage (fast, no network)
+    const storedWP = getStoredWPUser();
+    if (storedWP) {
+      setUser(wpUserToProfile(storedWP));
+      setAuthSource("wordpress");
+      setIsLoading(false);
+
+      wpValidateToken().then((validated) => {
+        if (cancelled) return;
+        if (!validated) {
+          const stillHasToken = !!localStorage.getItem("cc_wp_token");
+          if (!stillHasToken) {
+            setUser(null);
+            setAuthSource(null);
+          }
         }
-      }
-    );
+      });
+    } else {
+      setIsLoading(false);
+    }
 
-    // THEN check for existing session
-    careAuth.auth.getSession().then(({ data: { session: existing } }) => {
-      setSession(existing);
-      if (existing?.user) {
-        fetchProfile(existing.user.id).then(profile => {
-          setUser(profile);
-          setIsLoading(false);
-        });
-      } else {
-        setIsLoading(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [fetchProfile]);
+    return () => { cancelled = true; };
+  }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const { error } = await careAuth.auth.signInWithPassword({ email, password });
-    if (error) throw error;
+    const result: WPAuthResult = await wpAuthLogin(email, password);
+    const wpUser: WPUser = {
+      user_id: result.user_id,
+      user_email: result.user_email,
+      user_login: result.user_login,
+      user_display_name: result.user_display_name,
+    };
+    setUser(wpUserToProfile(wpUser));
+    setAuthSource("wordpress");
+    setIsLoading(false);
+  }, []);
+
+  const loginWithWP = useCallback(async (username: string, password: string) => {
+    const result: WPAuthResult = await wpAuthLogin(username, password);
+    const wpUser: WPUser = {
+      user_id: result.user_id,
+      user_email: result.user_email,
+      user_login: result.user_login,
+      user_display_name: result.user_display_name,
+    };
+    setUser(wpUserToProfile(wpUser));
+    setAuthSource("wordpress");
+    setIsLoading(false);
   }, []);
 
   const signup = useCallback(async (name: string, email: string, password: string, _role: string) => {
-    const { error } = await careAuth.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: name },
-        emailRedirectTo: window.location.origin,
-      },
-    });
-    if (error) throw error;
+    const result: WPAuthResult = await wpAuthRegister(email, password, name);
+    const wpUser: WPUser = {
+      user_id: result.user_id,
+      user_email: result.user_email,
+      user_login: result.user_login,
+      user_display_name: result.user_display_name,
+    };
+    setUser(wpUserToProfile(wpUser));
+    setAuthSource("wordpress");
+    setIsLoading(false);
   }, []);
 
   const logout = useCallback(async () => {
-    await careAuth.auth.signOut();
+    wpAuthLogout();
     setUser(null);
-    setSession(null);
+    setAuthSource(null);
   }, []);
 
   return (
     <AuthContext.Provider value={{
       user,
-      session,
-      isAuthenticated: !!session?.user,
+      session: null,
+      isAuthenticated: !!user,
       isLoading,
+      authSource,
       login,
+      loginWithWP,
       signup,
       logout,
     }}>

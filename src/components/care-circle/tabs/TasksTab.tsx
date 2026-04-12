@@ -43,7 +43,7 @@ export function TasksTab({
   };
 
   const toggleTask = (id: string, currentStatus: string) => {
-    updateTaskStatus.mutate({ id, status: currentStatus === "completed" ? "pending" : "completed" });
+    updateTaskStatus.mutate({ id, updates: { status: currentStatus === "completed" ? "pending" : "completed" } });
   };
 
   const addTask = () => {
@@ -51,8 +51,8 @@ export function TasksTab({
     createTask.mutate({
       title: newTask.title, description: newTask.description || undefined,
       group_id: activeGroupId, assigned_to: newTask.assignee || undefined,
-      priority: newTask.priority, category: newTask.category,
-      due_date: newTask.due_date || undefined, status: "pending", visibility: newTask.visibility,
+      priority: newTask.priority,
+      due_date: newTask.due_date || undefined,
     } as any, {
       onSuccess: () => {
         setNewTask({ title: "", description: "", assignee: "", priority: "medium", category: "Daily Living", due_date: "", visibility: "group" });

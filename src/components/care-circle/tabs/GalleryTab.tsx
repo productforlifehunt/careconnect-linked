@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { CommentsSection } from "@/components/comments/CommentsSection";
+import { createCareGroupGalleryItemWordPress, deleteCareGroupGalleryItemWordPress } from "@/features/care-groups/source.wordpress-extended";
 
 function GalleryUploadForm({ groupId }: { groupId: string }) {
   const { toast } = useToast();
@@ -20,11 +21,7 @@ function GalleryUploadForm({ groupId }: { groupId: string }) {
     if (!url.trim() || !groupId || !user?.id) return;
     setSaving(true);
     try {
-      const { careDb } = await import("@/integrations/supabase/external-client");
-      const { error } = await careDb.from("care_group_gallery").insert({
-        group_id: groupId, image_url: url.trim(), caption: caption.trim() || null, uploaded_by: user.id,
-      });
-      if (error) throw error;
+      await createCareGroupGalleryItemWordPress(groupId, url.trim(), caption.trim());
       setUrl(""); setCaption("");
       toast({ title: "Photo added!" });
       qc.invalidateQueries({ queryKey: ["care-group-gallery"] });
@@ -72,8 +69,7 @@ export function GalleryTab({ gallery, activeGroupId }: GalleryTabProps) {
                 className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 rounded-full p-1 text-destructive hover:bg-destructive hover:text-destructive-foreground"
                 onClick={async () => {
                   try {
-                    const { careDb: db } = await import("@/integrations/supabase/external-client");
-                    await db.from("care_group_gallery").delete().eq("id", img.id);
+                    await deleteCareGroupGalleryItemWordPress(img.id);
                     toast({ title: "Photo removed" });
                     qc.invalidateQueries({ queryKey: ["care-group-gallery"] });
                   } catch (e: any) {

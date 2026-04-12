@@ -1,0 +1,15 @@
+<!-- wp:group {"layout":{"type":"constrained","contentSize":"1120px"},"style":{"spacing":{"padding":{"top":"3rem","right":"1.5rem","bottom":"3rem","left":"1.5rem"},"blockGap":"1rem"}}} -->
+<div class="wp-block-group" style="padding-top:3rem;padding-right:1.5rem;padding-bottom:3rem;padding-left:1.5rem">
+<!-- wp:heading {"level":1,"style":{"typography":{"fontSize":"2rem","fontWeight":"700"},"spacing":{"margin":{"bottom":"0.25rem"}}}} -->
+<h1 class="wp-block-heading" style="margin-bottom:0.25rem;font-size:2rem;font-weight:700">Find Caregivers</h1>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"style":{"color":{"text":"#6b7280"},"typography":{"fontSize":"0.95rem"},"spacing":{"margin":{"bottom":"1.5rem"}}}} -->
+<p class="has-text-color" style="color:#6b7280;font-size:0.95rem;margin-bottom:1.5rem">Browse real caregiver storefronts and provider profiles powered by Dokan.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:shortcode -->
+[dokan-stores]
+<!-- /wp:shortcode -->
+</div>
+<!-- /wp:group -->

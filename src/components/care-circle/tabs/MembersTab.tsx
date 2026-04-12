@@ -189,7 +189,7 @@ export function MembersTab({
                         )}
                         <DropdownMenuSeparator />
                         {!m.is_owner && (
-                          <DropdownMenuItem className="text-destructive" onClick={() => removeMember.mutate(m.id, { onSuccess: () => toast({ title: "Member removed" }) })}>
+                          <DropdownMenuItem className="text-destructive" onClick={() => removeMember.mutate({ memberId: m.id, groupId: activeGroupId }, { onSuccess: () => toast({ title: "Member removed" }) })}>
                             <Trash2 className="h-3.5 w-3.5 mr-2" /> Remove from Group
                           </DropdownMenuItem>
                         )}

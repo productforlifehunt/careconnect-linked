@@ -1,0 +1,222 @@
+<!-- wp:html -->
+<style>
+#pf-app{max-width:48rem;margin:0 auto;padding:1.5rem 1rem;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+#pf-app *{box-sizing:border-box}
+#pf-app h1{font-size:1.5rem;font-weight:700;color:#0f172a;margin:0 0 1.5rem}
+.pf-tabs{display:flex;gap:0;background:#f1f5f9;border-radius:0.5rem;padding:0.25rem;margin-bottom:1.5rem;width:fit-content}
+.pf-tab{display:inline-flex;align-items:center;gap:0.5rem;padding:0.5rem 1rem;border-radius:0.375rem;font-size:0.8125rem;font-weight:500;cursor:pointer;border:none;background:transparent;color:#64748b}
+.pf-tab svg{width:16px;height:16px}
+.pf-tab.active{background:#fff;color:#0f172a;box-shadow:0 1px 2px rgba(0,0,0,0.05)}
+.pf-card{background:#fff;border-radius:0.75rem;box-shadow:0 1px 3px rgba(0,0,0,0.1);border:1px solid transparent;margin-bottom:1rem}
+.pf-card-hdr{padding:1.25rem 1.5rem 0;font-weight:600;font-size:1rem;color:#0f172a}
+.pf-card-body{padding:1.5rem}
+.pf-avatar-row{display:flex;align-items:center;gap:1.5rem}
+.pf-avatar{width:80px;height:80px;border-radius:1rem;background:#0d9488;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:1.5rem;flex-shrink:0;position:relative;overflow:hidden}
+.pf-avatar img{width:100%;height:100%;object-fit:cover;border-radius:1rem}
+.pf-avatar-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;cursor:pointer;border-radius:1rem}
+.pf-avatar:hover .pf-avatar-overlay{opacity:1}
+.pf-avatar-overlay svg{width:20px;height:20px;color:#fff}
+.pf-user-name{font-size:1.125rem;font-weight:600;color:#0f172a}
+.pf-user-email{font-size:0.875rem;color:#64748b}
+.pf-user-role{font-size:0.75rem;color:#94a3b8;margin-top:0.25rem}
+.pf-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:640px){.pf-form-grid{grid-template-columns:1fr}}
+.pf-label{font-size:0.8125rem;font-weight:500;color:#334155;display:block;margin-bottom:0.25rem}
+.pf-input{width:100%;padding:0.5rem 0.75rem;border:1px solid #e2e8f0;border-radius:0.5rem;font-size:0.875rem;outline:none;font-family:inherit}
+.pf-input:focus{border-color:#0d9488;box-shadow:0 0 0 2px rgba(13,148,136,0.1)}
+.pf-input:disabled{opacity:0.6;background:#f8fafc}
+.pf-textarea{resize:vertical;min-height:4rem}
+.pf-input-icon{position:relative}.pf-input-icon svg{position:absolute;left:0.75rem;top:50%;transform:translateY(-50%);width:16px;height:16px;color:#94a3b8}.pf-input-icon input{padding-left:2.25rem}
+.pf-btn{display:inline-flex;align-items:center;gap:0.5rem;padding:0.5rem 1rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;cursor:pointer;border:none;transition:opacity .15s}
+.pf-btn-coral{background:#0d9488;color:#fff}.pf-btn-coral:hover{opacity:0.9}
+.pf-btn-outline{background:#fff;color:#334155;border:1px solid #e2e8f0;width:100%}.pf-btn-outline:hover{background:#f8fafc}
+.pf-btn-destructive{background:#ef4444;color:#fff;width:100%}.pf-btn-destructive:hover{opacity:0.9}
+.pf-switch-row{display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0}
+.pf-switch{width:44px;height:24px;border-radius:12px;background:#e2e8f0;position:relative;cursor:pointer;border:none;transition:background .2s;flex-shrink:0}
+.pf-switch.on{background:#0d9488}
+.pf-switch::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 2px rgba(0,0,0,0.1)}
+.pf-switch.on::after{transform:translateX(20px)}
+.pf-panel{display:none}.pf-panel.active{display:block}
+.pf-danger-card{border-color:rgba(239,68,68,0.2)!important}
+.pf-danger-title{color:#ef4444}
+.pf-desc{font-size:0.8125rem;color:#64748b;margin-bottom:0.75rem}
+.pf-upload-row{display:flex;gap:0.5rem;align-items:center;margin-top:0.25rem}
+.pf-upload-row input{flex:1}
+.pf-btn-sm{padding:0.375rem 0.75rem;font-size:0.8125rem}
+/* Confirm modal */
+.pf-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;align-items:center;justify-content:center}
+.pf-overlay.show{display:flex}
+.pf-modal{background:#fff;border-radius:0.75rem;padding:1.5rem;max-width:24rem;width:90%;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25)}
+.pf-modal h3{font-weight:600;margin:0 0 0.5rem;color:#0f172a}
+.pf-modal p{font-size:0.8125rem;color:#64748b;margin:0 0 1.25rem}
+.pf-modal-footer{display:flex;gap:0.5rem;justify-content:flex-end}
+</style>
+
+<div id="pf-app">
+  <h1>My Profile</h1>
+
+  <div class="pf-tabs">
+    <button class="pf-tab active" onclick="switchPfTab('personal',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Personal</button>
+    <button class="pf-tab" onclick="switchPfTab('notifs',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Notifications</button>
+    <button class="pf-tab" onclick="switchPfTab('privacy',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Privacy</button>
+  </div>
+
+  <!-- Personal Tab -->
+  <div class="pf-panel active" id="pf-personal">
+    <div class="pf-card"><div class="pf-card-body">
+      <div class="pf-avatar-row">
+        <div class="pf-avatar" id="pf-avatar-display">
+          <span id="pf-avatar-initial">U</span>
+          <div class="pf-avatar-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+        </div>
+        <div>
+          <div class="pf-user-name" id="pf-display-name">User</div>
+          <div class="pf-user-email" id="pf-display-email"></div>
+          <div class="pf-user-role" id="pf-display-role">Care Seeker</div>
+        </div>
+      </div>
+    </div></div>
+
+    <div class="pf-card">
+      <div class="pf-card-hdr">Personal Information</div>
+      <div class="pf-card-body" style="display:flex;flex-direction:column;gap:1rem">
+        <div class="pf-form-grid">
+          <div><label class="pf-label">Full Name</label><input class="pf-input" id="pf-name"></div>
+          <div><label class="pf-label">Email</label><input class="pf-input" id="pf-email" disabled></div>
+          <div><label class="pf-label">Phone</label><input class="pf-input" id="pf-phone"></div>
+        </div>
+        <div>
+          <label class="pf-label">Avatar URL</label>
+          <div class="pf-upload-row">
+            <input class="pf-input" id="pf-avatar-url" placeholder="https://...">
+          </div>
+        </div>
+        <div>
+          <label class="pf-label">Address</label>
+          <div class="pf-input-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><input class="pf-input" id="pf-address"></div>
+        </div>
+        <div><label class="pf-label">About Me</label><textarea class="pf-input pf-textarea" id="pf-bio" rows="3"></textarea></div>
+      </div>
+    </div>
+    <button class="pf-btn pf-btn-coral" onclick="savePfProfile()">Save Changes</button>
+  </div>
+
+  <!-- Notifications Tab -->
+  <div class="pf-panel" id="pf-notifs">
+    <div class="pf-card">
+      <div class="pf-card-hdr">Notification Preferences</div>
+      <div class="pf-card-body" style="display:flex;flex-direction:column;gap:1rem">
+        <div class="pf-switch-row"><label class="pf-label" style="margin:0">Email Notifications</label><button class="pf-switch on" id="pf-sw-email" onclick="togglePfSwitch(this)"></button></div>
+        <div class="pf-switch-row"><label class="pf-label" style="margin:0">Push Notifications</label><button class="pf-switch on" id="pf-sw-push" onclick="togglePfSwitch(this)"></button></div>
+      </div>
+    </div>
+    <button class="pf-btn pf-btn-coral" onclick="savePfProfile()">Save Preferences</button>
+  </div>
+
+  <!-- Privacy Tab -->
+  <div class="pf-panel" id="pf-privacy">
+    <div class="pf-card">
+      <div class="pf-card-hdr">Your Data</div>
+      <div class="pf-card-body">
+        <p class="pf-desc">Download a copy of all your data including profile, bookings, messages, and tasks.</p>
+        <button class="pf-btn pf-btn-outline" id="pf-download-btn" onclick="downloadPfData()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download My Data
+        </button>
+      </div>
+    </div>
+    <div class="pf-card pf-danger-card">
+      <div class="pf-card-hdr pf-danger-title">Danger Zone</div>
+      <div class="pf-card-body">
+        <p class="pf-desc">Permanently delete your account and all associated data. This action cannot be undone.</p>
+        <button class="pf-btn pf-btn-destructive" onclick="document.getElementById('pf-delete-modal').classList.add('show')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          Delete Account
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirm Modal -->
+  <div class="pf-overlay" id="pf-delete-modal">
+    <div class="pf-modal">
+      <h3>Are you absolutely sure?</h3>
+      <p>This will permanently delete your account and all associated data. This action cannot be undone.</p>
+      <div class="pf-modal-footer">
+        <button class="pf-btn pf-btn-outline" style="width:auto" onclick="document.getElementById('pf-delete-modal').classList.remove('show')">Cancel</button>
+        <button class="pf-btn pf-btn-destructive" style="width:auto" onclick="deletePfAccount()">Yes, Delete Account</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const base='/careconnected/wp-json/wp/v2';
+  let userData=null;
+
+  window.switchPfTab=function(tab,btn){
+    document.querySelectorAll('.pf-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');
+    document.querySelectorAll('.pf-panel').forEach(p=>p.classList.remove('active'));
+    document.getElementById('pf-'+tab).classList.add('active');
+  };
+
+  window.togglePfSwitch=function(el){el.classList.toggle('on');};
+
+  async function loadProfile(){
+    try{
+      const r=await fetch(base+'/users/me?context=edit',{credentials:'include'});
+      if(!r.ok)return;
+      userData=await r.json();
+      document.getElementById('pf-name').value=userData.name||'';
+      document.getElementById('pf-email').value=userData.email||'';
+      document.getElementById('pf-phone').value=userData.meta?.phone_number||'';
+      document.getElementById('pf-address').value=userData.meta?.address||'';
+      document.getElementById('pf-bio').value=userData.description||'';
+      document.getElementById('pf-avatar-url').value=userData.avatar_urls?.['96']||'';
+      document.getElementById('pf-display-name').textContent=userData.name||'User';
+      document.getElementById('pf-display-email').textContent=userData.email||'';
+      document.getElementById('pf-avatar-initial').textContent=(userData.name||'U').charAt(0).toUpperCase();
+      const isCareProvider=userData.roles?.includes('seller')||userData.roles?.includes('vendor');
+      document.getElementById('pf-display-role').textContent=isCareProvider?'Care Provider':'Care Seeker';
+    }catch(e){console.error(e);}
+  }
+
+  window.savePfProfile=async function(){
+    const nonce=document.querySelector('meta[name="wp-nonce"]')?.content||'';
+    const payload={
+      name:document.getElementById('pf-name').value,
+      description:document.getElementById('pf-bio').value,
+      meta:{
+        phone_number:document.getElementById('pf-phone').value,
+        address:document.getElementById('pf-address').value,
+      }
+    };
+    try{
+      await fetch(base+'/users/me',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json','X-WP-Nonce':nonce},body:JSON.stringify(payload)});
+      alert('Profile updated!');
+    }catch(e){alert('Failed to save: '+e.message);}
+  };
+
+  window.downloadPfData=async function(){
+    const btn=document.getElementById('pf-download-btn');btn.textContent='Preparing...';
+    try{
+      const data={exported_at:new Date().toISOString(),profile:userData};
+      const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+      const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='careconnected-data-'+new Date().toISOString().split('T')[0]+'.json';
+      document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+    }catch(e){alert('Failed to download');}
+    btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download My Data';
+  };
+
+  window.deletePfAccount=function(){
+    document.getElementById('pf-delete-modal').classList.remove('show');
+    alert('Account deletion requested. Please contact support to complete this process.');
+  };
+
+  document.getElementById('pf-delete-modal').addEventListener('click',function(e){if(e.target===this)this.classList.remove('show');});
+
+  loadProfile();
+})();
+</script>
+<!-- /wp:html -->

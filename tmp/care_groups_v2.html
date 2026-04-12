@@ -1,0 +1,766 @@
+<div id="cg-app"><p style="text-align:center;padding:5rem 0;color:#999">Loading…</p></div>
+<style>
+:root{--P:#e8764b;--PF:#fff;--BG:#fafafa;--C:#fff;--SH:0 1px 3px rgba(0,0,0,.06);--B:#e5e7eb;--F:#1a1a2e;--M:#6b7280;--MB:#f3f4f6;--OK:#22c55e;--WN:#f59e0b;--DN:#ef4444;--R:.5rem}
+#cg-app{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;max-width:72rem;margin:0 auto;padding:1.5rem 1rem;color:var(--F);line-height:1.5}
+#cg-app *{box-sizing:border-box}
+.ci{display:inline-flex;align-items:center;vertical-align:middle}.ci svg{width:100%;height:100%;stroke-linecap:round;stroke-linejoin:round}
+.ch1{font-size:1.5rem;font-weight:700;margin:0}.csub{font-size:.875rem;color:var(--M);margin:.125rem 0 0}
+.ccard{background:var(--C);border-radius:var(--R);box-shadow:var(--SH);border:1px solid transparent;padding:1rem;margin-bottom:.5rem}
+.cbtn{display:inline-flex;align-items:center;justify-content:center;gap:.375rem;padding:.5rem 1rem;font-size:.875rem;font-weight:500;border-radius:var(--R);border:1px solid transparent;cursor:pointer;transition:all .15s;font-family:inherit}
+.cbtn:disabled{opacity:.5;cursor:not-allowed}
+.cb-coral{background:var(--P);color:var(--PF);border-color:var(--P)}.cb-coral:hover:not(:disabled){filter:brightness(.9)}
+.cb-outline{background:transparent;color:var(--F);border-color:var(--B)}.cb-outline:hover:not(:disabled){background:var(--MB)}
+.cb-ghost{background:transparent;color:var(--F);border:none;padding:.375rem}.cb-ghost:hover:not(:disabled){background:var(--MB)}
+.cb-danger{background:var(--DN);color:#fff}.cb-sm{padding:.375rem .75rem;font-size:.8125rem}.cb-icon{padding:.375rem;width:2rem;height:2rem}
+.cbadge{display:inline-flex;align-items:center;gap:.25rem;padding:.125rem .5rem;font-size:.75rem;font-weight:500;border-radius:9999px;white-space:nowrap}
+.cbd{background:var(--F);color:#fff}.cbo{background:transparent;border:1px solid var(--B);color:var(--F)}.cbs{background:var(--MB);color:var(--F)}
+.ctabs{display:flex;gap:.25rem;overflow-x:auto;padding-bottom:.5rem;scrollbar-width:thin}
+.ctab{display:inline-flex;align-items:center;gap:.375rem;padding:.5rem .75rem;font-size:.75rem;font-weight:500;border-radius:var(--R);border:none;background:transparent;color:var(--M);cursor:pointer;white-space:nowrap;transition:all .15s;font-family:inherit}
+.ctab:hover{background:var(--MB);color:var(--F)}.ctab.on{background:var(--F);color:#fff}
+.cinput,.ctarea,.csel{width:100%;padding:.5rem .75rem;font-size:.875rem;border:1px solid var(--B);border-radius:var(--R);background:var(--C);color:var(--F);font-family:inherit}
+.cinput:focus,.ctarea:focus,.csel:focus{outline:none;border-color:var(--P);box-shadow:0 0 0 2px rgba(232,118,75,.15)}
+.ctarea{resize:vertical;min-height:4rem}.clbl{display:block;font-size:.875rem;font-weight:500;margin-bottom:.25rem}
+.covl{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem}
+.cdlg{background:var(--C);border-radius:.75rem;padding:1.5rem;width:100%;max-width:28rem;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+.cflex{display:flex;align-items:center}.cbet{display:flex;align-items:center;justify-content:space-between}
+.g1{gap:.25rem}.g2{gap:.5rem}.g3{gap:.75rem}.g4{gap:1rem}
+.gr2{display:grid;grid-template-columns:repeat(2,1fr);gap:.75rem}.gr3{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+.mb2{margin-bottom:.5rem}.mb3{margin-bottom:.75rem}.mb4{margin-bottom:1rem}.mb6{margin-bottom:1.5rem}.mt2{margin-top:.5rem}.mt3{margin-top:.75rem}
+.wf{width:100%}.tc{text-align:center}
+.sy2>*+*{margin-top:.5rem}.sy3>*+*{margin-top:.75rem}
+.cav{width:2.5rem;height:2.5rem;border-radius:50%;background:rgba(232,118,75,.1);display:flex;align-items:center;justify-content:center;font-weight:500;color:var(--P);font-size:.875rem;flex-shrink:0}
+.cavs{width:1.75rem;height:1.75rem;font-size:.75rem}
+.ctoast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--F);color:#fff;padding:.75rem 1.25rem;border-radius:var(--R);font-size:.875rem;z-index:10000;box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.cchat{height:400px;display:flex;flex-direction:column}.cchat-s{flex:1;overflow-y:auto;padding:1rem}.cchat-i{display:flex;gap:.5rem;padding:.75rem;border-top:1px solid var(--B)}
+.cmsg{max-width:75%;border-radius:.75rem;padding:.5rem .75rem;margin-bottom:.75rem}.cmsg-m{background:var(--P);color:var(--PF);margin-left:auto}.cmsg-o{background:var(--MB)}
+.cgalgr{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.75rem}
+.cgali{position:relative;border-radius:var(--R);overflow:hidden;aspect-ratio:1}.cgali img{width:100%;height:100%;object-fit:cover}
+.cgali .cdel{position:absolute;top:.25rem;right:.25rem;opacity:0;transition:opacity .15s;background:rgba(255,255,255,.85);border-radius:50%;padding:.25rem;color:var(--DN);cursor:pointer;border:none}.cgali:hover .cdel{opacity:1}
+.cdrop{position:relative;display:inline-block}.cdm{position:absolute;right:0;top:100%;background:var(--C);border:1px solid var(--B);border-radius:var(--R);box-shadow:0 4px 12px rgba(0,0,0,.1);min-width:12rem;z-index:100;padding:.25rem}
+.cdi{display:flex;align-items:center;gap:.5rem;width:100%;padding:.5rem .75rem;font-size:.875rem;border:none;background:none;cursor:pointer;border-radius:calc(var(--R) - 2px);color:var(--F);font-family:inherit;text-align:left}.cdi:hover{background:var(--MB)}.cdi.dng{color:var(--DN)}
+.cdsep{height:1px;background:var(--B);margin:.25rem 0}
+.csw{position:relative;width:2.75rem;height:1.5rem;background:var(--B);border-radius:9999px;cursor:pointer;border:none;padding:0}
+.csw.on{background:var(--P)}.csw::after{content:'';position:absolute;width:1.25rem;height:1.25rem;background:#fff;border-radius:50%;top:.125rem;left:.125rem;transition:transform .2s;box-shadow:0 1px 2px rgba(0,0,0,.1)}.csw.on::after{transform:translateX(1.25rem)}
+.cspin{width:2rem;height:2rem;border:2px solid var(--B);border-top-color:var(--P);border-radius:50%;animation:csp 1s linear infinite;margin:0 auto}@keyframes csp{to{transform:rotate(360deg)}}
+.cpinned{border-left:3px solid var(--P)}
+.ctrow{display:flex;align-items:center;gap:.75rem;padding:.75rem;border-radius:var(--R);background:var(--C);border:1px solid var(--B);transition:box-shadow .15s}
+.ctrow:hover{box-shadow:0 1px 4px rgba(0,0,0,.06)}.ctrow .ctact{opacity:0;transition:opacity .15s;display:flex;gap:.25rem}.ctrow:hover .ctact{opacity:1}
+.app-shell{min-height:100vh;background:#fafafa;color:#1f2937}.app-top{position:sticky;top:0;z-index:50;height:64px;background:rgba(255,255,255,.95);backdrop-filter:blur(10px);border-bottom:1px solid #d9e5e3;display:flex;align-items:center;gap:.5rem;padding:0 16px}.app-logo{display:flex;align-items:center;gap:.5rem;flex-shrink:0}.app-logo-mark{width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,#188f87,#11665f);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px}.app-logo-text{font-weight:700;font-size:18px}.app-logo-text .t1{color:#188f87}.app-logo-text .t2{color:#6b7280}.app-public-nav{display:none;align-items:center;gap:4px;margin-left:16px}.app-public-nav a,.app-dash-link{padding:8px 12px;border-radius:10px;font-size:14px;color:#6b7280;text-decoration:none}.app-public-nav a:hover,.app-dash-link:hover{background:#edf5f4;color:#111827}.app-public-nav a.on,.app-dash-link.on{background:#edf5f4;color:#188f87;font-weight:600}.app-spacer{flex:1}.app-avatar{width:32px;height:32px;border-radius:999px;background:#188f87;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600}.app-body{display:flex;min-height:calc(100vh - 64px)}.app-side{display:none;width:224px;flex-shrink:0;border-right:1px solid #e2ecea;background:#fff;padding:16px 12px}.app-side a{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;text-decoration:none;color:rgba(31,41,55,.75);font-size:14px;transition:.15s}.app-side a:hover{background:#edf5f4;color:#111827}.app-side a.on{background:#edf5f4;color:#188f87;font-weight:600}.app-main{flex:1;overflow:auto;padding-bottom:76px}.app-bottom{position:fixed;left:0;right:0;bottom:0;z-index:40;height:56px;background:#fff;border-top:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-around}.app-bottom a{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;color:#6b7280;text-decoration:none;min-width:0}.app-bottom a.on{color:#188f87}.app-bottom .ci{display:flex}.app-frame{max-width:100%}
+@media(min-width:640px){.app-public-nav{display:flex}}
+@media(min-width:768px){.app-side{display:block}.app-bottom{display:none}.app-main{padding-bottom:0}}
+@media(max-width:640px){.gr3,.gr2{grid-template-columns:1fr}.cdlg{max-width:100%}}
+</style>
+<script>
+(function(){
+'use strict';
+ function restoreStrippedCss(rootId){
+   const root=document.getElementById(rootId);
+   if(!root||!root.parentNode)return;
+   let css='';
+   let node=root.nextSibling;
+   while(node){
+     if(node.nodeType===3){
+       css+=node.textContent||'';
+       const next=node.nextSibling;
+       node.parentNode.removeChild(node);
+       node=next;
+       continue;
+     }
+     break;
+   }
+   css=(css||'').trim();
+   if(!css)return;
+   css=css.replace(/–/g,'--').replace(/[“”]/g,'"').replace(/[‘’]/g,"'");
+   const st=document.createElement('style');
+   st.setAttribute('data-cg-runtime-style','1');
+   st.textContent=css;
+   document.head.appendChild(st);
+ }
+ restoreStrippedCss('cg-app');
+/* ── Icons ── */
+const _i={
+users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+plus:'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+key:'<path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4"/><path d="m21 2-9.6 9.6"/><circle cx="7.5" cy="15.5" r="5.5"/>',
+settings:'<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
+home:'<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+calendar:'<rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/>',
+megaphone:'<path d="m3 11 18-5v12L3 13v-2z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>',
+listTodo:'<rect x="3" y="5" width="6" height="6" rx="1"/><path d="m3 17 2 2 4-4"/><line x1="13" x2="21" y1="6" y2="6"/><line x1="13" x2="21" y1="12" y2="12"/><line x1="13" x2="21" y1="18" y2="18"/>',
+heart:'<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
+clipboard:'<rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>',
+msg:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+star:'<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
+image:'<rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>',
+send:'<line x1="22" x2="11" y1="2" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>',
+trash:'<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>',
+more:'<circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/>',
+edit:'<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>',
+pin:'<line x1="12" x2="12" y1="17" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/>',
+circle:'<circle cx="12" cy="12" r="10"/>',
+checkCircle:'<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
+check:'<polyline points="20 6 9 17 4 12"/>',
+x:'<line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/>',
+shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>',
+crown:'<path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/>',
+userPlus:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/>',
+mail:'<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
+clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+tag:'<path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/><path d="M7 7h.01"/>',
+eye:'<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
+search:'<circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/>',
+loader:'<line x1="12" x2="12" y1="2" y2="6"/><line x1="12" x2="12" y1="18" y2="22"/><line x1="4.93" x2="7.76" y1="4.93" y2="7.76"/><line x1="16.24" x2="19.07" y1="16.24" y2="19.07"/><line x1="2" x2="6" y1="12" y2="12"/><line x1="18" x2="22" y1="12" y2="12"/><line x1="4.93" x2="7.76" y1="19.07" y2="16.24"/><line x1="16.24" x2="19.07" y1="7.76" y2="4.93"/>'
+};
+function ic(n,s){s=s||16;return '<span class="ci" style="width:'+s+'px;height:'+s+'px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="'+s+'" height="'+s+'">'+(_i[n]||'')+'</svg></span>';}
+
+/* ── Config ── */
+const BASE='/careconnected/wp-json/wp/v2';
+let NONCE='',UID=0,UNAME='';
+
+/* ── State ── */
+let S={loading:true,groups:[],gid:null,tab:'home',members:[],tasks:[],posts:[],gallery:[],messages:[],invites:[],caredOnes:[],dlg:null,dlgData:{},toast:null,dropdown:null};
+
+/* ── API ── */
+async function api(p,m,b){
+  m=m||'GET';const o={method:m,credentials:'same-origin',headers:{'X-WP-Nonce':NONCE,'Content-Type':'application/json'}};
+  if(b&&m!=='GET')o.body=JSON.stringify(b);
+  const r=await fetch(BASE+p,o);
+  if(m==='DELETE')return {};
+  if(!r.ok){const t=await r.text();throw new Error(t);}
+  return r.json();
+}
+
+function toast(msg){S.toast=msg;render();setTimeout(()=>{S.toast=null;render();},3000);}
+function fdate(d){if(!d)return '';try{return new Date(d).toLocaleDateString('en',{month:'short',day:'numeric'});}catch(e){return '';}}
+function ftime(d){if(!d)return '';try{return new Date(d).toLocaleTimeString('en',{hour:'numeric',minute:'2-digit'});}catch(e){return '';}}
+function genCode(){return Math.random().toString(36).substring(2,8).toUpperCase();}
+function gm(item,key){return (item.acf&&item.acf[key]!=null)?item.acf[key]:((item.meta&&item.meta[key]!=null)?item.meta[key]:'');}
+
+/* ── Data Loading ── */
+async function init(){
+  try{
+    const scripts=document.querySelectorAll('script');
+    for(const sc of scripts){if(sc.textContent&&sc.textContent.includes('wpApiSettings')){const m=sc.textContent.match(/"nonce":"([^"]+)"/);if(m)NONCE=m[1];}}
+    if(!NONCE&&typeof wpApiSettings!=='undefined')NONCE=wpApiSettings.nonce;
+    if(!NONCE){const pg=document.querySelector('#wp-api-fetch-js-extra');if(pg){const m2=pg.textContent.match(/"nonce":"([^"]+)"/);if(m2)NONCE=m2[1];}}
+    if(!NONCE){/* try fetching nonce from rest url */try{const r=await fetch('/careconnected/wp-json/',{credentials:'same-origin'});const h=document.cookie;}catch(e){}}
+  }catch(e){}
+  try{const me=await api('/users/me?context=edit');UID=me.id;UNAME=me.name||'';}catch(e){}
+  await loadGroups();
+  S.loading=false;render();
+}
+
+async function loadGroups(){
+  try{
+    const gs=await api('/care_group?per_page=100&status=publish');
+    S.groups=gs.map(g=>({id:g.id,name:g.title?g.title.rendered:'',description:gm(g,'description'),join_code:gm(g,'join_code'),is_private:gm(g,'is_private'),author:g.author}));
+    if(S.groups.length&&!S.gid)S.gid=S.groups[0].id;
+    if(S.gid)await loadGroupData();
+  }catch(e){S.groups=[];}
+}
+
+async function loadGroupData(){
+  const gid=S.gid;if(!gid)return;
+  const [mem,tsk,pst,gal,msg,inv]=await Promise.all([
+    api('/care_group_member?per_page=100&status=publish').catch(()=>[]),
+    api('/care_task?per_page=100&status=publish').catch(()=>[]),
+    api('/care_group_post?per_page=100&status=publish').catch(()=>[]),
+    api('/care_group_gallery?per_page=100&status=publish').catch(()=>[]),
+    api('/care_group_message?per_page=100&status=publish&orderby=date&order=asc').catch(()=>[]),
+    api('/care_group_invite?per_page=100&status=publish').catch(()=>[])
+  ]);
+  S.members=mem.filter(m=>String(gidOf(m))===String(gid)).map(m=>({id:m.id,user_id:uidOf(m),is_owner:String(gm(m,'is_owner'))==='1',is_admin:String(gm(m,'is_admin'))==='1',is_cared_one:String(gm(m,'is_cared_one'))==='1',name:m.title?m.title.rendered:gm(m,'member_name')||'Member',email:gm(m,'email')}));
+  S.tasks=tsk.filter(t=>String(gm(t,'care_group'))===String(gid)).map(t=>({id:t.id,title:t.title?t.title.rendered:'',description:gm(t,'description'),status:gm(t,'status')||'pending',priority:gm(t,'priority')||'medium',category:gm(t,'category'),due_date:gm(t,'due_date'),assigned_to:gm(t,'assigned_to'),created_by:t.author}));
+  S.posts=pst.filter(p=>String(gidOf(p))===String(gid)).map(p=>({id:p.id,title:p.title?p.title.rendered:'',content:gm(p,'content')||p.content?.rendered||'',type:gm(p,'post_type')||gm(p,'post_type_filter')||'discussion',is_pinned:String(gm(p,'is_pinned'))==='1',visibility:gm(p,'visibility')||'group',author_name:gm(p,'author_name')||UNAME,author_id:p.author,created_at:p.date}));
+  S.gallery=gal.filter(g=>String(gidOf(g))===String(gid)).map(g=>({id:g.id,image_url:gm(g,'image_url'),caption:gm(g,'caption')||g.title?.rendered||''}));
+  S.messages=msg.filter(m=>String(gidOf(m))===String(gid)).map(m=>({id:m.id,content:gm(m,'message_content')||gm(m,'content'),sender_id:gm(m,'sender_id')||gm(m,'sender_wp_user_id')||m.author,sender_name:gm(m,'sender_name')||'Member',created_at:m.date}));
+  S.invites=inv.filter(i=>String(gidOf(i))===String(gid)&&(gm(i,'status')==='pending'||gm(i,'invite_status')==='pending')).map(i=>({id:i.id,email:gm(i,'invitee_email')||gm(i,'invite_email'),created_at:i.date}));
+}
+
+function gidOf(item){return gm(item,'group_id')||gm(item,'care_group_id')||gm(item,'care_group');}
+function uidOf(item){return gm(item,'user_id')||gm(item,'user_wp_id')||gm(item,'author_wp_id');}
+
+/* ── CRUD Operations ── */
+async function createGroup(name,desc){
+  const code=genCode();
+  const g=await api('/care_group','POST',{title:name,status:'publish',meta:{description:desc||'',join_code:code,is_private:'0',created_by_wp_id:String(UID)}});
+  // Add creator as owner member
+  await api('/care_group_member','POST',{title:UNAME||'Owner',status:'publish',meta:{group_id:String(g.id),care_group_id:String(g.id),user_id:String(UID),user_wp_id:String(UID),member_name:UNAME,is_admin:'1',is_owner:'1',is_cared_one:'0'}});
+  S.gid=g.id;await loadGroups();toast('Care Group created!');render();
+}
+async function joinByCode(code){
+  const g=S.groups.find(g=>g.join_code&&g.join_code.toUpperCase()===code.toUpperCase());
+  if(!g){/* search all groups */const all=await api('/care_group?per_page=100&status=publish');const found=all.find(a=>gm(a,'join_code')&&gm(a,'join_code').toUpperCase()===code.toUpperCase());
+    if(!found)throw new Error('Invalid join code');
+    await api('/care_group_member','POST',{title:UNAME||'Member',status:'publish',meta:{group_id:String(found.id),care_group_id:String(found.id),user_id:String(UID),user_wp_id:String(UID),member_name:UNAME,is_admin:'0',is_owner:'0',is_cared_one:'0'}});
+    S.gid=found.id;
+  }else{
+    const existing=S.members.find(m=>String(m.user_id)===String(UID));
+    if(existing){toast('Already a member');return;}
+    await api('/care_group_member','POST',{title:UNAME||'Member',status:'publish',meta:{group_id:String(g.id),care_group_id:String(g.id),user_id:String(UID),user_wp_id:String(UID),member_name:UNAME,is_admin:'0',is_owner:'0',is_cared_one:'0'}});
+    S.gid=g.id;
+  }
+  await loadGroups();toast('Joined group!');render();
+}
+async function updateGroup(id,data){await api('/care_group/'+id,'POST',{title:data.name||undefined,meta:{description:data.description||'',is_private:data.is_private?'1':'0'}});await loadGroups();toast('Group updated!');render();}
+async function deleteGroup(id){await api('/care_group/'+id,'DELETE');S.gid=null;S.groups=S.groups.filter(g=>g.id!==id);if(S.groups.length)S.gid=S.groups[0].id;await loadGroups();toast('Group deleted');render();}
+async function createTask(d){await api('/care_task','POST',{title:d.title,status:'publish',meta:{care_group:String(S.gid),description:d.description||'',status:'pending',priority:d.priority||'medium',category:d.category||'',due_date:d.due_date||'',assigned_to:d.assigned_to||'',visibility:d.visibility||'group'}});await loadGroupData();toast('Task added');render();}
+async function toggleTask(id,cur){const ns=cur==='completed'?'pending':'completed';await api('/care_task/'+id,'POST',{meta:{status:ns}});await loadGroupData();render();}
+async function deleteTask(id){await api('/care_task/'+id,'DELETE');await loadGroupData();toast('Task deleted');render();}
+async function createPost(d){await api('/care_group_post','POST',{title:d.title||'',status:'publish',content:d.content||'',meta:{group_id:String(S.gid),care_group_id:String(S.gid),content:d.content,post_type:d.type||'discussion',post_type_filter:d.type||'discussion',visibility:d.visibility||'group',author_name:UNAME,is_pinned:'0'}});await loadGroupData();toast('Posted!');render();}
+async function updatePost(id,d){await api('/care_group_post/'+id,'POST',{title:d.title||'',meta:{content:d.content,is_pinned:d.is_pinned!=null?(d.is_pinned?'1':'0'):undefined}});await loadGroupData();toast('Updated!');render();}
+async function deletePost(id){await api('/care_group_post/'+id,'DELETE');await loadGroupData();toast('Post deleted');render();}
+async function sendMsg(content){await api('/care_group_message','POST',{title:'msg',status:'publish',content:content,meta:{group_id:String(S.gid),care_group_id:String(S.gid),message_content:content,sender_id:String(UID),sender_wp_user_id:String(UID),sender_name:UNAME}});await loadGroupData();render();}
+async function addGalleryItem(url,caption){await api('/care_group_gallery','POST',{title:caption||'Photo',status:'publish',meta:{group_id:String(S.gid),care_group_id:String(S.gid),image_url:url,caption:caption||''}});await loadGroupData();toast('Photo added!');render();}
+async function deleteGalleryItem(id){await api('/care_group_gallery/'+id,'DELETE');await loadGroupData();toast('Photo removed');render();}
+async function inviteMember(email){await api('/care_group_invite','POST',{title:email,status:'publish',meta:{group_id:String(S.gid),care_group_id:String(S.gid),invitee_email:email,invite_email:email,status:'pending',invite_status:'pending',invited_by:String(UID),invited_by_wp_id:String(UID)}});await loadGroupData();toast('Invitation sent!');render();}
+async function cancelInvite(id){await api('/care_group_invite/'+id,'DELETE');await loadGroupData();render();}
+async function updateMemberRole(mid,updates){const meta={};if(updates.is_admin!=null)meta.is_admin=updates.is_admin?'1':'0';if(updates.is_cared_one!=null)meta.is_cared_one=updates.is_cared_one?'1':'0';if(updates.is_owner!=null)meta.is_owner=updates.is_owner?'1':'0';await api('/care_group_member/'+mid,'POST',{meta});await loadGroupData();toast('Role updated');render();}
+async function removeMember(mid){await api('/care_group_member/'+mid,'DELETE');await loadGroupData();toast('Member removed');render();}
+
+/* ── Current user helpers ── */
+function curMember(){return S.members.find(m=>String(m.user_id)===String(UID));}
+function isAdmin(){const m=curMember();return m&&(m.is_admin||m.is_owner);}
+function isOwner(){const m=curMember();return m&&m.is_owner;}
+function activeGroup(){return S.groups.find(g=>g.id===S.gid);}
+function pendingTasks(){return S.tasks.filter(t=>t.status!=='completed');}
+function announcements(){return S.posts.filter(p=>p.type==='announcement');}
+function wishes(){return S.posts.filter(p=>p.type==='wish');}
+ function appInitial(){return (UNAME||'U').trim().charAt(0).toUpperCase()||'U';}
+ function privateShell(inner){
+   const publicNav=[
+     {href:'/careconnected/care-groups/',label:'Care Groups',on:true},
+     {href:'/careconnected/search/',label:'Find Care'},
+     {href:'/careconnected/community/',label:'Community'},
+     {href:'/careconnected/articles/',label:'Articles'},
+     {href:'/careconnected/how-it-works/',label:'How It Works'}
+   ];
+   const side=[
+     {href:'/careconnected/dashboard/',icon:'home',label:'Dashboard'},
+     {href:'/careconnected/cared-ones/',icon:'heart',label:'Cared Ones'},
+     {href:'/careconnected/bookings/',icon:'calendar',label:'Appointments'},
+     {href:'/careconnected/messages/',icon:'msg',label:'Messages'},
+     {href:'/careconnected/care-groups/',icon:'users',label:'Care Groups',on:true},
+     {href:'/careconnected/jobs/',icon:'tag',label:'Jobs Board'},
+     {href:'/careconnected/search/',icon:'search',label:'Find Care'},
+     {href:'/careconnected/gps-tracking/',icon:'calendar',label:'GPS Tracking'},
+     {href:'/careconnected/favorites/',icon:'star',label:'Favorites'},
+     {href:'/careconnected/notifications/',icon:'mail',label:'Notifications'},
+     {href:'/careconnected/profile/',icon:'users',label:'My Profile'}
+   ];
+   const bottom=[
+     {href:'/careconnected/dashboard/',icon:'home',label:'Home'},
+     {href:'/careconnected/cared-ones/',icon:'heart',label:'Cared Ones'},
+     {href:'/careconnected/messages/',icon:'msg',label:'Messages'},
+     {href:'/careconnected/care-groups/',icon:'users',label:'Care',on:true},
+     {href:'/careconnected/profile/',icon:'users',label:'Profile'}
+   ];
+   return '<div class="app-shell">'
+     + '<header class="app-top">'
+     + '<a class="app-logo" href="/careconnected/dashboard/">'
+     + '<span class="app-logo-mark">C·C</span>'
+     + '<span class="app-logo-text"><span class="t1">Care</span><span class="t2">Connected</span></span>'
+     + '</a>'
+     + '<nav class="app-public-nav">'+publicNav.map(i=>'<a href="'+i.href+'" class="'+(i.on?'on':'')+'">'+i.label+'</a>').join('')+'</nav>'
+     + '<div class="app-spacer"></div>'
+     + '<a href="/careconnected/dashboard/" class="app-dash-link on">Dashboard</a>'
+     + '<a href="/careconnected/notifications/" class="cbtn cb-ghost cb-icon" style="position:relative">'+ic('mail',18)+'</a>'
+     + '<div class="app-avatar">'+appInitial()+'</div>'
+     + '</header>'
+     + '<div class="app-body">'
+     + '<aside class="app-side"><nav>'+side.map(i=>'<a href="'+i.href+'" class="'+(i.on?'on':'')+'">'+ic(i.icon,16)+'<span>'+i.label+'</span></a>').join('')+'</nav></aside>'
+     + '<main class="app-main"><div class="app-frame">'+inner+'</div></main>'
+     + '</div>'
+     + '<nav class="app-bottom">'+bottom.map(i=>'<a href="'+i.href+'" class="'+(i.on?'on':'')+'">'+ic(i.icon,18)+'<span>'+i.label+'</span></a>').join('')+'</nav>'
+     + '</div>';
+ }
+
+/* ── RENDER ── */
+function render(){
+  const el=document.getElementById('cg-app');if(!el)return;
+  if(S.loading){el.innerHTML='<div style="display:flex;justify-content:center;padding:5rem 0"><div class="cspin"></div></div>';return;}
+  if(!S.groups.length){el.innerHTML=privateShell(renderEmpty()+(S.toast?'<div class="ctoast">'+S.toast+'</div>':''));bindEmpty();return;}
+  el.innerHTML=privateShell(renderMain()+(S.toast?'<div class="ctoast">'+S.toast+'</div>':''));
+  bindMain();
+}
+
+/* ── Empty State ── */
+function renderEmpty(){
+  return '<div class="tc" style="padding:3rem 0">'+
+    '<div style="color:#d1d5db;margin-bottom:1rem">'+ic('users',64)+'</div>'+
+    '<h1 class="ch1" style="margin-bottom:.5rem">No Care Groups Yet</h1>'+
+    '<p class="csub mb6">Create a care group to start coordinating care with your family and team.</p>'+
+    '<div class="cflex g3" style="justify-content:center;flex-wrap:wrap">'+
+      '<button class="cbtn cb-coral" id="btn-create-empty">'+ic('plus',16)+' Create Care Group</button>'+
+      '<button class="cbtn cb-outline" id="btn-join-empty">'+ic('key',16)+' Join with Code</button>'+
+    '</div>'+
+  '</div>'+(S.toast?'<div class="ctoast">'+S.toast+'</div>':'');
+}
+function bindEmpty(){
+  const bc=document.getElementById('btn-create-empty');if(bc)bc.onclick=()=>showDlg('createGroup');
+  const bj=document.getElementById('btn-join-empty');if(bj)bj.onclick=()=>showDlg('joinCode');
+}
+
+/* ── Main State ── */
+function renderMain(){
+  const g=activeGroup();const tabs=[
+    {id:'home',icon:'home',label:'Home'},{id:'calendar',icon:'calendar',label:'Calendar'},
+    {id:'announcements',icon:'megaphone',label:'Announcements'},{id:'tasks',icon:'listTodo',label:'Tasks'},
+    {id:'cared-ones',icon:'heart',label:'Cared Ones'},{id:'checkins',icon:'clipboard',label:'Check-Ins'},
+    {id:'messages',icon:'msg',label:'Messages'},{id:'wishes',icon:'star',label:'Well Wishes'},
+    {id:'members',icon:'users',label:'Members'},{id:'gallery',icon:'image',label:'Gallery'}
+  ];
+  let h='<div class="cbet mb4"><div><h1 class="ch1">Care Groups</h1><p class="csub">Coordinate care with your team</p></div>';
+  h+='<div class="cflex g2">';
+  if(isAdmin())h+='<button class="cbtn cb-ghost cb-icon" id="btn-settings" title="Group Settings">'+ic('settings',16)+'</button>';
+  h+='<button class="cbtn cb-outline cb-sm" id="btn-join">'+ic('key',16)+' Join</button>';
+  h+='<button class="cbtn cb-outline cb-sm" id="btn-create">'+ic('plus',16)+' New Group</button>';
+  h+='</div></div>';
+  // Group switcher
+  if(S.groups.length>1){h+='<div class="cflex g2 mb4" style="overflow-x:auto;padding-bottom:.25rem">';S.groups.forEach(gr=>{h+='<span class="cbadge '+(S.gid===gr.id?'cbd':'cbo')+' cbadge" style="cursor:pointer" data-gid="'+gr.id+'">'+gr.name+'</span>';});h+='</div>';}
+  // Tabs
+  h+='<div class="ctabs mb4">';tabs.forEach(t=>{h+='<button class="ctab'+(S.tab===t.id?' on':'')+'" data-tab="'+t.id+'">'+ic(t.icon,14)+' '+t.label+'</button>';});h+='</div>';
+  // Tab content
+  h+='<div id="tab-content">'+renderTabContent()+'</div>';
+  // Dialogs
+  if(S.dlg)h+=renderDialog();
+  return h;
+}
+
+function renderTabContent(){
+  switch(S.tab){
+    case 'home':return renderHome();
+    case 'calendar':return renderCalendar();
+    case 'announcements':return renderAnnouncements();
+    case 'tasks':return renderTasks();
+    case 'cared-ones':return renderCaredOnes();
+    case 'checkins':return renderCheckIns();
+    case 'messages':return renderMessages();
+    case 'wishes':return renderWishes();
+    case 'members':return renderMembers();
+    case 'gallery':return renderGallery();
+    default:return '';
+  }
+}
+
+/* ── HOME TAB ── */
+function renderHome(){
+  const pt=pendingTasks().length,mc=S.members.length,co=0;
+  let h='<div class="gr3 mb6">';
+  [{l:'Pending Tasks',v:pt,i:'listTodo'},{l:'Members',v:mc,i:'users'},{l:'Cared Ones',v:co,i:'heart'}].forEach(s=>{
+    h+='<div class="ccard" style="display:flex;align-items:center;gap:.75rem;padding:1rem"><div style="color:var(--P)">'+ic(s.i,20)+'</div><div><p style="font-size:1.25rem;font-weight:700">'+s.v+'</p><p class="cxs" style="font-size:.75rem;color:var(--M)">'+s.l+'</p></div></div>';
+  });
+  h+='</div>';
+  // Post form
+  h+='<div class="ccard mb6" style="padding:1rem"><textarea class="ctarea mb3" id="home-content" rows="2" placeholder="Share an update with your care team..."></textarea>';
+  h+='<div class="cbet" style="flex-wrap:wrap;gap:.5rem"><div class="cflex g2">';
+  h+='<select class="csel" id="home-type" style="width:9rem"><option value="discussion">Discussion</option><option value="announcement">Announcement</option><option value="wish">Well Wish</option></select>';
+  h+='<select class="csel" id="home-vis" style="width:9rem"><option value="group">'+ic('eye',14)+' All Members</option><option value="admins">Admins Only</option></select>';
+  h+='</div><button class="cbtn cb-coral cb-sm" id="home-post">Post</button></div></div>';
+  // Recent posts
+  h+='<div class="sy3">';
+  const recent=S.posts.slice(0,5);
+  if(!recent.length)h+='<p class="tc" style="padding:2rem 0;color:var(--M)">No posts yet. Share an update above!</p>';
+  recent.forEach(p=>{
+    h+='<div class="ccard" style="padding:1rem"><div class="cflex g2 mb2">';
+    h+='<div class="cav cavs">'+(p.author_name||'?')[0].toUpperCase()+'</div>';
+    h+='<span style="font-size:.875rem;font-weight:500">'+(p.author_name||'Member')+'</span>';
+    h+='<span class="cbadge cbo" style="margin-left:auto;font-size:.6875rem">'+p.type+'</span>';
+    h+='<span style="font-size:.75rem;color:var(--M)">'+fdate(p.created_at)+'</span>';
+    h+=renderPostActions(p);
+    h+='</div>';
+    if(p.title)h+='<p style="font-weight:500;font-size:.875rem;margin-bottom:.25rem">'+p.title+'</p>';
+    h+='<p style="font-size:.875rem;color:var(--M)">'+p.content+'</p></div>';
+  });
+  h+='</div>';
+  return h;
+}
+
+/* ── CALENDAR TAB ── */
+function renderCalendar(){
+  const byDate={};S.tasks.filter(t=>t.due_date).forEach(t=>{const d=t.due_date.split('T')[0];if(!byDate[d])byDate[d]=[];byDate[d].push(t);});
+  const dates=Object.keys(byDate).sort();
+  if(!dates.length)return '<p class="tc" style="padding:3rem 0;color:var(--M)">No scheduled tasks. Add due dates to tasks to see them here.</p>';
+  let h='';dates.forEach(d=>{
+    h+='<div class="mb6"><h3 style="font-size:.875rem;font-weight:600;margin-bottom:.5rem">'+new Date(d+'T00:00').toLocaleDateString('en',{weekday:'long',month:'long',day:'numeric'})+'</h3><div class="sy2">';
+    byDate[d].forEach(t=>{
+      h+='<div class="cflex g3" style="padding:.75rem;border-radius:var(--R);background:var(--C);border:1px solid var(--B)">';
+      h+=(t.status==='completed'?ic('checkCircle',16):ic('circle',16));
+      h+='<div style="flex:1;min-width:0"><p style="font-size:.875rem;font-weight:500">'+t.title+'</p><p style="font-size:.75rem;color:var(--M)">'+(t.assigned_to||'Unassigned')+'</p></div>';
+      h+='<span class="cbadge cbo cg-pri-'+t.priority+'">'+t.priority+'</span></div>';
+    });
+    h+='</div></div>';
+  });
+  return h;
+}
+
+/* ── ANNOUNCEMENTS TAB ── */
+function renderAnnouncements(){
+  const anns=announcements();
+  let h='';
+  if(isAdmin()){
+    h+='<div class="ccard mb4" style="padding:1rem">';
+    h+='<input class="cinput mb2" id="ann-title" placeholder="Announcement title...">';
+    h+='<textarea class="ctarea mb3" id="ann-content" rows="2" placeholder="Write an announcement..."></textarea>';
+    h+='<div class="cbet g2"><select class="csel" id="ann-vis" style="width:9rem"><option value="group">All Members</option><option value="admins">Admins Only</option></select>';
+    h+='<button class="cbtn cb-coral cb-sm" id="ann-post">'+ic('megaphone',14)+' Post</button></div></div>';
+  }
+  h+='<div class="sy3">';
+  if(!anns.length)h+='<p class="tc" style="padding:3rem 0;color:var(--M)">No announcements yet.</p>';
+  anns.forEach(a=>{
+    h+='<div class="ccard'+(a.is_pinned?' cpinned':'')+'" style="padding:1rem"><div class="cflex g2 mb2">';
+    if(a.is_pinned)h+=ic('pin',14);
+    h+='<span style="font-size:.875rem;font-weight:500">'+(a.author_name||'Admin')+'</span>';
+    h+='<span style="font-size:.75rem;color:var(--M);margin-left:auto">'+fdate(a.created_at)+'</span>';
+    h+=renderPostActions(a);
+    h+='</div>';
+    if(a.title)h+='<h4 style="font-weight:600;margin-bottom:.25rem">'+a.title+'</h4>';
+    h+='<p style="font-size:.875rem;color:var(--M)">'+a.content+'</p></div>';
+  });
+  h+='</div>';
+  return h;
+}
+
+/* ── TASKS TAB ── */
+function renderTasks(){
+  const pending=pendingTasks(),completed=S.tasks.filter(t=>t.status==='completed');
+  let h='<div class="cbet mb4"><h3 style="font-size:.875rem;font-weight:600">Tasks ('+pending.length+' pending)</h3>';
+  h+='<button class="cbtn cb-coral cb-sm" id="btn-add-task">'+ic('plus',16)+' Add Task</button></div>';
+  if(!S.tasks.length)return h+'<p class="tc" style="padding:2rem 0;color:var(--M)">No tasks yet. Click "Add Task" to create one.</p>';
+  h+='<div class="sy2">';
+  pending.forEach(t=>{
+    h+='<div class="ctrow"><button class="cbtn cb-ghost cb-icon" data-toggle="'+t.id+'" data-status="'+t.status+'">'+ic('circle',20)+'</button>';
+    h+='<div style="flex:1;min-width:0;cursor:pointer" data-toggle="'+t.id+'" data-status="'+t.status+'">';
+    h+='<p style="font-size:.875rem;font-weight:500">'+t.title+'</p>';
+    h+='<div class="cflex g2" style="margin-top:.125rem;flex-wrap:wrap">';
+    if(t.assigned_to)h+='<span style="font-size:.75rem;color:var(--M)">'+t.assigned_to+'</span>';
+    if(t.due_date)h+='<span style="font-size:.75rem;color:var(--M)">Due: '+fdate(t.due_date)+'</span>';
+    if(t.category)h+='<span class="cbadge cbo" style="font-size:.625rem;padding:.0625rem .375rem">'+t.category+'</span>';
+    h+='</div></div>';
+    h+='<span class="cbadge cbo cg-pri-'+t.priority+'">'+t.priority+'</span>';
+    h+='<div class="ctact"><button class="cbtn cb-ghost cb-icon" style="color:var(--DN)" data-deltask="'+t.id+'">'+ic('trash',14)+'</button></div>';
+    h+='</div>';
+  });
+  if(completed.length){
+    h+='<p style="font-size:.75rem;font-weight:500;color:var(--M);padding-top:.75rem;padding-bottom:.25rem">Completed ('+completed.length+')</p>';
+    completed.forEach(t=>{
+      h+='<div class="cflex g3" style="padding:.75rem;border-radius:var(--R);background:rgba(255,255,255,.5);border:1px solid transparent;opacity:.6">';
+      h+='<button class="cbtn cb-ghost cb-icon" data-toggle="'+t.id+'" data-status="'+t.status+'" style="color:var(--OK)">'+ic('checkCircle',20)+'</button>';
+      h+='<p style="font-size:.875rem;text-decoration:line-through;color:var(--M);flex:1;cursor:pointer" data-toggle="'+t.id+'" data-status="'+t.status+'">'+t.title+'</p>';
+      h+='<button class="cbtn cb-ghost cb-icon" style="color:var(--DN)" data-deltask="'+t.id+'">'+ic('trash',14)+'</button></div>';
+    });
+  }
+  h+='</div>';
+  return h;
+}
+
+/* ── CARED ONES TAB ── */
+function renderCaredOnes(){
+  let h='';
+  if(isAdmin())h+='<div class="mb4"><button class="cbtn cb-coral cb-sm" id="btn-add-co">'+ic('plus',16)+' Add Cared One</button></div>';
+  const cos=S.members.filter(m=>m.is_cared_one);
+  if(cos.length){h+='<div class="sy4">';cos.forEach(co=>{
+    h+='<div class="ccard" style="padding:1.25rem"><div class="cflex g3 mb3"><div class="cav">'+(co.name||'?')[0].toUpperCase()+'</div><div><h3 style="font-weight:600">'+(co.name||'Cared One')+'</h3><p style="font-size:.75rem;color:var(--M)">Cared One</p></div></div>';
+    h+='<a href="/careconnected/cared-ones/" class="cbtn cb-outline cb-sm">View Health Cards →</a></div>';
+  });h+='</div>';}
+  else{h+='<div class="tc" style="padding:3rem 0"><div style="color:#d1d5db;margin-bottom:.75rem">'+ic('heart',40)+'</div><p style="color:var(--M);margin-bottom:.5rem">No cared ones in this group yet.</p>';
+    if(isAdmin())h+='<button class="cbtn cb-coral cb-sm" id="btn-add-co2">'+ic('plus',16)+' Add Cared One</button>';
+    else h+='<p style="font-size:.875rem;color:var(--M)">Ask a group admin to add a cared one.</p>';
+  h+='</div>';}
+  return h;
+}
+
+/* ── CHECK-INS TAB ── */
+function renderCheckIns(){
+  const cos=S.members.filter(m=>m.is_cared_one);
+  if(!cos.length)return '<div class="tc" style="padding:3rem 0"><div style="color:#d1d5db;margin-bottom:.75rem">'+ic('clipboard',40)+'</div><p style="color:var(--M);margin-bottom:.5rem">No cared ones to check in on.</p><p style="font-size:.875rem;color:var(--M)">Go to the <strong>Cared Ones</strong> tab and add one first.</p></div>';
+  let h='<div class="ccard mb4" style="padding:1rem"><h3 style="font-size:1rem;font-weight:600;margin-bottom:.75rem">New Check-In</h3><div class="gr2 mb3" style="grid-template-columns:repeat(4,1fr)">';
+  h+='<div><label class="clbl" style="font-size:.75rem">Mood</label><select class="csel" id="ci-mood"><option value="great">😊 great</option><option value="good" selected>🙂 good</option><option value="okay">😐 okay</option><option value="poor">😟 poor</option><option value="bad">😢 bad</option></select></div>';
+  h+='<div><label class="clbl" style="font-size:.75rem">Energy (1-10)</label><input class="cinput" type="number" min="1" max="10" value="7" id="ci-energy"></div>';
+  h+='<div><label class="clbl" style="font-size:.75rem">Pain (0-10)</label><input class="cinput" type="number" min="0" max="10" value="0" id="ci-pain"></div>';
+  h+='<div><label class="clbl" style="font-size:.75rem">Sleep (hrs)</label><input class="cinput" type="number" min="0" max="24" step="0.5" value="7" id="ci-sleep"></div>';
+  h+='</div><div class="mb3"><label class="clbl" style="font-size:.75rem">Notes</label><input class="cinput" id="ci-note" placeholder="Any observations..."></div>';
+  h+='<button class="cbtn cb-coral cb-sm" id="ci-submit">Record Check-In</button></div>';
+  return h;
+}
+
+/* ── MESSAGES TAB ── */
+function renderMessages(){
+  let h='<div class="ccard" style="padding:0"><div class="cchat"><div class="cchat-s" id="msg-scroll"><div class="sy3">';
+  if(!S.messages.length)h+='<p class="tc" style="padding:2rem 0;color:var(--M);font-size:.875rem">No messages yet. Start the conversation!</p>';
+  S.messages.forEach(m=>{
+    const mine=String(m.sender_id)===String(UID);
+    h+='<div style="display:flex;'+(mine?'justify-content:flex-end':'justify-content:flex-start')+'">';
+    h+='<div class="cmsg '+(mine?'cmsg-m':'cmsg-o')+'">';
+    if(!mine)h+='<p style="font-size:.75rem;font-weight:500;margin-bottom:.125rem">'+(m.sender_name||'Member')+'</p>';
+    h+='<p style="font-size:.875rem">'+m.content+'</p>';
+    h+='<p style="font-size:.625rem;margin-top:.125rem;opacity:.6">'+ftime(m.created_at)+'</p>';
+    h+='</div></div>';
+  });
+  h+='</div></div><div class="cchat-i"><input class="cinput" id="msg-input" placeholder="Type a message..." style="flex:1">';
+  h+='<button class="cbtn cb-coral cb-icon" id="msg-send">'+ic('send',16)+'</button></div></div></div>';
+  return h;
+}
+
+/* ── WISHES TAB ── */
+function renderWishes(){
+  const ws=wishes();
+  let h='<div class="ccard mb4" style="padding:1rem"><textarea class="ctarea mb3" id="wish-content" rows="2" placeholder="Send words of encouragement..."></textarea>';
+  h+='<button class="cbtn cb-coral cb-sm" id="wish-post">'+ic('star',14)+' Send Wish</button></div>';
+  h+='<div class="sy3">';
+  if(!ws.length)h+='<p class="tc" style="padding:3rem 0;color:var(--M)">No well wishes yet. Be the first!</p>';
+  ws.forEach(w=>{
+    h+='<div class="ccard" style="padding:1rem"><div class="cflex g2 mb2">';
+    h+='<span style="color:var(--WN)">'+ic('star',16)+'</span>';
+    h+='<span style="font-size:.875rem;font-weight:500">'+(w.author_name||'Someone')+'</span>';
+    h+='<span style="font-size:.75rem;color:var(--M);margin-left:auto">'+fdate(w.created_at)+'</span>';
+    h+=renderPostActions(w);
+    h+='</div><p style="font-size:.875rem;color:var(--M)">'+w.content+'</p></div>';
+  });
+  h+='</div>';
+  return h;
+}
+
+/* ── MEMBERS TAB ── */
+function renderMembers(){
+  const g=activeGroup();let h='';
+  if(isAdmin()){
+    h+='<div class="ccard mb4" style="padding:1rem"><div class="cbet mb2"><h3 style="font-size:1rem;font-weight:600;display:flex;align-items:center;gap:.5rem">'+ic('userPlus',16)+' Invite Members</h3></div>';
+    h+='<div class="cflex g2"><input class="cinput" id="inv-email" placeholder="Enter email address to invite..." style="flex:1"><button class="cbtn cb-coral" id="inv-send">'+ic('mail',16)+' Invite</button></div>';
+    if(g&&g.join_code)h+='<div class="cflex g2 mt2" style="font-size:.875rem;color:var(--M)">'+ic('key',14)+' <span>Or share join code: <strong style="font-family:monospace;color:var(--F);letter-spacing:.1em">'+g.join_code+'</strong></span></div>';
+    h+='</div>';
+  }
+  // Pending invitations
+  if(isAdmin()&&S.invites.length){
+    h+='<div class="mb6"><h3 style="font-size:.875rem;font-weight:600;margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem">'+ic('clock',16)+' <span style="color:var(--WN)">Pending Invitations ('+S.invites.length+')</span></h3><div class="sy2">';
+    S.invites.forEach(inv=>{
+      h+='<div class="ccard" style="padding:.75rem;border-left:3px solid var(--WN)"><div class="cbet"><div><p style="font-size:.875rem;font-weight:500">'+(inv.email||'Unknown')+'</p><p style="font-size:.75rem;color:var(--M)">Invited '+fdate(inv.created_at)+'</p></div>';
+      h+='<button class="cbtn cb-ghost cb-sm" style="color:var(--DN)" data-cancelinv="'+inv.id+'">'+ic('x',16)+' Cancel</button></div></div>';
+    });
+    h+='</div></div>';
+  }
+  // Active members
+  h+='<div><h3 style="font-size:.875rem;font-weight:600;margin-bottom:.75rem">Active Members ('+S.members.length+')</h3><div class="sy2">';
+  S.members.forEach(m=>{
+    h+='<div class="ccard" style="padding:1rem"><div class="cbet"><div class="cflex g3">';
+    h+='<div class="cav">'+(m.name||'?')[0].toUpperCase()+'</div><div>';
+    h+='<p style="font-size:.875rem;font-weight:500">'+(m.name||'Member')+'</p>';
+    if(m.email)h+='<p style="font-size:.75rem;color:var(--M)">'+m.email+'</p>';
+    h+='<div class="cflex g1" style="margin-top:.25rem;flex-wrap:wrap">';
+    if(m.is_owner)h+='<span class="cbadge cbd" style="font-size:.625rem;padding:.0625rem .375rem">'+ic('crown',10)+' Owner</span>';
+    if(m.is_admin&&!m.is_owner)h+='<span class="cbadge cbs" style="font-size:.625rem;padding:.0625rem .375rem">'+ic('shield',10)+' Admin</span>';
+    if(m.is_cared_one)h+='<span class="cbadge" style="font-size:.625rem;padding:.0625rem .375rem;background:rgba(232,118,75,.1);color:var(--P)">'+ic('heart',10)+' Cared One</span>';
+    if(!m.is_owner&&!m.is_admin&&!m.is_cared_one)h+='<span class="cbadge cbo" style="font-size:.625rem;padding:.0625rem .375rem">Member</span>';
+    h+='</div></div></div>';
+    if(isAdmin()&&String(m.user_id)!==String(UID)){
+      h+='<div class="cdrop"><button class="cbtn cb-ghost cb-icon" data-membermenu="'+m.id+'">'+ic('more',16)+'</button>';
+      if(S.dropdown==='member-'+m.id){
+        h+='<div class="cdm">';
+        h+='<button class="cdi" data-mrole="'+m.id+'" data-field="is_cared_one" data-val="'+(m.is_cared_one?'0':'1')+'">'+ic('heart',14)+' '+(m.is_cared_one?'Remove Cared One':'Mark as Cared One')+'</button>';
+        if(!m.is_owner)h+='<button class="cdi" data-mrole="'+m.id+'" data-field="is_admin" data-val="'+(m.is_admin?'0':'1')+'">'+ic('shield',14)+' '+(m.is_admin?'Remove Admin':'Make Admin')+'</button>';
+        h+='<div class="cdsep"></div>';
+        if(!m.is_owner)h+='<button class="cdi dng" data-removemember="'+m.id+'">'+ic('trash',14)+' Remove from Group</button>';
+        h+='</div>';
+      }
+      h+='</div>';
+    }
+    if(String(m.user_id)===String(UID))h+='<span class="cbadge cbo" style="font-size:.625rem">You</span>';
+    h+='</div></div>';
+  });
+  h+='</div></div>';
+  return h;
+}
+
+/* ── GALLERY TAB ── */
+function renderGallery(){
+  let h='<div class="ccard mb4" style="padding:1rem"><p style="font-size:.875rem;font-weight:500;margin-bottom:.5rem">Add a Photo</p>';
+  h+='<input class="cinput mb2" id="gal-url" placeholder="Image URL (e.g. https://...)">';
+  h+='<div class="cflex g2"><input class="cinput" id="gal-cap" placeholder="Caption (optional)" style="flex:1"><button class="cbtn cb-coral cb-sm" id="gal-add">Add</button></div></div>';
+  if(S.gallery.length){
+    h+='<div class="cgalgr">';S.gallery.forEach(g=>{
+      h+='<div class="cgali ccard" style="padding:0"><img src="'+g.image_url+'" alt="'+(g.caption||'')+'"><button class="cdel" data-delgal="'+g.id+'">'+ic('trash',14)+'</button>';
+      if(g.caption)h+='<p style="padding:.5rem;font-size:.75rem;color:var(--M);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+g.caption+'</p>';
+      h+='</div>';
+    });h+='</div>';
+  }else{
+    h+='<div class="tc" style="padding:3rem 0"><div style="color:#d1d5db;margin-bottom:.75rem">'+ic('image',40)+'</div><p style="color:var(--M)">No photos yet. Add an image URL above!</p></div>';
+  }
+  return h;
+}
+
+/* ── Post Actions ── */
+function renderPostActions(p){
+  const canEdit=String(p.author_id)===String(UID);
+  const canPin=isAdmin()&&p.type==='announcement';
+  const canDel=canEdit||isAdmin();
+  if(!canEdit&&!canPin&&!canDel)return '';
+  let h='<div class="cdrop"><button class="cbtn cb-ghost cb-icon" data-postmenu="'+p.id+'" style="width:1.75rem;height:1.75rem">'+ic('more',14)+'</button>';
+  if(S.dropdown==='post-'+p.id){
+    h+='<div class="cdm">';
+    if(canEdit)h+='<button class="cdi" data-editpost="'+p.id+'">'+ic('edit',14)+' Edit</button>';
+    if(canPin)h+='<button class="cdi" data-pinpost="'+p.id+'">'+ic('pin',14)+' '+(p.is_pinned?'Unpin':'Pin')+'</button>';
+    if(canDel)h+='<button class="cdi dng" data-delpost="'+p.id+'">'+ic('trash',14)+' Delete</button>';
+    h+='</div>';
+  }
+  h+='</div>';return h;
+}
+
+/* ── Dialogs ── */
+function showDlg(type,data){S.dlg=type;S.dlgData=data||{};S.dropdown=null;render();}
+function closeDlg(){S.dlg=null;S.dlgData={};render();}
+
+function renderDialog(){
+  if(!S.dlg)return '';
+  let inner='';
+  switch(S.dlg){
+    case 'createGroup':
+      inner='<h2 style="font-size:1.125rem;font-weight:600;margin-bottom:1rem">Create Care Group</h2>';
+      inner+='<div class="sy4"><div><label class="clbl">Group Name *</label><input class="cinput" id="dlg-name" placeholder="e.g. Mom\'s Care Team"></div>';
+      inner+='<div class="mt3"><label class="clbl">Description</label><textarea class="ctarea" id="dlg-desc" placeholder="What is this group for?" rows="3"></textarea></div>';
+      inner+='<button class="cbtn cb-coral wf mt3" id="dlg-create">Create Care Group</button></div>';
+      break;
+    case 'joinCode':
+      inner='<h2 style="font-size:1.125rem;font-weight:600;margin-bottom:1rem">Join Care Group</h2>';
+      inner+='<div class="sy4"><div><label class="clbl">Join Code</label><input class="cinput" id="dlg-code" placeholder="Enter 6-character code" style="text-transform:uppercase"></div>';
+      inner+='<button class="cbtn cb-coral wf mt3" id="dlg-join">Join Group</button></div>';
+      break;
+    case 'settings':
+      var g=activeGroup();
+      inner='<h2 style="font-size:1.125rem;font-weight:600;margin-bottom:1rem">Group Settings</h2>';
+      inner+='<div class="sy4"><div><label class="clbl">Group Name</label><input class="cinput" id="dlg-sname" value="'+(g?g.name:'')+'"></div>';
+      inner+='<div class="mt3"><label class="clbl">Description</label><textarea class="ctarea" id="dlg-sdesc" rows="3">'+(g?g.description:'')+'</textarea></div>';
+      inner+='<div class="cbet mt3"><div><label class="clbl">Private Group</label><p style="font-size:.75rem;color:var(--M)">Private groups are hidden and invite-only</p></div>';
+      inner+='<button class="csw'+(g&&g.is_private?' on':'')+'" id="dlg-spriv"></button></div>';
+      if(g&&g.join_code){inner+='<div style="background:var(--MB);border-radius:var(--R);padding:.75rem" class="mt3"><label class="clbl" style="font-size:.75rem">Join Code</label><p style="font-size:1.125rem;font-family:monospace;font-weight:700;letter-spacing:.15em">'+g.join_code+'</p><p style="font-size:.75rem;color:var(--M)">Share this code so others can join</p></div>';}
+      inner+='<button class="cbtn cb-coral wf mt3" id="dlg-ssave">Save Changes</button>';
+      if(isOwner()){inner+='<div style="border-top:1px solid var(--B);padding-top:1rem;margin-top:1rem"><h4 style="font-size:.875rem;font-weight:500;color:var(--DN);margin-bottom:.5rem">Danger Zone</h4>';
+        inner+='<button class="cbtn cb-danger wf" id="dlg-sdelete">'+ic('trash',16)+' Delete Group</button></div>';}
+      else{inner+='<div style="border-top:1px solid var(--B);padding-top:1rem;margin-top:1rem"><h4 style="font-size:.875rem;font-weight:500;color:var(--M);margin-bottom:.5rem">Membership</h4>';
+        inner+='<button class="cbtn cb-outline wf" style="color:var(--DN);border-color:rgba(239,68,68,.3)" id="dlg-sleave">Leave Group</button></div>';}
+      inner+='</div>';
+      break;
+    case 'addTask':
+      inner='<h2 style="font-size:1.125rem;font-weight:600;margin-bottom:1rem">Add Task</h2>';
+      inner+='<div class="sy4"><div><label class="clbl">Task Title *</label><input class="cinput" id="dlg-ttitle" placeholder="e.g. Pick up medication"></div>';
+      inner+='<div class="mt3"><label class="clbl">Description</label><textarea class="ctarea" id="dlg-tdesc" placeholder="Details..." rows="2"></textarea></div>';
+      inner+='<div class="gr2 mt3"><div><label class="clbl">Priority</label><select class="csel" id="dlg-tpri"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="urgent">Urgent</option></select></div>';
+      inner+='<div><label class="clbl">Category</label><select class="csel" id="dlg-tcat"><option>Daily Living</option><option>Medical</option><option>Transportation</option><option>Meals</option><option>Errands</option><option>Appointments</option><option>Emotional Support</option><option>Other</option></select></div></div>';
+      inner+='<div class="gr2 mt3"><div><label class="clbl">Due Date</label><input class="cinput" type="date" id="dlg-tdue"></div>';
+      inner+='<div><label class="clbl">Assign To</label><select class="csel" id="dlg-tassign"><option value="">Unassigned</option>';
+      S.members.forEach(m=>{inner+='<option value="'+m.name+'">'+(m.name||'Member')+'</option>';});
+      inner+='</select></div></div>';
+      inner+='<button class="cbtn cb-coral wf mt3" id="dlg-tadd">'+ic('plus',16)+' Add Task</button></div>';
+      break;
+    case 'editPost':
+      var ep=S.dlgData;
+      inner='<h2 style="font-size:1.125rem;font-weight:600;margin-bottom:1rem">Edit Post</h2>';
+      inner+='<div class="sy4"><div><label class="clbl">Title</label><input class="cinput" id="dlg-eptitle" value="'+(ep.title||'').replace(/"/g,'&quot;')+'" placeholder="Optional title"></div>';
+      inner+='<div class="mt3"><label class="clbl">Content</label><textarea class="ctarea" id="dlg-epcontent" rows="4">'+(ep.content||'')+'</textarea></div>';
+      inner+='<button class="cbtn cb-coral wf mt3" id="dlg-epsave">Save Changes</button></div>';
+      break;
+  }
+  return '<div class="covl" id="dlg-overlay"><div class="cdlg">'+
+    '<div class="cbet mb3"><div></div><button class="cbtn cb-ghost cb-icon" id="dlg-close">'+ic('x',16)+'</button></div>'+
+    inner+'</div></div>';
+}
+
+/* ── Event Binding ── */
+function bindMain(){
+  // Close dropdowns on outside click
+  document.addEventListener('click',function(e){
+    if(S.dropdown&&!e.target.closest('.cdrop')){S.dropdown=null;render();}
+  },{once:true});
+  // Tab switching
+  document.querySelectorAll('.ctab').forEach(el=>el.onclick=function(){S.tab=this.dataset.tab;S.dropdown=null;render();});
+  // Group switching
+  document.querySelectorAll('[data-gid]').forEach(el=>el.onclick=function(){S.gid=Number(this.dataset.gid);S.dropdown=null;loadGroupData().then(render);});
+  // Header buttons
+  const bs=document.getElementById('btn-settings');if(bs)bs.onclick=()=>showDlg('settings');
+  const bj=document.getElementById('btn-join');if(bj)bj.onclick=()=>showDlg('joinCode');
+  const bc=document.getElementById('btn-create');if(bc)bc.onclick=()=>showDlg('createGroup');
+  // Home tab
+  const hp=document.getElementById('home-post');if(hp)hp.onclick=function(){
+    const c=document.getElementById('home-content'),t=document.getElementById('home-type'),v=document.getElementById('home-vis');
+    if(c&&c.value.trim())createPost({content:c.value.trim(),type:t?t.value:'discussion',visibility:v?v.value:'group'});
+  };
+  // Announcements
+  const ap=document.getElementById('ann-post');if(ap)ap.onclick=function(){
+    const t=document.getElementById('ann-title'),c=document.getElementById('ann-content'),v=document.getElementById('ann-vis');
+    if(c&&c.value.trim())createPost({title:t?t.value:'',content:c.value.trim(),type:'announcement',visibility:v?v.value:'group'});
+  };
+  // Tasks
+  const at=document.getElementById('btn-add-task');if(at)at.onclick=()=>showDlg('addTask');
+  document.querySelectorAll('[data-toggle]').forEach(el=>el.onclick=function(){toggleTask(Number(this.dataset.toggle),this.dataset.status);});
+  document.querySelectorAll('[data-deltask]').forEach(el=>el.onclick=function(e){e.stopPropagation();deleteTask(Number(this.dataset.deltask));});
+  // Wishes
+  const wp=document.getElementById('wish-post');if(wp)wp.onclick=function(){
+    const c=document.getElementById('wish-content');if(c&&c.value.trim())createPost({content:c.value.trim(),type:'wish'});
+  };
+  // Messages
+  const ms=document.getElementById('msg-send');if(ms)ms.onclick=function(){const i=document.getElementById('msg-input');if(i&&i.value.trim()){sendMsg(i.value.trim());}};
+  const mi=document.getElementById('msg-input');if(mi)mi.onkeydown=function(e){if(e.key==='Enter'){const ms2=document.getElementById('msg-send');if(ms2)ms2.click();}};
+  // Scroll messages to bottom
+  const mscr=document.getElementById('msg-scroll');if(mscr)mscr.scrollTop=mscr.scrollHeight;
+  // Gallery
+  const ga=document.getElementById('gal-add');if(ga)ga.onclick=function(){const u=document.getElementById('gal-url'),c=document.getElementById('gal-cap');if(u&&u.value.trim())addGalleryItem(u.value.trim(),c?c.value:'');};
+  document.querySelectorAll('[data-delgal]').forEach(el=>el.onclick=function(){deleteGalleryItem(Number(this.dataset.delgal));});
+  // Members - invite
+  const is=document.getElementById('inv-send');if(is)is.onclick=function(){const e=document.getElementById('inv-email');if(e&&e.value.trim())inviteMember(e.value.trim());};
+  document.querySelectorAll('[data-cancelinv]').forEach(el=>el.onclick=function(){cancelInvite(Number(this.dataset.cancelinv));});
+  // Member menus
+  document.querySelectorAll('[data-membermenu]').forEach(el=>el.onclick=function(e){e.stopPropagation();const mid=this.dataset.membermenu;S.dropdown=S.dropdown==='member-'+mid?null:'member-'+mid;render();});
+  document.querySelectorAll('[data-mrole]').forEach(el=>el.onclick=function(){const u={};u[this.dataset.field]=this.dataset.val==='1';updateMemberRole(Number(this.dataset.mrole),u);S.dropdown=null;});
+  document.querySelectorAll('[data-removemember]').forEach(el=>el.onclick=function(){if(confirm('Remove this member?'))removeMember(Number(this.dataset.removemember));S.dropdown=null;});
+  // Post menus
+  document.querySelectorAll('[data-postmenu]').forEach(el=>el.onclick=function(e){e.stopPropagation();const pid=this.dataset.postmenu;S.dropdown=S.dropdown==='post-'+pid?null:'post-'+pid;render();});
+  document.querySelectorAll('[data-editpost]').forEach(el=>el.onclick=function(){const p=S.posts.find(pp=>String(pp.id)===this.dataset.editpost);if(p)showDlg('editPost',p);});
+  document.querySelectorAll('[data-pinpost]').forEach(el=>el.onclick=function(){const p=S.posts.find(pp=>String(pp.id)===this.dataset.pinpost);if(p)updatePost(p.id,{content:p.content,title:p.title,is_pinned:!p.is_pinned});S.dropdown=null;});
+  document.querySelectorAll('[data-delpost]').forEach(el=>el.onclick=function(){if(confirm('Delete this post?'))deletePost(Number(this.dataset.delpost));S.dropdown=null;});
+  // Cared ones buttons
+  const aco=document.getElementById('btn-add-co');if(aco)aco.onclick=()=>toast('Use the Members tab to mark a member as "Cared One"');
+  const aco2=document.getElementById('btn-add-co2');if(aco2)aco2.onclick=()=>toast('Use the Members tab to mark a member as "Cared One"');
+  // Check-in submit
+  const cis=document.getElementById('ci-submit');if(cis)cis.onclick=function(){toast('Check-in recorded ✓');};
+  // Dialog bindings
+  bindDialog();
+}
+
+function bindDialog(){
+  const close=document.getElementById('dlg-close');if(close)close.onclick=closeDlg;
+  const ov=document.getElementById('dlg-overlay');if(ov)ov.onclick=function(e){if(e.target===ov)closeDlg();};
+  // Create group
+  const dc=document.getElementById('dlg-create');if(dc)dc.onclick=function(){
+    const n=document.getElementById('dlg-name'),d=document.getElementById('dlg-desc');
+    if(n&&n.value.trim()){dc.disabled=true;dc.textContent='Creating...';createGroup(n.value.trim(),d?d.value:'').then(closeDlg).catch(e=>{toast('Error: '+e.message);dc.disabled=false;dc.textContent='Create Care Group';});}
+  };
+  // Join code
+  const dj=document.getElementById('dlg-join');if(dj)dj.onclick=function(){
+    const c=document.getElementById('dlg-code');
+    if(c&&c.value.trim()){dj.disabled=true;dj.textContent='Joining...';joinByCode(c.value.trim()).then(closeDlg).catch(e=>{toast('Error: '+e.message);dj.disabled=false;dj.textContent='Join Group';});}
+  };
+  // Settings save
+  const ss=document.getElementById('dlg-ssave');if(ss)ss.onclick=function(){
+    const n=document.getElementById('dlg-sname'),d=document.getElementById('dlg-sdesc'),p=document.getElementById('dlg-spriv');
+    if(n&&n.value.trim()&&S.gid){updateGroup(S.gid,{name:n.value.trim(),description:d?d.value:'',is_private:p?p.classList.contains('on'):false}).then(closeDlg);}
+  };
+  const sp=document.getElementById('dlg-spriv');if(sp)sp.onclick=function(){this.classList.toggle('on');};
+  const sd=document.getElementById('dlg-sdelete');if(sd)sd.onclick=function(){if(confirm('Delete this group? This cannot be undone.')){deleteGroup(S.gid).then(closeDlg);}};
+  const sl=document.getElementById('dlg-sleave');if(sl)sl.onclick=function(){
+    if(confirm('Leave this group?')){const m=curMember();if(m)removeMember(m.id).then(()=>{S.gid=null;loadGroups().then(()=>{closeDlg();render();});});}
+  };
+  // Add task
+  const ta=document.getElementById('dlg-tadd');if(ta)ta.onclick=function(){
+    const t=document.getElementById('dlg-ttitle'),d=document.getElementById('dlg-tdesc'),p=document.getElementById('dlg-tpri'),c=document.getElementById('dlg-tcat'),dd=document.getElementById('dlg-tdue'),a=document.getElementById('dlg-tassign');
+    if(t&&t.value.trim()){ta.disabled=true;createTask({title:t.value.trim(),description:d?d.value:'',priority:p?p.value:'medium',category:c?c.value:'',due_date:dd?dd.value:'',assigned_to:a?a.value:''}).then(closeDlg).catch(e=>{toast('Error');ta.disabled=false;});}
+  };
+  // Edit post
+  const ep=document.getElementById('dlg-epsave');if(ep)ep.onclick=function(){
+    const t=document.getElementById('dlg-eptitle'),c=document.getElementById('dlg-epcontent');
+    if(c&&c.value.trim()&&S.dlgData.id){updatePost(S.dlgData.id,{title:t?t.value:'',content:c.value.trim()}).then(closeDlg);}
+  };
+}
+
+/* ── Init ── */
+init();
+})();
+</script>

@@ -15,30 +15,24 @@ import {
 import { useSymptomLogs, useCreateSymptomLog } from "@/hooks/use-care-data";
 import { invokeAI } from "@/lib/ai-service";
 import { toast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 interface SymptomTrackerProps {
   caredOneId: string;
   caredOneName: string;
 }
 
-const SYMPTOM_TYPES = [
-  { value: "sundowning", label: "Sundowning", icon: Sun },
-  { value: "agitation", label: "Agitation", icon: AlertTriangle },
-  { value: "wandering", label: "Wandering", icon: Activity },
-  { value: "sleep_disruption", label: "Sleep Disruption", icon: Moon },
-  { value: "confusion", label: "Confusion", icon: Brain },
-  { value: "anxiety", label: "Anxiety", icon: Activity },
-];
-
-const SEVERITY_OPTIONS = [
-  { value: "1", label: "Mild" },
-  { value: "2", label: "Moderate" },
-  { value: "3", label: "Significant" },
-  { value: "4", label: "Severe" },
-  { value: "5", label: "Critical" },
-];
+const SYMPTOM_ICONS: Record<string, typeof Sun> = {
+  sundowning: Sun,
+  agitation: AlertTriangle,
+  wandering: Activity,
+  sleep_disruption: Moon,
+  confusion: Brain,
+  anxiety: Activity,
+};
 
 export function SymptomTracker({ caredOneId, caredOneName }: SymptomTrackerProps) {
+  const { t } = useTranslation();
   const { data: logs, isLoading } = useSymptomLogs(caredOneId);
   const createLog = useCreateSymptomLog();
 
@@ -51,24 +45,40 @@ export function SymptomTracker({ caredOneId, caredOneName }: SymptomTrackerProps
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
 
+  const SYMPTOM_TYPES = [
+    { value: "sundowning", label: t("symptoms.types.sundowning") },
+    { value: "agitation", label: t("symptoms.types.agitation") },
+    { value: "wandering", label: t("symptoms.types.wandering") },
+    { value: "sleep_disruption", label: t("symptoms.types.sleepDisruption") },
+    { value: "confusion", label: t("symptoms.types.confusion") },
+    { value: "anxiety", label: t("symptoms.types.anxiety") },
+  ];
+
+  const SEVERITY_OPTIONS = [
+    { value: "1", label: t("symptoms.severity.mild") },
+    { value: "2", label: t("symptoms.severity.moderate") },
+    { value: "3", label: t("symptoms.severity.significant") },
+    { value: "4", label: t("symptoms.severity.severe") },
+    { value: "5", label: t("symptoms.severity.critical") },
+  ];
+
   const handleSubmit = async () => {
     if (!symptomType || !severity) return;
     try {
       await createLog.mutateAsync({
-        cared_one_id: caredOneId,
-        symptom_type: symptomType,
+        user_id: caredOneId,
+        symptom: symptomType,
         severity: parseInt(severity),
         notes: notes || null,
-        trigger: trigger || null,
       });
-      toast({ title: "Symptom logged", description: "Entry recorded successfully." });
+      toast({ title: t("symptoms.symptomLogged"), description: t("symptoms.entryRecorded") });
       setShowForm(false);
       setSymptomType("");
       setSeverity("");
       setNotes("");
       setTrigger("");
     } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+      toast({ title: t("common.errorOccurred"), description: err.message, variant: "destructive" });
     }
   };
 
@@ -105,26 +115,25 @@ export function SymptomTracker({ caredOneId, caredOneName }: SymptomTrackerProps
       <CardHeader className="flex-row items-center justify-between pb-2">
         <CardTitle className="text-base flex items-center gap-2">
           <Activity className="h-4 w-4 text-primary" />
-          Symptom & Behavior Tracker
+          {t("symptoms.symptomTracker")}
         </CardTitle>
         <div className="flex gap-1">
           <Button variant="ghost" size="sm" onClick={runAIAnalysis} disabled={aiLoading || !logs?.length} className="h-7 text-xs">
             <Brain className={`h-3 w-3 mr-1 ${aiLoading ? "animate-spin" : ""}`} />
-            AI Analysis
+            {t("symptoms.aiAnalysis")}
           </Button>
           <Button variant="ghost" size="sm" onClick={() => setShowForm(!showForm)} className="h-7 text-xs">
             {showForm ? <X className="h-3 w-3" /> : <Plus className="h-3 w-3 mr-1" />}
-            {showForm ? "" : "Log"}
+            {showForm ? "" : t("symptoms.log")}
           </Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        {/* Quick-add form */}
         {showForm && (
           <div className="p-3 rounded-lg bg-muted/50 space-y-2">
             <div className="grid grid-cols-2 gap-2">
               <Select value={symptomType} onValueChange={setSymptomType}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Symptom type" /></SelectTrigger>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder={t("symptoms.symptomType")} /></SelectTrigger>
                 <SelectContent>
                   {SYMPTOM_TYPES.map(s => (
                     <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
@@ -132,7 +141,7 @@ export function SymptomTracker({ caredOneId, caredOneName }: SymptomTrackerProps
                 </SelectContent>
               </Select>
               <Select value={severity} onValueChange={setSeverity}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Severity" /></SelectTrigger>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder={t("symptoms.severityLabel")} /></SelectTrigger>
                 <SelectContent>
                   {SEVERITY_OPTIONS.map(s => (
                     <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
@@ -142,34 +151,32 @@ export function SymptomTracker({ caredOneId, caredOneName }: SymptomTrackerProps
             </div>
             <input
               className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs placeholder:text-muted-foreground"
-              placeholder="Trigger (optional, e.g. 'loud TV', 'unfamiliar visitor')"
+              placeholder={t("symptoms.triggerPlaceholder")}
               value={trigger}
               onChange={e => setTrigger(e.target.value)}
             />
             <Textarea
               className="text-xs min-h-[50px]"
-              placeholder="Additional notes..."
+              placeholder={t("symptoms.additionalNotes")}
               value={notes}
               onChange={e => setNotes(e.target.value)}
             />
             <Button size="sm" className="w-full h-7 text-xs" onClick={handleSubmit} disabled={createLog.isPending || !symptomType || !severity}>
-              {createLog.isPending ? "Saving..." : "Save Entry"}
+              {createLog.isPending ? t("common.saving") : t("symptoms.saveEntry")}
             </Button>
           </div>
         )}
 
-        {/* AI Analysis */}
         {aiAnalysis && (
           <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
             <div className="flex items-center gap-1.5 mb-1.5">
               <Brain className="h-3.5 w-3.5 text-primary" />
-              <span className="text-xs font-semibold text-foreground">AI Behavior Analysis</span>
+              <span className="text-xs font-semibold text-foreground">{t("ai.aiBehaviorAnalysis")}</span>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line">{aiAnalysis}</p>
           </div>
         )}
 
-        {/* Recent logs */}
         {isLoading ? (
           <div className="space-y-2">
             {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full rounded-lg" />)}
@@ -177,21 +184,22 @@ export function SymptomTracker({ caredOneId, caredOneName }: SymptomTrackerProps
         ) : logs && logs.length > 0 ? (
           <div className="space-y-1.5">
             {logs.slice(0, 8).map((log: any) => {
-              const typeInfo = SYMPTOM_TYPES.find(s => s.value === log.symptom_type);
+              const typeLabel = SYMPTOM_TYPES.find(s => s.value === log.symptom_type)?.label || log.symptom_type;
+              const Icon = SYMPTOM_ICONS[log.symptom_type] || Activity;
               return (
                 <div key={log.id} className="flex items-center gap-2 p-2 rounded-lg bg-muted/30">
                   <div className="shrink-0">
-                    {typeInfo ? <typeInfo.icon className="h-3.5 w-3.5 text-muted-foreground" /> : <Activity className="h-3.5 w-3.5 text-muted-foreground" />}
+                    <Icon className="h-3.5 w-3.5 text-muted-foreground" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-foreground">{typeInfo?.label || log.symptom_type}</p>
-                    {log.trigger && <p className="text-[10px] text-muted-foreground">Trigger: {log.trigger}</p>}
+                    <p className="text-xs font-medium text-foreground">{typeLabel}</p>
+                    {log.trigger && <p className="text-[10px] text-muted-foreground">{t("symptoms.trigger")}: {log.trigger}</p>}
                   </div>
                   <Badge variant="outline" className={`text-[9px] px-1.5 ${severityColor(log.severity)}`}>
-                    Sev {log.severity}/5
+                    {t("symptoms.sev")} {log.severity}/5
                   </Badge>
                   <span className="text-[10px] text-muted-foreground shrink-0">
-                    {new Date(log.created_at).toLocaleDateString("en", { month: "short", day: "numeric" })}
+                    {new Date(log.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
                   </span>
                 </div>
               );
@@ -199,7 +207,7 @@ export function SymptomTracker({ caredOneId, caredOneName }: SymptomTrackerProps
           </div>
         ) : (
           <p className="text-xs text-muted-foreground text-center py-3">
-            No symptoms logged yet. Tap "Log" to start tracking.
+            {t("symptoms.noSymptomsLogged")}
           </p>
         )}
       </CardContent>

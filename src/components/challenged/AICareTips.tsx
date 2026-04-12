@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Sparkles, RefreshCw, Heart, Shield, MessageCircle, Activity, Gamepad2 } from "lucide-react";
 import { invokeAI, parseAIJson } from "@/lib/ai-service";
+import { useTranslation } from "react-i18next";
 
 interface CareTip {
   tip: string;
@@ -31,6 +32,7 @@ interface AICareTipsProps {
 }
 
 export function AICareTips({ caredOneName, dementiaStage }: AICareTipsProps) {
+  const { t } = useTranslation();
   const [tips, setTips] = useState<CareTip[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -55,15 +57,15 @@ export function AICareTips({ caredOneName, dementiaStage }: AICareTipsProps) {
       <CardHeader className="flex-row items-center justify-between pb-2">
         <CardTitle className="text-base flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-primary" />
-          AI Care Tips
+          {t("ai.aiCareTips")}
         </CardTitle>
         <Button variant="ghost" size="sm" onClick={fetchTips} disabled={loading} className="h-7 text-xs">
-          <RefreshCw className={`h-3 w-3 mr-1 ${loading ? "animate-spin" : ""}`} /> New Tips
+          <RefreshCw className={`h-3 w-3 mr-1 ${loading ? "animate-spin" : ""}`} /> {t("ai.newTips")}
         </Button>
       </CardHeader>
       <CardContent className="space-y-2">
         {loading && !tips.length ? (
-          <div className="py-4 text-center text-xs text-muted-foreground animate-pulse">Generating tips...</div>
+          <div className="py-4 text-center text-xs text-muted-foreground animate-pulse">{t("ai.generatingTips")}</div>
         ) : tips.length > 0 ? (
           tips.map((tip, i) => {
             const Icon = categoryIcons[tip.category] || Heart;
@@ -76,7 +78,7 @@ export function AICareTips({ caredOneName, dementiaStage }: AICareTipsProps) {
             );
           })
         ) : (
-          <p className="text-xs text-muted-foreground text-center py-2">No tips available</p>
+          <p className="text-xs text-muted-foreground text-center py-2">{t("ai.noTipsAvailable")}</p>
         )}
       </CardContent>
     </Card>

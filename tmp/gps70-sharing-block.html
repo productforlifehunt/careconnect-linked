@@ -1,0 +1,22 @@
+<!-- wp:html -->
+<style>
+#gps70-sharing{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+#gps70-sharing .g70-card{background:#fff;border-radius:.75rem;box-shadow:0 1px 3px rgba(0,0,0,.1);border:1px solid transparent}
+#gps70-sharing .g70-body{padding:1rem 1.25rem}
+#gps70-sharing .g70-row{display:flex;align-items:center;justify-content:space-between;gap:1rem}
+#gps70-sharing .g70-label{font-size:.875rem;color:#334155}
+#gps70-sharing .g70-desc{font-size:.75rem;color:#94a3b8;margin-top:.125rem}
+#gps70-sharing .g70-switch{width:44px;height:24px;border-radius:12px;background:#e2e8f0;position:relative;cursor:pointer;border:none;transition:background .2s;flex-shrink:0}
+#gps70-sharing .g70-switch.on{background:#0d9488}
+#gps70-sharing .g70-switch::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 2px rgba(0,0,0,.1)}
+#gps70-sharing .g70-switch.on::after{transform:translateX(20px)}
+</style>
+<div id="gps70-sharing"><div class="g70-card"><div class="g70-body"><div class="g70-row"><div><div class="g70-label">Share My Location</div><div class="g70-desc">Allow care circle members to see your location</div></div><button class="g70-switch" id="gps70-share-switch" type="button"></button></div></div></div></div>
+<script>
+(function(){
+  const root=document.getElementById('gps70-sharing'); const side=document.getElementById('gps70-side-col'); if(side && root.parentElement!==side) side.appendChild(root);
+  const sw=document.getElementById('gps70-share-switch');
+  sw.addEventListener('click',()=>{sw.classList.toggle('on'); if(window.__gps70) window.__gps70.setSharing(sw.classList.contains('on'))});
+})();
+</script>
+<!-- /wp:html -->

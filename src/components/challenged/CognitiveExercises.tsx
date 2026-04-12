@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Puzzle, RefreshCw, Loader2, CheckCircle, Sparkles } from "lucide-react";
 import { invokeAI, parseAIJson } from "@/lib/ai-service";
+import { useTranslation } from "react-i18next";
 
 interface ExerciseItem {
   emoji?: string;
@@ -24,6 +25,7 @@ interface Exercise {
 }
 
 export function CognitiveExercises() {
+  const { t } = useTranslation();
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [loading, setLoading] = useState(false);
   const [revealed, setRevealed] = useState<Set<number>>(new Set());
@@ -58,22 +60,22 @@ export function CognitiveExercises() {
       <CardHeader className="pb-2">
         <CardTitle className="text-lg flex items-center gap-2">
           <Puzzle className="h-5 w-5 text-primary" />
-          Brain Games
+          {t("cognitive.brainGames")}
         </CardTitle>
       </CardHeader>
       <CardContent>
         {!exercise && !loading ? (
           <div className="text-center py-6 space-y-3">
             <Sparkles className="h-10 w-10 text-primary mx-auto" />
-            <p className="text-muted-foreground">Ready to exercise your brain?</p>
+            <p className="text-muted-foreground">{t("cognitive.readyToExercise")}</p>
             <Button onClick={generate} className="rounded-full px-6">
-              Start a Game
+              {t("cognitive.startGame")}
             </Button>
           </div>
         ) : loading ? (
           <div className="flex items-center justify-center py-8 gap-2 text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin" />
-            <span>Creating your exercise...</span>
+            <span>{t("cognitive.creatingExercise")}</span>
           </div>
         ) : exercise ? (
           <div className="space-y-4">
@@ -100,7 +102,7 @@ export function CognitiveExercises() {
                     <span className="text-sm font-medium">
                       {isRevealed
                         ? item.label || item.answer || item.sequence || item.question
-                        : item.prompt || item.label || item.question || "Tap to reveal"}
+                        : item.prompt || item.label || item.question || t("cognitive.tapToReveal")}
                     </span>
                     {isRevealed && item.hint && (
                       <span className="text-xs text-muted-foreground">{item.hint}</span>
@@ -119,7 +121,7 @@ export function CognitiveExercises() {
 
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={generate} className="flex-1">
-                <RefreshCw className="h-3 w-3 mr-1" /> New Game
+                <RefreshCw className="h-3 w-3 mr-1" /> {t("cognitive.newGame")}
               </Button>
             </div>
           </div>

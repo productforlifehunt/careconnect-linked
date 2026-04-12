@@ -22,9 +22,11 @@ Object.assign(zhTW.nav, {
   howItWorks: "使用方法", trustSafety: "信任與安全", myProfile: "我的資料",
   notifications: "通知", becomeCaregiver: "成為照護人員", toggleTheme: "切換主題",
 });
+zhTW.site.challenged.name = "憶暢";
 zhTW.site.challenged.heroTitle = "失智症照護，";
-zhTW.site.challenged.heroHighlight = "攜手同行";
-zhTW.site.challenged.heroSubtitle = "與家人協調失智症照護，找到專業照護人員，確保親人安全——一個團隊，一個平台。";
+zhTW.site.challenged.heroHighlight = "憶路暢行";
+zhTW.site.challenged.heroSubtitle = "讓失智症照護不再艱難——專業護理、家庭協作、智能守護，一切暢通無阻。";
+zhTW.site.challenged.tagline = "讓記憶暢行無阻";
 zhTW.site.challenged.caredOneSingular = "親人";
 zhTW.site.challenged.careGroupSingular = "照護團隊";
 zhTW.site.careconnected.heroTitle = "尋找可信賴的照護，";

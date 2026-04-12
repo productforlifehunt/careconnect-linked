@@ -1,0 +1,37 @@
+<!-- wp:html -->
+<style>
+#community70-feed{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+#community70-feed .c70-card{background:#fff;border-radius:.75rem;box-shadow:0 1px 3px rgba(0,0,0,.1);border:1px solid transparent;padding:1.25rem;margin-bottom:1rem}
+#community70-feed .c70-top{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:.75rem}
+#community70-feed .c70-author{display:flex;align-items:center;gap:.75rem}
+#community70-feed .c70-avatar{width:40px;height:40px;border-radius:50%;background:rgba(13,148,136,.1);display:flex;align-items:center;justify-content:center;color:#0d9488;font-weight:500;font-size:.875rem;flex-shrink:0}
+#community70-feed .c70-name{font-weight:500;font-size:.9375rem;color:#0f172a}
+#community70-feed .c70-time{font-size:.7rem;color:#94a3b8}
+#community70-feed .c70-title{font-size:1rem;font-weight:600;color:#0f172a;margin:0 0 .5rem}
+#community70-feed .c70-body{font-size:.875rem;color:#475569;line-height:1.5;margin-bottom:.75rem}
+#community70-feed .c70-footer{display:flex;align-items:center;justify-content:space-between;padding-top:.75rem;border-top:1px solid #f1f5f9}
+#community70-feed .c70-vote{display:flex;align-items:center;gap:.25rem}
+#community70-feed .c70-vote-btn{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border:none;background:transparent;cursor:pointer;border-radius:.25rem;color:#94a3b8;font-size:1rem}
+#community70-feed .c70-vote-btn:hover{background:#f1f5f9;color:#0d9488}
+#community70-feed .c70-count{font-size:.875rem;font-weight:600;color:#0f172a;min-width:24px;text-align:center}
+#community70-feed .c70-menu button{background:none;border:none;color:#64748b;font-size:.8125rem;cursor:pointer;padding:.25rem .5rem}
+#community70-feed .c70-empty{text-align:center;padding:3rem 1rem;color:#94a3b8;font-size:.875rem}
+</style>
+<div id="community70-feed">
+  <div class="c70-empty">Loading posts...</div>
+</div>
+<script>
+(function(){
+  const root=document.getElementById('community70-feed');
+  function timeAgo(d){const s=Math.floor((Date.now()-new Date(d).getTime())/1000);if(s<60)return'Just now';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago'}
+  function strip(v){return (v||'').replace(/<[^>]*>/g,'')}
+  function render(){
+    const api=window.__community70;if(!api)return; let items=api.state.items||[]; if(api.state.filter==='mine'&&api.state.uid) items=items.filter(p=>p.author===api.state.uid);
+    if(!items.length){root.innerHTML='<div class="c70-empty">'+(api.state.filter==='mine'?'You haven\'t posted yet':'No community posts yet')+'</div>';return}
+    root.innerHTML=items.map(p=>{const author=p._embedded?.author?.[0]?.name||'User'; const owned=p.author===api.state.uid; const menu=owned?'<div class="c70-menu"><button type="button" onclick="window.__community70.openModal({id:'+p.id+',title:'+JSON.stringify(p.title?.rendered||'')+',content:'+JSON.stringify(strip(p.content?.rendered||''))+'})">Edit</button><button type="button" onclick="window.__community70.remove('+p.id+')">Delete</button></div>':''; return '<div class="c70-card"><div class="c70-top"><div class="c70-author"><div class="c70-avatar">'+author.charAt(0).toUpperCase()+'</div><div><div class="c70-name">'+author+'</div><div class="c70-time">'+timeAgo(p.date)+'</div></div></div>'+menu+'</div>'+(p.title?.rendered?'<h3 class="c70-title">'+p.title.rendered+'</h3>':'')+'<div class="c70-body">'+strip(p.content?.rendered||'')+'</div><div class="c70-footer"><div class="c70-vote"><button class="c70-vote-btn" type="button" onclick="window.__community70.save('+p.id+',{meta:{vote_count:' + ((p.meta?.vote_count||0)+1) + '}})">▲</button><span class="c70-count">'+(p.meta?.vote_count||0)+'</span><button class="c70-vote-btn" type="button" onclick="window.__community70.save('+p.id+',{meta:{vote_count:' + ((p.meta?.vote_count||0)-1) + '}})">▼</button></div></div></div>';}).join('');
+  }
+  function bind(){const api=window.__community70;if(!api)return false;api.on('data',render);api.on('filter',render);render();return true}
+  if(!bind()){const t=setInterval(()=>{if(bind())clearInterval(t)},200)}
+})();
+</script>
+<!-- /wp:html -->

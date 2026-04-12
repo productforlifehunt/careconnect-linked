@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Pill, ClipboardCheck, CheckSquare, Clock } from "lucide-react";
-import { useMedicines, useCareTasks, useCheckinLogs, useTodayMedicineLogs } from "@/hooks/use-care-data";
+import { useMedicines, useCareTasks, useCheckins, useTodayCheckinLogs, useTodayMedicineLogs } from "@/hooks/use-care-data";
 import { useMemo } from "react";
 
 interface DailyTimelineProps {
@@ -22,10 +22,10 @@ export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) 
   const { data: medicines } = useMedicines(caredOneId);
   const { data: todayLogs } = useTodayMedicineLogs(caredOneId);
   const { data: tasks } = useCareTasks();
-  const { data: checkins } = useCheckinLogs(caredOneId);
+  const { data: checkins } = useCheckins(caredOneId);
+  const { data: todayCheckinLogs } = useTodayCheckinLogs(caredOneId);
 
   const today = new Date().toDateString();
-  const hasCheckinToday = checkins?.some((c: any) => new Date(c.created_at).toDateString() === today);
 
   const timelineItems = useMemo(() => {
     const items: TimelineItem[] = [];
@@ -79,18 +79,28 @@ export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) 
       });
     });
 
-    // Add check-in
-    items.push({
-      time: "Morning",
-      sortTime: 800,
-      label: "Daily wellness check-in",
-      type: "checkin",
-      status: hasCheckinToday ? "done" : "pending",
-      icon: ClipboardCheck,
+    (checkins || []).forEach((checkin: any) => {
+      const checkinLog = (todayCheckinLogs || []).find((l: any) => l.medicine_id === checkin.id);
+      const checkinStatus = checkinLog?.status === "taken" ? "done" : checkinLog?.status === "skipped" ? "missed" : "pending";
+      const slots = Array.isArray(checkin.time_slot) && checkin.time_slot.length > 0 ? checkin.time_slot : ["08:00"];
+      slots.forEach((slot: string) => {
+        const hour = parseInt(slot.split(":")[0] || "8");
+        const minute = parseInt(slot.split(":")[1] || "0");
+        const isPM = hour >= 12;
+        const display12 = `${hour > 12 ? hour - 12 : hour || 12}:${String(minute).padStart(2, "0")} ${isPM ? "PM" : "AM"}`;
+        items.push({
+          time: display12,
+          sortTime: hour * 100 + minute,
+          label: checkin.name || "Daily check-in",
+          type: "checkin",
+          status: checkinStatus,
+          icon: ClipboardCheck,
+        });
+      });
     });
 
     return items.sort((a, b) => a.sortTime - b.sortTime);
-  }, [medicines, todayLogs, tasks, checkins, caredOneId, hasCheckinToday, today]);
+  }, [medicines, todayLogs, tasks, checkins, todayCheckinLogs, caredOneId, today]);
 
   const statusColor = {
     done: "bg-success/10 text-success border-success/30",

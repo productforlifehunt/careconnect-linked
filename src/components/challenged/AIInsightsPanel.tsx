@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Brain, RefreshCw, AlertTriangle, Lightbulb, Shield } from "lucide-react";
 import { invokeAI, parseAIJson } from "@/lib/ai-service";
+import { useTranslation } from "react-i18next";
 
 interface Insight {
   title: string;
@@ -19,6 +20,7 @@ interface AIInsightsPanelProps {
 }
 
 export function AIInsightsPanel({ caredOnes, tasks, bookings }: AIInsightsPanelProps) {
+  const { t } = useTranslation();
   const [insights, setInsights] = useState<Insight[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,10 +44,10 @@ export function AIInsightsPanel({ caredOnes, tasks, bookings }: AIInsightsPanelP
       if (parsed && Array.isArray(parsed)) {
         setInsights(parsed);
       } else {
-        setError("Could not parse insights.");
+        setError(t("common.errorOccurred"));
       }
     } catch (err: any) {
-      setError(err.message || "Failed to generate insights");
+      setError(err.message || t("common.errorOccurred"));
     } finally {
       setLoading(false);
     }
@@ -68,11 +70,11 @@ export function AIInsightsPanel({ caredOnes, tasks, bookings }: AIInsightsPanelP
       <CardHeader className="flex-row items-center justify-between pb-2">
         <CardTitle className="text-base flex items-center gap-2">
           <Brain className="h-4 w-4 text-primary" />
-          AI Care Insights
+          {t("ai.aiCareInsights")}
         </CardTitle>
         <Button variant="ghost" size="sm" onClick={generateInsights} disabled={loading} className="h-7 text-xs">
           <RefreshCw className={`h-3 w-3 mr-1 ${loading ? "animate-spin" : ""}`} />
-          Refresh
+          {t("common.refresh")}
         </Button>
       </CardHeader>
       <CardContent className="space-y-2">
@@ -111,7 +113,7 @@ export function AIInsightsPanel({ caredOnes, tasks, bookings }: AIInsightsPanelP
           })
         ) : (
           <p className="text-xs text-muted-foreground text-center py-2">
-            Add care recipients to get AI insights
+            {t("ai.addRecipientsForInsights")}
           </p>
         )}
       </CardContent>

@@ -7,27 +7,20 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, DollarSign, Briefcase, Shield, Phone, Eye, EyeOff, X } from "lucide-react";
+import { MapPin, DollarSign, Briefcase, Shield, Phone, Eye, EyeOff, X, Store, ShoppingBag } from "lucide-react";
 import { useMyProfile, useUpdateProfile } from "@/hooks/use-care-data";
+import { useSyncProviderToWooCommerce, useProviderWooCommerceProduct } from "@/hooks/use-woocommerce";
 import { useToast } from "@/hooks/use-toast";
-
-const ALL_SPECIALTIES = [
-  "Elder Care", "Child Care", "Special Needs", "Nursing Care", "Companionship",
-  "Respite Care", "Physical Therapy", "Dementia Care", "Palliative Support",
-  "Post-Surgery Care", "Meal Preparation", "Transportation", "Medication Management",
-  "Wound Care", "Mobility Support", "Tutoring", "Overnight Care",
-];
-
-const ALL_CERTIFICATIONS = [
-  "CNA", "RN", "LPN", "CPR", "First Aid", "Home Health Aide",
-  "Child Development Associate", "Special Ed Certificate", "PTA License",
-  "BSN", "IV Certification", "Wound Care", "Alzheimer's Care", "Hospice Care", "Food Safety",
-];
+import { useTranslation } from "react-i18next";
+import { ALL_SPECIALTIES, ALL_CERTIFICATIONS, getSpecialtyKey, getCertificationKey } from "@/lib/specialty-i18n";
 
 export default function ProviderSettingsTab() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { data: profile } = useMyProfile();
   const updateProfile = useUpdateProfile();
+  const syncToWooCommerce = useSyncProviderToWooCommerce();
+  const { data: wcProduct, isLoading: wcLoading } = useProviderWooCommerceProduct();
 
   const [location, setLocation] = useState("");
   const [hourlyRate, setHourlyRate] = useState("");
@@ -57,9 +50,10 @@ export default function ProviderSettingsTab() {
     setter(list.includes(item) ? list.filter(x => x !== item) : [...list, item]);
   };
 
-  const handleSave = () => {
-    updateProfile.mutate(
-      {
+  const handleSave = async () => {
+    try {
+      // Save profile via WordPress
+      await updateProfile.mutateAsync({
         location,
         hourly_rate: parseFloat(hourlyRate) || 0,
         bio,
@@ -68,12 +62,23 @@ export default function ProviderSettingsTab() {
         specialty: specialties,
         certification: certifications,
         provider_is_active: isActive,
-      },
-      {
-        onSuccess: () => toast({ title: "Profile updated" }),
-        onError: (e: any) => toast({ title: "Update failed", description: e.message, variant: "destructive" }),
-      }
-    );
+      });
+
+      // Then sync to WooCommerce/Dokan
+      await syncToWooCommerce.mutateAsync({
+        hourlyRate: parseFloat(hourlyRate) || 0,
+        bio,
+        specialties,
+        certifications,
+        yearsOfExperience: parseInt(experience) || 0,
+        location,
+        providerIsActive: isActive,
+      });
+
+      toast({ title: t("profile.profileUpdated"), description: "Profile synced to marketplace" });
+    } catch (e: any) {
+      toast({ title: t("profile.updateFailed"), description: e.message, variant: "destructive" });
+    }
   };
 
   return (
@@ -85,9 +90,9 @@ export default function ProviderSettingsTab() {
             <div className="flex items-center gap-3">
               {isActive ? <Eye className="h-5 w-5 text-success" /> : <EyeOff className="h-5 w-5 text-muted-foreground" />}
               <div>
-                <p className="font-semibold text-foreground">Marketplace Visibility</p>
+                <p className="font-semibold text-foreground">{t("providerDash.marketplaceVisibility")}</p>
                 <p className="text-sm text-muted-foreground">
-                  {isActive ? "You are visible and bookable on the marketplace" : "You are hidden from search results"}
+                  {isActive ? t("providerDash.visibleBookable") : t("providerDash.hiddenFromSearch")}
                 </p>
               </div>
             </div>
@@ -96,47 +101,84 @@ export default function ProviderSettingsTab() {
         </CardContent>
       </Card>
 
+      {/* WooCommerce/Dokan Integration Status */}
+      <Card className="border-transparent card-elevated">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Store className="h-5 w-5" /> {t("providerDash.marketplaceIntegration") || "Marketplace Integration"}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <ShoppingBag className="h-5 w-5 text-primary" />
+              <div>
+                <p className="font-semibold text-foreground">
+                  {wcLoading ? "Checking..." : wcProduct ? t("providerDash.productListed") || "Service Product Listed" : t("providerDash.productNotListed") || "Service Product Not Listed"}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {wcProduct 
+                    ? `${t("providerDash.productId") || "Product ID"}: ${wcProduct.id}` 
+                    : t("providerDash.saveToList") || "Save profile to list your service on the marketplace"}
+                </p>
+              </div>
+            </div>
+            <Badge variant={wcProduct ? "default" : "secondary"}>
+              {wcProduct ? t("providerDash.listed") || "Listed" : t("providerDash.notListed") || "Not Listed"}
+            </Badge>
+          </div>
+          
+          {wcProduct && (
+            <div className="text-sm text-muted-foreground space-y-1">
+              <p><strong>{t("providerDash.productName") || "Product Name"}:</strong> {wcProduct.name}</p>
+              <p><strong>{t("providerDash.price") || "Price"}:</strong> ${wcProduct.regular_price}/hour</p>
+              <p><strong>{t("providerDash.status") || "Status"}:</strong> {wcProduct.status === 'publish' ? 'Published' : 'Draft'}</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Basic Info */}
       <Card className="border-transparent card-elevated">
-        <CardHeader><CardTitle className="flex items-center gap-2"><Briefcase className="h-5 w-5" /> Basic Info</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="flex items-center gap-2"><Briefcase className="h-5 w-5" /> {t("providerDash.basicInfo")}</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <Label className="flex items-center gap-1.5 mb-1.5"><MapPin className="h-3.5 w-3.5" /> Location</Label>
+              <Label className="flex items-center gap-1.5 mb-1.5"><MapPin className="h-3.5 w-3.5" /> {t("common.location")}</Label>
               <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. San Francisco, CA" />
             </div>
             <div>
-              <Label className="flex items-center gap-1.5 mb-1.5"><DollarSign className="h-3.5 w-3.5" /> Hourly Rate ($)</Label>
+              <Label className="flex items-center gap-1.5 mb-1.5"><DollarSign className="h-3.5 w-3.5" /> {t("becomeCaregiver.hourlyRateDollar")}</Label>
               <Input type="number" min="0" step="5" value={hourlyRate} onChange={e => setHourlyRate(e.target.value)} placeholder="e.g. 35" />
             </div>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <Label className="flex items-center gap-1.5 mb-1.5"><Phone className="h-3.5 w-3.5" /> Phone Number</Label>
+              <Label className="flex items-center gap-1.5 mb-1.5"><Phone className="h-3.5 w-3.5" /> {t("providerDash.phoneNumber")}</Label>
               <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="e.g. +1 (555) 123-4567" />
             </div>
             <div>
-              <Label className="mb-1.5">Years of Experience</Label>
+              <Label className="mb-1.5">{t("becomeCaregiver.yearsOfExperience")}</Label>
               <Select value={experience} onValueChange={setExperience}>
-                <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t("common.selectOption")} /></SelectTrigger>
                 <SelectContent>
                   {["1", "2", "3", "4", "5", "7", "10", "15", "20+"].map(y => (
-                    <SelectItem key={y} value={y}>{y} {y === "20+" ? "" : "years"}</SelectItem>
+                    <SelectItem key={y} value={y}>{y} {y === "20+" ? "" : t("common.yearsExp")}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
           <div>
-            <Label className="mb-1.5">Bio / About Me</Label>
-            <Textarea value={bio} onChange={e => setBio(e.target.value)} placeholder="Tell families about yourself, your experience, and why you love caregiving..." rows={4} />
+            <Label className="mb-1.5">{t("providerDash.bioAboutMe")}</Label>
+            <Textarea value={bio} onChange={e => setBio(e.target.value)} placeholder={t("providerDash.bioPlaceholder")} rows={4} />
           </div>
         </CardContent>
       </Card>
 
       {/* Specialties */}
       <Card className="border-transparent card-elevated">
-        <CardHeader><CardTitle className="flex items-center gap-2"><Shield className="h-5 w-5" /> Specialties</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="flex items-center gap-2"><Shield className="h-5 w-5" /> {t("becomeCaregiver.specialties")}</CardTitle></CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
             {ALL_SPECIALTIES.map(s => (
@@ -146,7 +188,7 @@ export default function ProviderSettingsTab() {
                 className="cursor-pointer text-xs py-1 px-2.5"
                 onClick={() => toggleItem(specialties, s, setSpecialties)}
               >
-                {s}
+                {t(getSpecialtyKey(s))}
                 {specialties.includes(s) && <X className="h-3 w-3 ml-1" />}
               </Badge>
             ))}
@@ -156,7 +198,7 @@ export default function ProviderSettingsTab() {
 
       {/* Certifications */}
       <Card className="border-transparent card-elevated">
-        <CardHeader><CardTitle className="flex items-center gap-2"><Shield className="h-5 w-5" /> Certifications</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="flex items-center gap-2"><Shield className="h-5 w-5" /> {t("becomeCaregiver.certifications")}</CardTitle></CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
             {ALL_CERTIFICATIONS.map(c => (
@@ -166,7 +208,7 @@ export default function ProviderSettingsTab() {
                 className="cursor-pointer text-xs py-1 px-2.5"
                 onClick={() => toggleItem(certifications, c, setCertifications)}
               >
-                {c}
+                {t(getCertificationKey(c))}
                 {certifications.includes(c) && <X className="h-3 w-3 ml-1" />}
               </Badge>
             ))}
@@ -175,8 +217,15 @@ export default function ProviderSettingsTab() {
       </Card>
 
       {/* Save */}
-      <Button variant="coral" className="w-full" onClick={handleSave} disabled={updateProfile.isPending}>
-        {updateProfile.isPending ? "Saving..." : "Save Profile Settings"}
+      <Button 
+        variant="coral" 
+        className="w-full" 
+        onClick={handleSave} 
+        disabled={updateProfile.isPending || syncToWooCommerce.isPending}
+      >
+        {updateProfile.isPending || syncToWooCommerce.isPending 
+          ? t("common.saving") 
+          : t("providerDash.saveProfileSettings")}
       </Button>
     </div>
   );

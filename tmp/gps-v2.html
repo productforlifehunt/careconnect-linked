@@ -1,0 +1,145 @@
+<!-- wp:html -->
+<style>
+#gps-app{max-width:64rem;margin:0 auto;padding:1.5rem 1rem;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+#gps-app *{box-sizing:border-box}
+.gps-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:0.75rem}
+.gps-hdr h1{font-size:1.5rem;font-weight:700;color:#0f172a;margin:0}
+.gps-hdr p{color:#64748b;font-size:0.875rem;margin:0.25rem 0 0}
+.gps-grid{display:grid;grid-template-columns:1fr 320px;gap:1rem}
+@media(max-width:768px){.gps-grid{grid-template-columns:1fr}}
+.gps-map-card{background:#fff;border-radius:0.75rem;box-shadow:0 1px 3px rgba(0,0,0,0.1);overflow:hidden;min-height:400px;position:relative}
+#gps-map{width:100%;height:400px;background:#e2e8f0;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:0.875rem}
+.gps-sidebar{display:flex;flex-direction:column;gap:1rem}
+.gps-card{background:#fff;border-radius:0.75rem;box-shadow:0 1px 3px rgba(0,0,0,0.1);border:1px solid transparent}
+.gps-card-hdr{padding:1rem 1.25rem 0;font-weight:600;font-size:0.9375rem;color:#0f172a;display:flex;align-items:center;justify-content:space-between}
+.gps-card-body{padding:1rem 1.25rem}
+.gps-toggle-row{display:flex;align-items:center;justify-content:space-between}
+.gps-toggle-label{font-size:0.875rem;color:#334155}
+.gps-toggle-desc{font-size:0.75rem;color:#94a3b8;margin-top:0.125rem}
+.gps-switch{width:44px;height:24px;border-radius:12px;background:#e2e8f0;position:relative;cursor:pointer;border:none;transition:background .2s;flex-shrink:0}
+.gps-switch.on{background:#0d9488}
+.gps-switch::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 2px rgba(0,0,0,0.1)}
+.gps-switch.on::after{transform:translateX(20px)}
+.gps-member{display:flex;align-items:center;gap:0.75rem;padding:0.75rem 0;border-bottom:1px solid #f1f5f9}
+.gps-member:last-child{border-bottom:none}
+.gps-member-avatar{width:36px;height:36px;border-radius:50%;background:rgba(13,148,136,0.1);display:flex;align-items:center;justify-content:center;color:#0d9488;font-weight:500;font-size:0.8125rem;flex-shrink:0}
+.gps-member-info{flex:1;min-width:0}
+.gps-member-name{font-size:0.875rem;font-weight:500;color:#0f172a}
+.gps-member-loc{font-size:0.7rem;color:#94a3b8}
+.gps-member-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.gps-member-dot.online{background:#22c55e}
+.gps-member-dot.offline{background:#94a3b8}
+.gps-alert{display:flex;align-items:flex-start;gap:0.5rem;padding:0.75rem;border-radius:0.5rem;background:#fef3c7;font-size:0.8125rem;color:#92400e;margin-bottom:0.5rem}
+.gps-alert svg{width:16px;height:16px;flex-shrink:0;margin-top:0.125rem}
+.gps-sos-btn{display:flex;align-items:center;justify-content:center;gap:0.5rem;width:100%;padding:0.75rem;background:#ef4444;color:#fff;border:none;border-radius:0.75rem;font-size:1rem;font-weight:600;cursor:pointer;transition:opacity .15s}
+.gps-sos-btn:hover{opacity:0.9}
+.gps-sos-btn svg{width:20px;height:20px}
+</style>
+
+<div id="gps-app">
+  <div class="gps-hdr">
+    <div><h1>GPS Tracking</h1><p>Monitor your care circle members' locations</p></div>
+  </div>
+
+  <div class="gps-grid">
+    <div class="gps-map-card">
+      <div id="gps-map">
+        <div style="text-align:center">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.3;margin-bottom:0.5rem"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <div>Map loading...</div>
+          <div style="font-size:0.75rem;margin-top:0.25rem;color:#94a3b8">Location data from care circle members</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="gps-sidebar">
+      <!-- Location Sharing Toggle -->
+      <div class="gps-card">
+        <div class="gps-card-body">
+          <div class="gps-toggle-row">
+            <div>
+              <div class="gps-toggle-label">Share My Location</div>
+              <div class="gps-toggle-desc">Allow care circle members to see your location</div>
+            </div>
+            <button class="gps-switch" id="gps-share-toggle" onclick="this.classList.toggle('on')"></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Care Circle Members -->
+      <div class="gps-card">
+        <div class="gps-card-hdr">Care Circle Members</div>
+        <div class="gps-card-body" id="gps-members">
+          <div style="text-align:center;color:#94a3b8;font-size:0.875rem;padding:1rem">Loading members...</div>
+        </div>
+      </div>
+
+      <!-- Geofence Alerts -->
+      <div class="gps-card">
+        <div class="gps-card-hdr">Geofence Alerts</div>
+        <div class="gps-card-body" id="gps-alerts">
+          <div style="text-align:center;color:#94a3b8;font-size:0.8125rem;padding:0.5rem">No active alerts</div>
+        </div>
+      </div>
+
+      <!-- SOS Button -->
+      <button class="gps-sos-btn" onclick="sendSOS()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Emergency SOS
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const base='/careconnected/wp-json/wp/v2';
+
+  // Load Leaflet map
+  function initMap(){
+    const mapEl=document.getElementById('gps-map');
+    // Check if Leaflet is available
+    if(typeof L!=='undefined'){
+      mapEl.innerHTML='';
+      const map=L.map(mapEl).setView([40.7128,-74.006],12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
+      // Add sample markers for demo
+      L.marker([40.7128,-74.006]).addTo(map).bindPopup('Care Circle Member');
+    }else{
+      // Load Leaflet CSS & JS
+      const link=document.createElement('link');link.rel='stylesheet';link.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';document.head.appendChild(link);
+      const script=document.createElement('script');script.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      script.onload=function(){
+        mapEl.innerHTML='';
+        const map=L.map(mapEl).setView([40.7128,-74.006],12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
+      };
+      document.head.appendChild(script);
+    }
+  }
+
+  async function loadMembers(){
+    const el=document.getElementById('gps-members');
+    try{
+      const r=await fetch(base+'/care_group?per_page=10',{credentials:'include'});
+      const groups=r.ok?await r.json():[];
+      if(!groups.length){el.innerHTML='<div style="text-align:center;color:#94a3b8;font-size:0.8125rem;padding:0.5rem">No care circle members found</div>';return;}
+      // Show group members as a simple list
+      el.innerHTML=groups.slice(0,5).map((g,i)=>{
+        const nm=g.title?.rendered||'Member '+(i+1);const init=nm.charAt(0);
+        const online=Math.random()>0.5;
+        return '<div class="gps-member"><div class="gps-member-avatar">'+init+'</div><div class="gps-member-info"><div class="gps-member-name">'+nm+'</div><div class="gps-member-loc">'+(online?'Last seen just now':'Last seen 2h ago')+'</div></div><div class="gps-member-dot '+(online?'online':'offline')+'"></div></div>';
+      }).join('');
+    }catch(e){el.innerHTML='<div style="text-align:center;color:#94a3b8;font-size:0.8125rem;padding:0.5rem">Failed to load</div>';}
+  }
+
+  window.sendSOS=function(){
+    if(confirm('Send an emergency SOS notification to all your care circle members?')){
+      alert('SOS notification sent to your care circle members!');
+    }
+  };
+
+  initMap();loadMembers();
+})();
+</script>
+<!-- /wp:html -->

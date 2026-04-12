@@ -1,0 +1,45 @@
+<!-- wp:html -->
+<style>
+#articles70-shell{max-width:48rem;margin:0 auto;padding:1.5rem 1rem;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+#articles70-shell *{box-sizing:border-box}
+#articles70-shell .a70-header{display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;margin-bottom:1.5rem}
+#articles70-shell .a70-header h1{font-size:1.5rem;font-weight:700;color:#0f172a;margin:0}
+#articles70-shell .a70-header p{margin:.25rem 0 0;font-size:.875rem;color:#64748b}
+#articles70-shell .a70-btn{display:inline-flex;align-items:center;gap:.5rem;padding:.5rem 1rem;border:none;border-radius:.5rem;font-size:.875rem;font-weight:500;cursor:pointer;background:#0d9488;color:#fff}
+#articles70-shell .a70-filters{display:flex;gap:.5rem;margin-bottom:1.5rem;flex-wrap:wrap}
+#articles70-shell .a70-filter{padding:.375rem .75rem;border-radius:9999px;font-size:.8125rem;font-weight:500;cursor:pointer;border:1px solid #e2e8f0;background:#fff;color:#64748b}
+#articles70-shell .a70-filter.active{background:#0d9488;color:#fff;border-color:#0d9488}
+</style>
+<div id="articles70-shell">
+  <div class="a70-header">
+    <div><h1>Articles</h1><p>Read and share care knowledge</p></div>
+    <button class="a70-btn" type="button" id="articles70-new-btn">Write Article</button>
+  </div>
+  <div class="a70-filters">
+    <button class="a70-filter active" data-filter="all" type="button">All</button>
+    <button class="a70-filter" data-filter="mine" type="button">My Articles</button>
+    <button class="a70-filter" data-filter="user" type="button">User</button>
+    <button class="a70-filter" data-filter="expert" type="button">Expert</button>
+    <button class="a70-filter" data-filter="official" type="button">Official</button>
+  </div>
+</div>
+<script>
+(function(){
+  const base='/careconnected/wp-json/wp/v2';
+  const state={uid:null,filter:'all',items:[],listeners:{}};
+  function emit(name){(state.listeners[name]||[]).forEach(fn=>{try{fn(state)}catch(e){}})}
+  function on(name,fn){state.listeners[name]=state.listeners[name]||[];state.listeners[name].push(fn);return()=>state.listeners[name]=(state.listeners[name]||[]).filter(x=>x!==fn)}
+  async function getUid(){if(state.uid)return state.uid;try{const r=await fetch(base+'/users/me',{credentials:'include'});if(!r.ok)return null;state.uid=(await r.json()).id;return state.uid}catch(e){return null}}
+  function setFilter(v){state.filter=v;document.querySelectorAll('#articles70-shell .a70-filter').forEach(btn=>btn.classList.toggle('active',btn.dataset.filter===v));emit('filter')}
+  function nonce(){return document.querySelector('meta[name="wp-nonce"]')?.content||''}
+  async function load(){await getUid();try{const r=await fetch(base+'/care_article?per_page=50&orderby=date&order=desc&_embed',{credentials:'include'});state.items=r.ok?await r.json():[]}catch(e){state.items=[]}emit('data')}
+  async function save(id,payload){const url=id?base+'/care_article/'+id:base+'/care_article';await fetch(url,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json','X-WP-Nonce':nonce()},body:JSON.stringify(payload)});await load()}
+  async function remove(id){await fetch(base+'/care_article/'+id+'?force=true',{method:'DELETE',credentials:'include',headers:{'X-WP-Nonce':nonce()}});await load()}
+  window.__articles70={state,on,emit,setFilter,load,save,remove,openModal(detail){window.dispatchEvent(new CustomEvent('articles70:modal-open',{detail}))}};
+  document.querySelectorAll('#articles70-shell .a70-filter').forEach(btn=>btn.addEventListener('click',()=>setFilter(btn.dataset.filter)));
+  document.getElementById('articles70-new-btn').addEventListener('click',()=>window.__articles70.openModal(null));
+  setFilter('all');
+  load();
+})();
+</script>
+<!-- /wp:html -->

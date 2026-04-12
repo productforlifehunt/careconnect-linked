@@ -1,0 +1,37 @@
+<!-- wp:html -->
+<style>
+#profile70-shell{max-width:48rem;margin:0 auto;padding:1.5rem 1rem;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+#profile70-shell *{box-sizing:border-box}
+#profile70-shell h1{font-size:1.5rem;font-weight:700;color:#0f172a;margin:0 0 1.5rem}
+#profile70-shell .p70-tabs{display:flex;gap:0;background:#f1f5f9;border-radius:.5rem;padding:.25rem;margin-bottom:1.5rem;width:fit-content}
+#profile70-shell .p70-tab{display:inline-flex;align-items:center;gap:.5rem;padding:.5rem 1rem;border-radius:.375rem;font-size:.8125rem;font-weight:500;cursor:pointer;border:none;background:transparent;color:#64748b}
+#profile70-shell .p70-tab.active{background:#fff;color:#0f172a;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+#profile70-shell .p70-tab svg{width:16px;height:16px}
+.p70-panel{display:none}
+.p70-panel.active{display:block}
+</style>
+<div id="profile70-shell">
+  <h1>My Profile</h1>
+  <div class="p70-tabs">
+    <button class="p70-tab active" data-tab="personal" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> Personal</button>
+    <button class="p70-tab" data-tab="notifications" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg> Notifications</button>
+    <button class="p70-tab" data-tab="privacy" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg> Privacy</button>
+  </div>
+</div>
+<script>
+(function(){
+  const base='/careconnected/wp-json/wp/v2';
+  const state={tab:'personal',user:null,listeners:{}};
+  function emit(name){(state.listeners[name]||[]).forEach(fn=>{try{fn(state)}catch(e){}})}
+  function on(name,fn){state.listeners[name]=state.listeners[name]||[];state.listeners[name].push(fn);return()=>state.listeners[name]=(state.listeners[name]||[]).filter(x=>x!==fn)}
+  function setTab(tab){state.tab=tab;document.querySelectorAll('#profile70-shell .p70-tab').forEach(btn=>btn.classList.toggle('active',btn.dataset.tab===tab));document.querySelectorAll('.p70-panel').forEach(p=>p.classList.toggle('active',p.dataset-panel===tab));emit('tab')}
+  async function load(){try{const r=await fetch(base+'/users/me?context=edit',{credentials:'include'});state.user=r.ok?await r.json():null}catch(e){state.user=null}emit('data')}
+  function nonce(){return document.querySelector('meta[name="wp-nonce"]')?.content||''}
+  async function save(payload){await fetch(base+'/users/me',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json','X-WP-Nonce':nonce()},body:JSON.stringify(payload)});await load()}
+  window.__profile70={state,on,emit,setTab,load,save};
+  document.querySelectorAll('#profile70-shell .p70-tab').forEach(btn=>btn.addEventListener('click',()=>setTab(btn.dataset.tab)));
+  setTab('personal');
+  load();
+})();
+</script>
+<!-- /wp:html -->

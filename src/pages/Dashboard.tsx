@@ -151,8 +151,8 @@ export default function Dashboard() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {caredOnes.map((co: any) => (
               <PatientSummaryCard
-                key={co.cared_one_id}
-                caredOneId={co.cared_one_id}
+                key={co.user_id}
+                caredOneId={co.user_id}
                 name={co.cared_one?.full_name || co.cared_one?.first_name || site.caredOneSingular}
                 avatarUrl={co.cared_one?.avatar_url}
                 relationship={co.relationship}
@@ -166,7 +166,7 @@ export default function Dashboard() {
       <div className="grid lg:grid-cols-2 gap-6">
         {show("dementia-stage") && firstCaredOne && (
           <DementiaStageSelector
-            caredOneId={firstCaredOne.cared_one_id}
+            caredOneId={firstCaredOne.user_id}
             caredOneName={firstCaredOne.cared_one?.full_name || firstCaredOne.cared_one?.first_name || site.caredOneSingular}
             currentStage={firstCaredOne.cared_one?.dementia_stage}
           />
@@ -178,14 +178,14 @@ export default function Dashboard() {
 
         {show("daily-timeline") && firstCaredOne && (
           <DailyTimeline
-            caredOneId={firstCaredOne.cared_one_id}
+            caredOneId={firstCaredOne.user_id}
             caredOneName={firstCaredOne.cared_one?.full_name || firstCaredOne.cared_one?.first_name || site.caredOneSingular}
           />
         )}
 
         {show("symptom-tracker") && firstCaredOne && (
           <SymptomTracker
-            caredOneId={firstCaredOne.cared_one_id}
+            caredOneId={firstCaredOne.user_id}
             caredOneName={firstCaredOne.cared_one?.full_name || firstCaredOne.cared_one?.first_name || site.caredOneSingular}
           />
         )}

@@ -27,25 +27,9 @@ import {
   Bell,
   UserPlus,
   User,
+  Newspaper,
+  ShoppingCart,
 } from "lucide-react";
-
-const publicItems = [
-  { title: "Home", url: "/", icon: Home },
-  { titleKey: "findCare" as const, url: "/search", icon: Search },
-  { title: "How It Works", url: "/how-it-works", icon: HelpCircle },
-  { title: "Become a Caregiver", url: "/become-caregiver", icon: UserPlus },
-];
-
-const authItems = [
-  { titleKey: "dashboard" as const, url: "/dashboard", icon: LayoutDashboard },
-  { title: "My Bookings", url: "/bookings", icon: CalendarDays },
-  { titleKey: "careGroups" as const, url: "/care-circle", icon: Users },
-  { title: "GPS Tracking", url: "/gps-tracking", icon: MapPin },
-  { title: "Messages", url: "/messages", icon: MessageSquare },
-  { title: "Notifications", url: "/notifications", icon: Bell },
-  { title: "Favorites", url: "/favorites", icon: Heart },
-  { title: "My Profile", url: "/profile", icon: User },
-];
 
 export function AppSidebar() {
   const { isAuthenticated } = useAuth();
@@ -54,7 +38,26 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const { t } = useTranslation();
 
-  const getTitle = (item: any) => item.titleKey ? (site.navLabels as any)[item.titleKey] : item.title;
+  const publicItems = [
+    { title: t("nav.dashboard"), url: "/", icon: Home },
+    { title: t(site.id === "challenged" ? "nav.findHelp" : "nav.findCare"), url: "/search", icon: Search },
+    { title: t("nav.community"), url: "/community", icon: Newspaper },
+    { title: t("nav.articles"), url: "/articles", icon: Newspaper },
+    { title: t("nav.howItWorks"), url: "/how-it-works", icon: HelpCircle },
+    { title: t("nav.becomeCaregiver"), url: "/become-caregiver", icon: UserPlus },
+  ];
+
+  const authItems = [
+    { title: t("nav.dashboard"), url: "/dashboard", icon: LayoutDashboard },
+    { title: t("nav.myBookings"), url: "/bookings", icon: CalendarDays },
+    { title: t(site.id === "challenged" ? "nav.careTeams" : "nav.careGroups"), url: "/care-circle", icon: Users },
+    { title: t("nav.gpsTracking"), url: "/gps-tracking", icon: MapPin },
+    { title: t("nav.messages"), url: "/messages", icon: MessageSquare },
+    { title: t("nav.notifications"), url: "/notifications", icon: Bell },
+    { title: t("nav.favorites"), url: "/favorites", icon: Heart },
+    { title: "Cart", url: "/cart", icon: ShoppingCart },
+    { title: t("nav.myProfile"), url: "/profile", icon: User },
+  ];
 
   return (
     <Sidebar collapsible="icon" className="border-r">
@@ -64,7 +67,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {publicItems.map((item) => {
-                const title = getTitle(item);
+                const title = item.title;
                 return (
                 <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton asChild tooltip={title}>
@@ -86,7 +89,7 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {authItems.map((item) => {
-                  const title = getTitle(item);
+                  const title = item.title;
                   return (
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton asChild tooltip={title}>

@@ -1,0 +1,41 @@
+<!-- wp:html -->
+<style>
+#provider70-shell{max-width:64rem;margin:0 auto;padding:1.5rem 1rem;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+#provider70-shell *{box-sizing:border-box}
+#provider70-shell .pv70-header{margin-bottom:1.5rem}
+#provider70-shell .pv70-header h1{font-size:1.5rem;font-weight:700;color:#0f172a;margin:0}
+#provider70-shell .pv70-header p{margin:.25rem 0 0;font-size:.875rem;color:#64748b}
+#provider70-shell .pv70-tabs{display:flex;gap:0;background:#f1f5f9;border-radius:.5rem;padding:.25rem;margin-bottom:1.5rem;width:fit-content}
+#provider70-shell .pv70-tab{padding:.5rem 1rem;border:none;border-radius:.375rem;background:transparent;color:#64748b;font-size:.8125rem;font-weight:500;cursor:pointer;white-space:nowrap}
+#provider70-shell .pv70-tab.active{background:#fff;color:#0f172a;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.pv70-panel{display:none}
+.pv70-panel.active{display:block}
+</style>
+<div id="provider70-shell">
+  <div class="pv70-header">
+    <h1>Provider Dashboard</h1>
+    <p>Manage your care services</p>
+  </div>
+  <div class="pv70-tabs">
+    <button class="pv70-tab active" data-tab="requests" type="button">Booking Requests</button>
+    <button class="pv70-tab" data-tab="schedule" type="button">Schedule</button>
+    <button class="pv70-tab" data-tab="earnings" type="button">Earnings</button>
+  </div>
+</div>
+<script>
+(function(){
+  const base='/careconnected/wp-json/wp/v2';
+  const state={tab:'requests',bookings:[],listeners:{}};
+  function emit(name){(state.listeners[name]||[]).forEach(fn=>{try{fn(state)}catch(e){}})}
+  function on(name,fn){state.listeners[name]=state.listeners[name]||[];state.listeners[name].push(fn);return()=>state.listeners[name]=(state.listeners[name]||[]).filter(x=>x!==fn)}
+  function setTab(tab){state.tab=tab;document.querySelectorAll('#provider70-shell .pv70-tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));document.querySelectorAll('.pv70-panel').forEach(p=>p.classList.toggle('active',p.dataset-panel===tab));emit('tab')}
+  function nonce(){return document.querySelector('meta[name="wp-nonce"]')?.content||''}
+  async function load(){try{const r=await fetch(base+'/wc_booking?per_page=20&orderby=date&order=desc',{credentials:'include'});state.bookings=r.ok?await r.json():[]}catch(e){state.bookings=[]}emit('data')}
+  async function updateBooking(id,payload){await fetch(base+'/wc_booking/'+id,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json','X-WP-Nonce':nonce()},body:JSON.stringify(payload)});await load()}
+  window.__provider70={state,on,emit,setTab,load,updateBooking};
+  document.querySelectorAll('#provider70-shell .pv70-tab').forEach(btn=>btn.addEventListener('click',()=>setTab(btn.dataset.tab)));
+  setTab('requests');
+  load();
+})();
+</script>
+<!-- /wp:html -->

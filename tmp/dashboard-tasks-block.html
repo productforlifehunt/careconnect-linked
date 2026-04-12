@@ -1,0 +1,100 @@
+<!-- wp:html -->
+<div style="background: #fff; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 1.5rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <h2 style="font-size: 1.125rem; font-weight: 600; margin: 0;">Pending Care Tasks</h2>
+    <a href="/careconnected/care-circle/" style="font-size: 0.875rem; color: #0d9488; text-decoration: none;">View All →</a>
+  </div>
+  
+  <div id="tasks-list" style="min-height: 100px;">
+    <div style="text-align: center; padding: 2rem; color: #9ca3af;">
+      <div style="font-size: 2rem; margin-bottom: 0.5rem;">⏳</div>
+      <div>Loading tasks...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const baseUrl = '/careconnected/wp-json/wp/v2';
+  
+  async function getCurrentUserId() {
+    try {
+      const res = await fetch('/careconnected/wp-json/wp/v2/users/me', {
+        credentials: 'include'
+      });
+      if (!res.ok) return null;
+      const user = await res.json();
+      return user.id;
+    } catch (e) {
+      return null;
+    }
+  }
+  
+  function formatDate(dateStr) {
+    if (!dateStr) return 'No due date';
+    const date = new Date(dateStr);
+    const options = { month: 'short', day: 'numeric' };
+    return date.toLocaleDateString('en-US', options);
+  }
+  
+  async function loadTasks() {
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      document.getElementById('tasks-list').innerHTML = '<div style="text-align: center; padding: 2rem; color: #9ca3af;"><div style="font-size: 2rem; margin-bottom: 0.5rem;">🔒</div><div>Please log in to view tasks</div></div>';
+      return;
+    }
+    
+    try {
+      const res = await fetch(`${baseUrl}/care_task?author=${userId}&per_page=5&orderby=date&order=desc&_embed`, {
+        credentials: 'include'
+      });
+      
+      if (!res.ok) throw new Error('Failed to fetch tasks');
+      
+      const tasks = await res.json();
+      
+      if (tasks.length === 0) {
+        document.getElementById('tasks-list').innerHTML = '<div style="text-align: center; padding: 2rem; color: #9ca3af;"><div style="font-size: 2rem; margin-bottom: 0.5rem;">✅</div><div>No pending tasks</div></div>';
+        return;
+      }
+      
+      const html = tasks.map(task => {
+        const title = task.title?.rendered || 'Task';
+        const dueDate = task.meta?.due_date || task.date;
+        const priority = task.meta?.priority || 'medium';
+        const priorityColors = {
+          'high': '#ef4444',
+          'medium': '#f59e0b',
+          'low': '#22c55e'
+        };
+        const priorityColor = priorityColors[priority] || '#6b7280';
+        
+        return `
+          <div style="padding: 1rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
+            <div style="flex: 1;">
+              <div style="font-weight: 500; color: #111827;">${title}</div>
+              <div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.25rem;">Due: ${formatDate(dueDate)}</div>
+            </div>
+            <div style="background: ${priorityColor}; color: white; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500;">
+              ${priority}
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      document.getElementById('tasks-list').innerHTML = html;
+      
+    } catch (e) {
+      console.error('Failed to load tasks:', e);
+      document.getElementById('tasks-list').innerHTML = '<div style="text-align: center; padding: 2rem; color: #ef4444;"><div>Failed to load tasks</div></div>';
+    }
+  }
+  
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadTasks);
+  } else {
+    loadTasks();
+  }
+})();
+</script>
+<!-- /wp:html -->

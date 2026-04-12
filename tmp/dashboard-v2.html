@@ -1,0 +1,233 @@
+<!-- wp:html -->
+<style>
+#dash-app{max-width:72rem;margin:0 auto;padding:1.5rem 1rem;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+#dash-app *{box-sizing:border-box}
+.da-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.5rem;gap:1rem}
+.da-header h1{font-size:1.5rem;font-weight:700;color:#0f172a;margin:0}
+.da-header p{color:#64748b;font-size:0.875rem;margin:0.25rem 0 0}
+.da-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;margin-bottom:1.5rem}
+@media(min-width:1024px){.da-stats{grid-template-columns:repeat(4,1fr)}}
+.da-stat-card{background:#fff;border-radius:0.75rem;padding:1rem;box-shadow:0 1px 3px 0 rgba(0,0,0,.1),0 1px 2px -1px rgba(0,0,0,.1);border:1px solid transparent}
+.da-stat-card .da-sc-inner{display:flex;align-items:center;gap:0.75rem}
+.da-stat-card .da-sc-icon{width:20px;height:20px;flex-shrink:0}
+.da-stat-card .da-sc-val{font-size:1.5rem;font-weight:700;color:#0f172a;line-height:1.2}
+.da-stat-card .da-sc-lbl{font-size:0.75rem;color:#64748b}
+.da-grid{display:grid;gap:1.5rem;margin-bottom:1.5rem}
+@media(min-width:1024px){.da-grid{grid-template-columns:1fr 1fr}}
+.da-card{background:#fff;border-radius:0.75rem;box-shadow:0 1px 3px 0 rgba(0,0,0,.1),0 1px 2px -1px rgba(0,0,0,.1);border:1px solid transparent;overflow:hidden}
+.da-card-hdr{display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem 0.75rem}
+.da-card-hdr h3{font-size:1.125rem;font-weight:600;margin:0;color:#0f172a}
+.da-card-hdr a{font-size:0.8rem;color:#64748b;text-decoration:none;display:flex;align-items:center;gap:0.25rem;cursor:pointer}
+.da-card-hdr a:hover{color:#0d9488}
+.da-card-body{padding:0 1.5rem 1.25rem}
+.da-booking-row,.da-task-row{display:flex;align-items:center;gap:0.75rem;padding:0.75rem;border-radius:0.5rem;background:#f8fafc;margin-bottom:0.5rem}
+.da-booking-date{text-align:center;flex-shrink:0;min-width:2.5rem}
+.da-booking-date .da-bd-month{font-size:0.7rem;color:#64748b;text-transform:uppercase}
+.da-booking-date .da-bd-day{font-size:1.125rem;font-weight:700;color:#0f172a;line-height:1.2}
+.da-booking-info{flex:1;min-width:0}
+.da-booking-info .da-bi-name{font-weight:500;font-size:0.875rem;color:#0f172a}
+.da-booking-info .da-bi-detail{font-size:0.75rem;color:#64748b}
+.da-badge{display:inline-block;padding:0.125rem 0.5rem;border-radius:9999px;font-size:0.7rem;font-weight:500;white-space:nowrap}
+.da-badge-confirmed{background:#dcfce7;color:#166534}
+.da-badge-pending{background:#fef3c7;color:#92400e}
+.da-badge-cancelled{background:#fee2e2;color:#991b1b}
+.da-badge-high,.da-badge-urgent{background:rgba(239,68,68,0.1);color:#ef4444}
+.da-badge-medium{background:rgba(245,158,11,0.1);color:#d97706}
+.da-badge-low{background:#f1f5f9;color:#64748b}
+.da-task-icon{width:16px;height:16px;flex-shrink:0;color:#94a3b8}
+.da-task-icon.done{color:#22c55e}
+.da-task-info{flex:1;min-width:0}
+.da-task-info .da-ti-name{font-weight:500;font-size:0.875rem;color:#0f172a}
+.da-task-info .da-ti-detail{font-size:0.75rem;color:#64748b}
+.da-qa{grid-column:1/-1}
+.da-qa-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:0.75rem}
+@media(min-width:640px){.da-qa-grid{grid-template-columns:repeat(4,1fr)}}
+.da-qa-btn{display:flex;flex-direction:column;align-items:center;gap:0.5rem;padding:1rem;border:1px solid #e2e8f0;border-radius:0.75rem;background:#fff;cursor:pointer;text-decoration:none;transition:border-color .15s,box-shadow .15s}
+.da-qa-btn:hover{border-color:#0d9488;box-shadow:0 0 0 1px #0d9488}
+.da-qa-btn svg{width:20px;height:20px;color:#0d9488}
+.da-qa-btn span{font-size:0.75rem;color:#334155;text-align:center}
+.da-empty{text-align:center;padding:1.5rem;color:#94a3b8;font-size:0.875rem}
+.da-loved{margin-bottom:1.5rem}
+.da-loved h2{font-size:1.125rem;font-weight:700;color:#0f172a;margin:0 0 0.75rem}
+.da-loved-grid{display:grid;gap:1rem;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+.da-loved-card{background:#fff;border-radius:0.75rem;padding:1rem;box-shadow:0 1px 3px 0 rgba(0,0,0,.1);display:flex;align-items:center;gap:0.75rem;cursor:pointer;transition:box-shadow .15s;border:1px solid transparent}
+.da-loved-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.1)}
+.da-loved-avatar{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.125rem;flex-shrink:0}
+.da-loved-name{font-weight:600;font-size:0.875rem;color:#0f172a}
+.da-loved-rel{font-size:0.75rem;color:#64748b}
+</style>
+
+<div id="dash-app">
+  <!-- Header -->
+  <div class="da-header">
+    <div>
+      <h1 id="da-welcome">Welcome back!</h1>
+      <p>Here is your care overview and daily summary.</p>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="da-stats" id="da-stats">
+    <div class="da-stat-card"><div class="da-sc-inner">
+      <svg class="da-sc-icon" style="color:#0d9488" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <div><div class="da-sc-val" id="stat-bookings">0</div><div class="da-sc-lbl">Upcoming Bookings</div></div>
+    </div></div>
+    <div class="da-stat-card"><div class="da-sc-inner">
+      <svg class="da-sc-icon" style="color:#22c55e" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <div><div class="da-sc-val" id="stat-groups">0</div><div class="da-sc-lbl">Care Teams</div></div>
+    </div></div>
+    <div class="da-stat-card"><div class="da-sc-inner">
+      <svg class="da-sc-icon" style="color:#f59e0b" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <div><div class="da-sc-val" id="stat-tasks">0</div><div class="da-sc-lbl">Pending Tasks</div></div>
+    </div></div>
+    <div class="da-stat-card"><div class="da-sc-inner">
+      <svg class="da-sc-icon" style="color:#f97316" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <div><div class="da-sc-val" id="stat-messages">0</div><div class="da-sc-lbl">Unread Messages</div></div>
+    </div></div>
+  </div>
+
+  <!-- Loved Ones At a Glance -->
+  <div class="da-loved" id="da-loved" style="display:none">
+    <h2>Loved Ones — At a Glance</h2>
+    <div class="da-loved-grid" id="da-loved-grid"></div>
+  </div>
+
+  <!-- 2-col grid: Bookings + Tasks -->
+  <div class="da-grid">
+    <div class="da-card">
+      <div class="da-card-hdr">
+        <h3>Upcoming Bookings</h3>
+        <a href="/careconnected/bookings/">View All <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
+      </div>
+      <div class="da-card-body" id="da-bookings-list">
+        <div class="da-empty">Loading bookings...</div>
+      </div>
+    </div>
+    <div class="da-card">
+      <div class="da-card-hdr">
+        <h3>Care Tasks</h3>
+        <a href="/careconnected/care-circle/">View All <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
+      </div>
+      <div class="da-card-body" id="da-tasks-list">
+        <div class="da-empty">Loading tasks...</div>
+      </div>
+    </div>
+
+    <!-- Quick Actions (spans full width) -->
+    <div class="da-card da-qa">
+      <div class="da-card-hdr"><h3>Quick Actions</h3></div>
+      <div class="da-card-body">
+        <div class="da-qa-grid">
+          <a class="da-qa-btn" href="/careconnected/store-listing/">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span>Find Help</span>
+          </a>
+          <a class="da-qa-btn" href="/careconnected/care-circle/">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span>Care Teams</span>
+          </a>
+          <a class="da-qa-btn" href="/careconnected/gps-tracking/">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span>GPS Track</span>
+          </a>
+          <a class="da-qa-btn" href="/careconnected/inbox/">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span>Messages</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const base='/careconnected/wp-json/wp/v2';
+  let uid=null;
+
+  async function getUid(){
+    if(uid)return uid;
+    try{const r=await fetch(base+'/users/me',{credentials:'include'});if(!r.ok)return null;uid=(await r.json()).id;return uid;}catch(e){return null;}
+  }
+
+  async function loadStats(){
+    const u=await getUid();
+    if(!u){document.getElementById('da-welcome').textContent='Welcome back!';return;}
+    try{
+      const ur=await fetch(base+'/users/'+u,{credentials:'include'});
+      if(ur.ok){const ud=await ur.json();const nm=ud.name||'there';document.getElementById('da-welcome').textContent='Welcome back, '+nm.split(' ')[0]+'!';}
+    }catch(e){}
+    try{
+      const[bk,gr,tk,mg]=await Promise.all([
+        fetch(base+'/wc_booking?author='+u+'&per_page=1',{credentials:'include'}),
+        fetch(base+'/care_group?author='+u+'&per_page=1',{credentials:'include'}),
+        fetch(base+'/care_task?author='+u+'&per_page=1',{credentials:'include'}),
+        fetch(base+'/chat_message?per_page=1',{credentials:'include'})
+      ]);
+      document.getElementById('stat-bookings').textContent=bk.headers.get('X-WP-Total')||'0';
+      document.getElementById('stat-groups').textContent=gr.headers.get('X-WP-Total')||'0';
+      document.getElementById('stat-tasks').textContent=tk.headers.get('X-WP-Total')||'0';
+      document.getElementById('stat-messages').textContent=mg.headers.get('X-WP-Total')||'0';
+    }catch(e){console.error(e);}
+  }
+
+  async function loadBookings(){
+    const u=await getUid();const el=document.getElementById('da-bookings-list');
+    if(!u){el.innerHTML='<div class="da-empty">Sign in to view bookings</div>';return;}
+    try{
+      const r=await fetch(base+'/wc_booking?author='+u+'&per_page=3&orderby=date&order=asc',{credentials:'include'});
+      const bks=r.ok?await r.json():[];
+      if(!bks.length){el.innerHTML='<div class="da-empty">No upcoming bookings</div>';return;}
+      el.innerHTML=bks.map(b=>{
+        const d=new Date(b.date);
+        const mo=d.toLocaleDateString('en',{month:'short'});
+        const dy=d.getDate();
+        const title=b.title?.rendered||'Booking';
+        const st=b.status||'pending';
+        const time=b.meta?._booking_start||'';
+        const svc=b.meta?.service_type||'';
+        return '<div class="da-booking-row"><div class="da-booking-date"><div class="da-bd-month">'+mo+'</div><div class="da-bd-day">'+dy+'</div></div><div class="da-booking-info"><div class="da-bi-name">'+title+'</div><div class="da-bi-detail">'+[time,svc].filter(Boolean).join(' · ')+'</div></div><span class="da-badge da-badge-'+st+'">'+st+'</span></div>';
+      }).join('');
+    }catch(e){el.innerHTML='<div class="da-empty">Failed to load</div>';}
+  }
+
+  async function loadTasks(){
+    const u=await getUid();const el=document.getElementById('da-tasks-list');
+    if(!u){el.innerHTML='<div class="da-empty">Sign in to view tasks</div>';return;}
+    try{
+      const r=await fetch(base+'/care_task?author='+u+'&per_page=4&orderby=date&order=desc',{credentials:'include'});
+      const tks=r.ok?await r.json():[];
+      if(!tks.length){el.innerHTML='<div class="da-empty">No pending tasks</div>';return;}
+      el.innerHTML=tks.map(t=>{
+        const title=t.title?.rendered||'Task';
+        const pri=t.meta?.priority||'medium';
+        const done=t.status==='completed';
+        const assignee=t.meta?.assignee_name||'Unassigned';
+        const due=t.meta?.due_date?new Date(t.meta.due_date).toLocaleDateString('en',{month:'short',day:'numeric'}):'';
+        const iconCls=done?'da-task-icon done':'da-task-icon';
+        return '<div class="da-task-row"><svg class="'+iconCls+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><div class="da-task-info"><div class="da-ti-name">'+title+'</div><div class="da-ti-detail">'+assignee+(due?' · Due '+due:'')+'</div></div><span class="da-badge da-badge-'+pri+'">'+pri+'</span></div>';
+      }).join('');
+    }catch(e){el.innerHTML='<div class="da-empty">Failed to load</div>';}
+  }
+
+  async function loadLoved(){
+    const u=await getUid();if(!u)return;
+    try{
+      const r=await fetch(base+'/cared_one?author='+u+'&per_page=6',{credentials:'include'});
+      const cos=r.ok?await r.json():[];
+      if(!cos.length)return;
+      const el=document.getElementById('da-loved');el.style.display='block';
+      const grid=document.getElementById('da-loved-grid');
+      grid.innerHTML=cos.map(c=>{
+        const nm=c.title?.rendered||'Loved One';
+        const rel=c.meta?.relationship||'';
+        const init=nm.charAt(0).toUpperCase();
+        return '<a class="da-loved-card" href="/careconnected/cared-ones/"><div class="da-loved-avatar">'+init+'</div><div><div class="da-loved-name">'+nm+'</div><div class="da-loved-rel">'+rel+'</div></div></a>';
+      }).join('');
+    }catch(e){}
+  }
+
+  loadStats();loadBookings();loadTasks();loadLoved();
+})();
+</script>
+<!-- /wp:html -->

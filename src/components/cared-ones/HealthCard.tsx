@@ -31,7 +31,7 @@ export function HealthCard({ caredOneId }: { caredOneId: string }) {
     if (!form.value) return;
     const numericValue = form.vital_type === "blood_pressure" ? 0 : parseFloat(form.value);
     const noteWithBP = form.vital_type === "blood_pressure" ? [form.value, form.note].filter(Boolean).join(" - ") : form.note || undefined;
-    create.mutate({ user_id: caredOneId, vital_type: form.vital_type, value: numericValue, unit: selectedType.unit, note: noteWithBP || undefined }, {
+    create.mutate({ user_id: caredOneId, vital_type: form.vital_type, value: numericValue, unit: selectedType.unit, notes: noteWithBP || undefined }, {
       onSuccess: () => { setForm({ vital_type: "blood_pressure", value: "", note: "" }); setAddOpen(false); toast({ title: "Vital recorded ✓" }); }
     });
   };

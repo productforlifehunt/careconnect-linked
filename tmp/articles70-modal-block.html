@@ -1,0 +1,43 @@
+<!-- wp:html -->
+<style>
+#articles70-modal{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+#articles70-modal .a70-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center}
+#articles70-modal .a70-overlay.show{display:flex}
+#articles70-modal .a70-modal{background:#fff;border-radius:.75rem;padding:1.5rem;max-width:32rem;width:90%;max-height:90vh;overflow-y:auto;box-shadow:0 25px 50px -12px rgba(0,0,0,.25)}
+#articles70-modal .a70-modal h3{font-size:1.125rem;font-weight:600;margin:0 0 1rem;color:#0f172a}
+#articles70-modal .a70-label{display:block;margin:.75rem 0 .25rem;font-size:.8125rem;font-weight:500;color:#334155}
+#articles70-modal .a70-input,#articles70-modal .a70-textarea,#articles70-modal .a70-select{width:100%;padding:.5rem;border:1px solid #e2e8f0;border-radius:.375rem;font-size:.875rem;font-family:inherit}
+#articles70-modal .a70-textarea{resize:vertical}
+#articles70-modal .a70-actions{display:flex;gap:.5rem;justify-content:flex-end;margin-top:1.25rem}
+#articles70-modal .a70-btn{display:inline-flex;align-items:center;gap:.5rem;padding:.5rem 1rem;border:none;border-radius:.5rem;font-size:.875rem;font-weight:500;cursor:pointer}
+#articles70-modal .a70-primary{background:#0d9488;color:#fff}
+#articles70-modal .a70-outline{background:#fff;color:#334155;border:1px solid #e2e8f0}
+</style>
+<div id="articles70-modal">
+  <div class="a70-overlay" id="articles70-overlay">
+    <div class="a70-modal">
+      <h3 id="articles70-modal-title">Write Article</h3>
+      <label class="a70-label" for="articles70-title">Title *</label>
+      <input class="a70-input" id="articles70-title" type="text" placeholder="Article title">
+      <label class="a70-label" for="articles70-content">Content *</label>
+      <textarea class="a70-textarea" id="articles70-content" rows="8" placeholder="Write your article content..."></textarea>
+      <label class="a70-label" for="articles70-type">Type</label>
+      <select class="a70-select" id="articles70-type"><option value="user">User</option><option value="expert">Expert</option><option value="official">Official</option></select>
+      <div class="a70-actions">
+        <button class="a70-btn a70-outline" type="button" id="articles70-cancel">Cancel</button>
+        <button class="a70-btn a70-primary" type="button" id="articles70-submit">Publish</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  let editingId=null;
+  const overlay=document.getElementById('articles70-overlay');
+  function open(detail){editingId=detail?.id||null;document.getElementById('articles70-modal-title').textContent=editingId?'Edit Article':'Write Article';document.getElementById('articles70-title').value=detail?.title||'';document.getElementById('articles70-content').value=detail?.content||'';document.getElementById('articles70-type').value=detail?.type||'user';document.getElementById('articles70-submit').textContent=editingId?'Update':'Publish';overlay.classList.add('show')}
+  function close(){overlay.classList.remove('show')}
+  function bind(){const api=window.__articles70;if(!api)return false;window.addEventListener('articles70:modal-open',e=>open(e.detail||null));document.getElementById('articles70-cancel').addEventListener('click',close);overlay.addEventListener('click',e=>{if(e.target===overlay)close()});document.getElementById('articles70-submit').addEventListener('click',async()=>{const btn=document.getElementById('articles70-submit');const title=document.getElementById('articles70-title').value.trim();const content=document.getElementById('articles70-content').value.trim();const type=document.getElementById('articles70-type').value;if(!title||!content)return;btn.textContent='Saving...';try{await api.save(editingId,{title,content,status:'publish',meta:{article_type:type}});close()}catch(e){alert('Failed to save article')}finally{btn.textContent=editingId?'Update':'Publish'}});return true}
+  if(!bind()){const t=setInterval(()=>{if(bind())clearInterval(t)},200)}
+})();
+</script>
+<!-- /wp:html -->

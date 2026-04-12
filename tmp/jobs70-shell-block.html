@@ -1,0 +1,91 @@
+<!-- wp:html -->
+<style>
+#jobs70-shell{max-width:64rem;margin:0 auto;padding:1.5rem 1rem;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+#jobs70-shell *{box-sizing:border-box}
+#jobs70-shell .j70-header{display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;margin-bottom:1.5rem}
+#jobs70-shell .j70-header h1{font-size:1.5rem;font-weight:700;color:#0f172a;margin:0}
+#jobs70-shell .j70-header p{margin:.25rem 0 0;font-size:.875rem;color:#64748b}
+#jobs70-shell .j70-btn{display:inline-flex;align-items:center;gap:.5rem;padding:.5rem 1rem;border:none;border-radius:.5rem;font-size:.875rem;font-weight:500;cursor:pointer;text-decoration:none;transition:opacity .15s}
+#jobs70-shell .j70-btn:hover{opacity:.9}
+#jobs70-shell .j70-btn-primary{background:#0d9488;color:#fff}
+#jobs70-shell .j70-btn-outline{background:#fff;color:#334155;border:1px solid #e2e8f0}
+#jobs70-shell .j70-search-row{display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1rem}
+#jobs70-shell .j70-search-wrap{position:relative;flex:1;min-width:240px}
+#jobs70-shell .j70-search-wrap svg{position:absolute;left:.75rem;top:50%;transform:translateY(-50%);width:16px;height:16px;color:#94a3b8}
+#jobs70-shell .j70-input,#jobs70-shell .j70-select{width:100%;padding:.5rem .75rem;border:1px solid #e2e8f0;border-radius:.5rem;font-size:.875rem;outline:none;background:#fff}
+#jobs70-shell .j70-search-wrap .j70-input{padding-left:2.25rem}
+#jobs70-shell .j70-input:focus,#jobs70-shell .j70-select:focus{border-color:#0d9488;box-shadow:0 0 0 2px rgba(13,148,136,.08)}
+#jobs70-shell .j70-tabs{display:flex;gap:0;background:#f1f5f9;border-radius:.5rem;padding:.25rem;margin-bottom:1rem;width:fit-content}
+#jobs70-shell .j70-tab{padding:.5rem 1rem;border:none;border-radius:.375rem;background:transparent;color:#64748b;font-size:.8125rem;font-weight:500;cursor:pointer;white-space:nowrap}
+#jobs70-shell .j70-tab.active{background:#fff;color:#0f172a;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+#jobs70-shell .j70-panel{display:none}
+#jobs70-shell .j70-panel.active{display:block}
+#jobs70-shell .j70-empty{text-align:center;padding:3rem 1rem;color:#94a3b8;font-size:.875rem}
+#jobs70-shell .j70-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center}
+#jobs70-shell .j70-overlay.show{display:flex}
+#jobs70-shell .j70-modal{background:#fff;border-radius:.75rem;padding:1.5rem;max-width:32rem;width:90%;max-height:90vh;overflow-y:auto;box-shadow:0 25px 50px -12px rgba(0,0,0,.25)}
+#jobs70-shell .j70-modal h3{margin:0 0 1rem;font-size:1.125rem;font-weight:600;color:#0f172a}
+#jobs70-shell .j70-modal label{display:block;margin:.75rem 0 .25rem;font-size:.8125rem;font-weight:500;color:#334155}
+</style>
+<div id="jobs70-shell">
+  <div class="j70-header">
+    <div>
+      <h1>Jobs Board</h1>
+      <p>Find and post caregiving opportunities</p>
+    </div>
+    <button class="j70-btn j70-btn-primary" type="button" onclick="window.__jobs70 && window.__jobs70.openCreate()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+      Post Job
+    </button>
+  </div>
+  <div class="j70-search-row">
+    <div class="j70-search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input class="j70-input" id="jobs70-search" type="text" placeholder="Search jobs...">
+    </div>
+    <div style="min-width:160px;flex:0 0 180px">
+      <select class="j70-select" id="jobs70-type-filter">
+        <option value="">All Sources</option>
+        <option value="general">General</option>
+        <option value="group_task">Group Task</option>
+        <option value="cared_one_checkin">Check-In</option>
+        <option value="cared_one_care">Ongoing Care</option>
+      </select>
+    </div>
+  </div>
+  <div class="j70-tabs">
+    <button class="j70-tab active" data-tab="browse" type="button">Browse Jobs</button>
+    <button class="j70-tab" data-tab="applications" type="button">My Applications</button>
+    <button class="j70-tab" data-tab="posted" type="button">My Posted Jobs</button>
+  </div>
+</div>
+<script>
+(function(){
+  const base='/careconnected/wp-json/wp/v2';
+  const state={uid:null,tab:'browse',search:'',type:'',jobs:[],applications:[],posted:[],listeners:{}};
+  function emit(name){(state.listeners[name]||[]).forEach(fn=>{try{fn(state)}catch(e){}})}
+  function on(name,fn){state.listeners[name]=state.listeners[name]||[];state.listeners[name].push(fn);return()=>state.listeners[name]=(state.listeners[name]||[]).filter(x=>x!==fn)}
+  async function getUid(){if(state.uid)return state.uid;try{const r=await fetch(base+'/users/me',{credentials:'include'});if(!r.ok)return null;state.uid=(await r.json()).id;return state.uid}catch(e){return null}}
+  async function load(){
+    const uid=await getUid();
+    try{const r=await fetch(base+'/care_job?per_page=50&orderby=date&order=desc',{credentials:'include'});state.jobs=r.ok?await r.json():[]}catch(e){state.jobs=[]}
+    if(uid){
+      try{const r=await fetch(base+'/job_application?author='+uid+'&per_page=50&orderby=date&order=desc',{credentials:'include'});state.applications=r.ok?await r.json():[]}catch(e){state.applications=[]}
+      state.posted=state.jobs.filter(j=>j.author===uid)
+    }else{state.applications=[];state.posted=[]}
+    emit('data')
+  }
+  function setTab(tab){state.tab=tab;document.querySelectorAll('#jobs70-shell .j70-tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));document.querySelectorAll('.j70-panel').forEach(p=>p.classList.toggle('active',p.dataset-panel===tab));emit('tab')}
+  function nonce(){return document.querySelector('meta[name="wp-nonce"]')?.content||''}
+  async function createJob(payload){await fetch(base+'/care_job',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json','X-WP-Nonce':nonce()},body:JSON.stringify(payload)});await load()}
+  async function createApplication(payload){await fetch(base+'/job_application',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json','X-WP-Nonce':nonce()},body:JSON.stringify(payload)});await load()}
+  async function updateApplication(id,payload){await fetch(base+'/job_application/'+id,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json','X-WP-Nonce':nonce()},body:JSON.stringify(payload)});await load()}
+  window.__jobs70={state,on,emit,load,setTab,createJob,createApplication,updateApplication,openCreate(){window.dispatchEvent(new CustomEvent('jobs70:create-open'))},openApply(detail){window.dispatchEvent(new CustomEvent('jobs70:apply-open',{detail}))}};
+  document.querySelectorAll('#jobs70-shell .j70-tab').forEach(btn=>btn.addEventListener('click',()=>setTab(btn.dataset.tab)));
+  document.getElementById('jobs70-search').addEventListener('input',e=>{state.search=e.target.value.toLowerCase();emit('filter')});
+  document.getElementById('jobs70-type-filter').addEventListener('change',e=>{state.type=e.target.value;emit('filter')});
+  setTab('browse');
+  load();
+})();
+</script>
+<!-- /wp:html -->

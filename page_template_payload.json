@@ -1,0 +1,6 @@
+{
+  "slug": "page",
+  "theme": "twentytwentyfive",
+  "content": "<!-- wp:template-part {\"slug\":\"header\",\"theme\":\"twentytwentyfive\"} /-->\n\n<!-- wp:group {\"tagName\":\"main\",\"layout\":{\"type\":\"constrained\"}} -->\n<main class=\"wp-block-group\">\n<!-- wp:post-content {\"align\":\"full\",\"layout\":{\"type\":\"constrained\"}} /-->\n</main>\n<!-- /wp:group -->\n\n<!-- wp:template-part {\"slug\":\"footer\",\"theme\":\"twentytwentyfive\"} /-->",
+  "status": "publish"
+}

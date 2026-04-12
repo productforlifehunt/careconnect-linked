@@ -1,0 +1,67 @@
+<!-- wp:html -->
+<style>
+#jobs70-posted{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+#jobs70-posted .j70-card{background:#fff;border-radius:.75rem;box-shadow:0 1px 3px rgba(0,0,0,.1);border:1px solid transparent;padding:1.25rem;margin-bottom:1rem}
+#jobs70-posted .j70-title{margin:0 0 .25rem;font-size:1rem;font-weight:600;color:#0f172a}
+#jobs70-posted .j70-badges{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.5rem}
+#jobs70-posted .j70-badge{display:inline-block;padding:.125rem .5rem;border-radius:9999px;font-size:.7rem;font-weight:500}
+#jobs70-posted .j70-type{background:#f1f5f9;color:#475569}
+#jobs70-posted .j70-open{background:#0d9488;color:#fff}
+#jobs70-posted .j70-closed{background:#e2e8f0;color:#64748b}
+#jobs70-posted .j70-desc{font-size:.875rem;color:#64748b;display:-webkit-box;display:box;line-clamp:2;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:.75rem}
+#jobs70-posted .j70-toggle{display:inline-flex;align-items:center;gap:.375rem;font-size:.875rem;font-weight:500;color:#0d9488;background:none;border:none;padding:0;cursor:pointer}
+#jobs70-posted .j70-apps{display:none;margin-top:.75rem;padding-top:1rem;border-top:1px solid #e2e8f0}
+#jobs70-posted .j70-apps.show{display:block}
+#jobs70-posted .j70-app-card{border:1px solid #e2e8f0;border-radius:.5rem;padding:1rem;background:#fafafa;margin-top:.75rem}
+#jobs70-posted .j70-app-top{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:.5rem}
+#jobs70-posted .j70-app-name{font-size:.875rem;font-weight:600;color:#0f172a}
+#jobs70-posted .j70-app-letter{font-size:.8125rem;color:#64748b;background:#fff;border-radius:.375rem;padding:.5rem;margin:.5rem 0}
+#jobs70-posted .j70-btn{display:inline-flex;align-items:center;gap:.375rem;padding:.375rem .75rem;border:none;border-radius:.5rem;font-size:.8125rem;font-weight:500;cursor:pointer}
+#jobs70-posted .j70-accept{background:#22c55e;color:#fff}
+#jobs70-posted .j70-decline{background:#fff;color:#ef4444;border:1px solid rgba(239,68,68,.3)}
+#jobs70-posted .j70-empty{text-align:center;padding:3rem 1rem;color:#94a3b8;font-size:.875rem}
+</style>
+<div id="jobs70-posted" class="j70-panel" data-panel="posted">
+  <div class="j70-empty">Loading posted jobs...</div>
+</div>
+<script>
+(function(){
+  const root=document.getElementById('jobs70-posted');
+  const sourceLabels={general:'General',group_task:'Group Task',cared_one_checkin:'Check-In',cared_one_care:'Ongoing Care'};
+  const cache={};
+  async function loadApplicants(jobId,wrap){
+    wrap.innerHTML='<div class="j70-empty" style="padding:1rem">Loading applicants...</div>';
+    try{
+      const r=await fetch('/careconnected/wp-json/wp/v2/job_application?meta_key=job_id&meta_value='+jobId+'&per_page=20',{credentials:'include'});
+      cache[jobId]=r.ok?await r.json():[];
+    }catch(e){cache[jobId]=[]}
+    renderApplicants(jobId,wrap);
+  }
+  function renderApplicants(jobId,wrap){
+    const apps=cache[jobId]||[];
+    if(!apps.length){wrap.innerHTML='<div class="j70-empty" style="padding:1rem">No applications yet</div>';return}
+    wrap.innerHTML=apps.map(a=>{
+      const status=a.meta?.status||'pending';
+      const badge=status==='accepted'?'style="background:#0d9488;color:#fff"':status==='rejected'?'style="background:#ef4444;color:#fff"':'style="background:#fef3c7;color:#92400e"';
+      const actions=status==='pending'?'<div style="display:flex;gap:.5rem;margin-top:.5rem"><button class="j70-btn j70-accept" type="button" onclick="window.__jobs70.updateApplication('+a.id+',{meta:{status:\'accepted\'}})">Accept</button><button class="j70-btn j70-decline" type="button" onclick="window.__jobs70.updateApplication('+a.id+',{meta:{status:\'rejected\'}})">Decline</button></div>':'';
+      return '<div class="j70-app-card"><div class="j70-app-top"><div class="j70-app-name">'+(a.title?.rendered||'Applicant')+'</div><span class="j70-badge" '+badge+'>'+status+'</span></div><div class="j70-app-letter">'+(a.meta?.cover_letter||'')+'</div>'+actions+'</div>';
+    }).join('');
+  }
+  function render(){
+    const api=window.__jobs70;if(!api)return; const items=api.state.posted||[];
+    if(!items.length){root.innerHTML='<div class="j70-empty">You haven\'t posted any jobs yet</div>';return}
+    root.innerHTML=items.map(j=>{
+      const type=j.meta?.job_source_type||'general'; const status=j.meta?.status||j.status||'open';
+      return '<div class="j70-card"><h3 class="j70-title">'+(j.title?.rendered||'Job')+'</h3><div class="j70-badges"><span class="j70-badge j70-type">'+(sourceLabels[type]||type)+'</span><span class="j70-badge '+(status==='open'?'j70-open':'j70-closed')+'">'+status+'</span></div><div class="j70-desc">'+((j.content?.rendered||'').replace(/<[^>]*>/g,''))+'</div><button class="j70-toggle" type="button" data-job="'+j.id+'">View Applicants</button><div class="j70-apps" id="jobs70-apps-'+j.id+'"></div></div>';
+    }).join('');
+    root.querySelectorAll('.j70-toggle').forEach(btn=>btn.addEventListener('click',()=>{
+      const jobId=btn.dataset.job; const wrap=document.getElementById('jobs70-apps-'+jobId); const show=!wrap.classList.contains('show');
+      wrap.classList.toggle('show',show); btn.textContent=show?'Hide Applicants':'View Applicants';
+      if(show && !cache[jobId]) loadApplicants(jobId,wrap);
+    }));
+  }
+  function bind(){const api=window.__jobs70;if(!api)return false;api.on('data',render);api.on('tab',render);render();return true}
+  if(!bind()){const t=setInterval(()=>{if(bind())clearInterval(t)},200)}
+})();
+</script>
+<!-- /wp:html -->

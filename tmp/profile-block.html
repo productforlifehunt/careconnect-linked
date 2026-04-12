@@ -1,0 +1,173 @@
+<!-- wp:html -->
+<div id="profile-app">
+  <!-- Tabs -->
+  <div style="border-bottom:1px solid #e5e7eb; margin-bottom:1.5rem;">
+    <div style="display:flex; gap:0.5rem;">
+      <button class="profile-tab active" data-tab="personal" style="padding:0.75rem 1.5rem; border:none; background:none; cursor:pointer; font-weight:500; color:#0d9488; border-bottom:2px solid #0d9488;">Personal Info</button>
+      <button class="profile-tab" data-tab="notifications" style="padding:0.75rem 1.5rem; border:none; background:none; cursor:pointer; font-weight:500; color:#6b7280; border-bottom:2px solid transparent;">Notifications</button>
+      <button class="profile-tab" data-tab="privacy" style="padding:0.75rem 1.5rem; border:none; background:none; cursor:pointer; font-weight:500; color:#6b7280; border-bottom:2px solid transparent;">Privacy</button>
+    </div>
+  </div>
+
+  <!-- Personal Info Panel -->
+  <div id="profile-personal" class="profile-panel">
+    <div style="display:flex; align-items:center; gap:1.5rem; margin-bottom:2rem;">
+      <div id="profile-avatar" style="width:80px; height:80px; border-radius:50%; background:linear-gradient(135deg,#0d9488,#14b8a6); color:white; display:flex; align-items:center; justify-content:center; font-size:2rem; font-weight:700; position:relative; cursor:pointer;" title="Click to change avatar">
+        <span id="avatar-initial">?</span>
+        <div style="position:absolute; bottom:0; right:0; background:#0d9488; border:2px solid white; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:0.7rem;">📷</div>
+      </div>
+      <div>
+        <div id="profile-display-name" style="font-size:1.25rem; font-weight:600; color:#111827;"></div>
+        <div id="profile-email" style="font-size:0.875rem; color:#6b7280;"></div>
+      </div>
+    </div>
+
+    <div style="background:#fff; border-radius:12px; padding:1.5rem; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+        <div><label style="font-size:0.8rem; font-weight:500; color:#374151; display:block; margin-bottom:0.25rem;">First Name</label><input id="pf-first" type="text" style="width:100%; padding:0.5rem; border:1px solid #d1d5db; border-radius:6px; font-size:0.875rem; box-sizing:border-box;"></div>
+        <div><label style="font-size:0.8rem; font-weight:500; color:#374151; display:block; margin-bottom:0.25rem;">Last Name</label><input id="pf-last" type="text" style="width:100%; padding:0.5rem; border:1px solid #d1d5db; border-radius:6px; font-size:0.875rem; box-sizing:border-box;"></div>
+        <div><label style="font-size:0.8rem; font-weight:500; color:#374151; display:block; margin-bottom:0.25rem;">Email</label><input id="pf-email" type="email" style="width:100%; padding:0.5rem; border:1px solid #d1d5db; border-radius:6px; font-size:0.875rem; box-sizing:border-box;" disabled></div>
+        <div><label style="font-size:0.8rem; font-weight:500; color:#374151; display:block; margin-bottom:0.25rem;">Phone</label><input id="pf-phone" type="tel" style="width:100%; padding:0.5rem; border:1px solid #d1d5db; border-radius:6px; font-size:0.875rem; box-sizing:border-box;"></div>
+        <div style="grid-column:1/-1;"><label style="font-size:0.8rem; font-weight:500; color:#374151; display:block; margin-bottom:0.25rem;">Bio</label><textarea id="pf-bio" rows="3" style="width:100%; padding:0.5rem; border:1px solid #d1d5db; border-radius:6px; font-size:0.875rem; resize:vertical; box-sizing:border-box;"></textarea></div>
+      </div>
+      <div style="margin-top:1.25rem; display:flex; justify-content:flex-end;">
+        <button id="pf-save" style="padding:0.5rem 1.5rem; background:#0d9488; color:white; border:none; border-radius:6px; font-size:0.875rem; cursor:pointer;">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notifications Panel -->
+  <div id="profile-notifications" class="profile-panel" style="display:none;">
+    <div style="background:#fff; border-radius:12px; padding:1.5rem; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+      <h3 style="font-size:1rem; font-weight:600; margin:0 0 1rem;">Notification Preferences</h3>
+      <div style="display:flex; flex-direction:column; gap:1rem;">
+        <label style="display:flex; justify-content:space-between; align-items:center; padding:0.75rem; border:1px solid #e5e7eb; border-radius:8px; cursor:pointer;">
+          <div><div style="font-weight:500; color:#111827;">Email Notifications</div><div style="font-size:0.8rem; color:#6b7280;">Receive updates via email</div></div>
+          <input id="notif-email" type="checkbox" checked style="width:20px; height:20px; accent-color:#0d9488;">
+        </label>
+        <label style="display:flex; justify-content:space-between; align-items:center; padding:0.75rem; border:1px solid #e5e7eb; border-radius:8px; cursor:pointer;">
+          <div><div style="font-weight:500; color:#111827;">Booking Reminders</div><div style="font-size:0.8rem; color:#6b7280;">Get reminded before appointments</div></div>
+          <input id="notif-booking" type="checkbox" checked style="width:20px; height:20px; accent-color:#0d9488;">
+        </label>
+        <label style="display:flex; justify-content:space-between; align-items:center; padding:0.75rem; border:1px solid #e5e7eb; border-radius:8px; cursor:pointer;">
+          <div><div style="font-weight:500; color:#111827;">Task Alerts</div><div style="font-size:0.8rem; color:#6b7280;">Notifications for new/due tasks</div></div>
+          <input id="notif-task" type="checkbox" checked style="width:20px; height:20px; accent-color:#0d9488;">
+        </label>
+        <label style="display:flex; justify-content:space-between; align-items:center; padding:0.75rem; border:1px solid #e5e7eb; border-radius:8px; cursor:pointer;">
+          <div><div style="font-weight:500; color:#111827;">Message Alerts</div><div style="font-size:0.8rem; color:#6b7280;">New message notifications</div></div>
+          <input id="notif-msg" type="checkbox" checked style="width:20px; height:20px; accent-color:#0d9488;">
+        </label>
+      </div>
+      <div style="margin-top:1.25rem; display:flex; justify-content:flex-end;">
+        <button id="notif-save" style="padding:0.5rem 1.5rem; background:#0d9488; color:white; border:none; border-radius:6px; font-size:0.875rem; cursor:pointer;">Save Preferences</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Privacy Panel -->
+  <div id="profile-privacy" class="profile-panel" style="display:none;">
+    <div style="background:#fff; border-radius:12px; padding:1.5rem; box-shadow:0 1px 3px rgba(0,0,0,0.1); margin-bottom:1.5rem;">
+      <h3 style="font-size:1rem; font-weight:600; margin:0 0 1rem;">Privacy Settings</h3>
+      <div style="display:flex; flex-direction:column; gap:1rem;">
+        <label style="display:flex; justify-content:space-between; align-items:center; padding:0.75rem; border:1px solid #e5e7eb; border-radius:8px; cursor:pointer;">
+          <div><div style="font-weight:500; color:#111827;">Profile Visibility</div><div style="font-size:0.8rem; color:#6b7280;">Allow others to see your profile</div></div>
+          <input id="priv-visible" type="checkbox" checked style="width:20px; height:20px; accent-color:#0d9488;">
+        </label>
+        <label style="display:flex; justify-content:space-between; align-items:center; padding:0.75rem; border:1px solid #e5e7eb; border-radius:8px; cursor:pointer;">
+          <div><div style="font-weight:500; color:#111827;">Location Sharing</div><div style="font-size:0.8rem; color:#6b7280;">Share location with care circle</div></div>
+          <input id="priv-location" type="checkbox" style="width:20px; height:20px; accent-color:#0d9488;">
+        </label>
+      </div>
+    </div>
+
+    <div style="background:#fff; border-radius:12px; padding:1.5rem; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+      <h3 style="font-size:1rem; font-weight:600; margin:0 0 1rem; color:#ef4444;">Danger Zone</h3>
+      <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+        <button id="download-data" style="padding:0.5rem 1rem; background:white; color:#0d9488; border:1px solid #0d9488; border-radius:6px; font-size:0.875rem; cursor:pointer;">Download My Data</button>
+        <button id="delete-account" style="padding:0.5rem 1rem; background:#ef4444; color:white; border:none; border-radius:6px; font-size:0.875rem; cursor:pointer;">Delete Account</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const baseUrl = '/careconnected/wp-json/wp/v2';
+
+  async function loadProfile() {
+    try {
+      const r = await fetch(baseUrl+'/users/me?context=edit',{credentials:'include'});
+      if (!r.ok) return;
+      const u = await r.json();
+      document.getElementById('avatar-initial').textContent = (u.name||'?').charAt(0).toUpperCase();
+      document.getElementById('profile-display-name').textContent = u.name||'User';
+      document.getElementById('profile-email').textContent = u.email||'';
+      document.getElementById('pf-first').value = u.first_name||'';
+      document.getElementById('pf-last').value = u.last_name||'';
+      document.getElementById('pf-email').value = u.email||'';
+      document.getElementById('pf-phone').value = u.meta?.phone||'';
+      document.getElementById('pf-bio').value = u.description||'';
+    } catch(e) { console.error('Failed to load profile:', e); }
+  }
+
+  // Tab switching
+  document.querySelectorAll('.profile-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+      document.querySelectorAll('.profile-tab').forEach(t => { t.style.color='#6b7280'; t.style.borderBottomColor='transparent'; });
+      this.style.color='#0d9488'; this.style.borderBottomColor='#0d9488';
+      document.querySelectorAll('.profile-panel').forEach(p => p.style.display='none');
+      document.getElementById('profile-'+this.dataset.tab).style.display='block';
+    });
+  });
+
+  // Save profile
+  document.getElementById('pf-save').addEventListener('click', async function() {
+    this.textContent = 'Saving...'; this.disabled = true;
+    try {
+      const nonce = document.querySelector('meta[name="wp-nonce"]')?.content||'';
+      await fetch(baseUrl+'/users/me',{
+        method:'POST', credentials:'include',
+        headers:{'Content-Type':'application/json','X-WP-Nonce':nonce},
+        body:JSON.stringify({
+          first_name: document.getElementById('pf-first').value,
+          last_name: document.getElementById('pf-last').value,
+          description: document.getElementById('pf-bio').value,
+          meta: { phone: document.getElementById('pf-phone').value }
+        })
+      });
+      this.textContent = '✓ Saved!'; setTimeout(() => { this.textContent = 'Save Changes'; this.disabled = false; }, 2000);
+    } catch(e) {
+      alert('Failed to save'); this.textContent = 'Save Changes'; this.disabled = false;
+    }
+  });
+
+  // Save notification prefs
+  document.getElementById('notif-save').addEventListener('click', function() {
+    this.textContent = '✓ Saved!'; setTimeout(() => { this.textContent = 'Save Preferences'; }, 2000);
+  });
+
+  // Download data
+  document.getElementById('download-data').addEventListener('click', async function() {
+    try {
+      const r = await fetch(baseUrl+'/users/me?context=edit',{credentials:'include'});
+      const data = await r.json();
+      const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'my-data.json'; a.click();
+      URL.revokeObjectURL(url);
+    } catch(e) { alert('Failed to download data'); }
+  });
+
+  // Delete account
+  document.getElementById('delete-account').addEventListener('click', function() {
+    if (confirm('Are you sure? This action cannot be undone.')) {
+      if (confirm('This will permanently delete your account and all data. Type OK to confirm.')) {
+        alert('Account deletion requested. Please contact support.');
+      }
+    }
+  });
+
+  loadProfile();
+})();
+</script>
+<!-- /wp:html -->

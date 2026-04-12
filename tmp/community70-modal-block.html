@@ -1,0 +1,41 @@
+<!-- wp:html -->
+<style>
+#community70-modal{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+#community70-modal .c70-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center}
+#community70-modal .c70-overlay.show{display:flex}
+#community70-modal .c70-modal{background:#fff;border-radius:.75rem;padding:1.5rem;max-width:32rem;width:90%;max-height:90vh;overflow-y:auto;box-shadow:0 25px 50px -12px rgba(0,0,0,.25)}
+#community70-modal .c70-modal h3{font-size:1.125rem;font-weight:600;margin:0 0 1rem;color:#0f172a}
+#community70-modal .c70-label{display:block;margin:.75rem 0 .25rem;font-size:.8125rem;font-weight:500;color:#334155}
+#community70-modal .c70-input,#community70-modal .c70-textarea{width:100%;padding:.5rem;border:1px solid #e2e8f0;border-radius:.375rem;font-size:.875rem;font-family:inherit}
+#community70-modal .c70-textarea{resize:vertical}
+#community70-modal .c70-actions{display:flex;gap:.5rem;justify-content:flex-end;margin-top:1.25rem}
+#community70-modal .c70-btn{display:inline-flex;align-items:center;gap:.5rem;padding:.5rem 1rem;border:none;border-radius:.5rem;font-size:.875rem;font-weight:500;cursor:pointer}
+#community70-modal .c70-primary{background:#0d9488;color:#fff}
+#community70-modal .c70-outline{background:#fff;color:#334155;border:1px solid #e2e8f0}
+</style>
+<div id="community70-modal">
+  <div class="c70-overlay" id="community70-overlay">
+    <div class="c70-modal">
+      <h3 id="community70-modal-title">Create Post</h3>
+      <label class="c70-label" for="community70-title">Title *</label>
+      <input class="c70-input" id="community70-title" type="text" placeholder="Give your post a title">
+      <label class="c70-label" for="community70-content">Content *</label>
+      <textarea class="c70-textarea" id="community70-content" rows="6" placeholder="Share your thoughts, experiences, or questions..."></textarea>
+      <div class="c70-actions">
+        <button class="c70-btn c70-outline" type="button" id="community70-cancel">Cancel</button>
+        <button class="c70-btn c70-primary" type="button" id="community70-submit">Publish</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  let editingId=null;
+  const overlay=document.getElementById('community70-overlay');
+  function open(detail){editingId=detail?.id||null;document.getElementById('community70-modal-title').textContent=editingId?'Edit Post':'Create Post';document.getElementById('community70-title').value=detail?.title||'';document.getElementById('community70-content').value=detail?.content||'';document.getElementById('community70-submit').textContent=editingId?'Update':'Publish';overlay.classList.add('show')}
+  function close(){overlay.classList.remove('show')}
+  function bind(){const api=window.__community70;if(!api)return false;window.addEventListener('community70:modal-open',e=>open(e.detail||null));document.getElementById('community70-cancel').addEventListener('click',close);overlay.addEventListener('click',e=>{if(e.target===overlay)close()});document.getElementById('community70-submit').addEventListener('click',async()=>{const btn=document.getElementById('community70-submit');const title=document.getElementById('community70-title').value.trim();const content=document.getElementById('community70-content').value.trim();if(!title||!content)return;btn.textContent='Saving...';try{await api.save(editingId,{title,content,status:'publish'});close()}catch(e){alert('Failed to save post')}finally{btn.textContent=editingId?'Update':'Publish'}});return true}
+  if(!bind()){const t=setInterval(()=>{if(bind())clearInterval(t)},200)}
+})();
+</script>
+<!-- /wp:html -->

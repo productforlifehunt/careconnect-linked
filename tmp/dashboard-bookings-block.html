@@ -1,0 +1,100 @@
+<!-- wp:html -->
+<div style="background: #fff; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 1.5rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <h2 style="font-size: 1.125rem; font-weight: 600; margin: 0;">Upcoming Bookings</h2>
+    <a href="/careconnected/bookings/" style="font-size: 0.875rem; color: #0d9488; text-decoration: none;">View All →</a>
+  </div>
+  
+  <div id="bookings-list" style="min-height: 100px;">
+    <div style="text-align: center; padding: 2rem; color: #9ca3af;">
+      <div style="font-size: 2rem; margin-bottom: 0.5rem;">⏳</div>
+      <div>Loading bookings...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const baseUrl = '/careconnected/wp-json/wp/v2';
+  
+  async function getCurrentUserId() {
+    try {
+      const res = await fetch('/careconnected/wp-json/wp/v2/users/me', {
+        credentials: 'include'
+      });
+      if (!res.ok) return null;
+      const user = await res.json();
+      return user.id;
+    } catch (e) {
+      return null;
+    }
+  }
+  
+  function formatDate(dateStr) {
+    const date = new Date(dateStr);
+    const options = { weekday: 'short', month: 'short', day: 'numeric' };
+    return date.toLocaleDateString('en-US', options);
+  }
+  
+  async function loadBookings() {
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      document.getElementById('bookings-list').innerHTML = '<div style="text-align: center; padding: 2rem; color: #9ca3af;"><div style="font-size: 2rem; margin-bottom: 0.5rem;">🔒</div><div>Please log in to view bookings</div></div>';
+      return;
+    }
+    
+    try {
+      const res = await fetch(`${baseUrl}/wc_booking?author=${userId}&status=confirmed,pending&per_page=5&orderby=date&order=asc&_embed`, {
+        credentials: 'include'
+      });
+      
+      if (!res.ok) throw new Error('Failed to fetch bookings');
+      
+      const bookings = await res.json();
+      
+      if (bookings.length === 0) {
+        document.getElementById('bookings-list').innerHTML = '<div style="text-align: center; padding: 2rem; color: #9ca3af;"><div style="font-size: 2rem; margin-bottom: 0.5rem;">📅</div><div>No upcoming bookings</div></div>';
+        return;
+      }
+      
+      const html = bookings.map(booking => {
+        const title = booking.title?.rendered || 'Booking';
+        const date = booking.meta?._booking_start || booking.date;
+        const status = booking.status || 'pending';
+        const statusColors = {
+          'confirmed': '#22c55e',
+          'pending': '#f59e0b',
+          'completed': '#6b7280',
+          'cancelled': '#ef4444'
+        };
+        const statusColor = statusColors[status] || '#6b7280';
+        
+        return `
+          <div style="padding: 1rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-weight: 500; color: #111827;">${title}</div>
+              <div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.25rem;">${formatDate(date)}</div>
+            </div>
+            <div style="background: ${statusColor}; color: white; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500;">
+              ${status}
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      document.getElementById('bookings-list').innerHTML = html;
+      
+    } catch (e) {
+      console.error('Failed to load bookings:', e);
+      document.getElementById('bookings-list').innerHTML = '<div style="text-align: center; padding: 2rem; color: #ef4444;"><div>Failed to load bookings</div></div>';
+    }
+  }
+  
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadBookings);
+  } else {
+    loadBookings();
+  }
+})();
+</script>
+<!-- /wp:html -->

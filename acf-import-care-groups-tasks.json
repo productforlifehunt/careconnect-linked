@@ -1,0 +1,231 @@
+[
+  {
+    "key": "group_care_group_details",
+    "title": "Care Group Details",
+    "fields": [
+      {
+        "key": "field_cg_group_type",
+        "label": "Group Type",
+        "name": "group_type",
+        "type": "select",
+        "instructions": "Type of care group",
+        "required": 1,
+        "choices": {
+          "family": "Family",
+          "professional": "Professional",
+          "community": "Community",
+          "mixed": "Mixed"
+        },
+        "default_value": "family",
+        "return_format": "value"
+      },
+      {
+        "key": "field_cg_cover_image",
+        "label": "Cover Image",
+        "name": "cover_image",
+        "type": "image",
+        "instructions": "Cover image for the care group",
+        "required": 0,
+        "return_format": "url",
+        "preview_size": "medium"
+      },
+      {
+        "key": "field_cg_is_active",
+        "label": "Is Active",
+        "name": "is_active",
+        "type": "true_false",
+        "instructions": "Whether the care group is currently active",
+        "required": 0,
+        "default_value": 1,
+        "ui": 1
+      },
+      {
+        "key": "field_cg_max_members",
+        "label": "Max Members",
+        "name": "max_members",
+        "type": "number",
+        "instructions": "Maximum number of members allowed",
+        "required": 0,
+        "default_value": 20,
+        "min": 1,
+        "max": 100
+      },
+      {
+        "key": "field_cg_created_by",
+        "label": "Created By",
+        "name": "created_by",
+        "type": "user",
+        "instructions": "User who created this care group",
+        "required": 0,
+        "role": "",
+        "return_format": "id"
+      },
+      {
+        "key": "field_cg_linked_cared_ones",
+        "label": "Linked Cared Ones",
+        "name": "linked_cared_ones",
+        "type": "relationship",
+        "instructions": "Cared ones associated with this care group",
+        "required": 0,
+        "post_type": ["cared_one"],
+        "filters": ["search"],
+        "return_format": "id",
+        "min": 0,
+        "max": 0
+      },
+      {
+        "key": "field_cg_members",
+        "label": "Members",
+        "name": "members",
+        "type": "user",
+        "instructions": "Users who are members of this care group",
+        "required": 0,
+        "role": "",
+        "multiple": 1,
+        "return_format": "id"
+      },
+      {
+        "key": "field_cg_privacy",
+        "label": "Privacy",
+        "name": "privacy",
+        "type": "select",
+        "instructions": "Privacy setting for the group",
+        "required": 0,
+        "choices": {
+          "public": "Public",
+          "private": "Private",
+          "secret": "Secret"
+        },
+        "default_value": "private",
+        "return_format": "value"
+      }
+    ],
+    "location": [
+      [
+        {
+          "param": "post_type",
+          "operator": "==",
+          "value": "care_group"
+        }
+      ]
+    ],
+    "menu_order": 0,
+    "position": "normal",
+    "style": "default",
+    "label_placement": "top",
+    "instruction_placement": "label",
+    "active": true
+  },
+  {
+    "key": "group_care_task_details",
+    "title": "Care Task Details",
+    "fields": [
+      {
+        "key": "field_ct_care_group",
+        "label": "Care Group",
+        "name": "care_group",
+        "type": "post_object",
+        "instructions": "The care group this task belongs to",
+        "required": 1,
+        "post_type": ["care_group"],
+        "return_format": "id"
+      },
+      {
+        "key": "field_ct_assigned_to",
+        "label": "Assigned To",
+        "name": "assigned_to",
+        "type": "user",
+        "instructions": "User responsible for this task",
+        "required": 0,
+        "role": "",
+        "return_format": "id"
+      },
+      {
+        "key": "field_ct_due_date",
+        "label": "Due Date",
+        "name": "due_date",
+        "type": "date_picker",
+        "instructions": "When this task is due",
+        "required": 0,
+        "display_format": "F j, Y",
+        "return_format": "Y-m-d"
+      },
+      {
+        "key": "field_ct_status",
+        "label": "Status",
+        "name": "status",
+        "type": "select",
+        "instructions": "Current status of the task",
+        "required": 1,
+        "choices": {
+          "pending": "Pending",
+          "in_progress": "In Progress",
+          "completed": "Completed",
+          "cancelled": "Cancelled"
+        },
+        "default_value": "pending",
+        "return_format": "value"
+      },
+      {
+        "key": "field_ct_priority",
+        "label": "Priority",
+        "name": "priority",
+        "type": "select",
+        "instructions": "Task priority level",
+        "required": 1,
+        "choices": {
+          "low": "Low",
+          "medium": "Medium",
+          "high": "High",
+          "urgent": "Urgent"
+        },
+        "default_value": "medium",
+        "return_format": "value"
+      },
+      {
+        "key": "field_ct_notes",
+        "label": "Notes",
+        "name": "notes",
+        "type": "textarea",
+        "instructions": "Additional notes about the task",
+        "required": 0,
+        "rows": 4
+      },
+      {
+        "key": "field_ct_linked_cared_one",
+        "label": "Linked Cared One",
+        "name": "linked_cared_one",
+        "type": "post_object",
+        "instructions": "The cared one this task relates to",
+        "required": 0,
+        "post_type": ["cared_one"],
+        "return_format": "id"
+      },
+      {
+        "key": "field_ct_completed_date",
+        "label": "Completed Date",
+        "name": "completed_date",
+        "type": "date_picker",
+        "instructions": "When this task was completed",
+        "required": 0,
+        "display_format": "F j, Y",
+        "return_format": "Y-m-d"
+      }
+    ],
+    "location": [
+      [
+        {
+          "param": "post_type",
+          "operator": "==",
+          "value": "care_task"
+        }
+      ]
+    ],
+    "menu_order": 0,
+    "position": "normal",
+    "style": "default",
+    "label_placement": "top",
+    "instruction_placement": "label",
+    "active": true
+  }
+]

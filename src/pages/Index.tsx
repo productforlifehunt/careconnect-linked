@@ -12,12 +12,16 @@ import { useProviders, useServiceCategories } from "@/hooks/use-care-data";
 import { useSite } from "@/contexts/SiteContext";
 import { useTranslation } from "react-i18next";
 import heroImage from "@/assets/hero-image.jpg";
+import heroImageCn from "@/assets/hero-image-cn.jpg";
+import yichangIcon from "@/assets/yichang-icon.png";
 import type { Profile } from "@/types/care-connector";
+import { getSpecialtyKey } from "@/lib/specialty-i18n";
 
 const Index = () => {
   const navigate = useNavigate();
   const site = useSite();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isChinese = i18n.language?.startsWith("zh");
   const [searchQuery, setSearchQuery] = useState("");
   const [locationQuery, setLocationQuery] = useState("");
 
@@ -48,7 +52,7 @@ const Index = () => {
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0">
-          <img src={heroImage} alt="Compassionate caregiving" className="w-full h-full object-cover" />
+          <img src={isChinese && site.id === "challenged" ? heroImageCn : heroImage} alt="Compassionate caregiving" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-r from-primary/90 via-primary/70 to-primary/40" />
         </div>
         <div className="relative max-w-6xl mx-auto px-4 py-20 md:py-32">
@@ -58,7 +62,7 @@ const Index = () => {
               <span className="text-coral">{t(`site.${site.id}.heroHighlight`)}</span>
             </h1>
             <p className="text-lg md:text-xl text-primary-foreground/90 mb-8 animate-fade-in" style={{ animationDelay: "0.1s" }}>
-              {site.heroSubtitle}
+              {t(`site.${site.id}.heroSubtitle`)}
             </p>
 
             <div className="bg-card rounded-xl p-2 shadow-xl animate-fade-in" style={{ animationDelay: "0.2s" }}>
@@ -90,10 +94,10 @@ const Index = () => {
             </div>
 
             <div className="flex flex-wrap gap-4 mt-6 animate-fade-in" style={{ animationDelay: "0.3s" }}>
-              {site.trustBadges.map((feat) => (
-                <div key={feat} className="flex items-center gap-2 text-primary-foreground/80 text-sm">
+              {site.trustBadges.map((badgeKey) => (
+                <div key={badgeKey} className="flex items-center gap-2 text-primary-foreground/80 text-sm">
                   <CheckCircle className="h-4 w-4" />
-                  <span>{feat}</span>
+                  <span>{t(`site.${site.id}.${badgeKey}`)}</span>
                 </div>
               ))}
             </div>
@@ -112,7 +116,7 @@ const Index = () => {
                 <div className="mx-auto w-12 h-12 rounded-xl bg-accent flex items-center justify-center mb-3 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                   {categoryIcons[cat.name] || <Heart className="h-6 w-6" />}
                 </div>
-                <h3 className="font-semibold text-sm text-foreground">{cat.name}</h3>
+                <h3 className="font-semibold text-sm text-foreground">{t(getSpecialtyKey(cat.name))}</h3>
               </CardContent>
             </Card>
           ))}
@@ -195,8 +199,8 @@ const Index = () => {
               <div className="mx-auto w-14 h-14 rounded-2xl hero-gradient flex items-center justify-center mb-4">
                 <span className="text-primary-foreground font-bold text-xl">{item.step}</span>
               </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">{item.title}</h3>
-              <p className="text-muted-foreground">{item.desc}</p>
+              <h3 className="text-lg font-semibold text-foreground mb-2">{t(`site.${site.id}.${item.titleKey}`)}</h3>
+              <p className="text-muted-foreground">{t(`site.${site.id}.${item.descKey}`)}</p>
             </div>
           ))}
         </div>
@@ -224,9 +228,13 @@ const Index = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-lg hero-gradient flex items-center justify-center">
-                  <span className="text-primary-foreground font-bold text-xs">{site.logoText}</span>
-                </div>
+                {site.id === "challenged" && isChinese ? (
+                  <img src={yichangIcon} alt="忆畅" className="w-12 h-12 rounded-xl" loading="lazy" />
+                ) : (
+                  <div className="w-8 h-8 rounded-lg hero-gradient flex items-center justify-center">
+                    <span className="text-primary-foreground font-bold text-xs">{site.logoText}</span>
+                  </div>
+                )}
                 <span className="font-bold text-foreground">{t(`site.${site.id}.footerBrand`)}</span>
               </div>
               <p className="text-sm text-muted-foreground">{t(`site.${site.id}.footerTagline`)}</p>
@@ -236,7 +244,7 @@ const Index = () => {
                 { label: t("home.findCaregivers"), href: "/search" },
                 { label: t("nav.howItWorks"), href: "/how-it-works" },
                 { label: t("nav.trustSafety"), href: "/trust-safety" },
-                { label: site.navLabels.careGroups, href: "/care-circle" },
+                { label: t(site.id === "challenged" ? "nav.careTeams" : "nav.careGroups"), href: "/care-circle" },
               ] },
               { title: t("home.forCaregivers"), links: [
                 { label: t("home.joinAsCaregiver"), href: "/become-caregiver" },
