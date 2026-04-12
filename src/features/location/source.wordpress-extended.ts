@@ -1,6 +1,7 @@
 import { createWordPressFeature, deleteWordPressFeature, listWordPressFeature, updateWordPressFeature } from "@/features/shared/wordpress-adapter";
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
+import { createNotificationWordPress } from "@/features/notifications/source.wordpress";
 
 const REL_USER_SAFE_ZONE = 90;
 const REL_USER_LOCATION_SHARING = 91;
