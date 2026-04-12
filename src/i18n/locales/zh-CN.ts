@@ -39,6 +39,9 @@ const zhCN = {
     notifications: "通知", becomeCaregiver: "成为护理人员", joinAsCaregiver: "加入成为护理人员",
     jobsBoard: "工作板", providerDashboard: "服务提供者面板", community: "社区", articles: "文章", browse: "浏览", myCare: "我的护理",
     toggleTheme: "切换主题",
+    // ChallengeD branded sections
+    united: "团聚", find: "定位", awareD: "认知篇", careD: "护理篇",
+    copeD: "应对篇", safeD: "安全篇", accompanieD: "陪伴篇", manageD: "自管篇",
   },
   site: {
     challenged: {
