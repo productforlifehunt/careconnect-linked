@@ -15,6 +15,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useTranslation } from "react-i18next";
+import { getCurrentPosition } from "@/lib/geolocation";
 
 export default function GPSTracking() {
   const { t } = useTranslation();
