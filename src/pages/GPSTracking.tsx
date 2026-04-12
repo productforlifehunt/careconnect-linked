@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { MapPin, Navigation, Clock, Shield, Phone, AlertTriangle, RefreshCw, Loader2 } from "lucide-react";
+import { MapPin, Navigation, Clock, Shield, AlertTriangle, RefreshCw, Loader2 } from "lucide-react";
 import { useLocationShares } from "@/hooks/use-care-data";
 import { shareMyLocationWordPress, disableMyLocationSharingWordPress } from "@/features/location/source.wordpress-extended";
 import { fetchCaredOneLocationSettingsWordPress } from "@/features/location/source.wordpress-extended";
@@ -15,6 +15,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useTranslation } from "react-i18next";
+import { getCurrentPosition } from "@/lib/geolocation";
 
 export default function GPSTracking() {
   const { t } = useTranslation();
@@ -134,18 +135,18 @@ export default function GPSTracking() {
     try {
       const authUserId = await getCurrentAuthUserId();
       if (!authUserId) return;
-      if (checked && navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(async (pos) => {
-          const timestamp = new Date().toISOString();
-          await shareMyLocationWordPress(pos.coords.latitude, pos.coords.longitude);
-          refetch();
-          setUpdatingShare(false);
-          toast({ title: t("gps.locationSharingEnabled") });
-        }, () => {
+      if (checked) {
+        const pos = await getCurrentPosition({ timeout: 10000 });
+        if (!pos) {
           setUpdatingShare(false);
           toast({ title: t("gps.couldNotGetLocation"), description: t("gps.enableLocationAccess"), variant: "destructive" });
           setShareMyLocation(false);
-        });
+          return;
+        }
+        await shareMyLocationWordPress(pos.latitude, pos.longitude);
+        refetch();
+        setUpdatingShare(false);
+        toast({ title: t("gps.locationSharingEnabled") });
       } else {
         await disableMyLocationSharingWordPress();
         refetch();
@@ -168,17 +169,14 @@ export default function GPSTracking() {
   const handleSOS = async () => {
     setSosSending(true);
     try {
-      const profileId = await getCurrentProfileId();
       const authUserId = await getCurrentAuthUserId();
-      if (!profileId || !authUserId) throw new Error("Not authenticated");
+      if (!authUserId) throw new Error("Not authenticated");
 
-      // Get current location
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000 });
-      });
+      const pos = await getCurrentPosition({ timeout: 8000 });
+      const locationAvailable = pos !== null;
 
-      await shareMyLocationWordPress(position.coords.latitude, position.coords.longitude, {
-        accuracy: position.coords.accuracy ?? null,
+      await shareMyLocationWordPress(pos?.latitude ?? 0, pos?.longitude ?? 0, {
+        accuracy: pos?.accuracy ?? null,
         isEmergency: true,
       });
 
@@ -186,7 +184,9 @@ export default function GPSTracking() {
       setSosDialogOpen(false);
       toast({
         title: t("gps.sosSuccess"),
-        description: t("gps.sosSuccessDesc", { groups: site.navLabels.careGroups.toLowerCase() }),
+        description: locationAvailable
+          ? t("gps.sosSuccessDesc", { groups: site.navLabels.careGroups.toLowerCase() })
+          : t("gps.sosWithoutLocation", "SOS alert sent without location. Your care circle has been notified."),
       });
     } catch (err: any) {
       toast({
