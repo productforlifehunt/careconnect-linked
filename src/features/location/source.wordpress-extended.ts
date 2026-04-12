@@ -367,6 +367,32 @@ export async function shareMyLocationWordPress(latitude: number, longitude: numb
       is_emergency: options?.isEmergency || false,
     });
   } catch {}
+  // If emergency SOS, create notification for the user's care circle
+  if (options?.isEmergency) {
+    try {
+      // Notify all care group members via care_group relations
+      const { fetchCareGroupsWordPress } = await import("@/features/care-groups/source.wordpress");
+      const groups = await fetchCareGroupsWordPress();
+      const notifiedUserIds = new Set<string>();
+      for (const group of groups) {
+        const members = group.members || [];
+        for (const member of members) {
+          const memberId = String(member.user_id || member.id || "");
+          if (memberId && memberId !== String(storedUser.user_id) && !notifiedUserIds.has(memberId)) {
+            notifiedUserIds.add(memberId);
+            await createNotificationWordPress({
+              user_id: memberId,
+              type: "sos_emergency",
+              title: "🚨 SOS Emergency Alert",
+              message: `${storedUser.display_name || "A care circle member"} triggered an SOS emergency alert. Location shared.`,
+              related_id: storedUser.user_id,
+              related_type: "user",
+            });
+          }
+        }
+      }
+    } catch {}
+  }
   await createSafeZoneAlertsForLocation(String(storedUser.user_id), latitude, longitude);
 }
 
