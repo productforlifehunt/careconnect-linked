@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { MapPin, Navigation, Clock, Shield, Phone, AlertTriangle, RefreshCw, Loader2 } from "lucide-react";
+import { MapPin, Navigation, Clock, Shield, AlertTriangle, RefreshCw, Loader2 } from "lucide-react";
 import { useLocationShares } from "@/hooks/use-care-data";
 import { shareMyLocationWordPress, disableMyLocationSharingWordPress } from "@/features/location/source.wordpress-extended";
 import { fetchCaredOneLocationSettingsWordPress } from "@/features/location/source.wordpress-extended";
