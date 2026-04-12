@@ -1107,7 +1107,18 @@ export function useCreateSymptomLog() {
 export function useCreateCaregiverWellnessLog() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (log: any) => createWordPressFeature("wellness_logs", log),
+    mutationFn: async (log: any) => {
+      const { wordpressCCTFetch } = await import("@/features/shared/wordpress-client");
+      await wordpressCCTFetch("caregiver_wellness_log", {
+        method: "POST",
+        body: {
+          mood: log.mood || "",
+          stress_level: log.stress_level ?? 0,
+          notes: log.notes || "",
+          logged_at: new Date().toISOString(),
+        },
+      });
+    },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["caregiverWellnessLogs"] }); },
   });
 }
@@ -1360,7 +1371,19 @@ export function useCreateExternalTestJob() {
 export function useCaregiverWellnessLogs() {
   return useQuery({
     queryKey: ["caregiverWellnessLogs"],
-    queryFn: () => listWordPressFeature("wellness_logs"),
+    queryFn: async () => {
+      const { wordpressCCTFetch } = await import("@/features/shared/wordpress-client");
+      const logs = await wordpressCCTFetch("caregiver_wellness_log", { params: { _limit: 100 } });
+      if (!Array.isArray(logs)) return [];
+      return logs.map((l: any) => ({
+        id: l.id,
+        mood: l.mood || null,
+        stress_level: l.stress_level ?? null,
+        notes: l.notes || null,
+        logged_at: l.logged_at || l.created_at,
+        created_at: l.created_at,
+      }));
+    },
   });
 }
 
