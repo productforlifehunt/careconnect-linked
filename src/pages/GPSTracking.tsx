@@ -135,18 +135,18 @@ export default function GPSTracking() {
     try {
       const authUserId = await getCurrentAuthUserId();
       if (!authUserId) return;
-      if (checked && navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(async (pos) => {
-          const timestamp = new Date().toISOString();
-          await shareMyLocationWordPress(pos.coords.latitude, pos.coords.longitude);
-          refetch();
-          setUpdatingShare(false);
-          toast({ title: t("gps.locationSharingEnabled") });
-        }, () => {
+      if (checked) {
+        const pos = await getCurrentPosition({ timeout: 10000 });
+        if (!pos) {
           setUpdatingShare(false);
           toast({ title: t("gps.couldNotGetLocation"), description: t("gps.enableLocationAccess"), variant: "destructive" });
           setShareMyLocation(false);
-        });
+          return;
+        }
+        await shareMyLocationWordPress(pos.latitude, pos.longitude);
+        refetch();
+        setUpdatingShare(false);
+        toast({ title: t("gps.locationSharingEnabled") });
       } else {
         await disableMyLocationSharingWordPress();
         refetch();
