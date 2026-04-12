@@ -33,6 +33,14 @@ export interface SiteConfig {
     findCare: string;
     caredOnes: string;
     dashboard: string;
+    gpsTracking: string;
+    // ChallengeD-specific content sections
+    awareD?: string;
+    careD?: string;
+    copeD?: string;
+    safeD?: string;
+    accompanieD?: string;
+    manageD?: string;
   };
   howItWorksSteps: { step: string; titleKey: string; descKey: string }[];
   trustBadges: string[];
@@ -66,6 +74,7 @@ const careConnectedConfig: SiteConfig = {
     findCare: "Find Care",
     caredOnes: "Cared Ones",
     dashboard: "Dashboard",
+    gpsTracking: "GPS Tracking",
   },
   howItWorksSteps: [
     { step: "1", titleKey: "step1Title", descKey: "step1Desc" },
@@ -99,10 +108,17 @@ const challengedConfig: SiteConfig = {
   caredOneSingular: "Loved One",
   careGroupSingular: "Care Team",
   navLabels: {
-    careGroups: "Care Teams",
+    careGroups: "UniteD",
     findCare: "Find Help",
     caredOnes: "My Loved Ones",
     dashboard: "Dashboard",
+    gpsTracking: "FinD",
+    awareD: "AwareD",
+    careD: "CareD",
+    copeD: "CopeD",
+    safeD: "SafeD",
+    accompanieD: "AccompanieD",
+    manageD: "ManageD",
   },
   howItWorksSteps: [
     { step: "1", titleKey: "step1Title", descKey: "step1Desc" },
