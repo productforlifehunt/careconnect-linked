@@ -172,29 +172,11 @@ export default function GPSTracking() {
       const authUserId = await getCurrentAuthUserId();
       if (!authUserId) throw new Error("Not authenticated");
 
-      // Try to get location, but proceed even without it
-      let latitude = 0;
-      let longitude = 0;
-      let accuracy: number | null = null;
-      let locationAvailable = false;
+      const pos = await getCurrentPosition({ timeout: 8000 });
+      const locationAvailable = pos !== null;
 
-      if ("geolocation" in navigator) {
-        try {
-          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 });
-          });
-          latitude = position.coords.latitude;
-          longitude = position.coords.longitude;
-          accuracy = position.coords.accuracy ?? null;
-          locationAvailable = true;
-        } catch {
-          // Location denied or unavailable — proceed without it
-        }
-      }
-
-      // Always send SOS, even without location
-      await shareMyLocationWordPress(latitude, longitude, {
-        accuracy,
+      await shareMyLocationWordPress(pos?.latitude ?? 0, pos?.longitude ?? 0, {
+        accuracy: pos?.accuracy ?? null,
         isEmergency: true,
       });
 
