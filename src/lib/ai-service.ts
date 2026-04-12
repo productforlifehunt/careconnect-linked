@@ -1,9 +1,10 @@
 /**
- * AI Service — WordPress-backed AI integration.
+ * AI Service — Lovable AI Gateway via edge function + WordPress CCT for conversation storage.
  */
 
-import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
+import { wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
+import { supabase } from "@/integrations/supabase/client";
 
 export type AIMode =
   | "insights"
@@ -27,7 +28,6 @@ export interface InvokeAIOptions {
   messages?: AIChatMessage[];
 }
 
-const MODEL_NAME = "google/gemma-3-4b-it:free";
 const CONVERSATION_SLUG = "ai_conversations";
 const MESSAGE_SLUG = "ai_messages";
 const CONTEXT_SLUG = "ai_context_memory";
@@ -80,7 +80,7 @@ async function ensureConversation(mode: AIMode, options: InvokeAIOptions = {}) {
   return createdId;
 }
 
-async function createMessage(conversationId: string, role: AIChatMessage["role"], content: string, mode: AIMode, rawResponse = "") {
+async function createMessage(conversationId: string, role: AIChatMessage["role"], content: string, mode: AIMode) {
   await wordpressCCTFetch(MESSAGE_SLUG, {
     method: "POST",
     body: {
@@ -89,9 +89,9 @@ async function createMessage(conversationId: string, role: AIChatMessage["role"]
       role,
       ai_mode: mode,
       content,
-      context_used: rawResponse,
+      context_used: "",
       tokens_used: 0,
-      model_name: MODEL_NAME,
+      model_name: "gemini-3-flash-preview",
       created_at: unixNow(),
     },
   });
@@ -100,7 +100,9 @@ async function createMessage(conversationId: string, role: AIChatMessage["role"]
 async function touchConversation(conversationId: string) {
   try {
     const messages = await wordpressCCTFetch<any[]>(MESSAGE_SLUG, { params: { _limit: 200 } });
-    const count = (Array.isArray(messages) ? messages : []).filter((item) => String(item.conversation_id) === String(conversationId)).length;
+    const count = (Array.isArray(messages) ? messages : []).filter(
+      (item) => String(item.conversation_id) === String(conversationId)
+    ).length;
     await wordpressCCTFetch(CONVERSATION_SLUG, {
       id: conversationId,
       method: "PUT",
@@ -112,110 +114,30 @@ async function touchConversation(conversationId: string) {
   } catch {}
 }
 
-function buildSystemPrompt(mode: AIMode) {
-  const base = "You are a dementia care assistant. Be compassionate, practical, concise, and safety-first. Never claim to replace a doctor. Escalate emergencies immediately.";
-  const modePrompt: Record<AIMode, string> = {
-    insights: "Analyze care coordination patterns and suggest the most actionable next steps.",
-    cognitive_exercise: "Return a gentle dementia-friendly exercise as valid JSON only.",
-    medication_check: "Flag possible issues conservatively and remind the user to verify with a clinician or pharmacist.",
-    behavior_analysis: "Identify likely triggers, patterns, and non-pharmacological strategies.",
-    care_tips: "Provide practical dementia care tips tailored to the situation.",
-    daily_summary: "Summarize the care day clearly, warmly, and usefully.",
-    routine_suggestion: "Suggest safe, simple dementia-friendly routines.",
-    general_chat: "Answer dementia care questions helpfully and naturally.",
-  };
-  return `${base} ${modePrompt[mode]}`;
-}
+/** Call the ai-care-engine edge function (Lovable AI Gateway) */
+async function callAI(mode: AIMode, messages: AIChatMessage[]): Promise<string> {
+  const { data, error } = await supabase.functions.invoke("ai-care-engine", {
+    body: { mode, messages },
+  });
 
-function normalizeMessages(mode: AIMode, prompt: string, messages?: AIChatMessage[]) {
-  const baseMessages = messages && messages.length > 0
-    ? messages
-    : [{ role: "user" as const, content: prompt }];
-
-  if (baseMessages[0]?.role === "system") {
-    return baseMessages;
+  if (error) {
+    console.error("AI edge function error:", error);
+    throw new Error(error.message || "AI service unavailable");
   }
 
-  return [{ role: "system" as const, content: buildSystemPrompt(mode) }, ...baseMessages];
-}
-
-function extractReply(response: any): string {
-  if (!response) return "";
-  if (typeof response === "string") return response;
-  if (typeof response.reply === "string") return response.reply;
-  if (typeof response.result === "string") return response.result;
-  if (typeof response.message === "string") return response.message;
-  if (typeof response.output === "string") return response.output;
-  if (typeof response.text === "string") return response.text;
-  if (typeof response.data === "string") return response.data;
-  if (typeof response?.data?.reply === "string") return response.data.reply;
-  if (typeof response?.data?.result === "string") return response.data.result;
-  if (typeof response?.choices?.[0]?.message?.content === "string") return response.choices[0].message.content;
-  if (typeof response?.choices?.[0]?.text === "string") return response.choices[0].text;
-  return JSON.stringify(response);
-}
-
-async function callWordPressAI(mode: AIMode, prompt: string, messages: AIChatMessage[]) {
-  const attempts: Array<{ endpoint: string; body: Record<string, any> }> = [
-    {
-      endpoint: "mwai-ui/v1/chats/submit",
-      body: {
-        botId: "default",
-        customId: "challenged-dementia-assistant",
-        newMessage: prompt,
-        messages,
-        model: MODEL_NAME,
-      },
-    },
-    {
-      endpoint: "mwai/v1/chats/submit",
-      body: {
-        botId: "default",
-        newMessage: prompt,
-        messages,
-        model: MODEL_NAME,
-      },
-    },
-    {
-      endpoint: "mwai/v1/chat/submit",
-      body: {
-        prompt,
-        messages,
-        model: MODEL_NAME,
-      },
-    },
-    {
-      endpoint: "better-messages/v1/ai/chat",
-      body: {
-        message: prompt,
-        messages,
-        model: MODEL_NAME,
-        assistant: mode,
-      },
-    },
-  ];
-
-  let lastError: unknown = null;
-  for (const attempt of attempts) {
-    try {
-      const response = await wordpressFetch<any>(attempt.endpoint, {
-        method: "POST",
-        body: attempt.body,
-      });
-      const reply = extractReply(response).trim();
-      if (reply) return { reply, raw: response };
-    } catch (error) {
-      lastError = error;
-    }
+  if (data?.error) {
+    throw new Error(data.error);
   }
 
-  throw lastError instanceof Error ? lastError : new Error("No WordPress AI endpoint responded.");
+  return data?.reply || "";
 }
 
 export async function loadAIConversation(mode: AIMode, options: Pick<InvokeAIOptions, "conversationId" | "caredOneId"> = {}) {
   const conversationId = options.conversationId || localStorage.getItem(conversationStorageKey(mode, options.caredOneId));
   if (!conversationId) return [] as AIChatMessage[];
-  const messages = await wordpressCCTFetch<any[]>(MESSAGE_SLUG, { params: { _limit: 200, _orderby: "cct_created", _order: "asc" } });
+  const messages = await wordpressCCTFetch<any[]>(MESSAGE_SLUG, {
+    params: { _limit: 200, _orderby: "cct_created", _order: "asc" },
+  });
   return (Array.isArray(messages) ? messages : [])
     .filter((item) => String(item.conversation_id) === String(conversationId))
     .sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime())
@@ -224,11 +146,18 @@ export async function loadAIConversation(mode: AIMode, options: Pick<InvokeAIOpt
 
 export async function invokeAI(mode: AIMode, context: string, options: InvokeAIOptions = {}): Promise<string> {
   const conversationId = await ensureConversation(mode, options);
-  const messages = normalizeMessages(mode, context, options.messages);
-  const userMessage = messages.filter((message) => message.role === "user").at(-1)?.content || context;
 
+  // Build messages array
+  const userMessages = options.messages && options.messages.length > 0
+    ? options.messages.filter((m) => m.role !== "system")
+    : [{ role: "user" as const, content: context }];
+
+  const userMessage = userMessages.filter((m) => m.role === "user").at(-1)?.content || context;
+
+  // Store user message in WP CCT
   await createMessage(conversationId, "user", userMessage, mode);
 
+  // Store context memory if caredOne specified
   if (options.caredOneId) {
     try {
       await wordpressCCTFetch(CONTEXT_SLUG, {
@@ -248,12 +177,13 @@ export async function invokeAI(mode: AIMode, context: string, options: InvokeAIO
   }
 
   try {
-    const { reply, raw } = await callWordPressAI(mode, context, messages);
-    await createMessage(conversationId, "assistant", reply, mode, JSON.stringify(raw));
+    const reply = await callAI(mode, userMessages);
+    await createMessage(conversationId, "assistant", reply, mode);
     await touchConversation(conversationId);
     return reply;
   } catch (error) {
-    await createMessage(conversationId, "assistant", "I’m having trouble reaching the WordPress AI service right now. Please try again in a moment.", mode);
+    const fallbackMsg = "I'm having trouble reaching the AI service right now. Please try again in a moment.";
+    await createMessage(conversationId, "assistant", fallbackMsg, mode);
     await touchConversation(conversationId);
     throw error;
   }
@@ -263,7 +193,6 @@ export async function invokeAI(mode: AIMode, context: string, options: InvokeAIO
 export function parseAIJson<T = any>(reply: string): T | null {
   try {
     let cleaned = reply.trim();
-    // Strip markdown code fences
     if (cleaned.startsWith("```")) {
       cleaned = cleaned.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
     }
