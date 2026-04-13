@@ -5,10 +5,7 @@
  */
 
 import { getWPToken } from "./wp-auth";
-
-const WP_SITE_PATH = import.meta.env.VITE_WP_SITE_PATH || "careconnected";
-const REMOTE_WP_BASE_URL = import.meta.env.VITE_WP_BASE_URL || `http://170.106.171.59:8080/${WP_SITE_PATH}`;
-const WP_BASE_URL = import.meta.env.DEV ? `/wp-proxy/${WP_SITE_PATH}` : REMOTE_WP_BASE_URL;
+import { buildWPUrl, buildWPHeaders } from "@/lib/wp-url";
 
 interface WPFetchOptions {
   method?: string;
@@ -20,19 +17,8 @@ async function wpFetch<T = any>(endpoint: string, options: WPFetchOptions = {}):
   const token = getWPToken();
   const { method = "GET", body, params } = options;
 
-  let url = `${WP_BASE_URL}/wp-json/${endpoint}`;
-  if (params) {
-    const qs = new URLSearchParams();
-    Object.entries(params).forEach(([k, v]) => qs.set(k, String(v)));
-    url += `?${qs.toString()}`;
-  }
-
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
+  const url = buildWPUrl(endpoint, params);
+  const headers = buildWPHeaders(token, "application/json");
 
   const resp = await fetch(url, {
     method,

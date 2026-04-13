@@ -1,16 +1,9 @@
 // WooCommerce REST API Service Layer
 // Headless integration for Care Connector marketplace
-// Auth: uses Vite dev-proxy + JWT Bearer token (no hardcoded consumer keys)
+// Auth: uses Vite dev-proxy + Supabase edge proxy + JWT Bearer token
 
 import { getWPToken } from './wp-auth';
-
-const WP_SITE_PATH = import.meta.env.VITE_WP_SITE_PATH || 'careconnected';
-const REMOTE_WP_BASE = import.meta.env.VITE_WP_BASE_URL || `http://170.106.171.59:8080/${WP_SITE_PATH}`;
-const WP_BASE_URL = import.meta.env.DEV ? `/wp-proxy/${WP_SITE_PATH}` : REMOTE_WP_BASE;
-const WC_API_URL = `${WP_BASE_URL}/wp-json/wc/v3`;
-const WC_STORE_API_URL = `${WP_BASE_URL}/wp-json/wc/store/v1`;
-const WC_BOOKINGS_API_URL = `${WP_BASE_URL}/wp-json/wc-bookings/v1`;
-const DOKAN_API_URL = `${WP_BASE_URL}/wp-json/dokan/v1`;
+import { buildWPUrl, buildWPHeaders } from '@/lib/wp-url';
 
 // Parent category slug for all care service products
 export const CARE_SERVICES_CATEGORY = 'care-services';
@@ -19,21 +12,15 @@ export const CARE_SERVICES_CATEGORY = 'care-services';
  * Build auth headers using JWT Bearer token
  */
 function getAuthHeaders(): Record<string, string> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   const token = getWPToken();
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  return headers;
+  return buildWPHeaders(token, 'application/json');
 }
 
 /**
  * Fetch wrapper for WooCommerce REST API v3 (admin endpoints)
  */
 async function wcFetch(endpoint: string, options: RequestInit = {}) {
-  // Ensure proper query-string delimiter
-  const separator = endpoint.includes('?') ? '&' : '?';
-  const url = `${WC_API_URL}/${endpoint}`;
+  const url = buildWPUrl(`wc/v3/${endpoint}`);
 
   const response = await fetch(url, {
     ...options,
@@ -55,7 +42,7 @@ async function wcFetch(endpoint: string, options: RequestInit = {}) {
  * Fetch wrapper for WooCommerce Store API (cart / checkout — public, cookie-based)
  */
 async function storeApiFetch(endpoint: string, options: RequestInit = {}) {
-  const url = `${WC_STORE_API_URL}/${endpoint}`;
+  const url = buildWPUrl(`wc/store/v1/${endpoint}`);
 
   const response = await fetch(url, {
     ...options,
@@ -77,7 +64,7 @@ async function storeApiFetch(endpoint: string, options: RequestInit = {}) {
 }
 
 async function wcBookingsFetch(endpoint: string, options: RequestInit = {}) {
-  const url = `${WC_BOOKINGS_API_URL}/${endpoint}`;
+  const url = buildWPUrl(`wc-bookings/v1/${endpoint}`);
 
   const response = await fetch(url, {
     ...options,
@@ -432,7 +419,7 @@ function normalizeBookingAvailabilityRules(rules: WooBookingAvailabilityRule[] =
 // ─── Dokan API fetch wrapper ───────────────────────────────
 
 async function dokanFetch(endpoint: string, options: RequestInit = {}) {
-  const url = `${DOKAN_API_URL}/${endpoint}`;
+  const url = buildWPUrl(`dokan/v1/${endpoint}`);
   const response = await fetch(url, {
     ...options,
     headers: { ...getAuthHeaders(), ...options.headers },
