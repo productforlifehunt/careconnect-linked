@@ -1,10 +1,12 @@
 import { wordpressCCTFetch } from "@/features/shared/wordpress-client";
 
 // CCT slugs: job_posting, job_application | flat fields
-export async function fetchJobPostingsWordPress(filters?: { source?: string; status?: string }): Promise<any[]> {
+export async function fetchJobPostingsWordPress(filters?: { source?: string; status?: string; locale?: { area?: string; language?: string } }): Promise<any[]> {
   try {
     const params: Record<string, any> = { _limit: 50 };
     if (filters?.status) params.status = filters.status;
+    if (filters?.locale?.area) params.app_area = filters.locale.area;
+    if (filters?.locale?.language) params.language = filters.locale.language;
     const jobs = await wordpressCCTFetch("job_posting", { params });
     if (!Array.isArray(jobs)) return [];
     return jobs.map((j: any) => ({
