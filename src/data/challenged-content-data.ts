@@ -1401,10 +1401,118 @@ const safeArticles: ChallengedContentItem[] = [
 </ul>`,
     "5 min read", 6
   ),
+
+  // ── Fire Safety & NRT + Bathing Safety ──
+
+  article("safe", "fire",
+    "Fire Safety for Dementia Households: Prevention, NRT, and Smoking Risks",
+    "People with dementia who smoke are at extreme fire risk. This comprehensive guide covers fire prevention, nicotine replacement therapy (NRT), and emergency planning.",
+    `<h2>Why Dementia + Smoking = Extreme Fire Risk</h2>
+<p>Smoking is one of the leading causes of fatal house fires. When combined with dementia — which impairs judgment, memory, and reaction time — the risk multiplies dramatically. A person with dementia may:</p>
+<ul>
+<li>Forget a lit cigarette and fall asleep</li>
+<li>Drop a cigarette onto clothing, furniture, or bedding</li>
+<li>Leave a lighter or match unattended near flammable materials</li>
+<li>Be unable to respond appropriately to a fire alarm</li>
+<li>Forget how to use a fire extinguisher or call for help</li>
+</ul>
+
+<h2>Nicotine Replacement Therapy (NRT)</h2>
+<p>NRT is one of the most important safety interventions for dementia patients who smoke. It removes the fire risk entirely while addressing nicotine dependence:</p>
+
+<h3>Types of NRT</h3>
+<ul>
+<li><strong>Nicotine patches</strong> — 24-hour slow release. Easiest for dementia patients as caregivers can apply/remove them. Available in 21mg, 14mg, and 7mg strengths for gradual step-down.</li>
+<li><strong>Nicotine gum</strong> — 2mg and 4mg. May be suitable for early-stage patients who can follow chewing instructions.</li>
+<li><strong>Nicotine lozenges</strong> — Dissolve in the mouth. Simpler than gum for those with chewing difficulties.</li>
+<li><strong>Nicotine inhaler</strong> — Mimics the hand-to-mouth action of smoking, which some patients find comforting.</li>
+<li><strong>Nicotine spray</strong> — Fast-acting for acute cravings.</li>
+</ul>
+
+<h3>NRT for Dementia Patients — Special Considerations</h3>
+<ul>
+<li><strong>Patches are the top recommendation</strong> — The caregiver manages application; no patient compliance required</li>
+<li>Remove patch at bedtime if vivid dreams occur (switch to 16-hour patch)</li>
+<li>Monitor skin for irritation — rotate application sites daily</li>
+<li>Consult the doctor before starting NRT, especially if the patient has cardiovascular conditions</li>
+<li>Combine with hiding cigarettes and lighters to prevent dual use</li>
+</ul>
+
+<h2>Fire Prevention Checklist</h2>
+<ul>
+<li>Install smoke alarms on every floor and in the kitchen and bedroom</li>
+<li>Test smoke alarms monthly — the person may not hear or respond to them</li>
+<li>Consider interconnected alarms that all sound when one is triggered</li>
+<li>Remove or lock up lighters, matches, and candles</li>
+<li>Install automatic stove shut-off devices</li>
+<li>Use flameless candles for ambiance</li>
+<li>Keep a fire extinguisher accessible to caregivers</li>
+<li>Never leave the person alone with an open flame</li>
+<li>Install fireproof bedding if they have a history of smoking in bed</li>
+</ul>
+
+<h2>Emergency Fire Plan</h2>
+<ul>
+<li>Practice fire escape routes — even if the person won't remember, muscle memory can help</li>
+<li>Install exit path lighting that activates with smoke alarms</li>
+<li>Alert your local fire department that a person with dementia lives at this address</li>
+<li>Keep doors unlocked from the inside for quick exit (balance with wandering prevention)</li>
+<li>Have an emergency bag ready with medications, IDs, and important documents</li>
+</ul>
+
+<h2>Recommended Products</h2>
+<ul>
+<li>10-year sealed lithium battery smoke alarms (no battery changes needed)</li>
+<li>Stove guard automatic shut-off devices</li>
+<li>Fireproof bedding and chair throws</li>
+<li>NRT starter kits (patches + lozenges combination packs)</li>
+<li>Flameless LED candles</li>
+<li>Lockboxes for lighters and matches</li>
+</ul>`,
+    "10 min read", 7
+  ),
+
+  article("safe", "bathing",
+    "Bathing Safety: Preventing Injuries During Personal Care",
+    "The bathroom is the most dangerous room for someone with dementia. These safety measures prevent falls, burns, and distress during bathing.",
+    `<h2>Why Bathing Is High-Risk</h2>
+<p>The bathroom combines wet surfaces, hard edges, hot water, and a vulnerable person who may be confused, frightened, or resistant. Falls in the bathroom are a leading cause of hospitalization in dementia patients.</p>
+
+<h2>Equipment Essentials</h2>
+<ul>
+<li><strong>Grab bars</strong> — Install near the toilet, inside and outside the tub/shower. Use bars rated for at least 250 lbs (screwed into studs, not suction cups)</li>
+<li><strong>Shower chair or bath bench</strong> — Allows seated bathing, reducing fall risk dramatically</li>
+<li><strong>Handheld showerhead</strong> — Gentler, less frightening than overhead water, and allows seated bathing</li>
+<li><strong>Non-slip mats</strong> — Inside the tub AND on the bathroom floor</li>
+<li><strong>Raised toilet seat</strong> — Easier to sit down and stand up</li>
+<li><strong>Thermostatic mixing valve</strong> — Prevents scalding by limiting water temperature</li>
+</ul>
+
+<h2>Temperature Safety</h2>
+<ul>
+<li>Set water heater to 120°F / 49°C maximum</li>
+<li>Always test water temperature yourself before the person enters</li>
+<li>Consider installing an anti-scald device on faucets</li>
+<li>People with dementia may lose the ability to sense temperature extremes</li>
+</ul>
+
+<h2>Reducing Bathing Resistance</h2>
+<ul>
+<li>Follow their lifelong bathing preferences (bath vs. shower, morning vs. evening)</li>
+<li>Warm the bathroom first — cold air causes resistance and distress</li>
+<li>Use a calm, reassuring voice throughout</li>
+<li>Cover body parts not being washed for warmth and dignity</li>
+<li>Let them do as much as possible independently</li>
+<li>On bad days, a sponge bath is perfectly acceptable</li>
+<li>Consider no-rinse body wash and shampoo products</li>
+</ul>
+
+<h2>When Professional Help Is Needed</h2>
+<p>If bathing becomes a consistent source of aggression or extreme distress, consider hiring a home health aide for bathing assistance. Sometimes a non-family caregiver encounters less resistance.</p>`,
+    "6 min read", 8
+  ),
 ];
 
-// ═══════════════════════════════════════════════
-// AccompanieD — Companionship
 // ═══════════════════════════════════════════════
 
 const accompanyArticles: ChallengedContentItem[] = [
