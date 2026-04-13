@@ -72,7 +72,7 @@ export async function createCareGroupWordPress(group: { name: string; descriptio
   // Auto-add creator as owner via JetEngine relation 72
   const groupId = normalizeWpObjectId(result?._ID || result?.id);
   const wpUser = getStoredWPUser();
-  const userId = wpUser?.id ? Number(wpUser.id) : null;
+  const userId = wpUser?.user_id ? Number(wpUser.user_id) : null;
   if (groupId && userId) {
     try {
       await wordpressFetch(`jet-rel/${REL_GROUP_MEMBER}`, {
