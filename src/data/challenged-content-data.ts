@@ -479,6 +479,175 @@ const careArticles: ChallengedContentItem[] = [
     "8 min read", 4
   ),
 
+  // ── Module 5: Detailed Behaviour Change Articles (WHO iSupport) ──
+
+  article("care", "behaviors",
+    "Understanding and Responding to Aggression in Dementia",
+    "Verbal and physical aggression affects up to 40% of people with dementia. Learn the ABC model and proven de-escalation techniques.",
+    `<h2>Why Aggression Happens</h2>
+<p>Aggression in dementia is almost never intentional. The person is reacting to something they can't articulate — pain, fear, confusion, frustration, or feeling threatened. As language deteriorates, behavior becomes the primary form of communication.</p>
+
+<h2>The ABC Model</h2>
+<p>The ABC (Antecedent–Behavior–Consequence) model is the gold-standard framework used by the WHO iSupport programme:</p>
+<ul>
+<li><strong>A — Antecedent:</strong> What happened just before? (Were they being rushed? Was the environment noisy? Were they in pain?)</li>
+<li><strong>B — Behavior:</strong> What exactly did they do? (Hitting, shouting, throwing, biting?)</li>
+<li><strong>C — Consequence:</strong> What happened after? (Did they get what they needed? Did the trigger stop?)</li>
+</ul>
+<p>By keeping an ABC diary, patterns emerge that help you predict and prevent episodes.</p>
+
+<h2>De-escalation Techniques</h2>
+<ul>
+<li><strong>Stay calm</strong> — Your body language sets the tone. Breathe slowly, relax your shoulders</li>
+<li><strong>Lower your voice</strong> — Speak slowly, softly, and use short sentences</li>
+<li><strong>Don't argue or reason</strong> — You cannot logic someone out of a brain disease</li>
+<li><strong>Give space</strong> — Step back. Don't crowd or corner them</li>
+<li><strong>Validate feelings</strong> — "I can see you're upset. I'm here to help."</li>
+<li><strong>Remove triggers</strong> — Turn off the TV, reduce noise, dim lights</li>
+<li><strong>Redirect</strong> — Offer a snack, suggest a walk, play familiar music</li>
+<li><strong>Check for pain</strong> — Urinary tract infections, constipation, and dental pain are common hidden triggers</li>
+</ul>
+
+<h2>What NOT to Do</h2>
+<ul>
+<li>Never restrain physically unless safety is at immediate risk</li>
+<li>Never punish or scold</li>
+<li>Never take it personally — they are reacting to the disease, not to you</li>
+<li>Never force compliance — try again later</li>
+</ul>
+
+<h2>When to Get Medical Help</h2>
+<p>Sudden onset of aggression may indicate a medical issue (infection, pain, medication side effect). Consult the doctor if aggression is new, sudden, escalating, or accompanied by other changes like fever or confusion beyond baseline.</p>`,
+    "8 min read", 5
+  ),
+
+  article("care", "behaviors",
+    "Repetitive Questions, Phrases, and Actions: Why They Happen and How to Cope",
+    "Being asked the same question 50 times a day is exhausting. Understanding why it happens transforms frustration into compassion.",
+    `<h2>Why Repetition Occurs</h2>
+<p>Repetition is one of the most common — and most frustrating — dementia behaviors. It happens because the person genuinely does not remember asking before. Their short-term memory loop is broken. Common forms include:</p>
+<ul>
+<li>Asking the same question repeatedly ("What day is it?" "When are we going?")</li>
+<li>Telling the same story over and over</li>
+<li>Performing the same action (opening/closing drawers, folding/unfolding clothes)</li>
+<li>Making repetitive sounds or movements</li>
+</ul>
+
+<h2>Common Triggers</h2>
+<ul>
+<li><strong>Anxiety</strong> — Repetition is often driven by worry or insecurity</li>
+<li><strong>Boredom</strong> — Not enough stimulation or engagement</li>
+<li><strong>Comfort-seeking</strong> — The familiar phrase or action feels reassuring</li>
+<li><strong>Unmet needs</strong> — Hunger, toileting, or discomfort they can't express</li>
+</ul>
+
+<h2>Strategies That Help</h2>
+<ul>
+<li><strong>Answer each time patiently</strong> — They truly don't remember asking. Your annoyance communicates rejection</li>
+<li><strong>Write it down</strong> — A whiteboard with "Today is Tuesday. Lunch is at 12:00." can reduce questions</li>
+<li><strong>Address the emotion</strong> — "Are you worried about something?" may reach the root cause</li>
+<li><strong>Redirect to activity</strong> — Engage hands and mind with folding laundry, sorting objects, or music</li>
+<li><strong>Use distraction</strong> — Change the subject, offer a snack, go for a walk</li>
+<li><strong>Create memory aids</strong> — Clocks with day/date, daily schedule posted on the wall</li>
+</ul>
+
+<h2>Taking Care of Yourself</h2>
+<p>Repetition can erode your patience to nothing. It's okay to step away briefly, use headphones during less risky tasks, or tag-team with another caregiver. Your emotional reserves matter too.</p>`,
+    "6 min read", 6
+  ),
+
+  article("care", "behaviors",
+    "Hallucinations, Delusions, and Paranoia in Dementia",
+    "When your loved one sees things that aren't there or accuses you of stealing — understanding these symptoms helps you respond with compassion.",
+    `<h2>Hallucinations vs. Delusions</h2>
+<ul>
+<li><strong>Hallucinations</strong> — Seeing, hearing, smelling, or feeling things that aren't there. Visual hallucinations are especially common in Lewy body dementia.</li>
+<li><strong>Delusions</strong> — Fixed false beliefs. Common delusions include believing someone is stealing, that a spouse is an imposter (Capgras syndrome), or that the home is not really their home.</li>
+<li><strong>Paranoia</strong> — Suspicion and mistrust, often targeting the primary caregiver ("You're poisoning my food," "You stole my wallet").</li>
+</ul>
+
+<h2>Why They Happen</h2>
+<p>Brain damage affects perception and interpretation. The person is experiencing something real TO THEM. Medications, infections (especially UTIs), poor lighting, and overstimulation can trigger or worsen episodes.</p>
+
+<h2>How to Respond</h2>
+<ul>
+<li><strong>Don't argue</strong> — Saying "That's not real" is unhelpful and distressing. Their experience IS real to them</li>
+<li><strong>Validate the emotion</strong> — "That sounds scary. You're safe. I'm here with you."</li>
+<li><strong>Don't play along with dangerous delusions</strong> — But gentle distraction is better than confrontation</li>
+<li><strong>Check the environment</strong> — Remove mirrors if they cause confusion, improve lighting, reduce shadows</li>
+<li><strong>Look for triggers</strong> — Certain TV shows, dark rooms, or specific times of day</li>
+<li><strong>If harmless, let it be</strong> — If they see a child playing in the room and it makes them happy, there's no need to correct</li>
+</ul>
+
+<h2>When It's an Emergency</h2>
+<p>Seek immediate medical help if hallucinations are sudden and new, accompanied by fever or delirium, causing danger to self or others, or associated with a medication change.</p>
+
+<h2>Medication Considerations</h2>
+<p>Antipsychotics are sometimes used but carry serious risks in dementia patients, including increased stroke risk and mortality. They should be a last resort, used at the lowest dose for the shortest time, and regularly reviewed.</p>`,
+    "7 min read", 7
+  ),
+
+  article("care", "behaviors",
+    "Inappropriate Sexual Behavior in Dementia: A Sensitive Guide",
+    "One of the most distressing and least discussed behaviors — understanding why it happens removes shame and enables effective management.",
+    `<h2>Understanding the Behavior</h2>
+<p>Inappropriate sexual behavior (ISB) affects 2–17% of people with dementia. It includes public undressing, inappropriate touching, sexual comments, excessive masturbation, or making advances toward caregivers or strangers.</p>
+<p>This is NOT the person's "true character" coming out. It is a direct result of brain damage to the frontal lobes (which control impulse and social behavior) and does not reflect their values or intentions.</p>
+
+<h2>Common Causes</h2>
+<ul>
+<li><strong>Frontal lobe damage</strong> — Loss of social inhibition and impulse control</li>
+<li><strong>Misidentification</strong> — Mistaking a caregiver for a spouse</li>
+<li><strong>Discomfort</strong> — Undressing may signal that clothing is uncomfortable or they need the bathroom</li>
+<li><strong>Need for touch/comfort</strong> — Craving human connection and warmth</li>
+<li><strong>Boredom</strong> — Lack of stimulation or engagement</li>
+</ul>
+
+<h2>Response Strategies</h2>
+<ul>
+<li><strong>Stay calm</strong> — React without shock or anger. Calmly redirect</li>
+<li><strong>Cover gently</strong> — If they've undressed, offer a robe without making it a confrontation</li>
+<li><strong>Distract</strong> — Offer a different activity or object to hold</li>
+<li><strong>Check for discomfort</strong> — Are they too hot? Do they need the bathroom?</li>
+<li><strong>Provide appropriate touch</strong> — Hand massages, hugs, gentle arm-holding can meet the underlying need</li>
+<li><strong>Modify clothing</strong> — Use back-fastening garments if undressing is frequent and risky</li>
+<li><strong>Ensure privacy</strong> — If masturbation is the issue, guide them to a private space</li>
+</ul>
+
+<h2>Protecting Caregivers</h2>
+<p>If a caregiver is being targeted, rotate caregivers, consider same-gender care for personal hygiene tasks, and ensure staff/family know this is a disease symptom, not a personal violation. Professional counseling for affected caregivers is appropriate.</p>`,
+    "6 min read", 8
+  ),
+
+  article("care", "behaviors",
+    "Hoarding, Rummaging, and Hiding Things in Dementia",
+    "When they hide the TV remote in the freezer or stuff tissues into every pocket — understanding these common behaviors helps you respond calmly.",
+    `<h2>Why These Behaviors Occur</h2>
+<p>Hoarding, rummaging, and hiding objects are extremely common in mid-stage dementia. They usually reflect:</p>
+<ul>
+<li><strong>Need for security</strong> — Collecting things provides a sense of control in a confusing world</li>
+<li><strong>Past habits</strong> — A former homemaker may compulsively fold and store</li>
+<li><strong>Boredom</strong> — Rummaging gives them something to do with their hands</li>
+<li><strong>Confusion</strong> — They may put items in illogical places because they've forgotten where things go</li>
+<li><strong>Fear of theft</strong> — Paranoia about stealing may drive hiding valuables</li>
+</ul>
+
+<h2>Practical Strategies</h2>
+<ul>
+<li><strong>Learn their hiding spots</strong> — Check regularly. Most people use 2–3 favorite spots</li>
+<li><strong>Keep duplicates</strong> — Extra keys, glasses, remote controls</li>
+<li><strong>Secure truly important items</strong> — Lock away passports, jewelry, medications, and financial documents</li>
+<li><strong>Create a rummaging box</strong> — Fill a box or drawer with safe, interesting items to sort through (old photos, fabric swatches, costume jewelry)</li>
+<li><strong>Don't accuse</strong> — Instead of "Where did you put my keys?" try "Let's find the keys together"</li>
+<li><strong>Check wastebaskets before emptying</strong> — Important items often end up in the trash</li>
+<li><strong>Label drawers and cabinets</strong> with pictures of contents</li>
+</ul>
+
+<h2>Food Hoarding</h2>
+<p>If they hoard food (common), check for spoiled food regularly, provide easy access to safe snacks, and ensure they're eating enough at meals — hoarding may indicate they feel food-insecure.</p>`,
+    "5 min read", 9
+  ),
+
   article("care", "sleep",
     "Sleep Problems and Sundowning: A Caregiver's Guide",
     "Up to 40% of people with dementia experience significant sleep disturbances. Here's how to improve sleep for everyone.",
