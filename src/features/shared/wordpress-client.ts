@@ -90,5 +90,9 @@ export async function wordpressCCTFetch<T = Record<string, any>[]>(
   if (raw && typeof raw === "object" && "_ID" in raw) {
     return normalizeCCT(raw as CCTItem) as unknown as T;
   }
+  // Handle CCT create response: {"success":true,"item_id":N}
+  if (raw && typeof raw === "object" && "item_id" in raw) {
+    return { ...raw, _ID: raw.item_id, id: String(raw.item_id) } as unknown as T;
+  }
   return raw as T;
 }
