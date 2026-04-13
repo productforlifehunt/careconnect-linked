@@ -13,6 +13,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { invokeAI, loadAIConversation, type AIChatMessage } from "@/lib/ai-service";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Message {
   role: "user" | "assistant";
@@ -32,54 +34,118 @@ function detectLanguage(text: string): string {
   return "en";
 }
 
-/** Clean text for TTS: remove markdown symbols, extra whitespace */
-function cleanForSpeech(text: string): string {
-  return text
-    .replace(/\*\*([^*]+)\*\*/g, "$1")   // **bold** → bold
-    .replace(/\*([^*]+)\*/g, "$1")        // *italic* → italic
-    .replace(/#{1,6}\s*/g, "")            // # headings
-    .replace(/```[\s\S]*?```/g, "")       // code blocks
-    .replace(/`([^`]+)`/g, "$1")          // inline code
-    .replace(/[-•]\s+/g, "，")             // bullet points → pause
-    .replace(/\n{2,}/g, "。")              // double newlines → sentence end
-    .replace(/\n/g, "，")                  // single newlines → comma pause
-    .replace(/[*_~>#|]/g, "")             // remaining markdown chars
-    .replace(/\s{2,}/g, " ")              // collapse spaces
-    .trim();
+// Audio context for PCM16 playback
+let currentAudioSource: AudioBufferSourceNode | null = null;
+let audioCtx: AudioContext | null = null;
+
+function getAudioContext(): AudioContext {
+  if (!audioCtx) audioCtx = new AudioContext();
+  return audioCtx;
 }
 
-/** Speak text using the browser's built-in Web Speech API */
-function speakText(rawText: string, lang: string, onEnd?: () => void) {
-  if (!("speechSynthesis" in window)) return;
-  window.speechSynthesis.cancel();
+/** Play base64 PCM16 audio (24kHz mono) */
+async function playPCM16Audio(base64Data: string, onEnd?: () => void) {
+  try {
+    stopAIVoice();
+    const ctx = getAudioContext();
+    if (ctx.state === "suspended") await ctx.resume();
 
-  const text = cleanForSpeech(rawText);
+    const binaryStr = atob(base64Data);
+    const bytes = new Uint8Array(binaryStr.length);
+    for (let i = 0; i < binaryStr.length; i++) {
+      bytes[i] = binaryStr.charCodeAt(i);
+    }
+
+    // PCM16 = 16-bit signed integers, little-endian, 24kHz mono
+    const sampleRate = 24000;
+    const int16 = new Int16Array(bytes.buffer);
+    const float32 = new Float32Array(int16.length);
+    for (let i = 0; i < int16.length; i++) {
+      float32[i] = int16[i] / 32768;
+    }
+
+    const audioBuffer = ctx.createBuffer(1, float32.length, sampleRate);
+    audioBuffer.getChannelData(0).set(float32);
+
+    const source = ctx.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(ctx.destination);
+    source.onended = () => {
+      currentAudioSource = null;
+      onEnd?.();
+    };
+    currentAudioSource = source;
+    source.start(0);
+  } catch (err) {
+    console.error("PCM16 playback error:", err);
+    onEnd?.();
+  }
+}
+
+function stopAIVoice() {
+  if (currentAudioSource) {
+    try { currentAudioSource.stop(); } catch {}
+    currentAudioSource = null;
+  }
+}
+
+/** Call the ai-voice edge function to get AI-generated speech */
+async function fetchAIVoice(text: string, voice: string = "alloy"): Promise<string | null> {
+  try {
+    const { data, error } = await supabase.functions.invoke("ai-voice", {
+      body: { text, voice, format: "pcm16" },
+    });
+    if (error) {
+      console.error("AI voice error:", error);
+      toast.error("Voice generation failed");
+      return null;
+    }
+    if (data?.error) {
+      console.error("AI voice error:", data.error);
+      toast.error(data.error);
+      return null;
+    }
+    return data?.audio || null;
+  } catch (err) {
+    console.error("AI voice fetch error:", err);
+    return null;
+  }
+}
+
+/** Fallback: browser Web Speech API */
+function speakTextBrowser(rawText: string, lang: string, onEnd?: () => void) {
+  if (!("speechSynthesis" in window)) { onEnd?.(); return; }
+  window.speechSynthesis.cancel();
+  const text = rawText
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\*([^*]+)\*/g, "$1")
+    .replace(/#{1,6}\s*/g, "")
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/[-•]\s+/g, "，")
+    .replace(/\n{2,}/g, "。")
+    .replace(/\n/g, "，")
+    .replace(/[*_~>#|]/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = lang;
   utterance.rate = 0.92;
-  utterance.pitch = 1.05; // slightly higher pitch sounds warmer
-
-  // Pick the best available voice for the language
   const voices = window.speechSynthesis.getVoices();
   const prefix = lang.split("-")[0];
   const langVoices = voices.filter(v => v.lang === lang || v.lang.startsWith(prefix));
-
   if (langVoices.length > 0) {
-    // Prefer premium/enhanced voices (often have "enhanced", "premium", or specific names)
-    const premium = langVoices.find(v =>
-      /enhanced|premium|natural|neural|tingting|sinji|meijia|yuna|google/i.test(v.name)
-    );
-    // Fallback: prefer non-default local voices (they tend to be higher quality)
+    const premium = langVoices.find(v => /enhanced|premium|natural|neural|tingting|sinji|meijia|yuna|google/i.test(v.name));
     const localVoice = langVoices.find(v => v.localService && !v.name.toLowerCase().includes("compact"));
     utterance.voice = premium || localVoice || langVoices[0];
   }
-
   if (onEnd) utterance.onend = onEnd;
   utterance.onerror = () => onEnd?.();
   window.speechSynthesis.speak(utterance);
 }
 
 function stopSpeaking() {
+  stopAIVoice();
   if ("speechSynthesis" in window) window.speechSynthesis.cancel();
 }
 
@@ -150,13 +216,19 @@ export function DementiaAssistant() {
     return detectLanguage(text);
   }, [voiceLang]);
 
-  const toggleSpeak = useCallback((idx: number, text: string) => {
+  const toggleSpeak = useCallback(async (idx: number, text: string) => {
     if (speakingIdx === idx) {
       stopSpeaking();
       setSpeakingIdx(null);
     } else {
       setSpeakingIdx(idx);
-      speakText(text, resolveLang(text), () => setSpeakingIdx(null));
+      // Try AI voice first, fallback to browser TTS
+      const audio = await fetchAIVoice(text);
+      if (audio) {
+        playPCM16Audio(audio, () => setSpeakingIdx(null));
+      } else {
+        speakTextBrowser(text, resolveLang(text), () => setSpeakingIdx(null));
+      }
     }
   }, [speakingIdx, resolveLang]);
 
@@ -190,9 +262,14 @@ export function DementiaAssistant() {
 
       // Auto-speak the new reply
       if (autoSpeak) {
-        setTimeout(() => {
-          setSpeakingIdx(nextMessages.length); // index of the new message
-          speakText(reply, resolveLang(reply), () => setSpeakingIdx(null));
+        setTimeout(async () => {
+          setSpeakingIdx(nextMessages.length);
+          const audio = await fetchAIVoice(reply);
+          if (audio) {
+            playPCM16Audio(audio, () => setSpeakingIdx(null));
+          } else {
+            speakTextBrowser(reply, resolveLang(reply), () => setSpeakingIdx(null));
+          }
         }, 100);
       }
     } catch (err: any) {
