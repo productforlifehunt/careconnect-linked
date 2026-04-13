@@ -187,3 +187,18 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
 };
 
 export const useSite = () => useContext(SiteContext);
+
+/** Returns { area, language } for CCT content filtering based on current site. */
+export function getContentLocale(siteId: SiteId = detectSite()): { area: string; language: string } {
+  if (siteId === "challenged") {
+    // Chinese site uses China + zh-CN
+    return { area: "china", language: "zh-CN" };
+  }
+  // Default: global English
+  return { area: "global", language: "en" };
+}
+
+export const useContentLocale = () => {
+  const site = useSite();
+  return useMemo(() => getContentLocale(site.id), [site.id]);
+};

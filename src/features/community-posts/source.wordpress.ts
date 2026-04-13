@@ -9,11 +9,12 @@ const SLUG = "care_community_post";
 const REL_POST_COMMENT = 71; // care_community_post → comment (many-to-many)
 const REL_COMMENT_REPLY = 69; // comment → comment (many-to-many)
 
-export async function fetchCommunityPostsWordPress(): Promise<any[]> {
+export async function fetchCommunityPostsWordPress(locale?: { area?: string; language?: string }): Promise<any[]> {
   try {
-    const posts = await wordpressCCTFetch(SLUG, {
-      params: { _limit: 50, _orderby: "cct_created", _order: "desc" },
-    });
+    const params: Record<string, string | number> = { _limit: 50, _orderby: "cct_created", _order: "desc" };
+    if (locale?.area) params.app_area = locale.area;
+    if (locale?.language) params.language = locale.language;
+    const posts = await wordpressCCTFetch(SLUG, { params });
     if (!Array.isArray(posts)) return [];
     return posts.map((p: any) => ({
       id: p.id,
