@@ -1029,6 +1029,122 @@ const copeArticles: ChallengedContentItem[] = [
 <p>After a prolonged caregiving journey, you may feel relief, guilt about feeling relief, emptiness, and loss of purpose. All of these are normal. Give yourself time and grace. Consider bereavement support groups specifically for former dementia caregivers.</p>`,
     "5 min read", 7
   ),
+
+  // ── Module 2: Being a Caregiver (iSupport) ──
+
+  article("cope", "self-care",
+    "Being a Caregiver: Understanding Your New Role",
+    "Becoming a dementia caregiver changes your identity, relationships, and daily life. This guide helps you navigate the transition with clarity and self-compassion.",
+    `<h2>The Shift in Identity</h2>
+<p>One day you're a spouse, child, or friend. The next, you're a caregiver — managing medications, handling finances, making medical decisions, and providing intimate personal care. This role reversal is disorienting and emotionally complex.</p>
+
+<h2>What Being a Caregiver Means</h2>
+<ul>
+<li><strong>You are not alone</strong> — Over 55 million families worldwide are on this same journey</li>
+<li><strong>You didn't choose this</strong> — And it's okay to feel conflicted about it</li>
+<li><strong>You are enough</strong> — You don't need medical training to provide loving care</li>
+<li><strong>Your needs still matter</strong> — Putting yourself last is not noble; it's unsustainable</li>
+</ul>
+
+<h2>Common Challenges for New Caregivers</h2>
+<ul>
+<li>Feeling unprepared and overwhelmed</li>
+<li>Navigating changed family dynamics</li>
+<li>Balancing caregiving with work and personal life</li>
+<li>Making decisions on behalf of someone else</li>
+<li>Dealing with denial — your own or the family's</li>
+</ul>
+
+<h2>Your Rights as a Caregiver</h2>
+<ul>
+<li>The right to take care of yourself</li>
+<li>The right to seek help from others</li>
+<li>The right to feel and express difficult emotions</li>
+<li>The right to reject manipulation</li>
+<li>The right to receive consideration, affection, and acceptance</li>
+<li>The right to take pride in your accomplishments</li>
+<li>The right to be treated with respect</li>
+</ul>
+
+<h2>First Steps</h2>
+<p>Learn about the specific type of dementia your loved one has. Connect with a support group early. Establish a care team and delegate tasks. Set up legal and financial documents while the person can still participate. And most importantly — be patient with yourself.</p>`,
+    "6 min read", 8
+  ),
+
+  article("cope", "emotional",
+    "Challenging Negative Thoughts: CBT Techniques for Caregivers",
+    "Your thoughts shape your experience. Learn cognitive-behavioral techniques to break cycles of guilt, helplessness, and catastrophic thinking.",
+    `<h2>How Thoughts Affect Caregiving</h2>
+<p>Cognitive Behavioral Therapy (CBT) research, referenced in the WHO iSupport programme, shows that how we THINK about a situation directly affects how we FEEL and BEHAVE. Negative thought patterns are common in caregivers and worsen stress, depression, and burnout.</p>
+
+<h2>Common Unhelpful Thought Patterns</h2>
+<ul>
+<li><strong>All-or-nothing thinking</strong> — "If I can't do this perfectly, I'm failing."</li>
+<li><strong>Catastrophizing</strong> — "Everything is getting worse. There's no hope."</li>
+<li><strong>Mind-reading</strong> — "Everyone thinks I'm a terrible caregiver."</li>
+<li><strong>Should statements</strong> — "I should be able to handle this without help."</li>
+<li><strong>Personalization</strong> — "She hit me because she hates me." (It's the disease.)</li>
+<li><strong>Emotional reasoning</strong> — "I feel guilty, so I must be doing something wrong."</li>
+</ul>
+
+<h2>The ABCDE Technique</h2>
+<ol>
+<li><strong>A — Activating Event:</strong> What happened? ("Mom asked the same question 20 times.")</li>
+<li><strong>B — Belief:</strong> What did you think? ("I can't take this anymore. I'm going to lose it.")</li>
+<li><strong>C — Consequence:</strong> How did you feel/act? (Frustrated, snapped at her.)</li>
+<li><strong>D — Dispute:</strong> Challenge the thought. ("She can't help it. I need a break, not an escape.")</li>
+<li><strong>E — New Effect:</strong> How do you feel now? (Calmer. "I'll ask my sister to come over tonight.")</li>
+</ol>
+
+<h2>Replacing Unhelpful Thoughts</h2>
+<ul>
+<li>"I should be able to do this alone" → "Asking for help is strength, not weakness"</li>
+<li>"Everything is falling apart" → "Today was hard. Tomorrow I'll try something different"</li>
+<li>"I'm a terrible caregiver" → "I'm doing the best I can in an impossible situation"</li>
+<li>"Nothing I do makes a difference" → "My presence and love matter, even when it doesn't feel like it"</li>
+</ul>
+
+<h2>Practice Daily</h2>
+<p>Keep a thought diary for one week. Write down the situation, your automatic thought, the emotion it caused, and a more balanced alternative. This simple practice, recommended by WHO iSupport, has been shown to significantly reduce caregiver depression and anxiety.</p>`,
+    "7 min read", 9
+  ),
+
+  article("cope", "support",
+    "Staying Connected: Maintaining Relationships While Caregiving",
+    "Caregiving can be profoundly isolating. Here's how to maintain friendships, family bonds, and your social identity beyond the caregiver role.",
+    `<h2>Why Isolation Happens</h2>
+<p>Dementia caregivers are among the most socially isolated people in society. Reasons include:</p>
+<ul>
+<li>The person with dementia may behave unpredictably in social settings</li>
+<li>Friends and family may withdraw because they don't know what to say or do</li>
+<li>Caregiving demands leave little time or energy for socializing</li>
+<li>Grief and depression reduce motivation to connect</li>
+<li>Stigma around dementia still exists</li>
+</ul>
+
+<h2>Strategies to Stay Connected</h2>
+<ul>
+<li><strong>Be honest with friends</strong> — Tell them what you need. "I can't always call, but a text means the world."</li>
+<li><strong>Accept imperfect social contact</strong> — A 10-minute phone call counts. A text conversation counts.</li>
+<li><strong>Invite people in</strong> — If you can't go out, have friends come to you. Many are willing but unsure if they should ask.</li>
+<li><strong>Use technology</strong> — Video calls, social media, and online communities help bridge the gap</li>
+<li><strong>Join a support group</strong> — People who truly understand what you're going through</li>
+<li><strong>Maintain one activity</strong> — Even if you scale back, keep one hobby, class, or regular outing</li>
+</ul>
+
+<h2>Managing Family Relationships</h2>
+<ul>
+<li>Hold family meetings to share updates and divide responsibilities</li>
+<li>Use a shared app or platform (like ChallengeD's UniteD) to coordinate</li>
+<li>Address conflicts directly and early — resentment festers</li>
+<li>Recognize that everyone grieves differently</li>
+<li>Accept that not all family members will contribute equally</li>
+</ul>
+
+<h2>Your Identity Beyond Caregiving</h2>
+<p>You are more than a caregiver. You are still a friend, a professional, a person with interests and dreams. Maintaining even small connections to your pre-caregiving identity is essential for long-term resilience.</p>`,
+    "6 min read", 10
+  ),
 ];
 
 // ═══════════════════════════════════════════════
