@@ -2,9 +2,8 @@
  * WordPress JWT Authentication Service
  */
 
-const WP_SITE_PATH = import.meta.env.VITE_WP_SITE_PATH || 'careconnected';
-const REMOTE_WP_BASE_URL = import.meta.env.VITE_WP_BASE_URL || `http://170.106.171.59:8080/${WP_SITE_PATH}`;
-const WP_BASE_URL = import.meta.env.DEV ? `/wp-proxy/${WP_SITE_PATH}` : REMOTE_WP_BASE_URL;
+import { buildWPUrl, buildWPHeaders } from '@/lib/wp-url';
+
 const TOKEN_KEY = 'cc_wp_token';
 const USER_KEY = 'cc_wp_user';
 
@@ -55,13 +54,10 @@ function userFromToken(token: string, fallbackIdentifier: string): WPUser {
 
 async function fetchCurrentWpUser(token: string): Promise<WPUser | null> {
   try {
-    const response = await fetch(`${WP_BASE_URL}/wp-json/wp/v2/users/me?context=edit`, {
+    const url = buildWPUrl('wp/v2/users/me', { context: 'edit' });
+    const response = await fetch(url, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      credentials: 'include',
+      headers: buildWPHeaders(token, 'application/json'),
     });
 
     if (!response.ok) return null;
@@ -85,31 +81,15 @@ async function fetchCurrentWpUser(token: string): Promise<WPUser | null> {
   }
 }
 
-async function tryJwtAuthLogin(identifier: string, password: string): Promise<any | null> {
-  const response = await fetch(`${WP_BASE_URL}/wp-json/jwt-auth/v1/token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ username: identifier, password }),
-  });
-
-  const data = await response.json().catch(() => null);
-  if (response.ok && data?.token) {
-    return data;
-  }
-
-  return null;
-}
-
 async function trySimpleJwtLogin(identifier: string, password: string): Promise<any | null> {
   const body = identifier.includes('@')
     ? { email: identifier, password }
     : { username: identifier, password };
 
-  const response = await fetch(`${WP_BASE_URL}/wp-json/simple-jwt-login/v1/auth`, {
+  const url = buildWPUrl('simple-jwt-login/v1/auth');
+  const response = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
+    headers: buildWPHeaders(null, 'application/json'),
     body: JSON.stringify(body),
   });
 
@@ -228,9 +208,10 @@ export async function wpUploadMedia(file: File): Promise<string> {
   if (!token) throw new Error('Not authenticated');
   const formData = new FormData();
   formData.append('file', file, file.name);
-  const res = await fetch(`${WP_BASE_URL}/wp-json/wp/v2/media`, {
+  const url = buildWPUrl('wp/v2/media');
+  const res = await fetch(url, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${token}` },
+    headers: buildWPHeaders(token),
     body: formData,
   });
   if (!res.ok) {
@@ -242,30 +223,21 @@ export async function wpUploadMedia(file: File): Promise<string> {
 }
 
 export async function wpRequestPasswordReset(email: string): Promise<void> {
-  // Try Simple JWT Login reset endpoint first (fully headless REST)
-  const sjlRes = await fetch(`${WP_BASE_URL}/wp-json/simple-jwt-login/v1/user/reset_password`, {
+  const url = buildWPUrl('simple-jwt-login/v1/user/reset_password');
+  const sjlRes = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: buildWPHeaders(null, 'application/json'),
     body: JSON.stringify({ email }),
   });
   if (sjlRes.ok) return;
-
-  // Fallback: POST to WP lost-password handler (still headless — no browser redirect)
-  const res = await fetch(`${WP_BASE_URL}/wp-login.php?action=lostpassword`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: `user_login=${encodeURIComponent(email)}&redirect_to=&wp-submit=Get+New+Password`,
-  });
-  if (!res.ok && res.status !== 302) {
-    throw new Error('Password reset request failed. Please try again.');
-  }
+  throw new Error('Password reset request failed. Please try again.');
 }
 
 export async function wpRegister(email: string, password: string, displayName?: string): Promise<WPAuthResult> {
-  // Try Simple JWT Login register endpoint
-  const res = await fetch(`${WP_BASE_URL}/wp-json/simple-jwt-login/v1/users`, {
+  const url = buildWPUrl('simple-jwt-login/v1/users');
+  const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: buildWPHeaders(null, 'application/json'),
     body: JSON.stringify({ email, password, user_login: email, display_name: displayName || email }),
   });
   const data = await res.json();
@@ -273,18 +245,17 @@ export async function wpRegister(email: string, password: string, displayName?: 
     const msg = data?.data?.message || data?.message || 'Registration failed';
     throw new Error(msg);
   }
-  // Auto-login after registration
   return wpLogin(email, password);
 }
 
 export async function wpDeleteAccount(): Promise<void> {
   const token = getWPToken();
   if (!token) throw new Error('Not authenticated');
-  // Anonymize user data (GDPR soft-delete — users can't self-delete via WP REST without admin)
   const randomSuffix = Math.random().toString(36).substring(2, 10);
-  const res = await fetch(`${WP_BASE_URL}/wp-json/wp/v2/users/me`, {
+  const url = buildWPUrl('wp/v2/users/me');
+  const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    headers: buildWPHeaders(token, 'application/json'),
     body: JSON.stringify({
       first_name: 'Deleted',
       last_name: 'User',
@@ -297,16 +268,16 @@ export async function wpDeleteAccount(): Promise<void> {
     const err = await res.text();
     throw new Error(`Account deletion failed: ${res.status} - ${err}`);
   }
-  // Clear local session
   wpLogout();
 }
 
 export async function wpChangePassword(newPassword: string): Promise<void> {
   const token = getWPToken();
   if (!token) throw new Error('Not authenticated');
-  const res = await fetch(`${WP_BASE_URL}/wp-json/wp/v2/users/me`, {
+  const url = buildWPUrl('wp/v2/users/me');
+  const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    headers: buildWPHeaders(token, 'application/json'),
     body: JSON.stringify({ password: newPassword }),
   });
   if (!res.ok) {
