@@ -36,31 +36,22 @@ export function AppHeader() {
   const { t, i18n } = useTranslation();
   const isChinese = i18n.language?.startsWith("zh");
 
-  const isChallengedChinese = site.id === "challenged" && isChinese;
+  
 
   const isChallenged = site.id === "challenged";
 
-  const publicNav = isChallengedChinese
-    ? [
-        { title: t("nav.awareD"), url: "/aware", icon: Search },
-        { title: t("nav.careD"), url: "/care-guides", icon: Heart },
-        { title: t("nav.copeD"), url: "/coping", icon: Heart },
-        { title: t("nav.safeD"), url: "/safety-guides", icon: Heart },
-        { title: t("nav.findCaregivers"), url: "/search?service_category=care", icon: Search },
-        { title: t("nav.findLocalCompanion"), url: "/search?service_type=local&service_category=companionship", icon: Heart },
-        { title: t("nav.findRemoteCompanion"), url: "/search?service_type=remote&service_category=companionship", icon: MessageSquare },
-        { title: t("nav.aiCompanion"), url: "/ai-companion", icon: Bot, badge: "小忆AI" },
-        { title: t("nav.seniorFacilities"), url: "/search?service_category=facility", icon: Building2 },
-        { title: t("nav.community"), url: "/community", icon: Newspaper },
-        { title: t("nav.howItWorks"), url: "/how-it-works", icon: HelpCircle },
-      ]
-    : isChallenged
+  const publicNav = isChallenged
     ? [
         { title: t("nav.awareD"), url: "/aware", icon: Search },
         { title: t("nav.careD"), url: "/care-guides", icon: Heart },
         { title: t("nav.copeD"), url: "/coping", icon: Heart },
         { title: t("nav.safeD"), url: "/safety-guides", icon: Heart },
         { title: t("nav.accompanieD"), url: "/accompanied", icon: Heart },
+        { title: t("nav.findCaregivers"), url: "/search?service_category=care", icon: Search },
+        { title: t("nav.findLocalCompanion"), url: "/search?service_type=local&service_category=companionship", icon: Heart },
+        { title: t("nav.findRemoteCompanion"), url: "/search?service_type=remote&service_category=companionship", icon: MessageSquare },
+        { title: t("nav.aiCompanion"), url: "/ai-companion", icon: Bot, badge: isChinese ? "小忆AI" : "AI" },
+        { title: t("nav.seniorFacilities"), url: "/search?service_category=facility", icon: Building2 },
         { title: site.navLabels.careGroups, url: "/care-circle", icon: Users },
         { title: t("nav.community"), url: "/community", icon: Newspaper },
         { title: t("nav.howItWorks"), url: "/how-it-works", icon: HelpCircle },
