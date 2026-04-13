@@ -145,8 +145,6 @@ export async function loadAIConversation(mode: AIMode, options: Pick<InvokeAIOpt
 }
 
 export async function invokeAI(mode: AIMode, context: string, options: InvokeAIOptions = {}): Promise<string> {
-  const conversationId = await ensureConversation(mode, options);
-
   // Build messages array
   const userMessages = options.messages && options.messages.length > 0
     ? options.messages.filter((m) => m.role !== "system")
@@ -154,10 +152,16 @@ export async function invokeAI(mode: AIMode, context: string, options: InvokeAIO
 
   const userMessage = userMessages.filter((m) => m.role === "user").at(-1)?.content || context;
 
-  // Store user message in WP CCT
-  await createMessage(conversationId, "user", userMessage, mode);
+  // Try to persist to WP CCT, but don't block on failure
+  let conversationId: string | null = null;
+  try {
+    conversationId = await ensureConversation(mode, options);
+    await createMessage(conversationId, "user", userMessage, mode);
+  } catch (e) {
+    console.warn("WP CCT persistence unavailable, continuing without:", e);
+  }
 
-  // Store context memory if caredOne specified
+  // Store context memory if caredOne specified (non-blocking)
   if (options.caredOneId) {
     try {
       await wordpressCCTFetch(CONTEXT_SLUG, {
@@ -176,17 +180,18 @@ export async function invokeAI(mode: AIMode, context: string, options: InvokeAIO
     } catch {}
   }
 
-  try {
-    const reply = await callAI(mode, userMessages);
-    await createMessage(conversationId, "assistant", reply, mode);
-    await touchConversation(conversationId);
-    return reply;
-  } catch (error) {
-    const fallbackMsg = "I'm having trouble reaching the AI service right now. Please try again in a moment.";
-    await createMessage(conversationId, "assistant", fallbackMsg, mode);
-    await touchConversation(conversationId);
-    throw error;
+  // Call AI — this is the critical path
+  const reply = await callAI(mode, userMessages);
+
+  // Persist reply (non-blocking)
+  if (conversationId) {
+    try {
+      await createMessage(conversationId, "assistant", reply, mode);
+      await touchConversation(conversationId);
+    } catch {}
   }
+
+  return reply;
 }
 
 /** Parse JSON from AI reply, stripping markdown fences if present */
