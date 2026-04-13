@@ -216,13 +216,19 @@ export function DementiaAssistant() {
     return detectLanguage(text);
   }, [voiceLang]);
 
-  const toggleSpeak = useCallback((idx: number, text: string) => {
+  const toggleSpeak = useCallback(async (idx: number, text: string) => {
     if (speakingIdx === idx) {
       stopSpeaking();
       setSpeakingIdx(null);
     } else {
       setSpeakingIdx(idx);
-      speakText(text, resolveLang(text), () => setSpeakingIdx(null));
+      // Try AI voice first, fallback to browser TTS
+      const audio = await fetchAIVoice(text);
+      if (audio) {
+        playPCM16Audio(audio, () => setSpeakingIdx(null));
+      } else {
+        speakTextBrowser(text, resolveLang(text), () => setSpeakingIdx(null));
+      }
     }
   }, [speakingIdx, resolveLang]);
 
