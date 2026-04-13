@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Bot, Send, Loader2, X, Volume2, VolumeX, Languages } from "lucide-react";
+import { Bot, Send, Loader2, X, Volume2, VolumeX, Languages, Mic, MicOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -34,7 +34,7 @@ function detectLanguage(text: string): string {
   return "en";
 }
 
-// Audio context for PCM16 playback
+// ─── Audio playback (PCM16 from AI voice edge function) ───
 let currentAudioSource: AudioBufferSourceNode | null = null;
 let audioCtx: AudioContext | null = null;
 
@@ -43,7 +43,6 @@ function getAudioContext(): AudioContext {
   return audioCtx;
 }
 
-/** Play base64 PCM16 audio (24kHz mono) */
 async function playPCM16Audio(base64Data: string, onEnd?: () => void) {
   try {
     stopAIVoice();
@@ -56,7 +55,6 @@ async function playPCM16Audio(base64Data: string, onEnd?: () => void) {
       bytes[i] = binaryStr.charCodeAt(i);
     }
 
-    // PCM16 = 16-bit signed integers, little-endian, 24kHz mono
     const sampleRate = 24000;
     const int16 = new Int16Array(bytes.buffer);
     const float32 = new Float32Array(int16.length);
@@ -89,7 +87,7 @@ function stopAIVoice() {
   }
 }
 
-/** Call the ai-voice edge function to get AI-generated speech */
+/** Call the ai-voice edge function — API key stays server-side */
 async function fetchAIVoice(text: string, voice: string = "alloy"): Promise<string | null> {
   try {
     const { data, error } = await supabase.functions.invoke("ai-voice", {
@@ -97,12 +95,12 @@ async function fetchAIVoice(text: string, voice: string = "alloy"): Promise<stri
     });
     if (error) {
       console.error("AI voice error:", error);
-      toast.error("Voice generation failed");
       return null;
     }
     if (data?.error) {
       console.error("AI voice error:", data.error);
-      toast.error(data.error);
+      if (data.error.includes("Rate limited")) toast.error("语音服务繁忙，请稍后再试");
+      else if (data.error.includes("Credits")) toast.error("语音额度已用尽");
       return null;
     }
     return data?.audio || null;
@@ -117,17 +115,11 @@ function speakTextBrowser(rawText: string, lang: string, onEnd?: () => void) {
   if (!("speechSynthesis" in window)) { onEnd?.(); return; }
   window.speechSynthesis.cancel();
   const text = rawText
-    .replace(/\*\*([^*]+)\*\*/g, "$1")
-    .replace(/\*([^*]+)\*/g, "$1")
-    .replace(/#{1,6}\s*/g, "")
-    .replace(/```[\s\S]*?```/g, "")
-    .replace(/`([^`]+)`/g, "$1")
-    .replace(/[-•]\s+/g, "，")
-    .replace(/\n{2,}/g, "。")
-    .replace(/\n/g, "，")
-    .replace(/[*_~>#|]/g, "")
-    .replace(/\s{2,}/g, " ")
-    .trim();
+    .replace(/\*\*([^*]+)\*\*/g, "$1").replace(/\*([^*]+)\*/g, "$1")
+    .replace(/#{1,6}\s*/g, "").replace(/```[\s\S]*?```/g, "")
+    .replace(/`([^`]+)`/g, "$1").replace(/[-•]\s+/g, "，")
+    .replace(/\n{2,}/g, "。").replace(/\n/g, "，")
+    .replace(/[*_~>#|]/g, "").replace(/\s{2,}/g, " ").trim();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = lang;
   utterance.rate = 0.92;
@@ -149,19 +141,31 @@ function stopSpeaking() {
   if ("speechSynthesis" in window) window.speechSynthesis.cancel();
 }
 
-const VOICE_OPTIONS = [
+// ─── Speech-to-text via browser SpeechRecognition ───
+const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+const STT_SUPPORTED = !!SpeechRecognition;
+
+// ─── Constants ───
+const AI_VOICE_PERSONAS = [
+  { value: "alloy", label: "Alloy (中性)" },
+  { value: "nova", label: "Nova (温暖女声)" },
+  { value: "shimmer", label: "Shimmer (柔和女声)" },
+  { value: "echo", label: "Echo (沉稳男声)" },
+  { value: "fable", label: "Fable (故事风)" },
+  { value: "onyx", label: "Onyx (低沉男声)" },
+];
+
+const LANG_OPTIONS = [
   { value: "auto", label: "自动 / Auto" },
   { value: "zh-CN", label: "中文" },
   { value: "en", label: "English" },
   { value: "ja", label: "日本語" },
   { value: "ko", label: "한국어" },
-  { value: "es", label: "Español" },
-  { value: "fr", label: "Français" },
-  { value: "de", label: "Deutsch" },
 ];
 
 export function DementiaAssistant() {
   const { t, i18n } = useTranslation();
+  const isChinese = i18n.language?.startsWith("zh");
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     { role: "assistant", content: t("dementiaAssistant.greeting") },
@@ -170,11 +174,15 @@ export function DementiaAssistant() {
   const [loading, setLoading] = useState(false);
   const [speakingIdx, setSpeakingIdx] = useState<number | null>(null);
   const [voiceLang, setVoiceLang] = useState("auto");
+  const [voicePersona, setVoicePersona] = useState("nova");
   const [autoSpeak, setAutoSpeak] = useState(false);
   const [conversationLoaded, setConversationLoaded] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [voiceLoading, setVoiceLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
 
-  // Preload voices
+  // Preload browser voices
   useEffect(() => {
     if ("speechSynthesis" in window) {
       window.speechSynthesis.getVoices();
@@ -184,11 +192,10 @@ export function DementiaAssistant() {
   }, []);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages]);
 
+  // Load conversation history
   useEffect(() => {
     if (!open || conversationLoaded) return;
     let mounted = true;
@@ -198,17 +205,11 @@ export function DementiaAssistant() {
         const normalized = history
           .filter((item) => item.role !== "system")
           .map((item) => ({ role: item.role === "assistant" ? "assistant" : "user", content: item.content } as Message));
-        if (normalized.length > 0) {
-          setMessages(normalized);
-        }
+        if (normalized.length > 0) setMessages(normalized);
       })
       .catch(() => {})
-      .finally(() => {
-        if (mounted) setConversationLoaded(true);
-      });
-    return () => {
-      mounted = false;
-    };
+      .finally(() => { if (mounted) setConversationLoaded(true); });
+    return () => { mounted = false; };
   }, [open, conversationLoaded]);
 
   const resolveLang = useCallback((text: string) => {
@@ -216,21 +217,92 @@ export function DementiaAssistant() {
     return detectLanguage(text);
   }, [voiceLang]);
 
+  // ─── Speak with AI voice, fallback to browser TTS ───
+  const speakWithAI = useCallback(async (text: string, onEnd?: () => void) => {
+    setVoiceLoading(true);
+    const audio = await fetchAIVoice(text, voicePersona);
+    setVoiceLoading(false);
+    if (audio) {
+      playPCM16Audio(audio, onEnd);
+    } else {
+      speakTextBrowser(text, resolveLang(text), onEnd);
+    }
+  }, [voicePersona, resolveLang]);
+
   const toggleSpeak = useCallback(async (idx: number, text: string) => {
     if (speakingIdx === idx) {
       stopSpeaking();
       setSpeakingIdx(null);
     } else {
       setSpeakingIdx(idx);
-      // Try AI voice first, fallback to browser TTS
-      const audio = await fetchAIVoice(text);
-      if (audio) {
-        playPCM16Audio(audio, () => setSpeakingIdx(null));
-      } else {
-        speakTextBrowser(text, resolveLang(text), () => setSpeakingIdx(null));
-      }
+      await speakWithAI(text, () => setSpeakingIdx(null));
     }
-  }, [speakingIdx, resolveLang]);
+  }, [speakingIdx, speakWithAI]);
+
+  // ─── Speech-to-text ───
+  const toggleListening = useCallback(() => {
+    if (isListening && recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+      return;
+    }
+
+    if (!STT_SUPPORTED) {
+      toast.error(isChinese ? "您的浏览器不支持语音输入" : "Speech input not supported in your browser");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+
+    // Set language based on voiceLang or UI language
+    const sttLang = voiceLang === "auto"
+      ? (isChinese ? "zh-CN" : "en-US")
+      : (voiceLang === "en" ? "en-US" : voiceLang);
+    recognition.lang = sttLang;
+
+    let finalTranscript = "";
+
+    recognition.onresult = (event: any) => {
+      let interim = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript;
+        } else {
+          interim += transcript;
+        }
+      }
+      setInput(finalTranscript + interim);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      recognitionRef.current = null;
+      // Auto-send if we got a final transcript
+      if (finalTranscript.trim()) {
+        // Small delay to let state update
+        setTimeout(() => {
+          const el = document.querySelector("[data-stt-send]") as HTMLButtonElement;
+          el?.click();
+        }, 100);
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error("STT error:", event.error);
+      setIsListening(false);
+      if (event.error === "not-allowed") {
+        toast.error(isChinese ? "请允许麦克风权限" : "Please allow microphone access");
+      }
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsListening(true);
+  }, [isListening, voiceLang, isChinese]);
 
   const QUICK_PROMPTS = [
     t("dementiaAssistant.quickPrompts.stages"),
@@ -260,16 +332,11 @@ export function DementiaAssistant() {
       });
       setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
 
-      // Auto-speak the new reply
+      // Auto-speak the new reply with AI voice
       if (autoSpeak) {
         setTimeout(async () => {
           setSpeakingIdx(nextMessages.length);
-          const audio = await fetchAIVoice(reply);
-          if (audio) {
-            playPCM16Audio(audio, () => setSpeakingIdx(null));
-          } else {
-            speakTextBrowser(reply, resolveLang(reply), () => setSpeakingIdx(null));
-          }
+          await speakWithAI(reply, () => setSpeakingIdx(null));
         }, 100);
       }
     } catch (err: any) {
@@ -306,30 +373,40 @@ export function DementiaAssistant() {
         </Button>
       </CardHeader>
       <CardContent className="p-0">
-        {/* Voice settings bar */}
-        <div className="flex items-center gap-2 px-3 py-2 border-b bg-muted/30 text-xs">
+        {/* Voice settings bar — row 1: language + voice persona */}
+        <div className="flex items-center gap-2 px-3 py-1.5 border-b bg-muted/30 text-xs">
           <Languages className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
           <Select value={voiceLang} onValueChange={setVoiceLang}>
-            <SelectTrigger className="h-7 text-xs w-[100px] bg-background">
+            <SelectTrigger className="h-6 text-[11px] w-[80px] bg-background">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {VOICE_OPTIONS.map(opt => (
-                <SelectItem key={opt.value} value={opt.value} className="text-xs">
-                  {opt.label}
-                </SelectItem>
+              {LANG_OPTIONS.map(opt => (
+                <SelectItem key={opt.value} value={opt.value} className="text-xs">{opt.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <div className="flex items-center gap-1.5 ml-auto">
-            <Volume2 className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-muted-foreground whitespace-nowrap">
-              {i18n.language?.startsWith("zh") ? "语音回答" : "Auto-speak"}
+
+          <Volume2 className="h-3.5 w-3.5 text-muted-foreground shrink-0 ml-1" />
+          <Select value={voicePersona} onValueChange={setVoicePersona}>
+            <SelectTrigger className="h-6 text-[11px] w-[110px] bg-background">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {AI_VOICE_PERSONAS.map(opt => (
+                <SelectItem key={opt.value} value={opt.value} className="text-xs">{opt.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <div className="flex items-center gap-1 ml-auto">
+            <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+              {isChinese ? "自动朗读" : "Auto"}
             </span>
             <Switch
               checked={autoSpeak}
               onCheckedChange={setAutoSpeak}
-              className="scale-75"
+              className="scale-[0.65]"
             />
           </div>
         </div>
@@ -348,8 +425,11 @@ export function DementiaAssistant() {
                     onClick={() => toggleSpeak(i, msg.content)}
                     className="mt-1 flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary transition-colors"
                     title={speakingIdx === i ? t("common.stop") : t("common.listen")}
+                    disabled={voiceLoading && speakingIdx !== i}
                   >
-                    {speakingIdx === i ? (
+                    {voiceLoading && speakingIdx === null ? (
+                      <><Loader2 className="h-3 w-3 animate-spin" /> {isChinese ? "生成语音..." : "Loading..."}</>
+                    ) : speakingIdx === i ? (
                       <><VolumeX className="h-3 w-3" /> {t("common.stop")}</>
                     ) : (
                       <><Volume2 className="h-3 w-3" /> {t("common.listen")}</>
@@ -383,17 +463,37 @@ export function DementiaAssistant() {
           </div>
         )}
 
-        {/* Input */}
-        <div className="border-t p-2 flex gap-2">
+        {/* Input with mic button */}
+        <div className="border-t p-2 flex gap-1.5">
+          {STT_SUPPORTED && (
+            <Button
+              size="icon"
+              variant={isListening ? "destructive" : "outline"}
+              className={`h-9 w-9 shrink-0 ${isListening ? "animate-pulse" : ""}`}
+              onClick={toggleListening}
+              disabled={loading}
+              title={isListening ? (isChinese ? "停止录音" : "Stop recording") : (isChinese ? "语音输入" : "Voice input")}
+            >
+              {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+            </Button>
+          )}
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && sendMessage(input)}
-            placeholder={t("dementiaAssistant.askPlaceholder")}
+            placeholder={isListening
+              ? (isChinese ? "正在听..." : "Listening...")
+              : t("dementiaAssistant.askPlaceholder")}
             className="text-sm h-9"
             disabled={loading}
           />
-          <Button size="icon" className="h-9 w-9 shrink-0" onClick={() => sendMessage(input)} disabled={!input.trim() || loading}>
+          <Button
+            data-stt-send
+            size="icon"
+            className="h-9 w-9 shrink-0"
+            onClick={() => sendMessage(input)}
+            disabled={!input.trim() || loading}
+          >
             <Send className="h-4 w-4" />
           </Button>
         </div>
