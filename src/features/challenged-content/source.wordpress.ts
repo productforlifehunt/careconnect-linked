@@ -29,7 +29,8 @@ const CCT_SLUG = "challenged_content";
 
 export async function fetchChallengedContent(
   category?: string,
-  subcategory?: string
+  subcategory?: string,
+  locale?: { area?: string; language?: string }
 ): Promise<ChallengedContentItem[]> {
   // Start with static content (always available, production-ready)
   const staticItems = getStaticContent(category, subcategory);
@@ -39,6 +40,8 @@ export async function fetchChallengedContent(
     const params: Record<string, string> = {};
     if (category) params.category = category;
     if (subcategory) params.subcategory = subcategory;
+    if (locale?.area) params.area = locale.area;
+    if (locale?.language) params.language = locale.language;
     const wpItems = await wordpressCCTFetch<ChallengedContentItem[]>(CCT_SLUG, { params });
 
     if (wpItems && wpItems.length > 0) {
