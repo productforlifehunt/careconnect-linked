@@ -96,11 +96,11 @@ export function TasksTab({
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>Due Date</Label><Input type="date" value={newTask.due_date} onChange={e => setNewTask(p => ({ ...p, due_date: e.target.value }))} /></div>
                 <div><Label>Assign To</Label>
-                  <Select value={newTask.assignee} onValueChange={v => setNewTask(p => ({ ...p, assignee: v }))}>
+                  <Select value={newTask.assignee || "unassigned"} onValueChange={v => setNewTask(p => ({ ...p, assignee: v === "unassigned" ? "" : v }))}>
                     <SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Unassigned</SelectItem>
-                      {(members || []).map((m: any) => <SelectItem key={m.user_id} value={m.user_id}>{m.profile?.full_name || "Member"}</SelectItem>)}
+                      <SelectItem value="unassigned">Unassigned</SelectItem>
+                      {(members || []).map((m: any) => <SelectItem key={m.user_id} value={m.user_id || `member-${m.id}`}>{m.profile?.full_name || "Member"}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
