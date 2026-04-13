@@ -61,7 +61,7 @@ serve(async (req) => {
     }
 
     const selectedVoice = voice || "alloy";
-    const audioFormat = format || "wav";
+    const audioFormat = format || "pcm16";
 
     // Use OpenRouter with GPT Audio Mini - streaming is required for audio output
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
