@@ -53,9 +53,19 @@ export async function fetchCareGroupPostsWordPress(groupId: string, type?: strin
 }
 
 export async function createGroupPostWordPress(post: { group_id: string; content: string; type?: string; title?: string }): Promise<void> {
+  const wpUser = getStoredWPUser();
+  const authorId = wpUser?.user_id ? String(wpUser.user_id) : null;
+  const authorName = wpUser?.user_display_name || wpUser?.user_nicename || "";
   const created = await wordpressCCTFetch<any>("care_group_not_too_special_post", {
     method: "POST",
-    body: { title: post.title || post.content.substring(0, 50), content: post.content, type: post.type || "discussion" },
+    body: {
+      title: post.title || post.content.substring(0, 50),
+      content: post.content,
+      type: post.type || "discussion",
+      group_id: post.group_id,
+      author_id: authorId,
+      author_name: authorName,
+    },
   });
   const groupId = normalizeWpObjectId(post.group_id);
   const postId = normalizeWpObjectId(created?._ID || created?.id);
