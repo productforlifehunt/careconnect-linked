@@ -42,7 +42,7 @@ async function wcFetch(endpoint: string, options: RequestInit = {}) {
  * Fetch wrapper for WooCommerce Store API (cart / checkout — public, cookie-based)
  */
 async function storeApiFetch(endpoint: string, options: RequestInit = {}) {
-  const url = `${WC_STORE_API_URL}/${endpoint}`;
+  const url = buildWPUrl(`wc/store/v1/${endpoint}`);
 
   const response = await fetch(url, {
     ...options,
@@ -64,7 +64,7 @@ async function storeApiFetch(endpoint: string, options: RequestInit = {}) {
 }
 
 async function wcBookingsFetch(endpoint: string, options: RequestInit = {}) {
-  const url = `${WC_BOOKINGS_API_URL}/${endpoint}`;
+  const url = buildWPUrl(`wc-bookings/v1/${endpoint}`);
 
   const response = await fetch(url, {
     ...options,
@@ -419,7 +419,7 @@ function normalizeBookingAvailabilityRules(rules: WooBookingAvailabilityRule[] =
 // ─── Dokan API fetch wrapper ───────────────────────────────
 
 async function dokanFetch(endpoint: string, options: RequestInit = {}) {
-  const url = `${DOKAN_API_URL}/${endpoint}`;
+  const url = buildWPUrl(`dokan/v1/${endpoint}`);
   const response = await fetch(url, {
     ...options,
     headers: { ...getAuthHeaders(), ...options.headers },
