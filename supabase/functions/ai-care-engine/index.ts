@@ -16,6 +16,112 @@ type AIMode =
   | "routine_suggestion"
   | "general_chat";
 
+const AI_MODELS = ["google/gemini-3-flash-preview", "google/gemini-2.5-flash"] as const;
+const VALID_MODES = new Set<AIMode>([
+  "insights",
+  "cognitive_exercise",
+  "medication_check",
+  "behavior_analysis",
+  "care_tips",
+  "daily_summary",
+  "routine_suggestion",
+  "general_chat",
+]);
+
+function normalizeMode(value: unknown): AIMode {
+  return VALID_MODES.has(value as AIMode) ? (value as AIMode) : "general_chat";
+}
+
+function buildFallbackReply(mode: AIMode): string {
+  switch (mode) {
+    case "insights":
+      return JSON.stringify([
+        {
+          title: "Temporary connection issue",
+          insight: "AI insights are temporarily unavailable, so review recent check-ins, medications, and tasks manually for now.",
+          priority: "medium",
+        },
+      ]);
+    case "cognitive_exercise":
+      return JSON.stringify({
+        title: "Photo Memory Match",
+        description: "Look at a familiar photo together and name the person, place, or memory connected to it.",
+        type: "memory",
+        difficulty: "easy",
+        items: [
+          {
+            emoji: "📷",
+            label: "Family photo",
+            prompt: "Who is in this photo and what happy moment do you remember?",
+            answer: "Any familiar name or memory is a good answer.",
+            hint: "Start with one familiar face or one place you remember.",
+          },
+        ],
+        encouragement: "Gentle recall is enough — celebrate any small memory that comes up.",
+      });
+    case "care_tips":
+      return JSON.stringify([
+        {
+          tip: "Keep the daily routine calm and predictable to reduce confusion.",
+          category: "daily_care",
+        },
+        {
+          tip: "Use short, reassuring sentences and give one instruction at a time.",
+          category: "communication",
+        },
+        {
+          tip: "Check for fall risks, hydration, and medication timing throughout the day.",
+          category: "safety",
+        },
+      ]);
+    case "medication_check":
+      return "AI medication review is temporarily unavailable. Please double-check dosing times, avoid changing medications without a clinician, and verify possible interactions with a pharmacist.\n\nAI药物检查暂时不可用。请再次确认服药时间，不要自行调整药物，并向医生或药师核实相互作用。";
+    case "behavior_analysis":
+      return "AI behavior analysis is temporarily unavailable. For now, look for triggers such as pain, hunger, noise, fatigue, or overstimulation, and respond with reassurance and a calmer environment.\n\nAI行为分析暂时不可用。当前可先检查疼痛、饥饿、噪音、疲劳或刺激过多等诱因，并用安抚和更平静的环境来应对。";
+    case "daily_summary":
+      return "Daily summary is temporarily unavailable. Please review today's meals, medications, mood changes, mobility, sleep, and check-ins manually.\n\n每日报告暂时不可用。请先手动查看今天的饮食、用药、情绪变化、活动情况、睡眠和签到记录。";
+    case "routine_suggestion":
+      return "Routine suggestions are temporarily unavailable. A safe default is: gentle morning hygiene, hydration, medication check, one simple activity, quiet rest, and a calm evening routine.\n\n日常建议暂时不可用。安全的默认安排是：早晨轻柔洗漱、补水、检查用药、一个简单活动、安静休息，以及平静的晚间流程。";
+    case "general_chat":
+    default:
+      return "I’m temporarily having trouble reaching the AI service, but I’m still here to help with calm, practical dementia-care guidance. Please try again in a moment.\n\n我暂时无法连接到AI服务，但仍可以继续提供冷静、实用的认知障碍照护建议。请稍后再试。";
+  }
+}
+
+async function requestAIReply(apiKey: string, messages: Array<{ role: string; content: string }>) {
+  for (const model of AI_MODELS) {
+    try {
+      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          messages,
+          stream: false,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error("AI gateway error:", model, response.status, await response.text());
+        continue;
+      }
+
+      const data = await response.json();
+      const reply = data?.choices?.[0]?.message?.content;
+      if (typeof reply === "string" && reply.trim()) {
+        return reply;
+      }
+    } catch (error) {
+      console.error("AI gateway request failed:", model, error);
+    }
+  }
+
+  return null;
+}
+
 function buildSystemPrompt(mode: AIMode): string {
   const base =
     "You are 小忆AI (XiaoYi AI), a compassionate dementia care assistant for the 忆畅 (ChallengeD) platform. " +
@@ -57,74 +163,49 @@ serve(async (req) => {
   }
 
   try {
-    const { mode, messages } = await req.json() as {
+    const payload = await req.json() as {
       mode: AIMode;
       messages: Array<{ role: string; content: string }>;
     };
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    const mode = normalizeMode(payload?.mode);
+    const messages = Array.isArray(payload?.messages)
+      ? payload.messages.filter((m) => typeof m?.role === "string" && typeof m?.content === "string")
+      : [];
+
+    if (messages.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "messages must be a non-empty array" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    const systemPrompt = buildSystemPrompt(mode || "general_chat");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      return new Response(
+        JSON.stringify({ reply: buildFallbackReply(mode), degraded: true }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const systemPrompt = buildSystemPrompt(mode);
 
     const aiMessages = [
       { role: "system", content: systemPrompt },
       ...messages.filter((m) => m.role !== "system"),
     ];
 
-    const response = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
-          messages: aiMessages,
-          stream: false,
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const status = response.status;
-      const errorText = await response.text();
-      console.error("AI gateway error:", status, errorText);
-
-      if (status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limited. Please try again in a moment." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      if (status === 402) {
-        return new Response(
-          JSON.stringify({ error: "AI credits exhausted. Please add funds." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      return new Response(
-        JSON.stringify({ error: "AI service error" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const data = await response.json();
-    const reply = data?.choices?.[0]?.message?.content || "";
+    const reply = await requestAIReply(LOVABLE_API_KEY, aiMessages);
 
     return new Response(
-      JSON.stringify({ reply }),
+      JSON.stringify({ reply: reply || buildFallbackReply(mode), degraded: !reply }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {
     console.error("ai-care-engine error:", e);
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ reply: buildFallbackReply("general_chat"), degraded: true }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

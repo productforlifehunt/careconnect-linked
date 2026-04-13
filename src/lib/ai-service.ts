@@ -38,12 +38,37 @@ function createId() {
     : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-function unixNow() {
-  return Math.floor(Date.now() / 1000);
-}
-
 function conversationStorageKey(mode: AIMode, caredOneId?: string | number | null) {
   return `ai_conversation:${mode}:${caredOneId ?? "none"}`;
+}
+
+function asWPString(value: string | number | boolean | null | undefined) {
+  return value === undefined || value === null ? "" : String(value);
+}
+
+function nowISOString() {
+  return new Date().toISOString();
+}
+
+function toTimestamp(value: unknown): number {
+  if (typeof value === "number") {
+    return value < 1_000_000_000_000 ? value * 1000 : value;
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return 0;
+
+    if (/^\d+$/.test(trimmed)) {
+      const numeric = Number(trimmed);
+      return trimmed.length <= 10 ? numeric * 1000 : numeric;
+    }
+
+    const parsed = Date.parse(trimmed);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+
+  return 0;
 }
 
 async function ensureConversation(mode: AIMode, options: InvokeAIOptions = {}) {
@@ -64,13 +89,13 @@ async function ensureConversation(mode: AIMode, options: InvokeAIOptions = {}) {
     method: "POST",
     body: {
       conversation_id: createId(),
-      user_id: user?.user_id || 0,
-      cared_one_id: options.caredOneId ? Number(options.caredOneId) : 0,
+      user_id: asWPString(user?.user_id || 0),
+      cared_one_id: asWPString(options.caredOneId ?? 0),
       title: options.title || mode.replace(/_/g, " "),
       conversation_type: mode,
       status: "active",
-      last_message_at: unixNow(),
-      message_count: 0,
+      last_message_at: nowISOString(),
+      message_count: asWPString(0),
       metadata: "",
     },
   });
@@ -90,9 +115,9 @@ async function createMessage(conversationId: string, role: AIChatMessage["role"]
       ai_mode: mode,
       content,
       context_used: "",
-      tokens_used: 0,
+      tokens_used: asWPString(0),
       model_name: "gemini-3-flash-preview",
-      created_at: unixNow(),
+      created_at: nowISOString(),
     },
   });
 }
@@ -107,8 +132,8 @@ async function touchConversation(conversationId: string) {
       id: conversationId,
       method: "PUT",
       body: {
-        last_message_at: unixNow(),
-        message_count: count,
+        last_message_at: nowISOString(),
+        message_count: asWPString(count),
       },
     });
   } catch {}
@@ -140,7 +165,7 @@ export async function loadAIConversation(mode: AIMode, options: Pick<InvokeAIOpt
   });
   return (Array.isArray(messages) ? messages : [])
     .filter((item) => String(item.conversation_id) === String(conversationId))
-    .sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime())
+    .sort((a, b) => toTimestamp(a.created_at || a.updated_at) - toTimestamp(b.created_at || b.updated_at))
     .map((item) => ({ role: item.role, content: item.content }));
 }
 
@@ -168,13 +193,13 @@ export async function invokeAI(mode: AIMode, context: string, options: InvokeAIO
         method: "POST",
         body: {
           context_id: createId(),
-          user_id: getStoredWPUser()?.user_id || 0,
-          cared_one_id: Number(options.caredOneId),
+          user_id: asWPString(getStoredWPUser()?.user_id || 0),
+          cared_one_id: asWPString(options.caredOneId),
           context_type: "cared_one_profile",
           context_key: `last_${mode}`,
           context_value: userMessage,
           priority: "medium",
-          last_updated: unixNow(),
+          last_updated: nowISOString(),
         },
       });
     } catch {}
