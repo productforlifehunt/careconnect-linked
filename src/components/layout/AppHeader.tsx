@@ -36,7 +36,7 @@ export function AppHeader() {
   const { t, i18n } = useTranslation();
   const isChinese = i18n.language?.startsWith("zh");
 
-  const isChallengedChinese = site.id === "challenged" && isChinese;
+  
 
   const isChallenged = site.id === "challenged";
 
