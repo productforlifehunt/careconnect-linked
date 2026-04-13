@@ -1243,7 +1243,12 @@ export function useUpdateBookingStatus() {
 export function useLeaveGroup() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (groupId: string) => leaveGroupWordPress(groupId),
+    mutationFn: async (groupId: string) => {
+      const profile = await fetchMyProfileWordPress();
+      const userId = profile?.id;
+      if (!userId) throw new Error("Not logged in");
+      return leaveGroupWordPress(groupId, userId);
+    },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["careGroups"] }); qc.invalidateQueries({ queryKey: ["careGroupMembers"] }); },
   });
 }
