@@ -479,6 +479,175 @@ const careArticles: ChallengedContentItem[] = [
     "8 min read", 4
   ),
 
+  // ── Module 5: Detailed Behaviour Change Articles (WHO iSupport) ──
+
+  article("care", "behaviors",
+    "Understanding and Responding to Aggression in Dementia",
+    "Verbal and physical aggression affects up to 40% of people with dementia. Learn the ABC model and proven de-escalation techniques.",
+    `<h2>Why Aggression Happens</h2>
+<p>Aggression in dementia is almost never intentional. The person is reacting to something they can't articulate — pain, fear, confusion, frustration, or feeling threatened. As language deteriorates, behavior becomes the primary form of communication.</p>
+
+<h2>The ABC Model</h2>
+<p>The ABC (Antecedent–Behavior–Consequence) model is the gold-standard framework used by the WHO iSupport programme:</p>
+<ul>
+<li><strong>A — Antecedent:</strong> What happened just before? (Were they being rushed? Was the environment noisy? Were they in pain?)</li>
+<li><strong>B — Behavior:</strong> What exactly did they do? (Hitting, shouting, throwing, biting?)</li>
+<li><strong>C — Consequence:</strong> What happened after? (Did they get what they needed? Did the trigger stop?)</li>
+</ul>
+<p>By keeping an ABC diary, patterns emerge that help you predict and prevent episodes.</p>
+
+<h2>De-escalation Techniques</h2>
+<ul>
+<li><strong>Stay calm</strong> — Your body language sets the tone. Breathe slowly, relax your shoulders</li>
+<li><strong>Lower your voice</strong> — Speak slowly, softly, and use short sentences</li>
+<li><strong>Don't argue or reason</strong> — You cannot logic someone out of a brain disease</li>
+<li><strong>Give space</strong> — Step back. Don't crowd or corner them</li>
+<li><strong>Validate feelings</strong> — "I can see you're upset. I'm here to help."</li>
+<li><strong>Remove triggers</strong> — Turn off the TV, reduce noise, dim lights</li>
+<li><strong>Redirect</strong> — Offer a snack, suggest a walk, play familiar music</li>
+<li><strong>Check for pain</strong> — Urinary tract infections, constipation, and dental pain are common hidden triggers</li>
+</ul>
+
+<h2>What NOT to Do</h2>
+<ul>
+<li>Never restrain physically unless safety is at immediate risk</li>
+<li>Never punish or scold</li>
+<li>Never take it personally — they are reacting to the disease, not to you</li>
+<li>Never force compliance — try again later</li>
+</ul>
+
+<h2>When to Get Medical Help</h2>
+<p>Sudden onset of aggression may indicate a medical issue (infection, pain, medication side effect). Consult the doctor if aggression is new, sudden, escalating, or accompanied by other changes like fever or confusion beyond baseline.</p>`,
+    "8 min read", 5
+  ),
+
+  article("care", "behaviors",
+    "Repetitive Questions, Phrases, and Actions: Why They Happen and How to Cope",
+    "Being asked the same question 50 times a day is exhausting. Understanding why it happens transforms frustration into compassion.",
+    `<h2>Why Repetition Occurs</h2>
+<p>Repetition is one of the most common — and most frustrating — dementia behaviors. It happens because the person genuinely does not remember asking before. Their short-term memory loop is broken. Common forms include:</p>
+<ul>
+<li>Asking the same question repeatedly ("What day is it?" "When are we going?")</li>
+<li>Telling the same story over and over</li>
+<li>Performing the same action (opening/closing drawers, folding/unfolding clothes)</li>
+<li>Making repetitive sounds or movements</li>
+</ul>
+
+<h2>Common Triggers</h2>
+<ul>
+<li><strong>Anxiety</strong> — Repetition is often driven by worry or insecurity</li>
+<li><strong>Boredom</strong> — Not enough stimulation or engagement</li>
+<li><strong>Comfort-seeking</strong> — The familiar phrase or action feels reassuring</li>
+<li><strong>Unmet needs</strong> — Hunger, toileting, or discomfort they can't express</li>
+</ul>
+
+<h2>Strategies That Help</h2>
+<ul>
+<li><strong>Answer each time patiently</strong> — They truly don't remember asking. Your annoyance communicates rejection</li>
+<li><strong>Write it down</strong> — A whiteboard with "Today is Tuesday. Lunch is at 12:00." can reduce questions</li>
+<li><strong>Address the emotion</strong> — "Are you worried about something?" may reach the root cause</li>
+<li><strong>Redirect to activity</strong> — Engage hands and mind with folding laundry, sorting objects, or music</li>
+<li><strong>Use distraction</strong> — Change the subject, offer a snack, go for a walk</li>
+<li><strong>Create memory aids</strong> — Clocks with day/date, daily schedule posted on the wall</li>
+</ul>
+
+<h2>Taking Care of Yourself</h2>
+<p>Repetition can erode your patience to nothing. It's okay to step away briefly, use headphones during less risky tasks, or tag-team with another caregiver. Your emotional reserves matter too.</p>`,
+    "6 min read", 6
+  ),
+
+  article("care", "behaviors",
+    "Hallucinations, Delusions, and Paranoia in Dementia",
+    "When your loved one sees things that aren't there or accuses you of stealing — understanding these symptoms helps you respond with compassion.",
+    `<h2>Hallucinations vs. Delusions</h2>
+<ul>
+<li><strong>Hallucinations</strong> — Seeing, hearing, smelling, or feeling things that aren't there. Visual hallucinations are especially common in Lewy body dementia.</li>
+<li><strong>Delusions</strong> — Fixed false beliefs. Common delusions include believing someone is stealing, that a spouse is an imposter (Capgras syndrome), or that the home is not really their home.</li>
+<li><strong>Paranoia</strong> — Suspicion and mistrust, often targeting the primary caregiver ("You're poisoning my food," "You stole my wallet").</li>
+</ul>
+
+<h2>Why They Happen</h2>
+<p>Brain damage affects perception and interpretation. The person is experiencing something real TO THEM. Medications, infections (especially UTIs), poor lighting, and overstimulation can trigger or worsen episodes.</p>
+
+<h2>How to Respond</h2>
+<ul>
+<li><strong>Don't argue</strong> — Saying "That's not real" is unhelpful and distressing. Their experience IS real to them</li>
+<li><strong>Validate the emotion</strong> — "That sounds scary. You're safe. I'm here with you."</li>
+<li><strong>Don't play along with dangerous delusions</strong> — But gentle distraction is better than confrontation</li>
+<li><strong>Check the environment</strong> — Remove mirrors if they cause confusion, improve lighting, reduce shadows</li>
+<li><strong>Look for triggers</strong> — Certain TV shows, dark rooms, or specific times of day</li>
+<li><strong>If harmless, let it be</strong> — If they see a child playing in the room and it makes them happy, there's no need to correct</li>
+</ul>
+
+<h2>When It's an Emergency</h2>
+<p>Seek immediate medical help if hallucinations are sudden and new, accompanied by fever or delirium, causing danger to self or others, or associated with a medication change.</p>
+
+<h2>Medication Considerations</h2>
+<p>Antipsychotics are sometimes used but carry serious risks in dementia patients, including increased stroke risk and mortality. They should be a last resort, used at the lowest dose for the shortest time, and regularly reviewed.</p>`,
+    "7 min read", 7
+  ),
+
+  article("care", "behaviors",
+    "Inappropriate Sexual Behavior in Dementia: A Sensitive Guide",
+    "One of the most distressing and least discussed behaviors — understanding why it happens removes shame and enables effective management.",
+    `<h2>Understanding the Behavior</h2>
+<p>Inappropriate sexual behavior (ISB) affects 2–17% of people with dementia. It includes public undressing, inappropriate touching, sexual comments, excessive masturbation, or making advances toward caregivers or strangers.</p>
+<p>This is NOT the person's "true character" coming out. It is a direct result of brain damage to the frontal lobes (which control impulse and social behavior) and does not reflect their values or intentions.</p>
+
+<h2>Common Causes</h2>
+<ul>
+<li><strong>Frontal lobe damage</strong> — Loss of social inhibition and impulse control</li>
+<li><strong>Misidentification</strong> — Mistaking a caregiver for a spouse</li>
+<li><strong>Discomfort</strong> — Undressing may signal that clothing is uncomfortable or they need the bathroom</li>
+<li><strong>Need for touch/comfort</strong> — Craving human connection and warmth</li>
+<li><strong>Boredom</strong> — Lack of stimulation or engagement</li>
+</ul>
+
+<h2>Response Strategies</h2>
+<ul>
+<li><strong>Stay calm</strong> — React without shock or anger. Calmly redirect</li>
+<li><strong>Cover gently</strong> — If they've undressed, offer a robe without making it a confrontation</li>
+<li><strong>Distract</strong> — Offer a different activity or object to hold</li>
+<li><strong>Check for discomfort</strong> — Are they too hot? Do they need the bathroom?</li>
+<li><strong>Provide appropriate touch</strong> — Hand massages, hugs, gentle arm-holding can meet the underlying need</li>
+<li><strong>Modify clothing</strong> — Use back-fastening garments if undressing is frequent and risky</li>
+<li><strong>Ensure privacy</strong> — If masturbation is the issue, guide them to a private space</li>
+</ul>
+
+<h2>Protecting Caregivers</h2>
+<p>If a caregiver is being targeted, rotate caregivers, consider same-gender care for personal hygiene tasks, and ensure staff/family know this is a disease symptom, not a personal violation. Professional counseling for affected caregivers is appropriate.</p>`,
+    "6 min read", 8
+  ),
+
+  article("care", "behaviors",
+    "Hoarding, Rummaging, and Hiding Things in Dementia",
+    "When they hide the TV remote in the freezer or stuff tissues into every pocket — understanding these common behaviors helps you respond calmly.",
+    `<h2>Why These Behaviors Occur</h2>
+<p>Hoarding, rummaging, and hiding objects are extremely common in mid-stage dementia. They usually reflect:</p>
+<ul>
+<li><strong>Need for security</strong> — Collecting things provides a sense of control in a confusing world</li>
+<li><strong>Past habits</strong> — A former homemaker may compulsively fold and store</li>
+<li><strong>Boredom</strong> — Rummaging gives them something to do with their hands</li>
+<li><strong>Confusion</strong> — They may put items in illogical places because they've forgotten where things go</li>
+<li><strong>Fear of theft</strong> — Paranoia about stealing may drive hiding valuables</li>
+</ul>
+
+<h2>Practical Strategies</h2>
+<ul>
+<li><strong>Learn their hiding spots</strong> — Check regularly. Most people use 2–3 favorite spots</li>
+<li><strong>Keep duplicates</strong> — Extra keys, glasses, remote controls</li>
+<li><strong>Secure truly important items</strong> — Lock away passports, jewelry, medications, and financial documents</li>
+<li><strong>Create a rummaging box</strong> — Fill a box or drawer with safe, interesting items to sort through (old photos, fabric swatches, costume jewelry)</li>
+<li><strong>Don't accuse</strong> — Instead of "Where did you put my keys?" try "Let's find the keys together"</li>
+<li><strong>Check wastebaskets before emptying</strong> — Important items often end up in the trash</li>
+<li><strong>Label drawers and cabinets</strong> with pictures of contents</li>
+</ul>
+
+<h2>Food Hoarding</h2>
+<p>If they hoard food (common), check for spoiled food regularly, provide easy access to safe snacks, and ensure they're eating enough at meals — hoarding may indicate they feel food-insecure.</p>`,
+    "5 min read", 9
+  ),
+
   article("care", "sleep",
     "Sleep Problems and Sundowning: A Caregiver's Guide",
     "Up to 40% of people with dementia experience significant sleep disturbances. Here's how to improve sleep for everyone.",
@@ -860,6 +1029,122 @@ const copeArticles: ChallengedContentItem[] = [
 <p>After a prolonged caregiving journey, you may feel relief, guilt about feeling relief, emptiness, and loss of purpose. All of these are normal. Give yourself time and grace. Consider bereavement support groups specifically for former dementia caregivers.</p>`,
     "5 min read", 7
   ),
+
+  // ── Module 2: Being a Caregiver (iSupport) ──
+
+  article("cope", "self-care",
+    "Being a Caregiver: Understanding Your New Role",
+    "Becoming a dementia caregiver changes your identity, relationships, and daily life. This guide helps you navigate the transition with clarity and self-compassion.",
+    `<h2>The Shift in Identity</h2>
+<p>One day you're a spouse, child, or friend. The next, you're a caregiver — managing medications, handling finances, making medical decisions, and providing intimate personal care. This role reversal is disorienting and emotionally complex.</p>
+
+<h2>What Being a Caregiver Means</h2>
+<ul>
+<li><strong>You are not alone</strong> — Over 55 million families worldwide are on this same journey</li>
+<li><strong>You didn't choose this</strong> — And it's okay to feel conflicted about it</li>
+<li><strong>You are enough</strong> — You don't need medical training to provide loving care</li>
+<li><strong>Your needs still matter</strong> — Putting yourself last is not noble; it's unsustainable</li>
+</ul>
+
+<h2>Common Challenges for New Caregivers</h2>
+<ul>
+<li>Feeling unprepared and overwhelmed</li>
+<li>Navigating changed family dynamics</li>
+<li>Balancing caregiving with work and personal life</li>
+<li>Making decisions on behalf of someone else</li>
+<li>Dealing with denial — your own or the family's</li>
+</ul>
+
+<h2>Your Rights as a Caregiver</h2>
+<ul>
+<li>The right to take care of yourself</li>
+<li>The right to seek help from others</li>
+<li>The right to feel and express difficult emotions</li>
+<li>The right to reject manipulation</li>
+<li>The right to receive consideration, affection, and acceptance</li>
+<li>The right to take pride in your accomplishments</li>
+<li>The right to be treated with respect</li>
+</ul>
+
+<h2>First Steps</h2>
+<p>Learn about the specific type of dementia your loved one has. Connect with a support group early. Establish a care team and delegate tasks. Set up legal and financial documents while the person can still participate. And most importantly — be patient with yourself.</p>`,
+    "6 min read", 8
+  ),
+
+  article("cope", "emotional",
+    "Challenging Negative Thoughts: CBT Techniques for Caregivers",
+    "Your thoughts shape your experience. Learn cognitive-behavioral techniques to break cycles of guilt, helplessness, and catastrophic thinking.",
+    `<h2>How Thoughts Affect Caregiving</h2>
+<p>Cognitive Behavioral Therapy (CBT) research, referenced in the WHO iSupport programme, shows that how we THINK about a situation directly affects how we FEEL and BEHAVE. Negative thought patterns are common in caregivers and worsen stress, depression, and burnout.</p>
+
+<h2>Common Unhelpful Thought Patterns</h2>
+<ul>
+<li><strong>All-or-nothing thinking</strong> — "If I can't do this perfectly, I'm failing."</li>
+<li><strong>Catastrophizing</strong> — "Everything is getting worse. There's no hope."</li>
+<li><strong>Mind-reading</strong> — "Everyone thinks I'm a terrible caregiver."</li>
+<li><strong>Should statements</strong> — "I should be able to handle this without help."</li>
+<li><strong>Personalization</strong> — "She hit me because she hates me." (It's the disease.)</li>
+<li><strong>Emotional reasoning</strong> — "I feel guilty, so I must be doing something wrong."</li>
+</ul>
+
+<h2>The ABCDE Technique</h2>
+<ol>
+<li><strong>A — Activating Event:</strong> What happened? ("Mom asked the same question 20 times.")</li>
+<li><strong>B — Belief:</strong> What did you think? ("I can't take this anymore. I'm going to lose it.")</li>
+<li><strong>C — Consequence:</strong> How did you feel/act? (Frustrated, snapped at her.)</li>
+<li><strong>D — Dispute:</strong> Challenge the thought. ("She can't help it. I need a break, not an escape.")</li>
+<li><strong>E — New Effect:</strong> How do you feel now? (Calmer. "I'll ask my sister to come over tonight.")</li>
+</ol>
+
+<h2>Replacing Unhelpful Thoughts</h2>
+<ul>
+<li>"I should be able to do this alone" → "Asking for help is strength, not weakness"</li>
+<li>"Everything is falling apart" → "Today was hard. Tomorrow I'll try something different"</li>
+<li>"I'm a terrible caregiver" → "I'm doing the best I can in an impossible situation"</li>
+<li>"Nothing I do makes a difference" → "My presence and love matter, even when it doesn't feel like it"</li>
+</ul>
+
+<h2>Practice Daily</h2>
+<p>Keep a thought diary for one week. Write down the situation, your automatic thought, the emotion it caused, and a more balanced alternative. This simple practice, recommended by WHO iSupport, has been shown to significantly reduce caregiver depression and anxiety.</p>`,
+    "7 min read", 9
+  ),
+
+  article("cope", "support",
+    "Staying Connected: Maintaining Relationships While Caregiving",
+    "Caregiving can be profoundly isolating. Here's how to maintain friendships, family bonds, and your social identity beyond the caregiver role.",
+    `<h2>Why Isolation Happens</h2>
+<p>Dementia caregivers are among the most socially isolated people in society. Reasons include:</p>
+<ul>
+<li>The person with dementia may behave unpredictably in social settings</li>
+<li>Friends and family may withdraw because they don't know what to say or do</li>
+<li>Caregiving demands leave little time or energy for socializing</li>
+<li>Grief and depression reduce motivation to connect</li>
+<li>Stigma around dementia still exists</li>
+</ul>
+
+<h2>Strategies to Stay Connected</h2>
+<ul>
+<li><strong>Be honest with friends</strong> — Tell them what you need. "I can't always call, but a text means the world."</li>
+<li><strong>Accept imperfect social contact</strong> — A 10-minute phone call counts. A text conversation counts.</li>
+<li><strong>Invite people in</strong> — If you can't go out, have friends come to you. Many are willing but unsure if they should ask.</li>
+<li><strong>Use technology</strong> — Video calls, social media, and online communities help bridge the gap</li>
+<li><strong>Join a support group</strong> — People who truly understand what you're going through</li>
+<li><strong>Maintain one activity</strong> — Even if you scale back, keep one hobby, class, or regular outing</li>
+</ul>
+
+<h2>Managing Family Relationships</h2>
+<ul>
+<li>Hold family meetings to share updates and divide responsibilities</li>
+<li>Use a shared app or platform (like ChallengeD's UniteD) to coordinate</li>
+<li>Address conflicts directly and early — resentment festers</li>
+<li>Recognize that everyone grieves differently</li>
+<li>Accept that not all family members will contribute equally</li>
+</ul>
+
+<h2>Your Identity Beyond Caregiving</h2>
+<p>You are more than a caregiver. You are still a friend, a professional, a person with interests and dreams. Maintaining even small connections to your pre-caregiving identity is essential for long-term resilience.</p>`,
+    "6 min read", 10
+  ),
 ];
 
 // ═══════════════════════════════════════════════
@@ -1116,10 +1401,118 @@ const safeArticles: ChallengedContentItem[] = [
 </ul>`,
     "5 min read", 6
   ),
+
+  // ── Fire Safety & NRT + Bathing Safety ──
+
+  article("safe", "fire",
+    "Fire Safety for Dementia Households: Prevention, NRT, and Smoking Risks",
+    "People with dementia who smoke are at extreme fire risk. This comprehensive guide covers fire prevention, nicotine replacement therapy (NRT), and emergency planning.",
+    `<h2>Why Dementia + Smoking = Extreme Fire Risk</h2>
+<p>Smoking is one of the leading causes of fatal house fires. When combined with dementia — which impairs judgment, memory, and reaction time — the risk multiplies dramatically. A person with dementia may:</p>
+<ul>
+<li>Forget a lit cigarette and fall asleep</li>
+<li>Drop a cigarette onto clothing, furniture, or bedding</li>
+<li>Leave a lighter or match unattended near flammable materials</li>
+<li>Be unable to respond appropriately to a fire alarm</li>
+<li>Forget how to use a fire extinguisher or call for help</li>
+</ul>
+
+<h2>Nicotine Replacement Therapy (NRT)</h2>
+<p>NRT is one of the most important safety interventions for dementia patients who smoke. It removes the fire risk entirely while addressing nicotine dependence:</p>
+
+<h3>Types of NRT</h3>
+<ul>
+<li><strong>Nicotine patches</strong> — 24-hour slow release. Easiest for dementia patients as caregivers can apply/remove them. Available in 21mg, 14mg, and 7mg strengths for gradual step-down.</li>
+<li><strong>Nicotine gum</strong> — 2mg and 4mg. May be suitable for early-stage patients who can follow chewing instructions.</li>
+<li><strong>Nicotine lozenges</strong> — Dissolve in the mouth. Simpler than gum for those with chewing difficulties.</li>
+<li><strong>Nicotine inhaler</strong> — Mimics the hand-to-mouth action of smoking, which some patients find comforting.</li>
+<li><strong>Nicotine spray</strong> — Fast-acting for acute cravings.</li>
+</ul>
+
+<h3>NRT for Dementia Patients — Special Considerations</h3>
+<ul>
+<li><strong>Patches are the top recommendation</strong> — The caregiver manages application; no patient compliance required</li>
+<li>Remove patch at bedtime if vivid dreams occur (switch to 16-hour patch)</li>
+<li>Monitor skin for irritation — rotate application sites daily</li>
+<li>Consult the doctor before starting NRT, especially if the patient has cardiovascular conditions</li>
+<li>Combine with hiding cigarettes and lighters to prevent dual use</li>
+</ul>
+
+<h2>Fire Prevention Checklist</h2>
+<ul>
+<li>Install smoke alarms on every floor and in the kitchen and bedroom</li>
+<li>Test smoke alarms monthly — the person may not hear or respond to them</li>
+<li>Consider interconnected alarms that all sound when one is triggered</li>
+<li>Remove or lock up lighters, matches, and candles</li>
+<li>Install automatic stove shut-off devices</li>
+<li>Use flameless candles for ambiance</li>
+<li>Keep a fire extinguisher accessible to caregivers</li>
+<li>Never leave the person alone with an open flame</li>
+<li>Install fireproof bedding if they have a history of smoking in bed</li>
+</ul>
+
+<h2>Emergency Fire Plan</h2>
+<ul>
+<li>Practice fire escape routes — even if the person won't remember, muscle memory can help</li>
+<li>Install exit path lighting that activates with smoke alarms</li>
+<li>Alert your local fire department that a person with dementia lives at this address</li>
+<li>Keep doors unlocked from the inside for quick exit (balance with wandering prevention)</li>
+<li>Have an emergency bag ready with medications, IDs, and important documents</li>
+</ul>
+
+<h2>Recommended Products</h2>
+<ul>
+<li>10-year sealed lithium battery smoke alarms (no battery changes needed)</li>
+<li>Stove guard automatic shut-off devices</li>
+<li>Fireproof bedding and chair throws</li>
+<li>NRT starter kits (patches + lozenges combination packs)</li>
+<li>Flameless LED candles</li>
+<li>Lockboxes for lighters and matches</li>
+</ul>`,
+    "10 min read", 7
+  ),
+
+  article("safe", "bathing",
+    "Bathing Safety: Preventing Injuries During Personal Care",
+    "The bathroom is the most dangerous room for someone with dementia. These safety measures prevent falls, burns, and distress during bathing.",
+    `<h2>Why Bathing Is High-Risk</h2>
+<p>The bathroom combines wet surfaces, hard edges, hot water, and a vulnerable person who may be confused, frightened, or resistant. Falls in the bathroom are a leading cause of hospitalization in dementia patients.</p>
+
+<h2>Equipment Essentials</h2>
+<ul>
+<li><strong>Grab bars</strong> — Install near the toilet, inside and outside the tub/shower. Use bars rated for at least 250 lbs (screwed into studs, not suction cups)</li>
+<li><strong>Shower chair or bath bench</strong> — Allows seated bathing, reducing fall risk dramatically</li>
+<li><strong>Handheld showerhead</strong> — Gentler, less frightening than overhead water, and allows seated bathing</li>
+<li><strong>Non-slip mats</strong> — Inside the tub AND on the bathroom floor</li>
+<li><strong>Raised toilet seat</strong> — Easier to sit down and stand up</li>
+<li><strong>Thermostatic mixing valve</strong> — Prevents scalding by limiting water temperature</li>
+</ul>
+
+<h2>Temperature Safety</h2>
+<ul>
+<li>Set water heater to 120°F / 49°C maximum</li>
+<li>Always test water temperature yourself before the person enters</li>
+<li>Consider installing an anti-scald device on faucets</li>
+<li>People with dementia may lose the ability to sense temperature extremes</li>
+</ul>
+
+<h2>Reducing Bathing Resistance</h2>
+<ul>
+<li>Follow their lifelong bathing preferences (bath vs. shower, morning vs. evening)</li>
+<li>Warm the bathroom first — cold air causes resistance and distress</li>
+<li>Use a calm, reassuring voice throughout</li>
+<li>Cover body parts not being washed for warmth and dignity</li>
+<li>Let them do as much as possible independently</li>
+<li>On bad days, a sponge bath is perfectly acceptable</li>
+<li>Consider no-rinse body wash and shampoo products</li>
+</ul>
+
+<h2>When Professional Help Is Needed</h2>
+<p>If bathing becomes a consistent source of aggression or extreme distress, consider hiring a home health aide for bathing assistance. Sometimes a non-family caregiver encounters less resistance.</p>`,
+    "6 min read", 8
+  ),
 ];
 
-// ═══════════════════════════════════════════════
-// AccompanieD — Companionship
 // ═══════════════════════════════════════════════
 
 const accompanyArticles: ChallengedContentItem[] = [
