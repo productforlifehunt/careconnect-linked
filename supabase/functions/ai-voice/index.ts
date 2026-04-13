@@ -37,7 +37,7 @@ serve(async (req) => {
     if (!OPENROUTER_API_KEY) {
       throw new Error("OPENROUTER_API_KEY is not configured");
     }
-    console.log("OPENROUTER_API_KEY length:", OPENROUTER_API_KEY.length, "starts with:", OPENROUTER_API_KEY.slice(0, 5));
+    
 
     // Clean text for speech: strip markdown
     const cleanText = text
