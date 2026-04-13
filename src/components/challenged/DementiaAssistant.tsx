@@ -262,9 +262,14 @@ export function DementiaAssistant() {
 
       // Auto-speak the new reply
       if (autoSpeak) {
-        setTimeout(() => {
-          setSpeakingIdx(nextMessages.length); // index of the new message
-          speakText(reply, resolveLang(reply), () => setSpeakingIdx(null));
+        setTimeout(async () => {
+          setSpeakingIdx(nextMessages.length);
+          const audio = await fetchAIVoice(reply);
+          if (audio) {
+            playPCM16Audio(audio, () => setSpeakingIdx(null));
+          } else {
+            speakTextBrowser(reply, resolveLang(reply), () => setSpeakingIdx(null));
+          }
         }, 100);
       }
     } catch (err: any) {
