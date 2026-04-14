@@ -254,6 +254,9 @@ export default function Profile() {
               </AlertDialog>
             </CardContent>
           </Card>
+
+          {/* Admin: WP Server Switch */}
+          <WPServerSwitch />
         </TabsContent>
       </Tabs>
     </div>
