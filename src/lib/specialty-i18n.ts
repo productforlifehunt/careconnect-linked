@@ -28,6 +28,8 @@ const SPECIALTY_KEY_MAP: Record<string, string> = {
   "Occupational Therapy": "specialties.occupationalTherapy",
   "Personal Care": "specialties.personalCare",
   "Home Health": "specialties.homeHealth",
+  "Speech Therapy": "specialties.speechTherapy",
+  "Behavioral Support": "specialties.behavioralSupport",
 };
 
 const CERTIFICATION_KEY_MAP: Record<string, string> = {

@@ -237,11 +237,5 @@ export const journalEntries: JournalEntry[] = [
   { id: "j4", author: "Lisa Smith", date: "2026-02-14", content: "Visited Mom this afternoon. We looked through old photo albums together. She seemed very happy and nostalgic.", type: "update" },
 ];
 
-export const careCategories = [
-  { name: "Elder Care", icon: "heart", count: 248 },
-  { name: "Child Care", icon: "baby", count: 412 },
-  { name: "Special Needs", icon: "accessibility", count: 156 },
-  { name: "Nursing Care", icon: "stethoscope", count: 189 },
-  { name: "Companionship", icon: "users", count: 320 },
-  { name: "Respite Care", icon: "moon", count: 97 },
-];
+/** @deprecated Use useServiceTypes() hook — service categories now come from WooCommerce pa_service-type */
+export const careCategories: { name: string; icon: string; count: number }[] = [];

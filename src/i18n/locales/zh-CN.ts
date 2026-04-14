@@ -464,6 +464,7 @@ const zhCN = {
     tutoring: "辅导", overnightCare: "夜间照护",
     household: "家政服务", memoryCare: "记忆照护", nursing: "护理",
     occupationalTherapy: "职业治疗", personalCare: "个人护理", homeHealth: "居家健康",
+    speechTherapy: "语言治疗", behavioralSupport: "行为支持",
   },
   certifications: {
     CNA: "注册护理助理", RN: "注册护士", LPN: "执业护士", CPR: "心肺复苏认证",
