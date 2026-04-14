@@ -48,7 +48,7 @@ const CERTIFICATION_KEY_MAP: Record<string, string> = {
   "Food Safety": "certifications.foodSafety",
 };
 
-/** All specialty DB values */
+/** @deprecated Use useServiceTypes() hook instead — service types come from WooCommerce pa_service-type */
 export const ALL_SPECIALTIES = Object.keys(SPECIALTY_KEY_MAP);
 
 /** All certification DB values */

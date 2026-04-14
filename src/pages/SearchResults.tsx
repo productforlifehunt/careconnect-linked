@@ -14,10 +14,9 @@ import { Label } from "@/components/ui/label";
 import { useCareFacilities, useFacilityReviewSummaries, useProviders } from "@/hooks/use-care-data";
 import type { CareFacility, Profile } from "@/types/care-connector";
 import { useTranslation } from "react-i18next";
-import { ALL_SPECIALTIES, getSpecialtyKey } from "@/lib/specialty-i18n";
+import { getSpecialtyKey } from "@/lib/specialty-i18n";
+import { useServiceTypes } from "@/hooks/use-service-types";
 import { useAuth } from "@/contexts/AuthContext";
-
-const specialties = ALL_SPECIALTIES.slice(0, 8); // top 8 for filter UI
 function normalizeList(value: string[] | string | null | undefined) {
   if (Array.isArray(value)) return value.filter(Boolean);
   if (typeof value === "string" && value.trim()) return [value];
