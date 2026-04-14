@@ -4,11 +4,12 @@ import {
   getProviderProduct,
   updateProviderProductStatus,
   syncProviderToVendor,
+  type ServiceRateEntry,
 } from '@/services/woocommerce-api';
 import { useMyProfile } from './use-care-data';
 
 /**
- * Hook to sync provider profile with WooCommerce product
+ * Hook to sync provider profile with WooCommerce product (variable with per-service pricing)
  */
 export function useSyncProviderToWooCommerce() {
   const qc = useQueryClient();
@@ -23,12 +24,13 @@ export function useSyncProviderToWooCommerce() {
       yearsOfExperience?: number;
       location?: string;
       providerIsActive?: boolean;
+      serviceRates?: ServiceRateEntry[];
     }) => {
       if (!profile?.id) {
         throw new Error('Profile not found');
       }
 
-      // Sync to WooCommerce product
+      // Sync to WooCommerce product (variable with variations per service type)
       const product = await getOrCreateProviderProduct(profile.id, {
         fullName: profile.full_name || '',
         hourlyRate: providerData.hourlyRate,
@@ -37,6 +39,7 @@ export function useSyncProviderToWooCommerce() {
         certifications: providerData.certifications,
         yearsOfExperience: providerData.yearsOfExperience,
         location: providerData.location,
+        serviceRates: providerData.serviceRates,
       });
 
       // Sync to Dokan vendor (optional)
