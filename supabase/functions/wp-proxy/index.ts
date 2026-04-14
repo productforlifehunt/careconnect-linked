@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const WP_BASE_URL = "http://170.106.171.59:8080/careconnected";
+/** Default WP base URL - used when no wp_base param is provided */
+const DEFAULT_WP_BASE_URL = "http://170.106.171.59:8080/careconnected";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -24,17 +25,19 @@ serve(async (req) => {
       });
     }
 
-    // Build the target URL: wpPath should start with /wp-json/...
-    // Strip any query params from wpPath if they were embedded, and forward remaining search params
+    // Dynamic server: read wp_base from query param, fallback to default
+    const wpBase = url.searchParams.get("wp_base") || DEFAULT_WP_BASE_URL;
+
+    // Build the target URL
     const cleanPath = wpPath.startsWith("/") ? wpPath : `/${wpPath}`;
     
-    // Forward all query params except 'path' itself
+    // Forward all query params except control params
     const forwardParams = new URLSearchParams();
     url.searchParams.forEach((value, key) => {
-      if (key !== "path") forwardParams.set(key, value);
+      if (key !== "path" && key !== "wp_base") forwardParams.set(key, value);
     });
     const qs = forwardParams.toString();
-    const targetUrl = `${WP_BASE_URL}${cleanPath}${qs ? `?${qs}` : ""}`;
+    const targetUrl = `${wpBase}${cleanPath}${qs ? `?${qs}` : ""}`;
 
     // Forward headers (especially Authorization)
     const headers: Record<string, string> = {};
