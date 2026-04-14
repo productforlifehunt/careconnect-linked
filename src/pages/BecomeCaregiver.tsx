@@ -15,9 +15,9 @@ import { useSite } from "@/contexts/SiteContext";
 import { useSubmitProviderApplication } from "@/hooks/use-care-data";
 import { ArrowLeft, ArrowRight, CheckCircle, Upload, Shield, DollarSign, Heart } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { ALL_SPECIALTIES, ALL_CERTIFICATIONS, getSpecialtyKey, getCertificationKey } from "@/lib/specialty-i18n";
+import { ALL_CERTIFICATIONS, getSpecialtyKey, getCertificationKey } from "@/lib/specialty-i18n";
+import { useServiceTypes } from "@/hooks/use-service-types";
 
-const allSpecialties = ALL_SPECIALTIES;
 const allCertifications = ALL_CERTIFICATIONS;
 
 export default function BecomeCaregiver() {
@@ -27,6 +27,7 @@ export default function BecomeCaregiver() {
   const { isAuthenticated } = useAuth();
   const site = useSite();
   const submitApplication = useSubmitProviderApplication();
+  const { serviceTypeNames: allSpecialties, isLoading: serviceTypesLoading } = useServiceTypes();
   const [step, setStep] = useState(1);
   const totalSteps = 4;
 

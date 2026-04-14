@@ -14,10 +14,9 @@ import { Label } from "@/components/ui/label";
 import { useCareFacilities, useFacilityReviewSummaries, useProviders } from "@/hooks/use-care-data";
 import type { CareFacility, Profile } from "@/types/care-connector";
 import { useTranslation } from "react-i18next";
-import { ALL_SPECIALTIES, getSpecialtyKey } from "@/lib/specialty-i18n";
+import { getSpecialtyKey } from "@/lib/specialty-i18n";
+import { useServiceTypes } from "@/hooks/use-service-types";
 import { useAuth } from "@/contexts/AuthContext";
-
-const specialties = ALL_SPECIALTIES.slice(0, 8); // top 8 for filter UI
 function normalizeList(value: string[] | string | null | undefined) {
   if (Array.isArray(value)) return value.filter(Boolean);
   if (typeof value === "string" && value.trim()) return [value];
@@ -40,6 +39,8 @@ function getFacilityAddress(facility: CareFacility, isZh: boolean) {
 export default function SearchResults() {
   const { t, i18n } = useTranslation();
   const { isAuthenticated } = useAuth();
+  const { serviceTypeNames: allServiceTypeNames } = useServiceTypes();
+  const specialties = allServiceTypeNames.slice(0, 8);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
@@ -62,7 +63,7 @@ export default function SearchResults() {
   }, [query, locationFilter]);
 
   const [priceRange, setPriceRange] = useState([0, 100]);
-  const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>(initialQuery ? [initialQuery].filter(q => specialties.includes(q)) : []);
+  const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>(initialQuery ? [initialQuery].filter(q => allServiceTypeNames.includes(q)) : []);
   const [selectedFacilityTypes, setSelectedFacilityTypes] = useState<string[]>([]);
   const [selectedServiceTypes, setSelectedServiceTypes] = useState<string[]>([]);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
