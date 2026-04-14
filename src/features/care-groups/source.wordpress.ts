@@ -84,7 +84,7 @@ export async function createCareGroupWordPress(group: { name: string; descriptio
           child_id: userId,
           context: "child",
           store_items_type: "update",
-          meta: { care_groups_special_role_type: "owner" },
+          meta: { care_groups_member_types: "owner" },
         },
       });
     } catch (e) {
