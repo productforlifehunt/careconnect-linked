@@ -44,7 +44,7 @@ export async function fetchCareGroupMembersWordPress(groupId: string): Promise<a
         try {
           const u = await wordpressFetch<any>(`wp/v2/users/${uid}`);
           const rel = rels.find((r: any) => Number(r.child_object_id) === uid);
-          const roleMeta = rel?.meta?.care_groups_special_role_type;
+          const roleMeta = rel?.meta?.care_groups_member_types;
           const isOwner = roleMeta === "owner";
           const isAdmin = roleMeta === "admin" || isOwner;
           return {
@@ -84,7 +84,7 @@ export async function createCareGroupWordPress(group: { name: string; descriptio
           child_id: userId,
           context: "child",
           store_items_type: "update",
-          meta: { care_groups_special_role_type: "owner" },
+          meta: { care_groups_member_types: "owner" },
         },
       });
     } catch (e) {

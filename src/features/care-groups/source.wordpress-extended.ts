@@ -174,7 +174,7 @@ export async function declineInvitationWordPress(invitationId: string): Promise<
 // ─── Member Roles & Removal ─────────────────────────────────
 // Uses JetEngine relation 72 (care_group → users)
 export async function updateMemberRoleWordPress(memberId: string, role: string, groupId?: string): Promise<void> {
-  // Update member role via JetEngine relation 72 meta field (care_groups_special_role_type)
+  // Update member role via JetEngine relation 72 meta field (care_groups_member_types)
   const normalizedGroupId = normalizeWpObjectId(groupId);
   const normalizedMemberId = normalizeWpObjectId(memberId);
   if (!normalizedGroupId || !normalizedMemberId) return;
@@ -185,7 +185,7 @@ export async function updateMemberRoleWordPress(memberId: string, role: string, 
       child_id: normalizedMemberId,
       context: "child",
       store_items_type: "update",
-      meta: { care_groups_special_role_type: role },
+      meta: { care_groups_member_types: role },
     },
   });
 }
