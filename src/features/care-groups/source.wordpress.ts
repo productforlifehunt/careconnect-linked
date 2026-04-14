@@ -18,8 +18,10 @@ export async function fetchCareGroupsWordPress(): Promise<CareGroup[]> {
       id: String(g._ID || g.id || ""),
       name: g.name || "",
       description: g.description || null,
-      is_private: g.is_private === true || g.is_private === "yes",
-      invite_code: g.join_code || g.invite_code || null,
+      is_private: g.group_type === "private",
+      group_type: g.group_type || "public",
+      invite_code: g.join_code || null,
+      is_active: g.is_active === "active" || g.is_active === true,
       created_by: g.cct_author_id ? `wp-${g.cct_author_id}` : null,
       created_at: g.cct_created || g.created_at,
     })) as unknown as CareGroup[];
@@ -67,7 +69,7 @@ export async function fetchCareGroupMembersWordPress(groupId: string): Promise<a
 export async function createCareGroupWordPress(group: { name: string; description?: string; is_private?: boolean }): Promise<CareGroup> {
   const result = await wordpressCCTFetch<any>("care_group", {
     method: "POST",
-    body: { name: group.name, description: group.description || "", is_private: group.is_private ? "yes" : "no" },
+    body: { name: group.name, description: group.description || "", group_type: group.is_private ? "private" : "public", is_active: "active" },
   });
   // Auto-add creator as owner via JetEngine relation 72
   const groupId = normalizeWpObjectId(result?._ID || result?.id);

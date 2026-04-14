@@ -95,7 +95,7 @@ export async function updateCareGroupWordPress(id: string, updates: { name?: str
   const body: Record<string, any> = {};
   if (updates.name !== undefined) body.name = updates.name;
   if (updates.description !== undefined) body.description = updates.description;
-  if (updates.is_private !== undefined) body.is_private = updates.is_private ? "yes" : "no";
+  if (updates.is_private !== undefined) body.group_type = updates.is_private ? "private" : "public";
   await wordpressCCTFetch("care_group", { id, method: "PUT", body });
 }
 
