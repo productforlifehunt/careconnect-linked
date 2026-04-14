@@ -1,5 +1,4 @@
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
-import { getStoredWPUser } from "@/services/wp-auth";
 
 // JetEngine Relation IDs
 const REL_GROUP_MEMBER = 72; // care_group → users (many-to-many)
@@ -34,45 +33,45 @@ export async function fetchCareGroupPostsWordPress(groupId: string, type?: strin
   try {
     const posts = await fetchRelatedCctItems(REL_GROUP_POST, groupId, "care_group_not_too_special_post");
     if (!Array.isArray(posts)) return [];
+    // JetEngine returns type as array (e.g. ["wish"]) — normalize to string
+    const normalizeType = (t: any): string => Array.isArray(t) ? (t[0] || "discussion") : (t || "discussion");
     return posts
-      .filter((p: any) => !type || (p.type || "discussion") === type)
-      .map((p: any) => ({
-      id: p.id,
-      group_id: p.group_id || groupId,
-      author_id: p.author_id || null,
-      type: p.type || "discussion",
-      title: p.title || null,
-      content: p.content || null,
-      is_pinned: p.is_pinned === true || p.is_pinned === "yes",
-      visibility: p.visibility || "all",
-      created_at: p.created_at,
-      updated_at: p.updated_at || p.created_at,
-      author: p.author_name ? { id: p.author_id, full_name: p.author_name, avatar_url: p.author_avatar || null } : null,
-    }));
+      .filter((p: any) => !type || normalizeType(p.type) === type)
+      .map((p: any) => {
+        const authorId = p.author_id || null; // from normalizeCCT (cct_author_id)
+        return {
+          id: p.id,
+          group_id: groupId,
+          author_id: authorId,
+          type: normalizeType(p.type),
+          title: p.title || null,
+          content: p.content || null,
+          is_pinned: p.is_pinned === true || p.is_pinned === "yes",
+          visibility: p.visibility || "all",
+          created_at: p.created_at,
+          updated_at: p.updated_at || p.created_at,
+          author: authorId ? { id: authorId, full_name: p.author_name || null, avatar_url: null } : null,
+        };
+      });
   } catch { return []; }
 }
 
 export async function createGroupPostWordPress(post: { group_id: string; content: string; type?: string; title?: string }): Promise<void> {
-  const wpUser = getStoredWPUser();
-  const authorId = wpUser?.user_id ? String(wpUser.user_id) : null;
-  const authorName = wpUser?.user_display_name || wpUser?.user_login || "";
+  // JetEngine auto-sets cct_author_id — no need to send author fields
   const created = await wordpressCCTFetch<any>("care_group_not_too_special_post", {
     method: "POST",
     body: {
       title: post.title || post.content.substring(0, 50),
       content: post.content,
       type: post.type || "discussion",
-      group_id: post.group_id,
-      author_id: authorId,
-      author_name: authorName,
     },
   });
   const groupId = normalizeWpObjectId(post.group_id);
-  const postId = normalizeWpObjectId(created?._ID || created?.id);
+  const postId = created?.item_id || normalizeWpObjectId(created?._ID || created?.id);
   if (groupId && postId) {
     await wordpressFetch(`jet-rel/${REL_GROUP_POST}`, {
       method: "POST",
-      body: { parent_id: groupId, child_id: postId, context: "child", store_items_type: "update" },
+      body: { parent_id: groupId, child_id: Number(postId), context: "child", store_items_type: "update" },
     });
   }
 }
