@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useServiceTypes } from "@/hooks/use-service-types";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,6 +33,7 @@ export default function CaregiverProfile() {
   const startConversation = useStartConversation();
   const createBooking = useCreateBookingWithWooCommerce();
   const addToCart = useAddToCart();
+  const { serviceTypes } = useServiceTypes();
 
   const [bookingDate, setBookingDate] = useState("");
   const [bookingTime, setBookingTime] = useState("");
@@ -306,13 +308,7 @@ export default function CaregiverProfile() {
                         <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
                         <SelectContent>
                          {(caregiver.specialty && caregiver.specialty.length > 0) ? caregiver.specialty.map((s: string) => <SelectItem key={s} value={s}>{s}</SelectItem>) : (
-                           <>
-                             <SelectItem value="Elder Care">Elder Care</SelectItem>
-                             <SelectItem value="Child Care">Child Care</SelectItem>
-                             <SelectItem value="Companionship">Companionship</SelectItem>
-                             <SelectItem value="Nursing Care">Nursing Care</SelectItem>
-                             <SelectItem value="General Care">General Care</SelectItem>
-                           </>
+                           serviceTypes.map((st: any) => <SelectItem key={st.slug || st.name} value={st.name}>{st.name}</SelectItem>)
                          )}
                         </SelectContent>
                       </Select>

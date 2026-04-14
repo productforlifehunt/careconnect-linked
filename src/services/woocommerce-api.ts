@@ -106,40 +106,45 @@ export async function ensureCategoryBySlug(slug: string, name?: string, parentId
 
 /**
  * Provider Product Management
+ * Products are VARIABLE type with pa_service-type as the variation attribute.
+ * Each service type the provider offers becomes a variation with its own price.
  */
 
-// Get or create provider's service product (virtual, under care-services category)
+export interface ServiceRateEntry {
+  serviceType: string; // term name e.g. "Elder Care"
+  hourlyRate: number;
+}
+
+// Get or create provider's service product as VARIABLE with service type variations
 export async function getOrCreateProviderProduct(
   providerId: string,
   providerData: {
     fullName: string;
-    hourlyRate: number;
+    hourlyRate: number; // default rate (fallback)
     bio?: string;
     specialties?: string[];
     certifications?: string[];
     yearsOfExperience?: number;
     location?: string;
+    serviceRates?: ServiceRateEntry[]; // per-service-type pricing
   }
 ) {
   try {
     const parentCat = await ensureCategoryBySlug(CARE_SERVICES_CATEGORY, 'Care Services');
-    const primarySpecialty = (providerData.specialties || [])[0];
-    let categoryIds = [parentCat.id];
-    if (primarySpecialty) {
-      const slug = primarySpecialty.toLowerCase().replace(/\s+/g, '-');
-      try {
-        const subCat = await ensureCategoryBySlug(slug, primarySpecialty, parentCat.id);
-        categoryIds.push(subCat.id);
-      } catch { /* sub-category optional */ }
-    }
+    const categoryIds = [parentCat.id];
 
     const sku = `care-provider-${providerId}`;
     const existingProducts = await wcFetch(`products?sku=${sku}`);
 
-    const productData = {
+    // Determine which service types this provider offers (from serviceRates or specialties)
+    const serviceRates = providerData.serviceRates || [];
+    const serviceTypeOptions = serviceRates.length > 0
+      ? serviceRates.map(r => r.serviceType)
+      : (providerData.specialties || []);
+
+    const productData: any = {
       name: `${providerData.fullName} – Care Service`,
-      type: 'simple',
-      regular_price: providerData.hourlyRate.toString(),
+      type: serviceTypeOptions.length > 0 ? 'variable' : 'simple',
       description: providerData.bio || '',
       short_description: `Professional care service by ${providerData.fullName}`,
       sku,
@@ -159,20 +164,94 @@ export async function getOrCreateProviderProduct(
       status: 'publish',
     };
 
+    // For variable products, add service-type as a product attribute used for variations
+    if (serviceTypeOptions.length > 0) {
+      productData.attributes = [{
+        name: 'Service Type',
+        slug: 'pa_service-type',
+        visible: true,
+        variation: true,
+        options: serviceTypeOptions,
+      }];
+      // Remove regular_price — variable products use variation prices
+    } else {
+      productData.regular_price = providerData.hourlyRate.toString();
+    }
+
+    let product;
     if (existingProducts && existingProducts.length > 0) {
-      return await wcFetch(`products/${existingProducts[0].id}`, {
+      product = await wcFetch(`products/${existingProducts[0].id}`, {
         method: 'PUT',
         body: JSON.stringify(productData),
       });
     } else {
-      return await wcFetch('products', {
+      product = await wcFetch('products', {
         method: 'POST',
         body: JSON.stringify(productData),
       });
     }
+
+    // Sync variations (one per service type with its own price)
+    if (product && serviceRates.length > 0) {
+      await syncProviderVariations(product.id, serviceRates, providerData.hourlyRate);
+    }
+
+    return product;
   } catch (error) {
     console.error('Error managing provider product:', error);
     throw error;
+  }
+}
+
+/**
+ * Sync WooCommerce product variations for each service type with its own hourly rate.
+ * Creates missing variations, updates existing ones.
+ */
+async function syncProviderVariations(
+  productId: number,
+  serviceRates: ServiceRateEntry[],
+  defaultRate: number
+) {
+  try {
+    const existing = await wcFetch(`products/${productId}/variations?per_page=100`);
+    const existingMap = new Map<string, any>();
+    (existing || []).forEach((v: any) => {
+      const attr = (v.attributes || []).find((a: any) => a.name === 'Service Type' || a.slug === 'pa_service-type');
+      if (attr) existingMap.set(attr.option, v);
+    });
+
+    for (const rate of serviceRates) {
+      const existingVariation = existingMap.get(rate.serviceType);
+      const variationData = {
+        regular_price: (rate.hourlyRate || defaultRate).toString(),
+        attributes: [{ name: 'Service Type', option: rate.serviceType }],
+        virtual: true,
+        status: 'publish',
+      };
+
+      if (existingVariation) {
+        await wcFetch(`products/${productId}/variations/${existingVariation.id}`, {
+          method: 'PUT',
+          body: JSON.stringify(variationData),
+        });
+      } else {
+        await wcFetch(`products/${productId}/variations`, {
+          method: 'POST',
+          body: JSON.stringify(variationData),
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Error syncing provider variations:', error);
+  }
+}
+
+/** Get all variations for a provider product */
+export async function getProviderVariations(productId: number): Promise<any[]> {
+  try {
+    return await wcFetch(`products/${productId}/variations?per_page=100`);
+  } catch {
+    return [];
   }
 }
 
