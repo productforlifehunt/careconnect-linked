@@ -416,7 +416,7 @@ export function useCareTasks(groupId?: string | null) {
 export function useCreateTask() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (task: { group_id?: string; care_group_id?: string; title: string; description?: string; priority?: string; assigned_to?: string; due_date?: string }) => createCareTaskWordPress(task),
+    mutationFn: (task: { group_id?: string; care_group_id?: string; title: string; description?: string; assigned_to?: string; due_date?: string }) => createCareTaskWordPress(task),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["careTasks"] }); },
   });
 }
