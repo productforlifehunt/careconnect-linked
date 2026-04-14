@@ -32,14 +32,15 @@ export function TasksTab({
 }: TasksTabProps) {
   const { toast } = useToast();
   const [addOpen, setAddOpen] = useState(false);
-  const [newTask, setNewTask] = useState({ title: "", description: "", assignee: "", priority: "medium", category: "Daily Living", due_date: "", visibility: "group" });
+  const [newTask, setNewTask] = useState({ title: "", description: "", assignee: "", category: "Daily Living", due_date: "", visibility: "group" });
 
   const pendingTasks = (tasks || []).filter((t: any) => t.status !== "completed");
   const completedTasks = (tasks || []).filter((t: any) => t.status === "completed");
 
-  const priorityColors: Record<string, string> = {
-    high: "bg-destructive/10 text-destructive", urgent: "bg-destructive/10 text-destructive",
-    medium: "bg-warning/10 text-warning", low: "bg-muted text-muted-foreground",
+  const statusColors: Record<string, string> = {
+    pending: "bg-warning/10 text-warning",
+    "in progress": "bg-primary/10 text-primary",
+    completed: "bg-success/10 text-success",
   };
 
   const toggleTask = (id: string, currentStatus: string) => {
@@ -51,11 +52,10 @@ export function TasksTab({
     createTask.mutate({
       title: newTask.title, description: newTask.description || undefined,
       group_id: activeGroupId, assigned_to: newTask.assignee || undefined,
-      priority: newTask.priority,
       due_date: newTask.due_date || undefined,
     } as any, {
       onSuccess: () => {
-        setNewTask({ title: "", description: "", assignee: "", priority: "medium", category: "Daily Living", due_date: "", visibility: "group" });
+        setNewTask({ title: "", description: "", assignee: "", category: "Daily Living", due_date: "", visibility: "group" });
         setAddOpen(false); toast({ title: "Task added" });
       },
     });
