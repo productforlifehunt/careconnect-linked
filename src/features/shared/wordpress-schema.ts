@@ -502,14 +502,20 @@ function mapAcfPost(post: WPPostEntity) {
   };
 }
 
-function mapCareGroup(entity: WPPostEntity): CareGroup {
+function mapCareGroup(entity: any): CareGroup {
+  // Support both CCT flat fields and legacy WP post format
+  const isCCT = entity._ID || entity.cct_slug;
   return {
-    id: String(entity.id),
-    name: entity.title?.rendered || "",
-    description: stripHtml(entity.content?.rendered) || null,
-    is_private: entity.acf?.is_private || false,
-    created_at: entity.date || new Date().toISOString(),
-    created_by: entity.author ? `wp-${entity.author}` : null,
+    id: String(isCCT ? (entity._ID || entity.id) : entity.id),
+    name: isCCT ? (entity.name || "") : (entity.title?.rendered || ""),
+    description: isCCT ? (entity.description || null) : (stripHtml(entity.content?.rendered) || null),
+    is_private: isCCT ? (entity.group_type === "private") : (entity.acf?.is_private || false),
+    group_type: isCCT ? (entity.group_type || "public") : (entity.acf?.group_type || "public"),
+    join_code: isCCT ? (entity.join_code || null) : null,
+    invite_code: isCCT ? (entity.join_code || null) : null,
+    is_active: isCCT ? (entity.is_active === "active" || entity.is_active === true) : true,
+    created_at: isCCT ? (entity.cct_created || entity.created_at) : (entity.date || new Date().toISOString()),
+    created_by: isCCT ? (entity.cct_author_id ? `wp-${entity.cct_author_id}` : null) : (entity.author ? `wp-${entity.author}` : null),
     member_count: entity.acf?.member_count ?? 0,
   } as CareGroup;
 }
@@ -765,17 +771,17 @@ export const wordpressSchema: Record<WordPressFeatureKey, WordPressSchemaEntry<a
     status: "confirmed",
     endpoint: "jet-cct/universal_care_task",
     defaultParams: { per_page: 100 },
-    mapList: (tasks: WPCareTask[]) => (Array.isArray(tasks) ? tasks.map((t) => ({
-      id: String(t.id),
-      title: t.title?.rendered || "Task",
-      status: t.acf?.status || "pending",
-      priority: t.acf?.priority || "medium",
-      due_date: t.acf?.due_date || null,
-      description: t.acf?.description || null,
+    mapList: (tasks: any[]) => (Array.isArray(tasks) ? tasks.map((t) => ({
+      id: String(t._ID || t.id),
+      title: t.title || "Task",
+      status: t.status || "pending",
+      due_date: t.due_date || null,
+      completed_at: t.completed_at || null,
+      description: t.description || null,
       care_group_id: null,
       assigned_to: null,
       assignee_profile: null,
-      created_at: t.date,
+      created_at: t.cct_created || t.date,
     })) : []),
   },
   cared_ones: {
@@ -807,23 +813,24 @@ export const wordpressSchema: Record<WordPressFeatureKey, WordPressSchemaEntry<a
   care_task: {
     status: "confirmed",
     endpoint: ({ id }) => `jet-cct/universal_care_task/${id}`,
-    mapDetail: (t: WPCareTask) => ({
-      id: String(t.id),
-      title: t.title?.rendered || "Task",
-      status: t.acf?.status || "pending",
-      priority: t.acf?.priority || "medium",
-      due_date: t.acf?.due_date || null,
-      description: t.acf?.description || null,
+    mapDetail: (t: any) => ({
+      id: String(t._ID || t.id),
+      title: t.title || "Task",
+      status: t.status || "pending",
+      due_date: t.due_date || null,
+      completed_at: t.completed_at || null,
+      description: t.description || null,
       care_group_id: null,
       assigned_to: null,
-      created_at: t.date,
+      created_at: t.cct_created || t.date,
     }),
-    buildCreateBody: (input: { title: string; description?: string; status?: string; priority?: string; due_date?: string; care_group_id?: string; assigned_to?: string }) => ({
+    buildCreateBody: (input: { title: string; description?: string; status?: string; due_date?: string; care_group_id?: string; assigned_to?: string }) => ({
       title: input.title,
-      status: "publish",
-      acf: { status: input.status || "pending", priority: input.priority || "medium", due_date: input.due_date, description: input.description },
+      status: input.status || "pending",
+      due_date: input.due_date,
+      description: input.description,
     }),
-    buildUpdateBody: (input: { status?: string; priority?: string; assigned_to?: string }) => ({ acf: { status: input.status, priority: input.priority } }),
+    buildUpdateBody: (input: { status?: string; assigned_to?: string }) => ({ status: input.status }),
   },
   care_plans: {
     status: "confirmed",

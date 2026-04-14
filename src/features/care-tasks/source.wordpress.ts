@@ -43,9 +43,9 @@ export async function fetchCareTasksWordPress(groupId?: string | null): Promise<
       title: t.title || null,
       description: t.description || null,
       status: t.status || "pending",
-      priority: t.priority || "medium",
       assigned_to: await fetchAssignedUserId(String(t._ID || t.id || "")),
       due_date: t.due_date || null,
+      completed_at: t.completed_at || null,
       created_by: t.cct_author_id ? `wp-${t.cct_author_id}` : null,
       created_at: t.cct_created || t.created_at,
       updated_at: t.cct_modified || t.updated_at || t.cct_created || t.created_at,
@@ -56,13 +56,12 @@ export async function fetchCareTasksWordPress(groupId?: string | null): Promise<
   }
 }
 
-export async function createCareTaskWordPress(task: { care_group_id?: string; group_id?: string; title: string; description?: string; priority?: string; assigned_to?: string; due_date?: string }): Promise<void> {
+export async function createCareTaskWordPress(task: { care_group_id?: string; group_id?: string; title: string; description?: string; assigned_to?: string; due_date?: string }): Promise<void> {
   const created = await wordpressCCTFetch<any>("universal_care_task", {
     method: "POST",
     body: {
       title: task.title,
       description: task.description,
-      priority: task.priority,
       due_date: task.due_date,
       status: "pending",
     },
