@@ -39,6 +39,8 @@ function getFacilityAddress(facility: CareFacility, isZh: boolean) {
 export default function SearchResults() {
   const { t, i18n } = useTranslation();
   const { isAuthenticated } = useAuth();
+  const { serviceTypeNames: allServiceTypeNames } = useServiceTypes();
+  const specialties = allServiceTypeNames.slice(0, 8);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
@@ -61,7 +63,7 @@ export default function SearchResults() {
   }, [query, locationFilter]);
 
   const [priceRange, setPriceRange] = useState([0, 100]);
-  const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>(initialQuery ? [initialQuery].filter(q => specialties.includes(q)) : []);
+  const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>(initialQuery ? [initialQuery].filter(q => allServiceTypeNames.includes(q)) : []);
   const [selectedFacilityTypes, setSelectedFacilityTypes] = useState<string[]>([]);
   const [selectedServiceTypes, setSelectedServiceTypes] = useState<string[]>([]);
   const [verifiedOnly, setVerifiedOnly] = useState(false);

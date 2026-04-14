@@ -27,6 +27,7 @@ export default function BecomeCaregiver() {
   const { isAuthenticated } = useAuth();
   const site = useSite();
   const submitApplication = useSubmitProviderApplication();
+  const { serviceTypeNames: allSpecialties, isLoading: serviceTypesLoading } = useServiceTypes();
   const [step, setStep] = useState(1);
   const totalSteps = 4;
 
