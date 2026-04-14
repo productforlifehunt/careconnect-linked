@@ -2,9 +2,10 @@ import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-c
 
 const REL_GROUP_TASK = 48;       // Care Group → Care Task (Many-to-Many)
 const REL_TASK_ASSIGNEE = 81;    // Care Task → Assigned User
+const REL_TASK_COMMENT = 82;     // Care Task → Comment (One-to-Many)
 const REL_TASK_CARED_ONE = 105;  // Care Task → Cared One (One-to-Many)
-const REL_TASK_COMMENT = 106;    // Care Task → Comment (One-to-Many)
 const REL_TASK_USERS = 108;      // Care Task → Users visibility (Many-to-Many)
+const REL_TASK_PRIVATE_GROUPS = 109; // Care Task → Private member groups (Many-to-Many)
 
 function normalizeWpObjectId(value: string | number | null | undefined): number {
   return Number(String(value ?? "").replace(/^wp-/, ""));
