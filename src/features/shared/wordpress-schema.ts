@@ -502,14 +502,19 @@ function mapAcfPost(post: WPPostEntity) {
   };
 }
 
-function mapCareGroup(entity: WPPostEntity): CareGroup {
+function mapCareGroup(entity: any): CareGroup {
+  // Support both CCT flat fields and legacy WP post format
+  const isCCT = entity._ID || entity.cct_slug;
   return {
-    id: String(entity.id),
-    name: entity.title?.rendered || "",
-    description: stripHtml(entity.content?.rendered) || null,
-    is_private: entity.acf?.is_private || false,
-    created_at: entity.date || new Date().toISOString(),
-    created_by: entity.author ? `wp-${entity.author}` : null,
+    id: String(isCCT ? (entity._ID || entity.id) : entity.id),
+    name: isCCT ? (entity.name || "") : (entity.title?.rendered || ""),
+    description: isCCT ? (entity.description || null) : (stripHtml(entity.content?.rendered) || null),
+    is_private: isCCT ? (entity.group_type === "private") : (entity.acf?.is_private || false),
+    group_type: isCCT ? (entity.group_type || "public") : (entity.acf?.group_type || "public"),
+    invite_code: isCCT ? (entity.join_code || null) : null,
+    is_active: isCCT ? (entity.is_active === "active" || entity.is_active === true) : true,
+    created_at: isCCT ? (entity.cct_created || entity.created_at) : (entity.date || new Date().toISOString()),
+    created_by: isCCT ? (entity.cct_author_id ? `wp-${entity.cct_author_id}` : null) : (entity.author ? `wp-${entity.author}` : null),
     member_count: entity.acf?.member_count ?? 0,
   } as CareGroup;
 }
