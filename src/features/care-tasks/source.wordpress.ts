@@ -56,13 +56,12 @@ export async function fetchCareTasksWordPress(groupId?: string | null): Promise<
   }
 }
 
-export async function createCareTaskWordPress(task: { care_group_id?: string; group_id?: string; title: string; description?: string; priority?: string; assigned_to?: string; due_date?: string }): Promise<void> {
+export async function createCareTaskWordPress(task: { care_group_id?: string; group_id?: string; title: string; description?: string; assigned_to?: string; due_date?: string }): Promise<void> {
   const created = await wordpressCCTFetch<any>("universal_care_task", {
     method: "POST",
     body: {
       title: task.title,
       description: task.description,
-      priority: task.priority,
       due_date: task.due_date,
       status: "pending",
     },
