@@ -10,9 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { MapPin, DollarSign, Briefcase, Shield, Phone, Eye, EyeOff, X, Store, ShoppingBag } from "lucide-react";
 import { useMyProfile, useUpdateProfile } from "@/hooks/use-care-data";
 import { useSyncProviderToWooCommerce, useProviderWooCommerceProduct } from "@/hooks/use-woocommerce";
+import { useServiceTypes } from "@/hooks/use-service-types";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
-import { ALL_SPECIALTIES, ALL_CERTIFICATIONS, getSpecialtyKey, getCertificationKey } from "@/lib/specialty-i18n";
+import { ALL_CERTIFICATIONS, getCertificationKey } from "@/lib/specialty-i18n";
 
 export default function ProviderSettingsTab() {
   const { t } = useTranslation();
@@ -21,13 +22,15 @@ export default function ProviderSettingsTab() {
   const updateProfile = useUpdateProfile();
   const syncToWooCommerce = useSyncProviderToWooCommerce();
   const { data: wcProduct, isLoading: wcLoading } = useProviderWooCommerceProduct();
+  const { serviceTypes, isLoading: serviceTypesLoading } = useServiceTypes();
 
   const [location, setLocation] = useState("");
   const [hourlyRate, setHourlyRate] = useState("");
   const [bio, setBio] = useState("");
   const [phone, setPhone] = useState("");
   const [experience, setExperience] = useState("");
-  const [specialties, setSpecialties] = useState<string[]>([]);
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const [serviceRates, setServiceRates] = useState<Record<string, string>>({});
   const [certifications, setCertifications] = useState<string[]>([]);
   const [isActive, setIsActive] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -39,19 +42,53 @@ export default function ProviderSettingsTab() {
       setBio(profile.bio || "");
       setPhone(profile.phone_number || "");
       setExperience(profile.years_of_experience?.toString() || "");
-      setSpecialties(profile.specialty || []);
+      setSelectedServices(profile.specialty || []);
       setCertifications(profile.certification || []);
       setIsActive(profile.provider_is_active || false);
+      // Initialize per-service rates from profile meta if available
+      const existingRates: Record<string, string> = {};
+      (profile.specialty || []).forEach((s: string) => {
+        existingRates[s] = profile.hourly_rate?.toString() || "";
+      });
+      setServiceRates(existingRates);
       setLoaded(true);
     }
   }, [profile, loaded]);
 
-  const toggleItem = (list: string[], item: string, setter: (v: string[]) => void) => {
-    setter(list.includes(item) ? list.filter(x => x !== item) : [...list, item]);
+  // Initialize rate for newly selected service with default rate
+  useEffect(() => {
+    setServiceRates(prev => {
+      const next = { ...prev };
+      selectedServices.forEach(s => {
+        if (!(s in next)) next[s] = hourlyRate || "";
+      });
+      // Remove rates for deselected services
+      Object.keys(next).forEach(k => {
+        if (!selectedServices.includes(k)) delete next[k];
+      });
+      return next;
+    });
+  }, [selectedServices, hourlyRate]);
+
+  const toggleService = (name: string) => {
+    setSelectedServices(prev =>
+      prev.includes(name) ? prev.filter(x => x !== name) : [...prev, name]
+    );
+  };
+
+  const toggleCert = (name: string) => {
+    setCertifications(prev =>
+      prev.includes(name) ? prev.filter(x => x !== name) : [...prev, name]
+    );
   };
 
   const handleSave = async () => {
     try {
+      const rateEntries = selectedServices.map(s => ({
+        serviceType: s,
+        hourlyRate: parseFloat(serviceRates[s]) || parseFloat(hourlyRate) || 0,
+      }));
+
       // Save profile via WordPress
       await updateProfile.mutateAsync({
         location,
@@ -59,20 +96,21 @@ export default function ProviderSettingsTab() {
         bio,
         phone_number: phone,
         years_of_experience: parseInt(experience) || 0,
-        specialty: specialties,
+        specialty: selectedServices,
         certification: certifications,
         provider_is_active: isActive,
       });
 
-      // Then sync to WooCommerce/Dokan
+      // Then sync to WooCommerce/Dokan with per-service-type rates
       await syncToWooCommerce.mutateAsync({
         hourlyRate: parseFloat(hourlyRate) || 0,
         bio,
-        specialties,
+        specialties: selectedServices,
         certifications,
         yearsOfExperience: parseInt(experience) || 0,
         location,
         providerIsActive: isActive,
+        serviceRates: rateEntries,
       });
 
       toast({ title: t("profile.profileUpdated"), description: "Profile synced to marketplace" });
@@ -131,7 +169,7 @@ export default function ProviderSettingsTab() {
           {wcProduct && (
             <div className="text-sm text-muted-foreground space-y-1">
               <p><strong>{t("providerDash.productName") || "Product Name"}:</strong> {wcProduct.name}</p>
-              <p><strong>{t("providerDash.price") || "Price"}:</strong> ${wcProduct.regular_price}/hour</p>
+              <p><strong>{t("providerDash.type") || "Type"}:</strong> {wcProduct.type === 'variable' ? 'Variable (per-service pricing)' : 'Simple'}</p>
               <p><strong>{t("providerDash.status") || "Status"}:</strong> {wcProduct.status === 'publish' ? 'Published' : 'Draft'}</p>
             </div>
           )}
@@ -148,7 +186,7 @@ export default function ProviderSettingsTab() {
               <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. San Francisco, CA" />
             </div>
             <div>
-              <Label className="flex items-center gap-1.5 mb-1.5"><DollarSign className="h-3.5 w-3.5" /> {t("becomeCaregiver.hourlyRateDollar")}</Label>
+              <Label className="flex items-center gap-1.5 mb-1.5"><DollarSign className="h-3.5 w-3.5" /> {t("becomeCaregiver.hourlyRateDollar")} (default)</Label>
               <Input type="number" min="0" step="5" value={hourlyRate} onChange={e => setHourlyRate(e.target.value)} placeholder="e.g. 35" />
             </div>
           </div>
@@ -176,23 +214,61 @@ export default function ProviderSettingsTab() {
         </CardContent>
       </Card>
 
-      {/* Specialties */}
+      {/* Service Types with Per-Service Pricing */}
       <Card className="border-transparent card-elevated">
-        <CardHeader><CardTitle className="flex items-center gap-2"><Shield className="h-5 w-5" /> {t("becomeCaregiver.specialties")}</CardTitle></CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            {ALL_SPECIALTIES.map(s => (
-              <Badge
-                key={s}
-                variant={specialties.includes(s) ? "default" : "outline"}
-                className="cursor-pointer text-xs py-1 px-2.5"
-                onClick={() => toggleItem(specialties, s, setSpecialties)}
-              >
-                {t(getSpecialtyKey(s))}
-                {specialties.includes(s) && <X className="h-3 w-3 ml-1" />}
-              </Badge>
-            ))}
-          </div>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" /> {t("becomeCaregiver.specialties") || "Services Offered"}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Select the services you offer. Set a custom hourly rate for each, or they'll use your default rate.
+          </p>
+          {serviceTypesLoading ? (
+            <p className="text-sm text-muted-foreground">Loading service types...</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {serviceTypes.map(st => (
+                <Badge
+                  key={st.slug}
+                  variant={selectedServices.includes(st.name) ? "default" : "outline"}
+                  className="cursor-pointer text-xs py-1 px-2.5"
+                  onClick={() => toggleService(st.name)}
+                >
+                  {st.name}
+                  {selectedServices.includes(st.name) && <X className="h-3 w-3 ml-1" />}
+                </Badge>
+              ))}
+            </div>
+          )}
+
+          {/* Per-service rate inputs */}
+          {selectedServices.length > 0 && (
+            <div className="mt-4 space-y-3">
+              <Label className="text-sm font-semibold">Per-Service Hourly Rates</Label>
+              <div className="grid sm:grid-cols-2 gap-3">
+                {selectedServices.map(s => (
+                  <div key={s} className="flex items-center gap-2">
+                    <Label className="text-xs min-w-[120px] truncate">{s}</Label>
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-muted-foreground">$</span>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="5"
+                        className="h-8 w-20 text-sm"
+                        value={serviceRates[s] || ""}
+                        onChange={e => setServiceRates(prev => ({ ...prev, [s]: e.target.value }))}
+                        placeholder={hourlyRate || "0"}
+                      />
+                      <span className="text-xs text-muted-foreground">/hr</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -206,7 +282,7 @@ export default function ProviderSettingsTab() {
                 key={c}
                 variant={certifications.includes(c) ? "default" : "outline"}
                 className="cursor-pointer text-xs py-1 px-2.5"
-                onClick={() => toggleItem(certifications, c, setCertifications)}
+                onClick={() => toggleCert(c)}
               >
                 {t(getCertificationKey(c))}
                 {certifications.includes(c) && <X className="h-3 w-3 ml-1" />}
