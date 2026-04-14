@@ -511,6 +511,7 @@ function mapCareGroup(entity: any): CareGroup {
     description: isCCT ? (entity.description || null) : (stripHtml(entity.content?.rendered) || null),
     is_private: isCCT ? (entity.group_type === "private") : (entity.acf?.is_private || false),
     group_type: isCCT ? (entity.group_type || "public") : (entity.acf?.group_type || "public"),
+    join_code: isCCT ? (entity.join_code || null) : null,
     invite_code: isCCT ? (entity.join_code || null) : null,
     is_active: isCCT ? (entity.is_active === "active" || entity.is_active === true) : true,
     created_at: isCCT ? (entity.cct_created || entity.created_at) : (entity.date || new Date().toISOString()),

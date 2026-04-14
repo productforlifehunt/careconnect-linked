@@ -358,10 +358,13 @@ export interface CareGroup {
   description: string | null;
   created_by: string;
   is_private: boolean;
+  group_type: string;
   join_code: string | null;
+  invite_code: string | null;
+  is_active: boolean;
   member_count: number | null;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
 }
 
 export interface CareGroupMember {
