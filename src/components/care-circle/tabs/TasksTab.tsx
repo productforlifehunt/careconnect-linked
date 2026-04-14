@@ -73,17 +73,6 @@ export function TasksTab({
               <div><Label>Task Title *</Label><Input value={newTask.title} onChange={e => setNewTask(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Pick up medication" /></div>
               <div><Label>Description</Label><Textarea value={newTask.description} onChange={e => setNewTask(p => ({ ...p, description: e.target.value }))} placeholder="Details..." rows={2} /></div>
               <div className="grid grid-cols-2 gap-3">
-                <div><Label>Priority</Label>
-                  <Select value={newTask.priority} onValueChange={v => setNewTask(p => ({ ...p, priority: v }))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                      <SelectItem value="urgent">Urgent</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
                 <div><Label>Category</Label>
                   <Select value={newTask.category} onValueChange={v => setNewTask(p => ({ ...p, category: v }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
@@ -131,7 +120,7 @@ export function TasksTab({
                     {t.category && <Badge variant="outline" className="text-[10px] h-4">{t.category}</Badge>}
                   </div>
                 </div>
-                <Badge variant="outline" className={priorityColors[t.priority] || ""}>{t.priority}</Badge>
+                <Badge variant="outline" className={statusColors[t.status] || ""}>{t.status || "pending"}</Badge>
                 <div className="flex gap-1 shrink-0">
                   <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" title="Post to Job Board"
                     onClick={(e) => { e.stopPropagation(); createJob.mutate({ title: t.title, description: t.description || `Help needed with: ${t.title}`, job_source_type: "group_task", linked_task_id: t.id, linked_group_id: activeGroupId!, location: "" }, { onSuccess: () => toast({ title: "Posted to Job Board" }) }); }}>
