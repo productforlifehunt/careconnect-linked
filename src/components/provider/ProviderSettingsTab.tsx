@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MapPin, DollarSign, Briefcase, Shield, Phone, Eye, EyeOff, X, Store, ShoppingBag } from "lucide-react";
 import { useMyProfile, useUpdateProfile } from "@/hooks/use-care-data";
@@ -214,7 +215,7 @@ export default function ProviderSettingsTab() {
         </CardContent>
       </Card>
 
-      {/* Service Types with Per-Service Pricing */}
+      {/* Service Types with Per-Service Pricing — like Care.com */}
       <Card className="border-transparent card-elevated">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -223,17 +224,19 @@ export default function ProviderSettingsTab() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Select the services you offer. Set a custom hourly rate for each, or they'll use your default rate.
+            {t("providerDash.selectServicesDesc") || "Select the services you offer. Each service becomes a bookable option with its own hourly rate."}
           </p>
           {serviceTypesLoading ? (
-            <p className="text-sm text-muted-foreground">Loading service types...</p>
+            <div className="grid sm:grid-cols-2 gap-2">
+              {[1,2,3,4].map(i => <Skeleton key={i} className="h-10 rounded-md" />)}
+            </div>
           ) : (
             <div className="flex flex-wrap gap-2">
               {serviceTypes.map(st => (
                 <Badge
                   key={st.slug}
                   variant={selectedServices.includes(st.name) ? "default" : "outline"}
-                  className="cursor-pointer text-xs py-1 px-2.5"
+                  className="cursor-pointer text-xs py-1.5 px-3 transition-colors"
                   onClick={() => toggleService(st.name)}
                 >
                   {st.name}
@@ -243,30 +246,52 @@ export default function ProviderSettingsTab() {
             </div>
           )}
 
-          {/* Per-service rate inputs */}
+          {/* Per-service pricing cards */}
           {selectedServices.length > 0 && (
-            <div className="mt-4 space-y-3">
-              <Label className="text-sm font-semibold">Per-Service Hourly Rates</Label>
-              <div className="grid sm:grid-cols-2 gap-3">
-                {selectedServices.map(s => (
-                  <div key={s} className="flex items-center gap-2">
-                    <Label className="text-xs min-w-[120px] truncate">{s}</Label>
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs text-muted-foreground">$</span>
-                      <Input
-                        type="number"
-                        min="0"
-                        step="5"
-                        className="h-8 w-20 text-sm"
-                        value={serviceRates[s] || ""}
-                        onChange={e => setServiceRates(prev => ({ ...prev, [s]: e.target.value }))}
-                        placeholder={hourlyRate || "0"}
-                      />
-                      <span className="text-xs text-muted-foreground">/hr</span>
-                    </div>
-                  </div>
-                ))}
+            <div className="mt-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-semibold">{t("providerDash.perServiceRates") || "Per-Service Hourly Rates"}</Label>
+                <span className="text-xs text-muted-foreground">
+                  {t("providerDash.defaultRate") || "Default"}: ${hourlyRate || "0"}/hr
+                </span>
               </div>
+              <div className="grid gap-3">
+                {selectedServices.map(s => {
+                  const customRate = serviceRates[s];
+                  const isCustom = customRate && customRate !== hourlyRate && customRate !== "";
+                  return (
+                    <div key={s} className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <Briefcase className="h-4 w-4 text-primary" />
+                        </div>
+                        <span className="text-sm font-medium truncate">{s}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+                        <Input
+                          type="number"
+                          min="0"
+                          step="5"
+                          className="h-8 w-20 text-sm text-right"
+                          value={serviceRates[s] || ""}
+                          onChange={e => setServiceRates(prev => ({ ...prev, [s]: e.target.value }))}
+                          placeholder={hourlyRate || "0"}
+                        />
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">/hr</span>
+                        {isCustom && (
+                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                            {t("providerDash.custom") || "Custom"}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {t("providerDash.pricingNote") || "Leave blank to use your default rate. Each service will be listed as a separate bookable variation on the marketplace."}
+              </p>
             </div>
           )}
         </CardContent>
