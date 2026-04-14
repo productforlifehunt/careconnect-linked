@@ -33,6 +33,7 @@ export default function CaregiverProfile() {
   const startConversation = useStartConversation();
   const createBooking = useCreateBookingWithWooCommerce();
   const addToCart = useAddToCart();
+  const { serviceTypes } = useServiceTypes();
 
   const [bookingDate, setBookingDate] = useState("");
   const [bookingTime, setBookingTime] = useState("");
