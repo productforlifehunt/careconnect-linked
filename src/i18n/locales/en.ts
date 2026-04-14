@@ -1155,6 +1155,8 @@ const en = {
     occupationalTherapy: "Occupational Therapy",
     personalCare: "Personal Care",
     homeHealth: "Home Health",
+    speechTherapy: "Speech Therapy",
+    behavioralSupport: "Behavioral Support",
   },
   certifications: {
     CNA: "CNA", RN: "RN", LPN: "LPN", CPR: "CPR",
