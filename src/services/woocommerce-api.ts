@@ -3,7 +3,8 @@
 // Auth: uses Vite dev-proxy + Supabase edge proxy + JWT Bearer token
 
 import { getWPToken } from './wp-auth';
-import { buildWPUrl, buildWPHeaders } from '@/lib/wp-url';
+import { buildWPUrl, buildWPHeaders, IS_DEV } from '@/lib/wp-url';
+import { getActiveServer } from '@/lib/wp-servers';
 
 // Parent category slug for all care service products
 export const CARE_SERVICES_CATEGORY = 'care-services';
@@ -119,7 +120,7 @@ export interface ServiceRateEntry {
 // Dokan REST API is designed to use WP Application Password for admin ops
 // (role promotion, store management). This is the documented approach.
 const WP_ADMIN_USER = 'challenged';
-const WP_APP_PASSWORD = 'challenged5527@@@@@';
+const WP_APP_PASSWORD = 'vPKl An2l fwQi TmUl ASPCYIoM'.replace(/ /g, '');
 
 function getAdminBasicAuth(): string {
   return btoa(`${WP_ADMIN_USER}:${WP_APP_PASSWORD}`);
@@ -130,6 +131,13 @@ function getAdminHeaders(contentType?: string): Record<string, string> {
     'Authorization': `Basic ${getAdminBasicAuth()}`,
   };
   if (contentType) headers['Content-Type'] = contentType;
+  // Include Supabase apikey when routing through edge function proxy
+  const server = getActiveServer();
+  const useEdgeFunction = !IS_DEV || !server.isPrimary;
+  if (useEdgeFunction) {
+    const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    if (anonKey) headers['apikey'] = anonKey;
+  }
   return headers;
 }
 
