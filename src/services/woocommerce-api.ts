@@ -263,12 +263,16 @@ export async function getOrCreateProviderProduct(
  * Sync WooCommerce product variations for each service type with its own hourly rate.
  * Creates missing variations, updates existing ones.
  */
+/**
+ * Sync WooCommerce product variations via Dokan API for vendor ownership.
+ */
 async function syncProviderVariations(
   productId: number,
   serviceRates: ServiceRateEntry[],
   defaultRate: number
 ) {
   try {
+    // Fetch existing variations — use WC admin API for read (dokan may not list all)
     const existing = await wcFetch(`products/${productId}/variations?per_page=100`);
     const existingMap = new Map<string, any>();
     (existing || []).forEach((v: any) => {
@@ -301,7 +305,6 @@ async function syncProviderVariations(
     console.error('Error syncing provider variations:', error);
   }
 }
-
 /** Get all variations for a provider product */
 export async function getProviderVariations(productId: number): Promise<any[]> {
   try {
