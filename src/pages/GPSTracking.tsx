@@ -17,7 +17,7 @@ import {
   fetchSafeZoneAlertsWordPress,
   acknowledgeAlertWordPress,
 } from "@/features/location/source.wordpress-extended";
-import { dualWriteLocation } from "@/features/location/source.trackserver";
+import { writeLocationAndCheckZones } from "@/features/location/source.trackserver";
 import { checkBreaches, getDistanceMeters } from "@/lib/locationService";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
