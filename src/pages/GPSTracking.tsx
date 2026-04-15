@@ -17,7 +17,7 @@ import {
   fetchSafeZoneAlertsWordPress,
   acknowledgeAlertWordPress,
 } from "@/features/location/source.wordpress-extended";
-import { writeLocationAndCheckZones } from "@/features/location/source.trackserver";
+import { writeLocationAndCheckZones } from "@/features/location/source.wordpress";
 import { checkBreaches, getDistanceMeters } from "@/lib/locationService";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -562,7 +562,7 @@ export default function GPSTracking() {
                   <Label className="text-sm">{t("gps.shareMyLocation")}</Label>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {shareMyLocation
-                      ? t("gps.sharingActive", "Sending every 15s via Trackserver + CCT")
+                      ? t("gps.sharingActive", "Sharing every 15s")
                       : t("gps.sharingInactive", "Not sharing")}
                   </p>
                 </div>
