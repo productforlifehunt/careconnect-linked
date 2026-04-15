@@ -305,7 +305,7 @@ async function ensureLocationSharingRecord(userId: number): Promise<string> {
   return id;
 }
 
-async function createSafeZoneAlertsForLocation(userId: string, lat: number, lng: number): Promise<void> {
+export async function createSafeZoneAlertsForLocation(userId: string, lat: number, lng: number): Promise<void> {
   try {
     const zones = await fetchSafeZonesWordPress(userId);
     if (!zones.length) return;
