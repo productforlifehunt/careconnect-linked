@@ -1,21 +1,24 @@
 ---
 name: Trackserver GPS Integration
-description: Hybrid Trackserver (OsmAnd ingestion) + JetEngine CCT (retrieval) architecture for live GPS tracking
+description: Trackserver as single GPS source — OsmAnd write + custom REST read (cc/v1/location/*)
 type: feature
 ---
-The GPS tracking system uses a hybrid architecture:
+The GPS tracking system uses Trackserver as the **single source of truth** for all GPS data:
 
-**Ingestion (sender)**: Capacitor background-geolocation plugin → Trackserver OsmAnd protocol (GET with Basic Auth). Dual-write to both Trackserver (`wp_ts_locations`) and `location_sharing` CCT via `dualWriteLocation()`.
+**Write (OsmAnd protocol)**: `GET /trackserver/?lat=X&lon=Y&timestamp=Z` with Basic Auth (Application Password). Writes to `wp_ts_locations` table.
 
-**Retrieval (viewer)**: JetEngine CCT REST API (`location_sharing` for current position, `location_history` for breadcrumb trails). Trackserver's `gettrack` requires WordPress nonces (incompatible with headless), so retrieval stays on CCTs.
+**Read (custom REST plugin)**: `cc-trackserver-rest` plugin exposes two JWT-compatible endpoints:
+- `GET /wp-json/cc/v1/location/live/{user_id}` — latest GPS point
+- `GET /wp-json/cc/v1/location/history/{user_id}?limit=N&since=ISO` — breadcrumb trail
 
-**Polling**: 15-second auto-refresh for both sender (sharing my location) and viewer (fetching others' locations). Uses `refetchInterval` on react-query.
+**No dual-write needed**. Old CCT-based location_sharing/location_history tables are deprecated for GPS data. Trackserver tables (`wp_ts_tracks`, `wp_ts_locations`) handle both live and historical positions.
 
-**Geofencing**: `safe_zone` CCT supports both radius and polygon shapes. Breach detection runs client-side via `checkBreaches()` with 5-minute dedup window. Alerts written to `cc_notification` CCT.
+**Zone breach detection**: Still runs client-side via `safe_zone` CCT + `checkBreaches()`. Alerts written to `cc_notification` CCT.
 
 **Key files**:
-- `src/features/location/source.trackserver.ts` — OsmAnd ingestion client
-- `src/features/location/source.wordpress-extended.ts` — CCT CRUD + breach detection
-- `src/pages/GPSTracking.tsx` — Map/Alerts/Zones tabs, 15s polling, trail polylines
+- `wp-plugins/cc-trackserver-rest/cc-trackserver-rest.php` — REST read endpoints
+- `src/features/location/source.trackserver.ts` — Unified write + read client
+- `src/features/location/source.wordpress-extended.ts` — Safe zones, alerts, requests (still CCT)
+- `src/pages/GPSTracking.tsx` — Map/Alerts/Zones tabs, 15s polling
 
-**Trackserver endpoint**: `https://app.challenged-dementia.com/careconnected/trackserver/?lat=X&lon=Y&timestamp=Z&speed=S` with Basic Auth
+**Plugin must be installed**: Upload `cc-trackserver-rest` to WordPress plugins and activate.
