@@ -1,94 +1,87 @@
 /**
- * Trackserver GPS Ingestion Service
+ * Trackserver REST Endpoint — Permanent Write-Only Archive
  * 
- * Uses the OsmAnd protocol to POST GPS coordinates to Trackserver.
- * Trackserver stores tracks in independent MySQL tables (wp_ts_tracks, wp_ts_locations)
- * for efficient high-frequency GPS breadcrumb storage.
+ * Sends GPS breadcrumbs to Trackserver via OsmAnd protocol (GET + Basic Auth).
+ * Trackserver stores high-frequency location data in optimized MySQL tables
+ * (wp_ts_tracks, wp_ts_locations) — ideal for long-term GPS history archival.
+ * 
+ * This is WRITE-ONLY. Retrieval uses JetEngine CCTs (location_sharing / location_history)
+ * because Trackserver's read API requires WordPress nonces (incompatible with headless JWT).
  * 
  * Architecture:
- * - Ingestion: OsmAnd protocol → Trackserver (this file)
- * - Retrieval: JetEngine CCT REST API (source.wordpress-extended.ts)
- * - Geofencing: safe_zone CCT + breach detection (source.wordpress-extended.ts)
+ *   Write: OsmAnd → Trackserver (this file) + CCT dual-write
+ *   Read:  JetEngine CCT REST API (source.wordpress-extended.ts)
  */
 
 import { getActiveServer } from "@/lib/wp-servers";
 import { getStoredWPUser } from "@/services/wp-auth";
 
 const TRACKSERVER_SLUG = "trackserver";
+const APP_PASSWORD = "challenged5527@@@@@";
 
-/**
- * Build the Trackserver OsmAnd endpoint URL.
- * Uses Basic Auth with WordPress Application Password.
- */
-function getTrackserverUrl(): string {
+function buildAuthHeader(username: string): string {
+  return `Basic ${btoa(`${username}:${APP_PASSWORD}`)}`;
+}
+
+function buildEndpointUrl(lat: number, lng: number, params: Record<string, string | number>): string {
   const server = getActiveServer();
-  return `${server.baseUrl}/${TRACKSERVER_SLUG}/`;
+  const qs = new URLSearchParams();
+  qs.set("lat", String(lat));
+  qs.set("lon", String(lng));
+  for (const [k, v] of Object.entries(params)) {
+    if (v != null && v !== "") qs.set(k, String(v));
+  }
+  return `${server.baseUrl}/${TRACKSERVER_SLUG}/?${qs.toString()}`;
+}
+
+interface TrackserverWriteResult {
+  trackId: string;
+  timestamp: string;
 }
 
 /**
- * Send a GPS coordinate to Trackserver via OsmAnd protocol.
- * This writes to Trackserver's optimized wp_ts_locations table.
- * 
- * @param lat - Latitude
- * @param lng - Longitude
- * @param options - Optional speed, altitude, battery, accuracy
- * @returns Track ID if successful, null if failed
+ * Write a single GPS point to Trackserver (OsmAnd protocol).
+ * Returns track ID on success, null on failure. Never throws.
  */
-export async function postLocationToTrackserver(
+export async function writeToTrackserver(
   lat: number,
   lng: number,
-  options?: {
+  opts?: {
     speed?: number;
     altitude?: number;
     battery?: number;
     accuracy?: number;
     timestamp?: number;
   }
-): Promise<{ trackId: string; timestamp: string } | null> {
-  const storedUser = getStoredWPUser();
-  if (!storedUser?.user_login) return null;
+): Promise<TrackserverWriteResult | null> {
+  const user = getStoredWPUser();
+  if (!user?.user_login) return null;
 
-  const ts = options?.timestamp ?? Math.floor(Date.now() / 1000);
-  const baseUrl = getTrackserverUrl();
-
-  const params = new URLSearchParams({
-    lat: String(lat),
-    lon: String(lng),
-    timestamp: String(ts),
-    speed: String(options?.speed ?? 0),
+  const url = buildEndpointUrl(lat, lng, {
+    timestamp: opts?.timestamp ?? Math.floor(Date.now() / 1000),
+    speed: opts?.speed ?? 0,
+    ...(opts?.altitude != null && { altitude: opts.altitude }),
+    ...(opts?.battery != null && { batt: opts.battery }),
+    ...(opts?.accuracy != null && { hdop: opts.accuracy }),
   });
 
-  if (options?.altitude != null) params.set("altitude", String(options.altitude));
-  if (options?.battery != null) params.set("batt", String(options.battery));
-  if (options?.accuracy != null) params.set("hdop", String(options.accuracy));
-
-  const url = `${baseUrl}?${params.toString()}`;
-
-  // Use Basic Auth with WordPress Application Password
-  const appPassword = "challenged5527@@@@@";
-  const authHeader = `Basic ${btoa(`${storedUser.user_login}:${appPassword}`)}`;
-
   try {
-    const response = await fetch(url, {
-      method: "GET", // OsmAnd protocol uses GET
-      headers: { Authorization: authHeader },
+    const res = await fetch(url, {
+      method: "GET",
+      headers: { Authorization: buildAuthHeader(user.user_login) },
     });
 
-    if (!response.ok) {
-      console.warn("[Trackserver] Ingestion failed:", response.status);
+    if (!res.ok) {
+      console.warn("[Trackserver] Write failed:", res.status);
       return null;
     }
 
-    const text = await response.text();
-    // Response format: "OK, track ID = 1, timestamp = 2026-04-15 18:35:34"
+    const text = await res.text();
     const trackMatch = text.match(/track ID = (\d+)/);
     const tsMatch = text.match(/timestamp = (.+)/);
 
     if (trackMatch) {
-      return {
-        trackId: trackMatch[1],
-        timestamp: tsMatch?.[1] ?? new Date().toISOString(),
-      };
+      return { trackId: trackMatch[1], timestamp: tsMatch?.[1] ?? new Date().toISOString() };
     }
 
     console.warn("[Trackserver] Unexpected response:", text);
@@ -100,13 +93,13 @@ export async function postLocationToTrackserver(
 }
 
 /**
- * Dual-write: Send location to both Trackserver AND our CCT system.
- * Trackserver stores the breadcrumb trail; CCT stores for headless retrieval.
+ * Dual-write: Trackserver (archive) + CCT (live/headless retrieval).
+ * Both writes run in parallel; failures are isolated.
  */
 export async function dualWriteLocation(
   lat: number,
   lng: number,
-  options?: {
+  opts?: {
     accuracy?: number | null;
     batteryLevel?: number | null;
     speed?: number;
@@ -117,43 +110,37 @@ export async function dualWriteLocation(
     "@/features/location/source.wordpress-extended"
   );
 
-  // Write to both in parallel
   const [tsResult] = await Promise.allSettled([
-    postLocationToTrackserver(lat, lng, {
-      accuracy: options?.accuracy ?? undefined,
-      battery: options?.batteryLevel ?? undefined,
-      speed: options?.speed,
+    writeToTrackserver(lat, lng, {
+      accuracy: opts?.accuracy ?? undefined,
+      battery: opts?.batteryLevel ?? undefined,
+      speed: opts?.speed,
     }),
     shareMyLocationWordPress(lat, lng, {
-      accuracy: options?.accuracy,
-      batteryLevel: options?.batteryLevel,
-      isEmergency: options?.isEmergency,
+      accuracy: opts?.accuracy,
+      batteryLevel: opts?.batteryLevel,
+      isEmergency: opts?.isEmergency,
     }),
   ]);
 
   if (tsResult.status === "fulfilled" && tsResult.value) {
-    console.debug("[Trackserver] Stored at track", tsResult.value.trackId);
+    console.debug("[Trackserver] Archived → track", tsResult.value.trackId);
   }
 }
 
 /**
- * Configuration for the Capacitor background-geolocation plugin.
+ * Capacitor background-geolocation config for native apps.
  * Returns the OsmAnd endpoint URL and auth headers.
  */
-export function getTrackserverConfig(): {
+export function getTrackserverNativeConfig(username: string): {
   url: string;
   method: "GET";
   headers: Record<string, string>;
-} | null {
-  const storedUser = getStoredWPUser();
-  if (!storedUser?.user_login) return null;
-
-  const appPassword = "challenged5527@@@@@";
+} {
+  const server = getActiveServer();
   return {
-    url: getTrackserverUrl(),
+    url: `${server.baseUrl}/${TRACKSERVER_SLUG}/`,
     method: "GET",
-    headers: {
-      Authorization: `Basic ${btoa(`${storedUser.user_login}:${appPassword}`)}`,
-    },
+    headers: { Authorization: buildAuthHeader(username) },
   };
 }
