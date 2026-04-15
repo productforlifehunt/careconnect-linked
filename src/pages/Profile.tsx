@@ -77,8 +77,8 @@ export default function Profile() {
         profile: {
           full_name: profile?.full_name,
           email: profile?.email,
-          phone_number: profile?.phone_number,
-          address: profile?.address,
+          phone: profile?.phone,
+          location: profile?.location,
           bio: profile?.bio,
           avatar_url: profile?.avatar_url,
           is_care_provider: profile?.is_care_provider,
