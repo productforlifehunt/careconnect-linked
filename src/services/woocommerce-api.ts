@@ -119,7 +119,7 @@ export interface ServiceRateEntry {
 // Dokan REST API is designed to use WP Application Password for admin ops
 // (role promotion, store management). This is the documented approach.
 const WP_ADMIN_USER = 'challenged';
-const WP_APP_PASSWORD = 'challenged5527@@@@@';
+const WP_APP_PASSWORD = 'vPKl An2l fwQi TmUl ASPCYIoM'.replace(/ /g, '');
 
 function getAdminBasicAuth(): string {
   return btoa(`${WP_ADMIN_USER}:${WP_APP_PASSWORD}`);
