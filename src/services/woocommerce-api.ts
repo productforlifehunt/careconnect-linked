@@ -130,6 +130,13 @@ function getAdminHeaders(contentType?: string): Record<string, string> {
     'Authorization': `Basic ${getAdminBasicAuth()}`,
   };
   if (contentType) headers['Content-Type'] = contentType;
+  // Include Supabase apikey when routing through edge function proxy
+  const server = getActiveServer();
+  const useEdgeFunction = !IS_DEV || !server.isPrimary;
+  if (useEdgeFunction) {
+    const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    if (anonKey) headers['apikey'] = anonKey;
+  }
   return headers;
 }
 
