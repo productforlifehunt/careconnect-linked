@@ -21,7 +21,7 @@ import { dualWriteLocation } from "@/features/location/source.trackserver";
 import { checkBreaches, getDistanceMeters } from "@/lib/locationService";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import L from "leaflet";
+import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useTranslation } from "react-i18next";
 import { getCurrentPosition, watchPosition as watchGeoPosition } from "@/lib/geolocation";
