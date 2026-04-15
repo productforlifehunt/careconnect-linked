@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 /** Default WP base URL - used when no wp_base param is provided */
-const DEFAULT_WP_BASE_URL = "http://170.106.171.59:8080/careconnected";
+const DEFAULT_WP_BASE_URL = "https://app.challenged-dementia.com";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

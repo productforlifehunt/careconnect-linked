@@ -19,9 +19,9 @@ export interface WPServer {
 export const WP_SERVERS: WPServer[] = [
   {
     id: "main",
-    label: "Main Server (170.106.171.59)",
-    baseUrl: "http://170.106.171.59:8080/careconnected",
-    sitePath: "careconnected",
+    label: "Main Server (app.challenged-dementia.com)",
+    baseUrl: "https://app.challenged-dementia.com",
+    sitePath: "",
     isPrimary: true,
   },
   {
