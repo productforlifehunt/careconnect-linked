@@ -48,7 +48,7 @@ export function useSyncProviderToWooCommerce() {
         email: profile.email || '',
         location: providerData.location,
         bio: providerData.bio,
-        phone: profile.phone_number || '',
+        phone: profile.phone || '',
       });
 
       // Update product status based on provider_is_active

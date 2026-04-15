@@ -45,12 +45,12 @@ export default function Profile() {
     if (profile) {
       setName(profile.full_name || "");
       setEmail(profile.email || "");
-      setPhone(profile.phone_number || "");
-      setAddress(profile.address || "");
+      setPhone(profile.phone || "");
+      setAddress(profile.location || "");
       setBio(profile.bio || "");
       setAvatarUrl(profile.avatar_url || "");
-      setEmailNotifs(profile.email_notification ?? true);
-      setPushNotifs(profile.push_notification ?? true);
+      setEmailNotifs(true);
+      setPushNotifs(true);
     }
   }, [profile]);
 
@@ -58,12 +58,10 @@ export default function Profile() {
     try {
       await updateProfile.mutateAsync({
         full_name: name,
-        phone_number: phone,
-        address,
+        phone,
+        location: address,
         bio,
         avatar_url: avatarUrl || null,
-        email_notification: emailNotifs,
-        push_notification: pushNotifs,
       });
       toast({ title: t("profile.profileUpdated") });
     } catch (err: any) {
