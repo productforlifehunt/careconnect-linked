@@ -1,15 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  ensureDokanVendor,
   getOrCreateProviderProduct,
   getProviderProduct,
   updateProviderProductStatus,
-  syncProviderToVendor,
   type ServiceRateEntry,
 } from '@/services/woocommerce-api';
 import { useMyProfile } from './use-care-data';
 
 /**
- * Hook to sync provider profile with WooCommerce product (variable with per-service pricing)
+ * Hook to sync provider profile with WooCommerce/Dokan.
+ * 1. Ensures user is a Dokan vendor (seller role + store)
+ * 2. Creates/updates a variable product under the vendor's store
+ * 3. Syncs per-service-type pricing as product variations
  */
 export function useSyncProviderToWooCommerce() {
   const qc = useQueryClient();
@@ -30,7 +33,16 @@ export function useSyncProviderToWooCommerce() {
         throw new Error('Profile not found');
       }
 
-      // Sync to WooCommerce product (variable with variations per service type)
+      // Step 1: Ensure user is a Dokan vendor with a store
+      const vendor = await ensureDokanVendor({
+        fullName: profile.full_name || '',
+        email: profile.email || '',
+        phone: profile.phone || '',
+        location: providerData.location,
+        bio: providerData.bio,
+      });
+
+      // Step 2: Create/update product via Dokan API (vendor-owned)
       const product = await getOrCreateProviderProduct(profile.id, {
         fullName: profile.full_name || '',
         hourlyRate: providerData.hourlyRate,
@@ -42,16 +54,7 @@ export function useSyncProviderToWooCommerce() {
         serviceRates: providerData.serviceRates,
       });
 
-      // Sync to Dokan vendor (optional)
-      const vendor = await syncProviderToVendor(profile.id, {
-        fullName: profile.full_name || '',
-        email: profile.email || '',
-        location: providerData.location,
-        bio: providerData.bio,
-        phone: profile.phone || '',
-      });
-
-      // Update product status based on provider_is_active
+      // Step 3: Update product status based on provider_is_active
       if (product && providerData.providerIsActive !== undefined) {
         await updateProviderProductStatus(profile.id, providerData.providerIsActive);
       }
