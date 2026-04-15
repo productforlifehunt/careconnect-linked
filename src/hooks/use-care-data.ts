@@ -698,10 +698,12 @@ export function useDeletePost() {
 }
 
 // ─── Location Shares (scoped to care circle members) ────────
-export function useLocationShares() {
+export function useLocationShares(refetchIntervalMs = 15000) {
   return useQuery({
     queryKey: ["locationShares"],
     queryFn: () => fetchLocationSharesWordPress(),
+    refetchInterval: refetchIntervalMs,
+    refetchIntervalInBackground: false,
   });
 }
 
