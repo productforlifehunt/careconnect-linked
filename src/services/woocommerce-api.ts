@@ -116,8 +116,11 @@ export interface ServiceRateEntry {
 }
 
 /**
- * Ensure the current user is a Dokan vendor (has seller role and store).
- * If not yet a vendor, creates the vendor store via Dokan API.
+ * Ensure the current user is a Dokan vendor (has `seller` role and store).
+ * Flow:
+ * 1. Check if user already has a Dokan store → return it
+ * 2. If not, set WP user role to `seller` via wp/v2/users/{id}
+ * 3. Then configure the Dokan store via dokan/v1/stores/{id}
  */
 export async function ensureDokanVendor(userData: {
   fullName: string;
@@ -126,29 +129,57 @@ export async function ensureDokanVendor(userData: {
   location?: string;
   bio?: string;
 }): Promise<any> {
-  try {
-    // Check if user already has a store
-    const store = await dokanFetch('stores/current');
-    if (store && store.id) return store;
-  } catch {
-    // No store yet — that's expected
+  const storedUser = (await import('@/services/wp-auth')).getStoredWPUser();
+  const wpUserId = storedUser?.user_id;
+  if (!wpUserId) {
+    console.warn('ensureDokanVendor: no stored WP user');
+    return null;
   }
 
-  // If the user doesn't have a vendor store, we need to set the seller role
-  // via WP admin API, then create the store
+  // Step 1: Check if user already has a Dokan store
   try {
-    const storedUser = (await import('@/services/wp-auth')).getStoredWPUser();
-    const wpUserId = storedUser?.user_id;
-    if (wpUserId) {
-      // Set user role to include 'seller' — requires admin JWT
-      await wcFetch(`customers/${wpUserId}`, {
-        method: 'PUT',
-        body: JSON.stringify({ role: 'seller' }),
-      });
+    const stores = await dokanFetch(`stores?include=${wpUserId}`);
+    if (Array.isArray(stores) && stores.length > 0) {
+      // User already is a vendor — update store settings
+      const store = stores[0];
+      try {
+        const updated = await dokanFetch(`stores/${store.id}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            store_name: userData.fullName ? `${userData.fullName} Care Services` : store.store_name,
+            phone: userData.phone || store.phone || '',
+            address: { street_1: userData.location || '' },
+          }),
+        });
+        return updated;
+      } catch {
+        return store; // update failed but store exists
+      }
     }
-    // Now update the store settings
-    const store = await dokanFetch('stores/current', {
+  } catch {
+    // No store found — proceed to create
+  }
+
+  // Step 2: Set user role to 'seller' via WP REST API (requires admin auth)
+  try {
+    const wpUrl = buildWPUrl(`wp/v2/users/${wpUserId}`);
+    const response = await fetch(wpUrl, {
       method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ roles: ['seller'] }),
+    });
+    if (!response.ok) {
+      const err = await response.text();
+      console.warn('ensureDokanVendor: failed to set seller role:', err);
+    }
+  } catch (e) {
+    console.warn('ensureDokanVendor: role assignment error', e);
+  }
+
+  // Step 3: Configure the Dokan store for this user
+  try {
+    const store = await dokanFetch(`stores/${wpUserId}`, {
+      method: 'PUT',
       body: JSON.stringify({
         store_name: `${userData.fullName} Care Services`,
         phone: userData.phone || '',
@@ -157,7 +188,7 @@ export async function ensureDokanVendor(userData: {
     });
     return store;
   } catch (e) {
-    console.warn('ensureDokanVendor: could not create vendor store', e);
+    console.warn('ensureDokanVendor: store setup error', e);
     return null;
   }
 }
@@ -569,28 +600,13 @@ async function dokanFetch(endpoint: string, options: RequestInit = {}) {
   return response.json();
 }
 
-// ─── Vendor sync ──────────────────────────────────────────
-
+// ─── Vendor sync (legacy wrapper — delegates to ensureDokanVendor) ─────
+// Kept for backward compat; prefer ensureDokanVendor directly.
 export async function syncProviderToVendor(
-  providerId: string,
+  _providerId: string,
   data: { fullName: string; email: string; location?: string; bio?: string; phone?: string }
 ) {
-  try {
-    // Try to update existing Dokan vendor store settings
-    const result = await dokanFetch('stores/current', {
-      method: 'POST',
-      body: JSON.stringify({
-        store_name: data.fullName,
-        phone: data.phone || '',
-        address: { street_1: data.location || '' },
-      }),
-    });
-    return result;
-  } catch (e) {
-    // Vendor may not exist yet or Dokan may not support this endpoint for the user
-    console.warn('syncProviderToVendor: could not sync vendor', e);
-    return null;
-  }
+  return ensureDokanVendor(data);
 }
 
 // ─── Order helpers ─────────────────────────────────────────
