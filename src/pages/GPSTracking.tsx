@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSite } from "@/contexts/SiteContext";
 import { Button } from "@/components/ui/button";
@@ -6,75 +6,127 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { MapPin, Navigation, Clock, Shield, AlertTriangle, RefreshCw, Loader2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MapPin, Navigation, Clock, Shield, AlertTriangle, RefreshCw, Loader2, Radio, Route, Bell, Hexagon } from "lucide-react";
 import { useLocationShares } from "@/hooks/use-care-data";
-import { shareMyLocationWordPress, disableMyLocationSharingWordPress } from "@/features/location/source.wordpress-extended";
-import { fetchCaredOneLocationSettingsWordPress } from "@/features/location/source.wordpress-extended";
+import {
+  shareMyLocationWordPress, disableMyLocationSharingWordPress,
+  fetchCaredOneLocationSettingsWordPress,
+  fetchCaredOneLocationHistoryWordPress,
+  fetchSafeZonesWordPress,
+  fetchSafeZoneAlertsWordPress,
+  acknowledgeAlertWordPress,
+} from "@/features/location/source.wordpress-extended";
+import { dualWriteLocation } from "@/features/location/source.trackserver";
+import { checkBreaches, getDistanceMeters } from "@/lib/locationService";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useTranslation } from "react-i18next";
-import { getCurrentPosition } from "@/lib/geolocation";
+import { getCurrentPosition, watchPosition as watchGeoPosition } from "@/lib/geolocation";
+
+const POLL_INTERVAL = 15_000; // 15 seconds
+const TRAIL_MAX_POINTS = 200;
 
 export default function GPSTracking() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const site = useSite();
-  const { data: locationShares, isLoading, refetch } = useLocationShares();
+  const { data: locationShares, isLoading, refetch } = useLocationShares(POLL_INTERVAL);
   const [selectedPerson, setSelectedPerson] = useState<any>(null);
   const [shareMyLocation, setShareMyLocation] = useState(false);
   const [geofenceAlerts, setGeofenceAlerts] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [updatingShare, setUpdatingShare] = useState(false);
   const [sosDialogOpen, setSosDialogOpen] = useState(false);
   const [sosSending, setSosSending] = useState(false);
+  const [activeTab, setActiveTab] = useState("map");
+  const [alerts, setAlerts] = useState<any[]>([]);
+  const [zones, setZones] = useState<any[]>([]);
+  const [trailData, setTrailData] = useState<Record<string, [number, number][]>>({});
 
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
+  const trailLinesRef = useRef<L.Polyline[]>([]);
+  const zoneLayers = useRef<L.Layer[]>([]);
+  const watchCleanup = useRef<(() => void) | null>(null);
+  const lastBreach = useRef<Record<string, number>>({});
 
   const { user } = useAuth();
+  const userId = user?.user_id ?? null;
 
-  const getCurrentAuthUserId = async () => {
-    return user?.user_id ?? null;
-  };
-
-  const getCurrentProfileId = async () => {
-    return user?.id ?? null;
-  };
-
-  // Check if current user has a location_current row
+  // ─── Initialize sharing state ───────────────────────────────
   useEffect(() => {
+    if (!userId) return;
     (async () => {
-      const authUserId = await getCurrentAuthUserId();
-      if (!authUserId) return;
       try {
-        const settings = await fetchCaredOneLocationSettingsWordPress(String(authUserId));
+        const settings = await fetchCaredOneLocationSettingsWordPress(String(userId));
         if (settings?.sharing_enabled) setShareMyLocation(true);
       } catch {}
     })();
-  }, []);
+  }, [userId]);
 
+  // ─── Load safe zones & alerts ───────────────────────────────
+  useEffect(() => {
+    if (!userId) return;
+    (async () => {
+      try {
+        const [z, a] = await Promise.all([
+          fetchSafeZonesWordPress(String(userId)),
+          fetchSafeZoneAlertsWordPress(String(userId)),
+        ]);
+        setZones(z);
+        setAlerts(a);
+      } catch {}
+    })();
+  }, [userId]);
+
+  // ─── Build people list from location shares ─────────────────
   const people = (locationShares || []).map((ls: any) => {
     const lat = parseFloat(ls.latitude) || 0;
     const lng = parseFloat(ls.longitude) || 0;
     return {
       id: ls.id,
       userId: ls.user_id,
-      name: ls.profile?.full_name || t("common.unknown"),
-      avatar_url: ls.profile?.avatar_url,
+      name: ls.profile?.full_name || ls.user_name || t("common.unknown"),
+      avatar_url: ls.profile?.avatar_url || ls.user_avatar,
       lastLocation: ls.address_text || `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
       coordinates: { lat, lng },
-      lastUpdated: ls.updated_at ? new Date(ls.updated_at).toLocaleTimeString("en", { hour: "numeric", minute: "2-digit" }) : "",
+      lastUpdated: ls.updated_at
+        ? new Date(typeof ls.updated_at === "number" ? ls.updated_at * 1000 : ls.updated_at).toLocaleTimeString("en", { hour: "numeric", minute: "2-digit" })
+        : "",
       status: "active" as const,
-      isSharing: ls.sharing_status !== "off",
+      isSharing: ls.sharing_status !== "off" && ls.is_sharing_enabled !== false,
     };
   });
 
   const sharingPeople = people.filter(p => p.isSharing && p.coordinates.lat && p.coordinates.lng);
 
-  // Initialize Leaflet map
+  // ─── Load trail history for each person ─────────────────────
+  useEffect(() => {
+    if (!sharingPeople.length) return;
+    (async () => {
+      const trails: Record<string, [number, number][]> = {};
+      await Promise.all(
+        sharingPeople.map(async (p) => {
+          try {
+            const history = await fetchCaredOneLocationHistoryWordPress(p.userId);
+            trails[p.userId] = history
+              .filter((h: any) => h.latitude && h.longitude)
+              .slice(0, TRAIL_MAX_POINTS)
+              .map((h: any) => [Number(h.latitude), Number(h.longitude)] as [number, number])
+              .reverse(); // oldest first for polyline
+          } catch {
+            trails[p.userId] = [];
+          }
+        })
+      );
+      setTrailData(trails);
+    })();
+  }, [sharingPeople.length]);
+
+  // ─── Initialize Leaflet map ─────────────────────────────────
   useEffect(() => {
     if (!mapRef.current || leafletMap.current) return;
     const map = L.map(mapRef.current, { zoomControl: true }).setView([39.8283, -98.5795], 4);
@@ -88,29 +140,79 @@ export default function GPSTracking() {
     };
   }, []);
 
-  // Update markers when data changes
+  // ─── Draw safe zones on map ─────────────────────────────────
   useEffect(() => {
     const map = leafletMap.current;
     if (!map) return;
-    // Clear existing markers
+    zoneLayers.current.forEach(l => map.removeLayer(l));
+    zoneLayers.current = [];
+
+    zones.filter(z => z.is_active).forEach(zone => {
+      const color = zone.zone_type === "danger" ? "#ef4444" : "#22c55e";
+      if (zone.shape_type === "polygon" && zone.polygon_points?.length >= 3) {
+        const poly = L.polygon(zone.polygon_points, {
+          color,
+          weight: 2,
+          fillOpacity: 0.15,
+          dashArray: zone.zone_type === "danger" ? "6 4" : undefined,
+        }).addTo(map);
+        poly.bindPopup(`<b>${zone.name}</b><br/>${zone.zone_type === "danger" ? "⚠️ Danger" : "✅ Safe"} Zone`);
+        zoneLayers.current.push(poly);
+      } else if (zone.latitude && zone.longitude) {
+        const circle = L.circle([zone.latitude, zone.longitude], {
+          radius: zone.radius_meters || 200,
+          color,
+          weight: 2,
+          fillOpacity: 0.12,
+          dashArray: zone.zone_type === "danger" ? "6 4" : undefined,
+        }).addTo(map);
+        circle.bindPopup(`<b>${zone.name}</b><br/>${zone.zone_type === "danger" ? "⚠️ Danger" : "✅ Safe"} Zone<br/>Radius: ${zone.radius_meters || 200}m`);
+        zoneLayers.current.push(circle);
+      }
+    });
+  }, [zones]);
+
+  // ─── Update markers + trails when data changes ──────────────
+  useEffect(() => {
+    const map = leafletMap.current;
+    if (!map) return;
+
+    // Clear old markers & trails
     markersRef.current.forEach(m => m.remove());
     markersRef.current = [];
+    trailLinesRef.current.forEach(l => l.remove());
+    trailLinesRef.current = [];
 
     if (sharingPeople.length === 0) return;
 
     sharingPeople.forEach(person => {
-      const initials = person.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2);
+      const initials = person.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase();
       const icon = L.divIcon({
         className: "custom-marker",
-        html: `<div style="width:36px;height:36px;border-radius:50%;background:hsl(var(--primary));color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);cursor:pointer">${initials}</div>`,
-        iconSize: [36, 36],
-        iconAnchor: [18, 18],
+        html: `<div style="width:40px;height:40px;border-radius:50%;background:hsl(var(--primary));color:white;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;border:3px solid white;box-shadow:0 2px 10px rgba(0,0,0,0.3);cursor:pointer;position:relative">
+          ${initials}
+          <span style="position:absolute;bottom:-2px;right:-2px;width:12px;height:12px;border-radius:50%;background:#22c55e;border:2px solid white"></span>
+        </div>`,
+        iconSize: [40, 40],
+        iconAnchor: [20, 20],
       });
       const marker = L.marker([person.coordinates.lat, person.coordinates.lng], { icon })
         .addTo(map)
         .bindPopup(`<b>${person.name}</b><br/>Last seen: ${person.lastUpdated}<br/>${person.lastLocation}`);
       marker.on("click", () => setSelectedPerson(person));
       markersRef.current.push(marker);
+
+      // Draw trail polyline
+      const trail = trailData[person.userId];
+      if (trail && trail.length > 1) {
+        const polyline = L.polyline(trail, {
+          color: "hsl(var(--primary))",
+          weight: 3,
+          opacity: 0.6,
+          dashArray: "4 6",
+        }).addTo(map);
+        trailLinesRef.current.push(polyline);
+      }
     });
 
     // Fit bounds
@@ -120,21 +222,64 @@ export default function GPSTracking() {
       const bounds = L.latLngBounds(sharingPeople.map(p => [p.coordinates.lat, p.coordinates.lng] as [number, number]));
       map.fitBounds(bounds, { padding: [50, 50] });
     }
-  }, [sharingPeople.length, locationShares]);
+  }, [sharingPeople.length, locationShares, trailData]);
 
-  // Focus map on selected person
+  // ─── Live breach detection on each poll ─────────────────────
+  useEffect(() => {
+    if (!geofenceAlerts || !zones.length || !sharingPeople.length) return;
+
+    sharingPeople.forEach(person => {
+      const breaches = checkBreaches(person.coordinates.lat, person.coordinates.lng, zones);
+      breaches.forEach(breach => {
+        const dedupKey = `${person.userId}-${breach.zoneId}-${breach.alertType}`;
+        const lastTime = lastBreach.current[dedupKey] || 0;
+        const now = Date.now();
+        // 5 minute dedup window
+        if (now - lastTime < 5 * 60 * 1000) return;
+        lastBreach.current[dedupKey] = now;
+
+        toast({
+          title: breach.alertType === "entered_danger_zone" ? "⚠️ Danger Zone Alert" : "📍 Safe Zone Alert",
+          description: `${person.name} — ${breach.alertType.replace(/_/g, " ")} (${breach.zoneName})`,
+          variant: breach.alertType.includes("danger") ? "destructive" : "default",
+        });
+      });
+    });
+  }, [locationShares, zones, geofenceAlerts]);
+
+  // ─── Auto-share my location (sender polling) ───────────────
+  useEffect(() => {
+    if (!shareMyLocation || !userId) return;
+
+    const sendMyLocation = async () => {
+      try {
+        const pos = await getCurrentPosition({ timeout: 10000 });
+        if (!pos) return;
+        await dualWriteLocation(pos.latitude, pos.longitude, {
+          accuracy: pos.accuracy,
+        });
+      } catch {}
+    };
+
+    // Send immediately, then every 15s
+    sendMyLocation();
+    const interval = setInterval(sendMyLocation, POLL_INTERVAL);
+    return () => clearInterval(interval);
+  }, [shareMyLocation, userId]);
+
+  // ─── Focus map on selected person ───────────────────────────
   useEffect(() => {
     if (selectedPerson?.coordinates?.lat && leafletMap.current) {
       leafletMap.current.setView([selectedPerson.coordinates.lat, selectedPerson.coordinates.lng], 15);
     }
   }, [selectedPerson]);
 
+  // ─── Toggle share ──────────────────────────────────────────
   const handleToggleShare = async (checked: boolean) => {
     setShareMyLocation(checked);
     setUpdatingShare(true);
     try {
-      const authUserId = await getCurrentAuthUserId();
-      if (!authUserId) return;
+      if (!userId) return;
       if (checked) {
         const pos = await getCurrentPosition({ timeout: 10000 });
         if (!pos) {
@@ -143,25 +288,22 @@ export default function GPSTracking() {
           setShareMyLocation(false);
           return;
         }
-        await shareMyLocationWordPress(pos.latitude, pos.longitude);
+        await dualWriteLocation(pos.latitude, pos.longitude, { accuracy: pos.accuracy });
         refetch();
-        setUpdatingShare(false);
         toast({ title: t("gps.locationSharingEnabled") });
       } else {
         await disableMyLocationSharingWordPress();
         refetch();
-        setUpdatingShare(false);
         toast({ title: t("gps.locationSharingDisabled") });
       }
     } catch {
+    } finally {
       setUpdatingShare(false);
     }
   };
 
   const handleRefresh = () => {
-    setRefreshing(true);
     refetch().then(() => {
-      setRefreshing(false);
       toast({ title: t("gps.locationsUpdated") });
     });
   };
@@ -169,52 +311,53 @@ export default function GPSTracking() {
   const handleSOS = async () => {
     setSosSending(true);
     try {
-      const authUserId = await getCurrentAuthUserId();
-      if (!authUserId) throw new Error("Not authenticated");
-
+      if (!userId) throw new Error("Not authenticated");
       const pos = await getCurrentPosition({ timeout: 8000 });
-      const locationAvailable = pos !== null;
-
-      await shareMyLocationWordPress(pos?.latitude ?? 0, pos?.longitude ?? 0, {
-        accuracy: pos?.accuracy ?? null,
+      await dualWriteLocation(pos?.latitude ?? 0, pos?.longitude ?? 0, {
+        accuracy: pos?.accuracy,
         isEmergency: true,
       });
-
       refetch();
       setSosDialogOpen(false);
       toast({
         title: t("gps.sosSuccess"),
-        description: locationAvailable
+        description: pos
           ? t("gps.sosSuccessDesc", { groups: site.navLabels.careGroups.toLowerCase() })
           : t("gps.sosWithoutLocation", "SOS alert sent without location. Your care circle has been notified."),
       });
     } catch (err: any) {
-      toast({
-        title: t("gps.sosFailed"),
-        description: err.message || t("gps.sosFailedDesc"),
-        variant: "destructive",
-      });
+      toast({ title: t("gps.sosFailed"), description: err.message || t("gps.sosFailedDesc"), variant: "destructive" });
     } finally {
       setSosSending(false);
     }
   };
 
-  const statusColors: Record<string, string> = {
-    active: "bg-success",
-    idle: "bg-warning",
-    offline: "bg-muted-foreground/30",
+  const handleAcknowledgeAlert = async (alertId: string) => {
+    try {
+      await acknowledgeAlertWordPress(alertId);
+      setAlerts(prev => prev.map(a => a.id === alertId ? { ...a, is_read: true } : a));
+    } catch {}
   };
+
+  const unreadAlerts = alerts.filter(a => !a.is_read);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
+      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground">{t("gps.gpsTracking")}</h1>
-          <p className="text-muted-foreground">{t("gps.realtimeLocation")}</p>
+          <p className="text-muted-foreground text-sm">
+            {t("gps.realtimeLocation")}
+            <span className="ml-2 text-xs text-muted-foreground/70">
+              <Radio className="inline h-3 w-3 mr-1 text-success" />
+              {t("gps.autoRefresh", "Auto-refresh")} 15s
+            </span>
+          </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
-            <RefreshCw className={`h-4 w-4 mr-1 ${refreshing ? "animate-spin" : ""}`} /> {t("common.refresh")}
+          <Button variant="outline" size="sm" onClick={handleRefresh}>
+            <RefreshCw className="h-4 w-4 mr-1" /> {t("common.refresh")}
           </Button>
           <Button variant="destructive" size="sm" onClick={() => setSosDialogOpen(true)}>
             <AlertTriangle className="h-4 w-4 mr-1" /> {t("gps.sos")}
@@ -222,7 +365,7 @@ export default function GPSTracking() {
         </div>
       </div>
 
-      {/* SOS Confirmation Dialog */}
+      {/* SOS Dialog */}
       <Dialog open={sosDialogOpen} onOpenChange={setSosDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -245,24 +388,101 @@ export default function GPSTracking() {
       </Dialog>
 
       <div className="grid lg:grid-cols-3 gap-6">
+        {/* Map + Tabs */}
         <div className="lg:col-span-2">
-          <Card className="border-transparent card-elevated overflow-hidden">
-            <CardContent className="p-0">
-              <div ref={mapRef} className="h-[500px] w-full" />
-              {sharingPeople.length === 0 && !isLoading && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[400]">
-                  <div className="text-center bg-card/80 backdrop-blur-sm rounded-xl p-6">
-                    <MapPin className="h-12 w-12 text-primary/30 mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">{t("gps.noSharingDesc")}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{t("gps.enableSharingDesc")}</p>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="mb-2">
+              <TabsTrigger value="map" className="gap-1"><MapPin className="h-3.5 w-3.5" /> {t("gps.map", "Map")}</TabsTrigger>
+              <TabsTrigger value="alerts" className="gap-1">
+                <Bell className="h-3.5 w-3.5" /> {t("gps.alerts", "Alerts")}
+                {unreadAlerts.length > 0 && <Badge variant="destructive" className="ml-1 text-[10px] px-1">{unreadAlerts.length}</Badge>}
+              </TabsTrigger>
+              <TabsTrigger value="zones" className="gap-1"><Hexagon className="h-3.5 w-3.5" /> {t("gps.zones", "Zones")}</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="map" className="mt-0">
+              <Card className="border-transparent card-elevated overflow-hidden relative">
+                <CardContent className="p-0">
+                  <div ref={mapRef} className="h-[500px] w-full" />
+                  {sharingPeople.length === 0 && !isLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[400]">
+                      <div className="text-center bg-card/80 backdrop-blur-sm rounded-xl p-6">
+                        <MapPin className="h-12 w-12 text-primary/30 mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">{t("gps.noSharingDesc")}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{t("gps.enableSharingDesc")}</p>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="alerts" className="mt-0">
+              <Card className="border-transparent card-elevated">
+                <CardContent className="py-4 space-y-3">
+                  {alerts.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">{t("gps.noAlerts", "No geofence alerts")}</p>
+                  ) : (
+                    alerts.slice(0, 20).map((alert: any) => (
+                      <div
+                        key={alert.id}
+                        className={`p-3 rounded-lg border ${alert.is_read ? "bg-muted/30 border-border" : "bg-warning/10 border-warning/30"}`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="text-sm font-medium text-foreground">
+                              {alert.alert_type?.includes("danger") ? "⚠️" : "📍"} {alert.message || alert.alert_type?.replace(/_/g, " ")}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {alert.created_at ? new Date(alert.created_at).toLocaleString() : ""}
+                            </p>
+                          </div>
+                          {!alert.is_read && (
+                            <Button variant="ghost" size="sm" onClick={() => handleAcknowledgeAlert(alert.id)}>
+                              {t("common.dismiss", "Dismiss")}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="zones" className="mt-0">
+              <Card className="border-transparent card-elevated">
+                <CardContent className="py-4 space-y-3">
+                  {zones.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">{t("gps.noZones", "No geofence zones configured")}</p>
+                  ) : (
+                    zones.map((zone: any) => (
+                      <div key={zone.id} className="p-3 rounded-lg bg-muted/50 border border-border">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-3 h-3 rounded-full ${zone.zone_type === "danger" ? "bg-destructive" : "bg-success"}`} />
+                            <p className="text-sm font-medium text-foreground">{zone.name}</p>
+                          </div>
+                          <Badge variant={zone.is_active ? "default" : "secondary"} className="text-[10px]">
+                            {zone.is_active ? t("common.active", "Active") : t("common.inactive", "Inactive")}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {zone.shape_type === "polygon" ? `Polygon (${zone.polygon_points?.length || 0} points)` : `Radius: ${zone.radius_meters || 200}m`}
+                          {" · "}{zone.zone_type === "danger" ? "⚠️ Danger" : "✅ Safe"}
+                        </p>
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
 
+        {/* Sidebar */}
         <div className="space-y-4">
+          {/* Tracked People */}
           <Card className="border-transparent card-elevated">
             <CardHeader><CardTitle className="text-lg">{t("gps.trackedPeople")}</CardTitle></CardHeader>
             <CardContent className="space-y-3">
@@ -283,7 +503,7 @@ export default function GPSTracking() {
                           <span className="text-primary text-sm font-medium">{p.name.charAt(0)}</span>
                         </div>
                       )}
-                      <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-card ${p.isSharing ? statusColors.active : statusColors.offline}`} />
+                      <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-card ${p.isSharing ? "bg-success" : "bg-muted-foreground/30"}`} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground">{p.name}</p>
@@ -303,7 +523,8 @@ export default function GPSTracking() {
             </CardContent>
           </Card>
 
-          {selectedPerson && selectedPerson.coordinates?.lat && (
+          {/* Selected Person Detail */}
+          {selectedPerson && selectedPerson.coordinates?.lat ? (
             <Card className="border-transparent card-elevated">
               <CardHeader><CardTitle className="text-lg">{selectedPerson.name}</CardTitle></CardHeader>
               <CardContent className="space-y-3">
@@ -315,6 +536,12 @@ export default function GPSTracking() {
                   <p className="text-muted-foreground text-xs">{t("gps.lastUpdated")}</p>
                   <p className="text-xs text-foreground">{selectedPerson.lastUpdated}</p>
                 </div>
+                {trailData[selectedPerson.userId]?.length > 0 && (
+                  <div className="p-2 rounded bg-muted/50 text-sm">
+                    <p className="text-muted-foreground text-xs flex items-center gap-1"><Route className="h-3 w-3" /> {t("gps.trail", "Trail")}</p>
+                    <p className="text-xs text-foreground">{trailData[selectedPerson.userId].length} {t("gps.points", "points")}</p>
+                  </div>
+                )}
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" className="flex-1" asChild>
                     <a href={`https://www.google.com/maps/dir/?api=1&destination=${selectedPerson.coordinates.lat},${selectedPerson.coordinates.lng}`} target="_blank" rel="noopener noreferrer">
@@ -324,17 +551,30 @@ export default function GPSTracking() {
                 </div>
               </CardContent>
             </Card>
-          )}
+          ) : null}
 
+          {/* Settings */}
           <Card className="border-transparent card-elevated">
             <CardHeader><CardTitle className="text-lg">{t("common.settings")}</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
-                <Label className="text-sm">{t("gps.shareMyLocation")}</Label>
+                <div>
+                  <Label className="text-sm">{t("gps.shareMyLocation")}</Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {shareMyLocation
+                      ? t("gps.sharingActive", "Sending every 15s via Trackserver + CCT")
+                      : t("gps.sharingInactive", "Not sharing")}
+                  </p>
+                </div>
                 <Switch checked={shareMyLocation} onCheckedChange={handleToggleShare} disabled={updatingShare} />
               </div>
               <div className="flex items-center justify-between">
-                <Label className="text-sm">{t("gps.geofenceAlerts")}</Label>
+                <div>
+                  <Label className="text-sm">{t("gps.geofenceAlerts")}</Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {zones.length} {t("gps.zonesConfigured", "zones")} ({zones.filter(z => z.zone_type === "danger").length} {t("gps.danger", "danger")})
+                  </p>
+                </div>
                 <Switch checked={geofenceAlerts} onCheckedChange={setGeofenceAlerts} />
               </div>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
