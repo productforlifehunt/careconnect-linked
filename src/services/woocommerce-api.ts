@@ -115,7 +115,54 @@ export interface ServiceRateEntry {
   hourlyRate: number;
 }
 
-// Get or create provider's service product as VARIABLE with service type variations
+/**
+ * Ensure the current user is a Dokan vendor (has seller role and store).
+ * If not yet a vendor, creates the vendor store via Dokan API.
+ */
+export async function ensureDokanVendor(userData: {
+  fullName: string;
+  email: string;
+  phone?: string;
+  location?: string;
+  bio?: string;
+}): Promise<any> {
+  try {
+    // Check if user already has a store
+    const store = await dokanFetch('stores/current');
+    if (store && store.id) return store;
+  } catch {
+    // No store yet — that's expected
+  }
+
+  // If the user doesn't have a vendor store, we need to set the seller role
+  // via WP admin API, then create the store
+  try {
+    const storedUser = (await import('@/services/wp-auth')).getStoredWPUser();
+    const wpUserId = storedUser?.user_id;
+    if (wpUserId) {
+      // Set user role to include 'seller' — requires admin JWT
+      await wcFetch(`customers/${wpUserId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ role: 'seller' }),
+      });
+    }
+    // Now update the store settings
+    const store = await dokanFetch('stores/current', {
+      method: 'POST',
+      body: JSON.stringify({
+        store_name: `${userData.fullName} Care Services`,
+        phone: userData.phone || '',
+        address: { street_1: userData.location || '' },
+      }),
+    });
+    return store;
+  } catch (e) {
+    console.warn('ensureDokanVendor: could not create vendor store', e);
+    return null;
+  }
+}
+
+// Get or create provider's service product via DOKAN API so product is vendor-owned
 export async function getOrCreateProviderProduct(
   providerId: string,
   providerData: {
@@ -134,9 +181,17 @@ export async function getOrCreateProviderProduct(
     const categoryIds = [parentCat.id];
 
     const sku = `care-provider-${providerId}`;
-    const existingProducts = await wcFetch(`products?sku=${sku}`);
+    
+    // Check if product already exists (search via WC admin API for SKU lookup)
+    let existingProduct: any = null;
+    try {
+      const existingProducts = await wcFetch(`products?sku=${sku}`);
+      if (existingProducts && existingProducts.length > 0) {
+        existingProduct = existingProducts[0];
+      }
+    } catch { /* no existing product */ }
 
-    // Determine which service types this provider offers (from serviceRates or specialties)
+    // Determine which service types this provider offers
     const serviceRates = providerData.serviceRates || [];
     const serviceTypeOptions = serviceRates.length > 0
       ? serviceRates.map(r => r.serviceType)
@@ -164,7 +219,7 @@ export async function getOrCreateProviderProduct(
       status: 'publish',
     };
 
-    // For variable products, add service-type as a product attribute used for variations
+    // For variable products, add service-type as a product attribute
     if (serviceTypeOptions.length > 0) {
       productData.attributes = [{
         name: 'Service Type',
@@ -173,19 +228,20 @@ export async function getOrCreateProviderProduct(
         variation: true,
         options: serviceTypeOptions,
       }];
-      // Remove regular_price — variable products use variation prices
     } else {
       productData.regular_price = providerData.hourlyRate.toString();
     }
 
     let product;
-    if (existingProducts && existingProducts.length > 0) {
-      product = await wcFetch(`products/${existingProducts[0].id}`, {
+    if (existingProduct) {
+      // Update existing product via Dokan vendor API
+      product = await dokanFetch(`products/${existingProduct.id}`, {
         method: 'PUT',
         body: JSON.stringify(productData),
       });
     } else {
-      product = await wcFetch('products', {
+      // Create new product via Dokan vendor API — this makes it vendor-owned
+      product = await dokanFetch('products', {
         method: 'POST',
         body: JSON.stringify(productData),
       });
