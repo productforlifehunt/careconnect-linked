@@ -149,7 +149,7 @@ const Index = () => {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <h3 className="font-semibold text-foreground truncate">{cg.full_name}</h3>
-                            {cg.background_check_status === "passed" && <Shield className="h-4 w-4 text-primary shrink-0" />}
+                            {cg.care_provider_is_background_checked && <Shield className="h-4 w-4 text-primary shrink-0" />}
                           </div>
                           <div className="flex items-center gap-1 mt-1">
                             <Star className="h-4 w-4 text-warning fill-warning" />
@@ -171,7 +171,7 @@ const Index = () => {
                       </div>
                       <div className="flex items-center justify-end mt-4 pt-4 border-t">
                         <div className="text-right">
-                          <span className="text-lg font-bold text-foreground">${cg.hourly_rate || 0}</span>
+                          <span className="text-lg font-bold text-foreground">${cg.care_provider_starts_hourly_rate || 0}</span>
                           <span className="text-sm text-muted-foreground">{t("common.perHour")}</span>
                         </div>
                       </div>

@@ -1,6 +1,7 @@
-// Types matching the care_connector schema
+// Types matching WordPress user + JetEngine CCT "User's extended profile"
 
 export interface Profile {
+  // ─── WordPress core user fields ─────────────────────────────
   id: string;
   user_id: string | null;
   email: string | null;
@@ -8,41 +9,29 @@ export interface Profile {
   last_name: string | null;
   full_name: string | null;
   user_name: string | null;
-  phone_number: string | null;
   avatar_url: string | null;
   bio: string | null;
+
+  // ─── CCT: User's extended profile (exact match) ─────────────
+  general_user_role: string[] | null;       // checkbox: ["cared one", "caring one"]
+  is_care_provider: boolean;                // radio: yes/no
+  care_provider_is_active: boolean;         // radio: yes/no
+  care_provider_is_background_checked: boolean; // radio: yes/no
+  care_provider_background_check_detail: string | null; // text
+  care_provider_starts_hourly_rate: number | null;      // number
+
+  // ─── CCT: Additional provider fields (added to CCT) ─────────
+  phone: string | null;
   location: string | null;
-  address: string | null;
-  address_latitude: number | null;
-  address_longitude: number | null;
-  timezone: string | null;
-  currency: string | null;
-  email_notification: boolean | null;
-  push_notification: boolean | null;
-  quiet_hour_start: string | null;
-  quiet_hour_end: string | null;
-  is_care_provider: boolean;
-  is_cared_one: boolean;
-  is_admin: boolean;
-  provider_type: string | null;
-  hourly_rate: number | null;
-  specialty: string[] | null;
-  service_offered: string[] | null;
   years_of_experience: number | null;
-  certification: string[] | null;
-  background_check_status: string | null;
-  stripe_account_id: string | null;
-  stripe_onboarding_complete: boolean | null;
-  instant_book_enabled: boolean | null;
-  provider_is_active: boolean | null;
+  certifications: string[] | null;
+  specialty: string[] | null;
+
+  // ─── Computed / external (Dokan/WooCommerce) ────────────────
   rating_average: number | null;
   rating_count: number | null;
-  total_booking_count: number | null;
-  response_time_minute: number | null;
-  cancellation_policy: string | null;
-  service_area: string[] | null;
-  created_by_user_id: string | null;
-  relationship_to_creator: string | null;
+
+  // ─── Timestamps ─────────────────────────────────────────────
   created_at: string;
   updated_at: string;
 }

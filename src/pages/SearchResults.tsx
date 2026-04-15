@@ -334,7 +334,7 @@ export default function SearchResults() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
                               <h3 className="font-semibold text-lg text-foreground">{cg.full_name}</h3>
-                              {cg.background_check_status === "passed" && <Shield className="h-4 w-4 text-primary" />}
+                              {cg.care_provider_is_background_checked && <Shield className="h-4 w-4 text-primary" />}
                             </div>
                             <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-2">
                               <span className="flex items-center gap-1"><Star className="h-4 w-4 text-warning fill-warning" /> {cg.rating_average?.toFixed(1) || t("common.new")} ({cg.rating_count || 0})</span>
@@ -347,7 +347,7 @@ export default function SearchResults() {
                             </div>
                           </div>
                           <div className="sm:text-right shrink-0 flex sm:flex-col items-center sm:items-end gap-3">
-                            <div><span className="text-2xl font-bold text-foreground">${cg.hourly_rate || 0}</span><span className="text-sm text-muted-foreground">{t("common.perHour")}</span></div>
+                            <div><span className="text-2xl font-bold text-foreground">${cg.care_provider_starts_hourly_rate || 0}</span><span className="text-sm text-muted-foreground">{t("common.perHour")}</span></div>
                             <Button variant="coral" size="sm">{t("common.bookNow")}</Button>
                           </div>
                         </div>

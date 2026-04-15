@@ -114,10 +114,10 @@ export default function CaregiverProfile() {
         appointment_time: bookingTime,
         duration_hour: durationHours,
         service_type: bookingType,
-        hourly_rate: caregiver.hourly_rate || 0,
-        total_cost: (caregiver.hourly_rate || 0) * durationHours,
+        hourly_rate: caregiver.care_provider_starts_hourly_rate || 0,
+        total_cost: (caregiver.care_provider_starts_hourly_rate || 0) * durationHours,
         special_instruction: recurringNote + (bookingNotes || "") || null,
-        status: availabilitySetting?.requires_confirmation === false || caregiver.instant_book_enabled ? "confirmed" : "pending",
+        status: availabilitySetting?.requires_confirmation === false ? "confirmed" : "pending",
         payment_status: "pending",
       });
       toast({ title: "Booking Request Sent!", description: `Your booking with ${caregiver.full_name} has been submitted.` });
@@ -132,7 +132,7 @@ export default function CaregiverProfile() {
     toggleSaved.mutate(caregiver.id);
   };
 
-  const total = (caregiver.hourly_rate || 0) * parseInt(bookingDuration);
+  const total = (caregiver.care_provider_starts_hourly_rate || 0) * parseInt(bookingDuration);
   const hasAvailabilityConflict = Boolean(availabilityWarning);
 
   return (
@@ -152,7 +152,7 @@ export default function CaregiverProfile() {
                     <div>
                       <div className="flex items-center gap-2">
                         <h1 className="text-2xl font-bold text-foreground">{caregiver.full_name}</h1>
-                        {caregiver.background_check_status === "passed" && <Shield className="h-5 w-5 text-primary" />}
+                        {caregiver.care_provider_is_background_checked && <Shield className="h-5 w-5 text-primary" />}
                       </div>
                       <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-muted-foreground">
                         <span className="flex items-center gap-1"><Star className="h-4 w-4 text-warning fill-warning" /> {caregiver.rating_average?.toFixed(1) || "New"} ({caregiver.rating_count || 0} reviews)</span>
@@ -181,21 +181,21 @@ export default function CaregiverProfile() {
             </Card>
           )}
 
-          {((caregiver.certification && caregiver.certification.length > 0)) && (
+          {((caregiver.certifications && caregiver.certifications.length > 0)) && (
             <Card className="border-transparent card-elevated">
               <CardHeader><CardTitle>Qualifications</CardTitle></CardHeader>
               <CardContent>
                 <div>
                   <h4 className="font-medium text-sm mb-2">Certifications</h4>
                   <div className="space-y-2">
-                    {(caregiver.certification || []).map(c => (
+                    {(caregiver.certifications || []).map(c => (
                       <div key={c} className="flex items-center gap-2 text-sm text-muted-foreground">
                         <CheckCircle className="h-4 w-4 text-success" /> {c}
                       </div>
                     ))}
                   </div>
                 </div>
-                {caregiver.background_check_status === "passed" && (
+                {caregiver.care_provider_is_background_checked && (
                   <div className="mt-4 p-3 rounded-lg bg-success/10 flex items-center gap-2 text-sm text-success">
                     <Shield className="h-4 w-4" /> {t("caregiverProfile.bgCheckPassed")}
                   </div>
@@ -287,7 +287,7 @@ export default function CaregiverProfile() {
           <Card className="border-transparent card-elevated sticky top-24">
             <CardContent className="p-6">
               <div className="text-center mb-6">
-                <span className="text-3xl font-bold text-foreground">${caregiver.hourly_rate || 0}</span>
+                <span className="text-3xl font-bold text-foreground">${caregiver.care_provider_starts_hourly_rate || 0}</span>
                 <span className="text-muted-foreground">/hour</span>
               </div>
 
@@ -386,16 +386,16 @@ export default function CaregiverProfile() {
               }} disabled={startConversation.isPending}>
                 <MessageSquare className="mr-2 h-4 w-4" /> {startConversation.isPending ? "Opening..." : "Send Message"}
               </Button>
-              {caregiver.phone_number && (
+              {caregiver.phone && (
                 <Button variant="ghost" className="w-full" asChild>
-                  <a href={`tel:${caregiver.phone_number}`}>
+                  <a href={`tel:${caregiver.phone}`}>
                     <Phone className="mr-2 h-4 w-4" /> Call {caregiver.full_name?.split(" ")[0]}
                   </a>
                 </Button>
               )}
 
               <div className="mt-6 pt-4 border-t space-y-3 text-sm">
-                {caregiver.background_check_status === "passed" && (
+                {caregiver.care_provider_is_background_checked && (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Shield className="h-4 w-4 text-primary" />
                     <span>Background verified</span>
@@ -406,9 +406,6 @@ export default function CaregiverProfile() {
                     <CheckCircle className="h-4 w-4 text-primary" />
                     <span>{caregiver.years_of_experience} years experience</span>
                   </div>
-                )}
-                {caregiver.instant_book_enabled && (
-                  <Badge className="bg-success text-success-foreground">Instant Book</Badge>
                 )}
               </div>
             </CardContent>

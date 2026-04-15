@@ -39,17 +39,17 @@ export default function ProviderSettingsTab() {
   useEffect(() => {
     if (profile && !loaded) {
       setLocation(profile.location || "");
-      setHourlyRate(profile.hourly_rate?.toString() || "");
+      setHourlyRate(profile.care_provider_starts_hourly_rate?.toString() || "");
       setBio(profile.bio || "");
-      setPhone(profile.phone_number || "");
+      setPhone(profile.phone || "");
       setExperience(profile.years_of_experience?.toString() || "");
       setSelectedServices(profile.specialty || []);
-      setCertifications(profile.certification || []);
-      setIsActive(profile.provider_is_active || false);
+      setCertifications(profile.certifications || []);
+      setIsActive(profile.care_provider_is_active || false);
       // Initialize per-service rates from profile meta if available
       const existingRates: Record<string, string> = {};
       (profile.specialty || []).forEach((s: string) => {
-        existingRates[s] = profile.hourly_rate?.toString() || "";
+        existingRates[s] = profile.care_provider_starts_hourly_rate?.toString() || "";
       });
       setServiceRates(existingRates);
       setLoaded(true);
@@ -93,13 +93,13 @@ export default function ProviderSettingsTab() {
       // Save profile via WordPress
       await updateProfile.mutateAsync({
         location,
-        hourly_rate: parseFloat(hourlyRate) || 0,
+        care_provider_starts_hourly_rate: parseFloat(hourlyRate) || 0,
         bio,
-        phone_number: phone,
+        phone,
         years_of_experience: parseInt(experience) || 0,
         specialty: selectedServices,
-        certification: certifications,
-        provider_is_active: isActive,
+        certifications,
+        care_provider_is_active: isActive,
       });
 
       // Then sync to WooCommerce/Dokan with per-service-type rates
