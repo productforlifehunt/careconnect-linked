@@ -20,8 +20,8 @@ export const WP_SERVERS: WPServer[] = [
   {
     id: "main",
     label: "Main Server (app.challenged-dementia.com)",
-    baseUrl: "https://app.challenged-dementia.com",
-    sitePath: "",
+    baseUrl: "https://app.challenged-dementia.com/careconnected",
+    sitePath: "careconnected",
     isPrimary: true,
   },
   {
