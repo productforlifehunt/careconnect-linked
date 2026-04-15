@@ -306,7 +306,7 @@ function mapWooOrderToBooking(order: WPWooOrder): Booking {
   };
 }
 
-function mapWPUserToProfile(user: WPUserEntity): Profile {
+function mapWPUserToProfile(user: WPUserEntity, cctData?: any): Profile {
   return {
     id: `wp-${user.id}`,
     user_id: `wp-${user.id}`,
@@ -317,21 +317,22 @@ function mapWPUserToProfile(user: WPUserEntity): Profile {
     user_name: user.slug || null,
     avatar_url: user.avatar_urls?.["96"] || user.avatar_urls?.["48"] || null,
     bio: user.description || null,
-    general_user_role: null,
-    is_care_provider: false,
-    care_provider_is_active: false,
-    care_provider_is_background_checked: false,
-    care_provider_background_check_detail: null,
-    care_provider_starts_hourly_rate: null,
-    phone: null,
-    location: null,
-    years_of_experience: null,
-    certifications: null,
-    specialty: null,
+    // CCT extended profile fields (merged from jet-cct/users_extended_prof)
+    general_user_role: cctData?.general_user_role ? (typeof cctData.general_user_role === 'string' ? cctData.general_user_role.split(',').map((s: string) => s.trim()) : cctData.general_user_role) : null,
+    is_care_provider: cctData?.is_care_provider_ === 'yes' || cctData?.is_care_provider_ === true || false,
+    care_provider_is_active: cctData?.care_provider_is_active === 'yes' || cctData?.care_provider_is_active === true || false,
+    care_provider_is_background_checked: cctData?.care_provider_is_background_checked === 'yes' || cctData?.care_provider_is_background_checked === true || false,
+    care_provider_background_check_detail: cctData?.care_provider_background_check_detail || null,
+    care_provider_starts_hourly_rate: cctData?.care_provider_starts_hourly_rate ? parseFloat(cctData.care_provider_starts_hourly_rate) : null,
+    phone: cctData?.phone || null,
+    location: cctData?.location || null,
+    years_of_experience: cctData?.years_of_experience ? parseInt(cctData.years_of_experience) : null,
+    certifications: cctData?.certifications ? (typeof cctData.certifications === 'string' ? JSON.parse(cctData.certifications || '[]') : cctData.certifications) : null,
+    specialty: cctData?.specialty ? (typeof cctData.specialty === 'string' ? JSON.parse(cctData.specialty || '[]') : cctData.specialty) : null,
     rating_average: null,
     rating_count: null,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+    created_at: cctData?.cct_created || new Date().toISOString(),
+    updated_at: cctData?.cct_modified || new Date().toISOString(),
   };
 }
 
