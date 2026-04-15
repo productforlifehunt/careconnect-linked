@@ -24,7 +24,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useTranslation } from "react-i18next";
-import { getCurrentPosition, watchPosition as watchGeoPosition } from "@/lib/geolocation";
+import { getCurrentPosition } from "@/lib/geolocation";
 
 const POLL_INTERVAL = 15_000; // 15 seconds
 const TRAIL_MAX_POINTS = 200;
@@ -50,7 +50,7 @@ export default function GPSTracking() {
   const markersRef = useRef<L.Marker[]>([]);
   const trailLinesRef = useRef<L.Polyline[]>([]);
   const zoneLayers = useRef<L.Layer[]>([]);
-  const watchCleanup = useRef<(() => void) | null>(null);
+  
   const lastBreach = useRef<Record<string, number>>({});
 
   const { user } = useAuth();
