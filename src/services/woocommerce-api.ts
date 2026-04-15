@@ -3,7 +3,8 @@
 // Auth: uses Vite dev-proxy + Supabase edge proxy + JWT Bearer token
 
 import { getWPToken } from './wp-auth';
-import { buildWPUrl, buildWPHeaders } from '@/lib/wp-url';
+import { buildWPUrl, buildWPHeaders, IS_DEV } from '@/lib/wp-url';
+import { getActiveServer } from '@/lib/wp-servers';
 
 // Parent category slug for all care service products
 export const CARE_SERVICES_CATEGORY = 'care-services';
