@@ -600,28 +600,13 @@ async function dokanFetch(endpoint: string, options: RequestInit = {}) {
   return response.json();
 }
 
-// ─── Vendor sync ──────────────────────────────────────────
-
+// ─── Vendor sync (legacy wrapper — delegates to ensureDokanVendor) ─────
+// Kept for backward compat; prefer ensureDokanVendor directly.
 export async function syncProviderToVendor(
-  providerId: string,
+  _providerId: string,
   data: { fullName: string; email: string; location?: string; bio?: string; phone?: string }
 ) {
-  try {
-    // Try to update existing Dokan vendor store settings
-    const result = await dokanFetch('stores/current', {
-      method: 'POST',
-      body: JSON.stringify({
-        store_name: data.fullName,
-        phone: data.phone || '',
-        address: { street_1: data.location || '' },
-      }),
-    });
-    return result;
-  } catch (e) {
-    // Vendor may not exist yet or Dokan may not support this endpoint for the user
-    console.warn('syncProviderToVendor: could not sync vendor', e);
-    return null;
-  }
+  return ensureDokanVendor(data);
 }
 
 // ─── Order helpers ─────────────────────────────────────────
