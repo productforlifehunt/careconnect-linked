@@ -988,11 +988,11 @@ export const wordpressSchema: Record<WordPressFeatureKey, WordPressSchemaEntry<a
   // ─── Location / Safety ─────────────────────────────────────
   location_history: {
     status: "confirmed",
-    endpoint: "jet-cct/location_current",
-    defaultParams: { _limit: 100 },
+    endpoint: "jet-cct/current_location",
+    defaultParams: { _limit: 200 },
     mapList: (items: any[]) => (Array.isArray(items) ? items : []),
-    buildCreateBody: (input: { user_id: string; latitude: number; longitude: number; accuracy_meters?: number; address_text?: string; battery_level?: number; is_emergency?: boolean }) => ({
-      user_id: input.user_id, latitude: String(input.latitude), longitude: String(input.longitude), accuracy_meters: input.accuracy_meters, address_text: input.address_text, battery_level: input.battery_level, is_emergency: input.is_emergency || false, captured_at: new Date().toISOString(),
+    buildCreateBody: (input: { latitude: number; longitude: number; accuracy_meters?: number; address_text?: string; battery_level?: number; is_emergency?: boolean }) => ({
+      latitude: String(input.latitude), longitude: String(input.longitude), accuracy_meters: input.accuracy_meters ? String(input.accuracy_meters) : "", address_text: input.address_text || "", battery_level: input.battery_level ? String(input.battery_level) : "", is_emergency: input.is_emergency ? "Yes" : "No", captured_at: new Date().toISOString(),
     }),
   },
   location_requests: {
