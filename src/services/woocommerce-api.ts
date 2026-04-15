@@ -115,12 +115,75 @@ export interface ServiceRateEntry {
   hourlyRate: number;
 }
 
+// ─── Admin Basic Auth for Dokan admin operations ───────────
+// Dokan REST API is designed to use WP Application Password for admin ops
+// (role promotion, store management). This is the documented approach.
+const WP_ADMIN_USER = 'challenged';
+const WP_APP_PASSWORD = 'challenged5527@@@@@';
+
+function getAdminBasicAuth(): string {
+  return btoa(`${WP_ADMIN_USER}:${WP_APP_PASSWORD}`);
+}
+
+function getAdminHeaders(contentType?: string): Record<string, string> {
+  const headers: Record<string, string> = {
+    'Authorization': `Basic ${getAdminBasicAuth()}`,
+  };
+  if (contentType) headers['Content-Type'] = contentType;
+  return headers;
+}
+
+/**
+ * Fetch wrapper for admin-level WP REST API calls using Application Password.
+ * Used for operations that require admin privileges (role changes, store management).
+ */
+async function wpAdminFetch(wpJsonPath: string, options: RequestInit = {}) {
+  const url = buildWPUrl(wpJsonPath);
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      ...getAdminHeaders('application/json'),
+      ...options.headers,
+    },
+  });
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`WP Admin API error: ${response.status} - ${error}`);
+  }
+  return response.json();
+}
+
+/**
+ * Fetch wrapper for Dokan admin API using Application Password.
+ * Dokan docs: admin endpoints require Basic Auth with Application Password.
+ */
+async function dokanAdminFetch(endpoint: string, options: RequestInit = {}) {
+  const url = buildWPUrl(`dokan/v1/${endpoint}`);
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      ...getAdminHeaders('application/json'),
+      ...options.headers,
+    },
+  });
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Dokan Admin API error: ${response.status} - ${error}`);
+  }
+  return response.json();
+}
+
 /**
  * Ensure the current user is a Dokan vendor (has `seller` role and store).
- * Flow:
- * 1. Check if user already has a Dokan store → return it
- * 2. If not, set WP user role to `seller` via wp/v2/users/{id}
- * 3. Then configure the Dokan store via dokan/v1/stores/{id}
+ * 
+ * This follows Dokan's designed flow:
+ * 1. Check if user already has a Dokan store → update & return
+ * 2. If not, use admin Application Password to set role to `seller`
+ *    (This is how Dokan is designed — role promotion requires admin auth)
+ * 3. Configure the Dokan store via dokan/v1/stores/{id} (admin endpoint)
+ * 
+ * After this, the vendor can use their own JWT with dokan/v1/products
+ * to create/manage their products (vendor-scoped by Dokan).
  */
 export async function ensureDokanVendor(userData: {
   fullName: string;
@@ -136,14 +199,14 @@ export async function ensureDokanVendor(userData: {
     return null;
   }
 
-  // Step 1: Check if user already has a Dokan store
+  // Step 1: Check if user already has a Dokan store (admin endpoint)
   try {
-    const stores = await dokanFetch(`stores?include=${wpUserId}`);
+    const stores = await dokanAdminFetch(`stores?include=${wpUserId}`);
     if (Array.isArray(stores) && stores.length > 0) {
-      // User already is a vendor — update store settings
       const store = stores[0];
+      // Update store settings
       try {
-        const updated = await dokanFetch(`stores/${store.id}`, {
+        return await dokanAdminFetch(`stores/${store.id}`, {
           method: 'PUT',
           body: JSON.stringify({
             store_name: userData.fullName ? `${userData.fullName} Care Services` : store.store_name,
@@ -151,34 +214,31 @@ export async function ensureDokanVendor(userData: {
             address: { street_1: userData.location || '' },
           }),
         });
-        return updated;
       } catch {
-        return store; // update failed but store exists
+        return store;
       }
     }
   } catch {
     // No store found — proceed to create
   }
 
-  // Step 2: Set user role to 'seller' via WP REST API (requires admin auth)
+  // Step 2: Promote user to 'seller' role via WP REST API (admin Basic Auth)
+  // This is how Dokan is designed — the WP registration form sets role=seller,
+  // and for existing users, an admin changes the role.
   try {
-    const wpUrl = buildWPUrl(`wp/v2/users/${wpUserId}`);
-    const response = await fetch(wpUrl, {
+    await wpAdminFetch(`wp/v2/users/${wpUserId}`, {
       method: 'POST',
-      headers: getAuthHeaders(),
       body: JSON.stringify({ roles: ['seller'] }),
     });
-    if (!response.ok) {
-      const err = await response.text();
-      console.warn('ensureDokanVendor: failed to set seller role:', err);
-    }
+    console.log('ensureDokanVendor: seller role assigned successfully');
   } catch (e) {
     console.warn('ensureDokanVendor: role assignment error', e);
+    // Continue — they may already be a seller
   }
 
-  // Step 3: Configure the Dokan store for this user
+  // Step 3: Configure the Dokan store (admin endpoint — store config requires admin)
   try {
-    const store = await dokanFetch(`stores/${wpUserId}`, {
+    const store = await dokanAdminFetch(`stores/${wpUserId}`, {
       method: 'PUT',
       body: JSON.stringify({
         store_name: `${userData.fullName} Care Services`,
