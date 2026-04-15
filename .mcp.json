@@ -1,13 +1,13 @@
 {
   "mcpServers": {
     "careconnected-jetengine": {
-      "url": "http://170.106.171.59:8080/careconnected/wp-json/jet-engine/v1/mcp/"
+      "url": "https://app.challenged-dementia.com/careconnected/wp-json/jet-engine/v1/mcp/"
     },
     "careconnected-flowmattic": {
       "command": "npx",
       "args": [
         "mcp-remote",
-        "http://170.106.171.59:8080/careconnected/wp-json/flowmattic/v1/mcp"
+        "https://app.challenged-dementia.com/careconnected/wp-json/flowmattic/v1/mcp"
       ]
     }
   }

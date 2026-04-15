@@ -8,9 +8,9 @@
 export interface WPServer {
   id: string;
   label: string;
-  /** Full base URL including site path, e.g. "http://170.106.171.59:8080/careconnected" */
+  /** Full base URL, e.g. "https://app.challenged-dementia.com" */
   baseUrl: string;
-  /** Site path for dev proxy rewrite, e.g. "careconnected" */
+  /** Site path for dev proxy rewrite (empty string if root) */
   sitePath: string;
   /** Whether this is the primary/default server */
   isPrimary?: boolean;
@@ -19,8 +19,8 @@ export interface WPServer {
 export const WP_SERVERS: WPServer[] = [
   {
     id: "main",
-    label: "Main Server (170.106.171.59)",
-    baseUrl: "http://170.106.171.59:8080/careconnected",
+    label: "Main Server (app.challenged-dementia.com)",
+    baseUrl: "https://app.challenged-dementia.com/careconnected",
     sitePath: "careconnected",
     isPrimary: true,
   },

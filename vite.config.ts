@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 
-const WP_PROXY_TARGET = "http://170.106.171.59:8080";
+const WP_PROXY_TARGET = "https://app.challenged-dementia.com";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({

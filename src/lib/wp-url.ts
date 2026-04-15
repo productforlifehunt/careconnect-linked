@@ -1,8 +1,8 @@
 /**
  * Centralized WordPress base URL helper.
  * Reads the active server from wp-servers registry.
- * - In dev with main server: uses Vite proxy (/wp-proxy/careconnected)
- * - Otherwise: uses Supabase edge function proxy (handles HTTPS→HTTP, dynamic server)
+ * - In dev with main server: uses Vite proxy (/wp-proxy)
+ * - Otherwise: uses Supabase edge function proxy
  */
 
 import { getActiveServer } from "@/lib/wp-servers";
