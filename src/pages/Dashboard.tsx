@@ -36,7 +36,7 @@ export default function Dashboard() {
   const { data: caredOnes } = useUserCaredOnes();
 
   const isChallenged = site.id === "challenged";
-  const isLovedOne = user?.is_cared_one === true;
+  const isLovedOne = user?.general_user_role?.includes("cared one") === true;
   const isProvider = user?.is_care_provider === true;
   const userRole: "caregiver" | "provider" | "caredOne" = isLovedOne
     ? "caredOne"

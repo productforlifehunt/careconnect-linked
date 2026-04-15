@@ -168,7 +168,7 @@ export default function Jobs() {
                   >
                     My Posted Jobs
                   </button>
-                  {user?.is_admin && (
+                  {false && (
                     <>
                       {" "}or create a test external job{" "}
                       <button

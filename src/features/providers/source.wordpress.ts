@@ -25,7 +25,7 @@ export async function fetchProvidersWordPress(filters?: ProviderFilters): Promis
     // Client-side filtering for fields Dokan API doesn't natively filter
     if (filters?.location) {
       const loc = filters.location.toLowerCase();
-      results = results.filter(p => p.location?.toLowerCase().includes(loc) || p.address?.toLowerCase().includes(loc));
+      results = results.filter(p => p.location?.toLowerCase().includes(loc));
     }
     if (filters?.minRating != null) {
       results = results.filter(p => (p.rating_average ?? 0) >= filters.minRating!);
@@ -33,8 +33,8 @@ export async function fetchProvidersWordPress(filters?: ProviderFilters): Promis
 
     // Sorting
     if (filters?.sortBy === "rating") results.sort((a, b) => (b.rating_average ?? 0) - (a.rating_average ?? 0));
-    else if (filters?.sortBy === "price-low") results.sort((a, b) => (a.hourly_rate ?? 0) - (b.hourly_rate ?? 0));
-    else if (filters?.sortBy === "price-high") results.sort((a, b) => (b.hourly_rate ?? 0) - (a.hourly_rate ?? 0));
+    else if (filters?.sortBy === "price-low") results.sort((a, b) => (a.care_provider_starts_hourly_rate ?? 0) - (b.care_provider_starts_hourly_rate ?? 0));
+    else if (filters?.sortBy === "price-high") results.sort((a, b) => (b.care_provider_starts_hourly_rate ?? 0) - (a.care_provider_starts_hourly_rate ?? 0));
     else results.sort((a, b) => (b.rating_average ?? 0) - (a.rating_average ?? 0));
 
     return results;
