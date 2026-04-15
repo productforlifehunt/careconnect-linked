@@ -12,7 +12,7 @@ import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-c
 import { getStoredWPUser } from "@/services/wp-auth";
 import { createNotificationWordPress } from "@/features/notifications/source.wordpress";
 import { fetchCurrentLocation, fetchLocationHistory, writeLocationAndCheckZones } from "@/features/location/source.wordpress";
-import type { LocationSnapshot } from "@/features/location/source.wordpress";
+
 
 // ─── Relation IDs ────────────────────────────────────────────
 const REL_USER_SAFE_ZONE = 90;

@@ -223,6 +223,6 @@ export function checkBreaches(lat: number, lng: number, zones: any[]): ZoneBreac
 // ─── Full pipeline: save location + check zones + create dedup'd alerts ───
 
 export async function saveLocationAndCheckZones(_userId: string, coords: GPSCoords): Promise<void> {
-  const { writeLocationAndCheckZones } = await import("@/features/location/source.trackserver");
+  const { writeLocationAndCheckZones } = await import("@/features/location/source.wordpress");
   await writeLocationAndCheckZones(coords.latitude, coords.longitude, { accuracy: coords.accuracy ?? undefined });
 }
