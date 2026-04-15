@@ -255,7 +255,7 @@ export default function GPSTracking() {
       try {
         const pos = await getCurrentPosition({ timeout: 10000 });
         if (!pos) return;
-        await dualWriteLocation(pos.latitude, pos.longitude, {
+        await writeLocationAndCheckZones(pos.latitude, pos.longitude, {
           accuracy: pos.accuracy,
         });
       } catch {}
@@ -288,7 +288,7 @@ export default function GPSTracking() {
           setShareMyLocation(false);
           return;
         }
-        await dualWriteLocation(pos.latitude, pos.longitude, { accuracy: pos.accuracy });
+        await writeLocationAndCheckZones(pos.latitude, pos.longitude, { accuracy: pos.accuracy });
         refetch();
         toast({ title: t("gps.locationSharingEnabled") });
       } else {
@@ -313,7 +313,7 @@ export default function GPSTracking() {
     try {
       if (!userId) throw new Error("Not authenticated");
       const pos = await getCurrentPosition({ timeout: 8000 });
-      await dualWriteLocation(pos?.latitude ?? 0, pos?.longitude ?? 0, {
+      await writeLocationAndCheckZones(pos?.latitude ?? 0, pos?.longitude ?? 0, {
         accuracy: pos?.accuracy,
         isEmergency: true,
       });
