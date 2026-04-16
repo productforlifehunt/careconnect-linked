@@ -369,17 +369,10 @@ async function configureBookingProduct(
       ? defaultHourlyRate
       : (serviceRates[0]?.hourlyRate || 0);
 
-    // Build per-service pricing rules (applied on top of base cost)
-    const pricing = serviceRates.map((rate) => ({
-      type: 'custom',
-      cost: String(rate.hourlyRate),
-      modifier: 'equals',
-      base_cost: String(rate.hourlyRate),
-      base_modifier: 'equals',
-      from: '',
-      to: '',
-    }));
-
+    // NOTE: Per-service pricing is stored in `_service_rates` product meta
+    // (read by the booking dialog at order time). We do NOT write WC Bookings
+    // native "Range" rules because they require date/person/resource scoping
+    // and would render as unlabeled rows in the admin UI.
     const bookingConfig: Record<string, any> = {
       duration_type: 'customer',          // lets customer pick block count (1–8 hrs)
       duration_unit: 'hour',
@@ -397,11 +390,8 @@ async function configureBookingProduct(
       qty: 1,
       max_bookings_per_block: 1,
       enable_range_picker: true,
+      pricing: [], // explicitly clear any leftover unlabeled range rules
     };
-
-    if (pricing.length > 0) {
-      bookingConfig.pricing = pricing;
-    }
 
     // PUT — POST is silently ignored for most fields by WC Bookings REST
     await wcBookingsFetch(`products/${productId}`, {
