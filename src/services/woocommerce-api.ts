@@ -117,6 +117,16 @@ export interface ServiceRateEntry {
   hourlyRate: number;
 }
 
+/**
+ * Resource costs for delivery mode (Mapping 1: Local vs Virtual).
+ * WC Bookings allows multiple resources per product but customer picks ONE.
+ * Both costs are per-block (per hour, given duration_unit='hour').
+ */
+export interface DeliveryResourceCosts {
+  localCost?: number;   // surcharge per hour for in-person care
+  virtualCost?: number; // surcharge per hour for remote/video care
+}
+
 // ─── Admin Basic Auth for Dokan admin operations ───────────
 const WP_ADMIN_USER = 'challenged';
 const WP_APP_PASSWORD = 'vPKl An2l fwQi TmUl ASPCYIoM'.replace(/ /g, '');
