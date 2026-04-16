@@ -48,8 +48,8 @@ export default function ProviderSettingsTab() {
       setSelectedServices(profile.specialty || []);
       setCertifications(profile.certifications || []);
       setIsActive(profile.care_provider_is_active || false);
-      setLocalCost(profile.care_provider_local_cost?.toString() || "0");
-      setVirtualCost(profile.care_provider_virtual_cost?.toString() || "0");
+      setLocalCost(((profile as any).care_provider_local_cost ?? 0).toString());
+      setVirtualCost(((profile as any).care_provider_virtual_cost ?? 0).toString());
       // Initialize per-service rates from profile meta if available
       const existingRates: Record<string, string> = {};
       (profile.specialty || []).forEach((s: string) => {
