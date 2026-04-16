@@ -352,6 +352,11 @@ export async function getOrCreateProviderProduct(
 /**
  * Configure WC Bookings specific settings on a product.
  * Sets duration, pricing, and default availability.
+ *
+ * IMPORTANT: WC Bookings REST `/wc-bookings/v1/products/{id}` requires PUT
+ * (POST returns 200 but silently ignores most fields). Field names also differ
+ * from raw post-meta keys (`cost` not `_wc_booking_cost`, etc.).
+ * Use numeric values for cost/duration; pricing rules accept strings.
  */
 async function configureBookingProduct(
   productId: number,
@@ -359,48 +364,63 @@ async function configureBookingProduct(
   serviceRates: ServiceRateEntry[] = [],
 ) {
   try {
-    // Build pricing rules from service rates
-    const pricing: any[] = serviceRates.map((rate, idx) => ({
+    // Effective base — fall back to first service rate if default is 0
+    const baseCost = defaultHourlyRate > 0
+      ? defaultHourlyRate
+      : (serviceRates[0]?.hourlyRate || 0);
+
+    // Build per-service pricing rules (applied on top of base cost)
+    const pricing = serviceRates.map((rate) => ({
       type: 'custom',
-      cost: rate.hourlyRate.toString(),
-      modifier: '',
-      base_cost: rate.hourlyRate.toString(),
-      base_modifier: '',
+      cost: String(rate.hourlyRate),
+      modifier: 'equals',
+      base_cost: String(rate.hourlyRate),
+      base_modifier: 'equals',
       from: '',
       to: '',
-      priority: (idx + 1).toString(),
     }));
 
-    const bookingConfig: any = {
-      duration_type: 'fixed',
+    const bookingConfig: Record<string, any> = {
+      duration_type: 'customer',          // lets customer pick block count (1–8 hrs)
       duration_unit: 'hour',
       duration: 1,
       min_duration: 1,
       max_duration: 8,
-      cost: defaultHourlyRate,
-      block_cost: defaultHourlyRate,
-      display_cost: `$${defaultHourlyRate}`,
-      has_price_label: true,
-      price_label: '/hour',
+      cost: baseCost,
+      base_cost: baseCost,
+      display_cost: `$${baseCost}`,
       calendar_display_mode: 'always_visible',
       requires_confirmation: false,
       can_be_cancelled: true,
-      default_date_availability: 'non-available',
+      default_date_availability: 'available',
       check_start_block_only: true,
       qty: 1,
       max_bookings_per_block: 1,
+      enable_range_picker: true,
     };
 
     if (pricing.length > 0) {
       bookingConfig.pricing = pricing;
     }
 
+    // PUT — POST is silently ignored for most fields by WC Bookings REST
     await wcBookingsFetch(`products/${productId}`, {
-      method: 'POST',
+      method: 'PUT',
       body: JSON.stringify(bookingConfig),
     });
+
+    // Mirror base cost to WC product price so it shows in catalog/cart
+    try {
+      await wcFetch(`products/${productId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ regular_price: String(baseCost) }),
+      });
+    } catch (e) {
+      console.warn('Failed to mirror base cost to product price:', e);
+    }
   } catch (error) {
     console.error('Error configuring booking product:', error);
+    throw error;
   }
 }
 // Get provider's product by provider ID
