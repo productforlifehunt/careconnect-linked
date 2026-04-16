@@ -5,6 +5,7 @@ import {
   getProviderProduct,
   updateProviderProductStatus,
   type ServiceRateEntry,
+  type DeliveryResourceCosts,
 } from '@/services/woocommerce-api';
 import { useMyProfile } from './use-care-data';
 
