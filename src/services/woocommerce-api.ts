@@ -1038,7 +1038,10 @@ export async function getProviderAvailabilitySetting(pid: string) {
 }
 
 export async function updateProviderAvailabilitySetting(pid: string, setting: any) {
-  const p = await getProviderProduct(pid);
+  let p = await getProviderProduct(pid);
+  if (!p) {
+    p = await getOrCreateProviderProduct(pid, { fullName: `Provider ${pid}`, hourlyRate: 30 });
+  }
   if (!p) throw new Error('Product not found');
   const minNoticeHours = Number(setting.min_notice_hours || 0);
   const minDateValue = setting.allow_same_day ? 0 : Math.max(1, minNoticeHours);
