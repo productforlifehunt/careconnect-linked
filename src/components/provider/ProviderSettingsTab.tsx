@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, DollarSign, Briefcase, Shield, Phone, Eye, EyeOff, X, Store, ShoppingBag } from "lucide-react";
+import { MapPin, DollarSign, Briefcase, Shield, Phone, Eye, EyeOff, X, Store, ShoppingBag, Home, Video } from "lucide-react";
 import { useMyProfile, useUpdateProfile } from "@/hooks/use-care-data";
 import { useSyncProviderToWooCommerce, useProviderWooCommerceProduct } from "@/hooks/use-woocommerce";
 import { useServiceTypes } from "@/hooks/use-service-types";
@@ -34,6 +34,8 @@ export default function ProviderSettingsTab() {
   const [serviceRates, setServiceRates] = useState<Record<string, string>>({});
   const [certifications, setCertifications] = useState<string[]>([]);
   const [isActive, setIsActive] = useState(false);
+  const [localCost, setLocalCost] = useState("0");
+  const [virtualCost, setVirtualCost] = useState("0");
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -46,6 +48,8 @@ export default function ProviderSettingsTab() {
       setSelectedServices(profile.specialty || []);
       setCertifications(profile.certifications || []);
       setIsActive(profile.care_provider_is_active || false);
+      setLocalCost(((profile as any).care_provider_local_cost ?? 0).toString());
+      setVirtualCost(((profile as any).care_provider_virtual_cost ?? 0).toString());
       // Initialize per-service rates from profile meta if available
       const existingRates: Record<string, string> = {};
       (profile.specialty || []).forEach((s: string) => {
@@ -102,7 +106,7 @@ export default function ProviderSettingsTab() {
         care_provider_is_active: isActive,
       });
 
-      // Then sync to WooCommerce/Dokan with per-service-type rates
+      // Then sync to WooCommerce/Dokan with per-service-type rates + delivery costs
       await syncToWooCommerce.mutateAsync({
         hourlyRate: parseFloat(hourlyRate) || 0,
         bio,
@@ -112,6 +116,10 @@ export default function ProviderSettingsTab() {
         location,
         providerIsActive: isActive,
         serviceRates: rateEntries,
+        deliveryCosts: {
+          localCost: parseFloat(localCost) || 0,
+          virtualCost: parseFloat(virtualCost) || 0,
+        },
       });
 
       toast({ title: t("profile.profileUpdated"), description: "Profile synced to marketplace" });
@@ -294,6 +302,71 @@ export default function ProviderSettingsTab() {
               </p>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Delivery Mode Surcharges (Local vs Virtual) — WC Bookings Resources */}
+      <Card className="border-transparent card-elevated">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MapPin className="h-5 w-5" /> {t("providerDash.deliveryMode") || "Delivery Mode Surcharges"}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            {t("providerDash.deliveryModeDesc") || "Customers choose Local (in-person) or Virtual (remote) at booking. Add an optional per-hour surcharge for each mode (set to 0 for no extra cost)."}
+          </p>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Home className="h-4 w-4 text-primary" />
+                </div>
+                <span className="text-sm font-medium truncate">
+                  {t("providerDash.localInPerson") || "Local (In-Person)"}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  type="number"
+                  min="0"
+                  step="5"
+                  className="h-8 w-20 text-sm text-right"
+                  value={localCost}
+                  onChange={e => setLocalCost(e.target.value)}
+                  placeholder="0"
+                />
+                <span className="text-xs text-muted-foreground whitespace-nowrap">/hr</span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Video className="h-4 w-4 text-primary" />
+                </div>
+                <span className="text-sm font-medium truncate">
+                  {t("providerDash.virtualRemote") || "Virtual (Remote)"}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  type="number"
+                  min="0"
+                  step="5"
+                  className="h-8 w-20 text-sm text-right"
+                  value={virtualCost}
+                  onChange={e => setVirtualCost(e.target.value)}
+                  placeholder="0"
+                />
+                <span className="text-xs text-muted-foreground whitespace-nowrap">/hr</span>
+              </div>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {t("providerDash.deliveryModeNote") || "Surcharges are per booked hour and added on top of the per-service rate. Customer picks one delivery mode per booking."}
+          </p>
         </CardContent>
       </Card>
 

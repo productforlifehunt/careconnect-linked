@@ -5,6 +5,7 @@ import {
   getProviderProduct,
   updateProviderProductStatus,
   type ServiceRateEntry,
+  type DeliveryResourceCosts,
 } from '@/services/woocommerce-api';
 import { useMyProfile } from './use-care-data';
 
@@ -28,6 +29,7 @@ export function useSyncProviderToWooCommerce() {
       location?: string;
       providerIsActive?: boolean;
       serviceRates?: ServiceRateEntry[];
+      deliveryCosts?: DeliveryResourceCosts;
     }) => {
       if (!profile?.id) {
         throw new Error('Profile not found');
@@ -52,6 +54,7 @@ export function useSyncProviderToWooCommerce() {
         yearsOfExperience: providerData.yearsOfExperience,
         location: providerData.location,
         serviceRates: providerData.serviceRates,
+        deliveryCosts: providerData.deliveryCosts,
       });
 
       // Step 3: Update product status based on provider_is_active
