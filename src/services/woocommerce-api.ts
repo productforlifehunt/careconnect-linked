@@ -269,10 +269,11 @@ export async function getOrCreateProviderProduct(
       ? serviceRates.map(r => r.serviceType)
       : (providerData.specialties || []);
 
-    // Build product payload — type = "booking" for WC Bookings
+    // Build product payload — create as 'simple' via Dokan (Dokan doesn't support 'booking' type)
+    // Will be converted to 'booking' via WC API after creation
     const productData: any = {
       name: `${providerData.fullName} – Care Service`,
-      type: 'booking',
+      type: 'simple',
       description: providerData.bio || '',
       short_description: `Professional care service by ${providerData.fullName}`,
       sku,
