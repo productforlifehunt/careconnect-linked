@@ -258,6 +258,7 @@ export async function getOrCreateProviderProduct(
     yearsOfExperience?: number;
     location?: string;
     serviceRates?: ServiceRateEntry[];
+    deliveryCosts?: DeliveryResourceCosts;
   }
 ) {
   try {
