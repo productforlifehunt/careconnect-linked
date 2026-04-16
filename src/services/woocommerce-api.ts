@@ -304,6 +304,8 @@ export async function getOrCreateProviderProduct(
         { key: '_location', value: providerData.location || '' },
         { key: '_service_types', value: JSON.stringify(serviceTypeNames) },
         { key: '_service_rates', value: JSON.stringify(serviceRatesMap) },
+        { key: '_delivery_local_cost', value: String(providerData.deliveryCosts?.localCost ?? 0) },
+        { key: '_delivery_virtual_cost', value: String(providerData.deliveryCosts?.virtualCost ?? 0) },
       ],
       virtual: true,
       downloadable: false,
