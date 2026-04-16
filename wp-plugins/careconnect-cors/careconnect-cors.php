@@ -175,3 +175,45 @@ function cc_rest_bridge_base64url_decode($data) {
     }
     return base64_decode(strtr($data, '-_', '+/'));
 }
+
+// ─── 4. Expose WC Bookings `bookable_person` CPT to REST API ────
+//    WC Bookings registers bookable_person without REST support, which
+//    blocks headless creation/update of per-service Person Types.
+//    This filter opts the existing CPT into the REST API at
+//    /wp-json/wp/v2/bookable_person and unlocks meta read/write.
+add_filter('register_post_type_args', function ($args, $post_type) {
+    if ($post_type === 'bookable_person') {
+        $args['show_in_rest']          = true;
+        $args['rest_base']             = 'bookable_person';
+        $args['rest_controller_class'] = 'WP_REST_Posts_Controller';
+        // Required so wp/v2 can write our private booking-cost meta keys.
+        $args['supports']              = array_unique(array_merge(
+            isset($args['supports']) && is_array($args['supports']) ? $args['supports'] : array(),
+            array('title', 'editor', 'custom-fields', 'page-attributes')
+        ));
+    }
+    return $args;
+}, 20, 2);
+
+// Register the WC Bookings person-cost meta keys so they're writable via REST.
+add_action('init', function () {
+    if (!post_type_exists('bookable_person')) {
+        return;
+    }
+    $person_meta_keys = array(
+        'cost'          => 'number',
+        'block_cost'    => 'number',
+        'min'           => 'number',
+        'max'           => 'number',
+        '_wc_booking_person_qty_multiplier' => 'number',
+        '_wc_booking_person_cost_multiplier' => 'number',
+    );
+    foreach ($person_meta_keys as $key => $type) {
+        register_post_meta('bookable_person', $key, array(
+            'show_in_rest'  => true,
+            'single'        => true,
+            'type'          => $type,
+            'auth_callback' => function () { return current_user_can('edit_posts'); },
+        ));
+    }
+}, 25);
