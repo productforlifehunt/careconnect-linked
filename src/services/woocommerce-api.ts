@@ -429,6 +429,7 @@ export async function getProviderProduct(providerId: string) {
   } catch (error) {
     console.error('Error getting provider product:', error);
     return null;
+  }
 }
 
 /**
@@ -453,7 +454,6 @@ export function extractProviderServicesFromProduct(product: any, defaultRate = 0
   // Backfill missing rates with default
   services.forEach(s => { if (rates[s] == null) rates[s] = defaultRate; });
   return { services, rates };
-}
 }
 
 // Update provider product status (active/inactive)
