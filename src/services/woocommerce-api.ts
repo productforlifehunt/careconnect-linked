@@ -699,7 +699,10 @@ export async function getProviderAvailability(providerId: string): Promise<Norma
 }
 
 export async function upsertProviderAvailability(providerId: string, slots: any[]) {
-  const product = await getProviderProduct(providerId);
+  let product = await getProviderProduct(providerId);
+  if (!product) {
+    product = await getOrCreateProviderProduct(providerId, { fullName: `Provider ${providerId}`, hourlyRate: 30 });
+  }
   if (!product) throw new Error('Provider product not found');
   // Update availability rules on the booking product
   const res = await wcBookingsFetch(`products/${product.id}`, {
