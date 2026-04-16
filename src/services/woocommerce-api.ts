@@ -269,10 +269,11 @@ export async function getOrCreateProviderProduct(
       ? serviceRates.map(r => r.serviceType)
       : (providerData.specialties || []);
 
-    // Build product payload — type = "booking" for WC Bookings
+    // Build product payload — create as 'simple' via Dokan (Dokan doesn't support 'booking' type)
+    // Will be converted to 'booking' via WC API after creation
     const productData: any = {
       name: `${providerData.fullName} – Care Service`,
-      type: 'booking',
+      type: 'simple',
       description: providerData.bio || '',
       short_description: `Professional care service by ${providerData.fullName}`,
       sku,
@@ -318,8 +319,19 @@ export async function getOrCreateProviderProduct(
       });
     }
 
-    // Configure WC Bookings fields on the product
+    // Step 2: Convert product type from 'simple' to 'booking' via WC API
+    // (Dokan doesn't support booking type natively)
     if (product?.id) {
+      try {
+        await wcFetch(`products/${product.id}`, {
+          method: 'PUT',
+          body: JSON.stringify({ type: 'booking' }),
+        });
+      } catch (e) {
+        console.warn('Failed to convert product to booking type:', e);
+      }
+
+      // Step 3: Configure WC Bookings fields on the product
       await configureBookingProduct(product.id, providerData.hourlyRate, serviceRates);
     }
 
