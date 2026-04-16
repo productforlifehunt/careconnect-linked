@@ -3,7 +3,7 @@
  * Plugin Name: CareConnect REST Bridge
  * Description: CORS headers + JWT authentication for all WordPress REST API endpoints.
  *              Works with the CareConnect JWT Auth plugin tokens. Network-activatable for multisite.
- * Version: 1.1.0
+ * Version: 1.2.0
  * Network: true
  */
 
