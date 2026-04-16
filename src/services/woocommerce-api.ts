@@ -269,6 +269,12 @@ export async function getOrCreateProviderProduct(
       ? serviceRates.map(r => r.serviceType)
       : (providerData.specialties || []);
 
+    // Build a {serviceType: rate} JSON map so the booking dialog can look up the right rate
+    const serviceRatesMap: Record<string, number> = {};
+    serviceRates.forEach(r => {
+      serviceRatesMap[r.serviceType] = r.hourlyRate;
+    });
+
     // Build product payload — create as 'simple' via Dokan (Dokan doesn't support 'booking' type)
     // Will be converted to 'booking' via WC API after creation
     const productData: any = {
@@ -286,6 +292,7 @@ export async function getOrCreateProviderProduct(
         { key: '_years_of_experience', value: (providerData.yearsOfExperience || 0).toString() },
         { key: '_location', value: providerData.location || '' },
         { key: '_service_types', value: JSON.stringify(serviceTypeNames) },
+        { key: '_service_rates', value: JSON.stringify(serviceRatesMap) },
       ],
       virtual: true,
       downloadable: false,
@@ -423,6 +430,30 @@ export async function getProviderProduct(providerId: string) {
     console.error('Error getting provider product:', error);
     return null;
   }
+}
+
+/**
+ * Extract per-service rate map and service-type list from a WC product's meta.
+ * Returns { services: string[], rates: Record<service, hourly_rate> }.
+ * Falls back gracefully if product is null or meta is missing.
+ */
+export function extractProviderServicesFromProduct(product: any, defaultRate = 0): {
+  services: string[];
+  rates: Record<string, number>;
+} {
+  const empty = { services: [] as string[], rates: {} as Record<string, number> };
+  if (!product || !Array.isArray(product.meta_data)) return empty;
+  const get = (k: string) => product.meta_data.find((m: any) => m?.key === k)?.value;
+  let services: string[] = [];
+  try { services = JSON.parse(get('_service_types') || '[]'); } catch { services = []; }
+  let rates: Record<string, number> = {};
+  try {
+    const raw = JSON.parse(get('_service_rates') || '{}');
+    Object.keys(raw).forEach(k => { rates[k] = Number(raw[k]) || defaultRate; });
+  } catch { rates = {}; }
+  // Backfill missing rates with default
+  services.forEach(s => { if (rates[s] == null) rates[s] = defaultRate; });
+  return { services, rates };
 }
 
 // Update provider product status (active/inactive)

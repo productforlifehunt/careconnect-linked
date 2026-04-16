@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useServiceTypes } from "@/hooks/use-service-types";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,8 @@ import { CommentsSection } from "@/components/comments/CommentsSection";
 import { useProvider, useProviderReviews, useCreateReview, useToggleSavedProvider, useSavedProviders, useStartConversation, useProviderAvailability, useProviderAvailabilitySetting } from "@/hooks/use-care-data";
 import { useCreateBookingWithWooCommerce } from "@/hooks/use-booking-woocommerce";
 import { useAddToCart } from "@/hooks/use-cart";
-import { getAvailabilityConflictMessage, getProviderBookingConflictMessage, getProviderProduct } from "@/services/woocommerce-api";
+import { getAvailabilityConflictMessage, getProviderBookingConflictMessage, getProviderProduct, extractProviderServicesFromProduct } from "@/services/woocommerce-api";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
@@ -50,6 +51,39 @@ export default function CaregiverProfile() {
   const { data: availability } = useProviderAvailability(id);
   const { data: availabilitySetting } = useProviderAvailabilitySetting(id || null);
   const isFavorited = savedProviders?.some((sp: any) => sp.provider_id === id) || false;
+
+  // Fetch the provider's WC product to derive their actual offered services + per-service rates
+  const { data: providerProduct } = useQuery({
+    queryKey: ["provider-product", id],
+    queryFn: () => getProviderProduct(id!),
+    enabled: !!id,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  // Build the source of truth for what the provider actually offers.
+  // Priority: WC product `_service_rates` meta → profile.specialty (fallback) → empty.
+  const offered = useMemo(() => {
+    const defaultRate = caregiver?.care_provider_starts_hourly_rate || 0;
+    const fromProduct = extractProviderServicesFromProduct(providerProduct, defaultRate);
+    if (fromProduct.services.length > 0) return fromProduct;
+    // Fallback: provider has profile specialties but hasn't synced product yet
+    const services = caregiver?.specialty || [];
+    const rates: Record<string, number> = {};
+    services.forEach(s => { rates[s] = defaultRate; });
+    return { services, rates };
+  }, [providerProduct, caregiver]);
+
+  // Effective hourly rate: per-service rate if available, else default
+  const effectiveRate = bookingType
+    ? (offered.rates[bookingType] ?? caregiver?.care_provider_starts_hourly_rate ?? 0)
+    : (caregiver?.care_provider_starts_hourly_rate ?? 0);
+
+  // Auto-pick the first offered service when dialog opens, so user can't be stuck
+  useEffect(() => {
+    if (bookingDialogOpen && !bookingType && offered.services.length > 0) {
+      setBookingType(offered.services[0]);
+    }
+  }, [bookingDialogOpen, bookingType, offered.services]);
 
   // Check availability when date/time changes
   const checkAvailability = (date: string, time: string) => {
@@ -114,8 +148,8 @@ export default function CaregiverProfile() {
         appointment_time: bookingTime,
         duration_hour: durationHours,
         service_type: bookingType,
-        hourly_rate: caregiver.care_provider_starts_hourly_rate || 0,
-        total_cost: (caregiver.care_provider_starts_hourly_rate || 0) * durationHours,
+        hourly_rate: effectiveRate,
+        total_cost: effectiveRate * durationHours,
         special_instruction: recurringNote + (bookingNotes || "") || null,
         status: availabilitySetting?.requires_confirmation === false ? "confirmed" : "pending",
         payment_status: "pending",
@@ -132,7 +166,7 @@ export default function CaregiverProfile() {
     toggleSaved.mutate(caregiver.id);
   };
 
-  const total = (caregiver.care_provider_starts_hourly_rate || 0) * parseInt(bookingDuration);
+  const total = effectiveRate * parseInt(bookingDuration);
   const hasAvailabilityConflict = Boolean(availabilityWarning);
 
   return (
@@ -304,14 +338,27 @@ export default function CaregiverProfile() {
                   <div className="space-y-4 mt-4">
                     <div>
                       <Label>Care Type *</Label>
-                      <Select value={bookingType} onValueChange={setBookingType}>
-                        <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
-                        <SelectContent>
-                         {(caregiver.specialty && caregiver.specialty.length > 0) ? caregiver.specialty.map((s: string) => <SelectItem key={s} value={s}>{s}</SelectItem>) : (
-                           serviceTypes.map((st: any) => <SelectItem key={st.slug || st.name} value={st.name}>{st.name}</SelectItem>)
-                         )}
-                        </SelectContent>
-                      </Select>
+                      {offered.services.length === 0 ? (
+                        <div className="text-sm text-muted-foreground bg-muted/50 rounded-md p-3 border border-dashed">
+                          This caregiver hasn't published any services yet. Please send them a message to inquire.
+                        </div>
+                      ) : (
+                        <Select value={bookingType} onValueChange={setBookingType}>
+                          <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                          <SelectContent>
+                            {offered.services.map((s: string) => (
+                              <SelectItem key={s} value={s}>
+                                {s} — ${offered.rates[s] ?? 0}/hr
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                      {bookingType && (
+                        <p className="text-xs text-muted-foreground mt-1.5">
+                          Rate for {bookingType}: <span className="font-semibold text-foreground">${effectiveRate}/hr</span>
+                        </p>
+                      )}
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
@@ -358,7 +405,7 @@ export default function CaregiverProfile() {
                       <span className="text-sm text-muted-foreground">Estimated Total</span>
                       <span className="text-xl font-bold text-foreground">${total}{recurringPattern !== "none" ? `/${recurringPattern === "weekly" ? "wk" : recurringPattern === "biweekly" ? "2wk" : "mo"}` : ""}</span>
                     </div>
-                    <Button variant="coral" className="w-full" onClick={handleBooking} disabled={createBooking.isPending || hasAvailabilityConflict}>
+                    <Button variant="coral" className="w-full" onClick={handleBooking} disabled={createBooking.isPending || hasAvailabilityConflict || offered.services.length === 0}>
                       {createBooking.isPending ? "Submitting..." : "Confirm Booking"}
                     </Button>
                   </div>
