@@ -338,14 +338,27 @@ export default function CaregiverProfile() {
                   <div className="space-y-4 mt-4">
                     <div>
                       <Label>Care Type *</Label>
-                      <Select value={bookingType} onValueChange={setBookingType}>
-                        <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
-                        <SelectContent>
-                         {(caregiver.specialty && caregiver.specialty.length > 0) ? caregiver.specialty.map((s: string) => <SelectItem key={s} value={s}>{s}</SelectItem>) : (
-                           serviceTypes.map((st: any) => <SelectItem key={st.slug || st.name} value={st.name}>{st.name}</SelectItem>)
-                         )}
-                        </SelectContent>
-                      </Select>
+                      {offered.services.length === 0 ? (
+                        <div className="text-sm text-muted-foreground bg-muted/50 rounded-md p-3 border border-dashed">
+                          This caregiver hasn't published any services yet. Please send them a message to inquire.
+                        </div>
+                      ) : (
+                        <Select value={bookingType} onValueChange={setBookingType}>
+                          <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                          <SelectContent>
+                            {offered.services.map((s: string) => (
+                              <SelectItem key={s} value={s}>
+                                {s} — ${offered.rates[s] ?? 0}/hr
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                      {bookingType && (
+                        <p className="text-xs text-muted-foreground mt-1.5">
+                          Rate for {bookingType}: <span className="font-semibold text-foreground">${effectiveRate}/hr</span>
+                        </p>
+                      )}
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
@@ -392,7 +405,7 @@ export default function CaregiverProfile() {
                       <span className="text-sm text-muted-foreground">Estimated Total</span>
                       <span className="text-xl font-bold text-foreground">${total}{recurringPattern !== "none" ? `/${recurringPattern === "weekly" ? "wk" : recurringPattern === "biweekly" ? "2wk" : "mo"}` : ""}</span>
                     </div>
-                    <Button variant="coral" className="w-full" onClick={handleBooking} disabled={createBooking.isPending || hasAvailabilityConflict}>
+                    <Button variant="coral" className="w-full" onClick={handleBooking} disabled={createBooking.isPending || hasAvailabilityConflict || offered.services.length === 0}>
                       {createBooking.isPending ? "Submitting..." : "Confirm Booking"}
                     </Button>
                   </div>
