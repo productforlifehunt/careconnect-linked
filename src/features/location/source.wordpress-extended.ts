@@ -15,7 +15,7 @@ import { fetchCurrentLocation, fetchLocationHistory, writeLocationAndCheckZones 
 
 
 // ─── Relation IDs ────────────────────────────────────────────
-const REL_USER_SAFE_ZONE = 90;
+const REL_USER_SAFE_ZONE = 118;
 
 type SafeZoneAlertType = "exited_safe_zone" | "entered_safe_zone" | "entered_danger_zone" | "exited_danger_zone";
 
