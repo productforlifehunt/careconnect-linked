@@ -351,8 +351,8 @@ export async function getOrCreateProviderProduct(
         console.warn('Failed to convert product to booking type:', e);
       }
 
-      // Step 3: Configure WC Bookings fields on the product
-      await configureBookingProduct(product.id, providerData.hourlyRate, serviceRates);
+      // Step 3: Configure WC Bookings core fields, Person Types, and Resources
+      await configureBookingProduct(product.id, providerData.hourlyRate, serviceRates, providerData.deliveryCosts);
     }
 
     return product;
