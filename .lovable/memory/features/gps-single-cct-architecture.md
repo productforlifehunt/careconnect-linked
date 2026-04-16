@@ -21,7 +21,7 @@ latitude, longitude, accuracy_meters, altitude_meters, heading_degrees, speed, i
 **Name**: "One user can have many related current location snapshots"  
 **Type**: Users → current_location (One-to-many)  
 **Relation custom field**: user_type (Radio: "Not someone special", "Cared one")  
-**Relation ID**: 91 (REL_USER_CURRENT_LOCATION)
+**Relation ID**: 117 (REL_USER_CURRENT_LOCATION)
 
 ### Read pattern
 For efficiency, reads use `cct_author_id` filter on the CCT endpoint directly rather than fetching relation children individually.
@@ -38,4 +38,4 @@ No Trackserver plugin, no OsmAnd protocol, no cc-trackserver-rest plugin. Delete
 ### Safe Zone CCT
 **Name**: "Safe Zone" | **Slug**: `safe_zone`  
 **Fields**: zone_type (Radio: Safe/Danger), shape_type (Radio: Radius/Polygon), custom_name, custom_description, custom_color (Colorpicker), latitude, longitude, radius_meters (Number, default 100), polygon_points (Textarea), notify_on_enter (Radio: Off/On), notify_on_exit (Radio: Off/On), schedule_enabled (Radio: Off/On), schedule_start_time (Datetime), schedule_end_time (Datetime), is_active (Radio: No/Yes)  
-**Relation**: "One user can have many related safe zones" (Users → safe_zone, one-to-many, ID: 90)
+**Relation**: "One user can have many related safe zones" (Users → safe_zone, one-to-many, ID: 118)
