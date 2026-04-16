@@ -699,7 +699,10 @@ export async function getProviderAvailability(providerId: string): Promise<Norma
 }
 
 export async function upsertProviderAvailability(providerId: string, slots: any[]) {
-  const product = await getProviderProduct(providerId);
+  let product = await getProviderProduct(providerId);
+  if (!product) {
+    product = await getOrCreateProviderProduct(providerId, { fullName: `Provider ${providerId}`, hourlyRate: 30 });
+  }
   if (!product) throw new Error('Provider product not found');
   // Update availability rules on the booking product
   const res = await wcBookingsFetch(`products/${product.id}`, {
@@ -1035,7 +1038,10 @@ export async function getProviderAvailabilitySetting(pid: string) {
 }
 
 export async function updateProviderAvailabilitySetting(pid: string, setting: any) {
-  const p = await getProviderProduct(pid);
+  let p = await getProviderProduct(pid);
+  if (!p) {
+    p = await getOrCreateProviderProduct(pid, { fullName: `Provider ${pid}`, hourlyRate: 30 });
+  }
   if (!p) throw new Error('Product not found');
   const minNoticeHours = Number(setting.min_notice_hours || 0);
   const minDateValue = setting.allow_same_day ? 0 : Math.max(1, minNoticeHours);
