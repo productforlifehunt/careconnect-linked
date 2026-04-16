@@ -148,8 +148,8 @@ export default function CaregiverProfile() {
         appointment_time: bookingTime,
         duration_hour: durationHours,
         service_type: bookingType,
-        hourly_rate: caregiver.care_provider_starts_hourly_rate || 0,
-        total_cost: (caregiver.care_provider_starts_hourly_rate || 0) * durationHours,
+        hourly_rate: effectiveRate,
+        total_cost: effectiveRate * durationHours,
         special_instruction: recurringNote + (bookingNotes || "") || null,
         status: availabilitySetting?.requires_confirmation === false ? "confirmed" : "pending",
         payment_status: "pending",
@@ -166,7 +166,7 @@ export default function CaregiverProfile() {
     toggleSaved.mutate(caregiver.id);
   };
 
-  const total = (caregiver.care_provider_starts_hourly_rate || 0) * parseInt(bookingDuration);
+  const total = effectiveRate * parseInt(bookingDuration);
   const hasAvailabilityConflict = Boolean(availabilityWarning);
 
   return (
