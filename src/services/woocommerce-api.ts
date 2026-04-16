@@ -429,7 +429,31 @@ export async function getProviderProduct(providerId: string) {
   } catch (error) {
     console.error('Error getting provider product:', error);
     return null;
-  }
+}
+
+/**
+ * Extract per-service rate map and service-type list from a WC product's meta.
+ * Returns { services: string[], rates: Record<service, hourly_rate> }.
+ * Falls back gracefully if product is null or meta is missing.
+ */
+export function extractProviderServicesFromProduct(product: any, defaultRate = 0): {
+  services: string[];
+  rates: Record<string, number>;
+} {
+  const empty = { services: [] as string[], rates: {} as Record<string, number> };
+  if (!product || !Array.isArray(product.meta_data)) return empty;
+  const get = (k: string) => product.meta_data.find((m: any) => m?.key === k)?.value;
+  let services: string[] = [];
+  try { services = JSON.parse(get('_service_types') || '[]'); } catch { services = []; }
+  let rates: Record<string, number> = {};
+  try {
+    const raw = JSON.parse(get('_service_rates') || '{}');
+    Object.keys(raw).forEach(k => { rates[k] = Number(raw[k]) || defaultRate; });
+  } catch { rates = {}; }
+  // Backfill missing rates with default
+  services.forEach(s => { if (rates[s] == null) rates[s] = defaultRate; });
+  return { services, rates };
+}
 }
 
 // Update provider product status (active/inactive)
