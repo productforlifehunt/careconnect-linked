@@ -375,6 +375,7 @@ async function configureBookingProduct(
   productId: number,
   defaultHourlyRate: number,
   serviceRates: ServiceRateEntry[] = [],
+  deliveryCosts: DeliveryResourceCosts = {},
 ) {
   try {
     // Effective base — fall back to first service rate if default is 0
@@ -382,10 +383,12 @@ async function configureBookingProduct(
       ? defaultHourlyRate
       : (serviceRates[0]?.hourlyRate || 0);
 
-    // NOTE: Per-service pricing is stored in `_service_rates` product meta
-    // (read by the booking dialog at order time). We do NOT write WC Bookings
-    // native "Range" rules because they require date/person/resource scoping
-    // and would render as unlabeled rows in the admin UI.
+    // Persons are enabled when there is more than one priced service.
+    // Resources are enabled whenever a delivery surcharge is set OR the
+    // provider explicitly offers both Local and Virtual.
+    const hasPersons = serviceRates.length > 0;
+    const hasResources = (deliveryCosts.localCost ?? 0) >= 0 || (deliveryCosts.virtualCost ?? 0) >= 0;
+
     const bookingConfig: Record<string, any> = {
       duration_type: 'customer',          // lets customer pick block count (1–8 hrs)
       duration_unit: 'hour',
@@ -404,6 +407,9 @@ async function configureBookingProduct(
       max_bookings_per_block: 1,
       enable_range_picker: true,
       pricing: [], // explicitly clear any leftover unlabeled range rules
+      has_persons: hasPersons,
+      has_resources: hasResources,
+      resources_assignment: 'customer', // customer picks Local vs Virtual
     };
 
     // PUT — POST is silently ignored for most fields by WC Bookings REST
@@ -411,6 +417,24 @@ async function configureBookingProduct(
       method: 'PUT',
       body: JSON.stringify(bookingConfig),
     });
+
+    // Sync Person Types (one per priced service) and Resources (Local/Virtual).
+    // These run sequentially after the parent product config so WC Bookings
+    // recognizes has_persons / has_resources before child posts are linked.
+    if (hasPersons) {
+      try {
+        await syncBookingPersons(productId, serviceRates);
+      } catch (e) {
+        console.warn('Failed to sync booking persons:', e);
+      }
+    }
+    if (hasResources) {
+      try {
+        await syncBookingResources(productId, deliveryCosts);
+      } catch (e) {
+        console.warn('Failed to sync booking resources:', e);
+      }
+    }
 
     // Mirror base cost to WC product price so it shows in catalog/cart
     try {
@@ -424,6 +448,161 @@ async function configureBookingProduct(
   } catch (error) {
     console.error('Error configuring booking product:', error);
     throw error;
+  }
+}
+
+/**
+ * Sync per-service Person Types (`bookable_person` CPT) for a product.
+ * Each service becomes a Person Type with its own `block_cost` (per-hour rate)
+ * and `cost` (per-booking flat). Customer can multi-select with quantities,
+ * and WC Bookings calculates: Σ(person.block_cost × qty × blocks).
+ *
+ * Requires the CareConnect REST Bridge plugin (v1.2.0+) which exposes
+ * `bookable_person` to wp/v2 with writable meta keys.
+ *
+ * Strategy: list existing persons for product → upsert by title match → trash extras.
+ */
+async function syncBookingPersons(productId: number, serviceRates: ServiceRateEntry[]) {
+  // Fetch existing person posts attached to this product (parent = productId)
+  let existingPersons: any[] = [];
+  try {
+    existingPersons = await wcFetch(
+      `../wp/v2/bookable_person?parent=${productId}&per_page=100&status=publish,draft`
+    ) || [];
+  } catch {
+    // Fallback path — try direct wp/v2 namespace via a custom helper
+    try {
+      const url = buildWPUrl(`wp/v2/bookable_person?parent=${productId}&per_page=100&status=publish,draft`);
+      const res = await fetch(url, { headers: getAuthHeaders() });
+      if (res.ok) existingPersons = await res.json();
+    } catch { /* ignore */ }
+  }
+
+  const existingByTitle: Record<string, any> = {};
+  existingPersons.forEach((p: any) => {
+    const title = (p?.title?.rendered || p?.title || '').toString().trim();
+    if (title) existingByTitle[title] = p;
+  });
+
+  const desiredTitles = new Set<string>();
+  for (const rate of serviceRates) {
+    const title = rate.serviceType;
+    desiredTitles.add(title);
+    const blockCost = Number(rate.hourlyRate) || 0;
+    const body = {
+      title,
+      status: 'publish',
+      parent: productId,
+      meta: {
+        cost: 0,
+        block_cost: blockCost,
+        min: 0,
+        max: 10,
+      },
+    };
+    const existing = existingByTitle[title];
+    const url = existing
+      ? buildWPUrl(`wp/v2/bookable_person/${existing.id}`)
+      : buildWPUrl(`wp/v2/bookable_person`);
+    try {
+      await fetch(url, {
+        method: existing ? 'PUT' : 'POST',
+        headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    } catch (e) {
+      console.warn(`Failed to upsert person "${title}":`, e);
+    }
+  }
+
+  // Trash persons no longer in serviceRates
+  for (const [title, person] of Object.entries(existingByTitle)) {
+    if (!desiredTitles.has(title)) {
+      try {
+        await fetch(buildWPUrl(`wp/v2/bookable_person/${person.id}?force=true`), {
+          method: 'DELETE',
+          headers: getAuthHeaders(),
+        });
+      } catch { /* ignore */ }
+    }
+  }
+}
+
+/**
+ * Sync delivery-mode Resources (Local / Virtual) for a product.
+ * WC Bookings allows multiple resources per product but customer picks ONE.
+ * Each resource has a `base_cost` and `block_cost` (per-hour surcharge).
+ *
+ * Uses the official `/wc-bookings/v1/resources` endpoint, then links them
+ * to the product via `/wc-bookings/v1/products/{id}` `resource_ids`.
+ */
+async function syncBookingResources(productId: number, deliveryCosts: DeliveryResourceCosts) {
+  const desired: Array<{ name: string; cost: number; metaTag: string }> = [
+    { name: 'Local (In-Person)', cost: deliveryCosts.localCost ?? 0, metaTag: 'local' },
+    { name: 'Virtual (Remote)', cost: deliveryCosts.virtualCost ?? 0, metaTag: 'virtual' },
+  ];
+
+  // List existing resources already linked to this product
+  let productInfo: any = null;
+  try {
+    productInfo = await wcBookingsFetch(`products/${productId}`);
+  } catch { /* ignore */ }
+  const existingIds: number[] = Array.isArray(productInfo?.resource_ids)
+    ? productInfo.resource_ids.map((x: any) => Number(x)).filter(Boolean)
+    : [];
+
+  // Fetch each existing resource to get its title for matching
+  const existingByTag: Record<string, any> = {};
+  for (const id of existingIds) {
+    try {
+      const r = await wcBookingsFetch(`resources/${id}`);
+      const tag = (r?.name || '').toLowerCase().includes('virtual') ? 'virtual' : 'local';
+      existingByTag[tag] = r;
+    } catch { /* ignore */ }
+  }
+
+  const linkedIds: number[] = [];
+  for (const d of desired) {
+    const existing = existingByTag[d.metaTag];
+    const body = {
+      name: d.name,
+      base_cost: d.cost,
+      block_cost: d.cost, // per-hour surcharge
+      qty: 1,
+    };
+    try {
+      if (existing) {
+        await wcBookingsFetch(`resources/${existing.id}`, {
+          method: 'PUT',
+          body: JSON.stringify(body),
+        });
+        linkedIds.push(existing.id);
+      } else {
+        const created = await wcBookingsFetch(`resources`, {
+          method: 'POST',
+          body: JSON.stringify(body),
+        });
+        if (created?.id) linkedIds.push(created.id);
+      }
+    } catch (e) {
+      console.warn(`Failed to upsert resource "${d.name}":`, e);
+    }
+  }
+
+  // Link resources to the product
+  if (linkedIds.length > 0) {
+    try {
+      await wcBookingsFetch(`products/${productId}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          has_resources: true,
+          resources_assignment: 'customer',
+          resource_ids: linkedIds,
+        }),
+      });
+    } catch (e) {
+      console.warn('Failed to link resources to product:', e);
+    }
   }
 }
 // Get provider's product by provider ID
