@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, DollarSign, Briefcase, Shield, Phone, Eye, EyeOff, X, Store, ShoppingBag } from "lucide-react";
+import { MapPin, DollarSign, Briefcase, Shield, Phone, Eye, EyeOff, X, Store, ShoppingBag, Home, Video } from "lucide-react";
 import { useMyProfile, useUpdateProfile } from "@/hooks/use-care-data";
 import { useSyncProviderToWooCommerce, useProviderWooCommerceProduct } from "@/hooks/use-woocommerce";
 import { useServiceTypes } from "@/hooks/use-service-types";
@@ -34,6 +34,8 @@ export default function ProviderSettingsTab() {
   const [serviceRates, setServiceRates] = useState<Record<string, string>>({});
   const [certifications, setCertifications] = useState<string[]>([]);
   const [isActive, setIsActive] = useState(false);
+  const [localCost, setLocalCost] = useState("0");
+  const [virtualCost, setVirtualCost] = useState("0");
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -46,6 +48,8 @@ export default function ProviderSettingsTab() {
       setSelectedServices(profile.specialty || []);
       setCertifications(profile.certifications || []);
       setIsActive(profile.care_provider_is_active || false);
+      setLocalCost(profile.care_provider_local_cost?.toString() || "0");
+      setVirtualCost(profile.care_provider_virtual_cost?.toString() || "0");
       // Initialize per-service rates from profile meta if available
       const existingRates: Record<string, string> = {};
       (profile.specialty || []).forEach((s: string) => {
@@ -102,7 +106,7 @@ export default function ProviderSettingsTab() {
         care_provider_is_active: isActive,
       });
 
-      // Then sync to WooCommerce/Dokan with per-service-type rates
+      // Then sync to WooCommerce/Dokan with per-service-type rates + delivery costs
       await syncToWooCommerce.mutateAsync({
         hourlyRate: parseFloat(hourlyRate) || 0,
         bio,
@@ -112,6 +116,10 @@ export default function ProviderSettingsTab() {
         location,
         providerIsActive: isActive,
         serviceRates: rateEntries,
+        deliveryCosts: {
+          localCost: parseFloat(localCost) || 0,
+          virtualCost: parseFloat(virtualCost) || 0,
+        },
       });
 
       toast({ title: t("profile.profileUpdated"), description: "Profile synced to marketplace" });
