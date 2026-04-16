@@ -52,6 +52,39 @@ export default function CaregiverProfile() {
   const { data: availabilitySetting } = useProviderAvailabilitySetting(id || null);
   const isFavorited = savedProviders?.some((sp: any) => sp.provider_id === id) || false;
 
+  // Fetch the provider's WC product to derive their actual offered services + per-service rates
+  const { data: providerProduct } = useQuery({
+    queryKey: ["provider-product", id],
+    queryFn: () => getProviderProduct(id!),
+    enabled: !!id,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  // Build the source of truth for what the provider actually offers.
+  // Priority: WC product `_service_rates` meta → profile.specialty (fallback) → empty.
+  const offered = useMemo(() => {
+    const defaultRate = caregiver?.care_provider_starts_hourly_rate || 0;
+    const fromProduct = extractProviderServicesFromProduct(providerProduct, defaultRate);
+    if (fromProduct.services.length > 0) return fromProduct;
+    // Fallback: provider has profile specialties but hasn't synced product yet
+    const services = caregiver?.specialty || [];
+    const rates: Record<string, number> = {};
+    services.forEach(s => { rates[s] = defaultRate; });
+    return { services, rates };
+  }, [providerProduct, caregiver]);
+
+  // Effective hourly rate: per-service rate if available, else default
+  const effectiveRate = bookingType
+    ? (offered.rates[bookingType] ?? caregiver?.care_provider_starts_hourly_rate ?? 0)
+    : (caregiver?.care_provider_starts_hourly_rate ?? 0);
+
+  // Auto-pick the first offered service when dialog opens, so user can't be stuck
+  useEffect(() => {
+    if (bookingDialogOpen && !bookingType && offered.services.length > 0) {
+      setBookingType(offered.services[0]);
+    }
+  }, [bookingDialogOpen, bookingType, offered.services]);
+
   // Check availability when date/time changes
   const checkAvailability = (date: string, time: string) => {
     const warning = getAvailabilityConflictMessage(availability || [], date, time, Number(bookingDuration));
