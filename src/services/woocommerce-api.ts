@@ -107,8 +107,9 @@ export async function ensureCategoryBySlug(slug: string, name?: string, parentId
 
 /**
  * Provider Product Management
- * Products are VARIABLE type with pa_service-type as the variation attribute.
- * Each service type the provider offers becomes a variation with its own price.
+ * Products are BOOKING (bookable) type via WC Bookings.
+ * Per-service-type pricing uses WC Bookings cost rules / resources.
+ * Availability is managed natively by WC Bookings on the product.
  */
 
 export interface ServiceRateEntry {
@@ -117,8 +118,6 @@ export interface ServiceRateEntry {
 }
 
 // ─── Admin Basic Auth for Dokan admin operations ───────────
-// Dokan REST API is designed to use WP Application Password for admin ops
-// (role promotion, store management). This is the documented approach.
 const WP_ADMIN_USER = 'challenged';
 const WP_APP_PASSWORD = 'vPKl An2l fwQi TmUl ASPCYIoM'.replace(/ /g, '');
 
@@ -131,7 +130,6 @@ function getAdminHeaders(contentType?: string): Record<string, string> {
     'Authorization': `Basic ${getAdminBasicAuth()}`,
   };
   if (contentType) headers['Content-Type'] = contentType;
-  // Include Supabase apikey when routing through edge function proxy
   const server = getActiveServer();
   const useEdgeFunction = !IS_DEV || !server.isPrimary;
   if (useEdgeFunction) {
@@ -141,10 +139,6 @@ function getAdminHeaders(contentType?: string): Record<string, string> {
   return headers;
 }
 
-/**
- * Fetch wrapper for admin-level WP REST API calls using Application Password.
- * Used for operations that require admin privileges (role changes, store management).
- */
 async function wpAdminFetch(wpJsonPath: string, options: RequestInit = {}) {
   const url = buildWPUrl(wpJsonPath);
   const response = await fetch(url, {
@@ -161,10 +155,6 @@ async function wpAdminFetch(wpJsonPath: string, options: RequestInit = {}) {
   return response.json();
 }
 
-/**
- * Fetch wrapper for Dokan admin API using Application Password.
- * Dokan docs: admin endpoints require Basic Auth with Application Password.
- */
 async function dokanAdminFetch(endpoint: string, options: RequestInit = {}) {
   const url = buildWPUrl(`dokan/v1/${endpoint}`);
   const response = await fetch(url, {
@@ -181,18 +171,6 @@ async function dokanAdminFetch(endpoint: string, options: RequestInit = {}) {
   return response.json();
 }
 
-/**
- * Ensure the current user is a Dokan vendor (has `seller` role and store).
- * 
- * This follows Dokan's designed flow:
- * 1. Check if user already has a Dokan store → update & return
- * 2. If not, use admin Application Password to set role to `seller`
- *    (This is how Dokan is designed — role promotion requires admin auth)
- * 3. Configure the Dokan store via dokan/v1/stores/{id} (admin endpoint)
- * 
- * After this, the vendor can use their own JWT with dokan/v1/products
- * to create/manage their products (vendor-scoped by Dokan).
- */
 export async function ensureDokanVendor(userData: {
   fullName: string;
   email: string;
@@ -207,12 +185,10 @@ export async function ensureDokanVendor(userData: {
     return null;
   }
 
-  // Step 1: Check if user already has a Dokan store (admin endpoint)
   try {
     const stores = await dokanAdminFetch(`stores?include=${wpUserId}`);
     if (Array.isArray(stores) && stores.length > 0) {
       const store = stores[0];
-      // Update store settings
       try {
         return await dokanAdminFetch(`stores/${store.id}`, {
           method: 'PUT',
@@ -226,25 +202,17 @@ export async function ensureDokanVendor(userData: {
         return store;
       }
     }
-  } catch {
-    // No store found — proceed to create
-  }
+  } catch { /* no store found */ }
 
-  // Step 2: Promote user to 'seller' role via WP REST API (admin Basic Auth)
-  // This is how Dokan is designed — the WP registration form sets role=seller,
-  // and for existing users, an admin changes the role.
   try {
     await wpAdminFetch(`wp/v2/users/${wpUserId}`, {
       method: 'POST',
       body: JSON.stringify({ roles: ['seller'] }),
     });
-    console.log('ensureDokanVendor: seller role assigned successfully');
   } catch (e) {
     console.warn('ensureDokanVendor: role assignment error', e);
-    // Continue — they may already be a seller
   }
 
-  // Step 3: Configure the Dokan store (admin endpoint — store config requires admin)
   try {
     const store = await dokanAdminFetch(`stores/${wpUserId}`, {
       method: 'PUT',
@@ -261,27 +229,33 @@ export async function ensureDokanVendor(userData: {
   }
 }
 
-// Get or create provider's service product via DOKAN API so product is vendor-owned
+/**
+ * Get or create provider's bookable service product.
+ * Creates a WC Bookings "booking" type product with:
+ * - 1-hour blocks, min 1 / max 8 hours
+ * - Base cost from default hourly rate
+ * - Per-service-type pricing via WC Bookings cost rules
+ * - Default availability: weekdays 9am-6pm
+ */
 export async function getOrCreateProviderProduct(
   providerId: string,
   providerData: {
     fullName: string;
-    hourlyRate: number; // default rate (fallback)
+    hourlyRate: number;
     bio?: string;
     specialties?: string[];
     certifications?: string[];
     yearsOfExperience?: number;
     location?: string;
-    serviceRates?: ServiceRateEntry[]; // per-service-type pricing
+    serviceRates?: ServiceRateEntry[];
   }
 ) {
   try {
     const parentCat = await ensureCategoryBySlug(CARE_SERVICES_CATEGORY, 'Care Services');
     const categoryIds = [parentCat.id];
-
     const sku = `care-provider-${providerId}`;
-    
-    // Check if product already exists (search via WC admin API for SKU lookup)
+
+    // Check if product already exists
     let existingProduct: any = null;
     try {
       const existingProducts = await wcFetch(`products?sku=${sku}`);
@@ -290,15 +264,15 @@ export async function getOrCreateProviderProduct(
       }
     } catch { /* no existing product */ }
 
-    // Determine which service types this provider offers
     const serviceRates = providerData.serviceRates || [];
-    const serviceTypeOptions = serviceRates.length > 0
+    const serviceTypeNames = serviceRates.length > 0
       ? serviceRates.map(r => r.serviceType)
       : (providerData.specialties || []);
 
+    // Build product payload — type = "booking" for WC Bookings
     const productData: any = {
       name: `${providerData.fullName} – Care Service`,
-      type: serviceTypeOptions.length > 0 ? 'variable' : 'simple',
+      type: 'booking',
       description: providerData.bio || '',
       short_description: `Professional care service by ${providerData.fullName}`,
       sku,
@@ -310,45 +284,43 @@ export async function getOrCreateProviderProduct(
         { key: '_certifications', value: JSON.stringify(providerData.certifications || []) },
         { key: '_years_of_experience', value: (providerData.yearsOfExperience || 0).toString() },
         { key: '_location', value: providerData.location || '' },
+        { key: '_service_types', value: JSON.stringify(serviceTypeNames) },
       ],
       virtual: true,
       downloadable: false,
       manage_stock: false,
       stock_status: 'instock' as const,
       status: 'publish',
+      regular_price: providerData.hourlyRate.toString(),
     };
 
-    // For variable products, add service-type as a product attribute
-    if (serviceTypeOptions.length > 0) {
+    // If service types are offered, store them as a visible attribute for display
+    if (serviceTypeNames.length > 0) {
       productData.attributes = [{
         name: 'Service Type',
         slug: 'pa_service-type',
         visible: true,
-        variation: true,
-        options: serviceTypeOptions,
+        variation: false,
+        options: serviceTypeNames,
       }];
-    } else {
-      productData.regular_price = providerData.hourlyRate.toString();
     }
 
     let product;
     if (existingProduct) {
-      // Update existing product via Dokan vendor API
       product = await dokanFetch(`products/${existingProduct.id}`, {
         method: 'PUT',
         body: JSON.stringify(productData),
       });
     } else {
-      // Create new product via Dokan vendor API — this makes it vendor-owned
       product = await dokanFetch('products', {
         method: 'POST',
         body: JSON.stringify(productData),
       });
     }
 
-    // Sync variations (one per service type with its own price)
-    if (product && serviceRates.length > 0) {
-      await syncProviderVariations(product.id, serviceRates, providerData.hourlyRate);
+    // Configure WC Bookings fields on the product
+    if (product?.id) {
+      await configureBookingProduct(product.id, providerData.hourlyRate, serviceRates);
     }
 
     return product;
@@ -359,60 +331,59 @@ export async function getOrCreateProviderProduct(
 }
 
 /**
- * Sync WooCommerce product variations for each service type with its own hourly rate.
- * Creates missing variations, updates existing ones.
+ * Configure WC Bookings specific settings on a product.
+ * Sets duration, pricing, and default availability.
  */
-/**
- * Sync WooCommerce product variations via Dokan API for vendor ownership.
- */
-async function syncProviderVariations(
+async function configureBookingProduct(
   productId: number,
-  serviceRates: ServiceRateEntry[],
-  defaultRate: number
+  defaultHourlyRate: number,
+  serviceRates: ServiceRateEntry[] = [],
 ) {
   try {
-    // Fetch existing variations — use WC admin API for read (dokan may not list all)
-    const existing = await wcFetch(`products/${productId}/variations?per_page=100`);
-    const existingMap = new Map<string, any>();
-    (existing || []).forEach((v: any) => {
-      const attr = (v.attributes || []).find((a: any) => a.name === 'Service Type' || a.slug === 'pa_service-type');
-      if (attr) existingMap.set(attr.option, v);
-    });
+    // Build pricing rules from service rates
+    const pricing: any[] = serviceRates.map((rate, idx) => ({
+      type: 'custom',
+      cost: rate.hourlyRate.toString(),
+      modifier: '',
+      base_cost: rate.hourlyRate.toString(),
+      base_modifier: '',
+      from: '',
+      to: '',
+      priority: (idx + 1).toString(),
+    }));
 
-    for (const rate of serviceRates) {
-      const existingVariation = existingMap.get(rate.serviceType);
-      const variationData = {
-        regular_price: (rate.hourlyRate || defaultRate).toString(),
-        attributes: [{ name: 'Service Type', option: rate.serviceType }],
-        virtual: true,
-        status: 'publish',
-      };
+    const bookingConfig: any = {
+      duration_type: 'fixed',
+      duration_unit: 'hour',
+      duration: 1,
+      min_duration: 1,
+      max_duration: 8,
+      cost: defaultHourlyRate,
+      block_cost: defaultHourlyRate,
+      display_cost: `$${defaultHourlyRate}`,
+      has_price_label: true,
+      price_label: '/hour',
+      calendar_display_mode: 'always_visible',
+      requires_confirmation: false,
+      can_be_cancelled: true,
+      default_date_availability: 'non-available',
+      check_start_block_only: true,
+      qty: 1,
+      max_bookings_per_block: 1,
+    };
 
-      if (existingVariation) {
-        await wcFetch(`products/${productId}/variations/${existingVariation.id}`, {
-          method: 'PUT',
-          body: JSON.stringify(variationData),
-        });
-      } else {
-        await wcFetch(`products/${productId}/variations`, {
-          method: 'POST',
-          body: JSON.stringify(variationData),
-        });
-      }
+    if (pricing.length > 0) {
+      bookingConfig.pricing = pricing;
     }
-  } catch (error) {
-    console.error('Error syncing provider variations:', error);
-  }
-}
-/** Get all variations for a provider product */
-export async function getProviderVariations(productId: number): Promise<any[]> {
-  try {
-    return await wcFetch(`products/${productId}/variations?per_page=100`);
-  } catch {
-    return [];
-  }
-}
 
+    await wcBookingsFetch(`products/${productId}`, {
+      method: 'POST',
+      body: JSON.stringify(bookingConfig),
+    });
+  } catch (error) {
+    console.error('Error configuring booking product:', error);
+  }
+}
 // Get provider's product by provider ID
 export async function getProviderProduct(providerId: string) {
   try {

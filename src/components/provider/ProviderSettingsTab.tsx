@@ -170,7 +170,7 @@ export default function ProviderSettingsTab() {
           {wcProduct && (
             <div className="text-sm text-muted-foreground space-y-1">
               <p><strong>{t("providerDash.productName") || "Product Name"}:</strong> {wcProduct.name}</p>
-              <p><strong>{t("providerDash.type") || "Type"}:</strong> {wcProduct.type === 'variable' ? 'Variable (per-service pricing)' : 'Simple'}</p>
+              <p><strong>{t("providerDash.type") || "Type"}:</strong> {wcProduct.type === 'booking' ? 'Bookable (WC Bookings)' : wcProduct.type === 'variable' ? 'Variable (legacy)' : wcProduct.type}</p>
               <p><strong>{t("providerDash.status") || "Status"}:</strong> {wcProduct.status === 'publish' ? 'Published' : 'Draft'}</p>
             </div>
           )}
