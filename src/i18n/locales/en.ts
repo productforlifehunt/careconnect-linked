@@ -775,6 +775,10 @@ const en = {
     bioAboutMe: "Bio / About Me",
     bioPlaceholder: "Tell families about yourself, your experience, and why you love caregiving...",
     saveProfileSettings: "Save Profile Settings",
+    perServiceRates: "Per-Service Hourly Rates",
+    defaultRate: "Default",
+    custom: "Custom",
+    pricingNote: "Leave blank to use your default rate. Each service uses its own rate at booking time.",
   },
 
   // ═══ DOCUMENTS ═══
