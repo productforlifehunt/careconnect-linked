@@ -269,6 +269,12 @@ export async function getOrCreateProviderProduct(
       ? serviceRates.map(r => r.serviceType)
       : (providerData.specialties || []);
 
+    // Build a {serviceType: rate} JSON map so the booking dialog can look up the right rate
+    const serviceRatesMap: Record<string, number> = {};
+    serviceRates.forEach(r => {
+      serviceRatesMap[r.serviceType] = r.hourlyRate;
+    });
+
     // Build product payload — create as 'simple' via Dokan (Dokan doesn't support 'booking' type)
     // Will be converted to 'booking' via WC API after creation
     const productData: any = {
@@ -286,6 +292,7 @@ export async function getOrCreateProviderProduct(
         { key: '_years_of_experience', value: (providerData.yearsOfExperience || 0).toString() },
         { key: '_location', value: providerData.location || '' },
         { key: '_service_types', value: JSON.stringify(serviceTypeNames) },
+        { key: '_service_rates', value: JSON.stringify(serviceRatesMap) },
       ],
       virtual: true,
       downloadable: false,
