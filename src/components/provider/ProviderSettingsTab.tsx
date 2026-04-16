@@ -305,6 +305,71 @@ export default function ProviderSettingsTab() {
         </CardContent>
       </Card>
 
+      {/* Delivery Mode Surcharges (Local vs Virtual) — WC Bookings Resources */}
+      <Card className="border-transparent card-elevated">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MapPin className="h-5 w-5" /> {t("providerDash.deliveryMode") || "Delivery Mode Surcharges"}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            {t("providerDash.deliveryModeDesc") || "Customers choose Local (in-person) or Virtual (remote) at booking. Add an optional per-hour surcharge for each mode (set to 0 for no extra cost)."}
+          </p>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Home className="h-4 w-4 text-primary" />
+                </div>
+                <span className="text-sm font-medium truncate">
+                  {t("providerDash.localInPerson") || "Local (In-Person)"}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  type="number"
+                  min="0"
+                  step="5"
+                  className="h-8 w-20 text-sm text-right"
+                  value={localCost}
+                  onChange={e => setLocalCost(e.target.value)}
+                  placeholder="0"
+                />
+                <span className="text-xs text-muted-foreground whitespace-nowrap">/hr</span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Video className="h-4 w-4 text-primary" />
+                </div>
+                <span className="text-sm font-medium truncate">
+                  {t("providerDash.virtualRemote") || "Virtual (Remote)"}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  type="number"
+                  min="0"
+                  step="5"
+                  className="h-8 w-20 text-sm text-right"
+                  value={virtualCost}
+                  onChange={e => setVirtualCost(e.target.value)}
+                  placeholder="0"
+                />
+                <span className="text-xs text-muted-foreground whitespace-nowrap">/hr</span>
+              </div>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {t("providerDash.deliveryModeNote") || "Surcharges are per booked hour and added on top of the per-service rate. Customer picks one delivery mode per booking."}
+          </p>
+        </CardContent>
+      </Card>
+
       {/* Certifications */}
       <Card className="border-transparent card-elevated">
         <CardHeader><CardTitle className="flex items-center gap-2"><Shield className="h-5 w-5" /> {t("becomeCaregiver.certifications")}</CardTitle></CardHeader>
