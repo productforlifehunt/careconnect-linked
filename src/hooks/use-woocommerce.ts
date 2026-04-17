@@ -50,6 +50,8 @@ export function useSyncProviderToWooCommerce() {
       });
 
       // Step 2: Create/update product via Dokan API (vendor-owned)
+      // Pass the real Dokan store id so `_provider_id` meta matches what the
+      // marketplace listing uses to key cards (dokan/v1/stores.id).
       const product = await getOrCreateProviderProduct(profile.id, {
         fullName: profile.full_name || '',
         hourlyRate: providerData.hourlyRate,
@@ -61,6 +63,7 @@ export function useSyncProviderToWooCommerce() {
         serviceResources: providerData.serviceResources,
         serviceRates: providerData.serviceRates,
         deliveryCosts: providerData.deliveryCosts,
+        dokanStoreId: vendor?.id ?? null,
       });
 
       // Step 3: Update product status based on provider_is_active
