@@ -78,31 +78,35 @@ export default function CaregiverProfile() {
   }, [bookingDialogOpen, deliveryResourceId, bookingResources]);
 
   const selectedResource = bookingResources.find((r: BookingResourceOption) => String(r.id) === deliveryResourceId);
-  const resourceCostPerHour = Number(selectedResource?.blockCost || 0);
-  // Build the source of truth for what the provider actually offers.
-  // Priority: WC product `_service_rates` meta → profile.specialty (fallback) → empty.
+  // In the flat-resource model, the resource IS the service package and its
+  // blockCost IS the full per-hour rate (no separate base + surcharge).
+  const effectiveRate = Number(selectedResource?.blockCost || 0);
+  // Derive the service-type label from the chosen resource for display + order meta.
+  const bookingTypeLabel = selectedResource?.name || bookingType || "";
+
+  // Auto-pick the first resource when dialog opens so the user can't be stuck.
+  useEffect(() => {
+    if (bookingDialogOpen && !deliveryResourceId && bookingResources.length > 0) {
+      setDeliveryResourceId(String(bookingResources[0].id));
+    }
+  }, [bookingDialogOpen, deliveryResourceId, bookingResources]);
+
+  // Keep `bookingType` in sync with the selected resource for legacy code paths.
+  useEffect(() => {
+    if (selectedResource?.name) setBookingType(selectedResource.name);
+  }, [selectedResource]);
+
+  // Legacy: provider may have profile.specialty without a synced product yet.
+  // We keep `offered` for display in chips but no longer drive the picker from it.
   const offered = useMemo(() => {
     const defaultRate = caregiver?.care_provider_starts_hourly_rate || 0;
     const fromProduct = extractProviderServicesFromProduct(providerProduct, defaultRate);
     if (fromProduct.services.length > 0) return fromProduct;
-    // Fallback: provider has profile specialties but hasn't synced product yet
     const services = caregiver?.specialty || [];
     const rates: Record<string, number> = {};
     services.forEach(s => { rates[s] = defaultRate; });
     return { services, rates };
   }, [providerProduct, caregiver]);
-
-  // Effective hourly rate: per-service rate if available, else default
-  const effectiveRate = bookingType
-    ? (offered.rates[bookingType] ?? caregiver?.care_provider_starts_hourly_rate ?? 0)
-    : (caregiver?.care_provider_starts_hourly_rate ?? 0);
-
-  // Auto-pick the first offered service when dialog opens, so user can't be stuck
-  useEffect(() => {
-    if (bookingDialogOpen && !bookingType && offered.services.length > 0) {
-      setBookingType(offered.services[0]);
-    }
-  }, [bookingDialogOpen, bookingType, offered.services]);
 
   // Check availability when date/time changes
   const checkAvailability = (date: string, time: string) => {
@@ -124,8 +128,8 @@ export default function CaregiverProfile() {
   }
 
   const handleBooking = async () => {
-    if (!bookingDate || !bookingTime || !bookingType) {
-      toast({ title: "Please fill all required fields", variant: "destructive" });
+    if (!bookingDate || !bookingTime || !selectedResource) {
+      toast({ title: "Please pick a service package, date, and time", variant: "destructive" });
       return;
     }
     const selectedDate = new Date(bookingDate + "T" + bookingTime);
@@ -161,17 +165,17 @@ export default function CaregiverProfile() {
     }
     try {
       const recurringNote = recurringPattern !== "none" ? `[Recurring: ${recurringPattern}] ` : "";
-      const deliveryNote = selectedResource ? `[Delivery: ${selectedResource.name}] ` : "";
-      const ratePerHour = effectiveRate + resourceCostPerHour;
+      const packageNote = `[Package: ${selectedResource.name}] `;
+      const ratePerHour = effectiveRate;
       await createBooking.mutateAsync({
         provider_id: caregiver.id,
         appointment_date: bookingDate,
         appointment_time: bookingTime,
         duration_hour: durationHours,
-        service_type: bookingType,
+        service_type: bookingTypeLabel,
         hourly_rate: ratePerHour,
         total_cost: ratePerHour * durationHours,
-        special_instruction: recurringNote + deliveryNote + (bookingNotes || "") || null,
+        special_instruction: recurringNote + packageNote + (bookingNotes || "") || null,
         status: availabilitySetting?.requires_confirmation === false ? "confirmed" : "pending",
         payment_status: "pending",
       });
@@ -188,7 +192,7 @@ export default function CaregiverProfile() {
   };
 
   const durationHrs = parseInt(bookingDuration) || 0;
-  const total = (effectiveRate + resourceCostPerHour) * durationHrs;
+  const total = effectiveRate * durationHrs;
   const hasAvailabilityConflict = Boolean(availabilityWarning);
 
   return (
@@ -359,44 +363,29 @@ export default function CaregiverProfile() {
                   </DialogHeader>
                   <div className="space-y-4 mt-4">
                     <div>
-                      <Label>Care Type *</Label>
-                      {offered.services.length === 0 ? (
+                      <Label>Service Package *</Label>
+                      {bookingResources.length === 0 ? (
                         <div className="text-sm text-muted-foreground bg-muted/50 rounded-md p-3 border border-dashed">
-                          This caregiver hasn't published any services yet. Please send them a message to inquire.
+                          This caregiver hasn't published any service packages yet. Send them a message to negotiate a custom price.
                         </div>
                       ) : (
-                        <Select value={bookingType} onValueChange={setBookingType}>
-                          <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
-                          <SelectContent>
-                            {offered.services.map((s: string) => (
-                              <SelectItem key={s} value={s}>
-                                {s} — ${offered.rates[s] ?? 0}/hr
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                      {bookingType && (
-                        <p className="text-xs text-muted-foreground mt-1.5">
-                          Rate for {bookingType}: <span className="font-semibold text-foreground">${effectiveRate}/hr</span>
-                        </p>
-                      )}
-                    </div>
-                    {bookingResources.length > 0 && (
-                      <div>
-                        <Label>Delivery *</Label>
                         <Select value={deliveryResourceId} onValueChange={setDeliveryResourceId}>
-                          <SelectTrigger><SelectValue placeholder="Select delivery option" /></SelectTrigger>
+                          <SelectTrigger><SelectValue placeholder="Select a package" /></SelectTrigger>
                           <SelectContent>
                             {bookingResources.map((r: BookingResourceOption) => (
                               <SelectItem key={r.id} value={String(r.id)}>
-                                {r.name} {r.blockCost > 0 ? `(+$${r.blockCost}/hr)` : "(included)"}
+                                {r.name} — ${r.blockCost}/hr
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
-                      </div>
-                    )}
+                      )}
+                      {selectedResource && (
+                        <p className="text-xs text-muted-foreground mt-1.5">
+                          Rate: <span className="font-semibold text-foreground">${effectiveRate}/hr</span>
+                        </p>
+                      )}
+                    </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <Label>Date *</Label>
@@ -442,13 +431,13 @@ export default function CaregiverProfile() {
                       <span className="text-sm text-muted-foreground">Estimated Total</span>
                       <span className="text-xl font-bold text-foreground">${total}{recurringPattern !== "none" ? `/${recurringPattern === "weekly" ? "wk" : recurringPattern === "biweekly" ? "2wk" : "mo"}` : ""}</span>
                     </div>
-                    <Button variant="coral" className="w-full" onClick={handleBooking} disabled={createBooking.isPending || hasAvailabilityConflict || offered.services.length === 0}>
+                    <Button variant="coral" className="w-full" onClick={handleBooking} disabled={createBooking.isPending || hasAvailabilityConflict || !selectedResource}>
                       {createBooking.isPending ? "Submitting..." : "Confirm Booking"}
                     </Button>
                     <Button
                       variant="outline"
                       className="w-full"
-                      disabled={addToCart.isPending || !providerProduct?.id || !bookingDate || !bookingTime || !bookingType}
+                      disabled={addToCart.isPending || !providerProduct?.id || !bookingDate || !bookingTime || !selectedResource}
                       onClick={async () => {
                         if (!isAuthenticated) { navigate("/auth"); return; }
                         try {
@@ -459,11 +448,11 @@ export default function CaregiverProfile() {
                               startDate: bookingDate,
                               startTime: bookingTime,
                               durationHours: durationHrs,
-                              serviceType: bookingType,
+                              serviceType: bookingTypeLabel,
                               notes: bookingNotes || undefined,
                             },
                           });
-                          toast({ title: "Added to cart", description: `${caregiver.full_name}'s booking added with ${selectedResource?.name || 'no'} delivery.` });
+                          toast({ title: "Added to cart", description: `${caregiver.full_name}'s ${selectedResource?.name} booking added.` });
                           setBookingDialogOpen(false);
                           navigate('/cart');
                         } catch (e: any) {
