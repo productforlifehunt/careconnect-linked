@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from "react";
-import { useServiceTypes } from "@/hooks/use-service-types";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +19,33 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 
+const TIME_STEP_MINUTES = 30;
+
+function timeToMinutes(value: string) {
+  const [hours, minutes] = value.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
+function minutesToTime(totalMinutes: number) {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
+function formatTimeLabel(value: string) {
+  const [hours, minutes] = value.split(":").map(Number);
+  return new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(2026, 0, 1, hours, minutes));
+}
+
+function getDurationHours(start: string, end: string) {
+  if (!start || !end) return 0;
+  const diffMinutes = timeToMinutes(end) - timeToMinutes(start);
+  return diffMinutes > 0 ? diffMinutes / 60 : 0;
+}
+
 export default function CaregiverProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -34,13 +60,11 @@ export default function CaregiverProfile() {
   const startConversation = useStartConversation();
   const createBooking = useCreateBookingWithWooCommerce();
   const addToCart = useAddToCart();
-  const { serviceTypes } = useServiceTypes();
 
   const [bookingDate, setBookingDate] = useState("");
   const [bookingTime, setBookingTime] = useState("");
-  const [bookingDuration, setBookingDuration] = useState("2");
+  const [bookingEndTime, setBookingEndTime] = useState("");
   const [bookingNotes, setBookingNotes] = useState("");
-  const [bookingType, setBookingType] = useState("");
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
   const [availabilityWarning, setAvailabilityWarning] = useState("");
   const [recurringPattern, setRecurringPattern] = useState("none");
@@ -92,35 +116,71 @@ export default function CaregiverProfile() {
   // blockCost IS the full per-hour rate (no separate base + surcharge).
   const effectiveRate = Number(selectedResource?.blockCost || 0);
   // Derive the service-type label from the chosen resource for display + order meta.
-  const bookingTypeLabel = selectedResource?.name || bookingType || "";
+  const bookingTypeLabel = selectedResource?.name || "";
 
-  // Auto-pick the first resource when dialog opens so the user can't be stuck.
+  const availableTimeRanges = useMemo(() => {
+    if (!bookingDate) return [];
+
+    const dayOfWeek = new Date(`${bookingDate}T12:00:00`).getDay();
+    const specificSlots = (availability || []).filter((slot: any) => slot.specific_date === bookingDate);
+    const candidateSlots = specificSlots.length > 0
+      ? specificSlots.filter((slot: any) => slot.is_available && slot.start_time && slot.end_time)
+      : (availability || []).filter(
+          (slot: any) =>
+            slot.day_of_week === dayOfWeek && slot.is_available && slot.start_time && slot.end_time,
+        );
+
+    return candidateSlots.sort(
+      (a: any, b: any) => String(a.start_time).localeCompare(String(b.start_time)),
+    );
+  }, [availability, bookingDate]);
+
+  const startTimeOptions = useMemo(() => {
+    const options = new Set<string>();
+
+    availableTimeRanges.forEach((slot: any) => {
+      const slotStart = timeToMinutes(String(slot.start_time));
+      const slotEnd = timeToMinutes(String(slot.end_time));
+      for (let minutes = slotStart; minutes + TIME_STEP_MINUTES <= slotEnd; minutes += TIME_STEP_MINUTES) {
+        options.add(minutesToTime(minutes));
+      }
+    });
+
+    return Array.from(options).sort();
+  }, [availableTimeRanges]);
+
+  const endTimeOptions = useMemo(() => {
+    if (!bookingTime) return [];
+
+    const selectedStartMinutes = timeToMinutes(bookingTime);
+    const options = new Set<string>();
+
+    availableTimeRanges.forEach((slot: any) => {
+      const slotStart = timeToMinutes(String(slot.start_time));
+      const slotEnd = timeToMinutes(String(slot.end_time));
+      if (selectedStartMinutes < slotStart || selectedStartMinutes >= slotEnd) return;
+
+      for (
+        let minutes = selectedStartMinutes + TIME_STEP_MINUTES;
+        minutes <= slotEnd;
+        minutes += TIME_STEP_MINUTES
+      ) {
+        options.add(minutesToTime(minutes));
+      }
+    });
+
+    return Array.from(options).sort();
+  }, [availableTimeRanges, bookingTime]);
+
   useEffect(() => {
-    if (bookingDialogOpen && !deliveryResourceId && bookingResources.length > 0) {
-      setDeliveryResourceId(String(bookingResources[0].id));
+    if (bookingEndTime && !endTimeOptions.includes(bookingEndTime)) {
+      setBookingEndTime("");
     }
-  }, [bookingDialogOpen, deliveryResourceId, bookingResources]);
-
-  // Keep `bookingType` in sync with the selected resource for legacy code paths.
-  useEffect(() => {
-    if (selectedResource?.name) setBookingType(selectedResource.name);
-  }, [selectedResource]);
-
-  // Legacy: provider may have profile.specialty without a synced product yet.
-  // We keep `offered` for display in chips but no longer drive the picker from it.
-  const offered = useMemo(() => {
-    const defaultRate = caregiver?.care_provider_starts_hourly_rate || 0;
-    const fromProduct = extractProviderServicesFromProduct(providerProduct, defaultRate);
-    if (fromProduct.services.length > 0) return fromProduct;
-    const services = caregiver?.specialty || [];
-    const rates: Record<string, number> = {};
-    services.forEach(s => { rates[s] = defaultRate; });
-    return { services, rates };
-  }, [providerProduct, caregiver]);
+  }, [bookingEndTime, endTimeOptions]);
 
   // Check availability when date/time changes
-  const checkAvailability = (date: string, time: string) => {
-    const warning = getAvailabilityConflictMessage(availability || [], date, time, Number(bookingDuration));
+  const checkAvailability = (date: string, time: string, endTime = bookingEndTime) => {
+    const warning = getAvailabilityConflictMessage(availability || [], date, time, getDurationHours(time, endTime));
     setAvailabilityWarning(warning || "");
   };
 
