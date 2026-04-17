@@ -330,9 +330,23 @@ export async function getOrCreateProviderProduct(
       serviceRatesMap[r.name] = r.ratePerHour;
     });
 
+    // Aggregate the unique service-type and location slugs across all resources
+    // so we can write them as product attributes for search filtering.
+    const serviceTypeSlugs = Array.from(
+      new Set(flatResources.map(r => r.serviceTypeSlug).filter(Boolean) as string[]),
+    );
+    const locationSlugs = Array.from(
+      new Set(flatResources.map(r => r.locationSlug).filter(Boolean) as string[]),
+    );
+
     // Base product price = 0. The full hourly rate lives on each resource's
     // block_cost so the cart math stays clean (resource.cost × hours).
     const baseProductPrice = '0';
+
+    const minBlockCost = flatResources.reduce(
+      (min, r) => (r.ratePerHour > 0 && (min === 0 || r.ratePerHour < min) ? r.ratePerHour : min),
+      0,
+    );
 
     const productData: any = {
       name: `${providerData.fullName} – Care Service`,
@@ -350,6 +364,8 @@ export async function getOrCreateProviderProduct(
         { key: '_location', value: providerData.location || '' },
         { key: '_service_types', value: JSON.stringify(serviceTypeNames) },
         { key: '_service_rates', value: JSON.stringify(serviceRatesMap) },
+        // Search-cache: minimum block_cost across resources for "from $X" labels.
+        { key: '_min_block_cost', value: String(minBlockCost) },
       ],
       virtual: true,
       downloadable: false,
@@ -359,14 +375,25 @@ export async function getOrCreateProviderProduct(
       regular_price: baseProductPrice,
     };
 
-    if (serviceTypeNames.length > 0) {
-      productData.attributes = [{
-        name: 'Service Type',
-        slug: 'pa_service-type',
+    const attributes: any[] = [];
+    if (serviceTypeSlugs.length > 0) {
+      attributes.push({
+        id: 3, // pa_service-type — primary category for marketplace search
         visible: true,
         variation: false,
-        options: serviceTypeNames,
-      }];
+        options: serviceTypeSlugs,
+      });
+    }
+    if (locationSlugs.length > 0) {
+      attributes.push({
+        id: 4, // pa_service-location — in-person / remote / hybrid
+        visible: true,
+        variation: false,
+        options: locationSlugs,
+      });
+    }
+    if (attributes.length > 0) {
+      productData.attributes = attributes;
     }
 
     let product;
