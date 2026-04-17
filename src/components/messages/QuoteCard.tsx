@@ -3,18 +3,23 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tag, Clock, DollarSign, CheckCircle2, XCircle, Loader2 } from "lucide-react";
-import type { QuoteData } from "@/lib/quote-protocol";
+import { type QuoteData, encodeQuote } from "@/lib/quote-protocol";
 import { useToast } from "@/hooks/use-toast";
 import { useAddToCart } from "@/hooks/use-cart";
 import { createQuoteProduct } from "@/services/quote-product";
+import { useSendMessage } from "@/hooks/use-care-data";
 
 interface QuoteCardProps {
   quote: QuoteData;
   /** True if the current user is the recipient (the buyer). Only the buyer
-   *  sees the Accept & Pay button. */
+   *  sees the Accept & Pay / Decline buttons. */
   isRecipient: boolean;
   /** True if current user sent the quote (seller view) — read-only state. */
   isMe: boolean;
+  /** Conversation id — needed to post the decline notification message. */
+  conversationId?: string;
+  /** The other user's id (seller, when current user is the buyer). */
+  otherUserId?: string;
 }
 
 export function QuoteCard({ quote, isRecipient, isMe }: QuoteCardProps) {
