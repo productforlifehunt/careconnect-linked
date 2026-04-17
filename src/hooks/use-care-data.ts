@@ -326,9 +326,6 @@ export function useGroupMessages(groupId: string | null) {
 export function useSendMessage() {
   const qc = useQueryClient();
   return useMutation({
-export function useSendMessage() {
-  const qc = useQueryClient();
-  return useMutation({
     mutationFn: ({ conversationId, content, receiverUserId }: { conversationId: string; content: string; receiverUserId: string }) => {
       const me = getStoredWPUser();
       const senderId = me ? `wp-${me.user_id}` : "";
