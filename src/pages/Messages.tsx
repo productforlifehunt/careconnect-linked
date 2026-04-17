@@ -96,19 +96,24 @@ export default function Messages() {
   }, [messages]);
 
   const handleSend = () => {
-    if ((!newMessage.trim() && !pendingAttachment) || !selectedConvoId) return;
+    if ((!newMessage.trim() && !pendingAttachment) || !selectedConvoId || !selectedOtherUser?.id) return;
     sendMessage.mutate({
       conversationId: selectedConvoId,
       content: newMessage || (pendingAttachment ? (pendingAttachment.type === "image" ? "📷 Image" : "📎 File") : ""),
+      receiverUserId: selectedOtherUser.id,
     });
     setNewMessage("");
     setPendingAttachment(null);
   };
 
   const handleSendQuote = async (quote: QuoteData) => {
-    if (!selectedConvoId) return;
+    if (!selectedConvoId || !selectedOtherUser?.id) return;
     const encoded = encodeQuote(quote);
-    await sendMessage.mutateAsync({ conversationId: selectedConvoId, content: encoded });
+    await sendMessage.mutateAsync({
+      conversationId: selectedConvoId,
+      content: encoded,
+      receiverUserId: selectedOtherUser.id,
+    });
     qc.invalidateQueries({ queryKey: ["messages"] });
     qc.invalidateQueries({ queryKey: ["conversations"] });
     setQuoteDialogOpen(false);
