@@ -249,6 +249,25 @@ add_action( 'rest_api_init', function () {
 				if ( function_exists( 'wc_delete_product_transients' ) ) {
 					wc_delete_product_transients( $pid );
 				}
+				// CRITICAL: Use WC Bookings internal product setter so the storefront
+				// resource <select> actually renders. Writing meta alone isn't enough —
+				// WC_Product_Booking caches resource_ids internally.
+				if ( function_exists( 'wc_get_product' ) ) {
+					$product = wc_get_product( $pid );
+					if ( $product && method_exists( $product, 'set_resource_ids' ) ) {
+						$product->set_resource_ids( $resource_ids );
+						if ( method_exists( $product, 'set_has_resources' ) ) {
+							$product->set_has_resources( ! empty( $resource_ids ) );
+						}
+						if ( method_exists( $product, 'set_resources_assignment' ) ) {
+							$product->set_resources_assignment( 'customer' );
+						}
+						if ( method_exists( $product, 'set_has_persons' ) && ! empty( $persons ) ) {
+							$product->set_has_persons( true );
+						}
+						$product->save();
+					}
+				}
 				return array(
 					'ok'                  => true,
 					'product_id'          => $pid,
@@ -256,6 +275,7 @@ add_action( 'rest_api_init', function () {
 					'resource_base_costs' => $base_costs,
 					'resource_block_costs'=> $block_costs,
 					'person_count'        => count( $persons ),
+					'wc_setter_used'      => function_exists( 'wc_get_product' ),
 				);
 			},
 		),
