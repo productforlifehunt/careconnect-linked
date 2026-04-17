@@ -113,18 +113,30 @@ export async function ensureCategoryBySlug(slug: string, name?: string, parentId
  */
 
 export interface ServiceRateEntry {
-  serviceType: string; // term name e.g. "Elder Care"
+  serviceType: string; // term name e.g. "Elder Care" (legacy, kept for back-compat)
   hourlyRate: number;
 }
 
 /**
- * Resource costs for delivery mode (Mapping 1: Local vs Virtual).
- * WC Bookings allows multiple resources per product but customer picks ONE.
- * Both costs are per-block (per hour, given duration_unit='hour').
+ * @deprecated Replaced by flat ServiceResource model. Kept only so older
+ * callers compile while we migrate. Local/Virtual surcharges no longer exist —
+ * each resource (e.g. "老人陪伴(当面)" / "老人陪伴(远程)") IS a complete
+ * service package with its own per-hour rate.
  */
 export interface DeliveryResourceCosts {
-  localCost?: number;   // surcharge per hour for in-person care
-  virtualCost?: number; // surcharge per hour for remote/video care
+  localCost?: number;
+  virtualCost?: number;
+}
+
+/**
+ * NEW flat service resource model. Vendor maintains a free-form list of
+ * service packages (e.g. "儿童护理", "老人陪伴(当面)", "老人陪伴(远程)").
+ * Each entry becomes 1 bookable_resource on the product. Customer picks
+ * exactly one at checkout. Total = ratePerHour × hours.
+ */
+export interface ServiceResource {
+  name: string;
+  ratePerHour: number;
 }
 
 // ─── Admin Basic Auth for Dokan admin operations ───────────
