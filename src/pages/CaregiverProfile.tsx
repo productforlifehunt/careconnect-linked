@@ -506,14 +506,57 @@ export default function CaregiverProfile() {
                         </p>
                       )}
                     </div>
+                    <div>
+                      <Label>Date *</Label>
+                      <Input
+                        type="date"
+                        value={bookingDate}
+                        onChange={e => {
+                          setBookingDate(e.target.value);
+                          setBookingTime("");
+                          setBookingEndTime("");
+                          setAvailabilityWarning("");
+                        }}
+                        min={new Date().toISOString().split("T")[0]}
+                      />
+                    </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <Label>Date *</Label>
-                        <Input type="date" value={bookingDate} onChange={e => { setBookingDate(e.target.value); checkAvailability(e.target.value, bookingTime); }} min={new Date().toISOString().split("T")[0]} />
+                        <Label>From *</Label>
+                        <Select
+                          value={bookingTime}
+                          onValueChange={(value) => {
+                            setBookingTime(value);
+                            setBookingEndTime("");
+                            checkAvailability(bookingDate, value, "");
+                          }}
+                          disabled={!bookingDate || startTimeOptions.length === 0}
+                        >
+                          <SelectTrigger><SelectValue placeholder={bookingDate ? "Select start" : "Choose date first"} /></SelectTrigger>
+                          <SelectContent>
+                            {startTimeOptions.map((time) => (
+                              <SelectItem key={time} value={time}>{formatTimeLabel(time)}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div>
-                        <Label>Time *</Label>
-                        <Input type="time" value={bookingTime} onChange={e => { setBookingTime(e.target.value); checkAvailability(bookingDate, e.target.value); }} />
+                        <Label>To *</Label>
+                        <Select
+                          value={bookingEndTime}
+                          onValueChange={(value) => {
+                            setBookingEndTime(value);
+                            checkAvailability(bookingDate, bookingTime, value);
+                          }}
+                          disabled={!bookingTime || endTimeOptions.length === 0}
+                        >
+                          <SelectTrigger><SelectValue placeholder={bookingTime ? "Select end" : "Choose start first"} /></SelectTrigger>
+                          <SelectContent>
+                            {endTimeOptions.map((time) => (
+                              <SelectItem key={time} value={time}>{formatTimeLabel(time)}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                     {availabilityWarning && (
@@ -522,14 +565,11 @@ export default function CaregiverProfile() {
                         {availabilityWarning}
                       </div>
                     )}
-                    <div>
-                      <Label>Duration (hours)</Label>
-                      <Select value={bookingDuration} onValueChange={setBookingDuration}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {[1, 2, 3, 4, 5, 6, 8].map(h => <SelectItem key={h} value={String(h)}>{h} hour{h > 1 ? "s" : ""}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                    <div className="rounded-lg border border-border bg-muted/30 px-3 py-2">
+                      <div className="text-xs text-muted-foreground">Duration</div>
+                      <div className="text-sm font-medium text-foreground">
+                        {durationHrs > 0 ? `${durationHrs} hour${durationHrs > 1 ? "s" : ""}` : "Choose a time range"}
+                      </div>
                     </div>
                     <div>
                       <Label>Recurring</Label>
@@ -557,7 +597,7 @@ export default function CaregiverProfile() {
                     <Button
                       variant="outline"
                       className="w-full"
-                      disabled={addToCart.isPending || !bookingDate || !bookingTime || !selectedResource}
+                      disabled={addToCart.isPending || !bookingDate || !bookingTime || !bookingEndTime || !selectedResource || hasAvailabilityConflict}
                       onClick={async () => {
                         if (!isAuthenticated) { navigate("/auth"); return; }
                         try {
