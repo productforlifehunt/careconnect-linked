@@ -5,9 +5,11 @@ import { QuoteCard } from "./QuoteCard";
 interface MessageBubbleProps {
   message: any;
   isMe: boolean;
+  conversationId?: string;
+  otherUserId?: string;
 }
 
-export function MessageBubble({ message, isMe }: MessageBubbleProps) {
+export function MessageBubble({ message, isMe, conversationId, otherUserId }: MessageBubbleProps) {
   const rawContent: string = message.message_content || message.content || "";
   const quote = extractQuote(rawContent);
 
@@ -15,7 +17,13 @@ export function MessageBubble({ message, isMe }: MessageBubbleProps) {
   if (quote) {
     return (
       <div className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
-        <QuoteCard quote={quote} isMe={isMe} isRecipient={!isMe} />
+        <QuoteCard
+          quote={quote}
+          isMe={isMe}
+          isRecipient={!isMe}
+          conversationId={conversationId}
+          otherUserId={otherUserId}
+        />
       </div>
     );
   }
