@@ -539,14 +539,18 @@ async function syncBookingPersons(productId: number, serviceRates: ServiceRateEn
 }
 
 /**
- * Sync delivery-mode Resources (Local / Virtual) for a product.
- * WC Bookings allows multiple resources per product but customer picks ONE.
- * Each resource has a `base_cost` and `block_cost` (per-hour surcharge).
+ * Sync delivery-mode Resources (Local / Virtual) for a product and return
+ * the resource IDs the caller must include in the booking-config PUT.
  *
- * Uses the official `/wc-bookings/v1/resources` endpoint, then links them
- * to the product via `/wc-bookings/v1/products/{id}` `resource_ids`.
+ * IMPORTANT: WC Bookings REST drops `resource_ids` when sent in a PUT that
+ * doesn't also carry the full booking config. The link MUST happen in the
+ * same PUT as `has_resources` — so this function only upserts and returns
+ * IDs; the caller (`configureBookingProduct`) does the linking.
  */
-async function syncBookingResources(productId: number, deliveryCosts: DeliveryResourceCosts) {
+async function syncBookingResources(
+  productId: number,
+  deliveryCosts: DeliveryResourceCosts,
+): Promise<number[]> {
   const desired: Array<{ name: string; cost: number; metaTag: string }> = [
     { name: 'Local (In-Person)', cost: deliveryCosts.localCost ?? 0, metaTag: 'local' },
     { name: 'Virtual (Remote)', cost: deliveryCosts.virtualCost ?? 0, metaTag: 'virtual' },
@@ -598,6 +602,9 @@ async function syncBookingResources(productId: number, deliveryCosts: DeliveryRe
       console.warn(`Failed to upsert resource "${d.name}":`, e);
     }
   }
+
+  return linkedIds;
+}
 
   // Link resources to the product
   if (linkedIds.length > 0) {
