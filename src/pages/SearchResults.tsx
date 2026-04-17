@@ -150,6 +150,17 @@ export default function SearchResults() {
       ) : (
         <>
           <div>
+            <Label className="text-sm font-semibold mb-3 block">{isZh ? "服务方式" : "Delivery"}</Label>
+            <div className="space-y-2">
+              {LOCATION_OPTIONS.map(opt => (
+                <label key={opt.slug} className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox checked={selectedLocations.includes(opt.slug)} onCheckedChange={() => { toggleLocation(opt.slug); setCurrentPage(1); }} />
+                  <span className="text-sm">{isZh ? opt.zh : opt.en}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <div>
             <Label className="text-sm font-semibold mb-3 block">{t("search.specialty")}</Label>
             <div className="space-y-2">
               {specialties.map(s => (
