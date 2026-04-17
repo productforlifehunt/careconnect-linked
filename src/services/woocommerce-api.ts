@@ -384,13 +384,24 @@ async function configureBookingProduct(
       : (serviceRates[0]?.hourlyRate || 0);
 
     // Persons are enabled when there is more than one priced service.
-    // Resources are enabled whenever a delivery surcharge is set OR the
-    // provider explicitly offers both Local and Virtual.
+    // Resources are enabled whenever a delivery surcharge is configured.
     const hasPersons = serviceRates.length > 0;
     const hasResources = (deliveryCosts.localCost ?? 0) >= 0 || (deliveryCosts.virtualCost ?? 0) >= 0;
 
+    // 1. Pre-create / upsert resources FIRST so we can include their IDs in
+    //    the single booking-config PUT below. Sending `resource_ids` in a
+    //    follow-up PUT is silently dropped by WC Bookings REST.
+    let resourceIds: number[] = [];
+    if (hasResources) {
+      try {
+        resourceIds = await syncBookingResources(productId, deliveryCosts);
+      } catch (e) {
+        console.warn('Failed to sync booking resources:', e);
+      }
+    }
+
     const bookingConfig: Record<string, any> = {
-      duration_type: 'customer',          // lets customer pick block count (1–8 hrs)
+      duration_type: 'customer',
       duration_unit: 'hour',
       duration: 1,
       min_duration: 1,
@@ -406,10 +417,11 @@ async function configureBookingProduct(
       qty: 1,
       max_bookings_per_block: 1,
       enable_range_picker: true,
-      pricing: [], // explicitly clear any leftover unlabeled range rules
+      pricing: [],
       has_persons: hasPersons,
-      has_resources: hasResources,
-      resources_assignment: 'customer', // customer picks Local vs Virtual
+      has_resources: hasResources && resourceIds.length > 0,
+      resources_assignment: 'customer',
+      resource_ids: resourceIds, // CRITICAL: must be in same PUT as has_resources
     };
 
     // PUT — POST is silently ignored for most fields by WC Bookings REST
@@ -418,21 +430,14 @@ async function configureBookingProduct(
       body: JSON.stringify(bookingConfig),
     });
 
-    // Sync Person Types (one per priced service) and Resources (Local/Virtual).
-    // These run sequentially after the parent product config so WC Bookings
-    // recognizes has_persons / has_resources before child posts are linked.
+    // 2. Sync Person Types AFTER the parent has has_persons=true. Stub
+    //    placeholders auto-spawned by WC Bookings will be cleaned up inside
+    //    syncBookingPersons.
     if (hasPersons) {
       try {
         await syncBookingPersons(productId, serviceRates);
       } catch (e) {
         console.warn('Failed to sync booking persons:', e);
-      }
-    }
-    if (hasResources) {
-      try {
-        await syncBookingResources(productId, deliveryCosts);
-      } catch (e) {
-        console.warn('Failed to sync booking resources:', e);
       }
     }
 
@@ -470,7 +475,6 @@ async function syncBookingPersons(productId: number, serviceRates: ServiceRateEn
       `../wp/v2/bookable_person?parent=${productId}&per_page=100&status=publish,draft`
     ) || [];
   } catch {
-    // Fallback path — try direct wp/v2 namespace via a custom helper
     try {
       const url = buildWPUrl(`wp/v2/bookable_person?parent=${productId}&per_page=100&status=publish,draft`);
       const res = await fetch(url, { headers: getAuthHeaders() });
@@ -480,7 +484,7 @@ async function syncBookingPersons(productId: number, serviceRates: ServiceRateEn
 
   const existingByTitle: Record<string, any> = {};
   existingPersons.forEach((p: any) => {
-    const title = (p?.title?.rendered || p?.title || '').toString().trim();
+    const title = (p?.title?.rendered || p?.title?.raw || p?.title || '').toString().trim();
     if (title) existingByTitle[title] = p;
   });
 
@@ -515,9 +519,15 @@ async function syncBookingPersons(productId: number, serviceRates: ServiceRateEn
     }
   }
 
-  // Trash persons no longer in serviceRates
+  // Trash any person not in our desired set — including stub "Person Type #N"
+  // entries auto-created by WC Bookings when has_persons=true is first set.
+  const STUB_RE = /^\s*Person Type\s*#?\d*\s*$/i;
   for (const [title, person] of Object.entries(existingByTitle)) {
-    if (!desiredTitles.has(title)) {
+    const isStub = !title || STUB_RE.test(title);
+    if (!desiredTitles.has(title) || isStub) {
+      // If the stub *happens* to share a title we want, only delete the stub copy
+      // (the real upsert above will have already created/updated the named one).
+      if (desiredTitles.has(title) && !isStub) continue;
       try {
         await fetch(buildWPUrl(`wp/v2/bookable_person/${person.id}?force=true`), {
           method: 'DELETE',
@@ -529,14 +539,18 @@ async function syncBookingPersons(productId: number, serviceRates: ServiceRateEn
 }
 
 /**
- * Sync delivery-mode Resources (Local / Virtual) for a product.
- * WC Bookings allows multiple resources per product but customer picks ONE.
- * Each resource has a `base_cost` and `block_cost` (per-hour surcharge).
+ * Sync delivery-mode Resources (Local / Virtual) for a product and return
+ * the resource IDs the caller must include in the booking-config PUT.
  *
- * Uses the official `/wc-bookings/v1/resources` endpoint, then links them
- * to the product via `/wc-bookings/v1/products/{id}` `resource_ids`.
+ * IMPORTANT: WC Bookings REST drops `resource_ids` when sent in a PUT that
+ * doesn't also carry the full booking config. The link MUST happen in the
+ * same PUT as `has_resources` — so this function only upserts and returns
+ * IDs; the caller (`configureBookingProduct`) does the linking.
  */
-async function syncBookingResources(productId: number, deliveryCosts: DeliveryResourceCosts) {
+async function syncBookingResources(
+  productId: number,
+  deliveryCosts: DeliveryResourceCosts,
+): Promise<number[]> {
   const desired: Array<{ name: string; cost: number; metaTag: string }> = [
     { name: 'Local (In-Person)', cost: deliveryCosts.localCost ?? 0, metaTag: 'local' },
     { name: 'Virtual (Remote)', cost: deliveryCosts.virtualCost ?? 0, metaTag: 'virtual' },
@@ -564,47 +578,44 @@ async function syncBookingResources(productId: number, deliveryCosts: DeliveryRe
   const linkedIds: number[] = [];
   for (const d of desired) {
     const existing = existingByTag[d.metaTag];
+    // wc-bookings/v1/resources is READ-ONLY (POST returns 405). We must use
+    // wp/v2/bookable_resource which creates the post + persists cost meta.
+    // Requires the "CareConnect Bookable REST v2" snippet to expose the CPT.
     const body = {
-      name: d.name,
-      base_cost: d.cost,
-      block_cost: d.cost, // per-hour surcharge
-      qty: 1,
+      title: d.name,
+      status: 'publish',
+      meta: {
+        _wc_booking_base_cost: d.cost,
+        _wc_booking_block_cost: d.cost,
+        _wc_booking_qty: 1,
+      },
     };
     try {
-      if (existing) {
-        await wcBookingsFetch(`resources/${existing.id}`, {
-          method: 'PUT',
-          body: JSON.stringify(body),
-        });
+      const url = existing
+        ? buildWPUrl(`wp/v2/bookable_resource/${existing.id}`)
+        : buildWPUrl(`wp/v2/bookable_resource`);
+      const res = await fetch(url, {
+        method: existing ? 'PUT' : 'POST',
+        headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.id) linkedIds.push(data.id);
+        else if (existing?.id) linkedIds.push(existing.id);
+      } else if (existing?.id) {
         linkedIds.push(existing.id);
-      } else {
-        const created = await wcBookingsFetch(`resources`, {
-          method: 'POST',
-          body: JSON.stringify(body),
-        });
-        if (created?.id) linkedIds.push(created.id);
       }
     } catch (e) {
       console.warn(`Failed to upsert resource "${d.name}":`, e);
+      if (existing?.id) linkedIds.push(existing.id);
     }
   }
 
-  // Link resources to the product
-  if (linkedIds.length > 0) {
-    try {
-      await wcBookingsFetch(`products/${productId}`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          has_resources: true,
-          resources_assignment: 'customer',
-          resource_ids: linkedIds,
-        }),
-      });
-    } catch (e) {
-      console.warn('Failed to link resources to product:', e);
-    }
-  }
+  return linkedIds;
 }
+
+
 // Get provider's product by provider ID
 export async function getProviderProduct(providerId: string) {
   try {
