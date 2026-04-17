@@ -30,6 +30,12 @@ export interface Profile {
   // ─── Computed / external (Dokan/WooCommerce) ────────────────
   rating_average: number | null;
   rating_count: number | null;
+  /** Lowest per-hour block_cost across the provider's WC Bookings resources. */
+  min_block_cost?: number | null;
+  /** pa_service-type slugs offered by this provider (from product attributes). */
+  service_type_slugs?: string[];
+  /** pa_service-location slugs: in-person | remote | hybrid. */
+  service_location_slugs?: string[];
 
   // ─── Timestamps ─────────────────────────────────────────────
   created_at: string;
