@@ -327,6 +327,15 @@ export default function Messages() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Quote dialog: send a price quote in the active conversation */}
+      <QuoteDialog
+        open={quoteDialogOpen}
+        onOpenChange={setQuoteDialogOpen}
+        vendorUserId={selectedOtherUser?.id || ""}
+        onSend={handleSendQuote}
+        submitting={sendMessage.isPending}
+      />
     </div>
   );
 }
