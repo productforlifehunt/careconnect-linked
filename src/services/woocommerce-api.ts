@@ -791,12 +791,18 @@ export interface ProviderProductSummary {
 export async function fetchAllProviderProductSummaries(): Promise<Map<string, ProviderProductSummary>> {
   const map = new Map<string, ProviderProductSummary>();
   try {
-    // Pull all booking products (not category-filtered) so we don't lose
-    // provider products that vendor API created in `uncategorized`. We then
-    // join client-side via the `_provider_id` meta written by getOrCreate.
-    const products = await wcFetch(
-      `products?per_page=100&status=publish&type=booking`,
+    // Use admin Basic Auth (wcFetch with admin headers) so unauthenticated
+    // visitors / non-admin logged-in users can still hydrate the marketplace
+    // listing. The JWT token alone returns 401 for `wc/v3/products`.
+    const url = buildWPUrl(
+      `wc/v3/products?per_page=100&status=publish&type=booking`,
     );
+    const res = await fetch(url, { headers: getAdminHeaders('application/json') });
+    if (!res.ok) {
+      console.warn('fetchAllProviderProductSummaries: admin fetch failed', res.status);
+      return map;
+    }
+    const products = await res.json();
     if (!Array.isArray(products)) return map;
 
     const toSlug = (s: string) => String(s).trim().toLowerCase().replace(/\s+/g, '-');
