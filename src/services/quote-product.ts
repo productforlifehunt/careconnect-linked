@@ -85,26 +85,27 @@ export async function createQuoteProduct(
   if (buyerName) meta.push({ key: "_quote_buyer", value: buyerName });
 
   const payload = {
+    amount: quote.amount,
+    vendor_user_id: Number(numericVendorId),
     name,
-    type: "simple",
     description,
-    short_description: description,
-    regular_price: String(quote.amount),
-    catalog_visibility: "hidden",
-    status: "publish",
-    virtual: true,
-    downloadable: false,
-    manage_stock: false,
-    stock_status: "instock",
-    meta_data: meta,
+    meta,
   };
 
-  // Create via wc/v3 with admin/JWT — we set _dokan_vendor_id so Dokan picks
-  // up the right vendor for commission split at order time.
-  const product = await wcFetch("products", {
+  // Use elevated careconnect/v1/quote-product endpoint (deployed via
+  // Code Snippets plugin) — buyers don't have wc/v3 product-create caps,
+  // so the server creates the hidden product on the vendor's behalf.
+  const url = buildWPUrl(`careconnect/v1/quote-product`);
+  const res = await fetch(url, {
     method: "POST",
+    headers: authHeaders(),
     body: JSON.stringify(payload),
   });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Quote product API ${res.status}: ${text}`);
+  }
+  const product = await res.json();
 
-  return { id: Number(product.id), price: Number(product.regular_price || quote.amount) };
+  return { id: Number(product.id), price: Number(product.price || quote.amount) };
 }
