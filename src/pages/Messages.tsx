@@ -148,8 +148,9 @@ export default function Messages() {
   };
 
   const filteredConvos = (conversations || []).filter((c: any) => {
+    if (!searchQuery.trim()) return true;
     const other = getOtherUser(c);
-    return other?.full_name?.toLowerCase().includes(searchQuery.toLowerCase());
+    return (other?.full_name || "").toLowerCase().includes(searchQuery.toLowerCase());
   });
 
   const ConvoSkeleton = () => (
