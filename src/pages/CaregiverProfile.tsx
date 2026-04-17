@@ -395,6 +395,9 @@ export default function CaregiverProfile() {
                         </Select>
                       </div>
                     )}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label>Date *</Label>
                         <Input type="date" value={bookingDate} onChange={e => { setBookingDate(e.target.value); checkAvailability(e.target.value, bookingTime); }} min={new Date().toISOString().split("T")[0]} />
                       </div>
                       <div>
