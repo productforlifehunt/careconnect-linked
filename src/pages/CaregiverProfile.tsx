@@ -445,6 +445,34 @@ export default function CaregiverProfile() {
                     <Button variant="coral" className="w-full" onClick={handleBooking} disabled={createBooking.isPending || hasAvailabilityConflict || offered.services.length === 0}>
                       {createBooking.isPending ? "Submitting..." : "Confirm Booking"}
                     </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      disabled={addToCart.isPending || !providerProduct?.id || !bookingDate || !bookingTime || !bookingType}
+                      onClick={async () => {
+                        if (!isAuthenticated) { navigate("/auth"); return; }
+                        try {
+                          await addToCart.mutateAsync({
+                            productId: providerProduct.id,
+                            booking: {
+                              resourceId: selectedResource?.id,
+                              startDate: bookingDate,
+                              startTime: bookingTime,
+                              durationHours: durationHrs,
+                              serviceType: bookingType,
+                              notes: bookingNotes || undefined,
+                            },
+                          });
+                          toast({ title: "Added to cart", description: `${caregiver.full_name}'s booking added with ${selectedResource?.name || 'no'} delivery.` });
+                          setBookingDialogOpen(false);
+                          navigate('/cart');
+                        } catch (e: any) {
+                          toast({ title: "Failed", description: e.message, variant: "destructive" });
+                        }
+                      }}
+                    >
+                      {addToCart.isPending ? "Adding…" : "Add to Cart & Checkout"}
+                    </Button>
                   </div>
                 </DialogContent>
               </Dialog>
