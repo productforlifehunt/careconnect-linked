@@ -266,7 +266,11 @@ export async function getOrCreateProviderProduct(
     const categoryIds = [parentCat.id];
     const sku = `care-provider-${providerId}`;
 
-    // Check if product already exists
+    // Check if product already exists. Try (1) the canonical SKU we generate,
+    // then (2) any product with `_provider_id` meta matching this provider —
+    // legacy products were created with different prefixes (e.g. `wp-1`)
+    // and Dokan sometimes mutates the SKU. Without (2), every save would
+    // duplicate the bookable_person stubs.
     let existingProduct: any = null;
     try {
       const existingProducts = await wcFetch(`products?sku=${sku}`);
@@ -274,6 +278,19 @@ export async function getOrCreateProviderProduct(
         existingProduct = existingProducts[0];
       }
     } catch { /* no existing product */ }
+    if (!existingProduct) {
+      try {
+        const all = await wcFetch(`products?per_page=100&status=any`);
+        if (Array.isArray(all)) {
+          existingProduct = all.find((p: any) => {
+            const m = Array.isArray(p?.meta_data)
+              ? p.meta_data.find((x: any) => x?.key === '_provider_id')?.value
+              : null;
+            return String(m || '') === String(providerId);
+          }) || null;
+        }
+      } catch { /* ignore */ }
+    }
 
     const serviceRates = providerData.serviceRates || [];
     const serviceTypeNames = serviceRates.length > 0
@@ -340,15 +357,21 @@ export async function getOrCreateProviderProduct(
     }
 
     // Step 2: Convert product type from 'simple' to 'booking' via WC API
-    // (Dokan doesn't support booking type natively)
+    // (Dokan doesn't support booking type natively). Also force-publish:
+    // Dokan auto-drafts new vendor products awaiting admin approval, which
+    // hides the listing from the catalog and breaks the storefront preview.
     if (product?.id) {
       try {
         await wcFetch(`products/${product.id}`, {
           method: 'PUT',
-          body: JSON.stringify({ type: 'booking' }),
+          body: JSON.stringify({
+            type: 'booking',
+            status: 'publish',
+            regular_price: String(providerData.hourlyRate || 0),
+          }),
         });
       } catch (e) {
-        console.warn('Failed to convert product to booking type:', e);
+        console.warn('Failed to convert/publish product:', e);
       }
 
       // Step 3: Configure WC Bookings core fields, Person Types, and Resources
