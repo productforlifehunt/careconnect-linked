@@ -758,7 +758,8 @@ export interface BookingResourceOption {
 export async function fetchProductBookingResources(productId: number): Promise<BookingResourceOption[]> {
   try {
     const url = buildWPUrl(`wp/v2/bookable_resource?product_id=${productId}&per_page=20&_fields=id,title,meta`);
-    const res = await fetch(url, { headers: { ...getAuthHeaders() } });
+    // Use admin Basic Auth so unauthenticated visitors still see resource costs.
+    const res = await fetch(url, { headers: getAdminHeaders('application/json') });
     if (!res.ok) return [];
     const rows = await res.json();
     return (rows || []).map((r: any) => ({
