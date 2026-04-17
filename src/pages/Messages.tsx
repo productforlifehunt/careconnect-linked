@@ -39,9 +39,20 @@ export default function Messages() {
   const { data: newConvoResults } = useSearchProfiles(newConvoSearch);
   const [handledNavState, setHandledNavState] = useState(false);
 
+  // Conversation rows from the WP adapter are flat: participant_1_id / participant_2_id / other_user_id (already prefixed wp-).
+  // We surface the "other" side as a minimal user stub; full name/avatar can be fetched lazily later.
   const getOtherUser = (convo: any) => {
-    if (!profile?.id) return null;
-    return convo.participant_1?.id === profile.id ? convo.participant_2 : convo.participant_1;
+    if (!convo) return null;
+    const otherId =
+      convo.other_user_id ||
+      (profile?.id && String(convo.participant_1_id) === String(profile.id).replace(/^wp-/, "")
+        ? `wp-${convo.participant_2_id}`
+        : `wp-${convo.participant_1_id}`);
+    return {
+      id: otherId,
+      full_name: convo.other_user_name || `User ${String(otherId).replace(/^wp-/, "")}`,
+      avatar_url: convo.other_user_avatar || null,
+    };
   };
 
   // Poll conversations every 15 seconds (WordPress CCT has no WebSocket support)
@@ -89,7 +100,11 @@ export default function Messages() {
   }, [conversations, selectedConvoId, profile?.id]);
 
   const otherUserId = selectedOtherUser?.id || null;
-  const { data: messages, isLoading: msgsLoading } = useDirectMessages(otherUserId);
+  // Messages are fetched by conversationId, not by otherUserId.
+  const { data: messages, isLoading: msgsLoading } = useDirectMessages(selectedConvoId);
+
+  // Backwards-compat: keep a no-op reference to silence linter on unused.
+  void otherUserId;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -133,8 +148,9 @@ export default function Messages() {
   };
 
   const filteredConvos = (conversations || []).filter((c: any) => {
+    if (!searchQuery.trim()) return true;
     const other = getOtherUser(c);
-    return other?.full_name?.toLowerCase().includes(searchQuery.toLowerCase());
+    return (other?.full_name || "").toLowerCase().includes(searchQuery.toLowerCase());
   });
 
   const ConvoSkeleton = () => (
