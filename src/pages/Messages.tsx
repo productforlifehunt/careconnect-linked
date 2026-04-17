@@ -262,6 +262,15 @@ export default function Messages() {
             )}
             <div className="flex gap-2">
               <MessageAttachment onAttach={(url, type) => setPendingAttachment({ url, type })} disabled={sendMessage.isPending} />
+              <Button
+                variant="ghost"
+                size="icon"
+                title="Send a price quote"
+                onClick={() => setQuoteDialogOpen(true)}
+                disabled={!selectedConvoId}
+              >
+                <Tag className="h-4 w-4" />
+              </Button>
               <Input
                 placeholder={t("messages.typeMessage")}
                 value={newMessage}
