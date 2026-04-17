@@ -8,13 +8,29 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, DollarSign, Briefcase, Shield, Phone, Eye, EyeOff, X, Store, ShoppingBag, Home, Video } from "lucide-react";
+import { MapPin, DollarSign, Briefcase, Shield, Phone, Eye, EyeOff, X, Store, ShoppingBag, Plus, Trash2 } from "lucide-react";
 import { useMyProfile, useUpdateProfile } from "@/hooks/use-care-data";
 import { useSyncProviderToWooCommerce, useProviderWooCommerceProduct } from "@/hooks/use-woocommerce";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { ALL_CERTIFICATIONS, getCertificationKey } from "@/lib/specialty-i18n";
-import { FIXED_SERVICE_TYPES } from "@/lib/fixed-service-types";
+
+/**
+ * Flat service-resource model. Each row is one bookable_resource the
+ * customer picks at checkout (e.g. "儿童陪伴(当面)"). The full hourly rate
+ * lives on the resource — no separate person/delivery split.
+ */
+interface ServiceResourceRow {
+  name: string;
+  ratePerHour: string;
+}
+
+const STARTER_RESOURCES: ServiceResourceRow[] = [
+  { name: "老人陪伴 (当面)", ratePerHour: "50" },
+  { name: "老人陪伴 (远程)", ratePerHour: "30" },
+  { name: "儿童陪伴 (当面)", ratePerHour: "40" },
+  { name: "儿童陪伴 (远程)", ratePerHour: "25" },
+];
 
 export default function ProviderSettingsTab() {
   const { t } = useTranslation();
@@ -23,19 +39,15 @@ export default function ProviderSettingsTab() {
   const updateProfile = useUpdateProfile();
   const syncToWooCommerce = useSyncProviderToWooCommerce();
   const { data: wcProduct, isLoading: wcLoading } = useProviderWooCommerceProduct();
-  const serviceTypes = FIXED_SERVICE_TYPES;
 
   const [location, setLocation] = useState("");
   const [hourlyRate, setHourlyRate] = useState("");
   const [bio, setBio] = useState("");
   const [phone, setPhone] = useState("");
   const [experience, setExperience] = useState("");
-  const [selectedServices, setSelectedServices] = useState<string[]>([]);
-  const [serviceRates, setServiceRates] = useState<Record<string, string>>({});
   const [certifications, setCertifications] = useState<string[]>([]);
   const [isActive, setIsActive] = useState(false);
-  const [localCost, setLocalCost] = useState("0");
-  const [virtualCost, setVirtualCost] = useState("0");
+  const [serviceResources, setServiceResources] = useState<ServiceResourceRow[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -45,41 +57,27 @@ export default function ProviderSettingsTab() {
       setBio(profile.bio || "");
       setPhone(profile.phone || "");
       setExperience(profile.years_of_experience?.toString() || "");
-      setSelectedServices(profile.specialty || []);
       setCertifications(profile.certifications || []);
       setIsActive(profile.care_provider_is_active || false);
-      setLocalCost(((profile as any).care_provider_local_cost ?? 0).toString());
-      setVirtualCost(((profile as any).care_provider_virtual_cost ?? 0).toString());
-      // Initialize per-service rates from profile meta if available
-      const existingRates: Record<string, string> = {};
-      (profile.specialty || []).forEach((s: string) => {
-        existingRates[s] = profile.care_provider_starts_hourly_rate?.toString() || "";
-      });
-      setServiceRates(existingRates);
+
+      // Hydrate flat service resources from existing WC product meta if present.
+      // _service_rates is a JSON map { name: rate }. If empty, leave list empty
+      // so the user can either add their own or click "Use starter list".
+      let initial: ServiceResourceRow[] = [];
+      try {
+        const meta = (wcProduct as any)?.meta_data?.find?.((m: any) => m.key === "_service_rates")?.value;
+        if (meta) {
+          const parsed = typeof meta === "string" ? JSON.parse(meta) : meta;
+          initial = Object.entries(parsed || {}).map(([name, rate]) => ({
+            name,
+            ratePerHour: String(rate ?? ""),
+          }));
+        }
+      } catch { /* ignore */ }
+      setServiceResources(initial);
       setLoaded(true);
     }
-  }, [profile, loaded]);
-
-  // Initialize rate for newly selected service with default rate
-  useEffect(() => {
-    setServiceRates(prev => {
-      const next = { ...prev };
-      selectedServices.forEach(s => {
-        if (!(s in next)) next[s] = hourlyRate || "";
-      });
-      // Remove rates for deselected services
-      Object.keys(next).forEach(k => {
-        if (!selectedServices.includes(k)) delete next[k];
-      });
-      return next;
-    });
-  }, [selectedServices, hourlyRate]);
-
-  const toggleService = (name: string) => {
-    setSelectedServices(prev =>
-      prev.includes(name) ? prev.filter(x => x !== name) : [...prev, name]
-    );
-  };
+  }, [profile, wcProduct, loaded]);
 
   const toggleCert = (name: string) => {
     setCertifications(prev =>
@@ -87,12 +85,28 @@ export default function ProviderSettingsTab() {
     );
   };
 
+  const updateRow = (idx: number, patch: Partial<ServiceResourceRow>) => {
+    setServiceResources(prev => prev.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
+  };
+
+  const addRow = () => {
+    setServiceResources(prev => [...prev, { name: "", ratePerHour: hourlyRate || "" }]);
+  };
+
+  const removeRow = (idx: number) => {
+    setServiceResources(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const useStarterList = () => {
+    setServiceResources(STARTER_RESOURCES.map(r => ({ ...r })));
+  };
+
   const handleSave = async () => {
     try {
-      const rateEntries = selectedServices.map(s => ({
-        serviceType: s,
-        hourlyRate: parseFloat(serviceRates[s]) || parseFloat(hourlyRate) || 0,
-      }));
+      // Normalize: drop empty names; coerce rates to numbers
+      const cleaned = serviceResources
+        .map(r => ({ name: r.name.trim(), ratePerHour: parseFloat(r.ratePerHour) || 0 }))
+        .filter(r => r.name.length > 0);
 
       // Save profile via WordPress
       await updateProfile.mutateAsync({
@@ -101,25 +115,22 @@ export default function ProviderSettingsTab() {
         bio,
         phone,
         years_of_experience: parseInt(experience) || 0,
-        specialty: selectedServices,
+        // Mirror the resource names into legacy `specialty` for display fallback
+        specialty: cleaned.map(r => r.name),
         certifications,
         care_provider_is_active: isActive,
       });
 
-      // Then sync to WooCommerce/Dokan with per-service-type rates + delivery costs
+      // Sync to WooCommerce/Dokan with the flat service-resource list
       await syncToWooCommerce.mutateAsync({
         hourlyRate: parseFloat(hourlyRate) || 0,
         bio,
-        specialties: selectedServices,
+        specialties: cleaned.map(r => r.name),
         certifications,
         yearsOfExperience: parseInt(experience) || 0,
         location,
         providerIsActive: isActive,
-        serviceRates: rateEntries,
-        deliveryCosts: {
-          localCost: parseFloat(localCost) || 0,
-          virtualCost: parseFloat(virtualCost) || 0,
-        },
+        serviceResources: cleaned,
       });
 
       toast({ title: t("profile.profileUpdated"), description: "Profile synced to marketplace" });
@@ -164,8 +175,8 @@ export default function ProviderSettingsTab() {
                   {wcLoading ? "Checking..." : wcProduct ? t("providerDash.productListed") || "Service Product Listed" : t("providerDash.productNotListed") || "Service Product Not Listed"}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {wcProduct 
-                    ? `${t("providerDash.productId") || "Product ID"}: ${wcProduct.id}` 
+                  {wcProduct
+                    ? `${t("providerDash.productId") || "Product ID"}: ${wcProduct.id}`
                     : t("providerDash.saveToList") || "Save profile to list your service on the marketplace"}
                 </p>
               </div>
@@ -174,14 +185,6 @@ export default function ProviderSettingsTab() {
               {wcProduct ? t("providerDash.listed") || "Listed" : t("providerDash.notListed") || "Not Listed"}
             </Badge>
           </div>
-          
-          {wcProduct && (
-            <div className="text-sm text-muted-foreground space-y-1">
-              <p><strong>{t("providerDash.productName") || "Product Name"}:</strong> {wcProduct.name}</p>
-              <p><strong>{t("providerDash.type") || "Type"}:</strong> {wcProduct.type === 'booking' ? 'Bookable (WC Bookings)' : wcProduct.type === 'variable' ? 'Variable (legacy)' : wcProduct.type}</p>
-              <p><strong>{t("providerDash.status") || "Status"}:</strong> {wcProduct.status === 'publish' ? 'Published' : 'Draft'}</p>
-            </div>
-          )}
         </CardContent>
       </Card>
 
@@ -223,138 +226,81 @@ export default function ProviderSettingsTab() {
         </CardContent>
       </Card>
 
-      {/* Service Types — fixed catalog. Providers toggle which they offer + edit hourly rate. */}
+      {/* Service Packages — flat resource list */}
       <Card className="border-transparent card-elevated">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" /> {t("becomeCaregiver.specialties") || "Services Offered"}
+            <Shield className="h-5 w-5" /> Service Packages
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            {t("providerDash.fixedServicesDesc") || "Toggle the services you offer and set your hourly rate for each. Service categories are fixed by the marketplace."}
+            Each package is one bookable service the customer picks at checkout. Name it however you like
+            (e.g. <span className="font-medium">老人陪伴 (当面)</span>, <span className="font-medium">儿童陪伴 (远程)</span>) and set
+            its hourly rate. Total = rate × hours booked.
           </p>
-          <div className="flex items-center justify-between">
-            <Label className="text-sm font-semibold">{t("providerDash.perServiceRates") || "Per-Service Hourly Rates"}</Label>
-            <span className="text-xs text-muted-foreground">
-              {t("providerDash.defaultRate") || "Default"}: ${hourlyRate || "0"}/hr
-            </span>
-          </div>
-          <div className="grid gap-3">
-            {serviceTypes.map(st => {
-              const offered = selectedServices.includes(st.name);
-              const customRate = serviceRates[st.name];
-              const isCustom = offered && customRate && customRate !== hourlyRate && customRate !== "";
-              return (
-                <div
-                  key={st.slug}
-                  className={`flex items-center justify-between p-3 rounded-lg border bg-card transition-opacity ${offered ? "" : "opacity-60"}`}
-                >
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <Switch
-                      checked={offered}
-                      onCheckedChange={() => toggleService(st.name)}
-                      aria-label={`Offer ${st.name}`}
-                    />
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium truncate">
-                        {st.i18nKey ? t(st.i18nKey, { defaultValue: st.name }) : st.name}
-                      </div>
-                      {st.description && (
-                        <div className="text-xs text-muted-foreground truncate">{st.description}</div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                    <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
-                    <Input
-                      type="number"
-                      min="0"
-                      step="5"
-                      disabled={!offered}
-                      className="h-8 w-20 text-sm text-right"
-                      value={serviceRates[st.name] || ""}
-                      onChange={e => setServiceRates(prev => ({ ...prev, [st.name]: e.target.value }))}
-                      placeholder={hourlyRate || "0"}
-                    />
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">/hr</span>
-                    {isCustom && (
-                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                        {t("providerDash.custom") || "Custom"}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {t("providerDash.fixedPricingNote") || "Toggle off any service you don't offer. Leave the rate blank to use your default. Only the marketplace can add new service categories."}
-          </p>
-        </CardContent>
-      </Card>
 
-      {/* Delivery Mode Surcharges (Local vs Virtual) — WC Bookings Resources */}
-      <Card className="border-transparent card-elevated">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5" /> {t("providerDash.deliveryMode") || "Delivery Mode Surcharges"}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            {t("providerDash.deliveryModeDesc") || "Customers choose Local (in-person) or Virtual (remote) at booking. Add an optional per-hour surcharge for each mode (set to 0 for no extra cost)."}
-          </p>
-          <div className="grid sm:grid-cols-2 gap-3">
-            <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
-              <div className="flex items-center gap-3 min-w-0 flex-1">
-                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Home className="h-4 w-4 text-primary" />
-                </div>
-                <span className="text-sm font-medium truncate">
-                  {t("providerDash.localInPerson") || "Local (In-Person)"}
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 flex-shrink-0">
-                <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
-                <Input
-                  type="number"
-                  min="0"
-                  step="5"
-                  className="h-8 w-20 text-sm text-right"
-                  value={localCost}
-                  onChange={e => setLocalCost(e.target.value)}
-                  placeholder="0"
-                />
-                <span className="text-xs text-muted-foreground whitespace-nowrap">/hr</span>
+          {serviceResources.length === 0 && (
+            <div className="rounded-lg border-2 border-dashed border-border p-6 text-center">
+              <p className="text-sm text-muted-foreground mb-3">No packages yet.</p>
+              <div className="flex gap-2 justify-center">
+                <Button variant="outline" size="sm" onClick={useStarterList}>
+                  Use starter list
+                </Button>
+                <Button variant="coral" size="sm" onClick={addRow}>
+                  <Plus className="h-3.5 w-3.5 mr-1" /> Add package
+                </Button>
               </div>
             </div>
-            <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
-              <div className="flex items-center gap-3 min-w-0 flex-1">
-                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Video className="h-4 w-4 text-primary" />
-                </div>
-                <span className="text-sm font-medium truncate">
-                  {t("providerDash.virtualRemote") || "Virtual (Remote)"}
-                </span>
+          )}
+
+          {serviceResources.length > 0 && (
+            <>
+              <div className="space-y-2">
+                {serviceResources.map((row, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center gap-2 p-3 rounded-lg border bg-card"
+                  >
+                    <Input
+                      className="flex-1"
+                      value={row.name}
+                      onChange={e => updateRow(idx, { name: e.target.value })}
+                      placeholder="e.g. 老人陪伴 (当面)"
+                    />
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+                      <Input
+                        type="number"
+                        min="0"
+                        step="5"
+                        className="h-9 w-20 text-sm text-right"
+                        value={row.ratePerHour}
+                        onChange={e => updateRow(idx, { ratePerHour: e.target.value })}
+                        placeholder="50"
+                      />
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">/hr</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive flex-shrink-0"
+                      onClick={() => removeRow(idx)}
+                      aria-label="Remove package"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ))}
               </div>
-              <div className="flex items-center gap-1.5 flex-shrink-0">
-                <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
-                <Input
-                  type="number"
-                  min="0"
-                  step="5"
-                  className="h-8 w-20 text-sm text-right"
-                  value={virtualCost}
-                  onChange={e => setVirtualCost(e.target.value)}
-                  placeholder="0"
-                />
-                <span className="text-xs text-muted-foreground whitespace-nowrap">/hr</span>
-              </div>
-            </div>
-          </div>
+              <Button variant="outline" size="sm" onClick={addRow} className="w-full">
+                <Plus className="h-3.5 w-3.5 mr-1" /> Add another package
+              </Button>
+            </>
+          )}
+
           <p className="text-xs text-muted-foreground">
-            {t("providerDash.deliveryModeNote") || "Surcharges are per booked hour and added on top of the per-service rate. Customer picks one delivery mode per booking."}
+            Tip: clients can also negotiate a custom price in chat (hourly or one-time flat rate) — those don't need to be listed here.
           </p>
         </CardContent>
       </Card>
@@ -380,14 +326,14 @@ export default function ProviderSettingsTab() {
       </Card>
 
       {/* Save */}
-      <Button 
-        variant="coral" 
-        className="w-full" 
-        onClick={handleSave} 
+      <Button
+        variant="coral"
+        className="w-full"
+        onClick={handleSave}
         disabled={updateProfile.isPending || syncToWooCommerce.isPending}
       >
-        {updateProfile.isPending || syncToWooCommerce.isPending 
-          ? t("common.saving") 
+        {updateProfile.isPending || syncToWooCommerce.isPending
+          ? t("common.saving")
           : t("providerDash.saveProfileSettings")}
       </Button>
     </div>
