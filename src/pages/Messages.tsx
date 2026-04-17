@@ -52,6 +52,8 @@ export default function Messages() {
     return () => clearInterval(interval);
   }, [qc]);
 
+  const [quotePrefill, setQuotePrefill] = useState<{ serviceType?: string; jobId?: string | number } | null>(null);
+
   useEffect(() => {
     const navState = location.state as any;
     if (navState?.targetUserId && !handledNavState) {
@@ -65,6 +67,10 @@ export default function Messages() {
         onSuccess: (convoId: string) => {
           setSelectedConvoId(convoId);
           setSelectedOtherUser(targetUser);
+          if (navState.openQuote) {
+            if (navState.quotePrefill) setQuotePrefill(navState.quotePrefill);
+            setQuoteDialogOpen(true);
+          }
         },
       });
     }

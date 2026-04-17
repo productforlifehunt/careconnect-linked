@@ -11,17 +11,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Briefcase, Plus, MapPin, Search, Loader2, Send, User, ChevronDown, ChevronUp,
-  Check, X, Star, Clock,
+  Check, X, Star, Clock, Tag,
 } from "lucide-react";
 import {
   useJobPostings, useCreateJobPosting, useApplyToJob, useMyJobApplications,
   useMyJobPostings, useJobApplications, useUpdateJobApplication, useCreateExternalTestJob,
+  useStartConversation,
 } from "@/hooks/use-care-data";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 export default function Jobs() {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const startConversation = useStartConversation();
   const { isAuthenticated, user } = useAuth();
   const [sourceFilter, setSourceFilter] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -222,6 +226,30 @@ export default function Jobs() {
                               <Button size="sm" variant="outline" onClick={() => setActiveTab("my-applications")}>View</Button>
                             </>
                           ) : job.status === "open" ? (
+                            <>
+                              {job.poster?.id && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={startConversation.isPending}
+                                  onClick={() => {
+                                    startConversation.mutate(job.poster.id, {
+                                      onSuccess: () => navigate("/messages", {
+                                        state: {
+                                          targetUserId: job.poster.id,
+                                          targetUserName: job.poster.full_name,
+                                          targetUserAvatar: job.poster.avatar_url,
+                                          openQuote: true,
+                                          quotePrefill: { serviceType: job.title, jobId: job.id },
+                                        },
+                                      }),
+                                      onError: () => navigate("/messages"),
+                                    });
+                                  }}
+                                >
+                                  <Tag className="h-3 w-3 mr-1" /> Contact & Quote
+                                </Button>
+                              )}
                             <Dialog open={applyOpen === job.id} onOpenChange={open => { setApplyOpen(open ? job.id : null); if (!open) setCoverLetter(""); }}>
                               <DialogTrigger asChild>
                                 <Button size="sm" variant="coral"><Send className="h-3 w-3 mr-1" /> Apply</Button>
@@ -239,6 +267,7 @@ export default function Jobs() {
                                 </div>
                               </DialogContent>
                             </Dialog>
+                            </>
                           ) : null
                         ) : (
                           <Badge variant="outline">Sign in to apply</Badge>
