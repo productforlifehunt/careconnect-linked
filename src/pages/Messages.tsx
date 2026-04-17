@@ -100,7 +100,11 @@ export default function Messages() {
   }, [conversations, selectedConvoId, profile?.id]);
 
   const otherUserId = selectedOtherUser?.id || null;
-  const { data: messages, isLoading: msgsLoading } = useDirectMessages(otherUserId);
+  // Messages are fetched by conversationId, not by otherUserId.
+  const { data: messages, isLoading: msgsLoading } = useDirectMessages(selectedConvoId);
+
+  // Backwards-compat: keep a no-op reference to silence linter on unused.
+  void otherUserId;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
