@@ -269,7 +269,11 @@ export async function getOrCreateProviderProduct(
     certifications?: string[];
     yearsOfExperience?: number;
     location?: string;
+    /** NEW: flat list of service packages — each becomes one bookable_resource. */
+    serviceResources?: ServiceResource[];
+    /** @deprecated use serviceResources */
     serviceRates?: ServiceRateEntry[];
+    /** @deprecated use serviceResources */
     deliveryCosts?: DeliveryResourceCosts;
   }
 ) {
@@ -278,11 +282,7 @@ export async function getOrCreateProviderProduct(
     const categoryIds = [parentCat.id];
     const sku = `care-provider-${providerId}`;
 
-    // Check if product already exists. Try (1) the canonical SKU we generate,
-    // then (2) any product with `_provider_id` meta matching this provider —
-    // legacy products were created with different prefixes (e.g. `wp-1`)
-    // and Dokan sometimes mutates the SKU. Without (2), every save would
-    // duplicate the bookable_person stubs.
+    // Check if product already exists.
     let existingProduct: any = null;
     try {
       const existingProducts = await wcFetch(`products?sku=${sku}`);
@@ -304,19 +304,28 @@ export async function getOrCreateProviderProduct(
       } catch { /* ignore */ }
     }
 
-    const serviceRates = providerData.serviceRates || [];
-    const serviceTypeNames = serviceRates.length > 0
-      ? serviceRates.map(r => r.serviceType)
-      : (providerData.specialties || []);
+    // Resolve flat serviceResources from new field (preferred) or legacy
+    // serviceRates list (back-compat — treats each rate as a flat resource
+    // with no delivery surcharge).
+    const flatResources: ServiceResource[] = providerData.serviceResources?.length
+      ? providerData.serviceResources
+      : (providerData.serviceRates || []).map(r => ({
+          name: r.serviceType,
+          ratePerHour: r.hourlyRate,
+        }));
 
-    // Build a {serviceType: rate} JSON map so the booking dialog can look up the right rate
+    const serviceTypeNames = flatResources.map(r => r.name);
+
+    // Persist a {name: rate} JSON map for catalog/profile display.
     const serviceRatesMap: Record<string, number> = {};
-    serviceRates.forEach(r => {
-      serviceRatesMap[r.serviceType] = r.hourlyRate;
+    flatResources.forEach(r => {
+      serviceRatesMap[r.name] = r.ratePerHour;
     });
 
-    // Build product payload — create as 'simple' via Dokan (Dokan doesn't support 'booking' type)
-    // Will be converted to 'booking' via WC API after creation
+    // Base product price = 0. The full hourly rate lives on each resource's
+    // block_cost so the cart math stays clean (resource.cost × hours).
+    const baseProductPrice = '0';
+
     const productData: any = {
       name: `${providerData.fullName} – Care Service`,
       type: 'simple',
@@ -333,18 +342,15 @@ export async function getOrCreateProviderProduct(
         { key: '_location', value: providerData.location || '' },
         { key: '_service_types', value: JSON.stringify(serviceTypeNames) },
         { key: '_service_rates', value: JSON.stringify(serviceRatesMap) },
-        { key: '_delivery_local_cost', value: String(providerData.deliveryCosts?.localCost ?? 0) },
-        { key: '_delivery_virtual_cost', value: String(providerData.deliveryCosts?.virtualCost ?? 0) },
       ],
       virtual: true,
       downloadable: false,
       manage_stock: false,
       stock_status: 'instock' as const,
       status: 'publish',
-      regular_price: providerData.hourlyRate.toString(),
+      regular_price: baseProductPrice,
     };
 
-    // If service types are offered, store them as a visible attribute for display
     if (serviceTypeNames.length > 0) {
       productData.attributes = [{
         name: 'Service Type',
@@ -368,10 +374,6 @@ export async function getOrCreateProviderProduct(
       });
     }
 
-    // Step 2: Convert product type from 'simple' to 'booking' via WC API
-    // (Dokan doesn't support booking type natively). Also force-publish:
-    // Dokan auto-drafts new vendor products awaiting admin approval, which
-    // hides the listing from the catalog and breaks the storefront preview.
     if (product?.id) {
       try {
         await wcFetch(`products/${product.id}`, {
@@ -379,15 +381,14 @@ export async function getOrCreateProviderProduct(
           body: JSON.stringify({
             type: 'booking',
             status: 'publish',
-            regular_price: String(providerData.hourlyRate || 0),
+            regular_price: baseProductPrice,
           }),
         });
       } catch (e) {
         console.warn('Failed to convert/publish product:', e);
       }
 
-      // Step 3: Configure WC Bookings core fields, Person Types, and Resources
-      await configureBookingProduct(product.id, providerData.hourlyRate, serviceRates, providerData.deliveryCosts);
+      await configureBookingProduct(product.id, providerData.hourlyRate, flatResources);
     }
 
     return product;
