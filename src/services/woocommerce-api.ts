@@ -468,6 +468,19 @@ async function configureBookingProduct(
       }
     }
 
+    // 3. CRITICAL: Trigger WC product setter via custom endpoint. WC Bookings
+    //    caches resource_ids on the WC_Product_Booking object — writing meta
+    //    alone won't make the storefront <select> render. This calls
+    //    $product->set_resource_ids()->save() server-side which is the only
+    //    path that actually persists the resource picker.
+    if (hasResources || hasPersons) {
+      try {
+        await syncBookingProductResources(productId);
+      } catch (e) {
+        console.warn('Failed to trigger WC resource setter:', e);
+      }
+    }
+
     // Mirror base cost to WC product price so it shows in catalog/cart
     try {
       await wcFetch(`products/${productId}`, {
@@ -670,8 +683,27 @@ async function forceLinkBookingChild(childId: number, productId: number): Promis
   }
 }
 
+/**
+ * Trigger server-side WC product setter for resource_ids. Snippet v6's
+ * POST /careconnect/v1/booking-debug/{id} calls $product->set_resource_ids()
+ * which is the only path that makes the storefront resource <select> render.
+ */
+async function syncBookingProductResources(productId: number): Promise<void> {
+  try {
+    const url = buildWPUrl(`careconnect/v1/booking-debug/${productId}`);
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) {
+      console.warn(`syncBookingProductResources ${productId} failed:`, res.status, await res.text());
+    }
+  } catch (e) {
+    console.warn(`syncBookingProductResources ${productId} error:`, e);
+  }
+}
 
-// Get provider's product by provider ID
+
 export async function getProviderProduct(providerId: string) {
   try {
     const sku = `care-provider-${providerId}`;
