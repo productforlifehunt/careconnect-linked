@@ -298,9 +298,12 @@ export function useCreateBooking() {
 
 // ─── Messages ───────────────────────────────────────────────@@
 export function useConversations() {
+  const me = getStoredWPUser();
+  const myId = me ? `wp-${me.user_id}` : "";
   return useQuery({
-    queryKey: ["conversations"],
-    queryFn: () => fetchConversationsWordPress(),
+    queryKey: ["conversations", myId],
+    queryFn: () => fetchConversationsWordPress(myId),
+    enabled: !!myId,
   });
 }
 
