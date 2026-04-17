@@ -411,9 +411,14 @@ async function configureBookingProduct(
     const hasPersons = serviceRates.length > 0;
     const hasResources = (deliveryCosts.localCost ?? 0) >= 0 || (deliveryCosts.virtualCost ?? 0) >= 0;
 
-    // 1. Pre-create / upsert resources FIRST so we can include their IDs in
-    //    the single booking-config PUT below. Sending `resource_ids` in a
-    //    follow-up PUT is silently dropped by WC Bookings REST.
+    // 1. Upsert resources and link them via the `product_id` REST field
+    //    (added by the CareConnect Bookable REST v3 snippet — maps to
+    //    post_parent). We no longer rely on `resource_ids` in the booking
+    //    config PUT because the WC Bookings REST controller silently drops
+    //    that field unless every related child post is already a child of
+    //    the product (chicken-and-egg). The `product_id` field on each
+    //    resource is what WC Bookings actually reads at runtime via
+    //    get_children( post_parent=product_id ).
     let resourceIds: number[] = [];
     if (hasResources) {
       try {
@@ -444,7 +449,6 @@ async function configureBookingProduct(
       has_persons: hasPersons,
       has_resources: hasResources && resourceIds.length > 0,
       resources_assignment: 'customer',
-      resource_ids: resourceIds, // CRITICAL: must be in same PUT as has_resources
     };
 
     // PUT — POST is silently ignored for most fields by WC Bookings REST
@@ -491,19 +495,15 @@ async function configureBookingProduct(
  * Strategy: list existing persons for product → upsert by title match → trash extras.
  */
 async function syncBookingPersons(productId: number, serviceRates: ServiceRateEntry[]) {
-  // Fetch existing person posts attached to this product (parent = productId)
+  // Fetch existing person posts attached to this product. We filter via the
+  // custom `?product_id=` query param (added by snippet v3) because the CPT
+  // is non-hierarchical so the standard `?parent=` arg is ignored.
   let existingPersons: any[] = [];
   try {
-    existingPersons = await wcFetch(
-      `../wp/v2/bookable_person?parent=${productId}&per_page=100&status=publish,draft`
-    ) || [];
-  } catch {
-    try {
-      const url = buildWPUrl(`wp/v2/bookable_person?parent=${productId}&per_page=100&status=publish,draft`);
-      const res = await fetch(url, { headers: getAuthHeaders() });
-      if (res.ok) existingPersons = await res.json();
-    } catch { /* ignore */ }
-  }
+    const url = buildWPUrl(`wp/v2/bookable_person?product_id=${productId}&per_page=100&status=publish,draft`);
+    const res = await fetch(url, { headers: getAuthHeaders() });
+    if (res.ok) existingPersons = await res.json();
+  } catch { /* ignore */ }
 
   const existingByTitle: Record<string, any> = {};
   existingPersons.forEach((p: any) => {
@@ -519,7 +519,10 @@ async function syncBookingPersons(productId: number, serviceRates: ServiceRateEn
     const body = {
       title,
       status: 'publish',
-      parent: productId,
+      // `product_id` is our custom REST field that writes post_parent.
+      // The standard `parent` arg is silently dropped on non-hierarchical
+      // CPTs, which is why all previous saves left orphans (parent=0).
+      product_id: productId,
       meta: {
         cost: 0,
         block_cost: blockCost,
@@ -579,34 +582,34 @@ async function syncBookingResources(
     { name: 'Virtual (Remote)', cost: deliveryCosts.virtualCost ?? 0, metaTag: 'virtual' },
   ];
 
-  // List existing resources already linked to this product
-  let productInfo: any = null;
+  // List existing resources already linked to this product via post_parent.
+  // Filter via the `?product_id=` param exposed by the CareConnect snippet.
+  let existingResources: any[] = [];
   try {
-    productInfo = await wcBookingsFetch(`products/${productId}`);
+    const url = buildWPUrl(`wp/v2/bookable_resource?product_id=${productId}&per_page=50&status=publish,draft`);
+    const res = await fetch(url, { headers: getAuthHeaders() });
+    if (res.ok) existingResources = await res.json();
   } catch { /* ignore */ }
-  const existingIds: number[] = Array.isArray(productInfo?.resource_ids)
-    ? productInfo.resource_ids.map((x: any) => Number(x)).filter(Boolean)
-    : [];
 
-  // Fetch each existing resource to get its title for matching
   const existingByTag: Record<string, any> = {};
-  for (const id of existingIds) {
-    try {
-      const r = await wcBookingsFetch(`resources/${id}`);
-      const tag = (r?.name || '').toLowerCase().includes('virtual') ? 'virtual' : 'local';
-      existingByTag[tag] = r;
-    } catch { /* ignore */ }
-  }
+  existingResources.forEach((r: any) => {
+    const title = (r?.title?.rendered || r?.title?.raw || '').toString().toLowerCase();
+    const tag = title.includes('virtual') ? 'virtual' : 'local';
+    existingByTag[tag] = r;
+  });
 
   const linkedIds: number[] = [];
   for (const d of desired) {
     const existing = existingByTag[d.metaTag];
     // wc-bookings/v1/resources is READ-ONLY (POST returns 405). We must use
     // wp/v2/bookable_resource which creates the post + persists cost meta.
-    // Requires the "CareConnect Bookable REST v2" snippet to expose the CPT.
+    // The `product_id` field maps to post_parent (custom REST field added by
+    // the CareConnect Bookable REST v3 snippet) so WC Bookings can find the
+    // resource via get_children() at runtime.
     const body = {
       title: d.name,
       status: 'publish',
+      product_id: productId,
       meta: {
         _wc_booking_base_cost: d.cost,
         _wc_booking_block_cost: d.cost,
