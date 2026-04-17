@@ -363,44 +363,29 @@ export default function CaregiverProfile() {
                   </DialogHeader>
                   <div className="space-y-4 mt-4">
                     <div>
-                      <Label>Care Type *</Label>
-                      {offered.services.length === 0 ? (
+                      <Label>Service Package *</Label>
+                      {bookingResources.length === 0 ? (
                         <div className="text-sm text-muted-foreground bg-muted/50 rounded-md p-3 border border-dashed">
-                          This caregiver hasn't published any services yet. Please send them a message to inquire.
+                          This caregiver hasn't published any service packages yet. Send them a message to negotiate a custom price.
                         </div>
                       ) : (
-                        <Select value={bookingType} onValueChange={setBookingType}>
-                          <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
-                          <SelectContent>
-                            {offered.services.map((s: string) => (
-                              <SelectItem key={s} value={s}>
-                                {s} — ${offered.rates[s] ?? 0}/hr
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                      {bookingType && (
-                        <p className="text-xs text-muted-foreground mt-1.5">
-                          Rate for {bookingType}: <span className="font-semibold text-foreground">${effectiveRate}/hr</span>
-                        </p>
-                      )}
-                    </div>
-                    {bookingResources.length > 0 && (
-                      <div>
-                        <Label>Delivery *</Label>
                         <Select value={deliveryResourceId} onValueChange={setDeliveryResourceId}>
-                          <SelectTrigger><SelectValue placeholder="Select delivery option" /></SelectTrigger>
+                          <SelectTrigger><SelectValue placeholder="Select a package" /></SelectTrigger>
                           <SelectContent>
                             {bookingResources.map((r: BookingResourceOption) => (
                               <SelectItem key={r.id} value={String(r.id)}>
-                                {r.name} {r.blockCost > 0 ? `(+$${r.blockCost}/hr)` : "(included)"}
+                                {r.name} — ${r.blockCost}/hr
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
-                      </div>
-                    )}
+                      )}
+                      {selectedResource && (
+                        <p className="text-xs text-muted-foreground mt-1.5">
+                          Rate: <span className="font-semibold text-foreground">${effectiveRate}/hr</span>
+                        </p>
+                      )}
+                    </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <Label>Date *</Label>
