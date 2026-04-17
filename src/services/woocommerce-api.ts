@@ -834,12 +834,35 @@ export async function fetchAllProviderProductSummaries(): Promise<Map<string, Pr
         const stOptions: string[] = (findAttr('service-type')?.options as string[]) || [];
         const slOptions: string[] = (findAttr('service-location')?.options as string[]) || [];
 
-        map.set(providerId, {
-          productId: Number(p.id),
-          minBlockCost,
-          serviceTypeSlugs: stOptions.map(toSlug),
-          serviceLocationSlugs: slOptions.map(toSlug),
-        });
+        // Aggregate across ALL products of this provider — a single provider
+        // typically offers multiple packages (e.g. Companionship Remote $25 +
+        // Dementia In-Person $65). Take the MIN price and the UNION of
+        // service-type / service-location slugs so the marketplace card and
+        // filters reflect the full catalogue, not just the last-seen product.
+        const existing = map.get(providerId);
+        const stSlugs = stOptions.map(toSlug).filter(Boolean);
+        const slSlugs = slOptions.map(toSlug).filter(Boolean);
+        if (!existing) {
+          map.set(providerId, {
+            productId: Number(p.id),
+            minBlockCost,
+            serviceTypeSlugs: stSlugs,
+            serviceLocationSlugs: slSlugs,
+          });
+        } else {
+          const mergedMin =
+            existing.minBlockCost > 0 && minBlockCost > 0
+              ? Math.min(existing.minBlockCost, minBlockCost)
+              : existing.minBlockCost || minBlockCost;
+          map.set(providerId, {
+            productId: existing.productId,
+            minBlockCost: mergedMin,
+            serviceTypeSlugs: Array.from(new Set([...existing.serviceTypeSlugs, ...stSlugs])),
+            serviceLocationSlugs: Array.from(
+              new Set([...existing.serviceLocationSlugs, ...slSlugs]),
+            ),
+          });
+        }
       }),
     );
   } catch (e) {
