@@ -14,7 +14,7 @@ import { CommentsSection } from "@/components/comments/CommentsSection";
 import { useProvider, useProviderReviews, useCreateReview, useToggleSavedProvider, useSavedProviders, useStartConversation, useProviderAvailability, useProviderAvailabilitySetting } from "@/hooks/use-care-data";
 import { useCreateBookingWithWooCommerce } from "@/hooks/use-booking-woocommerce";
 import { useAddToCart } from "@/hooks/use-cart";
-import { getAvailabilityConflictMessage, getProviderBookingConflictMessage, getProviderProduct, extractProviderServicesFromProduct, fetchProductBookingResources, type BookingResourceOption } from "@/services/woocommerce-api";
+import { getAvailabilityConflictMessage, getProviderBookingConflictMessage, getProviderProduct, extractProviderServicesFromProduct, fetchProviderBookingOptions, type BookingResourceOption } from "@/services/woocommerce-api";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -64,9 +64,9 @@ export default function CaregiverProfile() {
   // Fetch delivery resources (Local / Virtual) attached to this product so the
   // booking dialog can show price-impacting choices and total live-updates.
   const { data: bookingResources = [] } = useQuery({
-    queryKey: ["product-booking-resources", providerProduct?.id],
-    queryFn: () => fetchProductBookingResources(providerProduct.id),
-    enabled: !!providerProduct?.id,
+    queryKey: ["provider-booking-options", id],
+    queryFn: () => fetchProviderBookingOptions(id!),
+    enabled: !!id,
     staleTime: 1000 * 60 * 5,
   });
 
@@ -178,6 +178,7 @@ export default function CaregiverProfile() {
       const packageNote = `[Package: ${selectedResource.name}] `;
       const ratePerHour = effectiveRate;
       await createBooking.mutateAsync({
+        product_id: selectedResource.productId,
         provider_id: caregiver.id,
         appointment_date: bookingDate,
         appointment_time: bookingTime,
@@ -474,12 +475,12 @@ export default function CaregiverProfile() {
                     <Button
                       variant="outline"
                       className="w-full"
-                      disabled={addToCart.isPending || !providerProduct?.id || !bookingDate || !bookingTime || !selectedResource}
+                      disabled={addToCart.isPending || !bookingDate || !bookingTime || !selectedResource}
                       onClick={async () => {
                         if (!isAuthenticated) { navigate("/auth"); return; }
                         try {
                           await addToCart.mutateAsync({
-                            productId: providerProduct.id,
+                            productId: selectedResource.productId || providerProduct?.id,
                             booking: {
                               resourceId: selectedResource?.id,
                               startDate: bookingDate,
