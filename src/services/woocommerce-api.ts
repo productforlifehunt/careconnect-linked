@@ -1101,6 +1101,17 @@ export interface CartItem {
   quantity: number;
   image?: string;
   provider_id?: string;
+  /** WC Bookings line meta — when set, checkout() will pass these through to
+   *  the order's line_items meta_data so WC Bookings auto-creates a booking. */
+  booking?: {
+    resourceId?: number;
+    persons?: Record<string | number, number>; // { person_type_id: count }
+    startDate?: string; // YYYY-MM-DD
+    startTime?: string; // HH:MM
+    durationHours?: number;
+    serviceType?: string;
+    notes?: string;
+  };
 }
 
 function loadCartItems(): CartItem[] {
