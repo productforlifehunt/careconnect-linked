@@ -223,7 +223,7 @@ export default function ProviderSettingsTab() {
         </CardContent>
       </Card>
 
-      {/* Service Types with Per-Service Pricing — like Care.com */}
+      {/* Service Types — fixed catalog. Providers toggle which they offer + edit hourly rate. */}
       <Card className="border-transparent card-elevated">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -232,76 +232,65 @@ export default function ProviderSettingsTab() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            {t("providerDash.selectServicesDesc") || "Select the services you offer. Each service becomes a bookable option with its own hourly rate."}
+            {t("providerDash.fixedServicesDesc") || "Toggle the services you offer and set your hourly rate for each. Service categories are fixed by the marketplace."}
           </p>
-          {serviceTypesLoading ? (
-            <div className="grid sm:grid-cols-2 gap-2">
-              {[1,2,3,4].map(i => <Skeleton key={i} className="h-10 rounded-md" />)}
-            </div>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {serviceTypes.map(st => (
-                <Badge
+          <div className="flex items-center justify-between">
+            <Label className="text-sm font-semibold">{t("providerDash.perServiceRates") || "Per-Service Hourly Rates"}</Label>
+            <span className="text-xs text-muted-foreground">
+              {t("providerDash.defaultRate") || "Default"}: ${hourlyRate || "0"}/hr
+            </span>
+          </div>
+          <div className="grid gap-3">
+            {serviceTypes.map(st => {
+              const offered = selectedServices.includes(st.name);
+              const customRate = serviceRates[st.name];
+              const isCustom = offered && customRate && customRate !== hourlyRate && customRate !== "";
+              return (
+                <div
                   key={st.slug}
-                  variant={selectedServices.includes(st.name) ? "default" : "outline"}
-                  className="cursor-pointer text-xs py-1.5 px-3 transition-colors"
-                  onClick={() => toggleService(st.name)}
+                  className={`flex items-center justify-between p-3 rounded-lg border bg-card transition-opacity ${offered ? "" : "opacity-60"}`}
                 >
-                  {st.name}
-                  {selectedServices.includes(st.name) && <X className="h-3 w-3 ml-1" />}
-                </Badge>
-              ))}
-            </div>
-          )}
-
-          {/* Per-service pricing cards */}
-          {selectedServices.length > 0 && (
-            <div className="mt-5 space-y-3">
-              <div className="flex items-center justify-between">
-                <Label className="text-sm font-semibold">{t("providerDash.perServiceRates") || "Per-Service Hourly Rates"}</Label>
-                <span className="text-xs text-muted-foreground">
-                  {t("providerDash.defaultRate") || "Default"}: ${hourlyRate || "0"}/hr
-                </span>
-              </div>
-              <div className="grid gap-3">
-                {selectedServices.map(s => {
-                  const customRate = serviceRates[s];
-                  const isCustom = customRate && customRate !== hourlyRate && customRate !== "";
-                  return (
-                    <div key={s} className="flex items-center justify-between p-3 rounded-lg border bg-card">
-                      <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                          <Briefcase className="h-4 w-4 text-primary" />
-                        </div>
-                        <span className="text-sm font-medium truncate">{s}</span>
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <Switch
+                      checked={offered}
+                      onCheckedChange={() => toggleService(st.name)}
+                      aria-label={`Offer ${st.name}`}
+                    />
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium truncate">
+                        {st.i18nKey ? t(st.i18nKey, { defaultValue: st.name }) : st.name}
                       </div>
-                      <div className="flex items-center gap-1.5 flex-shrink-0">
-                        <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
-                        <Input
-                          type="number"
-                          min="0"
-                          step="5"
-                          className="h-8 w-20 text-sm text-right"
-                          value={serviceRates[s] || ""}
-                          onChange={e => setServiceRates(prev => ({ ...prev, [s]: e.target.value }))}
-                          placeholder={hourlyRate || "0"}
-                        />
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">/hr</span>
-                        {isCustom && (
-                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                            {t("providerDash.custom") || "Custom"}
-                          </Badge>
-                        )}
-                      </div>
+                      {st.description && (
+                        <div className="text-xs text-muted-foreground truncate">{st.description}</div>
+                      )}
                     </div>
-                  );
-                })}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {t("providerDash.pricingNote") || "Leave blank to use your default rate. Each service will be listed as a separate bookable variation on the marketplace."}
-              </p>
-            </div>
-          )}
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+                    <Input
+                      type="number"
+                      min="0"
+                      step="5"
+                      disabled={!offered}
+                      className="h-8 w-20 text-sm text-right"
+                      value={serviceRates[st.name] || ""}
+                      onChange={e => setServiceRates(prev => ({ ...prev, [st.name]: e.target.value }))}
+                      placeholder={hourlyRate || "0"}
+                    />
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">/hr</span>
+                    {isCustom && (
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                        {t("providerDash.custom") || "Custom"}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {t("providerDash.fixedPricingNote") || "Toggle off any service you don't offer. Leave the rate blank to use your default. Only the marketplace can add new service categories."}
+          </p>
         </CardContent>
       </Card>
 
