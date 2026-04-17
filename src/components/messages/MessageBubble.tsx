@@ -1,4 +1,6 @@
 import { FileText, ExternalLink } from "lucide-react";
+import { extractQuote, stripQuoteMarker } from "@/lib/quote-protocol";
+import { QuoteCard } from "./QuoteCard";
 
 interface MessageBubbleProps {
   message: any;
@@ -6,9 +8,22 @@ interface MessageBubbleProps {
 }
 
 export function MessageBubble({ message, isMe }: MessageBubbleProps) {
+  const rawContent: string = message.message_content || message.content || "";
+  const quote = extractQuote(rawContent);
+
+  // Render the quote card UI in place of the bubble for quote messages.
+  if (quote) {
+    return (
+      <div className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+        <QuoteCard quote={quote} isMe={isMe} isRecipient={!isMe} />
+      </div>
+    );
+  }
+
   const hasAttachment = !!message.attachment_url;
-  const isImage = message.message_type === "image" || 
+  const isImage = message.message_type === "image" ||
     (hasAttachment && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(message.attachment_url));
+  const textContent = stripQuoteMarker(rawContent);
 
   return (
     <div className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
@@ -39,8 +54,8 @@ export function MessageBubble({ message, isMe }: MessageBubbleProps) {
           </a>
         )}
         {/* Text */}
-        {message.message_content && (
-          <p className="text-sm">{message.message_content}</p>
+        {textContent && (
+          <p className="text-sm whitespace-pre-wrap">{textContent}</p>
         )}
         <p className={`text-xs mt-1 ${isMe ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
           {new Date(message.created_at).toLocaleTimeString("en", { hour: "numeric", minute: "2-digit" })}
