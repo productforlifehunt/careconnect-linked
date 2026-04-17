@@ -1088,7 +1088,18 @@ export async function addToCart({
 }) {
   let product: any;
   try {
-    product = await wcFetch(`products/${productId}`);
+    // Use the public Store API (no admin caps required) and normalize to
+    // the v3-shape fields the rest of this function reads (name, price, images).
+    const storeProduct: any = await wpRequest(`wc/store/v1/products/${productId}`);
+    const minorPrice = parseInt(storeProduct?.prices?.price || "0", 10);
+    const minorUnit = storeProduct?.prices?.currency_minor_unit ?? 2;
+    product = {
+      id: storeProduct.id,
+      name: storeProduct.name,
+      price: String(minorPrice / Math.pow(10, minorUnit)),
+      images: storeProduct.images || [],
+      meta_data: [],
+    };
   } catch {
     product = { id: productId, name: `Product #${productId}`, price: '0', images: [] };
   }
