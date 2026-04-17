@@ -44,6 +44,7 @@ export default function CaregiverProfile() {
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
   const [availabilityWarning, setAvailabilityWarning] = useState("");
   const [recurringPattern, setRecurringPattern] = useState("none");
+  const [deliveryResourceId, setDeliveryResourceId] = useState<string>("");
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
