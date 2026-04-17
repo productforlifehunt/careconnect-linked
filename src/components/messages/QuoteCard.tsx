@@ -70,7 +70,7 @@ export function QuoteCard({ quote, isRecipient, isMe, conversationId, otherUserI
       const declined: QuoteData = { ...quote, status: "declined" };
       await sendMessage.mutateAsync({
         conversationId,
-        recipientId: otherUserId,
+        receiverUserId: otherUserId,
         content: encodeQuote(declined),
       });
       toast({ title: "Quote declined", description: "The sender has been notified." });
