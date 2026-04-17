@@ -11,10 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { MapPin, DollarSign, Briefcase, Shield, Phone, Eye, EyeOff, X, Store, ShoppingBag, Home, Video } from "lucide-react";
 import { useMyProfile, useUpdateProfile } from "@/hooks/use-care-data";
 import { useSyncProviderToWooCommerce, useProviderWooCommerceProduct } from "@/hooks/use-woocommerce";
-import { useServiceTypes } from "@/hooks/use-service-types";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { ALL_CERTIFICATIONS, getCertificationKey } from "@/lib/specialty-i18n";
+import { FIXED_SERVICE_TYPES } from "@/lib/fixed-service-types";
 
 export default function ProviderSettingsTab() {
   const { t } = useTranslation();
