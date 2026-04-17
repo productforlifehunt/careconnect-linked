@@ -1101,6 +1101,17 @@ export interface CartItem {
   quantity: number;
   image?: string;
   provider_id?: string;
+  /** WC Bookings line meta — when set, checkout() will pass these through to
+   *  the order's line_items meta_data so WC Bookings auto-creates a booking. */
+  booking?: {
+    resourceId?: number;
+    persons?: Record<string | number, number>; // { person_type_id: count }
+    startDate?: string; // YYYY-MM-DD
+    startTime?: string; // HH:MM
+    durationHours?: number;
+    serviceType?: string;
+    notes?: string;
+  };
 }
 
 function loadCartItems(): CartItem[] {
@@ -1136,8 +1147,15 @@ export async function getCart() {
   };
 }
 
-export async function addToCart({ productId, quantity = 1 }: { productId: number; quantity?: number }) {
-  // Fetch product info from WC REST API to get name/price
+export async function addToCart({
+  productId,
+  quantity = 1,
+  booking,
+}: {
+  productId: number;
+  quantity?: number;
+  booking?: CartItem['booking'];
+}) {
   let product: any;
   try {
     product = await wcFetch(`products/${productId}`);
@@ -1145,20 +1163,49 @@ export async function addToCart({ productId, quantity = 1 }: { productId: number
     product = { id: productId, name: `Product #${productId}`, price: '0', images: [] };
   }
 
+  // Compute price = product price + per-hour resource cost × hours.
+  // For booking products we always create a NEW line (don't merge with existing)
+  // because each booking has unique date/time/resource selection.
+  let unitPrice = parseFloat(product.price || '0');
+  if (booking?.durationHours) {
+    unitPrice = unitPrice * booking.durationHours;
+    if (booking.resourceId) {
+      // Look up resource block_cost so the cart total reflects the surcharge.
+      try {
+        const resources = await fetchProductBookingResources(productId);
+        const r = resources.find(x => x.id === booking.resourceId);
+        if (r) unitPrice += r.blockCost * booking.durationHours;
+      } catch {}
+    }
+  }
+
   const items = loadCartItems();
-  const existing = items.find(i => i.product_id === productId);
-  if (existing) {
-    existing.quantity += quantity;
-  } else {
+  if (booking) {
     items.push({
-      key: `${productId}_${Date.now()}`,
+      key: `${productId}_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
       product_id: productId,
       name: product.name || `Product #${productId}`,
-      price: parseFloat(product.price || '0'),
+      price: unitPrice,
       quantity,
       image: product.images?.[0]?.src,
-      provider_id: product.meta_data?.find?.((m: any) => m.key === 'provider_id')?.value,
+      provider_id: product.meta_data?.find?.((m: any) => m.key === '_provider_id')?.value,
+      booking,
     });
+  } else {
+    const existing = items.find(i => i.product_id === productId && !i.booking);
+    if (existing) {
+      existing.quantity += quantity;
+    } else {
+      items.push({
+        key: `${productId}_${Date.now()}`,
+        product_id: productId,
+        name: product.name || `Product #${productId}`,
+        price: unitPrice,
+        quantity,
+        image: product.images?.[0]?.src,
+        provider_id: product.meta_data?.find?.((m: any) => m.key === '_provider_id')?.value,
+      });
+    }
   }
   saveCartItems(items);
   return getCart();
@@ -1184,11 +1231,33 @@ export async function checkout(billingData?: {
   const items = loadCartItems();
   if (items.length === 0) throw new Error('Cart is empty');
 
-  // Create a WC order via REST API v3 (supports JWT auth)
-  const lineItems = items.map(i => ({
-    product_id: i.product_id,
-    quantity: i.quantity,
-  }));
+  // Build line_items. For booking lines, attach meta_data using the keys
+  // WC Bookings reads server-side (wc_bookings_field_*). When these are
+  // present, WC Bookings creates a booking record automatically.
+  const lineItems = items.map(i => {
+    const base: any = { product_id: i.product_id, quantity: i.quantity };
+    if (!i.booking) return base;
+    const b = i.booking;
+    const meta: { key: string; value: string }[] = [];
+    if (b.startDate) meta.push({ key: 'wc_bookings_field_start_date_yy', value: b.startDate.split('-')[0] });
+    if (b.startDate) meta.push({ key: 'wc_bookings_field_start_date_mm', value: b.startDate.split('-')[1] });
+    if (b.startDate) meta.push({ key: 'wc_bookings_field_start_date_dd', value: b.startDate.split('-')[2] });
+    if (b.startTime) meta.push({ key: 'wc_bookings_field_start_date_time', value: b.startTime });
+    if (b.durationHours) meta.push({ key: 'wc_bookings_field_duration', value: String(b.durationHours) });
+    if (b.resourceId) meta.push({ key: 'wc_bookings_field_resource', value: String(b.resourceId) });
+    if (b.persons) {
+      Object.entries(b.persons).forEach(([pid, count]) => {
+        meta.push({ key: `wc_bookings_field_persons_${pid}`, value: String(count) });
+      });
+    }
+    if (b.serviceType) meta.push({ key: '_service_type', value: b.serviceType });
+    if (b.notes) meta.push({ key: '_customer_note', value: b.notes });
+    base.meta_data = meta;
+    // Force per-line price to include resource surcharge × hours.
+    base.subtotal = String(i.price * i.quantity);
+    base.total = String(i.price * i.quantity);
+    return base;
+  });
 
   const orderPayload: any = {
     payment_method: 'cod',

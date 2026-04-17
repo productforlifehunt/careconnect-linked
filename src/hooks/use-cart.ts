@@ -29,8 +29,19 @@ export function useAddToCart() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: ({ productId, quantity }: { productId: number; quantity?: number }) =>
-      addToCart({ productId, quantity }),
+    mutationFn: ({ productId, quantity, booking }: {
+      productId: number;
+      quantity?: number;
+      booking?: {
+        resourceId?: number;
+        persons?: Record<string | number, number>;
+        startDate?: string;
+        startTime?: string;
+        durationHours?: number;
+        serviceType?: string;
+        notes?: string;
+      };
+    }) => addToCart({ productId, quantity, booking }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['wc-cart'] });
       toast({ title: 'Added to cart' });
