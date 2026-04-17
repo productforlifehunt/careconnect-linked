@@ -253,12 +253,20 @@ export default function SearchResults() {
         </Sheet>
       </div>
 
-      {!isFacilityMode && selectedSpecialties.length > 0 && (
+      {!isFacilityMode && (selectedSpecialties.length > 0 || selectedLocations.length > 0) && (
         <div className="flex flex-wrap gap-2 mb-4">
+          {selectedLocations.map(slug => {
+            const opt = LOCATION_OPTIONS.find(o => o.slug === slug);
+            return (
+              <Badge key={slug} variant="secondary" className="gap-1 cursor-pointer" onClick={() => toggleLocation(slug)}>
+                {opt ? (isZh ? opt.zh : opt.en) : slug} <X className="h-3 w-3" />
+              </Badge>
+            );
+          })}
           {selectedSpecialties.map(s => (
             <Badge key={s} variant="secondary" className="gap-1 cursor-pointer" onClick={() => toggleSpecialty(s)}>{t(getSpecialtyKey(s))} <X className="h-3 w-3" /></Badge>
           ))}
-          <Button variant="ghost" size="sm" onClick={() => setSelectedSpecialties([])}>{t("common.clearAll")}</Button>
+          <Button variant="ghost" size="sm" onClick={() => { setSelectedSpecialties([]); setSelectedLocations([]); }}>{t("common.clearAll")}</Button>
         </div>
       )}
 
