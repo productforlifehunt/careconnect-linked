@@ -1222,10 +1222,20 @@ export async function checkout(billingData?: {
     };
   }
 
-  const order = await wcFetch('orders', {
+  // Use elevated careconnect/v1/checkout snippet — buyers don't have
+  // wc/v3/orders create-cap, so we let the server create the order
+  // (under the buyer's identity) on their behalf.
+  const checkoutUrl = buildWPUrl(`careconnect/v1/checkout`);
+  const checkoutRes = await fetch(checkoutUrl, {
     method: 'POST',
+    headers: getAuthHeaders(),
     body: JSON.stringify(orderPayload),
   });
+  if (!checkoutRes.ok) {
+    const text = await checkoutRes.text();
+    throw new Error(`Checkout failed ${checkoutRes.status}: ${text}`);
+  }
+  const order = await checkoutRes.json();
 
   // Clear client-side cart after successful order
   saveCartItems([]);
