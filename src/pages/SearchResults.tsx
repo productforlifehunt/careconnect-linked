@@ -49,6 +49,11 @@ export default function SearchResults() {
   const isFacilityMode = serviceCategory === "facility";
   const isZh = i18n.language?.startsWith("zh");
   const facilityArea = isZh ? "china" : "global";
+  // URL-driven filter pre-selection (e.g. nav links: ?service_location=in-person&service_type=companionship)
+  const initialServiceLocations = (searchParams.get("service_location") || "")
+    .split(",").map(s => s.trim()).filter(Boolean);
+  const initialServiceTypeSlugs = (searchParams.get("service_type") || "")
+    .split(",").map(s => s.trim()).filter(Boolean);
 
   const [query, setQuery] = useState(initialQuery);
   const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
@@ -66,7 +71,8 @@ export default function SearchResults() {
   const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>(initialQuery ? [initialQuery].filter(q => allServiceTypeNames.includes(q)) : []);
   const [selectedFacilityTypes, setSelectedFacilityTypes] = useState<string[]>([]);
   const [selectedServiceTypes, setSelectedServiceTypes] = useState<string[]>([]);
-  const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
+  const [selectedLocations, setSelectedLocations] = useState<string[]>(initialServiceLocations);
+  const [selectedServiceTypeSlugs, setSelectedServiceTypeSlugs] = useState<string[]>(initialServiceTypeSlugs);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [minRating, setMinRating] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -78,6 +84,7 @@ export default function SearchResults() {
     minRate: priceRange[0] > 0 ? priceRange[0] : undefined, maxRate: priceRange[1] < 100 ? priceRange[1] : undefined,
     verifiedOnly, minRating: minRating > 0 ? minRating : undefined, sortBy,
     serviceLocations: selectedLocations.length > 0 ? selectedLocations : undefined,
+    serviceTypeSlugs: selectedServiceTypeSlugs.length > 0 ? selectedServiceTypeSlugs : undefined,
   });
 
   const { data: facilities, isLoading: facilitiesLoading } = useCareFacilities({
