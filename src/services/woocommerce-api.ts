@@ -792,20 +792,61 @@ export interface ProviderProductSummary {
 export async function fetchAllProviderProductSummaries(): Promise<Map<string, ProviderProductSummary>> {
   const map = new Map<string, ProviderProductSummary>();
   try {
-    // Use admin Basic Auth (wcFetch with admin headers) so unauthenticated
-    // visitors / non-admin logged-in users can still hydrate the marketplace
-    // listing. The JWT token alone returns 401 for `wc/v3/products`.
-    const url = buildWPUrl(
+    // Use admin Basic Auth via wpAdminFetch so unauthenticated visitors and
+    // non-admin logged-in customers can still hydrate the marketplace listing
+    // (WC `/products` listing requires `read` cap → JWT alone returns 401).
+    const products = await wpAdminFetch(
       `wc/v3/products?per_page=100&status=publish&type=booking`,
     );
-    const res = await fetch(url, { headers: getAdminHeaders('application/json') });
-    if (!res.ok) {
-      console.warn('fetchAllProviderProductSummaries: admin fetch failed', res.status);
-      return map;
-    }
-    const products = await res.json();
     if (!Array.isArray(products)) return map;
 
+    const toSlug = (s: string) => String(s).trim().toLowerCase().replace(/\s+/g, '-');
+    const candidates: Array<{ p: any; providerId: string }> = [];
+    for (const p of products) {
+      const meta: any[] = Array.isArray(p?.meta_data) ? p.meta_data : [];
+      const providerId = meta.find((m) => m?.key === '_provider_id')?.value;
+      if (!providerId) continue;
+      candidates.push({ p, providerId: String(providerId) });
+    }
+
+    // For products missing `_min_block_cost`, fall back to fetching the actual
+    // bookable_resources so the marketplace card shows the right "from $X/hr"
+    // even when the meta wasn't refreshed by an older save.
+    await Promise.all(
+      candidates.map(async ({ p, providerId }) => {
+        const meta: any[] = Array.isArray(p?.meta_data) ? p.meta_data : [];
+        const minRaw = meta.find((m) => m?.key === '_min_block_cost')?.value;
+        let minBlockCost = Number(minRaw) || 0;
+
+        if (minBlockCost === 0) {
+          try {
+            const resources = await fetchProductBookingResources(Number(p.id));
+            const costs = resources.map((r) => r.blockCost).filter((c) => c > 0);
+            if (costs.length > 0) minBlockCost = Math.min(...costs);
+          } catch { /* ignore */ }
+        }
+
+        const attrs: any[] = Array.isArray(p?.attributes) ? p.attributes : [];
+        const findAttr = (slug: string) =>
+          attrs.find(
+            (a) => a?.slug === slug || a?.slug === `pa_${slug}` || a?.name?.toLowerCase().includes(slug),
+          );
+        const stOptions: string[] = (findAttr('service-type')?.options as string[]) || [];
+        const slOptions: string[] = (findAttr('service-location')?.options as string[]) || [];
+
+        map.set(providerId, {
+          productId: Number(p.id),
+          minBlockCost,
+          serviceTypeSlugs: stOptions.map(toSlug),
+          serviceLocationSlugs: slOptions.map(toSlug),
+        });
+      }),
+    );
+  } catch (e) {
+    console.warn('fetchAllProviderProductSummaries failed:', e);
+  }
+  return map;
+}
     const toSlug = (s: string) => String(s).trim().toLowerCase().replace(/\s+/g, '-');
     const candidates: Array<{ p: any; providerId: string }> = [];
     for (const p of products) {
