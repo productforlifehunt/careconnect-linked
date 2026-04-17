@@ -338,7 +338,7 @@ export default function Messages() {
       <QuoteDialog
         open={quoteDialogOpen}
         onOpenChange={(o) => { setQuoteDialogOpen(o); if (!o) setQuotePrefill(null); }}
-        vendorUserId={selectedOtherUser?.id || ""}
+        vendorUserId={profile?.id || ""}
         defaultServiceType={quotePrefill?.serviceType}
         jobId={quotePrefill?.jobId}
         onSend={handleSendQuote}
