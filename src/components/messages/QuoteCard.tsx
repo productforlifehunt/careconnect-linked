@@ -134,14 +134,14 @@ export function QuoteCard({ quote, isRecipient, isMe, conversationId, otherUserI
         </p>
       )}
 
-      {/* Action buttons — only the recipient (buyer) can accept */}
+      {/* Action buttons — only the recipient (buyer) can accept or decline */}
       {status === "pending" && isRecipient && (
         <div className="flex gap-2 pt-2 border-t">
           <Button
             variant="coral"
             size="sm"
             className="flex-1"
-            disabled={accepting || addToCart.isPending}
+            disabled={accepting || addToCart.isPending || declining}
             onClick={handleAccept}
           >
             {accepting || addToCart.isPending ? (
@@ -151,6 +151,20 @@ export function QuoteCard({ quote, isRecipient, isMe, conversationId, otherUserI
             ) : (
               <>
                 <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Accept &amp; Pay ${quote.amount}
+              </>
+            )}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={accepting || declining}
+            onClick={handleDecline}
+          >
+            {declining ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <>
+                <XCircle className="h-3.5 w-3.5 mr-1" /> Decline
               </>
             )}
           </Button>
