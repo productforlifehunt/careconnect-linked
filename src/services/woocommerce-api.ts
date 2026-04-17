@@ -1016,12 +1016,10 @@ export async function upsertProviderAvailability(providerId: string, slots: any[
   return res;
 }
 
-// ─── Client-side Cart + WC REST API v3 Checkout ─────────────
-// The WC Store API requires cookie/nonce auth which doesn't work
-// cross-origin with JWT. We use a client-side cart (localStorage)
-// and create WC orders directly via the admin REST API at checkout.
-
-const CART_STORAGE_KEY = 'cc_cart_items';
+// ─── Server-side Cart (careconnect/v1/cart) + Elevated Checkout ─────────────
+// Cart lives in WP user_meta via the careconnect-cart Code Snippet, so it
+// persists across devices/sessions per logged-in buyer. Frontend just calls
+// the REST endpoints — no localStorage involved.
 
 export interface CartItem {
   key: string;
@@ -1044,123 +1042,44 @@ export interface CartItem {
   };
 }
 
-function loadCartItems(): CartItem[] {
-  try {
-    const raw = localStorage.getItem(CART_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch { return []; }
-}
-
-function saveCartItems(items: CartItem[]) {
-  localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+async function ccCartFetch(path: string, init: RequestInit = {}) {
+  const url = buildWPUrl(`careconnect/v1/${path}`);
+  const res = await fetch(url, { ...init, headers: { ...getAuthHeaders(), ...init.headers } });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Cart API ${res.status}: ${text}`);
+  }
+  return res.json();
 }
 
 export async function getCart() {
-  const items = loadCartItems();
-  const total = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  return {
-    items: items.map(i => ({
-      key: i.key,
-      id: i.product_id,
-      name: i.name,
-      quantity: i.quantity,
-      prices: { price: String(Math.round(i.price * 100)), currency_code: 'USD' },
-      images: i.image ? [{ src: i.image }] : [],
-      totals: { line_total: String(Math.round(i.price * i.quantity * 100)) },
-    })),
-    totals: {
-      total_price: String(Math.round(total * 100)),
-      total_items: String(Math.round(total * 100)),
-      currency_code: 'USD',
-    },
-    items_count: items.reduce((s, i) => s + i.quantity, 0),
-  };
+  return ccCartFetch('cart', { method: 'GET' });
 }
 
 export async function addToCart({
   productId,
   quantity = 1,
   booking,
+  priceOverride,
 }: {
   productId: number;
   quantity?: number;
   booking?: CartItem['booking'];
+  /** For quote products: pass the agreed total so server doesn't multiply by hours. */
+  priceOverride?: number;
 }) {
-  let product: any;
-  try {
-    // Use the public Store API (no admin caps required) and normalize to
-    // the v3-shape fields the rest of this function reads (name, price, images).
-    const storeProduct: any = await storeApiFetch(`products/${productId}`);
-    const minorPrice = parseInt(storeProduct?.prices?.price || "0", 10);
-    const minorUnit = storeProduct?.prices?.currency_minor_unit ?? 2;
-    product = {
-      id: storeProduct.id,
-      name: storeProduct.name,
-      price: String(minorPrice / Math.pow(10, minorUnit)),
-      images: storeProduct.images || [],
-      meta_data: [],
-    };
-  } catch {
-    product = { id: productId, name: `Product #${productId}`, price: '0', images: [] };
-  }
-
-  // Compute price = product price + per-hour resource cost × hours.
-  // For booking products we always create a NEW line (don't merge with existing)
-  // because each booking has unique date/time/resource selection.
-  let unitPrice = parseFloat(product.price || '0');
-  if (booking?.durationHours) {
-    unitPrice = unitPrice * booking.durationHours;
-    if (booking.resourceId) {
-      // Look up resource block_cost so the cart total reflects the surcharge.
-      try {
-        const resources = await fetchProductBookingResources(productId);
-        const r = resources.find(x => x.id === booking.resourceId);
-        if (r) unitPrice += r.blockCost * booking.durationHours;
-      } catch {}
-    }
-  }
-
-  const items = loadCartItems();
-  if (booking) {
-    items.push({
-      key: `${productId}_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
-      product_id: productId,
-      name: product.name || `Product #${productId}`,
-      price: unitPrice,
-      quantity,
-      image: product.images?.[0]?.src,
-      provider_id: product.meta_data?.find?.((m: any) => m.key === '_provider_id')?.value,
-      booking,
-    });
-  } else {
-    const existing = items.find(i => i.product_id === productId && !i.booking);
-    if (existing) {
-      existing.quantity += quantity;
-    } else {
-      items.push({
-        key: `${productId}_${Date.now()}`,
-        product_id: productId,
-        name: product.name || `Product #${productId}`,
-        price: unitPrice,
-        quantity,
-        image: product.images?.[0]?.src,
-        provider_id: product.meta_data?.find?.((m: any) => m.key === '_provider_id')?.value,
-      });
-    }
-  }
-  saveCartItems(items);
-  return getCart();
+  const body: Record<string, unknown> = { product_id: productId, quantity };
+  if (booking) body.booking = booking;
+  if (priceOverride != null) body.price_override = priceOverride;
+  return ccCartFetch('cart/items', { method: 'POST', body: JSON.stringify(body) });
 }
 
 export async function removeCartItem(itemKey: string) {
-  const items = loadCartItems().filter(i => i.key !== itemKey);
-  saveCartItems(items);
-  return getCart();
+  return ccCartFetch(`cart/items/${encodeURIComponent(itemKey)}`, { method: 'DELETE' });
 }
 
 export async function clearCart() {
-  saveCartItems([]);
-  return getCart();
+  return ccCartFetch('cart', { method: 'DELETE' });
 }
 
 export async function checkout(billingData?: {
@@ -1169,43 +1088,13 @@ export async function checkout(billingData?: {
   email?: string;
   phone?: string;
 }) {
-  const items = loadCartItems();
-  if (items.length === 0) throw new Error('Cart is empty');
-
-  // Build line_items. For booking lines, attach meta_data using the keys
-  // WC Bookings reads server-side (wc_bookings_field_*). When these are
-  // present, WC Bookings creates a booking record automatically.
-  const lineItems = items.map(i => {
-    const base: any = { product_id: i.product_id, quantity: i.quantity };
-    if (!i.booking) return base;
-    const b = i.booking;
-    const meta: { key: string; value: string }[] = [];
-    if (b.startDate) meta.push({ key: 'wc_bookings_field_start_date_yy', value: b.startDate.split('-')[0] });
-    if (b.startDate) meta.push({ key: 'wc_bookings_field_start_date_mm', value: b.startDate.split('-')[1] });
-    if (b.startDate) meta.push({ key: 'wc_bookings_field_start_date_dd', value: b.startDate.split('-')[2] });
-    if (b.startTime) meta.push({ key: 'wc_bookings_field_start_date_time', value: b.startTime });
-    if (b.durationHours) meta.push({ key: 'wc_bookings_field_duration', value: String(b.durationHours) });
-    if (b.resourceId) meta.push({ key: 'wc_bookings_field_resource', value: String(b.resourceId) });
-    if (b.persons) {
-      Object.entries(b.persons).forEach(([pid, count]) => {
-        meta.push({ key: `wc_bookings_field_persons_${pid}`, value: String(count) });
-      });
-    }
-    if (b.serviceType) meta.push({ key: '_service_type', value: b.serviceType });
-    if (b.notes) meta.push({ key: '_customer_note', value: b.notes });
-    base.meta_data = meta;
-    // Force per-line price to include resource surcharge × hours.
-    base.subtotal = String(i.price * i.quantity);
-    base.total = String(i.price * i.quantity);
-    return base;
-  });
-
-  const orderPayload: any = {
+  // Server cart is auto-pulled by the careconnect-checkout snippet's
+  // rest_pre_dispatch filter when line_items is omitted.
+  const orderPayload: Record<string, unknown> = {
     payment_method: 'cod',
     payment_method_title: 'Cash on delivery',
     set_paid: true,
     status: 'processing',
-    line_items: lineItems,
   };
 
   if (billingData) {
@@ -1222,9 +1111,6 @@ export async function checkout(billingData?: {
     };
   }
 
-  // Use elevated careconnect/v1/checkout snippet — buyers don't have
-  // wc/v3/orders create-cap, so we let the server create the order
-  // (under the buyer's identity) on their behalf.
   const checkoutUrl = buildWPUrl(`careconnect/v1/checkout`);
   const checkoutRes = await fetch(checkoutUrl, {
     method: 'POST',
@@ -1236,9 +1122,6 @@ export async function checkout(billingData?: {
     throw new Error(`Checkout failed ${checkoutRes.status}: ${text}`);
   }
   const order = await checkoutRes.json();
-
-  // Clear client-side cart after successful order
-  saveCartItems([]);
 
   return {
     order_id: order.id,
