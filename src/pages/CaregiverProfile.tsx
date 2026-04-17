@@ -185,7 +185,8 @@ export default function CaregiverProfile() {
     toggleSaved.mutate(caregiver.id);
   };
 
-  const total = effectiveRate * parseInt(bookingDuration);
+  const durationHrs = parseInt(bookingDuration) || 0;
+  const total = (effectiveRate + resourceCostPerHour) * durationHrs;
   const hasAvailabilityConflict = Boolean(availabilityWarning);
 
   return (
