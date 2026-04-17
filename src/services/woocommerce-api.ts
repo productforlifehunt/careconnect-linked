@@ -279,6 +279,12 @@ export async function getOrCreateProviderProduct(
     location?: string;
     /** NEW: flat list of service packages — each becomes one bookable_resource. */
     serviceResources?: ServiceResource[];
+    /**
+     * Real Dokan store/vendor id (NOT the WP user id). Used as `_provider_id`
+     * meta so the marketplace listing (which keys cards by `dokan/v1/stores.id`)
+     * can join product → store. Falls back to `providerId` for back-compat.
+     */
+    dokanStoreId?: number | string | null;
     /** @deprecated use serviceResources */
     serviceRates?: ServiceRateEntry[];
     /** @deprecated use serviceResources */
@@ -289,6 +295,9 @@ export async function getOrCreateProviderProduct(
     const parentCat = await ensureCategoryBySlug(CARE_SERVICES_CATEGORY, 'Care Services');
     const categoryIds = [parentCat.id];
     const sku = `care-provider-${providerId}`;
+    // Listing-join key: prefer the real Dokan store id (matches what
+    // dokan/v1/stores returns and what marketplace cards use).
+    const providerJoinId = String(providerData.dokanStoreId || providerId);
 
     // Check if product already exists.
     let existingProduct: any = null;
@@ -356,7 +365,8 @@ export async function getOrCreateProviderProduct(
       sku,
       categories: categoryIds.map(id => ({ id })),
       meta_data: [
-        { key: '_provider_id', value: providerId },
+        { key: '_provider_id', value: providerJoinId },
+        { key: '_provider_user_id', value: providerId },
         { key: '_hourly_rate', value: providerData.hourlyRate.toString() },
         { key: '_specialties', value: JSON.stringify(providerData.specialties || []) },
         { key: '_certifications', value: JSON.stringify(providerData.certifications || []) },
@@ -418,6 +428,9 @@ export async function getOrCreateProviderProduct(
     }
 
     if (product?.id) {
+      // Vendor (Dokan) API silently drops `categories` on POST/PUT — force it
+      // via the admin WC API so the listing's category filter ("care-services")
+      // actually finds this product.
       try {
         await wcFetch(`products/${product.id}`, {
           method: 'PUT',
@@ -425,10 +438,11 @@ export async function getOrCreateProviderProduct(
             type: 'booking',
             status: 'publish',
             regular_price: baseProductPrice,
+            categories: categoryIds.map(id => ({ id })),
           }),
         });
       } catch (e) {
-        console.warn('Failed to convert/publish product:', e);
+        console.warn('Failed to convert/publish/categorize product:', e);
       }
 
       await configureBookingProduct(product.id, providerData.hourlyRate, flatResources);
@@ -777,10 +791,11 @@ export interface ProviderProductSummary {
 export async function fetchAllProviderProductSummaries(): Promise<Map<string, ProviderProductSummary>> {
   const map = new Map<string, ProviderProductSummary>();
   try {
-    // All provider service products use the SKU prefix `care-provider-{id}` and
-    // sit under the `care-services` category. `category` filter accepts a slug.
+    // Pull all booking products (not category-filtered) so we don't lose
+    // provider products that vendor API created in `uncategorized`. We then
+    // join client-side via the `_provider_id` meta written by getOrCreate.
     const products = await wcFetch(
-      `products?per_page=100&status=publish&category=${encodeURIComponent(CARE_SERVICES_CATEGORY)}`,
+      `products?per_page=100&status=publish&type=booking`,
     );
     if (!Array.isArray(products)) return map;
 
