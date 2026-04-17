@@ -3,25 +3,32 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tag, Clock, DollarSign, CheckCircle2, XCircle, Loader2 } from "lucide-react";
-import type { QuoteData } from "@/lib/quote-protocol";
+import { type QuoteData, encodeQuote } from "@/lib/quote-protocol";
 import { useToast } from "@/hooks/use-toast";
 import { useAddToCart } from "@/hooks/use-cart";
 import { createQuoteProduct } from "@/services/quote-product";
+import { useSendMessage } from "@/hooks/use-care-data";
 
 interface QuoteCardProps {
   quote: QuoteData;
   /** True if the current user is the recipient (the buyer). Only the buyer
-   *  sees the Accept & Pay button. */
+   *  sees the Accept & Pay / Decline buttons. */
   isRecipient: boolean;
   /** True if current user sent the quote (seller view) — read-only state. */
   isMe: boolean;
+  /** Conversation id — needed to post the decline notification message. */
+  conversationId?: string;
+  /** The other user's id (seller, when current user is the buyer). */
+  otherUserId?: string;
 }
 
-export function QuoteCard({ quote, isRecipient, isMe }: QuoteCardProps) {
+export function QuoteCard({ quote, isRecipient, isMe, conversationId, otherUserId }: QuoteCardProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
   const addToCart = useAddToCart();
+  const sendMessage = useSendMessage();
   const [accepting, setAccepting] = useState(false);
+  const [declining, setDeclining] = useState(false);
 
   const status = quote.status || "pending";
 
@@ -50,6 +57,31 @@ export function QuoteCard({ quote, isRecipient, isMe }: QuoteCardProps) {
       });
     } finally {
       setAccepting(false);
+    }
+  };
+
+  const handleDecline = async () => {
+    if (!conversationId || !otherUserId) {
+      toast({ title: "Cannot decline", description: "Missing conversation context.", variant: "destructive" });
+      return;
+    }
+    setDeclining(true);
+    try {
+      const declined: QuoteData = { ...quote, status: "declined" };
+      await sendMessage.mutateAsync({
+        conversationId,
+        receiverUserId: otherUserId,
+        content: encodeQuote(declined),
+      });
+      toast({ title: "Quote declined", description: "The sender has been notified." });
+    } catch (e: any) {
+      toast({
+        title: "Failed to decline",
+        description: e?.message || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeclining(false);
     }
   };
 
@@ -102,14 +134,14 @@ export function QuoteCard({ quote, isRecipient, isMe }: QuoteCardProps) {
         </p>
       )}
 
-      {/* Action buttons — only the recipient (buyer) can accept */}
+      {/* Action buttons — only the recipient (buyer) can accept or decline */}
       {status === "pending" && isRecipient && (
         <div className="flex gap-2 pt-2 border-t">
           <Button
             variant="coral"
             size="sm"
             className="flex-1"
-            disabled={accepting || addToCart.isPending}
+            disabled={accepting || addToCart.isPending || declining}
             onClick={handleAccept}
           >
             {accepting || addToCart.isPending ? (
@@ -119,6 +151,20 @@ export function QuoteCard({ quote, isRecipient, isMe }: QuoteCardProps) {
             ) : (
               <>
                 <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Accept &amp; Pay ${quote.amount}
+              </>
+            )}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={accepting || declining}
+            onClick={handleDecline}
+          >
+            {declining ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <>
+                <XCircle className="h-3.5 w-3.5 mr-1" /> Decline
               </>
             )}
           </Button>

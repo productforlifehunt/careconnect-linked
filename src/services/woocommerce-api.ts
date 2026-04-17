@@ -1088,7 +1088,18 @@ export async function addToCart({
 }) {
   let product: any;
   try {
-    product = await wcFetch(`products/${productId}`);
+    // Use the public Store API (no admin caps required) and normalize to
+    // the v3-shape fields the rest of this function reads (name, price, images).
+    const storeProduct: any = await storeApiFetch(`products/${productId}`);
+    const minorPrice = parseInt(storeProduct?.prices?.price || "0", 10);
+    const minorUnit = storeProduct?.prices?.currency_minor_unit ?? 2;
+    product = {
+      id: storeProduct.id,
+      name: storeProduct.name,
+      price: String(minorPrice / Math.pow(10, minorUnit)),
+      images: storeProduct.images || [],
+      meta_data: [],
+    };
   } catch {
     product = { id: productId, name: `Product #${productId}`, price: '0', images: [] };
   }
@@ -1211,10 +1222,20 @@ export async function checkout(billingData?: {
     };
   }
 
-  const order = await wcFetch('orders', {
+  // Use elevated careconnect/v1/checkout snippet — buyers don't have
+  // wc/v3/orders create-cap, so we let the server create the order
+  // (under the buyer's identity) on their behalf.
+  const checkoutUrl = buildWPUrl(`careconnect/v1/checkout`);
+  const checkoutRes = await fetch(checkoutUrl, {
     method: 'POST',
+    headers: getAuthHeaders(),
     body: JSON.stringify(orderPayload),
   });
+  if (!checkoutRes.ok) {
+    const text = await checkoutRes.text();
+    throw new Error(`Checkout failed ${checkoutRes.status}: ${text}`);
+  }
+  const order = await checkoutRes.json();
 
   // Clear client-side cart after successful order
   saveCartItems([]);
