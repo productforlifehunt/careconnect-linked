@@ -13,7 +13,7 @@ import { CommentsSection } from "@/components/comments/CommentsSection";
 import { useProvider, useProviderReviews, useCreateReview, useToggleSavedProvider, useSavedProviders, useStartConversation, useProviderAvailability, useProviderAvailabilitySetting } from "@/hooks/use-care-data";
 import { useCreateBookingWithWooCommerce } from "@/hooks/use-booking-woocommerce";
 import { useAddToCart } from "@/hooks/use-cart";
-import { getAvailabilityConflictMessage, getProviderBookingConflictMessage, getProviderProduct, extractProviderServicesFromProduct, fetchProviderBookingOptions, type BookingResourceOption } from "@/services/woocommerce-api";
+import { getAvailabilityConflictMessage, getProviderBookingConflictMessage, getProviderProduct, fetchProviderBookingOptions, type BookingResourceOption } from "@/services/woocommerce-api";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -173,8 +173,26 @@ export default function CaregiverProfile() {
   }, [availableTimeRanges, bookingTime]);
 
   useEffect(() => {
+    if (bookingTime && !startTimeOptions.includes(bookingTime)) {
+      setBookingTime("");
+    }
+  }, [bookingTime, startTimeOptions]);
+
+  useEffect(() => {
     if (bookingEndTime && !endTimeOptions.includes(bookingEndTime)) {
       setBookingEndTime("");
+    }
+  }, [bookingEndTime, endTimeOptions]);
+
+  useEffect(() => {
+    if (!bookingTime && startTimeOptions.length > 0) {
+      setBookingTime(startTimeOptions[0]);
+    }
+  }, [bookingTime, startTimeOptions]);
+
+  useEffect(() => {
+    if (!bookingEndTime && endTimeOptions.length > 0) {
+      setBookingEndTime(endTimeOptions[0]);
     }
   }, [bookingEndTime, endTimeOptions]);
 
@@ -198,8 +216,8 @@ export default function CaregiverProfile() {
   }
 
   const handleBooking = async () => {
-    if (!bookingDate || !bookingTime || !selectedResource) {
-      toast({ title: "Please pick a service package, date, and time", variant: "destructive" });
+    if (!bookingDate || !bookingTime || !bookingEndTime || !selectedResource) {
+      toast({ title: "Please pick a service package, date, start time, and end time", variant: "destructive" });
       return;
     }
     const selectedDate = new Date(bookingDate + "T" + bookingTime);
@@ -215,7 +233,11 @@ export default function CaregiverProfile() {
         return;
       }
     }
-    const durationHours = parseInt(bookingDuration);
+    const durationHours = getDurationHours(bookingTime, bookingEndTime);
+    if (!durationHours) {
+      toast({ title: "Invalid time range", description: "End time must be after start time.", variant: "destructive" });
+      return;
+    }
     const scheduleConflictMessage = getAvailabilityConflictMessage(availability || [], bookingDate, bookingTime, durationHours);
     if (scheduleConflictMessage) {
       setAvailabilityWarning(scheduleConflictMessage);
@@ -262,7 +284,7 @@ export default function CaregiverProfile() {
     toggleSaved.mutate(caregiver.id);
   };
 
-  const durationHrs = parseInt(bookingDuration) || 0;
+  const durationHrs = getDurationHours(bookingTime, bookingEndTime);
   const total = effectiveRate * durationHrs;
   const hasAvailabilityConflict = Boolean(availabilityWarning);
 
