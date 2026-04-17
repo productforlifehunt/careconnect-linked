@@ -23,7 +23,7 @@ export default function ProviderSettingsTab() {
   const updateProfile = useUpdateProfile();
   const syncToWooCommerce = useSyncProviderToWooCommerce();
   const { data: wcProduct, isLoading: wcLoading } = useProviderWooCommerceProduct();
-  const { serviceTypes, isLoading: serviceTypesLoading } = useServiceTypes();
+  const serviceTypes = FIXED_SERVICE_TYPES;
 
   const [location, setLocation] = useState("");
   const [hourlyRate, setHourlyRate] = useState("");
