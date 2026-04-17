@@ -759,8 +759,64 @@ export async function fetchProductBookingResources(productId: number): Promise<B
   }
 }
 
+/**
+ * Bulk-load every care-provider booking product so the marketplace listing can
+ * enrich each Dokan store card with min price + offered service-type/location
+ * slugs in a single round-trip (instead of N requests).
+ *
+ * Returns a Map keyed by provider_id (the Dokan store id stored in `_provider_id`
+ * meta). Empty map on failure — callers should fall back gracefully.
+ */
+export interface ProviderProductSummary {
+  productId: number;
+  minBlockCost: number;
+  serviceTypeSlugs: string[];
+  serviceLocationSlugs: string[];
+}
 
-// Update provider product status (active/inactive)
+export async function fetchAllProviderProductSummaries(): Promise<Map<string, ProviderProductSummary>> {
+  const map = new Map<string, ProviderProductSummary>();
+  try {
+    // All provider service products use the SKU prefix `care-provider-{id}` and
+    // sit under the `care-services` category. `category` filter accepts a slug.
+    const products = await wcFetch(
+      `products?per_page=100&status=publish&category=${encodeURIComponent(CARE_SERVICES_CATEGORY)}`,
+    );
+    if (!Array.isArray(products)) return map;
+
+    for (const p of products) {
+      const meta: any[] = Array.isArray(p?.meta_data) ? p.meta_data : [];
+      const providerId = meta.find((m) => m?.key === '_provider_id')?.value;
+      if (!providerId) continue;
+
+      const minRaw = meta.find((m) => m?.key === '_min_block_cost')?.value;
+      const minBlockCost = Number(minRaw) || 0;
+
+      const attrs: any[] = Array.isArray(p?.attributes) ? p.attributes : [];
+      const findAttr = (slug: string) =>
+        attrs.find(
+          (a) => a?.slug === slug || a?.slug === `pa_${slug}` || a?.name?.toLowerCase().includes(slug),
+        );
+      const stOptions: string[] = (findAttr('service-type')?.options as string[]) || [];
+      const slOptions: string[] = (findAttr('service-location')?.options as string[]) || [];
+
+      // WC returns option *names* in `options`. Normalise to lowercase-dash slugs
+      // so the front-end filter can compare against pa_service-location terms
+      // ("in-person" / "remote" / "hybrid") regardless of capitalisation.
+      const toSlug = (s: string) => String(s).trim().toLowerCase().replace(/\s+/g, '-');
+
+      map.set(String(providerId), {
+        productId: Number(p.id),
+        minBlockCost,
+        serviceTypeSlugs: stOptions.map(toSlug),
+        serviceLocationSlugs: slOptions.map(toSlug),
+      });
+    }
+  } catch (e) {
+    console.warn('fetchAllProviderProductSummaries failed:', e);
+  }
+  return map;
+}
 export async function updateProviderProductStatus(
   providerId: string,
   isActive: boolean
