@@ -96,6 +96,14 @@ export default function Messages() {
     setPendingAttachment(null);
   };
 
+  const handleSendQuote = async (quote: QuoteData) => {
+    if (!selectedConvoId) return;
+    const encoded = encodeQuote(quote);
+    await sendMessage.mutateAsync({ conversationId: selectedConvoId, content: encoded });
+    setQuoteDialogOpen(false);
+    toast({ title: "Quote sent", description: `$${quote.amount} ${quote.mode === "hourly" ? "(hourly)" : "(flat)"} sent.` });
+  };
+
   const handleStartConversation = (person: any) => {
     startConversation.mutate(person.id, {
       onSuccess: (convoId: string) => {
