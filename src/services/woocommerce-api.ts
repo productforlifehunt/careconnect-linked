@@ -691,6 +691,30 @@ async function syncBookingProductResources(productId: number): Promise<void> {
 }
 
 
+function matchesProviderProduct(product: any, providerId: string) {
+  const meta: any[] = Array.isArray(product?.meta_data) ? product.meta_data : [];
+  const providerJoinId = meta.find((item: any) => item?.key === '_provider_id')?.value;
+  const providerUserId = meta.find((item: any) => item?.key === '_provider_user_id')?.value;
+  const storeId = product?.store?.id;
+  const authorId = product?.author ?? product?.post_author;
+  return [providerJoinId, providerUserId, storeId, authorId].some(
+    (value) => value != null && String(value) === String(providerId),
+  );
+}
+
+export async function getProviderProducts(providerId: string) {
+  try {
+    const products = await wpAdminFetch(`wc/v3/products?per_page=100&status=publish&type=booking`);
+    if (!Array.isArray(products)) return [];
+
+    return products
+      .filter((product: any) => matchesProviderProduct(product, providerId))
+      .sort((a: any, b: any) => Number(b?.id || 0) - Number(a?.id || 0));
+  } catch {
+    return [];
+  }
+}
+
 export async function getProviderProduct(providerId: string) {
   const matchesProvider = (product: any) => {
     const meta: any[] = Array.isArray(product?.meta_data) ? product.meta_data : [];
@@ -776,6 +800,7 @@ export function extractProviderServicesFromProduct(product: any, defaultRate = 0
  */
 export interface BookingResourceOption {
   id: number;
+  productId?: number;
   name: string;
   blockCost: number;
   baseCost: number;
@@ -822,6 +847,56 @@ export async function fetchProductBookingResources(productId: number): Promise<B
     return extractBookingResourcesFromProductMeta(product);
   } catch (e) {
     console.warn('fetchProductBookingResources failed:', e);
+    return [];
+  }
+}
+
+export async function fetchProviderBookingOptions(providerId: string): Promise<BookingResourceOption[]> {
+  try {
+    const products = await getProviderProducts(providerId);
+    if (!products.length) return [];
+
+    const resourceGroups = await Promise.all(
+      products.map(async (product: any) => {
+        const productId = Number(product?.id);
+        if (!productId) return [] as BookingResourceOption[];
+
+        const resources = await fetchProductBookingResources(productId);
+        if (resources.length > 0) {
+          return resources.map((resource) => ({ ...resource, productId }));
+        }
+
+        const meta: any[] = Array.isArray(product?.meta_data) ? product.meta_data : [];
+        const minBlockCost = Number(
+          meta.find((item: any) => item?.key === '_min_block_cost')?.value ??
+            product?.price ??
+            product?.regular_price ??
+            0,
+        );
+        const name = String(product?.name || '').trim();
+        if (!name || minBlockCost <= 0) return [] as BookingResourceOption[];
+
+        return [
+          {
+            id: productId,
+            productId,
+            name,
+            blockCost: minBlockCost,
+            baseCost: minBlockCost,
+          },
+        ];
+      }),
+    );
+
+    const deduped = new Map<string, BookingResourceOption>();
+    resourceGroups.flat().forEach((resource) => {
+      const key = `${resource.productId ?? 0}:${resource.id}`;
+      if (!deduped.has(key)) deduped.set(key, resource);
+    });
+
+    return Array.from(deduped.values()).sort((a, b) => a.blockCost - b.blockCost || a.name.localeCompare(b.name));
+  } catch (e) {
+    console.warn('fetchProviderBookingOptions failed:', e);
     return [];
   }
 }
@@ -999,6 +1074,7 @@ export async function searchCareServices(filters?: {
 export async function createServiceOrder(
   providerId: string,
   bookingData: {
+    productId?: number;
     clientId: string;
     appointmentDate: string;
     appointmentTime: string;
@@ -1010,8 +1086,9 @@ export async function createServiceOrder(
   }
 ) {
   try {
-    // Get provider's product
-    const product = await getProviderProduct(providerId);
+    const product = bookingData.productId
+      ? await wpAdminFetch(`wc/v3/products/${bookingData.productId}`)
+      : await getProviderProduct(providerId);
     
     if (!product) {
       throw new Error('Provider service product not found');
