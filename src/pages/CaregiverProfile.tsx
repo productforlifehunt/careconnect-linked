@@ -61,6 +61,24 @@ export default function CaregiverProfile() {
     staleTime: 1000 * 60 * 5,
   });
 
+  // Fetch delivery resources (Local / Virtual) attached to this product so the
+  // booking dialog can show price-impacting choices and total live-updates.
+  const { data: bookingResources = [] } = useQuery({
+    queryKey: ["product-booking-resources", providerProduct?.id],
+    queryFn: () => fetchProductBookingResources(providerProduct.id),
+    enabled: !!providerProduct?.id,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  // Auto-select first delivery option when dialog opens
+  useEffect(() => {
+    if (bookingDialogOpen && !deliveryResourceId && bookingResources.length > 0) {
+      setDeliveryResourceId(String(bookingResources[0].id));
+    }
+  }, [bookingDialogOpen, deliveryResourceId, bookingResources]);
+
+  const selectedResource = bookingResources.find((r: BookingResourceOption) => String(r.id) === deliveryResourceId);
+  const resourceCostPerHour = Number(selectedResource?.blockCost || 0);
   // Build the source of truth for what the provider actually offers.
   // Priority: WC product `_service_rates` meta → profile.specialty (fallback) → empty.
   const offered = useMemo(() => {
