@@ -756,6 +756,37 @@ export function extractProviderServicesFromProduct(product: any, defaultRate = 0
   return { services, rates };
 }
 
+/**
+ * Fetch the bookable_resource list for a product (Local / Virtual delivery
+ * options) along with their per-block costs. Returns [] if the product has
+ * no resources or the endpoint is unreachable.
+ */
+export interface BookingResourceOption {
+  id: number;
+  name: string;
+  blockCost: number;
+  baseCost: number;
+}
+
+export async function fetchProductBookingResources(productId: number): Promise<BookingResourceOption[]> {
+  try {
+    const url = buildWPUrl(`wp/v2/bookable_resource?product_id=${productId}&per_page=20&_fields=id,title,meta`);
+    const res = await fetch(url, { headers: { ...getAuthHeaders() } });
+    if (!res.ok) return [];
+    const rows = await res.json();
+    return (rows || []).map((r: any) => ({
+      id: Number(r.id),
+      name: (r.title?.rendered || r.title || '').trim(),
+      blockCost: Number(r.meta?._wc_booking_block_cost ?? 0),
+      baseCost: Number(r.meta?._wc_booking_base_cost ?? 0),
+    }));
+  } catch (e) {
+    console.warn('fetchProductBookingResources failed:', e);
+    return [];
+  }
+}
+
+
 // Update provider product status (active/inactive)
 export async function updateProviderProductStatus(
   providerId: string,

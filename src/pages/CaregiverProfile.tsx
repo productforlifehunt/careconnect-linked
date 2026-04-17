@@ -14,7 +14,7 @@ import { CommentsSection } from "@/components/comments/CommentsSection";
 import { useProvider, useProviderReviews, useCreateReview, useToggleSavedProvider, useSavedProviders, useStartConversation, useProviderAvailability, useProviderAvailabilitySetting } from "@/hooks/use-care-data";
 import { useCreateBookingWithWooCommerce } from "@/hooks/use-booking-woocommerce";
 import { useAddToCart } from "@/hooks/use-cart";
-import { getAvailabilityConflictMessage, getProviderBookingConflictMessage, getProviderProduct, extractProviderServicesFromProduct } from "@/services/woocommerce-api";
+import { getAvailabilityConflictMessage, getProviderBookingConflictMessage, getProviderProduct, extractProviderServicesFromProduct, fetchProductBookingResources, type BookingResourceOption } from "@/services/woocommerce-api";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -44,6 +44,7 @@ export default function CaregiverProfile() {
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
   const [availabilityWarning, setAvailabilityWarning] = useState("");
   const [recurringPattern, setRecurringPattern] = useState("none");
+  const [deliveryResourceId, setDeliveryResourceId] = useState<string>("");
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
@@ -60,6 +61,24 @@ export default function CaregiverProfile() {
     staleTime: 1000 * 60 * 5,
   });
 
+  // Fetch delivery resources (Local / Virtual) attached to this product so the
+  // booking dialog can show price-impacting choices and total live-updates.
+  const { data: bookingResources = [] } = useQuery({
+    queryKey: ["product-booking-resources", providerProduct?.id],
+    queryFn: () => fetchProductBookingResources(providerProduct.id),
+    enabled: !!providerProduct?.id,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  // Auto-select first delivery option when dialog opens
+  useEffect(() => {
+    if (bookingDialogOpen && !deliveryResourceId && bookingResources.length > 0) {
+      setDeliveryResourceId(String(bookingResources[0].id));
+    }
+  }, [bookingDialogOpen, deliveryResourceId, bookingResources]);
+
+  const selectedResource = bookingResources.find((r: BookingResourceOption) => String(r.id) === deliveryResourceId);
+  const resourceCostPerHour = Number(selectedResource?.blockCost || 0);
   // Build the source of truth for what the provider actually offers.
   // Priority: WC product `_service_rates` meta → profile.specialty (fallback) → empty.
   const offered = useMemo(() => {
@@ -142,15 +161,17 @@ export default function CaregiverProfile() {
     }
     try {
       const recurringNote = recurringPattern !== "none" ? `[Recurring: ${recurringPattern}] ` : "";
+      const deliveryNote = selectedResource ? `[Delivery: ${selectedResource.name}] ` : "";
+      const ratePerHour = effectiveRate + resourceCostPerHour;
       await createBooking.mutateAsync({
         provider_id: caregiver.id,
         appointment_date: bookingDate,
         appointment_time: bookingTime,
         duration_hour: durationHours,
         service_type: bookingType,
-        hourly_rate: effectiveRate,
-        total_cost: effectiveRate * durationHours,
-        special_instruction: recurringNote + (bookingNotes || "") || null,
+        hourly_rate: ratePerHour,
+        total_cost: ratePerHour * durationHours,
+        special_instruction: recurringNote + deliveryNote + (bookingNotes || "") || null,
         status: availabilitySetting?.requires_confirmation === false ? "confirmed" : "pending",
         payment_status: "pending",
       });
@@ -166,7 +187,8 @@ export default function CaregiverProfile() {
     toggleSaved.mutate(caregiver.id);
   };
 
-  const total = effectiveRate * parseInt(bookingDuration);
+  const durationHrs = parseInt(bookingDuration) || 0;
+  const total = (effectiveRate + resourceCostPerHour) * durationHrs;
   const hasAvailabilityConflict = Boolean(availabilityWarning);
 
   return (
@@ -360,6 +382,21 @@ export default function CaregiverProfile() {
                         </p>
                       )}
                     </div>
+                    {bookingResources.length > 0 && (
+                      <div>
+                        <Label>Delivery *</Label>
+                        <Select value={deliveryResourceId} onValueChange={setDeliveryResourceId}>
+                          <SelectTrigger><SelectValue placeholder="Select delivery option" /></SelectTrigger>
+                          <SelectContent>
+                            {bookingResources.map((r: BookingResourceOption) => (
+                              <SelectItem key={r.id} value={String(r.id)}>
+                                {r.name} {r.blockCost > 0 ? `(+$${r.blockCost}/hr)` : "(included)"}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <Label>Date *</Label>
