@@ -700,6 +700,25 @@ export async function getProviderProduct(providerId: string) {
     const oldProducts = await wcFetch(`products?sku=provider-${providerId}`);
     if (oldProducts && oldProducts.length > 0) return oldProducts[0];
 
+    try {
+      const allProducts = await wpAdminFetch(`wc/v3/products?per_page=100&status=any`);
+      if (Array.isArray(allProducts)) {
+        const matchedProduct = allProducts.find((product: any) => {
+          const meta: any[] = Array.isArray(product?.meta_data) ? product.meta_data : [];
+          const providerJoinId = meta.find((item: any) => item?.key === '_provider_id')?.value;
+          const providerUserId = meta.find((item: any) => item?.key === '_provider_user_id')?.value;
+          const storeId = product?.store?.id;
+          const authorId = product?.author ?? product?.post_author;
+          return [providerJoinId, providerUserId, storeId, authorId].some(
+            (value) => value != null && String(value) === String(providerId),
+          );
+        });
+        if (matchedProduct) return matchedProduct;
+      }
+    } catch {
+      /* fall through */
+    }
+
     const providerProducts = await wcBookingsFetch('products');
     const matchedBookingProduct = (providerProducts || []).find((product: any) => {
       const storeId = Number(product?.store?.id ?? 0);
@@ -707,7 +726,15 @@ export async function getProviderProduct(providerId: string) {
       const metaProviderId = Array.isArray(product?.meta_data)
         ? product.meta_data.find((item: any) => item?.key === '_provider_id')?.value
         : null;
-      return storeId === Number(providerId) || authorId === Number(providerId) || String(metaProviderId || '') === String(providerId);
+      const metaProviderUserId = Array.isArray(product?.meta_data)
+        ? product.meta_data.find((item: any) => item?.key === '_provider_user_id')?.value
+        : null;
+      return (
+        storeId === Number(providerId) ||
+        authorId === Number(providerId) ||
+        String(metaProviderId || '') === String(providerId) ||
+        String(metaProviderUserId || '') === String(providerId)
+      );
     });
 
     if (matchedBookingProduct) return matchedBookingProduct;
