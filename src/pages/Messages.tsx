@@ -52,6 +52,8 @@ export default function Messages() {
     return () => clearInterval(interval);
   }, [qc]);
 
+  const [quotePrefill, setQuotePrefill] = useState<{ serviceType?: string; jobId?: string | number } | null>(null);
+
   useEffect(() => {
     const navState = location.state as any;
     if (navState?.targetUserId && !handledNavState) {
@@ -65,6 +67,10 @@ export default function Messages() {
         onSuccess: (convoId: string) => {
           setSelectedConvoId(convoId);
           setSelectedOtherUser(targetUser);
+          if (navState.openQuote) {
+            if (navState.quotePrefill) setQuotePrefill(navState.quotePrefill);
+            setQuoteDialogOpen(true);
+          }
         },
       });
     }
@@ -331,8 +337,10 @@ export default function Messages() {
       {/* Quote dialog: send a price quote in the active conversation */}
       <QuoteDialog
         open={quoteDialogOpen}
-        onOpenChange={setQuoteDialogOpen}
+        onOpenChange={(o) => { setQuoteDialogOpen(o); if (!o) setQuotePrefill(null); }}
         vendorUserId={selectedOtherUser?.id || ""}
+        defaultServiceType={quotePrefill?.serviceType}
+        jobId={quotePrefill?.jobId}
         onSend={handleSendQuote}
         submitting={sendMessage.isPending}
       />
