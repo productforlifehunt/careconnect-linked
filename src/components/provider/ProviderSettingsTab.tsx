@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,30 +6,33 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MapPin, DollarSign, Briefcase, Shield, Phone, Eye, EyeOff, X, Store, ShoppingBag, Plus, Trash2 } from "lucide-react";
 import { useMyProfile, useUpdateProfile } from "@/hooks/use-care-data";
 import { useSyncProviderToWooCommerce, useProviderWooCommerceProduct } from "@/hooks/use-woocommerce";
+import { useServiceTypes } from "@/hooks/use-service-types";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { ALL_CERTIFICATIONS, getCertificationKey } from "@/lib/specialty-i18n";
 
 /**
- * Flat service-resource model. Each row is one bookable_resource the
- * customer picks at checkout (e.g. "儿童陪伴(当面)"). The full hourly rate
- * lives on the resource — no separate person/delivery split.
+ * Three-field service package row. Each row will be double-written by the
+ * save handler:
+ *   1) `bookable_resource` with block_cost = ratePerHour (single source of
+ *      truth for checkout pricing).
+ *   2) `pa_service-type` and `pa_service-location` term selections on the
+ *      product attributes (for marketplace search filtering).
  */
 interface ServiceResourceRow {
-  name: string;
+  serviceTypeSlug: string; // pa_service-type term slug
+  locationSlug: string;    // pa_service-location term slug: in-person | remote | hybrid
   ratePerHour: string;
 }
 
-const STARTER_RESOURCES: ServiceResourceRow[] = [
-  { name: "老人陪伴 (当面)", ratePerHour: "50" },
-  { name: "老人陪伴 (远程)", ratePerHour: "30" },
-  { name: "儿童陪伴 (当面)", ratePerHour: "40" },
-  { name: "儿童陪伴 (远程)", ratePerHour: "25" },
+const LOCATION_OPTIONS: { slug: string; label: string }[] = [
+  { slug: "in-person", label: "In-Person" },
+  { slug: "remote",    label: "Remote" },
+  { slug: "hybrid",    label: "Both" },
 ];
 
 export default function ProviderSettingsTab() {
@@ -39,6 +42,7 @@ export default function ProviderSettingsTab() {
   const updateProfile = useUpdateProfile();
   const syncToWooCommerce = useSyncProviderToWooCommerce();
   const { data: wcProduct, isLoading: wcLoading } = useProviderWooCommerceProduct();
+  const { serviceTypes, serviceTypeBySlug } = useServiceTypes();
 
   const [location, setLocation] = useState("");
   const [hourlyRate, setHourlyRate] = useState("");
@@ -60,18 +64,36 @@ export default function ProviderSettingsTab() {
       setCertifications(profile.certifications || []);
       setIsActive(profile.care_provider_is_active || false);
 
-      // Hydrate flat service resources from existing WC product meta if present.
-      // _service_rates is a JSON map { name: rate }. If empty, leave list empty
-      // so the user can either add their own or click "Use starter list".
+      // Hydrate from WC product:
+      //   - `_service_rates`  → { name → ratePerHour }
+      //   - `_service_packages` → optional structured backup with slugs
+      // We prefer the structured backup when present; otherwise we attempt to
+      // re-derive slugs from the package name.
       let initial: ServiceResourceRow[] = [];
       try {
-        const meta = (wcProduct as any)?.meta_data?.find?.((m: any) => m.key === "_service_rates")?.value;
-        if (meta) {
-          const parsed = typeof meta === "string" ? JSON.parse(meta) : meta;
-          initial = Object.entries(parsed || {}).map(([name, rate]) => ({
-            name,
-            ratePerHour: String(rate ?? ""),
+        const meta = (wcProduct as any)?.meta_data || [];
+        const packagesRaw = meta.find?.((m: any) => m.key === "_service_packages")?.value;
+        if (packagesRaw) {
+          const parsed = typeof packagesRaw === "string" ? JSON.parse(packagesRaw) : packagesRaw;
+          initial = (Array.isArray(parsed) ? parsed : []).map((p: any) => ({
+            serviceTypeSlug: String(p.serviceTypeSlug || ""),
+            locationSlug: String(p.locationSlug || "in-person"),
+            ratePerHour: String(p.ratePerHour ?? ""),
           }));
+        } else {
+          const ratesRaw = meta.find?.((m: any) => m.key === "_service_rates")?.value;
+          if (ratesRaw) {
+            const parsed = typeof ratesRaw === "string" ? JSON.parse(ratesRaw) : ratesRaw;
+            initial = Object.entries(parsed || {}).map(([name, rate]) => {
+              // Best-effort: try to match the name back to a service-type slug
+              return {
+                serviceTypeSlug: "",
+                locationSlug: "in-person",
+                ratePerHour: String(rate ?? ""),
+                _legacyName: name,
+              } as any;
+            });
+          }
         }
       } catch { /* ignore */ }
       setServiceResources(initial);
@@ -90,23 +112,39 @@ export default function ProviderSettingsTab() {
   };
 
   const addRow = () => {
-    setServiceResources(prev => [...prev, { name: "", ratePerHour: hourlyRate || "" }]);
+    setServiceResources(prev => [
+      ...prev,
+      { serviceTypeSlug: "", locationSlug: "in-person", ratePerHour: hourlyRate || "" },
+    ]);
   };
 
   const removeRow = (idx: number) => {
     setServiceResources(prev => prev.filter((_, i) => i !== idx));
   };
 
-  const useStarterList = () => {
-    setServiceResources(STARTER_RESOURCES.map(r => ({ ...r })));
+  // Compose a display name "Service Type · Location" for each row that the
+  // backend stores as the bookable_resource title.
+  const composeName = (serviceTypeSlug: string, locationSlug: string): string => {
+    const stName = serviceTypeBySlug.get(serviceTypeSlug)?.name || serviceTypeSlug || "";
+    const locLabel = LOCATION_OPTIONS.find(l => l.slug === locationSlug)?.label || "";
+    if (!stName) return "";
+    return locLabel ? `${stName} · ${locLabel}` : stName;
   };
+
+  const validRows = useMemo(
+    () => serviceResources.filter(r => r.serviceTypeSlug && r.ratePerHour),
+    [serviceResources],
+  );
 
   const handleSave = async () => {
     try {
-      // Normalize: drop empty names; coerce rates to numbers
-      const cleaned = serviceResources
-        .map(r => ({ name: r.name.trim(), ratePerHour: parseFloat(r.ratePerHour) || 0 }))
-        .filter(r => r.name.length > 0);
+      // Normalize: drop incomplete rows; coerce rates to numbers
+      const cleaned = validRows.map(r => ({
+        name: composeName(r.serviceTypeSlug, r.locationSlug),
+        serviceTypeSlug: r.serviceTypeSlug,
+        locationSlug: r.locationSlug || "in-person",
+        ratePerHour: parseFloat(r.ratePerHour) || 0,
+      })).filter(r => r.name);
 
       // Save profile via WordPress
       await updateProfile.mutateAsync({
@@ -121,7 +159,7 @@ export default function ProviderSettingsTab() {
         care_provider_is_active: isActive,
       });
 
-      // Sync to WooCommerce/Dokan with the flat service-resource list
+      // Sync to WooCommerce/Dokan with the structured service-resource list
       await syncToWooCommerce.mutateAsync({
         hourlyRate: parseFloat(hourlyRate) || 0,
         bio,
@@ -226,7 +264,7 @@ export default function ProviderSettingsTab() {
         </CardContent>
       </Card>
 
-      {/* Service Packages — flat resource list */}
+      {/* Service Packages — structured (service-type + location + rate) */}
       <Card className="border-transparent card-elevated">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -235,22 +273,18 @@ export default function ProviderSettingsTab() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Each package is one bookable service the customer picks at checkout. Name it however you like
-            (e.g. <span className="font-medium">老人陪伴 (当面)</span>, <span className="font-medium">儿童陪伴 (远程)</span>) and set
-            its hourly rate. Total = rate × hours booked.
+            For each package, pick the <span className="font-medium">service category</span>, where you deliver it
+            (<span className="font-medium">In-Person</span>, <span className="font-medium">Remote</span>, or
+            <span className="font-medium"> Both</span>), and your hourly rate. Total = rate × hours booked.
+            Categories drive marketplace search filters; the rate is what clients pay at checkout.
           </p>
 
           {serviceResources.length === 0 && (
             <div className="rounded-lg border-2 border-dashed border-border p-6 text-center">
               <p className="text-sm text-muted-foreground mb-3">No packages yet.</p>
-              <div className="flex gap-2 justify-center">
-                <Button variant="outline" size="sm" onClick={useStarterList}>
-                  Use starter list
-                </Button>
-                <Button variant="coral" size="sm" onClick={addRow}>
-                  <Plus className="h-3.5 w-3.5 mr-1" /> Add package
-                </Button>
-              </div>
+              <Button variant="coral" size="sm" onClick={addRow}>
+                <Plus className="h-3.5 w-3.5 mr-1" /> Add package
+              </Button>
             </div>
           )}
 
@@ -260,31 +294,57 @@ export default function ProviderSettingsTab() {
                 {serviceResources.map((row, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center gap-2 p-3 rounded-lg border bg-card"
+                    className="grid grid-cols-12 gap-2 items-center p-3 rounded-lg border bg-card"
                   >
-                    <Input
-                      className="flex-1"
-                      value={row.name}
-                      onChange={e => updateRow(idx, { name: e.target.value })}
-                      placeholder="e.g. 老人陪伴 (当面)"
-                    />
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+                    {/* Service-type dropdown — pulls 21 terms from pa_service-type */}
+                    <Select
+                      value={row.serviceTypeSlug}
+                      onValueChange={v => updateRow(idx, { serviceTypeSlug: v })}
+                    >
+                      <SelectTrigger className="col-span-5 h-9">
+                        <SelectValue placeholder="Service type" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-72">
+                        {serviceTypes.map(st => (
+                          <SelectItem key={st.slug} value={st.slug}>{st.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    {/* Location dropdown — in-person / remote / hybrid */}
+                    <Select
+                      value={row.locationSlug || "in-person"}
+                      onValueChange={v => updateRow(idx, { locationSlug: v })}
+                    >
+                      <SelectTrigger className="col-span-3 h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {LOCATION_OPTIONS.map(l => (
+                          <SelectItem key={l.slug} value={l.slug}>{l.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    {/* Rate */}
+                    <div className="col-span-3 flex items-center gap-1.5">
+                      <DollarSign className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
                       <Input
                         type="number"
                         min="0"
                         step="5"
-                        className="h-9 w-20 text-sm text-right"
+                        className="h-9 text-sm text-right"
                         value={row.ratePerHour}
                         onChange={e => updateRow(idx, { ratePerHour: e.target.value })}
                         placeholder="50"
                       />
                       <span className="text-xs text-muted-foreground whitespace-nowrap">/hr</span>
                     </div>
+
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive flex-shrink-0"
+                      className="col-span-1 h-8 w-8 text-muted-foreground hover:text-destructive justify-self-end"
                       onClick={() => removeRow(idx)}
                       aria-label="Remove package"
                     >
@@ -300,7 +360,7 @@ export default function ProviderSettingsTab() {
           )}
 
           <p className="text-xs text-muted-foreground">
-            Tip: clients can also negotiate a custom price in chat (hourly or one-time flat rate) — those don't need to be listed here.
+            Tip: clients can also negotiate a custom price in chat — those don't need to be listed here.
           </p>
         </CardContent>
       </Card>
