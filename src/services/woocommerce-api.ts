@@ -534,14 +534,24 @@ async function syncBookingPersons(productId: number, serviceRates: ServiceRateEn
     const url = existing
       ? buildWPUrl(`wp/v2/bookable_person/${existing.id}`)
       : buildWPUrl(`wp/v2/bookable_person`);
+    let upsertedId = existing?.id;
     try {
-      await fetch(url, {
+      const res = await fetch(url, {
         method: existing ? 'PUT' : 'POST',
         headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
+      if (res.ok) {
+        const data = await res.json().catch(() => null);
+        if (data?.id) upsertedId = data.id;
+      }
     } catch (e) {
       console.warn(`Failed to upsert person "${title}":`, e);
+    }
+    if (upsertedId) {
+      // Force-link via direct DB endpoint — wp/v2 strips post_parent on
+      // non-hierarchical CPTs even when our product_id field is sent.
+      await forceLinkBookingChild(upsertedId, productId);
     }
   }
 
