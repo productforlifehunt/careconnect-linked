@@ -179,4 +179,85 @@ add_action( 'rest_api_init', function () {
 			);
 		},
 	) );
+
+	// 5. Diagnostic + sync endpoint: GET/POST /careconnect/v1/booking-debug/{product_id}
+	//    GET shows the real DB state; POST rebuilds the product's resource link
+	//    arrays (`_wc_booking_resource_ids` etc) from the actual child posts and
+	//    flushes WC Bookings transients. This is what makes the storefront
+	//    booking form actually render the resource picker.
+	register_rest_route( 'careconnect/v1', '/booking-debug/(?P<product_id>\d+)', array(
+		array(
+			'methods'             => 'GET',
+			'permission_callback' => function () { return current_user_can( 'edit_posts' ); },
+			'callback'            => function ( WP_REST_Request $req ) {
+				global $wpdb;
+				$pid = (int) $req->get_param( 'product_id' );
+				$rows = $wpdb->get_results( $wpdb->prepare(
+					"SELECT ID, post_title, post_type, post_parent, post_status FROM {$wpdb->posts} WHERE post_parent = %d AND post_type IN ('bookable_person','bookable_resource')",
+					$pid
+				), ARRAY_A );
+				return array(
+					'product_id' => $pid,
+					'children'   => $rows,
+					'meta'       => array(
+						'has_persons'         => get_post_meta( $pid, '_wc_booking_has_persons', true ),
+						'has_resources'       => get_post_meta( $pid, '_wc_booking_has_resources', true ),
+						'resource_ids'        => get_post_meta( $pid, '_wc_booking_resource_ids', true ),
+						'resource_base_costs' => get_post_meta( $pid, '_wc_booking_resource_base_costs', true ),
+						'resource_block_costs'=> get_post_meta( $pid, '_wc_booking_resource_block_costs', true ),
+					),
+				);
+			},
+		),
+		array(
+			'methods'             => 'POST',
+			'permission_callback' => function () { return current_user_can( 'edit_posts' ); },
+			'callback'            => function ( WP_REST_Request $req ) {
+				global $wpdb;
+				$pid = (int) $req->get_param( 'product_id' );
+				$resources = $wpdb->get_results( $wpdb->prepare(
+					"SELECT ID FROM {$wpdb->posts} WHERE post_parent = %d AND post_type = 'bookable_resource' AND post_status = 'publish'",
+					$pid
+				), ARRAY_A );
+				$resource_ids = array();
+				$base_costs   = array();
+				$block_costs  = array();
+				foreach ( $resources as $r ) {
+					$rid = (int) $r['ID'];
+					$resource_ids[] = $rid;
+					$base_costs[ $rid ]  = (float) get_post_meta( $rid, '_wc_booking_base_cost', true );
+					$block_costs[ $rid ] = (float) get_post_meta( $rid, '_wc_booking_block_cost', true );
+				}
+				update_post_meta( $pid, '_wc_booking_resource_ids', $resource_ids );
+				update_post_meta( $pid, '_wc_booking_resource_base_costs', $base_costs );
+				update_post_meta( $pid, '_wc_booking_resource_block_costs', $block_costs );
+				if ( ! empty( $resource_ids ) ) {
+					update_post_meta( $pid, '_wc_booking_has_resources', 'yes' );
+					update_post_meta( $pid, '_wc_booking_resources_assignment', 'customer' );
+				}
+				$persons = $wpdb->get_results( $wpdb->prepare(
+					"SELECT ID FROM {$wpdb->posts} WHERE post_parent = %d AND post_type = 'bookable_person' AND post_status = 'publish'",
+					$pid
+				), ARRAY_A );
+				if ( ! empty( $persons ) ) {
+					update_post_meta( $pid, '_wc_booking_has_persons', 'yes' );
+				}
+				clean_post_cache( $pid );
+				wp_cache_delete( 'wc_booking_resources_for_product_' . $pid, 'bookings' );
+				wp_cache_delete( 'wc_booking_persons_for_product_' . $pid, 'bookings' );
+				wp_cache_delete( 'product-' . $pid, 'products' );
+				if ( function_exists( 'wc_delete_product_transients' ) ) {
+					wc_delete_product_transients( $pid );
+				}
+				return array(
+					'ok'                  => true,
+					'product_id'          => $pid,
+					'resource_ids'        => $resource_ids,
+					'resource_base_costs' => $base_costs,
+					'resource_block_costs'=> $block_costs,
+					'person_count'        => count( $persons ),
+				);
+			},
+		),
+	) );
 } );
