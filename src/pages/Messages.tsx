@@ -337,8 +337,10 @@ export default function Messages() {
       {/* Quote dialog: send a price quote in the active conversation */}
       <QuoteDialog
         open={quoteDialogOpen}
-        onOpenChange={setQuoteDialogOpen}
+        onOpenChange={(o) => { setQuoteDialogOpen(o); if (!o) setQuotePrefill(null); }}
         vendorUserId={selectedOtherUser?.id || ""}
+        defaultServiceType={quotePrefill?.serviceType}
+        jobId={quotePrefill?.jobId}
         onSend={handleSendQuote}
         submitting={sendMessage.isPending}
       />
