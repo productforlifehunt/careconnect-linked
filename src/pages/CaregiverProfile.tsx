@@ -78,6 +78,16 @@ export default function CaregiverProfile() {
   }, [bookingDialogOpen, deliveryResourceId, bookingResources]);
 
   const selectedResource = bookingResources.find((r: BookingResourceOption) => String(r.id) === deliveryResourceId);
+  const availabilityPreview = useMemo(() => {
+    const weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const weeklySlots = (availability || [])
+      .filter((slot: any) => slot.is_available && typeof slot.day_of_week === "number" && slot.start_time && slot.end_time)
+      .sort((a: any, b: any) => a.day_of_week - b.day_of_week || String(a.start_time).localeCompare(String(b.start_time)));
+
+    return weeklySlots.slice(0, 5).map((slot: any) => ({
+      label: `${weekdayLabels[slot.day_of_week]} ${slot.start_time}–${slot.end_time}`,
+    }));
+  }, [availability]);
   // In the flat-resource model, the resource IS the service package and its
   // blockCost IS the full per-hour rate (no separate base + surcharge).
   const effectiveRate = Number(selectedResource?.blockCost || 0);
@@ -347,9 +357,36 @@ export default function CaregiverProfile() {
           <Card className="border-transparent card-elevated sticky top-24">
             <CardContent className="p-6">
               <div className="text-center mb-6">
-                <span className="text-3xl font-bold text-foreground">${caregiver.care_provider_starts_hourly_rate || 0}</span>
+                <span className="text-3xl font-bold text-foreground">${bookingResources[0]?.blockCost || caregiver.care_provider_starts_hourly_rate || 0}</span>
                 <span className="text-muted-foreground">/hour</span>
               </div>
+
+              {bookingResources.length > 0 && (
+                <div className="mb-5 space-y-2">
+                  <p className="text-sm font-medium text-foreground">Service packages</p>
+                  <div className="space-y-2">
+                    {bookingResources.map((resource: BookingResourceOption) => (
+                      <div key={resource.id} className="rounded-lg border border-border bg-muted/30 px-3 py-2">
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="text-sm text-foreground">{resource.name}</span>
+                          <span className="text-sm font-semibold text-foreground">${resource.blockCost}/hr</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {availabilityPreview.length > 0 && (
+                <div className="mb-5 space-y-2">
+                  <p className="text-sm font-medium text-foreground">Availability</p>
+                  <div className="space-y-1.5">
+                    {availabilityPreview.map((slot) => (
+                      <div key={slot.label} className="text-sm text-muted-foreground">{slot.label}</div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <Dialog open={bookingDialogOpen} onOpenChange={setBookingDialogOpen}>
                 <DialogTrigger asChild>
