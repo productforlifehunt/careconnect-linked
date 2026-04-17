@@ -6,6 +6,7 @@ import {
   updateProviderProductStatus,
   type ServiceRateEntry,
   type DeliveryResourceCosts,
+  type ServiceResource,
 } from '@/services/woocommerce-api';
 import { useMyProfile } from './use-care-data';
 
@@ -28,7 +29,11 @@ export function useSyncProviderToWooCommerce() {
       yearsOfExperience?: number;
       location?: string;
       providerIsActive?: boolean;
+      /** NEW: flat list of service packages — each becomes one bookable_resource. */
+      serviceResources?: ServiceResource[];
+      /** @deprecated use serviceResources */
       serviceRates?: ServiceRateEntry[];
+      /** @deprecated no longer used */
       deliveryCosts?: DeliveryResourceCosts;
     }) => {
       if (!profile?.id) {
@@ -53,6 +58,7 @@ export function useSyncProviderToWooCommerce() {
         certifications: providerData.certifications,
         yearsOfExperience: providerData.yearsOfExperience,
         location: providerData.location,
+        serviceResources: providerData.serviceResources,
         serviceRates: providerData.serviceRates,
         deliveryCosts: providerData.deliveryCosts,
       });
