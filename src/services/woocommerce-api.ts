@@ -384,13 +384,24 @@ async function configureBookingProduct(
       : (serviceRates[0]?.hourlyRate || 0);
 
     // Persons are enabled when there is more than one priced service.
-    // Resources are enabled whenever a delivery surcharge is set OR the
-    // provider explicitly offers both Local and Virtual.
+    // Resources are enabled whenever a delivery surcharge is configured.
     const hasPersons = serviceRates.length > 0;
     const hasResources = (deliveryCosts.localCost ?? 0) >= 0 || (deliveryCosts.virtualCost ?? 0) >= 0;
 
+    // 1. Pre-create / upsert resources FIRST so we can include their IDs in
+    //    the single booking-config PUT below. Sending `resource_ids` in a
+    //    follow-up PUT is silently dropped by WC Bookings REST.
+    let resourceIds: number[] = [];
+    if (hasResources) {
+      try {
+        resourceIds = await syncBookingResources(productId, deliveryCosts);
+      } catch (e) {
+        console.warn('Failed to sync booking resources:', e);
+      }
+    }
+
     const bookingConfig: Record<string, any> = {
-      duration_type: 'customer',          // lets customer pick block count (1–8 hrs)
+      duration_type: 'customer',
       duration_unit: 'hour',
       duration: 1,
       min_duration: 1,
@@ -406,10 +417,11 @@ async function configureBookingProduct(
       qty: 1,
       max_bookings_per_block: 1,
       enable_range_picker: true,
-      pricing: [], // explicitly clear any leftover unlabeled range rules
+      pricing: [],
       has_persons: hasPersons,
-      has_resources: hasResources,
-      resources_assignment: 'customer', // customer picks Local vs Virtual
+      has_resources: hasResources && resourceIds.length > 0,
+      resources_assignment: 'customer',
+      resource_ids: resourceIds, // CRITICAL: must be in same PUT as has_resources
     };
 
     // PUT — POST is silently ignored for most fields by WC Bookings REST
@@ -418,21 +430,14 @@ async function configureBookingProduct(
       body: JSON.stringify(bookingConfig),
     });
 
-    // Sync Person Types (one per priced service) and Resources (Local/Virtual).
-    // These run sequentially after the parent product config so WC Bookings
-    // recognizes has_persons / has_resources before child posts are linked.
+    // 2. Sync Person Types AFTER the parent has has_persons=true. Stub
+    //    placeholders auto-spawned by WC Bookings will be cleaned up inside
+    //    syncBookingPersons.
     if (hasPersons) {
       try {
         await syncBookingPersons(productId, serviceRates);
       } catch (e) {
         console.warn('Failed to sync booking persons:', e);
-      }
-    }
-    if (hasResources) {
-      try {
-        await syncBookingResources(productId, deliveryCosts);
-      } catch (e) {
-        console.warn('Failed to sync booking resources:', e);
       }
     }
 
