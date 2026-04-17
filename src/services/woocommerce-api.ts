@@ -578,28 +578,37 @@ async function syncBookingResources(
   const linkedIds: number[] = [];
   for (const d of desired) {
     const existing = existingByTag[d.metaTag];
+    // wc-bookings/v1/resources is READ-ONLY (POST returns 405). We must use
+    // wp/v2/bookable_resource which creates the post + persists cost meta.
+    // Requires the "CareConnect Bookable REST v2" snippet to expose the CPT.
     const body = {
-      name: d.name,
-      base_cost: d.cost,
-      block_cost: d.cost, // per-hour surcharge
-      qty: 1,
+      title: d.name,
+      status: 'publish',
+      meta: {
+        _wc_booking_base_cost: d.cost,
+        _wc_booking_block_cost: d.cost,
+        _wc_booking_qty: 1,
+      },
     };
     try {
-      if (existing) {
-        await wcBookingsFetch(`resources/${existing.id}`, {
-          method: 'PUT',
-          body: JSON.stringify(body),
-        });
+      const url = existing
+        ? buildWPUrl(`wp/v2/bookable_resource/${existing.id}`)
+        : buildWPUrl(`wp/v2/bookable_resource`);
+      const res = await fetch(url, {
+        method: existing ? 'PUT' : 'POST',
+        headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.id) linkedIds.push(data.id);
+        else if (existing?.id) linkedIds.push(existing.id);
+      } else if (existing?.id) {
         linkedIds.push(existing.id);
-      } else {
-        const created = await wcBookingsFetch(`resources`, {
-          method: 'POST',
-          body: JSON.stringify(body),
-        });
-        if (created?.id) linkedIds.push(created.id);
       }
     } catch (e) {
       console.warn(`Failed to upsert resource "${d.name}":`, e);
+      if (existing?.id) linkedIds.push(existing.id);
     }
   }
 
