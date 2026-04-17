@@ -364,6 +364,14 @@ export async function getOrCreateProviderProduct(
         { key: '_location', value: providerData.location || '' },
         { key: '_service_types', value: JSON.stringify(serviceTypeNames) },
         { key: '_service_rates', value: JSON.stringify(serviceRatesMap) },
+        // Structured backup so Provider Settings can hydrate the 3-field rows
+        // (service-type slug, location slug, rate) without lossy name parsing.
+        { key: '_service_packages', value: JSON.stringify(flatResources.map(r => ({
+          serviceTypeSlug: r.serviceTypeSlug || '',
+          locationSlug: r.locationSlug || 'in-person',
+          ratePerHour: r.ratePerHour,
+          name: r.name,
+        }))) },
         // Search-cache: minimum block_cost across resources for "from $X" labels.
         { key: '_min_block_cost', value: String(minBlockCost) },
       ],
