@@ -326,7 +326,15 @@ export function useGroupMessages(groupId: string | null) {
 export function useSendMessage() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ conversationId, content }: { conversationId: string; content: string }) => sendMessageWordPress(conversationId, content),
+export function useSendMessage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ conversationId, content, receiverUserId }: { conversationId: string; content: string; receiverUserId: string }) => {
+      const me = getStoredWPUser();
+      const senderId = me ? `wp-${me.user_id}` : "";
+      if (!senderId) throw new Error("Not authenticated");
+      return sendMessageWordPress(conversationId, content, senderId, receiverUserId);
+    },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["messages"] }); qc.invalidateQueries({ queryKey: ["conversations"] }); },
   });
 }
@@ -345,7 +353,10 @@ export function useStartConversation() {
   return useMutation({
     mutationFn: (otherUserId: string | { otherUserId: string }) => {
       const uid = typeof otherUserId === 'string' ? otherUserId : otherUserId.otherUserId;
-      return startConversationWordPress(uid);
+      const me = getStoredWPUser();
+      const myId = me ? `wp-${me.user_id}` : "";
+      if (!myId) throw new Error("Not authenticated");
+      return startConversationWordPress(uid, myId);
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["conversations"] }); },
   });
