@@ -130,6 +130,13 @@ export default function CaregiverProfile() {
             slot.day_of_week === dayOfWeek && slot.is_available && slot.start_time && slot.end_time,
         );
 
+    // Fallback: provider has not defined any availability for this day.
+    // Allow booking across a default 08:00–22:00 window so the user can still
+    // pick a time and submit a request (provider will confirm/decline).
+    if (candidateSlots.length === 0) {
+      return [{ start_time: "08:00", end_time: "22:00", is_available: true, _fallback: true }];
+    }
+
     return candidateSlots.sort(
       (a: any, b: any) => String(a.start_time).localeCompare(String(b.start_time)),
     );
