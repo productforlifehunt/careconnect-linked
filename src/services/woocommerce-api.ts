@@ -692,25 +692,51 @@ async function syncBookingProductResources(productId: number): Promise<void> {
 
 
 export async function getProviderProduct(providerId: string) {
+  const matchesProvider = (product: any) => {
+    const meta: any[] = Array.isArray(product?.meta_data) ? product.meta_data : [];
+    const providerJoinId = meta.find((item: any) => item?.key === '_provider_id')?.value;
+    const providerUserId = meta.find((item: any) => item?.key === '_provider_user_id')?.value;
+    const storeId = product?.store?.id;
+    const authorId = product?.author ?? product?.post_author;
+    return [providerJoinId, providerUserId, storeId, authorId].some(
+      (value) => value != null && String(value) === String(providerId),
+    );
+  };
+
   try {
     const sku = `care-provider-${providerId}`;
-    const products = await wcFetch(`products?sku=${sku}`);
-    if (products && products.length > 0) return products[0];
 
-    const oldProducts = await wcFetch(`products?sku=provider-${providerId}`);
-    if (oldProducts && oldProducts.length > 0) return oldProducts[0];
+    try {
+      const products = await wcFetch(`products?sku=${sku}`);
+      if (products && products.length > 0) return products[0];
+    } catch {
+      /* visitors may not have Woo read capability */
+    }
 
-    const providerProducts = await wcBookingsFetch('products');
-    const matchedBookingProduct = (providerProducts || []).find((product: any) => {
-      const storeId = Number(product?.store?.id ?? 0);
-      const authorId = Number(product?.author ?? product?.post_author ?? 0);
-      const metaProviderId = Array.isArray(product?.meta_data)
-        ? product.meta_data.find((item: any) => item?.key === '_provider_id')?.value
-        : null;
-      return storeId === Number(providerId) || authorId === Number(providerId) || String(metaProviderId || '') === String(providerId);
-    });
+    try {
+      const oldProducts = await wcFetch(`products?sku=provider-${providerId}`);
+      if (oldProducts && oldProducts.length > 0) return oldProducts[0];
+    } catch {
+      /* visitors may not have Woo read capability */
+    }
 
-    if (matchedBookingProduct) return matchedBookingProduct;
+    try {
+      const allProducts = await wpAdminFetch(`wc/v3/products?per_page=100&status=any`);
+      if (Array.isArray(allProducts)) {
+        const matchedProduct = allProducts.find(matchesProvider);
+        if (matchedProduct) return matchedProduct;
+      }
+    } catch {
+      /* fall through */
+    }
+
+    try {
+      const providerProducts = await wcBookingsFetch('products');
+      const matchedBookingProduct = (providerProducts || []).find(matchesProvider);
+      if (matchedBookingProduct) return matchedBookingProduct;
+    } catch {
+      /* fall through */
+    }
 
     return null;
   } catch (error) {
@@ -1149,7 +1175,12 @@ export async function getProviderAvailability(providerId: string): Promise<Norma
   try {
     const product = await getProviderProduct(providerId);
     if (!product) return [];
-    const bookingProduct = await wcBookingsFetch(`products/${product.id}`);
+    let bookingProduct: any = null;
+    try {
+      bookingProduct = await wcBookingsFetch(`products/${product.id}`);
+    } catch {
+      bookingProduct = await wpAdminFetch(`wc-bookings/v1/products/${product.id}`);
+    }
     return normalizeBookingAvailabilityRules(bookingProduct?.availability || []);
   } catch {
     return [];
@@ -1454,7 +1485,12 @@ export function getAvailabilityConflictMessage(
 export async function getProviderAvailabilitySetting(pid: string) {
   const p = await getProviderProduct(pid);
   if (!p) return null;
-  const bookingProduct = await wcBookingsFetch(`products/${p.id}`);
+  let bookingProduct: any = null;
+  try {
+    bookingProduct = await wcBookingsFetch(`products/${p.id}`);
+  } catch {
+    bookingProduct = await wpAdminFetch(`wc-bookings/v1/products/${p.id}`);
+  }
   const minNoticeHours = bookingProduct.min_date_unit === 'day'
     ? Number(bookingProduct.min_date_value || 0) * 24
     : Number(bookingProduct.min_date_value || 0);
