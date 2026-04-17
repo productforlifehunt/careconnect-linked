@@ -129,13 +129,21 @@ export interface DeliveryResourceCosts {
 }
 
 /**
- * NEW flat service resource model. Vendor maintains a free-form list of
- * service packages (e.g. "儿童护理", "老人陪伴(当面)", "老人陪伴(远程)").
- * Each entry becomes 1 bookable_resource on the product. Customer picks
- * exactly one at checkout. Total = ratePerHour × hours.
+ * NEW flat service resource model. Vendor maintains a list of service
+ * packages, each tied to one `pa_service-type` term + one `pa_service-location`
+ * term. Each entry becomes 1 bookable_resource on the product (block_cost =
+ * full per-hour rate). The same selections are also written to product
+ * attributes so the marketplace search can filter by category & location.
+ *
+ * Customer picks exactly one resource at checkout. Total = ratePerHour × hours.
  */
 export interface ServiceResource {
+  /** Display name (auto-derived "<service-type> · <location>" if blank). */
   name: string;
+  /** pa_service-type term slug, e.g. "elder-care". REQUIRED for filtering. */
+  serviceTypeSlug?: string;
+  /** pa_service-location term slug: "in-person" | "remote" | "hybrid". */
+  locationSlug?: string;
   ratePerHour: number;
 }
 
