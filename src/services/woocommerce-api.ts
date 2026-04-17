@@ -468,6 +468,19 @@ async function configureBookingProduct(
       }
     }
 
+    // 3. CRITICAL: Trigger WC product setter via custom endpoint. WC Bookings
+    //    caches resource_ids on the WC_Product_Booking object — writing meta
+    //    alone won't make the storefront <select> render. This calls
+    //    $product->set_resource_ids()->save() server-side which is the only
+    //    path that actually persists the resource picker.
+    if (hasResources || hasPersons) {
+      try {
+        await syncBookingProductResources(productId);
+      } catch (e) {
+        console.warn('Failed to trigger WC resource setter:', e);
+      }
+    }
+
     // Mirror base cost to WC product price so it shows in catalog/cart
     try {
       await wcFetch(`products/${productId}`, {
