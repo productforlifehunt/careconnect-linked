@@ -22,11 +22,13 @@ interface QuoteCardProps {
   otherUserId?: string;
 }
 
-export function QuoteCard({ quote, isRecipient, isMe }: QuoteCardProps) {
+export function QuoteCard({ quote, isRecipient, isMe, conversationId, otherUserId }: QuoteCardProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
   const addToCart = useAddToCart();
+  const sendMessage = useSendMessage();
   const [accepting, setAccepting] = useState(false);
+  const [declining, setDeclining] = useState(false);
 
   const status = quote.status || "pending";
 
@@ -55,6 +57,31 @@ export function QuoteCard({ quote, isRecipient, isMe }: QuoteCardProps) {
       });
     } finally {
       setAccepting(false);
+    }
+  };
+
+  const handleDecline = async () => {
+    if (!conversationId || !otherUserId) {
+      toast({ title: "Cannot decline", description: "Missing conversation context.", variant: "destructive" });
+      return;
+    }
+    setDeclining(true);
+    try {
+      const declined: QuoteData = { ...quote, status: "declined" };
+      await sendMessage.mutateAsync({
+        conversationId,
+        recipientId: otherUserId,
+        content: encodeQuote(declined),
+      });
+      toast({ title: "Quote declined", description: "The sender has been notified." });
+    } catch (e: any) {
+      toast({
+        title: "Failed to decline",
+        description: e?.message || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeclining(false);
     }
   };
 
