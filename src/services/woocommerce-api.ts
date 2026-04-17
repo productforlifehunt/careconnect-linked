@@ -1090,7 +1090,7 @@ export async function addToCart({
   try {
     // Use the public Store API (no admin caps required) and normalize to
     // the v3-shape fields the rest of this function reads (name, price, images).
-    const storeProduct: any = await wpRequest(`wc/store/v1/products/${productId}`);
+    const storeProduct: any = await storeApiFetch(`products/${productId}`);
     const minorPrice = parseInt(storeProduct?.prices?.price || "0", 10);
     const minorUnit = storeProduct?.prices?.currency_minor_unit ?? 2;
     product = {
