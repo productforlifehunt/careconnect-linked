@@ -76,6 +76,12 @@ add_action( 'init', function () {
 //    Both CPTs are registered as non-hierarchical, so REST drops the standard
 //    `parent` arg. WC Bookings, however, looks up resources/persons via
 //    post_parent === product_id at the SQL level, so we MUST persist parent.
+//
+//    v3 BUG: wp_update_post() inside an update_callback can silently fail when
+//    the CPT is non-hierarchical because core's sanitization layer strips
+//    post_parent. v4 fix: bypass wp_update_post entirely and write directly to
+//    wp_posts via $wpdb->update — this is the ONLY reliable way to set
+//    post_parent on a non-hierarchical CPT post.
 add_action( 'rest_api_init', function () {
 	$cpts = array( 'bookable_person', 'bookable_resource' );
 	foreach ( $cpts as $cpt ) {
@@ -87,18 +93,24 @@ add_action( 'rest_api_init', function () {
 				return (int) ( isset( $post['parent'] ) ? $post['parent'] : get_post_field( 'post_parent', $post['id'] ) );
 			},
 			'update_callback' => function ( $value, $post ) {
+				global $wpdb;
 				$pid = absint( $value );
-				if ( $pid <= 0 ) {
-					return true;
+				$post_id = is_object( $post ) ? (int) $post->ID : (int) ( $post['id'] ?? 0 );
+				if ( $post_id <= 0 ) {
+					return new WP_Error( 'cc_invalid_post', 'Invalid post id', array( 'status' => 400 ) );
 				}
-				$result = wp_update_post( array(
-					'ID'          => $post->ID,
-					'post_parent' => $pid,
-				), true );
-				if ( is_wp_error( $result ) ) {
-					return $result;
-				}
-				// WC Bookings caches person/resource lists per-product. Bust it.
+				// Direct DB write — bypasses wp_update_post() which strips
+				// post_parent on non-hierarchical CPTs.
+				$updated = $wpdb->update(
+					$wpdb->posts,
+					array( 'post_parent' => $pid ),
+					array( 'ID' => $post_id ),
+					array( '%d' ),
+					array( '%d' )
+				);
+				clean_post_cache( $post_id );
+				// WC Bookings caches person/resource lists per-product. Bust both
+				// the old and new parent so neither caches stale data.
 				if ( function_exists( 'wp_cache_delete' ) ) {
 					wp_cache_delete( 'wc_booking_resources_for_product_' . $pid, 'bookings' );
 					wp_cache_delete( 'wc_booking_persons_for_product_' . $pid, 'bookings' );
@@ -123,3 +135,48 @@ add_action( 'rest_api_init', function () {
 		}, 10, 2 );
 	}
 }, 20 );
+
+// 4. Custom endpoint: POST /careconnect/v1/link-booking-child
+//    Belt-and-suspenders. Lets the JS layer force-set post_parent on any
+//    bookable_person / bookable_resource if the REST field path fails for any
+//    reason (e.g., other plugin hijacking the wp/v2 update flow).
+add_action( 'rest_api_init', function () {
+	register_rest_route( 'careconnect/v1', '/link-booking-child', array(
+		'methods'             => 'POST',
+		'permission_callback' => function () { return current_user_can( 'edit_posts' ); },
+		'args'                => array(
+			'child_id'   => array( 'type' => 'integer', 'required' => true ),
+			'product_id' => array( 'type' => 'integer', 'required' => true ),
+		),
+		'callback'            => function ( WP_REST_Request $req ) {
+			global $wpdb;
+			$child_id   = (int) $req->get_param( 'child_id' );
+			$product_id = (int) $req->get_param( 'product_id' );
+			$child_type = get_post_type( $child_id );
+			if ( ! in_array( $child_type, array( 'bookable_person', 'bookable_resource' ), true ) ) {
+				return new WP_Error( 'cc_bad_child', 'Not a bookable child', array( 'status' => 400 ) );
+			}
+			if ( get_post_type( $product_id ) !== 'product' ) {
+				return new WP_Error( 'cc_bad_parent', 'Parent is not a product', array( 'status' => 400 ) );
+			}
+			$wpdb->update(
+				$wpdb->posts,
+				array( 'post_parent' => $product_id ),
+				array( 'ID' => $child_id ),
+				array( '%d' ),
+				array( '%d' )
+			);
+			clean_post_cache( $child_id );
+			clean_post_cache( $product_id );
+			if ( function_exists( 'wp_cache_delete' ) ) {
+				wp_cache_delete( 'wc_booking_resources_for_product_' . $product_id, 'bookings' );
+				wp_cache_delete( 'wc_booking_persons_for_product_' . $product_id, 'bookings' );
+			}
+			return array(
+				'ok'       => true,
+				'child_id' => $child_id,
+				'parent'   => (int) get_post_field( 'post_parent', $child_id ),
+			);
+		},
+	) );
+} );
