@@ -781,19 +781,45 @@ export interface BookingResourceOption {
   baseCost: number;
 }
 
+function extractBookingResourcesFromProductMeta(product: any): BookingResourceOption[] {
+  const meta: any[] = Array.isArray(product?.meta_data) ? product.meta_data : [];
+  const raw = meta.find((item: any) => item?.key === '_service_packages')?.value;
+  if (!raw) return [];
+
+  try {
+    const packages = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (!Array.isArray(packages)) return [];
+    return packages
+      .map((pkg: any, index: number) => ({
+        id: Number(pkg?.id) || -(index + 1),
+        name: String(pkg?.name || '').trim(),
+        blockCost: Number(pkg?.ratePerHour ?? 0),
+        baseCost: Number(pkg?.ratePerHour ?? 0),
+      }))
+      .filter((pkg: BookingResourceOption) => Boolean(pkg.name) && pkg.blockCost > 0);
+  } catch {
+    return [];
+  }
+}
+
 export async function fetchProductBookingResources(productId: number): Promise<BookingResourceOption[]> {
   try {
     const url = buildWPUrl(`wp/v2/bookable_resource?product_id=${productId}&per_page=20&_fields=id,title,meta`);
     // Use admin Basic Auth so unauthenticated visitors still see resource costs.
     const res = await fetch(url, { headers: getAdminHeaders('application/json') });
-    if (!res.ok) return [];
-    const rows = await res.json();
-    return (rows || []).map((r: any) => ({
-      id: Number(r.id),
-      name: (r.title?.rendered || r.title || '').trim(),
-      blockCost: Number(r.meta?._wc_booking_block_cost ?? 0),
-      baseCost: Number(r.meta?._wc_booking_base_cost ?? 0),
-    }));
+    if (res.ok) {
+      const rows = await res.json();
+      const resources = (rows || []).map((r: any) => ({
+        id: Number(r.id),
+        name: (r.title?.rendered || r.title || '').trim(),
+        blockCost: Number(r.meta?._wc_booking_block_cost ?? 0),
+        baseCost: Number(r.meta?._wc_booking_base_cost ?? 0),
+      })).filter((resource: BookingResourceOption) => Boolean(resource.name) && resource.blockCost > 0);
+      if (resources.length > 0) return resources;
+    }
+
+    const product = await wpAdminFetch(`wc/v3/products/${productId}`);
+    return extractBookingResourcesFromProductMeta(product);
   } catch (e) {
     console.warn('fetchProductBookingResources failed:', e);
     return [];
