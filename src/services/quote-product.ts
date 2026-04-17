@@ -68,10 +68,13 @@ export async function createQuoteProduct(
       ? `Negotiated rate: $${quote.ratePerHour}/hr × ${quote.hours}h = $${quote.amount}${quote.note ? `. Note: ${quote.note}` : ""}`
       : `Flat-rate quote: $${quote.amount}${quote.note ? `. Note: ${quote.note}` : ""}`;
 
+  // Dokan needs the RAW numeric WP user id (not "wp-1"). Strip any prefix.
+  const numericVendorId = String(vendorUserId).replace(/^wp-/, "");
+
   const meta: Array<{ key: string; value: string }> = [
     { key: "_quote_mode", value: quote.mode },
     { key: "_quote_amount", value: String(quote.amount) },
-    { key: "_dokan_vendor_id", value: String(vendorUserId) },
+    { key: "_dokan_vendor_id", value: numericVendorId },
     { key: "_is_quote_product", value: "1" },
   ];
   if (quote.ratePerHour != null) meta.push({ key: "_quote_rate", value: String(quote.ratePerHour) });
