@@ -161,15 +161,17 @@ export default function CaregiverProfile() {
     }
     try {
       const recurringNote = recurringPattern !== "none" ? `[Recurring: ${recurringPattern}] ` : "";
+      const deliveryNote = selectedResource ? `[Delivery: ${selectedResource.name}] ` : "";
+      const ratePerHour = effectiveRate + resourceCostPerHour;
       await createBooking.mutateAsync({
         provider_id: caregiver.id,
         appointment_date: bookingDate,
         appointment_time: bookingTime,
         duration_hour: durationHours,
         service_type: bookingType,
-        hourly_rate: effectiveRate,
-        total_cost: effectiveRate * durationHours,
-        special_instruction: recurringNote + (bookingNotes || "") || null,
+        hourly_rate: ratePerHour,
+        total_cost: ratePerHour * durationHours,
+        special_instruction: recurringNote + deliveryNote + (bookingNotes || "") || null,
         status: availabilitySetting?.requires_confirmation === false ? "confirmed" : "pending",
         payment_status: "pending",
       });
