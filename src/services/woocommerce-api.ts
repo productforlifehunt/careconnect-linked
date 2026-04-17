@@ -606,22 +606,7 @@ async function syncBookingResources(
   return linkedIds;
 }
 
-  // Link resources to the product
-  if (linkedIds.length > 0) {
-    try {
-      await wcBookingsFetch(`products/${productId}`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          has_resources: true,
-          resources_assignment: 'customer',
-          resource_ids: linkedIds,
-        }),
-      });
-    } catch (e) {
-      console.warn('Failed to link resources to product:', e);
-    }
-  }
-}
+
 // Get provider's product by provider ID
 export async function getProviderProduct(providerId: string) {
   try {
