@@ -683,8 +683,27 @@ async function forceLinkBookingChild(childId: number, productId: number): Promis
   }
 }
 
+/**
+ * Trigger server-side WC product setter for resource_ids. Snippet v6's
+ * POST /careconnect/v1/booking-debug/{id} calls $product->set_resource_ids()
+ * which is the only path that makes the storefront resource <select> render.
+ */
+async function syncBookingProductResources(productId: number): Promise<void> {
+  try {
+    const url = buildWPUrl(`careconnect/v1/booking-debug/${productId}`);
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) {
+      console.warn(`syncBookingProductResources ${productId} failed:`, res.status, await res.text());
+    }
+  } catch (e) {
+    console.warn(`syncBookingProductResources ${productId} error:`, e);
+  }
+}
 
-// Get provider's product by provider ID
+
 export async function getProviderProduct(providerId: string) {
   try {
     const sku = `care-provider-${providerId}`;
