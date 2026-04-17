@@ -817,6 +817,8 @@ export async function fetchAllProviderProductSummaries(): Promise<Map<string, Pr
   }
   return map;
 }
+
+// Update provider product status (active/inactive)
 export async function updateProviderProductStatus(
   providerId: string,
   isActive: boolean
