@@ -534,14 +534,24 @@ async function syncBookingPersons(productId: number, serviceRates: ServiceRateEn
     const url = existing
       ? buildWPUrl(`wp/v2/bookable_person/${existing.id}`)
       : buildWPUrl(`wp/v2/bookable_person`);
+    let upsertedId = existing?.id;
     try {
-      await fetch(url, {
+      const res = await fetch(url, {
         method: existing ? 'PUT' : 'POST',
         headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
+      if (res.ok) {
+        const data = await res.json().catch(() => null);
+        if (data?.id) upsertedId = data.id;
+      }
     } catch (e) {
       console.warn(`Failed to upsert person "${title}":`, e);
+    }
+    if (upsertedId) {
+      // Force-link via direct DB endpoint — wp/v2 strips post_parent on
+      // non-hierarchical CPTs even when our product_id field is sent.
+      await forceLinkBookingChild(upsertedId, productId);
     }
   }
 
@@ -582,8 +592,6 @@ async function syncBookingResources(
     { name: 'Virtual (Remote)', cost: deliveryCosts.virtualCost ?? 0, metaTag: 'virtual' },
   ];
 
-  // List existing resources already linked to this product via post_parent.
-  // Filter via the `?product_id=` param exposed by the CareConnect snippet.
   let existingResources: any[] = [];
   try {
     const url = buildWPUrl(`wp/v2/bookable_resource?product_id=${productId}&per_page=50&status=publish,draft`);
@@ -601,11 +609,6 @@ async function syncBookingResources(
   const linkedIds: number[] = [];
   for (const d of desired) {
     const existing = existingByTag[d.metaTag];
-    // wc-bookings/v1/resources is READ-ONLY (POST returns 405). We must use
-    // wp/v2/bookable_resource which creates the post + persists cost meta.
-    // The `product_id` field maps to post_parent (custom REST field added by
-    // the CareConnect Bookable REST v3 snippet) so WC Bookings can find the
-    // resource via get_children() at runtime.
     const body = {
       title: d.name,
       status: 'publish',
@@ -616,6 +619,7 @@ async function syncBookingResources(
         _wc_booking_qty: 1,
       },
     };
+    let upsertedId = existing?.id;
     try {
       const url = existing
         ? buildWPUrl(`wp/v2/bookable_resource/${existing.id}`)
@@ -627,18 +631,43 @@ async function syncBookingResources(
       });
       if (res.ok) {
         const data = await res.json();
-        if (data?.id) linkedIds.push(data.id);
-        else if (existing?.id) linkedIds.push(existing.id);
-      } else if (existing?.id) {
-        linkedIds.push(existing.id);
+        if (data?.id) upsertedId = data.id;
       }
     } catch (e) {
       console.warn(`Failed to upsert resource "${d.name}":`, e);
-      if (existing?.id) linkedIds.push(existing.id);
+    }
+    if (upsertedId) {
+      // Belt-and-suspenders: force post_parent via custom endpoint in case
+      // the wp/v2 product_id REST field didn't persist (snippet v4).
+      await forceLinkBookingChild(upsertedId, productId);
+      linkedIds.push(upsertedId);
     }
   }
 
   return linkedIds;
+}
+
+/**
+ * Force-link a bookable_person/resource to its parent product via the custom
+ * /careconnect/v1/link-booking-child endpoint (snippet v4). This is the
+ * ONLY reliable way to set post_parent on these non-hierarchical CPTs;
+ * the standard wp/v2 PATCH silently strips the parent field, and even our
+ * `product_id` REST field can fail when other plugins hijack the update flow.
+ */
+async function forceLinkBookingChild(childId: number, productId: number): Promise<void> {
+  try {
+    const url = buildWPUrl(`careconnect/v1/link-booking-child`);
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ child_id: childId, product_id: productId }),
+    });
+    if (!res.ok) {
+      console.warn(`forceLinkBookingChild ${childId}->${productId} failed:`, res.status, await res.text());
+    }
+  } catch (e) {
+    console.warn(`forceLinkBookingChild ${childId}->${productId} error:`, e);
+  }
 }
 
 
