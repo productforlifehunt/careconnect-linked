@@ -94,6 +94,14 @@ export default function SearchResults() {
   const toggleSpecialty = (s: string) => setSelectedSpecialties(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
   const toggleFacilityType = (s: string) => setSelectedFacilityTypes(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
   const toggleServiceType = (s: string) => setSelectedServiceTypes(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
+  const toggleLocation = (s: string) => setSelectedLocations(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
+
+  // Caregiver delivery-mode options come from the WC pa_service-location attribute terms.
+  const LOCATION_OPTIONS: { slug: string; en: string; zh: string }[] = [
+    { slug: "in-person", en: "In-Person", zh: "当面" },
+    { slug: "remote", en: "Remote", zh: "远程" },
+    { slug: "hybrid", en: "Hybrid", zh: "混合" },
+  ];
 
   const facilityTypeOptions = Array.from(new Set((facilityFacets || []).map((item) => item.type).filter(Boolean) as string[]));
   const facilityServiceOptions = Array.from(
