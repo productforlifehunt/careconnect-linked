@@ -66,6 +66,7 @@ export default function SearchResults() {
   const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>(initialQuery ? [initialQuery].filter(q => allServiceTypeNames.includes(q)) : []);
   const [selectedFacilityTypes, setSelectedFacilityTypes] = useState<string[]>([]);
   const [selectedServiceTypes, setSelectedServiceTypes] = useState<string[]>([]);
+  const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [minRating, setMinRating] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -76,6 +77,7 @@ export default function SearchResults() {
     specialties: selectedSpecialties.length > 0 ? selectedSpecialties : undefined,
     minRate: priceRange[0] > 0 ? priceRange[0] : undefined, maxRate: priceRange[1] < 100 ? priceRange[1] : undefined,
     verifiedOnly, minRating: minRating > 0 ? minRating : undefined, sortBy,
+    serviceLocations: selectedLocations.length > 0 ? selectedLocations : undefined,
   });
 
   const { data: facilities, isLoading: facilitiesLoading } = useCareFacilities({
@@ -92,6 +94,14 @@ export default function SearchResults() {
   const toggleSpecialty = (s: string) => setSelectedSpecialties(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
   const toggleFacilityType = (s: string) => setSelectedFacilityTypes(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
   const toggleServiceType = (s: string) => setSelectedServiceTypes(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
+  const toggleLocation = (s: string) => setSelectedLocations(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
+
+  // Caregiver delivery-mode options come from the WC pa_service-location attribute terms.
+  const LOCATION_OPTIONS: { slug: string; en: string; zh: string }[] = [
+    { slug: "in-person", en: "In-Person", zh: "当面" },
+    { slug: "remote", en: "Remote", zh: "远程" },
+    { slug: "hybrid", en: "Hybrid", zh: "混合" },
+  ];
 
   const facilityTypeOptions = Array.from(new Set((facilityFacets || []).map((item) => item.type).filter(Boolean) as string[]));
   const facilityServiceOptions = Array.from(
@@ -139,6 +149,17 @@ export default function SearchResults() {
         </div>
       ) : (
         <>
+          <div>
+            <Label className="text-sm font-semibold mb-3 block">{isZh ? "服务方式" : "Delivery"}</Label>
+            <div className="space-y-2">
+              {LOCATION_OPTIONS.map(opt => (
+                <label key={opt.slug} className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox checked={selectedLocations.includes(opt.slug)} onCheckedChange={() => { toggleLocation(opt.slug); setCurrentPage(1); }} />
+                  <span className="text-sm">{isZh ? opt.zh : opt.en}</span>
+                </label>
+              ))}
+            </div>
+          </div>
           <div>
             <Label className="text-sm font-semibold mb-3 block">{t("search.specialty")}</Label>
             <div className="space-y-2">
@@ -232,12 +253,20 @@ export default function SearchResults() {
         </Sheet>
       </div>
 
-      {!isFacilityMode && selectedSpecialties.length > 0 && (
+      {!isFacilityMode && (selectedSpecialties.length > 0 || selectedLocations.length > 0) && (
         <div className="flex flex-wrap gap-2 mb-4">
+          {selectedLocations.map(slug => {
+            const opt = LOCATION_OPTIONS.find(o => o.slug === slug);
+            return (
+              <Badge key={slug} variant="secondary" className="gap-1 cursor-pointer" onClick={() => toggleLocation(slug)}>
+                {opt ? (isZh ? opt.zh : opt.en) : slug} <X className="h-3 w-3" />
+              </Badge>
+            );
+          })}
           {selectedSpecialties.map(s => (
             <Badge key={s} variant="secondary" className="gap-1 cursor-pointer" onClick={() => toggleSpecialty(s)}>{t(getSpecialtyKey(s))} <X className="h-3 w-3" /></Badge>
           ))}
-          <Button variant="ghost" size="sm" onClick={() => setSelectedSpecialties([])}>{t("common.clearAll")}</Button>
+          <Button variant="ghost" size="sm" onClick={() => { setSelectedSpecialties([]); setSelectedLocations([]); }}>{t("common.clearAll")}</Button>
         </div>
       )}
 
@@ -343,6 +372,10 @@ export default function SearchResults() {
                             </div>
                             {cg.bio && <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{cg.bio}</p>}
                             <div className="flex flex-wrap gap-1.5">
+                              {(cg.service_location_slugs || []).map(slug => {
+                                const opt = LOCATION_OPTIONS.find(o => o.slug === slug);
+                                return <Badge key={`loc-${slug}`} variant="outline" className="text-xs border-primary/40 text-primary">{opt ? (isZh ? opt.zh : opt.en) : slug}</Badge>;
+                              })}
                               {(cg.specialty || []).map(s => (<Badge key={s} variant="secondary" className="bg-accent text-accent-foreground text-xs">{t(getSpecialtyKey(s))}</Badge>))}
                             </div>
                           </div>
@@ -358,7 +391,7 @@ export default function SearchResults() {
                 {allResults.length === 0 && (
                   <div className="text-center py-16">
                     <p className="text-lg text-muted-foreground">{isFacilityMode ? (isZh ? "没有符合条件的养老机构。" : "No facilities matched your filters.") : t("search.noMatch")}</p>
-                    <Button variant="outline" className="mt-4" onClick={() => { setQuery(""); setLocationFilter(""); setSelectedSpecialties([]); setSelectedFacilityTypes([]); setSelectedServiceTypes([]); setMinRating(0); setPriceRange([0, 100]); setCurrentPage(1); }}>{t("common.clearFilters")}</Button>
+                    <Button variant="outline" className="mt-4" onClick={() => { setQuery(""); setLocationFilter(""); setSelectedSpecialties([]); setSelectedFacilityTypes([]); setSelectedServiceTypes([]); setSelectedLocations([]); setMinRating(0); setPriceRange([0, 100]); setCurrentPage(1); }}>{t("common.clearFilters")}</Button>
                   </div>
                 )}
               </div>
