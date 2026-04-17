@@ -276,7 +276,13 @@ export default function Messages() {
                 <p className="text-xs text-muted-foreground mt-1">{t("messages.startConversationBelow")}</p>
               </div>
             ) : (messages || []).map((m: any) => (
-              <MessageBubble key={m.id} message={m} isMe={m.sender_id === profile?.id} />
+              <MessageBubble
+                key={m.id}
+                message={m}
+                isMe={m.sender_id === profile?.id}
+                conversationId={selectedConvoId || undefined}
+                otherUserId={selectedOtherUser?.id}
+              />
             ))}
             <div ref={messagesEndRef} />
           </div>
