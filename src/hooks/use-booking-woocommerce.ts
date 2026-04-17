@@ -15,6 +15,7 @@ export function useCreateBookingWithWooCommerce() {
 
   return useMutation({
     mutationFn: async (bookingData: {
+      product_id?: number;
       provider_id: string;
       appointment_date: string;
       appointment_time: string;
@@ -31,6 +32,7 @@ export function useCreateBookingWithWooCommerce() {
       const userId = `wp-${wpUser.user_id}`;
 
       const wcOrder = await createServiceOrder(bookingData.provider_id, {
+        productId: bookingData.product_id,
         clientId: userId,
         appointmentDate: bookingData.appointment_date,
         appointmentTime: bookingData.appointment_time,
