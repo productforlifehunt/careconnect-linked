@@ -14,7 +14,7 @@ import { CommentsSection } from "@/components/comments/CommentsSection";
 import { useProvider, useProviderReviews, useCreateReview, useToggleSavedProvider, useSavedProviders, useStartConversation, useProviderAvailability, useProviderAvailabilitySetting } from "@/hooks/use-care-data";
 import { useCreateBookingWithWooCommerce } from "@/hooks/use-booking-woocommerce";
 import { useAddToCart } from "@/hooks/use-cart";
-import { getAvailabilityConflictMessage, getProviderBookingConflictMessage, getProviderProduct, extractProviderServicesFromProduct } from "@/services/woocommerce-api";
+import { getAvailabilityConflictMessage, getProviderBookingConflictMessage, getProviderProduct, extractProviderServicesFromProduct, fetchProductBookingResources, type BookingResourceOption } from "@/services/woocommerce-api";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
