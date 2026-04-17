@@ -496,7 +496,7 @@ export default function CaregiverProfile() {
                   onError: () => navigate("/messages"),
                 });
               }} disabled={startConversation.isPending}>
-                <MessageSquare className="mr-2 h-4 w-4" /> {startConversation.isPending ? "Opening..." : "Send Message"}
+                <MessageSquare className="mr-2 h-4 w-4" /> {startConversation.isPending ? "Opening..." : "Message / Negotiate Price"}
               </Button>
               {caregiver.phone && (
                 <Button variant="ghost" className="w-full" asChild>

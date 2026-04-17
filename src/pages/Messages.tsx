@@ -3,9 +3,11 @@ import { useLocation } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Search, Phone, Video, MoreVertical, Loader2, Plus, X } from "lucide-react";
+import { Send, Search, Phone, Video, MoreVertical, Loader2, Plus, X, Tag } from "lucide-react";
 import { MessageAttachment } from "@/components/messages/MessageAttachment";
 import { MessageBubble } from "@/components/messages/MessageBubble";
+import { QuoteDialog } from "@/components/messages/QuoteDialog";
+import { encodeQuote, type QuoteData } from "@/lib/quote-protocol";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useConversations, useDirectMessages, useSendMessage, useSearchProfiles, useStartConversation, useMarkMessagesRead, useMyProfile } from "@/hooks/use-care-data";
@@ -31,6 +33,7 @@ export default function Messages() {
   const [searchQuery, setSearchQuery] = useState("");
   const [newConvoOpen, setNewConvoOpen] = useState(false);
   const [newConvoSearch, setNewConvoSearch] = useState("");
+  const [quoteDialogOpen, setQuoteDialogOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { data: newConvoResults } = useSearchProfiles(newConvoSearch);
   const [handledNavState, setHandledNavState] = useState(false);
@@ -91,6 +94,14 @@ export default function Messages() {
     });
     setNewMessage("");
     setPendingAttachment(null);
+  };
+
+  const handleSendQuote = async (quote: QuoteData) => {
+    if (!selectedConvoId) return;
+    const encoded = encodeQuote(quote);
+    await sendMessage.mutateAsync({ conversationId: selectedConvoId, content: encoded });
+    setQuoteDialogOpen(false);
+    toast({ title: "Quote sent", description: `$${quote.amount} ${quote.mode === "hourly" ? "(hourly)" : "(flat)"} sent.` });
   };
 
   const handleStartConversation = (person: any) => {
@@ -251,6 +262,15 @@ export default function Messages() {
             )}
             <div className="flex gap-2">
               <MessageAttachment onAttach={(url, type) => setPendingAttachment({ url, type })} disabled={sendMessage.isPending} />
+              <Button
+                variant="ghost"
+                size="icon"
+                title="Send a price quote"
+                onClick={() => setQuoteDialogOpen(true)}
+                disabled={!selectedConvoId}
+              >
+                <Tag className="h-4 w-4" />
+              </Button>
               <Input
                 placeholder={t("messages.typeMessage")}
                 value={newMessage}
@@ -307,6 +327,15 @@ export default function Messages() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Quote dialog: send a price quote in the active conversation */}
+      <QuoteDialog
+        open={quoteDialogOpen}
+        onOpenChange={setQuoteDialogOpen}
+        vendorUserId={selectedOtherUser?.id || ""}
+        onSend={handleSendQuote}
+        submitting={sendMessage.isPending}
+      />
     </div>
   );
 }
