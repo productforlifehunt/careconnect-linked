@@ -372,6 +372,10 @@ export default function SearchResults() {
                             </div>
                             {cg.bio && <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{cg.bio}</p>}
                             <div className="flex flex-wrap gap-1.5">
+                              {(cg.service_location_slugs || []).map(slug => {
+                                const opt = LOCATION_OPTIONS.find(o => o.slug === slug);
+                                return <Badge key={`loc-${slug}`} variant="outline" className="text-xs border-primary/40 text-primary">{opt ? (isZh ? opt.zh : opt.en) : slug}</Badge>;
+                              })}
                               {(cg.specialty || []).map(s => (<Badge key={s} variant="secondary" className="bg-accent text-accent-foreground text-xs">{t(getSpecialtyKey(s))}</Badge>))}
                             </div>
                           </div>
@@ -387,7 +391,7 @@ export default function SearchResults() {
                 {allResults.length === 0 && (
                   <div className="text-center py-16">
                     <p className="text-lg text-muted-foreground">{isFacilityMode ? (isZh ? "没有符合条件的养老机构。" : "No facilities matched your filters.") : t("search.noMatch")}</p>
-                    <Button variant="outline" className="mt-4" onClick={() => { setQuery(""); setLocationFilter(""); setSelectedSpecialties([]); setSelectedFacilityTypes([]); setSelectedServiceTypes([]); setMinRating(0); setPriceRange([0, 100]); setCurrentPage(1); }}>{t("common.clearFilters")}</Button>
+                    <Button variant="outline" className="mt-4" onClick={() => { setQuery(""); setLocationFilter(""); setSelectedSpecialties([]); setSelectedFacilityTypes([]); setSelectedServiceTypes([]); setSelectedLocations([]); setMinRating(0); setPriceRange([0, 100]); setCurrentPage(1); }}>{t("common.clearFilters")}</Button>
                   </div>
                 )}
               </div>
