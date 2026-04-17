@@ -66,6 +66,7 @@ export default function SearchResults() {
   const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>(initialQuery ? [initialQuery].filter(q => allServiceTypeNames.includes(q)) : []);
   const [selectedFacilityTypes, setSelectedFacilityTypes] = useState<string[]>([]);
   const [selectedServiceTypes, setSelectedServiceTypes] = useState<string[]>([]);
+  const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [minRating, setMinRating] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -76,6 +77,7 @@ export default function SearchResults() {
     specialties: selectedSpecialties.length > 0 ? selectedSpecialties : undefined,
     minRate: priceRange[0] > 0 ? priceRange[0] : undefined, maxRate: priceRange[1] < 100 ? priceRange[1] : undefined,
     verifiedOnly, minRating: minRating > 0 ? minRating : undefined, sortBy,
+    serviceLocations: selectedLocations.length > 0 ? selectedLocations : undefined,
   });
 
   const { data: facilities, isLoading: facilitiesLoading } = useCareFacilities({
