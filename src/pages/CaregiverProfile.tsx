@@ -128,8 +128,8 @@ export default function CaregiverProfile() {
   }
 
   const handleBooking = async () => {
-    if (!bookingDate || !bookingTime || !bookingType) {
-      toast({ title: "Please fill all required fields", variant: "destructive" });
+    if (!bookingDate || !bookingTime || !selectedResource) {
+      toast({ title: "Please pick a service package, date, and time", variant: "destructive" });
       return;
     }
     const selectedDate = new Date(bookingDate + "T" + bookingTime);
@@ -165,17 +165,17 @@ export default function CaregiverProfile() {
     }
     try {
       const recurringNote = recurringPattern !== "none" ? `[Recurring: ${recurringPattern}] ` : "";
-      const deliveryNote = selectedResource ? `[Delivery: ${selectedResource.name}] ` : "";
-      const ratePerHour = effectiveRate + resourceCostPerHour;
+      const packageNote = `[Package: ${selectedResource.name}] `;
+      const ratePerHour = effectiveRate;
       await createBooking.mutateAsync({
         provider_id: caregiver.id,
         appointment_date: bookingDate,
         appointment_time: bookingTime,
         duration_hour: durationHours,
-        service_type: bookingType,
+        service_type: bookingTypeLabel,
         hourly_rate: ratePerHour,
         total_cost: ratePerHour * durationHours,
-        special_instruction: recurringNote + deliveryNote + (bookingNotes || "") || null,
+        special_instruction: recurringNote + packageNote + (bookingNotes || "") || null,
         status: availabilitySetting?.requires_confirmation === false ? "confirmed" : "pending",
         payment_status: "pending",
       });
@@ -192,7 +192,7 @@ export default function CaregiverProfile() {
   };
 
   const durationHrs = parseInt(bookingDuration) || 0;
-  const total = (effectiveRate + resourceCostPerHour) * durationHrs;
+  const total = effectiveRate * durationHrs;
   const hasAvailabilityConflict = Boolean(availabilityWarning);
 
   return (
