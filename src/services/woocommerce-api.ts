@@ -410,32 +410,20 @@ export async function getOrCreateProviderProduct(
 async function configureBookingProduct(
   productId: number,
   defaultHourlyRate: number,
-  serviceRates: ServiceRateEntry[] = [],
-  deliveryCosts: DeliveryResourceCosts = {},
+  serviceResources: ServiceResource[] = [],
 ) {
   try {
-    // Effective base — fall back to first service rate if default is 0
-    const baseCost = defaultHourlyRate > 0
-      ? defaultHourlyRate
-      : (serviceRates[0]?.hourlyRate || 0);
+    // Base product price stays at 0 — the full hourly rate lives on each
+    // resource's block_cost. Cart math: resource.blockCost × hours.
+    const baseCost = 0;
 
-    // Persons are enabled when there is more than one priced service.
-    // Resources are enabled whenever a delivery surcharge is configured.
-    const hasPersons = serviceRates.length > 0;
-    const hasResources = (deliveryCosts.localCost ?? 0) >= 0 || (deliveryCosts.virtualCost ?? 0) >= 0;
+    const hasResources = serviceResources.length > 0;
 
-    // 1. Upsert resources and link them via the `product_id` REST field
-    //    (added by the CareConnect Bookable REST v3 snippet — maps to
-    //    post_parent). We no longer rely on `resource_ids` in the booking
-    //    config PUT because the WC Bookings REST controller silently drops
-    //    that field unless every related child post is already a child of
-    //    the product (chicken-and-egg). The `product_id` field on each
-    //    resource is what WC Bookings actually reads at runtime via
-    //    get_children( post_parent=product_id ).
+    // 1. Upsert one bookable_resource per service package.
     let resourceIds: number[] = [];
     if (hasResources) {
       try {
-        resourceIds = await syncBookingResources(productId, deliveryCosts);
+        resourceIds = await syncBookingResources(productId, serviceResources);
       } catch (e) {
         console.warn('Failed to sync booking resources:', e);
       }
@@ -459,34 +447,26 @@ async function configureBookingProduct(
       max_bookings_per_block: 1,
       enable_range_picker: true,
       pricing: [],
-      has_persons: hasPersons,
+      has_persons: false, // Persons no longer used — flat resource model
       has_resources: hasResources && resourceIds.length > 0,
       resources_assignment: 'customer',
     };
 
-    // PUT — POST is silently ignored for most fields by WC Bookings REST
     await wcBookingsFetch(`products/${productId}`, {
       method: 'PUT',
       body: JSON.stringify(bookingConfig),
     });
 
-    // 2. Sync Person Types AFTER the parent has has_persons=true. Stub
-    //    placeholders auto-spawned by WC Bookings will be cleaned up inside
-    //    syncBookingPersons.
-    if (hasPersons) {
-      try {
-        await syncBookingPersons(productId, serviceRates);
-      } catch (e) {
-        console.warn('Failed to sync booking persons:', e);
-      }
+    // 2. Cleanup: remove any legacy bookable_person stubs left over from the
+    //    previous person-types model so the storefront only shows the resource picker.
+    try {
+      await purgeBookingPersons(productId);
+    } catch (e) {
+      console.warn('Failed to purge legacy persons:', e);
     }
 
-    // 3. CRITICAL: Trigger WC product setter via custom endpoint. WC Bookings
-    //    caches resource_ids on the WC_Product_Booking object — writing meta
-    //    alone won't make the storefront <select> render. This calls
-    //    $product->set_resource_ids()->save() server-side which is the only
-    //    path that actually persists the resource picker.
-    if (hasResources || hasPersons) {
+    // 3. Trigger WC product setter so resource_ids cache on the booking product.
+    if (hasResources) {
       try {
         await syncBookingProductResources(productId);
       } catch (e) {
@@ -494,7 +474,7 @@ async function configureBookingProduct(
       }
     }
 
-    // Mirror base cost to WC product price so it shows in catalog/cart
+    // Mirror base cost (0) to the WC product price.
     try {
       await wcFetch(`products/${productId}`, {
         method: 'PUT',
@@ -507,6 +487,24 @@ async function configureBookingProduct(
     console.error('Error configuring booking product:', error);
     throw error;
   }
+}
+
+/** Trash all bookable_person posts attached to a product (legacy cleanup). */
+async function purgeBookingPersons(productId: number) {
+  try {
+    const url = buildWPUrl(`wp/v2/bookable_person?product_id=${productId}&per_page=100&status=publish,draft`);
+    const res = await fetch(url, { headers: getAuthHeaders() });
+    if (!res.ok) return;
+    const persons = await res.json();
+    for (const p of persons || []) {
+      try {
+        await fetch(buildWPUrl(`wp/v2/bookable_person/${p.id}?force=true`), {
+          method: 'DELETE',
+          headers: getAuthHeaders(),
+        });
+      } catch { /* ignore */ }
+    }
+  } catch { /* ignore */ }
 }
 
 /**
