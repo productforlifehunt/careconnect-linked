@@ -431,13 +431,13 @@ export default function CaregiverProfile() {
                       <span className="text-sm text-muted-foreground">Estimated Total</span>
                       <span className="text-xl font-bold text-foreground">${total}{recurringPattern !== "none" ? `/${recurringPattern === "weekly" ? "wk" : recurringPattern === "biweekly" ? "2wk" : "mo"}` : ""}</span>
                     </div>
-                    <Button variant="coral" className="w-full" onClick={handleBooking} disabled={createBooking.isPending || hasAvailabilityConflict || offered.services.length === 0}>
+                    <Button variant="coral" className="w-full" onClick={handleBooking} disabled={createBooking.isPending || hasAvailabilityConflict || !selectedResource}>
                       {createBooking.isPending ? "Submitting..." : "Confirm Booking"}
                     </Button>
                     <Button
                       variant="outline"
                       className="w-full"
-                      disabled={addToCart.isPending || !providerProduct?.id || !bookingDate || !bookingTime || !bookingType}
+                      disabled={addToCart.isPending || !providerProduct?.id || !bookingDate || !bookingTime || !selectedResource}
                       onClick={async () => {
                         if (!isAuthenticated) { navigate("/auth"); return; }
                         try {
@@ -448,11 +448,11 @@ export default function CaregiverProfile() {
                               startDate: bookingDate,
                               startTime: bookingTime,
                               durationHours: durationHrs,
-                              serviceType: bookingType,
+                              serviceType: bookingTypeLabel,
                               notes: bookingNotes || undefined,
                             },
                           });
-                          toast({ title: "Added to cart", description: `${caregiver.full_name}'s booking added with ${selectedResource?.name || 'no'} delivery.` });
+                          toast({ title: "Added to cart", description: `${caregiver.full_name}'s ${selectedResource?.name} booking added.` });
                           setBookingDialogOpen(false);
                           navigate('/cart');
                         } catch (e: any) {
