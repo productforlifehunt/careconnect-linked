@@ -470,7 +470,6 @@ async function syncBookingPersons(productId: number, serviceRates: ServiceRateEn
       `../wp/v2/bookable_person?parent=${productId}&per_page=100&status=publish,draft`
     ) || [];
   } catch {
-    // Fallback path — try direct wp/v2 namespace via a custom helper
     try {
       const url = buildWPUrl(`wp/v2/bookable_person?parent=${productId}&per_page=100&status=publish,draft`);
       const res = await fetch(url, { headers: getAuthHeaders() });
@@ -480,7 +479,7 @@ async function syncBookingPersons(productId: number, serviceRates: ServiceRateEn
 
   const existingByTitle: Record<string, any> = {};
   existingPersons.forEach((p: any) => {
-    const title = (p?.title?.rendered || p?.title || '').toString().trim();
+    const title = (p?.title?.rendered || p?.title?.raw || p?.title || '').toString().trim();
     if (title) existingByTitle[title] = p;
   });
 
@@ -515,9 +514,15 @@ async function syncBookingPersons(productId: number, serviceRates: ServiceRateEn
     }
   }
 
-  // Trash persons no longer in serviceRates
+  // Trash any person not in our desired set — including stub "Person Type #N"
+  // entries auto-created by WC Bookings when has_persons=true is first set.
+  const STUB_RE = /^\s*Person Type\s*#?\d*\s*$/i;
   for (const [title, person] of Object.entries(existingByTitle)) {
-    if (!desiredTitles.has(title)) {
+    const isStub = !title || STUB_RE.test(title);
+    if (!desiredTitles.has(title) || isStub) {
+      // If the stub *happens* to share a title we want, only delete the stub copy
+      // (the real upsert above will have already created/updated the named one).
+      if (desiredTitles.has(title) && !isStub) continue;
       try {
         await fetch(buildWPUrl(`wp/v2/bookable_person/${person.id}?force=true`), {
           method: 'DELETE',
