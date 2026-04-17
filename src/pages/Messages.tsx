@@ -35,6 +35,7 @@ export default function Messages() {
   const [newConvoSearch, setNewConvoSearch] = useState("");
   const [quoteDialogOpen, setQuoteDialogOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const navHandledRef = useRef(false);
   const { data: newConvoResults } = useSearchProfiles(newConvoSearch);
   const [handledNavState, setHandledNavState] = useState(false);
 
@@ -56,7 +57,8 @@ export default function Messages() {
 
   useEffect(() => {
     const navState = location.state as any;
-    if (navState?.targetUserId && !handledNavState) {
+    if (navState?.targetUserId && !navHandledRef.current) {
+      navHandledRef.current = true;
       setHandledNavState(true);
       const targetUser = {
         id: navState.targetUserId,
@@ -67,6 +69,7 @@ export default function Messages() {
         onSuccess: (convoId: string) => {
           setSelectedConvoId(convoId);
           setSelectedOtherUser(targetUser);
+          qc.invalidateQueries({ queryKey: ["conversations"] });
           if (navState.openQuote) {
             if (navState.quotePrefill) setQuotePrefill(navState.quotePrefill);
             setQuoteDialogOpen(true);
@@ -74,7 +77,7 @@ export default function Messages() {
         },
       });
     }
-  }, [location.state, handledNavState]);
+  }, [location.state]);
 
   useEffect(() => {
     const navState = location.state as any;
@@ -106,6 +109,8 @@ export default function Messages() {
     if (!selectedConvoId) return;
     const encoded = encodeQuote(quote);
     await sendMessage.mutateAsync({ conversationId: selectedConvoId, content: encoded });
+    qc.invalidateQueries({ queryKey: ["messages"] });
+    qc.invalidateQueries({ queryKey: ["conversations"] });
     setQuoteDialogOpen(false);
     toast({ title: "Quote sent", description: `$${quote.amount} ${quote.mode === "hourly" ? "(hourly)" : "(flat)"} sent.` });
   };
