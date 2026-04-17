@@ -126,6 +126,8 @@ export function useProviders(filters?: {
   minRating?: number;
   sortBy?: string;
   location?: string;
+  serviceLocations?: string[];
+  serviceTypeSlugs?: string[];
 }) {
   return useQuery({
     queryKey: ["providers", filters],
