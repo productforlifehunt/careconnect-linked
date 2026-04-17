@@ -508,141 +508,50 @@ async function purgeBookingPersons(productId: number) {
 }
 
 /**
- * Sync per-service Person Types (`bookable_person` CPT) for a product.
- * Each service becomes a Person Type with its own `block_cost` (per-hour rate)
- * and `cost` (per-booking flat). Customer can multi-select with quantities,
- * and WC Bookings calculates: Σ(person.block_cost × qty × blocks).
+ * Sync flat service-package Resources for a product. Each entry in
+ * `serviceResources` becomes one bookable_resource whose block_cost IS the
+ * full per-hour rate (no separate base + surcharge math). Customer picks
+ * exactly ONE at booking time. Total = resource.blockCost × hours.
  *
- * Requires the CareConnect REST Bridge plugin (v1.2.0+) which exposes
- * `bookable_person` to wp/v2 with writable meta keys.
- *
- * Strategy: list existing persons for product → upsert by title match → trash extras.
- */
-async function syncBookingPersons(productId: number, serviceRates: ServiceRateEntry[]) {
-  // Fetch existing person posts attached to this product. We filter via the
-  // custom `?product_id=` query param (added by snippet v3) because the CPT
-  // is non-hierarchical so the standard `?parent=` arg is ignored.
-  let existingPersons: any[] = [];
-  try {
-    const url = buildWPUrl(`wp/v2/bookable_person?product_id=${productId}&per_page=100&status=publish,draft`);
-    const res = await fetch(url, { headers: getAuthHeaders() });
-    if (res.ok) existingPersons = await res.json();
-  } catch { /* ignore */ }
-
-  const existingByTitle: Record<string, any> = {};
-  existingPersons.forEach((p: any) => {
-    const title = (p?.title?.rendered || p?.title?.raw || p?.title || '').toString().trim();
-    if (title) existingByTitle[title] = p;
-  });
-
-  const desiredTitles = new Set<string>();
-  for (const rate of serviceRates) {
-    const title = rate.serviceType;
-    desiredTitles.add(title);
-    const blockCost = Number(rate.hourlyRate) || 0;
-    const body = {
-      title,
-      status: 'publish',
-      // `product_id` is our custom REST field that writes post_parent.
-      // The standard `parent` arg is silently dropped on non-hierarchical
-      // CPTs, which is why all previous saves left orphans (parent=0).
-      product_id: productId,
-      meta: {
-        cost: 0,
-        block_cost: blockCost,
-        min: 0,
-        max: 10,
-      },
-    };
-    const existing = existingByTitle[title];
-    const url = existing
-      ? buildWPUrl(`wp/v2/bookable_person/${existing.id}`)
-      : buildWPUrl(`wp/v2/bookable_person`);
-    let upsertedId = existing?.id;
-    try {
-      const res = await fetch(url, {
-        method: existing ? 'PUT' : 'POST',
-        headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (res.ok) {
-        const data = await res.json().catch(() => null);
-        if (data?.id) upsertedId = data.id;
-      }
-    } catch (e) {
-      console.warn(`Failed to upsert person "${title}":`, e);
-    }
-    if (upsertedId) {
-      // Force-link via direct DB endpoint — wp/v2 strips post_parent on
-      // non-hierarchical CPTs even when our product_id field is sent.
-      await forceLinkBookingChild(upsertedId, productId);
-    }
-  }
-
-  // Trash any person not in our desired set — including stub "Person Type #N"
-  // entries auto-created by WC Bookings when has_persons=true is first set.
-  const STUB_RE = /^\s*Person Type\s*#?\d*\s*$/i;
-  for (const [title, person] of Object.entries(existingByTitle)) {
-    const isStub = !title || STUB_RE.test(title);
-    if (!desiredTitles.has(title) || isStub) {
-      // If the stub *happens* to share a title we want, only delete the stub copy
-      // (the real upsert above will have already created/updated the named one).
-      if (desiredTitles.has(title) && !isStub) continue;
-      try {
-        await fetch(buildWPUrl(`wp/v2/bookable_person/${person.id}?force=true`), {
-          method: 'DELETE',
-          headers: getAuthHeaders(),
-        });
-      } catch { /* ignore */ }
-    }
-  }
-}
-
-/**
- * Sync delivery-mode Resources (Local / Virtual) for a product and return
- * the resource IDs the caller must include in the booking-config PUT.
- *
- * IMPORTANT: WC Bookings REST drops `resource_ids` when sent in a PUT that
- * doesn't also carry the full booking config. The link MUST happen in the
- * same PUT as `has_resources` — so this function only upserts and returns
- * IDs; the caller (`configureBookingProduct`) does the linking.
+ * Strategy: list existing resources for product → upsert by name match → trash extras.
+ * Returns the resource IDs the caller must include in the booking-config PUT.
  */
 async function syncBookingResources(
   productId: number,
-  deliveryCosts: DeliveryResourceCosts,
+  serviceResources: ServiceResource[],
 ): Promise<number[]> {
-  const desired: Array<{ name: string; cost: number; metaTag: string }> = [
-    { name: 'Local (In-Person)', cost: deliveryCosts.localCost ?? 0, metaTag: 'local' },
-    { name: 'Virtual (Remote)', cost: deliveryCosts.virtualCost ?? 0, metaTag: 'virtual' },
-  ];
-
   let existingResources: any[] = [];
   try {
-    const url = buildWPUrl(`wp/v2/bookable_resource?product_id=${productId}&per_page=50&status=publish,draft`);
+    const url = buildWPUrl(`wp/v2/bookable_resource?product_id=${productId}&per_page=100&status=publish,draft`);
     const res = await fetch(url, { headers: getAuthHeaders() });
     if (res.ok) existingResources = await res.json();
   } catch { /* ignore */ }
 
-  const existingByTag: Record<string, any> = {};
+  const existingByName: Record<string, any> = {};
   existingResources.forEach((r: any) => {
-    const title = (r?.title?.rendered || r?.title?.raw || '').toString().toLowerCase();
-    const tag = title.includes('virtual') ? 'virtual' : 'local';
-    existingByTag[tag] = r;
+    const title = (r?.title?.rendered || r?.title?.raw || '').toString().trim();
+    if (title) existingByName[title] = r;
   });
 
+  const desiredNames = new Set<string>();
   const linkedIds: number[] = [];
-  for (const d of desired) {
-    const existing = existingByTag[d.metaTag];
+
+  for (const sr of serviceResources) {
+    const name = sr.name.trim();
+    if (!name) continue;
+    desiredNames.add(name);
+    const cost = Number(sr.ratePerHour) || 0;
     const body = {
-      title: d.name,
+      title: name,
       status: 'publish',
       product_id: productId,
       meta: {
-        _wc_booking_base_cost: d.cost,
-        _wc_booking_block_cost: d.cost,
+        _wc_booking_base_cost: cost,
+        _wc_booking_block_cost: cost,
         _wc_booking_qty: 1,
       },
     };
+    const existing = existingByName[name];
     let upsertedId = existing?.id;
     try {
       const url = existing
@@ -658,14 +567,24 @@ async function syncBookingResources(
         if (data?.id) upsertedId = data.id;
       }
     } catch (e) {
-      console.warn(`Failed to upsert resource "${d.name}":`, e);
+      console.warn(`Failed to upsert resource "${name}":`, e);
     }
     if (upsertedId) {
-      // Belt-and-suspenders: force post_parent via custom endpoint in case
-      // the wp/v2 product_id REST field didn't persist (snippet v4).
       await forceLinkBookingChild(upsertedId, productId);
       linkedIds.push(upsertedId);
     }
+  }
+
+  // Trash any resource not in our desired set (legacy "Local (In-Person)" /
+  // "Virtual (Remote)" stubs from the old delivery-cost model).
+  for (const [name, r] of Object.entries(existingByName)) {
+    if (desiredNames.has(name)) continue;
+    try {
+      await fetch(buildWPUrl(`wp/v2/bookable_resource/${r.id}?force=true`), {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+    } catch { /* ignore */ }
   }
 
   return linkedIds;
