@@ -78,31 +78,35 @@ export default function CaregiverProfile() {
   }, [bookingDialogOpen, deliveryResourceId, bookingResources]);
 
   const selectedResource = bookingResources.find((r: BookingResourceOption) => String(r.id) === deliveryResourceId);
-  const resourceCostPerHour = Number(selectedResource?.blockCost || 0);
-  // Build the source of truth for what the provider actually offers.
-  // Priority: WC product `_service_rates` meta → profile.specialty (fallback) → empty.
+  // In the flat-resource model, the resource IS the service package and its
+  // blockCost IS the full per-hour rate (no separate base + surcharge).
+  const effectiveRate = Number(selectedResource?.blockCost || 0);
+  // Derive the service-type label from the chosen resource for display + order meta.
+  const bookingTypeLabel = selectedResource?.name || bookingType || "";
+
+  // Auto-pick the first resource when dialog opens so the user can't be stuck.
+  useEffect(() => {
+    if (bookingDialogOpen && !deliveryResourceId && bookingResources.length > 0) {
+      setDeliveryResourceId(String(bookingResources[0].id));
+    }
+  }, [bookingDialogOpen, deliveryResourceId, bookingResources]);
+
+  // Keep `bookingType` in sync with the selected resource for legacy code paths.
+  useEffect(() => {
+    if (selectedResource?.name) setBookingType(selectedResource.name);
+  }, [selectedResource]);
+
+  // Legacy: provider may have profile.specialty without a synced product yet.
+  // We keep `offered` for display in chips but no longer drive the picker from it.
   const offered = useMemo(() => {
     const defaultRate = caregiver?.care_provider_starts_hourly_rate || 0;
     const fromProduct = extractProviderServicesFromProduct(providerProduct, defaultRate);
     if (fromProduct.services.length > 0) return fromProduct;
-    // Fallback: provider has profile specialties but hasn't synced product yet
     const services = caregiver?.specialty || [];
     const rates: Record<string, number> = {};
     services.forEach(s => { rates[s] = defaultRate; });
     return { services, rates };
   }, [providerProduct, caregiver]);
-
-  // Effective hourly rate: per-service rate if available, else default
-  const effectiveRate = bookingType
-    ? (offered.rates[bookingType] ?? caregiver?.care_provider_starts_hourly_rate ?? 0)
-    : (caregiver?.care_provider_starts_hourly_rate ?? 0);
-
-  // Auto-pick the first offered service when dialog opens, so user can't be stuck
-  useEffect(() => {
-    if (bookingDialogOpen && !bookingType && offered.services.length > 0) {
-      setBookingType(offered.services[0]);
-    }
-  }, [bookingDialogOpen, bookingType, offered.services]);
 
   // Check availability when date/time changes
   const checkAvailability = (date: string, time: string) => {
