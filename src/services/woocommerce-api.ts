@@ -758,7 +758,8 @@ export interface BookingResourceOption {
 export async function fetchProductBookingResources(productId: number): Promise<BookingResourceOption[]> {
   try {
     const url = buildWPUrl(`wp/v2/bookable_resource?product_id=${productId}&per_page=20&_fields=id,title,meta`);
-    const res = await fetch(url, { headers: { ...getAuthHeaders() } });
+    // Use admin Basic Auth so unauthenticated visitors still see resource costs.
+    const res = await fetch(url, { headers: getAdminHeaders('application/json') });
     if (!res.ok) return [];
     const rows = await res.json();
     return (rows || []).map((r: any) => ({
@@ -791,42 +792,56 @@ export interface ProviderProductSummary {
 export async function fetchAllProviderProductSummaries(): Promise<Map<string, ProviderProductSummary>> {
   const map = new Map<string, ProviderProductSummary>();
   try {
-    // Pull all booking products (not category-filtered) so we don't lose
-    // provider products that vendor API created in `uncategorized`. We then
-    // join client-side via the `_provider_id` meta written by getOrCreate.
-    const products = await wcFetch(
-      `products?per_page=100&status=publish&type=booking`,
+    // Use admin Basic Auth via wpAdminFetch so unauthenticated visitors and
+    // non-admin logged-in customers can still hydrate the marketplace listing
+    // (WC `/products` listing requires `read` cap → JWT alone returns 401).
+    const products = await wpAdminFetch(
+      `wc/v3/products?per_page=100&status=publish&type=booking`,
     );
     if (!Array.isArray(products)) return map;
 
+    const toSlug = (s: string) => String(s).trim().toLowerCase().replace(/\s+/g, '-');
+    const candidates: Array<{ p: any; providerId: string }> = [];
     for (const p of products) {
       const meta: any[] = Array.isArray(p?.meta_data) ? p.meta_data : [];
       const providerId = meta.find((m) => m?.key === '_provider_id')?.value;
       if (!providerId) continue;
-
-      const minRaw = meta.find((m) => m?.key === '_min_block_cost')?.value;
-      const minBlockCost = Number(minRaw) || 0;
-
-      const attrs: any[] = Array.isArray(p?.attributes) ? p.attributes : [];
-      const findAttr = (slug: string) =>
-        attrs.find(
-          (a) => a?.slug === slug || a?.slug === `pa_${slug}` || a?.name?.toLowerCase().includes(slug),
-        );
-      const stOptions: string[] = (findAttr('service-type')?.options as string[]) || [];
-      const slOptions: string[] = (findAttr('service-location')?.options as string[]) || [];
-
-      // WC returns option *names* in `options`. Normalise to lowercase-dash slugs
-      // so the front-end filter can compare against pa_service-location terms
-      // ("in-person" / "remote" / "hybrid") regardless of capitalisation.
-      const toSlug = (s: string) => String(s).trim().toLowerCase().replace(/\s+/g, '-');
-
-      map.set(String(providerId), {
-        productId: Number(p.id),
-        minBlockCost,
-        serviceTypeSlugs: stOptions.map(toSlug),
-        serviceLocationSlugs: slOptions.map(toSlug),
-      });
+      candidates.push({ p, providerId: String(providerId) });
     }
+
+    // For products missing `_min_block_cost`, fall back to fetching the actual
+    // bookable_resources so the marketplace card shows the right "from $X/hr"
+    // even when the meta wasn't refreshed by an older save.
+    await Promise.all(
+      candidates.map(async ({ p, providerId }) => {
+        const meta: any[] = Array.isArray(p?.meta_data) ? p.meta_data : [];
+        const minRaw = meta.find((m) => m?.key === '_min_block_cost')?.value;
+        let minBlockCost = Number(minRaw) || 0;
+
+        if (minBlockCost === 0) {
+          try {
+            const resources = await fetchProductBookingResources(Number(p.id));
+            const costs = resources.map((r) => r.blockCost).filter((c) => c > 0);
+            if (costs.length > 0) minBlockCost = Math.min(...costs);
+          } catch { /* ignore */ }
+        }
+
+        const attrs: any[] = Array.isArray(p?.attributes) ? p.attributes : [];
+        const findAttr = (slug: string) =>
+          attrs.find(
+            (a) => a?.slug === slug || a?.slug === `pa_${slug}` || a?.name?.toLowerCase().includes(slug),
+          );
+        const stOptions: string[] = (findAttr('service-type')?.options as string[]) || [];
+        const slOptions: string[] = (findAttr('service-location')?.options as string[]) || [];
+
+        map.set(providerId, {
+          productId: Number(p.id),
+          minBlockCost,
+          serviceTypeSlugs: stOptions.map(toSlug),
+          serviceLocationSlugs: slOptions.map(toSlug),
+        });
+      }),
+    );
   } catch (e) {
     console.warn('fetchAllProviderProductSummaries failed:', e);
   }
