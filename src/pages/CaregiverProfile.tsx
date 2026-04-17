@@ -380,9 +380,21 @@ export default function CaregiverProfile() {
                         </p>
                       )}
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    {bookingResources.length > 0 && (
                       <div>
-                        <Label>Date *</Label>
+                        <Label>Delivery *</Label>
+                        <Select value={deliveryResourceId} onValueChange={setDeliveryResourceId}>
+                          <SelectTrigger><SelectValue placeholder="Select delivery option" /></SelectTrigger>
+                          <SelectContent>
+                            {bookingResources.map((r: BookingResourceOption) => (
+                              <SelectItem key={r.id} value={String(r.id)}>
+                                {r.name} {r.blockCost > 0 ? `(+$${r.blockCost}/hr)` : "(included)"}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                         <Input type="date" value={bookingDate} onChange={e => { setBookingDate(e.target.value); checkAvailability(e.target.value, bookingTime); }} min={new Date().toISOString().split("T")[0]} />
                       </div>
                       <div>
