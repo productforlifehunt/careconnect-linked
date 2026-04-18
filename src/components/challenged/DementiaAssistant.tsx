@@ -396,6 +396,32 @@ export function DementiaAssistant() {
           </Select>
         </div>
 
+        {/* TTS Engine A/B switcher */}
+        <div className="flex items-center gap-2 px-3 py-1.5 border-b bg-muted/30 text-xs">
+          <Sparkles className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <span className="text-[11px] text-muted-foreground shrink-0">
+            {isChinese ? "引擎" : "Engine"}
+          </span>
+          <Tabs
+            value={ttsEngine}
+            onValueChange={(v) => { hardStop(); setTtsEngine(v as TTSEngine); }}
+            className="flex-1"
+          >
+            <TabsList className="grid grid-cols-2 h-7 w-full">
+              {TTS_ENGINES.map((e) => (
+                <TabsTrigger
+                  key={e.value}
+                  value={e.value}
+                  className="text-[11px] px-1"
+                  title={e.sub}
+                >
+                  {e.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        </div>
+
         {/* Messages */}
         <div ref={scrollRef} className="h-[320px] overflow-y-auto p-3 space-y-3">
           {messages.map((msg, i) => {
