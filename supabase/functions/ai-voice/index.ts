@@ -22,6 +22,20 @@ const OPENAI_VOICES = new Set([
   "fable", "nova", "onyx", "sage", "shimmer", "verse",
 ]);
 
+// ─── Alibaba DashScope voice maps ───
+// Qwen3-TTS-Flash voices (Cherry/Ethan/Chelsie/etc — multilingual, very natural)
+const QWEN_TTS_VOICES = new Set([
+  "Cherry", "Ethan", "Chelsie", "Serena", "Dylan", "Jada", "Sunny",
+]);
+// CosyVoice v3.5+ voices (longxiaochun / longxiaobai etc — Chinese-first, soft female "longxiaobai" is closest to 软妹)
+// CosyVoice v3.5+ / v3 voices (Chinese-first; "longxiaobai" is the soft female 软妹 audition).
+// We use the bare names (no _v2 suffix) which DashScope accepts for both v3 and v3.5 models.
+const COSYVOICE_V35_VOICES = new Set([
+  "longxiaochun", "longxiaobai", "longjing", "longshu",
+  "longwan", "longcheng", "longhua", "longshuo", "longanyang",
+]);
+
+// Map our generic persona keys onto each provider's actual voice ID.
 function resolveCosyVoice(voice?: string): string {
   if (!voice) return "FunAudioLLM/CosyVoice2-0.5B:anna";
   if (voice.includes("CosyVoice")) return voice;
@@ -31,6 +45,30 @@ function resolveCosyVoice(voice?: string): string {
 function resolveOpenAIVoice(voice?: string): string {
   if (!voice) return "alloy";
   return OPENAI_VOICES.has(voice) ? voice : "alloy";
+}
+
+function resolveQwenTTSVoice(voice?: string): string {
+  if (!voice) return "Cherry";
+  if (QWEN_TTS_VOICES.has(voice)) return voice;
+  // Map generic personas to closest Qwen voice
+  const map: Record<string, string> = {
+    nova: "Cherry", shimmer: "Chelsie", coral: "Serena", sage: "Jada",
+    alloy: "Ethan", onyx: "Dylan", echo: "Ethan", fable: "Sunny",
+  };
+  return map[voice] || "Cherry";
+}
+
+function resolveCosyV35Voice(voice?: string): string {
+  if (!voice) return "longxiaobai";
+  // Strip any _v2 suffix users might still send
+  const clean = voice.replace(/_v2$/, "");
+  if (COSYVOICE_V35_VOICES.has(clean)) return clean;
+  const map: Record<string, string> = {
+    nova: "longxiaobai", shimmer: "longxiaobai", coral: "longxiaochun",
+    sage: "longjing", alloy: "longcheng", onyx: "longshuo",
+    echo: "longwan", fable: "longhua",
+  };
+  return map[voice] || "longxiaobai";
 }
 
 async function arrayBufferToBase64(buffer: ArrayBuffer): Promise<string> {
@@ -99,7 +137,7 @@ serve(async (req) => {
       text: string;
       voice?: string;
       format?: string;
-      engine?: "siliconflow" | "openai" | "openai-full";
+      engine?: "siliconflow" | "openai" | "openai-full" | "qwen-tts" | "cosyvoice-v35";
     };
 
     if (!text || typeof text !== "string" || text.trim().length === 0) {
@@ -132,6 +170,8 @@ serve(async (req) => {
     const selectedEngine =
       engine === "openai" ? "openai"
       : engine === "openai-full" ? "openai-full"
+      : engine === "qwen-tts" ? "qwen-tts"
+      : engine === "cosyvoice-v35" ? "cosyvoice-v35"
       : "siliconflow";
 
     let response: Response;
@@ -277,6 +317,74 @@ serve(async (req) => {
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
+    } else if (selectedEngine === "qwen-tts") {
+      // ─── Alibaba DashScope · Qwen3-TTS-Flash ───
+      const DASHSCOPE_API_KEY = Deno.env.get("DASHSCOPE_API_KEY");
+      if (!DASHSCOPE_API_KEY) throw new Error("DASHSCOPE_API_KEY is not configured");
+      resolvedVoice = resolveQwenTTSVoice(voice);
+      providerLabel = "dashscope-qwen3-tts-flash";
+
+      // Synchronous HTTP call. Returns audio URL in output.audio.url
+      response = await fetch(
+        "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${DASHSCOPE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "qwen3-tts-flash",
+            input: { text: cleanText, voice: resolvedVoice },
+            parameters: { language_type: "Auto" },
+          }),
+        },
+      );
+    } else if (selectedEngine === "cosyvoice-v35") {
+      // ─── Alibaba DashScope · CosyVoice v3.5-Plus ───
+      const DASHSCOPE_API_KEY = Deno.env.get("DASHSCOPE_API_KEY");
+      if (!DASHSCOPE_API_KEY) throw new Error("DASHSCOPE_API_KEY is not configured");
+      resolvedVoice = resolveCosyV35Voice(voice);
+      providerLabel = "dashscope-cosyvoice-v3.5-plus";
+
+      // CosyVoice on DashScope:
+      //   v3.5-plus & v3.5-flash → WebSocket only (HTTP returns 418).
+      //   v3-flash & v2          → support sync HTTP via SpeechSynthesizer.
+      // Strategy: skip the WS-only models, call v3-flash directly (cheap, fast,
+      // good Chinese quality). Map our generic voice → a known v3-flash voice.
+      providerLabel = "dashscope-cosyvoice-v3-flash";
+      const v3VoiceMap: Record<string, string> = {
+        longxiaobai: "longanyang",   // soft female 软妹
+        longxiaochun: "longwan",     // mature warm female
+        longjing: "longjing",
+        longshu: "longshu",
+        longwan: "longwan",
+        longcheng: "longcheng",
+        longhua: "longhua",
+        longshuo: "longshuo",
+        longanyang: "longanyang",
+      };
+      const v3Voice = v3VoiceMap[resolvedVoice] || "longanyang";
+      response = await fetch(
+        "https://dashscope.aliyuncs.com/api/v1/services/audio/tts/SpeechSynthesizer",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${DASHSCOPE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "cosyvoice-v3-flash",
+            input: { text: cleanText },
+            parameters: {
+              voice: v3Voice,
+              format: "mp3",
+              sample_rate: 22050,
+            },
+          }),
+        },
+      );
+      resolvedVoice = v3Voice;
     } else {
       // ─── SiliconFlow / CosyVoice2 ───
       const SILICONFLOW_API_KEY = Deno.env.get("SILICONFLOW_API_KEY");
@@ -334,7 +442,34 @@ serve(async (req) => {
       );
     }
 
-    const audioBuffer = await response.arrayBuffer();
+    let audioBuffer: ArrayBuffer;
+    let outFormat = audioFormat;
+
+    if (selectedEngine === "qwen-tts" || selectedEngine === "cosyvoice-v35") {
+      // DashScope returns JSON with output.audio.url → fetch the audio.
+      const j = await response.json();
+      const audioUrl: string | undefined = j?.output?.audio?.url;
+      if (!audioUrl) {
+        console.error(`${providerLabel} no audio url:`, JSON.stringify(j).slice(0, 400));
+        return new Response(
+          JSON.stringify({ error: `${providerLabel} returned no audio url.` }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      const audioResp = await fetch(audioUrl);
+      if (!audioResp.ok) {
+        return new Response(
+          JSON.stringify({ error: `Failed to download ${providerLabel} audio.` }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      audioBuffer = await audioResp.arrayBuffer();
+      // Both Qwen3-TTS-Flash and CosyVoice v3.5+ default to MP3
+      outFormat = "mp3";
+    } else {
+      audioBuffer = await response.arrayBuffer();
+    }
+
     if (!audioBuffer || audioBuffer.byteLength === 0) {
       return new Response(
         JSON.stringify({ error: `No audio generated by ${providerLabel}.` }),
@@ -348,7 +483,7 @@ serve(async (req) => {
       JSON.stringify({
         audio: fullAudioBase64,
         transcript: cleanText,
-        format: audioFormat,
+        format: outFormat,
         voice: resolvedVoice,
         provider: providerLabel,
         engine: selectedEngine,
