@@ -252,9 +252,17 @@ export function streamChatWithVoice(
         "Content-Type": "application/json",
         Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
       },
-      body: JSON.stringify({ messages }),
+      body: JSON.stringify({ messages, language: handlers.language }),
       signal: handlers.signal,
     });
+
+    if (!resp.ok || !resp.body) {
+      const errText = await resp.text().catch(() => "");
+      audioQueue.abort();
+      const err = new Error(`Stream failed [${resp.status}]: ${errText.slice(0, 200)}`);
+      handlers.onError?.(err);
+      throw err;
+    }
 
     if (!resp.ok || !resp.body) {
       const errText = await resp.text().catch(() => "");
