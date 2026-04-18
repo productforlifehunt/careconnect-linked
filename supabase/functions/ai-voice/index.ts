@@ -22,6 +22,18 @@ const OPENAI_VOICES = new Set([
   "fable", "nova", "onyx", "sage", "shimmer", "verse",
 ]);
 
+// ─── Alibaba DashScope voice maps ───
+// Qwen3-TTS-Flash voices (Cherry/Ethan/Chelsie/etc — multilingual, very natural)
+const QWEN_TTS_VOICES = new Set([
+  "Cherry", "Ethan", "Chelsie", "Serena", "Dylan", "Jada", "Sunny",
+]);
+// CosyVoice v3.5+ voices (longxiaochun / longxiaobai etc — Chinese-first, soft female "longxiaobai" is closest to 软妹)
+const COSYVOICE_V35_VOICES = new Set([
+  "longxiaochun_v2", "longxiaobai_v2", "longjing_v2", "longshu_v2",
+  "longwan_v2", "longcheng_v2", "longhua_v2", "longshuo_v2",
+]);
+
+// Map our generic persona keys onto each provider's actual voice ID.
 function resolveCosyVoice(voice?: string): string {
   if (!voice) return "FunAudioLLM/CosyVoice2-0.5B:anna";
   if (voice.includes("CosyVoice")) return voice;
@@ -31,6 +43,28 @@ function resolveCosyVoice(voice?: string): string {
 function resolveOpenAIVoice(voice?: string): string {
   if (!voice) return "alloy";
   return OPENAI_VOICES.has(voice) ? voice : "alloy";
+}
+
+function resolveQwenTTSVoice(voice?: string): string {
+  if (!voice) return "Cherry";
+  if (QWEN_TTS_VOICES.has(voice)) return voice;
+  // Map generic personas to closest Qwen voice
+  const map: Record<string, string> = {
+    nova: "Cherry", shimmer: "Chelsie", coral: "Serena", sage: "Jada",
+    alloy: "Ethan", onyx: "Dylan", echo: "Ethan", fable: "Sunny",
+  };
+  return map[voice] || "Cherry";
+}
+
+function resolveCosyV35Voice(voice?: string): string {
+  if (!voice) return "longxiaobai_v2";
+  if (COSYVOICE_V35_VOICES.has(voice)) return voice;
+  const map: Record<string, string> = {
+    nova: "longxiaobai_v2", shimmer: "longxiaobai_v2", coral: "longxiaochun_v2",
+    sage: "longjing_v2", alloy: "longcheng_v2", onyx: "longshuo_v2",
+    echo: "longwan_v2", fable: "longhua_v2",
+  };
+  return map[voice] || "longxiaobai_v2";
 }
 
 async function arrayBufferToBase64(buffer: ArrayBuffer): Promise<string> {
@@ -99,7 +133,7 @@ serve(async (req) => {
       text: string;
       voice?: string;
       format?: string;
-      engine?: "siliconflow" | "openai" | "openai-full";
+      engine?: "siliconflow" | "openai" | "openai-full" | "qwen-tts" | "cosyvoice-v35";
     };
 
     if (!text || typeof text !== "string" || text.trim().length === 0) {
@@ -132,6 +166,8 @@ serve(async (req) => {
     const selectedEngine =
       engine === "openai" ? "openai"
       : engine === "openai-full" ? "openai-full"
+      : engine === "qwen-tts" ? "qwen-tts"
+      : engine === "cosyvoice-v35" ? "cosyvoice-v35"
       : "siliconflow";
 
     let response: Response;
