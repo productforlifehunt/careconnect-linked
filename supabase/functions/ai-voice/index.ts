@@ -16,8 +16,11 @@ const COSY_VOICE_MAP: Record<string, string> = {
   shimmer: "FunAudioLLM/CosyVoice2-0.5B:bella",
 };
 
-// OpenAI TTS expects one of: alloy, echo, fable, onyx, nova, shimmer (already aligned)
-const OPENAI_VOICES = new Set(["alloy", "echo", "fable", "onyx", "nova", "shimmer"]);
+// OpenAI native voices (gpt-audio / gpt-audio-mini full set, Nov 2025)
+const OPENAI_VOICES = new Set([
+  "alloy", "ash", "ballad", "coral", "echo",
+  "fable", "nova", "onyx", "sage", "shimmer", "verse",
+]);
 
 function resolveCosyVoice(voice?: string): string {
   if (!voice) return "FunAudioLLM/CosyVoice2-0.5B:anna";
@@ -26,8 +29,8 @@ function resolveCosyVoice(voice?: string): string {
 }
 
 function resolveOpenAIVoice(voice?: string): string {
-  if (!voice) return "nova";
-  return OPENAI_VOICES.has(voice) ? voice : "nova";
+  if (!voice) return "alloy";
+  return OPENAI_VOICES.has(voice) ? voice : "alloy";
 }
 
 async function arrayBufferToBase64(buffer: ArrayBuffer): Promise<string> {
@@ -96,7 +99,7 @@ serve(async (req) => {
       text: string;
       voice?: string;
       format?: string;
-      engine?: "siliconflow" | "openai";
+      engine?: "siliconflow" | "openai" | "openai-full";
     };
 
     if (!text || typeof text !== "string" || text.trim().length === 0) {
@@ -126,23 +129,29 @@ serve(async (req) => {
       ? requestedFormat
       : "mp3";
 
-    const selectedEngine = engine === "openai" ? "openai" : "siliconflow";
+    const selectedEngine =
+      engine === "openai" ? "openai"
+      : engine === "openai-full" ? "openai-full"
+      : "siliconflow";
 
     let response: Response;
     let providerLabel: string;
     let resolvedVoice: string;
 
-    if (selectedEngine === "openai") {
-      // ─── OpenAI gpt-audio-mini via OpenRouter (chat completions + audio modality) ───
+    if (selectedEngine === "openai" || selectedEngine === "openai-full") {
+      // ─── OpenAI gpt-audio / gpt-audio-mini via OpenRouter (chat + audio modality) ───
       const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
       if (!OPENROUTER_API_KEY) {
         throw new Error("OPENROUTER_API_KEY is not configured");
       }
       resolvedVoice = resolveOpenAIVoice(voice);
-      providerLabel = "openrouter-gpt-audio-mini";
+      const modelSlug = selectedEngine === "openai-full"
+        ? "openai/gpt-audio"
+        : "openai/gpt-audio-mini";
+      providerLabel = `openrouter-${modelSlug.split("/")[1]}`;
 
-      // gpt-audio-mini requires stream:true for audio output.
-      // We collect all SSE deltas server-side and return one consolidated audio blob.
+      // Audio output via streaming SSE. Use MP3 to avoid PCM concat artifacts
+      // (sample-rate guesswork, click/echo at chunk boundaries).
       const orResp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -152,9 +161,9 @@ serve(async (req) => {
           "X-Title": "ChallengeD AI Companion",
         },
         body: JSON.stringify({
-          model: "openai/gpt-audio-mini",
+          model: modelSlug,
           modalities: ["text", "audio"],
-          audio: { voice: resolvedVoice, format: "pcm16" },
+          audio: { voice: resolvedVoice, format: "mp3" },
           stream: true,
           messages: [
             {
