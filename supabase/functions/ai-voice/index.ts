@@ -84,6 +84,246 @@ async function arrayBufferToBase64(buffer: ArrayBuffer): Promise<string> {
   return btoa(binary);
 }
 
+/**
+ * Synthesize speech via Alibaba DashScope CosyVoice WebSocket API.
+ * Used for cosyvoice-v3.5-plus and cosyvoice-v3.5-flash (HTTP-only models reject these).
+ *
+ * Protocol:
+ *   1. Open wss://dashscope.aliyuncs.com/api-ws/v1/inference with bearer auth header.
+ *   2. Send `run-task` JSON event (configures voice/format/sample_rate).
+ *   3. Wait for `task-started` JSON event.
+ *   4. Send `continue-task` JSON event with the text to synthesize.
+ *   5. Send `finish-task` JSON event to flush.
+ *   6. Receive binary audio frames + final `task-finished` event.
+ *   7. Concatenate binary frames → return as a single audio buffer.
+ */
+async function cosyVoiceWebSocket(opts: {
+  apiKey: string;
+  model: string;        // "cosyvoice-v3.5-plus" | "cosyvoice-v3.5-flash"
+  voice: string;
+  text: string;
+  format?: string;      // "mp3" | "wav" | "pcm"
+  sampleRate?: number;
+}): Promise<{ audio: Uint8Array; format: string }> {
+  const fmt = (opts.format || "mp3").toLowerCase();
+  const sr = opts.sampleRate || 22050;
+  const taskId = crypto.randomUUID().replace(/-/g, "");
+
+  // Manual WebSocket over TLS — Supabase Edge Runtime's stock WebSocket cannot
+  // set custom request headers, and DashScope rejects auth via query/subprotocol.
+  // We open a raw TLS socket to dashscope.aliyuncs.com:443, perform the HTTP
+  // Upgrade handshake with Authorization: bearer <key>, then frame WS messages
+  // ourselves (RFC 6455).
+
+  const HOST = "dashscope.aliyuncs.com";
+  const PATH = "/api-ws/v1/inference";
+  const conn = await Deno.connectTls({ hostname: HOST, port: 443 });
+
+  // ── 1. WebSocket handshake ──
+  const wsKey = btoa(
+    String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16))),
+  );
+  const handshake =
+    `GET ${PATH} HTTP/1.1\r\n` +
+    `Host: ${HOST}\r\n` +
+    `Upgrade: websocket\r\n` +
+    `Connection: Upgrade\r\n` +
+    `Sec-WebSocket-Key: ${wsKey}\r\n` +
+    `Sec-WebSocket-Version: 13\r\n` +
+    `Authorization: bearer ${opts.apiKey}\r\n` +
+    `X-DashScope-DataInspection: enable\r\n` +
+    `\r\n`;
+  await conn.write(new TextEncoder().encode(handshake));
+
+  // Read until end of headers (\r\n\r\n)
+  const handshakeBuf = new Uint8Array(8192);
+  let hsLen = 0;
+  let bodyStart = -1;
+  while (bodyStart < 0 && hsLen < handshakeBuf.length) {
+    const n = await conn.read(handshakeBuf.subarray(hsLen));
+    if (n === null) throw new Error("CosyVoice WS handshake EOF");
+    hsLen += n;
+    const s = new TextDecoder().decode(handshakeBuf.subarray(0, hsLen));
+    const idx = s.indexOf("\r\n\r\n");
+    if (idx >= 0) bodyStart = idx + 4;
+  }
+  const respText = new TextDecoder().decode(handshakeBuf.subarray(0, bodyStart));
+  if (!/^HTTP\/1\.1 101/i.test(respText)) {
+    throw new Error(`CosyVoice WS handshake failed: ${respText.split("\r\n")[0]}`);
+  }
+  // Anything after bodyStart is start of WS frames
+  let leftover = handshakeBuf.subarray(bodyStart, hsLen).slice();
+
+  // ── 2. WebSocket framing helpers ──
+  const sendFrame = async (payload: Uint8Array, opcode: number) => {
+    const len = payload.length;
+    const mask = crypto.getRandomValues(new Uint8Array(4));
+    let header: Uint8Array;
+    if (len < 126) {
+      header = new Uint8Array(2 + 4);
+      header[0] = 0x80 | opcode;
+      header[1] = 0x80 | len;
+      header.set(mask, 2);
+    } else if (len < 65536) {
+      header = new Uint8Array(4 + 4);
+      header[0] = 0x80 | opcode;
+      header[1] = 0x80 | 126;
+      header[2] = (len >> 8) & 0xff;
+      header[3] = len & 0xff;
+      header.set(mask, 4);
+    } else {
+      header = new Uint8Array(10 + 4);
+      header[0] = 0x80 | opcode;
+      header[1] = 0x80 | 127;
+      // 64-bit length, JS limits to 32-bit
+      for (let i = 0; i < 4; i++) header[2 + i] = 0;
+      header[6] = (len >>> 24) & 0xff;
+      header[7] = (len >>> 16) & 0xff;
+      header[8] = (len >>> 8) & 0xff;
+      header[9] = len & 0xff;
+      header.set(mask, 10);
+    }
+    const masked = new Uint8Array(len);
+    for (let i = 0; i < len; i++) masked[i] = payload[i] ^ mask[i & 3];
+    const frame = new Uint8Array(header.length + masked.length);
+    frame.set(header, 0);
+    frame.set(masked, header.length);
+    await conn.write(frame);
+  };
+
+  const sendText = (s: string) =>
+    sendFrame(new TextEncoder().encode(s), 0x1);
+
+  // Read exactly N bytes (may consume from `leftover` first)
+  const readExact = async (n: number): Promise<Uint8Array> => {
+    const out = new Uint8Array(n);
+    let off = 0;
+    if (leftover.length > 0) {
+      const take = Math.min(n, leftover.length);
+      out.set(leftover.subarray(0, take), 0);
+      leftover = leftover.subarray(take);
+      off = take;
+    }
+    while (off < n) {
+      const r = await conn.read(out.subarray(off));
+      if (r === null) throw new Error("CosyVoice WS unexpected EOF");
+      off += r;
+    }
+    return out;
+  };
+
+  // Read one full message (handles fragmentation, control frames)
+  const readMessage = async (): Promise<{ opcode: number; data: Uint8Array }> => {
+    const fragments: Uint8Array[] = [];
+    let firstOp = -1;
+    while (true) {
+      const h = await readExact(2);
+      const fin = (h[0] & 0x80) !== 0;
+      const op = h[0] & 0x0f;
+      const masked = (h[1] & 0x80) !== 0;
+      let len = h[1] & 0x7f;
+      if (len === 126) {
+        const ext = await readExact(2);
+        len = (ext[0] << 8) | ext[1];
+      } else if (len === 127) {
+        const ext = await readExact(8);
+        // JS safe: take low 32 bits
+        len = (ext[4] << 24) | (ext[5] << 16) | (ext[6] << 8) | ext[7];
+      }
+      if (masked) await readExact(4); // server should not mask, but handle anyway
+      const payload = len > 0 ? await readExact(len) : new Uint8Array(0);
+
+      if (op === 0x9) { // ping → pong
+        await sendFrame(payload, 0xa);
+        continue;
+      }
+      if (op === 0xa) continue; // pong, ignore
+      if (op === 0x8) { // close
+        return { opcode: 0x8, data: payload };
+      }
+      if (firstOp < 0) firstOp = op;
+      fragments.push(payload);
+      if (fin) {
+        const total = fragments.reduce((s, f) => s + f.length, 0);
+        const merged = new Uint8Array(total);
+        let off = 0;
+        for (const f of fragments) { merged.set(f, off); off += f.length; }
+        return { opcode: firstOp, data: merged };
+      }
+    }
+  };
+
+  // ── 3. Send run-task ──
+  await sendText(JSON.stringify({
+    header: { action: "run-task", task_id: taskId, streaming: "duplex" },
+    payload: {
+      task_group: "audio",
+      task: "tts",
+      function: "SpeechSynthesizer",
+      model: opts.model,
+      parameters: {
+        text_type: "PlainText",
+        voice: opts.voice,
+        format: fmt,
+        sample_rate: sr,
+        volume: 50,
+        rate: 1,
+        pitch: 1,
+      },
+      input: {},
+    },
+  }));
+
+  // ── 4. Event loop ──
+  const audioChunks: Uint8Array[] = [];
+  let started = false;
+  let finished = false;
+
+  const deadline = Date.now() + 30000;
+  while (!finished && Date.now() < deadline) {
+    const msg = await readMessage();
+    if (msg.opcode === 0x8) break; // close
+    if (msg.opcode === 0x1) {
+      // text → JSON event
+      const text = new TextDecoder().decode(msg.data);
+      let parsed: any;
+      try { parsed = JSON.parse(text); } catch { continue; }
+      const event = parsed?.header?.event;
+      if (event === "task-started") {
+        started = true;
+        await sendText(JSON.stringify({
+          header: { action: "continue-task", task_id: taskId, streaming: "duplex" },
+          payload: { input: { text: opts.text } },
+        }));
+        await sendText(JSON.stringify({
+          header: { action: "finish-task", task_id: taskId, streaming: "duplex" },
+          payload: { input: {} },
+        }));
+      } else if (event === "task-finished") {
+        finished = true;
+      } else if (event === "task-failed") {
+        const m = parsed?.header?.error_message || parsed?.header?.error_code || "task-failed";
+        try { conn.close(); } catch { /* ignore */ }
+        throw new Error(`CosyVoice WS task-failed: ${m}`);
+      }
+    } else if (msg.opcode === 0x2) {
+      // binary → audio chunk
+      audioChunks.push(msg.data);
+    }
+  }
+
+  try { conn.close(); } catch { /* ignore */ }
+
+  if (!started) throw new Error("CosyVoice WS closed before task-started");
+  if (audioChunks.length === 0) throw new Error("CosyVoice WS produced no audio");
+
+  const total = audioChunks.reduce((s, c) => s + c.length, 0);
+  const merged = new Uint8Array(total);
+  let off = 0;
+  for (const c of audioChunks) { merged.set(c, off); off += c.length; }
+  return { audio: merged, format: fmt };
+}
+
 // Wrap raw PCM16 mono audio in a WAV container so browsers can decode it.
 function pcm16ToWav(pcm: Uint8Array, sampleRate = 24000, channels = 1): Uint8Array {
   const byteRate = sampleRate * channels * 2;
@@ -137,7 +377,7 @@ serve(async (req) => {
       text: string;
       voice?: string;
       format?: string;
-      engine?: "siliconflow" | "openai" | "openai-full" | "qwen-tts" | "cosyvoice-v35";
+      engine?: "siliconflow" | "openai" | "openai-full" | "qwen-tts" | "cosyvoice-v35-plus" | "cosyvoice-v35-flash";
     };
 
     if (!text || typeof text !== "string" || text.trim().length === 0) {
@@ -171,7 +411,8 @@ serve(async (req) => {
       engine === "openai" ? "openai"
       : engine === "openai-full" ? "openai-full"
       : engine === "qwen-tts" ? "qwen-tts"
-      : engine === "cosyvoice-v35" ? "cosyvoice-v35"
+      : engine === "cosyvoice-v35-plus" ? "cosyvoice-v35-plus"
+      : engine === "cosyvoice-v35-flash" ? "cosyvoice-v35-flash"
       : "siliconflow";
 
     let response: Response;
@@ -340,51 +581,48 @@ serve(async (req) => {
           }),
         },
       );
-    } else if (selectedEngine === "cosyvoice-v35") {
-      // ─── Alibaba DashScope · CosyVoice v3.5-Plus ───
+    } else if (
+      selectedEngine === "cosyvoice-v35-plus" ||
+      selectedEngine === "cosyvoice-v35-flash"
+    ) {
+      // ─── Alibaba DashScope · CosyVoice v3.5+ (WebSocket-only) ───
       const DASHSCOPE_API_KEY = Deno.env.get("DASHSCOPE_API_KEY");
       if (!DASHSCOPE_API_KEY) throw new Error("DASHSCOPE_API_KEY is not configured");
       resolvedVoice = resolveCosyV35Voice(voice);
-      providerLabel = "dashscope-cosyvoice-v3.5-plus";
+      const model = selectedEngine === "cosyvoice-v35-plus"
+        ? "cosyvoice-v3.5-plus"
+        : "cosyvoice-v3.5-flash";
+      providerLabel = `dashscope-${model}`;
 
-      // CosyVoice on DashScope:
-      //   v3.5-plus & v3.5-flash → WebSocket only (HTTP returns 418).
-      //   v3-flash & v2          → support sync HTTP via SpeechSynthesizer.
-      // Strategy: skip the WS-only models, call v3-flash directly (cheap, fast,
-      // good Chinese quality). Map our generic voice → a known v3-flash voice.
-      providerLabel = "dashscope-cosyvoice-v3-flash";
-      const v3VoiceMap: Record<string, string> = {
-        longxiaobai: "longanyang",   // soft female 软妹
-        longxiaochun: "longwan",     // mature warm female
-        longjing: "longjing",
-        longshu: "longshu",
-        longwan: "longwan",
-        longcheng: "longcheng",
-        longhua: "longhua",
-        longshuo: "longshuo",
-        longanyang: "longanyang",
-      };
-      const v3Voice = v3VoiceMap[resolvedVoice] || "longanyang";
-      response = await fetch(
-        "https://dashscope.aliyuncs.com/api/v1/services/audio/tts/SpeechSynthesizer",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${DASHSCOPE_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "cosyvoice-v3-flash",
-            input: { text: cleanText },
-            parameters: {
-              voice: v3Voice,
-              format: "mp3",
-              sample_rate: 22050,
-            },
+      try {
+        const { audio: wsAudio, format: wsFmt } = await cosyVoiceWebSocket({
+          apiKey: DASHSCOPE_API_KEY,
+          model,
+          voice: resolvedVoice,
+          text: cleanText,
+          format: "mp3",
+          sampleRate: 22050,
+        });
+        const audioBase64 = await arrayBufferToBase64(wsAudio.buffer);
+        return new Response(
+          JSON.stringify({
+            audio: audioBase64,
+            transcript: cleanText,
+            format: wsFmt,
+            voice: resolvedVoice,
+            provider: providerLabel,
+            engine: selectedEngine,
           }),
-        },
-      );
-      resolvedVoice = v3Voice;
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.error(`${providerLabel} WS error:`, msg);
+        return new Response(
+          JSON.stringify({ error: `${providerLabel} failed: ${msg}` }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
     } else {
       // ─── SiliconFlow / CosyVoice2 ───
       const SILICONFLOW_API_KEY = Deno.env.get("SILICONFLOW_API_KEY");
@@ -445,7 +683,7 @@ serve(async (req) => {
     let audioBuffer: ArrayBuffer;
     let outFormat = audioFormat;
 
-    if (selectedEngine === "qwen-tts" || selectedEngine === "cosyvoice-v35") {
+    if (selectedEngine === "qwen-tts") {
       // DashScope returns JSON with output.audio.url → fetch the audio.
       const j = await response.json();
       const audioUrl: string | undefined = j?.output?.audio?.url;
