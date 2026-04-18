@@ -229,7 +229,7 @@ export function DementiaAssistant() {
     const audio = await fetchAIVoice(text, voicePersona);
     setVoiceLoading(false);
     if (audio) {
-      playPCM16Audio(audio, onEnd);
+      playMP3Audio(audio.audio, audio.format, onEnd);
     } else {
       speakTextBrowser(text, resolveLang(text), onEnd);
     }
