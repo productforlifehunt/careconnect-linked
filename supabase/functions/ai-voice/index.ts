@@ -137,7 +137,7 @@ serve(async (req) => {
       text: string;
       voice?: string;
       format?: string;
-      engine?: "siliconflow" | "openai" | "openai-full" | "qwen-tts" | "cosyvoice-v35";
+      engine?: "siliconflow" | "openai" | "openai-full" | "qwen-tts" | "cosyvoice-v35-plus" | "cosyvoice-v35-flash";
     };
 
     if (!text || typeof text !== "string" || text.trim().length === 0) {
@@ -171,7 +171,8 @@ serve(async (req) => {
       engine === "openai" ? "openai"
       : engine === "openai-full" ? "openai-full"
       : engine === "qwen-tts" ? "qwen-tts"
-      : engine === "cosyvoice-v35" ? "cosyvoice-v35"
+      : engine === "cosyvoice-v35-plus" ? "cosyvoice-v35-plus"
+      : engine === "cosyvoice-v35-flash" ? "cosyvoice-v35-flash"
       : "siliconflow";
 
     let response: Response;
