@@ -34,64 +34,69 @@ function detectLanguage(text: string): string {
   return "en";
 }
 
-// ─── Audio playback (PCM16 from AI voice edge function) ───
-let currentAudioSource: AudioBufferSourceNode | null = null;
-let audioCtx: AudioContext | null = null;
+// ─── Audio playback (MP3 from SiliconFlow CosyVoice2) ───
+let currentAudioEl: HTMLAudioElement | null = null;
+let currentAudioUrl: string | null = null;
 
-function getAudioContext(): AudioContext {
-  if (!audioCtx) audioCtx = new AudioContext();
-  return audioCtx;
-}
-
-async function playPCM16Audio(base64Data: string, onEnd?: () => void) {
+async function playMP3Audio(base64Data: string, format: string = "mp3", onEnd?: () => void) {
   try {
     stopAIVoice();
-    const ctx = getAudioContext();
-    if (ctx.state === "suspended") await ctx.resume();
-
     const binaryStr = atob(base64Data);
     const bytes = new Uint8Array(binaryStr.length);
     for (let i = 0; i < binaryStr.length; i++) {
       bytes[i] = binaryStr.charCodeAt(i);
     }
+    const mime =
+      format === "wav" ? "audio/wav" :
+      format === "opus" ? "audio/ogg; codecs=opus" :
+      format === "pcm" ? "audio/wav" :
+      "audio/mpeg";
+    const blob = new Blob([bytes], { type: mime });
+    const url = URL.createObjectURL(blob);
+    currentAudioUrl = url;
 
-    const sampleRate = 24000;
-    const int16 = new Int16Array(bytes.buffer);
-    const float32 = new Float32Array(int16.length);
-    for (let i = 0; i < int16.length; i++) {
-      float32[i] = int16[i] / 32768;
-    }
-
-    const audioBuffer = ctx.createBuffer(1, float32.length, sampleRate);
-    audioBuffer.getChannelData(0).set(float32);
-
-    const source = ctx.createBufferSource();
-    source.buffer = audioBuffer;
-    source.connect(ctx.destination);
-    source.onended = () => {
-      currentAudioSource = null;
+    const audio = new Audio(url);
+    currentAudioEl = audio;
+    audio.onended = () => {
+      if (currentAudioUrl === url) {
+        URL.revokeObjectURL(url);
+        currentAudioUrl = null;
+      }
+      currentAudioEl = null;
       onEnd?.();
     };
-    currentAudioSource = source;
-    source.start(0);
+    audio.onerror = () => {
+      console.error("Audio playback error");
+      if (currentAudioUrl === url) {
+        URL.revokeObjectURL(url);
+        currentAudioUrl = null;
+      }
+      currentAudioEl = null;
+      onEnd?.();
+    };
+    await audio.play();
   } catch (err) {
-    console.error("PCM16 playback error:", err);
+    console.error("Audio playback error:", err);
     onEnd?.();
   }
 }
 
 function stopAIVoice() {
-  if (currentAudioSource) {
-    try { currentAudioSource.stop(); } catch {}
-    currentAudioSource = null;
+  if (currentAudioEl) {
+    try { currentAudioEl.pause(); currentAudioEl.src = ""; } catch {}
+    currentAudioEl = null;
+  }
+  if (currentAudioUrl) {
+    try { URL.revokeObjectURL(currentAudioUrl); } catch {}
+    currentAudioUrl = null;
   }
 }
 
-/** Call the ai-voice edge function — API key stays server-side */
-async function fetchAIVoice(text: string, voice: string = "alloy"): Promise<string | null> {
+/** Call the ai-voice edge function — API key stays server-side. Returns { audio, format }. */
+async function fetchAIVoice(text: string, voice: string = "alloy"): Promise<{ audio: string; format: string } | null> {
   try {
     const { data, error } = await supabase.functions.invoke("ai-voice", {
-      body: { text, voice, format: "pcm16" },
+      body: { text, voice, format: "mp3" },
     });
     if (error) {
       console.error("AI voice error:", error);
