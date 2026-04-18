@@ -28,9 +28,11 @@ const QWEN_TTS_VOICES = new Set([
   "Cherry", "Ethan", "Chelsie", "Serena", "Dylan", "Jada", "Sunny",
 ]);
 // CosyVoice v3.5+ voices (longxiaochun / longxiaobai etc — Chinese-first, soft female "longxiaobai" is closest to 软妹)
+// CosyVoice v3.5+ / v3 voices (Chinese-first; "longxiaobai" is the soft female 软妹 audition).
+// We use the bare names (no _v2 suffix) which DashScope accepts for both v3 and v3.5 models.
 const COSYVOICE_V35_VOICES = new Set([
-  "longxiaochun_v2", "longxiaobai_v2", "longjing_v2", "longshu_v2",
-  "longwan_v2", "longcheng_v2", "longhua_v2", "longshuo_v2",
+  "longxiaochun", "longxiaobai", "longjing", "longshu",
+  "longwan", "longcheng", "longhua", "longshuo", "longanyang",
 ]);
 
 // Map our generic persona keys onto each provider's actual voice ID.
@@ -57,14 +59,16 @@ function resolveQwenTTSVoice(voice?: string): string {
 }
 
 function resolveCosyV35Voice(voice?: string): string {
-  if (!voice) return "longxiaobai_v2";
-  if (COSYVOICE_V35_VOICES.has(voice)) return voice;
+  if (!voice) return "longxiaobai";
+  // Strip any _v2 suffix users might still send
+  const clean = voice.replace(/_v2$/, "");
+  if (COSYVOICE_V35_VOICES.has(clean)) return clean;
   const map: Record<string, string> = {
-    nova: "longxiaobai_v2", shimmer: "longxiaobai_v2", coral: "longxiaochun_v2",
-    sage: "longjing_v2", alloy: "longcheng_v2", onyx: "longshuo_v2",
-    echo: "longwan_v2", fable: "longhua_v2",
+    nova: "longxiaobai", shimmer: "longxiaobai", coral: "longxiaochun",
+    sage: "longjing", alloy: "longcheng", onyx: "longshuo",
+    echo: "longwan", fable: "longhua",
   };
-  return map[voice] || "longxiaobai_v2";
+  return map[voice] || "longxiaobai";
 }
 
 async function arrayBufferToBase64(buffer: ArrayBuffer): Promise<string> {
