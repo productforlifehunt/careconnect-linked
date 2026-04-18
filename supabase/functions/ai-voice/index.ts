@@ -109,121 +109,93 @@ async function cosyVoiceWebSocket(opts: {
   const sr = opts.sampleRate || 22050;
   const taskId = crypto.randomUUID().replace(/-/g, "");
 
-  // Deno's WebSocket constructor accepts (url, protocols) — for headers we
-  // must use the third-arg signature available in Deno (it accepts an options
-  // bag with `headers`).
-  const ws = new WebSocket(
+  // Use WebSocketStream — the only way in Deno to set custom request headers
+  // (the standard `WebSocket` constructor cannot send Authorization).
+  // @ts-ignore — WebSocketStream is unstable but supported in Supabase Edge Runtime.
+  const wss = new (globalThis as any).WebSocketStream(
     "wss://dashscope.aliyuncs.com/api-ws/v1/inference",
-    // @ts-ignore — Deno extension: pass headers via options
-    { headers: { Authorization: `bearer ${opts.apiKey}` } } as any,
+    {
+      headers: {
+        Authorization: `bearer ${opts.apiKey}`,
+        "X-DashScope-DataInspection": "enable",
+      },
+    },
   );
-  // Fallback: some Deno versions don't accept the options bag; if so the
-  // WebSocket will open without auth and the server will reject with 401.
-  // We'll set a header through the protocols param as a no-op safeguard.
-  ws.binaryType = "arraybuffer";
+
+  const conn = await wss.opened as {
+    readable: ReadableStream<string | Uint8Array>;
+    writable: WritableStream<string | Uint8Array>;
+  };
+  const writer = conn.writable.getWriter();
+  const reader = conn.readable.getReader();
+
+  // Send run-task instruction
+  await writer.write(JSON.stringify({
+    header: { action: "run-task", task_id: taskId, streaming: "duplex" },
+    payload: {
+      task_group: "audio",
+      task: "tts",
+      function: "SpeechSynthesizer",
+      model: opts.model,
+      parameters: {
+        text_type: "PlainText",
+        voice: opts.voice,
+        format: fmt,
+        sample_rate: sr,
+        volume: 50,
+        rate: 1,
+        pitch: 1,
+      },
+      input: {},
+    },
+  }));
 
   const audioChunks: Uint8Array[] = [];
-  let resolveDone: () => void;
-  let rejectDone: (e: Error) => void;
-  const done = new Promise<void>((res, rej) => {
-    resolveDone = res;
-    rejectDone = rej;
-  });
-
   let started = false;
-  const timeout = setTimeout(() => {
-    try { ws.close(); } catch { /* ignore */ }
-    rejectDone(new Error("CosyVoice WS timeout (30s)"));
-  }, 30000);
+  const timeoutPromise = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error("CosyVoice WS timeout (30s)")), 30000)
+  );
 
-  ws.onopen = () => {
-    // run-task instruction
-    ws.send(JSON.stringify({
-      header: {
-        action: "run-task",
-        task_id: taskId,
-        streaming: "duplex",
-      },
-      payload: {
-        task_group: "audio",
-        task: "tts",
-        function: "SpeechSynthesizer",
-        model: opts.model,
-        parameters: {
-          text_type: "PlainText",
-          voice: opts.voice,
-          format: fmt,
-          sample_rate: sr,
-          volume: 50,
-          rate: 1,
-          pitch: 1,
-        },
-        input: {},
-      },
-    }));
-  };
-
-  ws.onmessage = (ev) => {
-    if (typeof ev.data === "string") {
-      // JSON event
-      try {
-        const msg = JSON.parse(ev.data);
+  const readLoop = (async () => {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      if (typeof value === "string") {
+        let msg: any;
+        try { msg = JSON.parse(value); } catch { continue; }
         const event = msg?.header?.event;
         if (event === "task-started") {
           started = true;
           // Send the text, then immediately finish.
-          ws.send(JSON.stringify({
-            header: {
-              action: "continue-task",
-              task_id: taskId,
-              streaming: "duplex",
-            },
+          await writer.write(JSON.stringify({
+            header: { action: "continue-task", task_id: taskId, streaming: "duplex" },
             payload: { input: { text: opts.text } },
           }));
-          ws.send(JSON.stringify({
-            header: {
-              action: "finish-task",
-              task_id: taskId,
-              streaming: "duplex",
-            },
+          await writer.write(JSON.stringify({
+            header: { action: "finish-task", task_id: taskId, streaming: "duplex" },
             payload: { input: {} },
           }));
         } else if (event === "task-finished") {
-          clearTimeout(timeout);
-          try { ws.close(); } catch { /* ignore */ }
-          resolveDone();
+          break;
         } else if (event === "task-failed") {
-          clearTimeout(timeout);
-          const errMsg = msg?.header?.error_message || msg?.header?.error_code || "task-failed";
-          try { ws.close(); } catch { /* ignore */ }
-          rejectDone(new Error(`CosyVoice WS task-failed: ${errMsg}`));
+          const m = msg?.header?.error_message || msg?.header?.error_code || "task-failed";
+          throw new Error(`CosyVoice WS task-failed: ${m}`);
         }
-      } catch (e) {
-        console.error("CosyVoice WS bad JSON:", ev.data);
+      } else if (value instanceof Uint8Array) {
+        audioChunks.push(value);
       }
-    } else if (ev.data instanceof ArrayBuffer) {
-      audioChunks.push(new Uint8Array(ev.data));
     }
-  };
+  })();
 
-  ws.onerror = (e) => {
-    clearTimeout(timeout);
-    rejectDone(new Error(`CosyVoice WS error: ${(e as ErrorEvent).message || "unknown"}`));
-  };
+  try {
+    await Promise.race([readLoop, timeoutPromise]);
+  } finally {
+    try { await writer.close(); } catch { /* ignore */ }
+    try { wss.close({ code: 1000 }); } catch { /* ignore */ }
+  }
 
-  ws.onclose = (e) => {
-    clearTimeout(timeout);
-    if (!started) {
-      rejectDone(new Error(`CosyVoice WS closed before start: code=${e.code} reason=${e.reason || "no reason"}`));
-    } else if (audioChunks.length === 0) {
-      rejectDone(new Error("CosyVoice WS closed with no audio"));
-    } else {
-      // task-finished may not have fired before close — accept what we have
-      resolveDone();
-    }
-  };
-
-  await done;
+  if (!started) throw new Error("CosyVoice WS closed before task-started");
+  if (audioChunks.length === 0) throw new Error("CosyVoice WS produced no audio");
 
   const total = audioChunks.reduce((s, c) => s + c.length, 0);
   const merged = new Uint8Array(total);
