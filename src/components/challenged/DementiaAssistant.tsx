@@ -251,6 +251,7 @@ export function DementiaAssistant() {
 
         const { controls, result } = streamChatWithVoice(history, voicePersona, {
           language: resolvedLang,
+          engine: ttsEngine,
           onTextDelta: (_d, fullText) => {
             setMessages((prev) => {
               const copy = [...prev];
