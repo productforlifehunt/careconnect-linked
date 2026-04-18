@@ -24,6 +24,15 @@ export interface StreamHandlers {
   onPlayStateChange?: (state: "playing" | "paused" | "stopped" | "idle") => void;
   onError?: (err: Error) => void;
   signal?: AbortSignal;
+  language?: string;
+}
+
+export interface TextStreamHandlers {
+  onTextDelta: (delta: string, fullText: string) => void;
+  onDone?: (fullText: string) => void;
+  onError?: (err: Error) => void;
+  signal?: AbortSignal;
+  language?: string;
 }
 
 export interface StreamControls {
