@@ -108,7 +108,8 @@ async function fetchAIVoice(text: string, voice: string = "alloy"): Promise<{ au
       else if (data.error.includes("Credits")) toast.error("语音额度已用尽");
       return null;
     }
-    return data?.audio || null;
+    if (!data?.audio) return null;
+    return { audio: data.audio, format: data.format || "mp3" };
   } catch (err) {
     console.error("AI voice fetch error:", err);
     return null;
