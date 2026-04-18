@@ -25,7 +25,7 @@ export interface StreamHandlers {
   onError?: (err: Error) => void;
   signal?: AbortSignal;
   language?: string;
-  engine?: "siliconflow" | "openai" | "openai-full" | "qwen-tts" | "cosyvoice-v35";
+  engine?: "siliconflow" | "openai" | "openai-full" | "qwen-tts" | "cosyvoice-v35-plus" | "cosyvoice-v35-flash";
 }
 
 export interface TextStreamHandlers {
@@ -192,7 +192,7 @@ class AudioQueue {
   }
 }
 
-export type TTSEngine = "siliconflow" | "openai" | "openai-full" | "qwen-tts" | "cosyvoice-v35";
+export type TTSEngine = "siliconflow" | "openai" | "openai-full" | "qwen-tts" | "cosyvoice-v35-plus" | "cosyvoice-v35-flash";
 
 async function fetchTTSBlobURL(
   text: string,
