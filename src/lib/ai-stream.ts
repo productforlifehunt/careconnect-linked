@@ -21,8 +21,16 @@ export interface StreamHandlers {
   onSentence?: (sentence: string) => void;
   onAudioStart?: () => void;
   onAllAudioEnd?: () => void;
+  onPlayStateChange?: (state: "playing" | "paused" | "stopped" | "idle") => void;
   onError?: (err: Error) => void;
   signal?: AbortSignal;
+}
+
+export interface StreamControls {
+  pause: () => void;
+  resume: () => void;
+  stop: () => void;
+  isPaused: () => boolean;
 }
 
 interface QueueItem {
@@ -39,18 +47,25 @@ const MIN_FRAGMENT_LEN = 80;
 class AudioQueue {
   private queue: QueueItem[] = [];
   private playing = false;
+  private paused = false;
   private nextExpectedIndex = 0;
   private audio: HTMLAudioElement | null = null;
   private aborted = false;
   private onStart?: () => void;
   private onEnd?: () => void;
+  private onPlayStateChange?: (s: "playing" | "paused" | "stopped" | "idle") => void;
   private startedOnce = false;
   private finished = false;
   private streamDone = false;
 
-  constructor(opts: { onStart?: () => void; onEnd?: () => void }) {
+  constructor(opts: {
+    onStart?: () => void;
+    onEnd?: () => void;
+    onPlayStateChange?: (s: "playing" | "paused" | "stopped" | "idle") => void;
+  }) {
     this.onStart = opts.onStart;
     this.onEnd = opts.onEnd;
+    this.onPlayStateChange = opts.onPlayStateChange;
   }
 
   abort() {
@@ -60,10 +75,35 @@ class AudioQueue {
       this.audio = null;
     }
     for (const item of this.queue) {
-      try { URL.revokeObjectURL(item.url); } catch {}
+      try { if (item.url) URL.revokeObjectURL(item.url); } catch {}
     }
     this.queue = [];
     this.playing = false;
+    this.paused = false;
+    this.onPlayStateChange?.("stopped");
+  }
+
+  pause() {
+    if (!this.playing || this.paused || !this.audio) return;
+    this.paused = true;
+    try { this.audio.pause(); } catch {}
+    this.onPlayStateChange?.("paused");
+  }
+
+  resume() {
+    if (!this.paused) return;
+    this.paused = false;
+    if (this.audio) {
+      this.audio.play().catch(() => {});
+      this.onPlayStateChange?.("playing");
+    } else {
+      // No active audio (paused between chunks) — kick the queue.
+      this.tryPlayNext();
+    }
+  }
+
+  isPaused() {
+    return this.paused;
   }
 
   /** Mark that no more sentences will arrive — used to decide when to fire onEnd. */
@@ -74,7 +114,7 @@ class AudioQueue {
 
   push(item: QueueItem) {
     if (this.aborted) {
-      try { URL.revokeObjectURL(item.url); } catch {}
+      try { if (item.url) URL.revokeObjectURL(item.url); } catch {}
       return;
     }
     this.queue.push(item);
@@ -83,7 +123,7 @@ class AudioQueue {
   }
 
   private tryPlayNext() {
-    if (this.playing || this.aborted) return;
+    if (this.playing || this.aborted || this.paused) return;
     const next = this.queue[0];
     if (!next || next.index !== this.nextExpectedIndex) {
       // waiting for the in-order chunk
@@ -92,6 +132,13 @@ class AudioQueue {
     }
     this.queue.shift();
     this.nextExpectedIndex += 1;
+
+    // Empty url = TTS failed for this chunk, skip silently and continue.
+    if (!next.url) {
+      this.tryPlayNext();
+      return;
+    }
+
     this.playing = true;
     const audio = new Audio(next.url);
     this.audio = audio;
@@ -99,6 +146,7 @@ class AudioQueue {
       this.startedOnce = true;
       this.onStart?.();
     }
+    this.onPlayStateChange?.("playing");
     audio.onended = () => {
       try { URL.revokeObjectURL(next.url); } catch {}
       this.audio = null;
@@ -128,6 +176,7 @@ class AudioQueue {
       this.queue.length === 0
     ) {
       this.finished = true;
+      this.onPlayStateChange?.("idle");
       this.onEnd?.();
     }
   }
@@ -157,136 +206,208 @@ async function fetchTTSBlobURL(text: string, voice: string): Promise<string | nu
 
 /**
  * Stream a chat reply, emitting text deltas immediately and dispatching
- * each completed sentence to TTS in parallel. Returns the final full text.
+ * each completed sentence to TTS in parallel.
+ *
+ * Returns { controls, result }:
+ *   - controls: pause/resume/stop the audio playback (text streaming itself
+ *     is not pausable — only the audio queue).
+ *   - result: Promise resolving to the final full text once the SSE stream
+ *     ends (independent of whether audio finished playing).
  */
-export async function streamChatWithVoice(
+export function streamChatWithVoice(
   messages: Array<{ role: "user" | "assistant" | "system"; content: string }>,
   voice: string,
   handlers: StreamHandlers,
-): Promise<string> {
+): { controls: StreamControls; result: Promise<string> } {
   const audioQueue = new AudioQueue({
     onStart: handlers.onAudioStart,
     onEnd: handlers.onAllAudioEnd,
+    onPlayStateChange: handlers.onPlayStateChange,
   });
 
   if (handlers.signal) {
     handlers.signal.addEventListener("abort", () => audioQueue.abort(), { once: true });
   }
 
-  const resp = await fetch(STREAM_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-    },
-    body: JSON.stringify({ messages }),
-    signal: handlers.signal,
-  });
-
-  if (!resp.ok || !resp.body) {
-    const errText = await resp.text().catch(() => "");
-    audioQueue.abort();
-    const err = new Error(`Stream failed [${resp.status}]: ${errText.slice(0, 200)}`);
-    handlers.onError?.(err);
-    throw err;
-  }
-
-  const reader = resp.body.getReader();
-  const decoder = new TextDecoder();
-  let textBuffer = "";   // raw SSE buffer
-  let pending = "";      // accumulated text not yet shipped to TTS
-  let fullText = "";
-  let chunkIndex = 0;
-  const ttsPromises: Promise<void>[] = [];
-
-  const dispatchSentence = (sentence: string) => {
-    const idx = chunkIndex++;
-    handlers.onSentence?.(sentence);
-    const p = fetchTTSBlobURL(sentence, voice).then((url) => {
-      if (url) audioQueue.push({ url, index: idx });
-      else audioQueue.push({ url: "", index: idx }); // skip slot
-    });
-    ttsPromises.push(p);
+  const controls: StreamControls = {
+    pause: () => audioQueue.pause(),
+    resume: () => audioQueue.resume(),
+    stop: () => audioQueue.abort(),
+    isPaused: () => audioQueue.isPaused(),
   };
 
-  const flushSentencesFromPending = (force = false) => {
-    while (true) {
-      const match = pending.match(SENTENCE_RE);
-      if (match && match.index !== undefined) {
-        const end = match.index + match[0].length;
-        const sentence = pending.slice(0, end).trim();
-        pending = pending.slice(end);
-        if (sentence) dispatchSentence(sentence);
-        continue;
-      }
-      // No terminator. Ship a long fragment to keep latency low.
-      if (!force && pending.length >= MIN_FRAGMENT_LEN) {
-        // Try to break on a comma / 中文逗号 / space near the end.
-        const breakRe = /[，,、 ]/g;
-        let lastBreak = -1;
-        let m;
-        while ((m = breakRe.exec(pending)) !== null) {
-          if (m.index >= 30) lastBreak = m.index + 1;
-        }
-        if (lastBreak > 0) {
-          const fragment = pending.slice(0, lastBreak).trim();
-          pending = pending.slice(lastBreak);
-          if (fragment) dispatchSentence(fragment);
+  const result = (async () => {
+    const resp = await fetch(STREAM_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      },
+      body: JSON.stringify({ messages }),
+      signal: handlers.signal,
+    });
+
+    if (!resp.ok || !resp.body) {
+      const errText = await resp.text().catch(() => "");
+      audioQueue.abort();
+      const err = new Error(`Stream failed [${resp.status}]: ${errText.slice(0, 200)}`);
+      handlers.onError?.(err);
+      throw err;
+    }
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let textBuffer = "";
+    let pending = "";
+    let fullText = "";
+    let chunkIndex = 0;
+    const ttsPromises: Promise<void>[] = [];
+
+    const dispatchSentence = (sentence: string) => {
+      const idx = chunkIndex++;
+      handlers.onSentence?.(sentence);
+      const p = fetchTTSBlobURL(sentence, voice).then((url) => {
+        audioQueue.push({ url: url || "", index: idx });
+      });
+      ttsPromises.push(p);
+    };
+
+    const flushSentencesFromPending = (force = false) => {
+      while (true) {
+        const match = pending.match(SENTENCE_RE);
+        if (match && match.index !== undefined) {
+          const end = match.index + match[0].length;
+          const sentence = pending.slice(0, end).trim();
+          pending = pending.slice(end);
+          if (sentence) dispatchSentence(sentence);
           continue;
         }
-      }
-      if (force && pending.trim()) {
-        dispatchSentence(pending.trim());
-        pending = "";
-      }
-      return;
-    }
-  };
-
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      textBuffer += decoder.decode(value, { stream: true });
-
-      let nl: number;
-      while ((nl = textBuffer.indexOf("\n")) !== -1) {
-        let line = textBuffer.slice(0, nl);
-        textBuffer = textBuffer.slice(nl + 1);
-        if (line.endsWith("\r")) line = line.slice(0, -1);
-        if (!line || line.startsWith(":")) continue;
-        if (!line.startsWith("data: ")) continue;
-        const payload = line.slice(6).trim();
-        if (payload === "[DONE]") {
-          textBuffer = "";
-          break;
-        }
-        try {
-          const parsed = JSON.parse(payload);
-          const delta: string | undefined = parsed?.choices?.[0]?.delta?.content;
-          if (delta) {
-            fullText += delta;
-            pending += delta;
-            handlers.onTextDelta(delta, fullText);
-            flushSentencesFromPending(false);
+        if (!force && pending.length >= MIN_FRAGMENT_LEN) {
+          const breakRe = /[，,、 ]/g;
+          let lastBreak = -1;
+          let m;
+          while ((m = breakRe.exec(pending)) !== null) {
+            if (m.index >= 30) lastBreak = m.index + 1;
           }
-        } catch {
-          // Partial JSON across chunks — push back and wait.
-          textBuffer = line + "\n" + textBuffer;
-          break;
+          if (lastBreak > 0) {
+            const fragment = pending.slice(0, lastBreak).trim();
+            pending = pending.slice(lastBreak);
+            if (fragment) dispatchSentence(fragment);
+            continue;
+          }
+        }
+        if (force && pending.trim()) {
+          dispatchSentence(pending.trim());
+          pending = "";
+        }
+        return;
+      }
+    };
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        textBuffer += decoder.decode(value, { stream: true });
+
+        let nl: number;
+        while ((nl = textBuffer.indexOf("\n")) !== -1) {
+          let line = textBuffer.slice(0, nl);
+          textBuffer = textBuffer.slice(nl + 1);
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (!line || line.startsWith(":")) continue;
+          if (!line.startsWith("data: ")) continue;
+          const payload = line.slice(6).trim();
+          if (payload === "[DONE]") {
+            textBuffer = "";
+            break;
+          }
+          try {
+            const parsed = JSON.parse(payload);
+            const delta: string | undefined = parsed?.choices?.[0]?.delta?.content;
+            if (delta) {
+              fullText += delta;
+              pending += delta;
+              handlers.onTextDelta(delta, fullText);
+              flushSentencesFromPending(false);
+            }
+          } catch {
+            textBuffer = line + "\n" + textBuffer;
+            break;
+          }
         }
       }
-    }
 
-    // Flush remaining buffer.
-    flushSentencesFromPending(true);
-    await Promise.all(ttsPromises);
-    audioQueue.markStreamDone();
-    return fullText;
-  } catch (err) {
-    audioQueue.abort();
-    const e = err instanceof Error ? err : new Error(String(err));
-    handlers.onError?.(e);
-    throw e;
+      flushSentencesFromPending(true);
+      await Promise.all(ttsPromises);
+      audioQueue.markStreamDone();
+      return fullText;
+    } catch (err) {
+      audioQueue.abort();
+      const e = err instanceof Error ? err : new Error(String(err));
+      handlers.onError?.(e);
+      throw e;
+    }
+  })();
+
+  return { controls, result };
+}
+
+/**
+ * Play arbitrary text through the same sentence-level pipeline (no LLM call).
+ * Used by the "Listen" button on a finished text-only reply.
+ */
+export function speakTextStreaming(
+  text: string,
+  voice: string,
+  handlers: Omit<StreamHandlers, "onTextDelta" | "onSentence"> & {
+    onSentence?: (s: string) => void;
+  },
+): StreamControls {
+  const audioQueue = new AudioQueue({
+    onStart: handlers.onAudioStart,
+    onEnd: handlers.onAllAudioEnd,
+    onPlayStateChange: handlers.onPlayStateChange,
+  });
+
+  if (handlers.signal) {
+    handlers.signal.addEventListener("abort", () => audioQueue.abort(), { once: true });
   }
+
+  // Split text into sentence-sized chunks up front and dispatch in parallel.
+  const sentences: string[] = [];
+  let pending = text;
+  while (true) {
+    const match = pending.match(SENTENCE_RE);
+    if (match && match.index !== undefined) {
+      const end = match.index + match[0].length;
+      const s = pending.slice(0, end).trim();
+      pending = pending.slice(end);
+      if (s) sentences.push(s);
+      continue;
+    }
+    if (pending.trim()) sentences.push(pending.trim());
+    break;
+  }
+
+  const ttsPromises = sentences.map((s, idx) => {
+    handlers.onSentence?.(s);
+    return fetchTTSBlobURL(s, voice).then((url) => {
+      audioQueue.push({ url: url || "", index: idx });
+    });
+  });
+
+  if (sentences.length === 0) {
+    audioQueue.markStreamDone();
+  } else {
+    // Only mark stream done after all TTS dispatches have at least been queued.
+    Promise.all(ttsPromises).then(() => audioQueue.markStreamDone());
+  }
+
+  return {
+    pause: () => audioQueue.pause(),
+    resume: () => audioQueue.resume(),
+    stop: () => audioQueue.abort(),
+    isPaused: () => audioQueue.isPaused(),
+  };
 }
