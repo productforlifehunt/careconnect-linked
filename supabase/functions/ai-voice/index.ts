@@ -27,15 +27,37 @@ const OPENAI_VOICES = new Set([
 const QWEN_TTS_VOICES = new Set([
   "Cherry", "Ethan", "Chelsie", "Serena", "Dylan", "Jada", "Sunny",
 ]);
-// CosyVoice v3 voices — empirically verified working via WS API.
-// Note: cosyvoice-v3.5-plus / v3.5-flash currently reject ALL standard voice
-// names with error 418 (likely require allow-listed/cloned voices), so we use
-// the v3 family which works flawlessly. "longanyang" is a soft natural voice.
-const COSYVOICE_V3_VOICES = new Set([
-  "longanyang", "longxiaochun_v2", "longxiaobai_v2", "longjing_v2",
-  "longshu_v2", "longwan_v2", "longcheng_v2", "longhua_v2", "longshuo_v2",
-  "longxiaochun", "longxiaobai", "longjing", "longshu",
-  "longwan", "longcheng", "longhua", "longshuo",
+// CosyVoice v3-plus voice list (per Alibaba docs — only 2 standard voices).
+// Source: https://help.aliyun.com/zh/model-studio/cosyvoice-voice-list
+const COSYVOICE_V3_PLUS_VOICES = new Set([
+  "longanyang",  // 龙安洋 — 阳光大男孩 (sunny young man)
+  "longanhuan",  // 龙安欢 — 欢脱元气女 (lively energetic girl)
+]);
+
+// CosyVoice v3-flash voice list (subset of the most useful soft/natural voices).
+// All v3-flash voices use the "_v3" suffix.
+const COSYVOICE_V3_FLASH_VOICES = new Set([
+  "longwan_v3",       // 龙婉 — 细腻柔声女 (delicate soft female) ← softest
+  "longanrou_v3",     // 龙安柔 — 温柔闺蜜女 (gentle bestie female)
+  "longxiaochun_v3",  // 龙小淳 — 知性积极女
+  "longxiaoxia_v3",   // 龙小夏 — 沉稳权威女
+  "longanwen_v3",     // 龙安温 — 优雅知性女
+  "longanya_v3",      // 龙安雅 — 高雅气质女
+  "longanling_v3",    // 龙安灵 — 思维灵动女
+  "longyingling_v3",  // 龙应聆 — 温和共情女
+  "longyingtao_v3",   // 龙应桃 — 温柔淡定女
+  "longhua_v3",       // 龙华 — 元气甜美女
+  "longxing_v3",      // 龙星 — 温婉邻家女
+  "longyan_v3",       // 龙颜 — 温暖春风女
+  "longyumi_v3",      // YUMI — 正经青年女
+  "longantai_v3",     // 龙安台 — 嗲甜台湾女
+  "longfeifei_v3",    // 龙菲菲 — 甜美娇气女
+  "longanyun_v3",     // 龙安昀 — 居家暖男
+  "longanlang_v3",    // 龙安朗 — 清爽利落男
+  "longze_v3",        // 龙泽 — 温暖元气男
+  "longcheng_v3",     // 龙橙 — 智慧青年男
+  "longtian_v3",      // 龙天 — 磁性理智男
+  "longshu_v3",       // 龙书 — 沉稳青年男
 ]);
 
 // Map our generic persona keys onto each provider's actual voice ID.
