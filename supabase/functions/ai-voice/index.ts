@@ -27,12 +27,15 @@ const OPENAI_VOICES = new Set([
 const QWEN_TTS_VOICES = new Set([
   "Cherry", "Ethan", "Chelsie", "Serena", "Dylan", "Jada", "Sunny",
 ]);
-// CosyVoice v3.5+ voices (longxiaochun / longxiaobai etc — Chinese-first, soft female "longxiaobai" is closest to 软妹)
-// CosyVoice v3.5+ / v3 voices (Chinese-first; "longxiaobai" is the soft female 软妹 audition).
-// We use the bare names (no _v2 suffix) which DashScope accepts for both v3 and v3.5 models.
-const COSYVOICE_V35_VOICES = new Set([
+// CosyVoice v3 voices — empirically verified working via WS API.
+// Note: cosyvoice-v3.5-plus / v3.5-flash currently reject ALL standard voice
+// names with error 418 (likely require allow-listed/cloned voices), so we use
+// the v3 family which works flawlessly. "longanyang" is a soft natural voice.
+const COSYVOICE_V3_VOICES = new Set([
+  "longanyang", "longxiaochun_v2", "longxiaobai_v2", "longjing_v2",
+  "longshu_v2", "longwan_v2", "longcheng_v2", "longhua_v2", "longshuo_v2",
   "longxiaochun", "longxiaobai", "longjing", "longshu",
-  "longwan", "longcheng", "longhua", "longshuo", "longanyang",
+  "longwan", "longcheng", "longhua", "longshuo",
 ]);
 
 // Map our generic persona keys onto each provider's actual voice ID.
