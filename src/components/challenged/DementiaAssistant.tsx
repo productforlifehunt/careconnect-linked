@@ -88,25 +88,7 @@ export function DementiaAssistant() {
 
   useEffect(() => () => controlsRef.current?.stop(), []);
 
-  // Load conversation history
-  useEffect(() => {
-    if (!open || conversationLoaded) return;
-    let mounted = true;
-    loadAIConversation("general_chat")
-      .then((history) => {
-        if (!mounted || !history.length) return;
-        const normalized = history
-          .filter((item) => item.role !== "system")
-          .map((item) => ({
-            role: item.role === "assistant" ? "assistant" : "user",
-            content: item.content,
-          } as Message));
-        if (normalized.length > 0) setMessages(normalized);
-      })
-      .catch(() => {})
-      .finally(() => { if (mounted) setConversationLoaded(true); });
-    return () => { mounted = false; };
-  }, [open, conversationLoaded]);
+  // (Chat history is per-session only — no remote load to keep responses snappy.)
 
   // ─── Stop any active playback (industry-standard hard stop) ───
   const hardStop = useCallback(() => {
