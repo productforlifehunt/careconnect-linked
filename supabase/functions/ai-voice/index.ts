@@ -489,51 +489,48 @@ serve(async (req) => {
           }),
         },
       );
-    } else if (selectedEngine === "cosyvoice-v35") {
-      // ─── Alibaba DashScope · CosyVoice v3.5-Plus ───
+    } else if (
+      selectedEngine === "cosyvoice-v35-plus" ||
+      selectedEngine === "cosyvoice-v35-flash"
+    ) {
+      // ─── Alibaba DashScope · CosyVoice v3.5+ (WebSocket-only) ───
       const DASHSCOPE_API_KEY = Deno.env.get("DASHSCOPE_API_KEY");
       if (!DASHSCOPE_API_KEY) throw new Error("DASHSCOPE_API_KEY is not configured");
       resolvedVoice = resolveCosyV35Voice(voice);
-      providerLabel = "dashscope-cosyvoice-v3.5-plus";
+      const model = selectedEngine === "cosyvoice-v35-plus"
+        ? "cosyvoice-v3.5-plus"
+        : "cosyvoice-v3.5-flash";
+      providerLabel = `dashscope-${model}`;
 
-      // CosyVoice on DashScope:
-      //   v3.5-plus & v3.5-flash → WebSocket only (HTTP returns 418).
-      //   v3-flash & v2          → support sync HTTP via SpeechSynthesizer.
-      // Strategy: skip the WS-only models, call v3-flash directly (cheap, fast,
-      // good Chinese quality). Map our generic voice → a known v3-flash voice.
-      providerLabel = "dashscope-cosyvoice-v3-flash";
-      const v3VoiceMap: Record<string, string> = {
-        longxiaobai: "longanyang",   // soft female 软妹
-        longxiaochun: "longwan",     // mature warm female
-        longjing: "longjing",
-        longshu: "longshu",
-        longwan: "longwan",
-        longcheng: "longcheng",
-        longhua: "longhua",
-        longshuo: "longshuo",
-        longanyang: "longanyang",
-      };
-      const v3Voice = v3VoiceMap[resolvedVoice] || "longanyang";
-      response = await fetch(
-        "https://dashscope.aliyuncs.com/api/v1/services/audio/tts/SpeechSynthesizer",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${DASHSCOPE_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "cosyvoice-v3-flash",
-            input: { text: cleanText },
-            parameters: {
-              voice: v3Voice,
-              format: "mp3",
-              sample_rate: 22050,
-            },
+      try {
+        const { audio: wsAudio, format: wsFmt } = await cosyVoiceWebSocket({
+          apiKey: DASHSCOPE_API_KEY,
+          model,
+          voice: resolvedVoice,
+          text: cleanText,
+          format: "mp3",
+          sampleRate: 22050,
+        });
+        const audioBase64 = await arrayBufferToBase64(wsAudio.buffer);
+        return new Response(
+          JSON.stringify({
+            audio: audioBase64,
+            transcript: cleanText,
+            format: wsFmt,
+            voice: resolvedVoice,
+            provider: providerLabel,
+            engine: selectedEngine,
           }),
-        },
-      );
-      resolvedVoice = v3Voice;
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.error(`${providerLabel} WS error:`, msg);
+        return new Response(
+          JSON.stringify({ error: `${providerLabel} failed: ${msg}` }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
     } else {
       // ─── SiliconFlow / CosyVoice2 ───
       const SILICONFLOW_API_KEY = Deno.env.get("SILICONFLOW_API_KEY");
