@@ -21,8 +21,16 @@ export interface StreamHandlers {
   onSentence?: (sentence: string) => void;
   onAudioStart?: () => void;
   onAllAudioEnd?: () => void;
+  onPlayStateChange?: (state: "playing" | "paused" | "stopped" | "idle") => void;
   onError?: (err: Error) => void;
   signal?: AbortSignal;
+}
+
+export interface StreamControls {
+  pause: () => void;
+  resume: () => void;
+  stop: () => void;
+  isPaused: () => boolean;
 }
 
 interface QueueItem {
