@@ -105,24 +105,28 @@ serve(async (req) => {
     let resolvedVoice: string;
 
     if (selectedEngine === "openai") {
-      // ─── OpenAI TTS via OpenRouter ───
-      const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
-      if (!OPENROUTER_API_KEY) {
-        throw new Error("OPENROUTER_API_KEY is not configured");
+      // ─── OpenAI TTS direct (gpt-4o-mini-tts) ───
+      // Note: OpenRouter does NOT proxy /audio/speech, so we call OpenAI directly.
+      const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+      if (!OPENAI_API_KEY) {
+        return new Response(
+          JSON.stringify({
+            error: "OPENAI_API_KEY is not configured. Add it in Lovable Cloud settings to use the OpenAI TTS engine.",
+          }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
       }
       resolvedVoice = resolveOpenAIVoice(voice);
-      providerLabel = "openrouter-gpt-4o-mini-tts";
+      providerLabel = "openai-gpt-4o-mini-tts";
 
-      response = await fetch("https://openrouter.ai/api/v1/audio/speech", {
+      response = await fetch("https://api.openai.com/v1/audio/speech", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
           "Content-Type": "application/json",
-          "HTTP-Referer": "https://challenged-dementia.com",
-          "X-Title": "ChallengeD AI Companion",
         },
         body: JSON.stringify({
-          model: "openai/gpt-4o-mini-tts",
+          model: "gpt-4o-mini-tts",
           input: cleanText,
           voice: resolvedVoice,
           response_format: audioFormat,
