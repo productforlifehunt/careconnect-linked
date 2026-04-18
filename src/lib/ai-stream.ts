@@ -206,136 +206,210 @@ async function fetchTTSBlobURL(text: string, voice: string): Promise<string | nu
 
 /**
  * Stream a chat reply, emitting text deltas immediately and dispatching
- * each completed sentence to TTS in parallel. Returns the final full text.
+ * each completed sentence to TTS in parallel.
+ *
+ * Returns { controls, result }:
+ *   - controls: pause/resume/stop the audio playback (text streaming itself
+ *     is not pausable — only the audio queue).
+ *   - result: Promise resolving to the final full text once the SSE stream
+ *     ends (independent of whether audio finished playing).
  */
-export async function streamChatWithVoice(
+export function streamChatWithVoice(
   messages: Array<{ role: "user" | "assistant" | "system"; content: string }>,
   voice: string,
   handlers: StreamHandlers,
-): Promise<string> {
+): { controls: StreamControls; result: Promise<string> } {
   const audioQueue = new AudioQueue({
     onStart: handlers.onAudioStart,
     onEnd: handlers.onAllAudioEnd,
+    onPlayStateChange: handlers.onPlayStateChange,
   });
 
   if (handlers.signal) {
     handlers.signal.addEventListener("abort", () => audioQueue.abort(), { once: true });
   }
 
-  const resp = await fetch(STREAM_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-    },
-    body: JSON.stringify({ messages }),
-    signal: handlers.signal,
-  });
-
-  if (!resp.ok || !resp.body) {
-    const errText = await resp.text().catch(() => "");
-    audioQueue.abort();
-    const err = new Error(`Stream failed [${resp.status}]: ${errText.slice(0, 200)}`);
-    handlers.onError?.(err);
-    throw err;
-  }
-
-  const reader = resp.body.getReader();
-  const decoder = new TextDecoder();
-  let textBuffer = "";   // raw SSE buffer
-  let pending = "";      // accumulated text not yet shipped to TTS
-  let fullText = "";
-  let chunkIndex = 0;
-  const ttsPromises: Promise<void>[] = [];
-
-  const dispatchSentence = (sentence: string) => {
-    const idx = chunkIndex++;
-    handlers.onSentence?.(sentence);
-    const p = fetchTTSBlobURL(sentence, voice).then((url) => {
-      if (url) audioQueue.push({ url, index: idx });
-      else audioQueue.push({ url: "", index: idx }); // skip slot
-    });
-    ttsPromises.push(p);
+  const controls: StreamControls = {
+    pause: () => audioQueue.pause(),
+    resume: () => audioQueue.resume(),
+    stop: () => audioQueue.abort(),
+    isPaused: () => audioQueue.isPaused(),
   };
 
-  const flushSentencesFromPending = (force = false) => {
-    while (true) {
-      const match = pending.match(SENTENCE_RE);
-      if (match && match.index !== undefined) {
-        const end = match.index + match[0].length;
-        const sentence = pending.slice(0, end).trim();
-        pending = pending.slice(end);
-        if (sentence) dispatchSentence(sentence);
-        continue;
-      }
-      // No terminator. Ship a long fragment to keep latency low.
-      if (!force && pending.length >= MIN_FRAGMENT_LEN) {
-        // Try to break on a comma / 中文逗号 / space near the end.
-        const breakRe = /[，,、 ]/g;
-        let lastBreak = -1;
-        let m;
-        while ((m = breakRe.exec(pending)) !== null) {
-          if (m.index >= 30) lastBreak = m.index + 1;
-        }
-        if (lastBreak > 0) {
-          const fragment = pending.slice(0, lastBreak).trim();
-          pending = pending.slice(lastBreak);
-          if (fragment) dispatchSentence(fragment);
+  const result = (async () => {
+    const resp = await fetch(STREAM_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      },
+      body: JSON.stringify({ messages }),
+      signal: handlers.signal,
+    });
+
+    if (!resp.ok || !resp.body) {
+      const errText = await resp.text().catch(() => "");
+      audioQueue.abort();
+      const err = new Error(`Stream failed [${resp.status}]: ${errText.slice(0, 200)}`);
+      handlers.onError?.(err);
+      throw err;
+    }
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let textBuffer = "";
+    let pending = "";
+    let fullText = "";
+    let chunkIndex = 0;
+    const ttsPromises: Promise<void>[] = [];
+
+    const dispatchSentence = (sentence: string) => {
+      const idx = chunkIndex++;
+      handlers.onSentence?.(sentence);
+      const p = fetchTTSBlobURL(sentence, voice).then((url) => {
+        audioQueue.push({ url: url || "", index: idx });
+      });
+      ttsPromises.push(p);
+    };
+
+    const flushSentencesFromPending = (force = false) => {
+      while (true) {
+        const match = pending.match(SENTENCE_RE);
+        if (match && match.index !== undefined) {
+          const end = match.index + match[0].length;
+          const sentence = pending.slice(0, end).trim();
+          pending = pending.slice(end);
+          if (sentence) dispatchSentence(sentence);
           continue;
         }
-      }
-      if (force && pending.trim()) {
-        dispatchSentence(pending.trim());
-        pending = "";
-      }
-      return;
-    }
-  };
-
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      textBuffer += decoder.decode(value, { stream: true });
-
-      let nl: number;
-      while ((nl = textBuffer.indexOf("\n")) !== -1) {
-        let line = textBuffer.slice(0, nl);
-        textBuffer = textBuffer.slice(nl + 1);
-        if (line.endsWith("\r")) line = line.slice(0, -1);
-        if (!line || line.startsWith(":")) continue;
-        if (!line.startsWith("data: ")) continue;
-        const payload = line.slice(6).trim();
-        if (payload === "[DONE]") {
-          textBuffer = "";
-          break;
-        }
-        try {
-          const parsed = JSON.parse(payload);
-          const delta: string | undefined = parsed?.choices?.[0]?.delta?.content;
-          if (delta) {
-            fullText += delta;
-            pending += delta;
-            handlers.onTextDelta(delta, fullText);
-            flushSentencesFromPending(false);
+        if (!force && pending.length >= MIN_FRAGMENT_LEN) {
+          const breakRe = /[，,、 ]/g;
+          let lastBreak = -1;
+          let m;
+          while ((m = breakRe.exec(pending)) !== null) {
+            if (m.index >= 30) lastBreak = m.index + 1;
           }
-        } catch {
-          // Partial JSON across chunks — push back and wait.
-          textBuffer = line + "\n" + textBuffer;
-          break;
+          if (lastBreak > 0) {
+            const fragment = pending.slice(0, lastBreak).trim();
+            pending = pending.slice(lastBreak);
+            if (fragment) dispatchSentence(fragment);
+            continue;
+          }
+        }
+        if (force && pending.trim()) {
+          dispatchSentence(pending.trim());
+          pending = "";
+        }
+        return;
+      }
+    };
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        textBuffer += decoder.decode(value, { stream: true });
+
+        let nl: number;
+        while ((nl = textBuffer.indexOf("\n")) !== -1) {
+          let line = textBuffer.slice(0, nl);
+          textBuffer = textBuffer.slice(nl + 1);
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (!line || line.startsWith(":")) continue;
+          if (!line.startsWith("data: ")) continue;
+          const payload = line.slice(6).trim();
+          if (payload === "[DONE]") {
+            textBuffer = "";
+            break;
+          }
+          try {
+            const parsed = JSON.parse(payload);
+            const delta: string | undefined = parsed?.choices?.[0]?.delta?.content;
+            if (delta) {
+              fullText += delta;
+              pending += delta;
+              handlers.onTextDelta(delta, fullText);
+              flushSentencesFromPending(false);
+            }
+          } catch {
+            textBuffer = line + "\n" + textBuffer;
+            break;
+          }
         }
       }
-    }
 
-    // Flush remaining buffer.
-    flushSentencesFromPending(true);
-    await Promise.all(ttsPromises);
-    audioQueue.markStreamDone();
-    return fullText;
-  } catch (err) {
-    audioQueue.abort();
-    const e = err instanceof Error ? err : new Error(String(err));
-    handlers.onError?.(e);
-    throw e;
+      flushSentencesFromPending(true);
+      await Promise.all(ttsPromises);
+      audioQueue.markStreamDone();
+      return fullText;
+    } catch (err) {
+      audioQueue.abort();
+      const e = err instanceof Error ? err : new Error(String(err));
+      handlers.onError?.(e);
+      throw e;
+    }
+  })();
+
+  return { controls, result };
+}
+
+/**
+ * Play arbitrary text through the same sentence-level pipeline (no LLM call).
+ * Used by the "Listen" button on a finished text-only reply.
+ */
+export function speakTextStreaming(
+  text: string,
+  voice: string,
+  handlers: Omit<StreamHandlers, "onTextDelta" | "onSentence"> & {
+    onSentence?: (s: string) => void;
+  },
+): StreamControls {
+  const audioQueue = new AudioQueue({
+    onStart: handlers.onAudioStart,
+    onEnd: handlers.onAllAudioEnd,
+    onPlayStateChange: handlers.onPlayStateChange,
+  });
+
+  if (handlers.signal) {
+    handlers.signal.addEventListener("abort", () => audioQueue.abort(), { once: true });
   }
+
+  // Split text into sentence-sized chunks up front and dispatch in parallel.
+  const sentences: string[] = [];
+  let pending = text;
+  while (true) {
+    const match = pending.match(SENTENCE_RE);
+    if (match && match.index !== undefined) {
+      const end = match.index + match[0].length;
+      const s = pending.slice(0, end).trim();
+      pending = pending.slice(end);
+      if (s) sentences.push(s);
+      continue;
+    }
+    if (pending.trim()) sentences.push(pending.trim());
+    break;
+  }
+
+  sentences.forEach((s, idx) => {
+    handlers.onSentence?.(s);
+    fetchTTSBlobURL(s, voice).then((url) => {
+      audioQueue.push({ url: url || "", index: idx });
+    });
+  });
+
+  // No more sentences will be added.
+  if (sentences.length === 0) {
+    audioQueue.markStreamDone();
+  } else {
+    // Mark stream done synchronously so that once all chunks finish the
+    // queue can fire onEnd. (We've enqueued every dispatch above.)
+    queueMicrotask(() => audioQueue.markStreamDone());
+  }
+
+  return {
+    pause: () => audioQueue.pause(),
+    resume: () => audioQueue.resume(),
+    stop: () => audioQueue.abort(),
+    isPaused: () => audioQueue.isPaused(),
+  };
 }
