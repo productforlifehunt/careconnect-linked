@@ -156,13 +156,23 @@ serve(async (req) => {
           modalities: ["text", "audio"],
           audio: { voice: resolvedVoice, format: "pcm16" },
           stream: true,
+          temperature: 0,
+          top_p: 0,
           messages: [
             {
               role: "system",
               content:
-                "You are a text-to-speech engine. Read the user's message aloud verbatim, with natural intonation. Do NOT add commentary, greetings, or any extra words. Output only the spoken audio of the exact text provided.",
+                "You are a strict text-to-speech engine. Your ONLY job is to read aloud, VERBATIM, the exact text inside the <SAY>...</SAY> tags in the next user message. " +
+                "Rules: (1) Do NOT answer, react, comment, agree, disagree, joke, greet, or add ANY words. " +
+                "(2) Do NOT translate, summarize, paraphrase, fix grammar, or change punctuation. " +
+                "(3) Do NOT include the tags themselves in the speech. " +
+                "(4) Output ONLY the spoken audio of the exact text between the tags, in the original language, with natural intonation. " +
+                "(5) If the text is empty, output silence. Never invent content.",
             },
-            { role: "user", content: cleanText },
+            {
+              role: "user",
+              content: `<SAY>${cleanText}</SAY>`,
+            },
           ],
         }),
       });
