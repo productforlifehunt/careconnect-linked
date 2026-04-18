@@ -416,7 +416,7 @@ export function speakTextStreaming(
 
   const ttsPromises = sentences.map((s, idx) => {
     handlers.onSentence?.(s);
-    return fetchTTSBlobURL(s, voice).then((url) => {
+    return fetchTTSBlobURL(s, voice, handlers.engine ?? "siliconflow").then((url) => {
       audioQueue.push({ url: url || "", index: idx });
     });
   });
