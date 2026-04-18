@@ -591,7 +591,7 @@ serve(async (req) => {
     let audioBuffer: ArrayBuffer;
     let outFormat = audioFormat;
 
-    if (selectedEngine === "qwen-tts" || selectedEngine === "cosyvoice-v35") {
+    if (selectedEngine === "qwen-tts") {
       // DashScope returns JSON with output.audio.url → fetch the audio.
       const j = await response.json();
       const audioUrl: string | undefined = j?.output?.audio?.url;
