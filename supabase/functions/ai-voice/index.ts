@@ -109,28 +109,152 @@ async function cosyVoiceWebSocket(opts: {
   const sr = opts.sampleRate || 22050;
   const taskId = crypto.randomUUID().replace(/-/g, "");
 
-  // Use WebSocketStream — the only way in Deno to set custom request headers
-  // (the standard `WebSocket` constructor cannot send Authorization).
-  // @ts-ignore — WebSocketStream is unstable but supported in Supabase Edge Runtime.
-  const wss = new (globalThis as any).WebSocketStream(
-    "wss://dashscope.aliyuncs.com/api-ws/v1/inference",
-    {
-      headers: {
-        Authorization: `bearer ${opts.apiKey}`,
-        "X-DashScope-DataInspection": "enable",
-      },
-    },
+  // Manual WebSocket over TLS — Supabase Edge Runtime's stock WebSocket cannot
+  // set custom request headers, and DashScope rejects auth via query/subprotocol.
+  // We open a raw TLS socket to dashscope.aliyuncs.com:443, perform the HTTP
+  // Upgrade handshake with Authorization: bearer <key>, then frame WS messages
+  // ourselves (RFC 6455).
+
+  const HOST = "dashscope.aliyuncs.com";
+  const PATH = "/api-ws/v1/inference";
+  const conn = await Deno.connectTls({ hostname: HOST, port: 443 });
+
+  // ── 1. WebSocket handshake ──
+  const wsKey = btoa(
+    String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16))),
   );
+  const handshake =
+    `GET ${PATH} HTTP/1.1\r\n` +
+    `Host: ${HOST}\r\n` +
+    `Upgrade: websocket\r\n` +
+    `Connection: Upgrade\r\n` +
+    `Sec-WebSocket-Key: ${wsKey}\r\n` +
+    `Sec-WebSocket-Version: 13\r\n` +
+    `Authorization: bearer ${opts.apiKey}\r\n` +
+    `X-DashScope-DataInspection: enable\r\n` +
+    `\r\n`;
+  await conn.write(new TextEncoder().encode(handshake));
 
-  const conn = await wss.opened as {
-    readable: ReadableStream<string | Uint8Array>;
-    writable: WritableStream<string | Uint8Array>;
+  // Read until end of headers (\r\n\r\n)
+  const handshakeBuf = new Uint8Array(8192);
+  let hsLen = 0;
+  let bodyStart = -1;
+  while (bodyStart < 0 && hsLen < handshakeBuf.length) {
+    const n = await conn.read(handshakeBuf.subarray(hsLen));
+    if (n === null) throw new Error("CosyVoice WS handshake EOF");
+    hsLen += n;
+    const s = new TextDecoder().decode(handshakeBuf.subarray(0, hsLen));
+    const idx = s.indexOf("\r\n\r\n");
+    if (idx >= 0) bodyStart = idx + 4;
+  }
+  const respText = new TextDecoder().decode(handshakeBuf.subarray(0, bodyStart));
+  if (!/^HTTP\/1\.1 101/i.test(respText)) {
+    throw new Error(`CosyVoice WS handshake failed: ${respText.split("\r\n")[0]}`);
+  }
+  // Anything after bodyStart is start of WS frames
+  let leftover = handshakeBuf.subarray(bodyStart, hsLen).slice();
+
+  // ── 2. WebSocket framing helpers ──
+  const sendFrame = async (payload: Uint8Array, opcode: number) => {
+    const len = payload.length;
+    const mask = crypto.getRandomValues(new Uint8Array(4));
+    let header: Uint8Array;
+    if (len < 126) {
+      header = new Uint8Array(2 + 4);
+      header[0] = 0x80 | opcode;
+      header[1] = 0x80 | len;
+      header.set(mask, 2);
+    } else if (len < 65536) {
+      header = new Uint8Array(4 + 4);
+      header[0] = 0x80 | opcode;
+      header[1] = 0x80 | 126;
+      header[2] = (len >> 8) & 0xff;
+      header[3] = len & 0xff;
+      header.set(mask, 4);
+    } else {
+      header = new Uint8Array(10 + 4);
+      header[0] = 0x80 | opcode;
+      header[1] = 0x80 | 127;
+      // 64-bit length, JS limits to 32-bit
+      for (let i = 0; i < 4; i++) header[2 + i] = 0;
+      header[6] = (len >>> 24) & 0xff;
+      header[7] = (len >>> 16) & 0xff;
+      header[8] = (len >>> 8) & 0xff;
+      header[9] = len & 0xff;
+      header.set(mask, 10);
+    }
+    const masked = new Uint8Array(len);
+    for (let i = 0; i < len; i++) masked[i] = payload[i] ^ mask[i & 3];
+    const frame = new Uint8Array(header.length + masked.length);
+    frame.set(header, 0);
+    frame.set(masked, header.length);
+    await conn.write(frame);
   };
-  const writer = conn.writable.getWriter();
-  const reader = conn.readable.getReader();
 
-  // Send run-task instruction
-  await writer.write(JSON.stringify({
+  const sendText = (s: string) =>
+    sendFrame(new TextEncoder().encode(s), 0x1);
+
+  // Read exactly N bytes (may consume from `leftover` first)
+  const readExact = async (n: number): Promise<Uint8Array> => {
+    const out = new Uint8Array(n);
+    let off = 0;
+    if (leftover.length > 0) {
+      const take = Math.min(n, leftover.length);
+      out.set(leftover.subarray(0, take), 0);
+      leftover = leftover.subarray(take);
+      off = take;
+    }
+    while (off < n) {
+      const r = await conn.read(out.subarray(off));
+      if (r === null) throw new Error("CosyVoice WS unexpected EOF");
+      off += r;
+    }
+    return out;
+  };
+
+  // Read one full message (handles fragmentation, control frames)
+  const readMessage = async (): Promise<{ opcode: number; data: Uint8Array }> => {
+    const fragments: Uint8Array[] = [];
+    let firstOp = -1;
+    while (true) {
+      const h = await readExact(2);
+      const fin = (h[0] & 0x80) !== 0;
+      const op = h[0] & 0x0f;
+      const masked = (h[1] & 0x80) !== 0;
+      let len = h[1] & 0x7f;
+      if (len === 126) {
+        const ext = await readExact(2);
+        len = (ext[0] << 8) | ext[1];
+      } else if (len === 127) {
+        const ext = await readExact(8);
+        // JS safe: take low 32 bits
+        len = (ext[4] << 24) | (ext[5] << 16) | (ext[6] << 8) | ext[7];
+      }
+      if (masked) await readExact(4); // server should not mask, but handle anyway
+      const payload = len > 0 ? await readExact(len) : new Uint8Array(0);
+
+      if (op === 0x9) { // ping → pong
+        await sendFrame(payload, 0xa);
+        continue;
+      }
+      if (op === 0xa) continue; // pong, ignore
+      if (op === 0x8) { // close
+        return { opcode: 0x8, data: payload };
+      }
+      if (firstOp < 0) firstOp = op;
+      fragments.push(payload);
+      if (fin) {
+        const total = fragments.reduce((s, f) => s + f.length, 0);
+        const merged = new Uint8Array(total);
+        let off = 0;
+        for (const f of fragments) { merged.set(f, off); off += f.length; }
+        return { opcode: firstOp, data: merged };
+      }
+    }
+  };
+
+  // ── 3. Send run-task ──
+  await sendText(JSON.stringify({
     header: { action: "run-task", task_id: taskId, streaming: "duplex" },
     payload: {
       task_group: "audio",
@@ -150,49 +274,45 @@ async function cosyVoiceWebSocket(opts: {
     },
   }));
 
+  // ── 4. Event loop ──
   const audioChunks: Uint8Array[] = [];
   let started = false;
-  const timeoutPromise = new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new Error("CosyVoice WS timeout (30s)")), 30000)
-  );
+  let finished = false;
 
-  const readLoop = (async () => {
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      if (typeof value === "string") {
-        let msg: any;
-        try { msg = JSON.parse(value); } catch { continue; }
-        const event = msg?.header?.event;
-        if (event === "task-started") {
-          started = true;
-          // Send the text, then immediately finish.
-          await writer.write(JSON.stringify({
-            header: { action: "continue-task", task_id: taskId, streaming: "duplex" },
-            payload: { input: { text: opts.text } },
-          }));
-          await writer.write(JSON.stringify({
-            header: { action: "finish-task", task_id: taskId, streaming: "duplex" },
-            payload: { input: {} },
-          }));
-        } else if (event === "task-finished") {
-          break;
-        } else if (event === "task-failed") {
-          const m = msg?.header?.error_message || msg?.header?.error_code || "task-failed";
-          throw new Error(`CosyVoice WS task-failed: ${m}`);
-        }
-      } else if (value instanceof Uint8Array) {
-        audioChunks.push(value);
+  const deadline = Date.now() + 30000;
+  while (!finished && Date.now() < deadline) {
+    const msg = await readMessage();
+    if (msg.opcode === 0x8) break; // close
+    if (msg.opcode === 0x1) {
+      // text → JSON event
+      const text = new TextDecoder().decode(msg.data);
+      let parsed: any;
+      try { parsed = JSON.parse(text); } catch { continue; }
+      const event = parsed?.header?.event;
+      if (event === "task-started") {
+        started = true;
+        await sendText(JSON.stringify({
+          header: { action: "continue-task", task_id: taskId, streaming: "duplex" },
+          payload: { input: { text: opts.text } },
+        }));
+        await sendText(JSON.stringify({
+          header: { action: "finish-task", task_id: taskId, streaming: "duplex" },
+          payload: { input: {} },
+        }));
+      } else if (event === "task-finished") {
+        finished = true;
+      } else if (event === "task-failed") {
+        const m = parsed?.header?.error_message || parsed?.header?.error_code || "task-failed";
+        try { conn.close(); } catch { /* ignore */ }
+        throw new Error(`CosyVoice WS task-failed: ${m}`);
       }
+    } else if (msg.opcode === 0x2) {
+      // binary → audio chunk
+      audioChunks.push(msg.data);
     }
-  })();
-
-  try {
-    await Promise.race([readLoop, timeoutPromise]);
-  } finally {
-    try { await writer.close(); } catch { /* ignore */ }
-    try { wss.close({ code: 1000 }); } catch { /* ignore */ }
   }
+
+  try { conn.close(); } catch { /* ignore */ }
 
   if (!started) throw new Error("CosyVoice WS closed before task-started");
   if (audioChunks.length === 0) throw new Error("CosyVoice WS produced no audio");
