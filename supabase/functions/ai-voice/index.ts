@@ -6,6 +6,35 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Map legacy OpenAI voice names → CosyVoice2 voice IDs
+const VOICE_MAP: Record<string, string> = {
+  alloy: "FunAudioLLM/CosyVoice2-0.5B:alex",
+  echo: "FunAudioLLM/CosyVoice2-0.5B:benjamin",
+  fable: "FunAudioLLM/CosyVoice2-0.5B:charles",
+  onyx: "FunAudioLLM/CosyVoice2-0.5B:david",
+  nova: "FunAudioLLM/CosyVoice2-0.5B:anna",
+  shimmer: "FunAudioLLM/CosyVoice2-0.5B:bella",
+};
+
+function resolveVoice(voice?: string): string {
+  if (!voice) return "FunAudioLLM/CosyVoice2-0.5B:anna";
+  if (voice.includes("CosyVoice")) return voice;
+  return VOICE_MAP[voice] || "FunAudioLLM/CosyVoice2-0.5B:anna";
+}
+
+async function arrayBufferToBase64(buffer: ArrayBuffer): Promise<string> {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode.apply(
+      null,
+      Array.from(bytes.subarray(i, i + chunkSize)) as any,
+    );
+  }
+  return btoa(binary);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -21,25 +50,23 @@ serve(async (req) => {
     if (!text || typeof text !== "string" || text.trim().length === 0) {
       return new Response(
         JSON.stringify({ error: "text is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    // Limit text length to prevent abuse (roughly 2000 chars max)
     if (text.length > 2000) {
       return new Response(
         JSON.stringify({ error: "Text too long, max 2000 characters" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
-    if (!OPENROUTER_API_KEY) {
-      throw new Error("OPENROUTER_API_KEY is not configured");
+    const SILICONFLOW_API_KEY = Deno.env.get("SILICONFLOW_API_KEY");
+    if (!SILICONFLOW_API_KEY) {
+      throw new Error("SILICONFLOW_API_KEY is not configured");
     }
-    
 
-    // Clean text for speech: strip markdown
+    // Clean markdown for natural speech
     const cleanText = text
       .replace(/\*\*([^*]+)\*\*/g, "$1")
       .replace(/\*([^*]+)\*/g, "$1")
@@ -56,123 +83,89 @@ serve(async (req) => {
     if (!cleanText) {
       return new Response(
         JSON.stringify({ error: "No speakable text after cleaning" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    const selectedVoice = voice || "alloy";
-    const audioFormat = format || "pcm16";
+    const selectedVoice = resolveVoice(voice);
+    // SiliconFlow supports: mp3, wav, pcm, opus
+    const requestedFormat = (format || "mp3").toLowerCase();
+    const audioFormat = ["mp3", "wav", "pcm", "opus"].includes(requestedFormat)
+      ? requestedFormat
+      : "mp3";
 
-    // Use OpenRouter with GPT Audio Mini - streaming is required for audio output
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    const response = await fetch("https://api.siliconflow.cn/v1/audio/speech", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+        Authorization: `Bearer ${SILICONFLOW_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "openai/gpt-audio-mini",
-        messages: [
-          {
-            role: "system",
-            content: "You are a voice synthesis assistant. Repeat the user's text exactly as given, word for word. Do not add, remove, or change anything. Just speak the text naturally.",
-          },
-          {
-            role: "user",
-            content: `Please read this text aloud exactly as written:\n\n${cleanText}`,
-          },
-        ],
-        modalities: ["text", "audio"],
-        audio: {
-          voice: selectedVoice,
-          format: audioFormat,
-        },
-        stream: true,
+        model: "FunAudioLLM/CosyVoice2-0.5B",
+        input: cleanText,
+        voice: selectedVoice,
+        response_format: audioFormat,
+        sample_rate: audioFormat === "pcm" ? 16000 : 32000,
+        stream: false,
+        speed: 1,
+        gain: 0,
       }),
     });
 
     if (!response.ok) {
       const status = response.status;
       const errorText = await response.text();
-      console.error("OpenRouter audio error:", status, errorText);
+      console.error("SiliconFlow audio error:", status, errorText);
 
       if (status === 429) {
         return new Response(
           JSON.stringify({ error: "Rate limited. Please try again in a moment." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      if (status === 401 || status === 403) {
+        return new Response(
+          JSON.stringify({ error: "SiliconFlow auth failed. Check SILICONFLOW_API_KEY." }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
       if (status === 402) {
         return new Response(
-          JSON.stringify({ error: "Credits exhausted on OpenRouter. Please add funds." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({ error: "Credits exhausted on SiliconFlow. Please add funds." }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
       return new Response(
         JSON.stringify({ error: `Voice service error [${status}]: ${errorText.slice(0, 200)}` }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    // Parse SSE stream and collect audio chunks
-    const reader = response.body!.getReader();
-    const decoder = new TextDecoder();
-    const audioChunks: string[] = [];
-    const transcriptChunks: string[] = [];
-    let textBuffer = "";
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      textBuffer += decoder.decode(value, { stream: true });
-
-      let newlineIndex: number;
-      while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
-        let line = textBuffer.slice(0, newlineIndex);
-        textBuffer = textBuffer.slice(newlineIndex + 1);
-
-        if (line.endsWith("\r")) line = line.slice(0, -1);
-        if (!line.startsWith("data: ")) continue;
-
-        const jsonStr = line.slice(6).trim();
-        if (jsonStr === "[DONE]") break;
-
-        try {
-          const parsed = JSON.parse(jsonStr);
-          const delta = parsed.choices?.[0]?.delta;
-          const audio = delta?.audio;
-          if (audio?.data) audioChunks.push(audio.data);
-          if (audio?.transcript) transcriptChunks.push(audio.transcript);
-        } catch {
-          // partial JSON, skip
-        }
-      }
-    }
-
-    if (audioChunks.length === 0) {
+    const audioBuffer = await response.arrayBuffer();
+    if (!audioBuffer || audioBuffer.byteLength === 0) {
       return new Response(
-        JSON.stringify({ error: "No audio generated. The model may not support audio output." }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "No audio generated by SiliconFlow." }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    const fullAudioBase64 = audioChunks.join("");
-    const transcript = transcriptChunks.join("");
+    const fullAudioBase64 = await arrayBufferToBase64(audioBuffer);
 
     return new Response(
       JSON.stringify({
         audio: fullAudioBase64,
-        transcript,
+        transcript: cleanText,
         format: audioFormat,
         voice: selectedVoice,
+        provider: "siliconflow-cosyvoice2",
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e) {
     console.error("ai-voice error:", e);
     return new Response(
       JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });
