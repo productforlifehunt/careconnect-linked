@@ -105,33 +105,88 @@ serve(async (req) => {
     let resolvedVoice: string;
 
     if (selectedEngine === "openai") {
-      // ─── OpenAI TTS direct (gpt-4o-mini-tts) ───
-      // Note: OpenRouter does NOT proxy /audio/speech, so we call OpenAI directly.
-      const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
-      if (!OPENAI_API_KEY) {
-        return new Response(
-          JSON.stringify({
-            error: "OPENAI_API_KEY is not configured. Add it in Lovable Cloud settings to use the OpenAI TTS engine.",
-          }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
+      // ─── OpenAI gpt-audio-mini via OpenRouter (chat completions + audio modality) ───
+      const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
+      if (!OPENROUTER_API_KEY) {
+        throw new Error("OPENROUTER_API_KEY is not configured");
       }
       resolvedVoice = resolveOpenAIVoice(voice);
-      providerLabel = "openai-gpt-4o-mini-tts";
+      providerLabel = "openrouter-gpt-audio-mini";
 
-      response = await fetch("https://api.openai.com/v1/audio/speech", {
+      // gpt-audio-mini outputs wav natively; we transcode label only.
+      const orResp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${OPENAI_API_KEY}`,
+          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
           "Content-Type": "application/json",
+          "HTTP-Referer": "https://challenged-dementia.com",
+          "X-Title": "ChallengeD AI Companion",
         },
         body: JSON.stringify({
-          model: "gpt-4o-mini-tts",
-          input: cleanText,
-          voice: resolvedVoice,
-          response_format: audioFormat,
+          model: "openai/gpt-audio-mini",
+          modalities: ["text", "audio"],
+          audio: { voice: resolvedVoice, format: "wav" },
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are a text-to-speech engine. Read the user's message aloud verbatim, with natural intonation. Do NOT add commentary, greetings, or any extra words. Output only the spoken audio of the exact text provided.",
+            },
+            { role: "user", content: cleanText },
+          ],
         }),
       });
+
+      if (!orResp.ok) {
+        const status = orResp.status;
+        const errorText = await orResp.text();
+        console.error(`${providerLabel} chat error:`, status, errorText);
+        if (status === 429) {
+          return new Response(
+            JSON.stringify({ error: "Rate limited. Please try again in a moment." }),
+            { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
+        if (status === 401 || status === 403) {
+          return new Response(
+            JSON.stringify({ error: `${providerLabel} auth failed. Check OPENROUTER_API_KEY.` }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
+        if (status === 402) {
+          return new Response(
+            JSON.stringify({ error: `Credits exhausted on ${providerLabel}.` }),
+            { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
+        return new Response(
+          JSON.stringify({ error: `Voice service error [${status}]: ${errorText.slice(0, 300)}` }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
+      const orData = await orResp.json();
+      // OpenAI/OpenRouter audio response shape: choices[0].message.audio.data (base64 wav)
+      const audioB64: string | undefined = orData?.choices?.[0]?.message?.audio?.data;
+      if (!audioB64) {
+        console.error(`${providerLabel} no audio in response:`, JSON.stringify(orData).slice(0, 500));
+        return new Response(
+          JSON.stringify({ error: `${providerLabel} returned no audio. Response shape unexpected.` }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
+      return new Response(
+        JSON.stringify({
+          audio: audioB64,
+          transcript: cleanText,
+          format: "wav",
+          voice: resolvedVoice,
+          provider: providerLabel,
+          engine: selectedEngine,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     } else {
       // ─── SiliconFlow / CosyVoice2 ───
       const SILICONFLOW_API_KEY = Deno.env.get("SILICONFLOW_API_KEY");
