@@ -122,8 +122,19 @@ export function DementiaAssistant() {
     hardStop();
     setActiveMsgIdx(idx);
     setVoiceLoading(true);
+    const startedAt = performance.now();
     const controls = speakTextStreaming(text, voicePersona, {
-      onAudioStart: () => setVoiceLoading(false),
+      engine: ttsEngine,
+      onAudioStart: () => {
+        setVoiceLoading(false);
+        const elapsed = Math.round(performance.now() - startedAt);
+        toast.success(
+          isChinese
+            ? `${ttsEngine === "openai" ? "GPT-4o" : "CosyVoice2"} 首字 ${elapsed}ms`
+            : `${ttsEngine === "openai" ? "GPT-4o" : "CosyVoice2"} TTFB ${elapsed}ms`,
+          { duration: 2500 },
+        );
+      },
       onPlayStateChange: (s) => {
         if (s === "playing") setPlayState("playing");
         else if (s === "paused") setPlayState("paused");
