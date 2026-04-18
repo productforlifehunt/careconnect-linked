@@ -158,7 +158,8 @@ function buildSystemPrompt(mode: AIMode): string {
     routine_suggestion:
       "Suggest safe, simple dementia-friendly daily routines. Return plain text.",
     general_chat:
-      "Answer dementia care questions helpfully and naturally. Prioritize companionship and emotional support. Return plain text.",
+      "Chat naturally and warmly. Happily tell stories, jokes, riddles, fun facts, or just listen and reply with empathy when asked. " +
+      "Treat the user as a friend, not a patient. Only bring up dementia-care topics when the user actually asks. Return plain text.",
   };
 
   return `${base}\n\n${modePrompts[mode]}`;
