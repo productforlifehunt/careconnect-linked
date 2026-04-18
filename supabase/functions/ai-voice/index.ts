@@ -83,16 +83,28 @@ function resolveQwenTTSVoice(voice?: string): string {
   return map[voice] || "Cherry";
 }
 
-function resolveCosyV3Voice(voice?: string): string {
-  if (!voice) return "longanyang";
-  const clean = voice.replace(/_v2$/, "");
-  if (COSYVOICE_V3_VOICES.has(voice) || COSYVOICE_V3_VOICES.has(clean)) return voice;
-  const map: Record<string, string> = {
-    nova: "longanyang", shimmer: "longanyang", coral: "longxiaochun_v2",
-    sage: "longjing_v2", alloy: "longcheng_v2", onyx: "longshuo_v2",
-    echo: "longwan_v2", fable: "longhua_v2",
+// Model-aware resolver. v3-plus only has 2 voices, v3-flash has many.
+function resolveCosyV3Voice(voice: string | undefined, model: string): string {
+  const isPlus = model === "cosyvoice-v3-plus";
+  const allowed = isPlus ? COSYVOICE_V3_PLUS_VOICES : COSYVOICE_V3_FLASH_VOICES;
+  const fallback = isPlus ? "longanhuan" : "longwan_v3"; // softest natural female
+  if (!voice) return fallback;
+  if (allowed.has(voice)) return voice;
+  // Map generic OpenAI personas to closest matching voice.
+  const mapPlus: Record<string, string> = {
+    nova: "longanhuan", shimmer: "longanhuan", coral: "longanhuan",
+    sage: "longanhuan", fable: "longanhuan",
+    alloy: "longanyang", onyx: "longanyang", echo: "longanyang",
+    ash: "longanyang", ballad: "longanyang", verse: "longanyang",
   };
-  return map[voice] || "longanyang";
+  const mapFlash: Record<string, string> = {
+    nova: "longwan_v3", shimmer: "longanrou_v3", coral: "longyingling_v3",
+    sage: "longxiaoxia_v3", fable: "longhua_v3",
+    alloy: "longcheng_v3", onyx: "longtian_v3", echo: "longshu_v3",
+    ash: "longanyun_v3", ballad: "longanlang_v3", verse: "longze_v3",
+  };
+  const map = isPlus ? mapPlus : mapFlash;
+  return map[voice] || fallback;
 }
 
 async function arrayBufferToBase64(buffer: ArrayBuffer): Promise<string> {
