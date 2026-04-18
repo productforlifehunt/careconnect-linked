@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { invokeAI, loadAIConversation, type AIChatMessage } from "@/lib/ai-service";
+import { streamChatWithVoice } from "@/lib/ai-stream";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -327,23 +328,73 @@ export function DementiaAssistant() {
     setInput("");
     setLoading(true);
 
+    const assistantIdx = nextMessages.length; // index of the upcoming assistant msg
+
     try {
-      const history: AIChatMessage[] = nextMessages.map((message) => ({
-        role: message.role,
+      const history = nextMessages.map((message) => ({
+        role: message.role as "user" | "assistant",
         content: message.content,
       }));
-      const reply = await invokeAI("general_chat", text.trim(), {
-        title: "Dementia Assistant",
-        messages: history,
-      });
-      setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
 
-      // Auto-speak the new reply with AI voice
       if (autoSpeak) {
-        setTimeout(async () => {
-          setSpeakingIdx(nextMessages.length);
-          await speakWithAI(reply, () => setSpeakingIdx(null));
-        }, 100);
+        // ── Sentence-level streaming pipeline: text + parallel TTS ──
+        stopSpeaking();
+        setSpeakingIdx(assistantIdx);
+        // Insert empty assistant bubble; we'll fill it as tokens arrive.
+        setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
+        let accumulated = "";
+        try {
+          await streamChatWithVoice(history, voicePersona, {
+            onTextDelta: (_delta, fullText) => {
+              accumulated = fullText;
+              setMessages((prev) => {
+                const copy = [...prev];
+                if (copy[assistantIdx]) {
+                  copy[assistantIdx] = { role: "assistant", content: fullText };
+                }
+                return copy;
+              });
+            },
+            onAllAudioEnd: () => setSpeakingIdx(null),
+            onError: (err) => {
+              console.error("Stream error:", err);
+              setSpeakingIdx(null);
+            },
+          });
+
+          // Persist the final reply to WP CCT (non-blocking, fire-and-forget).
+          if (accumulated) {
+            invokeAI("general_chat", text.trim(), {
+              title: "Dementia Assistant",
+              messages: [...history, { role: "assistant", content: accumulated }],
+            }).catch(() => {});
+          }
+        } catch (err) {
+          console.error("Stream pipeline failed, falling back:", err);
+          setSpeakingIdx(null);
+          // Fallback: non-streaming single-shot call.
+          const reply = await invokeAI("general_chat", text.trim(), {
+            title: "Dementia Assistant",
+            messages: history as AIChatMessage[],
+          });
+          setMessages((prev) => {
+            const copy = [...prev];
+            copy[assistantIdx] = { role: "assistant", content: reply };
+            return copy;
+          });
+          setTimeout(async () => {
+            setSpeakingIdx(assistantIdx);
+            await speakWithAI(reply, () => setSpeakingIdx(null));
+          }, 100);
+        }
+      } else {
+        // ── Non-voice path: keep the simple single-shot call ──
+        const reply = await invokeAI("general_chat", text.trim(), {
+          title: "Dementia Assistant",
+          messages: history as AIChatMessage[],
+        });
+        setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
       }
     } catch (err: any) {
       setMessages((prev) => [
