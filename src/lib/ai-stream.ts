@@ -25,6 +25,7 @@ export interface StreamHandlers {
   onError?: (err: Error) => void;
   signal?: AbortSignal;
   language?: string;
+  engine?: "siliconflow" | "openai";
 }
 
 export interface TextStreamHandlers {
