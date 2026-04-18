@@ -142,7 +142,8 @@ export function DementiaAssistant() {
           ttsEngine === "openai-full" ? "GPT-Audio"
           : ttsEngine === "openai" ? "GPT-Audio-Mini"
           : ttsEngine === "qwen-tts" ? "Qwen3-TTS"
-          : ttsEngine === "cosyvoice-v35" ? "CosyVoice 3.5+"
+          : ttsEngine === "cosyvoice-v35-plus" ? "Cosy 3.5 Plus"
+          : ttsEngine === "cosyvoice-v35-flash" ? "Cosy 3.5 Flash"
           : "CosyVoice2";
         toast.success(
           isChinese
@@ -423,7 +424,7 @@ export function DementiaAssistant() {
             onValueChange={(v) => { hardStop(); setTtsEngine(v as TTSEngine); }}
             className="flex-1"
           >
-            <TabsList className="grid grid-cols-5 h-7 w-full">
+            <TabsList className="grid grid-cols-6 h-7 w-full">
               {TTS_ENGINES.map((e) => (
                 <TabsTrigger
                   key={e.value}
