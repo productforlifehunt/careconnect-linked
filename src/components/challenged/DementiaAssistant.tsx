@@ -156,7 +156,7 @@ export function DementiaAssistant() {
       },
     });
     controlsRef.current = controls;
-  }, [activeMsgIdx, playState, voicePersona, hardStop, isChinese]);
+  }, [activeMsgIdx, playState, voicePersona, ttsEngine, hardStop, isChinese]);
 
   // ─── Speech-to-text ───
   const toggleListening = useCallback(() => {
