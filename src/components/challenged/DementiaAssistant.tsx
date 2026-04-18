@@ -58,7 +58,7 @@ export function DementiaAssistant() {
   const [loading, setLoading] = useState(false);
   const [voiceLang, setVoiceLang] = useState("auto");
   const [voicePersona, setVoicePersona] = useState("nova");
-  const [conversationLoaded, setConversationLoaded] = useState(false);
+  // (No CCT history loading — chat is in-memory per session for max speed.)
   const [isListening, setIsListening] = useState(false);
 
   // Per-message playback state: which message is currently bound to a stream
