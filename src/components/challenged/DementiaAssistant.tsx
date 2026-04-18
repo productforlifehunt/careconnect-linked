@@ -11,9 +11,8 @@ import { useTranslation } from "react-i18next";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { invokeAI, loadAIConversation, type AIChatMessage } from "@/lib/ai-service";
 import {
-  streamChatWithVoice, speakTextStreaming, type StreamControls,
+  streamChatWithVoice, streamChatTextOnly, speakTextStreaming, type StreamControls,
 } from "@/lib/ai-stream";
 import { toast } from "sonner";
 
@@ -59,7 +58,7 @@ export function DementiaAssistant() {
   const [loading, setLoading] = useState(false);
   const [voiceLang, setVoiceLang] = useState("auto");
   const [voicePersona, setVoicePersona] = useState("nova");
-  const [conversationLoaded, setConversationLoaded] = useState(false);
+  // (No CCT history loading — chat is in-memory per session for max speed.)
   const [isListening, setIsListening] = useState(false);
 
   // Per-message playback state: which message is currently bound to a stream
@@ -89,25 +88,7 @@ export function DementiaAssistant() {
 
   useEffect(() => () => controlsRef.current?.stop(), []);
 
-  // Load conversation history
-  useEffect(() => {
-    if (!open || conversationLoaded) return;
-    let mounted = true;
-    loadAIConversation("general_chat")
-      .then((history) => {
-        if (!mounted || !history.length) return;
-        const normalized = history
-          .filter((item) => item.role !== "system")
-          .map((item) => ({
-            role: item.role === "assistant" ? "assistant" : "user",
-            content: item.content,
-          } as Message));
-        if (normalized.length > 0) setMessages(normalized);
-      })
-      .catch(() => {})
-      .finally(() => { if (mounted) setConversationLoaded(true); });
-    return () => { mounted = false; };
-  }, [open, conversationLoaded]);
+  // (Chat history is per-session only — no remote load to keep responses snappy.)
 
   // ─── Stop any active playback (industry-standard hard stop) ───
   const hardStop = useCallback(() => {
@@ -239,12 +220,19 @@ export function DementiaAssistant() {
         content: m.content,
       }));
 
+      // Resolve language for the AI: explicit override > UI language.
+      const resolvedLang =
+        voiceLang && voiceLang !== "auto"
+          ? voiceLang
+          : (i18n.language || "auto");
+
       if (mode === "voice") {
-        // Voice mode: streaming pipeline (text + parallel TTS).
+        // Voice mode: streaming text + parallel TTS.
         setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
         setActiveMsgIdx(assistantIdx);
 
         const { controls, result } = streamChatWithVoice(history, voicePersona, {
+          language: resolvedLang,
           onTextDelta: (_d, fullText) => {
             setMessages((prev) => {
               const copy = [...prev];
@@ -271,37 +259,38 @@ export function DementiaAssistant() {
           },
         });
         controlsRef.current = controls;
-
         try {
-          const fullText = await result;
-          if (fullText) {
-            // Persist (non-blocking).
-            invokeAI("general_chat", text.trim(), {
-              title: "Dementia Assistant",
-              messages: [...history, { role: "assistant", content: fullText }],
-            }).catch(() => {});
-          }
+          await result;
         } catch (err) {
-          console.error("Stream pipeline failed:", err);
-          toast.error(isChinese ? "语音对话失败,已切换到文字" : "Voice failed, switching to text");
-          // Fallback: single-shot text only (no TTS).
-          const reply = await invokeAI("general_chat", text.trim(), {
-            title: "Dementia Assistant",
-            messages: history as AIChatMessage[],
-          });
+          console.error("Voice stream failed:", err);
+          toast.error(isChinese ? "语音对话失败" : "Voice failed");
+        }
+      } else {
+        // Text mode: pure SSE streaming, NO TTS. Tokens shown as they arrive.
+        setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+        const { result } = streamChatTextOnly(history, {
+          language: resolvedLang,
+          onTextDelta: (_d, fullText) => {
+            setMessages((prev) => {
+              const copy = [...prev];
+              if (copy[assistantIdx]) {
+                copy[assistantIdx] = { role: "assistant", content: fullText };
+              }
+              return copy;
+            });
+          },
+          onError: (err) => console.error("Text stream error:", err),
+        });
+        try {
+          await result;
+        } catch (err) {
+          console.error("Text stream failed:", err);
           setMessages((prev) => {
             const copy = [...prev];
-            copy[assistantIdx] = { role: "assistant", content: reply };
+            copy[assistantIdx] = { role: "assistant", content: t("common.tryAgain") };
             return copy;
           });
         }
-      } else {
-        // Text mode: pure text reply, no auto-TTS. User taps speaker to listen.
-        const reply = await invokeAI("general_chat", text.trim(), {
-          title: "Dementia Assistant",
-          messages: history as AIChatMessage[],
-        });
-        setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
       }
     } catch (err: any) {
       setMessages((prev) => [

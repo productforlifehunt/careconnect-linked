@@ -10,15 +10,38 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SYSTEM_PROMPT =
+const BASE_PROMPT =
   "You are 小忆AI (XiaoYi AI), a compassionate dementia care assistant for the 忆畅 (ChallengeD) platform. " +
   "Be warm, practical, concise, and safety-first. Never claim to replace a doctor. " +
-  "Escalate emergencies immediately. Always respond bilingually (English first, then Chinese). " +
-  "Keep replies SHORT — 2 to 4 sentences total — so voice playback feels natural and quick. " +
+  "Escalate emergencies immediately. " +
+  "Keep replies SHORT — 2 to 4 sentences total. " +
   "End every sentence with proper punctuation (. ! ? 。 ! ?) so streaming TTS can split cleanly. " +
   "SAFETY GUARDRAILS: Never provide financial/investment advice. If the user shares bank card numbers, " +
   "passwords, or sensitive data, gently redirect them to a trusted caregiver. " +
   "For behavioral issues like hallucinations or delusions, use gentle redirection, never argue.";
+
+function buildLanguageRule(language: string | undefined): string {
+  switch ((language || "auto").toLowerCase()) {
+    case "zh":
+    case "zh-cn":
+    case "zh-tw":
+    case "zh-hk":
+      return "ALWAYS respond in Simplified Chinese (中文) only. Do NOT include English translation.";
+    case "en":
+    case "en-us":
+    case "en-gb":
+      return "ALWAYS respond in English only. Do NOT include translations in other languages.";
+    case "ja":
+    case "ja-jp":
+      return "ALWAYS respond in Japanese (日本語) only.";
+    case "ko":
+    case "ko-kr":
+      return "ALWAYS respond in Korean (한국어) only.";
+    case "auto":
+    default:
+      return "Detect the language of the user's most recent message and respond in THAT SAME language only. Do NOT add translations in other languages unless the user explicitly asks for them.";
+  }
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -26,8 +49,9 @@ serve(async (req) => {
   }
 
   try {
-    const { messages } = await req.json() as {
+    const { messages, language } = await req.json() as {
       messages: Array<{ role: string; content: string }>;
+      language?: string;
     };
 
     if (!Array.isArray(messages) || messages.length === 0) {
@@ -49,6 +73,8 @@ serve(async (req) => {
       .filter((m) => typeof m?.role === "string" && typeof m?.content === "string")
       .filter((m) => m.role !== "system");
 
+    const systemPrompt = `${BASE_PROMPT}\n\nLANGUAGE RULE: ${buildLanguageRule(language)}`;
+
     const upstream = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -59,7 +85,7 @@ serve(async (req) => {
         model: "google/gemini-2.5-flash",
         stream: true,
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: systemPrompt },
           ...cleaned,
         ],
       }),
