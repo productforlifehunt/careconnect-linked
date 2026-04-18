@@ -25,6 +25,7 @@ export interface StreamHandlers {
   onError?: (err: Error) => void;
   signal?: AbortSignal;
   language?: string;
+  engine?: "siliconflow" | "openai";
 }
 
 export interface TextStreamHandlers {
@@ -191,12 +192,18 @@ class AudioQueue {
   }
 }
 
-async function fetchTTSBlobURL(text: string, voice: string): Promise<string | null> {
+export type TTSEngine = "siliconflow" | "openai";
+
+async function fetchTTSBlobURL(
+  text: string,
+  voice: string,
+  engine: TTSEngine = "siliconflow",
+): Promise<string | null> {
   const trimmed = text.trim();
   if (!trimmed) return null;
   try {
     const { data, error } = await supabase.functions.invoke("ai-voice", {
-      body: { text: trimmed, voice, format: "mp3" },
+      body: { text: trimmed, voice, format: "mp3", engine },
     });
     if (error || data?.error || !data?.audio) {
       console.error("TTS chunk failed:", error || data?.error);
@@ -283,7 +290,7 @@ export function streamChatWithVoice(
     const dispatchSentence = (sentence: string) => {
       const idx = chunkIndex++;
       handlers.onSentence?.(sentence);
-      const p = fetchTTSBlobURL(sentence, voice).then((url) => {
+      const p = fetchTTSBlobURL(sentence, voice, handlers.engine ?? "siliconflow").then((url) => {
         audioQueue.push({ url: url || "", index: idx });
       });
       ttsPromises.push(p);
@@ -409,7 +416,7 @@ export function speakTextStreaming(
 
   const ttsPromises = sentences.map((s, idx) => {
     handlers.onSentence?.(s);
-    return fetchTTSBlobURL(s, voice).then((url) => {
+    return fetchTTSBlobURL(s, voice, handlers.engine ?? "siliconflow").then((url) => {
       audioQueue.push({ url: url || "", index: idx });
     });
   });

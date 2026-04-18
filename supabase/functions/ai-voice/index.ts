@@ -6,8 +6,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Map legacy OpenAI voice names → CosyVoice2 voice IDs
-const VOICE_MAP: Record<string, string> = {
+// ─── SiliconFlow / CosyVoice2 voice mapping ───
+const COSY_VOICE_MAP: Record<string, string> = {
   alloy: "FunAudioLLM/CosyVoice2-0.5B:alex",
   echo: "FunAudioLLM/CosyVoice2-0.5B:benjamin",
   fable: "FunAudioLLM/CosyVoice2-0.5B:charles",
@@ -16,10 +16,18 @@ const VOICE_MAP: Record<string, string> = {
   shimmer: "FunAudioLLM/CosyVoice2-0.5B:bella",
 };
 
-function resolveVoice(voice?: string): string {
+// OpenAI TTS expects one of: alloy, echo, fable, onyx, nova, shimmer (already aligned)
+const OPENAI_VOICES = new Set(["alloy", "echo", "fable", "onyx", "nova", "shimmer"]);
+
+function resolveCosyVoice(voice?: string): string {
   if (!voice) return "FunAudioLLM/CosyVoice2-0.5B:anna";
   if (voice.includes("CosyVoice")) return voice;
-  return VOICE_MAP[voice] || "FunAudioLLM/CosyVoice2-0.5B:anna";
+  return COSY_VOICE_MAP[voice] || "FunAudioLLM/CosyVoice2-0.5B:anna";
+}
+
+function resolveOpenAIVoice(voice?: string): string {
+  if (!voice) return "nova";
+  return OPENAI_VOICES.has(voice) ? voice : "nova";
 }
 
 async function arrayBufferToBase64(buffer: ArrayBuffer): Promise<string> {
@@ -35,16 +43,32 @@ async function arrayBufferToBase64(buffer: ArrayBuffer): Promise<string> {
   return btoa(binary);
 }
 
+function cleanMarkdown(text: string): string {
+  return text
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\*([^*]+)\*/g, "$1")
+    .replace(/#{1,6}\s*/g, "")
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/[-•]\s+/g, ", ")
+    .replace(/\n{2,}/g, ". ")
+    .replace(/\n/g, ", ")
+    .replace(/[*_~>#|]/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { text, voice, format } = await req.json() as {
+    const { text, voice, format, engine } = await req.json() as {
       text: string;
       voice?: string;
       format?: string;
+      engine?: "siliconflow" | "openai";
     };
 
     if (!text || typeof text !== "string" || text.trim().length === 0) {
@@ -61,25 +85,7 @@ serve(async (req) => {
       );
     }
 
-    const SILICONFLOW_API_KEY = Deno.env.get("SILICONFLOW_API_KEY");
-    if (!SILICONFLOW_API_KEY) {
-      throw new Error("SILICONFLOW_API_KEY is not configured");
-    }
-
-    // Clean markdown for natural speech
-    const cleanText = text
-      .replace(/\*\*([^*]+)\*\*/g, "$1")
-      .replace(/\*([^*]+)\*/g, "$1")
-      .replace(/#{1,6}\s*/g, "")
-      .replace(/```[\s\S]*?```/g, "")
-      .replace(/`([^`]+)`/g, "$1")
-      .replace(/[-•]\s+/g, ", ")
-      .replace(/\n{2,}/g, ". ")
-      .replace(/\n/g, ", ")
-      .replace(/[*_~>#|]/g, "")
-      .replace(/\s{2,}/g, " ")
-      .trim();
-
+    const cleanText = cleanMarkdown(text);
     if (!cleanText) {
       return new Response(
         JSON.stringify({ error: "No speakable text after cleaning" }),
@@ -87,35 +93,77 @@ serve(async (req) => {
       );
     }
 
-    const selectedVoice = resolveVoice(voice);
-    // SiliconFlow supports: mp3, wav, pcm, opus
     const requestedFormat = (format || "mp3").toLowerCase();
     const audioFormat = ["mp3", "wav", "pcm", "opus"].includes(requestedFormat)
       ? requestedFormat
       : "mp3";
 
-    const response = await fetch("https://api.siliconflow.cn/v1/audio/speech", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${SILICONFLOW_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "FunAudioLLM/CosyVoice2-0.5B",
-        input: cleanText,
-        voice: selectedVoice,
-        response_format: audioFormat,
-        sample_rate: audioFormat === "pcm" ? 16000 : 32000,
-        stream: false,
-        speed: 1,
-        gain: 0,
-      }),
-    });
+    const selectedEngine = engine === "openai" ? "openai" : "siliconflow";
+
+    let response: Response;
+    let providerLabel: string;
+    let resolvedVoice: string;
+
+    if (selectedEngine === "openai") {
+      // ─── OpenAI TTS direct (gpt-4o-mini-tts) ───
+      // Note: OpenRouter does NOT proxy /audio/speech, so we call OpenAI directly.
+      const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+      if (!OPENAI_API_KEY) {
+        return new Response(
+          JSON.stringify({
+            error: "OPENAI_API_KEY is not configured. Add it in Lovable Cloud settings to use the OpenAI TTS engine.",
+          }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      resolvedVoice = resolveOpenAIVoice(voice);
+      providerLabel = "openai-gpt-4o-mini-tts";
+
+      response = await fetch("https://api.openai.com/v1/audio/speech", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini-tts",
+          input: cleanText,
+          voice: resolvedVoice,
+          response_format: audioFormat,
+        }),
+      });
+    } else {
+      // ─── SiliconFlow / CosyVoice2 ───
+      const SILICONFLOW_API_KEY = Deno.env.get("SILICONFLOW_API_KEY");
+      if (!SILICONFLOW_API_KEY) {
+        throw new Error("SILICONFLOW_API_KEY is not configured");
+      }
+      resolvedVoice = resolveCosyVoice(voice);
+      providerLabel = "siliconflow-cosyvoice2";
+
+      response = await fetch("https://api.siliconflow.cn/v1/audio/speech", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${SILICONFLOW_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "FunAudioLLM/CosyVoice2-0.5B",
+          input: cleanText,
+          voice: resolvedVoice,
+          response_format: audioFormat,
+          sample_rate: audioFormat === "pcm" ? 16000 : 32000,
+          stream: false,
+          speed: 1,
+          gain: 0,
+        }),
+      });
+    }
 
     if (!response.ok) {
       const status = response.status;
       const errorText = await response.text();
-      console.error("SiliconFlow audio error:", status, errorText);
+      console.error(`${providerLabel} audio error:`, status, errorText);
 
       if (status === 429) {
         return new Response(
@@ -125,13 +173,13 @@ serve(async (req) => {
       }
       if (status === 401 || status === 403) {
         return new Response(
-          JSON.stringify({ error: "SiliconFlow auth failed. Check SILICONFLOW_API_KEY." }),
+          JSON.stringify({ error: `${providerLabel} auth failed. Check API key.` }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
       if (status === 402) {
         return new Response(
-          JSON.stringify({ error: "Credits exhausted on SiliconFlow. Please add funds." }),
+          JSON.stringify({ error: `Credits exhausted on ${providerLabel}. Please add funds.` }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
@@ -144,7 +192,7 @@ serve(async (req) => {
     const audioBuffer = await response.arrayBuffer();
     if (!audioBuffer || audioBuffer.byteLength === 0) {
       return new Response(
-        JSON.stringify({ error: "No audio generated by SiliconFlow." }),
+        JSON.stringify({ error: `No audio generated by ${providerLabel}.` }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -156,8 +204,9 @@ serve(async (req) => {
         audio: fullAudioBase64,
         transcript: cleanText,
         format: audioFormat,
-        voice: selectedVoice,
-        provider: "siliconflow-cosyvoice2",
+        voice: resolvedVoice,
+        provider: providerLabel,
+        engine: selectedEngine,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );

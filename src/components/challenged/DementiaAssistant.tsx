@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Bot, Send, Loader2, X, Volume2, VolumeX, Languages, Mic, MicOff,
-  Play, Pause, Square, MessageSquare, Headphones,
+  Play, Pause, Square, MessageSquare, Headphones, Sparkles,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
@@ -23,6 +23,12 @@ interface Message {
 
 type ChatMode = "text" | "voice";
 type PlayState = "idle" | "playing" | "paused";
+type TTSEngine = "siliconflow" | "openai";
+
+const TTS_ENGINES: { value: TTSEngine; label: string; sub: string }[] = [
+  { value: "siliconflow", label: "CosyVoice2", sub: "SiliconFlow · 中文最佳" },
+  { value: "openai", label: "GPT-4o-mini-TTS", sub: "OpenRouter · 多语自然" },
+];
 
 const SpeechRecognition =
   (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -58,6 +64,7 @@ export function DementiaAssistant() {
   const [loading, setLoading] = useState(false);
   const [voiceLang, setVoiceLang] = useState("auto");
   const [voicePersona, setVoicePersona] = useState("nova");
+  const [ttsEngine, setTtsEngine] = useState<TTSEngine>("siliconflow");
   // (No CCT history loading — chat is in-memory per session for max speed.)
   const [isListening, setIsListening] = useState(false);
 
@@ -115,8 +122,19 @@ export function DementiaAssistant() {
     hardStop();
     setActiveMsgIdx(idx);
     setVoiceLoading(true);
+    const startedAt = performance.now();
     const controls = speakTextStreaming(text, voicePersona, {
-      onAudioStart: () => setVoiceLoading(false),
+      engine: ttsEngine,
+      onAudioStart: () => {
+        setVoiceLoading(false);
+        const elapsed = Math.round(performance.now() - startedAt);
+        toast.success(
+          isChinese
+            ? `${ttsEngine === "openai" ? "GPT-4o" : "CosyVoice2"} 首字 ${elapsed}ms`
+            : `${ttsEngine === "openai" ? "GPT-4o" : "CosyVoice2"} TTFB ${elapsed}ms`,
+          { duration: 2500 },
+        );
+      },
       onPlayStateChange: (s) => {
         if (s === "playing") setPlayState("playing");
         else if (s === "paused") setPlayState("paused");
@@ -138,7 +156,7 @@ export function DementiaAssistant() {
       },
     });
     controlsRef.current = controls;
-  }, [activeMsgIdx, playState, voicePersona, hardStop, isChinese]);
+  }, [activeMsgIdx, playState, voicePersona, ttsEngine, hardStop, isChinese]);
 
   // ─── Speech-to-text ───
   const toggleListening = useCallback(() => {
@@ -233,6 +251,7 @@ export function DementiaAssistant() {
 
         const { controls, result } = streamChatWithVoice(history, voicePersona, {
           language: resolvedLang,
+          engine: ttsEngine,
           onTextDelta: (_d, fullText) => {
             setMessages((prev) => {
               const copy = [...prev];
@@ -375,6 +394,32 @@ export function DementiaAssistant() {
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        {/* TTS Engine A/B switcher */}
+        <div className="flex items-center gap-2 px-3 py-1.5 border-b bg-muted/30 text-xs">
+          <Sparkles className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <span className="text-[11px] text-muted-foreground shrink-0">
+            {isChinese ? "引擎" : "Engine"}
+          </span>
+          <Tabs
+            value={ttsEngine}
+            onValueChange={(v) => { hardStop(); setTtsEngine(v as TTSEngine); }}
+            className="flex-1"
+          >
+            <TabsList className="grid grid-cols-2 h-7 w-full">
+              {TTS_ENGINES.map((e) => (
+                <TabsTrigger
+                  key={e.value}
+                  value={e.value}
+                  className="text-[11px] px-1"
+                  title={e.sub}
+                >
+                  {e.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
         </div>
 
         {/* Messages */}
