@@ -23,6 +23,12 @@ interface Message {
 
 type ChatMode = "text" | "voice";
 type PlayState = "idle" | "playing" | "paused";
+type TTSEngine = "siliconflow" | "openai";
+
+const TTS_ENGINES: { value: TTSEngine; label: string; sub: string }[] = [
+  { value: "siliconflow", label: "CosyVoice2", sub: "SiliconFlow · 中文最佳" },
+  { value: "openai", label: "GPT-4o-mini-TTS", sub: "OpenRouter · 多语自然" },
+];
 
 const SpeechRecognition =
   (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
