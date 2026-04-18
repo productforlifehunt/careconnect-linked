@@ -25,7 +25,7 @@ export interface StreamHandlers {
   onError?: (err: Error) => void;
   signal?: AbortSignal;
   language?: string;
-  engine?: "siliconflow" | "openai";
+  engine?: "siliconflow" | "openai" | "openai-full";
 }
 
 export interface TextStreamHandlers {
@@ -192,7 +192,7 @@ class AudioQueue {
   }
 }
 
-export type TTSEngine = "siliconflow" | "openai";
+export type TTSEngine = "siliconflow" | "openai" | "openai-full";
 
 async function fetchTTSBlobURL(
   text: string,
