@@ -290,7 +290,7 @@ export function streamChatWithVoice(
     const dispatchSentence = (sentence: string) => {
       const idx = chunkIndex++;
       handlers.onSentence?.(sentence);
-      const p = fetchTTSBlobURL(sentence, voice).then((url) => {
+      const p = fetchTTSBlobURL(sentence, voice, handlers.engine ?? "siliconflow").then((url) => {
         audioQueue.push({ url: url || "", index: idx });
       });
       ttsPromises.push(p);
