@@ -591,10 +591,10 @@ serve(async (req) => {
       // ─── Alibaba DashScope · CosyVoice v3.5+ (WebSocket-only) ───
       const DASHSCOPE_API_KEY = Deno.env.get("DASHSCOPE_API_KEY");
       if (!DASHSCOPE_API_KEY) throw new Error("DASHSCOPE_API_KEY is not configured");
-      resolvedVoice = resolveCosyV35Voice(voice);
+      resolvedVoice = resolveCosyV3Voice(voice);
       const model = selectedEngine === "cosyvoice-v35-plus"
-        ? "cosyvoice-v3.5-plus"
-        : "cosyvoice-v3.5-flash";
+        ? "cosyvoice-v3-plus"
+        : "cosyvoice-v3-flash";
       providerLabel = `dashscope-${model}`;
 
       try {
