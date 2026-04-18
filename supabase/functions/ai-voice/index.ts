@@ -251,7 +251,9 @@ serve(async (req) => {
         );
       }
 
-      // Concatenate base64 PCM16 chunks → raw PCM bytes → wrap in WAV header.
+      // Concatenate base64 MP3 frames → raw bytes. MP3 frames are
+      // self-delimiting, so naive concat plays back cleanly with no
+      // sample-rate guesswork or boundary clicks/echo.
       const totalBytes: Uint8Array[] = audioParts.map((b64) => {
         const bin = atob(b64);
         const out = new Uint8Array(bin.length);
@@ -259,18 +261,16 @@ serve(async (req) => {
         return out;
       });
       const totalLen = totalBytes.reduce((s, a) => s + a.length, 0);
-      const mergedPcm = new Uint8Array(totalLen);
+      const merged = new Uint8Array(totalLen);
       let off = 0;
-      for (const a of totalBytes) { mergedPcm.set(a, off); off += a.length; }
-      // OpenAI streaming PCM16 is 24kHz mono.
-      const wav = pcm16ToWav(mergedPcm, 24000, 1);
-      const fullAudioBase64 = await arrayBufferToBase64(wav.buffer);
+      for (const a of totalBytes) { merged.set(a, off); off += a.length; }
+      const fullAudioBase64 = await arrayBufferToBase64(merged.buffer);
 
       return new Response(
         JSON.stringify({
           audio: fullAudioBase64,
           transcript: transcript || cleanText,
-          format: "wav",
+          format: "mp3",
           voice: resolvedVoice,
           provider: providerLabel,
           engine: selectedEngine,
