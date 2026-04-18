@@ -347,18 +347,24 @@ serve(async (req) => {
       resolvedVoice = resolveCosyV35Voice(voice);
       providerLabel = "dashscope-cosyvoice-v3.5-plus";
 
-      // Non-streaming sync HTTP endpoint (SpeechSynthesizer).
-      // v3.5-plus is normally WebSocket-only; we try it first then fall back
-      // to v3-flash which definitely supports the sync HTTP path.
-      const cosyBody = (model: string) => ({
-        model,
-        input: { text: cleanText },
-        parameters: {
-          voice: resolvedVoice,
-          format: "mp3",
-          sample_rate: 22050,
-        },
-      });
+      // CosyVoice on DashScope:
+      //   v3.5-plus & v3.5-flash → WebSocket only (HTTP returns 418).
+      //   v3-flash & v2          → support sync HTTP via SpeechSynthesizer.
+      // Strategy: skip the WS-only models, call v3-flash directly (cheap, fast,
+      // good Chinese quality). Map our generic voice → a known v3-flash voice.
+      providerLabel = "dashscope-cosyvoice-v3-flash";
+      const v3VoiceMap: Record<string, string> = {
+        longxiaobai: "longanyang",   // soft female 软妹
+        longxiaochun: "longwan",     // mature warm female
+        longjing: "longjing",
+        longshu: "longshu",
+        longwan: "longwan",
+        longcheng: "longcheng",
+        longhua: "longhua",
+        longshuo: "longshuo",
+        longanyang: "longanyang",
+      };
+      const v3Voice = v3VoiceMap[resolvedVoice] || "longanyang";
       response = await fetch(
         "https://dashscope.aliyuncs.com/api/v1/services/audio/tts/SpeechSynthesizer",
         {
@@ -367,25 +373,18 @@ serve(async (req) => {
             Authorization: `Bearer ${DASHSCOPE_API_KEY}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(cosyBody("cosyvoice-v3.5-plus")),
+          body: JSON.stringify({
+            model: "cosyvoice-v3-flash",
+            input: { text: cleanText },
+            parameters: {
+              voice: v3Voice,
+              format: "mp3",
+              sample_rate: 22050,
+            },
+          }),
         },
       );
-      if (!response.ok) {
-        const errText = await response.text();
-        console.warn("cosyvoice-v3.5-plus HTTP failed, falling back to v3-flash:", errText.slice(0, 200));
-        providerLabel = "dashscope-cosyvoice-v3-flash";
-        response = await fetch(
-          "https://dashscope.aliyuncs.com/api/v1/services/audio/tts/SpeechSynthesizer",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${DASHSCOPE_API_KEY}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(cosyBody("cosyvoice-v3-flash")),
-          },
-        );
-      }
+      resolvedVoice = v3Voice;
     } else {
       // ─── SiliconFlow / CosyVoice2 ───
       const SILICONFLOW_API_KEY = Deno.env.get("SILICONFLOW_API_KEY");
