@@ -154,7 +154,7 @@ serve(async (req) => {
         body: JSON.stringify({
           model: "openai/gpt-audio-mini",
           modalities: ["text", "audio"],
-          audio: { voice: resolvedVoice, format: "wav" },
+          audio: { voice: resolvedVoice, format: "pcm16" },
           stream: true,
           messages: [
             {
