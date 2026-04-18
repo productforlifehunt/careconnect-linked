@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Bot, Send, Loader2, X, Volume2, VolumeX, Languages, Mic, MicOff,
-  Play, Pause, Square, MessageSquare, Headphones,
+  Play, Pause, Square, MessageSquare, Headphones, Sparkles,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
