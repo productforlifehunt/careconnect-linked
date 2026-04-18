@@ -30,8 +30,8 @@ const TTS_ENGINES: { value: TTSEngine; label: string; sub: string }[] = [
   { value: "openai", label: "GPT-Audio-Mini", sub: "OpenRouter · 便宜 6×" },
   { value: "openai-full", label: "GPT-Audio", sub: "OpenRouter · 旗舰音质" },
   { value: "qwen-tts", label: "Qwen3-TTS", sub: "阿里 · 多语言自然" },
-  { value: "cosyvoice-v35-flash", label: "Cosy 3.5 Flash", sub: "阿里 · 快/便宜" },
-  { value: "cosyvoice-v35-plus", label: "Cosy 3.5 Plus", sub: "阿里 · 最高音质" },
+  { value: "cosyvoice-v35-flash", label: "Cosy v3 Flash", sub: "阿里 · 50+ 音色/最快" },
+  { value: "cosyvoice-v35-plus", label: "Cosy v3 Plus", sub: "阿里 · 最高音质/Instruct" },
 ];
 
 const SpeechRecognition =
