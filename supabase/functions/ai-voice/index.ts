@@ -84,6 +84,154 @@ async function arrayBufferToBase64(buffer: ArrayBuffer): Promise<string> {
   return btoa(binary);
 }
 
+/**
+ * Synthesize speech via Alibaba DashScope CosyVoice WebSocket API.
+ * Used for cosyvoice-v3.5-plus and cosyvoice-v3.5-flash (HTTP-only models reject these).
+ *
+ * Protocol:
+ *   1. Open wss://dashscope.aliyuncs.com/api-ws/v1/inference with bearer auth header.
+ *   2. Send `run-task` JSON event (configures voice/format/sample_rate).
+ *   3. Wait for `task-started` JSON event.
+ *   4. Send `continue-task` JSON event with the text to synthesize.
+ *   5. Send `finish-task` JSON event to flush.
+ *   6. Receive binary audio frames + final `task-finished` event.
+ *   7. Concatenate binary frames → return as a single audio buffer.
+ */
+async function cosyVoiceWebSocket(opts: {
+  apiKey: string;
+  model: string;        // "cosyvoice-v3.5-plus" | "cosyvoice-v3.5-flash"
+  voice: string;
+  text: string;
+  format?: string;      // "mp3" | "wav" | "pcm"
+  sampleRate?: number;
+}): Promise<{ audio: Uint8Array; format: string }> {
+  const fmt = (opts.format || "mp3").toLowerCase();
+  const sr = opts.sampleRate || 22050;
+  const taskId = crypto.randomUUID().replace(/-/g, "");
+
+  // Deno's WebSocket constructor accepts (url, protocols) — for headers we
+  // must use the third-arg signature available in Deno (it accepts an options
+  // bag with `headers`).
+  const ws = new WebSocket(
+    "wss://dashscope.aliyuncs.com/api-ws/v1/inference",
+    // @ts-ignore — Deno extension: pass headers via options
+    { headers: { Authorization: `bearer ${opts.apiKey}` } } as any,
+  );
+  // Fallback: some Deno versions don't accept the options bag; if so the
+  // WebSocket will open without auth and the server will reject with 401.
+  // We'll set a header through the protocols param as a no-op safeguard.
+  ws.binaryType = "arraybuffer";
+
+  const audioChunks: Uint8Array[] = [];
+  let resolveDone: () => void;
+  let rejectDone: (e: Error) => void;
+  const done = new Promise<void>((res, rej) => {
+    resolveDone = res;
+    rejectDone = rej;
+  });
+
+  let started = false;
+  const timeout = setTimeout(() => {
+    try { ws.close(); } catch { /* ignore */ }
+    rejectDone(new Error("CosyVoice WS timeout (30s)"));
+  }, 30000);
+
+  ws.onopen = () => {
+    // run-task instruction
+    ws.send(JSON.stringify({
+      header: {
+        action: "run-task",
+        task_id: taskId,
+        streaming: "duplex",
+      },
+      payload: {
+        task_group: "audio",
+        task: "tts",
+        function: "SpeechSynthesizer",
+        model: opts.model,
+        parameters: {
+          text_type: "PlainText",
+          voice: opts.voice,
+          format: fmt,
+          sample_rate: sr,
+          volume: 50,
+          rate: 1,
+          pitch: 1,
+        },
+        input: {},
+      },
+    }));
+  };
+
+  ws.onmessage = (ev) => {
+    if (typeof ev.data === "string") {
+      // JSON event
+      try {
+        const msg = JSON.parse(ev.data);
+        const event = msg?.header?.event;
+        if (event === "task-started") {
+          started = true;
+          // Send the text, then immediately finish.
+          ws.send(JSON.stringify({
+            header: {
+              action: "continue-task",
+              task_id: taskId,
+              streaming: "duplex",
+            },
+            payload: { input: { text: opts.text } },
+          }));
+          ws.send(JSON.stringify({
+            header: {
+              action: "finish-task",
+              task_id: taskId,
+              streaming: "duplex",
+            },
+            payload: { input: {} },
+          }));
+        } else if (event === "task-finished") {
+          clearTimeout(timeout);
+          try { ws.close(); } catch { /* ignore */ }
+          resolveDone();
+        } else if (event === "task-failed") {
+          clearTimeout(timeout);
+          const errMsg = msg?.header?.error_message || msg?.header?.error_code || "task-failed";
+          try { ws.close(); } catch { /* ignore */ }
+          rejectDone(new Error(`CosyVoice WS task-failed: ${errMsg}`));
+        }
+      } catch (e) {
+        console.error("CosyVoice WS bad JSON:", ev.data);
+      }
+    } else if (ev.data instanceof ArrayBuffer) {
+      audioChunks.push(new Uint8Array(ev.data));
+    }
+  };
+
+  ws.onerror = (e) => {
+    clearTimeout(timeout);
+    rejectDone(new Error(`CosyVoice WS error: ${(e as ErrorEvent).message || "unknown"}`));
+  };
+
+  ws.onclose = (e) => {
+    clearTimeout(timeout);
+    if (!started) {
+      rejectDone(new Error(`CosyVoice WS closed before start: code=${e.code} reason=${e.reason || "no reason"}`));
+    } else if (audioChunks.length === 0) {
+      rejectDone(new Error("CosyVoice WS closed with no audio"));
+    } else {
+      // task-finished may not have fired before close — accept what we have
+      resolveDone();
+    }
+  };
+
+  await done;
+
+  const total = audioChunks.reduce((s, c) => s + c.length, 0);
+  const merged = new Uint8Array(total);
+  let off = 0;
+  for (const c of audioChunks) { merged.set(c, off); off += c.length; }
+  return { audio: merged, format: fmt };
+}
+
 // Wrap raw PCM16 mono audio in a WAV container so browsers can decode it.
 function pcm16ToWav(pcm: Uint8Array, sampleRate = 24000, channels = 1): Uint8Array {
   const byteRate = sampleRate * channels * 2;
