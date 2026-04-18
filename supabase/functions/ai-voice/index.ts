@@ -118,7 +118,7 @@ async function cosyVoiceWebSocket(opts: {
   // ourselves (RFC 6455).
 
   const HOST = "dashscope.aliyuncs.com";
-  const PATH = "/api-ws/v1/inference";
+  const PATH = "/api-ws/v1/inference/";
   const conn = await Deno.connectTls({ hostname: HOST, port: 443 });
 
   // ── 1. WebSocket handshake ──
