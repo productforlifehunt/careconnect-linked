@@ -61,17 +61,16 @@ function resolveQwenTTSVoice(voice?: string): string {
   return map[voice] || "Cherry";
 }
 
-function resolveCosyV35Voice(voice?: string): string {
-  if (!voice) return "longxiaobai";
-  // Strip any _v2 suffix users might still send
+function resolveCosyV3Voice(voice?: string): string {
+  if (!voice) return "longanyang";
   const clean = voice.replace(/_v2$/, "");
-  if (COSYVOICE_V35_VOICES.has(clean)) return clean;
+  if (COSYVOICE_V3_VOICES.has(voice) || COSYVOICE_V3_VOICES.has(clean)) return voice;
   const map: Record<string, string> = {
-    nova: "longxiaobai", shimmer: "longxiaobai", coral: "longxiaochun",
-    sage: "longjing", alloy: "longcheng", onyx: "longshuo",
-    echo: "longwan", fable: "longhua",
+    nova: "longanyang", shimmer: "longanyang", coral: "longxiaochun_v2",
+    sage: "longjing_v2", alloy: "longcheng_v2", onyx: "longshuo_v2",
+    echo: "longwan_v2", fable: "longhua_v2",
   };
-  return map[voice] || "longxiaobai";
+  return map[voice] || "longanyang";
 }
 
 async function arrayBufferToBase64(buffer: ArrayBuffer): Promise<string> {
