@@ -47,18 +47,25 @@ const MIN_FRAGMENT_LEN = 80;
 class AudioQueue {
   private queue: QueueItem[] = [];
   private playing = false;
+  private paused = false;
   private nextExpectedIndex = 0;
   private audio: HTMLAudioElement | null = null;
   private aborted = false;
   private onStart?: () => void;
   private onEnd?: () => void;
+  private onPlayStateChange?: (s: "playing" | "paused" | "stopped" | "idle") => void;
   private startedOnce = false;
   private finished = false;
   private streamDone = false;
 
-  constructor(opts: { onStart?: () => void; onEnd?: () => void }) {
+  constructor(opts: {
+    onStart?: () => void;
+    onEnd?: () => void;
+    onPlayStateChange?: (s: "playing" | "paused" | "stopped" | "idle") => void;
+  }) {
     this.onStart = opts.onStart;
     this.onEnd = opts.onEnd;
+    this.onPlayStateChange = opts.onPlayStateChange;
   }
 
   abort() {
@@ -68,10 +75,35 @@ class AudioQueue {
       this.audio = null;
     }
     for (const item of this.queue) {
-      try { URL.revokeObjectURL(item.url); } catch {}
+      try { if (item.url) URL.revokeObjectURL(item.url); } catch {}
     }
     this.queue = [];
     this.playing = false;
+    this.paused = false;
+    this.onPlayStateChange?.("stopped");
+  }
+
+  pause() {
+    if (!this.playing || this.paused || !this.audio) return;
+    this.paused = true;
+    try { this.audio.pause(); } catch {}
+    this.onPlayStateChange?.("paused");
+  }
+
+  resume() {
+    if (!this.paused) return;
+    this.paused = false;
+    if (this.audio) {
+      this.audio.play().catch(() => {});
+      this.onPlayStateChange?.("playing");
+    } else {
+      // No active audio (paused between chunks) — kick the queue.
+      this.tryPlayNext();
+    }
+  }
+
+  isPaused() {
+    return this.paused;
   }
 
   /** Mark that no more sentences will arrive — used to decide when to fire onEnd. */
@@ -82,7 +114,7 @@ class AudioQueue {
 
   push(item: QueueItem) {
     if (this.aborted) {
-      try { URL.revokeObjectURL(item.url); } catch {}
+      try { if (item.url) URL.revokeObjectURL(item.url); } catch {}
       return;
     }
     this.queue.push(item);
@@ -91,7 +123,7 @@ class AudioQueue {
   }
 
   private tryPlayNext() {
-    if (this.playing || this.aborted) return;
+    if (this.playing || this.aborted || this.paused) return;
     const next = this.queue[0];
     if (!next || next.index !== this.nextExpectedIndex) {
       // waiting for the in-order chunk
@@ -100,6 +132,13 @@ class AudioQueue {
     }
     this.queue.shift();
     this.nextExpectedIndex += 1;
+
+    // Empty url = TTS failed for this chunk, skip silently and continue.
+    if (!next.url) {
+      this.tryPlayNext();
+      return;
+    }
+
     this.playing = true;
     const audio = new Audio(next.url);
     this.audio = audio;
@@ -107,6 +146,7 @@ class AudioQueue {
       this.startedOnce = true;
       this.onStart?.();
     }
+    this.onPlayStateChange?.("playing");
     audio.onended = () => {
       try { URL.revokeObjectURL(next.url); } catch {}
       this.audio = null;
@@ -136,6 +176,7 @@ class AudioQueue {
       this.queue.length === 0
     ) {
       this.finished = true;
+      this.onPlayStateChange?.("idle");
       this.onEnd?.();
     }
   }
