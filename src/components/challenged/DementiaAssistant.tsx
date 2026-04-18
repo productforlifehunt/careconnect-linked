@@ -27,7 +27,7 @@ type TTSEngine = "siliconflow" | "openai";
 
 const TTS_ENGINES: { value: TTSEngine; label: string; sub: string }[] = [
   { value: "siliconflow", label: "CosyVoice2", sub: "SiliconFlow · 中文最佳" },
-  { value: "openai", label: "GPT-4o-mini-TTS", sub: "OpenRouter · 多语自然" },
+  { value: "openai", label: "GPT-Audio-Mini", sub: "OpenRouter · OpenAI 原生音色" },
 ];
 
 const SpeechRecognition =
