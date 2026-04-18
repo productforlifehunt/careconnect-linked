@@ -23,24 +23,31 @@ interface Message {
 
 type ChatMode = "text" | "voice";
 type PlayState = "idle" | "playing" | "paused";
-type TTSEngine = "siliconflow" | "openai";
+type TTSEngine = "siliconflow" | "openai" | "openai-full";
 
 const TTS_ENGINES: { value: TTSEngine; label: string; sub: string }[] = [
   { value: "siliconflow", label: "CosyVoice2", sub: "SiliconFlow · 中文最佳" },
-  { value: "openai", label: "GPT-Audio-Mini", sub: "OpenRouter · OpenAI 原生音色" },
+  { value: "openai", label: "GPT-Audio-Mini", sub: "OpenRouter · 便宜 6×" },
+  { value: "openai-full", label: "GPT-Audio", sub: "OpenRouter · 旗舰音质" },
 ];
 
 const SpeechRecognition =
   (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 const STT_SUPPORTED = !!SpeechRecognition;
 
+// OpenAI 原生 11 种音色(gpt-audio / gpt-audio-mini 通用)
 const AI_VOICE_PERSONAS = [
   { value: "alloy", label: "Alloy (中性)" },
-  { value: "nova", label: "Nova (温暖女声)" },
-  { value: "shimmer", label: "Shimmer (柔和女声)" },
-  { value: "echo", label: "Echo (沉稳男声)" },
+  { value: "ash", label: "Ash (沉稳男声)" },
+  { value: "ballad", label: "Ballad (叙事男声)" },
+  { value: "coral", label: "Coral (温柔女声)" },
+  { value: "echo", label: "Echo (清亮男声)" },
   { value: "fable", label: "Fable (故事风)" },
+  { value: "nova", label: "Nova (温暖女声)" },
   { value: "onyx", label: "Onyx (低沉男声)" },
+  { value: "sage", label: "Sage (智者女声)" },
+  { value: "shimmer", label: "Shimmer (柔和女声)" },
+  { value: "verse", label: "Verse (诗意男声)" },
 ];
 
 const LANG_OPTIONS = [
