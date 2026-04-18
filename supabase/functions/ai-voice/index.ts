@@ -343,21 +343,45 @@ serve(async (req) => {
       resolvedVoice = resolveCosyV35Voice(voice);
       providerLabel = "dashscope-cosyvoice-v3.5-plus";
 
+      // Non-streaming sync HTTP endpoint (SpeechSynthesizer).
+      // v3.5-plus is normally WebSocket-only; we try it first then fall back
+      // to v3-flash which definitely supports the sync HTTP path.
+      const cosyBody = (model: string) => ({
+        model,
+        input: { text: cleanText },
+        parameters: {
+          voice: resolvedVoice,
+          format: "mp3",
+          sample_rate: 22050,
+        },
+      });
       response = await fetch(
-        "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
+        "https://dashscope.aliyuncs.com/api/v1/services/audio/tts/SpeechSynthesizer",
         {
           method: "POST",
           headers: {
             Authorization: `Bearer ${DASHSCOPE_API_KEY}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            model: "cosyvoice-v3.5-plus",
-            input: { text: cleanText, voice: resolvedVoice },
-            parameters: { format: "mp3", sample_rate: 22050 },
-          }),
+          body: JSON.stringify(cosyBody("cosyvoice-v3.5-plus")),
         },
       );
+      if (!response.ok) {
+        const errText = await response.text();
+        console.warn("cosyvoice-v3.5-plus HTTP failed, falling back to v3-flash:", errText.slice(0, 200));
+        providerLabel = "dashscope-cosyvoice-v3-flash";
+        response = await fetch(
+          "https://dashscope.aliyuncs.com/api/v1/services/audio/tts/SpeechSynthesizer",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${DASHSCOPE_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(cosyBody("cosyvoice-v3-flash")),
+          },
+        );
+      }
     } else {
       // ─── SiliconFlow / CosyVoice2 ───
       const SILICONFLOW_API_KEY = Deno.env.get("SILICONFLOW_API_KEY");
