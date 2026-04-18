@@ -23,12 +23,14 @@ interface Message {
 
 type ChatMode = "text" | "voice";
 type PlayState = "idle" | "playing" | "paused";
-type TTSEngine = "siliconflow" | "openai" | "openai-full";
+type TTSEngine = "siliconflow" | "openai" | "openai-full" | "qwen-tts" | "cosyvoice-v35";
 
 const TTS_ENGINES: { value: TTSEngine; label: string; sub: string }[] = [
   { value: "siliconflow", label: "CosyVoice2", sub: "SiliconFlow · 中文最佳" },
   { value: "openai", label: "GPT-Audio-Mini", sub: "OpenRouter · 便宜 6×" },
   { value: "openai-full", label: "GPT-Audio", sub: "OpenRouter · 旗舰音质" },
+  { value: "qwen-tts", label: "Qwen3-TTS", sub: "阿里 · 多语言自然" },
+  { value: "cosyvoice-v35", label: "CosyVoice 3.5+", sub: "阿里 · 中文软妹 longxiaobai" },
 ];
 
 const SpeechRecognition =
@@ -138,6 +140,8 @@ export function DementiaAssistant() {
         const engineLabel =
           ttsEngine === "openai-full" ? "GPT-Audio"
           : ttsEngine === "openai" ? "GPT-Audio-Mini"
+          : ttsEngine === "qwen-tts" ? "Qwen3-TTS"
+          : ttsEngine === "cosyvoice-v35" ? "CosyVoice 3.5+"
           : "CosyVoice2";
         toast.success(
           isChinese
@@ -418,7 +422,7 @@ export function DementiaAssistant() {
             onValueChange={(v) => { hardStop(); setTtsEngine(v as TTSEngine); }}
             className="flex-1"
           >
-            <TabsList className="grid grid-cols-3 h-7 w-full">
+            <TabsList className="grid grid-cols-5 h-7 w-full">
               {TTS_ENGINES.map((e) => (
                 <TabsTrigger
                   key={e.value}
