@@ -43,6 +43,34 @@ async function arrayBufferToBase64(buffer: ArrayBuffer): Promise<string> {
   return btoa(binary);
 }
 
+// Wrap raw PCM16 mono audio in a WAV container so browsers can decode it.
+function pcm16ToWav(pcm: Uint8Array, sampleRate = 24000, channels = 1): Uint8Array {
+  const byteRate = sampleRate * channels * 2;
+  const blockAlign = channels * 2;
+  const dataSize = pcm.length;
+  const buffer = new ArrayBuffer(44 + dataSize);
+  const view = new DataView(buffer);
+  const writeStr = (off: number, s: string) => {
+    for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i));
+  };
+  writeStr(0, "RIFF");
+  view.setUint32(4, 36 + dataSize, true);
+  writeStr(8, "WAVE");
+  writeStr(12, "fmt ");
+  view.setUint32(16, 16, true);          // PCM chunk size
+  view.setUint16(20, 1, true);           // PCM format
+  view.setUint16(22, channels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, byteRate, true);
+  view.setUint16(32, blockAlign, true);
+  view.setUint16(34, 16, true);          // bits per sample
+  writeStr(36, "data");
+  view.setUint32(40, dataSize, true);
+  const out = new Uint8Array(buffer);
+  out.set(pcm, 44);
+  return out;
+}
+
 function cleanMarkdown(text: string): string {
   return text
     .replace(/\*\*([^*]+)\*\*/g, "$1")
@@ -105,33 +133,138 @@ serve(async (req) => {
     let resolvedVoice: string;
 
     if (selectedEngine === "openai") {
-      // ─── OpenAI TTS direct (gpt-4o-mini-tts) ───
-      // Note: OpenRouter does NOT proxy /audio/speech, so we call OpenAI directly.
-      const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
-      if (!OPENAI_API_KEY) {
-        return new Response(
-          JSON.stringify({
-            error: "OPENAI_API_KEY is not configured. Add it in Lovable Cloud settings to use the OpenAI TTS engine.",
-          }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
+      // ─── OpenAI gpt-audio-mini via OpenRouter (chat completions + audio modality) ───
+      const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
+      if (!OPENROUTER_API_KEY) {
+        throw new Error("OPENROUTER_API_KEY is not configured");
       }
       resolvedVoice = resolveOpenAIVoice(voice);
-      providerLabel = "openai-gpt-4o-mini-tts";
+      providerLabel = "openrouter-gpt-audio-mini";
 
-      response = await fetch("https://api.openai.com/v1/audio/speech", {
+      // gpt-audio-mini requires stream:true for audio output.
+      // We collect all SSE deltas server-side and return one consolidated audio blob.
+      const orResp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${OPENAI_API_KEY}`,
+          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
           "Content-Type": "application/json",
+          "HTTP-Referer": "https://challenged-dementia.com",
+          "X-Title": "ChallengeD AI Companion",
         },
         body: JSON.stringify({
-          model: "gpt-4o-mini-tts",
-          input: cleanText,
-          voice: resolvedVoice,
-          response_format: audioFormat,
+          model: "openai/gpt-audio-mini",
+          modalities: ["text", "audio"],
+          audio: { voice: resolvedVoice, format: "pcm16" },
+          stream: true,
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are a text-to-speech engine. Read the user's message aloud verbatim, with natural intonation. Do NOT add commentary, greetings, or any extra words. Output only the spoken audio of the exact text provided.",
+            },
+            { role: "user", content: cleanText },
+          ],
         }),
       });
+
+      if (!orResp.ok || !orResp.body) {
+        const status = orResp.status;
+        const errorText = await orResp.text().catch(() => "");
+        console.error(`${providerLabel} chat error:`, status, errorText);
+        if (status === 429) {
+          return new Response(
+            JSON.stringify({ error: "Rate limited. Please try again in a moment." }),
+            { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
+        if (status === 401 || status === 403) {
+          return new Response(
+            JSON.stringify({ error: `${providerLabel} auth failed. Check OPENROUTER_API_KEY.` }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
+        if (status === 402) {
+          return new Response(
+            JSON.stringify({ error: `Credits exhausted on ${providerLabel}.` }),
+            { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
+        return new Response(
+          JSON.stringify({ error: `Voice service error [${status}]: ${errorText.slice(0, 300)}` }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
+      // Consume SSE stream and concatenate base64 audio deltas.
+      const reader = orResp.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+      const audioParts: string[] = [];
+      let transcript = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        let nl: number;
+        while ((nl = buf.indexOf("\n")) !== -1) {
+          let line = buf.slice(0, nl);
+          buf = buf.slice(nl + 1);
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (!line || line.startsWith(":")) continue;
+          if (!line.startsWith("data: ")) continue;
+          const payload = line.slice(6).trim();
+          if (payload === "[DONE]") continue;
+          try {
+            const parsed = JSON.parse(payload);
+            const delta = parsed?.choices?.[0]?.delta;
+            // OpenAI streaming audio delta: delta.audio.data (base64 chunk)
+            const audioChunk: string | undefined = delta?.audio?.data;
+            if (audioChunk) audioParts.push(audioChunk);
+            const txtChunk: string | undefined = delta?.audio?.transcript || delta?.content;
+            if (txtChunk) transcript += txtChunk;
+          } catch {
+            // Partial JSON across chunks — re-buffer.
+            buf = line + "\n" + buf;
+            break;
+          }
+        }
+      }
+
+      if (audioParts.length === 0) {
+        console.error(`${providerLabel} no audio chunks received`);
+        return new Response(
+          JSON.stringify({ error: `${providerLabel} returned no audio.` }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
+      // Concatenate base64 PCM16 chunks → raw PCM bytes → wrap in WAV header.
+      const totalBytes: Uint8Array[] = audioParts.map((b64) => {
+        const bin = atob(b64);
+        const out = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+        return out;
+      });
+      const totalLen = totalBytes.reduce((s, a) => s + a.length, 0);
+      const mergedPcm = new Uint8Array(totalLen);
+      let off = 0;
+      for (const a of totalBytes) { mergedPcm.set(a, off); off += a.length; }
+      // OpenAI streaming PCM16 is 24kHz mono.
+      const wav = pcm16ToWav(mergedPcm, 24000, 1);
+      const fullAudioBase64 = await arrayBufferToBase64(wav.buffer);
+
+      return new Response(
+        JSON.stringify({
+          audio: fullAudioBase64,
+          transcript: transcript || cleanText,
+          format: "wav",
+          voice: resolvedVoice,
+          provider: providerLabel,
+          engine: selectedEngine,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     } else {
       // ─── SiliconFlow / CosyVoice2 ───
       const SILICONFLOW_API_KEY = Deno.env.get("SILICONFLOW_API_KEY");
