@@ -390,20 +390,18 @@ export function speakTextStreaming(
     break;
   }
 
-  sentences.forEach((s, idx) => {
+  const ttsPromises = sentences.map((s, idx) => {
     handlers.onSentence?.(s);
-    fetchTTSBlobURL(s, voice).then((url) => {
+    return fetchTTSBlobURL(s, voice).then((url) => {
       audioQueue.push({ url: url || "", index: idx });
     });
   });
 
-  // No more sentences will be added.
   if (sentences.length === 0) {
     audioQueue.markStreamDone();
   } else {
-    // Mark stream done synchronously so that once all chunks finish the
-    // queue can fire onEnd. (We've enqueued every dispatch above.)
-    queueMicrotask(() => audioQueue.markStreamDone());
+    // Only mark stream done after all TTS dispatches have at least been queued.
+    Promise.all(ttsPromises).then(() => audioQueue.markStreamDone());
   }
 
   return {
