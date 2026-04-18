@@ -113,7 +113,8 @@ serve(async (req) => {
       resolvedVoice = resolveOpenAIVoice(voice);
       providerLabel = "openrouter-gpt-audio-mini";
 
-      // gpt-audio-mini outputs wav natively; we transcode label only.
+      // gpt-audio-mini requires stream:true for audio output.
+      // We collect all SSE deltas server-side and return one consolidated audio blob.
       const orResp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -126,6 +127,7 @@ serve(async (req) => {
           model: "openai/gpt-audio-mini",
           modalities: ["text", "audio"],
           audio: { voice: resolvedVoice, format: "wav" },
+          stream: true,
           messages: [
             {
               role: "system",
@@ -137,9 +139,9 @@ serve(async (req) => {
         }),
       });
 
-      if (!orResp.ok) {
+      if (!orResp.ok || !orResp.body) {
         const status = orResp.status;
-        const errorText = await orResp.text();
+        const errorText = await orResp.text().catch(() => "");
         console.error(`${providerLabel} chat error:`, status, errorText);
         if (status === 429) {
           return new Response(
@@ -165,21 +167,69 @@ serve(async (req) => {
         );
       }
 
-      const orData = await orResp.json();
-      // OpenAI/OpenRouter audio response shape: choices[0].message.audio.data (base64 wav)
-      const audioB64: string | undefined = orData?.choices?.[0]?.message?.audio?.data;
-      if (!audioB64) {
-        console.error(`${providerLabel} no audio in response:`, JSON.stringify(orData).slice(0, 500));
+      // Consume SSE stream and concatenate base64 audio deltas.
+      const reader = orResp.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+      const audioParts: string[] = [];
+      let transcript = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        let nl: number;
+        while ((nl = buf.indexOf("\n")) !== -1) {
+          let line = buf.slice(0, nl);
+          buf = buf.slice(nl + 1);
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (!line || line.startsWith(":")) continue;
+          if (!line.startsWith("data: ")) continue;
+          const payload = line.slice(6).trim();
+          if (payload === "[DONE]") continue;
+          try {
+            const parsed = JSON.parse(payload);
+            const delta = parsed?.choices?.[0]?.delta;
+            // OpenAI streaming audio delta: delta.audio.data (base64 chunk)
+            const audioChunk: string | undefined = delta?.audio?.data;
+            if (audioChunk) audioParts.push(audioChunk);
+            const txtChunk: string | undefined = delta?.audio?.transcript || delta?.content;
+            if (txtChunk) transcript += txtChunk;
+          } catch {
+            // Partial JSON across chunks — re-buffer.
+            buf = line + "\n" + buf;
+            break;
+          }
+        }
+      }
+
+      if (audioParts.length === 0) {
+        console.error(`${providerLabel} no audio chunks received`);
         return new Response(
-          JSON.stringify({ error: `${providerLabel} returned no audio. Response shape unexpected.` }),
+          JSON.stringify({ error: `${providerLabel} returned no audio.` }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
 
+      // Concatenate base64 chunks into one base64 blob.
+      // Each chunk is independently base64-encoded raw PCM/wav fragments;
+      // safest is to decode each, concatenate bytes, then re-encode.
+      const totalBytes: Uint8Array[] = audioParts.map((b64) => {
+        const bin = atob(b64);
+        const out = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+        return out;
+      });
+      const totalLen = totalBytes.reduce((s, a) => s + a.length, 0);
+      const merged = new Uint8Array(totalLen);
+      let off = 0;
+      for (const a of totalBytes) { merged.set(a, off); off += a.length; }
+      const fullAudioBase64 = await arrayBufferToBase64(merged.buffer);
+
       return new Response(
         JSON.stringify({
-          audio: audioB64,
-          transcript: cleanText,
+          audio: fullAudioBase64,
+          transcript: transcript || cleanText,
           format: "wav",
           voice: resolvedVoice,
           provider: providerLabel,
