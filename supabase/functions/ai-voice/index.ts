@@ -239,9 +239,7 @@ serve(async (req) => {
         );
       }
 
-      // Concatenate base64 chunks into one base64 blob.
-      // Each chunk is independently base64-encoded raw PCM/wav fragments;
-      // safest is to decode each, concatenate bytes, then re-encode.
+      // Concatenate base64 PCM16 chunks → raw PCM bytes → wrap in WAV header.
       const totalBytes: Uint8Array[] = audioParts.map((b64) => {
         const bin = atob(b64);
         const out = new Uint8Array(bin.length);
@@ -249,10 +247,12 @@ serve(async (req) => {
         return out;
       });
       const totalLen = totalBytes.reduce((s, a) => s + a.length, 0);
-      const merged = new Uint8Array(totalLen);
+      const mergedPcm = new Uint8Array(totalLen);
       let off = 0;
-      for (const a of totalBytes) { merged.set(a, off); off += a.length; }
-      const fullAudioBase64 = await arrayBufferToBase64(merged.buffer);
+      for (const a of totalBytes) { mergedPcm.set(a, off); off += a.length; }
+      // OpenAI streaming PCM16 is 24kHz mono.
+      const wav = pcm16ToWav(mergedPcm, 24000, 1);
+      const fullAudioBase64 = await arrayBufferToBase64(wav.buffer);
 
       return new Response(
         JSON.stringify({
