@@ -313,6 +313,51 @@ serve(async (req) => {
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
+    } else if (selectedEngine === "qwen-tts") {
+      // ─── Alibaba DashScope · Qwen3-TTS-Flash ───
+      const DASHSCOPE_API_KEY = Deno.env.get("DASHSCOPE_API_KEY");
+      if (!DASHSCOPE_API_KEY) throw new Error("DASHSCOPE_API_KEY is not configured");
+      resolvedVoice = resolveQwenTTSVoice(voice);
+      providerLabel = "dashscope-qwen3-tts-flash";
+
+      // Synchronous HTTP call. Returns audio URL in output.audio.url
+      response = await fetch(
+        "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${DASHSCOPE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "qwen3-tts-flash",
+            input: { text: cleanText, voice: resolvedVoice },
+            parameters: { language_type: "Auto" },
+          }),
+        },
+      );
+    } else if (selectedEngine === "cosyvoice-v35") {
+      // ─── Alibaba DashScope · CosyVoice v3.5-Plus ───
+      const DASHSCOPE_API_KEY = Deno.env.get("DASHSCOPE_API_KEY");
+      if (!DASHSCOPE_API_KEY) throw new Error("DASHSCOPE_API_KEY is not configured");
+      resolvedVoice = resolveCosyV35Voice(voice);
+      providerLabel = "dashscope-cosyvoice-v3.5-plus";
+
+      response = await fetch(
+        "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${DASHSCOPE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "cosyvoice-v3.5-plus",
+            input: { text: cleanText, voice: resolvedVoice },
+            parameters: { format: "mp3", sample_rate: 22050 },
+          }),
+        },
+      );
     } else {
       // ─── SiliconFlow / CosyVoice2 ───
       const SILICONFLOW_API_KEY = Deno.env.get("SILICONFLOW_API_KEY");
