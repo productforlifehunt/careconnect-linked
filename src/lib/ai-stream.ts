@@ -428,3 +428,94 @@ export function speakTextStreaming(
     isPaused: () => audioQueue.isPaused(),
   };
 }
+
+/**
+ * Pure text streaming — same SSE pipeline as voice mode, but NO TTS.
+ * Tokens arrive in real time so the UI bubble updates word-by-word.
+ * Returns an AbortController so the caller can cancel mid-stream.
+ */
+export function streamChatTextOnly(
+  messages: Array<{ role: "user" | "assistant" | "system"; content: string }>,
+  handlers: TextStreamHandlers,
+): { abort: () => void; result: Promise<string> } {
+  const controller = new AbortController();
+  const signal = handlers.signal
+    ? mergeSignals(handlers.signal, controller.signal)
+    : controller.signal;
+
+  const result = (async () => {
+    const resp = await fetch(STREAM_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      },
+      body: JSON.stringify({ messages, language: handlers.language }),
+      signal,
+    });
+
+    if (!resp.ok || !resp.body) {
+      const errText = await resp.text().catch(() => "");
+      const err = new Error(`Stream failed [${resp.status}]: ${errText.slice(0, 200)}`);
+      handlers.onError?.(err);
+      throw err;
+    }
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let textBuffer = "";
+    let fullText = "";
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        textBuffer += decoder.decode(value, { stream: true });
+
+        let nl: number;
+        while ((nl = textBuffer.indexOf("\n")) !== -1) {
+          let line = textBuffer.slice(0, nl);
+          textBuffer = textBuffer.slice(nl + 1);
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (!line || line.startsWith(":")) continue;
+          if (!line.startsWith("data: ")) continue;
+          const payload = line.slice(6).trim();
+          if (payload === "[DONE]") {
+            textBuffer = "";
+            break;
+          }
+          try {
+            const parsed = JSON.parse(payload);
+            const delta: string | undefined = parsed?.choices?.[0]?.delta?.content;
+            if (delta) {
+              fullText += delta;
+              handlers.onTextDelta(delta, fullText);
+            }
+          } catch {
+            textBuffer = line + "\n" + textBuffer;
+            break;
+          }
+        }
+      }
+      handlers.onDone?.(fullText);
+      return fullText;
+    } catch (err) {
+      const e = err instanceof Error ? err : new Error(String(err));
+      handlers.onError?.(e);
+      throw e;
+    }
+  })();
+
+  return { abort: () => controller.abort(), result };
+}
+
+function mergeSignals(a: AbortSignal, b: AbortSignal): AbortSignal {
+  if (a.aborted) return a;
+  if (b.aborted) return b;
+  const ctrl = new AbortController();
+  const onAbort = () => ctrl.abort();
+  a.addEventListener("abort", onAbort, { once: true });
+  b.addEventListener("abort", onAbort, { once: true });
+  return ctrl.signal;
+}
+
