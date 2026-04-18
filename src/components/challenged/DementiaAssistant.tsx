@@ -135,10 +135,14 @@ export function DementiaAssistant() {
       onAudioStart: () => {
         setVoiceLoading(false);
         const elapsed = Math.round(performance.now() - startedAt);
+        const engineLabel =
+          ttsEngine === "openai-full" ? "GPT-Audio"
+          : ttsEngine === "openai" ? "GPT-Audio-Mini"
+          : "CosyVoice2";
         toast.success(
           isChinese
-            ? `${ttsEngine === "openai" ? "GPT-4o" : "CosyVoice2"} 首字 ${elapsed}ms`
-            : `${ttsEngine === "openai" ? "GPT-4o" : "CosyVoice2"} TTFB ${elapsed}ms`,
+            ? `${engineLabel} 首字 ${elapsed}ms`
+            : `${engineLabel} TTFB ${elapsed}ms`,
           { duration: 2500 },
         );
       },
@@ -414,12 +418,12 @@ export function DementiaAssistant() {
             onValueChange={(v) => { hardStop(); setTtsEngine(v as TTSEngine); }}
             className="flex-1"
           >
-            <TabsList className="grid grid-cols-2 h-7 w-full">
+            <TabsList className="grid grid-cols-3 h-7 w-full">
               {TTS_ENGINES.map((e) => (
                 <TabsTrigger
                   key={e.value}
                   value={e.value}
-                  className="text-[11px] px-1"
+                  className="text-[10px] px-1"
                   title={e.sub}
                 >
                   {e.label}
