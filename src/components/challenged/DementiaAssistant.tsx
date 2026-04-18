@@ -11,9 +11,8 @@ import { useTranslation } from "react-i18next";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { invokeAI, loadAIConversation, type AIChatMessage } from "@/lib/ai-service";
 import {
-  streamChatWithVoice, speakTextStreaming, type StreamControls,
+  streamChatWithVoice, streamChatTextOnly, speakTextStreaming, type StreamControls,
 } from "@/lib/ai-stream";
 import { toast } from "sonner";
 
