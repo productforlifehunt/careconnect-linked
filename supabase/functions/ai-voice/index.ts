@@ -43,6 +43,34 @@ async function arrayBufferToBase64(buffer: ArrayBuffer): Promise<string> {
   return btoa(binary);
 }
 
+// Wrap raw PCM16 mono audio in a WAV container so browsers can decode it.
+function pcm16ToWav(pcm: Uint8Array, sampleRate = 24000, channels = 1): Uint8Array {
+  const byteRate = sampleRate * channels * 2;
+  const blockAlign = channels * 2;
+  const dataSize = pcm.length;
+  const buffer = new ArrayBuffer(44 + dataSize);
+  const view = new DataView(buffer);
+  const writeStr = (off: number, s: string) => {
+    for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i));
+  };
+  writeStr(0, "RIFF");
+  view.setUint32(4, 36 + dataSize, true);
+  writeStr(8, "WAVE");
+  writeStr(12, "fmt ");
+  view.setUint32(16, 16, true);          // PCM chunk size
+  view.setUint16(20, 1, true);           // PCM format
+  view.setUint16(22, channels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, byteRate, true);
+  view.setUint16(32, blockAlign, true);
+  view.setUint16(34, 16, true);          // bits per sample
+  writeStr(36, "data");
+  view.setUint32(40, dataSize, true);
+  const out = new Uint8Array(buffer);
+  out.set(pcm, 44);
+  return out;
+}
+
 function cleanMarkdown(text: string): string {
   return text
     .replace(/\*\*([^*]+)\*\*/g, "$1")
