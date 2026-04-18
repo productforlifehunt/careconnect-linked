@@ -191,12 +191,18 @@ class AudioQueue {
   }
 }
 
-async function fetchTTSBlobURL(text: string, voice: string): Promise<string | null> {
+export type TTSEngine = "siliconflow" | "openai";
+
+async function fetchTTSBlobURL(
+  text: string,
+  voice: string,
+  engine: TTSEngine = "siliconflow",
+): Promise<string | null> {
   const trimmed = text.trim();
   if (!trimmed) return null;
   try {
     const { data, error } = await supabase.functions.invoke("ai-voice", {
-      body: { text: trimmed, voice, format: "mp3" },
+      body: { text: trimmed, voice, format: "mp3", engine },
     });
     if (error || data?.error || !data?.audio) {
       console.error("TTS chunk failed:", error || data?.error);
