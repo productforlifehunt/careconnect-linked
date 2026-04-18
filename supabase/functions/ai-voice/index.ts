@@ -271,6 +271,7 @@ async function cosyVoiceWebSocket(opts: {
         volume: 50,
         rate: 1,
         pitch: 1,
+        enable_ssml: false,
       },
       input: {},
     },
