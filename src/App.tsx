@@ -48,6 +48,7 @@ import SafeD from "./pages/SafeD";
 import AccompanieD from "./pages/AccompanieD";
 import ChallengedArticleDetail from "./pages/ChallengedArticleDetail";
 import ConsultationRoom from "./pages/ConsultationRoom";
+import Calendar from "./pages/Calendar";
 
 const queryClient = new QueryClient();
 
