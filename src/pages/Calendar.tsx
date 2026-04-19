@@ -195,9 +195,8 @@ export default function CalendarPage() {
               </>
             )}
           </DialogContent>
-        </Dialog>
-      </div>
-    </DashboardLayout>
+      </Dialog>
+    </div>
   );
 }
 
