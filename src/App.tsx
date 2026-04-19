@@ -115,6 +115,7 @@ function AppRoutes() {
       <Route path="/cart" element={<RequireAuth><Cart /></RequireAuth>} />
       <Route path="/order-confirmation" element={<RequireAuth><OrderConfirmation /></RequireAuth>} />
       <Route path="/consultation/:orderId/:itemId" element={<RequireAuth><ConsultationRoom /></RequireAuth>} />
+      <Route path="/calendar" element={<RequireAuth><Calendar /></RequireAuth>} />
 
       <Route path="*" element={<NotFound />} />
     </Routes>
