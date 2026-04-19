@@ -48,11 +48,12 @@ import SafeD from "./pages/SafeD";
 import AccompanieD from "./pages/AccompanieD";
 import ChallengedArticleDetail from "./pages/ChallengedArticleDetail";
 import ConsultationRoom from "./pages/ConsultationRoom";
+import Calendar from "./pages/Calendar";
 
 const queryClient = new QueryClient();
 
 // Dashboard routes that always get sidebar
-const baseDashboardPaths = ["/dashboard", "/bookings", "/care-circle", "/gps-tracking", "/messages", "/favorites", "/notifications", "/profile", "/cared-ones", "/jobs", "/provider-dashboard", "/community", "/articles", "/cart", "/order-confirmation", "/consultation", "/aware", "/care-guides", "/coping", "/safety-guides", "/accompanied"];
+const baseDashboardPaths = ["/dashboard", "/bookings", "/care-circle", "/gps-tracking", "/messages", "/favorites", "/notifications", "/profile", "/cared-ones", "/jobs", "/provider-dashboard", "/community", "/articles", "/cart", "/order-confirmation", "/consultation", "/aware", "/care-guides", "/coping", "/safety-guides", "/accompanied", "/calendar"];
 // Routes that get sidebar only when authenticated
 const authDashboardPaths = ["/search", "/caregiver"];
 
@@ -114,6 +115,7 @@ function AppRoutes() {
       <Route path="/cart" element={<RequireAuth><Cart /></RequireAuth>} />
       <Route path="/order-confirmation" element={<RequireAuth><OrderConfirmation /></RequireAuth>} />
       <Route path="/consultation/:orderId/:itemId" element={<RequireAuth><ConsultationRoom /></RequireAuth>} />
+      <Route path="/calendar" element={<RequireAuth><Calendar /></RequireAuth>} />
 
       <Route path="*" element={<NotFound />} />
     </Routes>
