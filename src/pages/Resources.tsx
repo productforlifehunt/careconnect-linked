@@ -484,6 +484,12 @@ function LessonView({
           <h1 className="text-2xl md:text-3xl font-bold">
             {isZh ? lesson.titleZh : lesson.title}
           </h1>
+          {lesson.readMinutes && (
+            <div className="flex items-center gap-1.5 text-white/80 text-sm mt-2">
+              <Clock className="h-3.5 w-3.5" />
+              {lesson.readMinutes} {isZh ? "分钟阅读" : "min read"}
+            </div>
+          )}
         </div>
       </section>
 
@@ -496,6 +502,33 @@ function LessonView({
             </p>
           </CardContent>
         </Card>
+
+        {/* Key actions */}
+        {lesson.keyActions && lesson.keyActions.length > 0 && (
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <h3 className="font-semibold text-sm uppercase tracking-wide text-primary">
+                  {isZh ? "今天就可以做" : "Try today"}
+                </h3>
+              </div>
+              <ul className="space-y-2">
+                {(isZh && lesson.keyActionsZh
+                  ? lesson.keyActionsZh
+                  : lesson.keyActions
+                ).map((action, i) => (
+                  <li key={i} className="flex gap-3 text-sm leading-relaxed">
+                    <span className="shrink-0 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center mt-0.5">
+                      {i + 1}
+                    </span>
+                    <span>{action}</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Tool CTA */}
         {lesson.toolPath && lesson.toolLabel && (
