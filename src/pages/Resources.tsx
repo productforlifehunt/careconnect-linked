@@ -11,6 +11,8 @@ import {
   ExternalLink,
   Clock,
   BookOpen,
+  Sparkles,
+  PlayCircle,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,6 +23,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   ISUPPORT_MODULES,
   getModule,
+  getNextLesson,
+  TOTAL_LESSONS,
   type ISupportModule,
   type ISupportLesson,
 } from "@/data/isupport-modules";
