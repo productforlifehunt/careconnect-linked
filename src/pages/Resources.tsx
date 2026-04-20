@@ -120,12 +120,10 @@ export default function Resources() {
   }
 
   // ─── HUB VIEW (5 modules) ────────────────────────────────────
-  const totalLessons = ISUPPORT_MODULES.reduce(
-    (sum, m) => sum + m.lessons.length,
-    0
-  );
+  const totalLessons = TOTAL_LESSONS;
   const completedCount = progress.size;
   const overallPct = Math.round((completedCount / totalLessons) * 100);
+  const nextUp = getNextLesson(progress);
 
   return (
     <div className="min-h-full bg-background">
