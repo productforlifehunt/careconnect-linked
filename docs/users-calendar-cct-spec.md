@@ -137,10 +137,10 @@ https://app.challenged-dementia.com/careconnected/wp-json/jet-cct/users_calendar
 | 1 | One user can have many related user's calendar events | **Users** | CCT: User's Calendar | one-to-many |
 | 2 | One care group can have many related shared calendar events | CPT: **care_group** | CCT: User's Calendar | one-to-many |
 | 3 | One cared one can have many related calendar events | CCT: **cared_one** | CCT: User's Calendar | one-to-many |
-| 4 | One medicine record can have one related calendar event | CCT: **medicine** | CCT: User's Calendar | one-to-one |
-| 5 | One care task can have one related calendar event | CCT: **universal_care_task** | CCT: User's Calendar | one-to-one |
+| 4 | One medicine record can have many related calendar events | CCT: **medicine** | CCT: User's Calendar | one-to-many |
+| 5 | One care task can have many related calendar events | CCT: **universal_care_task** | CCT: User's Calendar | one-to-many |
 | 6 | One check-in schedule can have many related calendar events | CCT: **check_in** | CCT: User's Calendar | one-to-many |
-| 7 | One booking can have one related calendar event | Post: **shop_order** (WooCommerce) | CCT: User's Calendar | one-to-one |
+| 7 | One booking can have many related calendar events | Post: **shop_order** (WooCommerce) | CCT: User's Calendar | one-to-many |
 | 8 | One calendar event can have many related invited users | CCT: **User's Calendar** | Users | many-to-many |
 
 ---
