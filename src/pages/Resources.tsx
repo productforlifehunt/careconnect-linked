@@ -81,6 +81,47 @@ export default function Resources() {
   }, [search, isZh]);
 
   const toggleComplete = (lessonKey: string) => {
+    const next = new Set(progress);
+    if (next.has(lessonKey)) next.delete(lessonKey);
+    else next.add(lessonKey);
+    setProgress(next);
+    saveProgress(next);
+  };
+
+  // ─── LESSON DETAIL VIEW ──────────────────────────────────────
+  if (activeModule && activeLesson) {
+    return (
+      <LessonView
+        module={activeModule}
+        lesson={activeLesson}
+        isZh={isZh}
+        isComplete={progress.has(activeLesson.key)}
+        onToggleComplete={() => toggleComplete(activeLesson.key)}
+        onBack={() => setActiveLessonKey(null)}
+      />
+    );
+  }
+
+  // ─── MODULE DETAIL VIEW ──────────────────────────────────────
+  if (activeModule) {
+    return (
+      <ModuleView
+        module={activeModule}
+        isZh={isZh}
+        progress={progress}
+        onBack={() => setActiveModuleKey(null)}
+        onSelectLesson={(key) => setActiveLessonKey(key)}
+      />
+    );
+  }
+
+  // ─── HUB VIEW (5 modules) ────────────────────────────────────
+  const totalLessons = ISUPPORT_MODULES.reduce(
+    (sum, m) => sum + m.lessons.length,
+    0
+  );
+  const completedCount = progress.size;
+  const overallPct = Math.round((completedCount / totalLessons) * 100);
 
   return (
     <div className="min-h-full bg-background">
