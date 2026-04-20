@@ -20,6 +20,7 @@ import {
   ShieldCheck,
   HandHeart,
   Sliders,
+  BookOpen,
 } from "lucide-react";
 
 function useSidebarItems() {
@@ -52,6 +53,7 @@ function useSidebarItems() {
   }
 
   base.push(
+    { title: "Resources", url: "/resources", icon: BookOpen },
     { title: "Notifications", url: "/notifications", icon: Bell },
     { title: "My Profile", url: "/profile", icon: User },
   );
@@ -65,8 +67,8 @@ function useMobileBarItems() {
   return [
     { title: "Home", url: "/dashboard", icon: LayoutDashboard },
     { title: site.navLabels.caredOnes, url: "/cared-ones", icon: HeartIcon },
-    { title: "Messages", url: "/messages", icon: MessageSquare },
     { title: site.navLabels.careGroups.split(" ")[0], url: "/care-circle", icon: Users },
+    { title: "Resources", url: "/resources", icon: BookOpen },
     { title: "Profile", url: "/profile", icon: User },
   ];
 }
