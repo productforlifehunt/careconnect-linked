@@ -11,6 +11,8 @@ import {
   ExternalLink,
   Clock,
   BookOpen,
+  Sparkles,
+  PlayCircle,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,6 +23,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   ISUPPORT_MODULES,
   getModule,
+  getNextLesson,
+  TOTAL_LESSONS,
   type ISupportModule,
   type ISupportLesson,
 } from "@/data/isupport-modules";
@@ -116,12 +120,10 @@ export default function Resources() {
   }
 
   // ─── HUB VIEW (5 modules) ────────────────────────────────────
-  const totalLessons = ISUPPORT_MODULES.reduce(
-    (sum, m) => sum + m.lessons.length,
-    0
-  );
+  const totalLessons = TOTAL_LESSONS;
   const completedCount = progress.size;
   const overallPct = Math.round((completedCount / totalLessons) * 100);
+  const nextUp = getNextLesson(progress);
 
   return (
     <div className="min-h-full bg-background">
@@ -211,6 +213,52 @@ export default function Resources() {
       {/* Modules grid */}
       {!search.trim() && (
         <div className="max-w-5xl mx-auto px-4 py-8">
+          {/* Continue learning */}
+          {nextUp && (
+            <button
+              onClick={() => {
+                setActiveModuleKey(nextUp.module.key);
+                setActiveLessonKey(nextUp.lesson.key);
+              }}
+              className="w-full text-left mb-6 group"
+            >
+              <Card className="overflow-hidden hover:shadow-lg transition-all border-primary/20">
+                <CardContent className="p-5 flex items-center gap-4">
+                  <div className={`bg-gradient-to-br ${nextUp.module.accent} text-white rounded-xl p-3 shrink-0`}>
+                    <PlayCircle className="h-6 w-6" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs uppercase tracking-wide text-primary font-semibold mb-1">
+                      {completedCount === 0
+                        ? isZh ? "开始学习" : "Start learning"
+                        : isZh ? "继续学习" : "Continue learning"}
+                    </div>
+                    <div className="font-semibold text-base truncate">
+                      {isZh ? nextUp.lesson.titleZh : nextUp.lesson.title}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {isZh ? nextUp.module.titleZh : nextUp.module.title}
+                      {nextUp.lesson.readMinutes ? (
+                        <> · {nextUp.lesson.readMinutes} {isZh ? "分钟" : "min read"}</>
+                      ) : null}
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                </CardContent>
+              </Card>
+            </button>
+          )}
+
+          {/* Section heading */}
+          <div className="flex items-baseline justify-between mb-4">
+            <h2 className="text-xl font-bold">
+              {isZh ? "5 个学习模块" : "5 Learning Modules"}
+            </h2>
+            <span className="text-xs text-muted-foreground">
+              {totalLessons} {isZh ? "节课" : "lessons"}
+            </span>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {ISUPPORT_MODULES.map((m) => {
               const moduleProgress = m.lessons.filter((l) =>
@@ -436,6 +484,12 @@ function LessonView({
           <h1 className="text-2xl md:text-3xl font-bold">
             {isZh ? lesson.titleZh : lesson.title}
           </h1>
+          {lesson.readMinutes && (
+            <div className="flex items-center gap-1.5 text-white/80 text-sm mt-2">
+              <Clock className="h-3.5 w-3.5" />
+              {lesson.readMinutes} {isZh ? "分钟阅读" : "min read"}
+            </div>
+          )}
         </div>
       </section>
 
@@ -448,6 +502,33 @@ function LessonView({
             </p>
           </CardContent>
         </Card>
+
+        {/* Key actions */}
+        {lesson.keyActions && lesson.keyActions.length > 0 && (
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <h3 className="font-semibold text-sm uppercase tracking-wide text-primary">
+                  {isZh ? "今天就可以做" : "Try today"}
+                </h3>
+              </div>
+              <ul className="space-y-2">
+                {(isZh && lesson.keyActionsZh
+                  ? lesson.keyActionsZh
+                  : lesson.keyActions
+                ).map((action, i) => (
+                  <li key={i} className="flex gap-3 text-sm leading-relaxed">
+                    <span className="shrink-0 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center mt-0.5">
+                      {i + 1}
+                    </span>
+                    <span>{action}</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Tool CTA */}
         {lesson.toolPath && lesson.toolLabel && (
