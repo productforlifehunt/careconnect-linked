@@ -213,6 +213,52 @@ export default function Resources() {
       {/* Modules grid */}
       {!search.trim() && (
         <div className="max-w-5xl mx-auto px-4 py-8">
+          {/* Continue learning */}
+          {nextUp && (
+            <button
+              onClick={() => {
+                setActiveModuleKey(nextUp.module.key);
+                setActiveLessonKey(nextUp.lesson.key);
+              }}
+              className="w-full text-left mb-6 group"
+            >
+              <Card className="overflow-hidden hover:shadow-lg transition-all border-primary/20">
+                <CardContent className="p-5 flex items-center gap-4">
+                  <div className={`bg-gradient-to-br ${nextUp.module.accent} text-white rounded-xl p-3 shrink-0`}>
+                    <PlayCircle className="h-6 w-6" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs uppercase tracking-wide text-primary font-semibold mb-1">
+                      {completedCount === 0
+                        ? isZh ? "开始学习" : "Start learning"
+                        : isZh ? "继续学习" : "Continue learning"}
+                    </div>
+                    <div className="font-semibold text-base truncate">
+                      {isZh ? nextUp.lesson.titleZh : nextUp.lesson.title}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {isZh ? nextUp.module.titleZh : nextUp.module.title}
+                      {nextUp.lesson.readMinutes ? (
+                        <> · {nextUp.lesson.readMinutes} {isZh ? "分钟" : "min read"}</>
+                      ) : null}
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                </CardContent>
+              </Card>
+            </button>
+          )}
+
+          {/* Section heading */}
+          <div className="flex items-baseline justify-between mb-4">
+            <h2 className="text-xl font-bold">
+              {isZh ? "5 个学习模块" : "5 Learning Modules"}
+            </h2>
+            <span className="text-xs text-muted-foreground">
+              {totalLessons} {isZh ? "节课" : "lessons"}
+            </span>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {ISUPPORT_MODULES.map((m) => {
               const moduleProgress = m.lessons.filter((l) =>
