@@ -13,6 +13,9 @@ import {
   BookOpen,
   Sparkles,
   PlayCircle,
+  HelpCircle,
+  Lightbulb,
+  XCircle,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -27,6 +30,7 @@ import {
   TOTAL_LESSONS,
   type ISupportModule,
   type ISupportLesson,
+  type ISupportQuiz,
 } from "@/data/isupport-modules";
 import { fetchChallengedContent } from "@/features/challenged-content/source.wordpress";
 import { stripHtml } from "@/features/shared/wordpress-client";
@@ -530,6 +534,26 @@ function LessonView({
           </Card>
         )}
 
+        {/* Reflect — WHO 'Stop & think' prompt */}
+        {lesson.reflectQuestion && (
+          <Card className="border-amber-300/40 bg-amber-50/50 dark:bg-amber-950/20">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-2 mb-2">
+                <Lightbulb className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <h3 className="font-semibold text-sm uppercase tracking-wide text-amber-700 dark:text-amber-300">
+                  {isZh ? "停下来想一想" : "Stop & think"}
+                </h3>
+              </div>
+              <p className="text-base leading-relaxed italic">
+                {isZh ? lesson.reflectQuestionZh : lesson.reflectQuestion}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Self-check Quiz */}
+        {lesson.quiz && <QuizCard quiz={lesson.quiz} isZh={isZh} />}
+
         {/* Tool CTA */}
         {lesson.toolPath && lesson.toolLabel && (
           <Link to={lesson.toolPath}>
@@ -621,5 +645,96 @@ function LessonView({
         )}
       </div>
     </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// QUIZ CARD — single-question self-check (WHO format)
+// ═══════════════════════════════════════════════════════════════
+function QuizCard({ quiz, isZh }: { quiz: ISupportQuiz; isZh: boolean }) {
+  const [selected, setSelected] = useState<number | null>(null);
+  const question = isZh ? quiz.questionZh : quiz.question;
+  const options = isZh ? quiz.optionsZh : quiz.options;
+  const explanation = isZh ? quiz.explanationZh : quiz.explanation;
+  const isCorrect = selected === quiz.correct;
+  const answered = selected !== null;
+
+  return (
+    <Card className="border-primary/20">
+      <CardContent className="p-6">
+        <div className="flex items-center gap-2 mb-3">
+          <HelpCircle className="h-4 w-4 text-primary" />
+          <h3 className="font-semibold text-sm uppercase tracking-wide text-primary">
+            {isZh ? "小测验" : "Quick check"}
+          </h3>
+        </div>
+        <p className="text-base font-medium mb-4">{question}</p>
+        <div className="space-y-2">
+          {options.map((opt, i) => {
+            const isPicked = selected === i;
+            const showCorrect = answered && i === quiz.correct;
+            const showWrong = answered && isPicked && i !== quiz.correct;
+            return (
+              <button
+                key={i}
+                onClick={() => !answered && setSelected(i)}
+                disabled={answered}
+                className={`w-full text-left p-3 rounded-lg border-2 transition-all flex items-start gap-3 text-sm ${
+                  showCorrect
+                    ? "border-green-500 bg-green-50 dark:bg-green-950/30"
+                    : showWrong
+                      ? "border-destructive bg-destructive/5"
+                      : isPicked
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/40 hover:bg-muted/50"
+                } ${answered ? "cursor-default" : "cursor-pointer"}`}
+              >
+                <span
+                  className={`shrink-0 h-5 w-5 rounded-full border-2 flex items-center justify-center mt-0.5 ${
+                    showCorrect
+                      ? "border-green-500 bg-green-500 text-white"
+                      : showWrong
+                        ? "border-destructive bg-destructive text-destructive-foreground"
+                        : "border-muted-foreground/40"
+                  }`}
+                >
+                  {showCorrect && <CheckCircle2 className="h-3 w-3" />}
+                  {showWrong && <XCircle className="h-3 w-3" />}
+                </span>
+                <span className="flex-1">{opt}</span>
+              </button>
+            );
+          })}
+        </div>
+        {answered && (
+          <div
+            className={`mt-4 p-3 rounded-lg text-sm ${
+              isCorrect
+                ? "bg-green-50 dark:bg-green-950/30 text-green-900 dark:text-green-200"
+                : "bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200"
+            }`}
+          >
+            <div className="font-semibold mb-1">
+              {isCorrect
+                ? isZh
+                  ? "✓ 正确！"
+                  : "✓ Correct!"
+                : isZh
+                  ? "再想想"
+                  : "Not quite"}
+            </div>
+            <p className="leading-relaxed">{explanation}</p>
+            {!isCorrect && (
+              <button
+                onClick={() => setSelected(null)}
+                className="mt-2 text-xs underline opacity-80 hover:opacity-100"
+              >
+                {isZh ? "再试一次" : "Try again"}
+              </button>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
