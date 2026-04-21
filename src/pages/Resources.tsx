@@ -533,6 +533,26 @@ function LessonView({
           </Card>
         )}
 
+        {/* Reflect — WHO 'Stop & think' prompt */}
+        {lesson.reflectQuestion && (
+          <Card className="border-amber-300/40 bg-amber-50/50 dark:bg-amber-950/20">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-2 mb-2">
+                <Lightbulb className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <h3 className="font-semibold text-sm uppercase tracking-wide text-amber-700 dark:text-amber-300">
+                  {isZh ? "停下来想一想" : "Stop & think"}
+                </h3>
+              </div>
+              <p className="text-base leading-relaxed italic">
+                {isZh ? lesson.reflectQuestionZh : lesson.reflectQuestion}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Self-check Quiz */}
+        {lesson.quiz && <QuizCard quiz={lesson.quiz} isZh={isZh} />}
+
         {/* Tool CTA */}
         {lesson.toolPath && lesson.toolLabel && (
           <Link to={lesson.toolPath}>
