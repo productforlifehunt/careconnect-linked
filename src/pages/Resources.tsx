@@ -13,6 +13,9 @@ import {
   BookOpen,
   Sparkles,
   PlayCircle,
+  HelpCircle,
+  Lightbulb,
+  XCircle,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
