@@ -30,6 +30,7 @@ import {
   TOTAL_LESSONS,
   type ISupportModule,
   type ISupportLesson,
+  type ISupportQuiz,
 } from "@/data/isupport-modules";
 import { fetchChallengedContent } from "@/features/challenged-content/source.wordpress";
 import { stripHtml } from "@/features/shared/wordpress-client";
