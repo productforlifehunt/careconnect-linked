@@ -63,6 +63,33 @@ export interface ISupportModule {
   lessons: ISupportLesson[];
 }
 
+export function getModule(key: string): ISupportModule | undefined {
+  return ISUPPORT_MODULES.find((m) => m.key === key);
+}
+
+export function getNextLesson(
+  moduleKey: string,
+  lessonKey: string
+): { module: ISupportModule; lesson: ISupportLesson } | null {
+  const modIdx = ISUPPORT_MODULES.findIndex((m) => m.key === moduleKey);
+  if (modIdx === -1) return null;
+  const mod = ISUPPORT_MODULES[modIdx];
+  const lessonIdx = mod.lessons.findIndex((l) => l.key === lessonKey);
+  if (lessonIdx === -1) return null;
+  // Next lesson in same module
+  if (lessonIdx + 1 < mod.lessons.length) {
+    return { module: mod, lesson: mod.lessons[lessonIdx + 1] };
+  }
+  // First lesson of next module
+  if (modIdx + 1 < ISUPPORT_MODULES.length) {
+    const next = ISUPPORT_MODULES[modIdx + 1];
+    if (next.lessons.length > 0) {
+      return { module: next, lesson: next.lessons[0] };
+    }
+  }
+  return null;
+}
+
 export const ISUPPORT_MODULES: ISupportModule[] = [
   {
     key: "introduction",
