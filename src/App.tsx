@@ -51,7 +51,21 @@ import ConsultationRoom from "./pages/ConsultationRoom";
 import Calendar from "./pages/Calendar";
 import Resources from "./pages/Resources";
 
-const queryClient = new QueryClient();
+// Static-first defaults: no auto refetch on focus/mount/reconnect.
+// Data only fetches on first mount or explicit invalidation (after a mutation).
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      refetchOnReconnect: false,
+      refetchInterval: false,
+      staleTime: 5 * 60 * 1000, // 5 min — treat data as fresh
+      gcTime: 30 * 60 * 1000,   // 30 min cache retention
+      retry: 1,
+    },
+  },
+});
 
 // Dashboard routes that always get sidebar
 const baseDashboardPaths = ["/dashboard", "/bookings", "/care-circle", "/gps-tracking", "/messages", "/favorites", "/notifications", "/profile", "/cared-ones", "/jobs", "/provider-dashboard", "/community", "/articles", "/cart", "/order-confirmation", "/consultation", "/aware", "/care-guides", "/coping", "/safety-guides", "/accompanied", "/calendar", "/resources"];
