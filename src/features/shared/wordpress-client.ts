@@ -30,6 +30,29 @@ export async function wordpressFetchRaw(endpoint: string, options: WordPressFetc
   });
 
   if (!response.ok) {
+    // Auto-recover from stale / invalid JWT: clear token and bounce to /auth
+    if (response.status === 400 || response.status === 401 || response.status === 403) {
+      try {
+        const cloned = response.clone();
+        const text = await cloned.text();
+        const looksLikeAuthFailure =
+          /signature verification failed/i.test(text) ||
+          /jwt/i.test(text) && /(invalid|expired|verification)/i.test(text) ||
+          /errorCode"\s*:\s*1[0-3]/i.test(text); // simple-jwt-login auth error codes
+        if (looksLikeAuthFailure && token) {
+          localStorage.removeItem("cc_wp_token");
+          localStorage.removeItem("cc_wp_user");
+          if (typeof window !== "undefined" && !window.location.pathname.startsWith("/auth")) {
+            const next = encodeURIComponent(window.location.pathname + window.location.search);
+            window.location.replace(`/auth?session_expired=1&next=${next}`);
+          }
+          throw new Error("Session expired. Please log in again.");
+        }
+      } catch (e) {
+        if (e instanceof Error && e.message.startsWith("Session expired")) throw e;
+        // fall through to generic error
+      }
+    }
     throw new Error(`WP API ${endpoint}: ${response.status} ${response.statusText}`);
   }
 
