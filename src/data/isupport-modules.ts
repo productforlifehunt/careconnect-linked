@@ -758,13 +758,37 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
         quiz: {
           question: "Anne has dementia and often forgets what she usually buys from the market, leaving her fridge empty. Her daughter Maya wants to help. How would you advise Maya to deal with her mother’s memory loss?",
           questionZh: "安妮患有失智症，经常忘记她通常在市场买什么，导致冰箱空空如也。她的女儿玛雅想帮忙。你会建议玛雅如何应对她母亲的记忆力减退？",
-          options: ["Ask a neighbour to go with Anne once a week to the market to buy groceries.", "Create a memory aid together with Anne, e.g. a list of groceries that Anne needs to buy, and put the list in a place where it can be seen, so that it is easy to access.", "Go out and buy groceries immediately.", "Ask: “Mom, what’s wrong with you, there is no food in the house”"],
-          optionsZh: ["请邻居每周陪安妮去一次市场买菜。", "和安妮一起制作一个记忆辅助工具，例如一张安妮需要购买的食品清单，并把清单放在显眼的地方，方便取用。", "立即出门购买食品。", "质问：“妈妈，你怎么了，家里一点食物都没有了”。"],
-          correctIndices: [0, 1],
-          explanation: "Creating a memory aid like a list empowers Anne and involves her in the solution. This collaborative approach addresses the memory loss directly and can become a positive shared activity.",
-          explanationZh: "制作清单这样的记忆辅助工具能够增强安妮的能力，并让她参与到解决问题中来。这种合作的方式直接解决了记忆力减退的问题，还可能成为一项积极的共同活动。",
-          optionFeedback: ["Good idea. Having a neighbour go with Anne keeps her social and ensures groceries get bought.", "Good idea. A shared shopping list is a memory aid Anne can use independently.", "Less helpful. Buying for her replaces her role rather than supporting it.", "Not helpful. Blaming language causes shame and damages your relationship."],
-          optionFeedbackZh: ["很好的做法。请邻居陪安妮去市场，既维持社交也确保买到食品。", "很好的做法。共同制作的购物清单是安妮可以独立使用的记忆辅助工具。", "不太理想。直接替她购物取代了她的角色，而不是支持她。", "无益。质问的语气带来羞愧，也损害你们的关系。"],
+          options: [
+            "Ask a neighbour to go with Anne once a week to the market to buy groceries.",
+            "Create a memory aid together with Anne, e.g. a list of groceries that Anne needs to buy, and put it in a prominent place, so that the list is easy to access.",
+            "Go out and buy groceries immediately.",
+            "Ask: \"Mom, what's wrong with you, there is no food in the house\".",
+            "Sit down with Anne and make a list of groceries. Go shopping together."
+          ],
+          optionsZh: [
+            "请邻居每周陪安妮去一次市场买菜。",
+            "和安妮一起制作一个记忆辅助工具，例如一张安妮需要购买的食品清单，并把清单放在显眼的地方，方便取用。",
+            "立即出门购买食品。",
+            "质问：\"妈妈，你怎么了，家里一点食物都没有了\"。",
+            "坐下来和安妮一起列购物清单，然后一起去购物。"
+          ],
+          correctIndices: [0, 1, 4],
+          explanation: "WHO marks three responses as helpful: asking a neighbour to accompany her, creating a memory aid together, and shopping together with a shared list. Buying immediately for her or blaming her are not helpful.",
+          explanationZh: "WHO 标记三种回应为好：请邻居陪她、一起制作记忆辅助工具、以及一起列清单共同购物。直接替她买或责备她都没有帮助。",
+          optionFeedback: [
+            "Might be helpful. Anne will have groceries and a nice visit with the neighbour.",
+            "Good response. It addresses Anne's memory loss and may become a weekly shared pleasant activity.",
+            "Not so good. It is a panic reaction and a one-time solution. It does not solve the problem at hand.",
+            "Not so good. Anne cannot help that she forgets to buy food and may feel embarrassed that she has done something wrong. It does not improve the situation.",
+            "May be a good one. Maya is addressing her mother's needs. However, she might first want to try another approach — for example, with a list of groceries that her mother may still be able to go shopping without help."
+          ],
+          optionFeedbackZh: [
+            "可能有帮助。安妮能买到食品，也能和邻居有一次愉快的拜访。",
+            "好的回应。这解决了安妮的记忆力减退问题，并可能成为每周一次的共同愉快活动。",
+            "不太好。这是恐慌反应，也只是一次性解决方案，并未解决根本问题。",
+            "不太好。安妮无法控制自己忘记买食物，被这样问可能让她感到尴尬，仿佛做错了事，并不能改善情况。",
+            "可能是个好办法。玛雅在关注母亲的需要。不过，她或许可以先尝试另一种做法——比如先列一张清单，让母亲在仍有能力的情况下独立去购物。"
+          ],
         },
       },
       {
@@ -1069,9 +1093,9 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
             "让阿米特出门，并打电话请邻居帮忙留意他。",
             "请另一位家人陪他去散步。"
           ],
-          correctIndices: [1, 3, 5, 6],
-          explanation: "WHO marks four responses as good: turn off the cooker and follow him, calmly redirect, ask a prearranged neighbour to keep an eye out, or ask another family member to walk with him. Yelling, forcing him back, or locking him in are not good responses.",
-          explanationZh: "WHO 标记四种回应为好：关掉炉子并跟随他、冷静地引导、请预先约定的邻居留意、或请另一位家人陪他散步。大喊、强拉回家或锁门都不好。",
+          correctIndices: [1, 3, 4, 5, 6],
+          explanation: "WHO marks five responses as good: turn off the cooker and follow him, calmly redirect, lock the door (only if Samia stays inside with him and no other option exists), ask a prearranged neighbour to keep an eye out, or ask another family member to walk with him. Yelling or forcing him back are not good responses.",
+          explanationZh: "WHO 标记五种回应为好：关掉炉子并跟随他、冷静地引导、锁门（仅在没有其他办法且 Samia 留在屋内陪他时才可）、请预先约定的邻居留意、或请另一位家人陪他散步。大喊或强拉回家都不好。",
           optionFeedback: [
             "Not correct. Yelling at Amit from the kitchen may confuse and agitate him. It may also not stop him from going out on his own.",
             "Correct. This is a good response if there are no other alternatives.",
