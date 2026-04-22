@@ -652,12 +652,32 @@ function LessonView({
 // QUIZ CARD — single-question self-check (WHO format)
 // ═══════════════════════════════════════════════════════════════
 function QuizCard({ quiz, isZh }: { quiz: ISupportQuiz; isZh: boolean }) {
-  const [selected, setSelected] = useState<number | null>(null);
+  const [picked, setPicked] = useState<Set<number>>(new Set());
+  const [submitted, setSubmitted] = useState(false);
   const question = isZh ? quiz.questionZh : quiz.question;
   const options = isZh ? quiz.optionsZh : quiz.options;
   const explanation = isZh ? quiz.explanationZh : quiz.explanation;
-  const isCorrect = selected === quiz.correct;
-  const answered = selected !== null;
+  const perOptionFb = isZh ? quiz.optionFeedbackZh : quiz.optionFeedback;
+
+  const correctSet = new Set(quiz.correctIndices);
+  const isMulti = quiz.correctIndices.length > 1;
+  const allCorrect =
+    submitted &&
+    picked.size === correctSet.size &&
+    [...picked].every((i) => correctSet.has(i));
+
+  const toggle = (i: number) => {
+    if (submitted) return;
+    const next = new Set(picked);
+    if (next.has(i)) next.delete(i);
+    else next.add(i);
+    setPicked(next);
+  };
+
+  const reset = () => {
+    setPicked(new Set());
+    setSubmitted(false);
+  };
 
   return (
     <Card className="border-primary/20">
@@ -665,68 +685,107 @@ function QuizCard({ quiz, isZh }: { quiz: ISupportQuiz; isZh: boolean }) {
         <div className="flex items-center gap-2 mb-3">
           <HelpCircle className="h-4 w-4 text-primary" />
           <h3 className="font-semibold text-sm uppercase tracking-wide text-primary">
-            {isZh ? "小测验" : "Quick check"}
+            {isZh ? "小测验" : "Check your understanding"}
           </h3>
         </div>
-        <p className="text-base font-medium mb-4">{question}</p>
+        <p className="text-base font-medium mb-2">{question}</p>
+        <p className="text-xs text-muted-foreground mb-4">
+          {isMulti
+            ? isZh
+              ? "请勾选所有正确选项（可多选）"
+              : "Select all that apply"
+            : isZh
+              ? "请选择正确的选项"
+              : "Select the correct option"}
+        </p>
         <div className="space-y-2">
           {options.map((opt, i) => {
-            const isPicked = selected === i;
-            const showCorrect = answered && i === quiz.correct;
-            const showWrong = answered && isPicked && i !== quiz.correct;
+            if (!opt) return null;
+            const isPicked = picked.has(i);
+            const isCorrectOpt = correctSet.has(i);
+            const showCorrect = submitted && isCorrectOpt;
+            const showWrongPick = submitted && isPicked && !isCorrectOpt;
+            const showMissed = submitted && !isPicked && isCorrectOpt;
             return (
-              <button
-                key={i}
-                onClick={() => !answered && setSelected(i)}
-                disabled={answered}
-                className={`w-full text-left p-3 rounded-lg border-2 transition-all flex items-start gap-3 text-sm ${
-                  showCorrect
-                    ? "border-green-500 bg-green-50 dark:bg-green-950/30"
-                    : showWrong
-                      ? "border-destructive bg-destructive/5"
-                      : isPicked
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/40 hover:bg-muted/50"
-                } ${answered ? "cursor-default" : "cursor-pointer"}`}
-              >
-                <span
-                  className={`shrink-0 h-5 w-5 rounded-full border-2 flex items-center justify-center mt-0.5 ${
+              <div key={i}>
+                <button
+                  onClick={() => toggle(i)}
+                  disabled={submitted}
+                  className={`w-full text-left p-3 rounded-lg border-2 transition-all flex items-start gap-3 text-sm ${
                     showCorrect
-                      ? "border-green-500 bg-green-500 text-white"
-                      : showWrong
-                        ? "border-destructive bg-destructive text-destructive-foreground"
-                        : "border-muted-foreground/40"
-                  }`}
+                      ? "border-green-500 bg-green-50 dark:bg-green-950/30"
+                      : showWrongPick
+                        ? "border-destructive bg-destructive/5"
+                        : showMissed
+                          ? "border-amber-500 bg-amber-50 dark:bg-amber-950/30"
+                          : isPicked
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:border-primary/40 hover:bg-muted/50"
+                  } ${submitted ? "cursor-default" : "cursor-pointer"}`}
                 >
-                  {showCorrect && <CheckCircle2 className="h-3 w-3" />}
-                  {showWrong && <XCircle className="h-3 w-3" />}
-                </span>
-                <span className="flex-1">{opt}</span>
-              </button>
+                  <span
+                    className={`shrink-0 h-5 w-5 ${isMulti ? "rounded-sm" : "rounded-full"} border-2 flex items-center justify-center mt-0.5 ${
+                      showCorrect
+                        ? "border-green-500 bg-green-500 text-white"
+                        : showWrongPick
+                          ? "border-destructive bg-destructive text-destructive-foreground"
+                          : showMissed
+                            ? "border-amber-500 text-amber-700"
+                            : isPicked
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-muted-foreground/40"
+                    }`}
+                  >
+                    {showCorrect && <CheckCircle2 className="h-3 w-3" />}
+                    {showWrongPick && <XCircle className="h-3 w-3" />}
+                    {!submitted && isPicked && <CheckCircle2 className="h-3 w-3" />}
+                  </span>
+                  <span className="flex-1">{opt}</span>
+                </button>
+                {submitted && perOptionFb?.[i] && (
+                  <p
+                    className={`text-xs mt-1 ml-8 leading-relaxed ${
+                      isCorrectOpt ? "text-green-700 dark:text-green-400" : "text-muted-foreground"
+                    }`}
+                  >
+                    {isCorrectOpt ? "✓ " : "✗ "}
+                    {perOptionFb[i]}
+                  </p>
+                )}
+              </div>
             );
           })}
         </div>
-        {answered && (
+
+        {!submitted ? (
+          <Button
+            className="mt-4 w-full"
+            disabled={picked.size === 0}
+            onClick={() => setSubmitted(true)}
+          >
+            {isZh ? "提交答案" : "Check answer"}
+          </Button>
+        ) : (
           <div
             className={`mt-4 p-3 rounded-lg text-sm ${
-              isCorrect
+              allCorrect
                 ? "bg-green-50 dark:bg-green-950/30 text-green-900 dark:text-green-200"
                 : "bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200"
             }`}
           >
             <div className="font-semibold mb-1">
-              {isCorrect
+              {allCorrect
                 ? isZh
-                  ? "✓ 正确！"
-                  : "✓ Correct!"
+                  ? "✓ 全部正确！"
+                  : "✓ All correct!"
                 : isZh
-                  ? "再想想"
-                  : "Not quite"}
+                  ? "再想想 — 查看每个选项的反馈"
+                  : "Not quite — review the feedback for each option"}
             </div>
             <p className="leading-relaxed">{explanation}</p>
-            {!isCorrect && (
+            {!allCorrect && (
               <button
-                onClick={() => setSelected(null)}
+                onClick={reset}
                 className="mt-2 text-xs underline opacity-80 hover:opacity-100"
               >
                 {isZh ? "再试一次" : "Try again"}
