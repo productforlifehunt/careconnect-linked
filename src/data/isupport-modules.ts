@@ -1109,15 +1109,39 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
         reflectQuestion: "Think about a time the person you care for showed a change in their judgement. What did you observe, and how did it affect you? Based on what you've learned, what is one way you could respond differently in the future?",
         reflectQuestionZh: "回想一下您所护理的人在什么时候表现出判断力的改变。您观察到了什么？它对您有何影响？根据您学到的知识，未来您可以采取哪种不同的应对方式？",
         quiz: {
-          question: "Ivan is visiting his aunt Isabel, who has dementia. When a taxi pulls up suddenly, it startles her, and she begins scolding the driver. What is the BEST way for Ivan to respond in this moment?",
-          questionZh: "伊凡正在探望患有失智症的姑姑伊莎贝尔。当一辆出租车突然停到旁边时，伊莎贝尔受惊并开始责骂司机。在这一刻，伊凡最好的应对方式是什么？",
-          options: ["Put his hand on Isabel’s mouth to stop her.", "Walk Isabel back home and leave.", "Stay calm and reassure Isabel everything is alright.", "Accept the behaviour if the taxi driver doesn’t notice."],
-          optionsZh: ["用手捂住伊莎贝尔的嘴阻止她。", "带伊莎贝尔回家然后离开。", "保持冷静，并安抚伊莎贝尔说一切都很好。", "如果出租车司机没有注意到，就接受这个行为。"],
-          correctIndices: [2],
-          explanation: "Staying calm and offering reassurance shows you care about the person's feelings, which can de-escalate the situation and help them feel more relaxed.",
-          explanationZh: "保持冷静并提供安抚，表明您关心对方的感受，这有助于缓和局势，让他们感到更放松。",
-          optionFeedback: ["Not helpful. Covering her mouth is undignified and frightening.", "Avoidant. Leaving doesn't address the moment or her feelings.", "Good idea. Calm reassurance de-escalates the situation and respects her dignity.", "Possible if no one is harmed, but reassurance is the better default."],
-          optionFeedbackZh: ["无益。捂住她的嘴既不尊重，也会让她害怕。", "回避型。离开既未化解当下，也未关注她的感受。", "很好的做法。冷静安抚既能缓和局势，也尊重她的尊严。", "若无人受影响，可以接纳；但安抚仍是更好的默认做法。"],
+          question: "Ivan is visiting his aunt Isabel, who has dementia. They take a taxi but the driver does not stop quickly enough at the curb. Isabel becomes very upset and begins scolding the driver loudly. What would you recommend to Ivan? (Multiple answers are correct.)",
+          questionZh: "伊凡正在探望患有失智症的姑姑伊莎贝尔。他们叫了出租车，但司机没有及时停在路边。伊莎贝尔非常生气，大声责骂司机。您建议伊凡怎么做？（多选）",
+          options: [
+            "Put his hand on Isabel's mouth in order to stop her scolding the driver.",
+            "Walk Isabel back to her apartment and leave because what happened is embarrassing.",
+            "Stay calm and reassure Isabel everything is alright.",
+            "Accept the behaviour. If the taxi driver doesn't seem to notice, let it be. Find ways to adapt.",
+            "Ivan could carry a business card that explains, 'My companion has dementia, please be patient with us,' and give this card to the taxi driver."
+          ],
+          optionsZh: [
+            "用手捂住伊莎贝尔的嘴，阻止她责骂司机。",
+            "因为这件事很尴尬，把伊莎贝尔送回公寓后就离开。",
+            "保持冷静，安抚伊莎贝尔，告诉她一切都好。",
+            "接受这个行为。如果司机没有察觉，就顺其自然，找到适应的方法。",
+            "伊凡可以随身带一张卡片，写着\"我的同伴患有失智症，请您耐心对待\"，并把卡片递给司机。"
+          ],
+          correctIndices: [2, 3, 4],
+          explanation: "WHO marks three responses as good: stay calm and reassure her, accept the behaviour if it harms no one, and use a small card to discreetly explain her condition to others. Covering her mouth or leaving in embarrassment are not helpful.",
+          explanationZh: "WHO 标记三种回应为好：保持冷静并安抚、若无人受影响就接纳、用一张小卡片悄悄向他人说明情况。捂嘴或因尴尬离开都没有帮助。",
+          optionFeedback: [
+            "Not correct. This may even worsen the situation and cause Isabel further agitation.",
+            "Not correct. Isabel may feel bad and isolated.",
+            "Correct. This shows Ivan cares about Isabel. It may stop her from scolding the taxi driver and make her feel more relaxed.",
+            "Correct. This can be an appropriate response if the behaviour is not harming anyone.",
+            "Correct. This relieves Ivan from explaining the situation to the taxi driver, which may embarrass Isabel."
+          ],
+          optionFeedbackZh: [
+            "不正确。这可能让情况更糟，并让伊莎贝尔更激动。",
+            "不正确。伊莎贝尔可能会感到难过和被孤立。",
+            "正确。这表明伊凡关心伊莎贝尔，可能让她停止责骂司机并感到放松。",
+            "正确。如果行为没有伤害任何人，这是合适的回应。",
+            "正确。这能让伊凡免于亲口解释，避免让伊莎贝尔难堪。"
+          ],
         },
       },
       {
