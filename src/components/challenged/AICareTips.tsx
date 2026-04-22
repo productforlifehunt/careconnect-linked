@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Sparkles, RefreshCw, Heart, Shield, MessageCircle, Activity, Gamepad2 } from "lucide-react";
+import { Lightbulb, RefreshCw, Heart, Shield, MessageCircle, Activity, Gamepad2 } from "lucide-react";
 import { invokeAI, parseAIJson } from "@/lib/ai-service";
 import { useTranslation } from "react-i18next";
 
@@ -56,7 +56,7 @@ export function AICareTips({ caredOneName, dementiaStage }: AICareTipsProps) {
     <Card className="border-transparent card-elevated">
       <CardHeader className="flex-row items-center justify-between pb-2">
         <CardTitle className="text-base flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-primary" />
+          <Lightbulb className="h-4 w-4 text-primary" />
           {t("ai.aiCareTips")}
         </CardTitle>
         <Button variant="ghost" size="sm" onClick={fetchTips} disabled={loading} className="h-7 text-xs">

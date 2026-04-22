@@ -11,7 +11,7 @@ import {
   ExternalLink,
   Clock,
   BookOpen,
-  Sparkles,
+  ListChecks,
   PlayCircle,
   HelpCircle,
   Lightbulb,
@@ -512,7 +512,7 @@ function LessonView({
           <Card className="border-primary/20 bg-primary/5">
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="h-4 w-4 text-primary" />
+                <ListChecks className="h-4 w-4 text-primary" />
                 <h3 className="font-semibold text-sm uppercase tracking-wide text-primary">
                   {isZh ? "今天就可以做" : "Try today"}
                 </h3>
