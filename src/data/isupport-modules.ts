@@ -227,15 +227,35 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
         reflectQuestion: "Think about the ways you currently support the person you care for to make decisions. Are there small, everyday choices where you could offer more support to help them decide for themselves?",
         reflectQuestionZh: "想一想您目前是如何支持您所护理的人做决定的。在日常的一些小选择上，您能否提供更多支持来帮助他们自己做决定？",
         quiz: {
-          question: "Manuel has dementia and forgets to lay out his clothes, sometimes wearing the same ones every day. What is the best way to make sure he wears clean clothes, without taking over his decisions?",
-          questionZh: "曼努埃尔患有失智症，他会忘记准备衣服，有时会每天穿同一件衣服。在不替他做主的情况下，确保他穿上干净衣服的最好方法是什么？",
-          options: ["Before Maria and Manuel go to bed, Maria asks Manuel what he wants to wear the next day. She then asks Manuel to lay them out.", "Maria chooses clothes for Manuel and she asks him to lay them out.", "Maria chooses clothes for Manuel in the morning and gives them directly to Manuel to wear."],
-          optionsZh: ["在玛丽亚和曼努埃尔睡觉前，玛丽亚问曼努埃尔第二天想穿什么。然后她让曼努埃尔把衣服准备好。", "玛丽亚为曼努埃尔选好衣服，然后让他把衣服准备好。", "早上，玛丽亚为曼努埃尔选好衣服，然后直接递给他穿。"],
-          correctIndices: [0],
-          explanation: "This is the best option because it encourages Manuel to do things he is still able to do and supports him in making his own decision.",
-          explanationZh: "这是最好的选择，因为它鼓励曼努埃尔做自己仍有能力做的事情，并支持他自己做决定。",
-          optionFeedback: ["Good idea. Asking the night before and letting Manuel lay out his clothes supports his autonomy and uses skills he still has.", "Less helpful. Maria chooses for him; he only carries out the action, removing his decision.", "Not helpful. Maria makes all decisions and gives clothes directly; Manuel does nothing for himself."],
-          optionFeedbackZh: ["很好的做法。前一晚询问，再让曼努埃尔自己准备衣服，既支持他自主决定，也运用了他尚存的能力。", "不太理想。玛丽亚替他选好，他只是动手摆放，决定权被剥夺了。", "无益。玛丽亚替他做了所有决定并直接递衣服，曼努埃尔完全没有自主参与。"],
+          question: "Mary has dementia and her doctor wants her to start a new medication. Mary's daughter Chrissy is with her at the appointment. What should the doctor and Chrissy do to support Mary's decision? (Select all that apply.)",
+          questionZh: "玛丽患有失智症，医生希望她开始服用一种新药。她的女儿克莉茜陪她来就诊。医生和克莉茜应该如何支持玛丽做决定？（多选）",
+          options: [
+            "Mary says what she wants, so she does not need support in deciding whether to start the medication.",
+            "The doctor simply tells her she should take the medication because it is good for her health.",
+            "The doctor explains that taking the medication is good for her health because it will slow down damage to her brain from dementia.",
+            "Her daughter says: \"Mom, you know you are forgetting things and have difficulty finding the right words. Taking the medication may slow these problems down a bit.\""
+          ],
+          optionsZh: [
+            "玛丽说出了自己的想法，所以她不需要别人协助决定是否开始服药。",
+            "医生只是直接告诉她应该吃药，因为对她健康有好处。",
+            "医生解释说服药对她的健康有好处，因为可以减缓失智症对大脑的损害。",
+            "她的女儿说：\"妈，你知道你最近忘事、说话也想不起词。吃这个药可能让这些问题减缓一点。\""
+          ],
+          correctIndices: [2, 3],
+          explanation: "Multiple answers are correct. Mary needs information explained in ways she can understand so she can make an informed decision. The doctor should explain the medical reasons clearly, and family can rephrase in everyday words she relates to.",
+          explanationZh: "多个答案都正确。玛丽需要别人用她能理解的方式解释信息，才能做出知情的决定。医生应清楚解释医学原因，家人可以用她熟悉的日常话再说一遍。",
+          optionFeedback: [
+            "Not correct. Since Mary has dementia, we are not sure she understands why she needs the medication or the consequences of taking or not taking it.",
+            "Incorrect. Although the medication may help, the doctor is telling Mary what to do rather than supporting her decision.",
+            "Right. The doctor's explanation allows Mary to understand the importance of the medication and enables her to make an informed decision.",
+            "Correct. Using different words to explain the reasons for taking the medication may help Mary understand why it would benefit her."
+          ],
+          optionFeedbackZh: [
+            "不正确。因为玛丽有失智症，我们无法确定她是否理解自己为什么需要这种药，以及服或不服的后果。",
+            "不正确。虽然药物对健康有益，但医生是在告诉玛丽该怎么做，而不是支持她自己决定。",
+            "正确。医生的解释让玛丽理解了服药的重要性，使她能做出知情的决定。",
+            "正确。换一种措辞来解释服药的原因，可能帮助玛丽理解服药对她的好处。"
+          ],
         },
       },
       {
@@ -255,15 +275,35 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
         reflectQuestion: "Think of one thing you need help with. Who could you ask, and what exactly would you say to them?",
         reflectQuestionZh: "想一件您需要帮助的事情。您可以向谁求助，您具体会对他们说些什么？",
         quiz: {
-          question: "Li wants a break from caregiving and decides to ask her sister for help. Which of the following examples represents an effective way to ask?",
-          questionZh: "李想从护理工作中抽身休息一下，她决定向姐姐求助。以下哪个例子是有效的求助方式？",
-          options: ["Li tells her sister that she needs a short break and says: 'I would like to discuss how you could help in a way that is possible for you.'", "Li approaches her sister by saying, 'I’m sick and tired of you not doing anything! You never have time to help me care for our mother!'", "Li enrolls in a class without discussing her need for a break with her sister. When she asks her sister to cover for her, the sister says she has no time, so Li cancels the class."],
-          optionsZh: ["李告诉姐姐她需要短暂休息一下，并说：“我想和你谈谈，看看你怎样能在方便的情况下帮帮我。”", "李对姐姐说：“我真是受够了你什么都不做！你从来都没时间帮我照顾妈妈！”", "李报名参加了一个课程，但没有和姐姐沟通过她需要休息。当她让姐姐替她一会儿时，姐姐说没时间，于是李取消了课程。"],
+          question: "Li is feeling overwhelmed caring for their mother and wants to ask her sister for help. Which of the following are effective ways to ask? (Select all that apply.)",
+          questionZh: "李在照顾妈妈中感到不堪重负，想向姐姐求助。下面哪些是有效的求助方式？（多选）",
+          options: [
+            "Li tells her sister honestly that she needs a regular break, says what she is thinking, and keeps her sister's interests in mind too.",
+            "Li hints that things are hard but does not actually say she needs help, hoping her sister will figure it out.",
+            "Li becomes angry and shouts: \"I'm sick and tired of you not doing anything! You never help with mom!\"",
+            "Li enrolls in a class without first discussing her need for a break, then cancels when her sister says she is busy."
+          ],
+          optionsZh: [
+            "李诚实地告诉姐姐自己需要定期休息，说出自己的想法，同时也考虑姐姐的情况。",
+            "李暗示日子很难，但没有真正说出自己需要帮助，希望姐姐自己看出来。",
+            "李生气大喊：\"我真是受够了你什么都不做！你从来都不帮忙照顾妈妈！\"",
+            "李没有先和姐姐沟通就报名上课，结果姐姐说没空，她只好取消课程。"
+          ],
           correctIndices: [0],
-          explanation: "This is an effective way to ask for help. Li is honest about her own needs while also being respectful of her sister's availability and feelings.",
-          explanationZh: "这是一种有效的求助方式。李诚实地表达了自己的需求，同时也尊重姐姐的时间安排和感受。",
-          optionFeedback: ["Good idea. Li is honest about her need and respectful of her sister's time.", "Not helpful. Blaming and shouting will likely make her sister defensive, not willing to help.", "Not helpful. Avoiding the conversation means her need never gets discussed and she gives up on the break."],
-          optionFeedbackZh: ["很好的做法。李诚实表达了自己的需求，也尊重姐姐的时间。", "无益。责备和大喊只会让姐姐反感，不会愿意帮忙。", "无益。回避沟通意味着需求从未被讨论，她也放弃了喘息的机会。"],
+          explanation: "Only the first is an effective (assertive) way to ask. Li stands up for herself, is honest about her need, and respects her sister's interests too.",
+          explanationZh: "只有第一种是有效（坚定）的求助方式。李为自己发声，诚实表达需求，也尊重姐姐的处境。",
+          optionFeedback: [
+            "Effective. This is an effective way of asking for help. Li stands up for herself, is honest about her need for a regular break, and keeps her sister's interests in mind.",
+            "Passive. This is not effective. Her sister may not realise Li is overwhelmed; Li is not honest about her feelings and is trying to avoid conflict.",
+            "Aggressive. This is not effective. Li becomes angry but did not clearly state she is overwhelmed, and she does not approach her sister respectfully.",
+            "Passive / avoidant. By not discussing her need first, Li never opens the conversation, gives up the break, and her sister is unaware of how she feels."
+          ],
+          optionFeedbackZh: [
+            "有效（坚定）。这是有效的求助方式。李为自己发声，诚实表达需要定期休息，也照顾到姐姐的感受。",
+            "被动型。无效。姐姐可能没意识到李已经不堪重负；李没有诚实表达自己的感受，只是在回避冲突。",
+            "攻击型。无效。李生气了，但并没有清楚说出自己已经不堪重负，也没有尊重姐姐。",
+            "被动 / 回避型。事先不沟通，李从未真正开口求助，最终放弃了喘息机会，姐姐也不知道她的感受。"
+          ],
         },
       }
     ],
