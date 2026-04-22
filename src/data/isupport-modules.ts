@@ -795,6 +795,8 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           correctIndices: [2],
           explanation: "The lesson advises against arguing and suggests using distraction. It also recommends investigating other causes for behaviors before assuming it's only the disease.",
           explanationZh: "本课程建议不要争论，并建议使用分散注意力的方法。它还建议在认定行为仅由疾病引起之前，调查其他可能的原因。",
+          optionFeedback: ["Not helpful. Arguing escalates agitation.", "Not helpful. Assuming nothing can change misses opportunities to identify triggers.", "Good idea. Distraction and comfort are the recommended first responses.", "Not helpful. Bottling up your feelings leads to burnout."],
+          optionFeedbackZh: ["无益。争论会加剧激动。", "无益。认为“无法改变”就错失了识别诱因的机会。", "很好的做法。转移注意力和安抚是推荐的首要应对方式。", "无益。把感受憋在心里会导致身心俱疲。"],
         },
       }
     ],
