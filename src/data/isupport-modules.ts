@@ -302,6 +302,8 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           correctIndices: [0],
           explanation: "Diana's friend explains that some relaxation exercises are very brief and can give her renewed energy, which helps her get tasks done more easily.",
           explanationZh: "戴安娜的朋友解释说，有些放松练习非常简短，可以给她带来新的精力，帮助她更轻松地完成任务。",
+          optionFeedback: ["Good idea. Li is honest about her need and respectful of her sister's time.", "Not helpful. Blaming and shouting will likely make her sister defensive, not willing to help.", "Not helpful. Avoiding the conversation means her need never gets discussed and she gives up on the break."],
+          optionFeedbackZh: ["很好的做法。李诚实表达了自己的需求，也尊重姐姐的时间。", "无益。责备和大喊只会让姐姐反感，不会愿意帮忙。", "无益。回避沟通意味着需求从未被讨论，她也放弃了喘息的机会。"],
         },
       },
       {
@@ -326,9 +328,11 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           questionZh: "乔正要出门拜访朋友。她的丈夫马克斯患有失智症，他正担心自己找不到钥匙，并说：“我找不到钥匙了！你不能把我一个人丢下，我没有钥匙！”乔应该怎么做？",
           options: ["Tell Max that she cannot help him search now and leave.", "Search for the keys until she finds them.", "Tell Max that he should be more careful not to lose his keys in the future.", "Think to herself, “Max has dementia and is sometimes worried when he loses things. I can take some time to help and then go.” Then call her friend and explain that she will come later."],
           optionsZh: ["告诉马克斯她现在不能帮他找，然后离开。", "一直找钥匙，直到找到为止。", "告诉马克斯他以后应该更小心，不要再丢钥匙了。", "心里想：“马克斯患有失智症，找不到东西时偶尔会担心。我可以花点时间帮他，然后再走。” 然后打电话给朋友，解释说她会晚点到。"],
-          correctIndices: [3],
+          correctIndices: [1],
           explanation: "This response is based on a helpful thought. By reframing the situation, Jo can stay calm and compassionate while still planning to take time for herself.",
           explanationZh: "这个回应是基于一个有益的想法。通过重新定义情况，乔可以保持冷静和同情心，同时仍然计划为自己安排时间。",
+          optionFeedback: ["Not accurate. Relaxation does not need to be 30+ minutes to be effective.", "Good idea. Even short relaxation exercises can restore energy and lower stress.", "Not necessary. You don't need a paid carer to relax; small breaks work too.", "Not accurate. Many short methods (breathing, music, stretching) help, not just total stretching."],
+          optionFeedbackZh: ["不准确。放松不必长达30分钟以上才有效。", "很好的做法。即使是简短的放松练习也能恢复精力、降低压力。", "没有必要。不一定要请专业护理者才能放松，短暂休息同样有效。", "不准确。除了全身伸展，呼吸、音乐等许多简短方法也有帮助。"],
         },
       },
       {
@@ -355,6 +359,8 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           correctIndices: [3],
           explanation: "This is the best approach because it addresses Jo's unhelpful thought. By reframing her thinking, she can calmly help Max feel secure and still see her friend, managing the situation without feeling miserable.",
           explanationZh: "这是最好的方法，因为它处理了Jo自己的无益想法。通过重塑她的思维，她可以冷静地帮助Max获得安全感，同时仍然可以去见她的朋友，从而在不感到痛苦的情况下处理好情况。",
+          optionFeedback: ["Not helpful. Leaving Max alarmed will increase his distress and your guilt.", "Possible but rigid. Spending unlimited time means missing your friend; no balance.", "Not helpful. Lecturing him about future carefulness ignores his current dementia.", "Good idea. Reframing the situation lets Jo stay calm, help Max, and still see her friend."],
+          optionFeedbackZh: ["无益。让马克斯独自惊慌，会加剧他的痛苦和你的内疚。", "可行但僵硬。花无限时间找钥匙意味着错过朋友；缺乏平衡。", "无益。教训他以后要小心，忽视了他当下的失智症状况。", "很好的做法。重新定义情境让乔保持冷静，帮助马克斯，同时还能见到朋友。"],
         },
       }
     ],
