@@ -427,7 +427,7 @@ function ModuleView({
 }
 
 // ═══════════════════════════════════════════════════════════════
-// LESSON VIEW — summary + linked tools + linked deep-dive articles
+// LESSON VIEW — full digital lesson body + practice + linked tools + articles
 // ═══════════════════════════════════════════════════════════════
 function LessonView({
   module,
@@ -472,6 +472,14 @@ function LessonView({
             ? "/safety-guides"
             : "/accompanied";
 
+  const lessonSections = lesson.sections ?? [];
+  const introText = isZh ? lesson.summaryZh : lesson.summary;
+  const introLabel = isZh ? "课程导读" : "Lesson overview";
+  const lessonLabel = isZh ? "完整学习内容" : "Full lesson";
+  const lessonSubLabel = isZh
+    ? `本课共 ${lessonSections.length} 个学习部分`
+    : `${lessonSections.length} teaching sections`;
+
   return (
     <div className="min-h-full bg-background">
       <section className={`bg-gradient-to-br ${module.accent} text-white py-6`}>
@@ -498,14 +506,63 @@ function LessonView({
       </section>
 
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
-        {/* Summary */}
+        {/* Lesson overview */}
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-6 space-y-3">
+            <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {introLabel}
+            </div>
             <p className="text-base leading-relaxed">
-              {isZh ? lesson.summaryZh : lesson.summary}
+              {introText}
             </p>
           </CardContent>
         </Card>
+
+        {/* Full lesson content */}
+        {lessonSections.length > 0 && (
+          <div className="space-y-4">
+            <div className="space-y-1 px-1">
+              <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {lessonLabel}
+              </div>
+              <h2 className="text-xl font-semibold text-foreground">
+                {isZh ? lesson.titleZh : lesson.title}
+              </h2>
+              <p className="text-sm text-muted-foreground">{lessonSubLabel}</p>
+            </div>
+
+            {lessonSections.map((section, idx) => {
+              const body = isZh ? section.bodyZh : section.body;
+              const paragraphs = body
+                .split(/\n+/)
+                .map((part) => part.trim())
+                .filter(Boolean);
+
+              return (
+                <section
+                  key={`${lesson.key}-${idx}`}
+                  className="rounded-xl border bg-card px-5 py-5 shadow-sm"
+                >
+                  <div className="flex gap-4">
+                    <div className="shrink-0 h-8 w-8 rounded-full bg-secondary text-secondary-foreground text-sm font-semibold flex items-center justify-center">
+                      {idx + 1}
+                    </div>
+                    <div className="min-w-0 flex-1 space-y-3">
+                      <h3 className="text-lg font-semibold leading-tight text-foreground">
+                        {isZh ? section.headingZh : section.heading}
+                      </h3>
+                      <div className="space-y-3 text-base leading-7 text-foreground/90">
+                        {paragraphs.map((paragraph, paragraphIdx) => (
+                          <p key={paragraphIdx}>{paragraph}</p>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              );
+            })}
+          </div>
+        )}
 
         {/* Key actions */}
         {lesson.keyActions && lesson.keyActions.length > 0 && (
