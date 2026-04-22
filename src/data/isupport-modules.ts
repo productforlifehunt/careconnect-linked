@@ -122,15 +122,35 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
         reflectQuestion: "Reflect on the common symptoms of dementia mentioned, such as memory loss, difficulty with daily tasks, or changes in personality. Have you noticed any of these signs in the person you care for?",
         reflectQuestionZh: "反思一下课程中提到的失智症常见症状，例如记忆力减退、难以完成日常任务或性格改变。您是否在您护理的人身上注意到任何这些迹象？",
         quiz: {
-          question: "People with dementia often forget things or have trouble with their memory. Select the correct answer.",
-          questionZh: "失智症患者经常会忘记事情或出现记忆困难。请选择正确的答案。",
-          options: ["TRUE", "FALSE", ""],
-          optionsZh: ["正确", "错误", ""],
-          correctIndices: [0],
-          explanation: "This is correct. Memory loss is a common and primary symptom of dementia.",
-          explanationZh: "这是正确的。记忆力减退是失智症一个常见的主要症状。",
-          optionFeedback: ["Correct. Memory loss is one of the most common early symptoms of dementia.", "Not correct. Memory difficulties are a hallmark of dementia, not a misconception."],
-          optionFeedbackZh: ["正确。记忆力减退是失智症最常见的早期症状之一。", "不正确。记忆困难是失智症的典型表现，并不是误解。"],
+          question: "What is the first step if you think that a family member or friend has dementia? Please tick the answers you think are correct. (Select all that apply.)",
+          questionZh: "如果你认为家人或朋友可能患有失智症，第一步该做什么？请选出你认为正确的答案。（多选）",
+          options: [
+            "Call a friend or relative.",
+            "Use iSupport alone for help.",
+            "Call a medical doctor's office and make an appointment.",
+            "The person has been to a medical doctor already and has been diagnosed with dementia."
+          ],
+          optionsZh: [
+            "给朋友或亲戚打电话。",
+            "只靠 iSupport 来寻求帮助。",
+            "打电话给医生诊所并预约。",
+            "对方已经看过医生，并已被诊断为失智症。"
+          ],
+          correctIndices: [2, 3],
+          explanation: "Only a medical doctor can confirm whether memory problems are dementia or another treatable condition (such as depression, infection or medication side effects). If a diagnosis already exists, you can move on to support and planning.",
+          explanationZh: "只有医生才能确认记忆问题是失智症，还是其它可以治疗的状况（如抑郁、感染或药物副作用）。如果已经有诊断，则可以进入支持和规划阶段。",
+          optionFeedback: [
+            "Not the first step. A friend or relative cannot diagnose dementia; only a medical doctor can.",
+            "Not the first step. iSupport is a support manual, not a diagnostic tool.",
+            "Correct. Booking a medical appointment is the proper first step so the doctor can examine the body and brain functioning and rule out other causes.",
+            "Correct. If the person has already been seen and diagnosed by a doctor, the diagnostic step is done; you can now focus on care and support."
+          ],
+          optionFeedbackZh: [
+            "不是第一步。朋友或亲戚无法诊断失智症，只有医生才可以。",
+            "不是第一步。iSupport 是一份支持手册，不是诊断工具。",
+            "正确。预约就医是恰当的第一步，医生会检查身体和大脑功能，排除其它可能原因。",
+            "正确。如果已经看过医生并被诊断，诊断这一步就完成了；接下来可以专注于护理与支持。"
+          ],
         },
       }
     ],
@@ -197,15 +217,43 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
         reflectQuestion: "Think about all the things that you like about the person you care for. Now try to write down something you would say to give them a compliment.",
         reflectQuestionZh: "想想所有你欣赏被护理者的方面。现在，试着写下一句你会用来赞美他们的话。",
         quiz: {
-          question: "William’s sister, Elena, who has dementia, repeatedly asks where her deceased husband is. William finds this difficult. What is a more compassionate way for him to respond?",
-          questionZh: "威廉的姐姐埃琳娜患有失智症，她反复询问已故的丈夫在哪里。威廉对此感到很为难。他应该如何以更有同情心的方式回应？",
-          options: ["Ignore her question and try to distract her by talking about other things.", "Talk about his sister in her presence to someone else, saying he doesn't understand her.", "Acknowledge her feelings of loss, give her a hug, and talk about her husband.", "Tell her she should be ashamed of forgetting everything."],
-          optionsZh: ["忽略她的问题，并试图通过谈论其他事情来分散她的注意力。", "当着姐姐的面和别人议论她，说他不理解她。", "理解她失落的感受，给她一个拥抱，并和她聊聊她的丈夫。", "告诉她应该为忘记一切而感到羞愧。"],
-          correctIndices: [2],
-          explanation: "This response acknowledges Elena's feelings, takes her seriously, and shows compassion. It supports her in her grief and helps improve their relationship.",
-          explanationZh: "这个回应认可了埃琳娜的感受，认真对待了她的问题，并表现出了同情心。这能支持她度过悲伤，并有助于改善他们的关系。",
-          optionFeedback: ["Not helpful. Ignoring her feelings can make her feel dismissed.", "Not helpful. Talking about her in front of her is disrespectful and hurtful.", "Good idea. Acknowledging her feelings, offering touch, and reminiscing shows compassion.", "Not helpful. Shaming her for forgetting damages her self-worth."],
-          optionFeedbackZh: ["无益。忽视她的感受会让她觉得被无视。", "无益。当着她的面议论她，既不尊重也很伤人。", "很好的做法。认可她的感受、给予拥抱、聊聊丈夫，体现了同情心。", "无益。因健忘而羞辱她，会损害她的自我价值感。"],
+          question: "Below are some suggested ways to get the attention of a person living with dementia. Which are respectful, appropriate ways? (Select all that apply.)",
+          questionZh: "以下是一些建议的吸引失智症患者注意的方法。哪些是尊重且恰当的方式？（多选）",
+          options: [
+            "Raise your voice or shout.",
+            "Stop and hold the person to make them listen.",
+            "Speak clearly and slowly, at a comfortable volume, face to face and at eye level.",
+            "Approach from the back and touch the person's shoulder.",
+            "Tap a hand, arm or front of the shoulder gently.",
+            "Call the person living with dementia by a name that he or she recognizes."
+          ],
+          optionsZh: [
+            "提高声音或大喊。",
+            "拦住对方并抓住他们以让他们听。",
+            "清晰、缓慢地说话，用舒服的音量，面对面、平视交流。",
+            "从背后接近并拍对方肩膀。",
+            "轻轻拍手、胳膊或肩膀正面。",
+            "用对方认得的名字称呼失智症患者。"
+          ],
+          correctIndices: [2, 4, 5],
+          explanation: "Approach the person respectfully, calmly and where they can see you. Avoid shouting, restraining, or surprising them from behind, as these can cause sadness, fear or anger.",
+          explanationZh: "应当以尊重、平静、并让对方能看到你的方式接近。避免大喊、强行拉住，或从背后惊到对方，否则会让人感到悲伤、害怕或愤怒。",
+          optionFeedback: [
+            "Not respectful. Raising your voice is not a respectful way to gain attention. It may even make the person living with dementia feel sad, frustrated or angry.",
+            "Not respectful. This is not a respectful way to get attention. It may even make the person feel distressed or angry.",
+            "Appropriate. This is an appropriate way to make contact. It shows that you are seeking contact in a respectful manner.",
+            "Not ideal. This may startle someone who is not expecting you or perhaps did not hear you coming.",
+            "Good. This is a good way to attract the attention of a person living with dementia.",
+            "Good. This is a good way to attract attention. You might use their first name or a nickname that was used in the past."
+          ],
+          optionFeedbackZh: [
+            "不尊重。提高嗓门并不是尊重的吸引注意方式，可能让失智症患者感到悲伤、沮丧或愤怒。",
+            "不尊重。这不是尊重的吸引注意方式，反而可能让对方感到痛苦或愤怒。",
+            "恰当。这是恰当的接触方式，体现出你以尊重的态度在寻求交流。",
+            "不太好。这可能会惊到没料到你来、或没听到你脚步的人。",
+            "很好。这是吸引失智症患者注意的好办法。",
+            "很好。这是吸引注意的好办法。你可以叫他们的名字，或过去常用的昵称。"
+          ],
         },
       },
       {
@@ -335,15 +383,35 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
         reflectQuestion: "If you try a relaxation exercise and it doesn't seem to help, what could be the reason? Consider if the exercise wasn't a good fit, if you need more practice, or if the timing or environment was not right.",
         reflectQuestionZh: "如果您尝试了一种放松练习但似乎没有帮助，可能的原因是什么？想一想是否是这个练习不适合您，您是否需要更多练习，或者时间或环境不合适。",
         quiz: {
-          question: "Diana cares for her husband with dementia and feels she has no time or energy to relax. What does her friend suggest that persuades Diana to try a relaxation exercise?",
-          questionZh: "戴安娜照顾患有失智症的丈夫，觉得没时间或精力放松。她的朋友提出了什么建议，说服了戴安娜尝试放松练习？",
-          options: ["That relaxation exercises require at least 30 minutes to be effective.", "That some relaxation methods don't take much time and can provide renewed energy.", "That she must hire a professional carer to get any time to relax.", "That only total stretching will help with her level of tension."],
-          optionsZh: ["放松练习至少需要30分钟才有效。", "有些放松方法不占用太多时间，并且能提供新的精力。", "她必须雇一个专业护理者才能有时间放松。", "只有全身伸展才能帮助她缓解那种程度的紧张。"],
-          correctIndices: [0],
-          explanation: "Diana's friend explains that some relaxation exercises are very brief and can give her renewed energy, which helps her get tasks done more easily.",
-          explanationZh: "戴安娜的朋友解释说，有些放松练习非常简短，可以给她带来新的精力，帮助她更轻松地完成任务。",
-          optionFeedback: ["Good idea. Li is honest about her need and respectful of her sister's time.", "Not helpful. Blaming and shouting will likely make her sister defensive, not willing to help.", "Not helpful. Avoiding the conversation means her need never gets discussed and she gives up on the break."],
-          optionFeedbackZh: ["很好的做法。李诚实表达了自己的需求，也尊重姐姐的时间。", "无益。责备和大喊只会让姐姐反感，不会愿意帮忙。", "无益。回避沟通意味着需求从未被讨论，她也放弃了喘息的机会。"],
+          question: "Diana cares for her husband Dan, who has dementia, and feels she has no time or energy to relax. Her friend tells her about relaxation. Which statements about relaxation are correct? (Select all that apply.)",
+          questionZh: "戴安娜照顾患失智症的丈夫丹，觉得没有时间和精力去放松。她的朋友告诉她关于放松的事。下列关于放松的说法哪些正确？（多选）",
+          options: [
+            "Relaxation makes you feel less tense.",
+            "Relaxation might give you renewed energy.",
+            "Relaxation may make it easier to get tasks done.",
+            "Relaxation always requires a long time and special equipment to be effective."
+          ],
+          optionsZh: [
+            "放松能让人不那么紧张。",
+            "放松可能让你重新获得精力。",
+            "放松可能让完成任务变得更容易。",
+            "放松必须花很长时间、用特殊器材才有效果。"
+          ],
+          correctIndices: [0, 1, 2],
+          explanation: "Relaxation makes you feel less tense, may give renewed energy, and can help you get tasks done — and it does not have to take much time. Diana tries a short breathing exercise her friend showed her and feels less tense afterwards.",
+          explanationZh: "放松可以减轻紧张、补充精力，也能帮你更轻松完成任务——而且不一定要花很长时间。戴安娜尝试朋友教的简短呼吸练习，之后就感觉没那么紧张了。",
+          optionFeedback: [
+            "Correct. Relaxation makes you feel less tense.",
+            "Correct. Relaxation might give you renewed energy.",
+            "Correct. Relaxation may make it easier to get tasks done.",
+            "Not correct. Relaxation does not have to take much time — short exercises like simple breathing can already help."
+          ],
+          optionFeedbackZh: [
+            "正确。放松能让人不那么紧张。",
+            "正确。放松可能让你重新获得精力。",
+            "正确。放松可能让你更轻松地完成任务。",
+            "不正确。放松不一定要花很多时间——像简单呼吸这样的小练习就已经能起作用。"
+          ],
         },
       },
       {
