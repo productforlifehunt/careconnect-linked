@@ -44,7 +44,7 @@ export interface ISupportLesson {
   keyActionsZh: string[];
   reflectQuestion: string;
   reflectQuestionZh: string;
-  quiz: ISupportQuiz;
+  quiz?: ISupportQuiz;
   readMinutes?: number;
   /** Optional: link to challenged_content category for related deep-dive articles */
   contentCategory?: string;
@@ -295,17 +295,6 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
         keyActionsZh: ["您可以在一天中的任何时间、任何地点花些时间放松。", "设定一个目标：尝试每天至少做一次放松练习。", "您可以计划每天在特定的时间放松（如有必要，请使用提醒）。", "进行放松练习后，您将因精力恢复和心情变好而受益。", "即使是短暂的练习也能带来改变！"],
         reflectQuestion: "Before you try an exercise ask yourself: “How tense am I feeling”?",
         reflectQuestionZh: "在尝试练习之前，问问自己：“我感觉有多紧张？”",
-        quiz: {
-          question: "",
-          questionZh: "",
-          options: ["", "", ""],
-          optionsZh: ["", "", ""],
-          correctIndices: [],
-          explanation: "Pleasant mealtimes are created by including the person in familiar roles, protecting their dignity, and solving problems together instead of isolating or forcing them. A positive atmosphere can support both appetite and mood.",
-          explanationZh: "愉快的用餐体验来自于让当事人继续参与熟悉的角色、维护他们的尊严，并一起解决问题，而不是孤立或强迫他们。积极的用餐氛围有助于改善食欲和情绪。"
-          optionFeedback: ["", "", ""],
-          optionFeedbackZh: ["", "", ""],
-        },
       },
       {
         key: "pleasant-activities",
