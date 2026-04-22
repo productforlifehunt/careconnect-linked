@@ -432,15 +432,31 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
         reflectQuestion: "What are two pleasant activities you would like to do more often? Think of one you can do by yourself, and one you could do with the person you care for.",
         reflectQuestionZh: "您希望更频繁地进行哪两项愉快的活动？想一个您可以自己做的，再想一个可以和您所照护的人一起做的。",
         quiz: {
-          question: "Jo is about to leave the house to visit a friend. Her husband Max, who is living with dementia, is worried about his lost keys and says, “I can’t find my keys! You cannot leave me without keys!” What should Jo do?",
-          questionZh: "乔正要出门拜访朋友。她的丈夫马克斯患有失智症，他正担心自己找不到钥匙，并说：“我找不到钥匙了！你不能把我一个人丢下，我没有钥匙！”乔应该怎么做？",
-          options: ["Tell Max that she cannot help him search now and leave.", "Search for the keys until she finds them.", "Tell Max that he should be more careful not to lose his keys in the future.", "Think to herself, “Max has dementia and is sometimes worried when he loses things. I can take some time to help and then go.” Then call her friend and explain that she will come later."],
-          optionsZh: ["告诉马克斯她现在不能帮他找，然后离开。", "一直找钥匙，直到找到为止。", "告诉马克斯他以后应该更小心，不要再丢钥匙了。", "心里想：“马克斯患有失智症，找不到东西时偶尔会担心。我可以花点时间帮他，然后再走。” 然后打电话给朋友，解释说她会晚点到。"],
-          correctIndices: [1],
-          explanation: "This response is based on a helpful thought. By reframing the situation, Jo can stay calm and compassionate while still planning to take time for herself.",
-          explanationZh: "这个回应是基于一个有益的想法。通过重新定义情况，乔可以保持冷静和同情心，同时仍然计划为自己安排时间。",
-          optionFeedback: ["Not accurate. Relaxation does not need to be 30+ minutes to be effective.", "Good idea. Even short relaxation exercises can restore energy and lower stress.", "Not necessary. You don't need a paid carer to relax; small breaks work too.", "Not accurate. Many short methods (breathing, music, stretching) help, not just total stretching."],
-          optionFeedbackZh: ["不准确。放松不必长达30分钟以上才有效。", "很好的做法。即使是简短的放松练习也能恢复精力、降低压力。", "没有必要。不一定要请专业护理者才能放松，短暂休息同样有效。", "不准确。除了全身伸展，呼吸、音乐等许多简短方法也有帮助。"],
+          question: "Siya, who has dementia, has moved in with her son's family. She has lost her husband, her own home, and her previous roles as cook and housekeeper. She is becoming withdrawn at mealtimes. Which is a helpful response from Siya's family? (Select all that apply.)",
+          questionZh: "Siya 患有失智症，搬来和儿子一家同住。她失去了丈夫、自己的家以及以前作为厨师和管家的角色，最近吃饭时越来越退缩。她的家人哪些回应是有帮助的？（多选）",
+          options: [
+            "Bring Siya dinner in her room so she does not have to come out.",
+            "Demand that Siya joins them for dinner.",
+            "Let Siya help with the meal preparation and cleaning activities."
+          ],
+          optionsZh: [
+            "把晚餐送到 Siya 的房间，这样她就不必出来。",
+            "命令 Siya 和大家一起吃晚饭。",
+            "让 Siya 参与做饭和饭后清理。"
+          ],
+          correctIndices: [2],
+          explanation: "Siya's family knows she still enjoys cooking, so they should support her to continue engaging in activities she likes and is still able to do. This helps her feel welcomed and valued.",
+          explanationZh: "Siya 的家人知道她仍然喜欢做饭，因此应该支持她继续参与她喜欢且仍然能做的活动。这能让她感到被欢迎、被重视。",
+          optionFeedback: [
+            "Not helpful. This might further isolate Siya from her family. She may not feel welcome in the new home, having already lost her husband, her own home and her previous roles as cook and housekeeper.",
+            "Not such a good response. This may make Siya angry or cause her to further withdraw.",
+            "Good response. Siya's family knows she still enjoys cooking and should support her to continue engaging in activities she likes and is still able to do."
+          ],
+          optionFeedbackZh: [
+            "无益。这可能让 Siya 与家人更加疏离。她在失去丈夫、家、以及过去作为厨师和管家的角色后，可能本就不觉得在新家受欢迎。",
+            "不太好的回应。这可能让 Siya 生气，或让她更加退缩。",
+            "好的回应。家人知道她仍然喜欢做饭，应该支持她继续参与喜欢、且仍然能做的活动。"
+          ],
         },
       },
       {
@@ -460,15 +476,47 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
         reflectQuestion: "Think of a recent event that made you feel upset. What were your unhelpful thoughts? What would be a more helpful way to think about it? How would that helpful thought make you feel?",
         reflectQuestionZh: "想一个最近让您感到心烦的事件。您当时的无益想法是什么？更有益的想法会是什么？那个有益的想法会让您感觉如何？",
         quiz: {
-          question: "Jo is about to visit a friend when her husband Max, who has dementia, anxiously says he can't find his keys. Jo's immediate thought is, “I cannot leave him alone anymore,” and she feels miserable. What should Jo do?",
-          questionZh: "Jo正要出门拜访朋友时，她患有失智症的丈夫Max焦虑地说他找不到钥匙了。Jo的第一反应是：“我再也不能把他一个人丢下了”，她感到非常痛苦。Jo应该怎么做？",
-          options: ["Tell Max she cannot help him search now and leave.", "Search for the keys until she finds them.", "Tell Max that he should be more careful in the future.", "Think, “Max has dementia and gets worried. I can take some time to help and then go,” and then call her friend to explain she'll be late."],
-          optionsZh: ["告诉Max她现在不能帮他找，然后离开。", "一直寻找钥匙，直到找到为止。", "告诉Max他以后应该更小心。", "心里想：“Max患有失智症，有时会焦虑。我可以花点时间帮忙，然后再走”，然后打电话给朋友解释她会晚到。"],
-          correctIndices: [3],
-          explanation: "This is the best approach because it addresses Jo's unhelpful thought. By reframing her thinking, she can calmly help Max feel secure and still see her friend, managing the situation without feeling miserable.",
-          explanationZh: "这是最好的方法，因为它处理了Jo自己的无益想法。通过重塑她的思维，她可以冷静地帮助Max获得安全感，同时仍然可以去见她的朋友，从而在不感到痛苦的情况下处理好情况。",
-          optionFeedback: ["Not helpful. Leaving Max alarmed will increase his distress and your guilt.", "Possible but rigid. Spending unlimited time means missing your friend; no balance.", "Not helpful. Lecturing him about future carefulness ignores his current dementia.", "Good idea. Reframing the situation lets Jo stay calm, help Max, and still see her friend."],
-          optionFeedbackZh: ["无益。让马克斯独自惊慌，会加剧他的痛苦和你的内疚。", "可行但僵硬。花无限时间找钥匙意味着错过朋友；缺乏平衡。", "无益。教训他以后要小心，忽视了他当下的失智症状况。", "很好的做法。重新定义情境让乔保持冷静，帮助马克斯，同时还能见到朋友。"],
+          question: "Aryan cares for a family member with dementia and feels overwhelmed. Which of Aryan's thoughts may help her feel better? (Select all that apply.)",
+          questionZh: "Aryan 在照顾患失智症的家人，感到不堪重负。Aryan 的下列想法中，哪些可能帮助她感觉好一些？（多选）",
+          options: [
+            "Making time for myself helps me to provide better care.",
+            "I am a bad carer if my family member is not always happy.",
+            "Maybe the person living with dementia will get better.",
+            "Dementia is a disease, it is not my or anyone else's fault.",
+            "No one understands how hard it is to care.",
+            "No one can provide the care the way I do.",
+            "Asking others for help can help me to share care duties."
+          ],
+          optionsZh: [
+            "为自己留出时间，能让我提供更好的照护。",
+            "如果我的家人不是每天都开心，那就是我这个护理者不合格。",
+            "也许患失智症的人会好起来。",
+            "失智症是一种疾病，不是我或任何人的错。",
+            "没有人理解照护有多难。",
+            "没人能像我这样把照护做好。",
+            "请别人帮忙，可以让我分担一些照护任务。"
+          ],
+          correctIndices: [0, 3, 6],
+          explanation: "Helpful thoughts reduce guilt, prevent isolation, and let you keep caring long-term. Recognising that you need breaks, that dementia is a disease, and that sharing care helps you cope are all helpful reframes.",
+          explanationZh: "有益的想法可以减少内疚、防止孤立，让你能长期坚持照护。认识到自己需要休息、失智症是一种疾病、分担照护对自己有帮助，都是有益的换位思考。",
+          optionFeedback: [
+            "Helpful. No one should feel guilty when taking time for themselves. It might help the carer to continue providing care in the long term.",
+            "Unhelpful. This thought will make Aryan feel unhappy and sad. The mood of the person living with dementia does not depend solely on the carer; it can also be related to dementia, depression, functional ability or personality.",
+            "Unhelpful. This thought may make Aryan feel disappointed as people with dementia continue to decline. Many diseases cause dementia, and unfortunately there is no cure for them yet.",
+            "Helpful. This thought is helpful and might prevent feelings of guilt.",
+            "Unhelpful. This thought may make Aryan feel upset, isolated and lonely. There may be people who don't understand, but talking to others may help them understand and take pressure off you.",
+            "Unhelpful. This thought could make Aryan feel lonely, isolated and under a lot of pressure. Others may provide care differently, but that doesn't mean it's lower quality. Involving others avoids getting overwhelmed.",
+            "Helpful. This is a helpful thought that may make Aryan feel more in control. Involving others has many benefits — the carer can take regular breaks and provide care for longer."
+          ],
+          optionFeedbackZh: [
+            "有益。为自己留出时间不应感到内疚，这能帮护理者长期坚持下去。",
+            "无益。这种想法会让 Aryan 不快乐、悲伤。失智症患者的情绪不只取决于护理者，也可能与疾病、抑郁、功能状态或性格有关。",
+            "无益。这种想法可能让 Aryan 失望，因为失智症患者会持续退化。很多疾病都会导致失智症，目前尚无治愈方法。",
+            "有益。这种想法是有益的，可以防止内疚感。",
+            "无益。这种想法可能让 Aryan 感到难过、孤立、孤独。也许有人不理解，但与他人沟通可以帮他们理解，并让你减压。",
+            "无益。这种想法可能让 Aryan 感到孤独、孤立、压力很大。别人照护方式不同，并不代表质量更低。让他人参与可以避免你被压垮。",
+            "有益。这种想法可能让 Aryan 感到更有掌控感。让他人参与照护好处很多——护理者可以定期休息，更长时间地坚持下去。"
+          ],
         },
       }
     ],
