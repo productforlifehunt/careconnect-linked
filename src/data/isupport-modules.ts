@@ -23,10 +23,14 @@ export interface ISupportQuiz {
   questionZh: string;
   options: string[];
   optionsZh: string[];
-  /** 0-based index of the correct answer */
-  correct: number;
+  /** 0-based indices of ALL correct answers (multi-select checklist, WHO format) */
+  correctIndices: number[];
+  /** Overall feedback shown after submitting */
   explanation: string;
   explanationZh: string;
+  /** Optional per-option feedback (✓/✗ rationale, WHO "Check your understanding" style) */
+  optionFeedback?: string[];
+  optionFeedbackZh?: string[];
 }
 
 export interface ISupportLesson {
