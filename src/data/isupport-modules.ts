@@ -67,28 +67,25 @@ export function getModule(key: string): ISupportModule | undefined {
   return ISUPPORT_MODULES.find((m) => m.key === key);
 }
 
+/**
+ * Returns the next uncompleted lesson based on a Set of completed "moduleKey/lessonKey" entries.
+ * Falls back to the very first lesson if nothing is completed.
+ */
 export function getNextLesson(
-  moduleKey: string,
-  lessonKey: string
+  completed: Set<string>
 ): { module: ISupportModule; lesson: ISupportLesson } | null {
-  const modIdx = ISUPPORT_MODULES.findIndex((m) => m.key === moduleKey);
-  if (modIdx === -1) return null;
-  const mod = ISUPPORT_MODULES[modIdx];
-  const lessonIdx = mod.lessons.findIndex((l) => l.key === lessonKey);
-  if (lessonIdx === -1) return null;
-  // Next lesson in same module
-  if (lessonIdx + 1 < mod.lessons.length) {
-    return { module: mod, lesson: mod.lessons[lessonIdx + 1] };
-  }
-  // First lesson of next module
-  if (modIdx + 1 < ISUPPORT_MODULES.length) {
-    const next = ISUPPORT_MODULES[modIdx + 1];
-    if (next.lessons.length > 0) {
-      return { module: next, lesson: next.lessons[0] };
+  for (const mod of ISUPPORT_MODULES) {
+    for (const lesson of mod.lessons) {
+      const id = `${mod.key}/${lesson.key}`;
+      if (!completed.has(id)) {
+        return { module: mod, lesson };
+      }
     }
   }
   return null;
 }
+
+export const TOTAL_LESSONS = 23;
 
 export const ISUPPORT_MODULES: ISupportModule[] = [
   {
