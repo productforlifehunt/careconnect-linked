@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Bot, Send, Loader2, X, Volume2, VolumeX, Languages, Mic, MicOff,
-  Play, Pause, Square, MessageSquare, Headphones, Sparkles,
+  Play, Pause, Square, MessageSquare, Headphones, AudioLines,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
@@ -415,7 +415,7 @@ export function DementiaAssistant() {
 
         {/* TTS Engine A/B switcher */}
         <div className="flex items-center gap-2 px-3 py-1.5 border-b bg-muted/30 text-xs">
-          <Sparkles className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <AudioLines className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
           <span className="text-[11px] text-muted-foreground shrink-0">
             {isChinese ? "引擎" : "Engine"}
           </span>
