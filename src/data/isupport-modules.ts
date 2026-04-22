@@ -1049,15 +1049,47 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
         reflectQuestion: "What are the possible reasons why the person you care for may have the desire to walk? Based on the reasons you identify, how might you react or respond the next time they want to go outside?",
         reflectQuestionZh: "您所护理的人可能想行走的原因有哪些？根据您确定的原因，下次他们想外出时，您可以如何应对？",
         quiz: {
-          question: "Amit has dementia and is supported by his wife, Samia. Samia is cooking dinner when she hears Amit heading for the door. She knows that he likes to go for afternoon walks, but now is not a good time. What is the BEST immediate response for Samia?",
-          questionZh: "阿米特患有失智症，由他的妻子萨米亚照料。萨米亚正在做晚饭时，听到阿米特走向门口。她知道他喜欢下午散步，但现在时机不合适。对萨米亚来说，最好立即作出的反应是什么？",
-          options: ["Go to Amit and calmly say: “Let’s eat dinner first and we’ll go for a walk later.”", "Yell from the kitchen, “Please stop! I can’t come with you now.”", "Forbid Amit to leave and pull him back into the house.", "Lock the door so that Amit cannot leave."],
-          optionsZh: ["走到阿米特身边，平静地说：“我们先吃晚饭，稍后我们再去散步。”", "从厨房里大喊：“请停下！我现在不能和你一起去。”", "禁止阿米特离开，并把他拉回屋内。", "锁上门，让阿米特无法离开。"],
-          correctIndices: [0],
-          explanation: "This is a good response because Samia stays calm, does not yell, and honors Amit's wishes by telling him that they will go together after dinner.",
-          explanationZh: "这是一个很好的回应，因为萨米亚保持冷静，没有大喊大叫，并且通过告诉阿米特晚饭后他们会一起去，来尊重他的愿望。",
-          optionFeedback: ["Good idea. Calmly redirecting honours his wish to walk while keeping him safe for now.", "Not helpful. Yelling from another room may startle him and not stop him.", "Not helpful. Forcing him back removes his autonomy and may trigger aggression.", "Not ideal as a default. Locking him in can frighten him; better to redirect with empathy first."],
-          optionFeedbackZh: ["很好的做法。冷静地引导既尊重他散步的愿望，也确保他当下安全。", "无益。从另一个房间大喊可能吓到他，也无法阻止他。", "无益。强行拉回剥夺了他的自主，可能引发攻击行为。", "不宜作为默认做法。锁门会让他害怕；先用同理心引导更好。"],
+          question: "Amit has dementia and is supported by his wife Samia. Samia is cooking dinner when she hears Amit heading for the door. She knows that he likes to go for afternoon walks, but she is busy now and cannot accompany him. What could Samia do? Please select all correct responses. (Multiple answers are correct.)",
+          questionZh: "阿米特患有失智症，由妻子萨米亚照顾。萨米亚正在做晚饭，听到阿米特走向门口。她知道他喜欢下午散步，但她现在很忙，无法陪同。萨米亚可以怎么做？请选出所有正确的回应。（多选）",
+          options: [
+            "Yell to Amit from the kitchen: \"please stop! I can't come with you now.\"",
+            "Turn the cooker off and follow Amit.",
+            "Forbid Amit to leave and pull him back into the house.",
+            "Go to where Amit is standing by the door and calmly say: \"Let's eat dinner first and we'll go for a walk later.\"",
+            "Lock the door so that Amit cannot leave.",
+            "Let Amit leave and call a neighbour to keep an eye out for him.",
+            "Ask another family member to go for a walk with him."
+          ],
+          optionsZh: [
+            "从厨房大喊：\"请停下！我现在不能和你一起去。\"",
+            "关掉炉子，跟着阿米特出去。",
+            "禁止阿米特离开，把他拉回屋内。",
+            "走到门边阿米特身旁，平静地说：\"我们先吃晚饭，稍后再去散步。\"",
+            "锁上门，让阿米特无法离开。",
+            "让阿米特出门，并打电话请邻居帮忙留意他。",
+            "请另一位家人陪他去散步。"
+          ],
+          correctIndices: [1, 3, 5, 6],
+          explanation: "WHO marks four responses as good: turn off the cooker and follow him, calmly redirect, ask a prearranged neighbour to keep an eye out, or ask another family member to walk with him. Yelling, forcing him back, or locking him in are not good responses.",
+          explanationZh: "WHO 标记四种回应为好：关掉炉子并跟随他、冷静地引导、请预先约定的邻居留意、或请另一位家人陪他散步。大喊、强拉回家或锁门都不好。",
+          optionFeedback: [
+            "Not correct. Yelling at Amit from the kitchen may confuse and agitate him. It may also not stop him from going out on his own.",
+            "Correct. This is a good response if there are no other alternatives.",
+            "Not correct. Amit may get agitated and resist being pulled, which could result in Amit or Samia being harmed.",
+            "Correct. Samia stays calm, does not yell, and honours Amit's wishes by telling him they will go together after dinner.",
+            "Correct only if no other options exist and Samia is in the house with Amit. For fire safety, a person living with dementia who requires supervision should never be locked inside a house without another person there.",
+            "Correct if Samia has prearranged with the neighbours to keep an eye out for him. If Amit is in the very early stages of dementia, he may be okay going out on his own to familiar places.",
+            "Correct. A good option — Samia can finish cooking dinner and Amit can enjoy a nice walk before dinner."
+          ],
+          optionFeedbackZh: [
+            "不正确。从厨房大喊会让阿米特困惑、激动，也未必能阻止他独自外出。",
+            "正确。如果没有其他选择，这是一个好回应。",
+            "不正确。阿米特可能会激动并反抗被拉扯，可能导致他或萨米亚受伤。",
+            "正确。萨米亚保持冷静、没有大喊，并通过告诉他晚饭后一起去散步来尊重他的意愿。",
+            "仅当没有其他选择且萨米亚和阿米特都在屋内时正确。出于消防安全考虑，需要看护的失智症患者绝不能在没有其他人在场的情况下被锁在屋内。",
+            "正确，前提是萨米亚事先与邻居约好留意他。如果阿米特处于失智症早期，独自前往熟悉的地方也许没问题。",
+            "正确。这是个好选择——萨米亚可以做完晚饭，阿米特也能在饭前愉快地散步。"
+          ],
         },
       },
       {
