@@ -65,6 +65,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let cancelled = false;
 
+    // Proactively purge stale tokens issued by old hostnames (pre domain migration).
+    // Current valid issuer must contain "challenged-dementia.com" or "170.106.171.59".
+    // Any other iss = legacy token signed with a different secret → will fail JWT verification.
+    try {
+      const token = localStorage.getItem("cc_wp_token");
+      if (token) {
+        const parts = token.split(".");
+        if (parts.length === 3) {
+          const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(parts[1].length / 4) * 4, "=")));
+          const iss: string = payload?.iss || "";
+          const site: string = payload?.site || "";
+          const looksValid =
+            /challenged-dementia\.com/i.test(iss) ||
+            /challenged-dementia\.com/i.test(site) ||
+            /170\.106\.171\.59/.test(iss);
+          // Also drop if expired
+          const expired = typeof payload?.exp === "number" && payload.exp * 1000 <= Date.now();
+          if (!looksValid || expired) {
+            localStorage.removeItem("cc_wp_token");
+            localStorage.removeItem("cc_wp_user");
+          }
+        }
+      }
+    } catch {
+      // If we can't parse, leave it — the API call will trigger auto-recovery
+    }
+
     // Restore WP session from localStorage (fast, no network)
     const storedWP = getStoredWPUser();
     if (storedWP) {
