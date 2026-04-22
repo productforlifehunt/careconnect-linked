@@ -784,15 +784,43 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
         reflectQuestion: "Think about the last time the person you care for was aggressive. What was happening right before? What could you change about your response, or the environment, to make it more calming next time?",
         reflectQuestionZh: "回想一下您护理的人最近一次表现出攻击性是什么时候。在此之前发生了什么？下一次，您可以如何改变自己的应对方式或环境，使情况更平缓？",
         quiz: {
-          question: "Neil's father-in-law, Amit, who has dementia, angrily refuses to take a bath. When Neil insists and tugs his arm, Amit shouts and shoves him. What is a better way for Neil to respond?",
-          questionZh: "尼尔的岳父阿米特患有失智症，他愤怒地拒绝洗澡。当尼尔坚持并拉扯他的手臂时，阿米特大喊大叫并推搡他。对尼尔来说，哪种是更好的应对方式？",
-          options: ["Force Amit to take a bath anyway to ensure he is clean for the doctor.", "Logically explain in a firm voice that he must bathe.", "Walk away to give them both space, and try again later with a new approach, like playing music.", "Raise his voice to show Amit that he must listen."],
-          optionsZh: ["无论如何都强迫阿米特洗澡，以确保他去看医生时是干净的。", "用坚定的语气向他逻辑地解释为什么必须洗澡。", "走开，给彼此一些空间，稍后再用新的方法重试，比如播放音乐。", "提高声音，让阿米特知道必须听话。"],
-          correctIndices: [2],
-          explanation: "Walking away allows both people to calm down. It gives the carer time to breathe and devise a new, less stressful strategy, potentially making the person with dementia more receptive later.",
-          explanationZh: "走开可以让双方都冷静下来。它能让护理者有时间喘口气，并想出一个新的、压力较小的策略，可能会让失智症患者稍后更容易接受。",
-          optionFeedback: ["Not helpful. Forcing him will escalate the aggression and may injure both of you.", "Not helpful. Logical explanations rarely work in the heat of agitation.", "Good idea. Walking away allows everyone to calm down; trying again later with music may succeed.", "Not helpful. Raising your voice intensifies the conflict."],
-          optionFeedbackZh: ["无益。强迫只会升级攻击行为，并可能伤到双方。", "无益。在激动中逻辑解释很少奏效。", "很好的做法。走开让大家都冷静；稍后用音乐等方法重试可能成功。", "无益。提高嗓门只会加剧冲突。"],
+          question: "Neil's father-in-law, Amit, has dementia. Amit angrily refuses to take a bath. Neil tugs Amit's arm and says angrily: \"you must take a bath because you are going to the doctor and need to be clean\". Amit gets very upset and shouts and even tries to shove Neil. How could Neil react differently? (Multiple answers are correct.)",
+          questionZh: "尼尔的岳父阿米特患有失智症。阿米特愤怒地拒绝洗澡。尼尔拉着他的胳膊，生气地说：\"你必须洗澡，因为你要去看医生，需要干净。\"阿米特非常不安，大喊大叫，甚至试图推开尼尔。尼尔可以如何不同地回应？（多选）",
+          options: [
+            "Force his father-in-law to take a bath.",
+            "Walk away and try at a different time, or on a different day.",
+            "Use distraction, e.g. by playing music that his father-in-law likes.",
+            "Maintain his father-in-law's dignity and privacy.",
+            "Ask his wife or another family member to give it a try.",
+            "Look online or talk to other carers for new suggestions."
+          ],
+          optionsZh: [
+            "强迫岳父去洗澡。",
+            "走开，换个时间或换一天再试。",
+            "使用分散注意力的方法，比如播放岳父喜欢的音乐。",
+            "维护岳父的尊严和隐私。",
+            "请妻子或其他家人来试一试。",
+            "上网查找或与其他护理者交流，寻求新建议。"
+          ],
+          correctIndices: [1, 2, 3, 4, 5],
+          explanation: "WHO recommends: never force the person; walk away and try later, distract with something they enjoy, maintain dignity, ask others to help, and seek new ideas from carers or online resources.",
+          explanationZh: "WHO 建议：绝不强迫；走开稍后再试，用他们喜欢的事物分散注意力，维护尊严，请他人帮忙，并向其他护理者或网络资源寻求新方法。",
+          optionFeedback: [
+            "Not correct. Forcing will escalate the aggression and may injure both of you.",
+            "Correct. Walking away gives both of you time to calm down before trying again.",
+            "Correct. Distraction with something pleasant, like music he likes, can defuse the situation.",
+            "Correct. Always preserve the person's dignity and privacy, even in difficult moments.",
+            "Correct. A different family member may have more success at that moment.",
+            "Correct. Other carers and online resources can offer fresh ideas to try."
+          ],
+          optionFeedbackZh: [
+            "不正确。强迫会升级攻击行为，可能伤到双方。",
+            "正确。走开让双方都冷静下来，再尝试一次。",
+            "正确。用愉快的事物（如他喜欢的音乐）分散注意力可以化解局面。",
+            "正确。无论何时都要维护对方的尊严和隐私。",
+            "正确。换一位家人此刻可能更顺利。",
+            "正确。其他护理者和网络资源能提供新的尝试思路。"
+          ],
         },
       },
       {
@@ -812,15 +840,43 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
         reflectQuestion: "Think about the person you care for. Do they ever show signs of depression, anxiety, or apathy? Describe what these changes look like and consider what you could do to prevent them or respond differently next time.",
         reflectQuestionZh: "想一想您所护理的人。他们是否曾表现出抑郁、焦虑或冷漠的迹象？描述一下这些变化是什么样子的，并思考您可以做些什么来预防这些情况，或者在下一次以不同的方式应对。",
         quiz: {
-          question: "Juan has dementia and sometimes sits looking very sad, hunched over, and crying. His sister, Isabel, tries to cheer him up, but it doesn't seem to work. How should Isabel handle this situation?",
-          questionZh: "胡安患有失智症，有时会弓着背坐着，看起来很伤心，甚至哭泣。他的姐姐伊莎贝尔试图让他振作起来，但似乎并不奏效。伊莎贝尔应该如何处理这种情况？",
-          options: ["Say: 'Juan, what’s the matter with you? Just get up and do something.'", "Go over and touch Juan's arm, saying, 'I know that you feel bad, I do too. What we’re going through is really hard.'", "Say: 'Men don’t cry. We used to have so much fun together.'", "Sigh and walk away, thinking that there is nothing that she can do."],
-          optionsZh: ["说：“胡安，你怎么了？快起来做点什么。”", "走过去，摸摸胡安的手臂，说：“我知道你感觉不好，我也是。我们正在经历的这一切真的很难。”", "说：“男人不哭。我们以前在一起多开心啊。”", "叹口气走开，心想自己也无能为力。"],
-          correctIndices: [1],
-          explanation: "This is a good response because people who are feeling sad need extra love, support, and understanding. Acknowledging his feelings can be very comforting.",
-          explanationZh: "这是一个很好的回应，因为感到悲伤的人需要额外的关爱、支持和理解。承认他的感受可以给他很大的安慰。",
-          optionFeedback: ["Not helpful. Demanding he 'just get up' dismisses his feelings.", "Good idea. Touch and acknowledging his feelings shows love and makes him feel understood.", "Not helpful. Shaming words ('men don't cry') dismisses his emotions.", "Not helpful. Walking away leaves him alone in his sadness."],
-          optionFeedbackZh: ["无益。命令他“快起来”是无视他的感受。", "很好的做法。轻触加上认可他的感受，传递关爱并让他感到被理解。", "无益。羞辱性的话（“男人不哭”）是在否定他的情绪。", "无益。走开让他独自陷入悲伤。"],
+          question: "Juan has dementia and sometimes sits looking very sad, hunched over, and crying. His sister Isabel sees him like this. Below are some things Isabel may do or say. Please select all responses that you think might work. (Multiple answers are correct.)",
+          questionZh: "胡安患有失智症，有时会弓着背坐着，看起来很伤心、哭泣。他的姐姐伊莎贝尔看到他这样。下面是伊莎贝尔可能采取的做法或说的话。请选出所有您认为可能有用的回应。（多选）",
+          options: [
+            "Walk over to Juan and say in a calm, reassuring tone: \"I have some ideas for how you can feel better, let's talk.\"",
+            "Say: \"Juan, what's the matter with you? I'm tired of seeing you like this. Just get up and do something.\"",
+            "Say: \"Men don't cry and get sad, we used to have so much fun together.\"",
+            "Go over and touch Juan on the arm or shoulder: \"I know that you feel bad, I do too. What we're going through is really hard.\"",
+            "Sit with Juan and suggest that they do a pleasant activity together.",
+            "Sigh and walk away, thinking that there is nothing that she can do."
+          ],
+          optionsZh: [
+            "走到胡安身边，用平静、安抚的语气说：\"我有一些可以让你感觉好些的想法，我们聊聊吧。\"",
+            "说：\"胡安，你怎么了？我看你这样真累。快起来做点什么吧。\"",
+            "说：\"男人不哭、不悲伤，我们以前在一起多开心啊。\"",
+            "走过去摸他的手臂或肩膀，说：\"我知道你感觉不好，我也是。我们经历的一切真的很难。\"",
+            "陪胡安坐着，并建议一起做一项愉快的活动。",
+            "叹口气走开，心想自己什么也做不了。"
+          ],
+          correctIndices: [0, 3, 4],
+          explanation: "WHO marks three responses as good: calmly offering support, acknowledging his feelings with touch, and suggesting a pleasant activity together. Scolding, shaming, or walking away are not helpful.",
+          explanationZh: "WHO 标记的好回应有三种：冷静地提供支持、用身体接触认可他的感受、建议一起做愉快的活动。责备、羞辱或走开都没有帮助。",
+          optionFeedback: [
+            "Correct. Juan needs more support due to the changes in his mood.",
+            "Not correct. This response is not helpful because Juan cannot help that he is feeling sad.",
+            "Not correct. This might embarrass Juan and may make him feel even more sad.",
+            "Correct. People who are feeling sad need extra love, support and understanding.",
+            "Correct. It may distract Juan and make him feel better.",
+            "Not correct. This is not helpful because Isabel is further isolating Juan."
+          ],
+          optionFeedbackZh: [
+            "正确。胡安因情绪变化需要更多支持。",
+            "不正确。胡安无法控制自己的悲伤，这种话没有帮助。",
+            "不正确。这可能让胡安难堪，反而让他更伤心。",
+            "正确。感到悲伤的人需要额外的关爱、支持和理解。",
+            "正确。这可能转移胡安的注意力，让他感觉好一些。",
+            "不正确。走开会让伊莎贝尔进一步孤立胡安。"
+          ],
         },
       },
       {
