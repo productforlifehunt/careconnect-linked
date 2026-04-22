@@ -549,15 +549,31 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
         reflectQuestion: "Think about involving the person that you care for around mealtimes. Which activities do you think they can still engage in and would enjoy?",
         reflectQuestionZh: "想一想如何让您护理的人参与到用餐的各个环节中。您认为他们仍然可以参与并会喜欢哪些活动？",
         quiz: {
-          question: "Siya was a housewife who cooked daily. Now living with her son’s family after her husband’s death, she is sad, refuses food, and won’t join family dinners. How would you advise Siya’s family to deal with this situation?",
-          questionZh: "Siya 曾是一名家庭主妇，每天为家人做饭。丈夫去世后，她现在和儿子的家人住在一起。她很伤心，拒绝吃饭，也不参加家庭聚餐。您会如何建议 Siya 的家人应对这种情况？",
-          options: ["Bring Siya’s dinner to her room.", "Demand that Siya joins them for dinner.", "Let Siya help with meal preparation and cleaning."],
-          optionsZh: ["把 Siya 的晚餐送到她的房间。", "要求 Siya 必须和他们一起吃晚饭。", "让 Siya 帮忙准备饭菜和打扫卫生。"],
-          correctIndices: [2],
-          explanation: "This is a good response because it supports Siya in continuing activities she enjoys and is able to do, which can restore her sense of purpose and self-worth.",
-          explanationZh: "这是一个很好的回应，因为它支持 Siya 继续从事她喜欢并有能力做的活动，这可以帮助她恢复生活的目的感和自我价值感。",
-          optionFeedback: ["Not helpful. Bringing meals to her room isolates her further and worsens her mood.", "Not helpful. Demanding causes conflict and removes her dignity.", "Good idea. Letting Siya help with meal preparation restores purpose and uses skills she still has."],
-          optionFeedbackZh: ["无益。把餐食送到房间会让她更加孤立，情绪更差。", "无益。强迫只会引发冲突并剥夺她的尊严。", "很好的做法。让 Siya 参与做饭和打扫能恢复她的目的感，并运用她仍具备的技能。"],
+          question: "Shang has dementia and increasingly spills food at the family table, frustrating everyone. How could Shang's son deal with the situation? (Select all that apply.)",
+          questionZh: "Shang 患有失智症，在家庭餐桌上越来越常打翻食物，让大家都很烦躁。Shang 的儿子可以怎样处理？（多选）",
+          options: [
+            "Buy adaptive eating and drinking aids from the shop for Shang.",
+            "Set up a separate table for his father to eat in his own bedroom, because spilling and dropping food may make the family irritated.",
+            "Organise a family meeting to ask all family members to think of more positive and constructive ways to respond to the situation at mealtimes."
+          ],
+          optionsZh: [
+            "去商店给 Shang 买适应性的餐饮辅助用具。",
+            "在卧室里为父亲单独摆一张桌子，因为洒食物会让家人烦躁。",
+            "召开家庭会议，让所有家人一起想出更积极、更有建设性的应对方法。"
+          ],
+          correctIndices: [0, 2],
+          explanation: "Adaptive utensils help Shang continue eating with the family, and a family meeting builds a positive mealtime atmosphere for everyone. Separating him isolates him and worsens his mood.",
+          explanationZh: "适应性餐具能帮 Shang 继续与家人一起用餐，家庭会议能为大家营造积极的用餐氛围。把他分开吃只会让他更孤立、情绪更差。",
+          optionFeedback: [
+            "Good response. Shang's son recognises that his father is no longer able to manage eating using the usual utensils. Providing adapted utensils helps solve this problem.",
+            "Not helpful. Separation will make Shang feel sad or angry, which might prevent him from eating and drinking properly.",
+            "Good response. Shang's son is trying to provide a positive mealtime atmosphere for everyone."
+          ],
+          optionFeedbackZh: [
+            "好的回应。Shang 的儿子意识到父亲已无法用普通餐具进食，提供适应性餐具有助于解决问题。",
+            "无益。把他分开会让 Shang 感到悲伤或愤怒，反而可能让他无法好好吃饭喝水。",
+            "好的回应。Shang 的儿子在为大家营造一个积极的用餐氛围。"
+          ],
         },
       },
       {
@@ -576,15 +592,31 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
         reflectQuestion: "Ling has noticed that her mother, Chiu, has lost a significant amount of weight and is often too sleepy to eat at normal mealtimes. What are three different strategies Ling could try this week to improve her mother's food intake?",
         reflectQuestionZh: "凌注意到她的母亲近来体重显著下降,而且在正常用餐时间常常因为太困而无法进食。凌本周可以尝试哪三种不同的策略来改善母亲的食物摄入量？",
         quiz: {
-          question: "Ella's husband, Oliver, has had dementia for 10 years. She sees him eating flowers and trying to drink dish soap. What should Ella do?",
-          questionZh: "艾拉的丈夫奥利弗患有失智症已有10年。她看到他吃花,还试图喝洗洁精。艾拉应该怎么做？",
-          options: ["Lock away all household chemicals and inedible items.", "Leave some inedible items where he can reach them so he learns they cannot be eaten."],
-          optionsZh: ["将所有家用化学品和非食品锁起来。", "把一些非食品放在他能够拿到的地方，让他学会那些东西不能吃。"],
-          correctIndices: [0],
-          explanation: "People in the late stages of dementia can have impaired judgment about what is edible. It is essential to keep all dangerous and inedible substances securely locked away to ensure their safety.",
-          explanationZh: "处于失智症晚期的患者可能对什么可以食用有错误的判断。必须将所有危险和不可食用的物质安全地锁起来,以确保他们的安全。",
-          optionFeedback: ["Good idea. In late-stage dementia, judgement about what is edible is impaired; locking dangerous items away is essential.", "Not helpful. People with late-stage dementia cannot reliably 'learn' this; leaving items reachable is unsafe."],
-          optionFeedbackZh: ["很好的做法。晚期失智症患者对“能否食用”的判断力受损；将危险物品锁起来必不可少。", "无益。晚期失智患者无法可靠地“学会”这一点；将物品放在可及之处不安全。"],
+          question: "Ling's mother Chiu has late-stage dementia, sleeps through normal mealtimes and is losing weight. What would you advise Ling to do to improve Chiu's eating? (Select all that apply.)",
+          questionZh: "Ling 的母亲 Chiu 处于失智症晚期，常在正常用餐时间昏睡，体重也在下降。你会建议 Ling 怎么做来改善 Chiu 的进食？（多选）",
+          options: [
+            "Be flexible to have meals when her mother is awake.",
+            "Ensure Chiu has access to foods that she enjoys eating.",
+            "Keep a record of what and how often her mother eats in a diary."
+          ],
+          optionsZh: [
+            "灵活安排，在母亲清醒时再让她进餐。",
+            "确保 Chiu 能吃到她喜欢的食物。",
+            "用日记记录母亲吃什么、吃多少次。"
+          ],
+          correctIndices: [0, 1, 2],
+          explanation: "All three are good responses. People in late-stage dementia need rest, enjoy familiar foods, and benefit from carers tracking intake to ensure they get enough nutrition.",
+          explanationZh: "三个都是好的回应。晚期失智症患者需要休息，喜欢熟悉的食物，照护者记录摄入有助于确保营养足够。",
+          optionFeedback: [
+            "Good response. People in late stages of dementia need rest, so flexibility in planning meals will be very helpful when they are sleeping during normal mealtimes.",
+            "Good response. What foods did she enjoy eating before her diagnosis of dementia? What foods does she seem to enjoy now?",
+            "Good response. Recording what people with dementia eat is important. This way, carers will better understand when and what kind of food is needed for sufficient food intake."
+          ],
+          optionFeedbackZh: [
+            "好的回应。晚期失智症患者需要休息，灵活安排用餐时间，能让他们在正常用餐时段熟睡时也照顾得到。",
+            "好的回应。她在被诊断之前喜欢吃什么？现在似乎又喜欢吃什么？",
+            "好的回应。记录失智症患者的饮食很重要，照护者能更清楚什么时候、需要什么样的食物，以保证摄入足够。"
+          ],
         },
       },
       {
