@@ -23,10 +23,14 @@ export interface ISupportQuiz {
   questionZh: string;
   options: string[];
   optionsZh: string[];
-  /** 0-based index of the correct answer */
-  correct: number;
+  /** 0-based indices of ALL correct answers (multi-select checklist, WHO format) */
+  correctIndices: number[];
+  /** Overall feedback shown after submitting */
   explanation: string;
   explanationZh: string;
+  /** Optional per-option feedback (✓/✗ rationale, WHO "Check your understanding" style) */
+  optionFeedback?: string[];
+  optionFeedbackZh?: string[];
 }
 
 export interface ISupportLesson {
@@ -122,9 +126,11 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           questionZh: "失智症患者经常会忘记事情或出现记忆困难。请选择正确的答案。",
           options: ["TRUE", "FALSE", ""],
           optionsZh: ["正确", "错误", ""],
-          correct: 0,
+          correctIndices: [0],
           explanation: "This is correct. Memory loss is a common and primary symptom of dementia.",
           explanationZh: "这是正确的。记忆力减退是失智症一个常见的主要症状。",
+          optionFeedback: ["Correct. Memory loss is one of the most common early symptoms of dementia.", "Not correct. Memory difficulties are a hallmark of dementia, not a misconception."],
+          optionFeedbackZh: ["正确。记忆力减退是失智症最常见的早期症状之一。", "不正确。记忆困难是失智症的典型表现，并不是误解。"],
         },
       }
     ],
@@ -162,9 +168,11 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           questionZh: "奥利维亚（Olivia）患有失智症，她对自己总是在商店忘记买东西感到很沮丧。她的丈夫雅各布（Jacob）应该如何最好地处理这种情况？",
           options: ["Do not blame Olivia, but make a shopping list together with her before she goes.", "Ask Olivia how she feels about her memory loss.", "Forbid Olivia from shopping anymore.", "Tell Olivia to try harder to remember things."],
           optionsZh: ["不要责备奥利维亚，而是在她去购物前一起列好购物清单。", "询问奥利维亚对自己记性变差的感受。", "禁止奥利维亚再去购物。", "告诉奥利维亚要更努力地去记事情。"],
-          correct: 0,
+          correctIndices: [0, 1],
           explanation: "This is a very good response because this practical solution helps Olivia to continue shopping and maintain her independence for as long as possible.",
           explanationZh: "这是一个非常好的回应，因为这个务实的解决方案能帮助奥利维亚继续购物，并尽可能长时间地保持她的独立性。",
+          optionFeedback: ["Good idea. Practical support like a shared list helps Olivia stay independent.", "Good idea. Asking how she feels acknowledges her emotions and keeps you connected.", "Not helpful. Forbidding her removes her independence and dignity.", "Not helpful. She is not failing on purpose; trying harder will not help and adds shame."],
+          optionFeedbackZh: ["很好的做法。实用的支持（如共同列清单）能帮助奥利维亚保持独立。", "很好的做法。询问她的感受体现了对她情绪的关注，能保持彼此联系。", "无益。禁止她购物剥夺了她的独立和尊严。", "无益。她不是故意忘记的，更努力没有用，反而增加羞愧感。"],
         },
       },
       {
@@ -193,9 +201,11 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           questionZh: "威廉的姐姐埃琳娜患有失智症，她反复询问已故的丈夫在哪里。威廉对此感到很为难。他应该如何以更有同情心的方式回应？",
           options: ["Ignore her question and try to distract her by talking about other things.", "Talk about his sister in her presence to someone else, saying he doesn't understand her.", "Acknowledge her feelings of loss, give her a hug, and talk about her husband.", "Tell her she should be ashamed of forgetting everything."],
           optionsZh: ["忽略她的问题，并试图通过谈论其他事情来分散她的注意力。", "当着姐姐的面和别人议论她，说他不理解她。", "理解她失落的感受，给她一个拥抱，并和她聊聊她的丈夫。", "告诉她应该为忘记一切而感到羞愧。"],
-          correct: 2,
+          correctIndices: [2],
           explanation: "This response acknowledges Elena's feelings, takes her seriously, and shows compassion. It supports her in her grief and helps improve their relationship.",
           explanationZh: "这个回应认可了埃琳娜的感受，认真对待了她的问题，并表现出了同情心。这能支持她度过悲伤，并有助于改善他们的关系。",
+          optionFeedback: ["Not helpful. Ignoring her feelings can make her feel dismissed.", "Not helpful. Talking about her in front of her is disrespectful and hurtful.", "Good idea. Acknowledging her feelings, offering touch, and reminiscing shows compassion.", "Not helpful. Shaming her for forgetting damages her self-worth."],
+          optionFeedbackZh: ["无益。忽视她的感受会让她觉得被无视。", "无益。当着她的面议论她，既不尊重也很伤人。", "很好的做法。认可她的感受、给予拥抱、聊聊丈夫，体现了同情心。", "无益。因健忘而羞辱她，会损害她的自我价值感。"],
         },
       },
       {
@@ -221,9 +231,11 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           questionZh: "曼努埃尔患有失智症，他会忘记准备衣服，有时会每天穿同一件衣服。在不替他做主的情况下，确保他穿上干净衣服的最好方法是什么？",
           options: ["Before Maria and Manuel go to bed, Maria asks Manuel what he wants to wear the next day. She then asks Manuel to lay them out.", "Maria chooses clothes for Manuel and she asks him to lay them out.", "Maria chooses clothes for Manuel in the morning and gives them directly to Manuel to wear."],
           optionsZh: ["在玛丽亚和曼努埃尔睡觉前，玛丽亚问曼努埃尔第二天想穿什么。然后她让曼努埃尔把衣服准备好。", "玛丽亚为曼努埃尔选好衣服，然后让他把衣服准备好。", "早上，玛丽亚为曼努埃尔选好衣服，然后直接递给他穿。"],
-          correct: 0,
+          correctIndices: [0],
           explanation: "This is the best option because it encourages Manuel to do things he is still able to do and supports him in making his own decision.",
           explanationZh: "这是最好的选择，因为它鼓励曼努埃尔做自己仍有能力做的事情，并支持他自己做决定。",
+          optionFeedback: ["Good idea. Asking the night before and letting Manuel lay out his clothes supports his autonomy and uses skills he still has.", "Less helpful. Maria chooses for him; he only carries out the action, removing his decision.", "Not helpful. Maria makes all decisions and gives clothes directly; Manuel does nothing for himself."],
+          optionFeedbackZh: ["很好的做法。前一晚询问，再让曼努埃尔自己准备衣服，既支持他自主决定，也运用了他尚存的能力。", "不太理想。玛丽亚替他选好，他只是动手摆放，决定权被剥夺了。", "无益。玛丽亚替他做了所有决定并直接递衣服，曼努埃尔完全没有自主参与。"],
         },
       },
       {
@@ -247,9 +259,11 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           questionZh: "李想从护理工作中抽身休息一下，她决定向姐姐求助。以下哪个例子是有效的求助方式？",
           options: ["Li tells her sister that she needs a short break and says: 'I would like to discuss how you could help in a way that is possible for you.'", "Li approaches her sister by saying, 'I’m sick and tired of you not doing anything! You never have time to help me care for our mother!'", "Li enrolls in a class without discussing her need for a break with her sister. When she asks her sister to cover for her, the sister says she has no time, so Li cancels the class."],
           optionsZh: ["李告诉姐姐她需要短暂休息一下，并说：“我想和你谈谈，看看你怎样能在方便的情况下帮帮我。”", "李对姐姐说：“我真是受够了你什么都不做！你从来都没时间帮我照顾妈妈！”", "李报名参加了一个课程，但没有和姐姐沟通过她需要休息。当她让姐姐替她一会儿时，姐姐说没时间，于是李取消了课程。"],
-          correct: 0,
+          correctIndices: [0],
           explanation: "This is an effective way to ask for help. Li is honest about her own needs while also being respectful of her sister's availability and feelings.",
           explanationZh: "这是一种有效的求助方式。李诚实地表达了自己的需求，同时也尊重姐姐的时间安排和感受。",
+          optionFeedback: ["Good idea. Li is honest about her need and respectful of her sister's time.", "Not helpful. Blaming and shouting will likely make her sister defensive, not willing to help.", "Not helpful. Avoiding the conversation means her need never gets discussed and she gives up on the break."],
+          optionFeedbackZh: ["很好的做法。李诚实表达了自己的需求，也尊重姐姐的时间。", "无益。责备和大喊只会让姐姐反感，不会愿意帮忙。", "无益。回避沟通意味着需求从未被讨论，她也放弃了喘息的机会。"],
         },
       }
     ],
@@ -285,9 +299,11 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           questionZh: "戴安娜照顾患有失智症的丈夫，觉得没时间或精力放松。她的朋友提出了什么建议，说服了戴安娜尝试放松练习？",
           options: ["That relaxation exercises require at least 30 minutes to be effective.", "That some relaxation methods don't take much time and can provide renewed energy.", "That she must hire a professional carer to get any time to relax.", "That only total stretching will help with her level of tension."],
           optionsZh: ["放松练习至少需要30分钟才有效。", "有些放松方法不占用太多时间，并且能提供新的精力。", "她必须雇一个专业护理者才能有时间放松。", "只有全身伸展才能帮助她缓解那种程度的紧张。"],
-          correct: 1,
+          correctIndices: [0],
           explanation: "Diana's friend explains that some relaxation exercises are very brief and can give her renewed energy, which helps her get tasks done more easily.",
           explanationZh: "戴安娜的朋友解释说，有些放松练习非常简短，可以给她带来新的精力，帮助她更轻松地完成任务。",
+          optionFeedback: ["Good idea. Li is honest about her need and respectful of her sister's time.", "Not helpful. Blaming and shouting will likely make her sister defensive, not willing to help.", "Not helpful. Avoiding the conversation means her need never gets discussed and she gives up on the break."],
+          optionFeedbackZh: ["很好的做法。李诚实表达了自己的需求，也尊重姐姐的时间。", "无益。责备和大喊只会让姐姐反感，不会愿意帮忙。", "无益。回避沟通意味着需求从未被讨论，她也放弃了喘息的机会。"],
         },
       },
       {
@@ -312,9 +328,11 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           questionZh: "乔正要出门拜访朋友。她的丈夫马克斯患有失智症，他正担心自己找不到钥匙，并说：“我找不到钥匙了！你不能把我一个人丢下，我没有钥匙！”乔应该怎么做？",
           options: ["Tell Max that she cannot help him search now and leave.", "Search for the keys until she finds them.", "Tell Max that he should be more careful not to lose his keys in the future.", "Think to herself, “Max has dementia and is sometimes worried when he loses things. I can take some time to help and then go.” Then call her friend and explain that she will come later."],
           optionsZh: ["告诉马克斯她现在不能帮他找，然后离开。", "一直找钥匙，直到找到为止。", "告诉马克斯他以后应该更小心，不要再丢钥匙了。", "心里想：“马克斯患有失智症，找不到东西时偶尔会担心。我可以花点时间帮他，然后再走。” 然后打电话给朋友，解释说她会晚点到。"],
-          correct: 3,
+          correctIndices: [1],
           explanation: "This response is based on a helpful thought. By reframing the situation, Jo can stay calm and compassionate while still planning to take time for herself.",
           explanationZh: "这个回应是基于一个有益的想法。通过重新定义情况，乔可以保持冷静和同情心，同时仍然计划为自己安排时间。",
+          optionFeedback: ["Not accurate. Relaxation does not need to be 30+ minutes to be effective.", "Good idea. Even short relaxation exercises can restore energy and lower stress.", "Not necessary. You don't need a paid carer to relax; small breaks work too.", "Not accurate. Many short methods (breathing, music, stretching) help, not just total stretching."],
+          optionFeedbackZh: ["不准确。放松不必长达30分钟以上才有效。", "很好的做法。即使是简短的放松练习也能恢复精力、降低压力。", "没有必要。不一定要请专业护理者才能放松，短暂休息同样有效。", "不准确。除了全身伸展，呼吸、音乐等许多简短方法也有帮助。"],
         },
       },
       {
@@ -338,9 +356,11 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           questionZh: "Jo正要出门拜访朋友时，她患有失智症的丈夫Max焦虑地说他找不到钥匙了。Jo的第一反应是：“我再也不能把他一个人丢下了”，她感到非常痛苦。Jo应该怎么做？",
           options: ["Tell Max she cannot help him search now and leave.", "Search for the keys until she finds them.", "Tell Max that he should be more careful in the future.", "Think, “Max has dementia and gets worried. I can take some time to help and then go,” and then call her friend to explain she'll be late."],
           optionsZh: ["告诉Max她现在不能帮他找，然后离开。", "一直寻找钥匙，直到找到为止。", "告诉Max他以后应该更小心。", "心里想：“Max患有失智症，有时会焦虑。我可以花点时间帮忙，然后再走”，然后打电话给朋友解释她会晚到。"],
-          correct: 3,
+          correctIndices: [3],
           explanation: "This is the best approach because it addresses Jo's unhelpful thought. By reframing her thinking, she can calmly help Max feel secure and still see her friend, managing the situation without feeling miserable.",
           explanationZh: "这是最好的方法，因为它处理了Jo自己的无益想法。通过重塑她的思维，她可以冷静地帮助Max获得安全感，同时仍然可以去见她的朋友，从而在不感到痛苦的情况下处理好情况。",
+          optionFeedback: ["Not helpful. Leaving Max alarmed will increase his distress and your guilt.", "Possible but rigid. Spending unlimited time means missing your friend; no balance.", "Not helpful. Lecturing him about future carefulness ignores his current dementia.", "Good idea. Reframing the situation lets Jo stay calm, help Max, and still see her friend."],
+          optionFeedbackZh: ["无益。让马克斯独自惊慌，会加剧他的痛苦和你的内疚。", "可行但僵硬。花无限时间找钥匙意味着错过朋友；缺乏平衡。", "无益。教训他以后要小心，忽视了他当下的失智症状况。", "很好的做法。重新定义情境让乔保持冷静，帮助马克斯，同时还能见到朋友。"],
         },
       }
     ],
@@ -377,9 +397,11 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           questionZh: "Siya 曾是一名家庭主妇，每天为家人做饭。丈夫去世后，她现在和儿子的家人住在一起。她很伤心，拒绝吃饭，也不参加家庭聚餐。您会如何建议 Siya 的家人应对这种情况？",
           options: ["Bring Siya’s dinner to her room.", "Demand that Siya joins them for dinner.", "Let Siya help with meal preparation and cleaning."],
           optionsZh: ["把 Siya 的晚餐送到她的房间。", "要求 Siya 必须和他们一起吃晚饭。", "让 Siya 帮忙准备饭菜和打扫卫生。"],
-          correct: 2,
+          correctIndices: [2],
           explanation: "This is a good response because it supports Siya in continuing activities she enjoys and is able to do, which can restore her sense of purpose and self-worth.",
           explanationZh: "这是一个很好的回应，因为它支持 Siya 继续从事她喜欢并有能力做的活动，这可以帮助她恢复生活的目的感和自我价值感。",
+          optionFeedback: ["Not helpful. Bringing meals to her room isolates her further and worsens her mood.", "Not helpful. Demanding causes conflict and removes her dignity.", "Good idea. Letting Siya help with meal preparation restores purpose and uses skills she still has."],
+          optionFeedbackZh: ["无益。把餐食送到房间会让她更加孤立，情绪更差。", "无益。强迫只会引发冲突并剥夺她的尊严。", "很好的做法。让 Siya 参与做饭和打扫能恢复她的目的感，并运用她仍具备的技能。"],
         },
       },
       {
@@ -400,11 +422,13 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
         quiz: {
           question: "Ella's husband, Oliver, has had dementia for 10 years. She sees him eating flowers and trying to drink dish soap. What should Ella do?",
           questionZh: "艾拉的丈夫奥利弗患有失智症已有10年。她看到他吃花,还试图喝洗洁精。艾拉应该怎么做？",
-          options: ["Lock away all household chemicals and inedible items.", "Leave some inedible items where he can reach them to teach him they cannot be eaten.", "optionsZh"],
-          optionsZh: ["将所有家用化学品和非食品锁起来。", "将一些非食品留在他能够拿到的地方,以教导他那些东西不能吃。", "optionsZh"],
-          correct: 0,
+          options: ["Lock away all household chemicals and inedible items.", "Leave some inedible items where he can reach them so he learns they cannot be eaten."],
+          optionsZh: ["将所有家用化学品和非食品锁起来。", "把一些非食品放在他能够拿到的地方，让他学会那些东西不能吃。"],
+          correctIndices: [0],
           explanation: "People in the late stages of dementia can have impaired judgment about what is edible. It is essential to keep all dangerous and inedible substances securely locked away to ensure their safety.",
           explanationZh: "处于失智症晚期的患者可能对什么可以食用有错误的判断。必须将所有危险和不可食用的物质安全地锁起来,以确保他们的安全。",
+          optionFeedback: ["Good idea. In late-stage dementia, judgement about what is edible is impaired; locking dangerous items away is essential.", "Not helpful. People with late-stage dementia cannot reliably 'learn' this; leaving items reachable is unsafe."],
+          optionFeedbackZh: ["很好的做法。晚期失智症患者对“能否食用”的判断力受损；将危险物品锁起来必不可少。", "无益。晚期失智患者无法可靠地“学会”这一点；将物品放在可及之处不安全。"],
         },
       },
       {
@@ -425,11 +449,13 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
         quiz: {
           question: "Fu has dementia and has started urinating on the floor near the toilet. His wife, Zhen, is his carer. What is the best way for Zhen to respond?",
           questionZh: "阿福患有失智症，并开始在厕所附近的地板上小便。他的妻子阿珍是他的护理者。阿珍最好的应对方式是什么？",
-          options: ["Make simple changes like putting an image of a toilet on the door and using a toilet seat with a contrasting colour.", "Punish Fu by not taking him for his daily walk so he understands he did something wrong.", "optionsZh", "做一些简单的改变，比如在门上贴上马桶的图片，以及使用颜色对比鲜明的马桶圈。"],
-          optionsZh: ["做一些简单的改变，比如在门上贴上马桶的图片，以及使用颜色对比鲜明的马桶圈。", "惩罚阿福，不带他进行每日散步，让他明白自己做错了事。", "correct", "explanation"],
-          correct: 0,
+          options: ["Make simple changes like putting an image of a toilet on the door and using a toilet seat with a contrasting colour.", "Punish Fu by not taking him for his daily walk so he understands he did something wrong."],
+          optionsZh: ["做一些简单的改变，比如在门上贴上马桶的图片，使用颜色对比鲜明的马桶圈。", "惩罚阿福，不带他每日散步，让他知道自己做错了事。"],
+          correctIndices: [0],
           explanation: "People with dementia may have difficulties finding and using the toilet. Making small changes to the environment can help prevent accidents without causing stress or shame.",
           explanationZh: "失智症患者在寻找和使用卫生间方面可能会有困难。对环境做些小改变有助于防止意外发生，而不会给他们带来压力或羞耻感。",
+          optionFeedback: ["Good idea. Visual cues and contrasting colours help him locate and use the toilet without shame.", "Not helpful. Punishment causes distress and does not address his cognitive difficulty."],
+          optionFeedbackZh: ["很好的做法。视觉提示和对比色帮助他找到并使用卫生间，且不会感到羞愧。", "无益。惩罚带来痛苦，也无法解决他的认知困难。"],
         },
       },
       {
@@ -452,9 +478,11 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           questionZh: "玛利亚姆患有阿尔茨海默病，通常自己能够自理。最近，她的丈夫穆罕默德注意到，她穿着睡袍坐在餐桌旁吃早餐，没有像往常一样洗脸、梳头或化妆。穆罕默德的正确做法是什么？",
           options: ["Put personal care items in the order of use and label them with large print words and different colours for Mariam to read.", "Ask their daughter-in-law to take Mariam from the table to the bathing room and assist her with washing and changing clothes.", "Tell her she needs to go get ready before breakfast."],
           optionsZh: ["将个人护理用品按使用顺序列出，并用大号字体和不同颜色进行标记，方便玛利亚姆阅读。", "让儿媳把玛利亚姆从餐桌旁带到浴室，帮助她洗漱和换衣服。", "告诉她早餐前必须先梳洗打扮好。"],
-          correct: 0,
+          correctIndices: [0],
           explanation: "This is a good response. People with dementia may lose the ability to find items that are not obvious. Creating an 'easy to find' environment for them is very important.",
           explanationZh: "这是一个很好的回应。失智症患者可能会丧失寻找不显眼物品的能力。为他们创造一个“易于寻找”的环境非常重要。",
+          optionFeedback: ["Good idea. Labelled items in order of use let Mariam continue self-care with dignity.", "Less helpful. Asking another family member to bathe her removes her independence.", "Not helpful. Telling her to 'go get ready' assumes she remembers how, which she may not."],
+          optionFeedbackZh: ["很好的做法。按使用顺序贴标签的物品让玛利亚姆能继续自理，保持尊严。", "不太理想。让别的家人帮她洗漱削弱了她的独立性。", "无益。让她“先去梳洗”假设她还记得怎么做，但她可能已记不清。"],
         },
       },
       {
@@ -477,9 +505,11 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           questionZh: "玛莎患有失智症，习惯在早上准备好后立即喝茶。她的女儿佩妮想让她在早餐后马上就去散步，但玛莎拒绝了。对佩妮最好的建议是什么？",
           options: ["Suggest keeping to the routine by drinking tea first, after which Martha will be more likely to go for a walk.", "Ask Martha what activities she is used to and in what order she would like to do them.", "Force Martha to go for a walk because it was advised by the doctor."],
           optionsZh: ["建议先喝茶以维持惯例，之后玛莎会更有可能去散步。", "问玛莎她习惯了哪些活动，以及她喜欢按什么顺序进行。", "强迫玛莎去散步，因为这是医生的建议。"],
-          correct: 0,
+          correctIndices: [0, 1],
           explanation: "Respecting the person's established routine first can reduce stress and make them more willing to cooperate with another activity afterwards.",
           explanationZh: "首先尊重患者已建立的惯例可以减轻压力，使他们之后更愿意配合进行另一项活动。",
+          optionFeedback: ["Good idea. Honouring Martha's tea routine first makes her more willing to walk afterward.", "Good idea. Asking Martha about her preferred order respects her established routines.", "Not helpful. Forcing causes resistance and removes her dignity."],
+          optionFeedbackZh: ["很好的做法。先尊重玛莎喝茶的惯例，她之后会更愿意去散步。", "很好的做法。询问她偏好的顺序，体现了对她日常惯例的尊重。", "无益。强迫会引发抗拒，也剥夺了她的尊严。"],
         },
       }
     ],
@@ -515,9 +545,11 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           questionZh: "霍华德的妻子凯拉患有失智症。他经常问她最近发生的事情，但她记不起来，这让她变得激动，也让他感到沮丧。以下哪项是霍华德应对的好方法？",
           options: ["Show his frustration to let Kayla know her forgetfulness is a problem.", "Remind himself that Kayla has dementia and is not forgetting on purpose.", "Continue asking the questions until she remembers.", "Tell her to stop bothering him with her forgetfulness."],
           optionsZh: ["表现出他的沮丧，让凯拉知道她的健忘是个问题。", "提醒自己凯拉患有失智症，她不是故意忘记的。", "继续问问题，直到她想起来为止。", "告诉她不要再因为健忘而烦扰他。"],
-          correct: 1,
+          correctIndices: [1],
           explanation: "This is a good response because Howard recognises that Kayla's memory loss is a symptom of her dementia and not intentional. This understanding can help prevent further frustration for both of them.",
           explanationZh: "这是一个很好的回应，因为霍华德认识到凯拉的记忆力减退是她失智症的一个症状，而不是故意的。这种理解有助于防止双方进一步的沮丧。",
+          optionFeedback: ["Not helpful. Showing frustration adds stress and makes the agitation worse.", "Good idea. Reminding himself it's not intentional helps him stay calm and respond kindly.", "Not helpful. Pressing the question increases her distress and won't restore the memory.", "Not helpful. Telling her to stop blames her for a symptom she cannot control."],
+          optionFeedbackZh: ["无益。表现出沮丧会加重压力，让激动情绪更严重。", "很好的做法。提醒自己她不是故意的，能帮助他保持冷静、温和回应。", "无益。继续追问会加重她的痛苦，也无法恢复记忆。", "无益。让她“别烦你”是把症状归咎于她，但她无法控制。"],
         },
       },
       {
@@ -540,9 +572,11 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           questionZh: "安妮患有失智症，经常忘记她通常在市场买什么，导致冰箱空空如也。她的女儿玛雅想帮忙。你会建议玛雅如何应对她母亲的记忆力减退？",
           options: ["Ask a neighbour to go with Anne once a week to the market to buy groceries.", "Create a memory aid together with Anne, e.g. a list of groceries that Anne needs to buy, and put the list in a place where it can be seen, so that it is easy to access.", "Go out and buy groceries immediately.", "Ask: “Mom, what’s wrong with you, there is no food in the house”"],
           optionsZh: ["请邻居每周陪安妮去一次市场买菜。", "和安妮一起制作一个记忆辅助工具，例如一张安妮需要购买的食品清单，并把清单放在显眼的地方，方便取用。", "立即出门购买食品。", "质问：“妈妈，你怎么了，家里一点食物都没有了”。"],
-          correct: 1,
+          correctIndices: [0, 1],
           explanation: "Creating a memory aid like a list empowers Anne and involves her in the solution. This collaborative approach addresses the memory loss directly and can become a positive shared activity.",
           explanationZh: "制作清单这样的记忆辅助工具能够增强安妮的能力，并让她参与到解决问题中来。这种合作的方式直接解决了记忆力减退的问题，还可能成为一项积极的共同活动。",
+          optionFeedback: ["Good idea. Having a neighbour go with Anne keeps her social and ensures groceries get bought.", "Good idea. A shared shopping list is a memory aid Anne can use independently.", "Less helpful. Buying for her replaces her role rather than supporting it.", "Not helpful. Blaming language causes shame and damages your relationship."],
+          optionFeedbackZh: ["很好的做法。请邻居陪安妮去市场，既维持社交也确保买到食品。", "很好的做法。共同制作的购物清单是安妮可以独立使用的记忆辅助工具。", "不太理想。直接替她购物取代了她的角色，而不是支持她。", "无益。质问的语气带来羞愧，也损害你们的关系。"],
         },
       },
       {
@@ -566,9 +600,11 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           questionZh: "尼尔的岳父阿米特患有失智症，他愤怒地拒绝洗澡。当尼尔坚持并拉扯他的手臂时，阿米特大喊大叫并推搡他。对尼尔来说，哪种是更好的应对方式？",
           options: ["Force Amit to take a bath anyway to ensure he is clean for the doctor.", "Logically explain in a firm voice that he must bathe.", "Walk away to give them both space, and try again later with a new approach, like playing music.", "Raise his voice to show Amit that he must listen."],
           optionsZh: ["无论如何都强迫阿米特洗澡，以确保他去看医生时是干净的。", "用坚定的语气向他逻辑地解释为什么必须洗澡。", "走开，给彼此一些空间，稍后再用新的方法重试，比如播放音乐。", "提高声音，让阿米特知道必须听话。"],
-          correct: 2,
+          correctIndices: [2],
           explanation: "Walking away allows both people to calm down. It gives the carer time to breathe and devise a new, less stressful strategy, potentially making the person with dementia more receptive later.",
           explanationZh: "走开可以让双方都冷静下来。它能让护理者有时间喘口气，并想出一个新的、压力较小的策略，可能会让失智症患者稍后更容易接受。",
+          optionFeedback: ["Not helpful. Forcing him will escalate the aggression and may injure both of you.", "Not helpful. Logical explanations rarely work in the heat of agitation.", "Good idea. Walking away allows everyone to calm down; trying again later with music may succeed.", "Not helpful. Raising your voice intensifies the conflict."],
+          optionFeedbackZh: ["无益。强迫只会升级攻击行为，并可能伤到双方。", "无益。在激动中逻辑解释很少奏效。", "很好的做法。走开让大家都冷静；稍后用音乐等方法重试可能成功。", "无益。提高嗓门只会加剧冲突。"],
         },
       },
       {
@@ -592,9 +628,11 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           questionZh: "胡安患有失智症，有时会弓着背坐着，看起来很伤心，甚至哭泣。他的姐姐伊莎贝尔试图让他振作起来，但似乎并不奏效。伊莎贝尔应该如何处理这种情况？",
           options: ["Say: 'Juan, what’s the matter with you? Just get up and do something.'", "Go over and touch Juan's arm, saying, 'I know that you feel bad, I do too. What we’re going through is really hard.'", "Say: 'Men don’t cry. We used to have so much fun together.'", "Sigh and walk away, thinking that there is nothing that she can do."],
           optionsZh: ["说：“胡安，你怎么了？快起来做点什么。”", "走过去，摸摸胡安的手臂，说：“我知道你感觉不好，我也是。我们正在经历的这一切真的很难。”", "说：“男人不哭。我们以前在一起多开心啊。”", "叹口气走开，心想自己也无能为力。"],
-          correct: 1,
+          correctIndices: [1],
           explanation: "This is a good response because people who are feeling sad need extra love, support, and understanding. Acknowledging his feelings can be very comforting.",
           explanationZh: "这是一个很好的回应，因为感到悲伤的人需要额外的关爱、支持和理解。承认他的感受可以给他很大的安慰。",
+          optionFeedback: ["Not helpful. Demanding he 'just get up' dismisses his feelings.", "Good idea. Touch and acknowledging his feelings shows love and makes him feel understood.", "Not helpful. Shaming words ('men don't cry') dismisses his emotions.", "Not helpful. Walking away leaves him alone in his sadness."],
+          optionFeedbackZh: ["无益。命令他“快起来”是无视他的感受。", "很好的做法。轻触加上认可他的感受，传递关爱并让他感到被理解。", "无益。羞辱性的话（“男人不哭”）是在否定他的情绪。", "无益。走开让他独自陷入悲伤。"],
         },
       },
       {
@@ -617,9 +655,11 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           questionZh: "Rosie是一位患有失智症的老年妇女，与家人同住。家人试图让她晚上8点上床睡觉，但她难以入睡并发出噪音。以下哪项不是她的孙女Grace的正确应对方式？",
           options: ["Create a bedtime routine, like lowering the lights and washing up.", "Give her a pill to sleep.", "Go for a walk with Rosie and add more physical activity during the day.", "Play soothing music before bedtime to help Rosie sleep."],
           optionsZh: ["建立一个睡前程序，例如调暗灯光和洗漱。", "给她一片安眠药。", "白天带Rosie散步，增加体育锻炼。", "睡前播放舒缓的音乐，帮助Rosie入睡。"],
-          correct: 1,
+          correctIndices: [1],
           explanation: "Sleeping pills are not a good idea. They can make a person with dementia more confused or agitated and can become addictive.",
           explanationZh: "安眠药不是一个好主意。它可能使失智症患者更加困惑或激动，并且可能会上瘾。",
+          optionFeedback: ["Good practice — a calming routine helps her fall asleep naturally.", "Not recommended. Sleeping pills can worsen confusion and become addictive.", "Good practice — daytime activity helps tire her in a healthy way.", "Good practice — soothing music supports a calm bedtime."],
+          optionFeedbackZh: ["好做法 — 平静的睡前程序帮助她自然入睡。", "不推荐。安眠药可能加重困惑并导致依赖。", "好做法 — 白天活动以健康的方式让她适度疲倦。", "好做法 — 舒缓音乐有助于平静的就寝。"],
         },
       },
       {
@@ -642,9 +682,11 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           questionZh: "马丁的妻子贝蒂患有失智症。在公园里，贝蒂把一个陌生人错当成她30年前去世的妹妹苏珊。当陌生人没有理睬她时，贝蒂变得非常难过。马丁最好的应对方式是什么？",
           options: ["Argue with Betty, insisting the woman is not her sister.", "Soothe Betty in a calm voice and gently lead her away, perhaps suggesting they look at photos of Susan at home.", "Tell Betty harshly that she is wrong and her sister is dead.", "Agree with Betty that the woman is Susan to avoid a conflict."],
           optionsZh: ["与贝蒂争吵，坚称那个女人不是她妹妹。", "用冷静的声音安慰贝蒂，并温柔地带她离开，可以建议回家后看苏珊的照片。", "严厉地告诉贝蒂她错了，她妹妹已经去世了。", "为了避免冲突，同意贝蒂的说法，承认那个女人是苏珊。"],
-          correct: 1,
+          correctIndices: [1],
           explanation: "The best approach is to avoid arguing, offer comfort, and gently distract the person. This response acknowledges the importance of her sister without arguing about the delusion, which helps de-escalate the situation.",
           explanationZh: "最好的方法是避免争论，给予安慰，并温和地转移她的注意力。这种回应认可了她妹妹的重要性，但没有就错觉本身进行争论，有助于缓和局势。",
+          optionFeedback: ["Not helpful. Arguing increases her distress; her experience feels real to her.", "Good idea. Soothing her and gently distracting honours her feelings without arguing.", "Not helpful. Harsh correction is cruel and will not change her perception.", "Not ideal. Pretending the stranger is Susan can confuse her further when reality returns."],
+          optionFeedbackZh: ["无益。争论会加重她的痛苦；她的体验对她来说是真实的。", "很好的做法。安抚加上温柔转移注意力，既尊重她的感受又避免争论。", "无益。严厉纠正既残忍，也无法改变她的认知。", "不理想。假装陌生人就是苏珊，可能在她回到现实时让她更加困惑。"],
         },
       },
       {
@@ -667,9 +709,11 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           questionZh: "约翰的父亲乔刚吃过午饭，却不停地问：“什么时候吃午饭？”。他还因为妻子外出而感到焦虑。约翰变得心烦，并告诉父亲他已经回答过了。约翰用哪种方式回应更好？",
           options: ["Scold him, saying 'What’s wrong with you? Can’t you remember?'", "Stay calm and reassure him that his wife will be home soon.", "Walk away to make him stop asking.", "Tell him loudly, 'I have already answered these questions!'"],
           optionsZh: ["责备他：“你怎么了？记不住吗？”", "保持冷静，并安抚他，告诉他妻子很快就回家了。", "走开，让他别再问了。", "大声告诉他：“我已经回答过这些问题了！”"],
-          correct: 1,
+          correctIndices: [1],
           explanation: "This is a good response because the repetition might be due to insecurity. By reassuring Joe, the repetition may lessen or stop.",
           explanationZh: "这是一个很好的回应，因为重复行为可能是由于不安全感引起的。通过安抚乔，重复行为可能会减少或停止。",
+          optionFeedback: ["Not helpful. Scolding causes shame and may worsen the repetition.", "Good idea. Reassurance addresses the insecurity behind the repeating question.", "Not helpful. Walking away leaves him more anxious.", "Not helpful. Shouting increases his distress."],
+          optionFeedbackZh: ["无益。责备会带来羞愧，可能让重复更严重。", "很好的做法。安抚针对的是反复发问背后的不安全感。", "无益。走开让他更加焦虑。", "无益。提高嗓门只会加剧他的痛苦。"],
         },
       },
       {
@@ -693,9 +737,11 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           questionZh: "阿米特患有失智症，由他的妻子萨米亚照料。萨米亚正在做晚饭时，听到阿米特走向门口。她知道他喜欢下午散步，但现在时机不合适。对萨米亚来说，最好立即作出的反应是什么？",
           options: ["Go to Amit and calmly say: “Let’s eat dinner first and we’ll go for a walk later.”", "Yell from the kitchen, “Please stop! I can’t come with you now.”", "Forbid Amit to leave and pull him back into the house.", "Lock the door so that Amit cannot leave."],
           optionsZh: ["走到阿米特身边，平静地说：“我们先吃晚饭，稍后我们再去散步。”", "从厨房里大喊：“请停下！我现在不能和你一起去。”", "禁止阿米特离开，并把他拉回屋内。", "锁上门，让阿米特无法离开。"],
-          correct: 0,
+          correctIndices: [0],
           explanation: "This is a good response because Samia stays calm, does not yell, and honors Amit's wishes by telling him that they will go together after dinner.",
           explanationZh: "这是一个很好的回应，因为萨米亚保持冷静，没有大喊大叫，并且通过告诉阿米特晚饭后他们会一起去，来尊重他的愿望。",
+          optionFeedback: ["Good idea. Calmly redirecting honours his wish to walk while keeping him safe for now.", "Not helpful. Yelling from another room may startle him and not stop him.", "Not helpful. Forcing him back removes his autonomy and may trigger aggression.", "Not ideal as a default. Locking him in can frighten him; better to redirect with empathy first."],
+          optionFeedbackZh: ["很好的做法。冷静地引导既尊重他散步的愿望，也确保他当下安全。", "无益。从另一个房间大喊可能吓到他，也无法阻止他。", "无益。强行拉回剥夺了他的自主，可能引发攻击行为。", "不宜作为默认做法。锁门会让他害怕；先用同理心引导更好。"],
         },
       },
       {
@@ -719,9 +765,11 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           questionZh: "伊凡正在探望患有失智症的姑姑伊莎贝尔。当一辆出租车突然停到旁边时，伊莎贝尔受惊并开始责骂司机。在这一刻，伊凡最好的应对方式是什么？",
           options: ["Put his hand on Isabel’s mouth to stop her.", "Walk Isabel back home and leave.", "Stay calm and reassure Isabel everything is alright.", "Accept the behaviour if the taxi driver doesn’t notice."],
           optionsZh: ["用手捂住伊莎贝尔的嘴阻止她。", "带伊莎贝尔回家然后离开。", "保持冷静，并安抚伊莎贝尔说一切都很好。", "如果出租车司机没有注意到，就接受这个行为。"],
-          correct: 2,
+          correctIndices: [2],
           explanation: "Staying calm and offering reassurance shows you care about the person's feelings, which can de-escalate the situation and help them feel more relaxed.",
           explanationZh: "保持冷静并提供安抚，表明您关心对方的感受，这有助于缓和局势，让他们感到更放松。",
+          optionFeedback: ["Not helpful. Covering her mouth is undignified and frightening.", "Avoidant. Leaving doesn't address the moment or her feelings.", "Good idea. Calm reassurance de-escalates the situation and respects her dignity.", "Possible if no one is harmed, but reassurance is the better default."],
+          optionFeedbackZh: ["无益。捂住她的嘴既不尊重，也会让她害怕。", "回避型。离开既未化解当下，也未关注她的感受。", "很好的做法。冷静安抚既能缓和局势，也尊重她的尊严。", "若无人受影响，可以接纳；但安抚仍是更好的默认做法。"],
         },
       },
       {
@@ -744,9 +792,11 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           questionZh: "如果您护理的人变得焦躁不安，本课程建议下列哪项做法？",
           options: ["Argue with them to show them they are wrong.", "Assume the behavior is just part of the dementia and cannot be changed.", "Try to distract them or make them feel more comfortable.", "Keep your feelings to yourself to appear strong."],
           optionsZh: ["与他们争论，向他们证明他们是错的。", "认为这种行为只是失智症的一部分，无法改变。", "试着分散他们的注意力或让他们感觉更舒服。", "将自己的感受藏在心里以显得坚强。"],
-          correct: 2,
+          correctIndices: [2],
           explanation: "The lesson advises against arguing and suggests using distraction. It also recommends investigating other causes for behaviors before assuming it's only the disease.",
           explanationZh: "本课程建议不要争论，并建议使用分散注意力的方法。它还建议在认定行为仅由疾病引起之前，调查其他可能的原因。",
+          optionFeedback: ["Not helpful. Arguing escalates agitation.", "Not helpful. Assuming nothing can change misses opportunities to identify triggers.", "Good idea. Distraction and comfort are the recommended first responses.", "Not helpful. Bottling up your feelings leads to burnout."],
+          optionFeedbackZh: ["无益。争论会加剧激动。", "无益。认为“无法改变”就错失了识别诱因的机会。", "很好的做法。转移注意力和安抚是推荐的首要应对方式。", "无益。把感受憋在心里会导致身心俱疲。"],
         },
       }
     ],
