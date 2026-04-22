@@ -784,15 +784,43 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
         reflectQuestion: "Think about the last time the person you care for was aggressive. What was happening right before? What could you change about your response, or the environment, to make it more calming next time?",
         reflectQuestionZh: "回想一下您护理的人最近一次表现出攻击性是什么时候。在此之前发生了什么？下一次，您可以如何改变自己的应对方式或环境，使情况更平缓？",
         quiz: {
-          question: "Neil's father-in-law, Amit, who has dementia, angrily refuses to take a bath. When Neil insists and tugs his arm, Amit shouts and shoves him. What is a better way for Neil to respond?",
-          questionZh: "尼尔的岳父阿米特患有失智症，他愤怒地拒绝洗澡。当尼尔坚持并拉扯他的手臂时，阿米特大喊大叫并推搡他。对尼尔来说，哪种是更好的应对方式？",
-          options: ["Force Amit to take a bath anyway to ensure he is clean for the doctor.", "Logically explain in a firm voice that he must bathe.", "Walk away to give them both space, and try again later with a new approach, like playing music.", "Raise his voice to show Amit that he must listen."],
-          optionsZh: ["无论如何都强迫阿米特洗澡，以确保他去看医生时是干净的。", "用坚定的语气向他逻辑地解释为什么必须洗澡。", "走开，给彼此一些空间，稍后再用新的方法重试，比如播放音乐。", "提高声音，让阿米特知道必须听话。"],
-          correctIndices: [2],
-          explanation: "Walking away allows both people to calm down. It gives the carer time to breathe and devise a new, less stressful strategy, potentially making the person with dementia more receptive later.",
-          explanationZh: "走开可以让双方都冷静下来。它能让护理者有时间喘口气，并想出一个新的、压力较小的策略，可能会让失智症患者稍后更容易接受。",
-          optionFeedback: ["Not helpful. Forcing him will escalate the aggression and may injure both of you.", "Not helpful. Logical explanations rarely work in the heat of agitation.", "Good idea. Walking away allows everyone to calm down; trying again later with music may succeed.", "Not helpful. Raising your voice intensifies the conflict."],
-          optionFeedbackZh: ["无益。强迫只会升级攻击行为，并可能伤到双方。", "无益。在激动中逻辑解释很少奏效。", "很好的做法。走开让大家都冷静；稍后用音乐等方法重试可能成功。", "无益。提高嗓门只会加剧冲突。"],
+          question: "Neil's father-in-law, Amit, has dementia. Amit angrily refuses to take a bath. Neil tugs Amit's arm and says angrily: \"you must take a bath because you are going to the doctor and need to be clean\". Amit gets very upset and shouts and even tries to shove Neil. How could Neil react differently? (Multiple answers are correct.)",
+          questionZh: "尼尔的岳父阿米特患有失智症。阿米特愤怒地拒绝洗澡。尼尔拉着他的胳膊，生气地说：\"你必须洗澡，因为你要去看医生，需要干净。\"阿米特非常不安，大喊大叫，甚至试图推开尼尔。尼尔可以如何不同地回应？（多选）",
+          options: [
+            "Force his father-in-law to take a bath.",
+            "Walk away and try at a different time, or on a different day.",
+            "Use distraction, e.g. by playing music that his father-in-law likes.",
+            "Maintain his father-in-law's dignity and privacy.",
+            "Ask his wife or another family member to give it a try.",
+            "Look online or talk to other carers for new suggestions."
+          ],
+          optionsZh: [
+            "强迫岳父去洗澡。",
+            "走开，换个时间或换一天再试。",
+            "使用分散注意力的方法，比如播放岳父喜欢的音乐。",
+            "维护岳父的尊严和隐私。",
+            "请妻子或其他家人来试一试。",
+            "上网查找或与其他护理者交流，寻求新建议。"
+          ],
+          correctIndices: [1, 2, 3, 4, 5],
+          explanation: "WHO recommends: never force the person; walk away and try later, distract with something they enjoy, maintain dignity, ask others to help, and seek new ideas from carers or online resources.",
+          explanationZh: "WHO 建议：绝不强迫；走开稍后再试，用他们喜欢的事物分散注意力，维护尊严，请他人帮忙，并向其他护理者或网络资源寻求新方法。",
+          optionFeedback: [
+            "Not correct. Forcing will escalate the aggression and may injure both of you.",
+            "Correct. Walking away gives both of you time to calm down before trying again.",
+            "Correct. Distraction with something pleasant, like music he likes, can defuse the situation.",
+            "Correct. Always preserve the person's dignity and privacy, even in difficult moments.",
+            "Correct. A different family member may have more success at that moment.",
+            "Correct. Other carers and online resources can offer fresh ideas to try."
+          ],
+          optionFeedbackZh: [
+            "不正确。强迫会升级攻击行为，可能伤到双方。",
+            "正确。走开让双方都冷静下来，再尝试一次。",
+            "正确。用愉快的事物（如他喜欢的音乐）分散注意力可以化解局面。",
+            "正确。无论何时都要维护对方的尊严和隐私。",
+            "正确。换一位家人此刻可能更顺利。",
+            "正确。其他护理者和网络资源能提供新的尝试思路。"
+          ],
         },
       },
       {
@@ -812,15 +840,43 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
         reflectQuestion: "Think about the person you care for. Do they ever show signs of depression, anxiety, or apathy? Describe what these changes look like and consider what you could do to prevent them or respond differently next time.",
         reflectQuestionZh: "想一想您所护理的人。他们是否曾表现出抑郁、焦虑或冷漠的迹象？描述一下这些变化是什么样子的，并思考您可以做些什么来预防这些情况，或者在下一次以不同的方式应对。",
         quiz: {
-          question: "Juan has dementia and sometimes sits looking very sad, hunched over, and crying. His sister, Isabel, tries to cheer him up, but it doesn't seem to work. How should Isabel handle this situation?",
-          questionZh: "胡安患有失智症，有时会弓着背坐着，看起来很伤心，甚至哭泣。他的姐姐伊莎贝尔试图让他振作起来，但似乎并不奏效。伊莎贝尔应该如何处理这种情况？",
-          options: ["Say: 'Juan, what’s the matter with you? Just get up and do something.'", "Go over and touch Juan's arm, saying, 'I know that you feel bad, I do too. What we’re going through is really hard.'", "Say: 'Men don’t cry. We used to have so much fun together.'", "Sigh and walk away, thinking that there is nothing that she can do."],
-          optionsZh: ["说：“胡安，你怎么了？快起来做点什么。”", "走过去，摸摸胡安的手臂，说：“我知道你感觉不好，我也是。我们正在经历的这一切真的很难。”", "说：“男人不哭。我们以前在一起多开心啊。”", "叹口气走开，心想自己也无能为力。"],
-          correctIndices: [1],
-          explanation: "This is a good response because people who are feeling sad need extra love, support, and understanding. Acknowledging his feelings can be very comforting.",
-          explanationZh: "这是一个很好的回应，因为感到悲伤的人需要额外的关爱、支持和理解。承认他的感受可以给他很大的安慰。",
-          optionFeedback: ["Not helpful. Demanding he 'just get up' dismisses his feelings.", "Good idea. Touch and acknowledging his feelings shows love and makes him feel understood.", "Not helpful. Shaming words ('men don't cry') dismisses his emotions.", "Not helpful. Walking away leaves him alone in his sadness."],
-          optionFeedbackZh: ["无益。命令他“快起来”是无视他的感受。", "很好的做法。轻触加上认可他的感受，传递关爱并让他感到被理解。", "无益。羞辱性的话（“男人不哭”）是在否定他的情绪。", "无益。走开让他独自陷入悲伤。"],
+          question: "Juan has dementia and sometimes sits looking very sad, hunched over, and crying. His sister Isabel sees him like this. Below are some things Isabel may do or say. Please select all responses that you think might work. (Multiple answers are correct.)",
+          questionZh: "胡安患有失智症，有时会弓着背坐着，看起来很伤心、哭泣。他的姐姐伊莎贝尔看到他这样。下面是伊莎贝尔可能采取的做法或说的话。请选出所有您认为可能有用的回应。（多选）",
+          options: [
+            "Walk over to Juan and say in a calm, reassuring tone: \"I have some ideas for how you can feel better, let's talk.\"",
+            "Say: \"Juan, what's the matter with you? I'm tired of seeing you like this. Just get up and do something.\"",
+            "Say: \"Men don't cry and get sad, we used to have so much fun together.\"",
+            "Go over and touch Juan on the arm or shoulder: \"I know that you feel bad, I do too. What we're going through is really hard.\"",
+            "Sit with Juan and suggest that they do a pleasant activity together.",
+            "Sigh and walk away, thinking that there is nothing that she can do."
+          ],
+          optionsZh: [
+            "走到胡安身边，用平静、安抚的语气说：\"我有一些可以让你感觉好些的想法，我们聊聊吧。\"",
+            "说：\"胡安，你怎么了？我看你这样真累。快起来做点什么吧。\"",
+            "说：\"男人不哭、不悲伤，我们以前在一起多开心啊。\"",
+            "走过去摸他的手臂或肩膀，说：\"我知道你感觉不好，我也是。我们经历的一切真的很难。\"",
+            "陪胡安坐着，并建议一起做一项愉快的活动。",
+            "叹口气走开，心想自己什么也做不了。"
+          ],
+          correctIndices: [0, 3, 4],
+          explanation: "WHO marks three responses as good: calmly offering support, acknowledging his feelings with touch, and suggesting a pleasant activity together. Scolding, shaming, or walking away are not helpful.",
+          explanationZh: "WHO 标记的好回应有三种：冷静地提供支持、用身体接触认可他的感受、建议一起做愉快的活动。责备、羞辱或走开都没有帮助。",
+          optionFeedback: [
+            "Correct. Juan needs more support due to the changes in his mood.",
+            "Not correct. This response is not helpful because Juan cannot help that he is feeling sad.",
+            "Not correct. This might embarrass Juan and may make him feel even more sad.",
+            "Correct. People who are feeling sad need extra love, support and understanding.",
+            "Correct. It may distract Juan and make him feel better.",
+            "Not correct. This is not helpful because Isabel is further isolating Juan."
+          ],
+          optionFeedbackZh: [
+            "正确。胡安因情绪变化需要更多支持。",
+            "不正确。胡安无法控制自己的悲伤，这种话没有帮助。",
+            "不正确。这可能让胡安难堪，反而让他更伤心。",
+            "正确。感到悲伤的人需要额外的关爱、支持和理解。",
+            "正确。这可能转移胡安的注意力，让他感觉好一些。",
+            "不正确。走开会让伊莎贝尔进一步孤立胡安。"
+          ],
         },
       },
       {
@@ -866,15 +922,55 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
         reflectQuestion: "Think about a time the person you care for had an unreal thought or saw something that was not there. How did you react, and what could you do differently next time based on what you have learned?",
         reflectQuestionZh: "回想一下您照顾的人曾有过不真实的想法或看到不存在的东西的一次经历。您当时是如何反应的？根据本课所学，下次您会采取什么不同的做法？",
         quiz: {
-          question: "Martin's wife Betty has dementia. In a park, Betty mistakes a stranger for her sister, Susan, who died 30 years ago. When the stranger ignores her, Betty becomes very upset. What is the BEST way for Martin to respond?",
-          questionZh: "马丁的妻子贝蒂患有失智症。在公园里，贝蒂把一个陌生人错当成她30年前去世的妹妹苏珊。当陌生人没有理睬她时，贝蒂变得非常难过。马丁最好的应对方式是什么？",
-          options: ["Argue with Betty, insisting the woman is not her sister.", "Soothe Betty in a calm voice and gently lead her away, perhaps suggesting they look at photos of Susan at home.", "Tell Betty harshly that she is wrong and her sister is dead.", "Agree with Betty that the woman is Susan to avoid a conflict."],
-          optionsZh: ["与贝蒂争吵，坚称那个女人不是她妹妹。", "用冷静的声音安慰贝蒂，并温柔地带她离开，可以建议回家后看苏珊的照片。", "严厉地告诉贝蒂她错了，她妹妹已经去世了。", "为了避免冲突，同意贝蒂的说法，承认那个女人是苏珊。"],
-          correctIndices: [1],
-          explanation: "The best approach is to avoid arguing, offer comfort, and gently distract the person. This response acknowledges the importance of her sister without arguing about the delusion, which helps de-escalate the situation.",
-          explanationZh: "最好的方法是避免争论，给予安慰，并温和地转移她的注意力。这种回应认可了她妹妹的重要性，但没有就错觉本身进行争论，有助于缓和局势。",
-          optionFeedback: ["Not helpful. Arguing increases her distress; her experience feels real to her.", "Good idea. Soothing her and gently distracting honours her feelings without arguing.", "Not helpful. Harsh correction is cruel and will not change her perception.", "Not ideal. Pretending the stranger is Susan can confuse her further when reality returns."],
-          optionFeedbackZh: ["无益。争论会加重她的痛苦；她的体验对她来说是真实的。", "很好的做法。安抚加上温柔转移注意力，既尊重她的感受又避免争论。", "无益。严厉纠正既残忍，也无法改变她的认知。", "不理想。假装陌生人就是苏珊，可能在她回到现实时让她更加困惑。"],
+          question: "Martin's wife Betty is living with dementia. One day, Martin and Betty are walking in the park. Suddenly, Betty stops in front of a young woman whom she does not know and says: \"Oh Susan, where have you been? I missed you so much.\" In reality, Susan was Betty's sister who passed away 30 years ago. The young woman ignores Betty and Betty becomes very upset. What would you recommend Martin do? Please choose all correct responses. (Multiple answers are correct.)",
+          questionZh: "马丁的妻子贝蒂患有失智症。一天，马丁和贝蒂在公园散步。贝蒂突然在一位不认识的年轻女子面前停下，说：\"哦苏珊，你去哪儿了？我好想你。\" 事实上，苏珊是贝蒂30年前去世的妹妹。年轻女子没有理睬，贝蒂变得非常难过。您建议马丁怎么做？请选出所有正确的回应。（多选）",
+          options: [
+            "Soothe her in a calm voice.",
+            "Lead her away from the woman in the park.",
+            "Say: \"Yes you are right, it is Susan.\"",
+            "Directly tell the truth, harshly, to set the record straight.",
+            "Say: \"When we get home, you can look at pictures of Susan and remember her.\"",
+            "Argue with Betty that the young woman is not her sister.",
+            "Say that the young woman in the park is someone who looks like her, but it is not her.",
+            "Involve the woman in the park in any way.",
+            "Try to 'convince' Betty of the truth."
+          ],
+          optionsZh: [
+            "用平静的声音安抚她。",
+            "把她带离公园里的那位女子。",
+            "说：\"是的你说得对，她就是苏珊。\"",
+            "严厉地直说真相，把事情说清楚。",
+            "说：\"我们回到家后，你可以看苏珊的照片，回忆她。\"",
+            "和贝蒂争论说那位年轻女子不是她妹妹。",
+            "说公园里的年轻女子只是长得像她妹妹，但不是她。",
+            "以任何方式把公园里的那位女子卷入其中。",
+            "试图\"说服\"贝蒂接受事实。"
+          ],
+          correctIndices: [0, 1, 4, 6],
+          explanation: "WHO marks four responses as good: soothing in a calm voice, leading her away, suggesting they look at photos at home, and gently saying the woman just looks like her sister. Lying, arguing, harsh truth, and involving the stranger are not helpful.",
+          explanationZh: "WHO 标记四种回应为好：用平静的声音安抚、把她带离、建议回家看照片、温和地说那位女子只是长得像她妹妹。撒谎、争论、生硬地说真相或牵涉到陌生人都不合适。",
+          optionFeedback: [
+            "Correct. People with delusions and hallucinations may feel frightened and insecure.",
+            "Correct. This will distract her from the young woman in the park.",
+            "Not correct. This is not the truth.",
+            "Not correct. This may make Betty even more upset.",
+            "Correct. This addresses the importance of her sister, without arguing that the young woman was not her sister.",
+            "Not correct. This may make Betty even more upset.",
+            "Correct. This maintains a positive social environment.",
+            "Not correct. This may make the situation more complicated.",
+            "Not correct. Betty may not understand."
+          ],
+          optionFeedbackZh: [
+            "正确。患有错觉和幻觉的人可能感到害怕和不安。",
+            "正确。这能让她从公园里那位年轻女子身上移开注意力。",
+            "不正确。这并非事实。",
+            "不正确。这可能让贝蒂更加难过。",
+            "正确。既肯定了她妹妹的重要性，又不去争论那位年轻女子是否是她妹妹。",
+            "不正确。这可能让贝蒂更加难过。",
+            "正确。这维持了积极的社交氛围。",
+            "不正确。这可能让情况更复杂。",
+            "不正确。贝蒂可能无法理解。"
+          ],
         },
       },
       {
@@ -893,15 +989,47 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
         reflectQuestion: "Does the person you care for ever do or say things over and over again? What behaviour(s) do they repeat?",
         reflectQuestionZh: "您所护理的人是否曾反复做某事或说某些话？他们会重复哪些行为？",
         quiz: {
-          question: "John's father, Joe, just had lunch but keeps asking 'When is lunch?'. He is also anxious because his wife is out. John gets upset and tells his father he's already answered. What is a better way for John to respond?",
-          questionZh: "约翰的父亲乔刚吃过午饭，却不停地问：“什么时候吃午饭？”。他还因为妻子外出而感到焦虑。约翰变得心烦，并告诉父亲他已经回答过了。约翰用哪种方式回应更好？",
-          options: ["Scold him, saying 'What’s wrong with you? Can’t you remember?'", "Stay calm and reassure him that his wife will be home soon.", "Walk away to make him stop asking.", "Tell him loudly, 'I have already answered these questions!'"],
-          optionsZh: ["责备他：“你怎么了？记不住吗？”", "保持冷静，并安抚他，告诉他妻子很快就回家了。", "走开，让他别再问了。", "大声告诉他：“我已经回答过这些问题了！”"],
-          correctIndices: [1],
-          explanation: "This is a good response because the repetition might be due to insecurity. By reassuring Joe, the repetition may lessen or stop.",
-          explanationZh: "这是一个很好的回应，因为重复行为可能是由于不安全感引起的。通过安抚乔，重复行为可能会减少或停止。",
-          optionFeedback: ["Not helpful. Scolding causes shame and may worsen the repetition.", "Good idea. Reassurance addresses the insecurity behind the repeating question.", "Not helpful. Walking away leaves him more anxious.", "Not helpful. Shouting increases his distress."],
-          optionFeedbackZh: ["无益。责备会带来羞愧，可能让重复更严重。", "很好的做法。安抚针对的是反复发问背后的不安全感。", "无益。走开让他更加焦虑。", "无益。提高嗓门只会加剧他的痛苦。"],
+          question: "John is taking care of his father, Joe, who has dementia. Joe has just had lunch with John, but already he is asking John when lunch will be. He repeats this question many times. Joe seems to feel insecure because his wife went out. What would you recommend to John? Please select all correct responses. (Multiple answers are correct.)",
+          questionZh: "约翰在照顾患有失智症的父亲乔。乔刚和约翰一起吃过午饭，却又一遍又一遍地问约翰什么时候吃午饭。乔似乎因为妻子外出而感到不安。您建议约翰怎么做？请选出所有正确的回应。（多选）",
+          options: [
+            "Say: \"What's wrong with you? Can't you remember? We just had lunch!\"",
+            "Stay calm and reassure his father that his wife will be home soon.",
+            "Engage his father in an activity.",
+            "Offer his father a snack or a drink.",
+            "Write down the answers to his questions, for example where his wife is and when she is expected to return.",
+            "Walk away.",
+            "Accept the repetitive questions. If it isn't harmful, let it be. Find ways to adapt."
+          ],
+          optionsZh: [
+            "说：\"你怎么了？记不住吗？我们刚吃过午饭！\"",
+            "保持冷静，安抚父亲，告诉他妻子很快就回家。",
+            "让父亲参与一项活动。",
+            "给父亲一些零食或饮料。",
+            "把问题的答案写下来，例如妻子在哪里、什么时候回来。",
+            "走开。",
+            "接受重复的提问。如果无害，就顺其自然。寻找适应的方法。"
+          ],
+          correctIndices: [1, 2, 3, 4, 6],
+          explanation: "WHO marks five responses as good: stay calm and reassure, engage him in an activity, offer a snack or drink, write down the answer, and accept the behaviour if it isn't harmful. Blaming or walking away are not helpful.",
+          explanationZh: "WHO 标记五种回应为好：保持冷静并安抚、让他参与一项活动、给些零食饮料、把答案写下来、若行为无害就接纳。责备或走开都没有帮助。",
+          optionFeedback: [
+            "Not correct. John is blaming his father for something he can't help.",
+            "Correct. The repetition may worsen due to Joe's feelings of insecurity. Reassuring him may lessen or stop the repetition.",
+            "Correct. An activity may distract his father and offer something else to see, hear or do.",
+            "Correct. Perhaps Joe is still hungry or thirsty. It may help to calm him and meet his need.",
+            "Correct. This might work well, may reassure Joe and stop him from asking again.",
+            "Not correct. This will only upset his father more.",
+            "Correct. If it is just repetitive questioning, by remaining calm the behaviour may decrease."
+          ],
+          optionFeedbackZh: [
+            "不正确。约翰是在为父亲无法控制的事情责备他。",
+            "正确。重复可能源于乔的不安全感。安抚他可能会让重复行为减少或停止。",
+            "正确。活动可以转移父亲的注意力，提供新的视听感受。",
+            "正确。也许乔还饿或渴；这能安抚他并满足他的需求。",
+            "正确。这可能很有效，能让乔安心并不再反复发问。",
+            "不正确。这只会让父亲更加难过。",
+            "正确。如果只是反复提问，保持冷静可能会让该行为减少。"
+          ],
         },
       },
       {
@@ -921,15 +1049,47 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
         reflectQuestion: "What are the possible reasons why the person you care for may have the desire to walk? Based on the reasons you identify, how might you react or respond the next time they want to go outside?",
         reflectQuestionZh: "您所护理的人可能想行走的原因有哪些？根据您确定的原因，下次他们想外出时，您可以如何应对？",
         quiz: {
-          question: "Amit has dementia and is supported by his wife, Samia. Samia is cooking dinner when she hears Amit heading for the door. She knows that he likes to go for afternoon walks, but now is not a good time. What is the BEST immediate response for Samia?",
-          questionZh: "阿米特患有失智症，由他的妻子萨米亚照料。萨米亚正在做晚饭时，听到阿米特走向门口。她知道他喜欢下午散步，但现在时机不合适。对萨米亚来说，最好立即作出的反应是什么？",
-          options: ["Go to Amit and calmly say: “Let’s eat dinner first and we’ll go for a walk later.”", "Yell from the kitchen, “Please stop! I can’t come with you now.”", "Forbid Amit to leave and pull him back into the house.", "Lock the door so that Amit cannot leave."],
-          optionsZh: ["走到阿米特身边，平静地说：“我们先吃晚饭，稍后我们再去散步。”", "从厨房里大喊：“请停下！我现在不能和你一起去。”", "禁止阿米特离开，并把他拉回屋内。", "锁上门，让阿米特无法离开。"],
-          correctIndices: [0],
-          explanation: "This is a good response because Samia stays calm, does not yell, and honors Amit's wishes by telling him that they will go together after dinner.",
-          explanationZh: "这是一个很好的回应，因为萨米亚保持冷静，没有大喊大叫，并且通过告诉阿米特晚饭后他们会一起去，来尊重他的愿望。",
-          optionFeedback: ["Good idea. Calmly redirecting honours his wish to walk while keeping him safe for now.", "Not helpful. Yelling from another room may startle him and not stop him.", "Not helpful. Forcing him back removes his autonomy and may trigger aggression.", "Not ideal as a default. Locking him in can frighten him; better to redirect with empathy first."],
-          optionFeedbackZh: ["很好的做法。冷静地引导既尊重他散步的愿望，也确保他当下安全。", "无益。从另一个房间大喊可能吓到他，也无法阻止他。", "无益。强行拉回剥夺了他的自主，可能引发攻击行为。", "不宜作为默认做法。锁门会让他害怕；先用同理心引导更好。"],
+          question: "Amit has dementia and is supported by his wife Samia. Samia is cooking dinner when she hears Amit heading for the door. She knows that he likes to go for afternoon walks, but she is busy now and cannot accompany him. What could Samia do? Please select all correct responses. (Multiple answers are correct.)",
+          questionZh: "阿米特患有失智症，由妻子萨米亚照顾。萨米亚正在做晚饭，听到阿米特走向门口。她知道他喜欢下午散步，但她现在很忙，无法陪同。萨米亚可以怎么做？请选出所有正确的回应。（多选）",
+          options: [
+            "Yell to Amit from the kitchen: \"please stop! I can't come with you now.\"",
+            "Turn the cooker off and follow Amit.",
+            "Forbid Amit to leave and pull him back into the house.",
+            "Go to where Amit is standing by the door and calmly say: \"Let's eat dinner first and we'll go for a walk later.\"",
+            "Lock the door so that Amit cannot leave.",
+            "Let Amit leave and call a neighbour to keep an eye out for him.",
+            "Ask another family member to go for a walk with him."
+          ],
+          optionsZh: [
+            "从厨房大喊：\"请停下！我现在不能和你一起去。\"",
+            "关掉炉子，跟着阿米特出去。",
+            "禁止阿米特离开，把他拉回屋内。",
+            "走到门边阿米特身旁，平静地说：\"我们先吃晚饭，稍后再去散步。\"",
+            "锁上门，让阿米特无法离开。",
+            "让阿米特出门，并打电话请邻居帮忙留意他。",
+            "请另一位家人陪他去散步。"
+          ],
+          correctIndices: [1, 3, 5, 6],
+          explanation: "WHO marks four responses as good: turn off the cooker and follow him, calmly redirect, ask a prearranged neighbour to keep an eye out, or ask another family member to walk with him. Yelling, forcing him back, or locking him in are not good responses.",
+          explanationZh: "WHO 标记四种回应为好：关掉炉子并跟随他、冷静地引导、请预先约定的邻居留意、或请另一位家人陪他散步。大喊、强拉回家或锁门都不好。",
+          optionFeedback: [
+            "Not correct. Yelling at Amit from the kitchen may confuse and agitate him. It may also not stop him from going out on his own.",
+            "Correct. This is a good response if there are no other alternatives.",
+            "Not correct. Amit may get agitated and resist being pulled, which could result in Amit or Samia being harmed.",
+            "Correct. Samia stays calm, does not yell, and honours Amit's wishes by telling him they will go together after dinner.",
+            "Correct only if no other options exist and Samia is in the house with Amit. For fire safety, a person living with dementia who requires supervision should never be locked inside a house without another person there.",
+            "Correct if Samia has prearranged with the neighbours to keep an eye out for him. If Amit is in the very early stages of dementia, he may be okay going out on his own to familiar places.",
+            "Correct. A good option — Samia can finish cooking dinner and Amit can enjoy a nice walk before dinner."
+          ],
+          optionFeedbackZh: [
+            "不正确。从厨房大喊会让阿米特困惑、激动，也未必能阻止他独自外出。",
+            "正确。如果没有其他选择，这是一个好回应。",
+            "不正确。阿米特可能会激动并反抗被拉扯，可能导致他或萨米亚受伤。",
+            "正确。萨米亚保持冷静、没有大喊，并通过告诉他晚饭后一起去散步来尊重他的意愿。",
+            "仅当没有其他选择且萨米亚和阿米特都在屋内时正确。出于消防安全考虑，需要看护的失智症患者绝不能在没有其他人在场的情况下被锁在屋内。",
+            "正确，前提是萨米亚事先与邻居约好留意他。如果阿米特处于失智症早期，独自前往熟悉的地方也许没问题。",
+            "正确。这是个好选择——萨米亚可以做完晚饭，阿米特也能在饭前愉快地散步。"
+          ],
         },
       },
       {
@@ -949,15 +1109,39 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
         reflectQuestion: "Think about a time the person you care for showed a change in their judgement. What did you observe, and how did it affect you? Based on what you've learned, what is one way you could respond differently in the future?",
         reflectQuestionZh: "回想一下您所护理的人在什么时候表现出判断力的改变。您观察到了什么？它对您有何影响？根据您学到的知识，未来您可以采取哪种不同的应对方式？",
         quiz: {
-          question: "Ivan is visiting his aunt Isabel, who has dementia. When a taxi pulls up suddenly, it startles her, and she begins scolding the driver. What is the BEST way for Ivan to respond in this moment?",
-          questionZh: "伊凡正在探望患有失智症的姑姑伊莎贝尔。当一辆出租车突然停到旁边时，伊莎贝尔受惊并开始责骂司机。在这一刻，伊凡最好的应对方式是什么？",
-          options: ["Put his hand on Isabel’s mouth to stop her.", "Walk Isabel back home and leave.", "Stay calm and reassure Isabel everything is alright.", "Accept the behaviour if the taxi driver doesn’t notice."],
-          optionsZh: ["用手捂住伊莎贝尔的嘴阻止她。", "带伊莎贝尔回家然后离开。", "保持冷静，并安抚伊莎贝尔说一切都很好。", "如果出租车司机没有注意到，就接受这个行为。"],
-          correctIndices: [2],
-          explanation: "Staying calm and offering reassurance shows you care about the person's feelings, which can de-escalate the situation and help them feel more relaxed.",
-          explanationZh: "保持冷静并提供安抚，表明您关心对方的感受，这有助于缓和局势，让他们感到更放松。",
-          optionFeedback: ["Not helpful. Covering her mouth is undignified and frightening.", "Avoidant. Leaving doesn't address the moment or her feelings.", "Good idea. Calm reassurance de-escalates the situation and respects her dignity.", "Possible if no one is harmed, but reassurance is the better default."],
-          optionFeedbackZh: ["无益。捂住她的嘴既不尊重，也会让她害怕。", "回避型。离开既未化解当下，也未关注她的感受。", "很好的做法。冷静安抚既能缓和局势，也尊重她的尊严。", "若无人受影响，可以接纳；但安抚仍是更好的默认做法。"],
+          question: "Ivan is visiting his aunt Isabel, who has dementia. They take a taxi but the driver does not stop quickly enough at the curb. Isabel becomes very upset and begins scolding the driver loudly. What would you recommend to Ivan? (Multiple answers are correct.)",
+          questionZh: "伊凡正在探望患有失智症的姑姑伊莎贝尔。他们叫了出租车，但司机没有及时停在路边。伊莎贝尔非常生气，大声责骂司机。您建议伊凡怎么做？（多选）",
+          options: [
+            "Put his hand on Isabel's mouth in order to stop her scolding the driver.",
+            "Walk Isabel back to her apartment and leave because what happened is embarrassing.",
+            "Stay calm and reassure Isabel everything is alright.",
+            "Accept the behaviour. If the taxi driver doesn't seem to notice, let it be. Find ways to adapt.",
+            "Ivan could carry a business card that explains, 'My companion has dementia, please be patient with us,' and give this card to the taxi driver."
+          ],
+          optionsZh: [
+            "用手捂住伊莎贝尔的嘴，阻止她责骂司机。",
+            "因为这件事很尴尬，把伊莎贝尔送回公寓后就离开。",
+            "保持冷静，安抚伊莎贝尔，告诉她一切都好。",
+            "接受这个行为。如果司机没有察觉，就顺其自然，找到适应的方法。",
+            "伊凡可以随身带一张卡片，写着\"我的同伴患有失智症，请您耐心对待\"，并把卡片递给司机。"
+          ],
+          correctIndices: [2, 3, 4],
+          explanation: "WHO marks three responses as good: stay calm and reassure her, accept the behaviour if it harms no one, and use a small card to discreetly explain her condition to others. Covering her mouth or leaving in embarrassment are not helpful.",
+          explanationZh: "WHO 标记三种回应为好：保持冷静并安抚、若无人受影响就接纳、用一张小卡片悄悄向他人说明情况。捂嘴或因尴尬离开都没有帮助。",
+          optionFeedback: [
+            "Not correct. This may even worsen the situation and cause Isabel further agitation.",
+            "Not correct. Isabel may feel bad and isolated.",
+            "Correct. This shows Ivan cares about Isabel. It may stop her from scolding the taxi driver and make her feel more relaxed.",
+            "Correct. This can be an appropriate response if the behaviour is not harming anyone.",
+            "Correct. This relieves Ivan from explaining the situation to the taxi driver, which may embarrass Isabel."
+          ],
+          optionFeedbackZh: [
+            "不正确。这可能让情况更糟，并让伊莎贝尔更激动。",
+            "不正确。伊莎贝尔可能会感到难过和被孤立。",
+            "正确。这表明伊凡关心伊莎贝尔，可能让她停止责骂司机并感到放松。",
+            "正确。如果行为没有伤害任何人，这是合适的回应。",
+            "正确。这能让伊凡免于亲口解释，避免让伊莎贝尔难堪。"
+          ],
         },
       },
       {
