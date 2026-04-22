@@ -812,8 +812,8 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           correctIndices: [0, 1, 2, 3],
           explanation: "All of these are key messages of the iSupport programme. They are foundational to understanding your role as a carer and maintaining your own well-being.",
           explanationZh: "所有这些都是iSupport计划的关键信息。它们是理解您作为护理者的角色和维持自身福祉的基础。",
-          optionFeedback: [],
-          optionFeedbackZh: [],
+          optionFeedback: ["Correct. Dementia is not your fault.", "Correct. What you do as a carer makes a difference.", "Correct. Knowing about dementia and care is one of the core iSupport messages.", "Correct. Taking care of yourself is one of the core iSupport messages."],
+          optionFeedbackZh: ["正确。失智症不是你的错。", "正确。作为护理者，你所做的一切都会有所作为。", "正确。了解失智症和照护是 iSupport 的核心信息之一。", "正确。照顾好自己是 iSupport 的核心信息之一。"],
         },
       }
     ],
