@@ -609,7 +609,10 @@ function LessonView({
         )}
 
         {/* Self-check Quiz */}
-        {lesson.quiz && <QuizCard quiz={lesson.quiz} isZh={isZh} />}
+        {lesson.quiz?.question?.trim() &&
+          lesson.quiz.options.some((option) => option.trim()) && (
+            <QuizCard quiz={lesson.quiz} isZh={isZh} />
+          )}
 
         {/* Tool CTA */}
         {lesson.toolPath && lesson.toolLabel && (

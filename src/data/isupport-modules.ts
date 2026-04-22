@@ -44,7 +44,7 @@ export interface ISupportLesson {
   keyActionsZh: string[];
   reflectQuestion: string;
   reflectQuestionZh: string;
-  quiz: ISupportQuiz;
+  quiz?: ISupportQuiz;
   readMinutes?: number;
   /** Optional: link to challenged_content category for related deep-dive articles */
   contentCategory?: string;
@@ -201,8 +201,8 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           options: ["Raise your voice or shout.", "Speak clearly and slowly, at a volume that is comfortable for the person, face to face and at eye level.", "Tap a hand, arm or front of the shoulder.", "Stop and hold the person to make him or her listen.", "Approach the person from the back and touch their shoulder.", "Call the person living with dementia by a name that they recognize."],
           optionsZh: ["提高你的声音或大喊。", "面对面，在同一视线水平，以对方感到舒适的音量，清晰而缓慢地说话。", "轻拍手、胳膊或肩膀前方。", "停下来并抓住患者，让他/她听你说话。", "从背后接近并触摸患者的肩膀。", "用失智症患者认可的名字称呼他们。"],
           correctIndices: [1, 2, 5],
-          explanation: "",
-          explanationZh: "",
+          explanation: "Respectful communication begins by getting the person's attention calmly, speaking simply, and noticing their reactions. Shouting, grabbing, or approaching from behind can make communication harder and more distressing.",
+          explanationZh: "尊重性的沟通始于平静地获得对方注意、用简单的话语交流，并留意他们的反应。大喊、强行抓住对方或从背后靠近，只会让沟通更困难、也更令人痛苦。"
           optionFeedback: ["Raising your voice is not a respectful way to gain attention. It may even make the person living with dementia feel sad, frustrated or angry.", "This is an appropriate way to make contact. It shows that you are seeking contact in a respectful manner.", "This is a good way to attract the attention of a person living with dementia.", "This is not a respectful way to get attention. It may even make the person living with dementia feel distressed or angry.", "This may startle someone who is not expecting you or perhaps did not hear you coming.", "This is a good way to attract the attention of a person living with dementia. You might use their first name or a nickname that was used in the past."],
           optionFeedbackZh: ["提高声音不是一种尊重的吸引注意力的方式。这甚至可能让失智症患者感到悲伤、沮丧或愤怒。", "这是一种恰当的建立联系的方式。它表明您正在以尊重的方式寻求接触。", "这是吸引失智症患者注意力的好方法。", "这不是一种尊重的吸引注意力的方式。这甚至可能让失智症患者感到痛苦或愤怒。", "这可能会吓到没有预料到您或可能没听到您走近的人。", "这是吸引失智症患者注意力的好方法。您可以使用他们的名字或过去常用的昵称。"],
         },
@@ -231,8 +231,8 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           options: ["Before Maria and Manuel go to bed, Maria asks Manuel what he wants to wear the next day. She then asks Manuel to lay them out.", "Maria chooses clothes for Manuel and she asks him to lay them out.", "Maria chooses clothes for Manuel in the morning and gives them directly to Manuel to wear."],
           optionsZh: ["在玛丽亚和曼努埃尔睡觉前，玛丽亚问曼努埃尔第二天想穿什么。然后她让曼努埃尔把衣服摆出来。", "玛丽亚为曼努埃尔挑选衣服，并让他把衣服摆出来。", "早上，玛丽亚为曼努埃尔挑选衣服，然后直接给他穿上。"],
           correctIndices: [0],
-          explanation: "",
-          explanationZh: "",
+          explanation: "Supported decision-making works best when you help the person do what they can still do, offer simple choices, and keep their wishes at the center of the decision. Taking over too quickly can reduce independence and dignity.",
+          explanationZh: "支持性决策最有效的方式，是帮助当事人继续做他们仍然能做的事、提供简单可选项，并把他们自己的意愿放在决定中心。过早完全代劳，会削弱他们的独立性与尊严。"
           optionFeedback: ["This is the right answer! This way Manuel is encouraged to do the things he is still able to do.", "This answer is okay. It is good that Manuel is encouraged to lay out his clothes himself; however, it would have been better if Maria supported Manuel in making his own decision about what to wear.", "This is not a good option. Maria is taking control away from Manuel. It would be better if she supported him in making his own decision and encouraged him to do the things which he is still able to do, such as laying out the clothes."],
           optionFeedbackZh: ["这是正确答案！这样可以鼓励曼努埃尔做他仍有能力做的事情。", "这个答案也可以。鼓励曼努埃尔自己摆放衣服是好的；但是，如果玛丽亚支持曼努埃尔自己决定穿什么会更好。", "这不是一个好选择。玛丽亚正在从曼努埃尔手中夺走控制权。如果她能支持他自己做决定，并鼓励他做他仍有能力做的事情，比如摆放衣服，那就更好了。"],
         },
@@ -295,17 +295,6 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
         keyActionsZh: ["您可以在一天中的任何时间、任何地点花些时间放松。", "设定一个目标：尝试每天至少做一次放松练习。", "您可以计划每天在特定的时间放松（如有必要，请使用提醒）。", "进行放松练习后，您将因精力恢复和心情变好而受益。", "即使是短暂的练习也能带来改变！"],
         reflectQuestion: "Before you try an exercise ask yourself: “How tense am I feeling”?",
         reflectQuestionZh: "在尝试练习之前，问问自己：“我感觉有多紧张？”",
-        quiz: {
-          question: "",
-          questionZh: "",
-          options: ["", "", ""],
-          optionsZh: ["", "", ""],
-          correctIndices: [],
-          explanation: "",
-          explanationZh: "",
-          optionFeedback: ["", "", ""],
-          optionFeedbackZh: ["", "", ""],
-        },
       },
       {
         key: "pleasant-activities",
@@ -401,8 +390,8 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           options: ["Bring Siya’s dinner to her room.", "Demand that Siya joins them for dinner.", "Let Siya help with meal preparation and cleaning activities."],
           optionsZh: ["把Siya的晚餐送到她的房间。", "要求Siya和他们一起吃晚饭。", "让Siya帮忙准备饭菜和做清洁工作。"],
           correctIndices: [2],
-          explanation: "",
-          explanationZh: "",
+          explanation: "Improving eating safety means adapting meals to the person's needs, keeping dangerous non-food items out of reach, and preventing aspiration by changing food texture, drink thickness, and meal positioning when needed.",
+          explanationZh: "改善进食安全，意味着根据当事人的需要调整饮食，把危险的非食品物品放到碰不到的地方，并在需要时通过改变食物质地、液体稠度和进食姿势来预防误吸。"
           optionFeedback: ["This is not helpful because it might further isolate Siya from her family. Siya may not feel welcome in the new home. She has lost her husband, her own home and now also her previous roles as cook and housekeeper.", "This is not such a good response because it may make Siya angry or cause her to further withdraw.", "This is a good response because her family knows Siya still enjoys cooking and should therefore support her to continue engaging in the activities that she likes and is still able to do."],
           optionFeedbackZh: ["这没有帮助，因为它可能会让Siya与家人进一步隔离。Siya在新家里可能感觉不受欢迎。她失去了丈夫、自己的家，现在又失去了厨师和管家的角色。", "这不是一个很好的回应，因为它可能会让Siya生气或导致她进一步退缩。", "这是一个很好的回应，因为她的家人知道Siya仍然喜欢烹饪，因此应该支持她继续从事她喜欢并且仍有能力做的活动。"],
         },
@@ -430,8 +419,8 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           options: ["Be flexible to have meals when her mother is awake.", "In a diary, keep a record of what and how often her mother eats.", "Ensure Chiu has access to foods she enjoys eating."],
           optionsZh: ["灵活安排，在母亲清醒时用餐。", "在日记中记录母亲进食的内容和频率。", "确保Chiu能吃到她喜欢吃的食物。"],
           correctIndices: [0, 1, 2],
-          explanation: "",
-          explanationZh: "",
+          explanation: "Personal care support should make it easier for the person to use their remaining abilities. Clear labels, simpler clothing, step-by-step prompting, and protecting privacy work better than taking over or blaming the person.",
+          explanationZh: "个人护理支持应当让当事人更容易使用他们仍保有的能力。清晰标识、更简单的衣物、分步骤提示以及保护隐私，都比直接接管或责备对方更有效。"
           optionFeedback: ["This is a good response. People in late stages of dementia need rest, so flexibility in planning meals will be very helpful when they are sleeping during normal mealtimes.", "This is a good response. Recording what people with dementia eat is important. This way, carers will better understand when and what kind of food is needed for sufficient food intake.", "This is a good response. What foods did she enjoy eating before her diagnosis of dementia? What foods does she seem to enjoy now?"],
           optionFeedbackZh: ["这是一个很好的回应。处于失智症晚期的人需要休息，因此在他们正常用餐时间睡觉时，灵活安排用餐会非常有帮助。", "这是一个很好的回应。记录失智症患者的饮食情况非常重要。这样，护理者就能更好地了解何时需要何种食物，以确保充足的食物摄入。", "这是一个很好的回应。在诊断出失智症之前，她喜欢吃什么食物？现在她似乎喜欢吃什么食物？"],
         },
@@ -488,8 +477,8 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           options: ["Put personal care items in the order of use and label them with large print words and different colours for Mariam to read.", "Ask their daughter-in-law to take Mariam from the table to the bathing room and assist her with washing and changing clothes.", "Tell Ted that he needs to be less messy, choose clothes for Ted and dress him."],
           optionsZh: ["将个人护理用品按使用顺序列出，并用大号字体和不同颜色进行标记，以便玛丽亚姆阅读。", "让他们的儿媳把玛丽亚姆从餐桌带到浴室，协助她洗漱和更衣。", "告诉特德他需要整洁一些，为特德挑选衣服并帮他穿上。"],
           correctIndices: [0],
-          explanation: "",
-          explanationZh: "",
+          explanation: "Behaviour changes are easier to manage when you look at what happened before the behaviour, how you responded, and what might reduce distress next time. Calm, flexible responses usually work better than frustration.",
+          explanationZh: "当你观察行为发生前的诱因、自己当时的反应，以及下次可以如何减少痛苦时，行为变化会更容易处理。冷静、灵活的回应通常比沮丧发火更有效。"
           optionFeedback: ["This is a good response. People with dementia may lose the ability to find items that are not obvious. Creating an ‘easy to find’ environment for them is very important.", "This is not the right answer. Mohammed needs to first find out what the reason is for her not doing the personal care before breakfast anymore. Also, instead of assuming, Mohammed needs to ask his wife first if she wants help from their daughter-in-law. Not asking may upset her.", "This answer is not helpful. It is not Ted’s fault that he is finding this task challenging. With some extra help, Ted may still be able to dress himself."],
           optionFeedbackZh: ["这是一个很好的回应。失智症患者可能会失去寻找不显眼物品的能力。为他们创造一个‘容易找到’的环境非常重要。", "这不是正确的答案。穆罕默德首先需要找出她不再在早餐前进行个人护理的原因。此外，穆罕默德不应自作主张，而是应该先问他的妻子是否需要儿媳的帮助。不问可能会让她不高兴。", "这个答案没有帮助。特德觉得这个任务有挑战性不是他的错。在一些额外的帮助下，特德可能仍然能够自己穿衣服。"],
         },
@@ -560,8 +549,8 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           options: ["Show that he is frustrated.", "Take a deep breath.", "Show his irritation by saying: “I already answered that, please stop bothering me”.", "Remind himself that his wife has dementia and cannot help that she forgets things. She is not forgetting on purpose.", "Next time, remember that asking her such questions will only cause frustration, not only for him, but also for his wife.", "Work with Kayla to record significant family and social events in a family diary."],
           optionsZh: ["表现出他的沮丧。", "深呼吸。", "通过说：“我已经回答过了，请不要再烦我了”来表示他的烦躁。", "提醒自己他的妻子患有失智症，她忘记事情并非自己所能控制。她不是故意忘记的。", "下次记住，问她这样的问题只会给他和他的妻子带来挫败感。", "与凯拉一起在家庭日记中记录重要的家庭和社交活动。"],
           correctIndices: [1, 3, 4, 5],
-          explanation: "",
-          explanationZh: "",
+          explanation: "Aggression should be met with calm, dignity, privacy, and time. Force, rushing, or logical arguments often make things worse, while gentler alternatives and understanding the person's perspective usually reduce distress.",
+          explanationZh: "面对攻击行为，应以冷静、尊严、隐私保护和充足时间来回应。强迫、催促或讲道理往往会让情况更糟；更温和的替代方式以及尝试理解当事人的处境，通常更能减轻痛苦。"
           optionFeedback: ["This is not the best response. Showing that he is frustrated is an inappropriate way to deal with the stressful behaviour, it may even make the person living with dementia irritable.", "This is a good response. It shows that Howard is trying to control his frustration.", "This reaction is not so good, because Howard’s irritability may upset Kayla even more.", "This is a good response, because Howard recognises that Kayla is living with dementia.", "This is a good response, because it may prevent this frustrating situation.", "This is a good response, because they can revisit the events from time to time if Kayla is missing family members and friends."],
           optionFeedbackZh: ["这不是最好的回应。表现出他的沮丧是处理压力行为的不当方式，甚至可能使失智症人士变得烦躁。", "这是一个很好的回应。这表明霍华德正在努力控制自己的沮丧情绪。", "这个反应不太好，因为霍华德的烦躁可能会让凯拉更加不安。", "这是一个很好的回应，因为霍华德认识到凯拉患有失智症。", "这是一个很好的回应，因为它可以防止这种情况带来的挫败感。", "这是一个很好的回应，因为如果凯拉想念家人和朋友，他们可以不时地重温这些事件。"],
         },
@@ -618,8 +607,8 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           options: ["Force his father-in-law to start bathing anyway.", "Maintain the dignity and privacy of his father-in-law. He could keep him in a robe or towel until he actually takes a bath.", "Play soothing music that Amit likes.", "Walk away and come back later.", "Explain logically why he should bathe.", "Make sure that there is enough time so that it is not so stressful. Rather than trying to bathe Amit right before the doctor’s appointment, when things are rushed, Neil might try to assist with bathing the day before."],
           optionsZh: ["无论如何都要强迫他的岳父开始洗澡。", "维护他岳父的尊严和隐私。他可以让他一直穿着浴袍或裹着毛巾，直到他真正洗澡。", "播放阿米特喜欢的舒缓音乐。", "走开，稍后再回来。", "从逻辑上解释他为什么应该洗澡。", "确保有足够的时间，这样就不会那么紧张。尼尔可以尝试在看医生前一天帮阿米特洗澡，而不是在看医生前匆忙地洗。"],
           correctIndices: [1, 2, 3, 5],
-          explanation: "",
-          explanationZh: "",
+          explanation: "Mood changes such as sadness, anxiety, or apathy respond best to reassurance, warmth, and gentle engagement. Criticism, shaming, or walking away can deepen the person's distress and isolation.",
+          explanationZh: "悲伤、焦虑或冷漠等情绪变化，最适合用安抚、温暖和温和参与来应对。批评、羞辱或直接走开，只会加重当事人的痛苦和孤立感。"
           optionFeedback: ["This is not helpful, because it does not change the situation and may only make it worse.", "Correct. Maintaining dignity and privacy is always a good idea when caring for someone with dementia. By doing this Neil makes sure that the person living with dementia is comfortable.", "Yes. Though it may take extra time to arrange the music, this option may help sooth both Neil and Amit. This may create relaxation and less negative responses from both of them.", "This is a good response. It gives Neil time to calm down, take a deep breath and come up with a new strategy. It also gives Amit time to forget about the negative encounter and he may be in a better mood if approached differently later.", "This answer is not so good. It does not take into account that Amit may not be able to understand because of his dementia.", "Though taking more time may not always be feasible, this option is good. It may reduce tension for Neil and Amit."],
           optionFeedbackZh: ["这没有帮助，因为它不能改变情况，可能只会让情况变得更糟。", "正确。在照顾失智症患者时，维护尊严和隐私总是一个好主意。通过这样做，尼尔确保了失智症患者的舒适。", "是的。虽然安排音乐可能需要额外的时间，但这个选项可能有助于安抚尼尔和阿米特。这可能会创造放松的氛围，并减少他们双方的负面反应。", "这是一个很好的回应。它给尼尔时间冷静下来，深呼吸，并想出一个新的策略。它也给阿米特时间忘记这次不愉快的接触，如果稍后以不同的方式接近他，他的心情可能会更好。", "这个答案不太好。它没有考虑到阿米特可能因为失智症而无法理解。", "虽然花更多的时间可能不总是可行的，但这个选项是好的。它可以减轻尼尔和阿米特的紧张情绪。"],
         },
@@ -635,7 +624,7 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           { heading: "Responding to a person with dementia who is feeling depressed.", headingZh: "如何应对感到抑郁的失智症患者？", body: "When a person with dementia appears sad, withdrawn or is crying, it's important to respond with calm reassurance and support. Acknowledge their feelings with physical touch and comforting words, as people with mood problems need extra love. Trying to distract them with a pleasant activity can also be helpful, but avoid dismissive or shaming comments which can make things worse.", bodyZh: "当失智症患者表现出悲伤、退缩或哭泣时，重要的是要以冷静的安抚和支持来回应。通过身体接触和安慰的话语来承认他们的感受，因为有情绪问题的人需要额外的关爱。尝试用愉快的活动来分散他们的注意力也可能有帮助，但要避免可能使情况变得更糟的轻视或羞辱性评论。" },
           { heading: "Responding to a person with dementia who is feeling anxious.", headingZh: "如何应对感到焦虑的失智症患者？", body: "Anxiety in a person with dementia can manifest as pacing, wringing hands, or repeating phrases. This behavior is often a reaction to their environment or the illness itself, not something they can control. The best response is to offer smiles and reassurance, and to gently distract them by asking for help with a simple task. It's also helpful to modify the environment, such as by reducing loud noises.", bodyZh: "失智症患者的焦虑可能表现为踱步、搓手或重复话语。这种行为通常是对环境或疾病本身的反应，不是他们能控制的。最好的回应是给予微笑和安抚，并通过请求他们帮忙做一件简单的任务来温和地分散他们的注意力。调整环境也很有帮助，例如减少大声的噪音。" },
           { heading: "How to respond when a person living with dementia loses interest in daily activities?", headingZh: "当失智症患者对日常活动失去兴趣时该如何应对？", body: "Apathy, or a loss of interest in activities, can cause a person with dementia to seem removed and distant. Respond with extra love and support, rather than frustration or direct orders, which can increase withdrawal. Suggest activities you can do together, and think about their past interests to find things they might still enjoy, even in a modified way.", bodyZh: "冷漠，或对活动失去兴趣，可能导致失智症患者显得疏远和冷淡。应对时应给予额外的关爱和支持，而不是沮丧或直接命令，这会加剧他们的退缩。建议你们可以一起做的活动，并思考他们过去的兴趣，以找到他们可能仍然喜欢的事情，即使是以一种调整过的方式。" },
-          { heading: "Engaging The Person", headingZh: "Engaging The Person", body: "Even if the person you're caring for seems distant, it's important to keep trying to engage them. Thinking back to activities they used to enjoy can provide clues. You could try reading the newspaper to them, cooking their favourite meal, or even visiting a familiar place like a shop to let them perform a simple, familiar task.", bodyZh: "Even if the person you're caring for seems distant, it's important to keep trying to engage them. Thinking back to activities they used to enjoy can provide clues. You could try reading the newspaper to them, cooking their favourite meal, or even visiting a familiar place like a shop to let them perform a simple, familiar task." },
+          { heading: "Engaging the person", headingZh: "让当事人重新参与活动", body: "Even if the person you're caring for seems distant, it is still important to keep trying to involve them. Thinking about activities they used to enjoy can give you clues about what may still interest them. You might read the newspaper aloud, cook a favourite meal, or visit a familiar place so they can do a simple, familiar task.", bodyZh: "即使您所照护的人看起来有些疏离，仍然重要的是继续尝试让他们参与进来。回想他们过去喜欢的活动，往往能给您线索，帮助您找到他们现在仍可能感兴趣的事情。您可以为他们读报、做他们喜欢的饭菜，或者带他们去熟悉的地方，让他们完成一个简单而熟悉的小任务。" },
         ],
         keyActions: ["Identify ways to stop or reduce mood changes, by comforting and getting the person interested in things that they like to do.", "If one approach doesn’t work, try another one.", "In case of mood changes, remind yourself that they may be part of the disease or a reaction to the disease.", "Take a deep breath and think about the best ways to respond that will be the least distressing to you and the person you care for in case they have mood problems or experience a loss of interest."],
         keyActionsZh: ["找到停止或减少情绪变化的方法，通过安慰和引导他们参与自己喜欢的活动。", "如果一种方法不起作用，就试试另一种。", "如果出现情绪变化，提醒自己这可能是疾病的一部分或对疾病的反应。", "深呼吸，思考如何以对您和您所护理的人都最少痛苦的方式来应对他们出现的情绪问题或失去兴趣的情况。"],
@@ -647,8 +636,8 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
           options: ["Walk over to Juan and say in a calm, reassuring tone, “I have some ideas about how you can feel better, let’s talk.", "Say: “Juan, what’s the matter with you? I’m tired of seeing you like this. Just get up and do something.”", "Say: “men don’t cry and get sad, we used to have so much fun together.”", "Go over and touch Juan on the arm or shoulder. “I know that you feel bad, I do too. What we’re going through is really hard.”", "Sit with Juan and suggest that they do a pleasant activity together.", "Sigh and walk away, thinking that there is nothing that she can do."],
           optionsZh: ["走到胡安身边，用冷静、令人安心的语气说：“我有一些能让你感觉好一点的想法，我们谈谈吧。”", "说：“胡安，你怎么了？我不想再看到你这个样子。快起来做点什么。”", "说：“男人不该哭哭啼啼的，我们以前在一起多开心啊。”", "走过去，触摸胡安的手臂或肩膀。“我知道你感觉不好，我也是。我们正在经历的这一切真的很难。”", "和胡安坐在一起，建议他们一起做一个愉快的活动。", "叹口气走开，认为自己无能为力。"],
           correctIndices: [0, 3, 4],
-          explanation: "",
-          explanationZh: "",
+          explanation: "Walking can be a need, a habit, or a response to confusion. The safest responses respect the person, reduce risk, and adapt the situation calmly rather than shouting, grabbing, or escalating conflict.",
+          explanationZh: "行走可能是一种需要、习惯，或对困惑状态的反应。最安全的回应方式，是在尊重当事人的前提下减少风险、冷静调整情境，而不是大喊、强拉或升级冲突。"
           optionFeedback: ["This is a good response because Juan needs more support due to the changes in his mood.", "This response is not helpful because Juan cannot help that he is feeling sad.", "This response is not good because it might embarrass Juan and may make him feel even more sad.", "This is a good response because people who are feeling sad need extra love, support and understanding.", "This is a good response because it may distract Juan and make him feel better.", "This is not helpful because Isabel is further isolating Juan."],
           optionFeedbackZh: ["这是一个很好的回应，因为胡安由于情绪变化需要更多的支持。", "这个回应没有帮助，因为胡安无法控制自己的悲伤情绪。", "这个回应不好，因为它可能会让胡安感到尴尬，甚至更伤心。", "这是一个很好的回应，因为感到悲伤的人需要额外的关爱、支持和理解。", "这是一个很好的回应，因为它可能会分散胡安的注意力，让他感觉好一些。", "这个回应没有帮助，因为伊莎贝尔这样做会进一步孤立胡安。"],
         },
@@ -673,8 +662,8 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
         quiz: {
           question: "Here are some examples of what a carer could do. Please select all that you think may be appropriate to help a person with dementia fall asleep:",
           questionZh: "以下是护理者可以做的一些示范。请选择所有您认为可以帮助失智症人士入睡的合适方法：",
-          options: ["Go for a walk with the person and add more physical activity during the day.", "Give them a pill to sleep.", "Try and ensure that the person does not drink coffee or too much fluid a few hours before going to bed.", "Make lunch the bigger meal of the day.", "Limit daytime naps to 15 to 30 minutes.", "Play soothing music before bedtime to help the person sleep."],
-          optionsZh: ["和失智症人士一起散步，增加白天的体育锻炼。", "给他们一片安眠药。", "尽量确保失智症人士在睡前几小时内不喝咖啡或过多的液体。", "把午餐做成一天中最丰盛的一餐。", "将白天的午睡时间限制在15到30分钟。", "睡前播放舒缓的音乐，帮助失智症人士入睡。"],
+          options: ["Go for a walk with the person and add more physical activity during the day.", "Give them a pill to sleep.", "Try and ensure that the person does not drink coffee or too much fluid a few hours before going to bed.", "Make lunch the bigger meal of the day.", "Limit daytime naps to 15 to 30 minutes.", "Play soothing music before bedtime to help the person sleep.", "Create a bedtime routine, like lowering the lights, washing face and teeth, and changing into pajamas.", "Keep in mind that some people may require less sleep. Generally, 6 to 8 hours sleep from 20:00 means night waking between 2:00 to 4:00 in the morning."],
+          optionsZh: ["和失智症人士一起散步，增加白天的体育锻炼。", "给他们一片安眠药。", "尽量确保失智症人士在睡前几小时内不喝咖啡或过多的液体。", "把午餐做成一天中最丰盛的一餐。", "将白天的午睡时间限制在15到30分钟。", "睡前播放舒缓的音乐，帮助失智症人士入睡。", "建立一个睡前程序，比如调暗灯光、洗脸刷牙、换上睡衣。", "要记住，有些人本来就需要较少睡眠。一般来说，如果从20:00开始已睡满6到8小时，那么在凌晨2:00到4:00醒来并不一定异常。"],
           correctIndices: [0, 2, 3, 4, 5, 6, 7],
           explanation: "Establishing a healthy sleep hygiene is key. This includes ensuring the person is physically active during the day but not too close to bedtime, avoiding stimulants like caffeine, and creating a calming pre-sleep routine. It is also important to consider that sleep needs change with age and medical conditions, so adjusting bedtime or meal schedules can be very effective.",
           explanationZh: "建立健康的睡眠卫生是关键。这包括确保失智症人士在白天有充分的身体活动，但不要太靠近就寝时间；避免咖啡因等兴奋剂；并创建一个平静的睡前程序。同样重要的是要考虑到睡眠需求会随着年龄和健康状况而变化，因此调整就寝时间或用餐时间可能非常有效。",
@@ -731,8 +720,8 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
         quiz: {
           question: "What would you recommend to John to help with his father's repetitive questions?",
           questionZh: "你会建议约翰如何应对他父亲的重复提问？",
-          options: ["Say “What’s wrong with you? Can’t you remember? We just had lunch!”", "Stay calm and reassure his father that his wife will be home soon.", "Engage his father in an activity.", "Write down the answers to his questions, for example where his wife is and when she is expected to return.", "Walk away.", "Accept the repetitive questions. If it isn’t harmful, let it be. Find ways to adapt."],
-          optionsZh: ["说：“你怎么了？不记得了吗？我们刚吃过午饭！”", "保持冷静，并向他父亲保证他的妻子很快就会回家。", "让他父亲参与一项活动。", "写下他问题的答案，例如他的妻子在哪里，以及她预计何时回来。", "走开。", "接受重复性的问题。如果无害，就随它去。想办法适应。"],
+          options: ["Say “What’s wrong with you? Can’t you remember? We just had lunch!”", "Stay calm and reassure his father that his wife will be home soon.", "Engage his father in an activity.", "Write down the answers to his questions, for example where his wife is and when she is expected to return.", "Walk away.", "Accept the repetitive questions. If it isn’t harmful, let it be. Find ways to adapt.", "Offer his father a snack or a drink."],
+          optionsZh: ["说：“你怎么了？不记得了吗？我们刚吃过午饭！”", "保持冷静，并向他父亲保证他的妻子很快就会回家。", "让他父亲参与一项活动。", "写下他问题的答案，例如他的妻子在哪里，以及她预计何时回来。", "走开。", "接受重复性的问题。如果无害，就随它去。想办法适应。", "给他父亲一些点心或饮料。"],
           correctIndices: [1, 2, 3, 5, 6],
           explanation: "The best responses focus on reassurance, distraction, and meeting potential underlying needs, rather than confrontation.",
           explanationZh: "最好的回应侧重于安抚、分散注意力和满足潜在的根本需求，而不是对抗。",
@@ -808,8 +797,8 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
         sections: [
           { heading: "Practical tips on not blaming yourself, sharing your feelings with others and making time for yourself", headingZh: "关于不责备自己、与他人分享感受以及为自己留出时间的实用技巧", body: "This section reviews three key tips for carers from previous lessons. Firstly, do not blame yourself or the person with dementia for challenges you face. Secondly, it is important to share your feelings with others rather than keeping them to yourself. Finally, making time for yourself to enjoy hobbies and other valued activities is essential for your own well-being.", bodyZh: "本节回顾了先前课程中为护理者提供的三个关键技巧。首先，不要因遇到的挑战而责备自己或失智症患者。其次，与他人分享您的感受非常重要，而不是自己承受。最后，为自己安排时间享受爱好和进行其他有价值的活动，这对您自己的身心健康至关重要。" },
           { heading: "The five key messages of iSupport", headingZh: "iSupport的五个关键信息", body: "The iSupport programme is built on five key messages. First, dementia is not your fault, nor the fault of the person with dementia. Second, as a carer, you are not alone. Third, what you do as a carer makes a difference. Fourth, it is important to know about dementia and how to provide care. Finally, it is crucial to also take care of yourself.", bodyZh: "iSupport计划建立在五个关键信息之上。首先，失智症不是你的错，也不是失智症患者的错。其次，作为一名护理者，你并不孤单。第三，你作为护理者所做的一切都会有所作为。第四，了解失智症以及如何提供护理非常重要。最后，照顾好自己也至关重要。" },
-          { heading: "", headingZh: "", body: "This manual offers accessible, evidence-based training for carers of people with dementia, aiming to improve knowledge and caregiving skills. It helps carers learn to cope with dementia symptoms and to care for themselves.", bodyZh: "本手册为失智症患者的护理者提供易于理解的、基于证据的培训，旨在提高知识和护理技能。它帮助护理者学习如何应对失智症症状并照顾好自己。" },
-          { heading: "", headingZh: "", body: "You have finished this lesson, well done!", bodyZh: "您已完成本课，做得很好！" },
+          { heading: "What this manual offers", headingZh: "本手册提供什么", body: "This manual offers accessible, evidence-based training for carers of people with dementia, with the aim of improving knowledge and caregiving skills. It is designed to help carers cope with dementia symptoms while also taking care of themselves.", bodyZh: "本手册为失智症患者的照护者提供易于理解、基于证据的培训，目的是提升知识与照护技能。它帮助照护者学习如何应对失智症症状，同时也更好地照顾自己。" },
+          { heading: "Lesson completion", headingZh: "完成本课", body: "You have finished this lesson, well done!", bodyZh: "您已完成本课，做得很好！" },
         ],
         keyActions: ["Don’t blame yourself or the person living with dementia for the problems that you encounter.", "Share your feelings about your experiences as a carer with others.", "It is essential that you make time for yourself."],
         keyActionsZh: ["不要因为遇到的问题而责备自己或失智症患者。", "与他人分享您作为护理者的经历和感受。", "为自己安排时间至关重要。"],
