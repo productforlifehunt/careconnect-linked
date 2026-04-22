@@ -989,15 +989,47 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
         reflectQuestion: "Does the person you care for ever do or say things over and over again? What behaviour(s) do they repeat?",
         reflectQuestionZh: "您所护理的人是否曾反复做某事或说某些话？他们会重复哪些行为？",
         quiz: {
-          question: "John's father, Joe, just had lunch but keeps asking 'When is lunch?'. He is also anxious because his wife is out. John gets upset and tells his father he's already answered. What is a better way for John to respond?",
-          questionZh: "约翰的父亲乔刚吃过午饭，却不停地问：“什么时候吃午饭？”。他还因为妻子外出而感到焦虑。约翰变得心烦，并告诉父亲他已经回答过了。约翰用哪种方式回应更好？",
-          options: ["Scold him, saying 'What’s wrong with you? Can’t you remember?'", "Stay calm and reassure him that his wife will be home soon.", "Walk away to make him stop asking.", "Tell him loudly, 'I have already answered these questions!'"],
-          optionsZh: ["责备他：“你怎么了？记不住吗？”", "保持冷静，并安抚他，告诉他妻子很快就回家了。", "走开，让他别再问了。", "大声告诉他：“我已经回答过这些问题了！”"],
-          correctIndices: [1],
-          explanation: "This is a good response because the repetition might be due to insecurity. By reassuring Joe, the repetition may lessen or stop.",
-          explanationZh: "这是一个很好的回应，因为重复行为可能是由于不安全感引起的。通过安抚乔，重复行为可能会减少或停止。",
-          optionFeedback: ["Not helpful. Scolding causes shame and may worsen the repetition.", "Good idea. Reassurance addresses the insecurity behind the repeating question.", "Not helpful. Walking away leaves him more anxious.", "Not helpful. Shouting increases his distress."],
-          optionFeedbackZh: ["无益。责备会带来羞愧，可能让重复更严重。", "很好的做法。安抚针对的是反复发问背后的不安全感。", "无益。走开让他更加焦虑。", "无益。提高嗓门只会加剧他的痛苦。"],
+          question: "John is taking care of his father, Joe, who has dementia. Joe has just had lunch with John, but already he is asking John when lunch will be. He repeats this question many times. Joe seems to feel insecure because his wife went out. What would you recommend to John? Please select all correct responses. (Multiple answers are correct.)",
+          questionZh: "约翰在照顾患有失智症的父亲乔。乔刚和约翰一起吃过午饭，却又一遍又一遍地问约翰什么时候吃午饭。乔似乎因为妻子外出而感到不安。您建议约翰怎么做？请选出所有正确的回应。（多选）",
+          options: [
+            "Say: \"What's wrong with you? Can't you remember? We just had lunch!\"",
+            "Stay calm and reassure his father that his wife will be home soon.",
+            "Engage his father in an activity.",
+            "Offer his father a snack or a drink.",
+            "Write down the answers to his questions, for example where his wife is and when she is expected to return.",
+            "Walk away.",
+            "Accept the repetitive questions. If it isn't harmful, let it be. Find ways to adapt."
+          ],
+          optionsZh: [
+            "说：\"你怎么了？记不住吗？我们刚吃过午饭！\"",
+            "保持冷静，安抚父亲，告诉他妻子很快就回家。",
+            "让父亲参与一项活动。",
+            "给父亲一些零食或饮料。",
+            "把问题的答案写下来，例如妻子在哪里、什么时候回来。",
+            "走开。",
+            "接受重复的提问。如果无害，就顺其自然。寻找适应的方法。"
+          ],
+          correctIndices: [1, 2, 3, 4, 6],
+          explanation: "WHO marks five responses as good: stay calm and reassure, engage him in an activity, offer a snack or drink, write down the answer, and accept the behaviour if it isn't harmful. Blaming or walking away are not helpful.",
+          explanationZh: "WHO 标记五种回应为好：保持冷静并安抚、让他参与一项活动、给些零食饮料、把答案写下来、若行为无害就接纳。责备或走开都没有帮助。",
+          optionFeedback: [
+            "Not correct. John is blaming his father for something he can't help.",
+            "Correct. The repetition may worsen due to Joe's feelings of insecurity. Reassuring him may lessen or stop the repetition.",
+            "Correct. An activity may distract his father and offer something else to see, hear or do.",
+            "Correct. Perhaps Joe is still hungry or thirsty. It may help to calm him and meet his need.",
+            "Correct. This might work well, may reassure Joe and stop him from asking again.",
+            "Not correct. This will only upset his father more.",
+            "Correct. If it is just repetitive questioning, by remaining calm the behaviour may decrease."
+          ],
+          optionFeedbackZh: [
+            "不正确。约翰是在为父亲无法控制的事情责备他。",
+            "正确。重复可能源于乔的不安全感。安抚他可能会让重复行为减少或停止。",
+            "正确。活动可以转移父亲的注意力，提供新的视听感受。",
+            "正确。也许乔还饿或渴；这能安抚他并满足他的需求。",
+            "正确。这可能很有效，能让乔安心并不再反复发问。",
+            "不正确。这只会让父亲更加难过。",
+            "正确。如果只是反复提问，保持冷静可能会让该行为减少。"
+          ],
         },
       },
       {
