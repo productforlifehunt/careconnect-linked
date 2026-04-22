@@ -42,6 +42,13 @@ export interface ISupportLesson {
   reflectQuestionZh: string;
   quiz: ISupportQuiz;
   readMinutes?: number;
+  /** Optional: link to challenged_content category for related deep-dive articles */
+  contentCategory?: string;
+  contentSubcategory?: string;
+  /** Optional: CTA into an in-app tool */
+  toolPath?: string;
+  toolLabel?: string;
+  toolLabelZh?: string;
 }
 
 export interface ISupportModule {
