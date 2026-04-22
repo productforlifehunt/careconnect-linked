@@ -55,12 +55,15 @@ export default function Messages() {
     };
   };
 
-  // Poll conversations every 15 seconds (WordPress CCT has no WebSocket support)
+  // Poll conversations every 30s, only while the Messages page tab is visible.
+  // WordPress CCT has no WebSocket, so AJAX polling is the only realtime option here.
   useEffect(() => {
-    const interval = setInterval(() => {
+    const tick = () => {
+      if (document.visibilityState !== "visible") return;
       qc.invalidateQueries({ queryKey: ["messages"] });
       qc.invalidateQueries({ queryKey: ["conversations"] });
-    }, 15000);
+    };
+    const interval = setInterval(tick, 30000);
     return () => clearInterval(interval);
   }, [qc]);
 
