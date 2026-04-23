@@ -704,7 +704,9 @@ function matchesProviderProduct(product: any, providerId: string) {
 
 export async function getProviderProducts(providerId: string) {
   try {
-    const products = await wpAdminFetch(`wc/v3/products?per_page=100&status=publish&type=booking`);
+    // NOTE: WC REST `type` enum only accepts simple|grouped|external|variable.
+    // Custom `booking` type is rejected (400). Fetch all and filter client-side.
+    const products = await wpAdminFetch(`wc/v3/products?per_page=100&status=publish`);
     if (!Array.isArray(products)) return [];
 
     return products
@@ -922,8 +924,10 @@ export async function fetchAllProviderProductSummaries(): Promise<Map<string, Pr
     // Use admin Basic Auth via wpAdminFetch so unauthenticated visitors and
     // non-admin logged-in customers can still hydrate the marketplace listing
     // (WC `/products` listing requires `read` cap → JWT alone returns 401).
+    // NOTE: WC REST `type` enum only accepts simple|grouped|external|variable.
+    // Custom `booking` type is rejected (400). Fetch all and filter client-side via `_provider_id`.
     const products = await wpAdminFetch(
-      `wc/v3/products?per_page=100&status=publish&type=booking`,
+      `wc/v3/products?per_page=100&status=publish`,
     );
     if (!Array.isArray(products)) return map;
 
