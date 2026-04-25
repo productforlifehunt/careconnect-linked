@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, CheckCircle, Circle, Loader2, Trash2, Briefcase } from "lucide-react";
-import { VisibilitySelect } from "../PostActions";
+import { VisibilityPicker, EMPTY_VISIBILITY, type VisibilityValue } from "../VisibilityPicker";
 import { CommentsSection } from "@/components/comments/CommentsSection";
 import { useToast } from "@/hooks/use-toast";
 
@@ -32,7 +32,8 @@ export function TasksTab({
 }: TasksTabProps) {
   const { toast } = useToast();
   const [addOpen, setAddOpen] = useState(false);
-  const [newTask, setNewTask] = useState({ title: "", description: "", assignee: "", category: "Daily Living", due_date: "", visibility: "group" });
+  const [newTask, setNewTask] = useState({ title: "", description: "", assignee: "", category: "Daily Living", due_date: "" });
+  const [visibility, setVisibility] = useState<VisibilityValue>(EMPTY_VISIBILITY);
 
   const pendingTasks = (tasks || []).filter((t: any) => t.status !== "completed");
   const completedTasks = (tasks || []).filter((t: any) => t.status === "completed");
@@ -53,9 +54,12 @@ export function TasksTab({
       title: newTask.title, description: newTask.description || undefined,
       group_id: activeGroupId, assigned_to: newTask.assignee || undefined,
       due_date: newTask.due_date || undefined,
+      subgroupIds: visibility.subgroupIds,
+      visibilityUserIds: visibility.userIds,
     } as any, {
       onSuccess: () => {
-        setNewTask({ title: "", description: "", assignee: "", category: "Daily Living", due_date: "", visibility: "group" });
+        setNewTask({ title: "", description: "", assignee: "", category: "Daily Living", due_date: "" });
+        setVisibility(EMPTY_VISIBILITY);
         setAddOpen(false); toast({ title: "Task added" });
       },
     });
@@ -94,7 +98,7 @@ export function TasksTab({
                   </Select>
                 </div>
               </div>
-              <div><Label>Visibility</Label><VisibilitySelect value={newTask.visibility} onChange={v => setNewTask(p => ({ ...p, visibility: v }))} memberCategories={memberCategories} /></div>
+              <div><Label>Visibility</Label><VisibilityPicker value={visibility} onChange={setVisibility} memberCategories={memberCategories} members={members} /></div>
               <Button variant="coral" className="w-full" onClick={addTask} disabled={createTask.isPending || !newTask.title.trim()}>
                 {createTask.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
                 Add Task
