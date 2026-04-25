@@ -1,108 +1,117 @@
-import { wordpressCCTFetch } from "@/features/shared/wordpress-client";
+import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 
 /**
- * CCT slugs: chat_conversation, chat_message
- *
- * Real schema in WP (verified 2026-04-17):
- *   chat_conversation: participant_1_id, participant_2_id, last_message_at, last_message_preview
- *   chat_message:      conversation_id, sender_user_id, receiver_user_id, content, message_type
- *
- * IMPORTANT: WP wants RAW numeric ids (e.g. "1"), but the app carries user ids
- * with a "wp-" prefix (e.g. "wp-1"). Always strip the prefix before sending.
+ * Live JetEngine schema (verified from prd-to-wp-mapping.md):
+ *   CCT chat_conversation: chat_type, chat_name, ai_chat_mode, last_message_at
+ *   CCT chat_message:      chat_message_content, chat_message_type
+ *   REL 140 (1:1)  care_group        → chat_conversation
+ *   REL 142 (M:M)  chat_conversation → users           (members)
+ *   REL 143 (1:M)  chat_conversation → chat_message    (messages)
+ *   REL 144 (1:M)  chat_message      → chat_message    (reply parent)
  */
+
+const REL_CONV_MEMBER = 142;
+const REL_CONV_MESSAGE = 143;
 
 const stripWp = (id: string | number | null | undefined): string =>
   id == null ? "" : String(id).replace(/^wp-/, "");
+const numId = (id: string | number | null | undefined): number => Number(stripWp(id));
+
+async function fetchConversationMemberIds(convoId: string | number): Promise<number[]> {
+  try {
+    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_CONV_MEMBER}/children/${numId(convoId)}`);
+    if (!Array.isArray(rels)) return [];
+    return rels.map((r: any) => Number(r.child_object_id)).filter(Boolean);
+  } catch { return []; }
+}
 
 export async function fetchConversationsWordPress(currentUserId?: string): Promise<any[]> {
   try {
     const convos = await wordpressCCTFetch<any[]>("chat_conversation", { params: { _limit: 200 } });
     if (!Array.isArray(convos)) return [];
-    const myId = stripWp(currentUserId);
-    const filtered = myId
-      ? convos.filter(
-          (c: any) =>
-            String(c.participant_1_id) === myId || String(c.participant_2_id) === myId
-        )
-      : convos;
-    return filtered.map((c: any) => {
-      const p1 = String(c.participant_1_id || "0");
-      const p2 = String(c.participant_2_id || "0");
-      const otherRaw = myId && p1 === myId ? p2 : p1;
+    const myId = numId(currentUserId);
+
+    const enriched = await Promise.all(convos.map(async (c: any) => {
+      const id = String(c.id || c._ID);
+      const memberIds = await fetchConversationMemberIds(id);
+      if (myId && !memberIds.includes(myId)) return null;
+      const otherId = myId ? memberIds.find((m) => m !== myId) : memberIds[0];
       return {
-        id: c._ID || c.id,
-        title: c.title || null,
-        type: c.type || "direct",
-        participant_1_id: p1,
-        participant_2_id: p2,
-        other_user_id: otherRaw ? `wp-${otherRaw}` : null,
-        last_message: c.last_message_preview || null,
-        last_message_at: c.last_message_at || c.cct_modified || c.cct_created,
-        created_at: c.cct_created,
+        id,
+        title: c.chat_name || null,
+        chat_name: c.chat_name || null,
+        chat_type: c.chat_type || "direct",
+        type: c.chat_type || "direct",
+        ai_chat_mode: c.ai_chat_mode || null,
+        member_ids: memberIds.map((m) => `wp-${m}`),
+        other_user_id: otherId ? `wp-${otherId}` : null,
+        last_message: null,
+        last_message_at: c.last_message_at || c.updated_at || c.created_at,
+        created_at: c.created_at,
       };
-    });
-  } catch {
-    return [];
-  }
+    }));
+    return enriched.filter(Boolean) as any[];
+  } catch { return []; }
 }
 
 export async function fetchDirectMessagesWordPress(conversationId: string): Promise<any[]> {
   try {
-    const msgs = await wordpressCCTFetch<any[]>("chat_message", {
-      params: { conversation_id: conversationId, _limit: 200 },
-    });
-    if (!Array.isArray(msgs)) return [];
-    return msgs
-      .filter((m: any) => String(m.conversation_id) === String(conversationId))
+    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_CONV_MESSAGE}/children/${numId(conversationId)}`);
+    if (!Array.isArray(rels) || rels.length === 0) return [];
+    const messageIds = rels.map((r: any) => String(r.child_object_id)).filter(Boolean);
+    const msgs = await Promise.all(messageIds.map(async (mid) => {
+      try { return await wordpressCCTFetch<any>("chat_message", { id: mid }); }
+      catch { return null; }
+    }));
+    return (msgs.filter(Boolean) as any[])
       .map((m: any) => ({
-        id: m._ID || m.id,
-        conversation_id: m.conversation_id,
-        sender_user_id: m.sender_user_id ? `wp-${m.sender_user_id}` : null,
-        receiver_user_id: m.receiver_user_id ? `wp-${m.receiver_user_id}` : null,
-        sender_id: m.sender_user_id ? `wp-${m.sender_user_id}` : null, // backward-compat alias
-        content: m.content || "",
-        message_type: m.message_type || "text",
-        created_at: m.cct_created,
+        id: String(m.id || m._ID),
+        conversation_id: conversationId,
+        sender_user_id: m.author_id ? `wp-${m.author_id}` : null,
+        sender_id: m.author_id ? `wp-${m.author_id}` : null,
+        receiver_user_id: null,
+        content: m.chat_message_content || "",
+        message_type: m.chat_message_type || "text",
+        created_at: m.created_at,
       }))
       .sort((a, b) => (a.created_at || "").localeCompare(b.created_at || ""));
-  } catch {
-    return [];
-  }
+  } catch { return []; }
 }
 
 export async function sendMessageWordPress(
   conversationId: string,
   content: string,
-  senderUserId: string | number,
-  receiverUserId: string | number
+  _senderUserId: string | number,
+  _receiverUserId: string | number
 ): Promise<void> {
-  await wordpressCCTFetch("chat_message", {
+  // JetEngine sets author_id from the JWT — no need to send sender id
+  const created = await wordpressCCTFetch<any>("chat_message", {
     method: "POST",
     body: {
-      conversation_id: conversationId,
-      sender_user_id: stripWp(senderUserId),
-      receiver_user_id: stripWp(receiverUserId),
-      content,
-      message_type: "text",
+      chat_message_content: content,
+      chat_message_type: "text",
     },
   });
-  // Update parent conversation last_message_at + preview (best-effort)
+  const messageId = numId(created?.item_id || created?._ID || created?.id);
+  const convoId = numId(conversationId);
+  if (messageId && convoId) {
+    await wordpressFetch(`jet-rel/${REL_CONV_MESSAGE}`, {
+      method: "POST",
+      body: { parent_id: convoId, child_id: messageId, context: "child", store_items_type: "update" },
+    });
+  }
+  // Touch conversation last_message_at
   try {
-    const preview = content.length > 80 ? content.slice(0, 80) + "…" : content;
     await wordpressCCTFetch("chat_conversation", {
       id: conversationId,
       method: "PUT",
-      body: {
-        last_message_at: new Date().toISOString().slice(0, 19).replace("T", " "),
-        last_message_preview: preview,
-      },
+      body: { last_message_at: new Date().toISOString().slice(0, 19).replace("T", " ") },
     });
   } catch { /* non-blocking */ }
 }
 
 export async function markMessagesReadWordPress(_conversationId: string): Promise<void> {
-  // Read-tracking deferred — schema has is_read on chat_message, but per-user
-  // read state needs a chat_member table that isn't populated reliably.
+  // Per-user read state requires per-member tracking — deferred until schema supports it
   return;
 }
 
@@ -110,33 +119,42 @@ export async function startConversationWordPress(
   otherUserId: string,
   currentUserId: string
 ): Promise<string> {
-  const me = stripWp(currentUserId);
-  const other = stripWp(otherUserId);
+  const me = numId(currentUserId);
+  const other = numId(otherUserId);
   if (!me || !other) throw new Error("startConversation: missing user ids");
   if (me === other) throw new Error("Cannot start a conversation with yourself");
 
-  // Find existing conversation containing both ids (in either slot)
+  // Find existing direct conversation containing both members
   try {
     const convos = await wordpressCCTFetch<any[]>("chat_conversation", { params: { _limit: 500 } });
     if (Array.isArray(convos)) {
-      const existing = convos.find((c: any) => {
-        const p1 = String(c.participant_1_id);
-        const p2 = String(c.participant_2_id);
-        return (
-          (p1 === me && p2 === other) ||
-          (p1 === other && p2 === me)
-        );
-      });
-      if (existing) return String(existing._ID || existing.id);
+      for (const c of convos) {
+        if (c.chat_type && c.chat_type !== "direct") continue;
+        const memberIds = await fetchConversationMemberIds(String(c.id || c._ID));
+        if (memberIds.length === 2 && memberIds.includes(me) && memberIds.includes(other)) {
+          return String(c.id || c._ID);
+        }
+      }
     }
-  } catch { /* fall through to create */ }
+  } catch { /* fall through */ }
 
   const result = await wordpressCCTFetch<any>("chat_conversation", {
     method: "POST",
     body: {
-      participant_1_id: me,
-      participant_2_id: other,
+      chat_type: "direct",
+      chat_name: "",
+      ai_chat_mode: "",
+      last_message_at: new Date().toISOString().slice(0, 19).replace("T", " "),
     },
   });
-  return String(result?._item_id || result?.id || result?._ID || "");
+  const convoId = numId(result?.item_id || result?._ID || result?.id);
+  if (!convoId) throw new Error("Failed to create conversation");
+  // Add both members via REL 142
+  await Promise.all([me, other].map((uid) =>
+    wordpressFetch(`jet-rel/${REL_CONV_MEMBER}`, {
+      method: "POST",
+      body: { parent_id: convoId, child_id: uid, context: "child", store_items_type: "update" },
+    }).catch(() => {})
+  ));
+  return String(convoId);
 }
