@@ -39,8 +39,8 @@ These are hard rules. Break them and the app will break or connect to the wrong 
 
 这些是硬性规则。违反它们，应用会崩溃或连接到错误的数据库。
 
-- **NEVER** import from `src/integrations/supabase/client.ts`. That file connects to an empty Lovable Cloud database we don't use. Always use `careDb` and `careAuth` from `src/integrations/supabase/external-client.ts`.
-- **永远不要**从 `src/integrations/supabase/client.ts` 导入。那个文件连接到我们不使用的空 Lovable Cloud 数据库。始终使用 `src/integrations/supabase/external-client.ts` 中的 `careDb` 和 `careAuth`。
+- **NEVER** use any Supabase database client for data. All data is in headless WordPress (JetEngine CCTs). Supabase is only used for Edge Functions (AI, voice, wp-proxy). Data fetching goes through `wp-proxy` Edge Function → WordPress REST API.
+- **永远不要**用 Supabase 数据库存数据。所有数据在 headless WordPress 的 JetEngine CCT 中。Supabase 仅用于 Edge Functions（AI、语音、wp-proxy 桥接）。数据请求通过 `wp-proxy` Edge Function → WordPress REST API。
 
 - **NEVER** create mock data, fallback data, hardcoded workarounds, or fake anything. The app is production-ready. If you can't access something, ASK the developer.
 - **永远不要**创建模拟数据、回退数据、硬编码变通或伪造任何东西。应用是生产就绪的。如果无法访问某些东西，问开发者。
