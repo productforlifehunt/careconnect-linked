@@ -7,11 +7,18 @@
  * Location uses the new single-CCT architecture from source.wordpress.ts
  */
 
-import { createWordPressFeature, deleteWordPressFeature, listWordPressFeature, updateWordPressFeature } from "@/features/shared/wordpress-adapter";
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { createNotificationWordPress } from "@/features/notifications/source.wordpress";
 import { fetchCurrentLocation, fetchLocationHistory, writeLocationAndCheckZones } from "@/features/location/source.wordpress";
+
+// NOTE: There is no `safe_zone_alerts` or `location_requests` CCT in the live
+// WordPress backend. Alerts are delivered exclusively via the `notification`
+// CCT. Location requests are sent as notifications to the target user; the
+// frontend keeps a local in-memory cache of recent emergency dedup keys.
+const ALERT_DEDUP_KEY = (userId: string, zoneId: string, type: string) =>
+  `cc_zone_alert:${userId}:${zoneId}:${type}`;
+const ALERT_DEDUP_WINDOW_MS = 5 * 60 * 1000;
 
 
 // ─── Relation IDs ────────────────────────────────────────────
