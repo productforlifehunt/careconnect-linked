@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ListTodo, Users, Heart } from "lucide-react";
-import { PostActions, VisibilitySelect } from "../PostActions";
+import { PostActions } from "../PostActions";
+import { VisibilityPicker, EMPTY_VISIBILITY, type VisibilityValue } from "../VisibilityPicker";
 import { CommentsSection } from "@/components/comments/CommentsSection";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -19,6 +20,7 @@ interface HomeTabProps {
   userId: string | undefined;
   isAdmin: boolean;
   memberCategories: any[];
+  members?: any[];
   createPost: any;
   onEditPost: (post: any) => void;
   onTogglePin: (post: any) => void;
@@ -27,7 +29,7 @@ interface HomeTabProps {
 
 export function HomeTab({
   pendingTasksCount, membersCount, caredOnesCount,
-  allPosts, activeGroupId, userId, isAdmin, memberCategories,
+  allPosts, activeGroupId, userId, isAdmin, memberCategories, members,
   createPost, onEditPost, onTogglePin, onDeletePost,
 }: HomeTabProps) {
   const { toast } = useToast();
@@ -35,13 +37,26 @@ export function HomeTab({
   const [content, setContent] = useState("");
   const [postType, setPostType] = useState("discussion");
   const [title, setTitle] = useState("");
-  const [visibility, setVisibility] = useState("group");
+  const [visibility, setVisibility] = useState<VisibilityValue>(EMPTY_VISIBILITY);
 
   const addPost = () => {
     if (!content.trim() || !activeGroupId) return;
-    createPost.mutate({ group_id: activeGroupId, content, type: postType, title: title || undefined, visibility }, {
-      onSuccess: () => { setContent(""); setTitle(""); setVisibility("group"); toast({ title: "Posted!" }); },
-    });
+    createPost.mutate(
+      {
+        group_id: activeGroupId,
+        content,
+        type: postType,
+        title: title || undefined,
+        subgroupIds: visibility.subgroupIds,
+        visibilityUserIds: visibility.userIds,
+      },
+      {
+        onSuccess: () => {
+          setContent(""); setTitle(""); setVisibility(EMPTY_VISIBILITY);
+          toast({ title: "Posted!" });
+        },
+      }
+    );
   };
 
   return (
@@ -64,7 +79,7 @@ export function HomeTab({
         <CardContent className="p-4">
           <Textarea value={content} onChange={e => setContent(e.target.value)} placeholder="Share an update with your care team..." className="mb-3" rows={2} />
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <Select value={postType} onValueChange={setPostType}>
                 <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -73,7 +88,7 @@ export function HomeTab({
                   <SelectItem value="wish">Well Wish</SelectItem>
                 </SelectContent>
               </Select>
-              <VisibilitySelect value={visibility} onChange={setVisibility} memberCategories={memberCategories} />
+              <VisibilityPicker value={visibility} onChange={setVisibility} memberCategories={memberCategories} members={members} />
             </div>
             <Button variant="coral" size="sm" onClick={addPost} disabled={!content.trim() || createPost.isPending}>Post</Button>
           </div>

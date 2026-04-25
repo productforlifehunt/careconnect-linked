@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { UserPlus, Mail, KeyRound, Clock, X, Tag, Plus, Shield, Heart, Crown, MoreVertical, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { SubgroupCard } from "../SubgroupCard";
 
 interface MembersTabProps {
   members: any[];
@@ -124,16 +125,19 @@ export function MembersTab({
             </Dialog>
           </div>
           {(memberCategories || []).length > 0 ? (
-            <div className="flex flex-wrap gap-2">
+            <div className="grid sm:grid-cols-2 gap-2">
               {(memberCategories || []).map((cat: any) => (
-                <Badge key={cat.id} variant="secondary" className="gap-1.5 pr-1">
-                  <Tag className="h-3 w-3" />{cat.name}
-                  <Button variant="ghost" size="icon" className="h-4 w-4 ml-1 hover:bg-destructive/20" onClick={() => deleteCategory.mutate(cat.id)}><X className="h-2.5 w-2.5" /></Button>
-                </Badge>
+                <SubgroupCard
+                  key={cat.id}
+                  subgroup={cat}
+                  members={members || []}
+                  isAdmin={isAdmin}
+                  onDelete={() => deleteCategory.mutate(cat.id)}
+                />
               ))}
             </div>
           ) : (
-            <p className="text-xs text-muted-foreground">No categories yet. Create sub-groups like "Medical Team" or "Night Shift" to organize members.</p>
+            <p className="text-xs text-muted-foreground">No sub-groups yet. Create groups like "Family", "Medical Team", or "Night Shift" — posts and tasks can then be limited to specific sub-groups.</p>
           )}
         </div>
       )}

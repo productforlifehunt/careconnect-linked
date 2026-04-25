@@ -77,7 +77,7 @@ export async function createCareTaskWordPress(task: {
   care_group_id?: string; group_id?: string;
   title: string; description?: string; category?: string;
   assigned_to?: string; cared_one_id?: string; due_date?: string;
-}): Promise<void> {
+}): Promise<string | null> {
   const created = await wordpressCCTFetch<any>("universal_care_task", {
     method: "POST",
     body: {
@@ -113,6 +113,7 @@ export async function createCareTaskWordPress(task: {
     }));
   }
   await Promise.all(calls);
+  return taskId ? String(taskId) : null;
 }
 
 export async function updateCareTaskWordPress(id: string, updates: Record<string, any>): Promise<void> {

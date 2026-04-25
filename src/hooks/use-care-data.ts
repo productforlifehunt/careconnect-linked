@@ -24,8 +24,10 @@ import {
   updateMemberRoleWordPress, removeGroupMemberWordPress,
   joinGroupByCodeWordPress, fetchCareGroupGalleryWordPress,
   fetchMemberCategoriesWordPress, createMemberCategoryWordPress, deleteMemberCategoryWordPress,
+  fetchSubgroupMembersWordPress, addMemberToSubgroupWordPress, removeMemberFromSubgroupWordPress,
   searchProfilesWordPress, addCaredOneToGroupWordPress, leaveGroupWordPress,
 } from "@/features/care-groups/source.wordpress-extended";
+import { setPostVisibility, setTaskVisibility, filterVisiblePosts, filterVisibleTasks } from "@/features/care-groups/visibility";
 import {
   fetchSafeZonesWordPress, createSafeZoneWordPress, updateSafeZoneWordPress, deleteSafeZoneWordPress,
   fetchSafeZoneAlertsWordPress, acknowledgeAlertWordPress, acknowledgeAllAlertsWordPress,
@@ -422,14 +424,24 @@ export function useCareGroupGallery(groupId: string | null) {
 export function useCareTasks(groupId?: string | null) {
   return useQuery({
     queryKey: ["careTasks", groupId],
-    queryFn: () => fetchCareTasksWordPress(groupId),
+    queryFn: async () => {
+      const tasks = await fetchCareTasksWordPress(groupId);
+      return await filterVisibleTasks(tasks);
+    },
   });
 }
 
 export function useCreateTask() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (task: { group_id?: string; care_group_id?: string; title: string; description?: string; assigned_to?: string; due_date?: string }) => createCareTaskWordPress(task),
+    mutationFn: async (task: { group_id?: string; care_group_id?: string; title: string; description?: string; assigned_to?: string; due_date?: string; subgroupIds?: number[]; visibilityUserIds?: number[] }) => {
+      const { subgroupIds, visibilityUserIds, ...payload } = task;
+      const newId = await createCareTaskWordPress(payload);
+      if (newId && ((subgroupIds?.length ?? 0) > 0 || (visibilityUserIds?.length ?? 0) > 0)) {
+        await setTaskVisibility(newId, subgroupIds || [], visibilityUserIds || []);
+      }
+      return newId;
+    },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["careTasks"] }); },
   });
 }
@@ -522,7 +534,10 @@ export function useSubmitProviderApplication() {
 export function useCareGroupPosts(groupId: string | null, type?: string) {
   return useQuery({
     queryKey: ["careGroupPosts", groupId, type],
-    queryFn: () => fetchCareGroupPostsWordPress(groupId!, type),
+    queryFn: async () => {
+      const posts = await fetchCareGroupPostsWordPress(groupId!, type);
+      return await filterVisiblePosts(posts);
+    },
     enabled: !!groupId,
   });
 }
@@ -530,7 +545,14 @@ export function useCareGroupPosts(groupId: string | null, type?: string) {
 export function useCreateGroupPost() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (post: { group_id: string; content: string; type?: string; title?: string }) => createGroupPostWordPress(post),
+    mutationFn: async (post: { group_id: string; content: string; type?: string; title?: string; subgroupIds?: number[]; visibilityUserIds?: number[] }) => {
+      const { subgroupIds, visibilityUserIds, ...payload } = post;
+      const newId = await createGroupPostWordPress(payload);
+      if (newId && ((subgroupIds?.length ?? 0) > 0 || (visibilityUserIds?.length ?? 0) > 0)) {
+        await setPostVisibility(newId, subgroupIds || [], visibilityUserIds || []);
+      }
+      return newId;
+    },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["careGroupPosts"] }); },
   });
 }
@@ -657,7 +679,7 @@ export function useMemberCategories(groupId: string | null) {
 export function useCreateMemberCategory() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ groupId, name, color }: { groupId: string; name: string; color?: string }) => createMemberCategoryWordPress(groupId, name, color),
+    mutationFn: ({ groupId, name, color, description }: { groupId: string; name: string; color?: string; description?: string }) => createMemberCategoryWordPress(groupId, name, color, description),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["memberCategories"] }); },
   });
 }
@@ -667,6 +689,31 @@ export function useDeleteMemberCategory() {
   return useMutation({
     mutationFn: (categoryId: string) => deleteMemberCategoryWordPress(categoryId),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["memberCategories"] }); },
+  });
+}
+
+// ─── Sub-group Members (REL 75) ─────────────────────────────
+export function useSubgroupMembers(subgroupId: string | null) {
+  return useQuery({
+    queryKey: ["subgroupMembers", subgroupId],
+    queryFn: () => fetchSubgroupMembersWordPress(subgroupId!),
+    enabled: !!subgroupId,
+  });
+}
+
+export function useAddMemberToSubgroup() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ subgroupId, userId }: { subgroupId: string; userId: string | number }) => addMemberToSubgroupWordPress(subgroupId, userId),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["subgroupMembers"] }); qc.invalidateQueries({ queryKey: ["careGroupPosts"] }); qc.invalidateQueries({ queryKey: ["careTasks"] }); },
+  });
+}
+
+export function useRemoveMemberFromSubgroup() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ subgroupId, userId }: { subgroupId: string; userId: string | number }) => removeMemberFromSubgroupWordPress(subgroupId, userId),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["subgroupMembers"] }); qc.invalidateQueries({ queryKey: ["careGroupPosts"] }); qc.invalidateQueries({ queryKey: ["careTasks"] }); },
   });
 }
 
