@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Clock, Calendar, Share2 } from "lucide-react";
 import { fetchChallengedContentById } from "@/features/challenged-content/source.wordpress";
+import { StudyNotesPanel } from "@/components/challenged/StudyNotesPanel";
 import { useTranslation } from "react-i18next";
 
 /** Maps category to route base */
@@ -122,6 +123,16 @@ export default function ChallengedArticleDetail() {
         className="prose prose-lg dark:prose-invert max-w-none mb-12"
         dangerouslySetInnerHTML={{ __html: article.content || "" }}
       />
+
+      {/* Study notes & lesson tracking */}
+      {id && !String(id).startsWith("static-") && (
+        <div className="mb-12">
+          <StudyNotesPanel
+            articleId={String(id).replace(/^wp-/, "")}
+            showFinishedToggle={article.category === "learn"}
+          />
+        </div>
+      )}
 
       {/* Footer actions */}
       <div className="flex items-center justify-between border-t pt-6">

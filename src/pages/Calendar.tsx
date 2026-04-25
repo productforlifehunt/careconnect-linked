@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -15,8 +16,8 @@ import {
   CalendarEventType,
   EVENT_TYPE_COLORS,
   EVENT_TYPE_LABELS,
-  getMockEvents,
 } from "@/features/calendar/types";
+import { fetchCalendarEventsWordPress } from "@/features/calendar/source.wordpress";
 import { Calendar as CalendarIcon, MapPin, Users, Clock, Repeat } from "lucide-react";
 
 const ALL_TYPES: CalendarEventType[] = [
@@ -28,7 +29,11 @@ export default function CalendarPage() {
   const [enabledTypes, setEnabledTypes] = useState<Set<CalendarEventType>>(new Set(ALL_TYPES));
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
-  const allEvents = useMemo(() => getMockEvents(), []);
+  const { data: allEvents = [], isLoading } = useQuery({
+    queryKey: ["calendar-events"],
+    queryFn: fetchCalendarEventsWordPress,
+    staleTime: 60_000,
+  });
 
   /** Convert CCT-shaped events → FullCalendar EventInput, with RRULE support */
   const fcEvents = useMemo(() => {
@@ -82,7 +87,7 @@ export default function CalendarPage() {
               Family schedule, care tasks, medicine reminders & availability — all in one view.
             </p>
             <Badge variant="outline" className="mt-2">
-              Mock data preview · Backend: <code className="ml-1">users_calendar</code> CCT (pending field setup)
+              {isLoading ? "Loading from backend…" : `${allEvents.length} event${allEvents.length === 1 ? "" : "s"} · live`}
             </Badge>
           </div>
         </header>
