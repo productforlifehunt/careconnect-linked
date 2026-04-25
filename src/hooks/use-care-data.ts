@@ -679,7 +679,7 @@ export function useMemberCategories(groupId: string | null) {
 export function useCreateMemberCategory() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ groupId, name, color }: { groupId: string; name: string; color?: string }) => createMemberCategoryWordPress(groupId, name, color),
+    mutationFn: ({ groupId, name, color, description }: { groupId: string; name: string; color?: string; description?: string }) => createMemberCategoryWordPress(groupId, name, color, description),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["memberCategories"] }); },
   });
 }
@@ -689,6 +689,31 @@ export function useDeleteMemberCategory() {
   return useMutation({
     mutationFn: (categoryId: string) => deleteMemberCategoryWordPress(categoryId),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["memberCategories"] }); },
+  });
+}
+
+// ─── Sub-group Members (REL 75) ─────────────────────────────
+export function useSubgroupMembers(subgroupId: string | null) {
+  return useQuery({
+    queryKey: ["subgroupMembers", subgroupId],
+    queryFn: () => fetchSubgroupMembersWordPress(subgroupId!),
+    enabled: !!subgroupId,
+  });
+}
+
+export function useAddMemberToSubgroup() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ subgroupId, userId }: { subgroupId: string; userId: string | number }) => addMemberToSubgroupWordPress(subgroupId, userId),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["subgroupMembers"] }); qc.invalidateQueries({ queryKey: ["careGroupPosts"] }); qc.invalidateQueries({ queryKey: ["careTasks"] }); },
+  });
+}
+
+export function useRemoveMemberFromSubgroup() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ subgroupId, userId }: { subgroupId: string; userId: string | number }) => removeMemberFromSubgroupWordPress(subgroupId, userId),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["subgroupMembers"] }); qc.invalidateQueries({ queryKey: ["careGroupPosts"] }); qc.invalidateQueries({ queryKey: ["careTasks"] }); },
   });
 }
 
