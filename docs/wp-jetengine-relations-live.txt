@@ -1,0 +1,61 @@
+  ID TYPE           PARENT                                   CHILD                                    NAME
+  41 one_to_many    mix::users                               cct::job_posting                         Users to Job Posting
+  42 one_to_many    mix::users                               cct::job_application                     Users to Job Application
+  45 one_to_many    cct::care_group                          cct::care_group_invite                   Care Group to Care Group Invite
+  46 one_to_many    cct::care_group                          cct::care_group_gallery                  Care Group to Care Group Gallery
+  47 one_to_many    cct::care_group                          cct::care_group_private_member_group     One care group can have many related private member groups
+  48 many_to_many   cct::care_group                          cct::universal_care_task                 One care group can have many related care tasks
+  54 one_to_many    cct::care_plan                           cct::medicine                            Cared one's care plan to Cared one’s medicine schedule
+  63 one_to_many    mix::users                               cct::emergency_contact                   One cared one can have many related cared one’s emergency contact persons
+  66 one_to_many    cct::care_facility                       cct::review                              One care facility can have many related reviews
+  68 one_to_many    cct::review                              cct::comment                             One review can have many related comments
+  69 many_to_many   cct::comment                             cct::comment                             One comment can have many related comments
+  71 one_to_many    cct::care_community_post                 cct::comment                             One care community post can have many related comments
+  72 many_to_many   cct::care_group                          mix::users                               One care group can have many related care group members
+  75 many_to_many   cct::care_group_private_member_group     mix::users                               One care group's private member group can have related members
+  77 one_to_many    cct::care_group                          cct::care_group_not_too_special_post     One care group can have many related not too special posts
+  78 one_to_many    cct::care_group_not_too_special_post     cct::comment                             One related not too special posts of one care group can have many related commen
+  79 many_to_many   mix::users                               mix::users                               One user can have many related cared ones
+  81 one_to_many    cct::universal_care_task                 mix::users                               One care task can have many related assigned caregivers
+  82 one_to_many    cct::universal_care_task                 cct::comment                             One care task can have many related comments
+  83 one_to_many    mix::users                               cct::medicine                            One cared one can have many related cared one’s medicine schedules
+  88 one_to_many    mix::users                               cct::care_tip                            One cared one can have many related cared one’s care tips
+  92 one_to_many    mix::users                               cct::care_note                           One cared one can have many related cared one’s care notes
+  94 one_to_many    mix::users                               cct::activity_log                        Users to Activity Log
+  95 one_to_many    mix::users                               cct::care_document                       One cared one can have many related cared one’s care documents
+  96 one_to_many    mix::users                               cct::health_vital                        Users to Health Vital
+  97 one_to_many    mix::users                               cct::care_plan                           One cared one can have many related cared one’s care plans
+ 103 many_to_many   cct::care_group_not_too_special_post     cct::care_group_private_member_group     One related not too special posts of one care group can have many related care g
+ 104 many_to_many   cct::care_group_not_too_special_post     mix::users                               One related not too special posts of one care group can have many related users 
+ 107 one_to_many    cct::care_facility                       mix::users                               One care facility can have many related facility members
+ 108 many_to_many   cct::universal_care_task                 mix::users                               One care task can have many related users that it’s only visible to
+ 109 many_to_many   cct::universal_care_task                 cct::care_group_private_member_group     One care task can have many related care group’s private member groups that it’s
+ 111 one_to_one     mix::users                               cct::users_extended_prof                 One user can have one user‘s extended profile
+ 117 one_to_many    mix::users                               cct::current_location                    One user can have many related current location snapshots
+ 118 one_to_many    mix::users                               cct::safe_zone                           One user can have many related safe zones
+ 121 one_to_many    cct::medicine                            cct::medicine_log                        One cared one’s medicine schedule can have many related care one's medicine logs
+ 126 one_to_many    mix::users                               cct::cared_ones_informat                 One cared one can have many related cared one’s information cards
+ 127 one_to_many    cct::cared_ones_informat                 cct::emergency_contact                   One cared one’s information card can have many related cared one’s emergency con
+ 129 one_to_many    mix::users                               cct::users_calendar_even                 One user can have many related user’s calendar events
+ 130 one_to_many    cct::users_calendar_even                 mix::users                               One user’s calendar event can have many related invited users
+ 131 one_to_many    cct::universal_care_task                 cct::users_calendar_even                 One care task can have many related user’s calendar events
+ 140 one_to_one     cct::care_group                          cct::chat_conversation                   One care group can have one related group live chat conversation
+ 141 one_to_many    cct::universal_care_task                 mix::users                               One care task can have many related cared ones
+ 142 many_to_many   cct::chat_conversation                   mix::users                               One chat conversation can have many related chatters
+ 143 one_to_many    cct::chat_conversation                   cct::chat_message                        One chat conversation can have many related chat messages
+ 144 one_to_many    cct::chat_message                        cct::chat_message                        One chat message can have one parent chat message that it is specifically replyi
+ 145 one_to_many    mix::users                               posts::post                              One cared one can have many related cared one's checkin schedules
+ 148 one_to_many    mix::users                               cct::notification                        One user can have many related notifications to receive
+ 149 one_to_many    mix::users                               cct::users_notification_                 One user can have many related notification tokens
+ 150 one_to_many    mix::users                               cct::checkin_schedule                    One cared one can have many related cared one’s checkin schedules
+ 151 one_to_many    cct::checkin_schedule                    cct::checkin_log                         One cared one’s checkin schedule can have many related care one's checkin logs
+ 152 one_to_many    cct::care_job                            mix::users                               One care job can have many related cared ones
+ 153 one_to_many    cct::care_job                            mix::users                               One care job can have many assigned caregivers
+ 154 one_to_many    cct::care_group                          cct::care_job                            One care group can have many related care jobs
+ 155 many_to_many   cct::care_job                            cct::universal_care_task                 One care job can have many related care tasks
+ 156 one_to_many    cct::care_job                            cct::comment                             One care job can have many related comments
+ 157 one_to_many    mix::users                               cct::challenged_content                  One user can many related finished ChallengeD learn content
+ 158 one_to_many    cct::challenged_content                  cct::users_study_notes                   One Challenged App Content can have many related user’s study notes
+ 159 one_to_many    cct::challenged_content                  cct::care_tip                            One Challenged App Content can have many related cared one’s care tips
+
+TOTAL: 58
