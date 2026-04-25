@@ -424,14 +424,24 @@ export function useCareGroupGallery(groupId: string | null) {
 export function useCareTasks(groupId?: string | null) {
   return useQuery({
     queryKey: ["careTasks", groupId],
-    queryFn: () => fetchCareTasksWordPress(groupId),
+    queryFn: async () => {
+      const tasks = await fetchCareTasksWordPress(groupId);
+      return await filterVisibleTasks(tasks);
+    },
   });
 }
 
 export function useCreateTask() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (task: { group_id?: string; care_group_id?: string; title: string; description?: string; assigned_to?: string; due_date?: string }) => createCareTaskWordPress(task),
+    mutationFn: async (task: { group_id?: string; care_group_id?: string; title: string; description?: string; assigned_to?: string; due_date?: string; subgroupIds?: number[]; visibilityUserIds?: number[] }) => {
+      const { subgroupIds, visibilityUserIds, ...payload } = task;
+      const newId = await createCareTaskWordPress(payload);
+      if (newId && ((subgroupIds?.length ?? 0) > 0 || (visibilityUserIds?.length ?? 0) > 0)) {
+        await setTaskVisibility(newId, subgroupIds || [], visibilityUserIds || []);
+      }
+      return newId;
+    },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["careTasks"] }); },
   });
 }
