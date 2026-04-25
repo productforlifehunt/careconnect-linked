@@ -1,19 +1,26 @@
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
 
-const REL_USER_CARED_ONE = 79;     // users -> users
-const REL_GROUP_MEMBER = 72;        // care_group -> users
-// JetEngine Relation IDs for medicine system
-const REL_USER_MEDICINE = 83;      // Mix: Users → medicine (one-to-many)
-const REL_MEDICINE_LOG = 84;        // medicine → medicine_log (one-to-many)
-const REL_USER_CARE_TIP = 88;       // Mix: Users → care_tip (one-to-many)
-const REL_USER_EMERGENCY_CONTACT = 63; // Mix: Users → emergency_contact (one-to-many)
-const REL_USER_CARE_NOTE = 92;      // Mix: Users → care_note (one-to-many)
-const REL_USER_ACTIVITY_LOG = 94;   // Mix: Users → activity_log (one-to-many)
-const REL_USER_CARE_DOCUMENT = 95;  // Mix: Users → care_document (one-to-many)
-const REL_USER_HEALTH_VITAL = 96;   // Mix: Users → health_vital (one-to-many)
-const REL_USER_CARE_PLAN = 97;      // Mix: Users → care_plan (one-to-many)
-const REL_CARE_PLAN_GOAL = 98;      // CCT: care_plan → care_plan_goal (one-to-many)
+// Live JetEngine relations (verified from prd-to-wp-mapping.md)
+const REL_USER_CARED_ONE_LEGACY = 79;       // M:M users → users (legacy: cared ones as users)
+const REL_USER_CARED_ONE_CARD = 126;        // 1:M users → cared_ones_informat (NEW)
+const REL_CARED_CARD_EMERGENCY = 127;       // 1:M cared_ones_informat → emergency_contact
+const REL_GROUP_MEMBER = 72;                // M:M care_group → users
+
+const REL_USER_MEDICINE = 83;               // 1:M users → medicine
+const REL_MEDICINE_LOG = 121;               // 1:M medicine → medicine_log (live: 121, not 84)
+
+const REL_USER_CHECKIN = 150;               // 1:M users → checkin_schedule
+const REL_CHECKIN_LOG = 151;                // 1:M checkin_schedule → checkin_log
+
+const REL_USER_CARE_TIP = 88;
+const REL_USER_EMERGENCY_CONTACT = 63;
+const REL_USER_CARE_NOTE = 92;
+const REL_USER_ACTIVITY_LOG = 94;
+const REL_USER_CARE_DOCUMENT = 95;
+const REL_USER_HEALTH_VITAL = 96;
+const REL_USER_CARE_PLAN = 97;
+// Note: care_plan_goal links via field `care_plan_id` (no relation in live mapping)
 
 function normalizeWpObjectId(value: string | number | null | undefined): number {
   return Number(String(value ?? "").replace(/^wp-/, ""));
@@ -25,11 +32,8 @@ async function fetchRelatedCctChildren(relationId: number, parentId: string, cct
   const rels = await wordpressFetch<any[]>(`jet-rel/${relationId}/children/${normalizedParentId}`);
   if (!Array.isArray(rels) || rels.length === 0) return [];
   const items = await Promise.all(rels.map(async (rel: any) => {
-    try {
-      return await wordpressCCTFetch<any>(cctSlug, { id: rel.child_object_id });
-    } catch {
-      return null;
-    }
+    try { return await wordpressCCTFetch<any>(cctSlug, { id: rel.child_object_id }); }
+    catch { return null; }
   }));
   return items.filter(Boolean);
 }
@@ -48,26 +52,17 @@ function normalizeTimeSlot(value: unknown): string[] {
 }
 
 function serializeTimeSlot(value: unknown): string {
-  const slots = normalizeTimeSlot(value);
-  return slots.join(",");
+  return normalizeTimeSlot(value).join(",");
 }
 
-function isCheckinType(value: unknown): boolean {
-  return String(value || "").toLowerCase() === "checkin";
-}
-
-function isMedicineType(value: unknown): boolean {
-  return !isCheckinType(value);
-}
-
-// ─── Cared Ones CRUD ────────────────────────────────────────
-// Personal cared ones are managed via JetEngine relation 79 (users -> users)
+// ─── Cared Ones CRUD (legacy users-as-cared-ones) ───────────
+// Personal cared ones via JetEngine relation 79 (users → users) for back-compat
 export async function createUserCaredOneWordPress(caredOne: { caredOneId: string; relationship?: string; isPrimary?: boolean }): Promise<void> {
   const storedUser = getStoredWPUser();
   if (!storedUser?.user_id) throw new Error("Not authenticated");
-  const childId = Number(String(caredOne.caredOneId).replace(/^wp-/, ""));
+  const childId = normalizeWpObjectId(caredOne.caredOneId);
   if (!childId) throw new Error("Invalid cared one user");
-  await wordpressFetch(`jet-rel/${REL_USER_CARED_ONE}`, {
+  await wordpressFetch(`jet-rel/${REL_USER_CARED_ONE_LEGACY}`, {
     method: "POST",
     body: {
       parent_id: Number(storedUser.user_id),
@@ -81,22 +76,21 @@ export async function createUserCaredOneWordPress(caredOne: { caredOneId: string
 export async function deleteUserCaredOneWordPress(id: string): Promise<void> {
   const storedUser = getStoredWPUser();
   if (!storedUser?.user_id) throw new Error("Not authenticated");
-  const childId = Number(String(id).replace(/^wp-/, ""));
+  const childId = normalizeWpObjectId(id);
   if (!childId) throw new Error("Invalid cared one user");
-  await wordpressFetch(`jet-rel/${REL_USER_CARED_ONE}`, {
+  await wordpressFetch(`jet-rel/${REL_USER_CARED_ONE_LEGACY}`, {
     method: "DELETE",
-    body: {
-      parent_id: Number(storedUser.user_id),
-      child_id: childId,
-    },
+    body: { parent_id: Number(storedUser.user_id), child_id: childId },
   });
 }
 
 export async function fetchGroupCaredOnesWordPress(groupId: string): Promise<any[]> {
   try {
-    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${groupId}`);
+    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${normalizeWpObjectId(groupId)}`);
     if (!Array.isArray(rels) || rels.length === 0) return [];
-    const userIds = rels.map((r: any) => Number(r.child_object_id)).filter(Boolean);
+    // Filter only members tagged as cared_one in relation meta
+    const caredOneRels = rels.filter((r: any) => r?.meta?.care_groups_member_types === "cared_one");
+    const userIds = caredOneRels.map((r: any) => Number(r.child_object_id)).filter(Boolean);
     const caredOnes = await Promise.all(
       userIds.map(async (userId) => {
         try {
@@ -108,93 +102,124 @@ export async function fetchGroupCaredOnesWordPress(groupId: string): Promise<any
             name: fullName,
             full_name: fullName,
             relationship: null,
-            date_of_birth: null,
-            medical_conditions: null,
-            notes: null,
             avatar_url: user.avatar_urls?.["96"] || null,
             created_at: null,
           };
-        } catch {
-          return null;
-        }
+        } catch { return null; }
       })
     );
     return caredOnes.filter(Boolean);
   } catch { return []; }
 }
 
-export async function fetchCheckinsWordPress(caredOneId: string): Promise<any[]> {
+// ─── Cared Ones Information Card (live CCT: cared_ones_informat) ───
+// Fields: cared_ones_name, cared_ones_description, cared_ones_information_card_name, status, displays_location
+export async function fetchCaredOnesCardsWordPress(): Promise<any[]> {
   try {
-    const userId = String(caredOneId).replace(/^wp-/, "");
-    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_USER_MEDICINE}/children/${userId}`);
-    if (!Array.isArray(rels) || rels.length === 0) return [];
-    const checkinIds = rels.map((r: any) => r.child_object_id).filter(Boolean);
-    const items = await Promise.all(
-      checkinIds.map(async (id: string) => {
-        try {
-          const item = await wordpressCCTFetch<any>("medicine", { id });
-          if (!isCheckinType(item.medicine_or_checkin)) return null;
-          return {
-            id: String(item._ID || item.id || id),
-            user_id: caredOneId,
-            medicine_or_checkin: "checkin",
-            name: item.name || "Daily Check-In",
-            frequency: item.frequency || "Once daily",
-            time_slot: normalizeTimeSlot(item.time_slot),
-            note: item.note || item.notes || null,
-            is_active: item.is_active !== false && item.is_active !== "no",
-            created_at: item.cct_created || item.created_at,
-          };
-        } catch { return null; }
-      })
-    );
-    return items.filter(Boolean);
+    const stored = getStoredWPUser();
+    if (!stored?.user_id) return [];
+    const cards = await fetchRelatedCctChildren(REL_USER_CARED_ONE_CARD, String(stored.user_id), "cared_ones_informat");
+    return cards.map((c: any) => ({
+      id: String(c.id || c._ID),
+      user_id: `wp-${stored.user_id}`,
+      name: c.cared_ones_name || c.cared_ones_information_card_name || "Loved One",
+      description: c.cared_ones_description || null,
+      card_name: c.cared_ones_information_card_name || null,
+      status: c.status || "active",
+      displays_location: c.displays_location || null,
+      created_at: c.created_at,
+    }));
   } catch { return []; }
 }
 
-export async function createCheckinWordPress(checkin: { user_id: string; name: string; frequency?: string; time_slot?: string[]; note?: string }): Promise<void> {
-  const result = await wordpressCCTFetch<any>("medicine", {
+export async function createCaredOnesCardWordPress(card: { name: string; description?: string; card_name?: string; status?: string }): Promise<void> {
+  const stored = getStoredWPUser();
+  if (!stored?.user_id) throw new Error("Not authenticated");
+  const created = await wordpressCCTFetch<any>("cared_ones_informat", {
     method: "POST",
     body: {
-      medicine_or_checkin: "checkin",
-      name: checkin.name,
-      frequency: checkin.frequency,
-      time_slot: serializeTimeSlot(checkin.time_slot || ["08:00"]),
-      note: checkin.note || "",
-      is_active: "yes",
+      cared_ones_name: card.name,
+      cared_ones_description: card.description || "",
+      cared_ones_information_card_name: card.card_name || card.name,
+      status: card.status || "active",
     },
   });
-  const newId = result?._ID || result?.id || result?.item_id;
-  if (newId) {
-    const userId = String(checkin.user_id).replace(/^wp-/, "");
-    await wordpressFetch(`jet-rel/${REL_USER_MEDICINE}`, {
+  const childId = normalizeWpObjectId(created?.item_id || created?._ID || created?.id);
+  if (childId) {
+    await wordpressFetch(`jet-rel/${REL_USER_CARED_ONE_CARD}`, {
       method: "POST",
-      body: { parent_id: Number(userId), child_id: Number(newId), context: "child", store_items_type: "update" },
+      body: { parent_id: Number(stored.user_id), child_id: childId, context: "child", store_items_type: "update" },
     });
   }
 }
 
+// ─── Check-in Schedule (live CCT: checkin_schedule) ─────────
+// Fields: name, detail, frequency, time_slot, instructions, start_date_, end_date, is_active_, note
+export async function fetchCheckinsWordPress(caredOneId: string): Promise<any[]> {
+  try {
+    const items = await fetchRelatedCctChildren(REL_USER_CHECKIN, caredOneId, "checkin_schedule");
+    return items.map((i: any) => ({
+      id: String(i.id || i._ID),
+      user_id: caredOneId,
+      name: i.name || "Daily Check-In",
+      detail: i.detail || null,
+      frequency: i.frequency || "Once daily",
+      time_slot: normalizeTimeSlot(i.time_slot),
+      instructions: i.instructions || null,
+      start_date: i.start_date_ || null,
+      end_date: i.end_date || null,
+      note: i.note || null,
+      is_active: i.is_active_ !== false && i.is_active_ !== "no",
+      created_at: i.created_at,
+    }));
+  } catch { return []; }
+}
+
+export async function createCheckinWordPress(checkin: { user_id: string; name: string; detail?: string; frequency?: string; time_slot?: string[]; instructions?: string; note?: string }): Promise<void> {
+  const result = await wordpressCCTFetch<any>("checkin_schedule", {
+    method: "POST",
+    body: {
+      name: checkin.name,
+      detail: checkin.detail || "",
+      frequency: checkin.frequency || "Once daily",
+      time_slot: serializeTimeSlot(checkin.time_slot || ["08:00"]),
+      instructions: checkin.instructions || "",
+      note: checkin.note || "",
+      is_active_: "yes",
+    },
+  });
+  const newId = normalizeWpObjectId(result?.item_id || result?._ID || result?.id);
+  if (newId) {
+    const userId = normalizeWpObjectId(checkin.user_id);
+    await wordpressFetch(`jet-rel/${REL_USER_CHECKIN}`, {
+      method: "POST",
+      body: { parent_id: userId, child_id: newId, context: "child", store_items_type: "update" },
+    });
+  }
+}
+
+// Check-in logs — live CCT: checkin_log | fields: mood, energy_level, sleep_hours, note, status, note_49
 export async function fetchCheckinLogsWordPress(caredOneId: string): Promise<any[]> {
   try {
     const checkins = await fetchCheckinsWordPress(caredOneId);
     const nestedLogs = await Promise.all(
       checkins.map(async (checkin: any) => {
         try {
-          const rels = await wordpressFetch<any[]>(`jet-rel/${REL_MEDICINE_LOG}/children/${checkin.id}`);
+          const rels = await wordpressFetch<any[]>(`jet-rel/${REL_CHECKIN_LOG}/children/${normalizeWpObjectId(checkin.id)}`);
           if (!Array.isArray(rels) || rels.length === 0) return [];
           const logs = await Promise.all(
             rels.map(async (rel: any) => {
               try {
-                const item = await wordpressCCTFetch<any>("medicine_log", { id: rel.child_object_id });
-                if (!isCheckinType(item.medicine_or_checkin)) return null;
-                const createdAt = item.logged_at || item.cct_created || item.created_at;
+                const item = await wordpressCCTFetch<any>("checkin_log", { id: rel.child_object_id });
                 return {
-                  id: String(item._ID || item.id || rel.child_object_id),
-                  medicine_id: String(checkin.id),
+                  id: String(item.id || item._ID || rel.child_object_id),
                   checkin_id: String(checkin.id),
-                  status: item.status || "taken",
-                  note: item.note || null,
-                  created_at: createdAt,
+                  mood: item.mood || null,
+                  energy_level: item.energy_level || null,
+                  sleep_hours: item.sleep_hours || null,
+                  status: item.status || "completed",
+                  note: item.note || item.note_49 || null,
+                  created_at: item.created_at,
                 };
               } catch { return null; }
             })
@@ -208,101 +233,91 @@ export async function fetchCheckinLogsWordPress(caredOneId: string): Promise<any
 }
 
 export async function fetchTodayCheckinLogsWordPress(caredOneId: string): Promise<any[]> {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
   const logs = await fetchCheckinLogsWordPress(caredOneId);
   return logs.filter((log: any) => log.created_at && new Date(log.created_at) >= today);
 }
 
-export async function logCheckinWordPress(log: { medicine_id: string; status?: string; note?: string }): Promise<void> {
-  const result = await wordpressCCTFetch<any>("medicine_log", {
+export async function logCheckinWordPress(log: { medicine_id?: string; checkin_id?: string; status?: string; note?: string; mood?: string; energy_level?: string; sleep_hours?: number }): Promise<void> {
+  const result = await wordpressCCTFetch<any>("checkin_log", {
     method: "POST",
     body: {
-      medicine_or_checkin: "checkin",
-      logged_at: new Date().toISOString(),
-      status: log.status || "taken",
+      mood: log.mood || "",
+      energy_level: log.energy_level || "",
+      sleep_hours: log.sleep_hours ?? null,
+      status: log.status || "completed",
       note: log.note || "",
     },
   });
-  const newLogId = result?._ID || result?.id || result?.item_id;
-  if (newLogId) {
-    await wordpressFetch(`jet-rel/${REL_MEDICINE_LOG}`, {
+  const newLogId = normalizeWpObjectId(result?.item_id || result?._ID || result?.id);
+  const parentId = normalizeWpObjectId(log.checkin_id || log.medicine_id);
+  if (newLogId && parentId) {
+    await wordpressFetch(`jet-rel/${REL_CHECKIN_LOG}`, {
       method: "POST",
-      body: { parent_id: Number(log.medicine_id), child_id: Number(newLogId), context: "child", store_items_type: "update" },
+      body: { parent_id: parentId, child_id: newLogId, context: "child", store_items_type: "update" },
     });
   }
 }
 
 // ─── Medicines ──────────────────────────────────────────────
-// CCT slug: medicine | linked to WP user via JetEngine relation 83
+// CCT slug: medicine | fields: name, dosage, frequency, time_slot, instructions, prescribing_doctor, pharmacy, side_effects, start_date, end_date, is_active, note
 export async function fetchMedicinesWordPress(caredOneId: string): Promise<any[]> {
   try {
-    // caredOneId is a WP user ID (e.g. "wp-3" or "3") — extract numeric ID
-    const userId = String(caredOneId).replace(/^wp-/, "");
-    // Use JetEngine relation 83 to get medicines for this user
-    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_USER_MEDICINE}/children/${userId}`);
-    if (!Array.isArray(rels) || rels.length === 0) return [];
-    const medIds = rels.map((r: any) => r.child_object_id).filter(Boolean);
-    // Fetch each medicine CCT item
-    const meds = await Promise.all(
-      medIds.map(async (mid: string) => {
-        try {
-          const m = await wordpressCCTFetch<any>("medicine", { id: mid });
-          if (!isMedicineType(m.medicine_or_checkin)) return null;
-          return {
-            id: String(m._ID || m.id || mid),
-            user_id: caredOneId,
-            medicine_or_checkin: "medicine",
-            name: m.name || "Medicine",
-            dosage: m.dosage || null,
-            frequency: m.frequency || null,
-            time_slot: normalizeTimeSlot(m.time_slot),
-            note: m.note || m.notes || null,
-            is_active: m.is_active !== false && m.is_active !== "no",
-            created_at: m.cct_created || m.created_at,
-          };
-        } catch { return null; }
-      })
-    );
-    return meds.filter(Boolean);
+    const meds = await fetchRelatedCctChildren(REL_USER_MEDICINE, caredOneId, "medicine");
+    return meds.map((m: any) => ({
+      id: String(m.id || m._ID),
+      user_id: caredOneId,
+      name: m.name || "Medicine",
+      dosage: m.dosage || null,
+      frequency: m.frequency || null,
+      time_slot: normalizeTimeSlot(m.time_slot),
+      instructions: m.instructions || null,
+      prescribing_doctor: m.prescribing_doctor || null,
+      pharmacy: m.pharmacy || null,
+      side_effects: m.side_effects || null,
+      start_date: m.start_date || null,
+      end_date: m.end_date || null,
+      note: m.note || null,
+      is_active: m.is_active !== false && m.is_active !== "no",
+      created_at: m.created_at,
+    }));
   } catch { return []; }
 }
 
-export async function createMedicineWordPress(med: { user_id: string; name: string; dosage?: string; frequency?: string; time_slot?: string[]; note?: string }): Promise<void> {
-  // Create the medicine CCT item
+export async function createMedicineWordPress(med: { user_id: string; name: string; dosage?: string; frequency?: string; time_slot?: string[]; instructions?: string; prescribing_doctor?: string; pharmacy?: string; side_effects?: string; start_date?: string; end_date?: string; note?: string }): Promise<void> {
   const result = await wordpressCCTFetch<any>("medicine", {
     method: "POST",
     body: {
-      medicine_or_checkin: "medicine",
       name: med.name,
-      dosage: med.dosage,
-      frequency: med.frequency,
+      dosage: med.dosage || "",
+      frequency: med.frequency || "",
       time_slot: serializeTimeSlot(med.time_slot || []),
+      instructions: med.instructions || "",
+      prescribing_doctor: med.prescribing_doctor || "",
+      pharmacy: med.pharmacy || "",
+      side_effects: med.side_effects || "",
+      start_date: med.start_date || null,
+      end_date: med.end_date || null,
       note: med.note || "",
       is_active: "yes",
     },
   });
-  const newId = result?._ID || result?.id || result?.item_id;
+  const newId = normalizeWpObjectId(result?.item_id || result?._ID || result?.id);
   if (newId) {
-    // Link medicine to user via JetEngine relation 83
-    const userId = String(med.user_id).replace(/^wp-/, "");
+    const userId = normalizeWpObjectId(med.user_id);
     await wordpressFetch(`jet-rel/${REL_USER_MEDICINE}`, {
       method: "POST",
-      body: { parent_id: Number(userId), child_id: Number(newId), context: "child", store_items_type: "update" },
+      body: { parent_id: userId, child_id: newId, context: "child", store_items_type: "update" },
     });
   }
 }
 
 export async function updateMedicineWordPress(id: string, updates: Record<string, any>): Promise<void> {
-  await wordpressCCTFetch("medicine", {
-    id,
-    method: "PUT",
-    body: {
-      ...updates,
-      time_slot: updates.time_slot !== undefined ? serializeTimeSlot(updates.time_slot) : undefined,
-      note: updates.note !== undefined ? updates.note : updates.notes,
-    },
-  });
+  const body: Record<string, any> = { ...updates };
+  if (updates.time_slot !== undefined) body.time_slot = serializeTimeSlot(updates.time_slot);
+  if (updates.notes !== undefined && body.note === undefined) body.note = updates.notes;
+  delete body.notes;
+  await wordpressCCTFetch("medicine", { id, method: "PUT", body });
 }
 
 export async function deleteMedicineWordPress(id: string): Promise<void> {
@@ -310,66 +325,37 @@ export async function deleteMedicineWordPress(id: string): Promise<void> {
 }
 
 // ─── Medicine Logs ──────────────────────────────────────────
-// CCT slug: medicine_log | linked to medicine via JetEngine relation 84
+// CCT slug: medicine_log | fields: status, note | linked via REL 121 (medicine → medicine_log)
 export async function fetchMedicineLogsWordPress(medicineId: string): Promise<any[]> {
   try {
-    // Use JetEngine relation 84 to get logs for this medicine
-    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_MEDICINE_LOG}/children/${medicineId}`);
-    if (!Array.isArray(rels) || rels.length === 0) return [];
-    const logIds = rels.map((r: any) => r.child_object_id).filter(Boolean);
-    const logs = await Promise.all(
-      logIds.map(async (lid: string) => {
-        try {
-          const l = await wordpressCCTFetch<any>("medicine_log", { id: lid });
-          if (!isMedicineType(l.medicine_or_checkin)) return null;
-          return {
-            id: String(l._ID || l.id || lid),
-            medicine_id: medicineId,
-            taken_at: l.logged_at || l.taken_at || l.cct_created || l.created_at,
-            status: l.status || "taken",
-            logged_by: l.cct_author_id ? String(l.cct_author_id) : null,
-            note: l.note || l.notes || null,
-            notes: l.note || l.notes || null,
-            created_at: l.logged_at || l.cct_created || l.created_at,
-          };
-        } catch { return null; }
-      })
-    );
-    return logs.filter(Boolean);
+    const logs = await fetchRelatedCctChildren(REL_MEDICINE_LOG, medicineId, "medicine_log");
+    return logs.map((l: any) => ({
+      id: String(l.id || l._ID),
+      medicine_id: medicineId,
+      taken_at: l.created_at,
+      status: l.status || "taken",
+      logged_by: l.author_id || null,
+      note: l.note || null,
+      notes: l.note || null,
+      created_at: l.created_at,
+    }));
   } catch { return []; }
 }
 
 export async function fetchTodayMedicineLogsWordPress(caredOneId: string): Promise<any[]> {
   try {
-    // First get user's medicines via relation 83
-    const userId = String(caredOneId).replace(/^wp-/, "");
+    const userId = normalizeWpObjectId(caredOneId);
     const medRels = await wordpressFetch<any[]>(`jet-rel/${REL_USER_MEDICINE}/children/${userId}`);
     if (!Array.isArray(medRels) || medRels.length === 0) return [];
-    const medIds = medRels.map((r: any) => r.child_object_id).filter(Boolean);
-    // Then get today's logs for each medicine via relation 84
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const allLogs: any[] = [];
     await Promise.all(
-      medIds.map(async (mid: string) => {
+      medRels.map(async (rel: any) => {
+        const mid = String(rel.child_object_id);
         try {
-          const logRels = await wordpressFetch<any[]>(`jet-rel/${REL_MEDICINE_LOG}/children/${mid}`);
-          if (!Array.isArray(logRels)) return;
-          for (const rel of logRels) {
-            try {
-              const l = await wordpressCCTFetch<any>("medicine_log", { id: rel.child_object_id });
-              if (!isMedicineType(l.medicine_or_checkin)) continue;
-              const createdAt = l.logged_at || l.cct_created || l.created_at;
-              if (createdAt && new Date(createdAt) >= today) {
-                allLogs.push({
-                  id: String(l._ID || l.id || rel.child_object_id),
-                  medicine_id: mid,
-                  taken_at: l.logged_at || l.taken_at || createdAt,
-                  status: l.status || "taken",
-                  note: l.note || l.notes || null,
-                  created_at: createdAt,
-                });
-              }
-            } catch {}
+          const logs = await fetchMedicineLogsWordPress(mid);
+          for (const l of logs) {
+            if (l.created_at && new Date(l.created_at) >= today) allLogs.push(l);
           }
         } catch {}
       })
@@ -379,81 +365,95 @@ export async function fetchTodayMedicineLogsWordPress(caredOneId: string): Promi
 }
 
 export async function logMedicineWordPress(log: { medicine_id: string; status?: string; note?: string; user_id?: string }): Promise<void> {
-  // Create the medicine_log CCT item
   const result = await wordpressCCTFetch<any>("medicine_log", {
     method: "POST",
-    body: { medicine_or_checkin: "medicine", logged_at: new Date().toISOString(), status: log.status || "taken", note: log.note || "" },
+    body: { status: log.status || "taken", note: log.note || "" },
   });
-  const newLogId = result?._ID || result?.id || result?.item_id;
+  const newLogId = normalizeWpObjectId(result?.item_id || result?._ID || result?.id);
   if (newLogId) {
-    // Link log to medicine via JetEngine relation 84
     await wordpressFetch(`jet-rel/${REL_MEDICINE_LOG}`, {
       method: "POST",
-      body: { parent_id: Number(log.medicine_id), child_id: Number(newLogId), context: "child", store_items_type: "update" },
+      body: { parent_id: normalizeWpObjectId(log.medicine_id), child_id: newLogId, context: "child", store_items_type: "update" },
     });
   }
 }
 
 // ─── Health Vitals ──────────────────────────────────────────
-// CCT slug: health_vital | linked via JetEngine relation 96
+// CCT slug: health_vital | fields: cared_one_id, vital_type, vital_value, vital_unit, recorded_by_user_id, recorded_date, note
 export async function fetchHealthVitalsWordPress(caredOneId: string): Promise<any[]> {
   try {
     const vitals = await fetchRelatedCctChildren(REL_USER_HEALTH_VITAL, caredOneId, "health_vital");
-    if (!Array.isArray(vitals)) return [];
     return vitals.map((v: any) => ({
-      id: String(v._ID || v.id || ""),
+      id: String(v.id || v._ID),
       user_id: caredOneId,
+      cared_one_id: v.cared_one_id || caredOneId,
       vital_type: v.vital_type || null,
-      value: v.value ?? null,
-      unit: v.unit || null,
-      notes: v.notes || null,
-      recorded_at: v.recorded_at || v.created_at,
-      created_at: v.cct_created || v.created_at,
+      value: v.vital_value ?? null,
+      unit: v.vital_unit || null,
+      notes: v.note || null,
+      recorded_by: v.recorded_by_user_id ? `wp-${v.recorded_by_user_id}` : null,
+      recorded_at: v.recorded_date || v.created_at,
+      created_at: v.created_at,
     }));
   } catch { return []; }
 }
 
 export async function createHealthVitalWordPress(vital: { user_id: string; vital_type: string; value: number; unit?: string; notes?: string }): Promise<void> {
+  const stored = getStoredWPUser();
+  const recorderId = stored?.user_id ? Number(stored.user_id) : null;
+  const userIdNum = normalizeWpObjectId(vital.user_id);
   const created = await wordpressCCTFetch<any>("health_vital", {
     method: "POST",
-    body: { vital_type: vital.vital_type, value: vital.value, unit: vital.unit, notes: vital.notes || "", recorded_at: new Date().toISOString() },
+    body: {
+      cared_one_id: userIdNum,
+      vital_type: vital.vital_type,
+      vital_value: vital.value,
+      vital_unit: vital.unit || "",
+      recorded_by_user_id: recorderId,
+      recorded_date: new Date().toISOString(),
+      note: vital.notes || "",
+    },
   });
-  const parentId = normalizeWpObjectId(vital.user_id);
-  const childId = normalizeWpObjectId(created?._ID || created?.id);
-  if (parentId && childId) {
+  const childId = normalizeWpObjectId(created?.item_id || created?._ID || created?.id);
+  if (userIdNum && childId) {
     await wordpressFetch(`jet-rel/${REL_USER_HEALTH_VITAL}`, {
       method: "POST",
-      body: { parent_id: parentId, child_id: childId, context: "child", store_items_type: "update" },
+      body: { parent_id: userIdNum, child_id: childId, context: "child", store_items_type: "update" },
     });
   }
 }
 
 // ─── Care Tips ──────────────────────────────────────────────
-// CCT slug: care_tip | linked via JetEngine relation 88
+// CCT slug: care_tip | fields: title, content, category, is_pinned
 export async function fetchCareTipsWordPress(caredOneId: string): Promise<any[]> {
   try {
     const tips = await fetchRelatedCctChildren(REL_USER_CARE_TIP, caredOneId, "care_tip");
-    if (!Array.isArray(tips)) return [];
     return tips.map((t: any) => ({
-      id: String(t._ID || t.id || ""),
+      id: String(t.id || t._ID),
       user_id: caredOneId,
       title: t.title || null,
       content: t.content || null,
       category: t.category || null,
-      is_important: t.is_important === true || t.is_important === "yes",
-      created_at: t.cct_created || t.created_at,
-      updated_at: t.cct_modified || t.updated_at || t.cct_created || t.created_at,
+      is_pinned: t.is_pinned === true || t.is_pinned === "yes",
+      is_important: t.is_pinned === true || t.is_pinned === "yes",
+      created_at: t.created_at,
+      updated_at: t.updated_at || t.created_at,
     }));
   } catch { return []; }
 }
 
-export async function createCareTipWordPress(tip: { user_id: string; title?: string; content: string; category?: string }): Promise<void> {
+export async function createCareTipWordPress(tip: { user_id: string; title?: string; content: string; category?: string; is_pinned?: boolean }): Promise<void> {
   const created = await wordpressCCTFetch<any>("care_tip", {
     method: "POST",
-    body: { title: tip.title || tip.content.substring(0, 50), content: tip.content, category: tip.category },
+    body: {
+      title: tip.title || tip.content.substring(0, 50),
+      content: tip.content,
+      category: tip.category || "",
+      is_pinned: tip.is_pinned ? "yes" : "no",
+    },
   });
   const parentId = normalizeWpObjectId(tip.user_id);
-  const childId = normalizeWpObjectId(created?._ID || created?.id);
+  const childId = normalizeWpObjectId(created?.item_id || created?._ID || created?.id);
   if (parentId && childId) {
     await wordpressFetch(`jet-rel/${REL_USER_CARE_TIP}`, {
       method: "POST",
@@ -463,7 +463,11 @@ export async function createCareTipWordPress(tip: { user_id: string; title?: str
 }
 
 export async function updateCareTipWordPress(id: string, updates: Record<string, any>): Promise<void> {
-  await wordpressCCTFetch("care_tip", { id, method: "PUT", body: updates });
+  const body: Record<string, any> = { ...updates };
+  if (updates.is_pinned !== undefined) body.is_pinned = updates.is_pinned ? "yes" : "no";
+  if (updates.is_important !== undefined) body.is_pinned = updates.is_important ? "yes" : "no";
+  delete body.is_important;
+  await wordpressCCTFetch("care_tip", { id, method: "PUT", body });
 }
 
 export async function deleteCareTipWordPress(id: string): Promise<void> {
@@ -471,32 +475,35 @@ export async function deleteCareTipWordPress(id: string): Promise<void> {
 }
 
 // ─── Care Plans ─────────────────────────────────────────────
-// CCT slug: care_plan | linked via JetEngine relation 97
+// CCT slug: care_plan | fields: title, content, is_pinned
 export async function fetchCarePlansWordPress(caredOneId: string): Promise<any[]> {
   try {
     const plans = await fetchRelatedCctChildren(REL_USER_CARE_PLAN, caredOneId, "care_plan");
-    if (!Array.isArray(plans)) return [];
     return plans.map((p: any) => ({
-      id: String(p._ID || p.id || ""),
+      id: String(p.id || p._ID),
       user_id: caredOneId,
       title: p.title || null,
-      description: p.description || null,
-      status: p.status || "active",
-      start_date: p.start_date || null,
-      end_date: p.end_date || null,
-      created_at: p.cct_created || p.created_at,
-      updated_at: p.cct_modified || p.updated_at,
+      content: p.content || null,
+      description: p.content || null,
+      is_pinned: p.is_pinned === true || p.is_pinned === "yes",
+      status: "active",
+      created_at: p.created_at,
+      updated_at: p.updated_at,
     }));
   } catch { return []; }
 }
 
-export async function createCarePlanWordPress(plan: { user_id: string; title: string; description?: string }): Promise<void> {
+export async function createCarePlanWordPress(plan: { user_id: string; title: string; description?: string; content?: string; is_pinned?: boolean }): Promise<void> {
   const created = await wordpressCCTFetch<any>("care_plan", {
     method: "POST",
-    body: { title: plan.title, description: plan.description || "", status: "active" },
+    body: {
+      title: plan.title,
+      content: plan.content || plan.description || "",
+      is_pinned: plan.is_pinned ? "yes" : "no",
+    },
   });
   const parentId = normalizeWpObjectId(plan.user_id);
-  const childId = normalizeWpObjectId(created?._ID || created?.id);
+  const childId = normalizeWpObjectId(created?.item_id || created?._ID || created?.id);
   if (parentId && childId) {
     await wordpressFetch(`jet-rel/${REL_USER_CARE_PLAN}`, {
       method: "POST",
@@ -506,7 +513,11 @@ export async function createCarePlanWordPress(plan: { user_id: string; title: st
 }
 
 export async function updateCarePlanWordPress(id: string, updates: Record<string, any>): Promise<void> {
-  await wordpressCCTFetch("care_plan", { id, method: "PUT", body: updates });
+  const body: Record<string, any> = { ...updates };
+  if (updates.description !== undefined && body.content === undefined) body.content = updates.description;
+  if (updates.is_pinned !== undefined) body.is_pinned = updates.is_pinned ? "yes" : "no";
+  delete body.description;
+  await wordpressCCTFetch("care_plan", { id, method: "PUT", body });
 }
 
 export async function deleteCarePlanWordPress(id: string): Promise<void> {
@@ -514,57 +525,56 @@ export async function deleteCarePlanWordPress(id: string): Promise<void> {
 }
 
 // ─── Care Plan Goals ────────────────────────────────────────
-// CCT slug: care_plan_goal | linked via JetEngine relation 98
+// CCT slug: care_plan_goal | fields: care_plan_id, title, status, sort_order (linked via field, no relation)
 export async function fetchCarePlanGoalsWordPress(planId: string): Promise<any[]> {
   try {
-    const goals = await fetchRelatedCctChildren(REL_CARE_PLAN_GOAL, planId, "care_plan_goal");
-    if (!Array.isArray(goals)) return [];
-    return goals.map((g: any) => ({
-      id: String(g._ID || g.id || ""),
-      care_plan_id: planId,
-      title: g.title || null,
-      description: g.description || null,
-      status: g.status || "pending",
-      target_date: g.target_date || null,
-      created_at: g.cct_created || g.created_at,
-    }));
+    const all = await wordpressCCTFetch<any[]>("care_plan_goal", { params: { _limit: 200 } });
+    if (!Array.isArray(all)) return [];
+    const planIdNum = normalizeWpObjectId(planId);
+    return all
+      .filter((g: any) => Number(g.care_plan_id) === planIdNum)
+      .sort((a: any, b: any) => (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0))
+      .map((g: any) => ({
+        id: String(g.id || g._ID),
+        care_plan_id: planId,
+        title: g.title || null,
+        status: g.status || "pending",
+        sort_order: Number(g.sort_order) || 0,
+        created_at: g.created_at,
+      }));
   } catch { return []; }
 }
 
-export async function createCarePlanGoalWordPress(goal: { care_plan_id: string; title: string; description?: string }): Promise<void> {
-  const created = await wordpressCCTFetch<any>("care_plan_goal", {
+export async function createCarePlanGoalWordPress(goal: { care_plan_id: string; title: string; description?: string; sort_order?: number }): Promise<void> {
+  await wordpressCCTFetch("care_plan_goal", {
     method: "POST",
-    body: { title: goal.title, description: goal.description || "", status: "pending" },
+    body: {
+      care_plan_id: normalizeWpObjectId(goal.care_plan_id),
+      title: goal.title,
+      status: "pending",
+      sort_order: goal.sort_order ?? 0,
+    },
   });
-  const parentId = normalizeWpObjectId(goal.care_plan_id);
-  const childId = normalizeWpObjectId(created?._ID || created?.id);
-  if (parentId && childId) {
-    await wordpressFetch(`jet-rel/${REL_CARE_PLAN_GOAL}`, {
-      method: "POST",
-      body: { parent_id: parentId, child_id: childId, context: "child", store_items_type: "update" },
-    });
-  }
 }
 
 export async function updateCarePlanGoalWordPress(id: string, updates: Record<string, any>): Promise<void> {
-  await wordpressCCTFetch("care_plan_goal", { id, method: "PUT", body: updates });
+  const { description: _d, ...body } = updates || {};
+  await wordpressCCTFetch("care_plan_goal", { id, method: "PUT", body });
 }
 
 // ─── Care Notes ─────────────────────────────────────────────
-// CCT slug: care_note | linked via JetEngine relation 92
+// CCT slug: care_note | fields: title, content
 export async function fetchCareNotesWordPress(caredOneId: string): Promise<any[]> {
   try {
     const notes = await fetchRelatedCctChildren(REL_USER_CARE_NOTE, caredOneId, "care_note");
-    if (!Array.isArray(notes)) return [];
     return notes.map((n: any) => ({
-      id: String(n._ID || n.id || ""),
+      id: String(n.id || n._ID),
       user_id: caredOneId,
       title: n.title || null,
       content: n.content || null,
-      category: n.category || null,
       author_id: n.author_id || null,
-      created_at: n.cct_created || n.created_at,
-      updated_at: n.cct_modified || n.updated_at || n.cct_created || n.created_at,
+      created_at: n.created_at,
+      updated_at: n.updated_at || n.created_at,
     }));
   } catch { return []; }
 }
@@ -572,10 +582,13 @@ export async function fetchCareNotesWordPress(caredOneId: string): Promise<any[]
 export async function createCareNoteWordPress(note: { user_id: string; title?: string; content: string; category?: string }): Promise<void> {
   const created = await wordpressCCTFetch<any>("care_note", {
     method: "POST",
-    body: { title: note.title || note.content.substring(0, 50), content: note.content, category: note.category },
+    body: {
+      title: note.title || note.content.substring(0, 50),
+      content: note.content,
+    },
   });
   const parentId = normalizeWpObjectId(note.user_id);
-  const childId = normalizeWpObjectId(created?._ID || created?.id);
+  const childId = normalizeWpObjectId(created?.item_id || created?._ID || created?.id);
   if (parentId && childId) {
     await wordpressFetch(`jet-rel/${REL_USER_CARE_NOTE}`, {
       method: "POST",
@@ -585,7 +598,8 @@ export async function createCareNoteWordPress(note: { user_id: string; title?: s
 }
 
 export async function updateCareNoteWordPress(id: string, updates: Record<string, any>): Promise<void> {
-  await wordpressCCTFetch("care_note", { id, method: "PUT", body: updates });
+  const { category: _c, ...body } = updates || {};
+  await wordpressCCTFetch("care_note", { id, method: "PUT", body });
 }
 
 export async function deleteCareNoteWordPress(id: string): Promise<void> {
@@ -593,31 +607,41 @@ export async function deleteCareNoteWordPress(id: string): Promise<void> {
 }
 
 // ─── Emergency Contacts ─────────────────────────────────────
-// CCT slug: emergency_contact | linked via JetEngine relation 63
+// CCT slug: emergency_contact | fields: name, content, phone, address, relationship, note
+// Linked to user via REL 63 (users → emergency_contact) OR card via REL 127 (cared_ones_informat → emergency_contact)
 export async function fetchEmergencyContactsWordPress(caredOneId: string): Promise<any[]> {
   try {
     const contacts = await fetchRelatedCctChildren(REL_USER_EMERGENCY_CONTACT, caredOneId, "emergency_contact");
-    if (!Array.isArray(contacts)) return [];
     return contacts.map((c: any) => ({
-      id: String(c._ID || c.id || ""),
+      id: String(c.id || c._ID),
       user_id: caredOneId,
       name: c.name || null,
       phone: c.phone || null,
-      email: c.email || null,
+      address: c.address || null,
+      content: c.content || null,
+      email: null,
       relationship: c.relationship || null,
-      is_primary: c.is_primary === true || c.is_primary === "yes",
-      created_at: c.cct_created || c.created_at,
+      note: c.note || null,
+      is_primary: false,
+      created_at: c.created_at,
     }));
   } catch { return []; }
 }
 
-export async function createEmergencyContactWordPress(contact: { user_id: string; name: string; phone?: string; email?: string; relationship?: string }): Promise<void> {
+export async function createEmergencyContactWordPress(contact: { user_id: string; name: string; phone?: string; email?: string; address?: string; relationship?: string; note?: string; content?: string }): Promise<void> {
   const created = await wordpressCCTFetch<any>("emergency_contact", {
     method: "POST",
-    body: { name: contact.name, phone: contact.phone, email: contact.email, relationship: contact.relationship },
+    body: {
+      name: contact.name,
+      phone: contact.phone || "",
+      address: contact.address || "",
+      relationship: contact.relationship || "",
+      content: contact.content || "",
+      note: contact.note || contact.email || "",
+    },
   });
   const parentId = normalizeWpObjectId(contact.user_id);
-  const childId = normalizeWpObjectId(created?._ID || created?.id);
+  const childId = normalizeWpObjectId(created?.item_id || created?._ID || created?.id);
   if (parentId && childId) {
     await wordpressFetch(`jet-rel/${REL_USER_EMERGENCY_CONTACT}`, {
       method: "POST",
@@ -627,7 +651,8 @@ export async function createEmergencyContactWordPress(contact: { user_id: string
 }
 
 export async function updateEmergencyContactWordPress(id: string, updates: Record<string, any>): Promise<void> {
-  await wordpressCCTFetch("emergency_contact", { id, method: "PUT", body: updates });
+  const { email: _e, is_primary: _p, ...body } = updates || {};
+  await wordpressCCTFetch("emergency_contact", { id, method: "PUT", body });
 }
 
 export async function deleteEmergencyContactWordPress(id: string): Promise<void> {
@@ -635,33 +660,45 @@ export async function deleteEmergencyContactWordPress(id: string): Promise<void>
 }
 
 // ─── Activity Log ───────────────────────────────────────────
-// CCT slug: activity_log | linked via JetEngine relation 94
+// CCT slug: activity_log | fields: cared_one_id, user_id, activity_type, title, description, duration_minutes, activity_date
 export async function fetchActivityLogWordPress(caredOneId: string): Promise<any[]> {
   try {
     const logs = await fetchRelatedCctChildren(REL_USER_ACTIVITY_LOG, caredOneId, "activity_log");
-    if (!Array.isArray(logs)) return [];
     return logs.map((l: any) => ({
-      id: String(l._ID || l.id || ""),
+      id: String(l.id || l._ID),
       user_id: caredOneId,
+      cared_one_id: l.cared_one_id || caredOneId,
       activity_type: l.activity_type || null,
+      title: l.title || null,
       description: l.description || null,
-      logged_by: l.logged_by ? String(l.logged_by) : null,
-      created_at: l.cct_created || l.created_at,
+      duration_minutes: l.duration_minutes ?? null,
+      activity_date: l.activity_date || l.created_at,
+      logged_by: l.user_id ? String(l.user_id) : null,
+      created_at: l.created_at,
     }));
   } catch { return []; }
 }
 
-export async function createActivityLogWordPress(log: { user_id: string; activity_type?: string; description?: string }): Promise<void> {
+export async function createActivityLogWordPress(log: { user_id: string; activity_type?: string; title?: string; description?: string; duration_minutes?: number }): Promise<void> {
+  const stored = getStoredWPUser();
+  const userIdNum = normalizeWpObjectId(log.user_id);
   const created = await wordpressCCTFetch<any>("activity_log", {
     method: "POST",
-    body: { activity_type: log.activity_type, description: log.description || "" },
+    body: {
+      cared_one_id: userIdNum,
+      user_id: stored?.user_id ? Number(stored.user_id) : null,
+      activity_type: log.activity_type || "",
+      title: log.title || "",
+      description: log.description || "",
+      duration_minutes: log.duration_minutes ?? null,
+      activity_date: new Date().toISOString(),
+    },
   });
-  const parentId = normalizeWpObjectId(log.user_id);
-  const childId = normalizeWpObjectId(created?._ID || created?.id);
-  if (parentId && childId) {
+  const childId = normalizeWpObjectId(created?.item_id || created?._ID || created?.id);
+  if (userIdNum && childId) {
     await wordpressFetch(`jet-rel/${REL_USER_ACTIVITY_LOG}`, {
       method: "POST",
-      body: { parent_id: parentId, child_id: childId, context: "child", store_items_type: "update" },
+      body: { parent_id: userIdNum, child_id: childId, context: "child", store_items_type: "update" },
     });
   }
 }
@@ -670,65 +707,63 @@ export async function deleteActivityLogWordPress(id: string): Promise<void> {
   await wordpressCCTFetch("activity_log", { id, method: "DELETE" });
 }
 
-// ─── Symptom Logs ───────────────────────────────────────────
-// CCT: symptom logs stored via health_vital or activity_log CCT
+// ─── Symptom Logs (stored as health_vital with vital_type='symptom') ───
 export async function fetchSymptomLogsWordPress(caredOneId: string): Promise<any[]> {
   try {
-    const logs = await fetchRelatedCctChildren(REL_USER_HEALTH_VITAL, caredOneId, "health_vital");
-    if (!Array.isArray(logs)) return [];
-    return logs.filter((l: any) => (l.vital_type || "") === "symptom").map((l: any) => ({
-      id: String(l._ID || l.id || ""),
-      user_id: caredOneId,
-      symptom: l.symptom || l.vital_type || null,
-      severity: l.severity ?? l.value ?? null,
+    const all = await fetchHealthVitalsWordPress(caredOneId);
+    return all.filter((l: any) => l.vital_type === "symptom").map((l: any) => ({
+      id: l.id,
+      user_id: l.user_id,
+      symptom: l.notes || null,
+      severity: l.value ?? null,
       notes: l.notes || null,
-      recorded_at: l.recorded_at || l.created_at,
-      created_at: l.cct_created || l.created_at,
+      recorded_at: l.recorded_at,
+      created_at: l.created_at,
     }));
   } catch { return []; }
 }
 
 export async function createSymptomLogWordPress(log: { user_id: string; symptom: string; severity?: number; notes?: string }): Promise<void> {
-  const created = await wordpressCCTFetch<any>("health_vital", {
-    method: "POST",
-    body: { vital_type: "symptom", symptom: log.symptom, severity: log.severity, value: log.severity, notes: log.notes || "", recorded_at: new Date().toISOString() },
+  await createHealthVitalWordPress({
+    user_id: log.user_id,
+    vital_type: "symptom",
+    value: log.severity ?? 0,
+    unit: "",
+    notes: log.notes || log.symptom,
   });
-  const parentId = normalizeWpObjectId(log.user_id);
-  const childId = normalizeWpObjectId(created?._ID || created?.id);
-  if (parentId && childId) {
-    await wordpressFetch(`jet-rel/${REL_USER_HEALTH_VITAL}`, {
-      method: "POST",
-      body: { parent_id: parentId, child_id: childId, context: "child", store_items_type: "update" },
-    });
-  }
 }
 
 // ─── Cared One Documents ────────────────────────────────────
-// CCT slug: care_document | linked via JetEngine relation 95
+// CCT slug: care_document | fields: name, content
 export async function fetchCaredOneDocumentsWordPress(caredOneId: string): Promise<any[]> {
   try {
     const docs = await fetchRelatedCctChildren(REL_USER_CARE_DOCUMENT, caredOneId, "care_document");
-    if (!Array.isArray(docs)) return [];
     return docs.map((d: any) => ({
-      id: String(d._ID || d.id || ""),
+      id: String(d.id || d._ID),
       user_id: caredOneId,
-      title: d.title || null,
-      description: d.description || null,
-      file_url: d.file_url || null,
-      document_type: d.document_type || null,
-      created_at: d.cct_created || d.created_at,
-      updated_at: d.cct_modified || d.updated_at || d.cct_created || d.created_at,
+      title: d.name || null,
+      name: d.name || null,
+      description: d.content || null,
+      content: d.content || null,
+      file_url: null,
+      document_type: null,
+      created_at: d.created_at,
+      updated_at: d.updated_at || d.created_at,
     }));
   } catch { return []; }
 }
 
 export async function createCaredOneDocumentWordPress(doc: { user_id: string; title: string; description?: string; file_url?: string; document_type?: string }): Promise<void> {
+  // Live schema only has name + content; pack URL/type into content if provided
+  const contentParts = [doc.description || ""];
+  if (doc.file_url) contentParts.push(`URL: ${doc.file_url}`);
+  if (doc.document_type) contentParts.push(`Type: ${doc.document_type}`);
   const created = await wordpressCCTFetch<any>("care_document", {
     method: "POST",
-    body: { title: doc.title, description: doc.description || "", file_url: doc.file_url, document_type: doc.document_type },
+    body: { name: doc.title, content: contentParts.filter(Boolean).join("\n") },
   });
   const parentId = normalizeWpObjectId(doc.user_id);
-  const childId = normalizeWpObjectId(created?._ID || created?.id);
+  const childId = normalizeWpObjectId(created?.item_id || created?._ID || created?.id);
   if (parentId && childId) {
     await wordpressFetch(`jet-rel/${REL_USER_CARE_DOCUMENT}`, {
       method: "POST",
@@ -738,7 +773,12 @@ export async function createCaredOneDocumentWordPress(doc: { user_id: string; ti
 }
 
 export async function updateCaredOneDocumentWordPress(id: string, updates: Record<string, any>): Promise<void> {
-  await wordpressCCTFetch("care_document", { id, method: "PUT", body: updates });
+  const body: Record<string, any> = {};
+  if (updates.title !== undefined) body.name = updates.title;
+  if (updates.name !== undefined) body.name = updates.name;
+  if (updates.description !== undefined) body.content = updates.description;
+  if (updates.content !== undefined) body.content = updates.content;
+  await wordpressCCTFetch("care_document", { id, method: "PUT", body });
 }
 
 export async function deleteCaredOneDocumentWordPress(id: string): Promise<void> {
@@ -747,7 +787,7 @@ export async function deleteCaredOneDocumentWordPress(id: string): Promise<void>
 
 // ─── Dementia Stage ─────────────────────────────────────────
 export async function updateDementiaStageWordPress(caredOneId: string, stage: string): Promise<void> {
-  const userId = String(caredOneId).replace(/^wp-/, "");
+  const userId = normalizeWpObjectId(caredOneId);
   await wordpressFetch(`wp/v2/users/${userId}`, {
     method: "PUT",
     body: { meta: { dementia_stage: stage } },
