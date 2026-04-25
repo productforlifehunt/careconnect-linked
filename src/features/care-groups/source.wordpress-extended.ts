@@ -317,10 +317,10 @@ export async function fetchMemberCategoriesWordPress(groupId: string): Promise<a
   } catch { return []; }
 }
 
-export async function createMemberCategoryWordPress(groupId: string, name: string, color?: string): Promise<void> {
+export async function createMemberCategoryWordPress(groupId: string, name: string, color?: string, description?: string): Promise<void> {
   const created = await wordpressCCTFetch<any>("care_group_private_member_group", {
     method: "POST",
-    body: { name, description: "", color: color || "" },
+    body: { name, description: description || "", color: color || "" },
   });
   const normalizedGroupId = normalizeWpObjectId(groupId);
   const categoryId = normalizeWpObjectId(created?.item_id || created?._ID || created?.id);
@@ -334,6 +334,36 @@ export async function createMemberCategoryWordPress(groupId: string, name: strin
 
 export async function deleteMemberCategoryWordPress(categoryId: string): Promise<void> {
   await wordpressCCTFetch("care_group_private_member_group", { id: categoryId, method: "DELETE" });
+}
+
+// ─── Sub-group member assignment (REL 75) ───────────────────
+export async function fetchSubgroupMembersWordPress(subgroupId: string): Promise<number[]> {
+  try {
+    const sid = normalizeWpObjectId(subgroupId);
+    if (!sid) return [];
+    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_SUBGROUP_MEMBERS}/children/${sid}`);
+    return (Array.isArray(rels) ? rels : []).map((r: any) => Number(r.child_object_id)).filter(Boolean);
+  } catch { return []; }
+}
+
+export async function addMemberToSubgroupWordPress(subgroupId: string, userId: string | number): Promise<void> {
+  const sid = normalizeWpObjectId(subgroupId);
+  const uid = normalizeWpObjectId(userId);
+  if (!sid || !uid) return;
+  await wordpressFetch(`jet-rel/${REL_SUBGROUP_MEMBERS}`, {
+    method: "POST",
+    body: { parent_id: sid, child_id: uid, context: "child", store_items_type: "update" },
+  });
+}
+
+export async function removeMemberFromSubgroupWordPress(subgroupId: string, userId: string | number): Promise<void> {
+  const sid = normalizeWpObjectId(subgroupId);
+  const uid = normalizeWpObjectId(userId);
+  if (!sid || !uid) return;
+  await wordpressFetch(`jet-rel/${REL_SUBGROUP_MEMBERS}`, {
+    method: "DELETE",
+    body: { parent_id: sid, child_id: uid },
+  });
 }
 
 // ─── Search Profiles ────────────────────────────────────────
