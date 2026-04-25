@@ -534,7 +534,10 @@ export function useSubmitProviderApplication() {
 export function useCareGroupPosts(groupId: string | null, type?: string) {
   return useQuery({
     queryKey: ["careGroupPosts", groupId, type],
-    queryFn: () => fetchCareGroupPostsWordPress(groupId!, type),
+    queryFn: async () => {
+      const posts = await fetchCareGroupPostsWordPress(groupId!, type);
+      return await filterVisiblePosts(posts);
+    },
     enabled: !!groupId,
   });
 }
@@ -542,7 +545,14 @@ export function useCareGroupPosts(groupId: string | null, type?: string) {
 export function useCreateGroupPost() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (post: { group_id: string; content: string; type?: string; title?: string }) => createGroupPostWordPress(post),
+    mutationFn: async (post: { group_id: string; content: string; type?: string; title?: string; subgroupIds?: number[]; visibilityUserIds?: number[] }) => {
+      const { subgroupIds, visibilityUserIds, ...payload } = post;
+      const newId = await createGroupPostWordPress(payload);
+      if (newId && ((subgroupIds?.length ?? 0) > 0 || (visibilityUserIds?.length ?? 0) > 0)) {
+        await setPostVisibility(newId, subgroupIds || [], visibilityUserIds || []);
+      }
+      return newId;
+    },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["careGroupPosts"] }); },
   });
 }
