@@ -6,20 +6,10 @@
  *              action_url, notification_is_read
  */
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
+import { getCurrentUserId } from "@/features/shared/current-user";
 
 const SLUG = "notification";
 const REL_USER_NOTIFICATION = 148;
-
-function getCurrentUserId(): string | null {
-  try {
-    const raw = localStorage.getItem("cc_wp_user");
-    if (!raw) return null;
-    const u = JSON.parse(raw);
-    return u?.id ? String(u.id) : null;
-  } catch {
-    return null;
-  }
-}
 
 function isRead(v: any): boolean {
   return v === true || v === "yes" || v === "1" || v === 1;
