@@ -2,28 +2,29 @@ import type { CareGroup } from "@/types/care-connector";
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
 
-// JetEngine Relation IDs
-const REL_GROUP_MEMBER = 72; // care_group → users (many-to-many)
+// Live JetEngine relations (verified from prd-to-wp-mapping.md)
+const REL_GROUP_MEMBER = 72; // M:M  care_group → users
 
 function normalizeWpObjectId(value: string | number | null | undefined): number {
   return Number(String(value ?? "").replace(/^wp-/, ""));
 }
 
-// CCT slug: care_group | Members via JetEngine relation 72
+// CCT slug: care_group | fields: name, description, group_type, join_code, is_active, avatar_url
 export async function fetchCareGroupsWordPress(): Promise<CareGroup[]> {
   try {
-    const groups = await wordpressCCTFetch("care_group", { params: { _limit: 50 } });
+    const groups = await wordpressCCTFetch<any[]>("care_group", { params: { _limit: 50 } });
     if (!Array.isArray(groups)) return [];
     return groups.map((g: any) => ({
-      id: String(g._ID || g.id || ""),
+      id: String(g.id || g._ID || ""),
       name: g.name || "",
       description: g.description || null,
       is_private: g.group_type === "private",
       group_type: g.group_type || "public",
       invite_code: g.join_code || null,
-      is_active: g.is_active === "active" || g.is_active === true,
-      created_by: g.cct_author_id ? `wp-${g.cct_author_id}` : null,
-      created_at: g.cct_created || g.created_at,
+      avatar_url: g.avatar_url || null,
+      is_active: g.is_active === "active" || g.is_active === true || g.is_active === "yes",
+      created_by: g.author_id ? `wp-${g.author_id}` : null,
+      created_at: g.created_at,
     })) as unknown as CareGroup[];
   } catch {
     return [];
@@ -34,11 +35,9 @@ export async function fetchCareGroupMembersWordPress(groupId: string): Promise<a
   try {
     const normalizedGroupId = normalizeWpObjectId(groupId);
     if (!normalizedGroupId) return [];
-    // Use JetEngine relation 72 to get member user IDs
     const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${normalizedGroupId}`);
     if (!Array.isArray(rels) || rels.length === 0) return [];
     const userIds = rels.map((r: any) => Number(r.child_object_id)).filter(Boolean);
-    // Fetch WP user profiles for all member IDs
     const members = await Promise.all(
       userIds.map(async (uid) => {
         try {
@@ -69,10 +68,15 @@ export async function fetchCareGroupMembersWordPress(groupId: string): Promise<a
 export async function createCareGroupWordPress(group: { name: string; description?: string; is_private?: boolean }): Promise<CareGroup> {
   const result = await wordpressCCTFetch<any>("care_group", {
     method: "POST",
-    body: { name: group.name, description: group.description || "", group_type: group.is_private ? "private" : "public", is_active: "active" },
+    body: {
+      name: group.name,
+      description: group.description || "",
+      group_type: group.is_private ? "private" : "public",
+      is_active: "active",
+    },
   });
   // Auto-add creator as owner via JetEngine relation 72
-  const groupId = normalizeWpObjectId(result?._ID || result?.id);
+  const groupId = normalizeWpObjectId(result?.item_id || result?._ID || result?.id);
   const wpUser = getStoredWPUser();
   const userId = wpUser?.user_id ? Number(wpUser.user_id) : null;
   if (groupId && userId) {

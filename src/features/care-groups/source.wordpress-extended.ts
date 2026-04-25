@@ -1,11 +1,12 @@
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
+import { getStoredWPUser } from "@/services/wp-auth";
 
-// JetEngine Relation IDs
-const REL_GROUP_MEMBER = 72; // care_group → users (many-to-many)
-const REL_GROUP_POST = 77; // care_group → care_group_not_too_special_post
-const REL_GROUP_GALLERY = 46; // care_group → care_group_gallery
-const REL_GROUP_MEMBER_CATEGORY = 47; // care_group → member_category
-const REL_GROUP_INVITE = 45;          // care_group → care_group_invite
+// Live JetEngine relations (verified from prd-to-wp-mapping.md)
+const REL_GROUP_MEMBER = 72;          // M:M  care_group → users
+const REL_GROUP_INVITE = 45;          // 1:M  care_group → care_group_invite
+const REL_GROUP_GALLERY = 46;         // 1:M  care_group → care_group_gallery
+const REL_GROUP_SUBGROUP = 47;        // 1:M  care_group → care_group_private_member_group
+const REL_GROUP_POST = 77;            // 1:M  care_group → care_group_not_too_special_post
 
 function normalizeWpObjectId(value: string | number | null | undefined): number {
   return Number(String(value ?? "").replace(/^wp-/, ""));
@@ -20,44 +21,37 @@ async function fetchRelatedCctItems(relationId: number, parentId: string, cctSlu
   const items = await Promise.all(childIds.map(async (childId) => {
     try {
       return await wordpressCCTFetch(cctSlug, { id: childId });
-    } catch {
-      return null;
-    }
+    } catch { return null; }
   }));
   return items.filter(Boolean);
 }
 
 // ─── Care Group Posts ───────────────────────────────────────
-// CCT slug: care_group_post | flat fields
+// CCT slug: care_group_not_too_special_post | fields: type, title, content, is_pinned, scheduled_at
 export async function fetchCareGroupPostsWordPress(groupId: string, type?: string): Promise<any[]> {
   try {
     const posts = await fetchRelatedCctItems(REL_GROUP_POST, groupId, "care_group_not_too_special_post");
     if (!Array.isArray(posts)) return [];
-    // JetEngine returns type as array (e.g. ["wish"]) — normalize to string
     const normalizeType = (t: any): string => Array.isArray(t) ? (t[0] || "discussion") : (t || "discussion");
     return posts
       .filter((p: any) => !type || normalizeType(p.type) === type)
-      .map((p: any) => {
-        const authorId = p.author_id || null; // from normalizeCCT (cct_author_id)
-        return {
-          id: p.id,
-          group_id: groupId,
-          author_id: authorId,
-          type: normalizeType(p.type),
-          title: p.title || null,
-          content: p.content || null,
-          is_pinned: p.is_pinned === true || p.is_pinned === "yes",
-          visibility: p.visibility || "all",
-          created_at: p.created_at,
-          updated_at: p.updated_at || p.created_at,
-          author: authorId ? { id: authorId, full_name: p.author_name || null, avatar_url: null } : null,
-        };
-      });
+      .map((p: any) => ({
+        id: p.id,
+        group_id: groupId,
+        author_id: p.author_id || null,
+        type: normalizeType(p.type),
+        title: p.title || null,
+        content: p.content || null,
+        is_pinned: p.is_pinned === true || p.is_pinned === "yes" || p.is_pinned === "1",
+        scheduled_at: p.scheduled_at || null,
+        created_at: p.created_at,
+        updated_at: p.updated_at || p.created_at,
+        author: p.author_id ? { id: p.author_id, full_name: null, avatar_url: null } : null,
+      }));
   } catch { return []; }
 }
 
 export async function createGroupPostWordPress(post: { group_id: string; content: string; type?: string; title?: string }): Promise<void> {
-  // JetEngine auto-sets cct_author_id — no need to send author fields
   const created = await wordpressCCTFetch<any>("care_group_not_too_special_post", {
     method: "POST",
     body: {
@@ -67,11 +61,11 @@ export async function createGroupPostWordPress(post: { group_id: string; content
     },
   });
   const groupId = normalizeWpObjectId(post.group_id);
-  const postId = created?.item_id || normalizeWpObjectId(created?._ID || created?.id);
+  const postId = normalizeWpObjectId(created?.item_id || created?._ID || created?.id);
   if (groupId && postId) {
     await wordpressFetch(`jet-rel/${REL_GROUP_POST}`, {
       method: "POST",
-      body: { parent_id: groupId, child_id: Number(postId), context: "child", store_items_type: "update" },
+      body: { parent_id: groupId, child_id: postId, context: "child", store_items_type: "update" },
     });
   }
 }
@@ -89,12 +83,13 @@ export async function deleteGroupPostWordPress(id: string): Promise<void> {
 }
 
 // ─── Group Settings ─────────────────────────────────────────
-// CCT slug: care_group | flat fields
-export async function updateCareGroupWordPress(id: string, updates: { name?: string; description?: string; is_private?: boolean }): Promise<void> {
+// CCT slug: care_group | fields: name, description, group_type, join_code, is_active, avatar_url
+export async function updateCareGroupWordPress(id: string, updates: { name?: string; description?: string; is_private?: boolean; avatar_url?: string }): Promise<void> {
   const body: Record<string, any> = {};
   if (updates.name !== undefined) body.name = updates.name;
   if (updates.description !== undefined) body.description = updates.description;
   if (updates.is_private !== undefined) body.group_type = updates.is_private ? "private" : "public";
+  if (updates.avatar_url !== undefined) body.avatar_url = updates.avatar_url;
   await wordpressCCTFetch("care_group", { id, method: "PUT", body });
 }
 
@@ -103,39 +98,45 @@ export async function deleteCareGroupWordPress(id: string): Promise<void> {
 }
 
 // ─── Invitations ────────────────────────────────────────────
-// CCT slug: care_group_invite | linked via JetEngine relation 45
-export async function inviteToGroupWordPress(groupId: string, userId: string, role?: string): Promise<void> {
+// CCT slug: care_group_invite | fields: care_group_id, invited_by_user_id, invitee_email, invitee_user_id, status, group_name
+// Linked via JetEngine relation 45 (care_group → care_group_invite)
+export async function inviteToGroupWordPress(groupId: string, userIdOrEmail: string, _role?: string): Promise<void> {
+  const wpUser = getStoredWPUser();
+  const inviterId = wpUser?.user_id ? Number(wpUser.user_id) : null;
+  const isEmail = userIdOrEmail.includes("@");
+  const normalizedGroupId = normalizeWpObjectId(groupId);
+
   const created = await wordpressCCTFetch<any>("care_group_invite", {
     method: "POST",
-    body: { user_id: userId, role: role || "member", status: "pending" },
+    body: {
+      care_group_id: normalizedGroupId,
+      invited_by_user_id: inviterId,
+      invitee_email: isEmail ? userIdOrEmail : "",
+      invitee_user_id: isEmail ? null : normalizeWpObjectId(userIdOrEmail),
+      status: "pending",
+    },
   });
-  const parentId = normalizeWpObjectId(groupId);
-  const childId = normalizeWpObjectId(created?._ID || created?.id);
-  if (parentId && childId) {
+  const childId = normalizeWpObjectId(created?.item_id || created?._ID || created?.id);
+  if (normalizedGroupId && childId) {
     await wordpressFetch(`jet-rel/${REL_GROUP_INVITE}`, {
       method: "POST",
-      body: { parent_id: parentId, child_id: childId, context: "child", store_items_type: "update" },
+      body: { parent_id: normalizedGroupId, child_id: childId, context: "child", store_items_type: "update" },
     });
   }
 }
 
 export async function fetchGroupInvitationsWordPress(groupId: string): Promise<any[]> {
   try {
-    const parentId = normalizeWpObjectId(groupId);
-    const relData = await wordpressFetch<any>(`jet-rel/${REL_GROUP_INVITE}`, { params: { parent_id: parentId } });
-    const childIds: number[] = Array.isArray(relData) ? relData.map((r: any) => r.child_id || r.child_object_id) : [];
-    if (!childIds.length) return [];
-    const invites = await wordpressCCTFetch<any[]>("care_group_invite", { params: { _limit: 100 } });
-    if (!Array.isArray(invites)) return [];
-    const related = invites.filter((inv: any) => childIds.includes(Number(inv._ID || inv.id)));
-    return related.map((i: any) => ({
-      id: String(i._ID || i.id || ""),
+    const invites = await fetchRelatedCctItems(REL_GROUP_INVITE, groupId, "care_group_invite");
+    return invites.map((i: any) => ({
+      id: String(i.id || i._ID || ""),
       group_id: groupId,
-      user_id: i.user_id || null,
-      role: i.role || "member",
+      user_id: i.invitee_user_id ? `wp-${i.invitee_user_id}` : null,
+      role: "member",
       invitation_status: i.status || "pending",
-      invited_email: i.email || null,
-      created_at: i.cct_created || i.created_at,
+      invited_email: i.invitee_email || null,
+      invited_by: i.invited_by_user_id ? `wp-${i.invited_by_user_id}` : null,
+      created_at: i.created_at,
     }));
   } catch { return []; }
 }
@@ -146,24 +147,49 @@ export async function cancelInvitationWordPress(invitationId: string): Promise<v
 
 export async function fetchMyPendingInvitationsWordPress(): Promise<any[]> {
   try {
+    const wpUser = getStoredWPUser();
+    if (!wpUser?.user_id) return [];
+    const userId = Number(wpUser.user_id);
+    const userEmail = wpUser.email || "";
     const invites = await wordpressCCTFetch<any[]>("care_group_invite", {
-      params: { status: "pending", _limit: 100 },
+      params: { _limit: 200 },
     });
     if (!Array.isArray(invites)) return [];
-    return invites.map((i: any) => ({
-      id: String(i._ID || i.id || ""),
-      group_id: null,
-      user_id: i.user_id || null,
-      role: i.role || "member",
-      invitation_status: "pending",
-      created_at: i.cct_created || i.created_at,
-      group: null,
-    }));
+    return invites
+      .filter((i: any) => {
+        if (i.status !== "pending") return false;
+        return Number(i.invitee_user_id) === userId || (userEmail && i.invitee_email === userEmail);
+      })
+      .map((i: any) => ({
+        id: String(i.id || i._ID || ""),
+        group_id: i.care_group_id ? String(i.care_group_id) : null,
+        user_id: i.invitee_user_id ? `wp-${i.invitee_user_id}` : null,
+        role: "member",
+        invitation_status: "pending",
+        created_at: i.created_at,
+        group: i.care_group_id ? { id: String(i.care_group_id), name: i.group_name || "Care Group" } : null,
+      }));
   } catch { return []; }
 }
 
 export async function acceptInvitationWordPress(invitationId: string): Promise<void> {
+  // Mark invite accepted, then add user to group via rel 72
+  const invite = await wordpressCCTFetch<any>("care_group_invite", { id: invitationId });
   await wordpressCCTFetch("care_group_invite", { id: invitationId, method: "PUT", body: { status: "accepted" } });
+  const groupId = normalizeWpObjectId(invite?.care_group_id);
+  const userId = normalizeWpObjectId(invite?.invitee_user_id) || (getStoredWPUser()?.user_id ? Number(getStoredWPUser()!.user_id) : 0);
+  if (groupId && userId) {
+    await wordpressFetch(`jet-rel/${REL_GROUP_MEMBER}`, {
+      method: "POST",
+      body: {
+        parent_id: groupId,
+        child_id: userId,
+        context: "child",
+        store_items_type: "update",
+        meta: { care_groups_member_types: "member" },
+      },
+    });
+  }
 }
 
 export async function declineInvitationWordPress(invitationId: string): Promise<void> {
@@ -171,9 +197,8 @@ export async function declineInvitationWordPress(invitationId: string): Promise<
 }
 
 // ─── Member Roles & Removal ─────────────────────────────────
-// Uses JetEngine relation 72 (care_group → users)
+// JetEngine relation 72 (care_group → users) with meta `care_groups_member_types`
 export async function updateMemberRoleWordPress(memberId: string, role: string, groupId?: string): Promise<void> {
-  // Update member role via JetEngine relation 72 meta field (care_groups_member_types)
   const normalizedGroupId = normalizeWpObjectId(groupId);
   const normalizedMemberId = normalizeWpObjectId(memberId);
   if (!normalizedGroupId || !normalizedMemberId) return;
@@ -190,7 +215,6 @@ export async function updateMemberRoleWordPress(memberId: string, role: string, 
 }
 
 export async function removeGroupMemberWordPress(memberId: string, groupId?: string): Promise<void> {
-  // Remove user from group via JetEngine relation 72
   const normalizedGroupId = normalizeWpObjectId(groupId);
   const normalizedMemberId = normalizeWpObjectId(memberId);
   if (normalizedGroupId && normalizedMemberId) {
@@ -202,43 +226,66 @@ export async function removeGroupMemberWordPress(memberId: string, groupId?: str
 }
 
 // ─── Join by Code ───────────────────────────────────────────
+// CCT field: join_code (live)
 export async function joinGroupByCodeWordPress(code: string): Promise<any> {
   try {
-    const groups = await wordpressCCTFetch("care_group", {
-      params: { invite_code: code, _limit: 1 },
-    });
-    if (!Array.isArray(groups) || groups.length === 0) throw new Error("Invalid invite code");
-    return { group_id: groups[0].id, group_name: groups[0].name };
-  } catch {
-    throw new Error("Invalid invite code");
+    const groups = await wordpressCCTFetch<any[]>("care_group", { params: { _limit: 200 } });
+    if (!Array.isArray(groups)) throw new Error("Invalid invite code");
+    const match = groups.find((g: any) => g.join_code === code);
+    if (!match) throw new Error("Invalid invite code");
+    const groupId = normalizeWpObjectId(match.id || match._ID);
+    const wpUser = getStoredWPUser();
+    const userId = wpUser?.user_id ? Number(wpUser.user_id) : 0;
+    if (groupId && userId) {
+      await wordpressFetch(`jet-rel/${REL_GROUP_MEMBER}`, {
+        method: "POST",
+        body: {
+          parent_id: groupId,
+          child_id: userId,
+          context: "child",
+          store_items_type: "update",
+          meta: { care_groups_member_types: "member" },
+        },
+      });
+    }
+    return { group_id: String(match.id || match._ID), group_name: match.name };
+  } catch (e: any) {
+    throw new Error(e?.message || "Invalid invite code");
   }
 }
 
 // ─── Gallery ────────────────────────────────────────────────
-// CCT slug: care_group_gallery | flat fields
+// CCT slug: care_group_gallery | fields: care_group_id, uploaded_by_user_id, image_url, caption
 export async function fetchCareGroupGalleryWordPress(groupId: string): Promise<any[]> {
   try {
     const items = await fetchRelatedCctItems(REL_GROUP_GALLERY, groupId, "care_group_gallery");
-    if (!Array.isArray(items)) return [];
     return items.map((m: any) => ({
-      id: String(m._ID || m.id),
-      group_id: m.group_id || groupId,
-      image_url: m.url || m.file_url || m.image_url || null,
-      url: m.url || m.file_url || m.image_url || null,
-      type: m.media_type || "image",
+      id: String(m.id || m._ID),
+      group_id: m.care_group_id ? String(m.care_group_id) : groupId,
+      image_url: m.image_url || null,
+      url: m.image_url || null,
+      type: "image",
       caption: m.caption || null,
+      uploaded_by: m.uploaded_by_user_id ? `wp-${m.uploaded_by_user_id}` : null,
       created_at: m.created_at,
     }));
   } catch { return []; }
 }
 
 export async function createCareGroupGalleryItemWordPress(groupId: string, url: string, caption?: string): Promise<void> {
+  const wpUser = getStoredWPUser();
+  const uploaderId = wpUser?.user_id ? Number(wpUser.user_id) : null;
+  const normalizedGroupId = normalizeWpObjectId(groupId);
   const created = await wordpressCCTFetch<any>("care_group_gallery", {
     method: "POST",
-    body: { url, caption: caption || "", media_type: "image" },
+    body: {
+      care_group_id: normalizedGroupId,
+      uploaded_by_user_id: uploaderId,
+      image_url: url,
+      caption: caption || "",
+    },
   });
-  const normalizedGroupId = normalizeWpObjectId(groupId);
-  const itemId = normalizeWpObjectId(created?._ID || created?.id);
+  const itemId = normalizeWpObjectId(created?.item_id || created?._ID || created?.id);
   if (normalizedGroupId && itemId) {
     await wordpressFetch(`jet-rel/${REL_GROUP_GALLERY}`, {
       method: "POST",
@@ -251,16 +298,18 @@ export async function deleteCareGroupGalleryItemWordPress(itemId: string): Promi
   await wordpressCCTFetch("care_group_gallery", { id: itemId, method: "DELETE" });
 }
 
-// ─── Member Categories ──────────────────────────────────────
-// CCT slug: member_category | flat fields
+// ─── Sub-groups (private member groups) ─────────────────────
+// CCT slug: care_group_private_member_group | fields: name, description, color
+// Linked via JetEngine relation 47 (care_group → care_group_private_member_group)
+// Member assignment via JetEngine relation 75 (private_member_group → users)
 export async function fetchMemberCategoriesWordPress(groupId: string): Promise<any[]> {
   try {
-    const cats = await fetchRelatedCctItems(REL_GROUP_MEMBER_CATEGORY, groupId, "member_category");
-    if (!Array.isArray(cats)) return [];
+    const cats = await fetchRelatedCctItems(REL_GROUP_SUBGROUP, groupId, "care_group_private_member_group");
     return cats.map((c: any) => ({
-      id: c.id,
-      group_id: c.group_id || groupId,
+      id: String(c.id || c._ID),
+      group_id: groupId,
       name: c.name || "",
+      description: c.description || null,
       color: c.color || null,
       created_at: c.created_at,
     }));
@@ -268,14 +317,14 @@ export async function fetchMemberCategoriesWordPress(groupId: string): Promise<a
 }
 
 export async function createMemberCategoryWordPress(groupId: string, name: string, color?: string): Promise<void> {
-  const created = await wordpressCCTFetch<any>("member_category", {
+  const created = await wordpressCCTFetch<any>("care_group_private_member_group", {
     method: "POST",
-    body: { name, color: color || null },
+    body: { name, description: "", color: color || "" },
   });
   const normalizedGroupId = normalizeWpObjectId(groupId);
-  const categoryId = normalizeWpObjectId(created?._ID || created?.id);
+  const categoryId = normalizeWpObjectId(created?.item_id || created?._ID || created?.id);
   if (normalizedGroupId && categoryId) {
-    await wordpressFetch(`jet-rel/${REL_GROUP_MEMBER_CATEGORY}`, {
+    await wordpressFetch(`jet-rel/${REL_GROUP_SUBGROUP}`, {
       method: "POST",
       body: { parent_id: normalizedGroupId, child_id: categoryId, context: "child", store_items_type: "update" },
     });
@@ -283,7 +332,7 @@ export async function createMemberCategoryWordPress(groupId: string, name: strin
 }
 
 export async function deleteMemberCategoryWordPress(categoryId: string): Promise<void> {
-  await wordpressCCTFetch("member_category", { id: categoryId, method: "DELETE" });
+  await wordpressCCTFetch("care_group_private_member_group", { id: categoryId, method: "DELETE" });
 }
 
 // ─── Search Profiles ────────────────────────────────────────
@@ -304,13 +353,20 @@ export async function searchProfilesWordPress(query: string): Promise<any[]> {
 }
 
 // ─── Add Cared One to Group ─────────────────────────────────
+// Cared ones are stored as users. Adding them to the group is identical to adding any user via rel 72.
 export async function addCaredOneToGroupWordPress(groupId: string, caredOneId: string): Promise<void> {
-  // Add user to group via JetEngine relation 72
   const normalizedGroupId = normalizeWpObjectId(groupId);
   const normalizedCaredOneId = normalizeWpObjectId(caredOneId);
+  if (!normalizedGroupId || !normalizedCaredOneId) return;
   await wordpressFetch(`jet-rel/${REL_GROUP_MEMBER}`, {
     method: "POST",
-    body: { parent_id: normalizedGroupId, child_id: normalizedCaredOneId, context: "child", store_items_type: "update" },
+    body: {
+      parent_id: normalizedGroupId,
+      child_id: normalizedCaredOneId,
+      context: "child",
+      store_items_type: "update",
+      meta: { care_groups_member_types: "cared_one" },
+    },
   });
 }
 
@@ -321,7 +377,6 @@ export async function leaveGroupWordPress(groupId: string, userId?: string): Pro
     const normalizedGroupId = normalizeWpObjectId(groupId);
     const normalizedUserId = normalizeWpObjectId(userId);
     if (!normalizedGroupId || !normalizedUserId) return;
-    // Remove current user from group via JetEngine relation 72
     await wordpressFetch(`jet-rel/${REL_GROUP_MEMBER}`, {
       method: "DELETE",
       body: { parent_id: normalizedGroupId, child_id: normalizedUserId },
