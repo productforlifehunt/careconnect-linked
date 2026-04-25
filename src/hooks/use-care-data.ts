@@ -24,8 +24,10 @@ import {
   updateMemberRoleWordPress, removeGroupMemberWordPress,
   joinGroupByCodeWordPress, fetchCareGroupGalleryWordPress,
   fetchMemberCategoriesWordPress, createMemberCategoryWordPress, deleteMemberCategoryWordPress,
+  fetchSubgroupMembersWordPress, addMemberToSubgroupWordPress, removeMemberFromSubgroupWordPress,
   searchProfilesWordPress, addCaredOneToGroupWordPress, leaveGroupWordPress,
 } from "@/features/care-groups/source.wordpress-extended";
+import { setPostVisibility, setTaskVisibility, filterVisiblePosts, filterVisibleTasks } from "@/features/care-groups/visibility";
 import {
   fetchSafeZonesWordPress, createSafeZoneWordPress, updateSafeZoneWordPress, deleteSafeZoneWordPress,
   fetchSafeZoneAlertsWordPress, acknowledgeAlertWordPress, acknowledgeAllAlertsWordPress,
