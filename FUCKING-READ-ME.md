@@ -880,8 +880,8 @@ Each commentable parent CCT defines its own `One {parent} can have many related 
 
 | Rule / 规则                     | Details / 详情                                                                                     |
 | ------------------------------- | -------------------------------------------------------------------------------------------------- |
-| Schema / 数据库架构             | All data in `care_connector` schema. Not `public`.                                                 |
-| Clients / 客户端                | `careDb` for data, `careAuth` for auth. Both from `external-client.ts`.                            |
+| Schema / 数据库架构             | All data in headless WordPress JetEngine CCTs on the `careconnected` subsite. No Supabase DB.       |
+| Data access / 数据访问          | Frontend → `wp-proxy` Supabase Edge Function → WP REST API. Auth = Simple JWT Login plugin.         |
 | Migrations / 迁移               | If schema changes are needed, write SQL and tell developer to run it manually.                     |
 | Mocks / 模拟                    | NEVER fake data. Ask for access if blocked.                                                        |
 | Timestamps / 时间戳             | All tables use `created_at` and `updated_at`.                                                      |
