@@ -150,7 +150,7 @@ export async function fetchMyPendingInvitationsWordPress(): Promise<any[]> {
     const wpUser = getStoredWPUser();
     if (!wpUser?.user_id) return [];
     const userId = Number(wpUser.user_id);
-    const userEmail = wpUser.email || "";
+    const userEmail = wpUser.user_email || "";
     const invites = await wordpressCCTFetch<any[]>("care_group_invite", {
       params: { _limit: 200 },
     });
