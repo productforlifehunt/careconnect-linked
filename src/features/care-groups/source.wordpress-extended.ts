@@ -52,7 +52,7 @@ export async function fetchCareGroupPostsWordPress(groupId: string, type?: strin
   } catch { return []; }
 }
 
-export async function createGroupPostWordPress(post: { group_id: string; content: string; type?: string; title?: string }): Promise<void> {
+export async function createGroupPostWordPress(post: { group_id: string; content: string; type?: string; title?: string }): Promise<string | null> {
   const created = await wordpressCCTFetch<any>("care_group_not_too_special_post", {
     method: "POST",
     body: {
@@ -69,6 +69,7 @@ export async function createGroupPostWordPress(post: { group_id: string; content
       body: { parent_id: groupId, child_id: postId, context: "child", store_items_type: "update" },
     });
   }
+  return postId ? String(postId) : null;
 }
 
 export async function updateGroupPostWordPress(id: string, updates: { content?: string; title?: string; is_pinned?: boolean }): Promise<void> {
