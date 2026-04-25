@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Pin, Megaphone } from "lucide-react";
-import { PostActions, VisibilitySelect } from "../PostActions";
+import { PostActions } from "../PostActions";
+import { VisibilityPicker, EMPTY_VISIBILITY, type VisibilityValue } from "../VisibilityPicker";
 import { CommentsSection } from "@/components/comments/CommentsSection";
 import { useToast } from "@/hooks/use-toast";
 
@@ -15,6 +15,7 @@ interface AnnouncementsTabProps {
   userId: string | undefined;
   isAdmin: boolean;
   memberCategories: any[];
+  members?: any[];
   createPost: any;
   onEditPost: (post: any) => void;
   onTogglePin: (post: any) => void;
@@ -22,13 +23,13 @@ interface AnnouncementsTabProps {
 }
 
 export function AnnouncementsTab({
-  announcements, activeGroupId, userId, isAdmin, memberCategories,
+  announcements, activeGroupId, userId, isAdmin, memberCategories, members,
   createPost, onEditPost, onTogglePin, onDeletePost,
 }: AnnouncementsTabProps) {
   const { toast } = useToast();
   const [content, setContent] = useState("");
   const [title, setTitle] = useState("");
-  const [visibility, setVisibility] = useState("group");
+  const [visibility, setVisibility] = useState<VisibilityValue>(EMPTY_VISIBILITY);
 
   return (
     <div>
@@ -37,13 +38,26 @@ export function AnnouncementsTab({
           <CardContent className="p-4">
             <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Announcement title..." className="mb-2" />
             <Textarea value={content} onChange={e => setContent(e.target.value)} placeholder="Write an announcement..." className="mb-3" rows={2} />
-            <div className="flex items-center justify-between gap-2">
-              <VisibilitySelect value={visibility} onChange={setVisibility} memberCategories={memberCategories} />
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <VisibilityPicker value={visibility} onChange={setVisibility} memberCategories={memberCategories} members={members} />
               <Button variant="coral" size="sm" onClick={() => {
                 if (!content.trim() || !activeGroupId) return;
-                createPost.mutate({ group_id: activeGroupId, content, type: "announcement", title: title || undefined, visibility }, {
-                  onSuccess: () => { setContent(""); setTitle(""); setVisibility("group"); toast({ title: "Announcement posted!" }); },
-                });
+                createPost.mutate(
+                  {
+                    group_id: activeGroupId,
+                    content,
+                    type: "announcement",
+                    title: title || undefined,
+                    subgroupIds: visibility.subgroupIds,
+                    visibilityUserIds: visibility.userIds,
+                  },
+                  {
+                    onSuccess: () => {
+                      setContent(""); setTitle(""); setVisibility(EMPTY_VISIBILITY);
+                      toast({ title: "Announcement posted!" });
+                    },
+                  }
+                );
               }} disabled={!content.trim() || createPost.isPending}>
                 <Megaphone className="h-3.5 w-3.5 mr-1" /> Post
               </Button>
