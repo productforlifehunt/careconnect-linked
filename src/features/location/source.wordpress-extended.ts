@@ -7,11 +7,18 @@
  * Location uses the new single-CCT architecture from source.wordpress.ts
  */
 
-import { createWordPressFeature, deleteWordPressFeature, listWordPressFeature, updateWordPressFeature } from "@/features/shared/wordpress-adapter";
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { createNotificationWordPress } from "@/features/notifications/source.wordpress";
 import { fetchCurrentLocation, fetchLocationHistory, writeLocationAndCheckZones } from "@/features/location/source.wordpress";
+
+// NOTE: There is no `safe_zone_alerts` or `location_requests` CCT in the live
+// WordPress backend. Alerts are delivered exclusively via the `notification`
+// CCT. Location requests are sent as notifications to the target user; the
+// frontend keeps a local in-memory cache of recent emergency dedup keys.
+const ALERT_DEDUP_KEY = (userId: string, zoneId: string, type: string) =>
+  `cc_zone_alert:${userId}:${zoneId}:${type}`;
+const ALERT_DEDUP_WINDOW_MS = 5 * 60 * 1000;
 
 
 // ─── Relation IDs ────────────────────────────────────────────
@@ -225,32 +232,21 @@ export async function deleteSafeZoneWordPress(id: string): Promise<void> {
 }
 
 // ─── Safe Zone Alerts ───────────────────────────────────────
+//
+// No `safe_zone_alerts` CCT exists. Alerts surface via the `notification` CCT
+// (type = "safe_zone_breach"). The list endpoint returns an empty array; the
+// notifications page is the canonical alert inbox.
 
-export async function fetchSafeZoneAlertsWordPress(caredOneId: string): Promise<any[]> {
-  try {
-    const alerts = await listWordPressFeature<any[]>("safe_zone_alerts");
-    const zones = await fetchSafeZonesWordPress(caredOneId);
-    return (alerts || [])
-      .filter((a: any) => String(a.user_id || "") === String(caredOneId))
-      .map((a: any) => ({
-        ...a,
-        is_read: parseBoolean(a.is_read, false),
-        safe_zone: zones.find((z: any) => String(z.id) === String(a.safe_zone_id)) || null,
-        distance_from_center: parseNumber(a.distance_from_center),
-      }))
-      .sort((a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
-  } catch { return []; }
+export async function fetchSafeZoneAlertsWordPress(_caredOneId: string): Promise<any[]> {
+  return [];
 }
 
-export async function acknowledgeAlertWordPress(alertId: string): Promise<void> {
-  await updateWordPressFeature("safe_zone_alerts", { is_read: true, acknowledged_at: new Date().toISOString() }, { endpointArgs: { id: alertId } });
+export async function acknowledgeAlertWordPress(_alertId: string): Promise<void> {
+  // Acknowledge happens at the notification level (markNotificationReadWordPress).
 }
 
-export async function acknowledgeAllAlertsWordPress(caredOneId: string): Promise<void> {
-  try {
-    const alerts = await fetchSafeZoneAlertsWordPress(caredOneId);
-    await Promise.all(alerts.filter((a: any) => !a.is_read).map((a: any) => acknowledgeAlertWordPress(String(a.id))));
-  } catch {}
+export async function acknowledgeAllAlertsWordPress(_caredOneId: string): Promise<void> {
+  // No-op — handled by markAllNotificationsReadWordPress.
 }
 
 // ─── Cared One Location (delegates to source.wordpress.ts) ───
@@ -291,29 +287,35 @@ export async function fetchCaredOneLocationHistoryWordPress(caredOneId: string):
 }
 
 // ─── Zone Breach Detection ──────────────────────────────────
+// Dedup uses sessionStorage instead of an alerts CCT (no such CCT live).
 
 export async function createSafeZoneAlertsForLocation(userId: string, lat: number, lng: number): Promise<void> {
   try {
     const zones = await fetchSafeZonesWordPress(userId);
     if (!zones.length) return;
-    let existingAlerts: any[] = [];
-    try { existingAlerts = await listWordPressFeature<any[]>("safe_zone_alerts") || []; } catch {}
-    const userAlerts = existingAlerts.filter((a: any) => String(a.user_id || "") === String(userId));
+    const now = Date.now();
     for (const zone of zones) {
       const result = evaluateZoneAlert(zone, lat, lng);
       if (!result) continue;
-      const dup = userAlerts.find((a: any) => String(a.safe_zone_id || "") === String(zone.id) && String(a.alert_type || "") === result.alertType && !parseBoolean(a.is_read, false));
-      if (dup) continue;
-      const msg = result.alertType === "entered_danger_zone" ? `Entered danger zone: ${zone.name}` : result.alertType === "exited_safe_zone" ? `Left safe zone: ${zone.name}` : `Entered safe zone: ${zone.name}`;
-      await createWordPressFeature("safe_zone_alerts", { user_id: userId, safe_zone_id: zone.id, alert_type: result.alertType, latitude: lat, longitude: lng, message: msg });
+      // Local dedup window
+      try {
+        const key = ALERT_DEDUP_KEY(userId, String(zone.id), result.alertType);
+        const last = Number(sessionStorage.getItem(key) || 0);
+        if (last && now - last < ALERT_DEDUP_WINDOW_MS) continue;
+        sessionStorage.setItem(key, String(now));
+      } catch { /* sessionStorage unavailable in SSR */ }
+
+      const msg =
+        result.alertType === "entered_danger_zone" ? `Entered danger zone: ${zone.name}` :
+        result.alertType === "exited_safe_zone"   ? `Left safe zone: ${zone.name}` :
+                                                    `Entered safe zone: ${zone.name}`;
       try {
         await createNotificationWordPress({
           user_id: userId,
           type: "safe_zone_breach",
           title: result.alertType === "entered_danger_zone" ? "⚠️ Danger Zone Alert" : "📍 Safe Zone Alert",
           message: msg,
-          related_id: zone.id,
-          related_type: "safe_zone",
+          action_url: `/gps-tracking?zone=${zone.id}`,
         });
       } catch {}
     }
@@ -346,29 +348,14 @@ export async function shareMyLocationWordPress(latitude: number, longitude: numb
 export async function disableMyLocationSharingWordPress(): Promise<void> {
   // With append-only architecture, "disabling" sharing means the client
   // simply stops calling writeLocationSnapshot. No server-side toggle needed.
-  // The UI state is managed locally.
 }
 
 // ─── Location Requests ──────────────────────────────────────
+// No `location_requests` CCT live. Requests are pure notifications: the
+// requester pings the target user, who responds by enabling location sharing.
 
-export async function fetchLocationRequestsWordPress(caredOneId: string): Promise<any[]> {
-  try {
-    const requests = await listWordPressFeature<any[]>("location_requests");
-    const storedUser = getStoredWPUser();
-    return (requests || [])
-      .filter((r: any) => String(r.target_user_id || "") === String(caredOneId) || String(r.requester_id || "") === String(storedUser?.user_id || ""))
-      .map((r: any) => ({
-        id: String(r.id),
-        user_id: String(r.target_user_id || caredOneId),
-        requested_by: String(r.requester_id || ""),
-        status: r.status || "pending",
-        created_at: r.created_at,
-        message: r.message || null,
-        is_emergency: parseBoolean(r.is_emergency, false),
-        expire_at: r.expire_at || null,
-      }))
-      .sort((a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
-  } catch { return []; }
+export async function fetchLocationRequestsWordPress(_caredOneId: string): Promise<any[]> {
+  return [];
 }
 
 export async function sendLocationRequestWordPress(input: { caredOneId: string; message?: string; isEmergency?: boolean }): Promise<void> {
@@ -376,28 +363,21 @@ export async function sendLocationRequestWordPress(input: { caredOneId: string; 
   if (!caredOneUserId) throw new Error("Invalid cared one user");
   const storedUser = getStoredWPUser();
   if (!storedUser?.user_id) throw new Error("Not authenticated");
-  await createWordPressFeature("location_requests", {
-    requester_id: String(storedUser.user_id),
-    target_user_id: String(caredOneUserId),
-    message: input.message || undefined,
-    is_emergency: input.isEmergency || false,
-    status: input.isEmergency ? "emergency_approved" : "pending",
-  });
   try {
     await createNotificationWordPress({
       user_id: caredOneUserId,
       type: input.isEmergency ? "emergency_location_request" : "location_request",
       title: input.isEmergency ? "🚨 Emergency Location Request" : "📍 Location Request",
       message: `${storedUser.user_display_name || "Someone"} ${input.isEmergency ? "urgently needs" : "is requesting"} your location.${input.message ? ` "${input.message}"` : ""}`,
-      related_id: storedUser.user_id,
-      related_type: "user",
+      action_url: `/gps-tracking?request_from=${storedUser.user_id}`,
     });
   } catch {}
 }
 
-export async function cancelLocationRequestWordPress(requestId: string): Promise<void> {
-  await deleteWordPressFeature("location_requests", { endpointArgs: { id: requestId } });
+export async function cancelLocationRequestWordPress(_requestId: string): Promise<void> {
+  // No-op — requests are notifications; the recipient marks them read.
 }
+
 
 // ─── Location Settings (simplified — no separate settings CCT) ─
 

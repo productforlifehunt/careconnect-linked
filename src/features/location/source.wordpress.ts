@@ -306,8 +306,7 @@ export async function writeLocationAndCheckZones(
               type: "sos_emergency",
               title: "🚨 SOS Emergency Alert",
               message: `${storedUser.user_display_name || "A care circle member"} triggered an SOS emergency alert.`,
-              related_id: storedUser.user_id,
-              related_type: "user",
+              action_url: `/gps-tracking?sos=${storedUser.user_id}`,
             });
           }
         }
