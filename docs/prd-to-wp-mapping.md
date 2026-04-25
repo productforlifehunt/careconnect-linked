@@ -130,3 +130,52 @@ Pulled live from `app.challenged-dementia.com/careconnected` via JetEngine REST.
 // POST /wp-json/jet-rel/{relId}                     body: {parent_id, child_id, context, store_items_type}
 // DELETE /wp-json/jet-rel/{relId}/{context}/{_ID}
 ```
+
+## Live CCT field schemas (verified via REST)
+
+> Pulled from `/wp-json/jet-cct` route discovery. These are the EXACT field keys POST/PUT bodies must use. Do not invent fields.
+
+| CCT slug | Fields |
+|---|---|
+| `notification` | notification_type, notification_title, notification_content, action_url, notification_is_read |
+| `users_extended_prof` | is_care_provider_, care_provider_is_active, field |
+| `users_notification_` | notification_provider, device_label, auth_key, p256dh, is_active (+ endpoint_or_token) |
+| `care_group` | name, description, group_type, join_code, is_active, avatar_url |
+| `care_group_invite` | care_group_id, invited_by_user_id, invitee_email, invitee_user_id, status, group_name |
+| `care_group_gallery` | care_group_id, uploaded_by_user_id, image_url, caption |
+| `care_group_not_too_special_post` | type, title, content, is_pinned, scheduled_at |
+| `care_group_private_member_group` | name, description, color |
+| `universal_care_task` | title, description, status, category, due_date, completed_at |
+| `cared_ones_informat` | cared_ones_name, cared_ones_description, cared_ones_information_card_name, status, displays_location |
+| `emergency_contact` | name, content, phone, address, relationship, note |
+| `medicine` | name, dosage, frequency, time_slot, instructions, prescribing_doctor, pharmacy, side_effects, start_date, end_date, is_active, note |
+| `medicine_log` | status, note |
+| `care_plan` | title, content, is_pinned |
+| `care_plan_goal` | care_plan_id, title, status, sort_order |
+| `care_tip` | title, content, category, is_pinned |
+| `care_note` | title, content |
+| `care_document` | name, content |
+| `health_vital` | cared_one_id, vital_type, vital_value, vital_unit, recorded_by_user_id, recorded_date, note |
+| `checkin_schedule` | name, detail, frequency, time_slot, instructions, start_date_, end_date, is_active_, note |
+| `checkin_log` | mood, energy_level, sleep_hours, note, status, note_49 |
+| `chat_conversation` | chat_type, chat_name, ai_chat_mode, last_message_at |
+| `chat_message` | chat_message_content, chat_message_type |
+| `current_location` | latitude, longitude, accuracy_meters, altitude_meters, heading_degrees, speed, is_moving, moving_type, platform, battery_level, phone_is_charging, address_text, captured_at, is_emergency |
+| `safe_zone` | zone_type, shape_type, custom_name, custom_description, custom_color, latitude, longitude, radius_meters, polygon_points, notify_on_enter, notify_on_exit, schedule_enabled, schedule_start_time, schedule_end_time, is_active |
+| `users_calendar_even` | title, description, start_at, end_at, all_day, event_type, location, timezone, status, priority, color, rrule, rrule_until_, exdates, rdates, recurrence_id, show_as, visibility, reminders, is_availability, availability_note, rsvp_required, allow_comments, external_source, ical_uid, sequence, etag, google_event_id, meeting_url, attachments, last_sync_at, sync_token, geo_lat, geo_lng, tags, custom_data |
+| `challenged_content` | title, content, featured_image, author_name, reading_time, language, app_area, app_content_type_, learn_module_number, learn_lesson_number, care_and_accompany_tips_category, find_tips_category |
+| `users_study_notes` | title, content |
+| `care_job` | title, description, due_date, completed_at, status |
+| `job_posting` | care_group_id, posted_by_user_id, title, description, care_type, location, budget, schedule, special_needs, children_ages, start_date, status, app_area, language |
+| `job_application` | job_posting_id, applicant_user_id, cover_message, status, reviewed_by_user_id |
+| `care_facility` | name, detail, location, adress_, care_facility_type, care_facility_can_care_for_dementia_stage, care_facility_room_type, care_facility_provides_room_facility, community_facility, care_facility_people_number, location_hash, location_lat, location_lng, adress__hash, adress__lat, adress__lng |
+| `review` | title, content, rating |
+| `comment` | title, content |
+| `care_community_post` | title, content, app_area, language, care_community_post_category |
+| `cc_vote` | entity_type, entity_id, user_id, vote_type |
+| `activity_log` | cared_one_id, user_id, activity_type, title, description, duration_minutes, activity_date |
+| `caregiver_wellness_log` | moodmood, stress_levelstress_level, notesnotes, logged_atlogged_at |
+
+> ⚠️ **`caregiver_wellness_log`** has duplicated field keys (`moodmood`, etc.) — JetEngine bug from creating field with same machine name twice. Use the live keys verbatim until you re-create that CCT.
+> ⚠️ **`users_extended_prof`** has only 3 fields (`is_care_provider_`, `care_provider_is_active`, `field`). PRD asks for many more — add to GUI when ready, code uses what's live.
+> ⚠️ **`notification`** uses `action_url` for navigation (not `related_id`/`related_type`). Frontend writes full path like `/tasks/123`.
