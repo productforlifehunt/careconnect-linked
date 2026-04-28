@@ -230,9 +230,9 @@ const zhCN = {
     invitationDeclined: "邀请已拒绝", received: "收到",
   },
   trustSafety: {
-    title: "信任与安全", subtitle: "您家人的安全是我们的首要任务。以下是我们如何在每一步保护您。",
-    bgChecksCompleted: "已完成背景调查", activeVerified: "活跃已验证护理人员",
-    familiesServed: "已服务家庭", safetyIncidents: "安全事件解决率",
+    title: "信任与安全", subtitle: "本平台为信息与协调工具。我们尽力做好审核与隐私保护，但服务结果由您与护理人员共同负责。",
+    bgChecksCompleted: "护理人员资料审核", activeVerified: "活跃护理人员",
+    familiesServed: "已注册家庭", safetyIncidents: "用户反馈渠道",
     comprehensiveBgChecks: "全面背景调查",
     comprehensiveBgChecksDesc: "每位护理人员在加入平台前都要经过多州犯罪背景调查、性犯罪者登记检查和身份验证。",
     identityVerification: "身份验证",
