@@ -7,15 +7,13 @@ import type { WidgetDef } from "./DashboardWidgetConfig";
  */
 export const WIDGET_REGISTRY: WidgetDef[] = [
   // ── Challenged-only (dementia) — visible to caregivers AND providers ──
-  { id: "emergency-sos",       label: "Emergency SOS",            roles: ["all"],                    challengedOnly: true },
-  { id: "patient-summaries",   label: "Patient Summaries",        roles: ["caregiver", "provider"],  challengedOnly: true },
-  { id: "dementia-stage",      label: "Cognitive Stage Selector",  roles: ["caregiver", "provider"], challengedOnly: true },
-  { id: "ai-insights",        label: "AI Insights Panel",         roles: ["caregiver", "provider"],  challengedOnly: true },
+  // NOTE: Several AI/clinical-flavoured widgets removed (cognitive stage selector,
+  // symptom & behavior tracker, AI insights/care tips/daily summary) to avoid
+  // implying medical assessment. The app provides companionship + logistics only.
+  { id: "emergency-sos",       label: "Notify Care Circle",       roles: ["all"],                    challengedOnly: true },
+  { id: "patient-summaries",   label: "Loved One Overview",       roles: ["caregiver", "provider"],  challengedOnly: true },
   { id: "daily-timeline",     label: "Daily Timeline",            roles: ["caregiver", "provider"],  challengedOnly: true },
-  { id: "symptom-tracker",    label: "Symptom & Behavior Tracker", roles: ["caregiver", "provider"], challengedOnly: true },
   { id: "caregiver-wellness", label: "Caregiver Wellness",         roles: ["caregiver", "provider"], challengedOnly: true },
-  { id: "ai-daily-summary",   label: "AI Daily Summary",           roles: ["caregiver", "provider"], challengedOnly: true },
-  { id: "ai-care-tips",       label: "AI Care Tips",               roles: ["caregiver", "provider"], challengedOnly: true },
 
   // ── Shared widgets ──
   { id: "stats",              label: "Stats Overview",             roles: ["all"] },
@@ -24,7 +22,7 @@ export const WIDGET_REGISTRY: WidgetDef[] = [
   { id: "quick-actions",      label: "Quick Actions",              roles: ["all"] },
 
   // ── Challenged-only footer ──
-  { id: "dementia-assistant",  label: "AI Dementia Assistant",     roles: ["caregiver", "provider"], challengedOnly: true },
+  { id: "dementia-assistant",  label: "AI Companion",              roles: ["caregiver", "provider"], challengedOnly: true },
 ];
 
 /** Filter widgets to those relevant for the current user & site */
