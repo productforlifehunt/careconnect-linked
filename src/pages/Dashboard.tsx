@@ -16,12 +16,10 @@ import { EmergencySOS } from "@/components/challenged/EmergencySOS";
 import { DailyTimeline } from "@/components/challenged/DailyTimeline";
 import { LovedOneSimpleView } from "@/components/challenged/LovedOneSimpleView";
 import { DementiaAssistant } from "@/components/challenged/DementiaAssistant";
-import { AIInsightsPanel } from "@/components/challenged/AIInsightsPanel";
-import { AICareTips } from "@/components/challenged/AICareTips";
-import { AIDailySummary } from "@/components/challenged/AIDailySummary";
-import { SymptomTracker } from "@/components/challenged/SymptomTracker";
+// Removed: AIInsightsPanel, AICareTips, AIDailySummary, SymptomTracker, DementiaStageSelector
+// — these implied medical assessment / clinical analysis. The app provides
+// companionship, logistics, and neutral logging only.
 import { CaregiverWellness } from "@/components/challenged/CaregiverWellness";
-import { DementiaStageSelector } from "@/components/challenged/DementiaStageSelector";
 import { DashboardWidgetConfig, getWidgetPrefs, setWidgetPrefs } from "@/components/dashboard/DashboardWidgetConfig";
 import { getAvailableWidgets, getDefaultVisibility } from "@/components/dashboard/widgets";
 
@@ -164,17 +162,7 @@ export default function Dashboard() {
       )}
 
       <div className="grid lg:grid-cols-2 gap-6">
-        {show("dementia-stage") && firstCaredOne && (
-          <DementiaStageSelector
-            caredOneId={firstCaredOne.user_id}
-            caredOneName={firstCaredOne.cared_one?.full_name || firstCaredOne.cared_one?.first_name || site.caredOneSingular}
-            currentStage={firstCaredOne.cared_one?.dementia_stage}
-          />
-        )}
-
-        {show("ai-insights") && (
-          <AIInsightsPanel caredOnes={caredOnes} tasks={tasks} bookings={bookings} />
-        )}
+        {/* Removed: dementia-stage selector + ai-insights panel (clinical-flavoured) */}
 
         {show("daily-timeline") && firstCaredOne && (
           <DailyTimeline
@@ -183,27 +171,11 @@ export default function Dashboard() {
           />
         )}
 
-        {show("symptom-tracker") && firstCaredOne && (
-          <SymptomTracker
-            caredOneId={firstCaredOne.user_id}
-            caredOneName={firstCaredOne.cared_one?.full_name || firstCaredOne.cared_one?.first_name || site.caredOneSingular}
-          />
-        )}
+        {/* Removed: symptom & behavior tracker */}
 
         {show("caregiver-wellness") && <CaregiverWellness />}
 
-        {show("ai-daily-summary") && firstCaredOne && (
-          <AIDailySummary
-            caredOneName={firstCaredOne.cared_one?.full_name || firstCaredOne.cared_one?.first_name || site.caredOneSingular}
-            tasks={tasks}
-          />
-        )}
-
-        {show("ai-care-tips") && firstCaredOne && (
-          <AICareTips
-            caredOneName={firstCaredOne.cared_one?.full_name || firstCaredOne.cared_one?.first_name || site.caredOneSingular}
-          />
-        )}
+        {/* Removed: AI daily summary + AI care tips (avoid implying medical advice) */}
 
         {/* Upcoming Bookings */}
         {show("upcoming-bookings") && (

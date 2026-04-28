@@ -47,7 +47,7 @@ import CopeD from "./pages/CopeD";
 import SafeD from "./pages/SafeD";
 import AccompanieD from "./pages/AccompanieD";
 import ChallengedArticleDetail from "./pages/ChallengedArticleDetail";
-import ConsultationRoom from "./pages/ConsultationRoom";
+// Doctor consultation feature removed (compliance/risk avoidance — not a paid feature on this app)
 import Calendar from "./pages/Calendar";
 import Resources from "./pages/Resources";
 
@@ -68,7 +68,7 @@ const queryClient = new QueryClient({
 });
 
 // Dashboard routes that always get sidebar
-const baseDashboardPaths = ["/dashboard", "/bookings", "/care-circle", "/gps-tracking", "/messages", "/favorites", "/notifications", "/profile", "/cared-ones", "/jobs", "/provider-dashboard", "/community", "/articles", "/cart", "/order-confirmation", "/consultation", "/aware", "/care-guides", "/coping", "/safety-guides", "/accompanied", "/calendar", "/resources"];
+const baseDashboardPaths = ["/dashboard", "/bookings", "/care-circle", "/gps-tracking", "/messages", "/favorites", "/notifications", "/profile", "/cared-ones", "/jobs", "/provider-dashboard", "/community", "/articles", "/cart", "/order-confirmation", "/aware", "/care-guides", "/coping", "/safety-guides", "/accompanied", "/calendar", "/resources"];
 // Routes that get sidebar only when authenticated
 const authDashboardPaths = ["/search", "/caregiver"];
 
@@ -129,7 +129,7 @@ function AppRoutes() {
       <Route path="/provider-dashboard" element={<RequireAuth><ProviderDashboard /></RequireAuth>} />
       <Route path="/cart" element={<RequireAuth><Cart /></RequireAuth>} />
       <Route path="/order-confirmation" element={<RequireAuth><OrderConfirmation /></RequireAuth>} />
-      <Route path="/consultation/:orderId/:itemId" element={<RequireAuth><ConsultationRoom /></RequireAuth>} />
+      {/* /consultation route removed — see compliance decision */}
       <Route path="/calendar" element={<RequireAuth><Calendar /></RequireAuth>} />
       <Route path="/resources" element={<Resources />} />
 
