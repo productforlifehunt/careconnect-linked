@@ -16,12 +16,10 @@ import { EmergencySOS } from "@/components/challenged/EmergencySOS";
 import { DailyTimeline } from "@/components/challenged/DailyTimeline";
 import { LovedOneSimpleView } from "@/components/challenged/LovedOneSimpleView";
 import { DementiaAssistant } from "@/components/challenged/DementiaAssistant";
-import { AIInsightsPanel } from "@/components/challenged/AIInsightsPanel";
-import { AICareTips } from "@/components/challenged/AICareTips";
-import { AIDailySummary } from "@/components/challenged/AIDailySummary";
-import { SymptomTracker } from "@/components/challenged/SymptomTracker";
+// Removed: AIInsightsPanel, AICareTips, AIDailySummary, SymptomTracker, DementiaStageSelector
+// — these implied medical assessment / clinical analysis. The app provides
+// companionship, logistics, and neutral logging only.
 import { CaregiverWellness } from "@/components/challenged/CaregiverWellness";
-import { DementiaStageSelector } from "@/components/challenged/DementiaStageSelector";
 import { DashboardWidgetConfig, getWidgetPrefs, setWidgetPrefs } from "@/components/dashboard/DashboardWidgetConfig";
 import { getAvailableWidgets, getDefaultVisibility } from "@/components/dashboard/widgets";
 
