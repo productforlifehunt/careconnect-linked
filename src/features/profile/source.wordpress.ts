@@ -35,8 +35,8 @@ export async function fetchMyProfileWordPress(): Promise<Profile | null> {
       wpProfile.general_user_role = cctData.general_user_role
         ? (typeof cctData.general_user_role === 'string' ? cctData.general_user_role.split(',').map((s: string) => s.trim()) : cctData.general_user_role)
         : wpProfile.general_user_role;
-      wpProfile.is_care_provider = cctData.is_care_provider_ === 'yes' || cctData.is_care_provider_ === true || wpProfile.is_care_provider;
-      wpProfile.care_provider_is_active = cctData.care_provider_is_active === 'yes' || cctData.care_provider_is_active === true || wpProfile.care_provider_is_active;
+      wpProfile.is_care_provider = cctData.is_care_provider === 'yes' || cctData.is_care_provider === true || wpProfile.is_care_provider;
+      wpProfile.provider_is_active = cctData.provider_is_active === 'yes' || cctData.provider_is_active === true || wpProfile.provider_is_active;
       wpProfile.care_provider_is_background_checked = cctData.care_provider_is_background_checked === 'yes' || cctData.care_provider_is_background_checked === true || wpProfile.care_provider_is_background_checked;
       wpProfile.care_provider_background_check_detail = cctData.care_provider_background_check_detail || wpProfile.care_provider_background_check_detail;
       wpProfile.care_provider_starts_hourly_rate = cctData.care_provider_starts_hourly_rate ? parseFloat(cctData.care_provider_starts_hourly_rate) : wpProfile.care_provider_starts_hourly_rate;
@@ -61,7 +61,7 @@ export async function fetchMyProfileWordPress(): Promise<Profile | null> {
       user_name: stored.user_login,
       avatar_url: null, bio: null,
       general_user_role: null, is_care_provider: false,
-      care_provider_is_active: false, care_provider_is_background_checked: false,
+      provider_is_active: false, care_provider_is_background_checked: false,
       care_provider_background_check_detail: null, care_provider_starts_hourly_rate: null,
       phone: null, location: null, years_of_experience: null,
       certifications: null, specialty: null,
@@ -88,8 +88,8 @@ export async function updateProfileWordPress(updates: Partial<Profile>): Promise
   // Update CCT extended profile fields
   const cctFields: Record<string, any> = {};
   if (updates.general_user_role !== undefined) cctFields.general_user_role = Array.isArray(updates.general_user_role) ? updates.general_user_role.join(',') : updates.general_user_role;
-  if (updates.is_care_provider !== undefined) cctFields.is_care_provider_ = updates.is_care_provider ? 'yes' : 'no';
-  if (updates.care_provider_is_active !== undefined) cctFields.care_provider_is_active = updates.care_provider_is_active ? 'yes' : 'no';
+  if (updates.is_care_provider !== undefined) cctFields.is_care_provider = updates.is_care_provider ? 'yes' : 'no';
+  if (updates.provider_is_active !== undefined) cctFields.provider_is_active = updates.provider_is_active ? 'yes' : 'no';
   if (updates.care_provider_is_background_checked !== undefined) cctFields.care_provider_is_background_checked = updates.care_provider_is_background_checked ? 'yes' : 'no';
   if (updates.care_provider_background_check_detail !== undefined) cctFields.care_provider_background_check_detail = updates.care_provider_background_check_detail;
   if (updates.care_provider_starts_hourly_rate !== undefined) cctFields.care_provider_starts_hourly_rate = String(updates.care_provider_starts_hourly_rate);

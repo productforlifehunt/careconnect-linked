@@ -62,7 +62,7 @@ export default function ProviderSettingsTab() {
       setPhone(profile.phone || "");
       setExperience(profile.years_of_experience?.toString() || "");
       setCertifications(profile.certifications || []);
-      setIsActive(profile.care_provider_is_active || false);
+      setIsActive(profile.provider_is_active || false);
 
       // Hydrate from WC product:
       //   - `_service_rates`  → { name → ratePerHour }
@@ -156,7 +156,7 @@ export default function ProviderSettingsTab() {
         // Mirror the resource names into legacy `specialty` for display fallback
         specialty: cleaned.map(r => r.name),
         certifications,
-        care_provider_is_active: isActive,
+        provider_is_active: isActive,
       });
 
       // Sync to WooCommerce/Dokan with the structured service-resource list

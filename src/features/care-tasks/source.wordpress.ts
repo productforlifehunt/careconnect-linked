@@ -13,13 +13,12 @@ function normalizeWpObjectId(value: string | number | null | undefined): number 
   return Number(String(value ?? "").replace(/^wp-/, ""));
 }
 
-async function fetchAssignedUserId(taskId: string): Promise<string | null> {
+async function fetchAssignedUserIds(taskId: string): Promise<string[]> {
   try {
     const rels = await wordpressFetch<any[]>(`jet-rel/${REL_TASK_ASSIGNEE}/children/${normalizeWpObjectId(taskId)}`);
-    if (!Array.isArray(rels) || rels.length === 0) return null;
-    const assignedId = rels.map((r: any) => normalizeWpObjectId(r.child_object_id)).find(Boolean);
-    return assignedId ? `wp-${assignedId}` : null;
-  } catch { return null; }
+    if (!Array.isArray(rels) || rels.length === 0) return [];
+    return rels.map((r: any) => normalizeWpObjectId(r.child_object_id)).filter(Boolean).map((id) => `wp-${id}`);
+  } catch { return []; }
 }
 
 async function fetchCaredOneId(taskId: string): Promise<string | null> {
@@ -50,7 +49,7 @@ export async function fetchCareTasksWordPress(groupId?: string | null): Promise<
     const mapped = await Promise.all(taskList.map(async (t: any) => {
       const id = String(t.id || t._ID || "");
       const [assigned, caredOne] = await Promise.all([
-        fetchAssignedUserId(id),
+        fetchAssignedUserIds(id),
         fetchCaredOneId(id),
       ]);
       return {
@@ -59,8 +58,8 @@ export async function fetchCareTasksWordPress(groupId?: string | null): Promise<
         title: t.title || null,
         description: t.description || null,
         status: t.status || "pending",
-        category: t.category || null,
-        assigned_to: assigned,
+        assigned_to: assigned[0] || null,
+        assigned_to_ids: assigned,
         cared_one_id: caredOne,
         due_date: t.due_date || null,
         completed_at: t.completed_at || null,
@@ -75,8 +74,8 @@ export async function fetchCareTasksWordPress(groupId?: string | null): Promise<
 
 export async function createCareTaskWordPress(task: {
   care_group_id?: string; group_id?: string;
-  title: string; description?: string; category?: string;
-  assigned_to?: string; cared_one_id?: string; due_date?: string;
+  title: string; description?: string;
+  assigned_to?: string | string[]; cared_one_id?: string; due_date?: string;
 }): Promise<string | null> {
   const created = await wordpressCCTFetch<any>("universal_care_task", {
     method: "POST",
@@ -84,13 +83,14 @@ export async function createCareTaskWordPress(task: {
       title: task.title,
       description: task.description || "",
       due_date: task.due_date || null,
-      category: task.category || "",
       status: "pending",
     },
   });
   const taskId = normalizeWpObjectId(created?.item_id || created?._ID || created?.id);
   const groupId = normalizeWpObjectId(task.group_id || task.care_group_id);
-  const assignedUserId = normalizeWpObjectId(task.assigned_to);
+  const assignedUserIds = (Array.isArray(task.assigned_to) ? task.assigned_to : task.assigned_to ? [task.assigned_to] : [])
+    .map(normalizeWpObjectId)
+    .filter(Boolean);
   const caredOneId = normalizeWpObjectId(task.cared_one_id);
 
   const calls: Promise<any>[] = [];
@@ -100,12 +100,10 @@ export async function createCareTaskWordPress(task: {
       body: { parent_id: groupId, child_id: taskId, context: "child", store_items_type: "update" },
     }));
   }
-  if (taskId && assignedUserId) {
-    calls.push(wordpressFetch(`jet-rel/${REL_TASK_ASSIGNEE}`, {
-      method: "POST",
-      body: { parent_id: taskId, child_id: assignedUserId, context: "child", store_items_type: "replace" },
-    }));
-  }
+  assignedUserIds.forEach((assignedUserId) => calls.push(wordpressFetch(`jet-rel/${REL_TASK_ASSIGNEE}`, {
+    method: "POST",
+    body: { parent_id: taskId, child_id: assignedUserId, context: "child", store_items_type: "update" },
+  })));
   if (taskId && caredOneId) {
     calls.push(wordpressFetch(`jet-rel/${REL_TASK_CARED_ONE}`, {
       method: "POST",
@@ -121,11 +119,11 @@ export async function updateCareTaskWordPress(id: string, updates: Record<string
   await wordpressCCTFetch("universal_care_task", { id, method: "PUT", body: safeUpdates });
   const taskId = normalizeWpObjectId(id);
   if (assigned_to !== undefined) {
-    const assignedUserId = normalizeWpObjectId(assigned_to);
-    if (taskId && assignedUserId) {
+      const assignedUserIds = (Array.isArray(assigned_to) ? assigned_to : assigned_to ? [assigned_to] : []).map(normalizeWpObjectId).filter(Boolean);
+      for (const assignedUserId of assignedUserIds) {
       await wordpressFetch(`jet-rel/${REL_TASK_ASSIGNEE}`, {
         method: "POST",
-        body: { parent_id: taskId, child_id: assignedUserId, context: "child", store_items_type: "replace" },
+          body: { parent_id: taskId, child_id: assignedUserId, context: "child", store_items_type: "update" },
       });
     }
   }

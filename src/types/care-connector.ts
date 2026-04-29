@@ -15,7 +15,7 @@ export interface Profile {
   // ─── CCT: User's extended profile (exact match) ─────────────
   general_user_role: string[] | null;       // checkbox: ["cared one", "caring one"]
   is_care_provider: boolean;                // radio: yes/no
-  care_provider_is_active: boolean;         // radio: yes/no
+  provider_is_active: boolean;              // radio: yes/no
   care_provider_is_background_checked: boolean; // radio: yes/no
   care_provider_background_check_detail: string | null; // text
   care_provider_starts_hourly_rate: number | null;      // number
@@ -366,6 +366,9 @@ export interface CareGroupMember {
   id: string;
   group_id: string;
   user_id: string;
+  display_name: string | null;
+  member_types: string[];
+  member_roles: string[];
   is_owner: boolean;
   is_admin: boolean;
   is_cared_one: boolean;
@@ -379,12 +382,12 @@ export interface CareTask {
   group_id: string | null;
   created_by: string;
   assigned_to: string | null;
+  assigned_to_ids?: string[];
   care_recipient_id: string | null;
   title: string;
   description: string | null;
   status: string;
   priority: string;
-  category: string | null;
   due_date: string | null;
   job_id: string | null;
   created_at: string;
