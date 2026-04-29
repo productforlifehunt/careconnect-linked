@@ -434,7 +434,7 @@ export function useCareTasks(groupId?: string | null) {
 export function useCreateTask() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (task: { group_id?: string; care_group_id?: string; title: string; description?: string; assigned_to?: string; due_date?: string; subgroupIds?: number[]; visibilityUserIds?: number[] }) => {
+    mutationFn: async (task: { group_id?: string; care_group_id?: string; title: string; description?: string; assigned_to?: string | string[]; due_date?: string; subgroupIds?: number[]; visibilityUserIds?: number[] }) => {
       const { subgroupIds, visibilityUserIds, ...payload } = task;
       const newId = await createCareTaskWordPress(payload);
       if (newId && ((subgroupIds?.length ?? 0) > 0 || (visibilityUserIds?.length ?? 0) > 0)) {
