@@ -1,11 +1,10 @@
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, CheckCircle, Circle, Loader2, Trash2, Briefcase } from "lucide-react";
 import { VisibilityPicker, EMPTY_VISIBILITY, type VisibilityValue } from "../VisibilityPicker";
@@ -32,7 +31,7 @@ export function TasksTab({
 }: TasksTabProps) {
   const { toast } = useToast();
   const [addOpen, setAddOpen] = useState(false);
-  const [newTask, setNewTask] = useState({ title: "", description: "", assignee: "", category: "Daily Living", due_date: "" });
+  const [newTask, setNewTask] = useState({ title: "", description: "", assigneeIds: [] as string[], due_date: "" });
   const [visibility, setVisibility] = useState<VisibilityValue>(EMPTY_VISIBILITY);
 
   const pendingTasks = (tasks || []).filter((t: any) => t.status !== "completed");
@@ -52,17 +51,34 @@ export function TasksTab({
     if (!newTask.title || !activeGroupId) return;
     createTask.mutate({
       title: newTask.title, description: newTask.description || undefined,
-      group_id: activeGroupId, assigned_to: newTask.assignee || undefined,
+      group_id: activeGroupId, assigned_to: newTask.assigneeIds.length ? newTask.assigneeIds : undefined,
       due_date: newTask.due_date || undefined,
       subgroupIds: visibility.subgroupIds,
       visibilityUserIds: visibility.userIds,
     } as any, {
       onSuccess: () => {
-        setNewTask({ title: "", description: "", assignee: "", category: "Daily Living", due_date: "" });
+        setNewTask({ title: "", description: "", assigneeIds: [], due_date: "" });
         setVisibility(EMPTY_VISIBILITY);
         setAddOpen(false); toast({ title: "Task added" });
       },
     });
+  };
+
+  const toggleAssignee = (memberId: string) => {
+    setNewTask((prev) => ({
+      ...prev,
+      assigneeIds: prev.assigneeIds.includes(memberId)
+        ? prev.assigneeIds.filter((id) => id !== memberId)
+        : [...prev.assigneeIds, memberId],
+    }));
+  };
+
+  const getAssignedNames = (task: any) => {
+    const ids = Array.isArray(task.assigned_to_ids) ? task.assigned_to_ids : task.assigned_to ? [task.assigned_to] : [];
+    return ids
+      .map((id: string) => (members || []).find((m: any) => m.user_id === id || `wp-${m.id}` === id))
+      .filter(Boolean)
+      .map((m: any) => m.display_name || m.profile?.full_name || "Member");
   };
 
   return (
@@ -77,25 +93,20 @@ export function TasksTab({
               <div><Label>Task Title *</Label><Input value={newTask.title} onChange={e => setNewTask(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Pick up medication" /></div>
               <div><Label>Description</Label><Textarea value={newTask.description} onChange={e => setNewTask(p => ({ ...p, description: e.target.value }))} placeholder="Details..." rows={2} /></div>
               <div className="grid grid-cols-2 gap-3">
-                <div><Label>Category</Label>
-                  <Select value={newTask.category} onValueChange={v => setNewTask(p => ({ ...p, category: v }))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {["Daily Living", "Medical", "Transportation", "Meals", "Errands", "Appointments", "Emotional Support", "Other"].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
                 <div><Label>Due Date</Label><Input type="date" value={newTask.due_date} onChange={e => setNewTask(p => ({ ...p, due_date: e.target.value }))} /></div>
                 <div><Label>Assign To</Label>
-                  <Select value={newTask.assignee || "unassigned"} onValueChange={v => setNewTask(p => ({ ...p, assignee: v === "unassigned" ? "" : v }))}>
-                    <SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="unassigned">Unassigned</SelectItem>
-                      {(members || []).map((m: any) => <SelectItem key={m.user_id} value={m.user_id || `member-${m.id}`}>{m.profile?.full_name || "Member"}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <div className="mt-2 max-h-32 overflow-auto rounded-md border p-2 space-y-2">
+                    {(members || []).map((m: any) => {
+                      const memberId = m.user_id || `wp-${m.id}`;
+                      return (
+                        <label key={memberId} className="flex items-center gap-2 text-sm cursor-pointer">
+                          <Checkbox checked={newTask.assigneeIds.includes(memberId)} onCheckedChange={() => toggleAssignee(memberId)} />
+                          <span>{m.display_name || m.profile?.full_name || "Member"}</span>
+                        </label>
+                      );
+                    })}
+                    {(members || []).length === 0 && <p className="text-xs text-muted-foreground">No members available</p>}
+                  </div>
                 </div>
               </div>
               <div><Label>Visibility</Label><VisibilityPicker value={visibility} onChange={setVisibility} memberCategories={memberCategories} members={members} /></div>
@@ -119,9 +130,8 @@ export function TasksTab({
                 <div className="flex-1 min-w-0 cursor-pointer" onClick={() => toggleTask(t.id, t.status)}>
                   <p className="text-sm font-medium text-foreground">{t.title}</p>
                   <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    {t.assignee_profile?.full_name && <span className="text-xs text-muted-foreground">{t.assignee_profile.full_name}</span>}
+                    {getAssignedNames(t).length > 0 && <span className="text-xs text-muted-foreground">{getAssignedNames(t).join(", ")}</span>}
                     {t.due_date && <span className="text-xs text-muted-foreground">Due: {new Date(t.due_date).toLocaleDateString("en", { month: "short", day: "numeric" })}</span>}
-                    {t.category && <Badge variant="outline" className="text-[10px] h-4">{t.category}</Badge>}
                   </div>
                 </div>
                 <Badge variant="outline" className={statusColors[t.status] || ""}>{t.status || "pending"}</Badge>
