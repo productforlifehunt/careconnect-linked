@@ -390,7 +390,7 @@ export function useCreateCareGroup() {
 export function useInviteToGroup() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ groupId, userId, role }: { groupId: string; userId: string; role?: string }) => inviteToGroupWordPress(groupId, userId, role),
+    mutationFn: ({ groupId, userId, email, role }: { groupId: string; userId?: string; email?: string; role?: string }) => inviteToGroupWordPress(groupId, userId || email || "", role),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["careGroupMembers"] }); qc.invalidateQueries({ queryKey: ["groupInvitations"] }); },
   });
 }
@@ -398,7 +398,7 @@ export function useInviteToGroup() {
 export function useUpdateMemberRole() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ memberId, role }: { memberId: string; role: string }) => updateMemberRoleWordPress(memberId, role),
+    mutationFn: ({ memberId, groupId, role, updates }: { memberId: string; groupId?: string; role?: string; updates?: Record<string, any> }) => updateMemberRoleWordPress(memberId, updates ?? role ?? {}, groupId),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["careGroupMembers"] }); },
   });
 }
