@@ -517,7 +517,7 @@ export function useSubmitProviderApplication() {
     mutationFn: async (input: any) => {
       return updateProfileWordPress({
         is_care_provider: true,
-        care_provider_is_active: true,
+        provider_is_active: true,
         specialty: input.specialties || input.specialty || [],
         certifications: input.certifications || [],
         care_provider_starts_hourly_rate: input.hourlyRate || input.care_provider_starts_hourly_rate || 0,
