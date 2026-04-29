@@ -161,34 +161,25 @@ export async function fetchMyPendingInvitationsWordPress(): Promise<any[]> {
     const wpUser = getStoredWPUser();
     if (!wpUser?.user_id) return [];
     const userId = Number(wpUser.user_id);
-    const userEmail = wpUser.user_email || "";
-    const invites = await wordpressCCTFetch<any[]>("care_group_invite", {
-      params: { _limit: 200 },
-    });
-    if (!Array.isArray(invites)) return [];
-    return invites
-      .filter((i: any) => {
-        if (i.status !== "pending") return false;
-        return Number(i.invitee_user_id) === userId || (userEmail && i.invitee_email === userEmail);
-      })
-      .map((i: any) => ({
-        id: String(i.id || i._ID || ""),
-        group_id: i.care_group_id ? String(i.care_group_id) : null,
-        user_id: i.invitee_user_id ? `wp-${i.invitee_user_id}` : null,
+    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/parents/${userId}`);
+    return (Array.isArray(rels) ? rels : [])
+      .filter((r: any) => r?.meta?.care_groups_member_invitation_status === "pending")
+      .map((r: any) => ({
+        id: `${r.parent_object_id}:${userId}`,
+        group_id: r.parent_object_id ? String(r.parent_object_id) : null,
+        user_id: `wp-${userId}`,
         role: "member",
         invitation_status: "pending",
-        created_at: i.created_at,
-        group: i.care_group_id ? { id: String(i.care_group_id), name: i.group_name || "Care Group" } : null,
+        created_at: null,
+        group: r.parent_object_id ? { id: String(r.parent_object_id), name: "Care Group" } : null,
       }));
   } catch { return []; }
 }
 
 export async function acceptInvitationWordPress(invitationId: string): Promise<void> {
-  // Mark invite accepted, then add user to group via rel 72
-  const invite = await wordpressCCTFetch<any>("care_group_invite", { id: invitationId });
-  await wordpressCCTFetch("care_group_invite", { id: invitationId, method: "PUT", body: { status: "accepted" } });
-  const groupId = normalizeWpObjectId(invite?.care_group_id);
-  const userId = normalizeWpObjectId(invite?.invitee_user_id) || (getStoredWPUser()?.user_id ? Number(getStoredWPUser()!.user_id) : 0);
+  const [groupPart, userPart] = invitationId.split(":");
+  const groupId = normalizeWpObjectId(groupPart);
+  const userId = normalizeWpObjectId(userPart) || (getStoredWPUser()?.user_id ? Number(getStoredWPUser()!.user_id) : 0);
   if (groupId && userId) {
     await wordpressFetch(`jet-rel/${REL_GROUP_MEMBER}`, {
       method: "POST",
@@ -197,14 +188,21 @@ export async function acceptInvitationWordPress(invitationId: string): Promise<v
         child_id: userId,
         context: "child",
         store_items_type: "update",
-        meta: { care_groups_member_types: "member" },
+        meta: memberMeta({ invitationStatus: "accepted" }),
       },
     });
   }
 }
 
 export async function declineInvitationWordPress(invitationId: string): Promise<void> {
-  await wordpressCCTFetch("care_group_invite", { id: invitationId, method: "PUT", body: { status: "declined" } });
+  const [groupPart, userPart] = invitationId.split(":");
+  const groupId = normalizeWpObjectId(groupPart);
+  const userId = normalizeWpObjectId(userPart);
+  if (!groupId || !userId) return;
+  await wordpressFetch(`jet-rel/${REL_GROUP_MEMBER}`, {
+    method: "POST",
+    body: { parent_id: groupId, child_id: userId, context: "child", store_items_type: "update", meta: memberMeta({ invitationStatus: "declined" }) },
+  });
 }
 
 // ─── Member Roles & Removal ─────────────────────────────────
