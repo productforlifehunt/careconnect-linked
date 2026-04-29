@@ -41,7 +41,7 @@ function wpUserToProfile(wp: WPUser): Profile {
     bio: null,
     general_user_role: null,
     is_care_provider: false,
-    care_provider_is_active: false,
+    provider_is_active: false,
     care_provider_is_background_checked: false,
     care_provider_background_check_detail: null,
     care_provider_starts_hourly_rate: null,
