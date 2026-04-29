@@ -3,7 +3,6 @@ import { getStoredWPUser } from "@/services/wp-auth";
 
 // Live JetEngine relations (verified from prd-to-wp-mapping.md)
 const REL_GROUP_MEMBER = 72;          // M:M  care_group → users
-const REL_GROUP_INVITE = 45;          // 1:M  care_group → care_group_invite
 const REL_GROUP_GALLERY = 46;         // 1:M  care_group → care_group_gallery
 const REL_GROUP_SUBGROUP = 47;        // 1:M  care_group → care_group_private_member_group
 const REL_GROUP_POST = 77;            // 1:M  care_group → care_group_not_too_special_post
@@ -120,7 +119,7 @@ export async function inviteToGroupWordPress(groupId: string, userIdOrEmail: str
   const normalizedGroupId = normalizeWpObjectId(groupId);
   const childId = isEmail ? 0 : normalizeWpObjectId(userIdOrEmail);
   if (normalizedGroupId && childId) {
-    await wordpressFetch(`jet-rel/${REL_GROUP_INVITE}`, {
+    await wordpressFetch(`jet-rel/${REL_GROUP_MEMBER}`, {
       method: "POST",
       body: {
         parent_id: normalizedGroupId,
@@ -137,22 +136,24 @@ export async function inviteToGroupWordPress(groupId: string, userIdOrEmail: str
 
 export async function fetchGroupInvitationsWordPress(groupId: string): Promise<any[]> {
   try {
-    const invites = await fetchRelatedCctItems(REL_GROUP_INVITE, groupId, "care_group_invite");
-    return invites.map((i: any) => ({
-      id: String(i.id || i._ID || ""),
-      group_id: groupId,
-      user_id: i.invitee_user_id ? `wp-${i.invitee_user_id}` : null,
-      role: "member",
-      invitation_status: i.status || "pending",
-      invited_email: i.invitee_email || null,
-      invited_by: i.invited_by_user_id ? `wp-${i.invited_by_user_id}` : null,
-      created_at: i.created_at,
-    }));
+    const normalizedGroupId = normalizeWpObjectId(groupId);
+    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${normalizedGroupId}`);
+    return (Array.isArray(rels) ? rels : [])
+      .filter((r: any) => r?.meta?.care_groups_member_invitation_status === "pending")
+      .map((r: any) => ({
+        id: `${normalizedGroupId}:${r.child_object_id}`,
+        group_id: groupId,
+        user_id: `wp-${r.child_object_id}`,
+        role: "nothing special",
+        invitation_status: "pending",
+        invited_email: null,
+        created_at: null,
+      }));
   } catch { return []; }
 }
 
 export async function cancelInvitationWordPress(invitationId: string): Promise<void> {
-  await wordpressCCTFetch("care_group_invite", { id: invitationId, method: "DELETE" });
+  await declineInvitationWordPress(invitationId);
 }
 
 export async function fetchMyPendingInvitationsWordPress(): Promise<any[]> {
