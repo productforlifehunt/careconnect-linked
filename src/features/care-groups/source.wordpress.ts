@@ -9,6 +9,12 @@ function normalizeWpObjectId(value: string | number | null | undefined): number 
   return Number(String(value ?? "").replace(/^wp-/, ""));
 }
 
+function normalizeMetaList(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map(String).filter(Boolean);
+  if (typeof value === "string") return value.split(",").map((s) => s.trim()).filter(Boolean);
+  return [];
+}
+
 // CCT slug: care_group | fields: name, description, group_type, join_code, is_active, avatar_url
 export async function fetchCareGroupsWordPress(): Promise<CareGroup[]> {
   try {
@@ -21,8 +27,7 @@ export async function fetchCareGroupsWordPress(): Promise<CareGroup[]> {
       is_private: g.group_type === "private",
       group_type: g.group_type || "public",
       invite_code: g.join_code || null,
-      avatar_url: g.avatar_url || null,
-      is_active: g.is_active === "active" || g.is_active === true || g.is_active === "yes",
+      is_active: g.is_active === "active" || g.is_active === "Active" || g.is_active === true || g.is_active === "yes",
       created_by: g.author_id ? `wp-${g.author_id}` : null,
       created_at: g.created_at,
     })) as unknown as CareGroup[];
@@ -43,18 +48,25 @@ export async function fetchCareGroupMembersWordPress(groupId: string): Promise<a
         try {
           const u = await wordpressFetch<any>(`wp/v2/users/${uid}`);
           const rel = rels.find((r: any) => Number(r.child_object_id) === uid);
-          const roleMeta = rel?.meta?.care_groups_member_types;
-          const isOwner = roleMeta === "owner";
-          const isAdmin = roleMeta === "admin" || isOwner;
+          const memberTypes = normalizeMetaList(rel?.meta?.care_groups_member_types);
+          const memberRoles = normalizeMetaList(rel?.meta?.care_groups_member_roles);
+          const displayName = rel?.meta?.care_groups_member_display_name_ || u.name || u.slug || "Member";
+          const invitationStatus = rel?.meta?.care_groups_member_invitation_status || "accepted";
+          const isOwner = memberTypes.includes("owner");
+          const isAdmin = memberTypes.includes("admin") || isOwner;
           return {
             id: String(uid),
             user_id: `wp-${uid}`,
             group_id: groupId,
-            role: roleMeta || "member",
+            display_name: displayName,
+            member_types: memberTypes.length ? memberTypes : ["nothing special"],
+            member_roles: memberRoles.length ? memberRoles : ["nothing special"],
+            role: isOwner ? "owner" : isAdmin ? "admin" : "nothing special",
             is_admin: isAdmin,
             is_owner: isOwner,
-            invitation_status: "accepted",
-            profile: { id: `wp-${uid}`, full_name: u.name || u.slug, avatar_url: u.avatar_urls?.["96"] || null },
+            is_cared_one: memberRoles.includes("cared one"),
+            invitation_status: invitationStatus,
+            profile: { id: `wp-${uid}`, full_name: displayName, email: u.email || null, avatar_url: u.avatar_urls?.["96"] || null },
           };
         } catch { return null; }
       })
@@ -88,7 +100,12 @@ export async function createCareGroupWordPress(group: { name: string; descriptio
           child_id: userId,
           context: "child",
           store_items_type: "update",
-          meta: { care_groups_member_types: "owner" },
+          meta: {
+            care_groups_member_types: ["owner", "admin"],
+            care_groups_member_roles: ["nothing special"],
+            care_groups_member_display_name_: wpUser.user_display_name || wpUser.user_login || "Owner",
+            care_groups_member_invitation_status: "accepted",
+          },
         },
       });
     } catch (e) {
