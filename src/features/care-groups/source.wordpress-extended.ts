@@ -281,7 +281,12 @@ export async function joinGroupByCodeWordPress(code: string): Promise<any> {
           child_id: userId,
           context: "child",
           store_items_type: "update",
-          meta: { care_groups_member_types: "member" },
+          meta: memberMeta({
+            displayName: wpUser.user_display_name || wpUser.user_login || "Member",
+            memberTypes: ["nothing special"],
+            memberRoles: ["nothing special"],
+            invitationStatus: "accepted",
+          }),
         },
       });
     }
@@ -432,7 +437,7 @@ export async function addCaredOneToGroupWordPress(groupId: string, caredOneId: s
       child_id: normalizedCaredOneId,
       context: "child",
       store_items_type: "update",
-      meta: { care_groups_member_types: "cared_one" },
+      meta: memberMeta({ memberTypes: ["nothing special"], memberRoles: ["cared one"], invitationStatus: "accepted" }),
     },
   });
 }
