@@ -119,8 +119,8 @@ export async function createNotificationWordPress(input: {
   });
 
   const newId = created?.item_id ?? created?._ID ?? created?.id;
-  if (newId) {
-    // Link notification → user via Relation 148 (parent=user, child=notification)
+  if (newId && REL_USER_NOTIFICATION) {
+    // Link notification → user via configured relation (parent=user, child=notification)
     try {
       await wordpressFetch(`jet-rel/${REL_USER_NOTIFICATION}`, {
         method: "POST",
