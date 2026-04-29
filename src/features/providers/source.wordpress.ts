@@ -3,6 +3,10 @@ import type { Profile } from "@/types/care-connector";
 import { getWordPressFeature, listWordPressFeature } from "@/features/shared/wordpress-adapter";
 import { fetchAllProviderProductSummaries } from "@/services/woocommerce-api";
 
+function isActivePaidProvider(profile: Profile): boolean {
+  return profile.is_care_provider === true && profile.provider_is_active === true;
+}
+
 export interface ProviderFilters {
   query?: string;
   specialties?: string[];
@@ -32,7 +36,7 @@ export async function fetchProvidersWordPress(filters?: ProviderFilters): Promis
       fetchAllProviderProductSummaries().catch(() => new Map()),
     ]);
 
-    let results: Profile[] = (storeResults || []).map((p) => {
+    let results: Profile[] = (storeResults || []).filter(isActivePaidProvider).map((p) => {
       const summary = productSummaries.get(String(p.id));
       if (!summary) return p;
       return {
