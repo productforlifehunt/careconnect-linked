@@ -27,7 +27,6 @@ export type WordPressFeatureKey =
   | "care_group_member"
   | "care_group_posts"
   | "care_group_galleries"
-  | "care_group_invites"
   | "member_categories"
   | "cared_ones"
   | "cared_one"
@@ -611,17 +610,6 @@ export const wordpressSchema: Record<WordPressFeatureKey, WordPressSchemaEntry<a
     endpoint: "wp/v2/care_group_gallery",
     defaultParams: { per_page: 50 },
     mapList: (items: WPPostEntity[]) => (Array.isArray(items) ? items.map(mapAcfPost) : []),
-  },
-  care_group_invites: {
-    status: "confirmed",
-    endpoint: "wp/v2/care_group_invite",
-    defaultParams: { per_page: 50 },
-    mapList: (items: WPPostEntity[]) => (Array.isArray(items) ? items.map(mapAcfPost) : []),
-    buildCreateBody: (input: { invitee_email: string }) => ({
-      title: "Group Invite",
-      status: "publish",
-      acf: { invitee_email: input.invitee_email, status: "pending" },
-    }),
   },
   member_categories: {
     status: "confirmed",
