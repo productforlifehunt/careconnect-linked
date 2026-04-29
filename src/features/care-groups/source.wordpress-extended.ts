@@ -9,6 +9,20 @@ const REL_GROUP_SUBGROUP = 47;        // 1:M  care_group → care_group_private_
 const REL_GROUP_POST = 77;            // 1:M  care_group → care_group_not_too_special_post
 const REL_SUBGROUP_MEMBERS = 75;      // M:M  care_group_private_member_group → users
 
+function memberMeta(input: {
+  displayName?: string;
+  memberTypes?: string[];
+  memberRoles?: string[];
+  invitationStatus?: "accepted" | "pending" | "declined";
+} = {}) {
+  return {
+    care_groups_member_display_name_: input.displayName || "Member",
+    care_groups_member_types: input.memberTypes?.length ? input.memberTypes : ["nothing special"],
+    care_groups_member_roles: input.memberRoles?.length ? input.memberRoles : ["nothing special"],
+    care_groups_member_invitation_status: input.invitationStatus || "accepted",
+  };
+}
+
 function normalizeWpObjectId(value: string | number | null | undefined): number {
   return Number(String(value ?? "").replace(/^wp-/, ""));
 }
@@ -100,31 +114,25 @@ export async function deleteCareGroupWordPress(id: string): Promise<void> {
 }
 
 // ─── Invitations ────────────────────────────────────────────
-// CCT slug: care_group_invite | fields: care_group_id, invited_by_user_id, invitee_email, invitee_user_id, status, group_name
-// Linked via JetEngine relation 45 (care_group → care_group_invite)
+// Dictionary source of truth: invitation state lives on Rel 72 meta, not a separate CCT.
 export async function inviteToGroupWordPress(groupId: string, userIdOrEmail: string, _role?: string): Promise<void> {
-  const wpUser = getStoredWPUser();
-  const inviterId = wpUser?.user_id ? Number(wpUser.user_id) : null;
   const isEmail = userIdOrEmail.includes("@");
   const normalizedGroupId = normalizeWpObjectId(groupId);
-
-  const created = await wordpressCCTFetch<any>("care_group_invite", {
-    method: "POST",
-    body: {
-      care_group_id: normalizedGroupId,
-      invited_by_user_id: inviterId,
-      invitee_email: isEmail ? userIdOrEmail : "",
-      invitee_user_id: isEmail ? null : normalizeWpObjectId(userIdOrEmail),
-      status: "pending",
-    },
-  });
-  const childId = normalizeWpObjectId(created?.item_id || created?._ID || created?.id);
+  const childId = isEmail ? 0 : normalizeWpObjectId(userIdOrEmail);
   if (normalizedGroupId && childId) {
     await wordpressFetch(`jet-rel/${REL_GROUP_INVITE}`, {
       method: "POST",
-      body: { parent_id: normalizedGroupId, child_id: childId, context: "child", store_items_type: "update" },
+      body: {
+        parent_id: normalizedGroupId,
+        child_id: childId,
+        context: "child",
+        store_items_type: "update",
+        meta: memberMeta({ invitationStatus: "pending" }),
+      },
     });
+    return;
   }
+  throw new Error(isEmail ? "Dictionary requires group invitations through Users relation. Select an existing user, not email-only invite." : "Invalid user");
 }
 
 export async function fetchGroupInvitationsWordPress(groupId: string): Promise<any[]> {
