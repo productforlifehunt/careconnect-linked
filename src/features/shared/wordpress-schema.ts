@@ -27,7 +27,6 @@ export type WordPressFeatureKey =
   | "care_group_member"
   | "care_group_posts"
   | "care_group_galleries"
-  | "care_group_invites"
   | "member_categories"
   | "cared_ones"
   | "cared_one"
@@ -245,6 +244,24 @@ interface WPChatMessageEntity {
   acf?: { conversation_id?: number; sender_id?: number; sender_name?: string; sender_avatar?: string };
 }
 
+function parseWpBoolean(value: unknown, fallback = false): boolean {
+  if (value === true || value === 1) return true;
+  if (typeof value === "string") return ["yes", "true", "1", "active", "Active"].includes(value);
+  return fallback;
+}
+
+function parseWpList(value: unknown): string[] | null {
+  if (Array.isArray(value)) return value.map(String).filter(Boolean);
+  if (typeof value === "string" && value.trim()) {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) return parsed.map(String).filter(Boolean);
+    } catch {}
+    return value.split(",").map((s) => s.trim()).filter(Boolean);
+  }
+  return null;
+}
+
 function mapDokanStoreToProfile(store: WPDokanStore): Profile {
   const addr = store.address;
   const addrStr = addr ? [addr.street_1, addr.city, addr.state].filter(Boolean).join(", ") : null;
@@ -317,18 +334,18 @@ function mapWPUserToProfile(user: WPUserEntity, cctData?: any): Profile {
     user_name: user.slug || null,
     avatar_url: user.avatar_urls?.["96"] || user.avatar_urls?.["48"] || null,
     bio: user.description || null,
-    // CCT extended profile fields (merged from jet-cct/users_extended_prof)
-    general_user_role: cctData?.general_user_role ? (typeof cctData.general_user_role === 'string' ? cctData.general_user_role.split(',').map((s: string) => s.trim()) : cctData.general_user_role) : null,
-    is_care_provider: cctData?.is_care_provider === 'yes' || cctData?.is_care_provider === true || false,
-    provider_is_active: cctData?.provider_is_active === 'yes' || cctData?.provider_is_active === true || false,
-    care_provider_is_background_checked: cctData?.care_provider_is_background_checked === 'yes' || cctData?.care_provider_is_background_checked === true || false,
+    // CCT extended profile fields from dictionary slug users_extended_prof.
+    general_user_role: parseWpList(cctData?.general_user_role),
+    is_care_provider: parseWpBoolean(cctData?.is_care_provider),
+    provider_is_active: parseWpBoolean(cctData?.provider_is_active),
+    care_provider_is_background_checked: parseWpBoolean(cctData?.care_provider_is_background_checked),
     care_provider_background_check_detail: cctData?.care_provider_background_check_detail || null,
     care_provider_starts_hourly_rate: cctData?.care_provider_starts_hourly_rate ? parseFloat(cctData.care_provider_starts_hourly_rate) : null,
     phone: cctData?.phone || null,
     location: cctData?.location || null,
     years_of_experience: cctData?.years_of_experience ? parseInt(cctData.years_of_experience) : null,
-    certifications: cctData?.certifications ? (typeof cctData.certifications === 'string' ? JSON.parse(cctData.certifications || '[]') : cctData.certifications) : null,
-    specialty: cctData?.specialty ? (typeof cctData.specialty === 'string' ? JSON.parse(cctData.specialty || '[]') : cctData.specialty) : null,
+    certifications: parseWpList(cctData?.certifications),
+    specialty: parseWpList(cctData?.specialty),
     rating_average: null,
     rating_count: null,
     created_at: cctData?.cct_created || new Date().toISOString(),
@@ -593,17 +610,6 @@ export const wordpressSchema: Record<WordPressFeatureKey, WordPressSchemaEntry<a
     endpoint: "wp/v2/care_group_gallery",
     defaultParams: { per_page: 50 },
     mapList: (items: WPPostEntity[]) => (Array.isArray(items) ? items.map(mapAcfPost) : []),
-  },
-  care_group_invites: {
-    status: "confirmed",
-    endpoint: "wp/v2/care_group_invite",
-    defaultParams: { per_page: 50 },
-    mapList: (items: WPPostEntity[]) => (Array.isArray(items) ? items.map(mapAcfPost) : []),
-    buildCreateBody: (input: { invitee_email: string }) => ({
-      title: "Group Invite",
-      status: "publish",
-      acf: { invitee_email: input.invitee_email, status: "pending" },
-    }),
   },
   member_categories: {
     status: "confirmed",

@@ -30,7 +30,7 @@ async function fetchCaredOneId(taskId: string): Promise<string | null> {
   } catch { return null; }
 }
 
-// CCT slug: universal_care_task | fields: title, description, status, category, due_date, completed_at
+// CCT slug: universal_care_task | fields: title, description, status, due_date, completed_at
 export async function fetchCareTasksWordPress(groupId?: string | null): Promise<any[]> {
   try {
     const taskIds = groupId

@@ -141,11 +141,11 @@ function AppRoutes() {
 }
 
 const App = () => (
-  <SiteProvider>
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <AuthProvider>
+  <AuthProvider>
+    <SiteProvider>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
             <Toaster />
             <Sonner />
             <BrowserRouter>
@@ -155,11 +155,11 @@ const App = () => (
                 </ErrorBoundary>
               </AppLayout>
             </BrowserRouter>
-          </AuthProvider>
-        </TooltipProvider>
-      </QueryClientProvider>
-    </ThemeProvider>
-  </SiteProvider>
+          </TooltipProvider>
+        </QueryClientProvider>
+      </ThemeProvider>
+    </SiteProvider>
+  </AuthProvider>
 );
 
 export default App;

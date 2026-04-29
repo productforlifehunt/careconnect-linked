@@ -1,7 +1,71 @@
 import type { Profile } from "@/types/care-connector";
 
 import { getWordPressFeature, listWordPressFeature } from "@/features/shared/wordpress-adapter";
+import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 import { fetchAllProviderProductSummaries } from "@/services/woocommerce-api";
+
+function isActivePaidProvider(profile: Profile): boolean {
+  return profile.is_care_provider === true && profile.provider_is_active === true;
+}
+
+function parseWpBoolean(value: unknown): boolean {
+  return value === true || value === 1 || (typeof value === "string" && ["yes", "true", "1", "active", "Active"].includes(value));
+}
+
+function parseWpList(value: unknown): string[] | null {
+  if (Array.isArray(value)) return value.map(String).filter(Boolean);
+  if (typeof value === "string" && value.trim()) {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) return parsed.map(String).filter(Boolean);
+    } catch {}
+    return value.split(",").map((s) => s.trim()).filter(Boolean);
+  }
+  return null;
+}
+
+async function fetchDictionaryProviderProfiles(): Promise<Profile[]> {
+  const rows = await wordpressCCTFetch<any[]>("users_extended_prof", { params: { _limit: 200 } });
+  const activeRows = (Array.isArray(rows) ? rows : []).filter(
+    (row) => parseWpBoolean(row.is_care_provider) && parseWpBoolean(row.provider_is_active),
+  );
+
+  const profiles = await Promise.all(activeRows.map(async (row) => {
+    const userId = Number(row.author_id || row.cct_author_id || row.user_id);
+    if (!userId) return null;
+    let user: any = null;
+    try { user = await wordpressFetch<any>(`wp/v2/users/${userId}`); } catch {}
+    const fullName = user?.name || row.full_name || row.name || row.user_name || "Provider";
+    return {
+      id: `wp-${userId}`,
+      user_id: `wp-${userId}`,
+      email: user?.email || row.email || null,
+      first_name: user?.first_name || null,
+      last_name: user?.last_name || null,
+      full_name: fullName,
+      user_name: user?.slug || row.user_name || null,
+      avatar_url: user?.avatar_urls?.["96"] || user?.avatar_urls?.["48"] || row.avatar_url || null,
+      bio: user?.description || row.bio || null,
+      general_user_role: parseWpList(row.general_user_role),
+      is_care_provider: true,
+      provider_is_active: true,
+      care_provider_is_background_checked: parseWpBoolean(row.care_provider_is_background_checked),
+      care_provider_background_check_detail: row.care_provider_background_check_detail || null,
+      care_provider_starts_hourly_rate: row.care_provider_starts_hourly_rate ? parseFloat(row.care_provider_starts_hourly_rate) : null,
+      phone: row.phone || null,
+      location: row.location || null,
+      years_of_experience: row.years_of_experience ? parseInt(row.years_of_experience, 10) : null,
+      certifications: parseWpList(row.certifications),
+      specialty: parseWpList(row.specialty),
+      rating_average: null,
+      rating_count: null,
+      created_at: row.created_at || new Date().toISOString(),
+      updated_at: row.updated_at || row.created_at || new Date().toISOString(),
+    } satisfies Profile;
+  }));
+
+  return profiles.filter(Boolean) as Profile[];
+}
 
 export interface ProviderFilters {
   query?: string;
@@ -27,13 +91,20 @@ export async function fetchProvidersWordPress(filters?: ProviderFilters): Promis
     // the product summaries hydrate each provider card with min_block_cost +
     // pa_service-type / pa_service-location attribute slugs so we can filter
     // against the real package catalogue (not the stale CCT hourly_rate).
-    const [storeResults, productSummaries] = await Promise.all([
-      listWordPressFeature<Profile[]>("providers", { params }),
+    const [dictionaryProfiles, storeResults, productSummaries] = await Promise.all([
+      fetchDictionaryProviderProfiles().catch(() => []),
+      listWordPressFeature<Profile[]>("providers", { params }).catch(() => []),
       fetchAllProviderProductSummaries().catch(() => new Map()),
     ]);
 
-    let results: Profile[] = (storeResults || []).map((p) => {
-      const summary = productSummaries.get(String(p.id));
+    const activeProfileIds = new Set(dictionaryProfiles.map((p) => String(p.id).replace(/^wp-/, "")));
+    const sourceProfiles = dictionaryProfiles.length > 0
+      ? dictionaryProfiles
+      : (storeResults || []).filter(isActivePaidProvider);
+
+    let results: Profile[] = sourceProfiles.map((p) => {
+      const numericId = String(p.id).replace(/^wp-/, "");
+      const summary = productSummaries.get(String(p.id)) || productSummaries.get(numericId) || productSummaries.get(String(p.user_id || "").replace(/^wp-/, ""));
       if (!summary) return p;
       return {
         ...p,
@@ -46,6 +117,15 @@ export async function fetchProvidersWordPress(filters?: ProviderFilters): Promis
           summary.minBlockCost > 0 ? summary.minBlockCost : p.care_provider_starts_hourly_rate,
       };
     });
+
+    if (dictionaryProfiles.length > 0) {
+      results = results.filter((p) => activeProfileIds.has(String(p.id).replace(/^wp-/, "")));
+    }
+
+    if (filters?.query) {
+      const q = filters.query.toLowerCase();
+      results = results.filter((p) => [p.full_name, p.user_name, p.bio, p.location, ...(p.specialty || [])].some((v) => String(v || "").toLowerCase().includes(q)));
+    }
 
     // Client-side filtering for fields Dokan API doesn't natively filter
     if (filters?.location) {

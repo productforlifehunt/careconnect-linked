@@ -15,7 +15,7 @@ function normalizeMetaList(value: unknown): string[] {
   return [];
 }
 
-// CCT slug: care_group | fields: name, description, group_type, join_code, is_active, avatar_url
+// CCT slug: care_group | fields: name, description, group_type, join_code, is_active
 export async function fetchCareGroupsWordPress(): Promise<CareGroup[]> {
   try {
     const groups = await wordpressCCTFetch<any[]>("care_group", { params: { _limit: 50 } });

@@ -104,13 +104,12 @@ export async function deleteGroupPostWordPress(id: string): Promise<void> {
 }
 
 // ─── Group Settings ─────────────────────────────────────────
-// CCT slug: care_group | fields: name, description, group_type, join_code, is_active, avatar_url
-export async function updateCareGroupWordPress(id: string, updates: { name?: string; description?: string; is_private?: boolean; avatar_url?: string }): Promise<void> {
+// CCT slug: care_group | fields: name, description, group_type, join_code, is_active
+export async function updateCareGroupWordPress(id: string, updates: { name?: string; description?: string; is_private?: boolean }): Promise<void> {
   const body: Record<string, any> = {};
   if (updates.name !== undefined) body.name = updates.name;
   if (updates.description !== undefined) body.description = updates.description;
   if (updates.is_private !== undefined) body.group_type = updates.is_private ? "private" : "public";
-  if (updates.avatar_url !== undefined) body.avatar_url = updates.avatar_url;
   await wordpressCCTFetch("care_group", { id, method: "PUT", body });
 }
 

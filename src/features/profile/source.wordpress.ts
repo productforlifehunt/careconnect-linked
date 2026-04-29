@@ -3,6 +3,24 @@ import { getWordPressFeature, updateWordPressFeature } from "@/features/shared/w
 import { wordpressFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
 
+function parseWpBoolean(value: unknown, fallback = false): boolean {
+  if (value === true || value === 1) return true;
+  if (typeof value === "string") return ["yes", "true", "1", "active", "Active"].includes(value);
+  return fallback;
+}
+
+function parseWpList(value: unknown): string[] | null {
+  if (Array.isArray(value)) return value.map(String).filter(Boolean);
+  if (typeof value === "string" && value.trim()) {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) return parsed.map(String).filter(Boolean);
+    } catch {}
+    return value.split(",").map((s) => s.trim()).filter(Boolean);
+  }
+  return null;
+}
+
 /**
  * Fetch profile by merging WP user data + CCT extended profile data.
  * 1. GET wp/v2/users/me → core user fields
@@ -32,19 +50,17 @@ export async function fetchMyProfileWordPress(): Promise<Profile | null> {
 
     // Step 3: Merge CCT data into profile
     if (cctData) {
-      wpProfile.general_user_role = cctData.general_user_role
-        ? (typeof cctData.general_user_role === 'string' ? cctData.general_user_role.split(',').map((s: string) => s.trim()) : cctData.general_user_role)
-        : wpProfile.general_user_role;
-      wpProfile.is_care_provider = cctData.is_care_provider === 'yes' || cctData.is_care_provider === true || wpProfile.is_care_provider;
-      wpProfile.provider_is_active = cctData.provider_is_active === 'yes' || cctData.provider_is_active === true || wpProfile.provider_is_active;
-      wpProfile.care_provider_is_background_checked = cctData.care_provider_is_background_checked === 'yes' || cctData.care_provider_is_background_checked === true || wpProfile.care_provider_is_background_checked;
+      wpProfile.general_user_role = parseWpList(cctData.general_user_role) || wpProfile.general_user_role;
+      wpProfile.is_care_provider = parseWpBoolean(cctData.is_care_provider, wpProfile.is_care_provider);
+      wpProfile.provider_is_active = parseWpBoolean(cctData.provider_is_active, wpProfile.provider_is_active);
+      wpProfile.care_provider_is_background_checked = parseWpBoolean(cctData.care_provider_is_background_checked, wpProfile.care_provider_is_background_checked);
       wpProfile.care_provider_background_check_detail = cctData.care_provider_background_check_detail || wpProfile.care_provider_background_check_detail;
       wpProfile.care_provider_starts_hourly_rate = cctData.care_provider_starts_hourly_rate ? parseFloat(cctData.care_provider_starts_hourly_rate) : wpProfile.care_provider_starts_hourly_rate;
       wpProfile.phone = cctData.phone || wpProfile.phone;
       wpProfile.location = cctData.location || wpProfile.location;
       wpProfile.years_of_experience = cctData.years_of_experience ? parseInt(cctData.years_of_experience) : wpProfile.years_of_experience;
-      wpProfile.certifications = cctData.certifications ? (typeof cctData.certifications === 'string' ? JSON.parse(cctData.certifications || '[]') : cctData.certifications) : wpProfile.certifications;
-      wpProfile.specialty = cctData.specialty ? (typeof cctData.specialty === 'string' ? JSON.parse(cctData.specialty || '[]') : cctData.specialty) : wpProfile.specialty;
+      wpProfile.certifications = parseWpList(cctData.certifications) || wpProfile.certifications;
+      wpProfile.specialty = parseWpList(cctData.specialty) || wpProfile.specialty;
     }
 
     return wpProfile;
