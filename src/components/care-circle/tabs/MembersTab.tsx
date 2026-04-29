@@ -43,7 +43,7 @@ export function MembersTab({
 
   const handleInvite = () => {
     if (!inviteEmail.trim() || !activeGroupId) return;
-    inviteToGroup.mutate({ groupId: activeGroupId, email: inviteEmail }, {
+    inviteToGroup.mutate({ groupId: activeGroupId, userId: inviteEmail }, {
       onSuccess: () => { setInviteEmail(""); toast({ title: "Invitation sent!" }); },
       onError: (err: any) => toast({ title: "Failed to invite", description: err.message, variant: "destructive" }),
     });
@@ -154,7 +154,7 @@ export function MembersTab({
                       {m.profile?.avatar_url ? <img src={m.profile.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" /> : <span className="text-primary font-medium">{(m.profile?.full_name || "?")[0]}</span>}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-foreground">{m.profile?.full_name || "Member"}</p>
+                      <p className="text-sm font-medium text-foreground">{m.display_name || m.profile?.full_name || "Member"}</p>
                       <p className="text-xs text-muted-foreground">{m.profile?.email || ""}</p>
                       <div className="flex gap-1 mt-1 flex-wrap">
                         {m.is_owner && <Badge variant="default" className="text-[10px] h-4 gap-0.5"><Crown className="h-2.5 w-2.5" /> Owner</Badge>}
@@ -168,20 +168,20 @@ export function MembersTab({
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => updateRole.mutate({ memberId: m.id, updates: { is_cared_one: !m.is_cared_one } })}>
+                        <DropdownMenuItem onClick={() => updateRole.mutate({ memberId: m.id, groupId: activeGroupId, updates: { is_cared_one: !m.is_cared_one } })}>
                           <Heart className="h-3.5 w-3.5 mr-2" /> {m.is_cared_one ? "Remove Cared One" : "Mark as Cared One"}
                         </DropdownMenuItem>
                         {!m.is_owner && (
-                          <DropdownMenuItem onClick={() => updateRole.mutate({ memberId: m.id, updates: { is_admin: !m.is_admin } })}>
+                          <DropdownMenuItem onClick={() => updateRole.mutate({ memberId: m.id, groupId: activeGroupId, updates: { is_admin: !m.is_admin } })}>
                             <Shield className="h-3.5 w-3.5 mr-2" /> {m.is_admin ? "Remove Admin" : "Make Admin"}
                           </DropdownMenuItem>
                         )}
                         {isOwner && !m.is_owner && (
                           <DropdownMenuItem onClick={() => {
                             if (currentMember) {
-                              updateRole.mutate({ memberId: currentMember.id, updates: { is_owner: false } }, {
+                              updateRole.mutate({ memberId: currentMember.id, groupId: activeGroupId, updates: { is_owner: false } }, {
                                 onSuccess: () => {
-                                  updateRole.mutate({ memberId: m.id, updates: { is_owner: true, is_admin: true } }, {
+                                  updateRole.mutate({ memberId: m.id, groupId: activeGroupId, updates: { is_owner: true, is_admin: true } }, {
                                     onSuccess: () => toast({ title: "Ownership transferred!" }),
                                   });
                                 },
