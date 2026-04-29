@@ -1,15 +1,22 @@
 /**
- * Notifications — JetEngine CCT `notification` (CCT 146)
- * Relation 148: users → notification (1:M, parent=user, child=notification)
+ * Notifications — JetEngine CCT `notification`
  *
  * Live fields: notification_type, notification_title, notification_content,
  *              action_url, notification_is_read
+ *
+ * Recipient linkage is via JetEngine relation configured in WP admin.
+ * Relation ID is read from VITE env so it can change without code edits.
  */
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 import { getCurrentUserId } from "@/features/shared/current-user";
 
 const SLUG = "notification";
-const REL_USER_NOTIFICATION = 148;
+// Optional: set VITE_WP_REL_USER_NOTIFICATION in WP/env if/when the relation is created.
+const REL_USER_NOTIFICATION: number | null = (() => {
+  const v = (import.meta as any).env?.VITE_WP_REL_USER_NOTIFICATION;
+  const n = v ? Number(v) : NaN;
+  return Number.isFinite(n) && n > 0 ? n : null;
+})();
 
 function isRead(v: any): boolean {
   return v === true || v === "yes" || v === "1" || v === 1;
@@ -20,7 +27,7 @@ export async function fetchNotificationsWordPress(): Promise<any[]> {
     const userId = getCurrentUserId();
     let raw: any[] = [];
 
-    if (userId) {
+    if (userId && REL_USER_NOTIFICATION) {
       // Fetch by relation: GET /jet-rel/{rel}/parent/{userId}
       try {
         raw = await wordpressFetch<any[]>(`jet-rel/${REL_USER_NOTIFICATION}/parent/${userId}`);
@@ -29,7 +36,7 @@ export async function fetchNotificationsWordPress(): Promise<any[]> {
       }
     }
 
-    // Fallback: pull all and filter (only if relation lookup empty)
+    // Fallback: pull all (only if relation lookup empty/disabled)
     if (!Array.isArray(raw) || raw.length === 0) {
       const all = await wordpressCCTFetch(SLUG, { params: { _limit: 100, _orderby: "cct_created", _order: "desc" } });
       raw = Array.isArray(all) ? all : [];
@@ -112,8 +119,8 @@ export async function createNotificationWordPress(input: {
   });
 
   const newId = created?.item_id ?? created?._ID ?? created?.id;
-  if (newId) {
-    // Link notification → user via Relation 148 (parent=user, child=notification)
+  if (newId && REL_USER_NOTIFICATION) {
+    // Link notification → user via configured relation (parent=user, child=notification)
     try {
       await wordpressFetch(`jet-rel/${REL_USER_NOTIFICATION}`, {
         method: "POST",
