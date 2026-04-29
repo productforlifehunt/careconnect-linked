@@ -245,6 +245,24 @@ interface WPChatMessageEntity {
   acf?: { conversation_id?: number; sender_id?: number; sender_name?: string; sender_avatar?: string };
 }
 
+function parseWpBoolean(value: unknown, fallback = false): boolean {
+  if (value === true || value === 1) return true;
+  if (typeof value === "string") return ["yes", "true", "1", "active", "Active"].includes(value);
+  return fallback;
+}
+
+function parseWpList(value: unknown): string[] | null {
+  if (Array.isArray(value)) return value.map(String).filter(Boolean);
+  if (typeof value === "string" && value.trim()) {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) return parsed.map(String).filter(Boolean);
+    } catch {}
+    return value.split(",").map((s) => s.trim()).filter(Boolean);
+  }
+  return null;
+}
+
 function mapDokanStoreToProfile(store: WPDokanStore): Profile {
   const addr = store.address;
   const addrStr = addr ? [addr.street_1, addr.city, addr.state].filter(Boolean).join(", ") : null;
