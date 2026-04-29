@@ -88,8 +88,13 @@ export async function fetchGroupCaredOnesWordPress(groupId: string): Promise<any
   try {
     const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${normalizeWpObjectId(groupId)}`);
     if (!Array.isArray(rels) || rels.length === 0) return [];
-    // Filter only members tagged as cared_one in relation meta
-    const caredOneRels = rels.filter((r: any) => r?.meta?.care_groups_member_types === "cared_one");
+    // Dictionary: cared-one identity is stored in Rel 72 meta `care_groups_member_roles`.
+    const caredOneRels = rels.filter((r: any) => {
+      const roles = Array.isArray(r?.meta?.care_groups_member_roles)
+        ? r.meta.care_groups_member_roles
+        : String(r?.meta?.care_groups_member_roles || "").split(",").map((s) => s.trim());
+      return roles.includes("cared one");
+    });
     const userIds = caredOneRels.map((r: any) => Number(r.child_object_id)).filter(Boolean);
     const caredOnes = await Promise.all(
       userIds.map(async (userId) => {
