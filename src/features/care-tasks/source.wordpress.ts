@@ -49,7 +49,7 @@ export async function fetchCareTasksWordPress(groupId?: string | null): Promise<
     const mapped = await Promise.all(taskList.map(async (t: any) => {
       const id = String(t.id || t._ID || "");
       const [assigned, caredOne] = await Promise.all([
-        fetchAssignedUserId(id),
+        fetchAssignedUserIds(id),
         fetchCaredOneId(id),
       ]);
       return {
