@@ -15,34 +15,21 @@ function normalizeMetaList(value: unknown): string[] {
   return [];
 }
 
-// CCT slug: care_group | fields: name, description, group_type, join_code, is_active
-function generateJoinCode(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let out = "";
-  for (let i = 0; i < 8; i++) out += chars[Math.floor(Math.random() * chars.length)];
-  return out;
-}
+// CCT slug: care_group | fields: name, description, group_type, is_active
+// Invite codes/links live on a separate CCT (care_group_invite, Rel 161) — not on the group itself.
 
 export async function fetchCareGroupsWordPress(): Promise<CareGroup[]> {
   try {
     const groups = await wordpressCCTFetch<any[]>("care_group", { params: { _limit: 50 } });
     if (!Array.isArray(groups)) return [];
-    // Lazy backfill: legacy groups without a join_code get one assigned (fire-and-forget)
-    groups.forEach((g: any) => {
-      if (!g.join_code && (g.id || g._ID)) {
-        const code = generateJoinCode();
-        g.join_code = code;
-        wordpressCCTFetch("care_group", { id: String(g.id || g._ID), method: "PUT", body: { join_code: code } }).catch(() => {});
-      }
-    });
     return groups.map((g: any) => ({
       id: String(g.id || g._ID || ""),
       name: g.name || "",
       description: g.description || null,
       is_private: g.group_type === "private",
       group_type: g.group_type || "public",
-      invite_code: g.join_code || null,
-      join_code: g.join_code || null,
+      invite_code: null,
+      join_code: null,
       is_active: g.is_active === "active" || g.is_active === "Active" || g.is_active === true || g.is_active === "yes",
       created_by: g.cct_author_id ? `wp-${g.cct_author_id}` : (g.author_id ? `wp-${g.author_id}` : null),
       created_at: g.created_at,
@@ -94,20 +81,12 @@ export async function fetchCareGroupMembersWordPress(groupId: string): Promise<a
 }
 
 export async function createCareGroupWordPress(group: { name: string; description?: string; is_private?: boolean }): Promise<CareGroup> {
-  // Auto-generate human-friendly join code (8 chars, no ambiguous letters)
-  const generateJoinCode = () => {
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    let out = "";
-    for (let i = 0; i < 8; i++) out += chars[Math.floor(Math.random() * chars.length)];
-    return out;
-  };
   const result = await wordpressCCTFetch<any>("care_group", {
     method: "POST",
     body: {
       name: group.name,
       description: group.description || "",
       group_type: group.is_private ? "private" : "public",
-      join_code: generateJoinCode(),
       is_active: "active",
     },
   });
