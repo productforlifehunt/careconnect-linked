@@ -744,8 +744,16 @@ export function useSubgroupMembers(subgroupId: string | null) {
 export function useAddMemberToSubgroup() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ subgroupId, userId }: { subgroupId: string; userId: string | number }) => addMemberToSubgroupWordPress(subgroupId, userId),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["subgroupMembers"] }); qc.invalidateQueries({ queryKey: ["careGroupPosts"] }); qc.invalidateQueries({ queryKey: ["careTasks"] }); },
+    mutationFn: ({ subgroupId, userId, status, types }: { subgroupId: string; userId: string | number; status?: "accepted" | "pending"; types?: string[] }) =>
+      addMemberToSubgroupWordPress(subgroupId, userId, { status, types }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["subgroupMembers"] });
+      qc.invalidateQueries({ queryKey: ["subgroupMemberRecords"] });
+      qc.invalidateQueries({ queryKey: ["subgroupPending"] });
+      qc.invalidateQueries({ queryKey: ["mySubgroupPending"] });
+      qc.invalidateQueries({ queryKey: ["careGroupPosts"] });
+      qc.invalidateQueries({ queryKey: ["careTasks"] });
+    },
   });
 }
 
@@ -753,7 +761,87 @@ export function useRemoveMemberFromSubgroup() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ subgroupId, userId }: { subgroupId: string; userId: string | number }) => removeMemberFromSubgroupWordPress(subgroupId, userId),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["subgroupMembers"] }); qc.invalidateQueries({ queryKey: ["careGroupPosts"] }); qc.invalidateQueries({ queryKey: ["careTasks"] }); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["subgroupMembers"] });
+      qc.invalidateQueries({ queryKey: ["subgroupMemberRecords"] });
+      qc.invalidateQueries({ queryKey: ["subgroupPending"] });
+      qc.invalidateQueries({ queryKey: ["mySubgroupPending"] });
+      qc.invalidateQueries({ queryKey: ["careGroupPosts"] });
+      qc.invalidateQueries({ queryKey: ["careTasks"] });
+    },
+  });
+}
+
+// Full member records (including pending) — admin views
+export function useSubgroupMemberRecords(subgroupId: string | null) {
+  return useQuery({
+    queryKey: ["subgroupMemberRecords", subgroupId],
+    queryFn: () => fetchSubgroupMemberRecordsWordPress(subgroupId!),
+    enabled: !!subgroupId,
+  });
+}
+
+export function useSubgroupPendingRequests(subgroupId: string | null) {
+  return useQuery({
+    queryKey: ["subgroupPending", subgroupId],
+    queryFn: () => fetchSubgroupPendingRequestsWordPress(subgroupId!),
+    enabled: !!subgroupId,
+  });
+}
+
+export function useMyPendingSubgroupRequests() {
+  return useQuery({
+    queryKey: ["mySubgroupPending"],
+    queryFn: () => fetchMyPendingSubgroupRequestsWordPress(),
+  });
+}
+
+export function useRequestJoinSubgroup() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ subgroupId }: { subgroupId: string }) => requestJoinSubgroupWordPress(subgroupId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["subgroupPending"] });
+      qc.invalidateQueries({ queryKey: ["mySubgroupPending"] });
+      qc.invalidateQueries({ queryKey: ["subgroupMemberRecords"] });
+    },
+  });
+}
+
+export function useApproveSubgroupMember() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ subgroupId, userId }: { subgroupId: string; userId: string | number }) => approveSubgroupMemberWordPress(subgroupId, userId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["subgroupMembers"] });
+      qc.invalidateQueries({ queryKey: ["subgroupMemberRecords"] });
+      qc.invalidateQueries({ queryKey: ["subgroupPending"] });
+      qc.invalidateQueries({ queryKey: ["mySubgroupPending"] });
+    },
+  });
+}
+
+export function useDeclineSubgroupMember() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ subgroupId, userId }: { subgroupId: string; userId: string | number }) => declineSubgroupMemberWordPress(subgroupId, userId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["subgroupMemberRecords"] });
+      qc.invalidateQueries({ queryKey: ["subgroupPending"] });
+      qc.invalidateQueries({ queryKey: ["mySubgroupPending"] });
+    },
+  });
+}
+
+export function useUpdateSubgroupMemberRole() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ subgroupId, userId, role }: { subgroupId: string; userId: string | number; role: "owner" | "admin" | "nothing special" }) =>
+      updateSubgroupMemberRoleWordPress(subgroupId, userId, role),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["subgroupMemberRecords"] });
+      qc.invalidateQueries({ queryKey: ["subgroupMembers"] });
+    },
   });
 }
 
