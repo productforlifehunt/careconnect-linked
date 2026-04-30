@@ -156,7 +156,7 @@ export default function CareCircle() {
             <DialogContent>
               <DialogHeader><DialogTitle>{t("careCircle.joinGroup")} {site.careGroupSingular}</DialogTitle></DialogHeader>
               <div className="space-y-4 mt-2">
-                <div><Label>{t("careCircle.joinCode")}</Label><Input value={joinCode} onChange={e => setJoinCode(e.target.value.toUpperCase())} placeholder={t("careCircle.joinCodePlaceholder")} className="uppercase" /></div>
+                <div><Label>{t("careCircle.joinCode")}</Label><Input value={joinCode} onChange={e => setJoinCode(e.target.value.trim())} placeholder={t("careCircle.joinCodePlaceholder")} /></div>
                 <Button variant="coral" className="w-full" onClick={handleJoinByCode} disabled={joinGroupByCode.isPending || !joinCode.trim()}>{t("careCircle.joinGroup")}</Button>
               </div>
             </DialogContent>
