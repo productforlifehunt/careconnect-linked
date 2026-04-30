@@ -382,7 +382,8 @@ export async function joinGroupByCodeWordPress(token: string): Promise<any> {
     if (!trimmed) throw new Error("Invalid invite link");
     const invites = await wordpressCCTFetch<any[]>("care_group_invite", { params: { _limit: 500 } });
     if (!Array.isArray(invites)) throw new Error("Invalid invite link");
-    const match = invites.find((i: any) => String(i.token || "").trim() === trimmed);
+    const lower = trimmed.toLowerCase();
+    const match = invites.find((i: any) => String(i.token || "").trim().toLowerCase() === lower);
     if (!match) throw new Error("Invalid invite link");
     const invite = normalizeInvite(match);
     if (invite.is_revoked) throw new Error("This invite link has been revoked.");
