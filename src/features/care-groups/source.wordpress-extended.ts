@@ -158,7 +158,14 @@ export async function fetchGroupInvitationsWordPress(groupId: string): Promise<a
 }
 
 export async function cancelInvitationWordPress(invitationId: string): Promise<void> {
-  await declineInvitationWordPress(invitationId);
+  const [groupPart, userPart] = invitationId.split(":");
+  const groupId = normalizeWpObjectId(groupPart);
+  const userId = normalizeWpObjectId(userPart);
+  if (!groupId || !userId) return;
+  await wordpressFetch(`jet-rel/${REL_GROUP_MEMBER}`, {
+    method: "DELETE",
+    body: { parent_id: groupId, child_id: userId },
+  });
 }
 
 export async function fetchMyPendingInvitationsWordPress(): Promise<any[]> {
