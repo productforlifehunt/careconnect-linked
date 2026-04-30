@@ -79,12 +79,20 @@ export async function fetchCareGroupMembersWordPress(groupId: string): Promise<a
 }
 
 export async function createCareGroupWordPress(group: { name: string; description?: string; is_private?: boolean }): Promise<CareGroup> {
+  // Auto-generate human-friendly join code (8 chars, no ambiguous letters)
+  const generateJoinCode = () => {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let out = "";
+    for (let i = 0; i < 8; i++) out += chars[Math.floor(Math.random() * chars.length)];
+    return out;
+  };
   const result = await wordpressCCTFetch<any>("care_group", {
     method: "POST",
     body: {
       name: group.name,
       description: group.description || "",
       group_type: group.is_private ? "private" : "public",
+      join_code: generateJoinCode(),
       is_active: "active",
     },
   });
