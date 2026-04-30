@@ -511,6 +511,12 @@ export async function createMemberCategoryWordPress(groupId: string, name: strin
       method: "POST",
       body: { parent_id: normalizedGroupId, child_id: categoryId, context: "child", store_items_type: "update" },
     });
+    // Auto-add creator as owner of the sub-group (Rel 75) — accepted by default.
+    const wpUser = getStoredWPUser();
+    const ownerId = wpUser?.user_id ? Number(wpUser.user_id) : 0;
+    if (ownerId) {
+      try { await addSubgroupOwnerWordPress(String(categoryId), ownerId); } catch {}
+    }
   }
 }
 
@@ -519,22 +525,78 @@ export async function deleteMemberCategoryWordPress(categoryId: string): Promise
 }
 
 // ─── Sub-group member assignment (REL 75) ───────────────────
-export async function fetchSubgroupMembersWordPress(subgroupId: string): Promise<number[]> {
+// Rel 75 meta fields (configured in JetEngine GUI):
+//   • care_group_s_private_member_group_member_types  (checkbox: nothing special | owner | admin)
+//   • care_group_s_private_member_group_member_invitation_status  (radio: accepted | pending | declined)
+const SUBGROUP_META_TYPES = "care_group_s_private_member_group_member_types";
+const SUBGROUP_META_STATUS = "care_group_s_private_member_group_member_invitation_status";
+
+function subgroupMeta(input: {
+  types?: string[];
+  status?: "accepted" | "pending" | "declined";
+} = {}) {
+  return {
+    [SUBGROUP_META_TYPES]: input.types?.length ? input.types : ["nothing special"],
+    [SUBGROUP_META_STATUS]: input.status || "accepted",
+  };
+}
+
+export interface SubgroupMemberRecord {
+  user_id: number;
+  status: "accepted" | "pending" | "declined";
+  types: string[];
+  is_owner: boolean;
+  is_admin: boolean;
+}
+
+async function fetchSubgroupMemberRecords(subgroupId: string): Promise<SubgroupMemberRecord[]> {
+  const sid = normalizeWpObjectId(subgroupId);
+  if (!sid) return [];
   try {
-    const sid = normalizeWpObjectId(subgroupId);
-    if (!sid) return [];
     const rels = await wordpressFetch<any[]>(`jet-rel/${REL_SUBGROUP_MEMBERS}/children/${sid}`);
-    return (Array.isArray(rels) ? rels : []).map((r: any) => Number(r.child_object_id)).filter(Boolean);
+    return (Array.isArray(rels) ? rels : [])
+      .map((r: any): SubgroupMemberRecord | null => {
+        const uid = Number(r.child_object_id);
+        if (!uid) return null;
+        const types = normalizeMetaList(r?.meta?.[SUBGROUP_META_TYPES]);
+        const status = (r?.meta?.[SUBGROUP_META_STATUS] || "accepted") as SubgroupMemberRecord["status"];
+        const is_owner = types.includes("owner");
+        const is_admin = types.includes("admin") || is_owner;
+        return { user_id: uid, status, types: types.length ? types : ["nothing special"], is_owner, is_admin };
+      })
+      .filter(Boolean) as SubgroupMemberRecord[];
   } catch { return []; }
 }
 
-export async function addMemberToSubgroupWordPress(subgroupId: string, userId: string | number): Promise<void> {
+/** Backwards-compatible: returns only ACCEPTED member user ids. */
+export async function fetchSubgroupMembersWordPress(subgroupId: string): Promise<number[]> {
+  const recs = await fetchSubgroupMemberRecords(subgroupId);
+  return recs.filter((r) => r.status === "accepted").map((r) => r.user_id);
+}
+
+/** Full member records (including pending/declined) for admin views. */
+export async function fetchSubgroupMemberRecordsWordPress(subgroupId: string): Promise<SubgroupMemberRecord[]> {
+  return fetchSubgroupMemberRecords(subgroupId);
+}
+
+/** Admin-side direct add — auto-accepted. */
+export async function addMemberToSubgroupWordPress(
+  subgroupId: string,
+  userId: string | number,
+  opts: { status?: "accepted" | "pending"; types?: string[] } = {},
+): Promise<void> {
   const sid = normalizeWpObjectId(subgroupId);
   const uid = normalizeWpObjectId(userId);
   if (!sid || !uid) return;
   await wordpressFetch(`jet-rel/${REL_SUBGROUP_MEMBERS}`, {
     method: "POST",
-    body: { parent_id: sid, child_id: uid, context: "child", store_items_type: "update" },
+    body: {
+      parent_id: sid,
+      child_id: uid,
+      context: "child",
+      store_items_type: "update",
+      meta: subgroupMeta({ status: opts.status || "accepted", types: opts.types }),
+    },
   });
 }
 
@@ -546,6 +608,106 @@ export async function removeMemberFromSubgroupWordPress(subgroupId: string, user
     method: "DELETE",
     body: { parent_id: sid, child_id: uid },
   });
+}
+
+/** Current user requests to join a sub-group (creates a pending Rel 75 row). */
+export async function requestJoinSubgroupWordPress(subgroupId: string): Promise<void> {
+  const wpUser = getStoredWPUser();
+  const uid = wpUser?.user_id ? Number(wpUser.user_id) : 0;
+  const sid = normalizeWpObjectId(subgroupId);
+  if (!sid || !uid) return;
+  await wordpressFetch(`jet-rel/${REL_SUBGROUP_MEMBERS}`, {
+    method: "POST",
+    body: {
+      parent_id: sid,
+      child_id: uid,
+      context: "child",
+      store_items_type: "update",
+      meta: subgroupMeta({ status: "pending" }),
+    },
+  });
+}
+
+/** Admin approves a pending request by flipping status → accepted. */
+export async function approveSubgroupMemberWordPress(subgroupId: string, userId: string | number): Promise<void> {
+  const sid = normalizeWpObjectId(subgroupId);
+  const uid = normalizeWpObjectId(userId);
+  if (!sid || !uid) return;
+  // Preserve existing types if any
+  const recs = await fetchSubgroupMemberRecords(subgroupId);
+  const existing = recs.find((r) => r.user_id === uid);
+  await wordpressFetch(`jet-rel/${REL_SUBGROUP_MEMBERS}`, {
+    method: "POST",
+    body: {
+      parent_id: sid,
+      child_id: uid,
+      context: "child",
+      store_items_type: "update",
+      meta: subgroupMeta({ status: "accepted", types: existing?.types }),
+    },
+  });
+}
+
+/** Admin (or self) declines / removes a pending request. */
+export async function declineSubgroupMemberWordPress(subgroupId: string, userId: string | number): Promise<void> {
+  return removeMemberFromSubgroupWordPress(subgroupId, userId);
+}
+
+/** Update sub-group member role (owner/admin/nothing special). */
+export async function updateSubgroupMemberRoleWordPress(
+  subgroupId: string,
+  userId: string | number,
+  role: "owner" | "admin" | "nothing special",
+): Promise<void> {
+  const sid = normalizeWpObjectId(subgroupId);
+  const uid = normalizeWpObjectId(userId);
+  if (!sid || !uid) return;
+  const recs = await fetchSubgroupMemberRecords(subgroupId);
+  const existing = recs.find((r) => r.user_id === uid);
+  const nextTypes = new Set(existing?.types?.length ? existing.types : ["nothing special"]);
+  if (role === "nothing special") {
+    nextTypes.delete("owner");
+    nextTypes.delete("admin");
+    nextTypes.add("nothing special");
+  } else {
+    nextTypes.delete("nothing special");
+    nextTypes.add(role);
+  }
+  if ([...nextTypes].some((v) => v !== "nothing special")) nextTypes.delete("nothing special");
+  await wordpressFetch(`jet-rel/${REL_SUBGROUP_MEMBERS}`, {
+    method: "POST",
+    body: {
+      parent_id: sid,
+      child_id: uid,
+      context: "child",
+      store_items_type: "update",
+      meta: subgroupMeta({ status: existing?.status || "accepted", types: [...nextTypes] }),
+    },
+  });
+}
+
+/** Fetch pending join requests for a single sub-group (admin view). */
+export async function fetchSubgroupPendingRequestsWordPress(subgroupId: string): Promise<SubgroupMemberRecord[]> {
+  const recs = await fetchSubgroupMemberRecords(subgroupId);
+  return recs.filter((r) => r.status === "pending");
+}
+
+/** Fetch the current user's pending sub-group join requests across the whole site. */
+export async function fetchMyPendingSubgroupRequestsWordPress(): Promise<Array<{ subgroup_id: number; status: string }>> {
+  try {
+    const wpUser = getStoredWPUser();
+    if (!wpUser?.user_id) return [];
+    const userId = Number(wpUser.user_id);
+    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_SUBGROUP_MEMBERS}/parents/${userId}`);
+    return (Array.isArray(rels) ? rels : [])
+      .filter((r: any) => (r?.meta?.[SUBGROUP_META_STATUS] || "accepted") === "pending")
+      .map((r: any) => ({ subgroup_id: Number(r.parent_object_id), status: "pending" }));
+  } catch { return []; }
+}
+
+/** When a sub-group is created, auto-add creator as owner+accepted. */
+export async function addSubgroupOwnerWordPress(subgroupId: string, userId: string | number): Promise<void> {
+  return addMemberToSubgroupWordPress(subgroupId, userId, { status: "accepted", types: ["owner", "admin"] });
 }
 
 // ─── Search Profiles ────────────────────────────────────────
