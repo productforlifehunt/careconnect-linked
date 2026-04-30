@@ -105,7 +105,7 @@ export async function deleteGroupPostWordPress(id: string): Promise<void> {
 }
 
 // ─── Group Settings ─────────────────────────────────────────
-// CCT slug: care_group | fields: name, description, group_type, join_code, is_active
+// CCT slug: care_group | fields: name, description, group_type, is_active
 export async function updateCareGroupWordPress(id: string, updates: { name?: string; description?: string; is_private?: boolean }): Promise<void> {
   const body: Record<string, any> = {};
   if (updates.name !== undefined) body.name = updates.name;
