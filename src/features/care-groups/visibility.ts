@@ -35,11 +35,18 @@ async function relParents(rel: number, childId: number): Promise<number[]> {
   } catch { return []; }
 }
 
-/** Sub-group ids the current user belongs to. */
+/** Sub-group ids the current user belongs to (status = accepted only). */
 export async function fetchMySubgroupIds(): Promise<Set<number>> {
   const uid = getCurrentUserIdNumber();
   if (!uid) return new Set();
-  return new Set(await relParents(REL_SUBGROUP_MEMBERS, uid));
+  try {
+    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_SUBGROUP_MEMBERS}/parents/${uid}`);
+    const accepted = (Array.isArray(rels) ? rels : []).filter((r: any) => {
+      const status = r?.meta?.["care_group_s_private_member_group_member_invitation_status"] || "accepted";
+      return status === "accepted";
+    });
+    return new Set(accepted.map((r: any) => Number(r.parent_object_id)).filter(Boolean));
+  } catch { return new Set(); }
 }
 
 /** Filter a list of posts to those visible to the current user. */
