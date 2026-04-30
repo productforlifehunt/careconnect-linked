@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { UserPlus, Mail, KeyRound, Clock, X, Tag, Plus, Shield, Heart, Crown, MoreVertical, Trash2 } from "lucide-react";
+import { UserPlus, Mail, KeyRound, Clock, X, Tag, Plus, Shield, Heart, Crown, MoreVertical, Trash2, Link2, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { SubgroupCard } from "../SubgroupCard";
 
@@ -70,9 +70,32 @@ export function MembersTab({
               <Button variant="coral" onClick={handleInvite} disabled={!inviteEmail.trim() || inviteToGroup.isPending}><Mail className="h-4 w-4 mr-1" /> Invite</Button>
             </div>
             {activeGroup?.join_code && (
-              <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
-                <KeyRound className="h-3.5 w-3.5" />
-                <span>Or share join code: <strong className="font-mono text-foreground">{activeGroup.join_code}</strong></span>
+              <div className="mt-3 space-y-2">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <KeyRound className="h-3.5 w-3.5" />
+                  <span>Or share join code: <strong className="font-mono text-foreground">{activeGroup.join_code}</strong></span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Link2 className="h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    readOnly
+                    value={`${window.location.origin}/join/${activeGroup.join_code}`}
+                    className="flex-1 font-mono text-xs h-8"
+                    onFocus={(e) => e.currentTarget.select()}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const link = `${window.location.origin}/join/${activeGroup.join_code}`;
+                      navigator.clipboard?.writeText(link);
+                      toast({ title: "Invite link copied!" });
+                    }}
+                  >
+                    <Copy className="h-3.5 w-3.5 mr-1" /> Copy
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>
