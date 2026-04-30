@@ -64,13 +64,7 @@ export function GroupSettingsDialog({
             </div>
             <Switch checked={isPrivate} onCheckedChange={setIsPrivate} />
           </div>
-          {activeGroup?.join_code && (
-            <div className="rounded-lg bg-muted p-3">
-              <Label className="text-xs">Join Code</Label>
-              <p className="text-lg font-mono font-bold text-foreground tracking-widest">{activeGroup.join_code}</p>
-              <p className="text-xs text-muted-foreground">Share this code so others can join</p>
-            </div>
-          )}
+          {/* Invite links are managed in the Members tab (CCT 160 + Rel 161). */}
           <Button variant="coral" className="w-full" onClick={handleSave} disabled={updateGroup.isPending || !name.trim()}>Save Changes</Button>
           {!isOwner && (
             <div className="border-t pt-4">
