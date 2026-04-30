@@ -174,17 +174,30 @@ export async function fetchMyPendingInvitationsWordPress(): Promise<any[]> {
     if (!wpUser?.user_id) return [];
     const userId = Number(wpUser.user_id);
     const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/parents/${userId}`);
-    return (Array.isArray(rels) ? rels : [])
-      .filter((r: any) => r?.meta?.care_groups_member_invitation_status === "pending")
-      .map((r: any) => ({
+    const pending = (Array.isArray(rels) ? rels : []).filter(
+      (r: any) => r?.meta?.care_groups_member_invitation_status === "pending"
+    );
+    // Enrich with real group names
+    const enriched = await Promise.all(pending.map(async (r: any) => {
+      const groupId = r.parent_object_id ? String(r.parent_object_id) : null;
+      let groupName = "Care Group";
+      if (groupId) {
+        try {
+          const g = await wordpressCCTFetch<any>("care_group", { id: groupId });
+          groupName = g?.name || groupName;
+        } catch {}
+      }
+      return {
         id: `${r.parent_object_id}:${userId}`,
-        group_id: r.parent_object_id ? String(r.parent_object_id) : null,
+        group_id: groupId,
         user_id: `wp-${userId}`,
         role: "member",
         invitation_status: "pending",
         created_at: null,
-        group: r.parent_object_id ? { id: String(r.parent_object_id), name: "Care Group" } : null,
-      }));
+        group: groupId ? { id: groupId, name: groupName } : null,
+      };
+    }));
+    return enriched;
   } catch { return []; }
 }
 
