@@ -102,9 +102,27 @@ export function MembersTab({
     if (!activeGroupId || !linkName.trim()) return;
     const expiresAt = linkExpires ? new Date(linkExpires).toISOString() : null;
     const maxUses = Math.max(0, Number(linkMaxUses) || 0);
+    const trimmedToken = linkToken.trim();
+
+    // Soft duplicate check — tokens are stored normalized (lowercase) under the hood.
+    if (trimmedToken) {
+      const normalized = trimmedToken.toLowerCase();
+      const clash = (inviteLinks || []).some(
+        (i: any) => (i.token || "").toLowerCase() === normalized && i.id !== editInvite?.id
+      );
+      if (clash) {
+        toast({
+          title: "That code is already taken",
+          description: "Please pick a different code, or leave it blank to auto-generate one.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     if (editInvite) {
       updateInvite.mutate(
-        { id: editInvite.id, groupId: activeGroupId, name: linkName.trim(), token: linkToken.trim() || undefined, expiresAt, maxUses },
+        { id: editInvite.id, groupId: activeGroupId, name: linkName.trim(), token: trimmedToken || undefined, expiresAt, maxUses },
         {
           onSuccess: () => { setCreateInviteOpen(false); toast({ title: "Invite link updated" }); },
           onError: (err: any) => toast({ title: "Failed to update", description: err.message, variant: "destructive" }),
@@ -112,7 +130,7 @@ export function MembersTab({
       );
     } else {
       createInvite.mutate(
-        { groupId: activeGroupId, name: linkName.trim(), token: linkToken.trim() || undefined, expiresAt, maxUses },
+        { groupId: activeGroupId, name: linkName.trim(), token: trimmedToken || undefined, expiresAt, maxUses },
         {
           onSuccess: () => { setCreateInviteOpen(false); toast({ title: "Invite link created" }); },
           onError: (err: any) => toast({ title: "Failed to create", description: err.message, variant: "destructive" }),
