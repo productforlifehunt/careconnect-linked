@@ -304,6 +304,7 @@ export function MembersTab({
                   members={members || []}
                   isAdmin={isAdmin}
                   onDelete={() => deleteCategory.mutate(cat.id)}
+                  currentUserId={userId}
                 />
               ))}
             </div>
