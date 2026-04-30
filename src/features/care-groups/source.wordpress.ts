@@ -16,10 +16,25 @@ function normalizeMetaList(value: unknown): string[] {
 }
 
 // CCT slug: care_group | fields: name, description, group_type, join_code, is_active
+function generateJoinCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let out = "";
+  for (let i = 0; i < 8; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  return out;
+}
+
 export async function fetchCareGroupsWordPress(): Promise<CareGroup[]> {
   try {
     const groups = await wordpressCCTFetch<any[]>("care_group", { params: { _limit: 50 } });
     if (!Array.isArray(groups)) return [];
+    // Lazy backfill: legacy groups without a join_code get one assigned (fire-and-forget)
+    groups.forEach((g: any) => {
+      if (!g.join_code && (g.id || g._ID)) {
+        const code = generateJoinCode();
+        g.join_code = code;
+        wordpressCCTFetch("care_group", { id: String(g.id || g._ID), method: "PUT", body: { join_code: code } }).catch(() => {});
+      }
+    });
     return groups.map((g: any) => ({
       id: String(g.id || g._ID || ""),
       name: g.name || "",
