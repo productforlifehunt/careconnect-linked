@@ -27,8 +27,9 @@ export async function fetchCareGroupsWordPress(): Promise<CareGroup[]> {
       is_private: g.group_type === "private",
       group_type: g.group_type || "public",
       invite_code: g.join_code || null,
+      join_code: g.join_code || null,
       is_active: g.is_active === "active" || g.is_active === "Active" || g.is_active === true || g.is_active === "yes",
-      created_by: g.author_id ? `wp-${g.author_id}` : null,
+      created_by: g.cct_author_id ? `wp-${g.cct_author_id}` : (g.author_id ? `wp-${g.author_id}` : null),
       created_at: g.created_at,
     })) as unknown as CareGroup[];
   } catch {
