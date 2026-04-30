@@ -511,6 +511,12 @@ export async function createMemberCategoryWordPress(groupId: string, name: strin
       method: "POST",
       body: { parent_id: normalizedGroupId, child_id: categoryId, context: "child", store_items_type: "update" },
     });
+    // Auto-add creator as owner of the sub-group (Rel 75) — accepted by default.
+    const wpUser = getStoredWPUser();
+    const ownerId = wpUser?.user_id ? Number(wpUser.user_id) : 0;
+    if (ownerId) {
+      try { await addSubgroupOwnerWordPress(String(categoryId), ownerId); } catch {}
+    }
   }
 }
 
