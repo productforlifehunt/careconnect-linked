@@ -50,6 +50,7 @@ import ChallengedArticleDetail from "./pages/ChallengedArticleDetail";
 // Doctor consultation feature removed (compliance/risk avoidance — not a paid feature on this app)
 import Calendar from "./pages/Calendar";
 import Resources from "./pages/Resources";
+import JoinGroup from "./pages/JoinGroup";
 
 // Static-first defaults: no auto refetch on focus/mount/reconnect.
 // Data only fetches on first mount or explicit invalidation (after a mutation).
@@ -91,6 +92,7 @@ function AppRoutes() {
       <Route path="/caregiver/:id" element={<CaregiverProfile />} />
       <Route path="/facility/:id" element={<CareFacilityProfile />} />
       <Route path="/auth" element={<Auth />} />
+      <Route path="/join/:code" element={<JoinGroup />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/how-it-works" element={<HowItWorks />} />
       <Route path="/trust-safety" element={<TrustSafety />} />
