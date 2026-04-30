@@ -26,6 +26,7 @@ import {
   fetchMemberCategoriesWordPress, createMemberCategoryWordPress, deleteMemberCategoryWordPress,
   fetchSubgroupMembersWordPress, addMemberToSubgroupWordPress, removeMemberFromSubgroupWordPress,
   searchProfilesWordPress, addCaredOneToGroupWordPress, leaveGroupWordPress,
+  fetchGroupInvitesWordPress, createGroupInviteWordPress, updateGroupInviteWordPress, deleteGroupInviteWordPress,
 } from "@/features/care-groups/source.wordpress-extended";
 import { setPostVisibility, setTaskVisibility, filterVisiblePosts, filterVisibleTasks } from "@/features/care-groups/visibility";
 import {
@@ -590,12 +591,47 @@ export function useDeleteCareGroup() {
   });
 }
 
-// ─── Join by Code ───────────────────────────────────────────
+// ─── Join by Token ──────────────────────────────────────────
 export function useJoinGroupByCode() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (code: string) => joinGroupByCodeWordPress(code),
+    mutationFn: (token: string) => joinGroupByCodeWordPress(token),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["careGroups"] }); },
+  });
+}
+
+// ─── Group Invites (CCT 160 + Rel 161) ──────────────────────
+export function useGroupInvites(groupId: string | null) {
+  return useQuery({
+    queryKey: ["groupInvites", groupId],
+    queryFn: () => fetchGroupInvitesWordPress(groupId!),
+    enabled: !!groupId,
+  });
+}
+
+export function useCreateGroupInvite() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { groupId: string; name: string; expiresAt?: string | null; maxUses?: number; token?: string }) =>
+      createGroupInviteWordPress(input),
+    onSuccess: (_d, vars) => { qc.invalidateQueries({ queryKey: ["groupInvites", vars.groupId] }); },
+  });
+}
+
+export function useUpdateGroupInvite() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...updates }: { id: string; groupId?: string; name?: string; token?: string; expiresAt?: string | null; maxUses?: number; isRevoked?: boolean }) =>
+      updateGroupInviteWordPress(id, updates),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["groupInvites"] }); },
+  });
+}
+
+export function useDeleteGroupInvite() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id }: { id: string; groupId?: string }) => deleteGroupInviteWordPress(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["groupInvites"] }); },
   });
 }
 

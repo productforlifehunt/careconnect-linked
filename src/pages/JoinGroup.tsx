@@ -8,8 +8,8 @@ import { useJoinGroupByCode } from "@/hooks/use-care-data";
 import { toast } from "@/hooks/use-toast";
 
 /**
- * Magic-link group join: /join/:code
- * Reuses the existing care_group.join_code field — no new CCT needed.
+ * Magic-link group join: /join/:token
+ * Validates against the care_group_invite CCT (token, expiry, max_uses, revoked).
  */
 export default function JoinGroup() {
   const { code = "" } = useParams<{ code: string }>();

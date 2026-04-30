@@ -7,9 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { UserPlus, Mail, KeyRound, Clock, X, Tag, Plus, Shield, Heart, Crown, MoreVertical, Trash2, Link2, Copy } from "lucide-react";
+import { UserPlus, Mail, Clock, X, Tag, Plus, Shield, Heart, Crown, MoreVertical, Trash2, Link2, Copy, Ban, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { SubgroupCard } from "../SubgroupCard";
+import { useGroupInvites, useCreateGroupInvite, useUpdateGroupInvite, useDeleteGroupInvite } from "@/hooks/use-care-data";
 
 interface MembersTabProps {
   members: any[];
@@ -29,6 +30,14 @@ interface MembersTabProps {
   deleteCategory: any;
 }
 
+function formatDateTimeLocal(value: string | null | undefined) {
+  if (!value) return "";
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 export function MembersTab({
   members, activeGroup, activeGroupId, userId, isAdmin, isOwner, currentMember,
   pendingInvitations, memberCategories,
@@ -40,6 +49,18 @@ export function MembersTab({
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryDesc, setNewCategoryDesc] = useState("");
   const [newCategoryColor, setNewCategoryColor] = useState("");
+
+  // Invite-link state
+  const { data: inviteLinks = [] } = useGroupInvites(activeGroupId);
+  const createInvite = useCreateGroupInvite();
+  const updateInvite = useUpdateGroupInvite();
+  const deleteInvite = useDeleteGroupInvite();
+  const [createInviteOpen, setCreateInviteOpen] = useState(false);
+  const [editInvite, setEditInvite] = useState<any>(null);
+  const [linkName, setLinkName] = useState("");
+  const [linkToken, setLinkToken] = useState("");
+  const [linkExpires, setLinkExpires] = useState("");
+  const [linkMaxUses, setLinkMaxUses] = useState("0");
 
   const handleInvite = () => {
     if (!inviteEmail.trim() || !activeGroupId) return;
@@ -59,45 +80,154 @@ export function MembersTab({
     });
   };
 
+  const openCreateInvite = () => {
+    setEditInvite(null);
+    setLinkName("");
+    setLinkToken("");
+    setLinkExpires("");
+    setLinkMaxUses("0");
+    setCreateInviteOpen(true);
+  };
+
+  const openEditInvite = (inv: any) => {
+    setEditInvite(inv);
+    setLinkName(inv.name || "");
+    setLinkToken(inv.token || "");
+    setLinkExpires(formatDateTimeLocal(inv.expires_at));
+    setLinkMaxUses(String(inv.max_uses ?? 0));
+    setCreateInviteOpen(true);
+  };
+
+  const handleSaveInvite = () => {
+    if (!activeGroupId || !linkName.trim()) return;
+    const expiresAt = linkExpires ? new Date(linkExpires).toISOString() : null;
+    const maxUses = Math.max(0, Number(linkMaxUses) || 0);
+    if (editInvite) {
+      updateInvite.mutate(
+        { id: editInvite.id, groupId: activeGroupId, name: linkName.trim(), token: linkToken.trim() || undefined, expiresAt, maxUses },
+        {
+          onSuccess: () => { setCreateInviteOpen(false); toast({ title: "Invite link updated" }); },
+          onError: (err: any) => toast({ title: "Failed to update", description: err.message, variant: "destructive" }),
+        }
+      );
+    } else {
+      createInvite.mutate(
+        { groupId: activeGroupId, name: linkName.trim(), token: linkToken.trim() || undefined, expiresAt, maxUses },
+        {
+          onSuccess: () => { setCreateInviteOpen(false); toast({ title: "Invite link created" }); },
+          onError: (err: any) => toast({ title: "Failed to create", description: err.message, variant: "destructive" }),
+        }
+      );
+    }
+  };
+
+  const copyLink = (token: string) => {
+    const link = `${window.location.origin}/join/${token}`;
+    navigator.clipboard?.writeText(link);
+    toast({ title: "Invite link copied!" });
+  };
+
+  const toggleRevoke = (inv: any) => {
+    updateInvite.mutate({ id: inv.id, isRevoked: !inv.is_revoked }, {
+      onSuccess: () => toast({ title: inv.is_revoked ? "Invite link reactivated" : "Invite link revoked" }),
+    });
+  };
+
+  const handleDeleteInvite = (inv: any) => {
+    deleteInvite.mutate({ id: inv.id }, { onSuccess: () => toast({ title: "Invite link deleted" }) });
+  };
+
   return (
     <div>
       {isAdmin && (
         <Card className="border-transparent card-elevated mb-4">
           <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><UserPlus className="h-4 w-4" /> Invite Members</CardTitle></CardHeader>
-          <CardContent className="pt-2">
+          <CardContent className="pt-2 space-y-4">
             <div className="flex gap-2">
               <Input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="Enter email address to invite..." className="flex-1" />
               <Button variant="coral" onClick={handleInvite} disabled={!inviteEmail.trim() || inviteToGroup.isPending}><Mail className="h-4 w-4 mr-1" /> Invite</Button>
             </div>
-            {activeGroup?.join_code && (
-              <div className="mt-3 space-y-2">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <KeyRound className="h-3.5 w-3.5" />
-                  <span>Or share join code: <strong className="font-mono text-foreground">{activeGroup.join_code}</strong></span>
+
+            <div className="border-t pt-3">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-sm font-medium text-foreground flex items-center gap-2"><Link2 className="h-4 w-4" /> Invite Links</h4>
+                <Button size="sm" variant="outline" onClick={openCreateInvite}><Plus className="h-3.5 w-3.5 mr-1" /> New link</Button>
+              </div>
+              {inviteLinks.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No invite links yet. Create one to share a join URL with family or care staff.</p>
+              ) : (
+                <div className="space-y-2">
+                  {inviteLinks.map((inv: any) => {
+                    const link = `${window.location.origin}/join/${inv.token}`;
+                    const status = inv.is_revoked ? "Revoked" : inv.is_expired ? "Expired" : inv.is_exhausted ? "Used up" : "Active";
+                    return (
+                      <div key={inv.id} className="rounded-lg border p-3 space-y-2 bg-muted/30">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="text-sm font-medium text-foreground truncate">{inv.name || "Invite link"}</p>
+                              <Badge variant={inv.is_active ? "default" : "outline"} className="text-[10px] h-4">{status}</Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {inv.expires_at ? `Expires ${new Date(inv.expires_at).toLocaleString()}` : "Never expires"}
+                              {" · "}
+                              {inv.max_uses > 0 ? `${inv.use_count}/${inv.max_uses} uses` : `${inv.use_count} uses (unlimited)`}
+                            </p>
+                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 shrink-0"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => openEditInvite(inv)}><Pencil className="h-3.5 w-3.5 mr-2" /> Edit</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => toggleRevoke(inv)}><Ban className="h-3.5 w-3.5 mr-2" /> {inv.is_revoked ? "Reactivate" : "Revoke"}</DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteInvite(inv)}><Trash2 className="h-3.5 w-3.5 mr-2" /> Delete</DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Input readOnly value={link} className="flex-1 font-mono text-xs h-8" onFocus={(e) => e.currentTarget.select()} />
+                          <Button type="button" size="sm" variant="outline" onClick={() => copyLink(inv.token)}>
+                            <Copy className="h-3.5 w-3.5 mr-1" /> Copy
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-                <div className="flex items-center gap-2">
-                  <Link2 className="h-3.5 w-3.5 text-muted-foreground" />
-                  <Input
-                    readOnly
-                    value={`${window.location.origin}/join/${activeGroup.join_code}`}
-                    className="flex-1 font-mono text-xs h-8"
-                    onFocus={(e) => e.currentTarget.select()}
-                  />
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      const link = `${window.location.origin}/join/${activeGroup.join_code}`;
-                      navigator.clipboard?.writeText(link);
-                      toast({ title: "Invite link copied!" });
-                    }}
-                  >
-                    <Copy className="h-3.5 w-3.5 mr-1" /> Copy
+              )}
+            </div>
+
+            <Dialog open={createInviteOpen} onOpenChange={setCreateInviteOpen}>
+              <DialogContent>
+                <DialogHeader><DialogTitle>{editInvite ? "Edit invite link" : "Create invite link"}</DialogTitle></DialogHeader>
+                <div className="space-y-4 mt-2">
+                  <div>
+                    <Label>Name *</Label>
+                    <Input value={linkName} onChange={e => setLinkName(e.target.value)} placeholder="e.g. Family link, Night nurses" />
+                    <p className="text-xs text-muted-foreground mt-1">A label so you can tell links apart.</p>
+                  </div>
+                  <div>
+                    <Label>Custom code</Label>
+                    <Input value={linkToken} onChange={e => setLinkToken(e.target.value.replace(/\s+/g, ""))} placeholder="Leave blank to auto-generate" />
+                    <p className="text-xs text-muted-foreground mt-1">Optional — make it memorable, e.g. <code>moms-team-2026</code>.</p>
+                  </div>
+                  <div>
+                    <Label>Expires at</Label>
+                    <Input type="datetime-local" value={linkExpires} onChange={e => setLinkExpires(e.target.value)} />
+                    <p className="text-xs text-muted-foreground mt-1">Leave blank for no expiry.</p>
+                  </div>
+                  <div>
+                    <Label>Max uses</Label>
+                    <Input type="number" min={0} value={linkMaxUses} onChange={e => setLinkMaxUses(e.target.value)} />
+                    <p className="text-xs text-muted-foreground mt-1">Use 0 for unlimited.</p>
+                  </div>
+                  <Button variant="coral" className="w-full" onClick={handleSaveInvite}
+                    disabled={!linkName.trim() || createInvite.isPending || updateInvite.isPending}>
+                    {editInvite ? "Save changes" : "Create link"}
                   </Button>
                 </div>
-              </div>
-            )}
+              </DialogContent>
+            </Dialog>
           </CardContent>
         </Card>
       )}
