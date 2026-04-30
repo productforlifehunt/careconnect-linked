@@ -7,6 +7,7 @@ const REL_GROUP_GALLERY = 46;         // 1:M  care_group → care_group_gallery
 const REL_GROUP_SUBGROUP = 47;        // 1:M  care_group → care_group_private_member_group
 const REL_GROUP_POST = 77;            // 1:M  care_group → care_group_not_too_special_post
 const REL_SUBGROUP_MEMBERS = 75;      // M:M  care_group_private_member_group → users
+const REL_GROUP_INVITE = 161;         // 1:M  care_group → care_group_invite
 
 function memberMeta(input: {
   displayName?: string;
