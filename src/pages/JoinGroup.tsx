@@ -14,14 +14,13 @@ import { toast } from "@/hooks/use-toast";
 export default function JoinGroup() {
   const { code = "" } = useParams<{ code: string }>();
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const joinGroupByCode = useJoinGroupByCode();
   const [status, setStatus] = useState<"idle" | "joining" | "success" | "error">("idle");
   const [message, setMessage] = useState<string>("");
 
   useEffect(() => {
-    if (authLoading) return;
-    if (!user) {
+    if (!isAuthenticated || !user) {
       // Bounce to auth, returning to this exact link after login
       navigate(`/auth?next=${encodeURIComponent(`/join/${code}`)}`, { replace: true });
       return;
