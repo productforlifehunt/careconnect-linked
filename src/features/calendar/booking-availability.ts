@@ -109,6 +109,52 @@ export async function getProviderCalendarAvailability(providerId: string): Promi
   return calendarEventsToAvailability(events);
 }
 
+export async function upsertProviderCalendarAvailability(providerIdInput: string, slots: AvailabilitySlot[]) {
+  const providerId = normalizeWPUserId(providerIdInput);
+  if (!providerId) throw new Error("Provider user id is required");
+
+  const existing = await fetchCalendarEventsForUserWordPress(providerId);
+  await Promise.all(
+    existing
+      .filter(isAvailabilityManagedEvent)
+      .map((event) => deleteCalendarEventWordPress(event.id).catch(() => undefined)),
+  );
+
+  const today = new Date();
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - today.getDay());
+
+  const created = await Promise.all(
+    (slots || []).map((slot) => {
+      const isAvailable = Boolean(slot.is_available);
+      const date = slot.specific_date || (() => {
+        const d = new Date(startOfWeek);
+        d.setDate(startOfWeek.getDate() + Number(slot.day_of_week || 0));
+        return d.toISOString().slice(0, 10);
+      })();
+      const startTime = slot.start_time || "00:00";
+      const endTime = slot.end_time || (isAvailable ? "23:59" : "23:59");
+      return createCalendarEventForUserWordPress(providerId, {
+        title: isAvailable ? "Available" : "Unavailable",
+        start_at: toDate(date, startTime).toISOString(),
+        end_at: toDate(date, endTime).toISOString(),
+        all_day: !isAvailable && !slot.start_time && !slot.end_time,
+        status: "confirmed",
+        priority: "normal",
+        color: EVENT_TYPE_COLORS.availability,
+        event_type: "availability",
+        show_as: isAvailable ? "free" : "busy",
+        visibility: "public",
+        is_availability: isAvailable,
+        availability_note: isAvailable ? "Available for care booking" : "Unavailable",
+        rrule: slot.specific_date ? undefined : "FREQ=WEEKLY",
+      });
+    }),
+  );
+
+  return created.filter(Boolean);
+}
+
 export async function getProviderCalendarBookingConflictMessage(
   providerId: string,
   date: string,
