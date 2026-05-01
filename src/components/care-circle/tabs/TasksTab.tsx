@@ -180,8 +180,8 @@ export function TasksTab({
               <p className="text-xs font-medium text-muted-foreground pt-3 pb-1">Completed ({completedTasks.length})</p>
               {completedTasks.map((t: any) => (
                 <div key={t.id} className="flex items-center gap-3 p-3 rounded-lg bg-card/50 border border-transparent opacity-60 hover:opacity-80">
-                  <button onClick={() => toggleTask(t.id, t.status)} className="shrink-0"><CheckCircle className="h-5 w-5 text-success" /></button>
-                  <p className="text-sm line-through text-muted-foreground flex-1 cursor-pointer" onClick={() => toggleTask(t.id, t.status)}>{t.title}</p>
+                  <button onClick={() => toggleTask(t.id, t.finish_status)} className="shrink-0"><CheckCircle className="h-5 w-5 text-success" /></button>
+                  <p className="text-sm line-through text-muted-foreground flex-1 cursor-pointer" onClick={() => toggleTask(t.id, t.finish_status)}>{t.title}</p>
                   {(isAdmin || t.created_by === userId) && (
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10 shrink-0"
                       onClick={() => deleteTask.mutate(t.id, { onSuccess: () => toast({ title: "Task deleted" }) })}>
