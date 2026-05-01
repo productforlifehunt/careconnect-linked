@@ -1047,6 +1047,26 @@ export function useCreateCheckinLog() {
   return useCreateCheckin();
 }
 
+export function useUpdateCheckin() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...updates }: { id: string; [key: string]: any }) => updateCheckinWordPress(id, updates),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["checkins"] }); },
+  });
+}
+
+export function useDeleteCheckin() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteCheckinWordPress(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["checkins"] });
+      qc.invalidateQueries({ queryKey: ["checkinLogs"] });
+      qc.invalidateQueries({ queryKey: ["todayCheckinLogs"] });
+    },
+  });
+}
+
 export function useMedicines(caredOneId: string | null) {
   return useQuery({
     queryKey: ["medicines", caredOneId],
