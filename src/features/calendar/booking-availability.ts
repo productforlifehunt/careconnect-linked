@@ -2,6 +2,7 @@ import { RRule } from "rrule";
 
 import {
   createCalendarEventForUserWordPress,
+  deleteCalendarEventWordPress,
   fetchCalendarEventsForUserWordPress,
   inviteUserToEventWordPress,
 } from "./source.wordpress";
@@ -43,7 +44,7 @@ function rangesOverlap(startA: Date, endA: Date, startB: Date, endB: Date) {
 
 function isBlockingEvent(event: CalendarEvent) {
   if (event.status === "cancelled") return false;
-  if (event.is_availability || event.event_type === "availability") return false;
+  if (event.is_availability) return false;
   return event.show_as !== "free";
 }
 
@@ -69,21 +70,38 @@ function expandEventRanges(event: CalendarEvent, windowStart: Date, windowEnd: D
   }
 }
 
+function isAvailabilityManagedEvent(event: CalendarEvent) {
+  return event.is_availability || event.event_type === "availability";
+}
+
 function calendarEventsToAvailability(events: CalendarEvent[]): AvailabilitySlot[] {
   return events
-    .filter((event) => event.status !== "cancelled" && (event.is_availability || event.event_type === "availability"))
+    .filter((event) => event.status !== "cancelled" && isAvailabilityManagedEvent(event))
     .map((event) => ({
-      kind: "date" as const,
+      kind: event.rrule?.includes("FREQ=WEEKLY") ? "weekly" as const : "date" as const,
       type: "calendar-event",
+      day_of_week: event.rrule?.includes("FREQ=WEEKLY") ? new Date(event.start_at).getDay() : undefined,
       specific_date: event.start_at.slice(0, 10),
       start_time: toTime(new Date(event.start_at)),
       end_time: toTime(new Date(event.end_at || event.start_at)),
-      is_available: true,
+      is_available: event.is_availability || event.show_as === "free",
       priority: 10,
-      bookable: "yes",
+      bookable: event.is_availability || event.show_as === "free" ? "yes" : "no",
       from: event.start_at,
       to: event.end_at,
     }));
+}
+
+function availabilityRangesForDate(events: CalendarEvent[], date: string) {
+  const dayStart = new Date(`${date}T00:00:00`);
+  const dayEnd = new Date(`${date}T23:59:59`);
+  return events
+    .filter((event) => event.status !== "cancelled" && isAvailabilityManagedEvent(event))
+    .flatMap((event) => expandEventRanges(event, dayStart, dayEnd).map((range) => ({
+      start: range.start,
+      end: range.end,
+      is_available: event.is_availability || event.show_as === "free",
+    })));
 }
 
 export async function getProviderCalendarAvailability(providerId: string): Promise<AvailabilitySlot[]> {
@@ -101,18 +119,15 @@ export async function getProviderCalendarBookingConflictMessage(
   const requestedStart = toDate(date, time);
   const requestedEnd = addHours(requestedStart, durationHours);
   const events = await fetchCalendarEventsForUserWordPress(providerId);
-  const availabilityRanges = calendarEventsToAvailability(events).filter((slot) => slot.specific_date === date && slot.is_available);
+  const availabilityRanges = availabilityRangesForDate(events, date).filter((slot) => slot.is_available);
 
   if (availabilityRanges.length === 0) return "Caregiver has no available calendar slot for this time.";
 
   const insideAvailability = availabilityRanges.some((slot) => {
-    if (!slot.start_time || !slot.end_time) return false;
-    const slotStart = toDate(date, slot.start_time);
-    const slotEnd = toDate(date, slot.end_time);
-    return requestedStart >= slotStart && requestedEnd <= slotEnd;
+    return requestedStart >= slot.start && requestedEnd <= slot.end;
   });
   if (!insideAvailability) {
-    const ranges = availabilityRanges.map((slot) => `${slot.start_time}–${slot.end_time}`).join(", ");
+    const ranges = availabilityRanges.map((slot) => `${toTime(slot.start)}–${toTime(slot.end)}`).join(", ");
     return ranges ? `Caregiver is available: ${ranges}` : "Caregiver is not available at this time.";
   }
 
