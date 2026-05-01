@@ -30,6 +30,15 @@ export async function wordpressFetchRaw(endpoint: string, options: WordPressFetc
   });
 
   if (!response.ok) {
+    // Treat 404 on JetEngine relation lookups as "no relations" — the relation
+    // may not be registered on this WP yet, or the parent has zero children.
+    // Returning an empty payload keeps the UI from crashing on optional links.
+    if (response.status === 404 && /^jet-rel\//.test(endpoint)) {
+      return new Response("[]", {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
     // Auto-recover from stale / invalid JWT: clear token and bounce to /auth
     if (response.status === 400 || response.status === 401 || response.status === 403) {
       try {
