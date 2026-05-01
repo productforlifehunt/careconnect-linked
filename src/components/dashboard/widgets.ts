@@ -3,7 +3,7 @@ import type { WidgetDef } from "./DashboardWidgetConfig";
 /**
  * Master widget registry.
  * `roles` controls who sees the widget by default.
- *   "all" = everyone, "caregiver" = caregivers, "provider" = care providers, "caredOne" = loved ones
+ *   "all" = everyone, "caregiver" = caregivers, "provider" = care providers, "caredOne" = cared ones
  */
 export const WIDGET_REGISTRY: WidgetDef[] = [
   // ── Challenged-only (dementia) — visible to caregivers AND providers ──
@@ -11,7 +11,7 @@ export const WIDGET_REGISTRY: WidgetDef[] = [
   // symptom & behavior tracker, AI insights/care tips/daily summary) to avoid
   // implying medical assessment. The app provides companionship + logistics only.
   { id: "emergency-sos",       label: "Notify Care Circle",       roles: ["all"],                    challengedOnly: true },
-  { id: "patient-summaries",   label: "Loved One Overview",       roles: ["caregiver", "provider"],  challengedOnly: true },
+  { id: "patient-summaries",   label: "Cared One Overview",       roles: ["caregiver", "provider"],  challengedOnly: true },
   { id: "daily-timeline",     label: "Daily Timeline",            roles: ["caregiver", "provider"],  challengedOnly: true },
   { id: "caregiver-wellness", label: "Caregiver Wellness",         roles: ["caregiver", "provider"], challengedOnly: true },
 

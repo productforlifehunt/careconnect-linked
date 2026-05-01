@@ -143,7 +143,7 @@ const en = {
     aiCompanion: "AI Companion",
     seniorFacilities: "Senior Facilities",
     caredOnes: "Cared Ones",
-    myLovedOnes: "My Loved Ones",
+    myLovedOnes: "Cared Ones",
     howItWorks: "How It Works",
     trustSafety: "Trust & Safety",
     myProfile: "My Profile",
@@ -185,7 +185,7 @@ const en = {
       footerTagline: "The all-in-one dementia care platform. Knowledge, coordination, safety, and support since 2024.",
       authSubtitle: "Challenge dementia, together",
       dashboardSubtitle: "Your dementia care overview",
-      caredOneSingular: "Loved One",
+      caredOneSingular: "Cared One",
       careGroupSingular: "Care Team",
       becomeTitle: "Join as a Dementia Caregiver",
       becomeSubtitle: "Help families navigating dementia care",
@@ -301,7 +301,7 @@ const en = {
     step3Title: "Build Your Care Team",
     step3Desc: "Invite family members and caregivers to collaborate. Share updates, assign tasks, and maintain a care journal everyone can access.",
     step4Title: "Stay in Touch",
-    step4Desc: "See where loved ones and caregivers are with GPS location sharing (subject to network and device limits — for reference only). Set geofence reminders and notify family. For real emergencies, always call your local emergency number.",
+    step4Desc: "See where cared ones and caregivers are with GPS location sharing (subject to network and device limits — for reference only). Set geofence reminders and notify family. For real emergencies, always call your local emergency number.",
     whyTrust: "Why Families Trust Us",
     bgVerified: "Background Verified",
     bgVerifiedDesc: "All caregivers undergo thorough background checks and identity verification.",
@@ -388,7 +388,7 @@ const en = {
 
   // ═══ CARED ONES ═══
   caredOnes: {
-    manageAndTrack: "Manage and track care for your loved ones",
+    manageAndTrack: "Manage and track care for your cared ones",
     addCaredOne: "Add {{caredOne}}",
     searchByNameEmail: "Search by name or email",
     selectRelationship: "Select relationship",
@@ -1218,7 +1218,7 @@ const en = {
     feature1Title: "Dementia-Optimized Responses",
     feature1Desc: "Trained specifically for dementia patient behaviors, cognitive patterns, and emotional needs. Understands sundowning, repetitive questions, and confusion states.",
     feature2Title: "Multi-Layer Safety Guardrails",
-    feature2Desc: "Multiple safety filters prevent any harmful, misleading, or inappropriate content from reaching your loved one.",
+    feature2Desc: "Multiple safety filters prevent any harmful, misleading, or inappropriate content from reaching your cared one.",
     feature3Title: "Zero Financial Risk",
     feature3Desc: "Our AI will never suggest purchases, investments, or any financial transactions. No ads, no upsells, no manipulation.",
     feature4Title: "Emotional Safety",
@@ -1258,10 +1258,10 @@ const en = {
     ourAI5: "Multi-layer emotional safety filters protect against any form of manipulation",
     ourAI6: "Specially trained for hallucinations and delusions — gentle redirection without distress",
     ourAI7: "Proactively protects patient privacy — refuses to request or respond to any sensitive information",
-    ctaTitle: "Safe AI Companionship for Your Loved One",
-    ctaSubtitle: "Give your loved one a patient, warm, always-available companion that you can trust completely.",
+    ctaTitle: "Safe AI Companionship for Your Cared One",
+    ctaSubtitle: "Give your cared one a patient, warm, always-available companion that you can trust completely.",
     disclaimerTitle: "Important Notice",
-    disclaimerText: "AI-generated content is for companionship purposes only. It does not constitute medical advice, diagnosis, or treatment. If you have medical concerns about your loved one, please consult a qualified healthcare professional immediately. While our AI is designed with extensive safety measures specifically for dementia patients, including hallucination response, behavioral adaptation, and multi-layer safeguards, no AI system is perfect. Caregiver supervision is always recommended.",
+    disclaimerText: "AI-generated content is for companionship purposes only. It does not constitute medical advice, diagnosis, or treatment. If you have medical concerns about your cared one, please consult a qualified healthcare professional immediately. While our AI is designed with extensive safety measures specifically for dementia patients, including hallucination response, behavioral adaptation, and multi-layer safeguards, no AI system is perfect. Caregiver supervision is always recommended.",
   },
 };
 

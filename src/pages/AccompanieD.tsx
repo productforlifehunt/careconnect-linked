@@ -17,7 +17,7 @@ export default function AccompanieD() {
       brandNameZh="陪伴篇"
       title="Companionship & Support"
       titleZh="陪伴与支持"
-      subtitle="Find the right companion for your loved one — from professional caregivers to AI-powered support and activity guides."
+      subtitle="Find the right companion for your cared one — from professional caregivers to AI-powered support and activity guides."
       subtitleZh="为亲人找到合适的陪伴——从专业护理人员到AI智能陪伴和活动指南。"
       icon={<HandHeart className="h-6 w-6 text-white" />}
       accentColor="from-violet-500 to-purple-600"

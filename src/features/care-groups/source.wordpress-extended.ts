@@ -786,6 +786,11 @@ export async function addCaredOneToGroupWordPress(groupId: string, caredOneId: s
   const normalizedGroupId = normalizeWpObjectId(groupId);
   const normalizedCaredOneId = normalizeWpObjectId(caredOneId);
   if (!normalizedGroupId || !normalizedCaredOneId) return;
+  let displayName = "Cared One";
+  try {
+    const user = await wordpressFetch<any>(`wp/v2/users/${normalizedCaredOneId}?context=edit`);
+    displayName = user?.name || user?.slug || displayName;
+  } catch {}
   await wordpressFetch(`jet-rel/${REL_GROUP_MEMBER}`, {
     method: "POST",
     body: {
@@ -793,7 +798,7 @@ export async function addCaredOneToGroupWordPress(groupId: string, caredOneId: s
       child_id: normalizedCaredOneId,
       context: "child",
       store_items_type: "update",
-      meta: memberMeta({ memberTypes: ["nothing special"], memberRoles: ["cared one"], invitationStatus: "accepted" }),
+      meta: memberMeta({ displayName, memberTypes: ["nothing special"], memberRoles: ["cared one"], invitationStatus: "accepted" }),
     },
   });
 }

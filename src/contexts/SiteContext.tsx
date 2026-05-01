@@ -23,7 +23,7 @@ export interface SiteConfig {
   cssClass: string;
   contactEmail: string;
   brandSlug: string;
-  /** Singular label for a cared-one, e.g. "Cared One" or "Loved One" */
+  /** Singular label for a cared-one */
   caredOneSingular: string;
   /** Singular label for a care group, e.g. "Care Group" or "Care Team" */
   careGroupSingular: string;
@@ -101,16 +101,16 @@ const challengedConfig: SiteConfig = {
   footerBrand: "ChallengeD",
   footerTagline: "Supporting dementia caregivers and families since 2024.",
   metaTitle: "ChallengeD — Dementia Care Together",
-  metaDescription: "Coordinate dementia care, find specialized caregivers, and keep your loved one safe.",
+  metaDescription: "Coordinate dementia care, find specialized caregivers, and keep your cared one safe.",
   cssClass: "site-challenged",
   contactEmail: "safety@challenged.com",
   brandSlug: "challenged",
-  caredOneSingular: "Loved One",
+  caredOneSingular: "Cared One",
   careGroupSingular: "Care Team",
   navLabels: {
     careGroups: "UniteD",
     findCare: "Find Help",
-    caredOnes: "My Loved Ones",
+    caredOnes: "Cared Ones",
     dashboard: "Dashboard",
     gpsTracking: "FinD",
     awareD: "AwareD",

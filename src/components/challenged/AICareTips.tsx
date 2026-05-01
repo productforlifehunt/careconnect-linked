@@ -39,7 +39,7 @@ export function AICareTips({ caredOneName, dementiaStage }: AICareTipsProps) {
   const fetchTips = async () => {
     setLoading(true);
     try {
-      const context = `Patient: ${caredOneName || "a loved one"}. Dementia stage: ${dementiaStage || "unknown"}. Provide 3 personalized daily care tips.`;
+      const context = `Patient: ${caredOneName || "a cared one"}. Dementia stage: ${dementiaStage || "unknown"}. Provide 3 personalized daily care tips.`;
       const reply = await invokeAI("care_tips", context);
       const parsed = parseAIJson<CareTip[]>(reply);
       if (parsed && Array.isArray(parsed)) setTips(parsed);
