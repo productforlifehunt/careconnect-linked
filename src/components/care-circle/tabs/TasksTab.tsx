@@ -34,17 +34,30 @@ export function TasksTab({
   const [newTask, setNewTask] = useState({ title: "", description: "", assigneeIds: [] as string[], due_date: "" });
   const [visibility, setVisibility] = useState<VisibilityValue>(EMPTY_VISIBILITY);
 
-  const pendingTasks = (tasks || []).filter((t: any) => t.status !== "completed");
-  const completedTasks = (tasks || []).filter((t: any) => t.status === "completed");
+  // Per data model: task itself only has `k` (help status) and `l` (finish status: 1=not finished, 2=finished).
+  // "pending/accepted/rejected" belongs to each assignee on REL 108 meta `a` — i.e. invitee response.
+  const pendingTasks = (tasks || []).filter((t: any) => String(t.finish_status ?? "1") !== "2");
+  const completedTasks = (tasks || []).filter((t: any) => String(t.finish_status ?? "1") === "2");
 
-  const statusColors: Record<string, string> = {
+  const helpStatusColors: Record<string, string> = {
+    "1": "bg-muted text-muted-foreground",      // doesn't need help
+    "2": "bg-warning/10 text-warning",          // needs help
+    "3": "bg-success/10 text-success",          // found help
+  };
+  const helpStatusLabels: Record<string, string> = {
+    "1": "No help needed",
+    "2": "Needs help",
+    "3": "Help found",
+  };
+  const responseColors: Record<string, string> = {
     pending: "bg-warning/10 text-warning",
-    "in progress": "bg-primary/10 text-primary",
-    completed: "bg-success/10 text-success",
+    accepted: "bg-success/10 text-success",
+    rejected: "bg-destructive/10 text-destructive",
   };
 
-  const toggleTask = (id: string, currentStatus: string) => {
-    updateTaskStatus.mutate({ id, updates: { status: currentStatus === "completed" ? "pending" : "completed" } });
+  const toggleTask = (id: string, currentFinish: string) => {
+    const next = String(currentFinish) === "2" ? "1" : "2";
+    updateTaskStatus.mutate({ id, updates: { finish_status: next, completed_at: next === "2" ? new Date().toISOString() : "" } });
   };
 
   const addTask = () => {
