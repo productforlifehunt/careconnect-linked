@@ -124,7 +124,7 @@ export async function createCalendarEventWordPress(event: Partial<CalendarEvent>
   try {
     await wordpressFetch(`jet-rel/${REL_USER_EVENT}`, {
       method: "POST",
-      body: { parent_id: userId, child_id: newId, context: "child_object", store_items_type: "replace" },
+      body: { parent_id: userId, child_id: newId, context: "child", store_items_type: "update" },
     });
   } catch { /* non-fatal */ }
   return mapEventFromWP({ ...created, id: newId });
@@ -141,6 +141,6 @@ export async function deleteCalendarEventWordPress(id: string): Promise<void> {
 export async function inviteUserToEventWordPress(eventId: string, userId: string): Promise<void> {
   await wordpressFetch(`jet-rel/${REL_EVENT_INVITEES}`, {
     method: "POST",
-    body: { parent_id: eventId, child_id: userId, context: "child_object", store_items_type: "update" },
+    body: { parent_id: eventId, child_id: userId, context: "child", store_items_type: "update" },
   });
 }
