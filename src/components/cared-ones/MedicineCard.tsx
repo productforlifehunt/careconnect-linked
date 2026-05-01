@@ -166,7 +166,7 @@ function MedHistoryDialog({ open, onClose, med }: { open: boolean; onClose: () =
 function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClose: () => void; med: any; onDelete: () => void }) {
   const updateMed = useUpdateMedicine();
   const { toast } = useToast();
-  const [form, setForm] = useState({ name: "", dosage: "", frequency: "once_daily", time_slots: ["08:00"] as string[], note: "" });
+  const [form, setForm] = useState({ name: "", dosage: "", frequency: "once_daily", time_slots: ["08:00"] as string[], note: "", stock_count: "" as string | number, refill_threshold: "" as string | number });
 
   // Populate form on open
   useState(() => {
@@ -178,6 +178,8 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
         frequency: freqEntry?.value || "once_daily",
         time_slots: med.time_slot?.length > 0 ? [...med.time_slot] : ["08:00"],
         note: med.note || "",
+        stock_count: med.stock_count ?? "",
+        refill_threshold: med.refill_threshold ?? "",
       });
     }
   });
@@ -192,6 +194,8 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
         frequency: freqEntry?.value || "once_daily",
         time_slots: med.time_slot?.length > 0 ? [...med.time_slot] : ["08:00"],
         note: med.note || "",
+        stock_count: med.stock_count ?? "",
+        refill_threshold: med.refill_threshold ?? "",
       });
     }
   }, [med]);
@@ -205,6 +209,8 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
       frequency: FREQUENCIES.find(f => f.value === form.frequency)?.label || form.frequency,
       time_slot: form.time_slots,
       note: form.note || undefined,
+      stock_count: form.stock_count === "" ? "" : Number(form.stock_count),
+      refill_threshold: form.refill_threshold === "" ? "" : Number(form.refill_threshold),
     }, {
       onSuccess: () => { toast({ title: "Medicine updated" }); onClose(); },
       onError: (err) => toast({ title: "Failed", description: String(err.message), variant: "destructive" }),
