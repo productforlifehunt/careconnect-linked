@@ -81,7 +81,7 @@ function calendarEventsToAvailability(events: CalendarEvent[]): AvailabilitySlot
       kind: event.rrule?.includes("FREQ=WEEKLY") ? "weekly" as const : "date" as const,
       type: "calendar-event",
       day_of_week: event.rrule?.includes("FREQ=WEEKLY") ? new Date(event.start_at).getDay() : undefined,
-      specific_date: event.start_at.slice(0, 10),
+      specific_date: event.rrule?.includes("FREQ=WEEKLY") ? undefined : event.start_at.slice(0, 10),
       start_time: toTime(new Date(event.start_at)),
       end_time: toTime(new Date(event.end_at || event.start_at)),
       is_available: event.is_availability || event.show_as === "free",
