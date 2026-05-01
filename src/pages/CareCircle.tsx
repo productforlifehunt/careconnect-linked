@@ -45,7 +45,7 @@ export default function CareCircle() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const site = useSite();
-  const { data: profile } = useMyProfile();
+  const { data: profile, isLoading: profileLoading } = useMyProfile();
   const qc = useQueryClient();
   const { data: groups, isLoading: groupsLoading } = useCareGroups();
   const createGroup = useCreateCareGroup();
@@ -100,7 +100,7 @@ export default function CareCircle() {
   });
   const isAdmin = currentMember?.is_owner || currentMember?.is_admin;
   const isOwner = currentMember?.is_owner;
-  const canShowJoin = !membersLoading && activeGroupId && !currentMember;
+  const canShowJoin = !profileLoading && !membersLoading && !!currentUserId && !!activeGroupId && !currentMember;
   const pendingTasks = (tasks || []).filter((t: any) => t.status !== "completed");
 
   const handleCreateGroup = () => {
