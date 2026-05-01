@@ -143,7 +143,7 @@ const en = {
     aiCompanion: "AI Companion",
     seniorFacilities: "Senior Facilities",
     caredOnes: "Cared Ones",
-    myLovedOnes: "My Loved Ones",
+    myLovedOnes: "Cared Ones",
     howItWorks: "How It Works",
     trustSafety: "Trust & Safety",
     myProfile: "My Profile",
@@ -185,7 +185,7 @@ const en = {
       footerTagline: "The all-in-one dementia care platform. Knowledge, coordination, safety, and support since 2024.",
       authSubtitle: "Challenge dementia, together",
       dashboardSubtitle: "Your dementia care overview",
-      caredOneSingular: "Loved One",
+      caredOneSingular: "Cared One",
       careGroupSingular: "Care Team",
       becomeTitle: "Join as a Dementia Caregiver",
       becomeSubtitle: "Help families navigating dementia care",
@@ -388,7 +388,7 @@ const en = {
 
   // ═══ CARED ONES ═══
   caredOnes: {
-    manageAndTrack: "Manage and track care for your loved ones",
+    manageAndTrack: "Manage and track care for your cared ones",
     addCaredOne: "Add {{caredOne}}",
     searchByNameEmail: "Search by name or email",
     selectRelationship: "Select relationship",
