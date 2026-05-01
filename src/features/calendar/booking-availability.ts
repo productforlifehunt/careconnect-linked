@@ -56,10 +56,13 @@ function expandEventRanges(event: CalendarEvent, windowStart: Date, windowEnd: D
 
   try {
     const duration = Math.max(1, eventEnd.getTime() - eventStart.getTime());
-    const rule = RRule.fromString(event.rrule);
-    rule.options.dtstart = eventStart;
+    const options = RRule.parseString(event.rrule);
     const until = event.rrule_until ? new Date(event.rrule_until) : undefined;
-    if (until && !Number.isNaN(until.getTime())) rule.options.until = until;
+    const rule = new RRule({
+      ...options,
+      dtstart: eventStart,
+      ...(until && !Number.isNaN(until.getTime()) ? { until } : {}),
+    });
     return rule.between(windowStart, windowEnd, true).map((start) => ({ start, end: new Date(start.getTime() + duration) }));
   } catch {
     return [{ start: eventStart, end: eventEnd }];
