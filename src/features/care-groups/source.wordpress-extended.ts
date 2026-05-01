@@ -403,35 +403,48 @@ export async function joinGroupByCodeWordPress(token: string): Promise<any> {
       groupName = g?.name || groupName;
     } catch {}
 
-    // Add user to group via Rel 72
+    // Check membership FIRST — never re-POST to Rel 72 for an existing member
+    // (that would wipe owner/admin meta and falsely consume an invite use).
     const wpUser = getStoredWPUser();
     const userId = wpUser?.user_id ? Number(wpUser.user_id) : 0;
-    if (userId) {
-      await wordpressFetch(`jet-rel/${REL_GROUP_MEMBER}`, {
-        method: "POST",
-        body: {
-          parent_id: parentGroupId,
-          child_id: userId,
-          context: "child",
-          store_items_type: "update",
-          meta: memberMeta({
-            displayName: wpUser.user_display_name || wpUser.user_login || "Member",
-            memberTypes: ["nothing special"],
-            memberRoles: ["nothing special"],
-            invitationStatus: "accepted",
-          }),
-        },
-      });
+    if (!userId) throw new Error("Please sign in to join this group.");
+
+    const existingMembers = await wordpressFetch<any[]>(
+      `jet-rel/${REL_GROUP_MEMBER}/children/${parentGroupId}`
+    ).catch(() => []);
+    const alreadyMember = (Array.isArray(existingMembers) ? existingMembers : [])
+      .some((r: any) => Number(r.child_object_id) === userId
+        && (r?.meta?.care_groups_member_invitation_status || "accepted") === "accepted");
+
+    if (alreadyMember) {
+      return { group_id: String(parentGroupId), group_name: groupName, already_member: true };
     }
 
-    // Increment use_count (best-effort)
+    // Add user to group via Rel 72
+    await wordpressFetch(`jet-rel/${REL_GROUP_MEMBER}`, {
+      method: "POST",
+      body: {
+        parent_id: parentGroupId,
+        child_id: userId,
+        context: "child",
+        store_items_type: "update",
+        meta: memberMeta({
+          displayName: wpUser.user_display_name || wpUser.user_login || "Member",
+          memberTypes: ["nothing special"],
+          memberRoles: ["nothing special"],
+          invitationStatus: "accepted",
+        }),
+      },
+    });
+
+    // Increment use_count only on real join (best-effort)
     wordpressCCTFetch("care_group_invite", {
       id: String(inviteIdNum),
       method: "PUT",
       body: { use_count: invite.use_count + 1 },
     }).catch(() => {});
 
-    return { group_id: String(parentGroupId), group_name: groupName };
+    return { group_id: String(parentGroupId), group_name: groupName, already_member: false };
   } catch (e: any) {
     throw new Error(e?.message || "Invalid invite link");
   }
