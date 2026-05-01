@@ -280,6 +280,17 @@ export async function deleteCareTaskWordPress(id: string): Promise<void> {
   await wordpressCCTFetch(CCT_SLUG, { id, method: "DELETE" });
 }
 
+/** Link a calendar event to a task via REL 131 (universal_care_task → users_calendar_even). */
+export async function linkTaskToCalendarEventWordPress(taskId: string, eventId: string): Promise<void> {
+  const tid = normalizeWpObjectId(taskId);
+  const eid = normalizeWpObjectId(eventId);
+  if (!tid || !eid) return;
+  await wordpressFetch(`jet-rel/${REL_TASK_CALENDAR}`, {
+    method: "POST",
+    body: { parent_id: tid, child_id: eid, context: "child", store_items_type: "update" },
+  });
+}
+
 /** Update an assignee's response status (pending/accepted/rejected) on REL 108 meta field `a`. */
 export async function updateAssigneeStatusWordPress(taskId: string, userId: string, status: "pending" | "accepted" | "rejected"): Promise<void> {
   const tid = normalizeWpObjectId(taskId);
