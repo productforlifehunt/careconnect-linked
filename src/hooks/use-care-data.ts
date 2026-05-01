@@ -85,8 +85,10 @@ import {
 } from "@/features/cared-ones/source.wordpress-extended";
 import {
   fetchInformationCardsWordPress, fetchInformationCardWordPress,
+  fetchInformationCardByShareTokenWordPress,
   createInformationCardWordPress, updateInformationCardWordPress, deleteInformationCardWordPress,
   fetchInformationCardContactIdsWordPress, setInformationCardContactsWordPress,
+  enableInformationCardShareWordPress, revokeInformationCardShareWordPress,
 } from "@/features/cared-ones/source.information-cards";
 import type {
   Profile, Booking, Review, CareGroup, CareGroupMember,
