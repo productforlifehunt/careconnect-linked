@@ -66,6 +66,23 @@ async function fetchAssignedUserIds(taskId: string): Promise<string[]> {
   } catch { return []; }
 }
 
+/** Returns array of { user_id: "wp-N", response: "pending"|"accepted"|"rejected" } */
+async function fetchAssignees(taskId: string): Promise<Array<{ user_id: string; response: string }>> {
+  try {
+    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_TASK_ASSIGNEE}/children/${normalizeWpObjectId(taskId)}`);
+    if (!Array.isArray(rels) || rels.length === 0) return [];
+    return rels
+      .map((r: any) => {
+        const id = normalizeWpObjectId(r.child_object_id);
+        if (!id) return null;
+        const meta = r.meta || r.meta_fields || {};
+        const response = String(meta.a || meta.response || "pending");
+        return { user_id: `wp-${id}`, response };
+      })
+      .filter(Boolean) as Array<{ user_id: string; response: string }>;
+  } catch { return []; }
+}
+
 async function fetchCaredOneId(taskId: string): Promise<string | null> {
   try {
     const rels = await wordpressFetch<any[]>(`jet-rel/${REL_TASK_CARED_ONE}/children/${normalizeWpObjectId(taskId)}`);
