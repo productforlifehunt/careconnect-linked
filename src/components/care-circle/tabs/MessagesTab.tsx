@@ -29,12 +29,12 @@ export function MessagesTab({ groupMessages, userId, activeGroupId, sendMessage 
           <ScrollArea className="flex-1 p-4">
             <div className="space-y-3">
               {(groupMessages || []).map((msg: any) => {
-                const isMine = msg.sender_id === userId;
+                const isMine = (msg.sender_user_id || msg.sender_id) === userId;
                 return (
                   <div key={msg.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
                     <div className={`max-w-[75%] rounded-xl px-3 py-2 ${isMine ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
                       {!isMine && <p className="text-xs font-medium mb-0.5">{msg.sender?.full_name || "Member"}</p>}
-                      <p className="text-sm">{msg.message_content}</p>
+                      <p className="text-sm">{msg.content || msg.message_content}</p>
                       <p className={`text-[10px] mt-0.5 ${isMine ? "text-primary-foreground/60" : "text-muted-foreground"}`}>{new Date(msg.created_at).toLocaleTimeString("en", { hour: "numeric", minute: "2-digit" })}</p>
                     </div>
                   </div>
