@@ -322,6 +322,11 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onHistory, compact, slot }
           <p className={`font-medium text-sm truncate ${isDone ? "line-through opacity-60" : "text-foreground"}`}>
             {med.name}
             {isPRN && <Badge variant="outline" className="ml-2 text-[10px] py-0 px-1.5 border-primary/40 text-primary">PRN</Badge>}
+            {typeof med.stock_count === "number" && typeof med.refill_threshold === "number" && med.stock_count <= med.refill_threshold && (
+              <Badge variant="outline" className="ml-2 text-[10px] py-0 px-1.5 border-destructive/40 text-destructive bg-destructive/5">
+                <AlertCircle className="h-2.5 w-2.5 mr-0.5" />Low: {med.stock_count} left
+              </Badge>
+            )}
           </p>
           <p className="text-xs text-muted-foreground">{[med.dosage, med.frequency].filter(Boolean).join(" · ")}</p>
           {logForThisDose?.note && (
