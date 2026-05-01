@@ -1295,19 +1295,7 @@ export async function getProviderOrders(providerId: string) {
 }
 
 export async function getProviderAvailability(providerId: string): Promise<NormalizedBookingAvailabilityRule[]> {
-  try {
-    const product = await getProviderProduct(providerId);
-    if (!product) return [];
-    let bookingProduct: any = null;
-    try {
-      bookingProduct = await wcBookingsFetch(`products/${product.id}`);
-    } catch {
-      bookingProduct = await wpAdminFetch(`wc-bookings/v1/products/${product.id}`);
-    }
-    return normalizeBookingAvailabilityRules(bookingProduct?.availability || []);
-  } catch {
-    return [];
-  }
+  return getProviderCalendarAvailability(providerId);
 }
 
 export async function upsertProviderAvailability(providerId: string, slots: any[]) {
@@ -1527,24 +1515,7 @@ export async function getProviderBookingConflictMessage(
   durationHours = 0,
   options?: { excludeOrderId?: number },
 ) {
-  const availability = await getProviderAvailability(providerId);
-  const scheduleConflict = getAvailabilityConflictMessage(availability, date, time, durationHours);
-  if (scheduleConflict) return scheduleConflict;
-
-  if (!durationHours) return null;
-
-  const bookedRanges = await getProviderBookedTimeRanges(providerId);
-  const requestedEnd = addHoursToTime(time, durationHours);
-  const conflictingBooking = bookedRanges.find((booking) => {
-    if (options?.excludeOrderId && booking.orderId === options.excludeOrderId) return false;
-    if (booking.appointmentDate !== date) return false;
-    const bookingEnd = addHoursToTime(booking.appointmentTime, booking.durationHours);
-    return rangesOverlap(time, requestedEnd, booking.appointmentTime, bookingEnd);
-  });
-
-  if (!conflictingBooking) return null;
-
-  return `Provider already has a booking from ${conflictingBooking.appointmentTime} to ${addHoursToTime(conflictingBooking.appointmentTime, conflictingBooking.durationHours)} on this date.`;
+  return getProviderCalendarBookingConflictMessage(providerId, date, time, durationHours);
 }
 
 export function getAvailabilityConflictMessage(
