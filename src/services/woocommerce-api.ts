@@ -451,7 +451,9 @@ export async function getOrCreateProviderProduct(
         console.warn('Failed to convert/publish/categorize product:', e);
       }
 
-      await configureBookingProduct(product.id, providerData.hourlyRate, flatResources);
+      // Bookings & availability are handled by our Calendar CCT (users_calendar_even),
+      // not WooCommerce Bookings. Packages live in `_service_packages` product meta only.
+      // await configureBookingProduct(product.id, providerData.hourlyRate, flatResources);
     }
 
     return product;
