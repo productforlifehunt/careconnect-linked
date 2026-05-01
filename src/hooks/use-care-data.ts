@@ -696,7 +696,10 @@ export function useAddCaredOneToGroup() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ groupId, caredOneId }: { groupId: string; caredOneId: string }) => addCaredOneToGroupWordPress(groupId, caredOneId),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["careGroupMembers"] }); },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ["careGroupMembers", vars.groupId] });
+      qc.invalidateQueries({ queryKey: ["groupCaredOnes", vars.groupId] });
+    },
   });
 }
 
