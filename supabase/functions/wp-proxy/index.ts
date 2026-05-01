@@ -50,6 +50,10 @@ function createErrorResponse(status: number, payload: unknown, extraHeaders: Rec
   });
 }
 
+function isOptionalJetRelationLookup(method: string, wpPath: string, status: number): boolean {
+  return method === "GET" && status === 404 && /(^|\/)wp-json\/jet-rel\/\d+\/(children|parents|parent)\/\d+\/?$/i.test(wpPath);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -101,6 +105,19 @@ serve(async (req) => {
         if (shouldRetry) {
           lastError = { baseUrl, targetUrl, status: wpResponse.status, body: responseBody };
           continue;
+        }
+
+        if (isOptionalJetRelationLookup(req.method, wpPath, wpResponse.status)) {
+          return new Response("[]", {
+            status: 200,
+            headers: {
+              ...corsHeaders,
+              "Content-Type": "application/json",
+              "X-WP-Upstream-Base": baseUrl,
+              "X-WP-Fallback-Used": i > 0 ? "1" : "0",
+              "X-WP-Optional-Relation-Missing": "1",
+            },
+          });
         }
 
         if (!wpResponse.ok && wpResponse.status >= 500) {
