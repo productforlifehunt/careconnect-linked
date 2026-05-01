@@ -70,7 +70,7 @@ import { listWordPressFeature, createWordPressFeature } from "@/features/shared/
 import { getDokanVendorWithdrawals } from "@/services/woocommerce-api";
 import {
   createUserCaredOneWordPress, deleteUserCaredOneWordPress, fetchGroupCaredOnesWordPress,
-  fetchCheckinsWordPress, createCheckinWordPress, fetchCheckinLogsWordPress, fetchTodayCheckinLogsWordPress, logCheckinWordPress,
+  fetchCheckinsWordPress, createCheckinWordPress, updateCheckinWordPress, deleteCheckinWordPress, fetchCheckinLogsWordPress, fetchTodayCheckinLogsWordPress, logCheckinWordPress,
   fetchMedicinesWordPress, createMedicineWordPress, updateMedicineWordPress, deleteMedicineWordPress,
   fetchMedicineLogsWordPress, fetchTodayMedicineLogsWordPress, logMedicineWordPress,
   fetchHealthVitalsWordPress, createHealthVitalWordPress,
@@ -1045,6 +1045,26 @@ export function useLogCheckin() {
 
 export function useCreateCheckinLog() {
   return useCreateCheckin();
+}
+
+export function useUpdateCheckin() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...updates }: { id: string; [key: string]: any }) => updateCheckinWordPress(id, updates),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["checkins"] }); },
+  });
+}
+
+export function useDeleteCheckin() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteCheckinWordPress(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["checkins"] });
+      qc.invalidateQueries({ queryKey: ["checkinLogs"] });
+      qc.invalidateQueries({ queryKey: ["todayCheckinLogs"] });
+    },
+  });
 }
 
 export function useMedicines(caredOneId: string | null) {

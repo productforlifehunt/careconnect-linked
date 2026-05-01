@@ -211,6 +211,17 @@ export async function createCheckinWordPress(checkin: { user_id: string; name: s
   }
 }
 
+export async function updateCheckinWordPress(id: string, updates: Record<string, any>): Promise<void> {
+  const body: Record<string, any> = { ...updates };
+  if (updates.time_slot !== undefined) body.time_slot = serializeTimeSlot(updates.time_slot);
+  if (updates.is_active !== undefined) body.is_active = updates.is_active ? "Yes" : "No";
+  await wordpressCCTFetch("checkin_schedule", { id, method: "PUT", body });
+}
+
+export async function deleteCheckinWordPress(id: string): Promise<void> {
+  await wordpressCCTFetch("checkin_schedule", { id, method: "DELETE" });
+}
+
 // Check-in logs — live CCT: checkin_log | fields per model: status, note
 export async function fetchCheckinLogsWordPress(caredOneId: string): Promise<any[]> {
   try {

@@ -6,8 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { ClipboardCheck, Plus, Loader2, SkipForward, Check, AlertCircle, History, StickyNote, Edit2 } from "lucide-react";
-import { useCheckins, useCreateCheckin, useCheckinLogs, useTodayCheckinLogs, useLogCheckin } from "@/hooks/use-care-data";
+import { ClipboardCheck, Plus, Loader2, SkipForward, Check, AlertCircle, History, StickyNote, Edit2, Trash2, Pause, Play } from "lucide-react";
+import { useCheckins, useCreateCheckin, useUpdateCheckin, useDeleteCheckin, useCheckinLogs, useTodayCheckinLogs, useLogCheckin } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 
 function formatSlot(slot: string) {
@@ -37,9 +37,13 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
   const { data: logs } = useCheckinLogs(caredOneId);
   const { data: todayLogs } = useTodayCheckinLogs(caredOneId);
   const create = useCreateCheckin();
+  const update = useUpdateCheckin();
+  const remove = useDeleteCheckin();
   const logCheckin = useLogCheckin();
 
   const [addOpen, setAddOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState<{ open: boolean; checkin: any }>({ open: false, checkin: null });
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; checkin: any }>({ open: false, checkin: null });
   const [logDialog, setLogDialog] = useState<{ open: boolean; checkin: any; status: "checked" | "skipped" | "missed" }>({ open: false, checkin: null, status: "checked" });
   const [logNote, setLogNote] = useState("");
   const [historyOpen, setHistoryOpen] = useState<{ open: boolean; checkin: any }>({ open: false, checkin: null });
@@ -124,6 +128,62 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
         onError: (e: any) => toast({ title: "Failed", description: String(e?.message || e), variant: "destructive" }),
       }
     );
+  };
+
+  const togglePause = (checkin: any) => {
+    update.mutate(
+      { id: String(checkin.id), is_active: !checkin.is_active },
+      {
+        onSuccess: () => toast({ title: checkin.is_active ? "Check-in paused" : "Check-in resumed ✓" }),
+        onError: (e: any) => toast({ title: "Failed", description: String(e?.message || e), variant: "destructive" }),
+      }
+    );
+  };
+
+  const openEdit = (checkin: any) => {
+    const slot = Array.isArray(checkin.time_slot) && checkin.time_slot.length ? checkin.time_slot[0] : "08:00";
+    setForm({
+      name: checkin.name || "",
+      detail: checkin.detail || "",
+      frequency: checkin.frequency || "Once daily",
+      time: slot,
+      instructions: checkin.instructions || "",
+      start_date: checkin.start_date || "",
+      note: checkin.note || "",
+    });
+    setEditOpen({ open: true, checkin });
+  };
+
+  const handleEditSave = () => {
+    update.mutate(
+      {
+        id: String(editOpen.checkin.id),
+        name: form.name,
+        detail: form.detail || "",
+        frequency: form.frequency,
+        time_slot: [form.time],
+        instructions: form.instructions || "",
+        start_date: form.start_date || "",
+        note: form.note || "",
+      },
+      {
+        onSuccess: () => {
+          setEditOpen({ open: false, checkin: null });
+          toast({ title: "Check-in updated ✓" });
+        },
+        onError: (e: any) => toast({ title: "Failed", description: String(e?.message || e), variant: "destructive" }),
+      }
+    );
+  };
+
+  const confirmDelete = () => {
+    remove.mutate(String(deleteConfirm.checkin.id), {
+      onSuccess: () => {
+        setDeleteConfirm({ open: false, checkin: null });
+        toast({ title: "Check-in deleted" });
+      },
+      onError: (e: any) => toast({ title: "Failed", description: String(e?.message || e), variant: "destructive" }),
+    });
   };
 
   return (
@@ -227,6 +287,49 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
         </DialogContent>
       </Dialog>
 
+      {/* Edit schedule */}
+      <Dialog open={editOpen.open} onOpenChange={(o) => !o && setEditOpen({ open: false, checkin: null })}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Check-In Schedule</DialogTitle>
+            <DialogDescription>Update this recurring check-in.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 mt-2">
+            <div><Label className="text-sm">Name</Label><Input value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} /></div>
+            <div><Label className="text-sm">Detail</Label><Input value={form.detail} onChange={(e) => setForm((p) => ({ ...p, detail: e.target.value }))} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label className="text-sm">Frequency</Label><Input value={form.frequency} onChange={(e) => setForm((p) => ({ ...p, frequency: e.target.value }))} /></div>
+              <div><Label className="text-sm">Scheduled time</Label><Input type="time" value={form.time} onChange={(e) => setForm((p) => ({ ...p, time: e.target.value || "08:00" }))} /></div>
+            </div>
+            <div><Label className="text-sm">Start date</Label><Input type="date" value={form.start_date} onChange={(e) => setForm((p) => ({ ...p, start_date: e.target.value }))} /></div>
+            <div><Label className="text-sm">Instructions</Label><Input value={form.instructions} onChange={(e) => setForm((p) => ({ ...p, instructions: e.target.value }))} /></div>
+            <div><Label className="text-sm">Notes</Label><Textarea value={form.note} onChange={(e) => setForm((p) => ({ ...p, note: e.target.value }))} rows={2} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen({ open: false, checkin: null })}>Cancel</Button>
+            <Button onClick={handleEditSave} disabled={update.isPending || !form.name.trim()}>
+              {update.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirm */}
+      <Dialog open={deleteConfirm.open} onOpenChange={(o) => !o && setDeleteConfirm({ open: false, checkin: null })}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Trash2 className="h-5 w-5 text-destructive" /> Delete check-in?</DialogTitle>
+            <DialogDescription>This will permanently delete <strong>{deleteConfirm.checkin?.name}</strong>. Logged history will remain.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirm({ open: false, checkin: null })}>Cancel</Button>
+            <Button variant="destructive" onClick={confirmDelete} disabled={remove.isPending}>
+              {remove.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {isLoading ? (
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground mx-auto my-8" />
       ) : (checkins || []).length === 0 ? (
@@ -277,7 +380,12 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
                         </div>
                       )}
                       <div className="flex items-center gap-1">
-                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setHistoryOpen({ open: true, checkin })}><History className="h-3.5 w-3.5" /></Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" title="History" onClick={() => setHistoryOpen({ open: true, checkin })}><History className="h-3.5 w-3.5" /></Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" title={checkin.is_active ? "Pause" : "Resume"} onClick={() => togglePause(checkin)} disabled={update.isPending}>
+                          {checkin.is_active ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" title="Edit" onClick={() => openEdit(checkin)}><Edit2 className="h-3.5 w-3.5" /></Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10" title="Delete" onClick={() => setDeleteConfirm({ open: true, checkin })}><Trash2 className="h-3.5 w-3.5" /></Button>
                       </div>
                     </div>
                   </div>
