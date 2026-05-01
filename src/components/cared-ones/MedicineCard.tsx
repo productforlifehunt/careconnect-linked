@@ -166,7 +166,7 @@ function MedHistoryDialog({ open, onClose, med }: { open: boolean; onClose: () =
 function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClose: () => void; med: any; onDelete: () => void }) {
   const updateMed = useUpdateMedicine();
   const { toast } = useToast();
-  const [form, setForm] = useState({ name: "", dosage: "", frequency: "once_daily", time_slots: ["08:00"] as string[], note: "" });
+  const [form, setForm] = useState({ name: "", dosage: "", frequency: "once_daily", time_slots: ["08:00"] as string[], note: "", stock_count: "" as string | number, refill_threshold: "" as string | number });
 
   // Populate form on open
   useState(() => {
@@ -178,6 +178,8 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
         frequency: freqEntry?.value || "once_daily",
         time_slots: med.time_slot?.length > 0 ? [...med.time_slot] : ["08:00"],
         note: med.note || "",
+        stock_count: med.stock_count ?? "",
+        refill_threshold: med.refill_threshold ?? "",
       });
     }
   });
@@ -192,6 +194,8 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
         frequency: freqEntry?.value || "once_daily",
         time_slots: med.time_slot?.length > 0 ? [...med.time_slot] : ["08:00"],
         note: med.note || "",
+        stock_count: med.stock_count ?? "",
+        refill_threshold: med.refill_threshold ?? "",
       });
     }
   }, [med]);
@@ -205,6 +209,8 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
       frequency: FREQUENCIES.find(f => f.value === form.frequency)?.label || form.frequency,
       time_slot: form.time_slots,
       note: form.note || undefined,
+      stock_count: form.stock_count === "" ? "" : Number(form.stock_count),
+      refill_threshold: form.refill_threshold === "" ? "" : Number(form.refill_threshold),
     }, {
       onSuccess: () => { toast({ title: "Medicine updated" }); onClose(); },
       onError: (err) => toast({ title: "Failed", description: String(err.message), variant: "destructive" }),
@@ -247,6 +253,10 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
             </div>
           </div>
           <div><Label>Notes</Label><Textarea value={form.note} onChange={e => setForm(p => ({ ...p, note: e.target.value }))} placeholder="Instructions, side effects…" className="mt-1 min-h-[60px]" /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>Stock count <span className="text-muted-foreground text-xs">(pills left)</span></Label><Input type="number" min="0" value={form.stock_count} onChange={e => setForm(p => ({ ...p, stock_count: e.target.value }))} placeholder="e.g. 30" className="mt-1" /></div>
+            <div><Label>Refill alert <span className="text-muted-foreground text-xs">(threshold)</span></Label><Input type="number" min="0" value={form.refill_threshold} onChange={e => setForm(p => ({ ...p, refill_threshold: e.target.value }))} placeholder="e.g. 7" className="mt-1" /></div>
+          </div>
           <div className="flex gap-2">
             <Button className="flex-1" onClick={handleSave} disabled={updateMed.isPending || !form.name.trim()}>
               {updateMed.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null} Save Changes
@@ -312,6 +322,11 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onHistory, compact, slot }
           <p className={`font-medium text-sm truncate ${isDone ? "line-through opacity-60" : "text-foreground"}`}>
             {med.name}
             {isPRN && <Badge variant="outline" className="ml-2 text-[10px] py-0 px-1.5 border-primary/40 text-primary">PRN</Badge>}
+            {typeof med.stock_count === "number" && typeof med.refill_threshold === "number" && med.stock_count <= med.refill_threshold && (
+              <Badge variant="outline" className="ml-2 text-[10px] py-0 px-1.5 border-destructive/40 text-destructive bg-destructive/5">
+                <AlertCircle className="h-2.5 w-2.5 mr-0.5" />Low: {med.stock_count} left
+              </Badge>
+            )}
           </p>
           <p className="text-xs text-muted-foreground">{[med.dosage, med.frequency].filter(Boolean).join(" · ")}</p>
           {logForThisDose?.note && (
@@ -370,7 +385,8 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
 
   const [addOpen, setAddOpen] = useState(false);
   const [view, setView] = useState<"timeline" | "list">("timeline");
-  const [form, setForm] = useState({ name: "", dosage: "", frequency: "once_daily", time_slots: ["08:00"] as string[], note: "" });
+  const [form, setForm] = useState({ name: "", dosage: "", frequency: "once_daily", time_slots: ["08:00"] as string[], note: "", stock_count: "" as string | number, refill_threshold: "" as string | number });
+  const updateMed = useUpdateMedicine();
 
   // Dialogs
   const [logDialog, setLogDialog] = useState<{ open: boolean; med: any; action: "taken" | "skipped" | "missed" }>({ open: false, med: null, action: "taken" });
@@ -387,7 +403,15 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
       { medicine_id: med.id, status: action, note: note || undefined, user_id: caredOneId },
       {
         onSuccess: () => {
-          toast({ title: action === "taken" ? `${med.name} marked as taken ✓` : `${med.name} skipped` });
+          // Decrement stock on "taken"
+          if (action === "taken" && typeof med.stock_count === "number" && med.stock_count > 0) {
+            const newStock = med.stock_count - 1;
+            updateMed.mutate({ id: med.id, stock_count: newStock });
+            if (typeof med.refill_threshold === "number" && newStock <= med.refill_threshold) {
+              toast({ title: `Low stock: ${med.name}`, description: `${newStock} doses left — time to refill`, variant: "destructive" });
+            }
+          }
+          toast({ title: action === "taken" ? `${med.name} marked as taken ✓` : action === "skipped" ? `${med.name} skipped` : `${med.name} marked as missed` });
           setLogDialog({ open: false, med: null, action: "taken" });
         },
         onError: (err) => toast({ title: "Failed", description: String(err.message), variant: "destructive" }),
@@ -398,8 +422,17 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
   const handleAdd = () => {
     if (!form.name.trim()) return;
     createMed.mutate(
-      { user_id: caredOneId, name: form.name.trim(), dosage: form.dosage || undefined, frequency: FREQUENCIES.find(f => f.value === form.frequency)?.label || form.frequency, time_slot: form.time_slots.length > 0 ? form.time_slots : ["08:00"], note: form.note || undefined },
-      { onSuccess: () => { setForm({ name: "", dosage: "", frequency: "once_daily", time_slots: ["08:00"], note: "" }); setAddOpen(false); toast({ title: "Medicine added" }); },
+      {
+        user_id: caredOneId,
+        name: form.name.trim(),
+        dosage: form.dosage || undefined,
+        frequency: FREQUENCIES.find(f => f.value === form.frequency)?.label || form.frequency,
+        time_slot: form.time_slots.length > 0 ? form.time_slots : ["08:00"],
+        note: form.note || undefined,
+        stock_count: form.stock_count === "" ? undefined : Number(form.stock_count),
+        refill_threshold: form.refill_threshold === "" ? undefined : Number(form.refill_threshold),
+      },
+      { onSuccess: () => { setForm({ name: "", dosage: "", frequency: "once_daily", time_slots: ["08:00"], note: "", stock_count: "", refill_threshold: "" }); setAddOpen(false); toast({ title: "Medicine added" }); },
         onError: (err) => toast({ title: "Failed to add", description: String(err.message), variant: "destructive" }) }
     );
   };
@@ -499,6 +532,10 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
               </div>
             </div>
             <div><Label>Notes <span className="text-muted-foreground text-xs">(optional)</span></Label><Textarea value={form.note} onChange={e => setForm(p => ({ ...p, note: e.target.value }))} placeholder="Take with food, avoid dairy…" className="mt-1 min-h-[60px]" /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Stock count <span className="text-muted-foreground text-xs">(optional)</span></Label><Input type="number" min="0" value={form.stock_count} onChange={e => setForm(p => ({ ...p, stock_count: e.target.value }))} placeholder="e.g. 30" className="mt-1" /></div>
+              <div><Label>Refill alert at <span className="text-muted-foreground text-xs">(optional)</span></Label><Input type="number" min="0" value={form.refill_threshold} onChange={e => setForm(p => ({ ...p, refill_threshold: e.target.value }))} placeholder="e.g. 7" className="mt-1" /></div>
+            </div>
             <Button className="w-full" variant="coral" onClick={handleAdd} disabled={createMed.isPending || !form.name.trim()}>
               {createMed.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />} Add Medicine
             </Button>

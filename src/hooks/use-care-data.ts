@@ -1078,7 +1078,7 @@ export function useMedicines(caredOneId: string | null) {
 export function useCreateMedicine() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (med: { user_id: string; name: string; dosage?: string; frequency?: string; time_slot?: string[]; note?: string }) => createMedicineWordPress(med),
+    mutationFn: (med: { user_id: string; name: string; dosage?: string; frequency?: string; time_slot?: string[]; note?: string; stock_count?: number; refill_threshold?: number }) => createMedicineWordPress(med),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["medicines"] }); },
   });
 }

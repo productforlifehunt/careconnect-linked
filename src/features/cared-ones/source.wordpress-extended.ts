@@ -298,13 +298,15 @@ export async function fetchMedicinesWordPress(caredOneId: string): Promise<any[]
       start_date: m.start_date || null,
       end_date: m.end_date || null,
       note: m.note || null,
-      is_active: m.is_active !== false && m.is_active !== "no",
+      is_active: m.is_active !== false && m.is_active !== "No" && m.is_active !== "no",
+      stock_count: m.stock_count != null && m.stock_count !== "" ? Number(m.stock_count) : null,
+      refill_threshold: m.refill_threshold != null && m.refill_threshold !== "" ? Number(m.refill_threshold) : null,
       created_at: m.created_at,
     }));
   } catch { return []; }
 }
 
-export async function createMedicineWordPress(med: { user_id: string; name: string; dosage?: string; frequency?: string; time_slot?: string[]; instructions?: string; prescribing_doctor?: string; pharmacy?: string; side_effects?: string; start_date?: string; end_date?: string; note?: string }): Promise<void> {
+export async function createMedicineWordPress(med: { user_id: string; name: string; dosage?: string; frequency?: string; time_slot?: string[]; instructions?: string; prescribing_doctor?: string; pharmacy?: string; side_effects?: string; start_date?: string; end_date?: string; note?: string; stock_count?: number; refill_threshold?: number }): Promise<void> {
   const result = await wordpressCCTFetch<any>("medicine", {
     method: "POST",
     body: {
@@ -319,7 +321,9 @@ export async function createMedicineWordPress(med: { user_id: string; name: stri
       start_date: med.start_date || "",
       end_date: med.end_date || "",
       note: med.note || "",
-      is_active: "yes",
+      is_active: "Yes",
+      stock_count: med.stock_count ?? "",
+      refill_threshold: med.refill_threshold ?? "",
     },
   });
   const newId = normalizeWpObjectId(result?.item_id || result?._ID || result?.id);
