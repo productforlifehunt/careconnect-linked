@@ -29,6 +29,7 @@ import Profile from "./pages/Profile";
 import TrustSafety from "./pages/TrustSafety";
 import BecomeCaregiver from "./pages/BecomeCaregiver";
 import Notifications from "./pages/Notifications";
+import Inbox from "./pages/Inbox";
 import CaredOnes from "./pages/CaredOnes";
 import Jobs from "./pages/Jobs";
 import ProviderDashboard from "./pages/ProviderDashboard";
@@ -128,6 +129,7 @@ function AppRoutes() {
       <Route path="/favorites" element={<RequireAuth><Favorites /></RequireAuth>} />
       <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
       <Route path="/notifications" element={<RequireAuth><Notifications /></RequireAuth>} />
+      <Route path="/inbox" element={<RequireAuth><Inbox /></RequireAuth>} />
       <Route path="/cared-ones" element={<RequireAuth><CaredOnes /></RequireAuth>} />
       <Route path="/jobs" element={<RequireAuth><Jobs /></RequireAuth>} />
       <Route path="/provider-dashboard" element={<RequireAuth><ProviderDashboard /></RequireAuth>} />
