@@ -73,7 +73,7 @@ export async function fetchInformationCardByShareTokenWordPress(token: string): 
   if (!token) return null;
   try {
     // JetEngine CCT REST supports filter via meta query: ?meta_query[]...; simplest is full list + find
-    const list = await wordpressCCTFetch<any[]>(CCT_SLUG, { query: { per_page: 100, share_token: token } });
+    const list = await wordpressCCTFetch<any[]>(CCT_SLUG, { params: { per_page: 100, share_token: token } });
     const items = Array.isArray(list) ? list : [];
     const card = items.find((c) => String(c.share_token || "") === token) || null;
     if (!card) return null;
