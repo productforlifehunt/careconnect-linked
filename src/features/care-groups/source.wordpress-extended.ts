@@ -438,34 +438,74 @@ export async function joinGroupByCodeWordPress(token: string): Promise<any> {
 }
 
 // ─── Gallery ────────────────────────────────────────────────
-// CCT slug: care_group_gallery | fields: care_group_id, uploaded_by_user_id, image_url, caption
+// CCT slug: care_group_gallery | fields: image (Media ID), image_description (textarea), taken_at (datetime)
+// Linked to care_group via JetEngine Relation 46 (1:M)
+async function resolveMediaUrl(mediaId: number | string | null): Promise<string | null> {
+  if (!mediaId) return null;
+  try {
+    const m: any = await wordpressFetch(`/wp-json/wp/v2/media/${mediaId}`);
+    return (
+      m?.media_details?.sizes?.medium_large?.source_url ||
+      m?.media_details?.sizes?.medium?.source_url ||
+      m?.source_url ||
+      null
+    );
+  } catch { return null; }
+}
+
 export async function fetchCareGroupGalleryWordPress(groupId: string): Promise<any[]> {
   try {
     const items = await fetchRelatedCctItems(REL_GROUP_GALLERY, groupId, "care_group_gallery");
-    return items.map((m: any) => ({
-      id: String(m.id || m._ID),
-      group_id: m.care_group_id ? String(m.care_group_id) : groupId,
-      image_url: m.image_url || null,
-      url: m.image_url || null,
-      type: "image",
-      caption: m.caption || null,
-      uploaded_by: m.uploaded_by_user_id ? `wp-${m.uploaded_by_user_id}` : null,
-      created_at: m.created_at,
-    }));
+    const enriched = await Promise.all(
+      items.map(async (m: any) => {
+        const mediaId = m.image ?? null;
+        const image_url = await resolveMediaUrl(mediaId);
+        return {
+          id: String(m.id || m._ID),
+          group_id: groupId,
+          media_id: mediaId,
+          image_url,
+          url: image_url,
+          type: "image",
+          caption: m.image_description || "",
+          taken_at: m.taken_at || null,
+          created_at: m.created_at,
+        };
+      })
+    );
+    return enriched;
   } catch { return []; }
 }
 
-export async function createCareGroupGalleryItemWordPress(groupId: string, url: string, caption?: string): Promise<void> {
-  const wpUser = getStoredWPUser();
-  const uploaderId = wpUser?.user_id ? Number(wpUser.user_id) : null;
+/** Upload a File to WP Media Library and return the media ID. */
+export async function uploadToWPMedia(file: File): Promise<number> {
+  const { buildWPUrl, buildWPHeaders } = await import("@/lib/wp-url");
+  const { getWPToken } = await import("@/services/wp-auth");
+  const url = buildWPUrl("/wp-json/wp/v2/media");
+  const headers = buildWPHeaders(getWPToken());
+  delete (headers as any)["Content-Type"]; // let browser set multipart boundary
+  headers["Content-Disposition"] = `attachment; filename="${file.name.replace(/"/g, "")}"`;
+  const fd = new FormData();
+  fd.append("file", file);
+  const res = await fetch(url, { method: "POST", headers, body: fd });
+  if (!res.ok) throw new Error(`Media upload failed: ${res.status} ${await res.text()}`);
+  const json = await res.json();
+  return Number(json.id);
+}
+
+export async function createCareGroupGalleryItemWordPress(
+  groupId: string,
+  mediaId: number,
+  caption?: string,
+  takenAt?: string,
+): Promise<void> {
   const normalizedGroupId = normalizeWpObjectId(groupId);
   const created = await wordpressCCTFetch<any>("care_group_gallery", {
     method: "POST",
     body: {
-      care_group_id: normalizedGroupId,
-      uploaded_by_user_id: uploaderId,
-      image_url: url,
-      caption: caption || "",
+      image: mediaId,
+      image_description: caption || "",
+      taken_at: takenAt || new Date().toISOString().slice(0, 19).replace("T", " "),
     },
   });
   const itemId = normalizeWpObjectId(created?.item_id || created?._ID || created?.id);
