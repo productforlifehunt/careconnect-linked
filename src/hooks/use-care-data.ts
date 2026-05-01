@@ -83,6 +83,11 @@ import {
   fetchSymptomLogsWordPress, createSymptomLogWordPress,
   updateDementiaStageWordPress,
 } from "@/features/cared-ones/source.wordpress-extended";
+import {
+  fetchInformationCardsWordPress, fetchInformationCardWordPress,
+  createInformationCardWordPress, updateInformationCardWordPress, deleteInformationCardWordPress,
+  fetchInformationCardContactIdsWordPress, setInformationCardContactsWordPress,
+} from "@/features/cared-ones/source.information-cards";
 import type {
   Profile, Booking, Review, CareGroup, CareGroupMember,
   CareTask, Notification,
@@ -1709,5 +1714,66 @@ export function useCancelLocationRequest() {
   return useMutation({
     mutationFn: (requestId: string) => cancelLocationRequestWordPress(requestId),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["locationRequests"] }); },
+  });
+}
+
+// ─── Information Cards (Cared one's information card CCT) ───
+export function useInformationCards(caredOneId: string | null) {
+  return useQuery({
+    queryKey: ["informationCards", caredOneId],
+    queryFn: () => fetchInformationCardsWordPress(caredOneId!),
+    enabled: !!caredOneId,
+  });
+}
+
+export function useInformationCard(cardId: string | null) {
+  return useQuery({
+    queryKey: ["informationCard", cardId],
+    queryFn: () => fetchInformationCardWordPress(cardId!),
+    enabled: !!cardId,
+  });
+}
+
+export function useCreateInformationCard() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: Parameters<typeof createInformationCardWordPress>[0]) => createInformationCardWordPress(input),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["informationCards"] }); },
+  });
+}
+
+export function useUpdateInformationCard() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...updates }: { id: string; [k: string]: any }) => updateInformationCardWordPress(id, updates),
+    onSuccess: (_d, vars) => {
+      qc.invalidateQueries({ queryKey: ["informationCards"] });
+      qc.invalidateQueries({ queryKey: ["informationCard", vars.id] });
+    },
+  });
+}
+
+export function useDeleteInformationCard() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteInformationCardWordPress(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["informationCards"] }); },
+  });
+}
+
+export function useInformationCardContactIds(cardId: string | null) {
+  return useQuery({
+    queryKey: ["informationCardContacts", cardId],
+    queryFn: () => fetchInformationCardContactIdsWordPress(cardId!),
+    enabled: !!cardId,
+  });
+}
+
+export function useSetInformationCardContacts() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ cardId, contactIds }: { cardId: string; contactIds: string[] }) =>
+      setInformationCardContactsWordPress(cardId, contactIds),
+    onSuccess: (_d, vars) => { qc.invalidateQueries({ queryKey: ["informationCardContacts", vars.cardId] }); },
   });
 }

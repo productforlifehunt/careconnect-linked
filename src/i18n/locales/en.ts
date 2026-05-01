@@ -428,6 +428,8 @@ const en = {
     gpsSafeZones: "GPS & safe zones",
     medicalDocs: "Medical records & docs",
     visitHistory: "Caregiver visit history",
+    informationCards: "Information Cards",
+    informationCardsSubtitle: "Shareable profile cards",
     failedToRemove: "Failed to remove",
   },
 

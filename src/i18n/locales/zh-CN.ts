@@ -162,6 +162,7 @@ const zhCN = {
     freeFormNotes: "自由格式护理笔记", emergencyList: "紧急联系人列表",
     gpsSafeZones: "GPS和安全区域", medicalDocs: "医疗记录和文档",
     visitHistory: "护理人员访问历史", failedToRemove: "移除失败",
+    informationCards: "信息卡片", informationCardsSubtitle: "可分享的资料卡",
   },
   profile: {
     myProfile: "我的资料", personalInfo: "个人信息", avatar: "头像",
