@@ -107,22 +107,6 @@ export function InformationCardCard({ caredOneId }: { caredOneId: string }) {
     }
   };
 
-  const handleShare = async (card: any) => {
-    const text = buildShareText(card);
-    try {
-      if (typeof navigator !== "undefined" && (navigator as any).share) {
-        await (navigator as any).share({ title: card.cared_ones_information_card_name || "Information Card", text });
-        return;
-      }
-    } catch {/* fall through to clipboard */}
-    try {
-      await navigator.clipboard.writeText(text);
-      toast({ title: "Card copied", description: "You can now paste & share it anywhere." });
-    } catch {
-      toast({ title: "Share unavailable", variant: "destructive" });
-    }
-  };
-
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
