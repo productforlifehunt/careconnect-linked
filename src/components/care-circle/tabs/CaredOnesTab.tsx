@@ -2,7 +2,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Heart, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useSite } from "@/contexts/SiteContext";
 
 interface CaredOnesTabProps {
   groupCaredOnes: any[];
@@ -12,7 +11,6 @@ interface CaredOnesTabProps {
 
 export function CaredOnesTab({ groupCaredOnes, isAdmin, onAddCaredOne }: CaredOnesTabProps) {
   const navigate = useNavigate();
-  const site = useSite();
   const caredOneLabel = "Cared One";
   const caredOnesLabel = "Cared Ones";
 
