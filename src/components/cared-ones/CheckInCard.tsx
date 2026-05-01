@@ -337,7 +337,12 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
                         </div>
                       )}
                       <div className="flex items-center gap-1">
-                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setHistoryOpen({ open: true, checkin })}><History className="h-3.5 w-3.5" /></Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" title="History" onClick={() => setHistoryOpen({ open: true, checkin })}><History className="h-3.5 w-3.5" /></Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" title={checkin.is_active ? "Pause" : "Resume"} onClick={() => togglePause(checkin)} disabled={update.isPending}>
+                          {checkin.is_active ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" title="Edit" onClick={() => openEdit(checkin)}><Edit2 className="h-3.5 w-3.5" /></Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10" title="Delete" onClick={() => setDeleteConfirm({ open: true, checkin })}><Trash2 className="h-3.5 w-3.5" /></Button>
                       </div>
                     </div>
                   </div>
