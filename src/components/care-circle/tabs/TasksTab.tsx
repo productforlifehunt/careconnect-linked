@@ -139,15 +139,26 @@ export function TasksTab({
           {pendingTasks.map((t: any) => (
             <div key={t.id} className="p-3 rounded-lg bg-card border group hover:shadow-sm transition-shadow">
               <div className="flex items-center gap-3">
-                <button onClick={() => toggleTask(t.id, t.status)} className="shrink-0"><Circle className="h-5 w-5 text-muted-foreground hover:text-primary" /></button>
-                <div className="flex-1 min-w-0 cursor-pointer" onClick={() => toggleTask(t.id, t.status)}>
+                <button onClick={() => toggleTask(t.id, t.finish_status)} className="shrink-0"><Circle className="h-5 w-5 text-muted-foreground hover:text-primary" /></button>
+                <div className="flex-1 min-w-0 cursor-pointer" onClick={() => toggleTask(t.id, t.finish_status)}>
                   <p className="text-sm font-medium text-foreground">{t.title}</p>
                   <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                     {getAssignedNames(t).length > 0 && <span className="text-xs text-muted-foreground">{getAssignedNames(t).join(", ")}</span>}
                     {t.due_date && <span className="text-xs text-muted-foreground">Due: {new Date(t.due_date).toLocaleDateString("en", { month: "short", day: "numeric" })}</span>}
+                    {Array.isArray(t.assignees) && t.assignees.map((a: any) => {
+                      const m = (members || []).find((mm: any) => mm.user_id === a.user_id || `wp-${mm.id}` === a.user_id);
+                      const name = m?.display_name || m?.profile?.full_name || "Member";
+                      return (
+                        <Badge key={a.user_id} variant="outline" className={`text-[10px] ${responseColors[a.response] || ""}`}>
+                          {name}: {a.response}
+                        </Badge>
+                      );
+                    })}
                   </div>
                 </div>
-                <Badge variant="outline" className={statusColors[t.status] || ""}>{t.status || "pending"}</Badge>
+                <Badge variant="outline" className={helpStatusColors[String(t.help_status ?? "1")] || ""}>
+                  {helpStatusLabels[String(t.help_status ?? "1")] || "No help needed"}
+                </Badge>
                 <div className="flex gap-1 shrink-0">
                   <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" title="Post to Job Board"
                     onClick={(e) => { e.stopPropagation(); createJob.mutate({ title: t.title, description: t.description || `Help needed with: ${t.title}`, job_source_type: "group_task", linked_task_id: t.id, linked_group_id: activeGroupId!, location: "" }, { onSuccess: () => toast({ title: "Posted to Job Board" }) }); }}>
