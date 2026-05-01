@@ -130,6 +130,62 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
     );
   };
 
+  const togglePause = (checkin: any) => {
+    update.mutate(
+      { id: String(checkin.id), is_active: !checkin.is_active },
+      {
+        onSuccess: () => toast({ title: checkin.is_active ? "Check-in paused" : "Check-in resumed ✓" }),
+        onError: (e: any) => toast({ title: "Failed", description: String(e?.message || e), variant: "destructive" }),
+      }
+    );
+  };
+
+  const openEdit = (checkin: any) => {
+    const slot = Array.isArray(checkin.time_slot) && checkin.time_slot.length ? checkin.time_slot[0] : "08:00";
+    setForm({
+      name: checkin.name || "",
+      detail: checkin.detail || "",
+      frequency: checkin.frequency || "Once daily",
+      time: slot,
+      instructions: checkin.instructions || "",
+      start_date: checkin.start_date || "",
+      note: checkin.note || "",
+    });
+    setEditOpen({ open: true, checkin });
+  };
+
+  const handleEditSave = () => {
+    update.mutate(
+      {
+        id: String(editOpen.checkin.id),
+        name: form.name,
+        detail: form.detail || "",
+        frequency: form.frequency,
+        time_slot: [form.time],
+        instructions: form.instructions || "",
+        start_date: form.start_date || "",
+        note: form.note || "",
+      },
+      {
+        onSuccess: () => {
+          setEditOpen({ open: false, checkin: null });
+          toast({ title: "Check-in updated ✓" });
+        },
+        onError: (e: any) => toast({ title: "Failed", description: String(e?.message || e), variant: "destructive" }),
+      }
+    );
+  };
+
+  const confirmDelete = () => {
+    remove.mutate(String(deleteConfirm.checkin.id), {
+      onSuccess: () => {
+        setDeleteConfirm({ open: false, checkin: null });
+        toast({ title: "Check-in deleted" });
+      },
+      onError: (e: any) => toast({ title: "Failed", description: String(e?.message || e), variant: "destructive" }),
+    });
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
