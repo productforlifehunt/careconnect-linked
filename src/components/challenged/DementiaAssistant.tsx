@@ -344,8 +344,9 @@ export function DementiaAssistant() {
     return (
       <Button
         onClick={() => setOpen(true)}
-        className="fixed bottom-20 md:bottom-6 right-4 z-50 h-14 w-14 rounded-full shadow-lg hero-gradient hover:opacity-90"
+        className="fixed bottom-20 md:bottom-6 right-4 z-40 h-14 w-14 rounded-full shadow-lg hero-gradient hover:opacity-90"
         size="icon"
+        aria-label={t("dementiaAssistant.title")}
       >
         <Bot className="h-6 w-6 text-primary-foreground" />
       </Button>
@@ -353,209 +354,228 @@ export function DementiaAssistant() {
   }
 
   return (
-    <Card className="fixed bottom-20 md:bottom-6 right-4 z-50 w-[360px] max-w-[calc(100vw-2rem)] shadow-2xl border-primary/20">
-      <CardHeader className="flex-row items-center justify-between py-3 px-4 hero-gradient rounded-t-lg">
-        <CardTitle className="text-sm text-primary-foreground flex items-center gap-2">
-          <Bot className="h-4 w-4" /> {t("dementiaAssistant.title")}
-        </CardTitle>
-        <Button
-          variant="ghost" size="icon"
-          className="h-7 w-7 text-primary-foreground hover:bg-primary-foreground/20"
-          onClick={() => { hardStop(); setOpen(false); }}
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      </CardHeader>
-      <CardContent className="p-0">
-        {/* Mode toggle: Text vs Voice */}
-        <div className="px-3 pt-2 pb-1 border-b">
-          <Tabs value={mode} onValueChange={(v) => { hardStop(); setMode(v as ChatMode); }}>
-            <TabsList className="grid grid-cols-2 h-8 w-full">
-              <TabsTrigger value="text" className="text-xs gap-1.5">
-                <MessageSquare className="h-3.5 w-3.5" />
-                {isChinese ? "文字" : "Text"}
-              </TabsTrigger>
-              <TabsTrigger value="voice" className="text-xs gap-1.5">
-                <Headphones className="h-3.5 w-3.5" />
-                {isChinese ? "语音" : "Voice"}
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-
-        {/* Settings bar (compact) */}
-        <div className="flex items-center gap-2 px-3 py-1.5 border-b bg-muted/30 text-xs">
-          <Languages className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-          <Select value={voiceLang} onValueChange={setVoiceLang}>
-            <SelectTrigger className="h-6 text-[11px] w-[80px] bg-background">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {LANG_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value} className="text-xs">
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Volume2 className="h-3.5 w-3.5 text-muted-foreground shrink-0 ml-1" />
-          <Select value={voicePersona} onValueChange={setVoicePersona}>
-            <SelectTrigger className="h-6 text-[11px] w-[110px] bg-background">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {AI_VOICE_PERSONAS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value} className="text-xs">
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* TTS Engine A/B switcher */}
-        <div className="flex items-center gap-2 px-3 py-1.5 border-b bg-muted/30 text-xs">
-          <AudioLines className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-          <span className="text-[11px] text-muted-foreground shrink-0">
-            {isChinese ? "引擎" : "Engine"}
-          </span>
-          <Tabs
-            value={ttsEngine}
-            onValueChange={(v) => { hardStop(); setTtsEngine(v as TTSEngine); }}
-            className="flex-1"
-          >
-            <TabsList className="grid grid-cols-6 h-7 w-full">
-              {TTS_ENGINES.map((e) => (
-                <TabsTrigger
-                  key={e.value}
-                  value={e.value}
-                  className="text-[10px] px-1"
-                  title={e.sub}
+    <>
+      {/* Mobile backdrop */}
+      <div
+        className="md:hidden fixed inset-0 z-40 bg-background/40 backdrop-blur-sm"
+        onClick={() => { hardStop(); setOpen(false); }}
+      />
+      <Card
+        className="
+          fixed z-50 shadow-2xl border-primary/20 flex flex-col overflow-hidden
+          inset-x-3 bottom-[4.5rem] top-16
+          md:inset-auto md:bottom-6 md:right-4 md:top-auto
+          md:w-[380px] md:h-[600px] md:max-h-[calc(100vh-3rem)]
+          rounded-2xl
+        "
+      >
+        <CardHeader className="flex-row items-center justify-between py-3 px-4 hero-gradient shrink-0">
+          <CardTitle className="text-sm text-primary-foreground flex items-center gap-2">
+            <Bot className="h-4 w-4" /> {t("dementiaAssistant.title")}
+          </CardTitle>
+          <div className="flex items-center gap-1">
+            {/* Settings popover — engine / language / voice */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost" size="icon"
+                  className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/20"
+                  aria-label={isChinese ? "设置" : "Settings"}
                 >
-                  {e.label}
+                  <Settings2 className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-72 p-3 space-y-3 bg-card border shadow-xl z-[60]">
+                <div>
+                  <label className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground mb-1.5">
+                    <Languages className="h-3 w-3" />
+                    {isChinese ? "回复语言" : "Reply language"}
+                  </label>
+                  <Select value={voiceLang} onValueChange={setVoiceLang}>
+                    <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent className="z-[70]">
+                      {LANG_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value} className="text-xs">{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground mb-1.5">
+                    <Volume2 className="h-3 w-3" />
+                    {isChinese ? "声音" : "Voice"}
+                  </label>
+                  <Select value={voicePersona} onValueChange={setVoicePersona}>
+                    <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent className="z-[70] max-h-60">
+                      {AI_VOICE_PERSONAS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value} className="text-xs">{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground mb-1.5">
+                    <AudioLines className="h-3 w-3" />
+                    {isChinese ? "语音引擎" : "TTS engine"}
+                  </label>
+                  <Select value={ttsEngine} onValueChange={(v) => { hardStop(); setTtsEngine(v as TTSEngine); }}>
+                    <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent className="z-[70]">
+                      {TTS_ENGINES.map((e) => (
+                        <SelectItem key={e.value} value={e.value} className="text-xs">
+                          <div className="flex flex-col">
+                            <span className="font-medium">{e.label}</span>
+                            <span className="text-[10px] text-muted-foreground">{e.sub}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </PopoverContent>
+            </Popover>
+            <Button
+              variant="ghost" size="icon"
+              className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/20"
+              onClick={() => { hardStop(); setOpen(false); }}
+              aria-label={isChinese ? "关闭" : "Close"}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardHeader>
+
+        <CardContent className="p-0 flex-1 flex flex-col min-h-0">
+          {/* Mode toggle: Text vs Voice */}
+          <div className="px-3 pt-2 pb-2 border-b shrink-0">
+            <Tabs value={mode} onValueChange={(v) => { hardStop(); setMode(v as ChatMode); }}>
+              <TabsList className="grid grid-cols-2 h-8 w-full bg-muted/50">
+                <TabsTrigger value="text" className="text-xs gap-1.5">
+                  <MessageSquare className="h-3.5 w-3.5" />
+                  {isChinese ? "文字" : "Text"}
                 </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-        </div>
+                <TabsTrigger value="voice" className="text-xs gap-1.5">
+                  <Headphones className="h-3.5 w-3.5" />
+                  {isChinese ? "语音" : "Voice"}
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
 
-        {/* Messages */}
-        <div ref={scrollRef} className="h-[320px] overflow-y-auto p-3 space-y-3">
-          {messages.map((msg, i) => {
-            const isActive = activeMsgIdx === i;
-            const isPlaying = isActive && playState === "playing";
-            const isPaused = isActive && playState === "paused";
-            return (
-              <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[85%] rounded-xl px-3 py-2 text-sm ${
-                  msg.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-foreground"
-                }`}>
-                  <p className="whitespace-pre-wrap">{msg.content}</p>
-                  {msg.role === "assistant" && msg.content.trim().length > 0 && (
-                    <div className="mt-1.5 flex items-center gap-1">
-                      {/* Play / Pause toggle */}
-                      <button
-                        onClick={() => handlePlayMessage(i, msg.content)}
-                        disabled={voiceLoading && !isActive}
-                        className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary transition-colors disabled:opacity-40"
-                        title={
-                          isPlaying ? (isChinese ? "暂停" : "Pause")
-                          : isPaused ? (isChinese ? "继续" : "Resume")
-                          : (isChinese ? "朗读" : "Listen")
-                        }
-                      >
-                        {voiceLoading && isActive ? (
-                          <><Loader2 className="h-3 w-3 animate-spin" />{isChinese ? "加载中" : "Loading"}</>
-                        ) : isPlaying ? (
-                          <><Pause className="h-3 w-3" />{isChinese ? "暂停" : "Pause"}</>
-                        ) : isPaused ? (
-                          <><Play className="h-3 w-3" />{isChinese ? "继续" : "Resume"}</>
-                        ) : (
-                          <><Volume2 className="h-3 w-3" />{isChinese ? "朗读" : "Listen"}</>
-                        )}
-                      </button>
-
-                      {/* Stop button — only visible while this message is active */}
-                      {isActive && (
+          {/* Messages */}
+          <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0">
+            {messages.map((msg, i) => {
+              const isActive = activeMsgIdx === i;
+              const isPlaying = isActive && playState === "playing";
+              const isPaused = isActive && playState === "paused";
+              return (
+                <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                  <div className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm shadow-sm ${
+                    msg.role === "user"
+                      ? "bg-primary text-primary-foreground rounded-br-md"
+                      : "bg-muted text-foreground rounded-bl-md"
+                  }`}>
+                    <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                    {msg.role === "assistant" && msg.content.trim().length > 0 && (
+                      <div className="mt-1.5 flex items-center gap-2">
                         <button
-                          onClick={hardStop}
-                          className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-destructive transition-colors"
-                          title={isChinese ? "停止" : "Stop"}
+                          onClick={() => handlePlayMessage(i, msg.content)}
+                          disabled={voiceLoading && !isActive}
+                          className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary transition-colors disabled:opacity-40"
+                          title={
+                            isPlaying ? (isChinese ? "暂停" : "Pause")
+                            : isPaused ? (isChinese ? "继续" : "Resume")
+                            : (isChinese ? "朗读" : "Listen")
+                          }
                         >
-                          <Square className="h-3 w-3 fill-current" />
-                          {isChinese ? "停止" : "Stop"}
+                          {voiceLoading && isActive ? (
+                            <><Loader2 className="h-3 w-3 animate-spin" />{isChinese ? "加载中" : "Loading"}</>
+                          ) : isPlaying ? (
+                            <><Pause className="h-3 w-3" />{isChinese ? "暂停" : "Pause"}</>
+                          ) : isPaused ? (
+                            <><Play className="h-3 w-3" />{isChinese ? "继续" : "Resume"}</>
+                          ) : (
+                            <><Volume2 className="h-3 w-3" />{isChinese ? "朗读" : "Listen"}</>
+                          )}
                         </button>
-                      )}
-                    </div>
-                  )}
+                        {isActive && (
+                          <button
+                            onClick={hardStop}
+                            className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-destructive transition-colors"
+                          >
+                            <Square className="h-3 w-3 fill-current" />
+                            {isChinese ? "停止" : "Stop"}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+            {loading && (
+              <div className="flex justify-start">
+                <div className="bg-muted rounded-2xl rounded-bl-md px-3.5 py-2.5">
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                 </div>
               </div>
-            );
-          })}
-          {loading && (
-            <div className="flex justify-start">
-              <div className="bg-muted rounded-xl px-3 py-2">
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-              </div>
+            )}
+          </div>
+
+          {/* Quick prompts */}
+          {messages.length <= 2 && (
+            <div className="px-3 pb-2 flex flex-wrap gap-1.5 shrink-0">
+              {QUICK_PROMPTS.map((q) => (
+                <button
+                  key={q}
+                  onClick={() => sendMessage(q)}
+                  className="text-[11px] px-2.5 py-1 rounded-full bg-accent text-accent-foreground hover:bg-accent/80 transition-colors"
+                >
+                  {q}
+                </button>
+              ))}
             </div>
           )}
-        </div>
 
-        {/* Quick prompts */}
-        {messages.length <= 2 && (
-          <div className="px-3 pb-2 flex flex-wrap gap-1.5">
-            {QUICK_PROMPTS.map((q) => (
-              <button
-                key={q}
-                onClick={() => sendMessage(q)}
-                className="text-[11px] px-2 py-1 rounded-full bg-accent text-accent-foreground hover:bg-accent/80 transition-colors"
+          {/* Input */}
+          <div className="border-t p-2 flex gap-1.5 shrink-0 bg-card">
+            {STT_SUPPORTED && (
+              <Button
+                size="icon"
+                variant={isListening ? "destructive" : "outline"}
+                className={`h-9 w-9 shrink-0 rounded-full ${isListening ? "animate-pulse" : ""}`}
+                onClick={toggleListening}
+                disabled={loading}
+                title={isListening
+                  ? (isChinese ? "停止录音" : "Stop recording")
+                  : (isChinese ? "语音输入" : "Voice input")}
               >
-                {q}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Input */}
-        <div className="border-t p-2 flex gap-1.5">
-          {STT_SUPPORTED && (
-            <Button
-              size="icon"
-              variant={isListening ? "destructive" : "outline"}
-              className={`h-9 w-9 shrink-0 ${isListening ? "animate-pulse" : ""}`}
-              onClick={toggleListening}
+                {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              </Button>
+            )}
+            <Input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && sendMessage(input)}
+              placeholder={isListening
+                ? (isChinese ? "正在听..." : "Listening...")
+                : t("dementiaAssistant.askPlaceholder")}
+              className="text-sm h-9 rounded-full"
               disabled={loading}
-              title={isListening
-                ? (isChinese ? "停止录音" : "Stop recording")
-                : (isChinese ? "语音输入" : "Voice input")}
+            />
+            <Button
+              data-stt-send
+              size="icon"
+              className="h-9 w-9 shrink-0 rounded-full"
+              onClick={() => sendMessage(input)}
+              disabled={!input.trim() || loading}
             >
-              {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              <Send className="h-4 w-4" />
             </Button>
-          )}
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && sendMessage(input)}
-            placeholder={isListening
-              ? (isChinese ? "正在听..." : "Listening...")
-              : t("dementiaAssistant.askPlaceholder")}
-            className="text-sm h-9"
-            disabled={loading}
-          />
-          <Button
-            data-stt-send
-            size="icon"
-            className="h-9 w-9 shrink-0"
-            onClick={() => sendMessage(input)}
-            disabled={!input.trim() || loading}
-          >
-            <Send className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+          </div>
+        </CardContent>
+      </Card>
+    </>
   );
 }
