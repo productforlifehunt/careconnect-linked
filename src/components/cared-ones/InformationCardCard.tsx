@@ -63,6 +63,7 @@ export function InformationCardCard({ caredOneId }: { caredOneId: string }) {
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [contactsCardId, setContactsCardId] = useState<string | null>(null);
+  const [shareCard, setShareCard] = useState<any | null>(null);
 
   const openCreate = () => {
     setEditId(null);
