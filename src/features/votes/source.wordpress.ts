@@ -76,8 +76,8 @@ export async function toggleVoteWordPress(entityType: string, entityId: string, 
         method: "POST",
         body: {
           entity_type: entityType,
-          entity_id: entityId,
-          user_id: Number(me),
+          entity_id: String(entityId),
+          user_id: String(me),
           vote_type: dirToVoteType(value),
         },
       });
