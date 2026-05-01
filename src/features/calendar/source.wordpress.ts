@@ -86,19 +86,29 @@ export async function fetchCalendarEventsWordPress(): Promise<CalendarEvent[]> {
   const userId = getCurrentUserId();
   if (!userId) return [];
   try {
-    // Owned events via Rel 129
-    const owned: any[] = await wordpressFetch<any[]>(`jet-rel/${REL_USER_EVENT}/parent/${userId}`).catch(() => []);
-    // Invited events via Rel 130 (event → users) — fetch by child=user
-    const invited: any[] = await wordpressFetch<any[]>(`jet-rel/${REL_EVENT_INVITEES}/child/${userId}`).catch(() => []);
-    const seen = new Set<string>();
-    const all = [...(Array.isArray(owned) ? owned : []), ...(Array.isArray(invited) ? invited : [])];
-    return all
-      .map(mapEventFromWP)
-      .filter((e) => {
-        if (!e.id || seen.has(e.id)) return false;
-        seen.add(e.id);
-        return true;
-      });
+    // Owned events via Rel 129 (users[parent] → calendar event[child]) — list children of this user
+    const ownedRels: any[] = await wordpressFetch<any[]>(`jet-rel/${REL_USER_EVENT}/children/${userId}`).catch(() => []);
+    // Invited events via Rel 130 (calendar event[parent] → users[child]) — list parents (events) of this user
+    const invitedRels: any[] = await wordpressFetch<any[]>(`jet-rel/${REL_EVENT_INVITEES}/parents/${userId}`).catch(() => []);
+
+    // Both endpoints return relation rows ({ child_object_id } / { parent_object_id }); we need the event IDs.
+    const ownedIds: string[] = (Array.isArray(ownedRels) ? ownedRels : [])
+      .map((r: any) => String(r?.child_object_id ?? r?._ID ?? r?.id ?? "").replace(/^wp-/, ""))
+      .filter(Boolean);
+    const invitedIds: string[] = (Array.isArray(invitedRels) ? invitedRels : [])
+      .map((r: any) => String(r?.parent_object_id ?? r?._ID ?? r?.id ?? "").replace(/^wp-/, ""))
+      .filter(Boolean);
+
+    const allIds = Array.from(new Set([...ownedIds, ...invitedIds]));
+    if (allIds.length === 0) return [];
+
+    // Fetch each event row from the CCT
+    const rows = await Promise.all(
+      allIds.map((id) =>
+        wordpressCCTFetch<any>(SLUG, { id }).catch(() => null)
+      )
+    );
+    return rows.filter(Boolean).map(mapEventFromWP);
   } catch {
     return [];
   }
