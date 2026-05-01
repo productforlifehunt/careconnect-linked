@@ -14,6 +14,10 @@ const REL_GROUP_CONV = 140;     // 1:1  care_group → chat_conversation
 const REL_CONV_MEMBER = 142;
 const REL_CONV_MESSAGE = 143;
 
+const stripWp = (id: string | number | null | undefined): string =>
+  id == null ? "" : String(id).replace(/^wp-/, "");
+const numId = (id: string | number | null | undefined): number => Number(stripWp(id));
+
 /**
  * Resolve (or lazily create) the live group chat conversation for a care group.
  * Per spec: "every care group automatically gets one group live chat conversation".
