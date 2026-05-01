@@ -1,5 +1,6 @@
 import { NavLink } from "@/components/NavLink";
 import { useSite } from "@/contexts/SiteContext";
+import { useTranslation } from "react-i18next";
 import {
   CheckSquare,
   CalendarDays,
@@ -21,6 +22,7 @@ import {
   HandHeart,
   Sliders,
   BookOpen,
+  Inbox,
 } from "lucide-react";
 
 function useSidebarItems() {
