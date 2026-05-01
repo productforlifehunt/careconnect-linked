@@ -133,9 +133,6 @@ export async function getOrCreateGroupConversationWordPress(groupId: string | nu
   finally { _groupConvoInflight.delete(gid); }
 }
 
-const stripWp = (id: string | number | null | undefined): string =>
-  id == null ? "" : String(id).replace(/^wp-/, "");
-const numId = (id: string | number | null | undefined): number => Number(stripWp(id));
 
 async function fetchConversationMemberIds(convoId: string | number): Promise<number[]> {
   try {
