@@ -50,34 +50,37 @@ function formatTime(dateStr: string): string {
 // ─── Log Note Dialog ────────────────────────────────────────
 function LogNoteDialog({ open, onClose, onConfirm, medName, action, isPending }: {
   open: boolean; onClose: () => void; onConfirm: (note: string) => void;
-  medName: string; action: "taken" | "skipped"; isPending: boolean;
+  medName: string; action: "taken" | "skipped" | "missed"; isPending: boolean;
 }) {
   const [note, setNote] = useState("");
+  const titleMap = { taken: "Mark as Taken", skipped: "Skip Dose", missed: "Mark as Missed" };
+  const Icon = action === "taken" ? Check : action === "skipped" ? SkipForward : AlertCircle;
+  const iconColor = action === "taken" ? "text-success" : action === "skipped" ? "text-warning" : "text-destructive";
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) { setNote(""); onClose(); } }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {action === "taken" ? <Check className="h-5 w-5 text-success" /> : <SkipForward className="h-5 w-5 text-warning" />}
-            {action === "taken" ? "Mark as Taken" : "Skip Dose"}
+            <Icon className={`h-5 w-5 ${iconColor}`} />
+            {titleMap[action]}
           </DialogTitle>
           <DialogDescription>{medName} — add an optional note about this dose</DialogDescription>
         </DialogHeader>
         <Textarea
           value={note} onChange={e => setNote(e.target.value)}
-          placeholder={action === "taken" ? "e.g. Taken with breakfast, felt fine…" : "e.g. Out of stock, feeling nauseous…"}
+          placeholder={action === "taken" ? "e.g. Taken with breakfast, felt fine…" : action === "skipped" ? "e.g. Out of stock, feeling nauseous…" : "e.g. Forgot, was sleeping…"}
           className="min-h-[80px]"
         />
         <DialogFooter className="gap-2 sm:gap-0">
           <Button variant="outline" onClick={() => { setNote(""); onClose(); }}>Cancel</Button>
           <Button
             variant={action === "taken" ? "default" : "outline"}
-            className={action === "taken" ? "bg-success hover:bg-success/90 text-success-foreground" : "border-warning text-warning hover:bg-warning/10"}
+            className={action === "taken" ? "bg-success hover:bg-success/90 text-success-foreground" : action === "skipped" ? "border-warning text-warning hover:bg-warning/10" : "border-destructive text-destructive hover:bg-destructive/10"}
             onClick={() => { onConfirm(note); setNote(""); }}
             disabled={isPending}
           >
             {isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-            {action === "taken" ? "Confirm Taken" : "Confirm Skip"}
+            Confirm
           </Button>
         </DialogFooter>
       </DialogContent>
