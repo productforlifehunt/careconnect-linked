@@ -83,6 +83,11 @@ import {
   fetchSymptomLogsWordPress, createSymptomLogWordPress,
   updateDementiaStageWordPress,
 } from "@/features/cared-ones/source.wordpress-extended";
+import {
+  fetchInformationCardsWordPress, fetchInformationCardWordPress,
+  createInformationCardWordPress, updateInformationCardWordPress, deleteInformationCardWordPress,
+  fetchInformationCardContactIdsWordPress, setInformationCardContactsWordPress,
+} from "@/features/cared-ones/source.information-cards";
 import type {
   Profile, Booking, Review, CareGroup, CareGroupMember,
   CareTask, Notification,
