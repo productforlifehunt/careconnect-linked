@@ -1023,7 +1023,7 @@ export function useTodayCheckinLogs(caredOneId: string | null) {
 export function useCreateCheckin() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (checkin: { user_id: string; name: string; frequency?: string; time_slot?: string[]; note?: string }) => createCheckinWordPress(checkin),
+    mutationFn: (checkin: { user_id: string; name: string; detail?: string; frequency?: string; time_slot?: string[]; instructions?: string; start_date?: string; note?: string }) => createCheckinWordPress(checkin),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["checkins"] });
       qc.invalidateQueries({ queryKey: ["checkinLogs"] });
