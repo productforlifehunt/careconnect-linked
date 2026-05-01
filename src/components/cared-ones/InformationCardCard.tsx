@@ -161,7 +161,7 @@ export function InformationCardCard({ caredOneId }: { caredOneId: string }) {
                     )}
                   </div>
                   <div className="flex gap-1 shrink-0">
-                    <Button variant="outline" size="sm" onClick={() => handleShare(c)}><Share2 className="h-3 w-3 mr-1" /> Share</Button>
+                    <Button variant="outline" size="sm" onClick={() => setShareCard(c)}><Share2 className="h-3 w-3 mr-1" /> Share</Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setContactsCardId(String(c.id))} title="Manage contacts"><Eye className="h-3 w-3" /></Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(c)}><Pencil className="h-3 w-3" /></Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => del.mutate(String(c.id))}><Trash2 className="h-3 w-3" /></Button>
