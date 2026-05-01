@@ -588,6 +588,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
               onLog={handleLog}
               onEdit={setEditMed}
               onHistory={setHistoryMed}
+              slot={(med.time_slot && med.time_slot[0]) || undefined}
             />
           ))}
           {(meds || []).length === 0 && <p className="text-center py-8 text-muted-foreground">No medications added yet</p>}
