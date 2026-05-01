@@ -35,8 +35,14 @@ export default function JoinGroup() {
     joinGroupByCode.mutate(code, {
       onSuccess: (res: any) => {
         setStatus("success");
-        setMessage(`You've joined ${res?.group_name || "the care group"}.`);
-        toast({ title: "Joined", description: `Welcome to ${res?.group_name || "the group"}.` });
+        const groupName = res?.group_name || "the care group";
+        if (res?.already_member) {
+          setMessage(`You're already a member of ${groupName}.`);
+          toast({ title: "Already a member", description: `Opening ${groupName}…` });
+        } else {
+          setMessage(`You've joined ${groupName}.`);
+          toast({ title: "Joined", description: `Welcome to ${groupName}.` });
+        }
         setTimeout(() => navigate("/care-circle"), 1500);
       },
       onError: (err: any) => {
