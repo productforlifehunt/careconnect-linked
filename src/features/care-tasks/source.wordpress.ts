@@ -144,14 +144,16 @@ export async function fetchCareTasksWordPress(groupId?: string | null): Promise<
     const taskList = Array.isArray(tasks) ? tasks.filter(Boolean) : [];
     const mapped = await Promise.all(taskList.map(async (t: any) => {
       const base = mapTask(t, groupId);
-      const [assigned, caredOne] = await Promise.all([
-        fetchAssignedUserIds(base.id),
+      const [assignees, caredOne] = await Promise.all([
+        fetchAssignees(base.id),
         fetchCaredOneId(base.id),
       ]);
+      const assignedIds = assignees.map((a) => a.user_id);
       return {
         ...base,
-        assigned_to: assigned[0] || null,
-        assigned_to_ids: assigned,
+        assigned_to: assignedIds[0] || null,
+        assigned_to_ids: assignedIds,
+        assignees, // [{ user_id, response: "pending"|"accepted"|"rejected" }]
         cared_one_id: caredOne,
       };
     }));
