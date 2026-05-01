@@ -60,7 +60,7 @@ import { fetchCareTasksWordPress, createCareTaskWordPress, updateCareTaskWordPre
 import { fetchCategoriesWordPress } from "@/features/categories/source.wordpress";
 import { fetchArticlesWordPress } from "@/features/articles/source.wordpress";
 import { fetchEntityReviewsWordPress, createReviewWordPress } from "@/features/reviews/source.wordpress";
-import { fetchConversationsWordPress, fetchDirectMessagesWordPress, sendMessageWordPress, markMessagesReadWordPress, startConversationWordPress } from "@/features/conversations/source.wordpress";
+import { fetchConversationsWordPress, fetchDirectMessagesWordPress, sendMessageWordPress, markMessagesReadWordPress, startConversationWordPress, getOrCreateGroupConversationWordPress } from "@/features/conversations/source.wordpress";
 import { fetchSavedProvidersWordPress, toggleSavedProviderWordPress } from "@/features/saved-providers/source.wordpress";
 import { fetchCommentsWordPress, createCommentWordPress, updateCommentWordPress, deleteCommentWordPress } from "@/features/comments/source.wordpress";
 import { fetchVotesWordPress, fetchEntityVoteWordPress, toggleVoteWordPress } from "@/features/votes/source.wordpress";
