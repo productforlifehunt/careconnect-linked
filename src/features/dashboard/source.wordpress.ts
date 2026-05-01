@@ -35,7 +35,7 @@ export async function fetchDashboardStatsWordPress(): Promise<DashboardStats> {
   } catch { /* */ }
 
   try {
-    const notifs = await wordpressCCTFetch("cc_notification", { params: { _limit: 100 } });
+    const notifs = await wordpressCCTFetch("notification", { params: { _limit: 100 } });
     if (Array.isArray(notifs)) {
       unreadMessages = notifs.filter((n: any) => n.is_read !== true && n.is_read !== "yes").length;
     }

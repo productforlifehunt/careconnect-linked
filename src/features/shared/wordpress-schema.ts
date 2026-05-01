@@ -539,7 +539,7 @@ export const wordpressSchema: Record<WordPressFeatureKey, WordPressSchemaEntry<a
   },
   notifications: {
     status: "confirmed",
-    endpoint: "jet-cct/cc_notification",
+    endpoint: "jet-cct/notification",
     defaultParams: { _limit: 50 },
     mapList: (notifs: any[]) => (Array.isArray(notifs) ? notifs.map((n: any) => ({
       id: String(n._ID || n.id),
