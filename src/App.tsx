@@ -39,6 +39,7 @@ import Articles from "./pages/Articles";
 import ArticlePost from "./pages/ArticlePost";
 import AICompanion from "./pages/AICompanion";
 import BrandCompare from "./pages/BrandCompare";
+import SharedInformationCard from "./pages/SharedInformationCard";
 import Cart from "./pages/Cart";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import AwareD from "./pages/AwareD";
