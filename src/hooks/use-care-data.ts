@@ -70,7 +70,7 @@ import { listWordPressFeature, createWordPressFeature } from "@/features/shared/
 import { getDokanVendorWithdrawals } from "@/services/woocommerce-api";
 import {
   createUserCaredOneWordPress, deleteUserCaredOneWordPress, fetchGroupCaredOnesWordPress,
-  fetchCheckinsWordPress, createCheckinWordPress, fetchCheckinLogsWordPress, fetchTodayCheckinLogsWordPress, logCheckinWordPress,
+  fetchCheckinsWordPress, createCheckinWordPress, updateCheckinWordPress, deleteCheckinWordPress, fetchCheckinLogsWordPress, fetchTodayCheckinLogsWordPress, logCheckinWordPress,
   fetchMedicinesWordPress, createMedicineWordPress, updateMedicineWordPress, deleteMedicineWordPress,
   fetchMedicineLogsWordPress, fetchTodayMedicineLogsWordPress, logMedicineWordPress,
   fetchHealthVitalsWordPress, createHealthVitalWordPress,
