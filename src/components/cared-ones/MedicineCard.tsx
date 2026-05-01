@@ -259,18 +259,31 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
 }
 
 // ─── Inline Med Card (used in timeline & list) ──────────────
-function MedDoseCard({ med, todayLogs, onLog, onEdit, onHistory, compact }: {
+function MedDoseCard({ med, todayLogs, onLog, onEdit, onHistory, compact, slot }: {
   med: any;
   todayLogs: any[];
-  onLog: (med: any, status: "taken" | "skipped") => void;
+  onLog: (med: any, status: "taken" | "skipped" | "missed") => void;
   onEdit: (med: any) => void;
   onHistory: (med: any) => void;
   compact?: boolean;
+  slot?: string;
 }) {
+  const isPRN = med.frequency === "As needed" || med.frequency === "as_needed";
   const logForThisDose = todayLogs.find((l: any) => l.medicine_id === med.id);
   const isTaken = logForThisDose?.status === "taken";
   const isSkipped = logForThisDose?.status === "skipped";
-  const isDone = isTaken || isSkipped;
+  const isMissedLogged = logForThisDose?.status === "missed";
+  const isDone = isTaken || isSkipped || isMissedLogged;
+
+  // Auto-detect missed: scheduled slot >60min in the past, no log
+  const isMissedAuto = useMemo(() => {
+    if (isDone || isPRN || !slot) return false;
+    const [h = "0", m = "0"] = slot.split(":");
+    const slotMins = Number(h) * 60 + Number(m);
+    const now = new Date();
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    return nowMins > slotMins + 60;
+  }, [slot, isDone, isPRN]);
 
   return (
     <motion.div
@@ -278,6 +291,8 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onHistory, compact }: {
       className={`flex items-center justify-between rounded-xl border p-3 transition-all ${
         isTaken ? "bg-success/5 border-success/30" :
         isSkipped ? "bg-warning/5 border-warning/30" :
+        isMissedLogged ? "bg-destructive/5 border-destructive/30" :
+        isMissedAuto ? "bg-destructive/5 border-destructive/40" :
         "bg-card border-border hover:border-primary/30"
       }`}
     >
@@ -285,12 +300,16 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onHistory, compact }: {
         <div className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center ${
           isTaken ? "bg-success/15 text-success" :
           isSkipped ? "bg-warning/15 text-warning" :
+          isMissedLogged || isMissedAuto ? "bg-destructive/15 text-destructive" :
           "bg-primary/10 text-primary"
         }`}>
-          {isTaken ? <Check className="h-4 w-4" /> : isSkipped ? <SkipForward className="h-4 w-4" /> : <Pill className="h-4 w-4" />}
+          {isTaken ? <Check className="h-4 w-4" /> : isSkipped ? <SkipForward className="h-4 w-4" /> : (isMissedLogged || isMissedAuto) ? <AlertCircle className="h-4 w-4" /> : <Pill className="h-4 w-4" />}
         </div>
         <div className="min-w-0">
-          <p className={`font-medium text-sm truncate ${isDone ? "line-through opacity-60" : "text-foreground"}`}>{med.name}</p>
+          <p className={`font-medium text-sm truncate ${isDone ? "line-through opacity-60" : "text-foreground"}`}>
+            {med.name}
+            {isPRN && <Badge variant="outline" className="ml-2 text-[10px] py-0 px-1.5 border-primary/40 text-primary">PRN</Badge>}
+          </p>
           <p className="text-xs text-muted-foreground">{[med.dosage, med.frequency].filter(Boolean).join(" · ")}</p>
           {logForThisDose?.note && (
             <p className="text-xs text-muted-foreground/80 mt-0.5 italic flex items-center gap-1">
@@ -301,16 +320,29 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onHistory, compact }: {
       </div>
       <div className="flex items-center gap-1 shrink-0 ml-2">
         {isDone ? (
-          <Badge variant="outline" className={`text-xs ${isTaken ? "border-success/40 text-success bg-success/10" : "border-warning/40 text-warning bg-warning/10"}`}>
-            {isTaken ? "✓ Taken" : "⏭ Skipped"}
+          <Badge variant="outline" className={`text-xs ${
+            isTaken ? "border-success/40 text-success bg-success/10" :
+            isSkipped ? "border-warning/40 text-warning bg-warning/10" :
+            "border-destructive/40 text-destructive bg-destructive/10"
+          }`}>
+            {isTaken ? "✓ Taken" : isSkipped ? "⏭ Skipped" : "⚠ Missed"}
             {logForThisDose?.created_at && <span className="ml-1 opacity-70">{formatTime(logForThisDose.created_at)}</span>}
           </Badge>
+        ) : isPRN ? (
+          <>
+            <Button size="sm" className="h-8 text-xs bg-primary/15 text-primary hover:bg-primary/25 border-0" variant="outline"
+              onClick={() => onLog(med, "taken")}><Plus className="h-3 w-3 mr-1" /> Log dose now</Button>
+          </>
         ) : (
           <>
             <Button size="sm" className="h-8 text-xs bg-success/15 text-success hover:bg-success/25 border-0" variant="outline"
               onClick={() => onLog(med, "taken")}><Check className="h-3 w-3 mr-1" /> Taken</Button>
             <Button size="sm" variant="ghost" className="h-8 text-xs text-warning hover:bg-warning/10"
               onClick={() => onLog(med, "skipped")}><SkipForward className="h-3 w-3 mr-1" /> Skip</Button>
+            {isMissedAuto && (
+              <Button size="sm" variant="ghost" className="h-8 text-xs text-destructive hover:bg-destructive/10"
+                onClick={() => onLog(med, "missed")}><AlertCircle className="h-3 w-3 mr-1" /> Missed</Button>
+            )}
           </>
         )}
         <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => onHistory(med)}>
