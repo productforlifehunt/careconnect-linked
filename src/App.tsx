@@ -104,6 +104,7 @@ function AppRoutes() {
       <Route path="/articles/:id" element={<ArticlePost />} />
       <Route path="/ai-companion" element={<AICompanion />} />
       <Route path="/brand-compare" element={<BrandCompare />} />
+      <Route path="/share/card/:token" element={<SharedInformationCard />} />
       {/* ChallengeD content sections */}
       <Route path="/aware" element={<AwareD />} />
       <Route path="/aware/:id" element={<ChallengedArticleDetail />} />
