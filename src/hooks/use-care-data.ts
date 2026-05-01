@@ -56,7 +56,7 @@ import {
   fetchCommentRepliesWordPress, createCommentReplyWordPress,
   updateCommentCCTWordPress, deleteCommentCCTWordPress,
 } from "@/features/community-posts/source.wordpress";
-import { fetchCareTasksWordPress, createCareTaskWordPress, updateCareTaskWordPress, deleteCareTaskWordPress } from "@/features/care-tasks/source.wordpress";
+import { fetchCareTasksWordPress, createCareTaskWordPress, updateCareTaskWordPress, deleteCareTaskWordPress, updateAssigneeStatusWordPress, linkTaskToCalendarEventWordPress } from "@/features/care-tasks/source.wordpress";
 import { createCalendarEventForUserWordPress } from "@/features/calendar/source.wordpress";
 import { fetchCategoriesWordPress } from "@/features/categories/source.wordpress";
 import { fetchArticlesWordPress } from "@/features/articles/source.wordpress";
@@ -473,14 +473,15 @@ export function useCareTasks(groupId?: string | null) {
 export function useCreateTask() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (task: { group_id?: string; care_group_id?: string; title: string; description?: string; assigned_to?: string | string[]; due_date?: string; task_date?: string; start_time?: string; end_time?: string; location?: string; subgroupIds?: number[]; visibilityUserIds?: number[] }) => {
+    mutationFn: async (task: { group_id?: string; care_group_id?: string; title: string; description?: string; assigned_to?: string | string[]; due_date?: string; task_date?: string; start_time?: string; end_time?: string; location?: string; task_types?: string[]; people_needed?: number; help_status?: string; subgroupIds?: number[]; visibilityUserIds?: number[] }) => {
       const { subgroupIds, visibilityUserIds, ...payload } = task;
       const newId = await createCareTaskWordPress(payload);
       if (newId && ((subgroupIds?.length ?? 0) > 0 || (visibilityUserIds?.length ?? 0) > 0)) {
         await setTaskVisibility(newId, subgroupIds || [], visibilityUserIds || []);
       }
       // Per data model: task creation must materialize a calendar event for the group.
-      // Write event for creator + every assignee (REL 129 binds owner per row).
+      // Write event for creator + every assignee (REL 129 binds owner per row),
+      // and link each event back to the task via REL 131.
       try {
         const groupId = task.group_id || task.care_group_id;
         const stored = getStoredWPUser();
@@ -491,8 +492,8 @@ export function useCreateTask() {
         ));
         const startAt = task.start_time || task.task_date || task.due_date || "";
         const endAt = task.end_time || startAt;
-        await Promise.all(ownerIds.map((uid) =>
-          createCalendarEventForUserWordPress(uid, {
+        await Promise.all(ownerIds.map(async (uid) => {
+          const ev = await createCalendarEventForUserWordPress(uid, {
             title: task.title,
             description: task.description || "",
             location: task.location || "",
@@ -501,12 +502,22 @@ export function useCreateTask() {
             event_type: "task" as any,
             status: "confirmed" as any,
             show_as: "busy" as any,
-          }).catch(() => null)
-        ));
+          }).catch(() => null);
+          if (newId && ev?.id) await linkTaskToCalendarEventWordPress(newId, ev.id).catch(() => null);
+        }));
         if (groupId) qc.invalidateQueries({ queryKey: ["calendarEvents"] });
       } catch { /* non-fatal */ }
       return newId;
     },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["careTasks"] }); },
+  });
+}
+
+export function useUpdateAssigneeStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ taskId, userId, status }: { taskId: string; userId: string; status: "pending" | "accepted" | "rejected" }) =>
+      updateAssigneeStatusWordPress(taskId, userId, status),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["careTasks"] }); },
   });
 }
