@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,10 +7,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Pill, Plus, Loader2, Trash2, Check, X, Clock, SkipForward, Edit2, History, TrendingUp, AlertCircle, ChevronDown, ChevronUp, StickyNote } from "lucide-react";
+import { Pill, Plus, Loader2, Trash2, Check, X, Clock, SkipForward, Edit2, History, TrendingUp, AlertCircle, ChevronDown, ChevronUp, StickyNote, Search } from "lucide-react";
 import { useMedicines, useCreateMedicine, useDeleteMedicine, useLogMedicine, useUpdateMedicine, useTodayMedicineLogs, useMedicineLogs } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import { rxnormSuggest, rxnormLookup, type RxSuggestion } from "@/lib/rxnorm";
 
 const TIMELINE_HOURS = [
   "06:00","07:00","08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00",
@@ -374,6 +375,83 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onHistory, compact, slot }
   );
 }
 
+// ─── RxNorm Autocomplete (NIH/NLM, free) ───────────────────
+function RxNormNameInput({ value, onChange, onPick }: {
+  value: string;
+  onChange: (v: string) => void;
+  onPick: (s: { name: string; strength?: string | null; doseForm?: string | null }) => void;
+}) {
+  const [suggestions, setSuggestions] = useState<RxSuggestion[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const debounce = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (debounce.current) window.clearTimeout(debounce.current);
+    if (value.trim().length < 2) { setSuggestions([]); return; }
+    setLoading(true);
+    debounce.current = window.setTimeout(async () => {
+      const list = await rxnormSuggest(value);
+      setSuggestions(list);
+      setLoading(false);
+      setOpen(list.length > 0);
+    }, 300);
+    return () => { if (debounce.current) window.clearTimeout(debounce.current); };
+  }, [value]);
+
+  // Click outside closes dropdown
+  useEffect(() => {
+    function onDoc(e: MouseEvent) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+
+  const handlePick = async (name: string) => {
+    onChange(name);
+    setOpen(false);
+    const info = await rxnormLookup(name);
+    onPick({ name, strength: info.strength, doseForm: info.doseForm });
+  };
+
+  return (
+    <div ref={wrapRef} className="relative">
+      <div className="relative">
+        <Input
+          value={value}
+          onChange={e => { onChange(e.target.value); setOpen(true); }}
+          onFocus={() => suggestions.length > 0 && setOpen(true)}
+          placeholder="Type to search (e.g. Lisinopril)"
+          className="mt-1 pr-8"
+          autoComplete="off"
+        />
+        {loading ? (
+          <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 mt-0.5 h-4 w-4 animate-spin text-muted-foreground" />
+        ) : value.length >= 2 ? (
+          <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 mt-0.5 h-4 w-4 text-muted-foreground" />
+        ) : null}
+      </div>
+      {open && suggestions.length > 0 && (
+        <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-lg max-h-60 overflow-y-auto">
+          <div className="px-2 py-1 text-[10px] uppercase tracking-wide text-muted-foreground border-b">RxNorm · NIH/NLM</div>
+          {suggestions.map((s, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => handlePick(s.name)}
+              className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors"
+            >
+              {s.name}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main MedicineCard ──────────────────────────────────────
 export function MedicineCard({ caredOneId }: { caredOneId: string }) {
   const { toast } = useToast();
@@ -507,7 +585,17 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
         <DialogContent>
           <DialogHeader><DialogTitle>Add Medicine</DialogTitle><DialogDescription>Add a medication to the daily schedule</DialogDescription></DialogHeader>
           <div className="space-y-4 mt-2">
-            <div><Label>Medicine Name <span className="text-destructive">*</span></Label><Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Lisinopril, Aspirin" className="mt-1" /></div>
+            <div>
+              <Label>Medicine Name <span className="text-destructive">*</span></Label>
+              <RxNormNameInput
+                value={form.name}
+                onChange={(v) => setForm(p => ({ ...p, name: v }))}
+                onPick={({ name, strength }) => {
+                  setForm(p => ({ ...p, name, dosage: p.dosage || strength || "" }));
+                }}
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">Powered by RxNorm (NIH/NLM) — free US drug database</p>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Dosage</Label><Input value={form.dosage} onChange={e => setForm(p => ({ ...p, dosage: e.target.value }))} placeholder="e.g. 10mg" className="mt-1" /></div>
               <div><Label>Frequency</Label>
