@@ -10,8 +10,60 @@ import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-c
  *   REL 144 (1:M)  chat_message      → chat_message    (reply parent)
  */
 
+const REL_GROUP_CONV = 140;     // 1:1  care_group → chat_conversation
 const REL_CONV_MEMBER = 142;
 const REL_CONV_MESSAGE = 143;
+
+/**
+ * Resolve (or lazily create) the live group chat conversation for a care group.
+ * Per spec: "every care group automatically gets one group live chat conversation".
+ */
+export async function getOrCreateGroupConversationWordPress(groupId: string | number): Promise<string | null> {
+  const gid = numId(groupId);
+  if (!gid) return null;
+  // 1) Look up existing via REL 140
+  try {
+    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_CONV}/children/${gid}`);
+    const existing = (Array.isArray(rels) ? rels : [])[0]?.child_object_id;
+    if (existing) return String(existing);
+  } catch { /* fall through */ }
+
+  // 2) Create a new "Many users" group conversation
+  const created = await wordpressCCTFetch<any>("chat_conversation", {
+    method: "POST",
+    body: {
+      chat_type: "Many users",
+      chat_name: "",
+      ai_chat_mode: "",
+      last_message_at: new Date().toISOString().slice(0, 19).replace("T", " "),
+    },
+  });
+  const convoId = numId(created?.item_id || created?._ID || created?.id);
+  if (!convoId) return null;
+
+  // 3) Link group → conversation (REL 140, 1:1)
+  await wordpressFetch(`jet-rel/${REL_GROUP_CONV}`, {
+    method: "POST",
+    body: { parent_id: gid, child_id: convoId, context: "child", store_items_type: "replace" },
+  }).catch(() => {});
+
+  // 4) Auto-add all current accepted group members as chatters (REL 142)
+  try {
+    const memberRels = await wordpressFetch<any[]>(`jet-rel/72/children/${gid}`);
+    const acceptedIds = (Array.isArray(memberRels) ? memberRels : [])
+      .filter((r: any) => (r?.meta?.care_groups_member_invitation_status || "accepted") === "accepted")
+      .map((r: any) => Number(r.child_object_id))
+      .filter(Boolean);
+    await Promise.all(acceptedIds.map((uid) =>
+      wordpressFetch(`jet-rel/${REL_CONV_MEMBER}`, {
+        method: "POST",
+        body: { parent_id: convoId, child_id: uid, context: "child", store_items_type: "update" },
+      }).catch(() => {})
+    ));
+  } catch { /* non-blocking */ }
+
+  return String(convoId);
+}
 
 const stripWp = (id: string | number | null | undefined): string =>
   id == null ? "" : String(id).replace(/^wp-/, "");
