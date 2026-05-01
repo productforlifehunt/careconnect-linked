@@ -9,6 +9,7 @@ import {
   createBookingCalendarEvent,
   getProviderCalendarAvailability,
   getProviderCalendarBookingConflictMessage,
+  upsertProviderCalendarAvailability,
 } from '@/features/calendar/booking-availability';
 
 // Parent category slug for all care service products
@@ -1299,17 +1300,7 @@ export async function getProviderAvailability(providerId: string): Promise<Norma
 }
 
 export async function upsertProviderAvailability(providerId: string, slots: any[]) {
-  let product = await getProviderProduct(providerId);
-  if (!product) {
-    product = await getOrCreateProviderProduct(providerId, { fullName: `Provider ${providerId}`, hourlyRate: 30 });
-  }
-  if (!product) throw new Error('Provider product not found');
-  // Update availability rules on the booking product
-  const res = await wcBookingsFetch(`products/${product.id}`, {
-    method: 'POST',
-    body: JSON.stringify({ availability: slots }),
-  });
-  return res;
+  return upsertProviderCalendarAvailability(providerId, slots);
 }
 
 // ─── Server-side Cart (careconnect/v1/cart) + Elevated Checkout ─────────────
