@@ -34,17 +34,30 @@ export function TasksTab({
   const [newTask, setNewTask] = useState({ title: "", description: "", assigneeIds: [] as string[], due_date: "" });
   const [visibility, setVisibility] = useState<VisibilityValue>(EMPTY_VISIBILITY);
 
-  const pendingTasks = (tasks || []).filter((t: any) => t.status !== "completed");
-  const completedTasks = (tasks || []).filter((t: any) => t.status === "completed");
+  // Per data model: task itself only has `k` (help status) and `l` (finish status: 1=not finished, 2=finished).
+  // "pending/accepted/rejected" belongs to each assignee on REL 108 meta `a` — i.e. invitee response.
+  const pendingTasks = (tasks || []).filter((t: any) => String(t.finish_status ?? "1") !== "2");
+  const completedTasks = (tasks || []).filter((t: any) => String(t.finish_status ?? "1") === "2");
 
-  const statusColors: Record<string, string> = {
+  const helpStatusColors: Record<string, string> = {
+    "1": "bg-muted text-muted-foreground",      // doesn't need help
+    "2": "bg-warning/10 text-warning",          // needs help
+    "3": "bg-success/10 text-success",          // found help
+  };
+  const helpStatusLabels: Record<string, string> = {
+    "1": "No help needed",
+    "2": "Needs help",
+    "3": "Help found",
+  };
+  const responseColors: Record<string, string> = {
     pending: "bg-warning/10 text-warning",
-    "in progress": "bg-primary/10 text-primary",
-    completed: "bg-success/10 text-success",
+    accepted: "bg-success/10 text-success",
+    rejected: "bg-destructive/10 text-destructive",
   };
 
-  const toggleTask = (id: string, currentStatus: string) => {
-    updateTaskStatus.mutate({ id, updates: { status: currentStatus === "completed" ? "pending" : "completed" } });
+  const toggleTask = (id: string, currentFinish: string) => {
+    const next = String(currentFinish) === "2" ? "1" : "2";
+    updateTaskStatus.mutate({ id, updates: { finish_status: next, completed_at: next === "2" ? new Date().toISOString() : "" } });
   };
 
   const addTask = () => {
@@ -126,15 +139,26 @@ export function TasksTab({
           {pendingTasks.map((t: any) => (
             <div key={t.id} className="p-3 rounded-lg bg-card border group hover:shadow-sm transition-shadow">
               <div className="flex items-center gap-3">
-                <button onClick={() => toggleTask(t.id, t.status)} className="shrink-0"><Circle className="h-5 w-5 text-muted-foreground hover:text-primary" /></button>
-                <div className="flex-1 min-w-0 cursor-pointer" onClick={() => toggleTask(t.id, t.status)}>
+                <button onClick={() => toggleTask(t.id, t.finish_status)} className="shrink-0"><Circle className="h-5 w-5 text-muted-foreground hover:text-primary" /></button>
+                <div className="flex-1 min-w-0 cursor-pointer" onClick={() => toggleTask(t.id, t.finish_status)}>
                   <p className="text-sm font-medium text-foreground">{t.title}</p>
                   <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                     {getAssignedNames(t).length > 0 && <span className="text-xs text-muted-foreground">{getAssignedNames(t).join(", ")}</span>}
                     {t.due_date && <span className="text-xs text-muted-foreground">Due: {new Date(t.due_date).toLocaleDateString("en", { month: "short", day: "numeric" })}</span>}
+                    {Array.isArray(t.assignees) && t.assignees.map((a: any) => {
+                      const m = (members || []).find((mm: any) => mm.user_id === a.user_id || `wp-${mm.id}` === a.user_id);
+                      const name = m?.display_name || m?.profile?.full_name || "Member";
+                      return (
+                        <Badge key={a.user_id} variant="outline" className={`text-[10px] ${responseColors[a.response] || ""}`}>
+                          {name}: {a.response}
+                        </Badge>
+                      );
+                    })}
                   </div>
                 </div>
-                <Badge variant="outline" className={statusColors[t.status] || ""}>{t.status || "pending"}</Badge>
+                <Badge variant="outline" className={helpStatusColors[String(t.help_status ?? "1")] || ""}>
+                  {helpStatusLabels[String(t.help_status ?? "1")] || "No help needed"}
+                </Badge>
                 <div className="flex gap-1 shrink-0">
                   <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" title="Post to Job Board"
                     onClick={(e) => { e.stopPropagation(); createJob.mutate({ title: t.title, description: t.description || `Help needed with: ${t.title}`, job_source_type: "group_task", linked_task_id: t.id, linked_group_id: activeGroupId!, location: "" }, { onSuccess: () => toast({ title: "Posted to Job Board" }) }); }}>
@@ -156,8 +180,8 @@ export function TasksTab({
               <p className="text-xs font-medium text-muted-foreground pt-3 pb-1">Completed ({completedTasks.length})</p>
               {completedTasks.map((t: any) => (
                 <div key={t.id} className="flex items-center gap-3 p-3 rounded-lg bg-card/50 border border-transparent opacity-60 hover:opacity-80">
-                  <button onClick={() => toggleTask(t.id, t.status)} className="shrink-0"><CheckCircle className="h-5 w-5 text-success" /></button>
-                  <p className="text-sm line-through text-muted-foreground flex-1 cursor-pointer" onClick={() => toggleTask(t.id, t.status)}>{t.title}</p>
+                  <button onClick={() => toggleTask(t.id, t.finish_status)} className="shrink-0"><CheckCircle className="h-5 w-5 text-success" /></button>
+                  <p className="text-sm line-through text-muted-foreground flex-1 cursor-pointer" onClick={() => toggleTask(t.id, t.finish_status)}>{t.title}</p>
                   {(isAdmin || t.created_by === userId) && (
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10 shrink-0"
                       onClick={() => deleteTask.mutate(t.id, { onSuccess: () => toast({ title: "Task deleted" }) })}>

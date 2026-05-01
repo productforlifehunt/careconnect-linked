@@ -78,8 +78,8 @@ export async function createJobPostingWordPress(job: {
   const created = await wordpressCCTFetch<any>("job_posting", {
     method: "POST",
     body: {
-      care_group_id: job.care_group_id ? numId(job.care_group_id) : null,
-      posted_by_user_id: posterId,
+      care_group_id: job.care_group_id ? String(numId(job.care_group_id)) : "",
+      posted_by_user_id: posterId ? String(posterId) : "",
       title: job.title,
       description: job.description,
       care_type: job.care_type || "",
@@ -88,7 +88,7 @@ export async function createJobPostingWordPress(job: {
       schedule: job.schedule || "",
       special_needs: job.special_needs || "",
       children_ages: job.children_ages || "",
-      start_date: job.start_date || null,
+      start_date: job.start_date || "",
       status: "open",
       app_area: job.app_area || "",
       language: job.language || "",
