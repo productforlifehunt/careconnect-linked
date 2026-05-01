@@ -27,9 +27,10 @@ export async function fetchDashboardStatsWordPress(): Promise<DashboardStats> {
   } catch { /* */ }
 
   try {
-    const tasks = await wordpressCCTFetch("universal_care_task", { params: { _limit: 100 } });
+    const tasks = await wordpressCCTFetch("care_task_real", { params: { _limit: 100 } });
+    // l = finish status: "1" = not finished, "2" = finished
     pendingTasks = Array.isArray(tasks)
-      ? tasks.filter((t: any) => t.status === "pending").length
+      ? tasks.filter((t: any) => String(t.l ?? "1") !== "2").length
       : 0;
   } catch { /* */ }
 

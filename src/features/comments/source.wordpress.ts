@@ -22,6 +22,7 @@ const ENTITY_REL: Record<string, number> = {
   group_post: 78,
   care_group_post: 78,
   care_task: 82,
+  care_task_real: 82,
   universal_care_task: 82,
   task: 82,
   job: 156,

@@ -1,16 +1,61 @@
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 
-// Live JetEngine relations (verified from prd-to-wp-mapping.md)
-const REL_GROUP_TASK = 48;        // M:M  care_group → universal_care_task
-const REL_TASK_ASSIGNEE = 81;     // 1:M  universal_care_task → users (caregivers)
-const REL_TASK_COMMENT = 82;      // 1:M  universal_care_task → comment
-const REL_TASK_USERS = 108;       // M:M  universal_care_task → users (visibility)
-const REL_TASK_PRIVATE_GROUPS = 109; // M:M universal_care_task → private_member_group
-const REL_TASK_CARED_ONE = 141;   // 1:M  universal_care_task → users (cared ones) — replaces 105
-const REL_TASK_CALENDAR = 131;    // 1:M  universal_care_task → users_calendar_even
+/**
+ * Care Task — JetEngine CCT "162. Care Task"
+ *   slug: care_task_real
+ *   fields:
+ *     a = Title
+ *     b = Description
+ *     c = Task type (checkbox / array)  values: 1..9 (Preparing Meals … Occasions)
+ *     people_needed = Number
+ *     e = Location (text)
+ *     f = Photo
+ *     g = Date of the task
+ *     h = Task start time (datetime)
+ *     i = Task end time (datetime)
+ *     j = Task completed at (datetime)
+ *     k = Task help status (radio)   1=doesn't need, 2=needs, 3=found
+ *     l = Task finish status (radio) 1=Not finished, 2=Finished
+ *
+ * Relations (per data model):
+ *   REL 141 → cared ones (care_task → users)            One to Many
+ *   REL 108 → assigned caregivers (care_task → users)   One to Many   meta: a = pending|accepted|rejected
+ *   REL  48 → care group (care_group → care_task)       Many to Many
+ *   REL 109 → private member groups (care_task → group) One to Many   visibility
+ *   REL  81 → users (care_task → users)                 Many to Many  visibility
+ *   REL  82 → comments
+ *   REL 131 → users_calendar_even
+ */
+
+const CCT_SLUG = "care_task_real";
+
+const REL_GROUP_TASK = 48;          // M:M  care_group ↔ care_task
+const REL_TASK_ASSIGNEE = 108;      // 1:M  care_task → users (assigned caregivers)
+const REL_TASK_COMMENT = 82;
+const REL_TASK_USERS = 81;          // M:M  care_task ↔ users (visibility)
+const REL_TASK_PRIVATE_GROUPS = 109;// 1:M  care_task → private_member_group
+const REL_TASK_CARED_ONE = 141;     // 1:M  care_task → users (cared ones)
+const REL_TASK_CALENDAR = 131;
 
 function normalizeWpObjectId(value: string | number | null | undefined): number {
   return Number(String(value ?? "").replace(/^wp-/, ""));
+}
+
+// ── Help / Finish status mapping ────────────────────────────────
+const HELP_STATUS_TO_LABEL: Record<string, string> = {
+  "1": "no_help_needed",
+  "2": "needs_help",
+  "3": "found_help",
+};
+const FINISH_STATUS_TO_LABEL: Record<string, string> = {
+  "1": "pending",
+  "2": "completed",
+};
+function helpStatusFromLegacy(v: any): string {
+  return String(v ?? "1");
+}
+function finishStatusFromLegacy(status: any): string {
+  return status === "completed" ? "2" : "1";
 }
 
 async function fetchAssignedUserIds(taskId: string): Promise<string[]> {
@@ -30,7 +75,41 @@ async function fetchCaredOneId(taskId: string): Promise<string | null> {
   } catch { return null; }
 }
 
-// CCT slug: universal_care_task | fields: title, description, status, due_date, completed_at
+function mapTask(t: any, groupId?: string | null) {
+  const id = String(t._ID || t.id || "");
+  const finishCode = String(t.l ?? "1");
+  const helpCode = String(t.k ?? "1");
+  const taskTypeRaw = t.c;
+  const taskTypes = Array.isArray(taskTypeRaw)
+    ? taskTypeRaw.map(String)
+    : taskTypeRaw
+      ? String(taskTypeRaw).split(",").map((s) => s.trim()).filter(Boolean)
+      : [];
+  return {
+    id,
+    care_group_id: groupId || null,
+    title: t.a || "",
+    description: t.b || "",
+    task_types: taskTypes,
+    people_needed: t.people_needed ? Number(t.people_needed) : null,
+    location: t.e || "",
+    photo: t.f || "",
+    task_date: t.g || null,
+    start_time: t.h || null,
+    end_time: t.i || null,
+    completed_at: t.j || null,
+    help_status: helpCode,
+    help_status_label: HELP_STATUS_TO_LABEL[helpCode] || "no_help_needed",
+    finish_status: finishCode,
+    // Legacy `status` field for existing UI: completed | pending
+    status: FINISH_STATUS_TO_LABEL[finishCode] || "pending",
+    due_date: t.g || null, // legacy alias
+    created_by: t.cct_author_id || t.author_id || null,
+    created_at: t.cct_created || t.created_at || null,
+    updated_at: t.cct_modified || t.updated_at || t.cct_created || null,
+  };
+}
+
 export async function fetchCareTasksWordPress(groupId?: string | null): Promise<any[]> {
   try {
     const taskIds = groupId
@@ -41,31 +120,22 @@ export async function fetchCareTasksWordPress(groupId?: string | null): Promise<
     if (groupId && (!Array.isArray(taskIds) || taskIds.length === 0)) return [];
     const tasks = groupId
       ? await Promise.all(taskIds!.map(async (taskId) => {
-          try { return await wordpressCCTFetch("universal_care_task", { id: taskId }); }
+          try { return await wordpressCCTFetch(CCT_SLUG, { id: taskId }); }
           catch { return null; }
         }))
-      : await wordpressCCTFetch<any[]>("universal_care_task", { params: { _limit: 100 } });
+      : await wordpressCCTFetch<any[]>(CCT_SLUG, { params: { _limit: 100 } });
     const taskList = Array.isArray(tasks) ? tasks.filter(Boolean) : [];
     const mapped = await Promise.all(taskList.map(async (t: any) => {
-      const id = String(t.id || t._ID || "");
+      const base = mapTask(t, groupId);
       const [assigned, caredOne] = await Promise.all([
-        fetchAssignedUserIds(id),
-        fetchCaredOneId(id),
+        fetchAssignedUserIds(base.id),
+        fetchCaredOneId(base.id),
       ]);
       return {
-        id,
-        care_group_id: groupId || null,
-        title: t.title || null,
-        description: t.description || null,
-        status: t.status || "pending",
+        ...base,
         assigned_to: assigned[0] || null,
         assigned_to_ids: assigned,
         cared_one_id: caredOne,
-        due_date: t.due_date || null,
-        completed_at: t.completed_at || null,
-        created_by: t.author_id || null,
-        created_at: t.created_at,
-        updated_at: t.updated_at || t.created_at,
       };
     }));
     return mapped;
@@ -75,17 +145,34 @@ export async function fetchCareTasksWordPress(groupId?: string | null): Promise<
 export async function createCareTaskWordPress(task: {
   care_group_id?: string; group_id?: string;
   title: string; description?: string;
-  assigned_to?: string | string[]; cared_one_id?: string; due_date?: string;
+  assigned_to?: string | string[]; cared_one_id?: string;
+  // New fields
+  task_types?: string[];
+  people_needed?: number;
+  location?: string;
+  photo?: string;
+  task_date?: string;
+  start_time?: string;
+  end_time?: string;
+  help_status?: string; // "1"|"2"|"3"
+  // Legacy alias
+  due_date?: string;
 }): Promise<string | null> {
-  const created = await wordpressCCTFetch<any>("universal_care_task", {
-    method: "POST",
-    body: {
-      title: task.title,
-      description: task.description || "",
-      due_date: task.due_date || null,
-      status: "pending",
-    },
-  });
+  const body: Record<string, any> = {
+    a: task.title,
+    b: task.description || "",
+    c: Array.isArray(task.task_types) ? task.task_types : [],
+    people_needed: task.people_needed != null ? String(task.people_needed) : "",
+    e: task.location || "",
+    f: task.photo || "",
+    g: task.task_date || task.due_date || "",
+    h: task.start_time || "",
+    i: task.end_time || "",
+    j: "",
+    k: task.help_status || "1",
+    l: "1", // not finished
+  };
+  const created = await wordpressCCTFetch<any>(CCT_SLUG, { method: "POST", body });
   const taskId = normalizeWpObjectId(created?.item_id || created?._ID || created?.id);
   const groupId = normalizeWpObjectId(task.group_id || task.care_group_id);
   const assignedUserIds = (Array.isArray(task.assigned_to) ? task.assigned_to : task.assigned_to ? [task.assigned_to] : [])
@@ -102,7 +189,7 @@ export async function createCareTaskWordPress(task: {
   }
   assignedUserIds.forEach((assignedUserId) => calls.push(wordpressFetch(`jet-rel/${REL_TASK_ASSIGNEE}`, {
     method: "POST",
-    body: { parent_id: taskId, child_id: assignedUserId, context: "child", store_items_type: "update" },
+    body: { parent_id: taskId, child_id: assignedUserId, context: "child", store_items_type: "update", meta: { a: "pending" } },
   })));
   if (taskId && caredOneId) {
     calls.push(wordpressFetch(`jet-rel/${REL_TASK_CARED_ONE}`, {
@@ -115,15 +202,47 @@ export async function createCareTaskWordPress(task: {
 }
 
 export async function updateCareTaskWordPress(id: string, updates: Record<string, any>): Promise<void> {
-  const { care_group_id: _careGroupId, group_id: _groupId, assigned_to, cared_one_id, ...safeUpdates } = updates || {};
-  await wordpressCCTFetch("universal_care_task", { id, method: "PUT", body: safeUpdates });
+  const {
+    care_group_id: _careGroupId, group_id: _groupId,
+    assigned_to, cared_one_id,
+    title, description, task_types, people_needed, location, photo,
+    task_date, due_date, start_time, end_time, completed_at,
+    help_status, finish_status, status,
+    ...rest
+  } = updates || {};
+
+  const body: Record<string, any> = { ...rest };
+  if (title !== undefined) body.a = title;
+  if (description !== undefined) body.b = description;
+  if (task_types !== undefined) body.c = Array.isArray(task_types) ? task_types : [];
+  if (people_needed !== undefined) body.people_needed = people_needed != null ? String(people_needed) : "";
+  if (location !== undefined) body.e = location;
+  if (photo !== undefined) body.f = photo;
+  if (task_date !== undefined) body.g = task_date || "";
+  else if (due_date !== undefined) body.g = due_date || "";
+  if (start_time !== undefined) body.h = start_time || "";
+  if (end_time !== undefined) body.i = end_time || "";
+  if (completed_at !== undefined) body.j = completed_at || "";
+  if (help_status !== undefined) body.k = String(help_status);
+  if (finish_status !== undefined) body.l = String(finish_status);
+  // Legacy: { status: "completed" | "pending" }
+  if (status !== undefined) {
+    body.l = finishStatusFromLegacy(status);
+    if (status === "completed") body.j = body.j || new Date().toISOString();
+  }
+
+  if (Object.keys(body).length > 0) {
+    await wordpressCCTFetch(CCT_SLUG, { id, method: "PUT", body });
+  }
+
   const taskId = normalizeWpObjectId(id);
   if (assigned_to !== undefined) {
-      const assignedUserIds = (Array.isArray(assigned_to) ? assigned_to : assigned_to ? [assigned_to] : []).map(normalizeWpObjectId).filter(Boolean);
-      for (const assignedUserId of assignedUserIds) {
+    const assignedUserIds = (Array.isArray(assigned_to) ? assigned_to : assigned_to ? [assigned_to] : [])
+      .map(normalizeWpObjectId).filter(Boolean);
+    for (const assignedUserId of assignedUserIds) {
       await wordpressFetch(`jet-rel/${REL_TASK_ASSIGNEE}`, {
         method: "POST",
-          body: { parent_id: taskId, child_id: assignedUserId, context: "child", store_items_type: "update" },
+        body: { parent_id: taskId, child_id: assignedUserId, context: "child", store_items_type: "update", meta: { a: "pending" } },
       });
     }
   }
@@ -139,8 +258,19 @@ export async function updateCareTaskWordPress(id: string, updates: Record<string
 }
 
 export async function deleteCareTaskWordPress(id: string): Promise<void> {
-  await wordpressCCTFetch("universal_care_task", { id, method: "DELETE" });
+  await wordpressCCTFetch(CCT_SLUG, { id, method: "DELETE" });
+}
+
+/** Update an assignee's response status (pending/accepted/rejected) on REL 108 meta field `a`. */
+export async function updateAssigneeStatusWordPress(taskId: string, userId: string, status: "pending" | "accepted" | "rejected"): Promise<void> {
+  const tid = normalizeWpObjectId(taskId);
+  const uid = normalizeWpObjectId(userId);
+  if (!tid || !uid) return;
+  await wordpressFetch(`jet-rel/${REL_TASK_ASSIGNEE}`, {
+    method: "POST",
+    body: { parent_id: tid, child_id: uid, context: "child", store_items_type: "update", meta: { a: status } },
+  });
 }
 
 // Re-export relation IDs for callers that need them
-export { REL_TASK_COMMENT, REL_TASK_USERS, REL_TASK_PRIVATE_GROUPS, REL_TASK_CALENDAR };
+export { REL_TASK_COMMENT, REL_TASK_USERS, REL_TASK_PRIVATE_GROUPS, REL_TASK_CALENDAR, REL_TASK_ASSIGNEE, REL_TASK_CARED_ONE, REL_GROUP_TASK, CCT_SLUG };

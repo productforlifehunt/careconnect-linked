@@ -4,8 +4,9 @@
  * - REL 75:  care_group_private_member_group → users   (M:M, members of a sub-group)
  * - REL 103: care_group_not_too_special_post → care_group_private_member_group (M:M, post visibility)
  * - REL 104: care_group_not_too_special_post → users   (M:M, direct user visibility)
- * - REL 108: universal_care_task → users (M:M, direct user visibility)
- * - REL 109: universal_care_task → care_group_private_member_group (M:M, sub-group visibility)
+ * - REL  81: care_task_real → users (M:M, direct user visibility)
+ * - REL 109: care_task_real → care_group_private_member_group (M:M, sub-group visibility)
+ * (REL 108 = assigned caregivers, NOT visibility)
  *
  * Visibility rule per the PRD:
  *   A post / task is visible to the current user if EITHER
@@ -19,7 +20,7 @@ import { getCurrentUserIdNumber } from "@/features/shared/current-user";
 const REL_SUBGROUP_MEMBERS = 75;
 const REL_POST_SUBGROUPS = 103;
 const REL_POST_USERS = 104;
-const REL_TASK_USERS = 108;
+const REL_TASK_USERS = 81;
 const REL_TASK_SUBGROUPS = 109;
 
 async function relChildren(rel: number, parentId: number): Promise<number[]> {
