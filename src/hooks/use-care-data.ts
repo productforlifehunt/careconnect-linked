@@ -57,6 +57,7 @@ import {
   updateCommentCCTWordPress, deleteCommentCCTWordPress,
 } from "@/features/community-posts/source.wordpress";
 import { fetchCareTasksWordPress, createCareTaskWordPress, updateCareTaskWordPress, deleteCareTaskWordPress } from "@/features/care-tasks/source.wordpress";
+import { createCalendarEventForUserWordPress } from "@/features/calendar/source.wordpress";
 import { fetchCategoriesWordPress } from "@/features/categories/source.wordpress";
 import { fetchArticlesWordPress } from "@/features/articles/source.wordpress";
 import { fetchEntityReviewsWordPress, createReviewWordPress } from "@/features/reviews/source.wordpress";
