@@ -566,6 +566,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
                           onEdit={setEditMed}
                           onHistory={setHistoryMed}
                           compact
+                          slot={hour}
                         />
                       ))}
                     </div>
