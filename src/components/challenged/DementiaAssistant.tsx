@@ -5,12 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Bot, Send, Loader2, X, Volume2, VolumeX, Languages, Mic, MicOff,
-  Play, Pause, Square, MessageSquare, Headphones, AudioLines,
+  Play, Pause, Square, MessageSquare, Headphones, AudioLines, Settings2,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   streamChatWithVoice, streamChatTextOnly, speakTextStreaming, type StreamControls,
 } from "@/lib/ai-stream";
