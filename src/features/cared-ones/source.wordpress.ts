@@ -17,7 +17,7 @@ export async function fetchUserCaredOnesWordPress(): Promise<any[]> {
       caredOneIds.map(async (userId: string) => {
         try {
           const u = await wordpressFetch<any>(`wp/v2/users/${userId}?context=edit`);
-          const fullName = u.name || u.slug || "Loved One";
+          const fullName = u.name || u.slug || "Cared One";
           return {
             user_id: `wp-${userId}`,
             relationship: null,
