@@ -1,19 +1,41 @@
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Circle } from "lucide-react";
+import { CheckCircle, Circle, MapPin, Clock } from "lucide-react";
 
 interface CalendarTabProps {
   tasks: any[];
 }
 
+// Group calendar = pure frontend aggregation of tasks (per data model: task date = field `g`).
 export function CalendarTab({ tasks }: CalendarTabProps) {
-  const priorityColors: Record<string, string> = {
-    high: "bg-destructive/10 text-destructive", urgent: "bg-destructive/10 text-destructive",
-    medium: "bg-warning/10 text-warning", low: "bg-muted text-muted-foreground",
+  const helpStatusColors: Record<string, string> = {
+    "1": "bg-muted text-muted-foreground",
+    "2": "bg-warning/10 text-warning",
+    "3": "bg-success/10 text-success",
+  };
+  const helpStatusLabels: Record<string, string> = {
+    "1": "No help needed",
+    "2": "Needs help",
+    "3": "Help found",
+  };
+
+  const getDateKey = (t: any): string | null => {
+    const raw = t.task_date || t.start_time || t.due_date;
+    if (!raw) return null;
+    return String(raw).split("T")[0].split(" ")[0];
+  };
+
+  const fmtTime = (raw?: string | null) => {
+    if (!raw) return "";
+    const s = String(raw);
+    // accept "HH:mm", "YYYY-MM-DD HH:mm:ss", or ISO
+    const m = s.match(/(\d{2}):(\d{2})/);
+    return m ? `${m[1]}:${m[2]}` : "";
   };
 
   const tasksByDate: Record<string, any[]> = {};
-  (tasks || []).filter((t: any) => t.due_date).forEach((t: any) => {
-    const d = t.due_date.split("T")[0];
+  (tasks || []).forEach((t: any) => {
+    const d = getDateKey(t);
+    if (!d) return;
     if (!tasksByDate[d]) tasksByDate[d] = [];
     tasksByDate[d].push(t);
   });
@@ -23,23 +45,50 @@ export function CalendarTab({ tasks }: CalendarTabProps) {
     <div>
       {sortedDates.map(date => (
         <div key={date} className="mb-6">
-          <h3 className="text-sm font-semibold text-foreground mb-2">{new Date(date + "T00:00").toLocaleDateString("en", { weekday: "long", month: "long", day: "numeric" })}</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-2">
+            {new Date(date + "T00:00").toLocaleDateString("en", { weekday: "long", month: "long", day: "numeric" })}
+          </h3>
           <div className="space-y-2">
-            {tasksByDate[date].map((t: any) => (
-              <div key={t.id} className="flex items-center gap-3 p-3 rounded-lg bg-card border">
-                {t.status === "completed" ? <CheckCircle className="h-4 w-4 text-success" /> : <Circle className="h-4 w-4 text-muted-foreground" />}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground">{t.title}</p>
-                  <p className="text-xs text-muted-foreground">{t.assignee_profile?.full_name || "Unassigned"}</p>
+            {tasksByDate[date]
+              .sort((a, b) => fmtTime(a.start_time).localeCompare(fmtTime(b.start_time)))
+              .map((t: any) => {
+              const isDone = String(t.finish_status ?? "1") === "2";
+              const start = fmtTime(t.start_time);
+              const end = fmtTime(t.end_time);
+              return (
+                <div key={t.id} className="flex items-start gap-3 p-3 rounded-lg bg-card border">
+                  {isDone
+                    ? <CheckCircle className="h-4 w-4 text-success mt-0.5" />
+                    : <Circle className="h-4 w-4 text-muted-foreground mt-0.5" />}
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-medium text-foreground ${isDone ? "line-through opacity-60" : ""}`}>{t.title}</p>
+                    <div className="flex items-center gap-3 mt-0.5 flex-wrap text-xs text-muted-foreground">
+                      {(start || end) && (
+                        <span className="inline-flex items-center gap-1">
+                          <Clock className="h-3 w-3" />{start}{end ? `–${end}` : ""}
+                        </span>
+                      )}
+                      {t.location && (
+                        <span className="inline-flex items-center gap-1">
+                          <MapPin className="h-3 w-3" />{t.location}
+                        </span>
+                      )}
+                      {Array.isArray(t.assignees) && t.assignees.length > 0 && (
+                        <span>{t.assignees.length} assigned</span>
+                      )}
+                    </div>
+                  </div>
+                  <Badge variant="outline" className={helpStatusColors[String(t.help_status ?? "1")] || ""}>
+                    {helpStatusLabels[String(t.help_status ?? "1")] || "—"}
+                  </Badge>
                 </div>
-                <Badge variant="outline" className={priorityColors[t.priority] || ""}>{t.priority}</Badge>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       ))}
     </div>
   ) : (
-    <p className="text-center py-12 text-muted-foreground">No scheduled tasks. Add due dates to tasks to see them here.</p>
+    <p className="text-center py-12 text-muted-foreground">No scheduled tasks. Add a date to a task to see it here.</p>
   );
 }
