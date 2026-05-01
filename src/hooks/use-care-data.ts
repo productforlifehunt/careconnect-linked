@@ -1779,3 +1779,34 @@ export function useSetInformationCardContacts() {
     onSuccess: (_d, vars) => { qc.invalidateQueries({ queryKey: ["informationCardContacts", vars.cardId] }); },
   });
 }
+
+export function useEnableInformationCardShare() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ cardId, ...opts }: { cardId: string; visibility: any; expiresAt?: string | null; existingToken?: string }) =>
+      enableInformationCardShareWordPress(cardId, opts),
+    onSuccess: (_d, vars) => {
+      qc.invalidateQueries({ queryKey: ["informationCards"] });
+      qc.invalidateQueries({ queryKey: ["informationCard", vars.cardId] });
+    },
+  });
+}
+
+export function useRevokeInformationCardShare() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (cardId: string) => revokeInformationCardShareWordPress(cardId),
+    onSuccess: (_d, cardId) => {
+      qc.invalidateQueries({ queryKey: ["informationCards"] });
+      qc.invalidateQueries({ queryKey: ["informationCard", cardId] });
+    },
+  });
+}
+
+export function useInformationCardByToken(token: string | null) {
+  return useQuery({
+    queryKey: ["informationCardByToken", token],
+    queryFn: () => fetchInformationCardByShareTokenWordPress(token!),
+    enabled: !!token,
+  });
+}
