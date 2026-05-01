@@ -380,7 +380,8 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
 
   const [addOpen, setAddOpen] = useState(false);
   const [view, setView] = useState<"timeline" | "list">("timeline");
-  const [form, setForm] = useState({ name: "", dosage: "", frequency: "once_daily", time_slots: ["08:00"] as string[], note: "" });
+  const [form, setForm] = useState({ name: "", dosage: "", frequency: "once_daily", time_slots: ["08:00"] as string[], note: "", stock_count: "" as string | number, refill_threshold: "" as string | number });
+  const updateMed = useUpdateMedicine();
 
   // Dialogs
   const [logDialog, setLogDialog] = useState<{ open: boolean; med: any; action: "taken" | "skipped" | "missed" }>({ open: false, med: null, action: "taken" });
