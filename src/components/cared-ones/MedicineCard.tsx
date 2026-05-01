@@ -532,6 +532,10 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
               </div>
             </div>
             <div><Label>Notes <span className="text-muted-foreground text-xs">(optional)</span></Label><Textarea value={form.note} onChange={e => setForm(p => ({ ...p, note: e.target.value }))} placeholder="Take with food, avoid dairy…" className="mt-1 min-h-[60px]" /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Stock count <span className="text-muted-foreground text-xs">(optional)</span></Label><Input type="number" min="0" value={form.stock_count} onChange={e => setForm(p => ({ ...p, stock_count: e.target.value }))} placeholder="e.g. 30" className="mt-1" /></div>
+              <div><Label>Refill alert at <span className="text-muted-foreground text-xs">(optional)</span></Label><Input type="number" min="0" value={form.refill_threshold} onChange={e => setForm(p => ({ ...p, refill_threshold: e.target.value }))} placeholder="e.g. 7" className="mt-1" /></div>
+            </div>
             <Button className="w-full" variant="coral" onClick={handleAdd} disabled={createMed.isPending || !form.name.trim()}>
               {createMed.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />} Add Medicine
             </Button>
