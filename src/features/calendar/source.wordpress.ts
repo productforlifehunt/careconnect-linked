@@ -21,6 +21,10 @@ const SLUG = "users_calendar_even";
 const REL_USER_EVENT = 129;
 const REL_EVENT_INVITEES = 130;
 
+function normalizeWPUserId(id: string | number | null | undefined): string {
+  return String(id ?? "").replace(/^wp-/, "");
+}
+
 function asBool(v: any): boolean {
   return v === true || v === "yes" || v === "1" || v === 1 || v === "true";
 }
@@ -85,6 +89,12 @@ function mapEventToWP(e: Partial<CalendarEvent>): Record<string, any> {
 export async function fetchCalendarEventsWordPress(): Promise<CalendarEvent[]> {
   const userId = getCurrentUserId();
   if (!userId) return [];
+  return fetchCalendarEventsForUserWordPress(userId);
+}
+
+export async function fetchCalendarEventsForUserWordPress(userIdInput: string | number): Promise<CalendarEvent[]> {
+  const userId = normalizeWPUserId(userIdInput);
+  if (!userId) return [];
   try {
     // Owned events via Rel 129 (users[parent] → calendar event[child]) — list children of this user
     const ownedRels: any[] = await wordpressFetch<any[]>(`jet-rel/${REL_USER_EVENT}/children/${userId}`).catch(() => []);
@@ -116,6 +126,15 @@ export async function fetchCalendarEventsWordPress(): Promise<CalendarEvent[]> {
 
 export async function createCalendarEventWordPress(event: Partial<CalendarEvent>): Promise<CalendarEvent | null> {
   const userId = getCurrentUserId();
+  if (!userId) return null;
+  return createCalendarEventForUserWordPress(userId, event);
+}
+
+export async function createCalendarEventForUserWordPress(
+  ownerUserIdInput: string | number,
+  event: Partial<CalendarEvent>,
+): Promise<CalendarEvent | null> {
+  const userId = normalizeWPUserId(ownerUserIdInput);
   if (!userId) return null;
   const created: any = await wordpressCCTFetch(SLUG, { method: "POST", body: mapEventToWP(event) });
   const newId = String(created?.item_id ?? created?._ID ?? created?.id ?? "");
