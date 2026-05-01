@@ -163,7 +163,7 @@ export function getMockEvents(): CalendarEvent[] {
       show_as: "busy",
       visibility: "default",
       is_availability: false,
-      source_cct_slug: "universal_care_task",
+      source_cct_slug: "care_task_real",
       source_item_id: "44",
     },
     {

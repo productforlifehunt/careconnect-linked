@@ -213,16 +213,18 @@ export async function wpFetchBookings(): Promise<WPBooking[]> {
 // ─── Care Tasks ─────────────────────────────────────────────
 export async function wpFetchCareTasks(): Promise<any[]> {
   try {
-    const tasks = await wpFetchCPT("universal_care_task");
+    // Care tasks live in JetEngine CCT `care_task_real`, not as a CPT
+    const { wordpressCCTFetch } = await import("@/features/shared/wordpress-client");
+    const tasks = await wordpressCCTFetch<any[]>("care_task_real", { params: { _limit: 100 } });
     if (!Array.isArray(tasks)) return [];
     return tasks.map((t: any) => ({
-      id: String(t.id),
-      title: t.title?.rendered || "Task",
-      status: t.acf?.status || "pending",
-      priority: t.acf?.priority || "medium",
-      due_date: t.acf?.due_date || null,
+      id: String(t._ID || t.id),
+      title: t.a || "Task",
+      status: String(t.l ?? "1") === "2" ? "completed" : "pending",
+      priority: "medium",
+      due_date: t.g || null,
       assignee_profile: null,
-      created_at: t.date,
+      created_at: t.cct_created || null,
     }));
   } catch {
     return [];
