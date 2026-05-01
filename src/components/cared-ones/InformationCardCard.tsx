@@ -239,7 +239,141 @@ export function InformationCardCard({ caredOneId }: { caredOneId: string }) {
           onClose={() => setContactsCardId(null)}
         />
       )}
+
+      {shareCard && (
+        <ShareCardDialog card={shareCard} onClose={() => setShareCard(null)} />
+      )}
     </div>
+  );
+}
+
+function ShareCardDialog({ card, onClose }: { card: any; onClose: () => void }) {
+  const { toast } = useToast();
+  const enable = useEnableInformationCardShare();
+  const revoke = useRevokeInformationCardShare();
+  const [visibility, setVisibility] = useState<string>(card.share_visibility || "Visible to public");
+  const [expiresAt, setExpiresAt] = useState<string>(
+    card.share_expires_at ? String(card.share_expires_at).replace(" ", "T").slice(0, 16) : ""
+  );
+  const [generatedUrl, setGeneratedUrl] = useState<string>(() => {
+    if (card.share_token && typeof window !== "undefined") {
+      return `${window.location.origin}/share/card/${card.share_token}`;
+    }
+    return "";
+  });
+
+  const buildShareText = () => [
+    `📇 ${card.cared_ones_information_card_name || "Information Card"}`,
+    card.cared_ones_name ? `Name: ${card.cared_ones_name}` : "",
+    generatedUrl ? `\n${generatedUrl}` : "",
+  ].filter(Boolean).join("\n");
+
+  const handleEnable = () => {
+    enable.mutate(
+      {
+        cardId: String(card.id),
+        visibility: visibility as any,
+        expiresAt: expiresAt ? expiresAt.replace("T", " ") + ":00" : null,
+        existingToken: card.share_token,
+      },
+      {
+        onSuccess: (res) => {
+          setGeneratedUrl(res.url);
+          toast({ title: "Share link ready" });
+        },
+        onError: (e: any) => toast({ title: "Failed", description: e.message, variant: "destructive" }),
+      }
+    );
+  };
+
+  const copyLink = async () => {
+    if (!generatedUrl) return;
+    try { await navigator.clipboard.writeText(generatedUrl); toast({ title: "Link copied" }); }
+    catch { toast({ title: "Copy failed", variant: "destructive" }); }
+  };
+
+  const nativeShare = async () => {
+    if (!generatedUrl) return;
+    const text = buildShareText();
+    try {
+      if ((navigator as any).share) {
+        await (navigator as any).share({ title: card.cared_ones_information_card_name || "Information Card", text, url: generatedUrl });
+        return;
+      }
+      await navigator.clipboard.writeText(text);
+      toast({ title: "Copied", description: "Paste it anywhere to share." });
+    } catch {/* canceled */}
+  };
+
+  const handleRevoke = () => {
+    revoke.mutate(String(card.id), {
+      onSuccess: () => { setGeneratedUrl(""); toast({ title: "Sharing revoked" }); onClose(); },
+    });
+  };
+
+  return (
+    <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2"><Share2 className="h-4 w-4" /> Share Information Card</DialogTitle>
+          <DialogDescription>Generate a public link or QR code. You can revoke it any time.</DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3">
+          <div>
+            <Label>Who can view</Label>
+            <Select value={visibility} onValueChange={setVisibility}>
+              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Visible to public">Anyone with the link</SelectItem>
+                <SelectItem value="Visible to the care group of the cared one">Care group only</SelectItem>
+                <SelectItem value="Visible to caregivers of the cared one">Caregivers only</SelectItem>
+                <SelectItem value="Visible to author">Only me</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Expires at (optional)</Label>
+            <Input type="datetime-local" className="mt-1" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
+            <p className="text-[11px] text-muted-foreground mt-1">Leave empty for no expiry. After expiry the link stops working.</p>
+          </div>
+
+          {generatedUrl ? (
+            <div className="rounded-md border p-3 space-y-3">
+              <div className="flex items-center gap-2">
+                <Link2 className="h-4 w-4 text-muted-foreground shrink-0" />
+                <Input readOnly value={generatedUrl} className="text-xs h-8" />
+                <Button size="icon" variant="outline" className="h-8 w-8" onClick={copyLink}><Copy className="h-3 w-3" /></Button>
+              </div>
+              <div className="flex flex-col items-center gap-2 py-2">
+                <QRCodeSVG value={generatedUrl} size={140} />
+                <p className="text-[11px] text-muted-foreground flex items-center gap-1"><QrCode className="h-3 w-3" /> Scan to view</p>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" className="flex-1" onClick={nativeShare}><Share2 className="h-3 w-3 mr-1" /> Share…</Button>
+                <Button size="sm" variant="outline" onClick={handleEnable} disabled={enable.isPending}>
+                  {enable.isPending && <Loader2 className="h-3 w-3 animate-spin mr-1" />} Update
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button className="w-full" onClick={handleEnable} disabled={enable.isPending}>
+              {enable.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Generate share link
+            </Button>
+          )}
+        </div>
+
+        <DialogFooter className="sm:justify-between">
+          {card.share_token && (
+            <Button variant="ghost" size="sm" className="text-destructive" onClick={handleRevoke} disabled={revoke.isPending}>
+              <ShieldOff className="h-3 w-3 mr-1" /> Revoke sharing
+            </Button>
+          )}
+          <Button variant="ghost" onClick={onClose}>Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
