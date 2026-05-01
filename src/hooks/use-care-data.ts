@@ -473,12 +473,38 @@ export function useCareTasks(groupId?: string | null) {
 export function useCreateTask() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (task: { group_id?: string; care_group_id?: string; title: string; description?: string; assigned_to?: string | string[]; due_date?: string; subgroupIds?: number[]; visibilityUserIds?: number[] }) => {
+    mutationFn: async (task: { group_id?: string; care_group_id?: string; title: string; description?: string; assigned_to?: string | string[]; due_date?: string; task_date?: string; start_time?: string; end_time?: string; location?: string; subgroupIds?: number[]; visibilityUserIds?: number[] }) => {
       const { subgroupIds, visibilityUserIds, ...payload } = task;
       const newId = await createCareTaskWordPress(payload);
       if (newId && ((subgroupIds?.length ?? 0) > 0 || (visibilityUserIds?.length ?? 0) > 0)) {
         await setTaskVisibility(newId, subgroupIds || [], visibilityUserIds || []);
       }
+      // Per data model: task creation must materialize a calendar event for the group.
+      // Write event for creator + every assignee (REL 129 binds owner per row).
+      try {
+        const groupId = task.group_id || task.care_group_id;
+        const stored = getStoredWPUser();
+        const creatorId = stored?.user_id ? String(stored.user_id) : null;
+        const assignees = Array.isArray(task.assigned_to) ? task.assigned_to : task.assigned_to ? [task.assigned_to] : [];
+        const ownerIds = Array.from(new Set(
+          [creatorId, ...assignees.map((a) => String(a).replace(/^wp-/, ""))].filter(Boolean) as string[]
+        ));
+        const startAt = task.start_time || task.task_date || task.due_date || "";
+        const endAt = task.end_time || startAt;
+        await Promise.all(ownerIds.map((uid) =>
+          createCalendarEventForUserWordPress(uid, {
+            title: task.title,
+            description: task.description || "",
+            location: task.location || "",
+            start_at: startAt,
+            end_at: endAt,
+            event_type: "task" as any,
+            status: "confirmed" as any,
+            show_as: "busy" as any,
+          }).catch(() => null)
+        ));
+        if (groupId) qc.invalidateQueries({ queryKey: ["calendarEvents"] });
+      } catch { /* non-fatal */ }
       return newId;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["careTasks"] }); },
