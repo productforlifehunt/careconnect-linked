@@ -370,11 +370,11 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
   const [form, setForm] = useState({ name: "", dosage: "", frequency: "once_daily", time_slots: ["08:00"] as string[], note: "" });
 
   // Dialogs
-  const [logDialog, setLogDialog] = useState<{ open: boolean; med: any; action: "taken" | "skipped" }>({ open: false, med: null, action: "taken" });
+  const [logDialog, setLogDialog] = useState<{ open: boolean; med: any; action: "taken" | "skipped" | "missed" }>({ open: false, med: null, action: "taken" });
   const [historyMed, setHistoryMed] = useState<any>(null);
   const [editMed, setEditMed] = useState<any>(null);
 
-  const handleLog = (med: any, status: "taken" | "skipped") => {
+  const handleLog = (med: any, status: "taken" | "skipped" | "missed") => {
     setLogDialog({ open: true, med, action: status });
   };
 
