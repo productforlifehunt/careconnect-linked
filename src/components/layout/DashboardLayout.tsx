@@ -61,15 +61,19 @@ function useSidebarItems() {
   return base;
 }
 
-// Key items for mobile bottom bar (max 5)
+// Key items for mobile bottom bar (max 5). Profile lives in the top-right
+// avatar dropdown, so the bottom bar reserves a slot for the unified Inbox
+// (messages + notifications) instead.
 function useMobileBarItems() {
   const site = useSite();
+  const { i18n } = useTranslation();
+  const isChinese = i18n.language?.startsWith("zh");
   return [
     { title: "Home", url: "/dashboard", icon: LayoutDashboard },
     { title: site.navLabels.caredOnes, url: "/cared-ones", icon: HeartIcon },
     { title: site.navLabels.careGroups.split(" ")[0], url: "/care-circle", icon: Users },
+    { title: isChinese ? "收件箱" : "Inbox", url: "/inbox", icon: Inbox },
     { title: "Resources", url: "/resources", icon: BookOpen },
-    { title: "Profile", url: "/profile", icon: User },
   ];
 }
 
