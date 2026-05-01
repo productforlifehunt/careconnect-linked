@@ -64,7 +64,7 @@ export default function CareCircle() {
   const activeGroupId = selectedGroupId || (groups && groups.length > 0 ? groups[0].id : null);
   const activeGroup = (groups || []).find((g: any) => g.id === activeGroupId);
 
-  const { data: members } = useCareGroupMembers(activeGroupId);
+  const { data: members, isLoading: membersLoading } = useCareGroupMembers(activeGroupId);
   const { data: tasks, isLoading: tasksLoading } = useCareTasks(activeGroupId);
   const { data: allPosts } = useCareGroupPosts(activeGroupId);
   const { data: announcements } = useCareGroupPosts(activeGroupId, "announcement");
@@ -93,9 +93,14 @@ export default function CareCircle() {
   const leaveGroup = useLeaveGroup();
   const createJob = useCreateJobPosting();
 
-  const currentMember = (members || []).find((m: any) => m.user_id === profile?.id);
+  const currentUserId = String(profile?.id || profile?.user_id || "").replace(/^wp-/, "");
+  const currentMember = (members || []).find((m: any) => {
+    const memberUserId = String(m.user_id || m.id || "").replace(/^wp-/, "");
+    return currentUserId && memberUserId === currentUserId;
+  });
   const isAdmin = currentMember?.is_owner || currentMember?.is_admin;
   const isOwner = currentMember?.is_owner;
+  const canShowJoin = !membersLoading && activeGroupId && !currentMember;
   const pendingTasks = (tasks || []).filter((t: any) => t.status !== "completed");
 
   const handleCreateGroup = () => {
@@ -175,16 +180,18 @@ export default function CareCircle() {
         </div>
         <div className="flex gap-2">
           {isAdmin && <Button variant="ghost" size="icon" onClick={() => setSettingsOpen(true)} title={t("careCircle.groupSettings")}><Settings className="h-4 w-4" /></Button>}
-          <Dialog open={joinCodeOpen} onOpenChange={setJoinCodeOpen}>
-            <DialogTrigger asChild><Button variant="outline" size="sm"><KeyRound className="h-4 w-4 mr-1" /> {t("careCircle.join")}</Button></DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>{t("careCircle.joinGroup")} {site.careGroupSingular}</DialogTitle></DialogHeader>
-              <div className="space-y-4 mt-2">
-                <div><Label>{t("careCircle.joinCode")}</Label><Input value={joinCode} onChange={e => setJoinCode(e.target.value.trim())} placeholder={t("careCircle.joinCodePlaceholder")} /></div>
-                <Button variant="coral" className="w-full" onClick={handleJoinByCode} disabled={joinGroupByCode.isPending || !joinCode.trim()}>{t("careCircle.joinGroup")}</Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+          {canShowJoin && (
+            <Dialog open={joinCodeOpen} onOpenChange={setJoinCodeOpen}>
+              <DialogTrigger asChild><Button variant="outline" size="sm"><KeyRound className="h-4 w-4 mr-1" /> {t("careCircle.join")}</Button></DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>{t("careCircle.joinGroup")} {site.careGroupSingular}</DialogTitle></DialogHeader>
+                <div className="space-y-4 mt-2">
+                  <div><Label>{t("careCircle.joinCode")}</Label><Input value={joinCode} onChange={e => setJoinCode(e.target.value.trim())} placeholder={t("careCircle.joinCodePlaceholder")} /></div>
+                  <Button variant="coral" className="w-full" onClick={handleJoinByCode} disabled={joinGroupByCode.isPending || !joinCode.trim()}>{t("careCircle.joinGroup")}</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
           <Dialog open={createGroupOpen} onOpenChange={setCreateGroupOpen}>
             <DialogTrigger asChild><Button variant="outline" size="sm"><Plus className="h-4 w-4 mr-1" /> {t("careCircle.newGroup")}</Button></DialogTrigger>
             <DialogContent>
