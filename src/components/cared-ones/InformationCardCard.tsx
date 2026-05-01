@@ -8,12 +8,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Loader2, Plus, Pencil, Trash2, Share2, IdCard, MapPin, Eye } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, Share2, IdCard, MapPin, Eye, Link2, QrCode, Copy, ShieldOff } from "lucide-react";
 import {
   useInformationCards, useCreateInformationCard, useUpdateInformationCard, useDeleteInformationCard,
   useInformationCardContactIds, useSetInformationCardContacts, useEmergencyContacts,
+  useEnableInformationCardShare, useRevokeInformationCardShare,
 } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
+import { QRCodeSVG } from "qrcode.react";
 
 type Status = "Draft" | "Active" | "Paused";
 type DisplaysLocation = "Yes" | "No";
