@@ -5,6 +5,11 @@
 import { getWPToken } from './wp-auth';
 import { buildWPUrl, buildWPHeaders, IS_DEV } from '@/lib/wp-url';
 import { getActiveServer } from '@/lib/wp-servers';
+import {
+  createBookingCalendarEvent,
+  getProviderCalendarAvailability,
+  getProviderCalendarBookingConflictMessage,
+} from '@/features/calendar/booking-availability';
 
 // Parent category slug for all care service products
 export const CARE_SERVICES_CATEGORY = 'care-services';
@@ -1142,6 +1147,17 @@ export async function createServiceOrder(
         ],
       }),
     });
+
+    await createBookingCalendarEvent({
+      providerId,
+      clientId: bookingData.clientId,
+      appointmentDate: bookingData.appointmentDate,
+      appointmentTime: bookingData.appointmentTime,
+      durationHours: bookingData.durationHours,
+      serviceType: bookingData.serviceType,
+      orderId: order?.id,
+      note: bookingData.specialInstructions,
+    }).catch((error) => console.warn('Order created but calendar booking event failed:', error));
 
     return order;
   } catch (error) {
