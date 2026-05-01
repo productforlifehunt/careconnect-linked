@@ -1258,10 +1258,10 @@ const en = {
     ourAI5: "Multi-layer emotional safety filters protect against any form of manipulation",
     ourAI6: "Specially trained for hallucinations and delusions — gentle redirection without distress",
     ourAI7: "Proactively protects patient privacy — refuses to request or respond to any sensitive information",
-    ctaTitle: "Safe AI Companionship for Your Loved One",
-    ctaSubtitle: "Give your loved one a patient, warm, always-available companion that you can trust completely.",
+    ctaTitle: "Safe AI Companionship for Your Cared One",
+    ctaSubtitle: "Give your cared one a patient, warm, always-available companion that you can trust completely.",
     disclaimerTitle: "Important Notice",
-    disclaimerText: "AI-generated content is for companionship purposes only. It does not constitute medical advice, diagnosis, or treatment. If you have medical concerns about your loved one, please consult a qualified healthcare professional immediately. While our AI is designed with extensive safety measures specifically for dementia patients, including hallucination response, behavioral adaptation, and multi-layer safeguards, no AI system is perfect. Caregiver supervision is always recommended.",
+    disclaimerText: "AI-generated content is for companionship purposes only. It does not constitute medical advice, diagnosis, or treatment. If you have medical concerns about your cared one, please consult a qualified healthcare professional immediately. While our AI is designed with extensive safety measures specifically for dementia patients, including hallucination response, behavioral adaptation, and multi-layer safeguards, no AI system is perfect. Caregiver supervision is always recommended.",
   },
 };
 
