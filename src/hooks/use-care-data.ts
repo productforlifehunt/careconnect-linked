@@ -324,24 +324,50 @@ export function useDirectMessages(otherUserId: string | null) {
   });
 }
 
+/**
+ * Group live chat (per spec: REL 140 care_group → chat_conversation, 1:1).
+ * Resolves the group's conversation id, then fetches its messages via REL 143.
+ */
 export function useGroupMessages(groupId: string | null) {
   return useQuery({
     queryKey: ["groupMessages", groupId],
-    queryFn: () => fetchDirectMessagesWordPress(groupId!),
+    queryFn: async () => {
+      if (!groupId) return [];
+      const convoId = await getOrCreateGroupConversationWordPress(groupId);
+      if (!convoId) return [];
+      return fetchDirectMessagesWordPress(convoId);
+    },
     enabled: !!groupId,
+    refetchInterval: 5000,
   });
 }
 
 export function useSendMessage() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ conversationId, content, receiverUserId }: { conversationId: string; content: string; receiverUserId: string }) => {
+    mutationFn: async (
+      input:
+        | { conversationId: string; content: string; receiverUserId?: string }
+        | { groupId: string; content: string }
+    ) => {
       const me = getStoredWPUser();
       const senderId = me ? `wp-${me.user_id}` : "";
       if (!senderId) throw new Error("Not authenticated");
-      return sendMessageWordPress(conversationId, content, senderId, receiverUserId);
+      let convoId: string | null = null;
+      if ("groupId" in input && input.groupId) {
+        convoId = await getOrCreateGroupConversationWordPress(input.groupId);
+      } else if ("conversationId" in input) {
+        convoId = input.conversationId;
+      }
+      if (!convoId) throw new Error("No conversation");
+      const receiver = ("receiverUserId" in input && input.receiverUserId) ? input.receiverUserId : "";
+      return sendMessageWordPress(convoId, input.content, senderId, receiver);
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["messages"] }); qc.invalidateQueries({ queryKey: ["conversations"] }); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["messages"] });
+      qc.invalidateQueries({ queryKey: ["groupMessages"] });
+      qc.invalidateQueries({ queryKey: ["conversations"] });
+    },
   });
 }
 
