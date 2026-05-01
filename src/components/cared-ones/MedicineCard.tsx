@@ -253,6 +253,10 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
             </div>
           </div>
           <div><Label>Notes</Label><Textarea value={form.note} onChange={e => setForm(p => ({ ...p, note: e.target.value }))} placeholder="Instructions, side effects…" className="mt-1 min-h-[60px]" /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>Stock count <span className="text-muted-foreground text-xs">(pills left)</span></Label><Input type="number" min="0" value={form.stock_count} onChange={e => setForm(p => ({ ...p, stock_count: e.target.value }))} placeholder="e.g. 30" className="mt-1" /></div>
+            <div><Label>Refill alert <span className="text-muted-foreground text-xs">(threshold)</span></Label><Input type="number" min="0" value={form.refill_threshold} onChange={e => setForm(p => ({ ...p, refill_threshold: e.target.value }))} placeholder="e.g. 7" className="mt-1" /></div>
+          </div>
           <div className="flex gap-2">
             <Button className="flex-1" onClick={handleSave} disabled={updateMed.isPending || !form.name.trim()}>
               {updateMed.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null} Save Changes
