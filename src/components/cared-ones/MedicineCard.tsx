@@ -375,6 +375,83 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onHistory, compact, slot }
   );
 }
 
+// ─── RxNorm Autocomplete (NIH/NLM, free) ───────────────────
+function RxNormNameInput({ value, onChange, onPick }: {
+  value: string;
+  onChange: (v: string) => void;
+  onPick: (s: { name: string; strength?: string | null; doseForm?: string | null }) => void;
+}) {
+  const [suggestions, setSuggestions] = useState<RxSuggestion[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const debounce = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (debounce.current) window.clearTimeout(debounce.current);
+    if (value.trim().length < 2) { setSuggestions([]); return; }
+    setLoading(true);
+    debounce.current = window.setTimeout(async () => {
+      const list = await rxnormSuggest(value);
+      setSuggestions(list);
+      setLoading(false);
+      setOpen(list.length > 0);
+    }, 300);
+    return () => { if (debounce.current) window.clearTimeout(debounce.current); };
+  }, [value]);
+
+  // Click outside closes dropdown
+  useEffect(() => {
+    function onDoc(e: MouseEvent) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+
+  const handlePick = async (name: string) => {
+    onChange(name);
+    setOpen(false);
+    const info = await rxnormLookup(name);
+    onPick({ name, strength: info.strength, doseForm: info.doseForm });
+  };
+
+  return (
+    <div ref={wrapRef} className="relative">
+      <div className="relative">
+        <Input
+          value={value}
+          onChange={e => { onChange(e.target.value); setOpen(true); }}
+          onFocus={() => suggestions.length > 0 && setOpen(true)}
+          placeholder="Type to search (e.g. Lisinopril)"
+          className="mt-1 pr-8"
+          autoComplete="off"
+        />
+        {loading ? (
+          <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 mt-0.5 h-4 w-4 animate-spin text-muted-foreground" />
+        ) : value.length >= 2 ? (
+          <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 mt-0.5 h-4 w-4 text-muted-foreground" />
+        ) : null}
+      </div>
+      {open && suggestions.length > 0 && (
+        <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-lg max-h-60 overflow-y-auto">
+          <div className="px-2 py-1 text-[10px] uppercase tracking-wide text-muted-foreground border-b">RxNorm · NIH/NLM</div>
+          {suggestions.map((s, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => handlePick(s.name)}
+              className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors"
+            >
+              {s.name}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main MedicineCard ──────────────────────────────────────
 export function MedicineCard({ caredOneId }: { caredOneId: string }) {
   const { toast } = useToast();
