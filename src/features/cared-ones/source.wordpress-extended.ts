@@ -100,7 +100,8 @@ export async function fetchGroupCaredOnesWordPress(groupId: string): Promise<any
       userIds.map(async (userId) => {
         try {
           const user = await wordpressFetch<any>(`wp/v2/users/${userId}?context=edit`);
-          const fullName = user.name || user.slug || "Loved One";
+          const rel = caredOneRels.find((r: any) => Number(r.child_object_id) === userId);
+          const fullName = user.name || user.slug || rel?.meta?.care_groups_member_display_name_ || "Cared One";
           return {
             id: `wp-${userId}`,
             user_id: `wp-${userId}`,
@@ -108,6 +109,13 @@ export async function fetchGroupCaredOnesWordPress(groupId: string): Promise<any
             full_name: fullName,
             relationship: null,
             avatar_url: user.avatar_urls?.["96"] || null,
+            profile: {
+              id: `wp-${userId}`,
+              user_id: `wp-${userId}`,
+              full_name: fullName,
+              email: user.email || null,
+              avatar_url: user.avatar_urls?.["96"] || null,
+            },
             created_at: null,
           };
         } catch { return null; }
