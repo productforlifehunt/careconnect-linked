@@ -585,7 +585,17 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
         <DialogContent>
           <DialogHeader><DialogTitle>Add Medicine</DialogTitle><DialogDescription>Add a medication to the daily schedule</DialogDescription></DialogHeader>
           <div className="space-y-4 mt-2">
-            <div><Label>Medicine Name <span className="text-destructive">*</span></Label><Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Lisinopril, Aspirin" className="mt-1" /></div>
+            <div>
+              <Label>Medicine Name <span className="text-destructive">*</span></Label>
+              <RxNormNameInput
+                value={form.name}
+                onChange={(v) => setForm(p => ({ ...p, name: v }))}
+                onPick={({ name, strength }) => {
+                  setForm(p => ({ ...p, name, dosage: p.dosage || strength || "" }));
+                }}
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">Powered by RxNorm (NIH/NLM) — free US drug database</p>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Dosage</Label><Input value={form.dosage} onChange={e => setForm(p => ({ ...p, dosage: e.target.value }))} placeholder="e.g. 10mg" className="mt-1" /></div>
               <div><Label>Frequency</Label>
