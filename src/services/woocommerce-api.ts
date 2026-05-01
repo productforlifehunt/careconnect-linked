@@ -836,21 +836,9 @@ function extractBookingResourcesFromProductMeta(product: any): BookingResourceOp
 }
 
 export async function fetchProductBookingResources(productId: number): Promise<BookingResourceOption[]> {
+  // Service packages are stored on the product's `_service_packages` meta — we
+  // no longer query WooCommerce Bookings' `bookable_resource` endpoint.
   try {
-    const url = buildWPUrl(`wp/v2/bookable_resource?product_id=${productId}&per_page=20&_fields=id,title,meta`);
-    // Use admin Basic Auth so unauthenticated visitors still see resource costs.
-    const res = await fetch(url, { headers: getAdminHeaders('application/json') });
-    if (res.ok) {
-      const rows = await res.json();
-      const resources = (rows || []).map((r: any) => ({
-        id: Number(r.id),
-        name: (r.title?.rendered || r.title || '').trim(),
-        blockCost: Number(r.meta?._wc_booking_block_cost ?? 0),
-        baseCost: Number(r.meta?._wc_booking_base_cost ?? 0),
-      })).filter((resource: BookingResourceOption) => Boolean(resource.name) && resource.blockCost > 0);
-      if (resources.length > 0) return resources;
-    }
-
     const product = await wpAdminFetch(`wc/v3/products/${productId}`);
     return extractBookingResourcesFromProductMeta(product);
   } catch (e) {
