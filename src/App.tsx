@@ -39,6 +39,7 @@ import Articles from "./pages/Articles";
 import ArticlePost from "./pages/ArticlePost";
 import AICompanion from "./pages/AICompanion";
 import BrandCompare from "./pages/BrandCompare";
+import SharedInformationCard from "./pages/SharedInformationCard";
 import Cart from "./pages/Cart";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import AwareD from "./pages/AwareD";
@@ -103,6 +104,7 @@ function AppRoutes() {
       <Route path="/articles/:id" element={<ArticlePost />} />
       <Route path="/ai-companion" element={<AICompanion />} />
       <Route path="/brand-compare" element={<BrandCompare />} />
+      <Route path="/share/card/:token" element={<SharedInformationCard />} />
       {/* ChallengeD content sections */}
       <Route path="/aware" element={<AwareD />} />
       <Route path="/aware/:id" element={<ChallengedArticleDetail />} />

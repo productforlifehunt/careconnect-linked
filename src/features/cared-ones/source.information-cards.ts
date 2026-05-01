@@ -1,10 +1,16 @@
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
 
-// JetEngine relations (live)
+// JetEngine relations (live) — CCT 125 "Cared one's information card"
 const REL_USER_INFO_CARD = 126;          // 1:M users → cared_ones_informat
 const REL_INFO_CARD_EMERGENCY = 127;     // 1:M cared_ones_informat → emergency_contact
 const CCT_SLUG = "cared_ones_informat";
+
+export type ShareVisibility =
+  | "Visible to public"
+  | "Visible to the care group of the cared one"
+  | "Visible to caregivers of the cared one"
+  | "Visible to author";
 
 export interface InformationCard {
   id: string;
@@ -13,12 +19,24 @@ export interface InformationCard {
   cared_ones_information_card_name?: string;
   status?: "Draft" | "Active" | "Paused" | string;
   displays_location?: "Yes" | "No" | string;
+  share_token?: string;
+  share_expires_at?: string;
+  share_visibility?: ShareVisibility | string;
   cct_author_id?: string | number;
   cct_created?: string;
 }
 
 function normalizeWpId(value: string | number | null | undefined): number {
   return Number(String(value ?? "").replace(/^wp-/, ""));
+}
+
+function generateShareToken(): string {
+  // 32-char URL-safe random token
+  const bytes = new Uint8Array(24);
+  (globalThis.crypto || (globalThis as any).msCrypto).getRandomValues(bytes);
+  return Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 export async function fetchInformationCardsWordPress(caredOneId: string): Promise<InformationCard[]> {
@@ -50,6 +68,28 @@ export async function fetchInformationCardWordPress(cardId: string): Promise<Inf
   }
 }
 
+/** Public lookup by share token. Used by /share/card/:token public viewer. */
+export async function fetchInformationCardByShareTokenWordPress(token: string): Promise<InformationCard | null> {
+  if (!token) return null;
+  try {
+    // JetEngine CCT REST supports filter via meta query: ?meta_query[]...; simplest is full list + find
+    const list = await wordpressCCTFetch<any[]>(CCT_SLUG, { params: { per_page: 100, share_token: token } });
+    const items = Array.isArray(list) ? list : [];
+    const card = items.find((c) => String(c.share_token || "") === token) || null;
+    if (!card) return null;
+    // Honor expiry
+    if (card.share_expires_at) {
+      const expires = new Date(String(card.share_expires_at).replace(" ", "T"));
+      if (!Number.isNaN(expires.getTime()) && expires.getTime() < Date.now()) return null;
+    }
+    // Public visibility only (other levels require authenticated checks server-side later)
+    if (card.share_visibility && card.share_visibility !== "Visible to public") return null;
+    return card as InformationCard;
+  } catch {
+    return null;
+  }
+}
+
 export async function createInformationCardWordPress(input: {
   caredOneUserId: string;
   cared_ones_name?: string;
@@ -57,6 +97,7 @@ export async function createInformationCardWordPress(input: {
   cared_ones_information_card_name: string;
   status?: "Draft" | "Active" | "Paused";
   displays_location?: "Yes" | "No";
+  share_visibility?: ShareVisibility;
 }): Promise<InformationCard> {
   const stored = getStoredWPUser();
   if (!stored?.user_id) throw new Error("Not authenticated");
@@ -71,6 +112,7 @@ export async function createInformationCardWordPress(input: {
       cared_ones_information_card_name: input.cared_ones_information_card_name,
       status: input.status || "Draft",
       displays_location: input.displays_location || "No",
+      share_visibility: input.share_visibility || "Visible to author",
     },
   });
 
@@ -97,6 +139,33 @@ export async function deleteInformationCardWordPress(id: string): Promise<void> 
   await wordpressCCTFetch(CCT_SLUG, { id: normalizeWpId(id), method: "DELETE" });
 }
 
+/**
+ * Enable sharing on a card: ensures a share_token exists, sets visibility + optional expiry.
+ * Returns the public URL.
+ */
+export async function enableInformationCardShareWordPress(
+  cardId: string,
+  opts: { visibility: ShareVisibility; expiresAt?: string | null; existingToken?: string }
+): Promise<{ token: string; url: string; expiresAt?: string | null }> {
+  const token = opts.existingToken && opts.existingToken.length > 0 ? opts.existingToken : generateShareToken();
+  await updateInformationCardWordPress(cardId, {
+    share_token: token,
+    share_visibility: opts.visibility,
+    share_expires_at: opts.expiresAt || "",
+  });
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  return { token, url: `${origin}/share/card/${token}`, expiresAt: opts.expiresAt || null };
+}
+
+/** Revoke sharing by clearing the token. */
+export async function revokeInformationCardShareWordPress(cardId: string): Promise<void> {
+  await updateInformationCardWordPress(cardId, {
+    share_token: "",
+    share_expires_at: "",
+    share_visibility: "Visible to author",
+  });
+}
+
 // ── Linked emergency contacts (REL 127) ─────────────────
 export async function fetchInformationCardContactIdsWordPress(cardId: string): Promise<string[]> {
   const id = normalizeWpId(cardId);
@@ -114,12 +183,10 @@ export async function setInformationCardContactsWordPress(cardId: string, contac
   const parentId = normalizeWpId(cardId);
   if (!parentId) throw new Error("Invalid card");
 
-  // Get current to compute diff
   const current = await fetchInformationCardContactIdsWordPress(cardId);
   const currentSet = new Set(current.map(String));
   const desiredSet = new Set(contactIds.map((c) => String(normalizeWpId(c))));
 
-  // Add new ones
   const toAdd = [...desiredSet].filter((c) => !currentSet.has(c));
   for (const childId of toAdd) {
     await wordpressFetch(`jet-rel/${REL_INFO_CARD_EMERGENCY}`, {
@@ -133,7 +200,6 @@ export async function setInformationCardContactsWordPress(cardId: string, contac
     });
   }
 
-  // Remove ones no longer wanted
   const toRemove = [...currentSet].filter((c) => !desiredSet.has(c));
   for (const childId of toRemove) {
     try {
