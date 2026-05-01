@@ -1,5 +1,5 @@
 /**
- * Simplified "Loved One View" — high-contrast, large-button UI designed for
+ * Simplified cared-one view — high-contrast, large-button UI designed for
  * people living with dementia. Shown when the logged-in user is_cared_one=true
  * on the Challenged site.
  */
