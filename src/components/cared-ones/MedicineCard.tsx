@@ -398,7 +398,15 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
       { medicine_id: med.id, status: action, note: note || undefined, user_id: caredOneId },
       {
         onSuccess: () => {
-          toast({ title: action === "taken" ? `${med.name} marked as taken ✓` : `${med.name} skipped` });
+          // Decrement stock on "taken"
+          if (action === "taken" && typeof med.stock_count === "number" && med.stock_count > 0) {
+            const newStock = med.stock_count - 1;
+            updateMed.mutate({ id: med.id, stock_count: newStock });
+            if (typeof med.refill_threshold === "number" && newStock <= med.refill_threshold) {
+              toast({ title: `Low stock: ${med.name}`, description: `${newStock} doses left — time to refill`, variant: "destructive" });
+            }
+          }
+          toast({ title: action === "taken" ? `${med.name} marked as taken ✓` : action === "skipped" ? `${med.name} skipped` : `${med.name} marked as missed` });
           setLogDialog({ open: false, med: null, action: "taken" });
         },
         onError: (err) => toast({ title: "Failed", description: String(err.message), variant: "destructive" }),
@@ -409,8 +417,17 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
   const handleAdd = () => {
     if (!form.name.trim()) return;
     createMed.mutate(
-      { user_id: caredOneId, name: form.name.trim(), dosage: form.dosage || undefined, frequency: FREQUENCIES.find(f => f.value === form.frequency)?.label || form.frequency, time_slot: form.time_slots.length > 0 ? form.time_slots : ["08:00"], note: form.note || undefined },
-      { onSuccess: () => { setForm({ name: "", dosage: "", frequency: "once_daily", time_slots: ["08:00"], note: "" }); setAddOpen(false); toast({ title: "Medicine added" }); },
+      {
+        user_id: caredOneId,
+        name: form.name.trim(),
+        dosage: form.dosage || undefined,
+        frequency: FREQUENCIES.find(f => f.value === form.frequency)?.label || form.frequency,
+        time_slot: form.time_slots.length > 0 ? form.time_slots : ["08:00"],
+        note: form.note || undefined,
+        stock_count: form.stock_count === "" ? undefined : Number(form.stock_count),
+        refill_threshold: form.refill_threshold === "" ? undefined : Number(form.refill_threshold),
+      },
+      { onSuccess: () => { setForm({ name: "", dosage: "", frequency: "once_daily", time_slots: ["08:00"], note: "", stock_count: "", refill_threshold: "" }); setAddOpen(false); toast({ title: "Medicine added" }); },
         onError: (err) => toast({ title: "Failed to add", description: String(err.message), variant: "destructive" }) }
     );
   };
