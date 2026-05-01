@@ -287,6 +287,49 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
         </DialogContent>
       </Dialog>
 
+      {/* Edit schedule */}
+      <Dialog open={editOpen.open} onOpenChange={(o) => !o && setEditOpen({ open: false, checkin: null })}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Check-In Schedule</DialogTitle>
+            <DialogDescription>Update this recurring check-in.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 mt-2">
+            <div><Label className="text-sm">Name</Label><Input value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} /></div>
+            <div><Label className="text-sm">Detail</Label><Input value={form.detail} onChange={(e) => setForm((p) => ({ ...p, detail: e.target.value }))} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label className="text-sm">Frequency</Label><Input value={form.frequency} onChange={(e) => setForm((p) => ({ ...p, frequency: e.target.value }))} /></div>
+              <div><Label className="text-sm">Scheduled time</Label><Input type="time" value={form.time} onChange={(e) => setForm((p) => ({ ...p, time: e.target.value || "08:00" }))} /></div>
+            </div>
+            <div><Label className="text-sm">Start date</Label><Input type="date" value={form.start_date} onChange={(e) => setForm((p) => ({ ...p, start_date: e.target.value }))} /></div>
+            <div><Label className="text-sm">Instructions</Label><Input value={form.instructions} onChange={(e) => setForm((p) => ({ ...p, instructions: e.target.value }))} /></div>
+            <div><Label className="text-sm">Notes</Label><Textarea value={form.note} onChange={(e) => setForm((p) => ({ ...p, note: e.target.value }))} rows={2} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen({ open: false, checkin: null })}>Cancel</Button>
+            <Button onClick={handleEditSave} disabled={update.isPending || !form.name.trim()}>
+              {update.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirm */}
+      <Dialog open={deleteConfirm.open} onOpenChange={(o) => !o && setDeleteConfirm({ open: false, checkin: null })}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Trash2 className="h-5 w-5 text-destructive" /> Delete check-in?</DialogTitle>
+            <DialogDescription>This will permanently delete <strong>{deleteConfirm.checkin?.name}</strong>. Logged history will remain.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirm({ open: false, checkin: null })}>Cancel</Button>
+            <Button variant="destructive" onClick={confirmDelete} disabled={remove.isPending}>
+              {remove.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {isLoading ? (
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground mx-auto my-8" />
       ) : (checkins || []).length === 0 ? (
