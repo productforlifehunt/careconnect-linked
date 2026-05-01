@@ -135,7 +135,7 @@ export async function fetchCaredOnesCardsWordPress(): Promise<any[]> {
     return cards.map((c: any) => ({
       id: String(c.id || c._ID),
       user_id: `wp-${stored.user_id}`,
-      name: c.cared_ones_name || c.cared_ones_information_card_name || "Loved One",
+      name: c.cared_ones_name || c.cared_ones_information_card_name || "Cared One",
       description: c.cared_ones_description || null,
       card_name: c.cared_ones_information_card_name || null,
       status: c.status || "active",
