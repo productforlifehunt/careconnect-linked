@@ -167,7 +167,7 @@ export async function createCaredOnesCardWordPress(card: { name: string; descrip
 }
 
 // ─── Check-in Schedule (live CCT: checkin_schedule) ─────────
-// Fields: name, detail, frequency, time_slot, instructions, start_date_, end_date, is_active_, note
+// Fields per data model: name, detail, frequency, time_slot, instructions, start_date, is_active, note
 export async function fetchCheckinsWordPress(caredOneId: string): Promise<any[]> {
   try {
     const items = await fetchRelatedCctChildren(REL_USER_CHECKIN, caredOneId, "checkin_schedule");
@@ -179,16 +179,15 @@ export async function fetchCheckinsWordPress(caredOneId: string): Promise<any[]>
       frequency: i.frequency || "Once daily",
       time_slot: normalizeTimeSlot(i.time_slot),
       instructions: i.instructions || null,
-      start_date: i.start_date_ || null,
-      end_date: i.end_date || null,
+      start_date: i.start_date || null,
       note: i.note || null,
-      is_active: i.is_active_ !== false && i.is_active_ !== "no",
+      is_active: i.is_active !== false && i.is_active !== "no" && i.is_active !== "No",
       created_at: i.created_at,
     }));
   } catch { return []; }
 }
 
-export async function createCheckinWordPress(checkin: { user_id: string; name: string; detail?: string; frequency?: string; time_slot?: string[]; instructions?: string; note?: string }): Promise<void> {
+export async function createCheckinWordPress(checkin: { user_id: string; name: string; detail?: string; frequency?: string; time_slot?: string[]; instructions?: string; start_date?: string; note?: string }): Promise<void> {
   const result = await wordpressCCTFetch<any>("checkin_schedule", {
     method: "POST",
     body: {
@@ -197,8 +196,9 @@ export async function createCheckinWordPress(checkin: { user_id: string; name: s
       frequency: checkin.frequency || "Once daily",
       time_slot: serializeTimeSlot(checkin.time_slot || ["08:00"]),
       instructions: checkin.instructions || "",
+      start_date: checkin.start_date || "",
       note: checkin.note || "",
-      is_active_: "yes",
+      is_active: "Yes",
     },
   });
   const newId = normalizeWpObjectId(result?.item_id || result?._ID || result?.id);
@@ -211,7 +211,7 @@ export async function createCheckinWordPress(checkin: { user_id: string; name: s
   }
 }
 
-// Check-in logs — live CCT: checkin_log | fields: mood, energy_level, sleep_hours, note, status, note_49
+// Check-in logs — live CCT: checkin_log | fields per model: status, note
 export async function fetchCheckinLogsWordPress(caredOneId: string): Promise<any[]> {
   try {
     const checkins = await fetchCheckinsWordPress(caredOneId);
@@ -227,11 +227,8 @@ export async function fetchCheckinLogsWordPress(caredOneId: string): Promise<any
                 return {
                   id: String(item.id || item._ID || rel.child_object_id),
                   checkin_id: String(checkin.id),
-                  mood: item.mood || null,
-                  energy_level: item.energy_level || null,
-                  sleep_hours: item.sleep_hours || null,
-                  status: item.status || "completed",
-                  note: item.note || item.note_49 || null,
+                  status: (item.status || "checked").toLowerCase(),
+                  note: item.note || null,
                   created_at: item.created_at,
                 };
               } catch { return null; }
@@ -251,14 +248,13 @@ export async function fetchTodayCheckinLogsWordPress(caredOneId: string): Promis
   return logs.filter((log: any) => log.created_at && new Date(log.created_at) >= today);
 }
 
-export async function logCheckinWordPress(log: { medicine_id?: string; checkin_id?: string; status?: string; note?: string; mood?: string; energy_level?: string; sleep_hours?: number }): Promise<void> {
+export async function logCheckinWordPress(log: { medicine_id?: string; checkin_id?: string; status?: "checked" | "skipped" | "missed"; note?: string }): Promise<void> {
+  const statusValue = (log.status || "checked");
+  const wpStatus = statusValue.charAt(0).toUpperCase() + statusValue.slice(1);
   const result = await wordpressCCTFetch<any>("checkin_log", {
     method: "POST",
     body: {
-      mood: log.mood || "",
-      energy_level: log.energy_level || "",
-      sleep_hours: log.sleep_hours ?? null,
-      status: log.status || "completed",
+      status: wpStatus,
       note: log.note || "",
     },
   });
