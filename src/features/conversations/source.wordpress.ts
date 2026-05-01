@@ -14,60 +14,125 @@ const REL_GROUP_CONV = 140;     // 1:1  care_group → chat_conversation
 const REL_CONV_MEMBER = 142;
 const REL_CONV_MESSAGE = 143;
 
-/**
- * Resolve (or lazily create) the live group chat conversation for a care group.
- * Per spec: "every care group automatically gets one group live chat conversation".
- */
-export async function getOrCreateGroupConversationWordPress(groupId: string | number): Promise<string | null> {
-  const gid = numId(groupId);
-  if (!gid) return null;
-  // 1) Look up existing via REL 140
-  try {
-    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_CONV}/children/${gid}`);
-    const existing = (Array.isArray(rels) ? rels : [])[0]?.child_object_id;
-    if (existing) return String(existing);
-  } catch { /* fall through */ }
-
-  // 2) Create a new "Many users" group conversation
-  const created = await wordpressCCTFetch<any>("chat_conversation", {
-    method: "POST",
-    body: {
-      chat_type: "Many users",
-      chat_name: "",
-      ai_chat_mode: "",
-      last_message_at: new Date().toISOString().slice(0, 19).replace("T", " "),
-    },
-  });
-  const convoId = numId(created?.item_id || created?._ID || created?.id);
-  if (!convoId) return null;
-
-  // 3) Link group → conversation (REL 140, 1:1)
-  await wordpressFetch(`jet-rel/${REL_GROUP_CONV}`, {
-    method: "POST",
-    body: { parent_id: gid, child_id: convoId, context: "child", store_items_type: "replace" },
-  }).catch(() => {});
-
-  // 4) Auto-add all current accepted group members as chatters (REL 142)
-  try {
-    const memberRels = await wordpressFetch<any[]>(`jet-rel/72/children/${gid}`);
-    const acceptedIds = (Array.isArray(memberRels) ? memberRels : [])
-      .filter((r: any) => (r?.meta?.care_groups_member_invitation_status || "accepted") === "accepted")
-      .map((r: any) => Number(r.child_object_id))
-      .filter(Boolean);
-    await Promise.all(acceptedIds.map((uid) =>
-      wordpressFetch(`jet-rel/${REL_CONV_MEMBER}`, {
-        method: "POST",
-        body: { parent_id: convoId, child_id: uid, context: "child", store_items_type: "update" },
-      }).catch(() => {})
-    ));
-  } catch { /* non-blocking */ }
-
-  return String(convoId);
-}
-
 const stripWp = (id: string | number | null | undefined): string =>
   id == null ? "" : String(id).replace(/^wp-/, "");
 const numId = (id: string | number | null | undefined): number => Number(stripWp(id));
+
+/**
+ * Resolve (or lazily create) the live group chat conversation for a care group.
+ * Per spec: "every care group automatically gets one group live chat conversation".
+ *
+ * IMPORTANT: REL 140 (1:1 care_group→chat_conversation) is NOT exposed via the
+ * jet-rel REST POST endpoint on this WP install (returns 404). To work around
+ * that without leaking conversations on every render, we:
+ *   1. Cache the resolved conversation id per groupId in-memory (and in
+ *      sessionStorage) so re-renders don't re-create.
+ *   2. Use a sentinel in `chat_name` ("__group:<gid>") to recover the link
+ *      even after a hard reload, falling back to a CCT-list scan.
+ *   3. Best-effort POST to REL 140 (succeeds if the route is ever added);
+ *      failure is silently ignored.
+ */
+const _groupConvoCache = new Map<number, string>();
+const _groupConvoInflight = new Map<number, Promise<string | null>>();
+
+function readSessionConvoId(gid: number): string | null {
+  try { return sessionStorage.getItem(`group_convo:${gid}`); } catch { return null; }
+}
+function writeSessionConvoId(gid: number, convoId: string) {
+  try { sessionStorage.setItem(`group_convo:${gid}`, convoId); } catch { /* noop */ }
+}
+
+export async function getOrCreateGroupConversationWordPress(groupId: string | number): Promise<string | null> {
+  const gid = numId(groupId);
+  if (!gid) return null;
+
+  // 1) Memory / session cache
+  if (_groupConvoCache.has(gid)) return _groupConvoCache.get(gid)!;
+  const cached = readSessionConvoId(gid);
+  if (cached) { _groupConvoCache.set(gid, cached); return cached; }
+
+  // 2) Single-flight: dedupe concurrent calls for the same group
+  if (_groupConvoInflight.has(gid)) return _groupConvoInflight.get(gid)!;
+
+  const promise = (async (): Promise<string | null> => {
+    // 2a) Try REL 140 (works only if route exists)
+    try {
+      const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_CONV}/children/${gid}`);
+      const existing = (Array.isArray(rels) ? rels : [])[0]?.child_object_id;
+      if (existing) {
+        const id = String(existing);
+        _groupConvoCache.set(gid, id);
+        writeSessionConvoId(gid, id);
+        return id;
+      }
+    } catch { /* fall through */ }
+
+    // 2b) Fallback: scan chat_conversation CCT for sentinel chat_name
+    const sentinel = `__group:${gid}`;
+    try {
+      const all = await wordpressCCTFetch<any[]>("chat_conversation", { params: { _limit: 500 } });
+      const match = (Array.isArray(all) ? all : []).find(
+        (c: any) => String(c.chat_name || "") === sentinel
+      );
+      if (match?.id || match?._ID) {
+        const id = String(match.id || match._ID);
+        _groupConvoCache.set(gid, id);
+        writeSessionConvoId(gid, id);
+        // Best-effort REL 140 link (no-op if route missing)
+        wordpressFetch(`jet-rel/${REL_GROUP_CONV}`, {
+          method: "POST",
+          body: { parent_id: gid, child_id: Number(id), context: "child", store_items_type: "replace" },
+        }).catch(() => {});
+        return id;
+      }
+    } catch { /* fall through */ }
+
+    // 2c) Create new conversation with sentinel chat_name
+    const created = await wordpressCCTFetch<any>("chat_conversation", {
+      method: "POST",
+      body: {
+        chat_type: "Many users",
+        chat_name: sentinel,
+        ai_chat_mode: "",
+        last_message_at: new Date().toISOString().slice(0, 19).replace("T", " "),
+      },
+    });
+    const convoId = numId(created?.item_id || created?._ID || created?.id);
+    if (!convoId) return null;
+
+    // 2d) Cache immediately to prevent leak loops
+    _groupConvoCache.set(gid, String(convoId));
+    writeSessionConvoId(gid, String(convoId));
+
+    // 2e) Best-effort REL 140 link (route may not exist — non-blocking)
+    wordpressFetch(`jet-rel/${REL_GROUP_CONV}`, {
+      method: "POST",
+      body: { parent_id: gid, child_id: convoId, context: "child", store_items_type: "replace" },
+    }).catch(() => {});
+
+    // 2f) Add accepted group members as chatters (REL 142 — works)
+    try {
+      const memberRels = await wordpressFetch<any[]>(`jet-rel/72/children/${gid}`);
+      const acceptedIds = (Array.isArray(memberRels) ? memberRels : [])
+        .filter((r: any) => (r?.meta?.care_groups_member_invitation_status || "accepted") === "accepted")
+        .map((r: any) => Number(r.child_object_id))
+        .filter(Boolean);
+      await Promise.all(acceptedIds.map((uid) =>
+        wordpressFetch(`jet-rel/${REL_CONV_MEMBER}`, {
+          method: "POST",
+          body: { parent_id: convoId, child_id: uid, context: "child", store_items_type: "update" },
+        }).catch(() => {})
+      ));
+    } catch { /* non-blocking */ }
+
+    return String(convoId);
+  })();
+
+  _groupConvoInflight.set(gid, promise);
+  try { return await promise; }
+  finally { _groupConvoInflight.delete(gid); }
+}
+
 
 async function fetchConversationMemberIds(convoId: string | number): Promise<number[]> {
   try {
