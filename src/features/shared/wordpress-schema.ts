@@ -740,7 +740,7 @@ export const wordpressSchema: Record<WordPressFeatureKey, WordPressSchemaEntry<a
       relationship: c.acf?.relationship || null,
       cared_one: {
         id: String(c.id),
-        full_name: c.title?.rendered || "Loved One",
+        full_name: c.title?.rendered || "Cared One",
         first_name: c.title?.rendered?.split(" ")[0] || null,
         avatar_url: c.acf?.avatar_url || null,
         dementia_stage: c.acf?.dementia_stage || null,
