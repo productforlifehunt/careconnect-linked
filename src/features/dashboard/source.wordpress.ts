@@ -38,7 +38,9 @@ export async function fetchDashboardStatsWordPress(): Promise<DashboardStats> {
     if (Array.isArray(notifs)) {
       unreadMessages = notifs.filter((n: any) => n.is_read !== true && n.is_read !== "yes").length;
     }
-  } catch { /* */ }
+  } catch {
+    // cc_notification CCT may not be registered yet in WordPress — silently ignore 404s
+  }
 
   return { upcomingBookings, careGroups, pendingTasks, unreadMessages };
 }
