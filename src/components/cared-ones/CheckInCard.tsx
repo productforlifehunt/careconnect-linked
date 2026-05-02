@@ -48,6 +48,7 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
   const [logDialog, setLogDialog] = useState<{ open: boolean; checkin: any; status: "checked" | "skipped" | "missed" }>({ open: false, checkin: null, status: "checked" });
   const [logNote, setLogNote] = useState("");
   const [historyOpen, setHistoryOpen] = useState<{ open: boolean; checkin: any }>({ open: false, checkin: null });
+  const [aiOpen, setAiOpen] = useState<{ open: boolean; checkin: any }>({ open: false, checkin: null });
 
   const [form, setForm] = useState({
     name: "Daily Check-In",
