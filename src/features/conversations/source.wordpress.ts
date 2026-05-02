@@ -212,10 +212,16 @@ export async function sendMessageWordPress(
   const messageId = numId(created?.item_id || created?._ID || created?.id);
   const convoId = numId(conversationId);
   if (messageId && convoId) {
-    await wordpressFetch(`jet-rel/${REL_CONV_MESSAGE}`, {
-      method: "POST",
-      body: { parent_id: convoId, child_id: messageId, context: "child", store_items_type: "update" },
-    });
+    // Non-blocking: if REL 143 is not registered in JetEngine yet, the message
+    // is still saved and the conversation timestamp is updated below.
+    try {
+      await wordpressFetch(`jet-rel/${REL_CONV_MESSAGE}`, {
+        method: "POST",
+        body: { parent_id: convoId, child_id: messageId, context: "child", store_items_type: "update" },
+      });
+    } catch (e) {
+      console.warn(`[chat] jet-rel/${REL_CONV_MESSAGE} link failed (relation may not be registered):`, e);
+    }
   }
   // Touch conversation last_message_at
   try {
