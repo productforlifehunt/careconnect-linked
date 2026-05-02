@@ -235,12 +235,14 @@ export async function fetchCheckinLogsWordPress(caredOneId: string): Promise<any
             rels.map(async (rel: any) => {
               try {
                 const item = await wordpressCCTFetch<any>("checkin_log", { id: rel.child_object_id });
+                const rawStatus = String(item.a1 || item.status || "Checked");
                 return {
                   id: String(item.id || item._ID || rel.child_object_id),
                   checkin_id: String(checkin.id),
-                  status: (item.status || "checked").toLowerCase(),
-                  note: item.note || null,
-                  created_at: item.created_at,
+                  status: rawStatus.toLowerCase(),
+                  note: item.a2 || item.note || null,
+                  checked_by_ai: String(item.checked_by_ai || item.a3 || "").toLowerCase() === "yes",
+                  created_at: item.cct_created || item.created_at,
                 };
               } catch { return null; }
             })
