@@ -261,14 +261,15 @@ export async function fetchTodayCheckinLogsWordPress(caredOneId: string): Promis
   return logs.filter((log: any) => log.created_at && new Date(log.created_at) >= today);
 }
 
-export async function logCheckinWordPress(log: { medicine_id?: string; checkin_id?: string; status?: "checked" | "skipped" | "missed"; note?: string }): Promise<void> {
+export async function logCheckinWordPress(log: { medicine_id?: string; checkin_id?: string; status?: "checked" | "skipped" | "missed"; note?: string; checked_by_ai?: boolean }): Promise<void> {
   const statusValue = (log.status || "checked");
   const wpStatus = statusValue.charAt(0).toUpperCase() + statusValue.slice(1);
   const result = await wordpressCCTFetch<any>("checkin_log", {
     method: "POST",
     body: {
-      status: wpStatus,
-      note: log.note || "",
+      a1: wpStatus,
+      a2: log.note || "",
+      checked_by_ai: log.checked_by_ai ? "Yes" : "No",
     },
   });
   const newLogId = normalizeWpObjectId(result?.item_id || result?._ID || result?.id);
