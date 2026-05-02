@@ -417,6 +417,12 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
           </div>
         </div>
       )}
+
+      <AICheckInDialog
+        open={aiOpen.open}
+        onOpenChange={(o) => !o && setAiOpen({ open: false, checkin: null })}
+        checkin={aiOpen.checkin}
+      />
     </div>
   );
 }
