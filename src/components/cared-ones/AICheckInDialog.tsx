@@ -126,12 +126,10 @@ export function AICheckInDialog({ open, onOpenChange, checkin, caredOneName = "y
         <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-3 py-2 min-h-[260px]">
           {messages.map((m, i) => (
             <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-              <div className={`rounded-2xl px-3 py-2 max-w-[80%] text-sm ${
+              <div className={`rounded-2xl px-3 py-2 max-w-[80%] text-sm whitespace-pre-wrap ${
                 m.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
               }`}>
-                {m.role === "assistant"
-                  ? <div className="prose prose-sm max-w-none dark:prose-invert"><ReactMarkdown>{m.content}</ReactMarkdown></div>
-                  : m.content}
+                {m.content}
               </div>
             </div>
           ))}
