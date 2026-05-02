@@ -373,7 +373,8 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
                          isMissed ? "Missed today" : "Pending today"}
                       </Badge>
                       {!todayStatus && (
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 flex-wrap justify-end">
+                          <Button size="sm" variant="outline" className="border-primary/40 text-primary hover:bg-primary/10" onClick={() => setAiOpen({ open: true, checkin })}><Bot className="h-3 w-3 mr-1" /> AI Check</Button>
                           <Button size="sm" variant="outline" onClick={() => openLog(checkin, "skipped")} disabled={logCheckin.isPending}><SkipForward className="h-3 w-3 mr-1" /> Skip</Button>
                           {isMissed && (
                             <Button size="sm" variant="outline" className="border-destructive/40 text-destructive hover:bg-destructive/10" onClick={() => openLog(checkin, "missed")} disabled={logCheckin.isPending}><AlertCircle className="h-3 w-3 mr-1" /> Missed</Button>
