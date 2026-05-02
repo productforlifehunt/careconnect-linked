@@ -405,6 +405,7 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
                   <CardContent className="p-3 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2 min-w-0">
                       <Badge variant="outline" className={STATUS_STYLE[log.status] || ""}>{STATUS_LABEL[log.status] || log.status}</Badge>
+                      {log.checked_by_ai && <Badge variant="outline" className="text-xs border-primary/40 text-primary"><Bot className="h-3 w-3 mr-1" />AI</Badge>}
                       {log.note && <p className="text-xs text-muted-foreground truncate">{log.note}</p>}
                     </div>
                     <span className="text-xs text-muted-foreground shrink-0">{new Date(log.created_at).toLocaleDateString("en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
