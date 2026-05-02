@@ -235,12 +235,14 @@ export async function fetchCheckinLogsWordPress(caredOneId: string): Promise<any
             rels.map(async (rel: any) => {
               try {
                 const item = await wordpressCCTFetch<any>("checkin_log", { id: rel.child_object_id });
+                const rawStatus = String(item.a1 || item.status || "Checked");
                 return {
                   id: String(item.id || item._ID || rel.child_object_id),
                   checkin_id: String(checkin.id),
-                  status: (item.status || "checked").toLowerCase(),
-                  note: item.note || null,
-                  created_at: item.created_at,
+                  status: rawStatus.toLowerCase(),
+                  note: item.a2 || item.note || null,
+                  checked_by_ai: String(item.checked_by_ai || item.a3 || "").toLowerCase() === "yes",
+                  created_at: item.cct_created || item.created_at,
                 };
               } catch { return null; }
             })
@@ -259,14 +261,15 @@ export async function fetchTodayCheckinLogsWordPress(caredOneId: string): Promis
   return logs.filter((log: any) => log.created_at && new Date(log.created_at) >= today);
 }
 
-export async function logCheckinWordPress(log: { medicine_id?: string; checkin_id?: string; status?: "checked" | "skipped" | "missed"; note?: string }): Promise<void> {
+export async function logCheckinWordPress(log: { medicine_id?: string; checkin_id?: string; status?: "checked" | "skipped" | "missed"; note?: string; checked_by_ai?: boolean }): Promise<void> {
   const statusValue = (log.status || "checked");
   const wpStatus = statusValue.charAt(0).toUpperCase() + statusValue.slice(1);
   const result = await wordpressCCTFetch<any>("checkin_log", {
     method: "POST",
     body: {
-      status: wpStatus,
-      note: log.note || "",
+      a1: wpStatus,
+      a2: log.note || "",
+      checked_by_ai: log.checked_by_ai ? "Yes" : "No",
     },
   });
   const newLogId = normalizeWpObjectId(result?.item_id || result?._ID || result?.id);

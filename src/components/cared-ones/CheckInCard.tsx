@@ -6,9 +6,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { ClipboardCheck, Plus, Loader2, SkipForward, Check, AlertCircle, History, StickyNote, Edit2, Trash2, Pause, Play } from "lucide-react";
+import { ClipboardCheck, Plus, Loader2, SkipForward, Check, AlertCircle, History, StickyNote, Edit2, Trash2, Pause, Play, Bot } from "lucide-react";
 import { useCheckins, useCreateCheckin, useUpdateCheckin, useDeleteCheckin, useCheckinLogs, useTodayCheckinLogs, useLogCheckin } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
+import { AICheckInDialog } from "./AICheckInDialog";
 
 function formatSlot(slot: string) {
   const [hourRaw = "8", minuteRaw = "00"] = String(slot || "08:00").split(":");
@@ -47,6 +48,7 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
   const [logDialog, setLogDialog] = useState<{ open: boolean; checkin: any; status: "checked" | "skipped" | "missed" }>({ open: false, checkin: null, status: "checked" });
   const [logNote, setLogNote] = useState("");
   const [historyOpen, setHistoryOpen] = useState<{ open: boolean; checkin: any }>({ open: false, checkin: null });
+  const [aiOpen, setAiOpen] = useState<{ open: boolean; checkin: any }>({ open: false, checkin: null });
 
   const [form, setForm] = useState({
     name: "Daily Check-In",
@@ -371,7 +373,8 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
                          isMissed ? "Missed today" : "Pending today"}
                       </Badge>
                       {!todayStatus && (
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 flex-wrap justify-end">
+                          <Button size="sm" variant="outline" className="border-primary/40 text-primary hover:bg-primary/10" onClick={() => setAiOpen({ open: true, checkin })}><Bot className="h-3 w-3 mr-1" /> AI Check</Button>
                           <Button size="sm" variant="outline" onClick={() => openLog(checkin, "skipped")} disabled={logCheckin.isPending}><SkipForward className="h-3 w-3 mr-1" /> Skip</Button>
                           {isMissed && (
                             <Button size="sm" variant="outline" className="border-destructive/40 text-destructive hover:bg-destructive/10" onClick={() => openLog(checkin, "missed")} disabled={logCheckin.isPending}><AlertCircle className="h-3 w-3 mr-1" /> Missed</Button>
@@ -402,6 +405,7 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
                   <CardContent className="p-3 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2 min-w-0">
                       <Badge variant="outline" className={STATUS_STYLE[log.status] || ""}>{STATUS_LABEL[log.status] || log.status}</Badge>
+                      {log.checked_by_ai && <Badge variant="outline" className="text-xs border-primary/40 text-primary"><Bot className="h-3 w-3 mr-1" />AI</Badge>}
                       {log.note && <p className="text-xs text-muted-foreground truncate">{log.note}</p>}
                     </div>
                     <span className="text-xs text-muted-foreground shrink-0">{new Date(log.created_at).toLocaleDateString("en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
@@ -413,6 +417,12 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
           </div>
         </div>
       )}
+
+      <AICheckInDialog
+        open={aiOpen.open}
+        onOpenChange={(o) => !o && setAiOpen({ open: false, checkin: null })}
+        checkin={aiOpen.checkin}
+      />
     </div>
   );
 }
