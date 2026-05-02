@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Bot, Loader2, Send, Check, SkipForward } from "lucide-react";
-import ReactMarkdown from "react-markdown";
+
 import { invokeAI, parseAIJson, type AIChatMessage } from "@/lib/ai-service";
 import { useLogCheckin } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
