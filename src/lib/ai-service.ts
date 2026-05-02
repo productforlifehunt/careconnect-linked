@@ -1,9 +1,15 @@
 /**
- * AI Service — Lovable AI Gateway via edge function + WordPress CCT for conversation storage.
+ * AI Service — Lovable AI Gateway via edge function.
+ *
+ * Storage uses the SAME unified chat CCTs as user/group chat:
+ *   - chat_conversation (chat_type="AI", ai_chat_mode=<mode>)
+ *   - chat_message      (chat_message_type="ai" for assistant, "text" for user)
+ *   - REL 143           (1:M chat_conversation → chat_message)
+ *
+ * NO separate ai_conversations / ai_messages CCTs. Those were hallucinations.
  */
 
-import { wordpressCCTFetch } from "@/features/shared/wordpress-client";
-import { getStoredWPUser } from "@/services/wp-auth";
+import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 import { supabase } from "@/integrations/supabase/client";
 
 export type AIMode =
@@ -28,115 +34,78 @@ export interface InvokeAIOptions {
   messages?: AIChatMessage[];
 }
 
-const CONVERSATION_SLUG = "ai_conversations";
-const MESSAGE_SLUG = "ai_messages";
-const CONTEXT_SLUG = "ai_context_memory";
+const CONVERSATION_SLUG = "chat_conversation";
+const MESSAGE_SLUG = "chat_message";
+const REL_CONV_MESSAGE = 143; // 1:M chat_conversation → chat_message
 
-function createId() {
-  return typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+function nowWPDateTime() {
+  return new Date().toISOString().slice(0, 19).replace("T", " ");
 }
 
 function conversationStorageKey(mode: AIMode, caredOneId?: string | number | null) {
   return `ai_conversation:${mode}:${caredOneId ?? "none"}`;
 }
 
-function asWPString(value: string | number | boolean | null | undefined) {
-  return value === undefined || value === null ? "" : String(value);
-}
+const stripWp = (id: string | number | null | undefined): string =>
+  id == null ? "" : String(id).replace(/^wp-/, "");
+const numId = (id: string | number | null | undefined): number => Number(stripWp(id));
 
-function nowISOString() {
-  return new Date().toISOString();
-}
-
-function toTimestamp(value: unknown): number {
-  if (typeof value === "number") {
-    return value < 1_000_000_000_000 ? value * 1000 : value;
-  }
-
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    if (!trimmed) return 0;
-
-    if (/^\d+$/.test(trimmed)) {
-      const numeric = Number(trimmed);
-      return trimmed.length <= 10 ? numeric * 1000 : numeric;
-    }
-
-    const parsed = Date.parse(trimmed);
-    return Number.isNaN(parsed) ? 0 : parsed;
-  }
-
-  return 0;
-}
-
-async function ensureConversation(mode: AIMode, options: InvokeAIOptions = {}) {
-  const user = getStoredWPUser();
+async function ensureConversation(mode: AIMode, options: InvokeAIOptions = {}): Promise<string> {
   const cachedId = options.conversationId || localStorage.getItem(conversationStorageKey(mode, options.caredOneId));
 
   if (cachedId) {
     try {
       const existing = await wordpressCCTFetch<Record<string, any>>(CONVERSATION_SLUG, { id: cachedId });
-      if (existing?.id) {
-        localStorage.setItem(conversationStorageKey(mode, options.caredOneId), String(existing.id));
-        return String(existing.id);
+      const id = existing?.id || existing?._ID;
+      if (id) {
+        localStorage.setItem(conversationStorageKey(mode, options.caredOneId), String(id));
+        return String(id);
       }
-    } catch {}
+    } catch { /* fall through */ }
   }
 
   const result = await wordpressCCTFetch<any>(CONVERSATION_SLUG, {
     method: "POST",
     body: {
-      conversation_id: createId(),
-      user_id: asWPString(user?.user_id || 0),
-      cared_one_id: asWPString(options.caredOneId ?? 0),
-      title: options.title || mode.replace(/_/g, " "),
-      conversation_type: mode,
-      status: "active",
-      last_message_at: nowISOString(),
-      message_count: asWPString(0),
-      metadata: "",
+      chat_type: "AI",
+      chat_name: options.title || "",
+      ai_chat_mode: mode,
+      last_message_at: nowWPDateTime(),
     },
   });
-
-  const createdId = String(result?.item_id || result?.id || result?._ID);
-  localStorage.setItem(conversationStorageKey(mode, options.caredOneId), createdId);
+  const createdId = String(result?.item_id || result?._ID || result?.id);
+  if (createdId) localStorage.setItem(conversationStorageKey(mode, options.caredOneId), createdId);
   return createdId;
 }
 
-async function createMessage(conversationId: string, role: AIChatMessage["role"], content: string, mode: AIMode) {
-  await wordpressCCTFetch(MESSAGE_SLUG, {
+async function createMessage(conversationId: string, role: AIChatMessage["role"], content: string) {
+  const result = await wordpressCCTFetch<any>(MESSAGE_SLUG, {
     method: "POST",
     body: {
-      conversation_id: conversationId,
-      message_id: createId(),
-      role,
-      ai_mode: mode,
-      content,
-      context_used: "",
-      tokens_used: asWPString(0),
-      model_name: "gemini-3-flash-preview",
-      created_at: nowISOString(),
+      chat_message_content: content,
+      chat_message_type: role === "assistant" ? "ai" : "text",
     },
   });
+  const messageId = numId(result?.item_id || result?._ID || result?.id);
+  const convoId = numId(conversationId);
+  if (messageId && convoId) {
+    try {
+      await wordpressFetch(`jet-rel/${REL_CONV_MESSAGE}`, {
+        method: "POST",
+        body: { parent_id: convoId, child_id: messageId, context: "child", store_items_type: "update" },
+      });
+    } catch { /* non-blocking */ }
+  }
 }
 
 async function touchConversation(conversationId: string) {
   try {
-    const messages = await wordpressCCTFetch<any[]>(MESSAGE_SLUG, { params: { _limit: 200 } });
-    const count = (Array.isArray(messages) ? messages : []).filter(
-      (item) => String(item.conversation_id) === String(conversationId)
-    ).length;
     await wordpressCCTFetch(CONVERSATION_SLUG, {
       id: conversationId,
       method: "PUT",
-      body: {
-        last_message_at: nowISOString(),
-        message_count: asWPString(count),
-      },
+      body: { last_message_at: nowWPDateTime() },
     });
-  } catch {}
+  } catch { /* non-blocking */ }
 }
 
 /** Call the ai-care-engine edge function (Lovable AI Gateway) */
@@ -144,76 +113,60 @@ async function callAI(mode: AIMode, messages: AIChatMessage[]): Promise<string> 
   const { data, error } = await supabase.functions.invoke("ai-care-engine", {
     body: { mode, messages },
   });
-
   if (error) {
     console.error("AI edge function error:", error);
     throw new Error(error.message || "AI service unavailable");
   }
-
-  if (data?.error) {
-    throw new Error(data.error);
-  }
-
+  if (data?.error) throw new Error(data.error);
   return data?.reply || "";
 }
 
-export async function loadAIConversation(mode: AIMode, options: Pick<InvokeAIOptions, "conversationId" | "caredOneId"> = {}) {
+export async function loadAIConversation(
+  mode: AIMode,
+  options: Pick<InvokeAIOptions, "conversationId" | "caredOneId"> = {}
+): Promise<AIChatMessage[]> {
   const conversationId = options.conversationId || localStorage.getItem(conversationStorageKey(mode, options.caredOneId));
-  if (!conversationId) return [] as AIChatMessage[];
-  const messages = await wordpressCCTFetch<any[]>(MESSAGE_SLUG, {
-    params: { _limit: 200, _orderby: "cct_created", _order: "asc" },
-  });
-  return (Array.isArray(messages) ? messages : [])
-    .filter((item) => String(item.conversation_id) === String(conversationId))
-    .sort((a, b) => toTimestamp(a.created_at || a.updated_at) - toTimestamp(b.created_at || b.updated_at))
-    .map((item) => ({ role: item.role, content: item.content }));
+  if (!conversationId) return [];
+  try {
+    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_CONV_MESSAGE}/children/${numId(conversationId)}`);
+    if (!Array.isArray(rels) || rels.length === 0) return [];
+    const messages = await Promise.all(rels.map(async (r: any) => {
+      try { return await wordpressCCTFetch<any>(MESSAGE_SLUG, { id: r.child_object_id }); }
+      catch { return null; }
+    }));
+    return (messages.filter(Boolean) as any[])
+      .sort((a, b) => String(a.cct_created || "").localeCompare(String(b.cct_created || "")))
+      .map((m: any) => ({
+        role: (m.chat_message_type === "ai" ? "assistant" : "user") as AIChatMessage["role"],
+        content: m.chat_message_content || "",
+      }));
+  } catch { return []; }
 }
 
 export async function invokeAI(mode: AIMode, context: string, options: InvokeAIOptions = {}): Promise<string> {
-  // Build messages array
   const userMessages = options.messages && options.messages.length > 0
     ? options.messages.filter((m) => m.role !== "system")
     : [{ role: "user" as const, content: context }];
 
   const userMessage = userMessages.filter((m) => m.role === "user").at(-1)?.content || context;
 
-  // Try to persist to WP CCT, but don't block on failure
+  // Persist (non-blocking on failure)
   let conversationId: string | null = null;
   try {
     conversationId = await ensureConversation(mode, options);
-    await createMessage(conversationId, "user", userMessage, mode);
+    await createMessage(conversationId, "user", userMessage);
   } catch (e) {
-    console.warn("WP CCT persistence unavailable, continuing without:", e);
+    console.warn("Chat CCT persistence unavailable, continuing without:", e);
   }
 
-  // Store context memory if caredOne specified (non-blocking)
-  if (options.caredOneId) {
-    try {
-      await wordpressCCTFetch(CONTEXT_SLUG, {
-        method: "POST",
-        body: {
-          context_id: createId(),
-          user_id: asWPString(getStoredWPUser()?.user_id || 0),
-          cared_one_id: asWPString(options.caredOneId),
-          context_type: "cared_one_profile",
-          context_key: `last_${mode}`,
-          context_value: userMessage,
-          priority: "medium",
-          last_updated: nowISOString(),
-        },
-      });
-    } catch {}
-  }
-
-  // Call AI — this is the critical path
+  // Critical path
   const reply = await callAI(mode, userMessages);
 
-  // Persist reply (non-blocking)
   if (conversationId) {
     try {
-      await createMessage(conversationId, "assistant", reply, mode);
+      await createMessage(conversationId, "assistant", reply);
       await touchConversation(conversationId);
-    } catch {}
+    } catch { /* non-blocking */ }
   }
 
   return reply;
@@ -228,7 +181,6 @@ export function parseAIJson<T = any>(reply: string): T | null {
     }
     return JSON.parse(cleaned);
   } catch {
-    console.warn("Failed to parse AI JSON:", reply.slice(0, 200));
     return null;
   }
 }
