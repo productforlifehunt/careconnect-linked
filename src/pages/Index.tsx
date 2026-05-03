@@ -232,10 +232,12 @@ const Index = () => {
                   <img src={yichangIcon} alt="忆畅" className="w-12 h-12 rounded-xl" loading="lazy" />
                 ) : (
                   <div className="w-8 h-8 rounded-lg hero-gradient flex items-center justify-center">
-                    <span className="text-primary-foreground font-bold text-xs">{site.logoText}</span>
+                    <span className="text-primary-foreground font-bold text-xs">
+                      {site.id === "duocare" ? (isChinese ? "多护" : "DC") : site.logoText}
+                    </span>
                   </div>
                 )}
-                <span className="font-bold text-foreground">{t(`site.${site.id}.footerBrand`)}</span>
+                <span className="font-bold text-foreground">{site.id === "duocare" && isChinese ? "多护" : t(`site.${site.id}.footerBrand`)}</span>
               </div>
               <p className="text-sm text-muted-foreground">{t(`site.${site.id}.footerTagline`)}</p>
             </div>
