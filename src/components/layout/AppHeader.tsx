@@ -96,8 +96,8 @@ export function AppHeader() {
                       <span className="text-primary-foreground font-bold text-sm">{site.logoText}</span>
                     </div>
                     <span className="font-bold text-lg">
-                      <span className="text-primary">{site.id === "challenged" ? "Ch" : "Care"}</span>
-                      <span className="text-muted-foreground">{site.logoAccent}</span>
+                      <span className="text-primary">{site.logoText}</span>
+                      {site.logoAccent && <span className="text-muted-foreground">{site.logoAccent}</span>}
                     </span>
                   </>
                 )}
@@ -157,8 +157,8 @@ export function AppHeader() {
                 <span className="text-primary-foreground font-bold text-sm">{site.logoText}</span>
               </div>
               <span className="font-bold text-lg hidden sm:inline">
-                <span className="text-primary">{site.id === "challenged" ? "Ch" : "Care"}</span>
-                <span className="text-muted-foreground">{site.logoAccent}</span>
+                <span className="text-primary">{site.logoText}</span>
+                {site.logoAccent && <span className="text-muted-foreground">{site.logoAccent}</span>}
               </span>
             </>
           )}
