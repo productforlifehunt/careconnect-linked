@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useMemo, useEffect } from "react";
 
-export type SiteId = "careconnected" | "challenged";
+export type SiteId = "careconnected" | "challenged" | "duocare" | "carecnc";
 
 export interface SiteConfig {
   id: SiteId;
@@ -128,11 +128,91 @@ const challengedConfig: SiteConfig = {
   trustBadges: ["badge1", "badge2", "badge3", "badge4", "badge5"],
 };
 
+const duoCareConfig: SiteConfig = {
+  id: "duocare",
+  name: "DuoCare",
+  tagline: "Care, made simple — together.",
+  logoText: "Duo",
+  logoAccent: "Care",
+  heroTitle: "Care is better,",
+  heroHighlight: "in pairs.",
+  heroSubtitle: "DuoCare pairs families with trusted caregivers — playful, simple, and built around the people you love.",
+  ctaTitle: "Ready to find your care duo?",
+  ctaSubtitle: "Join thousands of families who picked DuoCare for warm, reliable care matches.",
+  ctaButton: "Find My Duo",
+  searchPlaceholder: "Who needs care today?",
+  howItWorksTitle: "How DuoCare Works",
+  footerBrand: "DuoCare",
+  footerTagline: "Pairing families with caregivers — one duo at a time.",
+  metaTitle: "DuoCare — Care, in pairs.",
+  metaDescription: "Pair with trusted caregivers, coordinate your care duo, and keep loved ones supported.",
+  cssClass: "site-duocare",
+  contactEmail: "hello@duocare.app",
+  brandSlug: "duocare",
+  caredOneSingular: "Loved One",
+  careGroupSingular: "Care Duo",
+  navLabels: {
+    careGroups: "Care Duos",
+    findCare: "Find a Duo",
+    caredOnes: "Loved Ones",
+    dashboard: "My Duo",
+    gpsTracking: "Where",
+  },
+  howItWorksSteps: [
+    { step: "1", titleKey: "step1Title", descKey: "step1Desc" },
+    { step: "2", titleKey: "step2Title", descKey: "step2Desc" },
+    { step: "3", titleKey: "step3Title", descKey: "step3Desc" },
+  ],
+  trustBadges: ["badge1", "badge2", "badge3"],
+};
+
+const careCNCConfig: SiteConfig = {
+  id: "carecnc",
+  name: "CareCNC",
+  tagline: "Connect. Care. Continue.",
+  logoText: "CNC",
+  logoAccent: "",
+  heroTitle: "Find caregivers,",
+  heroHighlight: "anywhere you need.",
+  heroSubtitle: "CareCNC is the marketplace for trusted care — search, book, and stay connected with caregivers near you.",
+  ctaTitle: "Your next caregiver is one tap away",
+  ctaSubtitle: "Join the CareCNC community — Connect. Care. Continue.",
+  ctaButton: "Browse Caregivers",
+  searchPlaceholder: "Where do you need care?",
+  howItWorksTitle: "How CareCNC Works",
+  footerBrand: "CareCNC",
+  footerTagline: "Connect. Care. Continue. — the marketplace for trusted care.",
+  metaTitle: "CareCNC — Connect. Care. Continue.",
+  metaDescription: "Browse and book trusted caregivers near you on CareCNC, the care marketplace.",
+  cssClass: "site-carecnc",
+  contactEmail: "hello@carecnc.com",
+  brandSlug: "carecnc",
+  caredOneSingular: "Loved One",
+  careGroupSingular: "Care Circle",
+  navLabels: {
+    careGroups: "Circles",
+    findCare: "Browse Care",
+    caredOnes: "Loved Ones",
+    dashboard: "Dashboard",
+    gpsTracking: "Live Track",
+  },
+  howItWorksSteps: [
+    { step: "1", titleKey: "step1Title", descKey: "step1Desc" },
+    { step: "2", titleKey: "step2Title", descKey: "step2Desc" },
+    { step: "3", titleKey: "step3Title", descKey: "step3Desc" },
+  ],
+  trustBadges: ["badge1", "badge2", "badge3"],
+};
+
 /** Map hostnames to site IDs */
 const DOMAIN_MAP: Record<string, SiteId> = {
   // Production domains — add your real domains here
   "challenged.com": "challenged",
   "www.challenged.com": "challenged",
+  "duocare.app": "duocare",
+  "www.duocare.app": "duocare",
+  "carecnc.com": "carecnc",
+  "www.carecnc.com": "carecnc",
   // Dev overrides via port
   "localhost:5174": "challenged",
 };
@@ -148,6 +228,8 @@ function detectSite(): SiteId {
   const siteParam = params.get("__site");
   if (siteParam === "challenged") return "challenged";
   if (siteParam === "careconnected") return "careconnected";
+  if (siteParam === "duocare") return "duocare";
+  if (siteParam === "carecnc") return "carecnc";
 
   // Check full host (with port) first, then hostname only
   if (DOMAIN_MAP[host]) return DOMAIN_MAP[host];
@@ -160,6 +242,8 @@ function detectSite(): SiteId {
 const SITE_CONFIGS: Record<SiteId, SiteConfig> = {
   careconnected: careConnectedConfig,
   challenged: challengedConfig,
+  duocare: duoCareConfig,
+  carecnc: careCNCConfig,
 };
 
 const SiteContext = createContext<SiteConfig>(careConnectedConfig);
@@ -174,7 +258,7 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const html = document.documentElement;
     // Remove any existing site class
-    html.classList.remove("site-careconnected", "site-challenged");
+    html.classList.remove("site-careconnected", "site-challenged", "site-duocare", "site-carecnc");
     html.classList.add(config.cssClass);
 
     // Update page title
