@@ -541,3 +541,35 @@ const zhCN = {
   },
 };
 export default zhCN;
+
+// DuoCare site clone (Chinese)
+zhCN.site = zhCN.site || {};
+zhCN.site.duocare = {
+  name: "多Care",
+  tagline: "护理，更简单 — 携手同行。",
+  heroTitle: "护理更轻松，",
+  heroHighlight: "成双成对。",
+  heroSubtitle: "多Care 把家庭与可信赖的护理者配对 — 简单、温暖、围绕你所爱的人。",
+  ctaTitle: "准备好找到你的护理搭档了吗？",
+  ctaSubtitle: "加入数千个选择多Care 的家庭，获得温暖可靠的护理匹配。",
+  ctaButton: "找我的搭档",
+  searchPlaceholder: "今天谁需要护理？",
+  howItWorksTitle: "多Care 如何运作",
+  footerBrand: "多Care",
+  footerTagline: "为家庭与护理者牵线 — 一对一搭档。",
+  authSubtitle: "与可信护理配对",
+  dashboardSubtitle: "你的护理搭档概览",
+  caredOneSingular: "亲人",
+  careGroupSingular: "护理搭档",
+  becomeTitle: "成为护理者",
+  becomeSubtitle: "搭档同行，让改变发生",
+  step1Title: "搜索与比较",
+  step1Desc: "按专长、地点、评价和空闲时段浏览经过认证的护理者。",
+  step2Title: "预约与管理",
+  step2Desc: "在一个平台预约护理、管理日程、与你的搭档协调。",
+  step3Title: "追踪与连接",
+  step3Desc: "使用 GPS 追踪、护理日志与团队协作，保持连接与知情。",
+  badge1: "背景核查",
+  badge2: "真实评价",
+  badge3: "GPS 追踪",
+};

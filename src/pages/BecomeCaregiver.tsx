@@ -66,7 +66,7 @@ export default function BecomeCaregiver() {
     return false;
   };
 
-  const siteKey = site.id === "challenged" ? "challenged" : "careconnected";
+  const siteKey = site.id;
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
