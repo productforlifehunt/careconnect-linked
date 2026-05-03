@@ -88,7 +88,7 @@ export default function Profile() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `careconnected-data-${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `carecnc-data-${new Date().toISOString().split('T')[0]}.json`;
       a.click();
       URL.revokeObjectURL(url);
       toast({ title: t("profile.dataDownloaded", "Your data has been downloaded") });

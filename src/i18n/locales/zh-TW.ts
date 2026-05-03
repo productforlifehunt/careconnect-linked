@@ -29,9 +29,9 @@ zhTW.site.challenged.heroSubtitle = "讓失智症照護不再艱難——專業�
 zhTW.site.challenged.tagline = "讓記憶暢行無阻";
 zhTW.site.challenged.caredOneSingular = "親人";
 zhTW.site.challenged.careGroupSingular = "照護團隊";
-zhTW.site.careconnected.heroTitle = "尋找可信賴的照護，";
-zhTW.site.careconnected.heroHighlight = "保持聯繫";
-zhTW.site.careconnected.caredOneSingular = "被照顧者";
-zhTW.site.careconnected.careGroupSingular = "照護小組";
+zhTW.site.carecnc.heroTitle = "尋找可信賴的照護，";
+zhTW.site.carecnc.heroHighlight = "保持聯繫";
+zhTW.site.carecnc.caredOneSingular = "被照顧者";
+zhTW.site.carecnc.careGroupSingular = "照護小組";
 zhTW.notFound = { title: "404", subtitle: "糟糕！頁面未找到", returnHome: "返回首頁" };
 export default zhTW;
