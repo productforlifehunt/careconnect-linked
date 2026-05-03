@@ -36,9 +36,9 @@ export function AppHeader() {
   const { t, i18n } = useTranslation();
   const isChinese = i18n.language?.startsWith("zh");
   const isChallenged = site.id === "challenged";
-  const isDuoCare = site.id === "duocare";
-  const logoBadgeText = isDuoCare ? (isChinese ? "多护" : "DC") : site.logoText;
-  const logoWordmarkText = isDuoCare ? (isChinese ? "多护" : "DuoCare") : `${site.logoText}${site.logoAccent}`;
+  const isCareDuo = site.id === "duocare";
+  const logoBadgeText = isCareDuo ? (isChinese ? "多护" : "CD") : site.logoText;
+  const logoWordmarkText = isCareDuo ? (isChinese ? "多护" : "CareDuo") : `${site.logoText}${site.logoAccent}`;
 
   const publicNav = isChallenged
     ? [
@@ -96,7 +96,7 @@ export function AppHeader() {
                       <span className="text-primary-foreground font-bold text-sm">{logoBadgeText}</span>
                     </div>
                     <span className="font-bold text-lg">
-                      {isDuoCare ? (
+                      {isCareDuo ? (
                         <span className="text-primary">{logoWordmarkText}</span>
                       ) : (
                         <>
@@ -163,7 +163,7 @@ export function AppHeader() {
                 <span className="text-primary-foreground font-bold text-sm">{logoBadgeText}</span>
               </div>
               <span className="font-bold text-lg hidden sm:inline">
-                {isDuoCare ? (
+                {isCareDuo ? (
                   <span className="text-primary">{logoWordmarkText}</span>
                 ) : (
                   <>

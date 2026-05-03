@@ -233,7 +233,7 @@ const Index = () => {
                 ) : (
                   <div className="w-8 h-8 rounded-lg hero-gradient flex items-center justify-center">
                     <span className="text-primary-foreground font-bold text-xs">
-                      {site.id === "duocare" ? (isChinese ? "多护" : "DC") : site.logoText}
+                      {site.id === "duocare" ? (isChinese ? "多护" : "CD") : site.logoText}
                     </span>
                   </div>
                 )}
