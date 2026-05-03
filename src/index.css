@@ -208,33 +208,33 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 25% 15%;
 
-    --primary: 158 55% 38%;
+    --primary: 212 78% 48%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 25 75% 55%;
+    --secondary: 32 92% 55%;
     --secondary-foreground: 0 0% 100%;
-    --accent: 158 35% 92%;
-    --accent-foreground: 158 55% 25%;
-    --muted: 158 15% 95%;
+    --accent: 212 60% 94%;
+    --accent-foreground: 212 78% 32%;
+    --muted: 212 25% 96%;
     --muted-foreground: 220 12% 45%;
-    --ring: 158 55% 38%;
-    --border: 158 15% 88%;
-    --input: 158 15% 88%;
+    --ring: 212 78% 48%;
+    --border: 212 25% 88%;
+    --input: 212 25% 88%;
 
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 220 25% 15%;
-    --sidebar-primary: 158 55% 38%;
+    --sidebar-primary: 212 78% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 158 35% 92%;
-    --sidebar-accent-foreground: 158 55% 25%;
-    --sidebar-border: 158 15% 90%;
-    --sidebar-ring: 158 55% 38%;
+    --sidebar-accent: 212 60% 94%;
+    --sidebar-accent-foreground: 212 78% 32%;
+    --sidebar-border: 212 25% 90%;
+    --sidebar-ring: 212 78% 48%;
 
-    --coral: 25 75% 55%;
+    --coral: 32 92% 55%;
     --coral-foreground: 0 0% 100%;
-    --hero-gradient: linear-gradient(135deg, hsl(158 55% 38%), hsl(168 50% 32%));
-    --coral-gradient: linear-gradient(135deg, hsl(25 75% 55%), hsl(18 75% 50%));
-    --card-shadow: 0 2px 12px -2px hsl(158 55% 38% / 0.08);
-    --card-shadow-hover: 0 8px 30px -4px hsl(158 55% 38% / 0.15);
+    --hero-gradient: linear-gradient(135deg, hsl(212 78% 48%), hsl(222 72% 40%));
+    --coral-gradient: linear-gradient(135deg, hsl(32 92% 55%), hsl(22 92% 50%));
+    --card-shadow: 0 2px 12px -2px hsl(212 78% 48% / 0.08);
+    --card-shadow-hover: 0 8px 30px -4px hsl(212 78% 48% / 0.15);
     --radius: 0.875rem;
   }
 
@@ -245,18 +245,18 @@
     --card-foreground: 0 0% 98%;
     --popover: 220 20% 12%;
     --popover-foreground: 0 0% 98%;
-    --primary: 158 50% 48%;
+    --primary: 212 72% 58%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 25 65% 55%;
+    --secondary: 32 82% 58%;
     --secondary-foreground: 0 0% 100%;
-    --accent: 158 25% 20%;
-    --accent-foreground: 158 45% 78%;
+    --accent: 212 35% 22%;
+    --accent-foreground: 212 60% 80%;
     --muted: 220 15% 18%;
     --muted-foreground: 220 10% 65%;
-    --ring: 158 50% 48%;
+    --ring: 212 72% 58%;
     --border: 220 15% 20%;
     --input: 220 15% 20%;
-    --coral: 25 65% 55%;
+    --coral: 32 82% 58%;
     --coral-foreground: 0 0% 100%;
   }
 }
