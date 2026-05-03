@@ -37,7 +37,7 @@ export function AppHeader() {
   const isChinese = i18n.language?.startsWith("zh");
   const isChallenged = site.id === "challenged";
   const isCareDuo = site.id === "duocare";
-  const logoBadgeText = isCareDuo ? (isChinese ? "多护" : "DC") : site.logoText;
+  const logoBadgeText = isCareDuo ? (isChinese ? "多护" : "CD") : site.logoText;
   const logoWordmarkText = isCareDuo ? (isChinese ? "多护" : "CareDuo") : `${site.logoText}${site.logoAccent}`;
 
   const publicNav = isChallenged
