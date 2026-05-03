@@ -177,7 +177,7 @@ export function AppHeader() {
         </Link>
 
         {/* Desktop horizontal nav */}
-        <nav className="hidden sm:flex items-center gap-1 ml-4">
+        <nav className="hidden lg:flex items-center gap-1 ml-4 flex-wrap">
           {publicNav.map(item => (
             <NavLink
               key={item.url}
