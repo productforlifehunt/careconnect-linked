@@ -208,46 +208,56 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 25% 15%;
 
-    --primary: 142 71% 45%;
+    --primary: 158 55% 38%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 38 100% 55%;
-    --secondary-foreground: 220 25% 15%;
-    --accent: 142 60% 92%;
-    --accent-foreground: 142 71% 28%;
-    --muted: 142 25% 95%;
+    --secondary: 25 75% 55%;
+    --secondary-foreground: 0 0% 100%;
+    --accent: 158 35% 92%;
+    --accent-foreground: 158 55% 25%;
+    --muted: 158 15% 95%;
     --muted-foreground: 220 12% 45%;
-    --ring: 142 71% 45%;
-    --border: 142 25% 88%;
-    --input: 142 25% 88%;
+    --ring: 158 55% 38%;
+    --border: 158 15% 88%;
+    --input: 158 15% 88%;
 
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 220 25% 15%;
-    --sidebar-primary: 142 71% 45%;
+    --sidebar-primary: 158 55% 38%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 142 60% 92%;
-    --sidebar-accent-foreground: 142 71% 28%;
-    --sidebar-border: 142 25% 90%;
-    --sidebar-ring: 142 71% 45%;
+    --sidebar-accent: 158 35% 92%;
+    --sidebar-accent-foreground: 158 55% 25%;
+    --sidebar-border: 158 15% 90%;
+    --sidebar-ring: 158 55% 38%;
 
-    --coral: 38 100% 55%;
-    --coral-foreground: 220 25% 15%;
-    --hero-gradient: linear-gradient(135deg, hsl(142 71% 45%), hsl(142 71% 35%));
-    --coral-gradient: linear-gradient(135deg, hsl(38 100% 55%), hsl(28 100% 50%));
-    --card-shadow: 0 4px 0 0 hsl(142 30% 80%);
-    --card-shadow-hover: 0 6px 0 0 hsl(142 40% 70%);
-    --radius: 1rem;
+    --coral: 25 75% 55%;
+    --coral-foreground: 0 0% 100%;
+    --hero-gradient: linear-gradient(135deg, hsl(158 55% 38%), hsl(168 50% 32%));
+    --coral-gradient: linear-gradient(135deg, hsl(25 75% 55%), hsl(18 75% 50%));
+    --card-shadow: 0 2px 12px -2px hsl(158 55% 38% / 0.08);
+    --card-shadow-hover: 0 8px 30px -4px hsl(158 55% 38% / 0.15);
+    --radius: 0.875rem;
   }
 
   .site-duocare.dark {
     --background: 220 25% 8%;
     --foreground: 0 0% 98%;
-    --primary: 142 65% 50%;
+    --card: 220 20% 12%;
+    --card-foreground: 0 0% 98%;
+    --popover: 220 20% 12%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 158 50% 48%;
     --primary-foreground: 0 0% 100%;
-    --accent: 142 30% 20%;
-    --accent-foreground: 142 50% 80%;
-    --ring: 142 65% 50%;
+    --secondary: 25 65% 55%;
+    --secondary-foreground: 0 0% 100%;
+    --accent: 158 25% 20%;
+    --accent-foreground: 158 45% 78%;
+    --muted: 220 15% 18%;
+    --muted-foreground: 220 10% 65%;
+    --ring: 158 50% 48%;
     --border: 220 15% 20%;
     --input: 220 15% 20%;
+    --coral: 25 65% 55%;
+    --coral-foreground: 0 0% 100%;
   }
 }
 
@@ -294,12 +304,22 @@
   .site-carecnc.dark {
     --background: 0 0% 8%;
     --foreground: 0 0% 98%;
+    --card: 0 0% 12%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 12%;
+    --popover-foreground: 0 0% 98%;
     --primary: 158 60% 48%;
     --primary-foreground: 0 0% 100%;
+    --secondary: 358 65% 60%;
+    --secondary-foreground: 0 0% 100%;
     --accent: 158 30% 18%;
     --accent-foreground: 158 50% 78%;
+    --muted: 0 0% 16%;
+    --muted-foreground: 0 0% 65%;
     --ring: 158 60% 48%;
     --border: 0 0% 18%;
     --input: 0 0% 18%;
+    --coral: 358 65% 60%;
+    --coral-foreground: 0 0% 100%;
   }
 }
