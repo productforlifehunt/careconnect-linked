@@ -241,13 +241,23 @@
   .site-duocare.dark {
     --background: 220 25% 8%;
     --foreground: 0 0% 98%;
+    --card: 220 20% 12%;
+    --card-foreground: 0 0% 98%;
+    --popover: 220 20% 12%;
+    --popover-foreground: 0 0% 98%;
     --primary: 158 50% 48%;
     --primary-foreground: 0 0% 100%;
+    --secondary: 25 65% 55%;
+    --secondary-foreground: 0 0% 100%;
     --accent: 158 25% 20%;
     --accent-foreground: 158 45% 78%;
+    --muted: 220 15% 18%;
+    --muted-foreground: 220 10% 65%;
     --ring: 158 50% 48%;
     --border: 220 15% 20%;
     --input: 220 15% 20%;
+    --coral: 25 65% 55%;
+    --coral-foreground: 0 0% 100%;
   }
 }
 
@@ -294,12 +304,22 @@
   .site-carecnc.dark {
     --background: 0 0% 8%;
     --foreground: 0 0% 98%;
+    --card: 0 0% 12%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 12%;
+    --popover-foreground: 0 0% 98%;
     --primary: 158 60% 48%;
     --primary-foreground: 0 0% 100%;
+    --secondary: 358 65% 60%;
+    --secondary-foreground: 0 0% 100%;
     --accent: 158 30% 18%;
     --accent-foreground: 158 50% 78%;
+    --muted: 0 0% 16%;
+    --muted-foreground: 0 0% 65%;
     --ring: 158 60% 48%;
     --border: 0 0% 18%;
     --input: 0 0% 18%;
+    --coral: 358 65% 60%;
+    --coral-foreground: 0 0% 100%;
   }
 }
