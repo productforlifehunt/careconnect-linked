@@ -35,10 +35,10 @@ export function AppHeader() {
   const unreadCount = notifications?.filter(n => !n.is_read).length || 0;
   const { t, i18n } = useTranslation();
   const isChinese = i18n.language?.startsWith("zh");
-
-  
-
   const isChallenged = site.id === "challenged";
+  const isDuoCare = site.id === "duocare";
+  const logoBadgeText = isDuoCare ? (isChinese ? "多护" : "DC") : site.logoText;
+  const logoWordmarkText = isDuoCare ? (isChinese ? "多护" : "DuoCare") : `${site.logoText}${site.logoAccent}`;
 
   const publicNav = isChallenged
     ? [
@@ -93,11 +93,17 @@ export function AppHeader() {
                 ) : (
                   <>
                     <div className="w-9 h-9 rounded-lg hero-gradient flex items-center justify-center">
-                      <span className="text-primary-foreground font-bold text-sm">{site.logoText}</span>
+                      <span className="text-primary-foreground font-bold text-sm">{logoBadgeText}</span>
                     </div>
                     <span className="font-bold text-lg">
-                      <span className="text-primary">{site.logoText}</span>
-                      {site.logoAccent && <span className="text-muted-foreground">{site.logoAccent}</span>}
+                      {isDuoCare ? (
+                        <span className="text-primary">{logoWordmarkText}</span>
+                      ) : (
+                        <>
+                          <span className="text-primary">{site.logoText}</span>
+                          {site.logoAccent && <span className="text-muted-foreground">{site.logoAccent}</span>}
+                        </>
+                      )}
                     </span>
                   </>
                 )}
@@ -154,11 +160,17 @@ export function AppHeader() {
           ) : (
             <>
               <div className="w-9 h-9 rounded-lg hero-gradient flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">{site.logoText}</span>
+                <span className="text-primary-foreground font-bold text-sm">{logoBadgeText}</span>
               </div>
               <span className="font-bold text-lg hidden sm:inline">
-                <span className="text-primary">{site.logoText}</span>
-                {site.logoAccent && <span className="text-muted-foreground">{site.logoAccent}</span>}
+                {isDuoCare ? (
+                  <span className="text-primary">{logoWordmarkText}</span>
+                ) : (
+                  <>
+                    <span className="text-primary">{site.logoText}</span>
+                    {site.logoAccent && <span className="text-muted-foreground">{site.logoAccent}</span>}
+                  </>
+                )}
               </span>
             </>
           )}
