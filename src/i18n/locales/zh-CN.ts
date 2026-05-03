@@ -62,14 +62,14 @@ const zhCN = {
       badge1: "AI陪伴对话", badge2: "护理人员资料公开", badge3: "位置分享和提醒",
       badge4: "AI辅助记录", badge5: "GPS位置查看",
     },
-    careconnected: {
-      name: "Care·Connected", tagline: "连接家庭与可信赖的护理人员",
+    carecnc: {
+      name: "CareCNC", tagline: "连接家庭与可信赖的护理人员",
       heroTitle: "寻找可信赖的护理，", heroHighlight: "保持联系",
       heroSubtitle: "搜索护理人员、预约服务、与护理团队协调，实时追踪护理——一站式完成。",
       ctaTitle: "准备好找到完美的护理人员了吗？",
-      ctaSubtitle: "加入数千信任Care·Connected的家庭，满足护理需求。",
+      ctaSubtitle: "加入数千信任CareCNC的家庭，满足护理需求。",
       ctaButton: "寻找护理人员", searchPlaceholder: "您需要什么类型的护理？",
-      howItWorksTitle: "Care·Connected如何运作", footerBrand: "Care·Connected",
+      howItWorksTitle: "CareCNC如何运作", footerBrand: "CareCNC",
       footerTagline: "自2024年起，连接家庭与可信赖的护理人员。",
       authSubtitle: "查找和管理可信赖的护理", dashboardSubtitle: "这是您的护理概览",
       caredOneSingular: "被照顾者", careGroupSingular: "照护小组",
