@@ -55,19 +55,19 @@ const Index = () => {
           <img src={isChinese && site.id === "challenged" ? heroImageCn : heroImage} alt="Compassionate caregiving" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-r from-primary/90 via-primary/70 to-primary/40" />
         </div>
-        <div className="relative max-w-6xl mx-auto px-4 py-20 md:py-32">
-          <div className="max-w-2xl">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground mb-6 leading-tight animate-fade-in">
+        <div className="relative max-w-6xl mx-auto px-4 py-16 md:py-24 lg:py-32">
+          <div className="max-w-3xl">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground mb-6 leading-tight animate-fade-in max-w-[14ch]">
               {t(`site.${site.id}.heroTitle`)}{" "}
               <span className="text-coral">{t(`site.${site.id}.heroHighlight`)}</span>
             </h1>
-            <p className="text-lg md:text-xl text-primary-foreground/90 mb-8 animate-fade-in" style={{ animationDelay: "0.1s" }}>
+            <p className="text-lg md:text-xl text-primary-foreground/90 mb-8 animate-fade-in max-w-[38rem]" style={{ animationDelay: "0.1s" }}>
               {t(`site.${site.id}.heroSubtitle`)}
             </p>
 
-            <div className="bg-card rounded-xl p-2 shadow-xl animate-fade-in" style={{ animationDelay: "0.2s" }}>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <div className="flex-1 relative">
+            <div className="bg-card rounded-xl p-2 shadow-xl animate-fade-in max-w-4xl" style={{ animationDelay: "0.2s" }}>
+              <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-2">
+                <div className="relative min-w-0">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder={t(`site.${site.id}.searchPlaceholder`)}
@@ -77,7 +77,7 @@ const Index = () => {
                     onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                   />
                 </div>
-                <div className="flex-1 relative">
+                <div className="relative min-w-0">
                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder={t("home.cityOrZip")}
@@ -87,16 +87,16 @@ const Index = () => {
                     onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                   />
                 </div>
-                <Button variant="coral" size="lg" className="h-12 px-8" onClick={handleSearch}>
+                <Button variant="coral" size="lg" className="h-12 px-8 lg:px-6 lg:min-w-[120px]" onClick={handleSearch}>
                   {t("common.search")}
                 </Button>
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-4 mt-6 animate-fade-in" style={{ animationDelay: "0.3s" }}>
+            <div className="flex flex-wrap gap-x-4 gap-y-2 mt-6 animate-fade-in" style={{ animationDelay: "0.3s" }}>
               {site.trustBadges.map((badgeKey) => (
-                <div key={badgeKey} className="flex items-center gap-2 text-primary-foreground/80 text-sm">
-                  <CheckCircle className="h-4 w-4" />
+                <div key={badgeKey} className="flex items-center gap-2 text-primary-foreground/85 text-sm">
+                  <CheckCircle className="h-4 w-4 shrink-0" />
                   <span>{t(`site.${site.id}.${badgeKey}`)}</span>
                 </div>
               ))}
