@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useMemo, useEffect } from "react";
 
-export type SiteId = "careconnected" | "challenged" | "duocare" | "carecnc";
+export type SiteId = "carecnc" | "challenged" | "duocare";
 
 export interface SiteConfig {
   id: SiteId;
@@ -46,27 +46,27 @@ export interface SiteConfig {
   trustBadges: string[];
 }
 
-const careConnectedConfig: SiteConfig = {
-  id: "careconnected",
-  name: "Care·Connected",
-  tagline: "Connecting families with trusted caregivers",
-  logoText: "C·C",
-  logoAccent: "Connected",
+const careCNCConfig: SiteConfig = {
+  id: "carecnc",
+  name: "CareCNC",
+  tagline: "Connect. Care. Continue.",
+  logoText: "CNC",
+  logoAccent: "",
   heroTitle: "Find Trusted Care,",
   heroHighlight: "Stay Connected",
   heroSubtitle: "Search caregivers, book appointments, coordinate with your care team, and track care in real-time — all in one place.",
   ctaTitle: "Ready to find the perfect caregiver?",
-  ctaSubtitle: "Join thousands of families who trust Care·Connected for their caregiving needs.",
+  ctaSubtitle: "Join thousands of families who trust CareCNC for their caregiving needs.",
   ctaButton: "Find Caregivers",
   searchPlaceholder: "What type of care do you need?",
-  howItWorksTitle: "How Care·Connected Works",
-  footerBrand: "Care·Connected",
-  footerTagline: "Connecting families with trusted caregivers since 2024.",
-  metaTitle: "Care·Connected — Find Trusted Caregivers",
+  howItWorksTitle: "How CareCNC Works",
+  footerBrand: "CareCNC",
+  footerTagline: "Connect. Care. Continue. — Connecting families with trusted caregivers since 2024.",
+  metaTitle: "CareCNC — Connect. Care. Continue.",
   metaDescription: "Search caregivers, book appointments, and coordinate care in one place.",
-  cssClass: "site-careconnected",
-  contactEmail: "safety@careconnected.com",
-  brandSlug: "careconnected",
+  cssClass: "site-carecnc",
+  contactEmail: "hello@carecnc.com",
+  brandSlug: "carecnc",
   caredOneSingular: "Cared One",
   careGroupSingular: "Care Group",
   navLabels: {
@@ -166,87 +166,42 @@ const duoCareConfig: SiteConfig = {
   trustBadges: ["badge1", "badge2", "badge3"],
 };
 
-const careCNCConfig: SiteConfig = {
-  id: "carecnc",
-  name: "CareCNC",
-  tagline: "Connect. Care. Continue.",
-  logoText: "CNC",
-  logoAccent: "",
-  heroTitle: "Find caregivers,",
-  heroHighlight: "anywhere you need.",
-  heroSubtitle: "CareCNC is the marketplace for trusted care — search, book, and stay connected with caregivers near you.",
-  ctaTitle: "Your next caregiver is one tap away",
-  ctaSubtitle: "Join the CareCNC community — Connect. Care. Continue.",
-  ctaButton: "Browse Caregivers",
-  searchPlaceholder: "Where do you need care?",
-  howItWorksTitle: "How CareCNC Works",
-  footerBrand: "CareCNC",
-  footerTagline: "Connect. Care. Continue. — the marketplace for trusted care.",
-  metaTitle: "CareCNC — Connect. Care. Continue.",
-  metaDescription: "Browse and book trusted caregivers near you on CareCNC, the care marketplace.",
-  cssClass: "site-carecnc",
-  contactEmail: "hello@carecnc.com",
-  brandSlug: "carecnc",
-  caredOneSingular: "Loved One",
-  careGroupSingular: "Care Circle",
-  navLabels: {
-    careGroups: "Circles",
-    findCare: "Browse Care",
-    caredOnes: "Loved Ones",
-    dashboard: "Dashboard",
-    gpsTracking: "Live Track",
-  },
-  howItWorksSteps: [
-    { step: "1", titleKey: "step1Title", descKey: "step1Desc" },
-    { step: "2", titleKey: "step2Title", descKey: "step2Desc" },
-    { step: "3", titleKey: "step3Title", descKey: "step3Desc" },
-  ],
-  trustBadges: ["badge1", "badge2", "badge3"],
-};
-
 /** Map hostnames to site IDs */
 const DOMAIN_MAP: Record<string, SiteId> = {
-  // Production domains — add your real domains here
   "challenged.com": "challenged",
   "www.challenged.com": "challenged",
   "duocare.app": "duocare",
   "www.duocare.app": "duocare",
   "carecnc.com": "carecnc",
   "www.carecnc.com": "carecnc",
-  // Dev overrides via port
   "localhost:5174": "challenged",
 };
 
 function detectSite(): SiteId {
-  if (typeof window === "undefined") return "careconnected";
+  if (typeof window === "undefined") return "carecnc";
 
-  const host = window.location.host; // includes port
+  const host = window.location.host;
   const hostname = window.location.hostname;
 
-  // Check URL param override for development
   const params = new URLSearchParams(window.location.search);
   const siteParam = params.get("__site");
   if (siteParam === "challenged") return "challenged";
-  if (siteParam === "careconnected") return "careconnected";
+  if (siteParam === "carecnc" || siteParam === "careconnected") return "carecnc";
   if (siteParam === "duocare") return "duocare";
-  if (siteParam === "carecnc") return "carecnc";
 
-  // Check full host (with port) first, then hostname only
   if (DOMAIN_MAP[host]) return DOMAIN_MAP[host];
   if (DOMAIN_MAP[hostname]) return DOMAIN_MAP[hostname];
 
-  // Default
   return "challenged";
 }
 
 const SITE_CONFIGS: Record<SiteId, SiteConfig> = {
-  careconnected: careConnectedConfig,
   challenged: challengedConfig,
-  duocare: duoCareConfig,
   carecnc: careCNCConfig,
+  duocare: duoCareConfig,
 };
 
-const SiteContext = createContext<SiteConfig>(careConnectedConfig);
+const SiteContext = createContext<SiteConfig>(careCNCConfig);
 
 export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const config = useMemo(() => {
@@ -258,7 +213,7 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const html = document.documentElement;
     // Remove any existing site class
-    html.classList.remove("site-careconnected", "site-challenged", "site-duocare", "site-carecnc");
+    html.classList.remove("site-carecnc", "site-challenged", "site-duocare");
     html.classList.add(config.cssClass);
 
     // Update page title
