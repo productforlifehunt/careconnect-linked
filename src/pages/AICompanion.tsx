@@ -71,6 +71,32 @@ const AICompanion = () => {
         </div>
       </section>
 
+      {/* Capabilities — Qwen3.5-Omni powered */}
+      <section className="bg-accent/30 py-16">
+        <div className="max-w-5xl mx-auto px-4">
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-4">
+            {t("aiCompanion.capabilitiesTitle")}
+          </h2>
+          <p className="text-muted-foreground text-center max-w-2xl mx-auto mb-12">
+            {t("aiCompanion.capabilitiesSubtitle")}
+          </p>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+              <Card key={n} className="card-elevated border-transparent">
+                <CardContent className="p-5">
+                  <h3 className="font-semibold text-foreground mb-2 text-base">
+                    {t(`aiCompanion.cap${n}Title`)}
+                  </h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {t(`aiCompanion.cap${n}Desc`)}
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Safety guarantees */}
       <section className="bg-muted/50 py-16">
         <div className="max-w-5xl mx-auto px-4">
