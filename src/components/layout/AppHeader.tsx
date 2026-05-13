@@ -162,11 +162,16 @@ export function AppHeader() {
         <Link to="/" className="flex items-center gap-2 shrink-0">
           {site.id === "challenged" && isChinese ? (
             <img src={yichangIcon} alt="忆畅" className="w-12 h-12 rounded-xl" />
+          ) : isCareCNC && isChinese ? (
+            <>
+              <img src={huchangIcon} alt="护畅" className="w-12 h-12 rounded-xl" />
+              <span className="font-bold text-lg hidden sm:inline text-primary">{logoWordmarkText}</span>
+            </>
           ) : isCareCNC ? (
             <>
-              <div className="w-11 h-11 rounded-xl hero-gradient flex flex-col items-center justify-center leading-none">
-                <span className="text-primary-foreground font-bold text-[10px] tracking-wide">Care</span>
-                <span className="text-primary-foreground font-bold text-[11px] tracking-wider">CNC</span>
+              <div className="w-11 h-11 rounded-xl hero-gradient flex flex-col items-center justify-center leading-none px-1">
+                <span className="text-primary-foreground font-bold text-[13px] tracking-tight">Care</span>
+                <span className="text-primary-foreground font-semibold text-[7px] tracking-[0.15em] mt-px">CNC</span>
               </div>
               <span className="font-bold text-lg hidden sm:inline text-primary">{logoWordmarkText}</span>
             </>
