@@ -260,11 +260,6 @@ export function AppHeader() {
                     </div>
                   )}
                   <span className="hidden md:inline text-sm font-medium">{displayName}</span>
-                  {authSource === "wordpress" && (
-                    <Badge variant="outline" className="ml-1 text-[10px] px-1.5 py-0 h-4 border-amber-400 text-amber-600 dark:text-amber-400 font-medium">
-                      WP
-                    </Badge>
-                  )}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52 bg-card border shadow-lg z-[60]">
