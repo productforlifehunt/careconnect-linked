@@ -67,7 +67,7 @@ const Index = () => {
           <div
             className={
               site.id === "carecnc"
-                ? "absolute inset-0 bg-gradient-to-r from-background/85 via-background/50 to-transparent"
+                ? "absolute inset-0 bg-gradient-to-r from-card/85 via-card/40 to-transparent"
                 : "absolute inset-0 bg-gradient-to-r from-primary/90 via-primary/70 to-primary/40"
             }
           />
