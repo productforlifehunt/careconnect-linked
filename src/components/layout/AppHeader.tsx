@@ -83,21 +83,18 @@ export function AppHeader() {
       <div className="flex h-16 items-center px-4 lg:px-6 gap-2">
         {/* Mobile menu */}
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="lg:hidden shrink-0">
-              <Menu className="h-5 w-5" />
-            </Button>
-          </SheetTrigger>
           <SheetContent side="left" className="w-72 p-0">
             <div className="p-4 border-b">
               <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-2">
                 {site.id === "challenged" && isChinese ? (
                   <img src={yichangIcon} alt="忆畅" className="w-12 h-12 rounded-xl" />
+                ) : isCareCNC && isChinese ? (
+                  <img src={huchangIcon} alt="护畅" className="w-12 h-12 rounded-xl" />
                 ) : isCareCNC ? (
                   <>
-                    <div className="w-11 h-11 rounded-xl hero-gradient flex flex-col items-center justify-center leading-none">
-                      <span className="text-primary-foreground font-bold text-[10px] tracking-wide">Care</span>
-                      <span className="text-primary-foreground font-bold text-[11px] tracking-wider">CNC</span>
+                    <div className="w-11 h-11 rounded-xl hero-gradient flex flex-col items-center justify-center leading-none px-1">
+                      <span className="text-primary-foreground font-bold text-[13px] tracking-tight">Care</span>
+                      <span className="text-primary-foreground font-semibold text-[7px] tracking-[0.15em] mt-px">CNC</span>
                     </div>
                     <span className="font-bold text-lg text-primary">{logoWordmarkText}</span>
                   </>
