@@ -148,7 +148,7 @@ export default function GPSTracking() {
     zoneLayers.current = [];
 
     zones.filter(z => z.is_active).forEach(zone => {
-      const color = zone.zone_type === "danger" ? "#ef4444" : "#22c55e";
+      const color = zone.zone_type === "danger" ? "#ef4444" : "hsl(var(--primary))";
       if (zone.shape_type === "polygon" && zone.polygon_points?.length >= 3) {
         const poly = L.polygon(zone.polygon_points, {
           color,
@@ -191,7 +191,7 @@ export default function GPSTracking() {
         className: "custom-marker",
         html: `<div style="width:40px;height:40px;border-radius:50%;background:hsl(var(--primary));color:white;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;border:3px solid white;box-shadow:0 2px 10px rgba(0,0,0,0.3);cursor:pointer;position:relative">
           ${initials}
-          <span style="position:absolute;bottom:-2px;right:-2px;width:12px;height:12px;border-radius:50%;background:#22c55e;border:2px solid white"></span>
+          <span style="position:absolute;bottom:-2px;right:-2px;width:12px;height:12px;border-radius:50%;background:hsl(var(--primary));border:2px solid white"></span>
         </div>`,
         iconSize: [40, 40],
         iconAnchor: [20, 20],
