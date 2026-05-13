@@ -13,6 +13,7 @@ import { useSite } from "@/contexts/SiteContext";
 import { useTranslation } from "react-i18next";
 import heroImage from "@/assets/hero-image.jpg";
 import heroImageCn from "@/assets/hero-image-cn.jpg";
+import heroImageCarecnc from "@/assets/hero-image-carecnc.jpg";
 import yichangIcon from "@/assets/yichang-icon.png";
 import type { Profile } from "@/types/care-connector";
 import { getSpecialtyKey } from "@/lib/specialty-i18n";
@@ -52,16 +53,32 @@ const Index = () => {
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0">
-          <img src={isChinese && site.id === "challenged" ? heroImageCn : heroImage} alt="Compassionate caregiving" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/90 via-primary/70 to-primary/40" />
+          <img
+            src={
+              site.id === "carecnc"
+                ? heroImageCarecnc
+                : isChinese && site.id === "challenged"
+                ? heroImageCn
+                : heroImage
+            }
+            alt="Compassionate caregiving"
+            className="w-full h-full object-cover"
+          />
+          <div
+            className={
+              site.id === "carecnc"
+                ? "absolute inset-0 bg-gradient-to-r from-background/85 via-background/50 to-transparent"
+                : "absolute inset-0 bg-gradient-to-r from-primary/90 via-primary/70 to-primary/40"
+            }
+          />
         </div>
         <div className="relative max-w-6xl mx-auto px-4 py-16 md:py-24 lg:py-32">
           <div className="max-w-3xl">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground mb-6 leading-tight animate-fade-in max-w-[14ch]">
+            <h1 className={`text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight animate-fade-in max-w-[14ch] ${site.id === "carecnc" ? "text-foreground" : "text-primary-foreground"}`}>
               {t(`site.${site.id}.heroTitle`)}{" "}
               <span className="text-coral">{t(`site.${site.id}.heroHighlight`)}</span>
             </h1>
-            <p className="text-lg md:text-xl text-primary-foreground/90 mb-8 animate-fade-in max-w-[38rem]" style={{ animationDelay: "0.1s" }}>
+            <p className={`text-lg md:text-xl mb-8 animate-fade-in max-w-[38rem] ${site.id === "carecnc" ? "text-foreground/80" : "text-primary-foreground/90"}`} style={{ animationDelay: "0.1s" }}>
               {t(`site.${site.id}.heroSubtitle`)}
             </p>
 
