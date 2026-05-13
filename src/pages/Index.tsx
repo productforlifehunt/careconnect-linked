@@ -13,6 +13,7 @@ import { useSite } from "@/contexts/SiteContext";
 import { useTranslation } from "react-i18next";
 import heroImage from "@/assets/hero-image.jpg";
 import heroImageCn from "@/assets/hero-image-cn.jpg";
+import heroImageCarecnc from "@/assets/hero-image-carecnc.jpg";
 import yichangIcon from "@/assets/yichang-icon.png";
 import type { Profile } from "@/types/care-connector";
 import { getSpecialtyKey } from "@/lib/specialty-i18n";
