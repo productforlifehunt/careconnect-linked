@@ -703,7 +703,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
             </Badge>
             {lastSeen && (
               <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
                 Last seen {lastSeen}
               </span>
             )}
@@ -790,7 +790,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                 </p>
                 <div className="flex gap-4 flex-wrap">
                   <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${locationSettings.is_sharing_enabled ? "bg-emerald-500" : "bg-muted-foreground"}`} />
+                    <div className={`w-2 h-2 rounded-full ${locationSettings.is_sharing_enabled ? "bg-success" : "bg-muted-foreground"}`} />
                     <span className="text-sm">{locationSettings.is_sharing_enabled ? "Sharing enabled" : "Sharing disabled"}</span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -809,7 +809,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
             <Card className="border-transparent card-elevated">
               <CardContent className="p-4 space-y-2">
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
                   <span className="text-sm font-semibold text-foreground">Current Location</span>
                   <span className="text-xs text-muted-foreground">· {new Date(currentLocation.created_at).toLocaleString()}</span>
                 </div>
@@ -831,7 +831,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                         <div key={zone.id} className="flex items-center gap-2 text-xs">
                           <div className="w-2 h-2 rounded-full" style={{ background: catCfg.color }} />
                           <span className="font-medium">{zone.name}</span>
-                          <span className={breach.breached ? "text-destructive font-semibold" : "text-emerald-600"}>
+                          <span className={breach.breached ? "text-destructive font-semibold" : "text-success"}>
                             {zone.zone_type === "safe"
                               ? (breach.breached ? `⚠ Outside (${breach.distance}m)` : `✓ Inside (${breach.distance}m)`)
                               : (breach.breached ? `⚠ INSIDE danger zone!` : `✓ Away (${breach.distance}m)`)}
@@ -924,7 +924,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
               <div className="space-y-2">
                 {(locationRequests || []).filter((r: any) => r.status !== "pending").map((req: any) => {
                   const sc: Record<string, { icon: string; label: string; color: string }> = {
-                    accepted:           { icon: "✓",  label: "Accepted",               color: "text-emerald-600" },
+                    accepted:           { icon: "✓",  label: "Accepted",               color: "text-success" },
                     emergency_approved: { icon: "🚨", label: "Emergency — Auto-shared", color: "text-destructive" },
                     declined:           { icon: "✗",  label: "Declined",               color: "text-destructive" },
                     rejected:           { icon: "✗",  label: "Declined",               color: "text-destructive" },
@@ -978,9 +978,9 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
               {(alerts || []).map((alert: any) => {
                 const typeConfig: Record<string, { label: string; color: string }> = {
                   exited_safe_zone:    { label: "Left Safe Zone",      color: "text-destructive" },
-                  entered_safe_zone:   { label: "Entered Safe Zone",   color: "text-emerald-600" },
+                  entered_safe_zone:   { label: "Entered Safe Zone",   color: "text-success" },
                   entered_danger_zone: { label: "Entered Danger Zone", color: "text-destructive" },
-                  exited_danger_zone:  { label: "Left Danger Zone",    color: "text-emerald-600" },
+                  exited_danger_zone:  { label: "Left Danger Zone",    color: "text-success" },
                 };
                 const cfg = typeConfig[alert.alert_type] || { label: alert.alert_type, color: "text-muted-foreground" };
                 return (
@@ -1005,7 +1005,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                             disabled={acknowledgeAlert.isPending}>
                             <CheckCircle2 className="h-3 w-3 mr-1" /> Ack
                           </Button>
-                        ) : <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />}
+                        ) : <CheckCircle2 className="h-4 w-4 text-success shrink-0 mt-0.5" />}
                       </div>
                     </CardContent>
                   </Card>
@@ -1036,7 +1036,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                     <button key={t} onClick={() => setZoneForm(p => ({ ...p, zone_type: t }))}
                       className={`flex-1 py-2 text-sm font-medium transition-colors
                         ${zoneForm.zone_type === t
-                          ? t === "danger" ? "bg-destructive text-destructive-foreground" : "bg-emerald-500 text-white"
+                          ? t === "danger" ? "bg-destructive text-destructive-foreground" : "bg-success text-white"
                           : "bg-transparent text-muted-foreground hover:bg-accent"}`}>
                       {t === "safe" ? "✅ Safe Zone" : "⚠️ Danger Zone"}
                     </button>
@@ -1152,7 +1152,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                     )}
                     {drawMode === "editing" && (
                       <div className="space-y-2">
-                        <p className="text-xs text-emerald-600 font-medium">
+                        <p className="text-xs text-success font-medium">
                           ✓ {drawnPoints.length} vertices · Drag to reposition · Dbl-click to delete
                         </p>
                         {selectedVertex !== null && drawnPoints[selectedVertex] && (
@@ -1301,7 +1301,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                           </p>
                         )}
                         {currentLocation && active && (
-                          <p className={`text-xs mt-1 font-medium ${breachInfo.breached ? "text-destructive" : "text-emerald-600"}`}>
+                          <p className={`text-xs mt-1 font-medium ${breachInfo.breached ? "text-destructive" : "text-success"}`}>
                             {zone.zone_type === "safe"
                               ? (breachInfo.breached ? `⚠ Outside (${breachInfo.distance}m away)` : `✓ Inside (${breachInfo.distance}m from center)`)
                               : (breachInfo.breached ? `⚠ INSIDE danger zone! (${breachInfo.distance}m)` : `✓ Away (${breachInfo.distance}m)`)}
@@ -1344,10 +1344,10 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
             <Card key={entry.id} className="border-transparent card-elevated">
               <CardContent className="p-3">
                 <div className="flex items-start gap-3">
-                  <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${idx === 0 ? "bg-emerald-500" : "bg-muted-foreground/40"}`} />
+                  <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${idx === 0 ? "bg-success" : "bg-muted-foreground/40"}`} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className={`text-xs font-medium ${idx === 0 ? "text-emerald-600" : "text-muted-foreground"}`}>
+                      <span className={`text-xs font-medium ${idx === 0 ? "text-success" : "text-muted-foreground"}`}>
                         {idx === 0 ? "Current" : "Previous"}
                       </span>
                       <span className="text-xs text-muted-foreground">{new Date(entry.created_at).toLocaleString()}</span>

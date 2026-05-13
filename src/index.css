@@ -50,7 +50,7 @@
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
-    --hero-gradient: linear-gradient(135deg, hsl(173 80% 40%), hsl(173 80% 30%));
+    --hero-gradient: linear-gradient(135deg, hsl(173 80% 42%), hsl(173 80% 38%));
     --coral-gradient: linear-gradient(135deg, hsl(16 80% 58%), hsl(8 80% 52%));
     --card-shadow: 0 2px 12px -2px hsl(173 80% 40% / 0.08);
     --card-shadow-hover: 0 8px 30px -4px hsl(173 80% 40% / 0.15);

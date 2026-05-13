@@ -402,7 +402,7 @@ function ModuleView({
             >
               <div className="shrink-0">
                 {done ? (
-                  <CheckCircle2 className="h-6 w-6 text-emerald-500" />
+                  <CheckCircle2 className="h-6 w-6 text-success" />
                 ) : (
                   <div className="h-6 w-6 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center text-xs font-semibold text-muted-foreground">
                     {idx + 1}
@@ -773,7 +773,7 @@ function QuizCard({ quiz, isZh }: { quiz: ISupportQuiz; isZh: boolean }) {
                   disabled={submitted}
                   className={`w-full text-left p-3 rounded-lg border-2 transition-all flex items-start gap-3 text-sm ${
                     showCorrect
-                      ? "border-green-500 bg-green-50 dark:bg-green-950/30"
+                      ? "border-success bg-accent"
                       : showWrongPick
                         ? "border-destructive bg-destructive/5"
                         : showMissed
@@ -786,7 +786,7 @@ function QuizCard({ quiz, isZh }: { quiz: ISupportQuiz; isZh: boolean }) {
                   <span
                     className={`shrink-0 h-5 w-5 ${isMulti ? "rounded-sm" : "rounded-full"} border-2 flex items-center justify-center mt-0.5 ${
                       showCorrect
-                        ? "border-green-500 bg-green-500 text-white"
+                        ? "border-success bg-success text-success-foreground"
                         : showWrongPick
                           ? "border-destructive bg-destructive text-destructive-foreground"
                           : showMissed
@@ -805,7 +805,7 @@ function QuizCard({ quiz, isZh }: { quiz: ISupportQuiz; isZh: boolean }) {
                 {submitted && perOptionFb?.[i] && (
                   <p
                     className={`text-xs mt-1 ml-8 leading-relaxed ${
-                      isCorrectOpt ? "text-green-700 dark:text-green-400" : "text-muted-foreground"
+                      isCorrectOpt ? "text-success" : "text-muted-foreground"
                     }`}
                   >
                     {isCorrectOpt ? "✓ " : "✗ "}
@@ -829,7 +829,7 @@ function QuizCard({ quiz, isZh }: { quiz: ISupportQuiz; isZh: boolean }) {
           <div
             className={`mt-4 p-3 rounded-lg text-sm ${
               allCorrect
-                ? "bg-green-50 dark:bg-green-950/30 text-green-900 dark:text-green-200"
+                ? "bg-accent text-accent-foreground"
                 : "bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200"
             }`}
           >
