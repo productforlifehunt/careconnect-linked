@@ -163,10 +163,7 @@ export function AppHeader() {
           {site.id === "challenged" && isChinese ? (
             <img src={yichangIcon} alt="忆畅" className="w-12 h-12 rounded-xl" />
           ) : isCareCNC && isChinese ? (
-            <>
-              <img src={huchangIcon} alt="护畅" className="w-12 h-12 rounded-xl" />
-              <span className="font-bold text-lg hidden sm:inline text-primary">{logoWordmarkText}</span>
-            </>
+            <img src={huchangIcon} alt="护畅" className="w-12 h-12 rounded-xl" />
           ) : isCareCNC ? (
             <>
               <div className="w-11 h-11 rounded-xl hero-gradient flex flex-col items-center justify-center leading-none px-1">
