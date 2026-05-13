@@ -86,10 +86,7 @@ export function AppHeader() {
             <div className="p-4 border-b">
               <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-2">
                 {site.id === "challenged" && isChinese ? (
-                  <>
-                    <img src={yichangIcon} alt="忆畅" className="w-12 h-12 rounded-xl" />
-                    <span className="font-bold text-lg text-primary">忆畅</span>
-                  </>
+                  <img src={yichangIcon} alt="忆畅" className="w-12 h-12 rounded-xl" />
                 ) : (
                   <>
                     <div className="w-9 h-9 rounded-lg hero-gradient flex items-center justify-center">
@@ -153,10 +150,7 @@ export function AppHeader() {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 shrink-0">
           {site.id === "challenged" && isChinese ? (
-            <>
-              <img src={yichangIcon} alt="忆畅" className="w-12 h-12 rounded-xl" />
-              <span className="font-bold text-lg text-primary hidden sm:inline">忆畅</span>
-            </>
+            <img src={yichangIcon} alt="忆畅" className="w-12 h-12 rounded-xl" />
           ) : (
             <>
               <div className="w-9 h-9 rounded-lg hero-gradient flex items-center justify-center">
