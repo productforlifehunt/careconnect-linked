@@ -23,6 +23,7 @@ import { useTheme } from "next-themes";
 import { useNotifications } from "@/hooks/use-care-data";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import yichangIcon from "@/assets/yichang-icon.png";
+import huchangIcon from "@/assets/huchang-icon.png";
 
 export function AppHeader() {
   const { user, isAuthenticated, logout, authSource } = useAuth();
