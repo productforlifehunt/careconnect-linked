@@ -11,12 +11,13 @@ export function MobileBottomBar() {
   const { data: notifications } = useNotifications();
   const unreadCount = (notifications || []).filter((n) => !n.is_read).length;
 
+  const isCareCNC = site.id === "carecnc";
   const items = [
-    { title: "Home", url: "/dashboard", icon: LayoutDashboard },
+    { title: isChinese ? "首页" : "Home", url: "/dashboard", icon: LayoutDashboard },
     { title: site.navLabels.caredOnes, url: "/cared-ones", icon: HeartIcon },
     { title: site.navLabels.careGroups.split(" ")[0], url: "/care-circle", icon: Users },
     { title: isChinese ? "收件箱" : "Inbox", url: "/inbox", icon: Inbox },
-    { title: "Resources", url: "/resources", icon: BookOpen },
+    ...(isCareCNC ? [] : [{ title: isChinese ? "资源" : "Resources", url: "/resources", icon: BookOpen }]),
   ];
 
   return (
