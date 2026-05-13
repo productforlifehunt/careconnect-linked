@@ -53,8 +53,24 @@ const Index = () => {
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0">
-          <img src={isChinese && site.id === "challenged" ? heroImageCn : heroImage} alt="Compassionate caregiving" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/90 via-primary/70 to-primary/40" />
+          <img
+            src={
+              site.id === "carecnc"
+                ? heroImageCarecnc
+                : isChinese && site.id === "challenged"
+                ? heroImageCn
+                : heroImage
+            }
+            alt="Compassionate caregiving"
+            className="w-full h-full object-cover"
+          />
+          <div
+            className={
+              site.id === "carecnc"
+                ? "absolute inset-0 bg-gradient-to-r from-background/85 via-background/50 to-transparent"
+                : "absolute inset-0 bg-gradient-to-r from-primary/90 via-primary/70 to-primary/40"
+            }
+          />
         </div>
         <div className="relative max-w-6xl mx-auto px-4 py-16 md:py-24 lg:py-32">
           <div className="max-w-3xl">
