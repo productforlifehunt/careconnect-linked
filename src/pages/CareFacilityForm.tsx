@@ -185,8 +185,8 @@ export default function CareFacilityForm() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
-      <Button variant="ghost" className="gap-2" onClick={() => navigate(-1)}>
+    <div className="max-w-5xl mx-auto px-4 py-5 space-y-5">
+      <Button variant="ghost" size="sm" className="gap-1.5 -ml-2" onClick={() => navigate(-1)}>
         <ArrowLeft className="h-4 w-4" /> {isZh ? "返回" : "Back"}
       </Button>
 
