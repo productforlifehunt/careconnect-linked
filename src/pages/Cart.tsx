@@ -30,9 +30,9 @@ export default function Cart() {
   if (isLoading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6">
-      <Button variant="ghost" className="mb-4 gap-2" onClick={() => navigate(-1)}><ArrowLeft className="h-4 w-4" /> Back</Button>
-      <h1 className="text-2xl font-bold mb-6 flex items-center gap-2"><ShoppingCart className="h-6 w-6" /> Your Cart</h1>
+    <div className="max-w-3xl mx-auto px-4 py-5">
+      <Button variant="ghost" size="sm" className="mb-3 gap-1.5 -ml-2" onClick={() => navigate(-1)}><ArrowLeft className="h-4 w-4" /> Back</Button>
+      <h1 className="text-xl sm:text-2xl font-bold tracking-tight mb-5 flex items-center gap-2"><ShoppingCart className="h-5 w-5" /> Your Cart</h1>
 
       {items.length === 0 ? (
         <Card className="border-transparent card-elevated">
