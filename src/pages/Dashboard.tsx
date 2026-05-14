@@ -33,7 +33,7 @@ export default function Dashboard() {
   const { data: stats } = useDashboardStats();
   const { data: caredOnes } = useUserCaredOnes();
 
-  const isChallenged = site.id === "challenged";
+  const isChallenged = site.family === "challenged";
   const isLovedOne = user?.general_user_role?.includes("cared one") === true;
   const isProvider = user?.is_care_provider === true;
   const userRole: "caregiver" | "provider" | "caredOne" = isLovedOne

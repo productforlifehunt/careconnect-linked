@@ -57,7 +57,7 @@ const Index = () => {
             src={
               site.id === "carecnc"
                 ? heroImageCarecnc
-                : isChinese && site.id === "challenged"
+                : isChinese && site.family === "challenged"
                 ? heroImageCn
                 : heroImage
             }
@@ -245,7 +245,7 @@ const Index = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                {site.id === "challenged" && isChinese ? (
+                {site.family === "challenged" && isChinese ? (
                   <img src={yichangIcon} alt="忆畅" className="w-12 h-12 rounded-xl" loading="lazy" />
                 ) : (
                   <div className="w-8 h-8 rounded-lg hero-gradient flex items-center justify-center">
@@ -263,7 +263,7 @@ const Index = () => {
                 { label: t("home.findCaregivers"), href: "/search" },
                 { label: t("nav.howItWorks"), href: "/how-it-works" },
                 { label: t("nav.trustSafety"), href: "/trust-safety" },
-                { label: t(site.id === "challenged" ? "nav.careTeams" : "nav.careGroups"), href: "/care-circle" },
+                { label: t(site.family === "challenged" ? "nav.careTeams" : "nav.careGroups"), href: "/care-circle" },
               ] },
               { title: t("home.forCaregivers"), links: [
                 { label: t("home.joinAsCaregiver"), href: "/become-caregiver" },

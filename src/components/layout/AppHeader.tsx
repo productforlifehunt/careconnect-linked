@@ -36,7 +36,7 @@ export function AppHeader() {
   const unreadCount = notifications?.filter(n => !n.is_read).length || 0;
   const { t, i18n } = useTranslation();
   const isChinese = i18n.language?.startsWith("zh");
-  const isChallenged = site.id === "challenged";
+  const isChallenged = site.family === "challenged";
   const isCareDuo = site.id === "duocare";
   const isCareCNC = site.id === "carecnc";
   const logoBadgeText = isCareDuo ? (isChinese ? "多护" : "CD") : site.logoText;
@@ -63,8 +63,8 @@ export function AppHeader() {
         { title: t("nav.howItWorks"), url: "/how-it-works", icon: HelpCircle },
       ]
     : [
-        { title: t(site.id === "challenged" ? "nav.careTeams" : "nav.careGroups"), url: "/care-circle", icon: Users },
-        { title: t(site.id === "challenged" ? "nav.findHelp" : "nav.findCare"), url: "/search", icon: Search },
+        { title: t(site.family === "challenged" ? "nav.careTeams" : "nav.careGroups"), url: "/care-circle", icon: Users },
+        { title: t(site.family === "challenged" ? "nav.findHelp" : "nav.findCare"), url: "/search", icon: Search },
         { title: t("nav.community"), url: "/community", icon: Newspaper },
         { title: t("nav.articles"), url: "/articles", icon: Newspaper },
         { title: t("nav.howItWorks"), url: "/how-it-works", icon: HelpCircle },
@@ -86,7 +86,7 @@ export function AppHeader() {
           <SheetContent side="left" className="w-72 p-0">
             <div className="p-4 border-b">
               <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-2">
-                {site.id === "challenged" && isChinese ? (
+                {site.family === "challenged" && isChinese ? (
                   <img src={yichangIcon} alt="忆畅" className="w-12 h-12 rounded-xl" />
                 ) : isCareCNC && isChinese ? (
                   <img src={huchangIcon} alt="护畅" className="w-12 h-12 rounded-xl" />
@@ -135,9 +135,9 @@ export function AppHeader() {
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 mt-6 px-3">{t("nav.myCare")}</p>
                   {[
                     { title: t("nav.dashboard"), url: "/dashboard", icon: LayoutDashboard },
-                    { title: t(site.id === "challenged" ? "nav.myLovedOnes" : "nav.caredOnes"), url: "/cared-ones", icon: Heart },
+                    { title: t(site.family === "challenged" ? "nav.myLovedOnes" : "nav.caredOnes"), url: "/cared-ones", icon: Heart },
                     { title: t("nav.myBookings"), url: "/bookings", icon: CalendarDays },
-                    { title: t(isChallenged ? "nav.united" : (site.id === "challenged" ? "nav.careTeams" : "nav.careGroups")), url: "/care-circle", icon: Users },
+                    { title: t(isChallenged ? "nav.united" : (site.family === "challenged" ? "nav.careTeams" : "nav.careGroups")), url: "/care-circle", icon: Users },
                     { title: t("nav.messages"), url: "/messages", icon: MessageSquare },
                     { title: t("nav.favorites"), url: "/favorites", icon: Heart },
                     { title: isChallenged ? t("nav.find") : t("nav.gpsTracking"), url: "/gps-tracking", icon: MapPin },
@@ -160,7 +160,7 @@ export function AppHeader() {
 
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 shrink-0">
-          {site.id === "challenged" && isChinese ? (
+          {site.family === "challenged" && isChinese ? (
             <img src={yichangIcon} alt="忆畅" className="w-12 h-12 rounded-xl" />
           ) : isCareCNC && isChinese ? (
             <img src={huchangIcon} alt="护畅" className="w-12 h-12 rounded-xl" />
@@ -274,7 +274,7 @@ export function AppHeader() {
                   <CalendarDays className="mr-2 h-4 w-4" /> {t("nav.myBookings")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/care-circle")}>
-                  <Users className="mr-2 h-4 w-4" /> {isChallenged ? t("nav.united") : t(site.id === "challenged" ? "nav.careTeams" : "nav.careGroups")}
+                  <Users className="mr-2 h-4 w-4" /> {isChallenged ? t("nav.united") : t(site.family === "challenged" ? "nav.careTeams" : "nav.careGroups")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/gps-tracking")}>
                   <MapPin className="mr-2 h-4 w-4" /> {isChallenged ? t("nav.find") : t("nav.gpsTracking")}

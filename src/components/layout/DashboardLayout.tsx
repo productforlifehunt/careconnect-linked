@@ -26,7 +26,7 @@ function useSidebarItems() {
   const site = useSite();
   const { i18n } = useTranslation();
   const isChinese = i18n.language?.startsWith("zh");
-  const isChallenged = site.id === "challenged";
+  const isChallenged = site.family === "challenged";
   const isCareCNC = site.id === "carecnc";
   const L = (zh: string, en: string) => (isChinese ? zh : en);
 

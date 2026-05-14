@@ -40,7 +40,7 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const { t } = useTranslation();
 
-  const isChallenged = site.id === "challenged";
+  const isChallenged = site.family === "challenged";
 
   const publicItems = isChallenged
     ? [
