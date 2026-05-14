@@ -138,6 +138,7 @@ const challengedConfig: SiteConfig = {
 
 const duoCareConfig: SiteConfig = {
   id: "duocare",
+  family: "duocare",
   name: "CareDuo",
   tagline: "Simple care for everyday life.",
   logoText: "Care",
