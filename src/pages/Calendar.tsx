@@ -77,67 +77,98 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-6 space-y-6">
-        <header className="flex items-start justify-between flex-wrap gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-              <CalendarIcon className="h-7 w-7 text-primary" /> Calendar
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Family schedule, care tasks, medicine reminders & availability — all in one view.
-            </p>
-            <Badge variant="outline" className="mt-2">
-              {isLoading ? "Loading from backend…" : `${allEvents.length} event${allEvents.length === 1 ? "" : "s"} · live`}
-            </Badge>
+    <div className="container mx-auto px-4 py-5 sm:py-8 space-y-5 max-w-5xl">
+      <header className="space-y-2">
+        <div className="flex items-center gap-2.5">
+          <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
+            <CalendarIcon className="h-5 w-5 text-primary" />
           </div>
-        </header>
+          <h1 className="text-[26px] sm:text-3xl font-semibold tracking-tight">Calendar</h1>
+        </div>
+        <p className="text-[13px] sm:text-sm text-muted-foreground leading-relaxed">
+          Family schedule, care tasks, medicine & availability — all in one view.
+        </p>
+        <Badge variant="secondary" className="rounded-full font-medium text-[11px]">
+          {isLoading ? "Loading…" : `${allEvents.length} event${allEvents.length === 1 ? "" : "s"} · live`}
+        </Badge>
+      </header>
 
-        {/* Type filter chips */}
-        <Card className="p-4">
-          <div className="text-sm font-medium mb-3">Show event types</div>
-          <div className="flex flex-wrap gap-3">
-            {ALL_TYPES.map((t) => (
-              <label key={t} className="flex items-center gap-2 cursor-pointer">
-                <Checkbox
-                  checked={enabledTypes.has(t)}
-                  onCheckedChange={() => toggleType(t)}
-                />
+      {/* Type filter chips */}
+      <Card className="p-4 rounded-2xl border-border/60 shadow-none">
+        <div className="text-[13px] font-medium mb-3 text-foreground/90">Show event types</div>
+        <div className="flex flex-wrap gap-1.5">
+          {ALL_TYPES.map((t) => {
+            const active = enabledTypes.has(t);
+            return (
+              <button
+                key={t}
+                type="button"
+                onClick={() => toggleType(t)}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[12px] font-medium transition-all border ${
+                  active
+                    ? "bg-foreground/[0.04] border-border text-foreground"
+                    : "bg-transparent border-transparent text-muted-foreground opacity-50 hover:opacity-80"
+                }`}
+              >
                 <span
-                  className="inline-block h-3 w-3 rounded-full"
+                  className="inline-block h-2.5 w-2.5 rounded-full"
                   style={{ backgroundColor: EVENT_TYPE_COLORS[t] }}
                 />
-                <span className="text-sm">{EVENT_TYPE_LABELS[t]}</span>
-              </label>
-            ))}
-          </div>
-        </Card>
+                {EVENT_TYPE_LABELS[t]}
+              </button>
+            );
+          })}
+        </div>
+      </Card>
 
-        {/* Calendar */}
-        <Card className="p-4 [&_.fc]:font-sans [&_.fc-toolbar-title]:text-foreground [&_.fc-col-header-cell-cushion]:text-foreground [&_.fc-daygrid-day-number]:text-foreground [&_.fc-list-day-cushion]:!bg-muted [&_.fc-list-event:hover_td]:!bg-accent">
-          <FullCalendar
-            plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin, rrulePlugin]}
-            initialView="dayGridMonth"
-            headerToolbar={{
-              left: "prev,next today",
-              center: "title",
-              right: "dayGridMonth,timeGridWeek,timeGridDay,listWeek",
-            }}
-            buttonText={{
-              today: "Today",
-              month: "Month",
-              week: "Week",
-              day: "Day",
-              list: "Agenda",
-            }}
-            events={fcEvents}
-            height="auto"
-            nowIndicator
-            dayMaxEvents={3}
-            eventClick={(info) => {
-              setSelectedEvent(info.event.extendedProps as CalendarEvent);
-            }}
-          />
-        </Card>
+      {/* Calendar */}
+      <Card className="p-2.5 sm:p-4 rounded-2xl border-border/60 shadow-none overflow-hidden
+        [&_.fc]:font-sans
+        [&_.fc-toolbar.fc-header-toolbar]:!flex [&_.fc-toolbar.fc-header-toolbar]:!flex-col [&_.fc-toolbar.fc-header-toolbar]:!gap-2.5 [&_.fc-toolbar.fc-header-toolbar]:!items-stretch [&_.fc-toolbar.fc-header-toolbar]:!mb-3
+        sm:[&_.fc-toolbar.fc-header-toolbar]:!flex-row sm:[&_.fc-toolbar.fc-header-toolbar]:!items-center
+        [&_.fc-toolbar-chunk]:!flex [&_.fc-toolbar-chunk]:!items-center [&_.fc-toolbar-chunk]:!justify-center [&_.fc-toolbar-chunk]:!gap-1
+        [&_.fc-toolbar-title]:!text-base [&_.fc-toolbar-title]:!font-semibold [&_.fc-toolbar-title]:text-foreground
+        sm:[&_.fc-toolbar-title]:!text-lg
+        [&_.fc-button]:!bg-transparent [&_.fc-button]:!border [&_.fc-button]:!border-border [&_.fc-button]:!text-foreground [&_.fc-button]:!shadow-none [&_.fc-button]:!rounded-lg [&_.fc-button]:!font-medium [&_.fc-button]:!text-[12px] [&_.fc-button]:!px-2.5 [&_.fc-button]:!py-1.5 [&_.fc-button]:!h-auto [&_.fc-button]:!capitalize
+        [&_.fc-button:hover]:!bg-muted
+        [&_.fc-button-active]:!bg-primary [&_.fc-button-active]:!text-primary-foreground [&_.fc-button-active]:!border-primary
+        [&_.fc-button-primary:not(:disabled).fc-button-active]:!bg-primary [&_.fc-button-primary:not(:disabled).fc-button-active]:!text-primary-foreground
+        [&_.fc-button:focus]:!shadow-none [&_.fc-button:focus]:!ring-2 [&_.fc-button:focus]:!ring-ring/30
+        [&_.fc-icon]:!text-[14px]
+        [&_.fc-col-header-cell]:!border-border/40 [&_.fc-col-header-cell-cushion]:text-muted-foreground [&_.fc-col-header-cell-cushion]:!text-[11px] [&_.fc-col-header-cell-cushion]:!font-medium [&_.fc-col-header-cell-cushion]:!uppercase [&_.fc-col-header-cell-cushion]:!tracking-wide [&_.fc-col-header-cell-cushion]:!py-2
+        [&_.fc-daygrid-day]:!border-border/40
+        [&_.fc-daygrid-day-number]:text-foreground [&_.fc-daygrid-day-number]:!text-[12px] [&_.fc-daygrid-day-number]:!font-medium [&_.fc-daygrid-day-number]:!p-1.5
+        [&_.fc-day-today]:!bg-primary/[0.06]
+        [&_.fc-day-today_.fc-daygrid-day-number]:!text-primary [&_.fc-day-today_.fc-daygrid-day-number]:!font-semibold
+        [&_.fc-scrollgrid]:!border-border/40 [&_.fc-scrollgrid_td]:!border-border/40 [&_.fc-scrollgrid_th]:!border-border/40
+        [&_.fc-list-day-cushion]:!bg-muted/60
+        [&_.fc-list-event:hover_td]:!bg-accent/40
+        [&_.fc-event]:!rounded-md [&_.fc-event]:!border-0 [&_.fc-event]:!px-1.5 [&_.fc-event]:!text-[10px] [&_.fc-event]:!font-medium">
+        <FullCalendar
+          plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin, rrulePlugin]}
+          initialView="dayGridMonth"
+          headerToolbar={{
+            left: "prev,next today",
+            center: "title",
+            right: "dayGridMonth,timeGridWeek,listWeek",
+          }}
+          buttonText={{
+            today: "Today",
+            month: "Month",
+            week: "Week",
+            day: "Day",
+            list: "List",
+          }}
+          events={fcEvents}
+          height="auto"
+          nowIndicator
+          dayMaxEvents={2}
+          fixedWeekCount={false}
+          eventClick={(info) => {
+            setSelectedEvent(info.event.extendedProps as CalendarEvent);
+          }}
+        />
+      </Card>
 
         {/* Event detail dialog */}
         <Dialog open={!!selectedEvent} onOpenChange={(o) => !o && setSelectedEvent(null)}>
