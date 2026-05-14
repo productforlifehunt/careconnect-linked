@@ -69,15 +69,15 @@ export default function BecomeCaregiver() {
   const siteKey = site.id;
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
-      <Button variant="ghost" className="mb-4 gap-2" onClick={() => step > 1 ? setStep(step - 1) : navigate(-1)}>
+    <div className="max-w-2xl mx-auto px-4 py-6">
+      <Button variant="ghost" size="sm" className="mb-4 gap-1.5 -ml-2" onClick={() => step > 1 ? setStep(step - 1) : navigate(-1)}>
         <ArrowLeft className="h-4 w-4" /> {step > 1 ? t("becomeCaregiver.previousStep") : t("common.back")}
       </Button>
 
-      <div className="text-center mb-8">
-        <div className="mx-auto w-14 h-14 rounded-2xl hero-gradient flex items-center justify-center mb-4"><Heart className="h-7 w-7 text-primary-foreground" /></div>
-        <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t(`site.${siteKey}.becomeTitle`)}</h1>
-        <p className="text-muted-foreground mt-2">{t(`site.${siteKey}.becomeSubtitle`)}</p>
+      <div className="text-center mb-6">
+        <div className="mx-auto w-12 h-12 rounded-2xl hero-gradient flex items-center justify-center mb-3"><Heart className="h-6 w-6 text-primary-foreground" /></div>
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-foreground">{t(`site.${siteKey}.becomeTitle`)}</h1>
+        <p className="text-sm text-muted-foreground mt-1.5">{t(`site.${siteKey}.becomeSubtitle`)}</p>
       </div>
 
       <div className="mb-8">
