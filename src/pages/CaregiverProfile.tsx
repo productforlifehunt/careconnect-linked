@@ -296,22 +296,22 @@ export default function CaregiverProfile() {
   const hasAvailabilityConflict = Boolean(availabilityWarning);
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6">
-      <Button variant="ghost" className="mb-4 gap-2" onClick={() => navigate(-1)}>
+    <div className="max-w-5xl mx-auto px-4 py-5">
+      <Button variant="ghost" size="sm" className="mb-3 gap-1.5 -ml-2" onClick={() => navigate(-1)}>
         <ArrowLeft className="h-4 w-4" /> Back
       </Button>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
+      <div className="grid lg:grid-cols-3 gap-5">
+        <div className="lg:col-span-2 space-y-5">
           <Card className="border-transparent card-elevated">
-            <CardContent className="p-6">
-              <div className="flex flex-col sm:flex-row gap-6">
-                <img src={caregiver.avatar_url || "/placeholder.svg"} alt={caregiver.full_name || ""} className="w-28 h-28 rounded-2xl object-cover" />
-                <div className="flex-1">
+            <CardContent className="p-5">
+              <div className="flex flex-col sm:flex-row gap-5">
+                <img src={caregiver.avatar_url || "/placeholder.svg"} alt={caregiver.full_name || ""} className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover shrink-0" />
+                <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between">
-                    <div>
+                    <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <h1 className="text-2xl font-bold text-foreground">{caregiver.full_name}</h1>
+                        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground truncate">{caregiver.full_name}</h1>
                         {caregiver.care_provider_is_background_checked && <Shield className="h-5 w-5 text-primary" />}
                       </div>
                       <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-muted-foreground">
