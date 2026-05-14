@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useMemo, useEffect } from "react";
 
-export type SiteId = "carecnc" | "challenged" | "duocare";
+export type SiteId = "carecnc" | "challenged" | "challenged-v1" | "duocare";
 
 export interface SiteConfig {
   id: SiteId;
