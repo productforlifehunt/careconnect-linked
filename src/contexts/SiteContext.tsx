@@ -243,6 +243,13 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
     document.title = config.metaTitle;
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) metaDesc.setAttribute("content", config.metaDescription);
+
+    // Force language so Chinese builds are fully Chinese and English builds
+    // are fully English, regardless of browser locale or saved preference.
+    if (config.forceLanguage && i18n.language !== config.forceLanguage) {
+      i18n.changeLanguage(config.forceLanguage);
+      try { localStorage.setItem("i18nextLng", config.forceLanguage); } catch {}
+    }
   }, [config]);
 
   return <SiteContext.Provider value={config}>{children}</SiteContext.Provider>;
@@ -252,7 +259,7 @@ export const useSite = () => useContext(SiteContext);
 
 /** Returns { area, language } for CCT content filtering based on current site. */
 export function getContentLocale(siteId: SiteId = detectSite()): { area: string; language: string } {
-  if (siteId === "challenged") {
+  if (siteId === "challenged" || siteId === "challenged-v1") {
     // Chinese site uses China + zh-CN
     return { area: "china", language: "zh-CN" };
   }
