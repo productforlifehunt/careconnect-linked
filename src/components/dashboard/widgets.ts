@@ -10,7 +10,6 @@ export const WIDGET_REGISTRY: WidgetDef[] = [
   // NOTE: Several AI/clinical-flavoured widgets removed (cognitive stage selector,
   // symptom & behavior tracker, AI insights/care tips/daily summary) to avoid
   // implying medical assessment. The app provides companionship + logistics only.
-  { id: "emergency-sos",       label: "Notify Care Circle",       roles: ["all"],                    challengedOnly: true },
   { id: "patient-summaries",   label: "Cared One Overview",       roles: ["caregiver", "provider"],  challengedOnly: true },
   { id: "daily-timeline",     label: "Daily Timeline",            roles: ["caregiver", "provider"],  challengedOnly: true },
   { id: "caregiver-wellness", label: "Caregiver Wellness",         roles: ["caregiver", "provider"], challengedOnly: true },
