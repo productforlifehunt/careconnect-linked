@@ -25,15 +25,15 @@ export default function OrderConfirmation() {
   }, []);
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-10">
-      <div className="text-center mb-8">
-        <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full bg-success/10 mb-4 ${showConfetti ? "animate-bounce" : ""}`}>
-          <CheckCircle2 className="h-10 w-10 text-success" />
+    <div className="max-w-2xl mx-auto px-4 py-8">
+      <div className="text-center mb-6">
+        <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full bg-success/10 mb-3 ${showConfetti ? "animate-bounce" : ""}`}>
+          <CheckCircle2 className="h-8 w-8 text-success" />
         </div>
-        <h1 className="text-3xl font-bold text-foreground mb-2">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground mb-2">
           {t("checkout.orderConfirmed", "Order Confirmed!")}
         </h1>
-        <p className="text-muted-foreground text-lg">
+        <p className="text-sm sm:text-base text-muted-foreground">
           {t("checkout.thankYou", "Thank you for your booking. Your order has been placed successfully.")}
         </p>
       </div>
