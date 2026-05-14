@@ -169,6 +169,24 @@ const duoCareConfig: SiteConfig = {
   trustBadges: ["badge1", "badge2", "badge3"],
 };
 
+// ChallengeD 1.0 / 忆畅 1.0 — early-launch version.
+// Same brand and language as `challenged`, but trimmed feature set.
+// Use ?__site=challenged-v1 (or its dedicated domain) to load this build.
+const challengedV1Config: SiteConfig = {
+  ...challengedConfig,
+  id: "challenged-v1",
+  name: "ChallengeD 1.0",
+  metaTitle: "ChallengeD 1.0 — 忆畅 早期版",
+  brandSlug: "challenged-v1",
+  forceLanguage: "zh-CN",
+};
+
+// Force language on the main brands so the Chinese build is fully Chinese
+// and the English builds are fully English.
+challengedConfig.forceLanguage = "zh-CN";
+careCNCConfig.forceLanguage = "en";
+duoCareConfig.forceLanguage = "en";
+
 /** Map hostnames to site IDs */
 const DOMAIN_MAP: Record<string, SiteId> = {
   "challenged.com": "challenged",
@@ -189,6 +207,7 @@ function detectSite(): SiteId {
   const params = new URLSearchParams(window.location.search);
   const siteParam = params.get("__site");
   if (siteParam === "challenged") return "challenged";
+  if (siteParam === "challenged-v1" || siteParam === "challenged-1.0" || siteParam === "yichang-v1") return "challenged-v1";
   if (siteParam === "carecnc" || siteParam === "careconnected") return "carecnc";
   if (siteParam === "duocare") return "duocare";
 
@@ -200,6 +219,7 @@ function detectSite(): SiteId {
 
 const SITE_CONFIGS: Record<SiteId, SiteConfig> = {
   challenged: challengedConfig,
+  "challenged-v1": challengedV1Config,
   carecnc: careCNCConfig,
   duocare: duoCareConfig,
 };
