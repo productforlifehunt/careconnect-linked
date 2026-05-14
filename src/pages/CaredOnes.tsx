@@ -112,13 +112,13 @@ export default function CaredOnes() {
   if (isLoading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">{site.navLabels.caredOnes}</h1>
-          <p className="text-muted-foreground">{t("caredOnes.manageAndTrack")}</p>
+    <div className="max-w-5xl mx-auto px-4 py-5">
+      <div className="flex items-start justify-between gap-3 mb-5">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">{site.navLabels.caredOnes}</h1>
+          <p className="text-sm text-muted-foreground">{t("caredOnes.manageAndTrack")}</p>
         </div>
-        <Button variant="coral" size="sm" onClick={() => setAddOpen(true)}><UserPlus className="h-4 w-4 mr-1" /> {t("caredOnes.addCaredOne", { caredOne: site.caredOneSingular })}</Button>
+        <Button variant="coral" size="sm" className="shrink-0" onClick={() => setAddOpen(true)}><UserPlus className="h-4 w-4 mr-1" /> <span className="hidden sm:inline">{t("caredOnes.addCaredOne", { caredOne: site.caredOneSingular })}</span><span className="sm:hidden">{t("common.add", { defaultValue: "Add" })}</span></Button>
       </div>
 
       <Dialog open={addOpen} onOpenChange={(open) => { setAddOpen(open); if (!open) { setSelectedPerson(null); setSearchQuery(""); } }}>
@@ -175,7 +175,7 @@ export default function CaredOnes() {
 
       {caredOnes && caredOnes.length > 0 ? (
         <>
-          <div className="flex gap-2 mb-6 flex-wrap items-center">
+          <div className="flex gap-2 mb-5 overflow-x-auto items-center -mx-4 px-4 pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {caredOnes.map((co: any) => {
               const name = co.cared_one?.full_name || co.cared_one?.first_name || site.caredOneSingular;
               return (
@@ -203,16 +203,17 @@ export default function CaredOnes() {
               <FeatureDetail cardKey={openCard} caredOneId={selectedId!} caredOneName={caredOneName} />
             </div>
           ) : (
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
               {featureCards.map((card) => (
-                <Card key={card.key} className="border-transparent card-elevated cursor-pointer hover:border-primary/20 transition-all" onClick={() => setOpenCard(card.key)}>
-                  <CardContent className="p-5">
-                    <div className="flex items-center gap-3">
-                      <div className="text-primary"><card.icon className="h-5 w-5" /></div>
-                      <div><h3 className="font-semibold text-foreground text-sm">{card.title}</h3><p className="text-xs text-muted-foreground">{card.subtitle}</p></div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <button key={card.key}
+                  onClick={() => setOpenCard(card.key)}
+                  className="text-left rounded-xl border border-transparent card-elevated p-3.5 hover:border-primary/30 transition-colors">
+                  <div className="h-9 w-9 rounded-full bg-muted/60 flex items-center justify-center text-primary mb-2">
+                    <card.icon className="h-4 w-4" />
+                  </div>
+                  <h3 className="font-semibold text-foreground text-[13px] leading-tight">{card.title}</h3>
+                  <p className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5">{card.subtitle}</p>
+                </button>
               ))}
             </div>
           )}

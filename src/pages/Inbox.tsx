@@ -24,11 +24,11 @@ export default function Inbox() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-3xl mx-auto px-4 pt-4 pb-2">
-        <h1 className="text-2xl font-bold text-foreground">
+      <div className="max-w-3xl mx-auto px-4 pt-5 pb-2">
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">
           {isChinese ? "收件箱" : "Inbox"}
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">
+        <p className="text-sm text-muted-foreground mt-0.5">
           {isChinese ? "消息与通知" : "Messages & notifications"}
         </p>
       </div>
