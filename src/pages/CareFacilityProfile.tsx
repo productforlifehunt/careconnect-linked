@@ -122,23 +122,23 @@ export default function CareFacilityProfile() {
   const fullAddress = getFacilityAddress(facility, isZh);
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6">
-      <Button variant="ghost" className="mb-4 gap-2" onClick={() => navigate(-1)}>
+    <div className="max-w-6xl mx-auto px-4 py-5">
+      <Button variant="ghost" size="sm" className="mb-3 gap-1.5 -ml-2" onClick={() => navigate(-1)}>
         <ArrowLeft className="h-4 w-4" /> {t("common.back")}
       </Button>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
+      <div className="grid lg:grid-cols-3 gap-5">
+        <div className="lg:col-span-2 space-y-5">
           <Card className="border-transparent card-elevated overflow-hidden">
-            <div className="h-56 bg-muted overflow-hidden">
+            <div className="h-48 sm:h-56 bg-muted overflow-hidden">
               <img src={facility.image_url || facility.avatar_url || "/placeholder.svg"} alt={facility.name} className="w-full h-full object-cover" />
             </div>
-            <CardContent className="p-6">
+            <CardContent className="p-5">
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-4 flex-1 min-w-0">
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <h1 className="text-3xl font-bold text-foreground">{facility.name}</h1>
+                      <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">{facility.name}</h1>
                       <Building2 className="h-5 w-5 text-primary" />
                     </div>
                     <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
