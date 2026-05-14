@@ -173,10 +173,10 @@ export default function ProviderDashboard() {
   const statusColors: Record<string, string> = { confirmed: "bg-success text-success-foreground", pending: "bg-warning text-warning-foreground", completed: "bg-muted text-muted-foreground", cancelled: "bg-destructive text-destructive-foreground" };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Provider Dashboard</h1>
-        <p className="text-muted-foreground">Manage your bookings, schedule, and earnings</p>
+    <div className="max-w-6xl mx-auto px-4 py-5">
+      <div className="mb-5">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">Provider Dashboard</h1>
+        <p className="text-sm text-muted-foreground">Manage your bookings, schedule, and earnings</p>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
