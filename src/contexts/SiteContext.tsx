@@ -93,6 +93,7 @@ const careCNCConfig: SiteConfig = {
 
 const challengedConfig: SiteConfig = {
   id: "challenged",
+  family: "challenged",
   name: "ChallengeD",
   tagline: "Together in dementia care",
   logoText: "Ch",
