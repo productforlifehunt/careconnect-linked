@@ -16,16 +16,16 @@ const AICompanion = () => {
   return (
     <div className="min-h-full">
       {/* Hero */}
-      <section className="hero-gradient py-20 md:py-28">
+      <section className="hero-gradient py-14 sm:py-20 md:py-28">
         <div className="max-w-5xl mx-auto px-4 text-center">
-          <Badge variant="secondary" className="mb-4 bg-primary-foreground/20 text-primary-foreground border-0 text-sm px-4 py-1">
+          <Badge variant="secondary" className="mb-4 bg-primary-foreground/20 text-primary-foreground border-0 text-xs sm:text-sm px-3 py-1">
             {t("aiCompanion.badge")}
           </Badge>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground mb-6 leading-tight">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-primary-foreground mb-4 sm:mb-6 leading-tight">
             {t("aiCompanion.heroTitle")}{" "}
             <span className="text-coral">{t("aiCompanion.heroHighlight")}</span>
           </h1>
-          <p className="text-lg md:text-xl text-primary-foreground/90 max-w-3xl mx-auto mb-8">
+          <p className="text-base sm:text-lg md:text-xl text-primary-foreground/90 max-w-3xl mx-auto mb-6 sm:mb-8">
             {t("aiCompanion.heroSubtitle")}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -40,7 +40,7 @@ const AICompanion = () => {
       </section>
 
       {/* Why our AI is different */}
-      <section className="max-w-5xl mx-auto px-4 py-16">
+      <section className="max-w-5xl mx-auto px-4 py-12 sm:py-16">
         <h2 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-4">
           {t("aiCompanion.whyDifferentTitle")}
         </h2>
