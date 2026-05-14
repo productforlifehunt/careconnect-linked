@@ -72,13 +72,13 @@ const Index = () => {
             }
           />
         </div>
-        <div className="relative max-w-6xl mx-auto px-4 py-16 md:py-24 lg:py-32">
+        <div className="relative max-w-6xl mx-auto px-4 py-12 sm:py-16 md:py-24 lg:py-32">
           <div className="max-w-3xl">
-            <h1 className={`text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight animate-fade-in max-w-[14ch] ${site.id === "carecnc" ? "text-foreground" : "text-primary-foreground"}`}>
+            <h1 className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 leading-[1.1] tracking-tight animate-fade-in max-w-[14ch] ${site.id === "carecnc" ? "text-foreground" : "text-primary-foreground"}`}>
               {t(`site.${site.id}.heroTitle`)}{" "}
               <span className="text-coral">{t(`site.${site.id}.heroHighlight`)}</span>
             </h1>
-            <p className={`text-lg md:text-xl mb-8 animate-fade-in max-w-[38rem] ${site.id === "carecnc" ? "text-foreground/80" : "text-primary-foreground/90"}`} style={{ animationDelay: "0.1s" }}>
+            <p className={`text-base sm:text-lg md:text-xl mb-6 sm:mb-8 animate-fade-in max-w-[38rem] ${site.id === "carecnc" ? "text-foreground/80" : "text-primary-foreground/90"}`} style={{ animationDelay: "0.1s" }}>
               {t(`site.${site.id}.heroSubtitle`)}
             </p>
 
@@ -123,9 +123,9 @@ const Index = () => {
       </section>
 
       {/* Categories */}
-      <section className="max-w-6xl mx-auto px-4 py-16">
-        <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">{t("home.browseByCategory")}</h2>
-        <p className="text-muted-foreground mb-8">{t("home.findRightCare")}</p>
+      <section className="max-w-6xl mx-auto px-4 py-10 sm:py-16">
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground mb-1.5 tracking-tight">{t("home.browseByCategory")}</h2>
+        <p className="text-sm sm:text-base text-muted-foreground mb-6 sm:mb-8">{t("home.findRightCare")}</p>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {displayCategories.map((cat) => (
             <Card key={cat.name} className="card-elevated cursor-pointer group border-transparent" onClick={() => navigate(`/search?q=${encodeURIComponent(cat.name)}`)}>
@@ -141,12 +141,12 @@ const Index = () => {
       </section>
 
       {/* Featured Caregivers */}
-      <section className="bg-muted/50 py-16">
+      <section className="bg-muted/50 py-10 sm:py-16">
         <div className="max-w-6xl mx-auto px-4">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground">{t("home.topRatedCaregivers")}</h2>
-              <p className="text-muted-foreground mt-1">{t("home.trustedProfessionals")}</p>
+          <div className="flex items-center justify-between mb-6 sm:mb-8 gap-3">
+            <div className="min-w-0">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground tracking-tight">{t("home.topRatedCaregivers")}</h2>
+              <p className="text-sm sm:text-base text-muted-foreground mt-1">{t("home.trustedProfessionals")}</p>
             </div>
             <Button variant="outline" onClick={() => navigate("/search")} className="hidden sm:flex">
               {t("home.viewAllCaregivers")} <ArrowRight className="ml-2 h-4 w-4" />
@@ -208,8 +208,8 @@ const Index = () => {
       </section>
 
       {/* How It Works */}
-      <section className="max-w-6xl mx-auto px-4 py-16">
-        <h2 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-12">{t(`site.${site.id}.howItWorksTitle`)}</h2>
+      <section className="max-w-6xl mx-auto px-4 py-10 sm:py-16">
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground text-center mb-8 sm:mb-12 tracking-tight">{t(`site.${site.id}.howItWorksTitle`)}</h2>
         <div className="grid md:grid-cols-3 gap-8">
           {site.howItWorksSteps.map((item) => (
             <div key={item.step} className="text-center">
@@ -224,9 +224,9 @@ const Index = () => {
       </section>
 
       {/* CTA */}
-      <section className="hero-gradient py-16">
+      <section className="hero-gradient py-10 sm:py-16">
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="text-2xl md:text-3xl font-bold text-primary-foreground mb-4">{t(`site.${site.id}.ctaTitle`)}</h2>
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-primary-foreground mb-3 sm:mb-4 tracking-tight">{t(`site.${site.id}.ctaTitle`)}</h2>
           <p className="text-primary-foreground/80 mb-8 max-w-xl mx-auto">{t(`site.${site.id}.ctaSubtitle`)}</p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button variant="coral" size="lg" onClick={() => navigate("/search")}>

@@ -172,10 +172,10 @@ export default function CareCircle() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">{site.navLabels.careGroups}</h1>
+    <div className="max-w-6xl mx-auto px-4 py-5">
+      <div className="flex items-start justify-between mb-4 gap-3">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">{site.navLabels.careGroups}</h1>
           <p className="text-sm text-muted-foreground">{t("careCircle.coordinateCare")}</p>
         </div>
         <div className="flex gap-2">
