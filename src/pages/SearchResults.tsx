@@ -227,8 +227,8 @@ export default function SearchResults() {
   const paged = allResults.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6">
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+    <div className="max-w-7xl mx-auto px-4 py-5">
+      <div className="flex flex-col sm:flex-row gap-2.5 mb-5">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder={isFacilityMode ? (isZh ? "搜索养老机构、记忆照护、护理院..." : "Search care facilities, memory care, nursing homes...") : t("search.searchCaregivers")} value={query} onChange={e => setQuery(e.target.value)} className="pl-9 h-11" />

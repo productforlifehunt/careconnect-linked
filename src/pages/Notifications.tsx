@@ -62,11 +62,11 @@ export default function Notifications() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">{t("notifs.notifications")}</h1>
-          <p className="text-muted-foreground">{t("notifs.unread", { count: unreadCount })}{invitationCount > 0 ? ` · ${t("notifs.pendingInvitations", { count: invitationCount, s: invitationCount > 1 ? "s" : "" })}` : ""}</p>
+    <div className="max-w-3xl mx-auto px-4 py-5">
+      <div className="flex items-center justify-between gap-3 mb-5">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">{t("notifs.notifications")}</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{t("notifs.unread", { count: unreadCount })}{invitationCount > 0 ? ` · ${t("notifs.pendingInvitations", { count: invitationCount, s: invitationCount > 1 ? "s" : "" })}` : ""}</p>
         </div>
         {unreadCount > 0 && (
           <Button variant="ghost" size="sm" onClick={() => markAllRead.mutate()}>{t("notifs.markAllRead")}</Button>

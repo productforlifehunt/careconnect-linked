@@ -129,8 +129,8 @@ export default function Profile() {
   const roleLabel = profile?.is_care_provider ? t("profile.careProvider") : t("profile.careSeeker");
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold text-foreground mb-6">{t("profile.myProfile")}</h1>
+    <div className="max-w-3xl mx-auto px-4 py-5">
+      <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight mb-5">{t("profile.myProfile")}</h1>
 
       <Tabs defaultValue="personal">
         <TabsList className="mb-6">

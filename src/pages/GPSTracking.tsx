@@ -342,12 +342,12 @@ export default function GPSTracking() {
   const unreadAlerts = alerts.filter(a => !a.is_read);
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6">
+    <div className="max-w-6xl mx-auto px-4 py-5">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">{t("gps.gpsTracking")}</h1>
-          <p className="text-muted-foreground text-sm">
+      <div className="flex items-center justify-between gap-3 mb-5">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">{t("gps.gpsTracking")}</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
             {t("gps.realtimeLocation")}
             <span className="ml-2 text-xs text-muted-foreground/70">
               <Radio className="inline h-3 w-3 mr-1 text-success" />
