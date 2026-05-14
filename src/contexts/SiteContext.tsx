@@ -24,6 +24,8 @@ export interface SiteConfig {
   cssClass: string;
   contactEmail: string;
   brandSlug: string;
+  /** Force a specific i18n language regardless of browser detection. */
+  forceLanguage?: string;
   /** Singular label for a cared-one */
   caredOneSingular: string;
   /** Singular label for a care group, e.g. "Care Group" or "Care Team" */
