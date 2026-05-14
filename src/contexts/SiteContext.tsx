@@ -1,9 +1,13 @@
 import React, { createContext, useContext, useMemo, useEffect } from "react";
+import i18n from "@/i18n/config";
 
-export type SiteId = "carecnc" | "challenged" | "duocare";
+export type SiteId = "carecnc" | "challenged" | "challenged-v1" | "duocare";
 
 export interface SiteConfig {
   id: SiteId;
+  /** Brand family — versioned variants (e.g. challenged-v1) share the
+   *  same family as their parent so id-based UI checks keep working. */
+  family?: "challenged" | "carecnc" | "duocare";
   name: string;
   tagline: string;
   logoText: string;
@@ -23,6 +27,8 @@ export interface SiteConfig {
   cssClass: string;
   contactEmail: string;
   brandSlug: string;
+  /** Force a specific i18n language regardless of browser detection. */
+  forceLanguage?: string;
   /** Singular label for a cared-one */
   caredOneSingular: string;
   /** Singular label for a care group, e.g. "Care Group" or "Care Team" */
@@ -48,6 +54,7 @@ export interface SiteConfig {
 
 const careCNCConfig: SiteConfig = {
   id: "carecnc",
+  family: "carecnc",
   name: "CareCNC",
   tagline: "Connect. Care. Continue.",
   logoText: "CNC",
@@ -86,6 +93,7 @@ const careCNCConfig: SiteConfig = {
 
 const challengedConfig: SiteConfig = {
   id: "challenged",
+  family: "challenged",
   name: "ChallengeD",
   tagline: "Together in dementia care",
   logoText: "Ch",
@@ -130,6 +138,7 @@ const challengedConfig: SiteConfig = {
 
 const duoCareConfig: SiteConfig = {
   id: "duocare",
+  family: "duocare",
   name: "CareDuo",
   tagline: "Simple care for everyday life.",
   logoText: "Care",
@@ -166,6 +175,24 @@ const duoCareConfig: SiteConfig = {
   trustBadges: ["badge1", "badge2", "badge3"],
 };
 
+// ChallengeD 1.0 / 忆畅 1.0 — early-launch version.
+// Same brand and language as `challenged`, but trimmed feature set.
+// Use ?__site=challenged-v1 (or its dedicated domain) to load this build.
+const challengedV1Config: SiteConfig = {
+  ...challengedConfig,
+  id: "challenged-v1",
+  name: "ChallengeD 1.0",
+  metaTitle: "ChallengeD 1.0 — 忆畅 早期版",
+  brandSlug: "challenged-v1",
+  forceLanguage: "zh-CN",
+};
+
+// Force language on the main brands so the Chinese build is fully Chinese
+// and the English builds are fully English.
+challengedConfig.forceLanguage = "zh-CN";
+careCNCConfig.forceLanguage = "en";
+duoCareConfig.forceLanguage = "en";
+
 /** Map hostnames to site IDs */
 const DOMAIN_MAP: Record<string, SiteId> = {
   "challenged.com": "challenged",
@@ -186,6 +213,7 @@ function detectSite(): SiteId {
   const params = new URLSearchParams(window.location.search);
   const siteParam = params.get("__site");
   if (siteParam === "challenged") return "challenged";
+  if (siteParam === "challenged-v1" || siteParam === "challenged-1.0" || siteParam === "yichang-v1") return "challenged-v1";
   if (siteParam === "carecnc" || siteParam === "careconnected") return "carecnc";
   if (siteParam === "duocare") return "duocare";
 
@@ -197,6 +225,7 @@ function detectSite(): SiteId {
 
 const SITE_CONFIGS: Record<SiteId, SiteConfig> = {
   challenged: challengedConfig,
+  "challenged-v1": challengedV1Config,
   carecnc: careCNCConfig,
   duocare: duoCareConfig,
 };
@@ -220,6 +249,13 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
     document.title = config.metaTitle;
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) metaDesc.setAttribute("content", config.metaDescription);
+
+    // Force language so Chinese builds are fully Chinese and English builds
+    // are fully English, regardless of browser locale or saved preference.
+    if (config.forceLanguage && i18n.language !== config.forceLanguage) {
+      i18n.changeLanguage(config.forceLanguage);
+      try { localStorage.setItem("i18nextLng", config.forceLanguage); } catch {}
+    }
   }, [config]);
 
   return <SiteContext.Provider value={config}>{children}</SiteContext.Provider>;
@@ -229,7 +265,7 @@ export const useSite = () => useContext(SiteContext);
 
 /** Returns { area, language } for CCT content filtering based on current site. */
 export function getContentLocale(siteId: SiteId = detectSite()): { area: string; language: string } {
-  if (siteId === "challenged") {
+  if (siteId === "challenged" || siteId === "challenged-v1") {
     // Chinese site uses China + zh-CN
     return { area: "china", language: "zh-CN" };
   }
