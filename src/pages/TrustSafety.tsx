@@ -25,11 +25,11 @@ export default function TrustSafety() {
   ];
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-12">
-      <div className="text-center mb-12">
-        <div className="mx-auto w-16 h-16 rounded-2xl hero-gradient flex items-center justify-center mb-4"><Shield className="h-8 w-8 text-primary-foreground" /></div>
-        <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">{t("trustSafety.title")}</h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">{t("trustSafety.subtitle")}</p>
+    <div className="max-w-5xl mx-auto px-4 py-8 sm:py-12">
+      <div className="text-center mb-8 sm:mb-12">
+        <div className="mx-auto w-14 h-14 sm:w-16 sm:h-16 rounded-2xl hero-gradient flex items-center justify-center mb-3"><Shield className="h-7 w-7 sm:h-8 sm:w-8 text-primary-foreground" /></div>
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-3">{t("trustSafety.title")}</h1>
+        <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">{t("trustSafety.subtitle")}</p>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">

@@ -111,7 +111,7 @@ export default function Articles() {
   };
 
   return (
-    <div className="container max-w-5xl mx-auto py-6 px-4 space-y-6">
+    <div className="container max-w-5xl mx-auto py-5 px-4 space-y-5">
       <ArticleEditorDialog
         open={!!editingArticle}
         onOpenChange={(open) => { if (!open) setEditingArticle(null); }}

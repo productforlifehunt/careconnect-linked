@@ -154,7 +154,7 @@ export default function Community() {
   };
 
   return (
-    <div className="container max-w-4xl mx-auto py-6 px-4 space-y-6">
+    <div className="container max-w-4xl mx-auto py-5 px-4 space-y-5">
       <PostEditorDialog
         open={!!editingPost}
         onOpenChange={(open) => { if (!open) setEditingPost(null); }}
