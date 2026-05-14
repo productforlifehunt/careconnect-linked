@@ -182,13 +182,13 @@ export default function Bookings() {
   if (isLoading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">{t("bookings.myBookings")}</h1>
-          <p className="text-muted-foreground">{t("bookings.manageCareAppointments")}</p>
+    <div className="max-w-4xl mx-auto px-4 py-5">
+      <div className="flex items-center justify-between gap-3 mb-5">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">{t("bookings.myBookings")}</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{t("bookings.manageCareAppointments")}</p>
         </div>
-        <Button variant="coral" onClick={() => navigate("/search")}><CalendarDays className="h-4 w-4 mr-2" /> {t("bookings.bookNew")}</Button>
+        <Button variant="coral" size="sm" className="shrink-0" onClick={() => navigate("/search")}><CalendarDays className="h-4 w-4 sm:mr-1" /> <span className="hidden sm:inline">{t("bookings.bookNew")}</span></Button>
       </div>
 
       <Tabs defaultValue="upcoming">

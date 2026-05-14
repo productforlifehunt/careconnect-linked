@@ -24,9 +24,9 @@ export default function Favorites() {
   const favorites = savedProviders || [];
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold text-foreground mb-2">{t("favorites.favorites")}</h1>
-      <p className="text-muted-foreground mb-6">{t("favorites.caregiversSaved")}</p>
+    <div className="max-w-4xl mx-auto px-4 py-5">
+      <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">{t("favorites.favorites")}</h1>
+      <p className="text-sm text-muted-foreground mt-0.5 mb-5">{t("favorites.caregiversSaved")}</p>
 
       {favorites.length > 0 ? (
         <div className="space-y-4">
