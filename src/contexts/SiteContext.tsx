@@ -5,6 +5,9 @@ export type SiteId = "carecnc" | "challenged" | "challenged-v1" | "duocare";
 
 export interface SiteConfig {
   id: SiteId;
+  /** Brand family — versioned variants (e.g. challenged-v1) share the
+   *  same family as their parent so id-based UI checks keep working. */
+  family?: "challenged" | "carecnc" | "duocare";
   name: string;
   tagline: string;
   logoText: string;
