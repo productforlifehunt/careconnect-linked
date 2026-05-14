@@ -54,6 +54,7 @@ export interface SiteConfig {
 
 const careCNCConfig: SiteConfig = {
   id: "carecnc",
+  family: "carecnc",
   name: "CareCNC",
   tagline: "Connect. Care. Continue.",
   logoText: "CNC",
