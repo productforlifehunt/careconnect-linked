@@ -25,12 +25,12 @@ export default function HowItWorks() {
   ];
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-12">
-      <div className="text-center mb-16">
-        <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">{t(`site.${site.id}.howItWorksTitle`)}</h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">{t("howItWorks.subtitle")}</p>
+    <div className="max-w-5xl mx-auto px-4 py-8 sm:py-12">
+      <div className="text-center mb-10 sm:mb-16">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-3">{t(`site.${site.id}.howItWorksTitle`)}</h1>
+        <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">{t("howItWorks.subtitle")}</p>
       </div>
-      <div className="space-y-12 mb-20">
+      <div className="space-y-10 sm:space-y-12 mb-16 sm:mb-20">
         {steps.map((step, i) => (
           <div key={i} className={`flex flex-col md:flex-row gap-8 items-center ${i % 2 === 1 ? "md:flex-row-reverse" : ""}`}>
             <div className="w-24 h-24 rounded-3xl hero-gradient flex items-center justify-center shrink-0">
