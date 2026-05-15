@@ -156,7 +156,7 @@ export function MobileBottomBar() {
           </SheetTrigger>
           <SheetContent
             side="bottom"
-            className="rounded-t-2xl max-h-[80vh] overflow-y-auto p-0"
+            className="rounded-t-2xl max-h-[75vh] overflow-y-auto p-0 bottom-14 border-b-0"
           >
             <SheetHeader className="p-5 pb-2 text-left">
               <SheetTitle className="text-lg">{moreLabel}</SheetTitle>
