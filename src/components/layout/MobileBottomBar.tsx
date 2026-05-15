@@ -15,18 +15,15 @@ import {
   Search,
   CalendarDays,
   MapPin,
-  Bell,
   ShoppingCart,
-  User,
   Bot,
   Building2,
   MessageSquare,
   Newspaper,
-  HelpCircle,
-  Shield,
   UserPlus,
   Briefcase,
   Star,
+  ClipboardList,
 } from "lucide-react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 
@@ -43,7 +40,7 @@ export function MobileBottomBar() {
   const location = useLocation();
 
   const isChallenged = site.family === "challenged";
-  const moreActive = location.pathname.startsWith("/resources") || open;
+  const moreActive = open;
 
   const items = [
     { title: isChinese ? "首页" : "Home", url: "/dashboard", icon: LayoutDashboard },
@@ -54,64 +51,75 @@ export function MobileBottomBar() {
 
   const moreLabel = isChinese ? "工具" : "More";
 
-  // Tools grouped — covers all miscellaneous entries
-  const groups: { label: string; items: ToolItem[] }[] = [
-    {
-      label: isChinese ? "发现" : "Discover",
-      items: isChallenged
-        ? [
+  // Tools — only meaningful entries; settings/notifications/profile already reachable elsewhere
+  const groups: { label: string; items: ToolItem[] }[] = isChallenged
+    ? [
+        {
+          label: isChinese ? "寻找服务" : "Find Care",
+          items: [
             { title: isChinese ? "找护理者" : "Hire Caregivers", url: "/search?service_category=care", icon: Search },
             { title: isChinese ? "本地陪伴" : "Local Companion", url: "/search?service_type=local&service_category=companionship", icon: HeartIcon },
             { title: isChinese ? "远程陪伴" : "Remote Companion", url: "/search?service_type=remote&service_category=companionship", icon: MessageSquare },
             { title: isChinese ? "养老机构" : "Facilities", url: "/search?service_category=facility", icon: Building2 },
+          ],
+        },
+        {
+          label: isChinese ? "日常照护" : "Daily Care",
+          items: [
+            { title: isChinese ? "日历" : "Calendar", url: "/calendar", icon: CalendarDays },
+            { title: isChinese ? "预约" : "Bookings", url: "/bookings", icon: ClipboardList },
+            { title: isChinese ? "定位" : "GPS", url: "/gps-tracking", icon: MapPin },
             { title: isChinese ? "AI 小忆" : "AI Companion", url: "/ai-companion", icon: Bot },
+          ],
+        },
+        {
+          label: isChinese ? "社区与资源" : "Community",
+          items: [
             { title: isChinese ? "社区" : "Community", url: "/community", icon: Newspaper },
-          ]
-        : [
+            { title: isChinese ? "资源" : "Resources", url: "/resources", icon: BookOpen },
+            { title: isChinese ? "收藏" : "Favorites", url: "/favorites", icon: Star },
+            { title: isChinese ? "购物车" : "Cart", url: "/cart", icon: ShoppingCart },
+          ],
+        },
+      ]
+    : [
+        {
+          label: isChinese ? "寻找服务" : "Find Care",
+          items: [
             { title: isChinese ? "找护理者" : "Hire Caregivers", url: "/search", icon: Search },
             { title: isChinese ? "AI 助手" : "AI Companion", url: "/ai-companion", icon: Bot },
+          ],
+        },
+        {
+          label: isChinese ? "日常照护" : "Daily Care",
+          items: [
+            { title: isChinese ? "日历" : "Calendar", url: "/calendar", icon: CalendarDays },
+            { title: isChinese ? "预约" : "Bookings", url: "/bookings", icon: ClipboardList },
+            { title: isChinese ? "定位" : "GPS", url: "/gps-tracking", icon: MapPin },
+          ],
+        },
+        {
+          label: isChinese ? "工作与社区" : "Work & Community",
+          items: [
+            { title: isChinese ? "工作机会" : "Jobs", url: "/jobs", icon: Briefcase },
+            { title: isChinese ? "成为护理者" : "Become Caregiver", url: "/become-caregiver", icon: UserPlus },
             { title: isChinese ? "社区" : "Community", url: "/community", icon: Newspaper },
             { title: isChinese ? "文章" : "Articles", url: "/articles", icon: Newspaper },
-            { title: isChinese ? "成为护理者" : "Become Caregiver", url: "/become-caregiver", icon: UserPlus },
           ],
-    },
-    {
-      label: isChinese ? "日常照护" : "Daily Care",
-      items: [
-        { title: isChinese ? "日历" : "Calendar", url: "/calendar", icon: CalendarDays },
-        { title: isChinese ? "预约" : "Bookings", url: "/bookings", icon: CalendarDays },
-        { title: isChinese ? "定位" : "GPS Tracking", url: "/gps-tracking", icon: MapPin },
-        { title: isChinese ? "工作机会" : "Jobs", url: "/jobs", icon: Briefcase },
-      ],
-    },
-    {
-      label: isChinese ? "账户" : "Account",
-      items: [
-        { title: isChinese ? "通知" : "Notifications", url: "/notifications", icon: Bell },
-        { title: isChinese ? "收藏" : "Favorites", url: "/favorites", icon: Star },
-        { title: isChinese ? "购物车" : "Cart", url: "/cart", icon: ShoppingCart },
-        { title: isChinese ? "个人资料" : "Profile", url: "/profile", icon: User },
-        { title: isChinese ? "服务商面板" : "Provider Dashboard", url: "/provider-dashboard", icon: LayoutDashboard },
-      ],
-    },
-    {
-      label: isChinese ? "资源与帮助" : "Resources & Help",
-      items: [
-        { title: isChinese ? "资源" : "Resources", url: "/resources", icon: BookOpen },
-        { title: isChinese ? "使用指南" : "How It Works", url: "/how-it-works", icon: HelpCircle },
-        { title: isChinese ? "信任与安全" : "Trust & Safety", url: "/trust-safety", icon: Shield },
-      ],
-    },
-  ];
-
-  // Filter Account group items requiring auth when logged out
-  if (!isAuthenticated) {
-    groups[2].items = [];
-  }
+        },
+        {
+          label: isChinese ? "我的" : "Mine",
+          items: [
+            { title: isChinese ? "收藏" : "Favorites", url: "/favorites", icon: Star },
+            { title: isChinese ? "购物车" : "Cart", url: "/cart", icon: ShoppingCart },
+            { title: isChinese ? "服务商面板" : "Provider Dashboard", url: "/provider-dashboard", icon: LayoutDashboard },
+          ],
+        },
+      ];
 
   return (
     <>
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t flex items-center justify-around h-14 px-1">
+      <nav data-bottom-nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t flex items-center justify-around h-14 px-1">
         {items.map((item) => {
           const showBadge = item.url === "/inbox" && unreadCount > 0;
           return (
@@ -154,12 +162,12 @@ export function MobileBottomBar() {
                 const target = e.target as HTMLElement;
                 if (target.closest('[data-bottom-nav]')) e.preventDefault();
               }}
-              className="fixed inset-x-0 bottom-14 z-50 rounded-t-2xl bg-background shadow-lg border-t max-h-[75vh] overflow-y-auto p-0 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom data-[state=closed]:duration-300 data-[state=open]:duration-500"
+              className="fixed inset-x-0 bottom-14 z-50 rounded-t-2xl bg-background shadow-lg border-t max-h-[75vh] overflow-y-auto p-0"
             >
-              <DialogPrimitive.Title className="text-lg font-semibold p-5 pb-2">
+              <DialogPrimitive.Title className="text-base font-semibold p-4 pb-2">
                 {moreLabel}
               </DialogPrimitive.Title>
-              <div className="px-4 pb-8 space-y-5">
+              <div className="px-4 pb-6 space-y-4">
                 {groups.map((group) =>
                   group.items.length === 0 ? null : (
                     <div key={group.label}>
