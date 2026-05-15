@@ -28,13 +28,7 @@ import {
   Briefcase,
   Star,
 } from "lucide-react";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 
 type ToolItem = { title: string; url: string; icon: React.ComponentType<{ className?: string }> };
 
@@ -141,8 +135,8 @@ export function MobileBottomBar() {
           );
         })}
 
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger asChild>
+        <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
+          <DialogPrimitive.Trigger asChild>
             <button
               type="button"
               className={`relative flex flex-col items-center gap-0.5 px-2 py-1 transition-colors min-w-0 ${
@@ -153,44 +147,49 @@ export function MobileBottomBar() {
               <LayoutGrid className="h-5 w-5" />
               <span className="text-[10px] leading-tight truncate">{moreLabel}</span>
             </button>
-          </SheetTrigger>
-          <SheetContent
-            side="bottom"
-            className="rounded-t-2xl max-h-[75vh] overflow-y-auto p-0 bottom-14 border-b-0"
-          >
-            <SheetHeader className="p-5 pb-2 text-left">
-              <SheetTitle className="text-lg">{moreLabel}</SheetTitle>
-            </SheetHeader>
-            <div className="px-4 pb-8 space-y-5">
-              {groups.map((group) =>
-                group.items.length === 0 ? null : (
-                  <div key={group.label}>
-                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 px-1">
-                      {group.label}
-                    </h3>
-                    <div className="grid grid-cols-4 gap-2">
-                      {group.items.map((tool) => (
-                        <Link
-                          key={tool.url}
-                          to={tool.url}
-                          onClick={() => setOpen(false)}
-                          className="flex flex-col items-center justify-start gap-1.5 p-2 rounded-xl hover:bg-accent transition-colors text-center min-h-[72px]"
-                        >
-                          <div className="h-10 w-10 rounded-xl bg-accent/60 flex items-center justify-center text-foreground">
-                            <tool.icon className="h-5 w-5" />
-                          </div>
-                          <span className="text-[10px] leading-tight line-clamp-2">
-                            {tool.title}
-                          </span>
-                        </Link>
-                      ))}
+          </DialogPrimitive.Trigger>
+          <DialogPrimitive.Portal>
+            <DialogPrimitive.Content
+              onInteractOutside={(e) => {
+                const target = e.target as HTMLElement;
+                if (target.closest('[data-bottom-nav]')) e.preventDefault();
+              }}
+              className="fixed inset-x-0 bottom-14 z-50 rounded-t-2xl bg-background shadow-lg border-t max-h-[75vh] overflow-y-auto p-0 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom data-[state=closed]:duration-300 data-[state=open]:duration-500"
+            >
+              <DialogPrimitive.Title className="text-lg font-semibold p-5 pb-2">
+                {moreLabel}
+              </DialogPrimitive.Title>
+              <div className="px-4 pb-8 space-y-5">
+                {groups.map((group) =>
+                  group.items.length === 0 ? null : (
+                    <div key={group.label}>
+                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 px-1">
+                        {group.label}
+                      </h3>
+                      <div className="grid grid-cols-4 gap-2">
+                        {group.items.map((tool) => (
+                          <Link
+                            key={tool.url}
+                            to={tool.url}
+                            onClick={() => setOpen(false)}
+                            className="flex flex-col items-center justify-start gap-1.5 p-2 rounded-xl hover:bg-accent transition-colors text-center min-h-[72px]"
+                          >
+                            <div className="h-10 w-10 rounded-xl bg-accent/60 flex items-center justify-center text-foreground">
+                              <tool.icon className="h-5 w-5" />
+                            </div>
+                            <span className="text-[10px] leading-tight line-clamp-2">
+                              {tool.title}
+                            </span>
+                          </Link>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )
-              )}
-            </div>
-          </SheetContent>
-        </Sheet>
+                  )
+                )}
+              </div>
+            </DialogPrimitive.Content>
+          </DialogPrimitive.Portal>
+        </DialogPrimitive.Root>
       </nav>
     </>
   );
