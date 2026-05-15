@@ -75,10 +75,8 @@ export function MobileBottomBar() {
         {
           label: isChinese ? "社区与资源" : "Community",
           items: [
+            { title: isChinese ? "资源与帮助" : "Resources & Help", url: "/resources", icon: BookOpen },
             { title: isChinese ? "社区" : "Community", url: "/community", icon: Newspaper },
-            { title: isChinese ? "资源" : "Resources", url: "/resources", icon: BookOpen },
-            { title: isChinese ? "收藏" : "Favorites", url: "/favorites", icon: Star },
-            { title: isChinese ? "购物车" : "Cart", url: "/cart", icon: ShoppingCart },
           ],
         },
       ]
@@ -110,8 +108,6 @@ export function MobileBottomBar() {
         {
           label: isChinese ? "我的" : "Mine",
           items: [
-            { title: isChinese ? "收藏" : "Favorites", url: "/favorites", icon: Star },
-            { title: isChinese ? "购物车" : "Cart", url: "/cart", icon: ShoppingCart },
             { title: isChinese ? "服务商面板" : "Provider Dashboard", url: "/provider-dashboard", icon: LayoutDashboard },
           ],
         },
