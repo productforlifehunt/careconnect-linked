@@ -28,13 +28,7 @@ import {
   Briefcase,
   Star,
 } from "lucide-react";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 
 type ToolItem = { title: string; url: string; icon: React.ComponentType<{ className?: string }> };
 
