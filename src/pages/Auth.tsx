@@ -121,10 +121,10 @@ export default function Auth() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue={initialMode}>
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="login">{t("common.signIn")}</TabsTrigger>
-              <TabsTrigger value="signup">{t("common.signUp")}</TabsTrigger>
-              <TabsTrigger value="auth2" className="flex items-center gap-1"><Shield className="h-3 w-3" />Auth 2</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3 h-auto">
+              <TabsTrigger value="login" className="text-xs sm:text-sm px-1.5 py-1.5">{t("common.signIn")}</TabsTrigger>
+              <TabsTrigger value="signup" className="text-xs sm:text-sm px-1.5 py-1.5">{t("common.signUp")}</TabsTrigger>
+              <TabsTrigger value="auth2" className="text-xs sm:text-sm px-1.5 py-1.5 flex items-center gap-1"><Shield className="h-3 w-3 shrink-0" /><span className="truncate">2FA</span></TabsTrigger>
             </TabsList>
             <TabsContent value="login" className="space-y-4 mt-4">
               <div>
