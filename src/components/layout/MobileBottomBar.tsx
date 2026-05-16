@@ -102,7 +102,7 @@ export function MobileBottomBar() {
           label: isChinese ? "寻找服务" : "Find Care",
           items: [
             { title: isChinese ? "找护理者" : "Hire Caregivers", url: "/search", icon: Search },
-            { title: isChinese ? "AI 助手" : "AI Companion", url: "/ai-companion", icon: Bot },
+            { title: isChinese ? "AI 助手" : "AI Companion", icon: Bot, onClick: () => { setOpen(false); setAiOpen(true); } },
           ],
         },
         {
