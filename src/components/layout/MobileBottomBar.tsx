@@ -125,14 +125,15 @@ export function MobileBottomBar() {
         { id: "daily-ai", title: isChinese ? "AI 助手" : "AI Companion", icon: Bot, onClick: openAi },
       ];
 
-  const communityItems: ToolItem[] = isChallenged
+  const resourceItems: ToolItem[] = isChallenged
     ? [
         { id: "community-resources", title: isChinese ? "资源与帮助" : "Resources & Help", url: "/resources", icon: BookOpen },
-        { id: "community-community", title: isChinese ? "社区" : "Community", url: "/community", icon: Newspaper },
       ]
-    : [
-        { id: "community-community", title: isChinese ? "社区" : "Community", url: "/community", icon: Newspaper },
-      ];
+    : [];
+
+  const communityItems: ToolItem[] = [
+    { id: "community-community", title: isChinese ? "社区" : "Community", url: "/community", icon: Newspaper },
+  ];
 
   // Filter by user prefs
   const visible = (arr: ToolItem[]) => arr.filter((t) => !prefs.hidden.includes(t.id));
@@ -166,10 +167,11 @@ export function MobileBottomBar() {
 
   // All items for customization list
   const allGroups: Group[] = [
+    { id: "daily", label: isChinese ? "日常照护" : "Daily Care", items: dailyCareItems },
+    { id: "resources", label: isChinese ? "资源与帮助" : "Resources & Help", items: resourceItems },
     { id: "find-care", label: isChinese ? "寻找服务" : "Find Care", items: findCareItems },
     { id: "find-work", label: isChinese ? "寻找工作" : "Find Work", items: findWorkItems },
-    { id: "daily", label: isChinese ? "日常照护" : "Daily Care", items: dailyCareItems },
-    { id: "community", label: isChinese ? "社区与资源" : "Community", items: communityItems },
+    { id: "community", label: isChinese ? "社区" : "Community", items: communityItems },
   ];
 
   const togglePref = (id: string, show: boolean) => {
@@ -252,6 +254,30 @@ export function MobileBottomBar() {
               </div>
 
               <div className="px-4 pb-6 space-y-5">
+                {/* Daily Care */}
+                {visible(dailyCareItems).length > 0 && (
+                  <div>
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 px-1">
+                      {isChinese ? "日常照护" : "Daily Care"}
+                    </h3>
+                    <div className="grid grid-cols-4 gap-2">
+                      {visible(dailyCareItems).map(renderToolButton)}
+                    </div>
+                  </div>
+                )}
+
+                {/* Resources & Help */}
+                {visible(resourceItems).length > 0 && (
+                  <div>
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 px-1">
+                      {isChinese ? "资源与帮助" : "Resources & Help"}
+                    </h3>
+                    <div className="grid grid-cols-4 gap-2">
+                      {visible(resourceItems).map(renderToolButton)}
+                    </div>
+                  </div>
+                )}
+
                 {/* Find tab (Find Care / Find Work) */}
                 {(visible(findCareItems).length > 0 || visible(findWorkItems).length > 0) && (
                   <div>
@@ -281,23 +307,11 @@ export function MobileBottomBar() {
                   </div>
                 )}
 
-                {/* Daily Care */}
-                {visible(dailyCareItems).length > 0 && (
-                  <div>
-                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 px-1">
-                      {isChinese ? "日常照护" : "Daily Care"}
-                    </h3>
-                    <div className="grid grid-cols-4 gap-2">
-                      {visible(dailyCareItems).map(renderToolButton)}
-                    </div>
-                  </div>
-                )}
-
                 {/* Community */}
                 {visible(communityItems).length > 0 && (
                   <div>
                     <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 px-1">
-                      {isChinese ? "社区与资源" : "Community"}
+                      {isChinese ? "社区" : "Community"}
                     </h3>
                     <div className="grid grid-cols-4 gap-2">
                       {visible(communityItems).map(renderToolButton)}
