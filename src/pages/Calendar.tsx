@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
@@ -26,6 +27,8 @@ const ALL_TYPES: CalendarEventType[] = [
 ];
 
 export default function CalendarPage() {
+  const { i18n } = useTranslation();
+  const isZh = i18n.language?.startsWith("zh");
   const [enabledTypes, setEnabledTypes] = useState<Set<CalendarEventType>>(new Set(ALL_TYPES));
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
@@ -83,19 +86,19 @@ export default function CalendarPage() {
           <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
             <CalendarIcon className="h-5 w-5 text-primary" />
           </div>
-          <h1 className="text-[26px] sm:text-3xl font-semibold tracking-tight">Calendar</h1>
+          <h1 className="text-[22px] sm:text-3xl font-semibold tracking-tight">{isZh ? "日历" : "Calendar"}</h1>
         </div>
         <p className="text-[13px] sm:text-sm text-muted-foreground leading-relaxed">
-          Family schedule, care tasks, medicine & availability — all in one view.
+          {isZh ? "家庭日程、护理任务、用药与可约时间，一目了然。" : "Family schedule, care tasks, medicine & availability — all in one view."}
         </p>
         <Badge variant="secondary" className="rounded-full font-medium text-[11px]">
-          {isLoading ? "Loading…" : `${allEvents.length} event${allEvents.length === 1 ? "" : "s"} · live`}
+          {isLoading ? (isZh ? "加载中…" : "Loading…") : (isZh ? `${allEvents.length} 条 · 实时` : `${allEvents.length} event${allEvents.length === 1 ? "" : "s"} · live`)}
         </Badge>
       </header>
 
       {/* Type filter chips */}
       <Card className="p-4 rounded-2xl border-border/60 shadow-none">
-        <div className="text-[13px] font-medium mb-3 text-foreground/90">Show event types</div>
+        <div className="text-[13px] font-medium mb-3 text-foreground/90">{isZh ? "显示事件类型" : "Show event types"}</div>
         <div className="flex flex-wrap gap-1.5">
           {ALL_TYPES.map((t) => {
             const active = enabledTypes.has(t);

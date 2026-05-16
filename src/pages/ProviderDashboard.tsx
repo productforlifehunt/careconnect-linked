@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +25,8 @@ import { useQueryClient } from "@tanstack/react-query";
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 export default function ProviderDashboard() {
+  const { i18n } = useTranslation();
+  const isZh = i18n.language?.startsWith("zh");
   const { toast } = useToast();
   const qc = useQueryClient();
   const { data: profile } = useMyProfile();
@@ -175,22 +178,25 @@ export default function ProviderDashboard() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-5">
       <div className="mb-5">
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">Provider Dashboard</h1>
-        <p className="text-sm text-muted-foreground">Manage your bookings, schedule, and earnings</p>
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">{isZh ? "服务者中心" : "Provider Dashboard"}</h1>
+        <p className="text-sm text-muted-foreground">{isZh ? "管理预约、排班与收入" : "Manage your bookings, schedule, and earnings"}</p>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         {[
-          { label: "Pending Requests", value: pendingBookings.length, icon: Clock, color: "text-warning" },
-          { label: "Confirmed", value: confirmedBookings.length, icon: CalendarDays, color: "text-primary" },
-          { label: "Total Earned", value: `$${totalEarnings.toFixed(0)}`, icon: DollarSign, color: "text-success" },
-          { label: "Pending Payout", value: `$${pendingEarnings.toFixed(0)}`, icon: TrendingUp, color: "text-coral" },
+          { label: isZh ? "待处理" : "Pending Requests", value: pendingBookings.length, icon: Clock, color: "text-warning" },
+          { label: isZh ? "已确认" : "Confirmed", value: confirmedBookings.length, icon: CalendarDays, color: "text-primary" },
+          { label: isZh ? "总收入" : "Total Earned", value: `$${totalEarnings.toFixed(0)}`, icon: DollarSign, color: "text-success" },
+          { label: isZh ? "待结算" : "Pending Payout", value: `$${pendingEarnings.toFixed(0)}`, icon: TrendingUp, color: "text-coral" },
         ].map(stat => (
           <Card key={stat.label} className="border-transparent card-elevated">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className={stat.color}><stat.icon className="h-5 w-5" /></div>
-                <div><p className="text-2xl font-bold text-foreground">{stat.value}</p><p className="text-xs text-muted-foreground">{stat.label}</p></div>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                <div className={`${stat.color} shrink-0`}><stat.icon className="h-5 w-5" /></div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-lg sm:text-2xl font-bold text-foreground truncate">{stat.value}</p>
+                  <p className="text-[11px] sm:text-xs text-muted-foreground truncate">{stat.label}</p>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -199,11 +205,11 @@ export default function ProviderDashboard() {
 
       <Tabs defaultValue="requests">
         <TabsList>
-          <TabsTrigger value="requests">Booking Requests ({pendingBookings.length})</TabsTrigger>
-          <TabsTrigger value="schedule">My Schedule</TabsTrigger>
-          <TabsTrigger value="availability">Availability</TabsTrigger>
-          <TabsTrigger value="earnings">Earnings</TabsTrigger>
-          <TabsTrigger value="settings"><Settings className="h-3.5 w-3.5 mr-1" /> My Profile</TabsTrigger>
+          <TabsTrigger value="requests" className="text-xs sm:text-sm">{isZh ? "预约请求" : "Requests"} ({pendingBookings.length})</TabsTrigger>
+          <TabsTrigger value="schedule" className="text-xs sm:text-sm">{isZh ? "排班" : "Schedule"}</TabsTrigger>
+          <TabsTrigger value="availability" className="text-xs sm:text-sm">{isZh ? "可约时间" : "Availability"}</TabsTrigger>
+          <TabsTrigger value="earnings" className="text-xs sm:text-sm">{isZh ? "收入" : "Earnings"}</TabsTrigger>
+          <TabsTrigger value="settings" className="text-xs sm:text-sm"><Settings className="h-3.5 w-3.5 mr-1" />{isZh ? "我的" : "Profile"}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="requests" className="mt-4 space-y-4">
