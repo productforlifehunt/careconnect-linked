@@ -114,7 +114,7 @@ export function HomeTab({
             </CardContent>
           </Card>
         ))}
-        {(allPosts || []).length === 0 && <p className="text-center py-8 text-muted-foreground">No posts yet. Share an update above!</p>}
+        {(allPosts || []).length === 0 && <p className="text-center py-8 text-muted-foreground">{isCN ? "还没有动态。在上方分享第一条吧！" : "No posts yet. Share an update above!"}</p>}
       </div>
     </div>
   );
