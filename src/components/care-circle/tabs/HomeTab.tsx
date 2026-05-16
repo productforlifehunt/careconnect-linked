@@ -10,6 +10,7 @@ import { VisibilityPicker, EMPTY_VISIBILITY, type VisibilityValue } from "../Vis
 import { CommentsSection } from "@/components/comments/CommentsSection";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 interface HomeTabProps {
   pendingTasksCount: number;
