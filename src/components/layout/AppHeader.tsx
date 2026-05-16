@@ -16,7 +16,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { NavLink } from "@/components/NavLink";
-import { Menu, User, LogOut, LayoutDashboard, Bell, Heart, Search, HelpCircle, CalendarDays, Users, MapPin, MessageSquare, Sun, Moon, Newspaper, Bot, Building2 } from "lucide-react";
+import { Menu, User, LogOut, LayoutDashboard, Bell, Heart, Search, HelpCircle, CalendarDays, Users, MapPin, MessageSquare, Sun, Moon, Newspaper, Bot, Building2, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { useTheme } from "next-themes";
@@ -234,7 +234,7 @@ export function AppHeader() {
           <div className="flex items-center gap-1">
             <NavLink
               to="/dashboard"
-              className="px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+              className="hidden md:inline-flex px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
               activeClassName="bg-primary text-primary-foreground rounded-lg"
             >
               {t("nav.dashboard")}
@@ -294,6 +294,12 @@ export function AppHeader() {
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/notifications")}>
                   <Bell className="mr-2 h-4 w-4" /> {t("nav.notifications")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/profile?tab=settings")}>
+                  <Settings className="mr-2 h-4 w-4" /> {isChinese ? "设置" : "Settings"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/how-it-works")}>
+                  <HelpCircle className="mr-2 h-4 w-4" /> {isChinese ? "帮助" : "Help"}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="text-destructive">
