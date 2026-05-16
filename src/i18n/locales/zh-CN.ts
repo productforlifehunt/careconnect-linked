@@ -270,7 +270,7 @@ const zhCN = {
   becomeCaregiver: {
     previousStep: "上一步", stepOf: "第{{current}}步，共{{total}}步",
     percentComplete: "{{percent}}% 完成", personalInfo: "个人信息", tellAboutYourself: "告诉我们关于您自己",
-    cityZip: "城市/邮编", aboutYou: "关于您",
+    cityZip: "城市/邮编", cityZipPlaceholder: "例如：北京 朝阳区", aboutYou: "关于您",
     aboutYouPlaceholder: "告诉家庭您为什么对护理充满热情...",
     qualifications: "资质", yourSkills: "您的技能和经验", specialties: "专业",
     selectAllApply: "选择所有适用的", certifications: "认证", yearsOfExperience: "工作年限",

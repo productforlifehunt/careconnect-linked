@@ -94,7 +94,7 @@ export default function BecomeCaregiver() {
           <CardContent className="space-y-4">
             <div className="grid sm:grid-cols-2 gap-4">
               <div><Label>{t("common.phone")} *</Label><Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="(555) 000-0000" /></div>
-              <div><Label>{t("becomeCaregiver.cityZip")} *</Label><Input value={city} onChange={e => setCity(e.target.value)} placeholder="Brooklyn, NY" /></div>
+              <div><Label>{t("becomeCaregiver.cityZip")} *</Label><Input value={city} onChange={e => setCity(e.target.value)} placeholder={t("becomeCaregiver.cityZipPlaceholder", "Brooklyn, NY")} /></div>
             </div>
             <div><Label>{t("becomeCaregiver.aboutYou")}</Label><Textarea value={bio} onChange={e => setBio(e.target.value)} placeholder={t("becomeCaregiver.aboutYouPlaceholder")} rows={4} /></div>
           </CardContent>
