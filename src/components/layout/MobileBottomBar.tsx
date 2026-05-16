@@ -232,6 +232,7 @@ export function MobileBottomBar() {
           </DialogPrimitive.Portal>
         </DialogPrimitive.Root>
       </nav>
+      <AICompanionChatDialog open={aiOpen} onOpenChange={setAiOpen} />
     </>
   );
 }
