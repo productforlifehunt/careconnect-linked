@@ -1138,6 +1138,10 @@ const en = {
     noData: "No data",
     tasks: "Tasks",
     pending: "pending",
+    checkIns: "Check-ins",
+    completedToday: "Done today",
+    pendingToday: "Pending",
+    noSchedule: "None",
   },
 
   // ═══ SYMPTOM TRACKER ═══
