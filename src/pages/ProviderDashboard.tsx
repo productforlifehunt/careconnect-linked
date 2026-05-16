@@ -25,6 +25,8 @@ import { useQueryClient } from "@tanstack/react-query";
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 export default function ProviderDashboard() {
+  const { i18n } = useTranslation();
+  const isZh = i18n.language?.startsWith("zh");
   const { toast } = useToast();
   const qc = useQueryClient();
   const { data: profile } = useMyProfile();
