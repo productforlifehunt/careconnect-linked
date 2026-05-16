@@ -396,7 +396,7 @@ export default function CaregiverProfile() {
                         </div>
                         <div>
                           <Label>Comment</Label>
-                          <Textarea value={reviewComment} onChange={e => setReviewComment(e.target.value)} placeholder="Share your experience..." rows={4} />
+                          <Textarea value={reviewComment} onChange={e => setReviewComment(e.target.value)} placeholder={isZh ? "分享您的体验…" : "Share your experience..."} rows={4} />
                         </div>
                         <Button variant="coral" className="w-full" disabled={createReview.isPending} onClick={async () => {
                           try {
