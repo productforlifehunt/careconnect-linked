@@ -64,36 +64,36 @@ export function HomeTab({
 
   return (
     <div>
-      <div className="grid sm:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
         {[
-          { label: "Pending Tasks", value: pendingTasksCount, icon: ListTodo },
-          { label: "Members", value: membersCount, icon: Users },
-          { label: site.navLabels.caredOnes, value: caredOnesCount, icon: Heart },
+          { label: isCN ? "待办任务" : "Pending Tasks", value: pendingTasksCount, icon: ListTodo },
+          { label: isCN ? "成员" : "Members", value: membersCount, icon: Users },
+          { label: isCN ? "亲人" : site.navLabels.caredOnes, value: caredOnesCount, icon: Heart },
         ].map(s => (
           <Card key={s.label} className="border-transparent card-elevated">
-            <CardContent className="p-4 flex items-center gap-3">
-              <s.icon className="h-5 w-5 text-primary" />
-              <div><p className="text-xl font-bold text-foreground">{s.value}</p><p className="text-xs text-muted-foreground">{s.label}</p></div>
+            <CardContent className="p-3 sm:p-4 flex items-center gap-2">
+              <s.icon className="h-4 w-4 sm:h-5 sm:w-5 text-primary shrink-0" />
+              <div className="min-w-0"><p className="text-base sm:text-xl font-bold text-foreground leading-tight">{s.value}</p><p className="text-[11px] sm:text-xs text-muted-foreground truncate">{s.label}</p></div>
             </CardContent>
           </Card>
         ))}
       </div>
       <Card className="border-transparent card-elevated mb-6">
         <CardContent className="p-4">
-          <Textarea value={content} onChange={e => setContent(e.target.value)} placeholder="Share an update with your care team..." className="mb-3" rows={2} />
+          <Textarea value={content} onChange={e => setContent(e.target.value)} placeholder={isCN ? "与团队分享一条更新…" : "Share an update with your care team..."} className="mb-3" rows={2} />
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex gap-2 flex-wrap">
               <Select value={postType} onValueChange={setPostType}>
                 <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="discussion">Discussion</SelectItem>
-                  <SelectItem value="announcement">Announcement</SelectItem>
-                  <SelectItem value="wish">Well Wish</SelectItem>
+                  <SelectItem value="discussion">{isCN ? "讨论" : "Discussion"}</SelectItem>
+                  <SelectItem value="announcement">{isCN ? "公告" : "Announcement"}</SelectItem>
+                  <SelectItem value="wish">{isCN ? "祝福" : "Well Wish"}</SelectItem>
                 </SelectContent>
               </Select>
               <VisibilityPicker value={visibility} onChange={setVisibility} memberCategories={memberCategories} members={members} />
             </div>
-            <Button variant="coral" size="sm" onClick={addPost} disabled={!content.trim() || createPost.isPending}>Post</Button>
+            <Button variant="coral" size="sm" onClick={addPost} disabled={!content.trim() || createPost.isPending}>{isCN ? "发布" : "Post"}</Button>
           </div>
         </CardContent>
       </Card>
