@@ -8,9 +8,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useTranslation } from "react-i18next";
 
 export default function Cart() {
   const navigate = useNavigate();
+  const { i18n } = useTranslation();
+  const cn = i18n.language?.startsWith("zh");
   const { user } = useAuth();
   const { data: cart, isLoading } = useCart();
   const removeItem = useRemoveCartItem();
@@ -31,15 +34,15 @@ export default function Cart() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-5">
-      <Button variant="ghost" size="sm" className="mb-3 gap-1.5 -ml-2" onClick={() => navigate(-1)}><ArrowLeft className="h-4 w-4" /> Back</Button>
-      <h1 className="text-xl sm:text-2xl font-bold tracking-tight mb-5 flex items-center gap-2"><ShoppingCart className="h-5 w-5" /> Your Cart</h1>
+      <Button variant="ghost" size="sm" className="mb-3 gap-1.5 -ml-2" onClick={() => navigate(-1)}><ArrowLeft className="h-4 w-4" /> {cn ? "返回" : "Back"}</Button>
+      <h1 className="text-xl sm:text-2xl font-bold tracking-tight mb-5 flex items-center gap-2"><ShoppingCart className="h-5 w-5" /> {cn ? "我的购物车" : "Your Cart"}</h1>
 
       {items.length === 0 ? (
         <Card className="border-transparent card-elevated">
           <CardContent className="p-8 text-center">
             <ShoppingCart className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-lg text-muted-foreground mb-4">Your cart is empty</p>
-            <Button variant="coral" onClick={() => navigate("/search")}>Browse Care Services</Button>
+            <p className="text-lg text-muted-foreground mb-4">{cn ? "购物车为空" : "Your cart is empty"}</p>
+            <Button variant="coral" onClick={() => navigate("/search")}>{cn ? "浏览护理服务" : "Browse Care Services"}</Button>
           </CardContent>
         </Card>
       ) : (

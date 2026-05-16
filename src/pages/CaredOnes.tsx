@@ -115,7 +115,7 @@ export default function CaredOnes() {
     <div className="max-w-5xl mx-auto px-4 py-5">
       <div className="flex items-start justify-between gap-3 mb-5">
         <div className="min-w-0">
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">{site.navLabels.caredOnes}</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">{t("nav.myLovedOnes", site.navLabels.caredOnes)}</h1>
           <p className="text-sm text-muted-foreground">{t("caredOnes.manageAndTrack")}</p>
         </div>
         <Button variant="coral" size="sm" className="shrink-0" onClick={() => setAddOpen(true)}><UserPlus className="h-4 w-4 mr-1" /> <span className="hidden sm:inline">{t("caredOnes.addCaredOne", { caredOne: site.caredOneSingular })}</span><span className="sm:hidden">{t("common.add", { defaultValue: "Add" })}</span></Button>

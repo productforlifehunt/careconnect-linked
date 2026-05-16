@@ -223,7 +223,7 @@ export default function CareCircle() {
             <TabsTrigger value="calendar" className="gap-1.5 text-xs"><CalendarDays className="h-3.5 w-3.5" /> {t("careCircle.calendar")}</TabsTrigger>
             <TabsTrigger value="announcements" className="gap-1.5 text-xs"><Megaphone className="h-3.5 w-3.5" /> {t("careCircle.announcements")}</TabsTrigger>
             <TabsTrigger value="tasks" className="gap-1.5 text-xs"><ListTodo className="h-3.5 w-3.5" /> {t("careCircle.tasks")}</TabsTrigger>
-            <TabsTrigger value="cared-ones" className="gap-1.5 text-xs"><Heart className="h-3.5 w-3.5" /> {site.navLabels.caredOnes}</TabsTrigger>
+            <TabsTrigger value="cared-ones" className="gap-1.5 text-xs"><Heart className="h-3.5 w-3.5" /> {t("nav.myLovedOnes")}</TabsTrigger>
             <TabsTrigger value="checkins" className="gap-1.5 text-xs"><ClipboardCheck className="h-3.5 w-3.5" /> {t("careCircle.checkIns")}</TabsTrigger>
             <TabsTrigger value="messages" className="gap-1.5 text-xs"><MessageSquare className="h-3.5 w-3.5" /> {t("messages.messages")}</TabsTrigger>
             <TabsTrigger value="wishes" className="gap-1.5 text-xs"><Star className="h-3.5 w-3.5" /> {t("careCircle.wellWishes")}</TabsTrigger>
