@@ -81,13 +81,18 @@ export function MobileBottomBar() {
             { title: isChinese ? "日历" : "Calendar", url: "/calendar", icon: CalendarDays },
             { title: isChinese ? "预约" : "Bookings", url: "/bookings", icon: ClipboardList },
             { title: isChinese ? "定位" : "GPS", url: "/gps-tracking", icon: MapPin },
-            { title: isChinese ? "AI 小忆" : "AI Companion", url: "/ai-companion", icon: Bot },
+            { title: isChinese ? "AI 小忆" : "AI Companion", icon: Bot, onClick: () => { setOpen(false); setAiOpen(true); } },
           ],
         },
         {
-          label: isChinese ? "社区与资源" : "Community",
+          label: isChinese ? "资源" : "Resources",
           items: [
             { title: isChinese ? "资源与帮助" : "Resources & Help", url: "/resources", icon: BookOpen },
+          ],
+        },
+        {
+          label: isChinese ? "社区" : "Community",
+          items: [
             { title: isChinese ? "社区" : "Community", url: "/community", icon: Newspaper },
           ],
         },
