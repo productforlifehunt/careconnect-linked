@@ -50,7 +50,8 @@ export default function CaregiverProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isZh = i18n.language?.startsWith("zh");
   const { isAuthenticated } = useAuth();
   const { data: caregiver, isLoading } = useProvider(id);
   const { data: reviews } = useProviderReviews(id);
@@ -395,7 +396,7 @@ export default function CaregiverProfile() {
                         </div>
                         <div>
                           <Label>Comment</Label>
-                          <Textarea value={reviewComment} onChange={e => setReviewComment(e.target.value)} placeholder="Share your experience..." rows={4} />
+                          <Textarea value={reviewComment} onChange={e => setReviewComment(e.target.value)} placeholder={isZh ? "分享您的体验…" : "Share your experience..."} rows={4} />
                         </div>
                         <Button variant="coral" className="w-full" disabled={createReview.isPending} onClick={async () => {
                           try {
@@ -493,11 +494,11 @@ export default function CaregiverProfile() {
                       <Label>Service Package *</Label>
                       {bookingResources.length === 0 ? (
                         <div className="text-sm text-muted-foreground bg-muted/50 rounded-md p-3 border border-dashed">
-                          This caregiver hasn't published any service packages yet. Send them a message to negotiate a custom price.
+                          {isZh ? "该护理者尚未发布服务套餐。请发消息协商定价。" : "This caregiver hasn't published any service packages yet. Send them a message to negotiate a custom price."}
                         </div>
                       ) : (
                         <Select value={deliveryResourceId} onValueChange={setDeliveryResourceId}>
-                          <SelectTrigger><SelectValue placeholder="Select a package" /></SelectTrigger>
+                          <SelectTrigger><SelectValue placeholder={isZh ? "选择套餐" : "Select a package"} /></SelectTrigger>
                           <SelectContent>
                             {bookingResources.map((r: BookingResourceOption) => (
                               <SelectItem key={r.id} value={String(r.id)}>
@@ -592,7 +593,7 @@ export default function CaregiverProfile() {
                     </div>
                     <div>
                       <Label>Notes</Label>
-                      <Textarea value={bookingNotes} onChange={e => setBookingNotes(e.target.value)} placeholder="Any special requirements..." />
+                      <Textarea value={bookingNotes} onChange={e => setBookingNotes(e.target.value)} placeholder={isZh ? "任何特殊需求…" : "Any special requirements..."} />
                     </div>
                     <div className="flex justify-between items-center pt-2 border-t">
                       <span className="text-sm text-muted-foreground">Estimated Total</span>
