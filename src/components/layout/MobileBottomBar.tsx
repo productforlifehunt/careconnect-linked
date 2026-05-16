@@ -42,10 +42,15 @@ export function MobileBottomBar() {
   const isChallenged = site.family === "challenged";
   const moreActive = open;
 
+  const caredOnesLabel = isChinese ? "亲人" : site.navLabels.caredOnes;
+  const careGroupLabel = isChinese
+    ? (isChallenged ? "团队" : "圈子")
+    : site.navLabels.careGroups.split(" ")[0];
+
   const items = [
     { title: isChinese ? "首页" : "Home", url: "/dashboard", icon: LayoutDashboard },
-    { title: site.navLabels.caredOnes, url: "/cared-ones", icon: HeartIcon },
-    { title: site.navLabels.careGroups.split(" ")[0], url: "/care-circle", icon: Users },
+    { title: caredOnesLabel, url: "/cared-ones", icon: HeartIcon },
+    { title: careGroupLabel, url: "/care-circle", icon: Users },
     { title: isChinese ? "收件箱" : "Inbox", url: "/inbox", icon: Inbox },
   ];
 
