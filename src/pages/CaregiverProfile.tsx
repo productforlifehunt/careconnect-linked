@@ -494,11 +494,11 @@ export default function CaregiverProfile() {
                       <Label>Service Package *</Label>
                       {bookingResources.length === 0 ? (
                         <div className="text-sm text-muted-foreground bg-muted/50 rounded-md p-3 border border-dashed">
-                          This caregiver hasn't published any service packages yet. Send them a message to negotiate a custom price.
+                          {isZh ? "该护理者尚未发布服务套餐。请发消息协商定价。" : "This caregiver hasn't published any service packages yet. Send them a message to negotiate a custom price."}
                         </div>
                       ) : (
                         <Select value={deliveryResourceId} onValueChange={setDeliveryResourceId}>
-                          <SelectTrigger><SelectValue placeholder="Select a package" /></SelectTrigger>
+                          <SelectTrigger><SelectValue placeholder={isZh ? "选择套餐" : "Select a package"} /></SelectTrigger>
                           <SelectContent>
                             {bookingResources.map((r: BookingResourceOption) => (
                               <SelectItem key={r.id} value={String(r.id)}>
