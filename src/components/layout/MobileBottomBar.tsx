@@ -188,21 +188,41 @@ export function MobileBottomBar() {
                         {group.label}
                       </h3>
                       <div className="grid grid-cols-4 gap-2">
-                        {group.items.map((tool) => (
-                          <Link
-                            key={tool.url}
-                            to={tool.url}
-                            onClick={() => setOpen(false)}
-                            className="flex flex-col items-center justify-start gap-1.5 p-2 rounded-xl hover:bg-accent transition-colors text-center min-h-[72px]"
-                          >
-                            <div className="h-10 w-10 rounded-xl bg-accent/60 flex items-center justify-center text-foreground">
-                              <tool.icon className="h-5 w-5" />
-                            </div>
-                            <span className="text-[10px] leading-tight line-clamp-2">
-                              {tool.title}
-                            </span>
-                          </Link>
-                        ))}
+                        {group.items.map((tool) => {
+                          const cls = "flex flex-col items-center justify-start gap-1.5 p-2 rounded-xl hover:bg-accent transition-colors text-center min-h-[72px]";
+                          const inner = (
+                            <>
+                              <div className="h-10 w-10 rounded-xl bg-accent/60 flex items-center justify-center text-foreground">
+                                <tool.icon className="h-5 w-5" />
+                              </div>
+                              <span className="text-[10px] leading-tight line-clamp-2">
+                                {tool.title}
+                              </span>
+                            </>
+                          );
+                          if (tool.onClick) {
+                            return (
+                              <button
+                                key={tool.title}
+                                type="button"
+                                onClick={() => { setOpen(false); tool.onClick!(); }}
+                                className={cls}
+                              >
+                                {inner}
+                              </button>
+                            );
+                          }
+                          return (
+                            <Link
+                              key={tool.url}
+                              to={tool.url!}
+                              onClick={() => setOpen(false)}
+                              className={cls}
+                            >
+                              {inner}
+                            </Link>
+                          );
+                        })}
                       </div>
                     </div>
                   )
