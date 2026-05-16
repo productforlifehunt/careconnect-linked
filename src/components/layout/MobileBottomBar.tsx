@@ -254,6 +254,30 @@ export function MobileBottomBar() {
               </div>
 
               <div className="px-4 pb-6 space-y-5">
+                {/* Daily Care */}
+                {visible(dailyCareItems).length > 0 && (
+                  <div>
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 px-1">
+                      {isChinese ? "日常照护" : "Daily Care"}
+                    </h3>
+                    <div className="grid grid-cols-4 gap-2">
+                      {visible(dailyCareItems).map(renderToolButton)}
+                    </div>
+                  </div>
+                )}
+
+                {/* Resources & Help */}
+                {visible(resourceItems).length > 0 && (
+                  <div>
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 px-1">
+                      {isChinese ? "资源与帮助" : "Resources & Help"}
+                    </h3>
+                    <div className="grid grid-cols-4 gap-2">
+                      {visible(resourceItems).map(renderToolButton)}
+                    </div>
+                  </div>
+                )}
+
                 {/* Find tab (Find Care / Find Work) */}
                 {(visible(findCareItems).length > 0 || visible(findWorkItems).length > 0) && (
                   <div>
@@ -283,23 +307,11 @@ export function MobileBottomBar() {
                   </div>
                 )}
 
-                {/* Daily Care */}
-                {visible(dailyCareItems).length > 0 && (
-                  <div>
-                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 px-1">
-                      {isChinese ? "日常照护" : "Daily Care"}
-                    </h3>
-                    <div className="grid grid-cols-4 gap-2">
-                      {visible(dailyCareItems).map(renderToolButton)}
-                    </div>
-                  </div>
-                )}
-
                 {/* Community */}
                 {visible(communityItems).length > 0 && (
                   <div>
                     <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 px-1">
-                      {isChinese ? "社区与资源" : "Community"}
+                      {isChinese ? "社区" : "Community"}
                     </h3>
                     <div className="grid grid-cols-4 gap-2">
                       {visible(communityItems).map(renderToolButton)}
