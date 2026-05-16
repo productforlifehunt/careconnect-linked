@@ -43,6 +43,7 @@ export function MobileBottomBar() {
   const { data: notifications } = useNotifications();
   const unreadCount = (notifications || []).filter((n) => !n.is_read).length;
   const [open, setOpen] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
   const location = useLocation();
 
   const isChallenged = site.family === "challenged";
