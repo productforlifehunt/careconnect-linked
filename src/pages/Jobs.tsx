@@ -95,15 +95,15 @@ export default function Jobs() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold text-foreground">Jobs Board</h1>
-          <p className="text-muted-foreground">Find care jobs or post opportunities</p>
+          <p className="text-muted-foreground text-sm">Find care jobs or post opportunities</p>
         </div>
         {isAuthenticated && (
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
-              <Button variant="coral"><Plus className="h-4 w-4 mr-2" /> Post Job</Button>
+              <Button variant="coral" className="self-start sm:self-auto shrink-0"><Plus className="h-4 w-4 mr-2" /> Post Job</Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>Post a Care Job</DialogTitle></DialogHeader>
@@ -132,13 +132,13 @@ export default function Jobs() {
       </div>
 
       {/* Search + Filter */}
-      <div className="flex gap-3 mb-6">
-        <div className="relative flex-1">
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-6">
+        <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search jobs..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9" />
         </div>
         <Select value={sourceFilter || "all"} onValueChange={v => setSourceFilter(v === "all" ? "" : v)}>
-          <SelectTrigger className="w-[160px]"><SelectValue placeholder="All types" /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-[160px] shrink-0"><SelectValue placeholder="All types" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Types</SelectItem>
             <SelectItem value="general">General</SelectItem>
@@ -150,11 +150,13 @@ export default function Jobs() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} defaultValue="browse">
-        <TabsList>
-          <TabsTrigger value="browse">Browse Jobs ({filteredJobs.length})</TabsTrigger>
-          <TabsTrigger value="my-applications">My Applications ({myAppsCount})</TabsTrigger>
-          {isAuthenticated && <TabsTrigger value="my-posts">My Posted Jobs ({myPostedCount})</TabsTrigger>}
-        </TabsList>
+        <div className="overflow-x-auto -mx-4 px-4 scrollbar-none">
+          <TabsList className="w-max">
+            <TabsTrigger value="browse">Browse Jobs ({filteredJobs.length})</TabsTrigger>
+            <TabsTrigger value="my-applications">My Applications ({myAppsCount})</TabsTrigger>
+            {isAuthenticated && <TabsTrigger value="my-posts">My Posted Jobs ({myPostedCount})</TabsTrigger>}
+          </TabsList>
+        </div>
 
         {/* ═══ BROWSE JOBS ═══ */}
         <TabsContent value="browse" className="mt-4 space-y-4">

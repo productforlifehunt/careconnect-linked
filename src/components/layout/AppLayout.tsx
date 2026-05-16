@@ -7,9 +7,9 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   return (
-    <div className="min-h-screen flex flex-col w-full">
+    <div className="min-h-screen flex flex-col w-full overflow-x-hidden">
       <AppHeader />
-      <main className="flex-1 overflow-auto pb-16 md:pb-0">
+      <main className="flex-1 overflow-x-hidden overflow-y-auto pb-16 md:pb-0">
         {children}
       </main>
       <MobileBottomBar />
