@@ -26,8 +26,14 @@ import {
   ClipboardList,
 } from "lucide-react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
+import { AICompanionChatDialog } from "@/components/ai/AICompanionChatDialog";
 
-type ToolItem = { title: string; url: string; icon: React.ComponentType<{ className?: string }> };
+type ToolItem = {
+  title: string;
+  url?: string;
+  icon: React.ComponentType<{ className?: string }>;
+  onClick?: () => void;
+};
 
 export function MobileBottomBar() {
   const site = useSite();
