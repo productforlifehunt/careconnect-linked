@@ -133,7 +133,7 @@ export default function Dashboard() {
         <section>
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-sm font-semibold text-foreground">
-              {site.navLabels.caredOnes}
+              {t("nav.myLovedOnes") || site.navLabels.caredOnes}
             </h2>
             <Button variant="ghost" size="sm" className="h-7 px-2 text-xs"
               onClick={() => navigate("/cared-ones")}>
