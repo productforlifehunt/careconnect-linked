@@ -593,7 +593,7 @@ export default function CaregiverProfile() {
                     </div>
                     <div>
                       <Label>Notes</Label>
-                      <Textarea value={bookingNotes} onChange={e => setBookingNotes(e.target.value)} placeholder="Any special requirements..." />
+                      <Textarea value={bookingNotes} onChange={e => setBookingNotes(e.target.value)} placeholder={isZh ? "任何特殊需求…" : "Any special requirements..."} />
                     </div>
                     <div className="flex justify-between items-center pt-2 border-t">
                       <span className="text-sm text-muted-foreground">Estimated Total</span>
