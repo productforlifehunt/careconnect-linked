@@ -26,8 +26,14 @@ import {
   ClipboardList,
 } from "lucide-react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
+import { AICompanionChatDialog } from "@/components/ai/AICompanionChatDialog";
 
-type ToolItem = { title: string; url: string; icon: React.ComponentType<{ className?: string }> };
+type ToolItem = {
+  title: string;
+  url?: string;
+  icon: React.ComponentType<{ className?: string }>;
+  onClick?: () => void;
+};
 
 export function MobileBottomBar() {
   const site = useSite();
@@ -37,6 +43,7 @@ export function MobileBottomBar() {
   const { data: notifications } = useNotifications();
   const unreadCount = (notifications || []).filter((n) => !n.is_read).length;
   const [open, setOpen] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
   const location = useLocation();
 
   const isChallenged = site.family === "challenged";
@@ -74,13 +81,18 @@ export function MobileBottomBar() {
             { title: isChinese ? "日历" : "Calendar", url: "/calendar", icon: CalendarDays },
             { title: isChinese ? "预约" : "Bookings", url: "/bookings", icon: ClipboardList },
             { title: isChinese ? "定位" : "GPS", url: "/gps-tracking", icon: MapPin },
-            { title: isChinese ? "AI 小忆" : "AI Companion", url: "/ai-companion", icon: Bot },
+            { title: isChinese ? "AI 小忆" : "AI Companion", icon: Bot, onClick: () => { setOpen(false); setAiOpen(true); } },
           ],
         },
         {
-          label: isChinese ? "社区与资源" : "Community",
+          label: isChinese ? "资源" : "Resources",
           items: [
             { title: isChinese ? "资源与帮助" : "Resources & Help", url: "/resources", icon: BookOpen },
+          ],
+        },
+        {
+          label: isChinese ? "社区" : "Community",
+          items: [
             { title: isChinese ? "社区" : "Community", url: "/community", icon: Newspaper },
           ],
         },
@@ -90,7 +102,7 @@ export function MobileBottomBar() {
           label: isChinese ? "寻找服务" : "Find Care",
           items: [
             { title: isChinese ? "找护理者" : "Hire Caregivers", url: "/search", icon: Search },
-            { title: isChinese ? "AI 助手" : "AI Companion", url: "/ai-companion", icon: Bot },
+            { title: isChinese ? "AI 助手" : "AI Companion", icon: Bot, onClick: () => { setOpen(false); setAiOpen(true); } },
           ],
         },
         {
@@ -176,21 +188,41 @@ export function MobileBottomBar() {
                         {group.label}
                       </h3>
                       <div className="grid grid-cols-4 gap-2">
-                        {group.items.map((tool) => (
-                          <Link
-                            key={tool.url}
-                            to={tool.url}
-                            onClick={() => setOpen(false)}
-                            className="flex flex-col items-center justify-start gap-1.5 p-2 rounded-xl hover:bg-accent transition-colors text-center min-h-[72px]"
-                          >
-                            <div className="h-10 w-10 rounded-xl bg-accent/60 flex items-center justify-center text-foreground">
-                              <tool.icon className="h-5 w-5" />
-                            </div>
-                            <span className="text-[10px] leading-tight line-clamp-2">
-                              {tool.title}
-                            </span>
-                          </Link>
-                        ))}
+                        {group.items.map((tool) => {
+                          const cls = "flex flex-col items-center justify-start gap-1.5 p-2 rounded-xl hover:bg-accent transition-colors text-center min-h-[72px]";
+                          const inner = (
+                            <>
+                              <div className="h-10 w-10 rounded-xl bg-accent/60 flex items-center justify-center text-foreground">
+                                <tool.icon className="h-5 w-5" />
+                              </div>
+                              <span className="text-[10px] leading-tight line-clamp-2">
+                                {tool.title}
+                              </span>
+                            </>
+                          );
+                          if (tool.onClick) {
+                            return (
+                              <button
+                                key={tool.title}
+                                type="button"
+                                onClick={() => { setOpen(false); tool.onClick!(); }}
+                                className={cls}
+                              >
+                                {inner}
+                              </button>
+                            );
+                          }
+                          return (
+                            <Link
+                              key={tool.url}
+                              to={tool.url!}
+                              onClick={() => setOpen(false)}
+                              className={cls}
+                            >
+                              {inner}
+                            </Link>
+                          );
+                        })}
                       </div>
                     </div>
                   )
@@ -200,6 +232,7 @@ export function MobileBottomBar() {
           </DialogPrimitive.Portal>
         </DialogPrimitive.Root>
       </nav>
+      <AICompanionChatDialog open={aiOpen} onOpenChange={setAiOpen} />
     </>
   );
 }
