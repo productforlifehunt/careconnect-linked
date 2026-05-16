@@ -167,10 +167,11 @@ export function MobileBottomBar() {
 
   // All items for customization list
   const allGroups: Group[] = [
+    { id: "daily", label: isChinese ? "日常照护" : "Daily Care", items: dailyCareItems },
+    { id: "resources", label: isChinese ? "资源与帮助" : "Resources & Help", items: resourceItems },
     { id: "find-care", label: isChinese ? "寻找服务" : "Find Care", items: findCareItems },
     { id: "find-work", label: isChinese ? "寻找工作" : "Find Work", items: findWorkItems },
-    { id: "daily", label: isChinese ? "日常照护" : "Daily Care", items: dailyCareItems },
-    { id: "community", label: isChinese ? "社区与资源" : "Community", items: communityItems },
+    { id: "community", label: isChinese ? "社区" : "Community", items: communityItems },
   ];
 
   const togglePref = (id: string, show: boolean) => {
