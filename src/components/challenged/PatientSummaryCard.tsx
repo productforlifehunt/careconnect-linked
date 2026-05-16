@@ -57,27 +57,27 @@ export function PatientSummaryCard({ caredOneId, name, avatarUrl, relationship, 
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <div className="flex items-center gap-2 rounded-md bg-muted/50 px-2.5 py-1.5">
-            <ClipboardCheck className="h-3.5 w-3.5 text-primary" />
-            <div>
-              <p className="text-[10px] text-muted-foreground leading-none">Check-ins</p>
-              <p className="text-xs font-medium text-foreground capitalize">{latestCheckinLog?.status === "taken" ? "Completed today" : totalCheckins > 0 ? "Pending today" : "No schedule"}</p>
+          <div className="flex items-center gap-1.5 rounded-md bg-muted/50 px-2 py-1.5 min-w-0">
+            <ClipboardCheck className="h-3.5 w-3.5 text-primary shrink-0" />
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] text-muted-foreground truncate">{t("patientSummary.checkIns") || "Check-ins"}</p>
+              <p className="text-[11px] font-medium text-foreground truncate">{latestCheckinLog?.status === "taken" ? (t("patientSummary.completedToday") || "Done today") : totalCheckins > 0 ? (t("patientSummary.pendingToday") || "Pending") : (t("patientSummary.noSchedule") || "None")}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 rounded-md bg-muted/50 px-2.5 py-1.5">
-            <Pill className="h-3.5 w-3.5 text-primary" />
-            <div>
-              <p className="text-[10px] text-muted-foreground leading-none">{t("patientSummary.medications")}</p>
-              <p className="text-xs font-medium text-foreground">{totalMeds} {t("patientSummary.active")}</p>
+          <div className="flex items-center gap-1.5 rounded-md bg-muted/50 px-2 py-1.5 min-w-0">
+            <Pill className="h-3.5 w-3.5 text-primary shrink-0" />
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] text-muted-foreground truncate">{t("patientSummary.medications")}</p>
+              <p className="text-[11px] font-medium text-foreground truncate">{totalMeds} {t("patientSummary.active")}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 rounded-md bg-muted/50 px-2.5 py-1.5">
-            <MapPin className="h-3.5 w-3.5 text-primary" />
-            <div>
-              <p className="text-[10px] text-muted-foreground leading-none">{t("patientSummary.location")}</p>
-              <p className="text-xs font-medium text-foreground">
+          <div className="flex items-center gap-1.5 rounded-md bg-muted/50 px-2 py-1.5 min-w-0">
+            <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] text-muted-foreground truncate">{t("patientSummary.location")}</p>
+              <p className="text-[11px] font-medium text-foreground truncate">
                 {hasRecentLocation
                   ? locationAge != null && locationAge < 60
                     ? `${locationAge}m ${t("patientSummary.ago")}`
@@ -87,11 +87,11 @@ export function PatientSummaryCard({ caredOneId, name, avatarUrl, relationship, 
             </div>
           </div>
 
-          <div className="flex items-center gap-2 rounded-md bg-muted/50 px-2.5 py-1.5">
-            <ClipboardCheck className="h-3.5 w-3.5 text-primary" />
-            <div>
-              <p className="text-[10px] text-muted-foreground leading-none">{t("patientSummary.tasks")}</p>
-              <p className="text-xs font-medium text-foreground">{caredOneTasks.length} {t("patientSummary.pending")}</p>
+          <div className="flex items-center gap-1.5 rounded-md bg-muted/50 px-2 py-1.5 min-w-0">
+            <ClipboardCheck className="h-3.5 w-3.5 text-primary shrink-0" />
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] text-muted-foreground truncate">{t("patientSummary.tasks")}</p>
+              <p className="text-[11px] font-medium text-foreground truncate">{caredOneTasks.length} {t("patientSummary.pending")}</p>
             </div>
           </div>
         </div>
