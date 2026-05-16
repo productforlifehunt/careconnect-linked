@@ -27,6 +27,8 @@ const ALL_TYPES: CalendarEventType[] = [
 ];
 
 export default function CalendarPage() {
+  const { i18n } = useTranslation();
+  const isZh = i18n.language?.startsWith("zh");
   const [enabledTypes, setEnabledTypes] = useState<Set<CalendarEventType>>(new Set(ALL_TYPES));
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
