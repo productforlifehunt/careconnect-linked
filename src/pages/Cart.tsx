@@ -12,6 +12,8 @@ import { useTranslation } from "react-i18next";
 
 export default function Cart() {
   const navigate = useNavigate();
+  const { i18n } = useTranslation();
+  const cn = i18n.language?.startsWith("zh");
   const { user } = useAuth();
   const { data: cart, isLoading } = useCart();
   const removeItem = useRemoveCartItem();
