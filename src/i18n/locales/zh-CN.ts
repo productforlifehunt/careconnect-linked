@@ -462,6 +462,7 @@ const zhCN = {
   patientSummary: {
     checkedIn: "已签到", noCheckIn: "未签到", mood: "情绪", medications: "药物", active: "使用中",
     location: "位置", ago: "前", available: "可用", noData: "无数据", tasks: "任务", pending: "待处理",
+    checkIns: "签到", completedToday: "今日已完成", pendingToday: "今日待办", noSchedule: "无计划",
   },
   symptoms: {
     symptomTracker: "症状和行为追踪", aiAnalysis: "AI分析", log: "记录", saveEntry: "保存记录",
