@@ -33,8 +33,8 @@ export async function wordpressFetchRaw(endpoint: string, options: WordPressFetc
     // Treat 404 on JetEngine relation lookups as "no relations" — the relation
     // may not be registered on this WP yet, or the parent has zero children.
     // Returning an empty payload keeps the UI from crashing on optional links.
-    if (response.status === 404 && /(^|\/)(jet-rel|jet-cct)\//.test(endpoint)) {
-      // Missing relation or CCT not registered on this WP — treat as empty list
+    if (response.status === 404) {
+      // Missing CPT/relation/CCT on this WP — treat as empty list so UI doesn't crash
       return new Response("[]", {
         status: 200,
         headers: { "Content-Type": "application/json" },
