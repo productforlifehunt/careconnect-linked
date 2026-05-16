@@ -515,7 +515,7 @@ export default function CaregiverProfile() {
                       )}
                     </div>
                     <div>
-                      <Label>Date *</Label>
+                      <Label>{isZh ? "日期 *" : "Date *"}</Label>
                       <Input
                         type="date"
                         value={bookingDate}
@@ -530,7 +530,7 @@ export default function CaregiverProfile() {
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <Label>From *</Label>
+                        <Label>{isZh ? "开始 *" : "From *"}</Label>
                         <Select
                           value={bookingTime}
                           onValueChange={(value) => {
@@ -540,7 +540,7 @@ export default function CaregiverProfile() {
                           }}
                           disabled={!bookingDate || startTimeOptions.length === 0}
                         >
-                          <SelectTrigger><SelectValue placeholder={bookingDate ? "Select start" : "Choose date first"} /></SelectTrigger>
+                          <SelectTrigger><SelectValue placeholder={bookingDate ? (isZh ? "选择开始时间" : "Select start") : (isZh ? "请先选日期" : "Choose date first")} /></SelectTrigger>
                           <SelectContent>
                             {startTimeOptions.map((time) => (
                               <SelectItem key={time} value={time}>{formatTimeLabel(time)}</SelectItem>
@@ -549,7 +549,7 @@ export default function CaregiverProfile() {
                         </Select>
                       </div>
                       <div>
-                        <Label>To *</Label>
+                        <Label>{isZh ? "结束 *" : "To *"}</Label>
                         <Select
                           value={bookingEndTime}
                           onValueChange={(value) => {
@@ -558,7 +558,7 @@ export default function CaregiverProfile() {
                           }}
                           disabled={!bookingTime || endTimeOptions.length === 0}
                         >
-                          <SelectTrigger><SelectValue placeholder={bookingTime ? "Select end" : "Choose start first"} /></SelectTrigger>
+                          <SelectTrigger><SelectValue placeholder={bookingTime ? (isZh ? "选择结束时间" : "Select end") : (isZh ? "请先选开始" : "Choose start first")} /></SelectTrigger>
                           <SelectContent>
                             {endTimeOptions.map((time) => (
                               <SelectItem key={time} value={time}>{formatTimeLabel(time)}</SelectItem>
@@ -574,30 +574,30 @@ export default function CaregiverProfile() {
                       </div>
                     )}
                     <div className="rounded-lg border border-border bg-muted/30 px-3 py-2">
-                      <div className="text-xs text-muted-foreground">Duration</div>
+                      <div className="text-xs text-muted-foreground">{isZh ? "时长" : "Duration"}</div>
                       <div className="text-sm font-medium text-foreground">
-                        {durationHrs > 0 ? `${durationHrs} hour${durationHrs > 1 ? "s" : ""}` : "Choose a time range"}
+                        {durationHrs > 0 ? (isZh ? `${durationHrs} 小时` : `${durationHrs} hour${durationHrs > 1 ? "s" : ""}`) : (isZh ? "请选择时间段" : "Choose a time range")}
                       </div>
                     </div>
                     <div>
-                      <Label>Recurring</Label>
+                      <Label>{isZh ? "周期" : "Recurring"}</Label>
                       <Select value={recurringPattern} onValueChange={setRecurringPattern}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">One-time</SelectItem>
-                          <SelectItem value="weekly">Weekly</SelectItem>
-                          <SelectItem value="biweekly">Bi-weekly</SelectItem>
-                          <SelectItem value="monthly">Monthly</SelectItem>
+                          <SelectItem value="none">{isZh ? "单次" : "One-time"}</SelectItem>
+                          <SelectItem value="weekly">{isZh ? "每周" : "Weekly"}</SelectItem>
+                          <SelectItem value="biweekly">{isZh ? "每两周" : "Bi-weekly"}</SelectItem>
+                          <SelectItem value="monthly">{isZh ? "每月" : "Monthly"}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div>
-                      <Label>Notes</Label>
+                      <Label>{isZh ? "备注" : "Notes"}</Label>
                       <Textarea value={bookingNotes} onChange={e => setBookingNotes(e.target.value)} placeholder={isZh ? "任何特殊需求…" : "Any special requirements..."} />
                     </div>
                     <div className="flex justify-between items-center pt-2 border-t">
-                      <span className="text-sm text-muted-foreground">Estimated Total</span>
-                      <span className="text-xl font-bold text-foreground">${total}{recurringPattern !== "none" ? `/${recurringPattern === "weekly" ? "wk" : recurringPattern === "biweekly" ? "2wk" : "mo"}` : ""}</span>
+                      <span className="text-sm text-muted-foreground">{isZh ? "预估总价" : "Estimated Total"}</span>
+                      <span className="text-xl font-bold text-foreground">${total}{recurringPattern !== "none" ? `/${recurringPattern === "weekly" ? (isZh ? "周" : "wk") : recurringPattern === "biweekly" ? (isZh ? "2周" : "2wk") : (isZh ? "月" : "mo")}` : ""}</span>
                     </div>
                     <Button variant="coral" className="w-full" onClick={handleBooking} disabled={createBooking.isPending || hasAvailabilityConflict || !selectedResource}>
                       {createBooking.isPending ? "Submitting..." : "Confirm Booking"}
