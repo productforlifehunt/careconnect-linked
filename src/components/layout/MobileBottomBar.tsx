@@ -125,14 +125,15 @@ export function MobileBottomBar() {
         { id: "daily-ai", title: isChinese ? "AI 助手" : "AI Companion", icon: Bot, onClick: openAi },
       ];
 
-  const communityItems: ToolItem[] = isChallenged
+  const resourceItems: ToolItem[] = isChallenged
     ? [
         { id: "community-resources", title: isChinese ? "资源与帮助" : "Resources & Help", url: "/resources", icon: BookOpen },
-        { id: "community-community", title: isChinese ? "社区" : "Community", url: "/community", icon: Newspaper },
       ]
-    : [
-        { id: "community-community", title: isChinese ? "社区" : "Community", url: "/community", icon: Newspaper },
-      ];
+    : [];
+
+  const communityItems: ToolItem[] = [
+    { id: "community-community", title: isChinese ? "社区" : "Community", url: "/community", icon: Newspaper },
+  ];
 
   // Filter by user prefs
   const visible = (arr: ToolItem[]) => arr.filter((t) => !prefs.hidden.includes(t.id));
