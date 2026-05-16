@@ -50,7 +50,8 @@ export default function CaregiverProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isZh = i18n.language?.startsWith("zh");
   const { isAuthenticated } = useAuth();
   const { data: caregiver, isLoading } = useProvider(id);
   const { data: reviews } = useProviderReviews(id);
