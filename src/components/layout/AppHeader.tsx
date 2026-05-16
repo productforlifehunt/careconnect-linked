@@ -43,7 +43,7 @@ export function AppHeader() {
   const logoWordmarkText = isCareDuo
     ? (isChinese ? "多护" : "CareDuo")
     : isCareCNC
-    ? (isChinese ? "护畅" : "Care CNC")
+    ? (isChinese ? "护畅" : "Care cnc")
     : `${site.logoText}${site.logoAccent}`;
 
   const publicNav = isChallenged
@@ -92,11 +92,12 @@ export function AppHeader() {
                   <img src={huchangIcon} alt="护畅" className="w-12 h-12 rounded-xl" />
                 ) : isCareCNC ? (
                   <>
-                    <div className="w-11 h-11 rounded-xl hero-gradient flex flex-col items-center justify-center leading-none px-1">
-                      <span className="text-primary-foreground font-bold text-[13px] tracking-tight">Care</span>
-                      <span className="text-primary-foreground font-semibold text-[7px] tracking-[0.15em] mt-px">CNC</span>
+                    <div className="w-9 h-9 rounded-xl hero-gradient flex items-center justify-center">
+                      <span className="text-primary-foreground font-bold text-base leading-none">C</span>
                     </div>
-                    <span className="font-bold text-lg text-primary">{logoWordmarkText}</span>
+                    <span className="font-semibold text-[17px] tracking-tight text-primary lowercase">
+                      <span className="uppercase">C</span>are cnc
+                    </span>
                   </>
                 ) : (
                   <>
@@ -166,11 +167,12 @@ export function AppHeader() {
             <img src={huchangIcon} alt="护畅" className="w-12 h-12 rounded-xl" />
           ) : isCareCNC ? (
             <>
-              <div className="w-11 h-11 rounded-xl hero-gradient flex flex-col items-center justify-center leading-none px-1">
-                <span className="text-primary-foreground font-bold text-[13px] tracking-tight">Care</span>
-                <span className="text-primary-foreground font-semibold text-[7px] tracking-[0.15em] mt-px">CNC</span>
+              <div className="w-9 h-9 rounded-xl hero-gradient flex items-center justify-center">
+                <span className="text-primary-foreground font-bold text-base leading-none">C</span>
               </div>
-              <span className="font-bold text-lg hidden sm:inline text-primary">{logoWordmarkText}</span>
+              <span className="font-semibold text-[17px] tracking-tight text-primary">
+                <span>C</span><span className="lowercase">are cnc</span>
+              </span>
             </>
           ) : (
             <>
