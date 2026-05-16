@@ -141,14 +141,14 @@ export default function Profile() {
 
         <TabsContent value="personal" className="space-y-6">
           <Card className="border-transparent card-elevated">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-6">
-                <div className="relative group">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center gap-4 sm:gap-6 min-w-0">
+                <div className="relative group shrink-0">
                   {profile?.avatar_url ? (
-                    <img src={profile.avatar_url} alt="" className="w-20 h-20 rounded-2xl object-cover" />
+                    <img src={profile.avatar_url} alt="" className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover" />
                   ) : (
-                    <div className="w-20 h-20 rounded-2xl bg-primary flex items-center justify-center">
-                      <span className="text-primary-foreground text-2xl font-bold">{displayName.charAt(0).toUpperCase()}</span>
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-primary flex items-center justify-center">
+                      <span className="text-primary-foreground text-xl sm:text-2xl font-bold">{displayName.charAt(0).toUpperCase()}</span>
                     </div>
                   )}
                   <button type="button" className="absolute inset-0 rounded-2xl bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer" onClick={() => fileInputRef.current?.click()} disabled={avatarUploading}>
@@ -168,10 +168,10 @@ export default function Profile() {
                     } finally { setAvatarUploading(false); if (fileInputRef.current) fileInputRef.current.value = ""; }
                   }} />
                 </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-foreground">{displayName}</h2>
-                  <p className="text-sm text-muted-foreground">{email}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{roleLabel}</p>
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-base sm:text-lg font-semibold text-foreground truncate">{displayName}</h2>
+                  <p className="text-xs sm:text-sm text-muted-foreground truncate">{email}</p>
+                  <p className="text-[11px] sm:text-xs text-muted-foreground mt-1 truncate">{roleLabel}</p>
                 </div>
               </div>
             </CardContent>
