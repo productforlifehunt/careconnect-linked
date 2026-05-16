@@ -34,6 +34,8 @@ export function HomeTab({
   createPost, onEditPost, onTogglePin, onDeletePost,
 }: HomeTabProps) {
   const { toast } = useToast();
+  const { t, i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
   const site = useSite();
   const [content, setContent] = useState("");
   const [postType, setPostType] = useState("discussion");
