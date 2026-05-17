@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Sparkles, RefreshCw, AlertTriangle, Lightbulb, Shield } from "lucide-react";
+import { Wand2, RefreshCw, AlertTriangle, Lightbulb, Shield } from "lucide-react";
 import { invokeAI, parseAIJson } from "@/lib/ai-service";
 import { useTranslation } from "react-i18next";
 
@@ -69,7 +69,7 @@ export function AIInsightsPanel({ caredOnes, tasks, bookings }: AIInsightsPanelP
     <Card className="border-transparent card-elevated">
       <CardHeader className="flex-row items-center justify-between pb-2">
         <CardTitle className="text-base flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-primary" />
+          <Wand2 className="h-4 w-4 text-primary" />
           {t("ai.aiCareInsights")}
         </CardTitle>
         <Button variant="ghost" size="sm" onClick={generateInsights} disabled={loading} className="h-7 text-xs">

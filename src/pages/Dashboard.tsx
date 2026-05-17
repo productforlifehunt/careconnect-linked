@@ -11,7 +11,7 @@ import {
 } from "@/hooks/use-care-data";
 import {
   CalendarDays, Users, MapPin, ArrowRight, CheckCircle, AlertCircle, MessageSquare,
-  ShoppingBag, Heart, BookOpen, Sparkles, Briefcase, Bell, Calendar as CalIcon,
+  ShoppingBag, Heart, BookOpen, Wand2, Briefcase, Bell, Calendar as CalIcon,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PatientSummaryCard } from "@/components/challenged/PatientSummaryCard";
@@ -121,7 +121,7 @@ export default function Dashboard() {
     { icon: Heart,       label: t("nav.community", { defaultValue: "Community" }),   to: "/community", color: "text-coral" },
     { icon: BookOpen,    label: t("nav.resources", { defaultValue: "Resources" }),   to: "/resources", color: "text-primary" },
     { icon: Bell,        label: t("nav.notifications", { defaultValue: "Alerts" }), to: "/notifications", color: "text-warning" },
-    { icon: Sparkles,    label: t("nav.aiCompanion", { defaultValue: "AI Companion" }), to: "/ai-companion", color: "text-primary" },
+    { icon: Wand2,    label: t("nav.aiCompanion", { defaultValue: "AI Companion" }), to: "/ai-companion", color: "text-primary" },
   ];
 
   // ── Each widget id maps to its own block; rendered in user-defined order ──

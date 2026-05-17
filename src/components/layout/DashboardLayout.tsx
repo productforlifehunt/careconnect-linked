@@ -16,7 +16,7 @@ import {
   ShoppingCart,
   Lightbulb,
   HeartPulse,
-  Sparkles,
+  Wand2,
   ShieldCheck,
   HandHeart,
   BookOpen,
@@ -48,7 +48,7 @@ function useSidebarItems() {
     base.push(
       { title: site.navLabels.awareD || "AwareD", url: "/aware", icon: Lightbulb },
       { title: site.navLabels.careD || "CareD", url: "/care-guides", icon: HeartPulse },
-      { title: site.navLabels.copeD || "CopeD", url: "/coping", icon: Sparkles },
+      { title: site.navLabels.copeD || "CopeD", url: "/coping", icon: Wand2 },
       { title: site.navLabels.safeD || "SafeD", url: "/safety-guides", icon: ShieldCheck },
       { title: site.navLabels.accompanieD || "AccompanieD", url: "/accompanied", icon: HandHeart },
     );

@@ -1,5 +1,5 @@
 import { ContentHub } from "@/components/challenged/ContentHub";
-import { Sparkles } from "lucide-react";
+import { Wand2 } from "lucide-react";
 
 const SUBCATEGORIES = [
   { key: "stress", label: "Stress Management", labelZh: "压力管理" },
@@ -22,7 +22,7 @@ export default function CopeD() {
       titleZh="照护者应对指南"
       subtitle="You matter too. Guides for managing stress, preventing burnout, and maintaining your own wellbeing as a caregiver."
       subtitleZh="您同样重要。帮助照护者管理压力、预防倦怠、维护自身健康的指南。"
-      icon={<Sparkles className="h-6 w-6 text-white" />}
+      icon={<Wand2 className="h-6 w-6 text-white" />}
       accentColor="from-teal-500 to-cyan-600"
       subcategories={SUBCATEGORIES}
       basePath="/coping"

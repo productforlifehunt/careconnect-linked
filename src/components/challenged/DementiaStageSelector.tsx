@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Check, ChevronRight } from "lucide-react";
+import { Wand2, Check, ChevronRight } from "lucide-react";
 import { useUpdateDementiaStage } from "@/hooks/use-care-data";
 import { toast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
@@ -63,7 +63,7 @@ export function DementiaStageSelector({ caredOneId, caredOneName, currentStage }
     <Card className="border-transparent card-elevated">
       <CardHeader className="pb-2">
         <CardTitle className="text-base flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-primary" />
+          <Wand2 className="h-4 w-4 text-primary" />
           {t("dementiaStage.cognitiveStage")} — {caredOneName}
         </CardTitle>
       </CardHeader>
