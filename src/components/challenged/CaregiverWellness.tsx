@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Heart, Plus, Brain, SmilePlus, X } from "lucide-react";
+import { Heart, Plus, Sparkles, SmilePlus, X } from "lucide-react";
 import { useCaregiverWellnessLogs, useCreateCaregiverWellnessLog } from "@/hooks/use-care-data";
 import { invokeAI } from "@/lib/ai-service";
 import { toast } from "@/hooks/use-toast";
@@ -88,7 +88,7 @@ export function CaregiverWellness() {
         </CardTitle>
         <div className="flex gap-1">
           <Button variant="ghost" size="sm" onClick={generateAISupport} disabled={aiLoading} className="h-7 text-xs">
-            <Brain className={`h-3 w-3 mr-1 ${aiLoading ? "animate-spin" : ""}`} />
+            <Sparkles className={`h-3 w-3 mr-1 ${aiLoading ? "animate-spin" : ""}`} />
             {t("ai.aiSupport")}
           </Button>
           <Button variant="ghost" size="sm" onClick={() => setShowForm(!showForm)} className="h-7 text-xs">
