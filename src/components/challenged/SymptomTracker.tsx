@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Activity, Plus, Sparkles, TrendingUp, Sun, Moon, AlertTriangle, RefreshCw, X
+  Activity, Plus, Wand2, TrendingUp, Sun, Moon, AlertTriangle, RefreshCw, X
 } from "lucide-react";
 import { useSymptomLogs, useCreateSymptomLog } from "@/hooks/use-care-data";
 import { invokeAI } from "@/lib/ai-service";
@@ -27,7 +27,7 @@ const SYMPTOM_ICONS: Record<string, typeof Sun> = {
   agitation: AlertTriangle,
   wandering: Activity,
   sleep_disruption: Moon,
-  confusion: Sparkles,
+  confusion: Wand2,
   anxiety: Activity,
 };
 
@@ -119,7 +119,7 @@ export function SymptomTracker({ caredOneId, caredOneName }: SymptomTrackerProps
         </CardTitle>
         <div className="flex gap-1">
           <Button variant="ghost" size="sm" onClick={runAIAnalysis} disabled={aiLoading || !logs?.length} className="h-7 text-xs">
-            <Sparkles className={`h-3 w-3 mr-1 ${aiLoading ? "animate-spin" : ""}`} />
+            <Wand2 className={`h-3 w-3 mr-1 ${aiLoading ? "animate-spin" : ""}`} />
             {t("symptoms.aiAnalysis")}
           </Button>
           <Button variant="ghost" size="sm" onClick={() => setShowForm(!showForm)} className="h-7 text-xs">
@@ -170,7 +170,7 @@ export function SymptomTracker({ caredOneId, caredOneName }: SymptomTrackerProps
         {aiAnalysis && (
           <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
             <div className="flex items-center gap-1.5 mb-1.5">
-              <Sparkles className="h-3.5 w-3.5 text-primary" />
+              <Wand2 className="h-3.5 w-3.5 text-primary" />
               <span className="text-xs font-semibold text-foreground">{t("ai.aiBehaviorAnalysis")}</span>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line">{aiAnalysis}</p>

@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
-  Shield, Heart, Sparkles, MessageCircle, Lock, AlertTriangle,
+  Shield, Heart, Wand2, MessageCircle, Lock, AlertTriangle,
   CheckCircle, Bot, Phone, Video, Headphones, ArrowRight, Eye
 } from "lucide-react";
 
@@ -50,7 +50,7 @@ const AICompanion = () => {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[
-            { icon: Sparkles, titleKey: "feature1Title", descKey: "feature1Desc" },
+            { icon: Wand2, titleKey: "feature1Title", descKey: "feature1Desc" },
             { icon: Shield, titleKey: "feature2Title", descKey: "feature2Desc" },
             { icon: Lock, titleKey: "feature3Title", descKey: "feature3Desc" },
             { icon: Heart, titleKey: "feature4Title", descKey: "feature4Desc" },

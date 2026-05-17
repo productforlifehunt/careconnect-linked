@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Puzzle, RefreshCw, Loader2, CheckCircle, Sparkles } from "lucide-react";
+import { Puzzle, RefreshCw, Loader2, CheckCircle, Wand2 } from "lucide-react";
 import { invokeAI, parseAIJson } from "@/lib/ai-service";
 import { useTranslation } from "react-i18next";
 
@@ -66,7 +66,7 @@ export function CognitiveExercises() {
       <CardContent>
         {!exercise && !loading ? (
           <div className="text-center py-6 space-y-3">
-            <Sparkles className="h-10 w-10 text-primary mx-auto" />
+            <Wand2 className="h-10 w-10 text-primary mx-auto" />
             <p className="text-muted-foreground">{t("cognitive.readyToExercise")}</p>
             <Button onClick={generate} className="rounded-full px-6">
               {t("cognitive.startGame")}

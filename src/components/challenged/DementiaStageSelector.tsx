@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Check, ChevronRight } from "lucide-react";
+import { Wand2, Check, ChevronRight } from "lucide-react";
 import { useUpdateDementiaStage } from "@/hooks/use-care-data";
 import { toast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
