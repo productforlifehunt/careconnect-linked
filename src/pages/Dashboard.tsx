@@ -1,10 +1,9 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSite } from "@/contexts/SiteContext";
 import {
@@ -20,7 +19,10 @@ import { DailyTimeline } from "@/components/challenged/DailyTimeline";
 import { LovedOneSimpleView } from "@/components/challenged/LovedOneSimpleView";
 import { DementiaAssistant } from "@/components/challenged/DementiaAssistant";
 import { CaregiverWellness } from "@/components/challenged/CaregiverWellness";
-import { DashboardWidgetConfig, getWidgetPrefs, setWidgetPrefs } from "@/components/dashboard/DashboardWidgetConfig";
+import {
+  DashboardWidgetConfig, getWidgetPrefs, setWidgetPrefs,
+  getWidgetOrder, setWidgetOrder, resolveOrder,
+} from "@/components/dashboard/DashboardWidgetConfig";
 import { getAvailableWidgets, getDefaultVisibility } from "@/components/dashboard/widgets";
 
 export default function Dashboard() {
