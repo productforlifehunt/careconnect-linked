@@ -16,9 +16,10 @@ export const WIDGET_REGISTRY: WidgetDef[] = [
 
   // ── Shared widgets ──
   { id: "stats",              label: "Stats Overview",             roles: ["all"] },
+  { id: "quick-actions",      label: "Quick Actions",              roles: ["all"] },
   { id: "upcoming-bookings",  label: "Upcoming Bookings",          roles: ["all"] },
   { id: "care-tasks",         label: "Care Tasks",                 roles: ["caregiver", "provider"] },
-  { id: "quick-actions",      label: "Quick Actions",              roles: ["all"] },
+  { id: "community-feed",     label: "Community Feed",             roles: ["all"] },
 
   // ── Challenged-only footer ──
   { id: "dementia-assistant",  label: "AI Companion",              roles: ["caregiver", "provider"], challengedOnly: true },
