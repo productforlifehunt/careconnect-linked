@@ -132,7 +132,7 @@ export function VisibilityPicker({ value, onChange, memberCategories = [], membe
             <div className="p-6 text-center">
               <Users className="h-6 w-6 text-muted-foreground/40 mx-auto mb-2" />
               <p className="text-xs text-muted-foreground">
-                No sub-groups or members yet. Create sub-groups in Members tab to limit visibility.
+                {Z("还没有子分组或成员。在「成员」标签创建子分组以限制可见性。", "No sub-groups or members yet. Create sub-groups in Members tab to limit visibility.")}
               </p>
             </div>
           )}
