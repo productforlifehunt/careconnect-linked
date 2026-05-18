@@ -251,12 +251,7 @@ const Index = () => {
                 ) : site.id === "carecnc" && isChinese ? (
                   <img src={huchangIcon} alt="护畅" className="w-12 h-12 rounded-xl" loading="lazy" />
                 ) : site.id === "carecnc" ? (
-                  <>
-                    <div className="w-9 h-9 rounded-xl hero-gradient flex items-center justify-center">
-                      <span className="text-primary-foreground font-bold text-sm leading-none">C</span>
-                    </div>
-                    <span className="font-bold text-primary text-[15px] tracking-tight">Carecnc</span>
-                  </>
+                  <span className="font-bold text-primary text-xl tracking-tight">Carecnc</span>
                 ) : (
                   <>
                     <div className="w-8 h-8 rounded-lg hero-gradient flex items-center justify-center">
