@@ -471,7 +471,7 @@ export default function GPSTracking() {
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
                           {zone.shape_type === "polygon" ? `Polygon (${zone.polygon_points?.length || 0} points)` : `Radius: ${zone.radius_meters || 200}m`}
-                          {" · "}{zone.zone_type === "danger" ? "⚠️ Danger" : "✅ Safe"}
+                          {" · "}{zone.zone_type === "danger" ? Z("⚠️ 危险", "⚠️ Danger") : Z("✅ 安全", "✅ Safe")}
                         </p>
                       </div>
                     ))
