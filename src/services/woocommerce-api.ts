@@ -1643,8 +1643,11 @@ export async function getProviderBookingSlots(pid: string, minDate: string, maxD
 export async function getDokanVendorOrders(perPage = 50) {
   try {
     return await dokanFetch(`orders?per_page=${perPage}`);
-  } catch (error) {
-    console.error('Error fetching vendor orders:', error);
+  } catch (error: any) {
+    // Non-vendor users (or expired JWT) will fail signature verification — that's expected.
+    if (!String(error?.message || '').includes('Signature verification')) {
+      console.warn('getDokanVendorOrders skipped:', error?.message || error);
+    }
     return [];
   }
 }
