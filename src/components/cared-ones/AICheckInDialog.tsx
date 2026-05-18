@@ -8,6 +8,7 @@ import { Bot, Loader2, Send, Check, SkipForward } from "lucide-react";
 import { invokeAI, parseAIJson, type AIChatMessage } from "@/lib/ai-service";
 import { useLogCheckin } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   open: boolean;
