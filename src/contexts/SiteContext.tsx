@@ -204,6 +204,12 @@ const DOMAIN_MAP: Record<string, SiteId> = {
   "localhost:5174": "challenged",
 };
 
+const SITE_STORAGE_KEY = "__lovable_site_id";
+
+function persistSite(id: SiteId) {
+  try { sessionStorage.setItem(SITE_STORAGE_KEY, id); } catch {}
+}
+
 function detectSite(): SiteId {
   if (typeof window === "undefined") return "carecnc";
 
@@ -212,13 +218,23 @@ function detectSite(): SiteId {
 
   const params = new URLSearchParams(window.location.search);
   const siteParam = params.get("__site");
-  if (siteParam === "challenged") return "challenged";
-  if (siteParam === "challenged-v1" || siteParam === "challenged-1.0" || siteParam === "yichang-v1") return "challenged-v1";
-  if (siteParam === "carecnc" || siteParam === "careconnected") return "carecnc";
-  if (siteParam === "duocare") return "duocare";
+  let resolved: SiteId | null = null;
+  if (siteParam === "challenged") resolved = "challenged";
+  else if (siteParam === "challenged-v1" || siteParam === "challenged-1.0" || siteParam === "yichang-v1") resolved = "challenged-v1";
+  else if (siteParam === "carecnc" || siteParam === "careconnected") resolved = "carecnc";
+  else if (siteParam === "duocare") resolved = "duocare";
 
-  if (DOMAIN_MAP[host]) return DOMAIN_MAP[host];
-  if (DOMAIN_MAP[hostname]) return DOMAIN_MAP[hostname];
+  if (resolved) { persistSite(resolved); return resolved; }
+
+  // Fallback: remember last site within the session so SPA navigation
+  // (which strips `?__site=` from internal Links) keeps us inside the same brand.
+  try {
+    const stored = sessionStorage.getItem(SITE_STORAGE_KEY) as SiteId | null;
+    if (stored && SITE_CONFIGS[stored]) return stored;
+  } catch {}
+
+  if (DOMAIN_MAP[host]) { persistSite(DOMAIN_MAP[host]); return DOMAIN_MAP[host]; }
+  if (DOMAIN_MAP[hostname]) { persistSite(DOMAIN_MAP[hostname]); return DOMAIN_MAP[hostname]; }
 
   return "challenged";
 }
