@@ -241,8 +241,8 @@ export default function GPSTracking() {
         lastBreach.current[dedupKey] = now;
 
         toast({
-          title: breach.alertType === "entered_danger_zone" ? "⚠️ Danger Zone Alert" : "📍 Safe Zone Alert",
-          description: `${person.name} — ${breach.alertType.replace(/_/g, " ")} (${breach.zoneName})`,
+          title: breach.alertType === "entered_danger_zone" ? Z("⚠️ 危险区域警报", "⚠️ Danger Zone Alert") : Z("📍 安全区域警报", "📍 Safe Zone Alert"),
+          description: `${person.name} — ${Z(({ entered_danger_zone: "进入危险区域", exited_safe_zone: "离开安全区域", entered_safe_zone: "进入安全区域" } as any)[breach.alertType] || breach.alertType, breach.alertType.replace(/_/g, " "))} (${breach.zoneName})`,
           variant: breach.alertType.includes("danger") ? "destructive" : "default",
         });
       });
