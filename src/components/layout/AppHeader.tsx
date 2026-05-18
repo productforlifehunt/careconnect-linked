@@ -39,6 +39,7 @@ export function AppHeader() {
   const isChallenged = site.family === "challenged";
   const isCareDuo = site.id === "duocare";
   const isCareCNC = site.id === "carecnc";
+  const logoBrand = site.family === "challenged" || site.brandSlug.startsWith("challenged") ? "challenged" : site.id;
   const logoBadgeText = isCareDuo ? (isChinese ? "多护" : "CD") : site.logoText;
   const logoWordmarkText = isCareDuo
     ? (isChinese ? "多护" : "CareDuo")
@@ -86,11 +87,11 @@ export function AppHeader() {
           <SheetContent side="left" className="w-72 p-0">
             <div className="p-4 border-b">
               <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-2">
-                {site.family === "challenged" && isChinese ? (
+                {logoBrand === "challenged" ? (
                   <img src={yichangIcon} alt="忆畅" className="w-12 h-12 rounded-xl" />
-                ) : isCareCNC && isChinese ? (
+                ) : logoBrand === "carecnc" && isChinese ? (
                   <img src={huchangIcon} alt="护畅" className="w-12 h-12 rounded-xl" />
-                ) : isCareCNC ? (
+                ) : logoBrand === "carecnc" ? (
                   <div className="w-12 h-12 rounded-[22%] hero-gradient flex flex-col items-center justify-center leading-none shadow-sm">
                     <span className="text-primary-foreground font-bold text-[13px] tracking-tight">Care</span>
                     <span className="text-primary-foreground font-bold text-[13px] tracking-tight">cnc</span>
@@ -157,11 +158,11 @@ export function AppHeader() {
 
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 shrink-0">
-          {site.family === "challenged" && isChinese ? (
+          {logoBrand === "challenged" ? (
             <img src={yichangIcon} alt="忆畅" className="w-12 h-12 rounded-xl" />
-          ) : isCareCNC && isChinese ? (
+          ) : logoBrand === "carecnc" && isChinese ? (
             <img src={huchangIcon} alt="护畅" className="w-12 h-12 rounded-xl" />
-          ) : isCareCNC ? (
+          ) : logoBrand === "carecnc" ? (
             <div className="w-12 h-12 rounded-[22%] hero-gradient flex flex-col items-center justify-center leading-none shadow-sm">
               <span className="text-primary-foreground font-bold text-[13px] tracking-tight">Care</span>
               <span className="text-primary-foreground font-bold text-[13px] tracking-tight">cnc</span>
