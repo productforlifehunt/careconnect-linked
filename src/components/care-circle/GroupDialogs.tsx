@@ -10,6 +10,13 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Loader2, Search, X, Heart, Trash2, KeyRound } from "lucide-react";
 import { useSearchProfiles, useAddCaredOneToGroup, useUpdateCareGroup, useDeleteCareGroup } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
+
+function useZ() {
+  const { i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
+  return (cn: string, en: string) => (isCN ? cn : en);
+}
 
 // ─── Settings Dialog ────────────────────────────────────────
 export function GroupSettingsDialog({
