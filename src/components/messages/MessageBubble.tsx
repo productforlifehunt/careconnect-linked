@@ -11,6 +11,8 @@ interface MessageBubbleProps {
 }
 
 export function MessageBubble({ message, isMe, conversationId, otherUserId }: MessageBubbleProps) {
+  const { i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
   const rawContent: string = message.message_content || message.content || "";
   const quote = extractQuote(rawContent);
 
