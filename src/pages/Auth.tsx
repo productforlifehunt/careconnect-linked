@@ -191,17 +191,17 @@ export default function Auth() {
               </Button>
             </TabsContent>
             <TabsContent value="auth2" className="space-y-4 mt-4">
-              <p className="text-sm text-muted-foreground">Sign in with your backup account for uninterrupted access.</p>
+              <p className="text-sm text-muted-foreground">{t("auth.backupSignInDesc", "Sign in with your backup account for uninterrupted access.")}</p>
               <div>
-                <Label>{t("common.email")} / Username</Label>
-                <Input type="text" value={wpEmail} onChange={e => setWpEmail(e.target.value)} placeholder="Email or username" onKeyDown={e => e.key === "Enter" && handleWpLogin()} />
+                <Label>{t("common.email")} / {t("auth.username", "Username")}</Label>
+                <Input type="text" value={wpEmail} onChange={e => setWpEmail(e.target.value)} placeholder={t("auth.emailOrUsername", "Email or username")} onKeyDown={e => e.key === "Enter" && handleWpLogin()} />
               </div>
               <div>
                 <Label>{t("common.password")}</Label>
-                <PasswordInput value={wpPassword} onChange={e => setWpPassword(e.target.value)} placeholder="Password" onKeyDown={e => e.key === "Enter" && handleWpLogin()} />
+                <PasswordInput value={wpPassword} onChange={e => setWpPassword(e.target.value)} placeholder={t("common.password")} onKeyDown={e => e.key === "Enter" && handleWpLogin()} />
               </div>
               <Button variant="coral" className="w-full" onClick={handleWpLogin} disabled={wpLoading}>
-                {wpLoading ? "Signing in..." : "Sign In"}
+                {wpLoading ? t("auth.signingIn", "Signing in...") : t("auth.signIn", "Sign In")}
               </Button>
             </TabsContent>
           </Tabs>
