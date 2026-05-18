@@ -420,7 +420,7 @@ export function TasksTab({
           <AlertDialogHeader>
             <AlertDialogTitle>{Z("发布到护理工作板？", "Post to Job Board?")}</AlertDialogTitle>
             <AlertDialogDescription>
-              {Z(`此操作会将「${jobConfirmTask?.title ?? ""}」发布到公开的护理工作板，团聚之外的护理者也可以申请帮忙。`,
+              {Z(`此操作会将「${jobConfirmTask?.title ?? ""}」发布到公开的护理工作板，护理群组之外的护理者也可以申请帮忙。`,
                  `This will publish "${jobConfirmTask?.title}" to the public Job Board so caregivers outside your group can apply to help.`)}
             </AlertDialogDescription>
           </AlertDialogHeader>

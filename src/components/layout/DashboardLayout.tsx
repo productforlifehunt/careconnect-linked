@@ -32,10 +32,10 @@ function useSidebarItems() {
 
   const base = [
     { title: L("控制面板", site.navLabels.dashboard), url: "/dashboard", icon: LayoutDashboard },
-    { title: L(isChallenged ? "亲人" : "被照顾者", site.navLabels.caredOnes), url: "/cared-ones", icon: HeartIcon },
+    { title: L(isChallenged ? "被护理者" : "被照顾者", site.navLabels.caredOnes), url: "/cared-ones", icon: HeartIcon },
     { title: L("预约", "Appointments"), url: "/bookings", icon: CalendarDays },
     { title: L("消息", "Messages"), url: "/messages", icon: MessageSquare },
-    { title: L(isChallenged ? "团聚" : "照护小组", site.navLabels.careGroups), url: "/care-circle", icon: Users },
+    { title: L(isChallenged ? "护理群组" : "照护小组", site.navLabels.careGroups), url: "/care-circle", icon: Users },
     { title: L("已发布护理工作", "Jobs Board"), url: "/jobs", icon: Briefcase },
     { title: L(isChallenged ? "寻求帮助" : "寻找护理", site.navLabels.findCare), url: "/search", icon: Search },
     { title: L(isChallenged ? "定位" : "定位追踪", site.navLabels.gpsTracking), url: "/gps-tracking", icon: MapPin },

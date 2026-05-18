@@ -31,7 +31,7 @@ export default function Dashboard() {
   const isChinese = i18n.language?.startsWith("zh");
   const { user } = useAuth();
   const site = useSite();
-  const careGroupsLabel = isChinese ? t("nav.united", { defaultValue: "团聚" }) : site.navLabels.careGroups;
+  const careGroupsLabel = isChinese ? t("nav.united", { defaultValue: "护理群组" }) : site.navLabels.careGroups;
   const { data: bookings, isLoading: bookingsLoading } = useBookings();
   const { data: tasks, isLoading: tasksLoading } = useCareTasks();
   const { data: stats } = useDashboardStats();

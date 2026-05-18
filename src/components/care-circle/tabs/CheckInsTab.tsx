@@ -22,8 +22,8 @@ export function CheckInsTab({ groupCaredOnes, activeGroupId }: CheckInsTabProps)
     return (
       <div className="text-center py-12">
         <ClipboardCheck className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-        <p className="text-muted-foreground mb-2">{Z("暂无可签到的亲人。", "No cared ones to check in on.")}</p>
-        <p className="text-sm text-muted-foreground">{Z("请前往「亲人」标签先添加一位亲人。", "Go to the Cared Ones tab and add one first.")}</p>
+        <p className="text-muted-foreground mb-2">{Z("暂无可签到的被护理者。", "No cared ones to check in on.")}</p>
+        <p className="text-sm text-muted-foreground">{Z("请前往「被护理者」标签先添加一位被护理者。", "Go to the Cared Ones tab and add one first.")}</p>
       </div>
     );
   }
@@ -33,7 +33,7 @@ export function CheckInsTab({ groupCaredOnes, activeGroupId }: CheckInsTabProps)
       {groupCaredOnes.length > 1 && (
         <div className="flex gap-2 mb-4">
           {groupCaredOnes.map((co: any) => (
-            <Badge key={co.user_id} variant={activeCOId === co.user_id ? "default" : "outline"} className="cursor-pointer" onClick={() => setSelectedCaredOne(co.user_id)}>{co.profile?.full_name || (isCN ? "亲人" : site.caredOneSingular)}</Badge>
+            <Badge key={co.user_id} variant={activeCOId === co.user_id ? "default" : "outline"} className="cursor-pointer" onClick={() => setSelectedCaredOne(co.user_id)}>{co.profile?.full_name || (isCN ? "被护理者" : site.caredOneSingular)}</Badge>
           ))}
         </div>
       )}
