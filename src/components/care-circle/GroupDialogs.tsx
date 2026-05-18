@@ -29,6 +29,7 @@ export function GroupSettingsDialog({
   onDeleteSuccess: () => void; onLeaveGroup: () => void;
 }) {
   const { toast } = useToast();
+  const Z = useZ();
   const [name, setName] = useState(activeGroup?.name || "");
   const [desc, setDesc] = useState(activeGroup?.description || "");
   const [isPrivate, setIsPrivate] = useState(activeGroup?.is_private || false);
@@ -46,14 +47,14 @@ export function GroupSettingsDialog({
   const handleSave = () => {
     if (!activeGroupId || !name.trim()) return;
     updateGroup.mutate({ id: activeGroupId, updates: { name, description: desc || null, is_private: isPrivate } }, {
-      onSuccess: () => { onOpenChange(false); toast({ title: "Group updated!" }); },
+      onSuccess: () => { onOpenChange(false); toast({ title: Z("小组已更新！", "Group updated!") }); },
     });
   };
 
   const handleDelete = () => {
     if (!activeGroupId) return;
     deleteGroup.mutate(activeGroupId, {
-      onSuccess: () => { onOpenChange(false); onDeleteSuccess(); toast({ title: "Group deleted" }); },
+      onSuccess: () => { onOpenChange(false); onDeleteSuccess(); toast({ title: Z("小组已删除", "Group deleted") }); },
     });
   };
 
@@ -126,6 +127,7 @@ export function EditPostDialog({
   post: any; onClose: () => void; updatePost: any;
 }) {
   const { toast } = useToast();
+  const Z = useZ();
   const [content, setContent] = useState(post?.content || "");
   const [title, setTitle] = useState(post?.title || "");
 
@@ -139,7 +141,7 @@ export function EditPostDialog({
           <Button variant="coral" className="w-full" onClick={() => {
             if (!post) return;
             updatePost.mutate({ id: post.id, updates: { content, title: title || null } }, {
-              onSuccess: () => { onClose(); toast({ title: "Post updated!" }); },
+              onSuccess: () => { onClose(); toast({ title: Z("帖子已更新！", "Post updated!") }); },
             });
           }} disabled={updatePost.isPending || !content.trim()}>Save Changes</Button>
         </div>
@@ -155,6 +157,7 @@ export function AddCaredOneDialog({
   open: boolean; onOpenChange: (o: boolean) => void; activeGroupId: string | null;
 }) {
   const { toast } = useToast();
+  const Z = useZ();
   const [search, setSearch] = useState("");
   const [selectedPerson, setSelectedPerson] = useState<any>(null);
   const [skipInvitation, setSkipInvitation] = useState(false);
@@ -166,9 +169,9 @@ export function AddCaredOneDialog({
     addCaredOne.mutate({ groupId: activeGroupId, caredOneId: selectedPerson.id }, {
       onSuccess: () => {
         onOpenChange(false); setSelectedPerson(null); setSearch(""); setSkipInvitation(false);
-        toast({ title: "Cared one added to group!" });
+        toast({ title: Z("已将被照护者加入小组！", "Cared one added to group!") });
       },
-      onError: (err: any) => toast({ title: "Failed to add", description: err.message, variant: "destructive" }),
+      onError: (err: any) => toast({ title: Z("添加失败", "Failed to add"), description: err.message, variant: "destructive" }),
     });
   };
 
