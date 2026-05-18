@@ -14,6 +14,7 @@ import {
   Loader2, Send, Radio, Pencil, RotateCcw, Layers,
   ExternalLink,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import {
   useSafeZones, useCreateSafeZone, useUpdateSafeZone, useDeleteSafeZone,
   useCaredOneLocation, useCaredOneLocationHistory,
