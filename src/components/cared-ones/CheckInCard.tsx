@@ -107,11 +107,11 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
       },
       {
         onSuccess: () => {
-          setForm({ name: "Daily Check-In", detail: "", frequency: "Once daily", time: "08:00", instructions: "", start_date: "", note: "" });
+          setForm({ name: Z("每日签到", "Daily Check-In"), detail: "", frequency: Z("每日一次", "Once daily"), time: "08:00", instructions: "", start_date: "", note: "" });
           setAddOpen(false);
-          toast({ title: "Check-in schedule created ✓" });
+          toast({ title: Z("签到日程已创建 ✓", "Check-in schedule created ✓") });
         },
-        onError: (e: any) => toast({ title: "Failed", description: String(e?.message || e), variant: "destructive" }),
+        onError: (e: any) => toast({ title: Z("操作失败", "Failed"), description: String(e?.message || e), variant: "destructive" }),
       }
     );
   };
@@ -129,9 +129,9 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
         onSuccess: () => {
           setLogDialog({ open: false, checkin: null, status: "checked" });
           setLogNote("");
-          toast({ title: `Check-in ${STATUS_LABEL[status].toLowerCase()} ✓` });
+          toast({ title: Z(`签到${STATUS_LABEL[status]} ✓`, `Check-in ${STATUS_LABEL[status].toLowerCase()} ✓`) });
         },
-        onError: (e: any) => toast({ title: "Failed", description: String(e?.message || e), variant: "destructive" }),
+        onError: (e: any) => toast({ title: Z("操作失败", "Failed"), description: String(e?.message || e), variant: "destructive" }),
       }
     );
   };
@@ -140,8 +140,8 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
     update.mutate(
       { id: String(checkin.id), is_active: !checkin.is_active },
       {
-        onSuccess: () => toast({ title: checkin.is_active ? "Check-in paused" : "Check-in resumed ✓" }),
-        onError: (e: any) => toast({ title: "Failed", description: String(e?.message || e), variant: "destructive" }),
+        onSuccess: () => toast({ title: checkin.is_active ? Z("签到已暂停", "Check-in paused") : Z("签到已恢复 ✓", "Check-in resumed ✓") }),
+        onError: (e: any) => toast({ title: Z("操作失败", "Failed"), description: String(e?.message || e), variant: "destructive" }),
       }
     );
   };
@@ -151,7 +151,7 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
     setForm({
       name: checkin.name || "",
       detail: checkin.detail || "",
-      frequency: checkin.frequency || "Once daily",
+      frequency: checkin.frequency || Z("每日一次", "Once daily"),
       time: slot,
       instructions: checkin.instructions || "",
       start_date: checkin.start_date || "",
@@ -175,9 +175,9 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
       {
         onSuccess: () => {
           setEditOpen({ open: false, checkin: null });
-          toast({ title: "Check-in updated ✓" });
+          toast({ title: Z("签到已更新 ✓", "Check-in updated ✓") });
         },
-        onError: (e: any) => toast({ title: "Failed", description: String(e?.message || e), variant: "destructive" }),
+        onError: (e: any) => toast({ title: Z("操作失败", "Failed"), description: String(e?.message || e), variant: "destructive" }),
       }
     );
   };
@@ -186,17 +186,17 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
     remove.mutate(String(deleteConfirm.checkin.id), {
       onSuccess: () => {
         setDeleteConfirm({ open: false, checkin: null });
-        toast({ title: "Check-in deleted" });
+        toast({ title: Z("签到已删除", "Check-in deleted") });
       },
-      onError: (e: any) => toast({ title: "Failed", description: String(e?.message || e), variant: "destructive" }),
+      onError: (e: any) => toast({ title: Z("操作失败", "Failed"), description: String(e?.message || e), variant: "destructive" }),
     });
   };
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-foreground">Daily Check-In</h2>
-        <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> Add Check-In</Button>
+        <h2 className="text-lg font-bold text-foreground">{Z("每日签到", "Daily Check-In")}</h2>
+        <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> {Z("新增签到", "Add Check-In")}</Button>
       </div>
 
       {/* Add schedule */}
