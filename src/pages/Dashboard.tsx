@@ -158,7 +158,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
         {[
           { label: t("dashboard.upcomingBookings"), value: stats?.upcomingBookings ?? 0, icon: CalendarDays, color: "text-primary", to: "/bookings" },
-          { label: site.navLabels.careGroups, value: stats?.careGroups ?? 0, icon: Users, color: "text-success", to: "/care-circle" },
+          { label: careGroupsLabel, value: stats?.careGroups ?? 0, icon: Users, color: "text-success", to: "/care-circle" },
           { label: t("dashboard.pendingTasks"), value: stats?.pendingTasks ?? 0, icon: AlertCircle, color: "text-warning", to: "/care-circle" },
           { label: t("dashboard.unreadMessages"), value: stats?.unreadMessages ?? 0, icon: MessageSquare, color: "text-coral", to: "/messages" },
         ].map((s) => (
