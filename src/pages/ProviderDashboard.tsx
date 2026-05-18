@@ -297,11 +297,11 @@ export default function ProviderDashboard() {
           </Card>
 
           <Card className="border-transparent card-elevated">
-            <CardHeader><CardTitle>Booking Rules</CardTitle></CardHeader>
+            <CardHeader><CardTitle>{isZh ? "预约规则" : "Booking Rules"}</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <Label>Minimum notice (hours)</Label>
+                  <Label>{isZh ? "最少提前预约（小时）" : "Minimum notice (hours)"}</Label>
                   <Input
                     type="number"
                     min="0"
@@ -311,7 +311,7 @@ export default function ProviderDashboard() {
                   />
                 </div>
                 <div>
-                  <Label>Booking window (days)</Label>
+                  <Label>{isZh ? "可预约时间范围（天）" : "Booking window (days)"}</Label>
                   <Input
                     type="number"
                     min="1"
@@ -323,7 +323,7 @@ export default function ProviderDashboard() {
               </div>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <Label>Buffer between bookings (minutes)</Label>
+                  <Label>{isZh ? "预约间隔缓冲（分钟）" : "Buffer between bookings (minutes)"}</Label>
                   <Input
                     type="number"
                     min="0"
@@ -333,7 +333,7 @@ export default function ProviderDashboard() {
                   />
                 </div>
                 <div>
-                  <Label>Default calendar availability</Label>
+                  <Label>{isZh ? "日历默认可约状态" : "Default calendar availability"}</Label>
                   <Select
                     value={availabilityRules.default_date_availability}
                     onValueChange={value => setAvailabilityRules(prev => ({ ...prev, default_date_availability: value === "non-available" ? "non-available" : "available" }))}
@@ -342,28 +342,28 @@ export default function ProviderDashboard() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="available">Available by default</SelectItem>
-                      <SelectItem value="non-available">Not available by default</SelectItem>
+                      <SelectItem value="available">{isZh ? "默认可约" : "Available by default"}</SelectItem>
+                      <SelectItem value="non-available">{isZh ? "默认不可约" : "Not available by default"}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
               <div className="flex items-center justify-between rounded-lg bg-muted/30 p-3">
                 <div>
-                  <p className="text-sm font-medium text-foreground">Allow same-day bookings</p>
-                  <p className="text-xs text-muted-foreground">Enable customers to book for the current day when a slot is available.</p>
+                  <p className="text-sm font-medium text-foreground">{isZh ? "允许当天预约" : "Allow same-day bookings"}</p>
+                  <p className="text-xs text-muted-foreground">{isZh ? "允许客户在当天有空档时直接预约。" : "Enable customers to book for the current day when a slot is available."}</p>
                 </div>
                 <Switch checked={availabilityRules.allow_same_day} onCheckedChange={c => setAvailabilityRules(prev => ({ ...prev, allow_same_day: c }))} />
               </div>
               <div className="flex items-center justify-between rounded-lg bg-muted/30 p-3">
                 <div>
-                  <p className="text-sm font-medium text-foreground">Require provider confirmation</p>
-                  <p className="text-xs text-muted-foreground">Match Woo Bookings confirmation behavior for new booking requests.</p>
+                  <p className="text-sm font-medium text-foreground">{isZh ? "需要服务者确认" : "Require provider confirmation"}</p>
+                  <p className="text-xs text-muted-foreground">{isZh ? "新预约请求需要您手动确认后才生效。" : "Match Woo Bookings confirmation behavior for new booking requests."}</p>
                 </div>
                 <Switch checked={availabilityRules.requires_confirmation} onCheckedChange={c => setAvailabilityRules(prev => ({ ...prev, requires_confirmation: c }))} />
               </div>
               <Button variant="outline" className="w-full" onClick={handleSaveAvailabilityRules} disabled={updateAvailabilitySetting.isPending}>
-                {updateAvailabilitySetting.isPending ? "Saving..." : "Save Booking Rules"}
+                {updateAvailabilitySetting.isPending ? (isZh ? "保存中…" : "Saving...") : (isZh ? "保存预约规则" : "Save Booking Rules")}
               </Button>
             </CardContent>
           </Card>
