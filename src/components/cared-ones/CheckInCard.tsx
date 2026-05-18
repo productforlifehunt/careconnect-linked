@@ -341,8 +341,8 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
       ) : (checkins || []).length === 0 ? (
         <div className="text-center py-12">
           <ClipboardCheck className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground mb-3">No check-in schedules yet</p>
-          <Button variant="coral" size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> First Check-In Schedule</Button>
+          <p className="text-muted-foreground mb-3">{Z("暂无签到日程", "No check-in schedules yet")}</p>
+          <Button variant="coral" size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> {Z("创建第一个签到日程", "First Check-In Schedule")}</Button>
         </div>
       ) : (
         <div className="space-y-3">
@@ -358,11 +358,11 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
                       <div className="flex items-center gap-2">
                         <ClipboardCheck className="h-4 w-4 text-primary" />
                         <span className="font-medium text-foreground">{checkin.name}</span>
-                        {!checkin.is_active && <Badge variant="outline" className="text-xs">Paused</Badge>}
+                        {!checkin.is_active && <Badge variant="outline" className="text-xs">{Z("已暂停", "Paused")}</Badge>}
                       </div>
                       {checkin.detail && <p className="text-xs text-muted-foreground mt-1">{checkin.detail}</p>}
                       <p className="text-xs text-muted-foreground mt-1">
-                        {checkin.frequency || "Once daily"} · {slots.map(formatSlot).join(", ")}
+                        {checkin.frequency || Z("每日一次", "Once daily")} · {slots.map((s: string) => formatSlot(s, isCN)).join(", ")}
                       </p>
                       {checkin.instructions && <p className="text-xs text-muted-foreground mt-1 italic">{checkin.instructions}</p>}
                       {checkin.note && <p className="text-xs text-muted-foreground mt-1">{checkin.note}</p>}
@@ -373,26 +373,26 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
                         isMissed ? STATUS_STYLE.missed :
                         "bg-muted text-muted-foreground"
                       }>
-                        {todayStatus ? STATUS_LABEL[todayStatus] + " today" :
-                         isMissed ? "Missed today" : "Pending today"}
+                        {todayStatus ? Z(`今天${STATUS_LABEL[todayStatus]}`, STATUS_LABEL[todayStatus] + " today") :
+                         isMissed ? Z("今天未完成", "Missed today") : Z("今天待办", "Pending today")}
                       </Badge>
                       {!todayStatus && (
                         <div className="flex items-center gap-1 flex-wrap justify-end">
-                          <Button size="sm" variant="outline" className="border-primary/40 text-primary hover:bg-primary/10" onClick={() => setAiOpen({ open: true, checkin })}><Bot className="h-3 w-3 mr-1" /> AI Check</Button>
-                          <Button size="sm" variant="outline" onClick={() => openLog(checkin, "skipped")} disabled={logCheckin.isPending}><SkipForward className="h-3 w-3 mr-1" /> Skip</Button>
+                          <Button size="sm" variant="outline" className="border-primary/40 text-primary hover:bg-primary/10" onClick={() => setAiOpen({ open: true, checkin })}><Bot className="h-3 w-3 mr-1" /> {Z("AI 签到", "AI Check")}</Button>
+                          <Button size="sm" variant="outline" onClick={() => openLog(checkin, "skipped")} disabled={logCheckin.isPending}><SkipForward className="h-3 w-3 mr-1" /> {Z("跳过", "Skip")}</Button>
                           {isMissed && (
-                            <Button size="sm" variant="outline" className="border-destructive/40 text-destructive hover:bg-destructive/10" onClick={() => openLog(checkin, "missed")} disabled={logCheckin.isPending}><AlertCircle className="h-3 w-3 mr-1" /> Missed</Button>
+                            <Button size="sm" variant="outline" className="border-destructive/40 text-destructive hover:bg-destructive/10" onClick={() => openLog(checkin, "missed")} disabled={logCheckin.isPending}><AlertCircle className="h-3 w-3 mr-1" /> {Z("未完成", "Missed")}</Button>
                           )}
-                          <Button size="sm" onClick={() => openLog(checkin, "checked")} disabled={logCheckin.isPending}><Check className="h-3 w-3 mr-1" /> Check</Button>
+                          <Button size="sm" onClick={() => openLog(checkin, "checked")} disabled={logCheckin.isPending}><Check className="h-3 w-3 mr-1" /> {Z("签到", "Check")}</Button>
                         </div>
                       )}
                       <div className="flex items-center gap-1">
-                        <Button size="icon" variant="ghost" className="h-7 w-7" title="History" onClick={() => setHistoryOpen({ open: true, checkin })}><History className="h-3.5 w-3.5" /></Button>
-                        <Button size="icon" variant="ghost" className="h-7 w-7" title={checkin.is_active ? "Pause" : "Resume"} onClick={() => togglePause(checkin)} disabled={update.isPending}>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" title={Z("历史", "History")} onClick={() => setHistoryOpen({ open: true, checkin })}><History className="h-3.5 w-3.5" /></Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" title={checkin.is_active ? Z("暂停", "Pause") : Z("恢复", "Resume")} onClick={() => togglePause(checkin)} disabled={update.isPending}>
                           {checkin.is_active ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
                         </Button>
-                        <Button size="icon" variant="ghost" className="h-7 w-7" title="Edit" onClick={() => openEdit(checkin)}><Edit2 className="h-3.5 w-3.5" /></Button>
-                        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10" title="Delete" onClick={() => setDeleteConfirm({ open: true, checkin })}><Trash2 className="h-3.5 w-3.5" /></Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" title={Z("编辑", "Edit")} onClick={() => openEdit(checkin)}><Edit2 className="h-3.5 w-3.5" /></Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10" title={Z("删除", "Delete")} onClick={() => setDeleteConfirm({ open: true, checkin })}><Trash2 className="h-3.5 w-3.5" /></Button>
                       </div>
                     </div>
                   </div>
@@ -402,7 +402,7 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
           })}
 
           <div className="pt-2">
-            <h3 className="text-sm font-semibold text-foreground mb-2">Recent check-in history</h3>
+            <h3 className="text-sm font-semibold text-foreground mb-2">{Z("最近签到记录", "Recent check-in history")}</h3>
             <div className="space-y-2">
               {(logs || []).slice(0, 5).map((log: any) => (
                 <Card key={log.id} className="border-transparent card-elevated">
@@ -412,11 +412,11 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
                       {log.checked_by_ai && <Badge variant="outline" className="text-xs border-primary/40 text-primary"><Bot className="h-3 w-3 mr-1" />AI</Badge>}
                       {log.note && <p className="text-xs text-muted-foreground truncate">{log.note}</p>}
                     </div>
-                    <span className="text-xs text-muted-foreground shrink-0">{new Date(log.created_at).toLocaleDateString("en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+                    <span className="text-xs text-muted-foreground shrink-0">{new Date(log.created_at).toLocaleDateString(isCN ? "zh-CN" : "en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
                   </CardContent>
                 </Card>
               ))}
-              {(logs || []).length === 0 && <p className="text-xs text-muted-foreground text-center py-4">No history yet</p>}
+              {(logs || []).length === 0 && <p className="text-xs text-muted-foreground text-center py-4">{Z("暂无历史", "No history yet")}</p>}
             </div>
           </div>
         </div>
