@@ -109,6 +109,8 @@ const zhCN = {
     resetLinkSentDesc: "请检查邮箱获取密码重置链接。", emailPlaceholder: "you@example.com",
     passwordPlaceholder: "••••••••", namePlaceholder: "张三",
     passwordHint: "最少8个字符，包含大写、数字、符号",
+    signIn: "登录", username: "用户名", emailOrUsername: "邮箱或用户名",
+    backupSignInDesc: "使用备用账户登录，保障无中断访问。",
   },
   resetPw: {
     title: "设置新密码", subtitle: "在下方输入您的新密码", newPassword: "新密码",
