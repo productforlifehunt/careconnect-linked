@@ -139,7 +139,7 @@ export function DashboardWidgetConfig({ widgets, visibility, order, onChange, on
               {orderedWidgets.map((w) => (
                 <SortableRow
                   key={w.id}
-                  widget={w}
+                  widget={{ ...w, label: localizeWidgetLabel(w.id, w.label, isZh) }}
                   checked={visibility[w.id] ?? true}
                   onToggle={(v) => onChange(w.id, v)}
                 />
