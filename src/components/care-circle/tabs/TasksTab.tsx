@@ -305,7 +305,7 @@ export function TasksTab({
             const start = fmtTime(t.start_time);
             const end = fmtTime(t.end_time);
             const dateStr = t.task_date
-              ? new Date(dateOnly(t.task_date) + "T00:00").toLocaleDateString("en", { month: "short", day: "numeric" })
+              ? new Date(dateOnly(t.task_date) + "T00:00").toLocaleDateString(isCN ? "zh-CN" : "en", { month: "short", day: "numeric" })
               : "";
             const canEdit = isAdmin || t.created_by === userId;
             return (
@@ -332,7 +332,7 @@ export function TasksTab({
                       )}
                       {t.people_needed != null && t.people_needed !== "" && Number(t.people_needed) > 0 && (
                         <span className="inline-flex items-center gap-1">
-                          <Users className="h-3 w-3" />{t.people_needed} needed
+                          <Users className="h-3 w-3" />{Z(`需要 ${t.people_needed} 人`, `${t.people_needed} needed`)}
                         </span>
                       )}
                     </div>
@@ -340,48 +340,51 @@ export function TasksTab({
                     <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                       {Array.isArray(t.task_types) && t.task_types.map((tt: string) => {
                         const opt = TASK_TYPE_OPTIONS.find((o) => o.value === String(tt));
-                        return opt ? <Badge key={tt} variant="secondary" className="text-[10px]">{opt.label}</Badge> : null;
+                        return opt ? <Badge key={tt} variant="secondary" className="text-[10px]">{isCN ? opt.labelZh : opt.label}</Badge> : null;
                       })}
                       {Array.isArray(t.assignees) && t.assignees.map((a: any) => {
                         const m = (members || []).find((mm: any) => mm.user_id === a.user_id || `wp-${mm.id}` === a.user_id);
-                        const name = m?.display_name || m?.profile?.full_name || "Member";
+                        const name = m?.display_name || m?.profile?.full_name || Z("成员", "Member");
+                        const respLabel = isCN
+                          ? (a.response === "accepted" ? "已接受" : a.response === "rejected" ? "已拒绝" : "待回应")
+                          : a.response;
                         return (
                           <Badge key={a.user_id} variant="outline" className={`text-[10px] ${responseColors[a.response] || ""}`}>
-                            {name}: {a.response}
+                            {name}: {respLabel}
                           </Badge>
                         );
                       })}
                     </div>
                   </div>
                   <Badge variant="outline" className={`shrink-0 ${helpStatusColors[String(t.help_status ?? "1")] || ""}`}>
-                    {helpStatusLabels[String(t.help_status ?? "1")] || "No help needed"}
+                    {helpStatusLabels[String(t.help_status ?? "1")] || Z("无需帮助", "No help needed")}
                   </Badge>
                   <div className="flex gap-1 shrink-0">
                     {myAssignment && myAssignment.response !== "accepted" && (
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-success hover:bg-success/10" title="Accept"
-                        onClick={() => updateAssignee.mutate({ taskId: t.id, userId: myWpId, status: "accepted" }, { onSuccess: () => toast({ title: "Accepted" }) })}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-success hover:bg-success/10" title={Z("接受", "Accept")}
+                        onClick={() => updateAssignee.mutate({ taskId: t.id, userId: myWpId, status: "accepted" }, { onSuccess: () => toast({ title: Z("已接受", "Accepted") }) })}>
                         <Check className="h-3.5 w-3.5" />
                       </Button>
                     )}
                     {myAssignment && myAssignment.response !== "rejected" && (
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10" title="Decline"
-                        onClick={() => updateAssignee.mutate({ taskId: t.id, userId: myWpId, status: "rejected" }, { onSuccess: () => toast({ title: "Declined" }) })}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10" title={Z("拒绝", "Decline")}
+                        onClick={() => updateAssignee.mutate({ taskId: t.id, userId: myWpId, status: "rejected" }, { onSuccess: () => toast({ title: Z("已拒绝", "Declined") }) })}>
                         <X className="h-3.5 w-3.5" />
                       </Button>
                     )}
-                    <Button variant="ghost" size="icon" className="h-7 w-7" title="Post to Job Board"
+                    <Button variant="ghost" size="icon" className="h-7 w-7" title={Z("发布到护理工作板", "Post to Job Board")}
                       onClick={() => setJobConfirmTask(t)}>
                       <Briefcase className="h-3.5 w-3.5" />
                     </Button>
                     {canEdit && (
-                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Edit"
+                      <Button variant="ghost" size="icon" className="h-7 w-7" title={Z("编辑", "Edit")}
                         onClick={() => openEdit(t)}>
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
                     )}
                     {canEdit && (
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10" title="Delete"
-                        onClick={() => deleteTask.mutate(t.id, { onSuccess: () => toast({ title: "Task deleted" }) })}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10" title={Z("删除", "Delete")}
+                        onClick={() => deleteTask.mutate(t.id, { onSuccess: () => toast({ title: Z("任务已删除", "Task deleted") }) })}>
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     )}
@@ -393,14 +396,14 @@ export function TasksTab({
           })}
           {completedTasks.length > 0 && (
             <>
-              <p className="text-xs font-medium text-muted-foreground pt-3 pb-1">Completed ({completedTasks.length})</p>
+              <p className="text-xs font-medium text-muted-foreground pt-3 pb-1">{Z(`已完成（${completedTasks.length}）`, `Completed (${completedTasks.length})`)}</p>
               {completedTasks.map((t: any) => (
                 <div key={t.id} className="flex items-center gap-3 p-3 rounded-lg bg-card/50 border border-transparent opacity-60 hover:opacity-80">
                   <button onClick={() => toggleTask(t.id, t.finish_status)} className="shrink-0"><CheckCircle className="h-5 w-5 text-success" /></button>
                   <p className="text-sm line-through text-muted-foreground flex-1 cursor-pointer" onClick={() => toggleTask(t.id, t.finish_status)}>{t.title}</p>
                   {(isAdmin || t.created_by === userId) && (
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10 shrink-0"
-                      onClick={() => deleteTask.mutate(t.id, { onSuccess: () => toast({ title: "Task deleted" }) })}>
+                      onClick={() => deleteTask.mutate(t.id, { onSuccess: () => toast({ title: Z("任务已删除", "Task deleted") }) })}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   )}
@@ -408,23 +411,24 @@ export function TasksTab({
               ))}
             </>
           )}
-          {(tasks || []).length === 0 && <p className="text-center py-8 text-muted-foreground">No tasks yet. Click "Add Task" to create one.</p>}
+          {(tasks || []).length === 0 && <p className="text-center py-8 text-muted-foreground">{Z("还没有任务。点击「添加任务」创建。", 'No tasks yet. Click "Add Task" to create one.')}</p>}
         </div>
       )}
 
       <AlertDialog open={!!jobConfirmTask} onOpenChange={(open) => !open && setJobConfirmTask(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Post to Job Board?</AlertDialogTitle>
+            <AlertDialogTitle>{Z("发布到护理工作板？", "Post to Job Board?")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will publish "{jobConfirmTask?.title}" to the public Job Board so caregivers outside your group can apply to help.
+              {Z(`此操作会将「${jobConfirmTask?.title ?? ""}」发布到公开的护理工作板，团聚之外的护理者也可以申请帮忙。`,
+                 `This will publish "${jobConfirmTask?.title}" to the public Job Board so caregivers outside your group can apply to help.`)}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{Z("取消", "Cancel")}</AlertDialogCancel>
             <AlertDialogAction onClick={confirmPostJob} disabled={createJob.isPending}>
               {createJob.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Briefcase className="h-4 w-4 mr-2" />}
-              Post Job
+              {Z("发布工作", "Post Job")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
