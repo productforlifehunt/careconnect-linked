@@ -141,10 +141,10 @@ export function VisibilityPicker({ value, onChange, memberCategories = [], membe
         {totalSelected > 0 && (
           <div className="p-2 border-t flex justify-between items-center bg-muted/20">
             <button onClick={reset} className="text-xs text-muted-foreground hover:text-foreground">
-              Reset
+              {Z("重置", "Reset")}
             </button>
             <button onClick={() => setOpen(false)} className="text-xs font-medium text-primary hover:underline">
-              Done
+              {Z("完成", "Done")}
             </button>
           </div>
         )}
