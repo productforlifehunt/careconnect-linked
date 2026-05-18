@@ -241,6 +241,7 @@ const zhCN = {
     couldNotGetLocation: "无法获取位置", enableLocationAccess: "请在浏览器设置中启用位置访问。",
     locationsUpdated: "位置已更新", coordinates: "坐标", lastUpdated: "最后更新",
     map: "地图", alerts: "警报", zones: "区域", autoRefresh: "自动刷新",
+    sharingActive: "每 15 秒分享一次", sharingInactive: "未分享",
   },
   notifs: {
     notifications: "通知", unread: "{{count}}条未读",
