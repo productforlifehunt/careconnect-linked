@@ -325,7 +325,7 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><Trash2 className="h-5 w-5 text-destructive" /> {Z("删除签到?", "Delete check-in?")}</DialogTitle>
-            <DialogDescription>{Z(<>这将永久删除 <strong>{deleteConfirm.checkin?.name}</strong>。已记录的历史将保留。</>, <>This will permanently delete <strong>{deleteConfirm.checkin?.name}</strong>. Logged history will remain.</>) as any}</DialogDescription>
+            <DialogDescription>{isCN ? <>这将永久删除 <strong>{deleteConfirm.checkin?.name}</strong>。已记录的历史将保留。</> : <>This will permanently delete <strong>{deleteConfirm.checkin?.name}</strong>. Logged history will remain.</>}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteConfirm({ open: false, checkin: null })}>{Z("取消", "Cancel")}</Button>
