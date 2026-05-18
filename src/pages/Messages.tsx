@@ -148,7 +148,7 @@ export default function Messages() {
         setNewConvoOpen(false);
         setNewConvoSearch("");
       },
-      onError: (err: any) => toast({ title: "Failed", description: err.message, variant: "destructive" }),
+      onError: (err: any) => toast({ title: Z("操作失败", "Failed"), description: err.message, variant: "destructive" }),
     });
   };
 
