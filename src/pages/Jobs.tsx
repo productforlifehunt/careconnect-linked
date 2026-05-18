@@ -106,33 +106,33 @@ export default function Jobs() {
     <div className="max-w-5xl mx-auto px-4 py-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-foreground">Jobs Board</h1>
-          <p className="text-muted-foreground text-sm">Find care jobs or post opportunities</p>
+          <h1 className="text-2xl font-bold text-foreground">{Z("已发布护理工作", "Jobs Board")}</h1>
+          <p className="text-muted-foreground text-sm">{Z("寻找护理工作或发布机会", "Find care jobs or post opportunities")}</p>
         </div>
         {isAuthenticated && (
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
-              <Button variant="coral" className="self-start sm:self-auto shrink-0"><Plus className="h-4 w-4 mr-2" /> Post Job</Button>
+              <Button variant="coral" className="self-start sm:self-auto shrink-0"><Plus className="h-4 w-4 mr-2" /> {Z("发布工作", "Post Job")}</Button>
             </DialogTrigger>
             <DialogContent>
-              <DialogHeader><DialogTitle>Post a Care Job</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle>{Z("发布护理工作", "Post a Care Job")}</DialogTitle></DialogHeader>
               <div className="space-y-4 mt-2">
-                <div><Label>Job Title *</Label><Input value={newJob.title} onChange={e => setNewJob(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Part-time caregiver needed" className="mt-1" /></div>
-                <div><Label>Description *</Label><Textarea value={newJob.description} onChange={e => setNewJob(p => ({ ...p, description: e.target.value }))} placeholder="Describe the care needs, schedule, requirements, rate, and location..." rows={5} className="mt-1" /></div>
-                <div><Label>Location</Label><Input value={newJob.location} onChange={e => setNewJob(p => ({ ...p, location: e.target.value }))} placeholder="e.g. Brooklyn, NY" className="mt-1" /></div>
+                <div><Label>{Z("工作标题 *", "Job Title *")}</Label><Input value={newJob.title} onChange={e => setNewJob(p => ({ ...p, title: e.target.value }))} placeholder={Z("例如：招聘兼职护理者", "e.g. Part-time caregiver needed")} className="mt-1" /></div>
+                <div><Label>{Z("详细描述 *", "Description *")}</Label><Textarea value={newJob.description} onChange={e => setNewJob(p => ({ ...p, description: e.target.value }))} placeholder={Z("描述护理需求、时间安排、要求、薪资和地点……", "Describe the care needs, schedule, requirements, rate, and location...")} rows={5} className="mt-1" /></div>
+                <div><Label>{Z("地点", "Location")}</Label><Input value={newJob.location} onChange={e => setNewJob(p => ({ ...p, location: e.target.value }))} placeholder={Z("例如：上海浦东", "e.g. Brooklyn, NY")} className="mt-1" /></div>
                 <div>
-                  <Label>Job Type</Label>
+                  <Label>{Z("工作类型", "Job Type")}</Label>
                   <Select value={newJob.job_source_type} onValueChange={v => setNewJob(p => ({ ...p, job_source_type: v }))}>
                     <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="general">General</SelectItem>
-                      <SelectItem value="cared_one_checkin">Check-In Care</SelectItem>
-                      <SelectItem value="cared_one_care">Ongoing Care</SelectItem>
+                      <SelectItem value="general">{Z("通用", "General")}</SelectItem>
+                      <SelectItem value="cared_one_checkin">{Z("签到护理", "Check-In Care")}</SelectItem>
+                      <SelectItem value="cared_one_care">{Z("长期护理", "Ongoing Care")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <Button variant="coral" className="w-full" onClick={handleCreateJob} disabled={createJob.isPending || !newJob.title || !newJob.description}>
-                  {createJob.isPending ? "Posting..." : "Post Job"}
+                  {createJob.isPending ? Z("发布中…", "Posting...") : Z("发布工作", "Post Job")}
                 </Button>
               </div>
             </DialogContent>
@@ -144,16 +144,16 @@ export default function Jobs() {
       <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-6">
         <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search jobs..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9" />
+          <Input placeholder={Z("搜索工作……", "Search jobs...")} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9" />
         </div>
         <Select value={sourceFilter || "all"} onValueChange={v => setSourceFilter(v === "all" ? "" : v)}>
-          <SelectTrigger className="w-full sm:w-[160px] shrink-0"><SelectValue placeholder="All types" /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-[160px] shrink-0"><SelectValue placeholder={Z("所有类型", "All types")} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="general">General</SelectItem>
-            <SelectItem value="group_task">Group Task</SelectItem>
-            <SelectItem value="cared_one_checkin">Check-In</SelectItem>
-            <SelectItem value="cared_one_care">Ongoing Care</SelectItem>
+            <SelectItem value="all">{Z("所有类型", "All Types")}</SelectItem>
+            <SelectItem value="general">{Z("通用", "General")}</SelectItem>
+            <SelectItem value="group_task">{Z("小组任务", "Group Task")}</SelectItem>
+            <SelectItem value="cared_one_checkin">{Z("签到护理", "Check-In")}</SelectItem>
+            <SelectItem value="cared_one_care">{Z("长期护理", "Ongoing Care")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -161,9 +161,9 @@ export default function Jobs() {
       <Tabs value={activeTab} onValueChange={setActiveTab} defaultValue="browse">
         <div className="overflow-x-auto -mx-4 px-4 scrollbar-none">
           <TabsList className="w-max">
-            <TabsTrigger value="browse">Browse Jobs ({filteredJobs.length})</TabsTrigger>
-            <TabsTrigger value="my-applications">My Applications ({myAppsCount})</TabsTrigger>
-            {isAuthenticated && <TabsTrigger value="my-posts">My Posted Jobs ({myPostedCount})</TabsTrigger>}
+            <TabsTrigger value="browse">{Z("浏览工作", "Browse Jobs")} ({filteredJobs.length})</TabsTrigger>
+            <TabsTrigger value="my-applications">{Z("我的申请", "My Applications")} ({myAppsCount})</TabsTrigger>
+            {isAuthenticated && <TabsTrigger value="my-posts">{Z("我发布的", "My Posted Jobs")} ({myPostedCount})</TabsTrigger>}
           </TabsList>
         </div>
 
