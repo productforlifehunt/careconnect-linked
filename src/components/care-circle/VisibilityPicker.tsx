@@ -102,14 +102,14 @@ export function VisibilityPicker({ value, onChange, memberCategories = [], membe
           {members.length > 0 && (
             <div className="p-3">
               <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1">
-                <User className="h-3 w-3" /> Specific members
+                <User className="h-3 w-3" /> {Z("指定成员", "Specific members")}
               </p>
               <div className="space-y-1.5">
                 {members.map((m) => {
                   const uid = toNum(m.user_id || m.id);
                   if (!uid) return null;
                   const checked = value.userIds.includes(uid);
-                  const name = m.profile?.full_name || `Member ${uid}`;
+                  const name = m.profile?.full_name || Z(`成员 ${uid}`, `Member ${uid}`);
                   return (
                     <label key={uid} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded px-1.5 py-1 -mx-1.5">
                       <Checkbox checked={checked} onCheckedChange={() => toggleUser(uid)} />
