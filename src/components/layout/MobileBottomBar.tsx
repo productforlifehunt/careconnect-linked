@@ -23,6 +23,11 @@ import {
   Briefcase,
   ClipboardList,
   Settings2,
+  HeartHandshake,
+  ShieldCheck,
+  Smile,
+  Brain,
+  HandHeart,
 } from "lucide-react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { AICompanionChatDialog } from "@/components/ai/AICompanionChatDialog";
