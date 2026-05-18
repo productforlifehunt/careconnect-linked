@@ -91,7 +91,7 @@ export function AICompanionChatDialog({
               </DialogPrimitive.Title>
             </div>
             <DialogPrimitive.Close asChild>
-              <button className="p-1.5 rounded-md hover:bg-accent text-muted-foreground" aria-label="Close">
+              <button className="p-1.5 rounded-md hover:bg-accent text-muted-foreground" aria-label={isZh ? "关闭" : "Close"}>
                 <X className="h-4 w-4" />
               </button>
             </DialogPrimitive.Close>

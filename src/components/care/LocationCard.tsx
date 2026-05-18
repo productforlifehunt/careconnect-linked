@@ -912,7 +912,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                         </div>
                         <Button variant="ghost" size="sm" className="text-destructive text-xs h-7"
                           onClick={() => cancelRequest.mutate(req.id)}
-                          disabled={cancelRequest.isPending}>Cancel</Button>
+                          disabled={cancelRequest.isPending}>{isZh ? "取消" : "Cancel"}</Button>
                       </div>
                     </CardContent>
                   </Card>
@@ -1191,9 +1191,9 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                 )}
 
                 <div>
-                  <Label className="text-xs">Description (optional)</Label>
+                  <Label className="text-xs">{isZh ? "描述（可选）" : "Description (optional)"}</Label>
                   <Textarea value={zoneForm.description} onChange={e => setZoneForm(p => ({ ...p, description: e.target.value }))}
-                    placeholder="Optional notes..." rows={2} className="mt-1" />
+                    placeholder={isZh ? "可选备注…" : "Optional notes..."} rows={2} className="mt-1" />
                 </div>
 
                 <div className="space-y-2">

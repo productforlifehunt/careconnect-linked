@@ -113,7 +113,7 @@ export function SubgroupCard({ subgroup, members, isAdmin, onDelete, currentUser
             )}
           </div>
           {isAdmin && (
-            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:bg-destructive/10" onClick={onDelete} aria-label="Delete sub-group">
+            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:bg-destructive/10" onClick={onDelete} aria-label={Z("删除子分组", "Delete sub-group")}>
               <X className="h-3 w-3" />
             </Button>
           )}
@@ -125,7 +125,7 @@ export function SubgroupCard({ subgroup, members, isAdmin, onDelete, currentUser
         ) : (
           <div className="flex flex-wrap gap-1.5 mb-2">
             {memberChips.length === 0 ? (
-              <p className="text-xs text-muted-foreground">No members yet.</p>
+              <p className="text-xs text-muted-foreground">{Z("暂无成员。", "No members yet.")}</p>
             ) : memberChips.map(({ rec, name }) => (
               <Badge key={rec.user_id} variant="outline" className="text-[11px] gap-1 pr-1">
                 {renderRoleIcon(rec)}
@@ -133,26 +133,26 @@ export function SubgroupCard({ subgroup, members, isAdmin, onDelete, currentUser
                 {canManage && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button className="ml-0.5 hover:bg-muted rounded p-0.5" aria-label="Member options">
+                      <button className="ml-0.5 hover:bg-muted rounded p-0.5" aria-label={Z("成员选项", "Member options")}>
                         <MoreVertical className="h-2.5 w-2.5" />
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-40">
                       <DropdownMenuItem onClick={() => updateRole.mutate({ subgroupId: subgroup.id, userId: rec.user_id, role: "owner" })}>
-                        <Crown className="h-3 w-3 mr-2 text-warning" /> Make owner
+                        <Crown className="h-3 w-3 mr-2 text-warning" /> {Z("设为群主", "Make owner")}
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => updateRole.mutate({ subgroupId: subgroup.id, userId: rec.user_id, role: "admin" })}>
-                        <Shield className="h-3 w-3 mr-2 text-primary" /> Make admin
+                        <Shield className="h-3 w-3 mr-2 text-primary" /> {Z("设为管理员", "Make admin")}
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => updateRole.mutate({ subgroupId: subgroup.id, userId: rec.user_id, role: "nothing special" })}>
-                        <UsersIcon className="h-3 w-3 mr-2" /> Set as member
+                        <UsersIcon className="h-3 w-3 mr-2" /> {Z("设为成员", "Set as member")}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         className="text-destructive focus:text-destructive"
                         onClick={() => togglePicker(rec.user_id, false)}
                       >
-                        <X className="h-3 w-3 mr-2" /> Remove
+                        <X className="h-3 w-3 mr-2" /> {Z("移除", "Remove")}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -166,12 +166,12 @@ export function SubgroupCard({ subgroup, members, isAdmin, onDelete, currentUser
         {canManage && pending.length > 0 && (
           <div className="mb-2 rounded-md border border-warning/30 bg-warning/5 p-2">
             <p className="text-[11px] font-semibold text-warning mb-1.5 flex items-center gap-1">
-              <Clock className="h-3 w-3" /> Pending requests
+              <Clock className="h-3 w-3" /> {Z("待审核请求", "Pending requests")}
             </p>
             <div className="space-y-1">
               {pending.map((rec) => {
                 const m = members.find((mm) => toNum(mm.user_id || mm.id) === rec.user_id);
-                const name = m?.profile?.full_name || `User ${rec.user_id}`;
+                const name = m?.profile?.full_name || (isCN ? `用户 ${rec.user_id}` : `User ${rec.user_id}`);
                 return (
                   <div key={rec.user_id} className="flex items-center justify-between gap-2">
                     <span className="text-xs text-foreground truncate flex-1">{name}</span>
@@ -181,7 +181,7 @@ export function SubgroupCard({ subgroup, members, isAdmin, onDelete, currentUser
                       onClick={() => handleApprove(rec.user_id)}
                       disabled={approveMember.isPending}
                     >
-                      <Check className="h-3 w-3 mr-0.5" /> Approve
+                      <Check className="h-3 w-3 mr-0.5" /> {Z("批准", "Approve")}
                     </Button>
                     <Button
                       size="sm" variant="ghost"
