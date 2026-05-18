@@ -203,45 +203,45 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Create Check-In Schedule</DialogTitle>
-            <DialogDescription>Set a recurring wellness check-in for this cared one.</DialogDescription>
+            <DialogTitle>{Z("创建签到日程", "Create Check-In Schedule")}</DialogTitle>
+            <DialogDescription>{Z("为这位亲人设置定期的健康签到。", "Set a recurring wellness check-in for this cared one.")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 mt-2">
             <div>
-              <Label className="text-sm">Name</Label>
+              <Label className="text-sm">{Z("名称", "Name")}</Label>
               <Input value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} />
             </div>
             <div>
-              <Label className="text-sm">Detail</Label>
-              <Input value={form.detail} onChange={(e) => setForm((p) => ({ ...p, detail: e.target.value }))} placeholder="Short description (optional)" />
+              <Label className="text-sm">{Z("详情", "Detail")}</Label>
+              <Input value={form.detail} onChange={(e) => setForm((p) => ({ ...p, detail: e.target.value }))} placeholder={Z("简短描述(可选)", "Short description (optional)")} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-sm">Frequency</Label>
-                <Input value={form.frequency} onChange={(e) => setForm((p) => ({ ...p, frequency: e.target.value }))} placeholder="Once daily" />
+                <Label className="text-sm">{Z("频率", "Frequency")}</Label>
+                <Input value={form.frequency} onChange={(e) => setForm((p) => ({ ...p, frequency: e.target.value }))} placeholder={Z("每日一次", "Once daily")} />
               </div>
               <div>
-                <Label className="text-sm">Scheduled time</Label>
+                <Label className="text-sm">{Z("计划时间", "Scheduled time")}</Label>
                 <Input type="time" value={form.time} onChange={(e) => setForm((p) => ({ ...p, time: e.target.value || "08:00" }))} />
               </div>
             </div>
             <div>
-              <Label className="text-sm">Start date</Label>
+              <Label className="text-sm">{Z("开始日期", "Start date")}</Label>
               <Input type="date" value={form.start_date} onChange={(e) => setForm((p) => ({ ...p, start_date: e.target.value }))} />
             </div>
             <div>
-              <Label className="text-sm">Instructions</Label>
-              <Input value={form.instructions} onChange={(e) => setForm((p) => ({ ...p, instructions: e.target.value }))} placeholder="What to ask or check" />
+              <Label className="text-sm">{Z("询问说明", "Instructions")}</Label>
+              <Input value={form.instructions} onChange={(e) => setForm((p) => ({ ...p, instructions: e.target.value }))} placeholder={Z("要询问或检查什么", "What to ask or check")} />
             </div>
             <div>
-              <Label className="text-sm">Notes</Label>
+              <Label className="text-sm">{Z("备注", "Notes")}</Label>
               <Textarea value={form.note} onChange={(e) => setForm((p) => ({ ...p, note: e.target.value }))} rows={2} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setAddOpen(false)}>{Z("取消", "Cancel")}</Button>
             <Button onClick={handleCreate} disabled={create.isPending || !form.name.trim()}>
-              {create.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <ClipboardCheck className="h-4 w-4 mr-2" />} Save
+              {create.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <ClipboardCheck className="h-4 w-4 mr-2" />} {Z("保存", "Save")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -255,15 +255,15 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
               {logDialog.status === "checked" ? <Check className="h-5 w-5 text-success" /> :
                logDialog.status === "skipped" ? <SkipForward className="h-5 w-5 text-warning" /> :
                <AlertCircle className="h-5 w-5 text-destructive" />}
-              Mark as {STATUS_LABEL[logDialog.status]}
+              {Z(`标记为${STATUS_LABEL[logDialog.status]}`, `Mark as ${STATUS_LABEL[logDialog.status]}`)}
             </DialogTitle>
-            <DialogDescription>{logDialog.checkin?.name} — add an optional note</DialogDescription>
+            <DialogDescription>{logDialog.checkin?.name} — {Z("添加可选备注", "add an optional note")}</DialogDescription>
           </DialogHeader>
-          <Textarea value={logNote} onChange={(e) => setLogNote(e.target.value)} rows={3} placeholder="How did it go?" />
+          <Textarea value={logNote} onChange={(e) => setLogNote(e.target.value)} rows={3} placeholder={Z("情况如何?", "How did it go?")} />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setLogDialog({ open: false, checkin: null, status: "checked" })}>Cancel</Button>
+            <Button variant="outline" onClick={() => setLogDialog({ open: false, checkin: null, status: "checked" })}>{Z("取消", "Cancel")}</Button>
             <Button onClick={confirmLog} disabled={logCheckin.isPending}>
-              {logCheckin.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Confirm
+              {logCheckin.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />} {Z("确认", "Confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -273,17 +273,17 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
       <Dialog open={historyOpen.open} onOpenChange={(o) => !o && setHistoryOpen({ open: false, checkin: null })}>
         <DialogContent className="sm:max-w-lg max-h-[80vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><History className="h-5 w-5 text-primary" /> {historyOpen.checkin?.name} — History</DialogTitle>
+            <DialogTitle className="flex items-center gap-2"><History className="h-5 w-5 text-primary" /> {historyOpen.checkin?.name} — {Z("历史记录", "History")}</DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto space-y-1">
             {(logs || []).filter((l: any) => String(l.checkin_id) === String(historyOpen.checkin?.id)).length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">No logs yet</p>
+              <p className="text-center text-muted-foreground py-8">{Z("暂无记录", "No logs yet")}</p>
             ) : (
               (logs || []).filter((l: any) => String(l.checkin_id) === String(historyOpen.checkin?.id)).map((log: any) => (
                 <div key={log.id} className="flex items-start gap-3 py-2 border-b border-border/50 last:border-0">
                   <Badge variant="outline" className={STATUS_STYLE[log.status] || ""}>{STATUS_LABEL[log.status] || log.status}</Badge>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-muted-foreground">{new Date(log.created_at).toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">{new Date(log.created_at).toLocaleString(isCN ? "zh-CN" : undefined)}</p>
                     {log.note && <p className="text-xs mt-0.5 flex items-start gap-1"><StickyNote className="h-3 w-3 mt-0.5 shrink-0" />{log.note}</p>}
                   </div>
                 </div>
@@ -297,24 +297,24 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
       <Dialog open={editOpen.open} onOpenChange={(o) => !o && setEditOpen({ open: false, checkin: null })}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Edit Check-In Schedule</DialogTitle>
-            <DialogDescription>Update this recurring check-in.</DialogDescription>
+            <DialogTitle>{Z("编辑签到日程", "Edit Check-In Schedule")}</DialogTitle>
+            <DialogDescription>{Z("更新这个定期签到。", "Update this recurring check-in.")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 mt-2">
-            <div><Label className="text-sm">Name</Label><Input value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} /></div>
-            <div><Label className="text-sm">Detail</Label><Input value={form.detail} onChange={(e) => setForm((p) => ({ ...p, detail: e.target.value }))} /></div>
+            <div><Label className="text-sm">{Z("名称", "Name")}</Label><Input value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} /></div>
+            <div><Label className="text-sm">{Z("详情", "Detail")}</Label><Input value={form.detail} onChange={(e) => setForm((p) => ({ ...p, detail: e.target.value }))} /></div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label className="text-sm">Frequency</Label><Input value={form.frequency} onChange={(e) => setForm((p) => ({ ...p, frequency: e.target.value }))} /></div>
-              <div><Label className="text-sm">Scheduled time</Label><Input type="time" value={form.time} onChange={(e) => setForm((p) => ({ ...p, time: e.target.value || "08:00" }))} /></div>
+              <div><Label className="text-sm">{Z("频率", "Frequency")}</Label><Input value={form.frequency} onChange={(e) => setForm((p) => ({ ...p, frequency: e.target.value }))} /></div>
+              <div><Label className="text-sm">{Z("计划时间", "Scheduled time")}</Label><Input type="time" value={form.time} onChange={(e) => setForm((p) => ({ ...p, time: e.target.value || "08:00" }))} /></div>
             </div>
-            <div><Label className="text-sm">Start date</Label><Input type="date" value={form.start_date} onChange={(e) => setForm((p) => ({ ...p, start_date: e.target.value }))} /></div>
-            <div><Label className="text-sm">Instructions</Label><Input value={form.instructions} onChange={(e) => setForm((p) => ({ ...p, instructions: e.target.value }))} /></div>
-            <div><Label className="text-sm">Notes</Label><Textarea value={form.note} onChange={(e) => setForm((p) => ({ ...p, note: e.target.value }))} rows={2} /></div>
+            <div><Label className="text-sm">{Z("开始日期", "Start date")}</Label><Input type="date" value={form.start_date} onChange={(e) => setForm((p) => ({ ...p, start_date: e.target.value }))} /></div>
+            <div><Label className="text-sm">{Z("询问说明", "Instructions")}</Label><Input value={form.instructions} onChange={(e) => setForm((p) => ({ ...p, instructions: e.target.value }))} /></div>
+            <div><Label className="text-sm">{Z("备注", "Notes")}</Label><Textarea value={form.note} onChange={(e) => setForm((p) => ({ ...p, note: e.target.value }))} rows={2} /></div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditOpen({ open: false, checkin: null })}>Cancel</Button>
+            <Button variant="outline" onClick={() => setEditOpen({ open: false, checkin: null })}>{Z("取消", "Cancel")}</Button>
             <Button onClick={handleEditSave} disabled={update.isPending || !form.name.trim()}>
-              {update.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Save
+              {update.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />} {Z("保存", "Save")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -324,13 +324,13 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
       <Dialog open={deleteConfirm.open} onOpenChange={(o) => !o && setDeleteConfirm({ open: false, checkin: null })}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><Trash2 className="h-5 w-5 text-destructive" /> Delete check-in?</DialogTitle>
-            <DialogDescription>This will permanently delete <strong>{deleteConfirm.checkin?.name}</strong>. Logged history will remain.</DialogDescription>
+            <DialogTitle className="flex items-center gap-2"><Trash2 className="h-5 w-5 text-destructive" /> {Z("删除签到?", "Delete check-in?")}</DialogTitle>
+            <DialogDescription>{Z(<>这将永久删除 <strong>{deleteConfirm.checkin?.name}</strong>。已记录的历史将保留。</>, <>This will permanently delete <strong>{deleteConfirm.checkin?.name}</strong>. Logged history will remain.</>) as any}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirm({ open: false, checkin: null })}>Cancel</Button>
+            <Button variant="outline" onClick={() => setDeleteConfirm({ open: false, checkin: null })}>{Z("取消", "Cancel")}</Button>
             <Button variant="destructive" onClick={confirmDelete} disabled={remove.isPending}>
-              {remove.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Delete
+              {remove.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />} {Z("删除", "Delete")}
             </Button>
           </DialogFooter>
         </DialogContent>
