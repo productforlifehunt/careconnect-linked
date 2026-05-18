@@ -223,24 +223,24 @@ export default function ProviderDashboard() {
                   <div className="flex items-center gap-3">
                     {b.client?.avatar_url ? <img src={b.client.avatar_url} alt="" className="w-12 h-12 rounded-xl object-cover" /> : <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center"><User className="h-5 w-5 text-primary" /></div>}
                     <div>
-                      <h3 className="font-semibold text-foreground">{b.client?.full_name || "Client"}</h3>
-                      <p className="text-sm text-muted-foreground">{b.service_type} · {b.duration_hour}hrs</p>
-                      <p className="text-sm text-muted-foreground">{b.appointment_date ? new Date(b.appointment_date).toLocaleDateString("en", { weekday: "short", month: "short", day: "numeric" }) : ""} at {b.appointment_time || ""}</p>
+                      <h3 className="font-semibold text-foreground">{b.client?.full_name || (isZh ? "客户" : "Client")}</h3>
+                      <p className="text-sm text-muted-foreground">{b.service_type} · {b.duration_hour}{isZh ? "小时" : "hrs"}</p>
+                      <p className="text-sm text-muted-foreground">{b.appointment_date ? new Date(b.appointment_date).toLocaleDateString(isZh ? "zh-CN" : "en", { weekday: "short", month: "short", day: "numeric" }) : ""} {isZh ? "于" : "at"} {b.appointment_time || ""}</p>
                       {b.special_instruction && <p className="text-xs text-muted-foreground mt-1 italic">"{b.special_instruction}"</p>}
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     <span className="text-lg font-bold text-foreground">${b.total_cost || 0}</span>
                     <div className="flex gap-2">
-                      <Button size="sm" variant="default" onClick={() => handleBookingAction(b.id, "confirmed")} disabled={updateBookingStatus.isPending}><Check className="h-3 w-3 mr-1" /> Accept</Button>
-                      <Button size="sm" variant="outline" className="text-destructive" onClick={() => handleBookingAction(b.id, "cancelled_by_provider")} disabled={updateBookingStatus.isPending}><X className="h-3 w-3 mr-1" /> Decline</Button>
+                      <Button size="sm" variant="default" onClick={() => handleBookingAction(b.id, "confirmed")} disabled={updateBookingStatus.isPending}><Check className="h-3 w-3 mr-1" /> {isZh ? "接受" : "Accept"}</Button>
+                      <Button size="sm" variant="outline" className="text-destructive" onClick={() => handleBookingAction(b.id, "cancelled_by_provider")} disabled={updateBookingStatus.isPending}><X className="h-3 w-3 mr-1" /> {isZh ? "拒绝" : "Decline"}</Button>
                     </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
           )) : (
-            <div className="text-center py-12"><Briefcase className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" /><p className="text-muted-foreground">No pending booking requests</p></div>
+            <div className="text-center py-12"><Briefcase className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" /><p className="text-muted-foreground">{isZh ? "暂无待处理预约请求" : "No pending booking requests"}</p></div>
           )}
         </TabsContent>
 
@@ -251,22 +251,22 @@ export default function ProviderDashboard() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="text-center shrink-0">
-                      <p className="text-xs text-muted-foreground">{b.appointment_date ? new Date(b.appointment_date).toLocaleDateString("en", { month: "short" }) : ""}</p>
+                      <p className="text-xs text-muted-foreground">{b.appointment_date ? new Date(b.appointment_date).toLocaleDateString(isZh ? "zh-CN" : "en", { month: "short" }) : ""}</p>
                       <p className="text-lg font-bold text-foreground">{b.appointment_date ? new Date(b.appointment_date).getDate() : ""}</p>
                     </div>
                     <div>
-                      <h3 className="font-semibold text-foreground">{b.client?.full_name || "Client"}</h3>
-                      <p className="text-sm text-muted-foreground">{b.appointment_time} · {b.duration_hour}hrs · {b.service_type}</p>
+                      <h3 className="font-semibold text-foreground">{b.client?.full_name || (isZh ? "客户" : "Client")}</h3>
+                      <p className="text-sm text-muted-foreground">{b.appointment_time} · {b.duration_hour}{isZh ? "小时" : "hrs"} · {b.service_type}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge className={statusColors[b.status]}>{b.status}</Badge>
-                    <Button size="sm" variant="outline" onClick={() => handleBookingAction(b.id, "completed")}>Complete</Button>
+                    <Button size="sm" variant="outline" onClick={() => handleBookingAction(b.id, "completed")}>{isZh ? "完成" : "Complete"}</Button>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          )) : <p className="text-center py-12 text-muted-foreground">No confirmed bookings</p>}
+          )) : <p className="text-center py-12 text-muted-foreground">{isZh ? "暂无已确认预约" : "No confirmed bookings"}</p>}
         </TabsContent>
 
         <TabsContent value="availability" className="mt-4 space-y-6">
