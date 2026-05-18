@@ -308,7 +308,7 @@ export default function Messages() {
               <Button
                 variant="ghost"
                 size="icon"
-                title="Send a price quote"
+                title={Z("发送报价", "Send a price quote")}
                 onClick={() => setQuoteDialogOpen(true)}
                 disabled={!selectedConvoId}
               >
