@@ -62,7 +62,7 @@ const Index = () => {
                 ? heroImageCn
                 : heroImage
             }
-            alt="Compassionate caregiving"
+            alt={isChinese ? "用心的护理" : "Compassionate caregiving"}
             className="w-full h-full object-cover"
           />
           <div

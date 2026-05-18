@@ -1,6 +1,7 @@
 import { FileText, ExternalLink } from "lucide-react";
 import { extractQuote, stripQuoteMarker } from "@/lib/quote-protocol";
 import { QuoteCard } from "./QuoteCard";
+import { useTranslation } from "react-i18next";
 
 interface MessageBubbleProps {
   message: any;
@@ -10,6 +11,8 @@ interface MessageBubbleProps {
 }
 
 export function MessageBubble({ message, isMe, conversationId, otherUserId }: MessageBubbleProps) {
+  const { i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
   const rawContent: string = message.message_content || message.content || "";
   const quote = extractQuote(rawContent);
 
@@ -41,7 +44,7 @@ export function MessageBubble({ message, isMe, conversationId, otherUserId }: Me
           <a href={message.attachment_url} target="_blank" rel="noopener noreferrer" className="block mb-1">
             <img 
               src={message.attachment_url} 
-              alt="Shared image" 
+              alt={isCN ? "分享的图片" : "Shared image"} 
               className="rounded-lg max-h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity" 
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
             />
@@ -56,7 +59,7 @@ export function MessageBubble({ message, isMe, conversationId, otherUserId }: Me
           >
             <FileText className="h-4 w-4 shrink-0" />
             <span className="text-xs truncate flex-1">
-              {message.attachment_url.split("/").pop() || "File"}
+              {message.attachment_url.split("/").pop() || (isCN ? "文件" : "File")}
             </span>
             <ExternalLink className="h-3 w-3 shrink-0" />
           </a>
@@ -66,7 +69,7 @@ export function MessageBubble({ message, isMe, conversationId, otherUserId }: Me
           <p className="text-sm whitespace-pre-wrap">{textContent}</p>
         )}
         <p className={`text-xs mt-1 ${isMe ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
-          {new Date(message.created_at).toLocaleTimeString("en", { hour: "numeric", minute: "2-digit" })}
+          {new Date(message.created_at).toLocaleTimeString(i18n.language, { hour: "numeric", minute: "2-digit" })}
         </p>
       </div>
     </div>

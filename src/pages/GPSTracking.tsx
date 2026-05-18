@@ -30,7 +30,9 @@ const POLL_INTERVAL = 15_000; // 15 seconds
 const TRAIL_MAX_POINTS = 200;
 
 export default function GPSTracking() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
+  const Z = (cn: string, en: string) => (isCN ? cn : en);
   const { toast } = useToast();
   const site = useSite();
   const { data: locationShares, isLoading, refetch } = useLocationShares(POLL_INTERVAL);
@@ -156,7 +158,7 @@ export default function GPSTracking() {
           fillOpacity: 0.15,
           dashArray: zone.zone_type === "danger" ? "6 4" : undefined,
         }).addTo(map);
-        poly.bindPopup(`<b>${zone.name}</b><br/>${zone.zone_type === "danger" ? "⚠️ Danger" : "✅ Safe"} Zone`);
+        poly.bindPopup(`<b>${zone.name}</b><br/>${zone.zone_type === "danger" ? Z("⚠️ 危险区域", "⚠️ Danger Zone") : Z("✅ 安全区域", "✅ Safe Zone")}`);
         zoneLayers.current.push(poly);
       } else if (zone.latitude && zone.longitude) {
         const circle = L.circle([zone.latitude, zone.longitude], {
@@ -166,7 +168,7 @@ export default function GPSTracking() {
           fillOpacity: 0.12,
           dashArray: zone.zone_type === "danger" ? "6 4" : undefined,
         }).addTo(map);
-        circle.bindPopup(`<b>${zone.name}</b><br/>${zone.zone_type === "danger" ? "⚠️ Danger" : "✅ Safe"} Zone<br/>Radius: ${zone.radius_meters || 200}m`);
+        circle.bindPopup(`<b>${zone.name}</b><br/>${zone.zone_type === "danger" ? Z("⚠️ 危险区域", "⚠️ Danger Zone") : Z("✅ 安全区域", "✅ Safe Zone")}<br/>${Z("半径", "Radius")}: ${zone.radius_meters || 200}m`);
         zoneLayers.current.push(circle);
       }
     });
@@ -198,7 +200,7 @@ export default function GPSTracking() {
       });
       const marker = L.marker([person.coordinates.lat, person.coordinates.lng], { icon })
         .addTo(map)
-        .bindPopup(`<b>${person.name}</b><br/>Last seen: ${person.lastUpdated}<br/>${person.lastLocation}`);
+        .bindPopup(`<b>${person.name}</b><br/>${Z("最近上线", "Last seen")}: ${person.lastUpdated}<br/>${person.lastLocation}`);
       marker.on("click", () => setSelectedPerson(person));
       markersRef.current.push(marker);
 
@@ -239,8 +241,8 @@ export default function GPSTracking() {
         lastBreach.current[dedupKey] = now;
 
         toast({
-          title: breach.alertType === "entered_danger_zone" ? "⚠️ Danger Zone Alert" : "📍 Safe Zone Alert",
-          description: `${person.name} — ${breach.alertType.replace(/_/g, " ")} (${breach.zoneName})`,
+          title: breach.alertType === "entered_danger_zone" ? Z("⚠️ 危险区域警报", "⚠️ Danger Zone Alert") : Z("📍 安全区域警报", "📍 Safe Zone Alert"),
+          description: `${person.name} — ${Z(({ entered_danger_zone: "进入危险区域", exited_safe_zone: "离开安全区域", entered_safe_zone: "进入安全区域" } as any)[breach.alertType] || breach.alertType, breach.alertType.replace(/_/g, " "))} (${breach.zoneName})`,
           variant: breach.alertType.includes("danger") ? "destructive" : "default",
         });
       });
@@ -311,7 +313,7 @@ export default function GPSTracking() {
   const handleSOS = async () => {
     setSosSending(true);
     try {
-      if (!userId) throw new Error("Not authenticated");
+      if (!userId) throw new Error(Z("未登录", "Not authenticated"));
       const pos = await getCurrentPosition({ timeout: 8000 });
       await writeLocationAndCheckZones(pos?.latitude ?? 0, pos?.longitude ?? 0, {
         accuracy: pos?.accuracy,
@@ -469,7 +471,7 @@ export default function GPSTracking() {
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
                           {zone.shape_type === "polygon" ? `Polygon (${zone.polygon_points?.length || 0} points)` : `Radius: ${zone.radius_meters || 200}m`}
-                          {" · "}{zone.zone_type === "danger" ? "⚠️ Danger" : "✅ Safe"}
+                          {" · "}{zone.zone_type === "danger" ? Z("⚠️ 危险", "⚠️ Danger") : Z("✅ 安全", "✅ Safe")}
                         </p>
                       </div>
                     ))

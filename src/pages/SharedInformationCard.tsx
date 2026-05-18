@@ -6,8 +6,12 @@ import { fetchEmergencyContactsWordPress } from "@/features/cared-ones/source.wo
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { IdCard, MapPin, Phone, Loader2, ShieldOff } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function SharedInformationCard() {
+  const { i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
+  const Z = (cn: string, en: string) => (isCN ? cn : en);
   const { token } = useParams<{ token: string }>();
   const { data: card, isLoading, isError } = useInformationCardByToken(token || null);
 
@@ -42,8 +46,8 @@ export default function SharedInformationCard() {
       <div className="min-h-screen flex items-center justify-center bg-background p-6">
         <div className="text-center max-w-sm">
           <ShieldOff className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-          <h1 className="text-lg font-semibold mb-1">Card unavailable</h1>
-          <p className="text-sm text-muted-foreground">This share link is invalid, expired, or no longer public.</p>
+          <h1 className="text-lg font-semibold mb-1">{Z("名片不可用", "Card unavailable")}</h1>
+          <p className="text-sm text-muted-foreground">{Z("此分享链接无效、已过期或不再公开。", "This share link is invalid, expired, or no longer public.")}</p>
         </div>
       </div>
     );
@@ -60,14 +64,14 @@ export default function SharedInformationCard() {
               </div>
               <div className="min-w-0 flex-1">
                 <h1 className="text-lg font-semibold leading-tight truncate">
-                  {card.cared_ones_information_card_name || "Information Card"}
+                  {card.cared_ones_information_card_name || Z("信息卡", "Information Card")}
                 </h1>
                 {card.cared_ones_name && (
                   <p className="text-sm text-muted-foreground mt-0.5">{card.cared_ones_name}</p>
                 )}
                 <div className="flex items-center gap-1 mt-1.5 flex-wrap">
                   {card.displays_location === "Yes" && (
-                    <Badge variant="outline" className="text-[10px]"><MapPin className="h-2.5 w-2.5 mr-1" />Location</Badge>
+                    <Badge variant="outline" className="text-[10px]"><MapPin className="h-2.5 w-2.5 mr-1" />{Z("位置", "Location")}</Badge>
                   )}
                 </div>
               </div>
@@ -82,7 +86,7 @@ export default function SharedInformationCard() {
             {!!contacts?.length && (
               <div className="border-t pt-4">
                 <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                  Emergency contacts
+                  {Z("紧急联系人", "Emergency contacts")}
                 </h2>
                 <div className="space-y-2">
                   {contacts.map((c: any) => (
@@ -105,7 +109,7 @@ export default function SharedInformationCard() {
             )}
           </CardContent>
         </Card>
-        <p className="text-center text-[11px] text-muted-foreground mt-4">Shared via ChallengeD</p>
+        <p className="text-center text-[11px] text-muted-foreground mt-4">{Z("由忆畅分享", "Shared via ChallengeD")}</p>
       </div>
     </div>
   );
