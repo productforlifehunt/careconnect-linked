@@ -55,9 +55,9 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
   const [aiOpen, setAiOpen] = useState<{ open: boolean; checkin: any }>({ open: false, checkin: null });
 
   const [form, setForm] = useState({
-    name: "Daily Check-In",
+    name: Z("每日签到", "Daily Check-In"),
     detail: "",
-    frequency: "Once daily",
+    frequency: Z("每日一次", "Once daily"),
     time: "08:00",
     instructions: "",
     start_date: "",
