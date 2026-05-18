@@ -1,5 +1,7 @@
 import * as React from "react";
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
+import i18n from "@/i18n/config";
+const __isCN = () => i18n.language?.startsWith("zh");
 
 import { cn } from "@/lib/utils";
 import { ButtonProps, buttonVariants } from "@/components/ui/button";
@@ -7,7 +9,7 @@ import { ButtonProps, buttonVariants } from "@/components/ui/button";
 const Pagination = ({ className, ...props }: React.ComponentProps<"nav">) => (
   <nav
     role="navigation"
-    aria-label="pagination"
+    aria-label={__isCN() ? "分页" : "pagination"}
     className={cn("mx-auto flex w-full justify-center", className)}
     {...props}
   />
@@ -47,16 +49,16 @@ const PaginationLink = ({ className, isActive, size = "icon", ...props }: Pagina
 PaginationLink.displayName = "PaginationLink";
 
 const PaginationPrevious = ({ className, ...props }: React.ComponentProps<typeof PaginationLink>) => (
-  <PaginationLink aria-label="Go to previous page" size="default" className={cn("gap-1 pl-2.5", className)} {...props}>
+  <PaginationLink aria-label={__isCN() ? "上一页" : "Go to previous page"} size="default" className={cn("gap-1 pl-2.5", className)} {...props}>
     <ChevronLeft className="h-4 w-4" />
-    <span>Previous</span>
+    <span>{__isCN() ? "上一页" : "Previous"}</span>
   </PaginationLink>
 );
 PaginationPrevious.displayName = "PaginationPrevious";
 
 const PaginationNext = ({ className, ...props }: React.ComponentProps<typeof PaginationLink>) => (
-  <PaginationLink aria-label="Go to next page" size="default" className={cn("gap-1 pr-2.5", className)} {...props}>
-    <span>Next</span>
+  <PaginationLink aria-label={__isCN() ? "下一页" : "Go to next page"} size="default" className={cn("gap-1 pr-2.5", className)} {...props}>
+    <span>{__isCN() ? "下一页" : "Next"}</span>
     <ChevronRight className="h-4 w-4" />
   </PaginationLink>
 );
@@ -65,7 +67,7 @@ PaginationNext.displayName = "PaginationNext";
 const PaginationEllipsis = ({ className, ...props }: React.ComponentProps<"span">) => (
   <span aria-hidden className={cn("flex h-9 w-9 items-center justify-center", className)} {...props}>
     <MoreHorizontal className="h-4 w-4" />
-    <span className="sr-only">More pages</span>
+    <span className="sr-only">{__isCN() ? "更多页" : "More pages"}</span>
   </span>
 );
 PaginationEllipsis.displayName = "PaginationEllipsis";

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Paperclip, Image as ImageIcon, FileText, X, Loader2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 interface MessageAttachmentProps {
   onAttach: (url: string, type: "image" | "file") => void;
@@ -11,6 +12,9 @@ interface MessageAttachmentProps {
 
 export function MessageAttachment({ onAttach, disabled }: MessageAttachmentProps) {
   const { toast } = useToast();
+  const { i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
+  const Z = (cn: string, en: string) => (isCN ? cn : en);
   const [uploading, setUploading] = useState(false);
   const [open, setOpen] = useState(false);
   const [urlInput, setUrlInput] = useState("");
@@ -34,19 +38,19 @@ export function MessageAttachment({ onAttach, disabled }: MessageAttachmentProps
       <PopoverContent className="w-72 p-3" align="start">
         {!mode ? (
           <div className="space-y-2">
-            <p className="text-sm font-medium text-foreground mb-2">Attach</p>
+            <p className="text-sm font-medium text-foreground mb-2">{Z("添加附件", "Attach")}</p>
             <Button variant="outline" className="w-full justify-start gap-2" size="sm" onClick={() => setMode("image")}>
-              <ImageIcon className="h-4 w-4 text-primary" /> Image URL
+              <ImageIcon className="h-4 w-4 text-primary" /> {Z("图片链接", "Image URL")}
             </Button>
             <Button variant="outline" className="w-full justify-start gap-2" size="sm" onClick={() => setMode("file")}>
-              <FileText className="h-4 w-4 text-primary" /> File URL
+              <FileText className="h-4 w-4 text-primary" /> {Z("文件链接", "File URL")}
             </Button>
           </div>
         ) : (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium text-foreground">
-                {mode === "image" ? "Image URL" : "File URL"}
+                {mode === "image" ? Z("图片链接", "Image URL") : Z("文件链接", "File URL")}
               </p>
               <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setMode(null)}>
                 <X className="h-3 w-3" />
@@ -60,7 +64,7 @@ export function MessageAttachment({ onAttach, disabled }: MessageAttachmentProps
               onKeyDown={e => e.key === "Enter" && handleSubmitUrl()}
             />
             <Button variant="coral" size="sm" className="w-full" onClick={handleSubmitUrl} disabled={!urlInput.trim()}>
-              Attach
+              {Z("添加", "Attach")}
             </Button>
           </div>
         )}
