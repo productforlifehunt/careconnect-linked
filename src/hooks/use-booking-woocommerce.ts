@@ -3,6 +3,9 @@ import { createServiceOrder, updateOrderStatus } from '@/services/woocommerce-ap
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
 import { getStoredWPUser } from '@/services/wp-auth';
+import i18next from 'i18next';
+
+const Z = (cn: string, en: string) => (i18next.language?.startsWith('zh') ? cn : en);
 
 /**
  * Hook to create a booking via WooCommerce order.
@@ -54,7 +57,7 @@ export function useCreateBookingWithWooCommerce() {
       qc.invalidateQueries({ queryKey: ['providerBookings'] });
       toast({
         title: t('bookings.bookingCreated'),
-        description: 'Booking created and order placed',
+        description: Z('订单已创建并下单', 'Booking created and order placed'),
       });
     },
     onError: (error: any) => {
@@ -88,7 +91,7 @@ export function useConfirmBookingWithWooCommerce() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['bookings'] });
       qc.invalidateQueries({ queryKey: ['providerBookings'] });
-      toast({ title: 'Booking confirmed' });
+      toast({ title: Z('预约已确认', 'Booking confirmed') });
     },
   });
 }
@@ -114,7 +117,7 @@ export function useCompleteBookingWithWooCommerce() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['bookings'] });
       qc.invalidateQueries({ queryKey: ['providerBookings'] });
-      toast({ title: 'Booking completed' });
+      toast({ title: Z('预约已完成', 'Booking completed') });
     },
   });
 }
@@ -141,7 +144,7 @@ export function useCancelBookingWithWooCommerce() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['bookings'] });
       qc.invalidateQueries({ queryKey: ['providerBookings'] });
-      toast({ title: 'Booking cancelled' });
+      toast({ title: Z('预约已取消', 'Booking cancelled') });
     },
   });
 }

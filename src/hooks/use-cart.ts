@@ -8,6 +8,9 @@ import {
   createOrderRefund,
 } from '@/services/woocommerce-api';
 import { useToast } from '@/hooks/use-toast';
+import i18next from 'i18next';
+
+const Z = (cn: string, en: string) => (i18next.language?.startsWith('zh') ? cn : en);
 
 /**
  * Hook to fetch the current WooCommerce cart
@@ -44,10 +47,10 @@ export function useAddToCart() {
     }) => addToCart({ productId, quantity, booking }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['wc-cart'] });
-      toast({ title: 'Added to cart' });
+      toast({ title: Z('已加入购物车', 'Added to cart') });
     },
     onError: (err: any) => {
-      toast({ title: 'Failed to add to cart', description: err.message, variant: 'destructive' });
+      toast({ title: Z('加入购物车失败', 'Failed to add to cart'), description: err.message, variant: 'destructive' });
     },
   });
 }
@@ -98,10 +101,10 @@ export function useCheckout() {
       qc.invalidateQueries({ queryKey: ['wc-cart'] });
       qc.invalidateQueries({ queryKey: ['bookings'] });
       qc.invalidateQueries({ queryKey: ['providerBookings'] });
-      toast({ title: 'Order placed successfully!' });
+      toast({ title: Z('订单已提交！', 'Order placed successfully!') });
     },
     onError: (err: any) => {
-      toast({ title: 'Checkout failed', description: err.message, variant: 'destructive' });
+      toast({ title: Z('结算失败', 'Checkout failed'), description: err.message, variant: 'destructive' });
     },
   });
 }
@@ -119,10 +122,10 @@ export function useRequestRefund() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['bookings'] });
       qc.invalidateQueries({ queryKey: ['providerBookings'] });
-      toast({ title: 'Refund requested', description: 'Your refund request has been submitted.' });
+      toast({ title: Z('已申请退款', 'Refund requested'), description: Z('您的退款申请已提交。', 'Your refund request has been submitted.') });
     },
     onError: (err: any) => {
-      toast({ title: 'Refund failed', description: err.message, variant: 'destructive' });
+      toast({ title: Z('退款失败', 'Refund failed'), description: err.message, variant: 'destructive' });
     },
   });
 }
