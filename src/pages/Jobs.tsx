@@ -295,18 +295,18 @@ export default function Jobs() {
                     app.status === "accepted" ? "default" :
                     app.status === "rejected" ? "destructive" : "secondary"
                   }>
-                    {app.status === "accepted" ? "✓ Accepted" : app.status === "rejected" ? "✗ Rejected" : "Pending"}
+                    {app.status === "accepted" ? Z("✓ 已接受", "✓ Accepted") : app.status === "rejected" ? Z("✗ 已拒绝", "✗ Rejected") : Z("待处理", "Pending")}
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground line-clamp-2">{app.cover_letter}</p>
-                <p className="text-xs text-muted-foreground mt-2">Applied {new Date(app.created_at).toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric" })}</p>
+                <p className="text-xs text-muted-foreground mt-2">{Z("申请于 ", "Applied ")}{new Date(app.created_at).toLocaleDateString(zh ? "zh-CN" : "en", { month: "short", day: "numeric", year: "numeric" })}</p>
               </CardContent>
             </Card>
           )) : (
             <div className="text-center py-16">
               <Briefcase className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-muted-foreground">No applications yet</p>
-              <p className="text-sm text-muted-foreground mt-1">Browse available jobs and apply to get started</p>
+              <p className="text-muted-foreground">{Z("还没有申请", "No applications yet")}</p>
+              <p className="text-sm text-muted-foreground mt-1">{Z("浏览可用工作并提交申请开始使用", "Browse available jobs and apply to get started")}</p>
             </div>
           )}
         </TabsContent>
