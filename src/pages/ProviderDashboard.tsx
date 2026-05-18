@@ -271,9 +271,9 @@ export default function ProviderDashboard() {
 
         <TabsContent value="availability" className="mt-4 space-y-6">
           <Card className="border-transparent card-elevated">
-            <CardHeader><CardTitle>Weekly Schedule</CardTitle></CardHeader>
+            <CardHeader><CardTitle>{isZh ? "每周排班" : "Weekly Schedule"}</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              {DAYS.map((day, i) => (
+              {(isZh ? DAYS_ZH : DAYS_EN).map((day, i) => (
                 <div key={i} className="flex items-center gap-4 p-3 rounded-lg bg-muted/30">
                   <div className="w-28 shrink-0">
                     <div className="flex items-center gap-2">
@@ -284,14 +284,14 @@ export default function ProviderDashboard() {
                   {schedule[i]?.enabled ? (
                     <div className="flex items-center gap-2">
                       <Input type="time" value={schedule[i]?.start || "09:00"} onChange={e => setSchedule(p => ({ ...p, [i]: { ...p[i], start: e.target.value } }))} className="w-32" />
-                      <span className="text-muted-foreground">to</span>
+                      <span className="text-muted-foreground">{isZh ? "至" : "to"}</span>
                       <Input type="time" value={schedule[i]?.end || "17:00"} onChange={e => setSchedule(p => ({ ...p, [i]: { ...p[i], end: e.target.value } }))} className="w-32" />
                     </div>
-                  ) : <span className="text-sm text-muted-foreground">Unavailable</span>}
+                  ) : <span className="text-sm text-muted-foreground">{isZh ? "不可约" : "Unavailable"}</span>}
                 </div>
               ))}
               <Button variant="coral" className="w-full mt-4" onClick={handleSaveSchedule} disabled={upsertAvailability.isPending}>
-                {upsertAvailability.isPending ? "Saving..." : "Save Weekly Schedule"}
+                {upsertAvailability.isPending ? (isZh ? "保存中…" : "Saving...") : (isZh ? "保存每周排班" : "Save Weekly Schedule")}
               </Button>
             </CardContent>
           </Card>
