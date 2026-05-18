@@ -175,31 +175,15 @@ export default function Jobs() {
             <>
               {isAuthenticated && availableToApplyCount === 0 && (
                 <div className="rounded-md border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-                  No open jobs from other users right now. You can manage your own posts in{" "}
+                  {Z("目前没有其他用户发布的开放工作。您可以在", "No open jobs from other users right now. You can manage your own posts in")}{" "}
                   <button
                     type="button"
                     className="font-medium text-primary hover:underline"
                     onClick={() => setActiveTab("my-posts")}
                   >
-                    My Posted Jobs
+                    {Z("我发布的", "My Posted Jobs")}
                   </button>
-                  {false && (
-                    <>
-                      {" "}or create a test external job{" "}
-                      <button
-                        type="button"
-                        className="font-medium text-primary hover:underline disabled:opacity-60"
-                        onClick={() => createExternalTestJob.mutate(undefined, {
-                          onSuccess: () => toast({ title: "Test job created", description: "A job from another profile is now available for apply testing." }),
-                          onError: (err: any) => toast({ title: "Could not create test job", description: err?.message || "Please check database policies", variant: "destructive" }),
-                        })}
-                        disabled={createExternalTestJob.isPending}
-                      >
-                        {createExternalTestJob.isPending ? "creating..." : "create one now"}
-                      </button>
-                    </>
-                  )}
-                  .
+                  {Z("中管理您的发布。", ".")}
                 </div>
               )}
 
