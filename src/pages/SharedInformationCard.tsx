@@ -6,8 +6,12 @@ import { fetchEmergencyContactsWordPress } from "@/features/cared-ones/source.wo
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { IdCard, MapPin, Phone, Loader2, ShieldOff } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function SharedInformationCard() {
+  const { i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
+  const Z = (cn: string, en: string) => (isCN ? cn : en);
   const { token } = useParams<{ token: string }>();
   const { data: card, isLoading, isError } = useInformationCardByToken(token || null);
 
