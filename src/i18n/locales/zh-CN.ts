@@ -33,7 +33,7 @@ const zhCN = {
     dashboard: "控制面板", messages: "消息", favorites: "收藏", gpsTracking: "定位追踪",
     myBookings: "我的预约", careGroups: "照护小组", careTeams: "照护团队", findCare: "寻找护理",
     findHelp: "寻求帮助", findCaregivers: "找寻护理", findLocalCompanion: "找寻本地陪伴",
-    findRemoteCompanion: "找寻远程陪伴", aiCompanion: "AI陪伴", seniorFacilities: "养老机构",
+    findRemoteCompanion: "找寻远程陪伴", aiCompanion: "智能陪伴", seniorFacilities: "养老机构",
     caredOnes: "被照顾者", myLovedOnes: "我的亲人",
     howItWorks: "使用方法", trustSafety: "信任与安全", myProfile: "我的资料",
     notifications: "通知", becomeCaregiver: "成为护理人员", joinAsCaregiver: "加入成为护理人员",

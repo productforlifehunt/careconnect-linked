@@ -31,26 +31,26 @@ function useSidebarItems() {
   const L = (zh: string, en: string) => (isChinese ? zh : en);
 
   const base = [
-    { title: site.navLabels.dashboard, url: "/dashboard", icon: LayoutDashboard },
-    { title: site.navLabels.caredOnes, url: "/cared-ones", icon: HeartIcon },
+    { title: L("控制面板", site.navLabels.dashboard), url: "/dashboard", icon: LayoutDashboard },
+    { title: L(isChallenged ? "亲人" : "被照顾者", site.navLabels.caredOnes), url: "/cared-ones", icon: HeartIcon },
     { title: L("预约", "Appointments"), url: "/bookings", icon: CalendarDays },
     { title: L("消息", "Messages"), url: "/messages", icon: MessageSquare },
-    { title: site.navLabels.careGroups, url: "/care-circle", icon: Users },
-    { title: L("工作机会", "Jobs Board"), url: "/jobs", icon: Briefcase },
-    { title: site.navLabels.findCare, url: "/search", icon: Search },
-    { title: site.navLabels.gpsTracking, url: "/gps-tracking", icon: MapPin },
+    { title: L(isChallenged ? "团聚" : "照护小组", site.navLabels.careGroups), url: "/care-circle", icon: Users },
+    { title: L("已发布护理工作", "Jobs Board"), url: "/jobs", icon: Briefcase },
+    { title: L(isChallenged ? "寻求帮助" : "寻找护理", site.navLabels.findCare), url: "/search", icon: Search },
+    { title: L(isChallenged ? "定位" : "定位追踪", site.navLabels.gpsTracking), url: "/gps-tracking", icon: MapPin },
     { title: L("收藏", "Favorites"), url: "/favorites", icon: HeartIcon },
-    { title: L("服务者后台", "Provider Dashboard"), url: "/provider-dashboard", icon: Settings },
+    { title: L("护理者面板", "Provider Dashboard"), url: "/provider-dashboard", icon: Settings },
     { title: L("购物车", "Cart"), url: "/cart", icon: ShoppingCart },
   ];
 
   if (isChallenged) {
     base.push(
-      { title: site.navLabels.awareD || "AwareD", url: "/aware", icon: Lightbulb },
-      { title: site.navLabels.careD || "CareD", url: "/care-guides", icon: HeartPulse },
-      { title: site.navLabels.copeD || "CopeD", url: "/coping", icon: Wand2 },
-      { title: site.navLabels.safeD || "SafeD", url: "/safety-guides", icon: ShieldCheck },
-      { title: site.navLabels.accompanieD || "AccompanieD", url: "/accompanied", icon: HandHeart },
+      { title: L("认知助手", site.navLabels.awareD || "AwareD"), url: "/aware", icon: Lightbulb },
+      { title: L("护理助手", site.navLabels.careD || "CareD"), url: "/care-guides", icon: HeartPulse },
+      { title: L("情绪助手", site.navLabels.copeD || "CopeD"), url: "/coping", icon: Wand2 },
+      { title: L("安全助手", site.navLabels.safeD || "SafeD"), url: "/safety-guides", icon: ShieldCheck },
+      { title: L("陪伴助手", site.navLabels.accompanieD || "AccompanieD"), url: "/accompanied", icon: HandHeart },
     );
   }
 
