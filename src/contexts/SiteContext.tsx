@@ -279,7 +279,8 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useSite = (): SiteConfig => {
   const base = useContext(SiteContext);
-  const lang = (typeof window !== "undefined" ? i18n.language : "en") || "en";
+  const { i18n: i18nInstance } = useTranslation();
+  const lang = i18nInstance.language || "en";
   const isCN = lang.startsWith("zh");
   if (!isCN) return base;
   const isChallenged = base.family === "challenged";
