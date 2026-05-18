@@ -50,8 +50,8 @@ export default function Cart() {
           <Card className="border-transparent card-elevated">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle>Items ({items.length})</CardTitle>
-                <Button variant="ghost" size="sm" className="text-destructive" onClick={() => clearAll.mutate()} disabled={clearAll.isPending}>Clear All</Button>
+                <CardTitle>{cn ? "商品" : "Items"} ({items.length})</CardTitle>
+                <Button variant="ghost" size="sm" className="text-destructive" onClick={() => clearAll.mutate()} disabled={clearAll.isPending}>{cn ? "全部清空" : "Clear All"}</Button>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -59,7 +59,7 @@ export default function Cart() {
                 <div key={item.key} className="flex items-center justify-between border-b last:border-0 pb-3 last:pb-0">
                   <div>
                     <p className="font-semibold">{item.name}</p>
-                    <p className="text-sm text-muted-foreground">Qty: {item.quantity} × {sym}{(parseInt(item.prices?.price || "0") / 100).toFixed(2)}</p>
+                    <p className="text-sm text-muted-foreground">{cn ? "数量" : "Qty"}: {item.quantity} × {sym}{(parseInt(item.prices?.price || "0") / 100).toFixed(2)}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary">{sym}{(parseInt(item.totals?.line_total || "0") / 100).toFixed(2)}</Badge>
@@ -72,10 +72,10 @@ export default function Cart() {
 
           <Card className="border-transparent card-elevated">
             <CardContent className="p-5 space-y-4">
-              <div className="flex justify-between text-lg font-bold"><span>Total</span><span>{sym}{total}</span></div>
-              <div><Label>Billing Email</Label><Input value={email} onChange={e => setEmail(e.target.value)} placeholder={(user as any)?.email || "email@example.com"} /></div>
+              <div className="flex justify-between text-lg font-bold"><span>{cn ? "合计" : "Total"}</span><span>{sym}{total}</span></div>
+              <div><Label>{cn ? "账单邮箱" : "Billing Email"}</Label><Input value={email} onChange={e => setEmail(e.target.value)} placeholder={(user as any)?.email || "email@example.com"} /></div>
               <div className="rounded-lg bg-muted/40 p-3 text-sm text-muted-foreground">
-                Payment method: Cash on delivery / offline payment as configured in WooCommerce.
+                {cn ? "支付方式：按 WooCommerce 配置使用货到付款或线下支付。" : "Payment method: Cash on delivery / offline payment as configured in WooCommerce."}
               </div>
               <Button variant="coral" className="w-full" size="lg" disabled={doCheckout.isPending || !email.trim()} onClick={async () => {
                 const u = user as any;
