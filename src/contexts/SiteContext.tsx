@@ -276,7 +276,32 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return <SiteContext.Provider value={config}>{children}</SiteContext.Provider>;
 };
 
-export const useSite = () => useContext(SiteContext);
+export const useSite = (): SiteConfig => {
+  const base = useContext(SiteContext);
+  const lang = (typeof window !== "undefined" ? i18n.language : "en") || "en";
+  const isCN = lang.startsWith("zh");
+  if (!isCN) return base;
+  const isChallenged = base.family === "challenged";
+  return {
+    ...base,
+    caredOneSingular: isChallenged ? "被护理者" : "被照顾者",
+    careGroupSingular: isChallenged ? "护理群组" : "照护小组",
+    navLabels: {
+      ...base.navLabels,
+      careGroups: isChallenged ? "护理群组" : "照护小组",
+      findCare: isChallenged ? "寻求帮助" : "寻找护理",
+      caredOnes: isChallenged ? "被护理者" : "被照顾者",
+      dashboard: "控制面板",
+      gpsTracking: isChallenged ? "定位" : "定位追踪",
+      awareD: "认知助手",
+      careD: "护理助手",
+      copeD: "情绪助手",
+      safeD: "安全助手",
+      accompanieD: "陪伴助手",
+      manageD: "管理助手",
+    },
+  };
+};
 
 /** Returns { area, language } for CCT content filtering based on current site. */
 export function getContentLocale(siteId: SiteId = detectSite()): { area: string; language: string } {
