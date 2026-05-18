@@ -168,7 +168,7 @@ export default function GPSTracking() {
           fillOpacity: 0.12,
           dashArray: zone.zone_type === "danger" ? "6 4" : undefined,
         }).addTo(map);
-        circle.bindPopup(`<b>${zone.name}</b><br/>${zone.zone_type === "danger" ? "⚠️ Danger" : "✅ Safe"} Zone<br/>Radius: ${zone.radius_meters || 200}m`);
+        circle.bindPopup(`<b>${zone.name}</b><br/>${zone.zone_type === "danger" ? Z("⚠️ 危险区域", "⚠️ Danger Zone") : Z("✅ 安全区域", "✅ Safe Zone")}<br/>${Z("半径", "Radius")}: ${zone.radius_meters || 200}m`);
         zoneLayers.current.push(circle);
       }
     });
