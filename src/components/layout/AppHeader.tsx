@@ -65,7 +65,7 @@ export function AppHeader() {
     : [
         { title: t(site.family === "challenged" ? "nav.careTeams" : "nav.careGroups"), url: "/care-circle", icon: Users },
         { title: t(site.family === "challenged" ? "nav.findHelp" : "nav.findCare"), url: "/search", icon: Search },
-        { title: t("nav.community"), url: "/community", icon: Newspaper },
+        ...(isCareCNC ? [] : [{ title: t("nav.community"), url: "/community", icon: Newspaper }]),
         { title: t("nav.articles"), url: "/articles", icon: Newspaper },
         { title: t("nav.howItWorks"), url: "/how-it-works", icon: HelpCircle },
       ];
