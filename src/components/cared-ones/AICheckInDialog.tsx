@@ -67,16 +67,17 @@ export function AICheckInDialog({ open, onOpenChange, checkin, caredOneName }: P
     setMessages([]);
     setInput("");
     setCompleted(false);
-    const sys = SYSTEM_PROMPT(checkin?.name || "Check-In", checkin?.instructions || "", caredOneName);
+    const sys = SYSTEM_PROMPT(checkin?.name || Z("签到", "Check-In"), checkin?.instructions || "", defaultCaredOneName);
+    const starter = Z("现在请开始签到。", "Please start the check-in now.");
     setSending(true);
-    invokeAI("general_chat", "Please start the check-in now.", {
+    invokeAI("general_chat", starter, {
       messages: [
         { role: "system", content: sys },
-        { role: "user", content: "Please start the check-in now." },
+        { role: "user", content: starter },
       ],
     })
       .then((reply) => setMessages([{ role: "assistant", content: reply }]))
-      .catch((e) => toast({ title: "AI unavailable", description: String(e?.message || e), variant: "destructive" }))
+      .catch((e) => toast({ title: Z("AI 不可用", "AI unavailable"), description: String(e?.message || e), variant: "destructive" }))
       .finally(() => setSending(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, checkin?.id]);
@@ -90,11 +91,11 @@ export function AICheckInDialog({ open, onOpenChange, checkin, caredOneName }: P
       { checkin_id: String(checkin.id), status, note: summary, checked_by_ai: true },
       {
         onSuccess: () => {
-          toast({ title: `AI check-in saved (${status}) ✓` });
+          toast({ title: Z(`AI 签到已保存(${status === "skipped" ? "跳过" : "已签到"})✓`, `AI check-in saved (${status}) ✓`) });
           setCompleted(true);
           setTimeout(() => onOpenChange(false), 800);
         },
-        onError: (e: any) => toast({ title: "Save failed", description: String(e?.message || e), variant: "destructive" }),
+        onError: (e: any) => toast({ title: Z("保存失败", "Save failed"), description: String(e?.message || e), variant: "destructive" }),
       }
     );
   };
@@ -103,7 +104,7 @@ export function AICheckInDialog({ open, onOpenChange, checkin, caredOneName }: P
     const text = input.trim();
     if (!text || sending) return;
     setInput("");
-    const sys = SYSTEM_PROMPT(checkin?.name || "Check-In", checkin?.instructions || "", caredOneName);
+    const sys = SYSTEM_PROMPT(checkin?.name || Z("签到", "Check-In"), checkin?.instructions || "", defaultCaredOneName);
     const next: AIChatMessage[] = [...messages, { role: "user", content: text }];
     setMessages(next);
     setSending(true);
@@ -112,7 +113,6 @@ export function AICheckInDialog({ open, onOpenChange, checkin, caredOneName }: P
         messages: [{ role: "system", content: sys }, ...next],
       });
 
-      // Try to parse completion JSON
       const parsed = parseAIJson<{ done?: boolean; summary?: string; status?: "checked" | "skipped" }>(reply);
       if (parsed?.done && parsed.summary) {
         setMessages((m) => [...m, { role: "assistant", content: `✅ ${parsed.summary}` }]);
@@ -121,16 +121,15 @@ export function AICheckInDialog({ open, onOpenChange, checkin, caredOneName }: P
       }
       setMessages((m) => [...m, { role: "assistant", content: reply }]);
     } catch (e: any) {
-      toast({ title: "AI error", description: String(e?.message || e), variant: "destructive" });
+      toast({ title: Z("AI 出错", "AI error"), description: String(e?.message || e), variant: "destructive" });
     } finally {
       setSending(false);
     }
   };
 
   const finishNow = () => {
-    // Manual completion: ask AI to summarize from history
-    const transcript = messages.map((m) => `${m.role === "user" ? "Caregiver" : "AI"}: ${m.content}`).join("\n");
-    finalize("checked", transcript.slice(0, 1500) || "AI-assisted check-in completed.");
+    const transcript = messages.map((m) => `${m.role === "user" ? Z("护理者", "Caregiver") : "AI"}: ${m.content}`).join("\n");
+    finalize("checked", transcript.slice(0, 1500) || Z("AI 协助的签到已完成。", "AI-assisted check-in completed."));
   };
 
   return (
@@ -138,10 +137,10 @@ export function AICheckInDialog({ open, onOpenChange, checkin, caredOneName }: P
       <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Bot className="h-5 w-5 text-primary" /> AI Check-In
+            <Bot className="h-5 w-5 text-primary" /> {Z("AI 智能签到", "AI Check-In")}
             <Badge variant="outline" className="ml-2">{checkin?.name}</Badge>
           </DialogTitle>
-          <DialogDescription>Chat naturally — the AI will save the result when done.</DialogDescription>
+          <DialogDescription>{Z("自然对话即可——AI 会在完成后自动保存结果。", "Chat naturally — the AI will save the result when done.")}</DialogDescription>
         </DialogHeader>
 
         <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-3 py-2 min-h-[260px]">
@@ -168,7 +167,7 @@ export function AICheckInDialog({ open, onOpenChange, checkin, caredOneName }: P
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), send())}
-            placeholder="Type your reply…"
+            placeholder={Z("输入您的回复…", "Type your reply…")}
             disabled={sending || completed}
           />
           <Button onClick={send} disabled={sending || !input.trim() || completed}>
@@ -177,14 +176,15 @@ export function AICheckInDialog({ open, onOpenChange, checkin, caredOneName }: P
         </div>
 
         <DialogFooter className="gap-2">
-          <Button variant="outline" size="sm" onClick={() => finalize("skipped", "Skipped via AI check-in.")} disabled={logCheckin.isPending || completed}>
-            <SkipForward className="h-4 w-4 mr-1" /> Skip
+          <Button variant="outline" size="sm" onClick={() => finalize("skipped", Z("通过 AI 签到跳过。", "Skipped via AI check-in."))} disabled={logCheckin.isPending || completed}>
+            <SkipForward className="h-4 w-4 mr-1" /> {Z("跳过", "Skip")}
           </Button>
           <Button size="sm" onClick={finishNow} disabled={logCheckin.isPending || completed || messages.length < 2}>
-            <Check className="h-4 w-4 mr-1" /> Finish & Save
+            <Check className="h-4 w-4 mr-1" /> {Z("完成并保存", "Finish & Save")}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+
