@@ -91,7 +91,10 @@ export function AppHeader() {
                 ) : isCareCNC && isChinese ? (
                   <img src={huchangIcon} alt="护畅" className="w-12 h-12 rounded-xl" />
                 ) : isCareCNC ? (
-                  <span className="font-bold text-primary text-2xl tracking-tight">Carecnc</span>
+                  <div className="w-12 h-12 rounded-[22%] hero-gradient flex flex-col items-center justify-center leading-none shadow-sm">
+                    <span className="text-primary-foreground font-bold text-[13px] tracking-tight">Care</span>
+                    <span className="text-primary-foreground font-bold text-[13px] tracking-tight">cnc</span>
+                  </div>
                 ) : (
                   <>
                     <div className="w-9 h-9 rounded-lg hero-gradient flex items-center justify-center">
