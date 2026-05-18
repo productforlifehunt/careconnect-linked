@@ -190,8 +190,7 @@ const challengedV1Config: SiteConfig = {
 // Force language on the main brands so the Chinese build is fully Chinese
 // and the English builds are fully English.
 challengedConfig.forceLanguage = "zh-CN";
-careCNCConfig.forceLanguage = "en";
-duoCareConfig.forceLanguage = "en";
+// CareCNC and CareDuo are bilingual — user can switch EN/ZH via the LanguageSwitcher.
 
 /** Map hostnames to site IDs */
 const DOMAIN_MAP: Record<string, SiteId> = {
