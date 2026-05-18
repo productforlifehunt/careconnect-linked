@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { UserPlus, Mail, Clock, X, Tag, Plus, Shield, Heart, Crown, MoreVertical, Trash2, Link2, Copy, Ban, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import { SubgroupCard } from "../SubgroupCard";
 import { useGroupInvites, useCreateGroupInvite, useUpdateGroupInvite, useDeleteGroupInvite } from "@/hooks/use-care-data";
 
@@ -44,6 +45,9 @@ export function MembersTab({
   inviteToGroup, updateRole, removeMember, cancelInvitation, createCategory, deleteCategory,
 }: MembersTabProps) {
   const { toast } = useToast();
+  const { i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
+  const Z = (cn: string, en: string) => (isCN ? cn : en);
   const [inviteEmail, setInviteEmail] = useState("");
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
