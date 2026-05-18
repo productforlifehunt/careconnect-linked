@@ -10,7 +10,7 @@ const zhCN = {
     minutes: "分钟", yearsExp: "年经验", new: "新", all: "全部", bookNow: "立即预约",
     learnMore: "了解更多", previous: "上一步", continue: "继续", refresh: "刷新",
     directions: "导航", accept: "接受", decline: "拒绝", remove: "移除", add: "添加",
-    create: "创建", update: "更新", upload: "上传", download: "下载", listen: "朗读", stop: "停止",
+    create: "创建", update: "更新", upload: "上传", download: "下载", listen: "朗读", stop: "停止", dismiss: "忽略",
     or: "或", of: "的", at: "在", to: "到", page: "页", step: "步骤", complete: "完成",
     pending: "待处理", confirmed: "已确认", completed: "已完成", cancelled: "已取消",
     inProgress: "进行中", unassigned: "未分配", provider: "服务提供者", caregiver: "护理人员",
@@ -109,6 +109,8 @@ const zhCN = {
     resetLinkSentDesc: "请检查邮箱获取密码重置链接。", emailPlaceholder: "you@example.com",
     passwordPlaceholder: "••••••••", namePlaceholder: "张三",
     passwordHint: "最少8个字符，包含大写、数字、符号",
+    signIn: "登录", username: "用户名", emailOrUsername: "邮箱或用户名",
+    backupSignInDesc: "使用备用账户登录，保障无中断访问。",
   },
   resetPw: {
     title: "设置新密码", subtitle: "在下方输入您的新密码", newPassword: "新密码",
@@ -241,6 +243,7 @@ const zhCN = {
     couldNotGetLocation: "无法获取位置", enableLocationAccess: "请在浏览器设置中启用位置访问。",
     locationsUpdated: "位置已更新", coordinates: "坐标", lastUpdated: "最后更新",
     map: "地图", alerts: "警报", zones: "区域", autoRefresh: "自动刷新",
+    sharingActive: "每 15 秒分享一次", sharingInactive: "未分享",
   },
   notifs: {
     notifications: "通知", unread: "{{count}}条未读",

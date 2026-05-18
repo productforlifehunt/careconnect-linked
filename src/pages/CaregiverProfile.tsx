@@ -225,41 +225,41 @@ export default function CaregiverProfile() {
 
   const handleBooking = async () => {
     if (!bookingDate || !bookingTime || !bookingEndTime || !selectedResource) {
-      toast({ title: "Please pick a service package, date, start time, and end time", variant: "destructive" });
+      toast({ title: isZh ? "请选择服务套餐、日期、开始时间和结束时间" : "Please pick a service package, date, start time, and end time", variant: "destructive" });
       return;
     }
     const selectedDate = new Date(bookingDate + "T" + bookingTime);
     if (selectedDate < new Date()) {
-      toast({ title: "Cannot book in the past", description: "Please select a future date and time.", variant: "destructive" });
+      toast({ title: isZh ? "无法预约过去时间" : "Cannot book in the past", description: isZh ? "请选择未来的日期与时间。" : "Please select a future date and time.", variant: "destructive" });
       return;
     }
     const minNoticeHours = Number(availabilitySetting?.min_notice_hours ?? 0);
     if (minNoticeHours > 0) {
       const earliestBookable = new Date(Date.now() + minNoticeHours * 60 * 60 * 1000);
       if (selectedDate < earliestBookable) {
-        toast({ title: "Minimum notice required", description: `This caregiver requires at least ${minNoticeHours} hours notice.`, variant: "destructive" });
+        toast({ title: isZh ? "需提前预约" : "Minimum notice required", description: isZh ? `此护理者要求至少提前 ${minNoticeHours} 小时预约。` : `This caregiver requires at least ${minNoticeHours} hours notice.`, variant: "destructive" });
         return;
       }
     }
     const durationHours = getDurationHours(bookingTime, bookingEndTime);
     if (!durationHours) {
-      toast({ title: "Invalid time range", description: "End time must be after start time.", variant: "destructive" });
+      toast({ title: isZh ? "时间区间无效" : "Invalid time range", description: isZh ? "结束时间必须晚于开始时间。" : "End time must be after start time.", variant: "destructive" });
       return;
     }
     const scheduleConflictMessage = getAvailabilityConflictMessage(availability || [], bookingDate, bookingTime, durationHours);
     if (scheduleConflictMessage) {
       setAvailabilityWarning(scheduleConflictMessage);
-      toast({ title: "Time slot unavailable", description: scheduleConflictMessage, variant: "destructive" });
+      toast({ title: isZh ? "该时段不可预约" : "Time slot unavailable", description: scheduleConflictMessage, variant: "destructive" });
       return;
     }
     const conflictMessage = await getProviderBookingConflictMessage(caregiver.id, bookingDate, bookingTime, durationHours);
     if (conflictMessage) {
       setAvailabilityWarning(conflictMessage);
-      toast({ title: "Time slot unavailable", description: conflictMessage, variant: "destructive" });
+      toast({ title: isZh ? "该时段不可预约" : "Time slot unavailable", description: conflictMessage, variant: "destructive" });
       return;
     }
     if (!isAuthenticated) {
-      toast({ title: "Please sign in to book", variant: "destructive" });
+      toast({ title: isZh ? "请先登录后再预约" : "Please sign in to book", variant: "destructive" });
       navigate("/auth");
       return;
     }
@@ -280,10 +280,10 @@ export default function CaregiverProfile() {
         status: availabilitySetting?.requires_confirmation === false ? "confirmed" : "pending",
         payment_status: "pending",
       });
-      toast({ title: "Booking Request Sent!", description: `Your booking with ${caregiver.full_name} has been submitted.` });
+      toast({ title: isZh ? "预约请求已发送！" : "Booking Request Sent!", description: isZh ? `已向 ${caregiver.full_name} 提交预约请求。` : `Your booking with ${caregiver.full_name} has been submitted.` });
       setBookingDialogOpen(false);
     } catch (err: any) {
-      toast({ title: "Booking failed", description: err.message, variant: "destructive" });
+      toast({ title: isZh ? "预约失败" : "Booking failed", description: err.message, variant: "destructive" });
     }
   };
 
@@ -620,11 +620,11 @@ export default function CaregiverProfile() {
                               notes: bookingNotes || undefined,
                             },
                           });
-                          toast({ title: "Added to cart", description: `${caregiver.full_name}'s ${selectedResource?.name} booking added.` });
+                          toast({ title: isZh ? "已加入购物车" : "Added to cart", description: isZh ? `已加入 ${caregiver.full_name} 的 ${selectedResource?.name} 预约。` : `${caregiver.full_name}'s ${selectedResource?.name} booking added.` });
                           setBookingDialogOpen(false);
                           navigate('/cart');
                         } catch (e: any) {
-                          toast({ title: "Failed", description: e.message, variant: "destructive" });
+                          toast({ title: isZh ? "操作失败" : "Failed", description: e.message, variant: "destructive" });
                         }
                       }}
                     >
@@ -638,10 +638,10 @@ export default function CaregiverProfile() {
                 if (!isAuthenticated) { navigate("/auth"); return; }
                 try {
                   const product = await getProviderProduct(caregiver.id);
-                  if (!product) { toast({ title: "Service not listed yet", variant: "destructive" }); return; }
+                  if (!product) { toast({ title: isZh ? "服务尚未上架" : "Service not listed yet", variant: "destructive" }); return; }
                   await addToCart.mutateAsync({ productId: product.id });
-                  toast({ title: "Added to cart", description: `${caregiver.full_name}'s service added.` });
-                } catch (e: any) { toast({ title: "Failed", description: e.message, variant: "destructive" }); }
+                  toast({ title: isZh ? "已加入购物车" : "Added to cart", description: isZh ? `已加入 ${caregiver.full_name} 的服务。` : `${caregiver.full_name}'s service added.` });
+                } catch (e: any) { toast({ title: isZh ? "操作失败" : "Failed", description: e.message, variant: "destructive" }); }
               }}>
                 {addToCart.isPending ? "Adding..." : "Add to Cart"}
               </Button>

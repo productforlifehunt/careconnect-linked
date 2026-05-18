@@ -98,7 +98,7 @@ export default function CaredOnes() {
     if (!selectedPerson) return;
     createUserCaredOne.mutate({ caredOneId: selectedPerson.id, relationship: relationship || undefined, isPrimary }, {
       onSuccess: () => { setAddOpen(false); setSelectedPerson(null); setSearchQuery(""); setRelationship(""); setIsPrimary(false); toast({ title: t("caredOnes.added", { caredOne: site.caredOneSingular }) }); },
-      onError: (err: any) => toast({ title: "Failed", description: err.message, variant: "destructive" }),
+      onError: (err: any) => toast({ title: t("caredOnes.failedToAdd", "Failed"), description: err.message, variant: "destructive" }),
     });
   };
 

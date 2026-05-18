@@ -16,7 +16,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
 export default function Messages() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
+  const Z = (cn: string, en: string) => (isCN ? cn : en);
   const { toast } = useToast();
   const { data: profile } = useMyProfile();
   const location = useLocation();
@@ -135,7 +137,7 @@ export default function Messages() {
     qc.invalidateQueries({ queryKey: ["messages"] });
     qc.invalidateQueries({ queryKey: ["conversations"] });
     setQuoteDialogOpen(false);
-    toast({ title: "Quote sent", description: `$${quote.amount} ${quote.mode === "hourly" ? "(hourly)" : "(flat)"} sent.` });
+    toast({ title: Z("报价已发送", "Quote sent"), description: `$${quote.amount} ${quote.mode === "hourly" ? Z("（按小时）", "(hourly)") : Z("（一口价）", "(flat)")} ${Z("已发送", "sent")}.` });
   };
 
   const handleStartConversation = (person: any) => {
@@ -146,7 +148,7 @@ export default function Messages() {
         setNewConvoOpen(false);
         setNewConvoSearch("");
       },
-      onError: (err: any) => toast({ title: "Failed", description: err.message, variant: "destructive" }),
+      onError: (err: any) => toast({ title: Z("操作失败", "Failed"), description: err.message, variant: "destructive" }),
     });
   };
 
@@ -306,7 +308,7 @@ export default function Messages() {
               <Button
                 variant="ghost"
                 size="icon"
-                title="Send a price quote"
+                title={Z("发送报价", "Send a price quote")}
                 onClick={() => setQuoteDialogOpen(true)}
                 disabled={!selectedConvoId}
               >

@@ -16,6 +16,7 @@ import {
 } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { QRCodeSVG } from "qrcode.react";
+import { useTranslation } from "react-i18next";
 
 type Status = "Draft" | "Active" | "Paused";
 type DisplaysLocation = "Yes" | "No";
@@ -42,17 +43,17 @@ function statusVariant(status?: string): "default" | "secondary" | "outline" {
   return "outline";
 }
 
-function buildShareText(card: any): string {
-  const lines = [
-    `📇 ${card.cared_ones_information_card_name || "Information Card"}`,
-    card.cared_ones_name ? `Name: ${card.cared_ones_name}` : "",
-    card.cared_ones_description ? `\n${card.cared_ones_description}` : "",
-  ].filter(Boolean);
-  return lines.join("\n");
-}
-
 export function InformationCardCard({ caredOneId }: { caredOneId: string }) {
   const { toast } = useToast();
+  const { i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
+  const Z = (cn: string, en: string) => (isCN ? cn : en);
+
+  const statusLabel = (s?: string) =>
+    s === "Active" ? Z("启用", "Active")
+      : s === "Paused" ? Z("已暂停", "Paused")
+      : Z("草稿", "Draft");
+
   const { data: cards, isLoading } = useInformationCards(caredOneId);
   const create = useCreateInformationCard();
   const update = useUpdateInformationCard();
@@ -85,23 +86,23 @@ export function InformationCardCard({ caredOneId }: { caredOneId: string }) {
 
   const handleSubmit = () => {
     if (!form.cared_ones_information_card_name.trim()) {
-      toast({ title: "Card name is required", variant: "destructive" });
+      toast({ title: Z("请填写卡片名称", "Card name is required"), variant: "destructive" });
       return;
     }
     if (editId) {
       update.mutate(
         { id: editId, ...form },
         {
-          onSuccess: () => { setFormOpen(false); toast({ title: "Information card updated" }); },
-          onError: (e: any) => toast({ title: "Update failed", description: e.message, variant: "destructive" }),
+          onSuccess: () => { setFormOpen(false); toast({ title: Z("信息卡已更新", "Information card updated") }); },
+          onError: (e: any) => toast({ title: Z("更新失败", "Update failed"), description: e.message, variant: "destructive" }),
         },
       );
     } else {
       create.mutate(
         { caredOneUserId: caredOneId, ...form },
         {
-          onSuccess: () => { setFormOpen(false); toast({ title: "Information card created" }); },
-          onError: (e: any) => toast({ title: "Create failed", description: e.message, variant: "destructive" }),
+          onSuccess: () => { setFormOpen(false); toast({ title: Z("信息卡已创建", "Information card created") }); },
+          onError: (e: any) => toast({ title: Z("创建失败", "Create failed"), description: e.message, variant: "destructive" }),
         },
       );
     }
@@ -111,10 +112,10 @@ export function InformationCardCard({ caredOneId }: { caredOneId: string }) {
     <div>
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-lg font-bold text-foreground">Information Cards</h2>
-          <p className="text-xs text-muted-foreground">Shareable profile cards for different contexts</p>
+          <h2 className="text-lg font-bold text-foreground">{Z("信息卡", "Information Cards")}</h2>
+          <p className="text-xs text-muted-foreground">{Z("可在不同场景分享的资料卡", "Shareable profile cards for different contexts")}</p>
         </div>
-        <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> New Card</Button>
+        <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> {Z("新建卡片", "New Card")}</Button>
       </div>
 
       {isLoading ? (
@@ -122,8 +123,8 @@ export function InformationCardCard({ caredOneId }: { caredOneId: string }) {
       ) : (cards || []).length === 0 ? (
         <div className="text-center py-12">
           <IdCard className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground mb-3">No information cards yet</p>
-          <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> Create First Card</Button>
+          <p className="text-muted-foreground mb-3">{Z("暂无信息卡", "No information cards yet")}</p>
+          <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> {Z("创建第一张卡片", "Create First Card")}</Button>
         </div>
       ) : (
         <div className="space-y-2">
@@ -133,20 +134,20 @@ export function InformationCardCard({ caredOneId }: { caredOneId: string }) {
                 <div className="flex justify-between items-start gap-2">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="font-medium text-foreground text-sm truncate">{c.cared_ones_information_card_name || "(Untitled card)"}</h4>
-                      <Badge variant={statusVariant(c.status)} className="text-[10px]">{c.status || "Draft"}</Badge>
+                      <h4 className="font-medium text-foreground text-sm truncate">{c.cared_ones_information_card_name || Z("（未命名卡片）", "(Untitled card)")}</h4>
+                      <Badge variant={statusVariant(c.status)} className="text-[10px]">{statusLabel(c.status)}</Badge>
                       {c.displays_location === "Yes" && (
-                        <Badge variant="outline" className="text-[10px]"><MapPin className="h-2.5 w-2.5 mr-1" />Location</Badge>
+                        <Badge variant="outline" className="text-[10px]"><MapPin className="h-2.5 w-2.5 mr-1" />{Z("位置", "Location")}</Badge>
                       )}
                     </div>
-                    {c.cared_ones_name && <p className="text-xs text-muted-foreground mt-1">For: {c.cared_ones_name}</p>}
+                    {c.cared_ones_name && <p className="text-xs text-muted-foreground mt-1">{Z("对象：", "For: ")}{c.cared_ones_name}</p>}
                     {c.cared_ones_description && (
                       <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{c.cared_ones_description}</p>
                     )}
                   </div>
                   <div className="flex gap-1 shrink-0">
-                    <Button variant="outline" size="sm" onClick={() => setShareCard(c)}><Share2 className="h-3 w-3 mr-1" /> Share</Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setContactsCardId(String(c.id))} title="Manage contacts"><Eye className="h-3 w-3" /></Button>
+                    <Button variant="outline" size="sm" onClick={() => setShareCard(c)}><Share2 className="h-3 w-3 mr-1" /> {Z("分享", "Share")}</Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setContactsCardId(String(c.id))} title={Z("管理联系人", "Manage contacts")}><Eye className="h-3 w-3" /></Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(c)}><Pencil className="h-3 w-3" /></Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => del.mutate(String(c.id))}><Trash2 className="h-3 w-3" /></Button>
                   </div>
@@ -161,56 +162,56 @@ export function InformationCardCard({ caredOneId }: { caredOneId: string }) {
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editId ? "Edit Information Card" : "New Information Card"}</DialogTitle>
-            <DialogDescription>A reusable shareable profile card for your cared one.</DialogDescription>
+            <DialogTitle>{editId ? Z("编辑信息卡", "Edit Information Card") : Z("新建信息卡", "New Information Card")}</DialogTitle>
+            <DialogDescription>{Z("为被照护者制作一张可重复使用的分享卡片。", "A reusable shareable profile card for your cared one.")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 mt-2">
             <div>
-              <Label>Card name <span className="text-destructive">*</span></Label>
+              <Label>{Z("卡片名称", "Card name")} <span className="text-destructive">*</span></Label>
               <Input className="mt-1" value={form.cared_ones_information_card_name}
                 onChange={(e) => setForm((p) => ({ ...p, cared_ones_information_card_name: e.target.value }))}
-                placeholder="e.g. Hospital visit, Day care, School" />
+                placeholder={Z("例如：就诊、日间照料、学校", "e.g. Hospital visit, Day care, School")} />
             </div>
             <div>
-              <Label>Cared one's name</Label>
+              <Label>{Z("被照护者姓名", "Cared one's name")}</Label>
               <Input className="mt-1" value={form.cared_ones_name}
                 onChange={(e) => setForm((p) => ({ ...p, cared_ones_name: e.target.value }))} />
             </div>
             <div>
-              <Label>Description</Label>
+              <Label>{Z("说明", "Description")}</Label>
               <Textarea className="mt-1" rows={3} value={form.cared_ones_description}
                 onChange={(e) => setForm((p) => ({ ...p, cared_ones_description: e.target.value }))}
-                placeholder="Background, conditions, preferences shared on this card…" />
+                placeholder={Z("背景、病史、偏好等需要在卡片上展示的信息……", "Background, conditions, preferences shared on this card…")} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Status</Label>
+                <Label>{Z("状态", "Status")}</Label>
                 <Select value={form.status} onValueChange={(v) => setForm((p) => ({ ...p, status: v as Status }))}>
                   <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Draft">Draft</SelectItem>
-                    <SelectItem value="Active">Active</SelectItem>
-                    <SelectItem value="Paused">Paused</SelectItem>
+                    <SelectItem value="Draft">{Z("草稿", "Draft")}</SelectItem>
+                    <SelectItem value="Active">{Z("启用", "Active")}</SelectItem>
+                    <SelectItem value="Paused">{Z("已暂停", "Paused")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label>Displays location</Label>
+                <Label>{Z("显示位置", "Displays location")}</Label>
                 <Select value={form.displays_location} onValueChange={(v) => setForm((p) => ({ ...p, displays_location: v as DisplaysLocation }))}>
                   <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="No">No</SelectItem>
-                    <SelectItem value="Yes">Yes</SelectItem>
+                    <SelectItem value="No">{Z("否", "No")}</SelectItem>
+                    <SelectItem value="Yes">{Z("是", "Yes")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setFormOpen(false)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => setFormOpen(false)}>{Z("取消", "Cancel")}</Button>
             <Button onClick={handleSubmit} disabled={create.isPending || update.isPending}>
               {(create.isPending || update.isPending) && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              {editId ? "Save changes" : "Create card"}
+              {editId ? Z("保存修改", "Save changes") : Z("创建卡片", "Create card")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -233,6 +234,9 @@ export function InformationCardCard({ caredOneId }: { caredOneId: string }) {
 
 function ShareCardDialog({ card, onClose }: { card: any; onClose: () => void }) {
   const { toast } = useToast();
+  const { i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
+  const Z = (cn: string, en: string) => (isCN ? cn : en);
   const enable = useEnableInformationCardShare();
   const revoke = useRevokeInformationCardShare();
   const [visibility, setVisibility] = useState<string>(card.share_visibility || "Visible to public");
@@ -247,8 +251,8 @@ function ShareCardDialog({ card, onClose }: { card: any; onClose: () => void }) 
   });
 
   const buildShareText = () => [
-    `📇 ${card.cared_ones_information_card_name || "Information Card"}`,
-    card.cared_ones_name ? `Name: ${card.cared_ones_name}` : "",
+    `📇 ${card.cared_ones_information_card_name || Z("信息卡", "Information Card")}`,
+    card.cared_ones_name ? `${Z("姓名", "Name")}: ${card.cared_ones_name}` : "",
     generatedUrl ? `\n${generatedUrl}` : "",
   ].filter(Boolean).join("\n");
 
@@ -263,17 +267,17 @@ function ShareCardDialog({ card, onClose }: { card: any; onClose: () => void }) 
       {
         onSuccess: (res) => {
           setGeneratedUrl(res.url);
-          toast({ title: "Share link ready" });
+          toast({ title: Z("分享链接已就绪", "Share link ready") });
         },
-        onError: (e: any) => toast({ title: "Failed", description: e.message, variant: "destructive" }),
+        onError: (e: any) => toast({ title: Z("操作失败", "Failed"), description: e.message, variant: "destructive" }),
       }
     );
   };
 
   const copyLink = async () => {
     if (!generatedUrl) return;
-    try { await navigator.clipboard.writeText(generatedUrl); toast({ title: "Link copied" }); }
-    catch { toast({ title: "Copy failed", variant: "destructive" }); }
+    try { await navigator.clipboard.writeText(generatedUrl); toast({ title: Z("链接已复制", "Link copied") }); }
+    catch { toast({ title: Z("复制失败", "Copy failed"), variant: "destructive" }); }
   };
 
   const nativeShare = async () => {
@@ -281,17 +285,17 @@ function ShareCardDialog({ card, onClose }: { card: any; onClose: () => void }) 
     const text = buildShareText();
     try {
       if ((navigator as any).share) {
-        await (navigator as any).share({ title: card.cared_ones_information_card_name || "Information Card", text, url: generatedUrl });
+        await (navigator as any).share({ title: card.cared_ones_information_card_name || Z("信息卡", "Information Card"), text, url: generatedUrl });
         return;
       }
       await navigator.clipboard.writeText(text);
-      toast({ title: "Copied", description: "Paste it anywhere to share." });
+      toast({ title: Z("已复制", "Copied"), description: Z("可粘贴到任意位置进行分享。", "Paste it anywhere to share.") });
     } catch {/* canceled */}
   };
 
   const handleRevoke = () => {
     revoke.mutate(String(card.id), {
-      onSuccess: () => { setGeneratedUrl(""); toast({ title: "Sharing revoked" }); onClose(); },
+      onSuccess: () => { setGeneratedUrl(""); toast({ title: Z("已停止分享", "Sharing revoked") }); onClose(); },
     });
   };
 
@@ -299,27 +303,27 @@ function ShareCardDialog({ card, onClose }: { card: any; onClose: () => void }) 
     <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><Share2 className="h-4 w-4" /> Share Information Card</DialogTitle>
-          <DialogDescription>Generate a public link or QR code. You can revoke it any time.</DialogDescription>
+          <DialogTitle className="flex items-center gap-2"><Share2 className="h-4 w-4" /> {Z("分享信息卡", "Share Information Card")}</DialogTitle>
+          <DialogDescription>{Z("生成公开链接或二维码，可随时撤销。", "Generate a public link or QR code. You can revoke it any time.")}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
           <div>
-            <Label>Who can view</Label>
+            <Label>{Z("可见对象", "Who can view")}</Label>
             <Select value={visibility} onValueChange={setVisibility}>
               <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="Visible to public">Anyone with the link</SelectItem>
-                <SelectItem value="Visible to the care group of the cared one">Care group only</SelectItem>
-                <SelectItem value="Visible to caregivers of the cared one">Caregivers only</SelectItem>
-                <SelectItem value="Visible to author">Only me</SelectItem>
+                <SelectItem value="Visible to public">{Z("任何持有链接的人", "Anyone with the link")}</SelectItem>
+                <SelectItem value="Visible to the care group of the cared one">{Z("仅护理小组", "Care group only")}</SelectItem>
+                <SelectItem value="Visible to caregivers of the cared one">{Z("仅护理者", "Caregivers only")}</SelectItem>
+                <SelectItem value="Visible to author">{Z("仅自己", "Only me")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div>
-            <Label>Expires at (optional)</Label>
+            <Label>{Z("过期时间（可选）", "Expires at (optional)")}</Label>
             <Input type="datetime-local" className="mt-1" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
-            <p className="text-[11px] text-muted-foreground mt-1">Leave empty for no expiry. After expiry the link stops working.</p>
+            <p className="text-[11px] text-muted-foreground mt-1">{Z("留空则永不过期。过期后链接将失效。", "Leave empty for no expiry. After expiry the link stops working.")}</p>
           </div>
 
           {generatedUrl ? (
@@ -331,19 +335,19 @@ function ShareCardDialog({ card, onClose }: { card: any; onClose: () => void }) 
               </div>
               <div className="flex flex-col items-center gap-2 py-2">
                 <QRCodeSVG value={generatedUrl} size={140} />
-                <p className="text-[11px] text-muted-foreground flex items-center gap-1"><QrCode className="h-3 w-3" /> Scan to view</p>
+                <p className="text-[11px] text-muted-foreground flex items-center gap-1"><QrCode className="h-3 w-3" /> {Z("扫码查看", "Scan to view")}</p>
               </div>
               <div className="flex gap-2">
-                <Button size="sm" className="flex-1" onClick={nativeShare}><Share2 className="h-3 w-3 mr-1" /> Share…</Button>
+                <Button size="sm" className="flex-1" onClick={nativeShare}><Share2 className="h-3 w-3 mr-1" /> {Z("分享…", "Share…")}</Button>
                 <Button size="sm" variant="outline" onClick={handleEnable} disabled={enable.isPending}>
-                  {enable.isPending && <Loader2 className="h-3 w-3 animate-spin mr-1" />} Update
+                  {enable.isPending && <Loader2 className="h-3 w-3 animate-spin mr-1" />} {Z("更新", "Update")}
                 </Button>
               </div>
             </div>
           ) : (
             <Button className="w-full" onClick={handleEnable} disabled={enable.isPending}>
               {enable.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Generate share link
+              {Z("生成分享链接", "Generate share link")}
             </Button>
           )}
         </div>
@@ -351,10 +355,10 @@ function ShareCardDialog({ card, onClose }: { card: any; onClose: () => void }) 
         <DialogFooter className="sm:justify-between">
           {card.share_token && (
             <Button variant="ghost" size="sm" className="text-destructive" onClick={handleRevoke} disabled={revoke.isPending}>
-              <ShieldOff className="h-3 w-3 mr-1" /> Revoke sharing
+              <ShieldOff className="h-3 w-3 mr-1" /> {Z("停止分享", "Revoke sharing")}
             </Button>
           )}
-          <Button variant="ghost" onClick={onClose}>Close</Button>
+          <Button variant="ghost" onClick={onClose}>{Z("关闭", "Close")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -365,6 +369,9 @@ function ContactSelectorDialog({
   cardId, allContacts, onClose,
 }: { cardId: string; allContacts: any[]; onClose: () => void }) {
   const { toast } = useToast();
+  const { i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
+  const Z = (cn: string, en: string) => (isCN ? cn : en);
   const { data: linkedIds, isLoading } = useInformationCardContactIds(cardId);
   const setContacts = useSetInformationCardContacts();
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -393,8 +400,8 @@ function ContactSelectorDialog({
     setContacts.mutate(
       { cardId, contactIds: [...selected] },
       {
-        onSuccess: () => { toast({ title: "Contacts updated" }); onClose(); },
-        onError: (e: any) => toast({ title: "Update failed", description: e.message, variant: "destructive" }),
+        onSuccess: () => { toast({ title: Z("联系人已更新", "Contacts updated") }); onClose(); },
+        onError: (e: any) => toast({ title: Z("更新失败", "Update failed"), description: e.message, variant: "destructive" }),
       },
     );
   };
@@ -403,12 +410,12 @@ function ContactSelectorDialog({
     <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Visible emergency contacts</DialogTitle>
-          <DialogDescription>Choose which contacts appear on this information card. All are selected by default.</DialogDescription>
+          <DialogTitle>{Z("可见的紧急联系人", "Visible emergency contacts")}</DialogTitle>
+          <DialogDescription>{Z("选择在此信息卡上显示哪些联系人。默认全部选中。", "Choose which contacts appear on this information card. All are selected by default.")}</DialogDescription>
         </DialogHeader>
         <div className="space-y-2 max-h-[50vh] overflow-y-auto py-2">
           {allContacts.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">No emergency contacts yet. Add some from the Emergency Contacts card first.</p>
+            <p className="text-sm text-muted-foreground text-center py-4">{Z("尚无紧急联系人，请先在「紧急联系人」卡片中添加。", "No emergency contacts yet. Add some from the Emergency Contacts card first.")}</p>
           ) : (
             allContacts.map((c) => {
               const id = String(c.id);
@@ -425,10 +432,10 @@ function ContactSelectorDialog({
           )}
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button variant="ghost" onClick={onClose}>{Z("取消", "Cancel")}</Button>
           <Button onClick={save} disabled={setContacts.isPending}>
             {setContacts.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-            Save
+            {Z("保存", "Save")}
           </Button>
         </DialogFooter>
       </DialogContent>

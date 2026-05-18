@@ -56,7 +56,7 @@ export function HomeTab({
       {
         onSuccess: () => {
           setContent(""); setTitle(""); setVisibility(EMPTY_VISIBILITY);
-          toast({ title: "Posted!" });
+          toast({ title: isCN ? "已发布！" : "Posted!" });
         },
       }
     );
