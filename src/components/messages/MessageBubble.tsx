@@ -44,7 +44,7 @@ export function MessageBubble({ message, isMe, conversationId, otherUserId }: Me
           <a href={message.attachment_url} target="_blank" rel="noopener noreferrer" className="block mb-1">
             <img 
               src={message.attachment_url} 
-              alt="Shared image" 
+              alt={isCN ? "分享的图片" : "Shared image"} 
               className="rounded-lg max-h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity" 
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
             />
