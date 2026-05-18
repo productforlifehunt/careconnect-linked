@@ -299,7 +299,7 @@ export function MobileBottomBar() {
                           findTab === "care" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
                         }`}
                       >
-                        {isChinese ? "找服务" : "Find Care"}
+                        {isChinese ? "寻找护理服务" : "Find Care"}
                       </button>
                       <button
                         type="button"
@@ -308,7 +308,7 @@ export function MobileBottomBar() {
                           findTab === "work" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
                         }`}
                       >
-                        {isChinese ? "找工作" : "Find Work"}
+                        {isChinese ? "寻找护理工作" : "Find Work"}
                       </button>
                     </div>
                     <div className="grid grid-cols-4 gap-2">
