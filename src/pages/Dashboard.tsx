@@ -27,7 +27,9 @@ import { getAvailableWidgets, getDefaultVisibility } from "@/components/dashboar
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isChinese = i18n.language?.startsWith("zh");
+  const careGroupsLabel = isChinese ? t("nav.united", { defaultValue: "团聚" }) : site.navLabels.careGroups;
   const { user } = useAuth();
   const site = useSite();
   const { data: bookings, isLoading: bookingsLoading } = useBookings();
