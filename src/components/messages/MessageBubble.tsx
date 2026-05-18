@@ -1,6 +1,7 @@
 import { FileText, ExternalLink } from "lucide-react";
 import { extractQuote, stripQuoteMarker } from "@/lib/quote-protocol";
 import { QuoteCard } from "./QuoteCard";
+import { useTranslation } from "react-i18next";
 
 interface MessageBubbleProps {
   message: any;
