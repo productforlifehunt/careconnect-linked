@@ -4,6 +4,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Eye, Users, User, Tag } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export interface VisibilityValue {
   /** Sub-group (private member group) numeric ids selected for visibility. */
