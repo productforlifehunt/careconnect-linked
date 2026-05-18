@@ -30,6 +30,9 @@ interface SubgroupCardProps {
 
 export function SubgroupCard({ subgroup, members, isAdmin, onDelete, currentUserId }: SubgroupCardProps) {
   const { toast } = useToast();
+  const { i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
+  const Z = (cn: string, en: string) => (isCN ? cn : en);
   const { data: records = [], isLoading } = useSubgroupMemberRecords(subgroup.id);
   const addMember = useAddMemberToSubgroup();
   const removeMember = useRemoveMemberFromSubgroup();
