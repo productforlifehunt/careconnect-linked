@@ -145,7 +145,7 @@ export function TasksTab({
           setEditingTaskId(null);
           setForm({ ...EMPTY_FORM });
           setAddOpen(false);
-          toast({ title: "Task updated" });
+          toast({ title: Z("任务已更新", "Task updated") });
         },
       });
     } else {
@@ -168,7 +168,7 @@ export function TasksTab({
           setForm({ ...EMPTY_FORM });
           setVisibility(EMPTY_VISIBILITY);
           setAddOpen(false);
-          toast({ title: "Task added" });
+          toast({ title: Z("任务已添加", "Task added") });
         },
       });
     }
@@ -199,14 +199,14 @@ export function TasksTab({
     if (!t) return;
     createJob.mutate({
       title: t.title,
-      description: t.description || `Help needed with: ${t.title}`,
+      description: t.description || Z(`需要帮助：${t.title}`, `Help needed with: ${t.title}`),
       job_source_type: "group_task",
       linked_task_id: t.id,
       linked_group_id: activeGroupId!,
       location: t.location || "",
     }, {
       onSuccess: () => {
-        toast({ title: "Posted to Job Board" });
+        toast({ title: Z("已发布到护理工作板", "Posted to Job Board") });
         setJobConfirmTask(null);
       },
     });
@@ -215,79 +215,79 @@ export function TasksTab({
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-foreground">Tasks ({pendingTasks.length} pending)</h3>
+        <h3 className="text-sm font-semibold text-foreground">{Z(`任务（${pendingTasks.length} 项待办）`, `Tasks (${pendingTasks.length} pending)`)}</h3>
         <Dialog open={addOpen} onOpenChange={(open) => {
           setAddOpen(open);
           if (!open) { setEditingTaskId(null); setForm({ ...EMPTY_FORM }); }
         }}>
           <DialogTrigger asChild>
             <Button variant="coral" size="sm" onClick={() => { setEditingTaskId(null); setForm({ ...EMPTY_FORM }); }}>
-              <Plus className="h-4 w-4 mr-1" /> Add Task
+              <Plus className="h-4 w-4 mr-1" /> {Z("添加任务", "Add Task")}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-h-[90vh] overflow-y-auto">
-            <DialogHeader><DialogTitle>{isEditing ? "Edit Task" : "Add Task"}</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{isEditing ? Z("编辑任务", "Edit Task") : Z("添加任务", "Add Task")}</DialogTitle></DialogHeader>
             <div className="space-y-4 mt-2">
-              <div><Label>Task Title *</Label><Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Pick up medication" /></div>
-              <div><Label>Description</Label><Textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Details..." rows={2} /></div>
+              <div><Label>{Z("任务标题 *", "Task Title *")}</Label><Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder={Z("例如：取药", "e.g. Pick up medication")} /></div>
+              <div><Label>{Z("描述", "Description")}</Label><Textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder={Z("详细说明……", "Details...")} rows={2} /></div>
 
               <div>
-                <Label>Task Types</Label>
+                <Label>{Z("任务类型", "Task Types")}</Label>
                 <div className="mt-2 grid grid-cols-2 gap-2 rounded-md border p-2">
                   {TASK_TYPE_OPTIONS.map((opt) => (
                     <label key={opt.value} className="flex items-center gap-2 text-sm cursor-pointer">
                       <Checkbox checked={form.task_types.includes(opt.value)} onCheckedChange={() => toggleTaskType(opt.value)} />
-                      <span>{opt.label}</span>
+                      <span>{isCN ? opt.labelZh : opt.label}</span>
                     </label>
                   ))}
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-3">
-                <div><Label>Date</Label><Input type="date" value={form.task_date} onChange={e => setForm(p => ({ ...p, task_date: e.target.value }))} /></div>
-                <div><Label>Start</Label><Input type="time" value={form.start_time} onChange={e => setForm(p => ({ ...p, start_time: e.target.value }))} /></div>
-                <div><Label>End</Label><Input type="time" value={form.end_time} onChange={e => setForm(p => ({ ...p, end_time: e.target.value }))} /></div>
+                <div><Label>{Z("日期", "Date")}</Label><Input type="date" value={form.task_date} onChange={e => setForm(p => ({ ...p, task_date: e.target.value }))} /></div>
+                <div><Label>{Z("开始", "Start")}</Label><Input type="time" value={form.start_time} onChange={e => setForm(p => ({ ...p, start_time: e.target.value }))} /></div>
+                <div><Label>{Z("结束", "End")}</Label><Input type="time" value={form.end_time} onChange={e => setForm(p => ({ ...p, end_time: e.target.value }))} /></div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div><Label>Location</Label><Input value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))} placeholder="e.g. Pharmacy" /></div>
-                <div><Label>People Needed</Label><Input type="number" min={1} value={form.people_needed} onChange={e => setForm(p => ({ ...p, people_needed: e.target.value }))} /></div>
+                <div><Label>{Z("地点", "Location")}</Label><Input value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))} placeholder={Z("例如：药房", "e.g. Pharmacy")} /></div>
+                <div><Label>{Z("所需人数", "People Needed")}</Label><Input type="number" min={1} value={form.people_needed} onChange={e => setForm(p => ({ ...p, people_needed: e.target.value }))} /></div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label>Help Status</Label>
+                  <Label>{Z("帮助状态", "Help Status")}</Label>
                   <Select value={form.help_status} onValueChange={(v) => setForm(p => ({ ...p, help_status: v }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1">No help needed</SelectItem>
-                      <SelectItem value="2">Needs help</SelectItem>
-                      <SelectItem value="3">Help found</SelectItem>
+                      <SelectItem value="1">{Z("无需帮助", "No help needed")}</SelectItem>
+                      <SelectItem value="2">{Z("需要帮助", "Needs help")}</SelectItem>
+                      <SelectItem value="3">{Z("已找到帮助", "Help found")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <div><Label>Assign To</Label>
+                <div><Label>{Z("指派给", "Assign To")}</Label>
                   <div className="mt-2 max-h-32 overflow-auto rounded-md border p-2 space-y-2">
                     {(members || []).map((m: any) => {
                       const memberId = m.user_id || `wp-${m.id}`;
                       return (
                         <label key={memberId} className="flex items-center gap-2 text-sm cursor-pointer">
                           <Checkbox checked={form.assigneeIds.includes(memberId)} onCheckedChange={() => toggleAssignee(memberId)} />
-                          <span>{m.display_name || m.profile?.full_name || "Member"}</span>
+                          <span>{m.display_name || m.profile?.full_name || Z("成员", "Member")}</span>
                         </label>
                       );
                     })}
-                    {(members || []).length === 0 && <p className="text-xs text-muted-foreground">No members available</p>}
+                    {(members || []).length === 0 && <p className="text-xs text-muted-foreground">{Z("暂无可选成员", "No members available")}</p>}
                   </div>
                 </div>
               </div>
 
               {!isEditing && (
-                <div><Label>Visibility</Label><VisibilityPicker value={visibility} onChange={setVisibility} memberCategories={memberCategories} members={members} /></div>
+                <div><Label>{Z("可见范围", "Visibility")}</Label><VisibilityPicker value={visibility} onChange={setVisibility} memberCategories={memberCategories} members={members} /></div>
               )}
               <Button variant="coral" className="w-full" onClick={submitForm} disabled={createTask.isPending || updateTaskStatus.isPending || !form.title.trim()}>
                 {(createTask.isPending || updateTaskStatus.isPending) ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
-                {isEditing ? "Save Changes" : "Add Task"}
+                {isEditing ? Z("保存更改", "Save Changes") : Z("添加任务", "Add Task")}
               </Button>
             </div>
           </DialogContent>
