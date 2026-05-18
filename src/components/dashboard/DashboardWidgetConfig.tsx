@@ -52,6 +52,21 @@ export function isWidgetVisible(id: string, defaults: Record<string, boolean>): 
   return prefs[id] ?? defaults[id] ?? true;
 }
 
+const ZH_WIDGET_LABELS: Record<string, string> = {
+  "patient-summaries": "亲人概览",
+  "daily-timeline": "每日时间线",
+  "caregiver-wellness": "照护者健康",
+  "stats": "统计概览",
+  "quick-actions": "快捷操作",
+  "upcoming-bookings": "即将到来的预约",
+  "care-tasks": "护理任务",
+  "community-feed": "社区动态",
+  "dementia-assistant": "智能陪伴",
+};
+function localizeWidgetLabel(id: string, fallback: string, isZh: boolean): string {
+  return isZh ? (ZH_WIDGET_LABELS[id] || fallback) : fallback;
+}
+
 interface SortableRowProps {
   widget: WidgetDef;
   checked: boolean;
