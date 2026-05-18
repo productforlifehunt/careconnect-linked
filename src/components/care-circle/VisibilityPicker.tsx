@@ -71,10 +71,10 @@ export function VisibilityPicker({ value, onChange, memberCategories = [], membe
       <PopoverContent className="w-72 p-0" align="start">
         <div className="p-3 border-b">
           <p className="text-xs font-medium text-foreground flex items-center gap-1.5">
-            <Eye className="h-3.5 w-3.5" /> Who can see this?
+            <Eye className="h-3.5 w-3.5" /> {Z("谁可以看到？", "Who can see this?")}
           </p>
           <p className="text-[11px] text-muted-foreground mt-0.5">
-            Leave empty to share with the whole group.
+            {Z("留空则对整个群组可见。", "Leave empty to share with the whole group.")}
           </p>
         </div>
 
