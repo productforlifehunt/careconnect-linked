@@ -10,21 +10,17 @@ import { ClipboardCheck, Plus, Loader2, SkipForward, Check, AlertCircle, History
 import { useCheckins, useCreateCheckin, useUpdateCheckin, useDeleteCheckin, useCheckinLogs, useTodayCheckinLogs, useLogCheckin } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { AICheckInDialog } from "./AICheckInDialog";
+import { useTranslation } from "react-i18next";
 
-function formatSlot(slot: string) {
+function formatSlot(slot: string, isCN: boolean) {
   const [hourRaw = "8", minuteRaw = "00"] = String(slot || "08:00").split(":");
   const hour = Number(hourRaw);
   const minute = Number(minuteRaw);
+  if (isCN) return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
   const isPM = hour >= 12;
   const displayHour = hour > 12 ? hour - 12 : hour || 12;
   return `${displayHour}:${String(minute).padStart(2, "0")} ${isPM ? "PM" : "AM"}`;
 }
-
-const STATUS_LABEL: Record<string, string> = {
-  checked: "Checked",
-  skipped: "Skipped",
-  missed: "Missed",
-};
 
 const STATUS_STYLE: Record<string, string> = {
   checked: "bg-success/10 text-success border-success/30",
