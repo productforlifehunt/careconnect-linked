@@ -16,6 +16,7 @@ import { VisibilityPicker, EMPTY_VISIBILITY, type VisibilityValue } from "../Vis
 import { CommentsSection } from "@/components/comments/CommentsSection";
 import { useToast } from "@/hooks/use-toast";
 import { useUpdateAssigneeStatus } from "@/hooks/use-care-data";
+import { useTranslation } from "react-i18next";
 
 interface TasksTabProps {
   tasks: any[];
@@ -32,16 +33,16 @@ interface TasksTabProps {
 }
 
 // Task type values per data model field `c` (1..9)
-const TASK_TYPE_OPTIONS: { value: string; label: string }[] = [
-  { value: "1", label: "Preparing Meals" },
-  { value: "2", label: "Shopping/Errands" },
-  { value: "3", label: "Transportation" },
-  { value: "4", label: "Personal Care" },
-  { value: "5", label: "Medication" },
-  { value: "6", label: "Companionship" },
-  { value: "7", label: "Housekeeping" },
-  { value: "8", label: "Medical Appointments" },
-  { value: "9", label: "Occasions" },
+const TASK_TYPE_OPTIONS: { value: string; label: string; labelZh: string }[] = [
+  { value: "1", label: "Preparing Meals", labelZh: "准备餐食" },
+  { value: "2", label: "Shopping/Errands", labelZh: "购物 / 跑腿" },
+  { value: "3", label: "Transportation", labelZh: "交通接送" },
+  { value: "4", label: "Personal Care", labelZh: "个人护理" },
+  { value: "5", label: "Medication", labelZh: "用药" },
+  { value: "6", label: "Companionship", labelZh: "陪伴" },
+  { value: "7", label: "Housekeeping", labelZh: "家务清洁" },
+  { value: "8", label: "Medical Appointments", labelZh: "就医预约" },
+  { value: "9", label: "Occasions", labelZh: "重要日子" },
 ];
 
 const EMPTY_FORM = {
@@ -67,6 +68,9 @@ export function TasksTab({
   memberCategories, createTask, updateTaskStatus, deleteTask, createJob,
 }: TasksTabProps) {
   const { toast } = useToast();
+  const { i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
+  const Z = (cn: string, en: string) => (isCN ? cn : en);
   const updateAssignee = useUpdateAssigneeStatus();
   const [addOpen, setAddOpen] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
@@ -86,9 +90,9 @@ export function TasksTab({
     "3": "bg-success/10 text-success",
   };
   const helpStatusLabels: Record<string, string> = {
-    "1": "No help needed",
-    "2": "Needs help",
-    "3": "Help found",
+    "1": Z("无需帮助", "No help needed"),
+    "2": Z("需要帮助", "Needs help"),
+    "3": Z("已找到帮助", "Help found"),
   };
   const responseColors: Record<string, string> = {
     pending: "bg-warning/10 text-warning",
