@@ -321,9 +321,9 @@ export default function Jobs() {
             )) : (
               <div className="text-center py-16">
                 <Briefcase className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-muted-foreground">You haven't posted any jobs yet</p>
+                <p className="text-muted-foreground">{Z("您还没有发布任何工作", "You haven't posted any jobs yet")}</p>
                 <Button variant="coral" className="mt-4" onClick={() => setCreateOpen(true)}>
-                  <Plus className="h-4 w-4 mr-2" /> Post Your First Job
+                  <Plus className="h-4 w-4 mr-2" /> {Z("发布您的第一份工作", "Post Your First Job")}
                 </Button>
               </div>
             )}
