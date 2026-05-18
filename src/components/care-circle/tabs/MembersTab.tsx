@@ -69,8 +69,8 @@ export function MembersTab({
   const handleInvite = () => {
     if (!inviteEmail.trim() || !activeGroupId) return;
     inviteToGroup.mutate({ groupId: activeGroupId, userId: inviteEmail }, {
-      onSuccess: () => { setInviteEmail(""); toast({ title: "Invitation sent!" }); },
-      onError: (err: any) => toast({ title: "Failed to invite", description: err.message, variant: "destructive" }),
+      onSuccess: () => { setInviteEmail(""); toast({ title: Z("邀请已发送！", "Invitation sent!") }); },
+      onError: (err: any) => toast({ title: Z("邀请失败", "Failed to invite"), description: err.message, variant: "destructive" }),
     });
   };
 
@@ -79,7 +79,7 @@ export function MembersTab({
     createCategory.mutate({ groupId: activeGroupId, name: newCategoryName, description: newCategoryDesc || undefined, color: newCategoryColor || undefined }, {
       onSuccess: () => {
         setNewCategoryName(""); setNewCategoryDesc(""); setNewCategoryColor(""); setAddCategoryOpen(false);
-        toast({ title: "Category created!" });
+        toast({ title: Z("分组已创建！", "Category created!") });
       },
     });
   };
@@ -116,8 +116,8 @@ export function MembersTab({
       );
       if (clash) {
         toast({
-          title: "That code is already taken",
-          description: "Please pick a different code, or leave it blank to auto-generate one.",
+          title: Z("该代码已被占用", "That code is already taken"),
+          description: Z("请换一个代码，或留空让系统自动生成。", "Please pick a different code, or leave it blank to auto-generate one."),
           variant: "destructive",
         });
         return;
@@ -128,16 +128,16 @@ export function MembersTab({
       updateInvite.mutate(
         { id: editInvite.id, groupId: activeGroupId, name: linkName.trim(), token: trimmedToken || undefined, expiresAt, maxUses },
         {
-          onSuccess: () => { setCreateInviteOpen(false); toast({ title: "Invite link updated" }); },
-          onError: (err: any) => toast({ title: "Failed to update", description: err.message, variant: "destructive" }),
+          onSuccess: () => { setCreateInviteOpen(false); toast({ title: Z("邀请链接已更新", "Invite link updated") }); },
+          onError: (err: any) => toast({ title: Z("更新失败", "Failed to update"), description: err.message, variant: "destructive" }),
         }
       );
     } else {
       createInvite.mutate(
         { groupId: activeGroupId, name: linkName.trim(), token: trimmedToken || undefined, expiresAt, maxUses },
         {
-          onSuccess: () => { setCreateInviteOpen(false); toast({ title: "Invite link created" }); },
-          onError: (err: any) => toast({ title: "Failed to create", description: err.message, variant: "destructive" }),
+          onSuccess: () => { setCreateInviteOpen(false); toast({ title: Z("邀请链接已创建", "Invite link created") }); },
+          onError: (err: any) => toast({ title: Z("创建失败", "Failed to create"), description: err.message, variant: "destructive" }),
         }
       );
     }
@@ -146,70 +146,70 @@ export function MembersTab({
   const copyLink = (token: string) => {
     const link = `${window.location.origin}/join/${token}`;
     navigator.clipboard?.writeText(link);
-    toast({ title: "Invite link copied!" });
+    toast({ title: Z("邀请链接已复制！", "Invite link copied!") });
   };
 
   const toggleRevoke = (inv: any) => {
     updateInvite.mutate({ id: inv.id, isRevoked: !inv.is_revoked }, {
-      onSuccess: () => toast({ title: inv.is_revoked ? "Invite link reactivated" : "Invite link revoked" }),
+      onSuccess: () => toast({ title: inv.is_revoked ? Z("邀请链接已重新启用", "Invite link reactivated") : Z("邀请链接已撤销", "Invite link revoked") }),
     });
   };
 
   const handleDeleteInvite = (inv: any) => {
-    deleteInvite.mutate({ id: inv.id }, { onSuccess: () => toast({ title: "Invite link deleted" }) });
+    deleteInvite.mutate({ id: inv.id }, { onSuccess: () => toast({ title: Z("邀请链接已删除", "Invite link deleted") }) });
   };
 
   return (
     <div>
       {isAdmin && (
         <Card className="border-transparent card-elevated mb-4">
-          <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><UserPlus className="h-4 w-4" /> Invite Members</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><UserPlus className="h-4 w-4" /> {Z("邀请成员", "Invite Members")}</CardTitle></CardHeader>
           <CardContent className="pt-2 space-y-4">
             <div className="flex gap-2">
-              <Input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="Enter email address to invite..." className="flex-1" />
-              <Button variant="coral" onClick={handleInvite} disabled={!inviteEmail.trim() || inviteToGroup.isPending}><Mail className="h-4 w-4 mr-1" /> Invite</Button>
+              <Input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder={Z("输入邮箱进行邀请……", "Enter email address to invite...")} className="flex-1" />
+              <Button variant="coral" onClick={handleInvite} disabled={!inviteEmail.trim() || inviteToGroup.isPending}><Mail className="h-4 w-4 mr-1" /> {Z("邀请", "Invite")}</Button>
             </div>
 
             <div className="border-t pt-3">
               <div className="flex items-center justify-between mb-2">
-                <h4 className="text-sm font-medium text-foreground flex items-center gap-2"><Link2 className="h-4 w-4" /> Invite Links</h4>
-                <Button size="sm" variant="outline" onClick={openCreateInvite}><Plus className="h-3.5 w-3.5 mr-1" /> New link</Button>
+                <h4 className="text-sm font-medium text-foreground flex items-center gap-2"><Link2 className="h-4 w-4" /> {Z("邀请链接", "Invite Links")}</h4>
+                <Button size="sm" variant="outline" onClick={openCreateInvite}><Plus className="h-3.5 w-3.5 mr-1" /> {Z("新建链接", "New link")}</Button>
               </div>
               {inviteLinks.length === 0 ? (
-                <p className="text-xs text-muted-foreground">No invite links yet. Create one to share a join URL with family or care staff.</p>
+                <p className="text-xs text-muted-foreground">{Z("还没有邀请链接。创建一个分享给家人或护理人员。", "No invite links yet. Create one to share a join URL with family or care staff.")}</p>
               ) : (
                 <div className="space-y-2">
                   {inviteLinks.map((inv: any) => {
                     const link = `${window.location.origin}/join/${inv.token}`;
-                    const status = inv.is_revoked ? "Revoked" : inv.is_expired ? "Expired" : inv.is_exhausted ? "Used up" : "Active";
+                    const status = inv.is_revoked ? Z("已撤销", "Revoked") : inv.is_expired ? Z("已过期", "Expired") : inv.is_exhausted ? Z("已用完", "Used up") : Z("有效", "Active");
                     return (
                       <div key={inv.id} className="rounded-lg border p-3 space-y-2 bg-muted/30">
                         <div className="flex items-center justify-between gap-2">
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <p className="text-sm font-medium text-foreground truncate">{inv.name || "Invite link"}</p>
+                              <p className="text-sm font-medium text-foreground truncate">{inv.name || Z("邀请链接", "Invite link")}</p>
                               <Badge variant={inv.is_active ? "default" : "outline"} className="text-[10px] h-4">{status}</Badge>
                             </div>
                             <p className="text-xs text-muted-foreground">
-                              {inv.expires_at ? `Expires ${new Date(inv.expires_at).toLocaleString()}` : "Never expires"}
+                              {inv.expires_at ? Z(`过期时间：${new Date(inv.expires_at).toLocaleString("zh-CN")}`, `Expires ${new Date(inv.expires_at).toLocaleString()}`) : Z("永不过期", "Never expires")}
                               {" · "}
-                              {inv.max_uses > 0 ? `${inv.use_count}/${inv.max_uses} uses` : `${inv.use_count} uses (unlimited)`}
+                              {inv.max_uses > 0 ? Z(`已使用 ${inv.use_count}/${inv.max_uses}`, `${inv.use_count}/${inv.max_uses} uses`) : Z(`已使用 ${inv.use_count} 次（无限）`, `${inv.use_count} uses (unlimited)`)}
                             </p>
                           </div>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 shrink-0"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => openEditInvite(inv)}><Pencil className="h-3.5 w-3.5 mr-2" /> Edit</DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => toggleRevoke(inv)}><Ban className="h-3.5 w-3.5 mr-2" /> {inv.is_revoked ? "Reactivate" : "Revoke"}</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => openEditInvite(inv)}><Pencil className="h-3.5 w-3.5 mr-2" /> {Z("编辑", "Edit")}</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => toggleRevoke(inv)}><Ban className="h-3.5 w-3.5 mr-2" /> {inv.is_revoked ? Z("重新启用", "Reactivate") : Z("撤销", "Revoke")}</DropdownMenuItem>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteInvite(inv)}><Trash2 className="h-3.5 w-3.5 mr-2" /> Delete</DropdownMenuItem>
+                              <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteInvite(inv)}><Trash2 className="h-3.5 w-3.5 mr-2" /> {Z("删除", "Delete")}</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
                         <div className="flex items-center gap-2">
                           <Input readOnly value={link} className="flex-1 font-mono text-xs h-8" onFocus={(e) => e.currentTarget.select()} />
                           <Button type="button" size="sm" variant="outline" onClick={() => copyLink(inv.token)}>
-                            <Copy className="h-3.5 w-3.5 mr-1" /> Copy
+                            <Copy className="h-3.5 w-3.5 mr-1" /> {Z("复制", "Copy")}
                           </Button>
                         </div>
                       </div>
@@ -221,31 +221,31 @@ export function MembersTab({
 
             <Dialog open={createInviteOpen} onOpenChange={setCreateInviteOpen}>
               <DialogContent>
-                <DialogHeader><DialogTitle>{editInvite ? "Edit invite link" : "Create invite link"}</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>{editInvite ? Z("编辑邀请链接", "Edit invite link") : Z("创建邀请链接", "Create invite link")}</DialogTitle></DialogHeader>
                 <div className="space-y-4 mt-2">
                   <div>
-                    <Label>Name *</Label>
-                    <Input value={linkName} onChange={e => setLinkName(e.target.value)} placeholder="e.g. Family link, Night nurses" />
-                    <p className="text-xs text-muted-foreground mt-1">A label so you can tell links apart.</p>
+                    <Label>{Z("名称 *", "Name *")}</Label>
+                    <Input value={linkName} onChange={e => setLinkName(e.target.value)} placeholder={Z("例如：家庭链接、夜班护士", "e.g. Family link, Night nurses")} />
+                    <p className="text-xs text-muted-foreground mt-1">{Z("用于区分不同链接的标签。", "A label so you can tell links apart.")}</p>
                   </div>
                   <div>
-                    <Label>Custom code</Label>
-                    <Input value={linkToken} onChange={e => setLinkToken(e.target.value.replace(/\s+/g, ""))} placeholder="Leave blank to auto-generate" />
-                    <p className="text-xs text-muted-foreground mt-1">Optional — make it memorable, e.g. <code>moms-team-2026</code>.</p>
+                    <Label>{Z("自定义代码", "Custom code")}</Label>
+                    <Input value={linkToken} onChange={e => setLinkToken(e.target.value.replace(/\s+/g, ""))} placeholder={Z("留空则自动生成", "Leave blank to auto-generate")} />
+                    <p className="text-xs text-muted-foreground mt-1">{Z("可选 — 让它好记，例如 ", "Optional — make it memorable, e.g. ")}<code>moms-team-2026</code>{Z("。", ".")}</p>
                   </div>
                   <div>
-                    <Label>Expires at</Label>
+                    <Label>{Z("过期时间", "Expires at")}</Label>
                     <Input type="datetime-local" value={linkExpires} onChange={e => setLinkExpires(e.target.value)} />
-                    <p className="text-xs text-muted-foreground mt-1">Leave blank for no expiry.</p>
+                    <p className="text-xs text-muted-foreground mt-1">{Z("留空表示永不过期。", "Leave blank for no expiry.")}</p>
                   </div>
                   <div>
-                    <Label>Max uses</Label>
+                    <Label>{Z("最大使用次数", "Max uses")}</Label>
                     <Input type="number" min={0} value={linkMaxUses} onChange={e => setLinkMaxUses(e.target.value)} />
-                    <p className="text-xs text-muted-foreground mt-1">Use 0 for unlimited.</p>
+                    <p className="text-xs text-muted-foreground mt-1">{Z("填 0 表示不限次数。", "Use 0 for unlimited.")}</p>
                   </div>
                   <Button variant="coral" className="w-full" onClick={handleSaveInvite}
                     disabled={!linkName.trim() || createInvite.isPending || updateInvite.isPending}>
-                    {editInvite ? "Save changes" : "Create link"}
+                    {editInvite ? Z("保存更改", "Save changes") : Z("创建链接", "Create link")}
                   </Button>
                 </div>
               </DialogContent>
@@ -256,16 +256,16 @@ export function MembersTab({
 
       {isAdmin && (pendingInvitations || []).length > 0 && (
         <div className="mb-6">
-          <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><Clock className="h-4 w-4 text-warning" /> Pending Invitations ({(pendingInvitations || []).length})</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><Clock className="h-4 w-4 text-warning" /> {Z(`待处理邀请（${(pendingInvitations || []).length}）`, `Pending Invitations (${(pendingInvitations || []).length})`)}</h3>
           <div className="space-y-2">
             {(pendingInvitations || []).map((inv: any) => (
               <Card key={inv.id} className="border-transparent card-elevated border-l-4 border-l-warning">
                 <CardContent className="p-3 flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-foreground">{inv.invitee_email || inv.invited_email || "Unknown"}</p>
-                    <p className="text-xs text-muted-foreground">Invited {new Date(inv.created_at).toLocaleDateString("en", { month: "short", day: "numeric" })}</p>
+                    <p className="text-sm font-medium text-foreground">{inv.invitee_email || inv.invited_email || Z("未知", "Unknown")}</p>
+                    <p className="text-xs text-muted-foreground">{Z(`邀请于 ${new Date(inv.created_at).toLocaleDateString("zh-CN", { month: "short", day: "numeric" })}`, `Invited ${new Date(inv.created_at).toLocaleDateString("en", { month: "short", day: "numeric" })}`)}</p>
                   </div>
-                  <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => cancelInvitation.mutate(inv.id)}><X className="h-4 w-4 mr-1" /> Cancel</Button>
+                  <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => cancelInvitation.mutate(inv.id)}><X className="h-4 w-4 mr-1" /> {Z("取消", "Cancel")}</Button>
                 </CardContent>
               </Card>
             ))}
@@ -276,25 +276,25 @@ export function MembersTab({
       {isAdmin && (
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Tag className="h-4 w-4" /> Member Categories</h3>
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Tag className="h-4 w-4" /> {Z("成员分组", "Member Categories")}</h3>
             <Dialog open={addCategoryOpen} onOpenChange={setAddCategoryOpen}>
-              <DialogTrigger asChild><Button variant="outline" size="sm"><Plus className="h-3.5 w-3.5 mr-1" /> Add</Button></DialogTrigger>
+              <DialogTrigger asChild><Button variant="outline" size="sm"><Plus className="h-3.5 w-3.5 mr-1" /> {Z("添加", "Add")}</Button></DialogTrigger>
               <DialogContent>
-                <DialogHeader><DialogTitle>Create Member Category</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>{Z("创建成员分组", "Create Member Category")}</DialogTitle></DialogHeader>
                 <div className="space-y-4 mt-2">
-                  <div><Label>Name *</Label><Input value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} placeholder="e.g. Medical Team, Night Shift" /></div>
-                  <div><Label>Description</Label><Input value={newCategoryDesc} onChange={e => setNewCategoryDesc(e.target.value)} placeholder="Optional description" /></div>
-                  <div><Label>Color</Label>
+                  <div><Label>{Z("名称 *", "Name *")}</Label><Input value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} placeholder={Z("例如：医疗团队、夜班", "e.g. Medical Team, Night Shift")} /></div>
+                  <div><Label>{Z("描述", "Description")}</Label><Input value={newCategoryDesc} onChange={e => setNewCategoryDesc(e.target.value)} placeholder={Z("可选的描述", "Optional description")} /></div>
+                  <div><Label>{Z("颜色", "Color")}</Label>
                     <Select value={newCategoryColor} onValueChange={setNewCategoryColor}>
-                      <SelectTrigger><SelectValue placeholder="Choose a color" /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder={Z("选择颜色", "Choose a color")} /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="blue">Blue</SelectItem><SelectItem value="green">Green</SelectItem>
-                        <SelectItem value="red">Red</SelectItem><SelectItem value="purple">Purple</SelectItem>
-                        <SelectItem value="orange">Orange</SelectItem><SelectItem value="teal">Teal</SelectItem>
+                        <SelectItem value="blue">{Z("蓝色", "Blue")}</SelectItem><SelectItem value="green">{Z("绿色", "Green")}</SelectItem>
+                        <SelectItem value="red">{Z("红色", "Red")}</SelectItem><SelectItem value="purple">{Z("紫色", "Purple")}</SelectItem>
+                        <SelectItem value="orange">{Z("橙色", "Orange")}</SelectItem><SelectItem value="teal">{Z("青色", "Teal")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button variant="coral" className="w-full" onClick={handleAddCategory} disabled={!newCategoryName.trim() || createCategory.isPending}>Create Category</Button>
+                  <Button variant="coral" className="w-full" onClick={handleAddCategory} disabled={!newCategoryName.trim() || createCategory.isPending}>{Z("创建分组", "Create Category")}</Button>
                 </div>
               </DialogContent>
             </Dialog>
@@ -313,13 +313,13 @@ export function MembersTab({
               ))}
             </div>
           ) : (
-            <p className="text-xs text-muted-foreground">No sub-groups yet. Create groups like "Family", "Medical Team", or "Night Shift" — posts and tasks can then be limited to specific sub-groups.</p>
+            <p className="text-xs text-muted-foreground">{Z("还没有子分组。建议创建「家人」「医疗团队」或「夜班」等分组——之后帖子和任务可限定给特定子分组。", 'No sub-groups yet. Create groups like "Family", "Medical Team", or "Night Shift" — posts and tasks can then be limited to specific sub-groups.')}</p>
           )}
         </div>
       )}
 
       <div>
-        <h3 className="text-sm font-semibold text-foreground mb-3">Active Members ({(members || []).length})</h3>
+        <h3 className="text-sm font-semibold text-foreground mb-3">{Z(`成员（${(members || []).length}）`, `Active Members (${(members || []).length})`)}</h3>
         <div className="space-y-2">
           {(members || []).map((m: any) => (
             <Card key={m.id} className="border-transparent card-elevated">
@@ -330,13 +330,13 @@ export function MembersTab({
                       {m.profile?.avatar_url ? <img src={m.profile.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" /> : <span className="text-primary font-medium">{(m.profile?.full_name || "?")[0]}</span>}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-foreground">{m.display_name || m.profile?.full_name || "Member"}</p>
+                      <p className="text-sm font-medium text-foreground">{m.display_name || m.profile?.full_name || Z("成员", "Member")}</p>
                       <p className="text-xs text-muted-foreground">{m.profile?.email || ""}</p>
                       <div className="flex gap-1 mt-1 flex-wrap">
-                        {m.is_owner && <Badge variant="default" className="text-[10px] h-4 gap-0.5"><Crown className="h-2.5 w-2.5" /> Owner</Badge>}
-                        {m.is_admin && !m.is_owner && <Badge variant="secondary" className="text-[10px] h-4 gap-0.5"><Shield className="h-2.5 w-2.5" /> Admin</Badge>}
-                        {m.is_cared_one && <Badge className="text-[10px] h-4 bg-accent text-accent-foreground"><Heart className="h-2.5 w-2.5 mr-0.5" /> Cared One</Badge>}
-                        {!m.is_owner && !m.is_admin && !m.is_cared_one && <Badge variant="outline" className="text-[10px] h-4">Member</Badge>}
+                        {m.is_owner && <Badge variant="default" className="text-[10px] h-4 gap-0.5"><Crown className="h-2.5 w-2.5" /> {Z("拥有者", "Owner")}</Badge>}
+                        {m.is_admin && !m.is_owner && <Badge variant="secondary" className="text-[10px] h-4 gap-0.5"><Shield className="h-2.5 w-2.5" /> {Z("管理员", "Admin")}</Badge>}
+                        {m.is_cared_one && <Badge className="text-[10px] h-4 bg-accent text-accent-foreground"><Heart className="h-2.5 w-2.5 mr-0.5" /> {Z("亲人", "Cared One")}</Badge>}
+                        {!m.is_owner && !m.is_admin && !m.is_cared_one && <Badge variant="outline" className="text-[10px] h-4">{Z("成员", "Member")}</Badge>}
                       </div>
                     </div>
                   </div>
@@ -345,11 +345,11 @@ export function MembersTab({
                       <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => updateRole.mutate({ memberId: m.id, groupId: activeGroupId, updates: { is_cared_one: !m.is_cared_one } })}>
-                          <Heart className="h-3.5 w-3.5 mr-2" /> {m.is_cared_one ? "Remove Cared One" : "Mark as Cared One"}
+                          <Heart className="h-3.5 w-3.5 mr-2" /> {m.is_cared_one ? Z("取消亲人标记", "Remove Cared One") : Z("标记为亲人", "Mark as Cared One")}
                         </DropdownMenuItem>
                         {!m.is_owner && (
                           <DropdownMenuItem onClick={() => updateRole.mutate({ memberId: m.id, groupId: activeGroupId, updates: { is_admin: !m.is_admin } })}>
-                            <Shield className="h-3.5 w-3.5 mr-2" /> {m.is_admin ? "Remove Admin" : "Make Admin"}
+                            <Shield className="h-3.5 w-3.5 mr-2" /> {m.is_admin ? Z("取消管理员", "Remove Admin") : Z("设为管理员", "Make Admin")}
                           </DropdownMenuItem>
                         )}
                         {isOwner && !m.is_owner && (
@@ -358,25 +358,25 @@ export function MembersTab({
                               updateRole.mutate({ memberId: currentMember.id, groupId: activeGroupId, updates: { is_owner: false } }, {
                                 onSuccess: () => {
                                   updateRole.mutate({ memberId: m.id, groupId: activeGroupId, updates: { is_owner: true, is_admin: true } }, {
-                                    onSuccess: () => toast({ title: "Ownership transferred!" }),
+                                    onSuccess: () => toast({ title: Z("拥有权已转移！", "Ownership transferred!") }),
                                   });
                                 },
                               });
                             }
                           }}>
-                            <Crown className="h-3.5 w-3.5 mr-2" /> Transfer Ownership
+                            <Crown className="h-3.5 w-3.5 mr-2" /> {Z("转移拥有权", "Transfer Ownership")}
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuSeparator />
                         {!m.is_owner && (
-                          <DropdownMenuItem className="text-destructive" onClick={() => removeMember.mutate({ memberId: m.id, groupId: activeGroupId }, { onSuccess: () => toast({ title: "Member removed" }) })}>
-                            <Trash2 className="h-3.5 w-3.5 mr-2" /> Remove from Group
+                          <DropdownMenuItem className="text-destructive" onClick={() => removeMember.mutate({ memberId: m.id, groupId: activeGroupId }, { onSuccess: () => toast({ title: Z("成员已移除", "Member removed") }) })}>
+                            <Trash2 className="h-3.5 w-3.5 mr-2" /> {Z("从团聚中移除", "Remove from Group")}
                           </DropdownMenuItem>
                         )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   )}
-                  {m.user_id === userId && <Badge variant="outline" className="text-[10px]">You</Badge>}
+                  {m.user_id === userId && <Badge variant="outline" className="text-[10px]">{Z("你", "You")}</Badge>}
                 </div>
               </CardContent>
             </Card>
