@@ -230,11 +230,14 @@ function detectSite(): SiteId {
   if (DOMAIN_MAP[hostname]) { persistSite(DOMAIN_MAP[hostname]); return DOMAIN_MAP[hostname]; }
 
   // Fallback to stored session value only when domain is unknown (e.g. dev preview)
-  // and no explicit ?__site param. This prevents stale carecnc/challenged caches
-  // from sticking around on the wrong brand.
+  // and no explicit ?__site param. Defaults to "challenged" otherwise so the
+  // primary 忆畅/ChallengeD app is never accidentally hidden behind a stale
+  // carecnc cache from a previous brand-compare visit.
   try {
     const stored = sessionStorage.getItem(SITE_STORAGE_KEY) as SiteId | null;
-    if (stored && SITE_CONFIGS[stored]) return stored;
+    // Only restore challenged variants automatically; carecnc/duocare require
+    // an explicit ?__site param to load.
+    if (stored === "challenged" || stored === "challenged-v1") return stored;
   } catch {}
 
   return "challenged";
