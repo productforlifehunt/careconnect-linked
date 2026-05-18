@@ -22,7 +22,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 
-const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const DAYS_EN = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const DAYS_ZH = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
 
 export default function ProviderDashboard() {
   const { i18n } = useTranslation();
