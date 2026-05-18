@@ -56,9 +56,9 @@ export function AppHeader() {
         { title: t("nav.findCaregivers"), url: "/search?service_category=care", icon: Search },
         { title: t("nav.findLocalCompanion"), url: "/search?service_category=care&service_location=in-person&service_type=companionship", icon: Heart },
         { title: t("nav.findRemoteCompanion"), url: "/search?service_category=care&service_location=remote&service_type=companionship", icon: MessageSquare },
-        { title: t("nav.aiCompanion"), url: "/ai-companion", icon: Bot, badge: isChinese ? "小忆AI" : "AI" },
+        { title: t("nav.aiCompanion"), url: "/ai-companion", icon: Bot, badge: isChinese ? "小忆" : "AI" },
         { title: t("nav.seniorFacilities"), url: "/search?service_category=facility", icon: Building2 },
-        { title: site.navLabels.careGroups, url: "/care-circle", icon: Users },
+        { title: isChinese ? t("nav.united") : site.navLabels.careGroups, url: "/care-circle", icon: Users },
         { title: t("nav.community"), url: "/community", icon: Newspaper },
         { title: t("nav.howItWorks"), url: "/how-it-works", icon: HelpCircle },
       ]
