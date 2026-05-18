@@ -62,7 +62,7 @@ export default function Auth() {
       toast({ title: t("auth.welcomeBack") });
       navigate("/dashboard");
     } catch (err: any) {
-      toast({ title: "Login failed", description: err.message, variant: "destructive" });
+      toast({ title: t("auth.loginFailed"), description: err.message, variant: "destructive" });
     } finally {
       setWpLoading(false);
     }
