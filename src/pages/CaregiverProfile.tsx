@@ -454,13 +454,13 @@ export default function CaregiverProfile() {
 
               {bookingResources.length > 0 && (
                 <div className="mb-5 space-y-2">
-                  <p className="text-sm font-medium text-foreground">Service packages</p>
+                  <p className="text-sm font-medium text-foreground">{isZh ? "服务套餐" : "Service packages"}</p>
                   <div className="space-y-2">
                     {bookingResources.map((resource: BookingResourceOption) => (
                       <div key={resource.id} className="rounded-lg border border-border bg-muted/30 px-3 py-2">
                         <div className="flex items-start justify-between gap-3">
                           <span className="text-sm text-foreground">{resource.name}</span>
-                          <span className="text-sm font-semibold text-foreground">${resource.blockCost}/hr</span>
+                          <span className="text-sm font-semibold text-foreground">{isZh ? `¥${resource.blockCost}/小时` : `$${resource.blockCost}/hr`}</span>
                         </div>
                       </div>
                     ))}
@@ -470,7 +470,7 @@ export default function CaregiverProfile() {
 
               {availabilityPreview.length > 0 && (
                 <div className="mb-5 space-y-2">
-                  <p className="text-sm font-medium text-foreground">Availability</p>
+                  <p className="text-sm font-medium text-foreground">{isZh ? "可约时间" : "Availability"}</p>
                   <div className="space-y-1.5">
                     {availabilityPreview.map((slot) => (
                       <div key={slot.label} className="text-sm text-muted-foreground">{slot.label}</div>
