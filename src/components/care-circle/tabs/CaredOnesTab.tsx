@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Heart, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 interface CaredOnesTabProps {
   groupCaredOnes: any[];
@@ -11,14 +12,17 @@ interface CaredOnesTabProps {
 
 export function CaredOnesTab({ groupCaredOnes, isAdmin, onAddCaredOne }: CaredOnesTabProps) {
   const navigate = useNavigate();
-  const caredOneLabel = "Cared One";
-  const caredOnesLabel = "Cared Ones";
+  const { i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
+  const Z = (cn: string, en: string) => (isCN ? cn : en);
+  const caredOneLabel = Z("亲人", "Cared One");
+  const caredOnesLabel = Z("亲人", "Cared Ones");
 
   return (
     <div>
       {isAdmin && (
         <div className="mb-4">
-          <Button variant="coral" size="sm" onClick={onAddCaredOne}><Plus className="h-4 w-4 mr-1" /> Add {caredOneLabel}</Button>
+          <Button variant="coral" size="sm" onClick={onAddCaredOne}><Plus className="h-4 w-4 mr-1" /> {Z("添加亲人", `Add ${caredOneLabel}`)}</Button>
         </div>
       )}
       {(groupCaredOnes || []).length > 0 ? (
@@ -35,7 +39,7 @@ export function CaredOnesTab({ groupCaredOnes, isAdmin, onAddCaredOne }: CaredOn
                     <p className="text-xs text-muted-foreground">{co.relationship || caredOneLabel}</p>
                   </div>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => navigate("/cared-ones")}>View Health Cards →</Button>
+                <Button variant="outline" size="sm" onClick={() => navigate("/cared-ones")}>{Z("查看健康卡片 →", "View Health Cards →")}</Button>
               </CardContent>
             </Card>
           ))}
@@ -43,11 +47,11 @@ export function CaredOnesTab({ groupCaredOnes, isAdmin, onAddCaredOne }: CaredOn
       ) : (
         <div className="text-center py-12">
           <Heart className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="text-muted-foreground mb-2">No {caredOnesLabel.toLowerCase()} in this group yet.</p>
+          <p className="text-muted-foreground mb-2">{Z("本团聚中暂无亲人。", `No ${caredOnesLabel.toLowerCase()} in this group yet.`)}</p>
           {isAdmin ? (
-            <Button variant="coral" size="sm" onClick={onAddCaredOne}><Plus className="h-4 w-4 mr-1" /> Add {caredOneLabel}</Button>
+            <Button variant="coral" size="sm" onClick={onAddCaredOne}><Plus className="h-4 w-4 mr-1" /> {Z("添加亲人", `Add ${caredOneLabel}`)}</Button>
           ) : (
-            <p className="text-sm text-muted-foreground">Ask a group admin to add a cared one.</p>
+            <p className="text-sm text-muted-foreground">{Z("请联系团聚管理员添加亲人。", "Ask a group admin to add a cared one.")}</p>
           )}
         </div>
       )}
