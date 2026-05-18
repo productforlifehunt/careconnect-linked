@@ -335,7 +335,7 @@ export function MembersTab({
                       <div className="flex gap-1 mt-1 flex-wrap">
                         {m.is_owner && <Badge variant="default" className="text-[10px] h-4 gap-0.5"><Crown className="h-2.5 w-2.5" /> {Z("拥有者", "Owner")}</Badge>}
                         {m.is_admin && !m.is_owner && <Badge variant="secondary" className="text-[10px] h-4 gap-0.5"><Shield className="h-2.5 w-2.5" /> {Z("管理员", "Admin")}</Badge>}
-                        {m.is_cared_one && <Badge className="text-[10px] h-4 bg-accent text-accent-foreground"><Heart className="h-2.5 w-2.5 mr-0.5" /> {Z("亲人", "Cared One")}</Badge>}
+                        {m.is_cared_one && <Badge className="text-[10px] h-4 bg-accent text-accent-foreground"><Heart className="h-2.5 w-2.5 mr-0.5" /> {Z("被护理者", "Cared One")}</Badge>}
                         {!m.is_owner && !m.is_admin && !m.is_cared_one && <Badge variant="outline" className="text-[10px] h-4">{Z("成员", "Member")}</Badge>}
                       </div>
                     </div>
@@ -345,7 +345,7 @@ export function MembersTab({
                       <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => updateRole.mutate({ memberId: m.id, groupId: activeGroupId, updates: { is_cared_one: !m.is_cared_one } })}>
-                          <Heart className="h-3.5 w-3.5 mr-2" /> {m.is_cared_one ? Z("取消亲人标记", "Remove Cared One") : Z("标记为亲人", "Mark as Cared One")}
+                          <Heart className="h-3.5 w-3.5 mr-2" /> {m.is_cared_one ? Z("取消被护理者标记", "Remove Cared One") : Z("标记为被护理者", "Mark as Cared One")}
                         </DropdownMenuItem>
                         {!m.is_owner && (
                           <DropdownMenuItem onClick={() => updateRole.mutate({ memberId: m.id, groupId: activeGroupId, updates: { is_admin: !m.is_admin } })}>
@@ -370,7 +370,7 @@ export function MembersTab({
                         <DropdownMenuSeparator />
                         {!m.is_owner && (
                           <DropdownMenuItem className="text-destructive" onClick={() => removeMember.mutate({ memberId: m.id, groupId: activeGroupId }, { onSuccess: () => toast({ title: Z("成员已移除", "Member removed") }) })}>
-                            <Trash2 className="h-3.5 w-3.5 mr-2" /> {Z("从团聚中移除", "Remove from Group")}
+                            <Trash2 className="h-3.5 w-3.5 mr-2" /> {Z("从护理群组中移除", "Remove from Group")}
                           </DropdownMenuItem>
                         )}
                       </DropdownMenuContent>

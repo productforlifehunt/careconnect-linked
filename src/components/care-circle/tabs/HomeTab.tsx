@@ -68,7 +68,7 @@ export function HomeTab({
         {[
           { label: isCN ? "待办任务" : "Pending Tasks", value: pendingTasksCount, icon: ListTodo },
           { label: isCN ? "成员" : "Members", value: membersCount, icon: Users },
-          { label: isCN ? "亲人" : site.navLabels.caredOnes, value: caredOnesCount, icon: Heart },
+          { label: isCN ? "被护理者" : site.navLabels.caredOnes, value: caredOnesCount, icon: Heart },
         ].map(s => (
           <Card key={s.label} className="border-transparent card-elevated">
             <CardContent className="p-3 sm:p-4 flex items-center gap-2">
