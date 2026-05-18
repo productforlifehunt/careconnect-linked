@@ -27,9 +27,11 @@ import { getAvailableWidgets, getDefaultVisibility } from "@/components/dashboar
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isChinese = i18n.language?.startsWith("zh");
   const { user } = useAuth();
   const site = useSite();
+  const careGroupsLabel = isChinese ? t("nav.united", { defaultValue: "团聚" }) : site.navLabels.careGroups;
   const { data: bookings, isLoading: bookingsLoading } = useBookings();
   const { data: tasks, isLoading: tasksLoading } = useCareTasks();
   const { data: stats } = useDashboardStats();
@@ -117,8 +119,7 @@ export default function Dashboard() {
     { icon: CalIcon,     label: t("nav.calendar", { defaultValue: "Calendar" }),     to: "/calendar", color: "text-success" },
     { icon: MessageSquare, label: t("nav.messages", { defaultValue: "Messages" }),   to: "/messages", color: "text-coral" },
     { icon: Briefcase,   label: t("nav.bookings", { defaultValue: "Bookings" }),     to: "/bookings", color: "text-primary" },
-    { icon: Users,       label: site.navLabels.careGroups,                            to: "/care-circle", color: "text-success" },
-    { icon: Heart,       label: t("nav.community", { defaultValue: "Community" }),   to: "/community", color: "text-coral" },
+    { icon: Users,       label: careGroupsLabel,                                        to: "/care-circle", color: "text-success" },
     { icon: BookOpen,    label: t("nav.resources", { defaultValue: "Resources" }),   to: "/resources", color: "text-primary" },
     { icon: Bell,        label: t("nav.notifications", { defaultValue: "Alerts" }), to: "/notifications", color: "text-warning" },
     { icon: Wand2,    label: t("nav.aiCompanion", { defaultValue: "AI Companion" }), to: "/ai-companion", color: "text-primary" },
@@ -157,7 +158,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
         {[
           { label: t("dashboard.upcomingBookings"), value: stats?.upcomingBookings ?? 0, icon: CalendarDays, color: "text-primary", to: "/bookings" },
-          { label: site.navLabels.careGroups, value: stats?.careGroups ?? 0, icon: Users, color: "text-success", to: "/care-circle" },
+          { label: careGroupsLabel, value: stats?.careGroups ?? 0, icon: Users, color: "text-success", to: "/care-circle" },
           { label: t("dashboard.pendingTasks"), value: stats?.pendingTasks ?? 0, icon: AlertCircle, color: "text-warning", to: "/care-circle" },
           { label: t("dashboard.unreadMessages"), value: stats?.unreadMessages ?? 0, icon: MessageSquare, color: "text-coral", to: "/messages" },
         ].map((s) => (
