@@ -82,7 +82,7 @@ export function VisibilityPicker({ value, onChange, memberCategories = [], membe
           {memberCategories.length > 0 && (
             <div className="p-3 border-b">
               <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1">
-                <Tag className="h-3 w-3" /> Sub-groups
+                <Tag className="h-3 w-3" /> {Z("子分组", "Sub-groups")}
               </p>
               <div className="space-y-1.5">
                 {memberCategories.map((cat) => {
