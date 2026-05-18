@@ -59,7 +59,7 @@ export function MessageBubble({ message, isMe, conversationId, otherUserId }: Me
           >
             <FileText className="h-4 w-4 shrink-0" />
             <span className="text-xs truncate flex-1">
-              {message.attachment_url.split("/").pop() || "File"}
+              {message.attachment_url.split("/").pop() || (isCN ? "文件" : "File")}
             </span>
             <ExternalLink className="h-3 w-3 shrink-0" />
           </a>
