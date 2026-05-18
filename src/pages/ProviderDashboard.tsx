@@ -105,9 +105,9 @@ export default function ProviderDashboard() {
     try {
       await updateAvailabilitySetting.mutateAsync({ providerId, setting: availabilityRules });
       qc.invalidateQueries({ queryKey: ["providerAvailabilitySetting", providerId] });
-      toast({ title: "Availability rules saved" });
+      toast({ title: isZh ? "可预约规则已保存" : "Availability rules saved" });
     } catch (e: any) {
-      toast({ title: "Failed", description: e.message, variant: "destructive" });
+      toast({ title: isZh ? "操作失败" : "Failed", description: e.message, variant: "destructive" });
     }
   };
 
@@ -120,8 +120,8 @@ export default function ProviderDashboard() {
       specific_date: o.date, start_time: o.start, end_time: o.end, is_available: o.available,
     }));
     upsertAvailability.mutate({ providerId, slots: [...weeklySlots, ...overrideSlots] }, {
-      onSuccess: () => toast({ title: "Schedule saved" }),
-      onError: (e: any) => toast({ title: "Save failed", description: e.message, variant: "destructive" }),
+      onSuccess: () => toast({ title: isZh ? "排班已保存" : "Schedule saved" }),
+      onError: (e: any) => toast({ title: isZh ? "保存失败" : "Save failed", description: e.message, variant: "destructive" }),
     });
   };
 
@@ -141,9 +141,9 @@ export default function ProviderDashboard() {
       setAddOverrideOpen(false);
       setNewOverride({ date: "", start: "09:00", end: "17:00", available: true });
       qc.invalidateQueries({ queryKey: ["providerAvailability", providerId] });
-      toast({ title: "Date override saved" });
+      toast({ title: isZh ? "日期例外已保存" : "Date override saved" });
     } catch (e: any) {
-      toast({ title: "Failed", description: e.message, variant: "destructive" });
+      toast({ title: isZh ? "操作失败" : "Failed", description: e.message, variant: "destructive" });
     } finally { setSavingOverrides(false); }
   };
 
@@ -160,8 +160,8 @@ export default function ProviderDashboard() {
       await upsertAvailability.mutateAsync({ providerId, slots: [...weeklySlots, ...overrideSlots] });
       setDateOverrides(nextOverrides);
       qc.invalidateQueries({ queryKey: ["providerAvailability", providerId] });
-      toast({ title: "Override removed" });
-    } catch (e: any) { toast({ title: "Failed", description: e.message, variant: "destructive" }); }
+      toast({ title: isZh ? "已删除例外" : "Override removed" });
+    } catch (e: any) { toast({ title: isZh ? "操作失败" : "Failed", description: e.message, variant: "destructive" }); }
   };
 
   const pendingBookings = (bookings || []).filter((b: any) => b.status === "pending");
