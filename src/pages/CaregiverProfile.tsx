@@ -667,7 +667,7 @@ export default function CaregiverProfile() {
                 {caregiver.care_provider_is_background_checked && (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Shield className="h-4 w-4 text-primary" />
-                    <span>Background verified</span>
+                    <span>{isZh ? "已通过背景核查" : "Background verified"}</span>
                   </div>
                 )}
                 {caregiver.years_of_experience && (
