@@ -76,7 +76,7 @@ export function AppSidebar() {
     { title: t("nav.messages"), url: "/messages", icon: MessageSquare },
     { title: t("nav.notifications"), url: "/notifications", icon: Bell },
     { title: t("nav.favorites"), url: "/favorites", icon: Heart },
-    { title: "Cart", url: "/cart", icon: ShoppingCart },
+    { title: t("nav.cart", "Cart"), url: "/cart", icon: ShoppingCart },
     { title: t("nav.myProfile"), url: "/profile", icon: User },
   ];
 
