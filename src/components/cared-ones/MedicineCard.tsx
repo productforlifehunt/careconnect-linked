@@ -32,10 +32,10 @@ const SCHEDULE_TIMES = [
 ];
 
 const FREQUENCIES = [
-  { value: "once_daily", label: "Once daily" },{ value: "twice_daily", label: "Twice daily" },
-  { value: "three_daily", label: "Three times daily" },{ value: "four_daily", label: "Four times daily" },
-  { value: "every_other_day", label: "Every other day" },{ value: "weekly", label: "Weekly" },
-  { value: "as_needed", label: "As needed" },
+  { value: "once_daily", label: Z("每日一次","Once daily") },{ value: "twice_daily", label: Z("每日两次","Twice daily") },
+  { value: "three_daily", label: Z("每日三次","Three times daily") },{ value: "four_daily", label: Z("每日四次","Four times daily") },
+  { value: "every_other_day", label: Z("隔日一次","Every other day") },{ value: "weekly", label: Z("每周一次","Weekly") },
+  { value: "as_needed", label: Z("按需服用","As needed") },
 ];
 
 function formatHour(h: string): string {
@@ -57,7 +57,7 @@ function LogNoteDialog({ open, onClose, onConfirm, medName, action, isPending }:
   medName: string; action: "taken" | "skipped" | "missed"; isPending: boolean;
 }) {
   const [note, setNote] = useState("");
-  const titleMap = { taken: "Mark as Taken", skipped: "Skip Dose", missed: "Mark as Missed" };
+  const titleMap = { taken: Z("标记为已服用","Mark as Taken"), skipped: Z("跳过此剂","Skip Dose"), missed: Z("标记为漏服","Mark as Missed") };
   const Icon = action === "taken" ? Check : action === "skipped" ? SkipForward : AlertCircle;
   const iconColor = action === "taken" ? "text-success" : action === "skipped" ? "text-warning" : "text-destructive";
   return (
@@ -68,15 +68,15 @@ function LogNoteDialog({ open, onClose, onConfirm, medName, action, isPending }:
             <Icon className={`h-5 w-5 ${iconColor}`} />
             {titleMap[action]}
           </DialogTitle>
-          <DialogDescription>{medName} — add an optional note about this dose</DialogDescription>
+          <DialogDescription>{medName} — {Z("为此次服药添加可选备注","add an optional note about this dose")}</DialogDescription>
         </DialogHeader>
         <Textarea
           value={note} onChange={e => setNote(e.target.value)}
-          placeholder={action === "taken" ? "e.g. Taken with breakfast, felt fine…" : action === "skipped" ? "e.g. Out of stock, feeling nauseous…" : "e.g. Forgot, was sleeping…"}
+          placeholder={action === "taken" ? Z("例如:早餐时服用,感觉良好…","e.g. Taken with breakfast, felt fine…") : action === "skipped" ? Z("例如:药已用完,感觉恶心…","e.g. Out of stock, feeling nauseous…") : Z("例如:忘记了、当时在睡觉…","e.g. Forgot, was sleeping…")}
           className="min-h-[80px]"
         />
         <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={() => { setNote(""); onClose(); }}>Cancel</Button>
+          <Button variant="outline" onClick={() => { setNote(""); onClose(); }}>{Z("取消","Cancel")}</Button>
           <Button
             variant={action === "taken" ? "default" : "outline"}
             className={action === "taken" ? "bg-success hover:bg-success/90 text-success-foreground" : action === "skipped" ? "border-warning text-warning hover:bg-warning/10" : "border-destructive text-destructive hover:bg-destructive/10"}
@@ -84,7 +84,7 @@ function LogNoteDialog({ open, onClose, onConfirm, medName, action, isPending }:
             disabled={isPending}
           >
             {isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-            Confirm
+            {Z("确认","Confirm")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -111,7 +111,7 @@ function MedHistoryDialog({ open, onClose, med }: { open: boolean; onClose: () =
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <History className="h-5 w-5 text-primary" />
-            {med?.name} — History
+            {med?.name} — {Z("历史记录","History")}
           </DialogTitle>
           <DialogDescription>{[med?.dosage, med?.frequency].filter(Boolean).join(" · ")}</DialogDescription>
         </DialogHeader>
@@ -121,15 +121,15 @@ function MedHistoryDialog({ open, onClose, med }: { open: boolean; onClose: () =
           <div className="grid grid-cols-3 gap-3 py-2">
             <div className="text-center p-3 rounded-xl bg-success/10 border border-success/20">
               <div className="text-2xl font-bold text-success">{stats.adherence}%</div>
-              <div className="text-xs text-muted-foreground">Adherence</div>
+              <div className="text-xs text-muted-foreground">{Z("依从率","Adherence")}</div>
             </div>
             <div className="text-center p-3 rounded-xl bg-primary/10 border border-primary/20">
               <div className="text-2xl font-bold text-primary">{stats.taken}</div>
-              <div className="text-xs text-muted-foreground">Taken</div>
+              <div className="text-xs text-muted-foreground">{Z("已服用","Taken")}</div>
             </div>
             <div className="text-center p-3 rounded-xl bg-warning/10 border border-warning/20">
               <div className="text-2xl font-bold text-warning">{stats.skipped}</div>
-              <div className="text-xs text-muted-foreground">Skipped</div>
+              <div className="text-xs text-muted-foreground">{Z("已跳过","Skipped")}</div>
             </div>
           </div>
         )}
@@ -139,7 +139,7 @@ function MedHistoryDialog({ open, onClose, med }: { open: boolean; onClose: () =
           {isLoading ? (
             <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground my-8" />
           ) : (logs || []).length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">No logs recorded yet</p>
+            <p className="text-center text-muted-foreground py-8">{Z("暂无记录","No logs recorded yet") as any}</p>
           ) : (
             (logs || []).map((log: any) => (
               <div key={log.id} className="flex items-start gap-3 py-2.5 border-b border-border/50 last:border-0">
@@ -216,8 +216,8 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
       stock_count: form.stock_count === "" ? "" : Number(form.stock_count),
       refill_threshold: form.refill_threshold === "" ? "" : Number(form.refill_threshold),
     }, {
-      onSuccess: () => { toast({ title: "Medicine updated" }); onClose(); },
-      onError: (err) => toast({ title: "Failed", description: String(err.message), variant: "destructive" }),
+      onSuccess: () => { toast({ title: Z("药品已更新","Medicine updated") }); onClose(); },
+      onError: (err) => toast({ title: Z("操作失败","Failed"), description: String(err.message), variant: "destructive" }),
     });
   };
 
@@ -225,14 +225,14 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); else populateForm(); }}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Edit Medicine</DialogTitle>
-          <DialogDescription>Update medication details</DialogDescription>
+          <DialogTitle>{Z("编辑药品","Edit Medicine")}</DialogTitle>
+          <DialogDescription>{Z("更新药品信息","Update medication details")}</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 mt-2">
-          <div><Label>Medicine Name <span className="text-destructive">*</span></Label><Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} className="mt-1" /></div>
+          <div><Label>{Z("药品名称","Medicine Name")} <span className="text-destructive">*</span></Label><Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} className="mt-1" /></div>
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>Dosage</Label><Input value={form.dosage} onChange={e => setForm(p => ({ ...p, dosage: e.target.value }))} placeholder="e.g. 10mg" className="mt-1" /></div>
-            <div><Label>Frequency</Label>
+            <div><Label>{Z("剂量","Dosage")}</Label><Input value={form.dosage} onChange={e => setForm(p => ({ ...p, dosage: e.target.value }))} placeholder={Z("例如:10 毫克","e.g. 10mg")} className="mt-1" /></div>
+            <div><Label>{Z("频率","Frequency")}</Label>
               <Select value={form.frequency} onValueChange={v => setForm(p => ({ ...p, frequency: v }))}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>{FREQUENCIES.map(f => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}</SelectContent>
@@ -241,8 +241,8 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
           </div>
           <div>
             <div className="flex items-center justify-between">
-              <Label>Scheduled Times</Label>
-              <Button type="button" variant="ghost" size="sm" onClick={() => setForm(p => ({ ...p, time_slots: [...p.time_slots, "12:00"] }))} className="text-xs h-7"><Plus className="h-3 w-3 mr-1" /> Add Time</Button>
+              <Label>{Z("服药时间","Scheduled Times")}</Label>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setForm(p => ({ ...p, time_slots: [...p.time_slots, "12:00"] }))} className="text-xs h-7"><Plus className="h-3 w-3 mr-1" /> {Z("添加时间","Add Time")}</Button>
             </div>
             <div className="space-y-2 mt-1">
               {form.time_slots.map((slot, idx) => (
@@ -256,17 +256,17 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
               ))}
             </div>
           </div>
-          <div><Label>Notes</Label><Textarea value={form.note} onChange={e => setForm(p => ({ ...p, note: e.target.value }))} placeholder="Instructions, side effects…" className="mt-1 min-h-[60px]" /></div>
+          <div><Label>{Z("备注","Notes")}</Label><Textarea value={form.note} onChange={e => setForm(p => ({ ...p, note: e.target.value }))} placeholder={Z("用药说明、副作用…","Instructions, side effects…")} className="mt-1 min-h-[60px]" /></div>
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>Stock count <span className="text-muted-foreground text-xs">(pills left)</span></Label><Input type="number" min="0" value={form.stock_count} onChange={e => setForm(p => ({ ...p, stock_count: e.target.value }))} placeholder="e.g. 30" className="mt-1" /></div>
-            <div><Label>Refill alert <span className="text-muted-foreground text-xs">(threshold)</span></Label><Input type="number" min="0" value={form.refill_threshold} onChange={e => setForm(p => ({ ...p, refill_threshold: e.target.value }))} placeholder="e.g. 7" className="mt-1" /></div>
+            <div><Label>{Z("库存数量","Stock count")} <span className="text-muted-foreground text-xs">{Z("(剩余药片)","(pills left)")}</span></Label><Input type="number" min="0" value={form.stock_count} onChange={e => setForm(p => ({ ...p, stock_count: e.target.value }))} placeholder="e.g. 30" className="mt-1" /></div>
+            <div><Label>{Z("补药提醒","Refill alert")} <span className="text-muted-foreground text-xs">{Z("(阈值)","(threshold)")}</span></Label><Input type="number" min="0" value={form.refill_threshold} onChange={e => setForm(p => ({ ...p, refill_threshold: e.target.value }))} placeholder="e.g. 7" className="mt-1" /></div>
           </div>
           <div className="flex gap-2">
             <Button className="flex-1" onClick={handleSave} disabled={updateMed.isPending || !form.name.trim()}>
-              {updateMed.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null} Save Changes
+              {updateMed.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null} {Z("保存更改","Save Changes")}
             </Button>
             <Button variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={onDelete}>
-              <Trash2 className="h-4 w-4 mr-1" /> Delete
+              <Trash2 className="h-4 w-4 mr-1" /> {Z("删除","Delete")}
             </Button>
           </div>
         </div>
@@ -328,7 +328,7 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onHistory, compact, slot }
             {isPRN && <Badge variant="outline" className="ml-2 text-[10px] py-0 px-1.5 border-primary/40 text-primary">PRN</Badge>}
             {typeof med.stock_count === "number" && typeof med.refill_threshold === "number" && med.stock_count <= med.refill_threshold && (
               <Badge variant="outline" className="ml-2 text-[10px] py-0 px-1.5 border-destructive/40 text-destructive bg-destructive/5">
-                <AlertCircle className="h-2.5 w-2.5 mr-0.5" />Low: {med.stock_count} left
+                <AlertCircle className="h-2.5 w-2.5 mr-0.5" />{Z(`库存低:剩 ${med.stock_count}`, `Low: ${med.stock_count} left`)}
               </Badge>
             )}
           </p>
@@ -347,23 +347,23 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onHistory, compact, slot }
             isSkipped ? "border-warning/40 text-warning bg-warning/10" :
             "border-destructive/40 text-destructive bg-destructive/10"
           }`}>
-            {isTaken ? "✓ Taken" : isSkipped ? "⏭ Skipped" : "⚠ Missed"}
+            {isTaken ? Z("✓ 已服用","✓ Taken") : isSkipped ? Z("⏭ 已跳过","⏭ Skipped") : Z("⚠ 漏服","⚠ Missed")}
             {logForThisDose?.created_at && <span className="ml-1 opacity-70">{formatTime(logForThisDose.created_at)}</span>}
           </Badge>
         ) : isPRN ? (
           <>
             <Button size="sm" className="h-8 text-xs bg-primary/15 text-primary hover:bg-primary/25 border-0" variant="outline"
-              onClick={() => onLog(med, "taken")}><Plus className="h-3 w-3 mr-1" /> Log dose now</Button>
+              onClick={() => onLog(med, "taken")}><Plus className="h-3 w-3 mr-1" /> {Z("立即记录","Log dose now")}</Button>
           </>
         ) : (
           <>
             <Button size="sm" className="h-8 text-xs bg-success/15 text-success hover:bg-success/25 border-0" variant="outline"
-              onClick={() => onLog(med, "taken")}><Check className="h-3 w-3 mr-1" /> Taken</Button>
+              onClick={() => onLog(med, "taken")}><Check className="h-3 w-3 mr-1" /> {Z("已服用","Taken")}</Button>
             <Button size="sm" variant="ghost" className="h-8 text-xs text-warning hover:bg-warning/10"
-              onClick={() => onLog(med, "skipped")}><SkipForward className="h-3 w-3 mr-1" /> Skip</Button>
+              onClick={() => onLog(med, "skipped")}><SkipForward className="h-3 w-3 mr-1" /> {Z("跳过","Skip")}</Button>
             {isMissedAuto && (
               <Button size="sm" variant="ghost" className="h-8 text-xs text-destructive hover:bg-destructive/10"
-                onClick={() => onLog(med, "missed")}><AlertCircle className="h-3 w-3 mr-1" /> Missed</Button>
+                onClick={() => onLog(med, "missed")}><AlertCircle className="h-3 w-3 mr-1" /> {Z("漏服","Missed")}</Button>
             )}
           </>
         )}
@@ -426,7 +426,7 @@ function RxNormNameInput({ value, onChange, onPick }: {
           value={value}
           onChange={e => { onChange(e.target.value); setOpen(true); }}
           onFocus={() => suggestions.length > 0 && setOpen(true)}
-          placeholder="Type to search (e.g. Lisinopril)"
+          placeholder={Z("输入关键词搜索(例如:Lisinopril)","Type to search (e.g. Lisinopril)")}
           className="mt-1 pr-8"
           autoComplete="off"
         />
@@ -489,13 +489,13 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
             const newStock = med.stock_count - 1;
             updateMed.mutate({ id: med.id, stock_count: newStock });
             if (typeof med.refill_threshold === "number" && newStock <= med.refill_threshold) {
-              toast({ title: `Low stock: ${med.name}`, description: `${newStock} doses left — time to refill`, variant: "destructive" });
+              toast({ title: Z(`库存不足:${med.name}`, `Low stock: ${med.name}`), description: Z(`剩余 ${newStock} 剂 — 该补药了`, `${newStock} doses left — time to refill`), variant: "destructive" });
             }
           }
-          toast({ title: action === "taken" ? `${med.name} marked as taken ✓` : action === "skipped" ? `${med.name} skipped` : `${med.name} marked as missed` });
+          toast({ title: action === "taken" ? Z(`${med.name} 已标记为服用 ✓`, `${med.name} marked as taken ✓`) : action === "skipped" ? Z(`${med.name} 已跳过`, `${med.name} skipped`) : Z(`${med.name} 已标记为漏服`, `${med.name} marked as missed`) });
           setLogDialog({ open: false, med: null, action: "taken" });
         },
-        onError: (err) => toast({ title: "Failed", description: String(err.message), variant: "destructive" }),
+        onError: (err) => toast({ title: Z("操作失败","Failed"), description: String(err.message), variant: "destructive" }),
       }
     );
   };
@@ -513,8 +513,8 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
         stock_count: form.stock_count === "" ? undefined : Number(form.stock_count),
         refill_threshold: form.refill_threshold === "" ? undefined : Number(form.refill_threshold),
       },
-      { onSuccess: () => { setForm({ name: "", dosage: "", frequency: "once_daily", time_slots: ["08:00"], note: "", stock_count: "", refill_threshold: "" }); setAddOpen(false); toast({ title: "Medicine added" }); },
-        onError: (err) => toast({ title: "Failed to add", description: String(err.message), variant: "destructive" }) }
+      { onSuccess: () => { setForm({ name: "", dosage: "", frequency: "once_daily", time_slots: ["08:00"], note: "", stock_count: "", refill_threshold: "" }); setAddOpen(false); toast({ title: Z("药品已添加","Medicine added") }); },
+        onError: (err) => toast({ title: Z("添加失败","Failed to add"), description: String(err.message), variant: "destructive" }) }
     );
   };
 
@@ -548,13 +548,13 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-foreground">Medicine Tracker</h2>
+        <h2 className="text-lg font-bold text-foreground">{Z("用药追踪","Medicine Tracker")}</h2>
         <div className="flex gap-2">
           <div className="flex border rounded-lg overflow-hidden">
-            <button onClick={() => setView("timeline")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === "timeline" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground hover:bg-accent"}`}>Timeline</button>
-            <button onClick={() => setView("list")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === "list" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground hover:bg-accent"}`}>List</button>
+            <button onClick={() => setView("timeline")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === "timeline" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground hover:bg-accent"}`}>{Z("时间线","Timeline")}</button>
+            <button onClick={() => setView("list")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === "list" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground hover:bg-accent"}`}>{Z("列表","List")}</button>
           </div>
-          <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> Add</Button>
+          <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> {Z("添加","Add")}</Button>
         </div>
       </div>
 
@@ -563,7 +563,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
         <div className="mb-4 p-3 rounded-xl bg-muted/50 border border-border/50">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-              <TrendingUp className="h-3.5 w-3.5" /> Today's Progress
+              <TrendingUp className="h-3.5 w-3.5" /> {Z("今日进度","Today's Progress") as any}
             </span>
             <span className="text-sm font-bold text-foreground">{adherenceSummary.pct}%</span>
           </div>
@@ -576,9 +576,9 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
             />
           </div>
           <div className="flex gap-3 mt-2 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1"><Check className="h-3 w-3 text-success" /> {adherenceSummary.taken} taken</span>
-            <span className="flex items-center gap-1"><SkipForward className="h-3 w-3 text-warning" /> {adherenceSummary.skipped} skipped</span>
-            <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {adherenceSummary.pending} pending</span>
+            <span className="flex items-center gap-1"><Check className="h-3 w-3 text-success" /> {adherenceSummary.taken} {Z("已服用","taken")}</span>
+            <span className="flex items-center gap-1"><SkipForward className="h-3 w-3 text-warning" /> {adherenceSummary.skipped} {Z("已跳过","skipped")}</span>
+            <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {adherenceSummary.pending} {Z("待服","pending")}</span>
           </div>
         </div>
       )}
@@ -586,10 +586,10 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
       {/* Add Medicine Dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Add Medicine</DialogTitle><DialogDescription>Add a medication to the daily schedule</DialogDescription></DialogHeader>
+          <DialogHeader><DialogTitle>{Z("添加药品","Add Medicine")}</DialogTitle><DialogDescription>{Z("将药物添加到每日计划","Add a medication to the daily schedule")}</DialogDescription></DialogHeader>
           <div className="space-y-4 mt-2">
             <div>
-              <Label>Medicine Name <span className="text-destructive">*</span></Label>
+              <Label>{Z("药品名称","Medicine Name")} <span className="text-destructive">*</span></Label>
               <RxNormNameInput
                 value={form.name}
                 onChange={(v) => setForm(p => ({ ...p, name: v }))}
@@ -597,11 +597,11 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
                   setForm(p => ({ ...p, name, dosage: p.dosage || strength || "" }));
                 }}
               />
-              <p className="text-[10px] text-muted-foreground mt-1">Powered by RxNorm (NIH/NLM) — free US drug database</p>
+              <p className="text-[10px] text-muted-foreground mt-1">{Z("由 RxNorm(NIH/NLM)提供 — 免费美国药品数据库","Powered by RxNorm (NIH/NLM) — free US drug database") as any}</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Dosage</Label><Input value={form.dosage} onChange={e => setForm(p => ({ ...p, dosage: e.target.value }))} placeholder="e.g. 10mg" className="mt-1" /></div>
-              <div><Label>Frequency</Label>
+              <div><Label>{Z("剂量","Dosage")}</Label><Input value={form.dosage} onChange={e => setForm(p => ({ ...p, dosage: e.target.value }))} placeholder={Z("例如:10 毫克","e.g. 10mg")} className="mt-1" /></div>
+              <div><Label>{Z("频率","Frequency")}</Label>
                 <Select value={form.frequency} onValueChange={v => setForm(p => ({ ...p, frequency: v }))}>
                   <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent>{FREQUENCIES.map(f => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}</SelectContent>
@@ -609,7 +609,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
               </div>
             </div>
             <div>
-              <div className="flex items-center justify-between"><Label>Scheduled Times</Label><Button type="button" variant="ghost" size="sm" onClick={() => setForm(p => ({ ...p, time_slots: [...p.time_slots, "12:00"] }))} className="text-xs h-7"><Plus className="h-3 w-3 mr-1" /> Add Time</Button></div>
+              <div className="flex items-center justify-between"><Label>{Z("服药时间","Scheduled Times")}</Label><Button type="button" variant="ghost" size="sm" onClick={() => setForm(p => ({ ...p, time_slots: [...p.time_slots, "12:00"] }))} className="text-xs h-7"><Plus className="h-3 w-3 mr-1" /> {Z("添加时间","Add Time")}</Button></div>
               <div className="space-y-2 mt-1">
                 {form.time_slots.map((slot, idx) => (
                   <div key={idx} className="flex items-center gap-2">
@@ -622,13 +622,13 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
                 ))}
               </div>
             </div>
-            <div><Label>Notes <span className="text-muted-foreground text-xs">(optional)</span></Label><Textarea value={form.note} onChange={e => setForm(p => ({ ...p, note: e.target.value }))} placeholder="Take with food, avoid dairy…" className="mt-1 min-h-[60px]" /></div>
+            <div><Label>{Z("备注","Notes")} <span className="text-muted-foreground text-xs">{Z("(可选)","(optional)")}</span></Label><Textarea value={form.note} onChange={e => setForm(p => ({ ...p, note: e.target.value }))} placeholder={Z("随餐服用、避免乳制品…","Take with food, avoid dairy…")} className="mt-1 min-h-[60px]" /></div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Stock count <span className="text-muted-foreground text-xs">(optional)</span></Label><Input type="number" min="0" value={form.stock_count} onChange={e => setForm(p => ({ ...p, stock_count: e.target.value }))} placeholder="e.g. 30" className="mt-1" /></div>
-              <div><Label>Refill alert at <span className="text-muted-foreground text-xs">(optional)</span></Label><Input type="number" min="0" value={form.refill_threshold} onChange={e => setForm(p => ({ ...p, refill_threshold: e.target.value }))} placeholder="e.g. 7" className="mt-1" /></div>
+              <div><Label>{Z("库存数量","Stock count")} <span className="text-muted-foreground text-xs">{Z("(可选)","(optional)")}</span></Label><Input type="number" min="0" value={form.stock_count} onChange={e => setForm(p => ({ ...p, stock_count: e.target.value }))} placeholder="e.g. 30" className="mt-1" /></div>
+              <div><Label>{Z("补药提醒阈值","Refill alert at")} <span className="text-muted-foreground text-xs">{Z("(可选)","(optional)")}</span></Label><Input type="number" min="0" value={form.refill_threshold} onChange={e => setForm(p => ({ ...p, refill_threshold: e.target.value }))} placeholder="e.g. 7" className="mt-1" /></div>
             </div>
             <Button className="w-full" variant="coral" onClick={handleAdd} disabled={createMed.isPending || !form.name.trim()}>
-              {createMed.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />} Add Medicine
+              {createMed.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />} {Z("添加药品","Add Medicine")}
             </Button>
           </div>
         </DialogContent>
@@ -655,7 +655,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
           med={editMed}
           onDelete={() => {
             deleteMed.mutate(editMed.id, {
-              onSuccess: () => { toast({ title: `${editMed.name} deleted` }); setEditMed(null); },
+              onSuccess: () => { toast({ title: Z(`${editMed.name} 已删除`, `${editMed.name} deleted`) }); setEditMed(null); },
             });
           }}
         />
@@ -667,8 +667,8 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
           {!hasScheduledMeds ? (
             <div className="text-center py-12">
               <Pill className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground mb-3">No medications scheduled yet</p>
-              <Button variant="coral" size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> Add First Medicine</Button>
+              <p className="text-muted-foreground mb-3">{Z("暂未安排药物","No medications scheduled yet") as any}</p>
+              <Button variant="coral" size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> {Z("添加第一个药品","Add First Medicine")}</Button>
             </div>
           ) : TIMELINE_HOURS.map((hour) => {
             const medsAtTime = timelineMeds[hour];
@@ -699,7 +699,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
                       ))}
                     </div>
                   ) : isCurrentHour ? (
-                    <p className="text-xs text-muted-foreground py-2 italic">No meds at this time</p>
+                    <p className="text-xs text-muted-foreground py-2 italic">{Z("此时段无药物","No meds at this time") as any}</p>
                   ) : null}
                 </div>
               </div>
@@ -719,7 +719,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
               slot={(med.time_slot && med.time_slot[0]) || undefined}
             />
           ))}
-          {(meds || []).length === 0 && <p className="text-center py-8 text-muted-foreground">No medications added yet</p>}
+          {(meds || []).length === 0 && <p className="text-center py-8 text-muted-foreground">{Z("尚未添加药物","No medications added yet") as any}</p>}
         </div>
       )}
     </div>
