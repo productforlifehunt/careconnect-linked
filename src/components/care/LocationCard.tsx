@@ -188,6 +188,8 @@ const defaultForm = () => ({
 
 export default function LocationCard({ caredOneId, caredOneName }: Props) {
   const { toast } = useToast();
+  const { i18n } = useTranslation();
+  const isZh = i18n.language?.startsWith("zh");
   const [activeTab, setActiveTab] = useState<Tab>("location");
 
   // ─── Data
