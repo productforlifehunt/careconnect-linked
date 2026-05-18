@@ -21,10 +21,14 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 export default function Jobs() {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { i18n } = useTranslation();
+  const zh = i18n.language?.startsWith("zh");
+  const Z = (cn: string, en: string) => (zh ? cn : en);
   const startConversation = useStartConversation();
   const { isAuthenticated, user } = useAuth();
   const [sourceFilter, setSourceFilter] = useState<string>("");
