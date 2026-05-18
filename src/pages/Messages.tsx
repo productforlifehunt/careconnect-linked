@@ -16,7 +16,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
 export default function Messages() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
+  const Z = (cn: string, en: string) => (isCN ? cn : en);
   const { toast } = useToast();
   const { data: profile } = useMyProfile();
   const location = useLocation();
