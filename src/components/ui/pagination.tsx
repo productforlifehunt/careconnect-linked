@@ -1,5 +1,7 @@
 import * as React from "react";
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
+import i18n from "@/i18n/config";
+const __isCN = () => i18n.language?.startsWith("zh");
 
 import { cn } from "@/lib/utils";
 import { ButtonProps, buttonVariants } from "@/components/ui/button";
