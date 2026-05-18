@@ -204,42 +204,27 @@ const DOMAIN_MAP: Record<string, SiteId> = {
   "localhost:5174": "challenged",
 };
 
-const SITE_STORAGE_KEY = "__lovable_site_id";
-
-function persistSite(id: SiteId) {
-  try { sessionStorage.setItem(SITE_STORAGE_KEY, id); } catch {}
-}
-
 function detectSite(): SiteId {
-  if (typeof window === "undefined") return "carecnc";
+  if (typeof window === "undefined") return "challenged";
+
+  // Purge any legacy sessionStorage value — site is now resolved purely from
+  // hostname + ?__site param. No cross-app cache bleed.
+  try { sessionStorage.removeItem("__lovable_site_id"); } catch {}
 
   const host = window.location.host;
   const hostname = window.location.hostname;
 
   const params = new URLSearchParams(window.location.search);
   const siteParam = params.get("__site");
-  let resolved: SiteId | null = null;
-  if (siteParam === "challenged") resolved = "challenged";
-  else if (siteParam === "challenged-v1" || siteParam === "challenged-1.0" || siteParam === "yichang-v1") resolved = "challenged-v1";
-  else if (siteParam === "carecnc" || siteParam === "careconnected") resolved = "carecnc";
-  else if (siteParam === "duocare") resolved = "duocare";
+  if (siteParam === "challenged") return "challenged";
+  if (siteParam === "challenged-v1" || siteParam === "challenged-1.0" || siteParam === "yichang-v1") return "challenged-v1";
+  if (siteParam === "carecnc" || siteParam === "careconnected") return "carecnc";
+  if (siteParam === "duocare") return "duocare";
 
-  if (resolved) { persistSite(resolved); return resolved; }
+  if (DOMAIN_MAP[host]) return DOMAIN_MAP[host];
+  if (DOMAIN_MAP[hostname]) return DOMAIN_MAP[hostname];
 
-  if (DOMAIN_MAP[host]) { persistSite(DOMAIN_MAP[host]); return DOMAIN_MAP[host]; }
-  if (DOMAIN_MAP[hostname]) { persistSite(DOMAIN_MAP[hostname]); return DOMAIN_MAP[hostname]; }
-
-  // Fallback to stored session value only when domain is unknown (e.g. dev preview)
-  // and no explicit ?__site param. Defaults to "challenged" otherwise so the
-  // primary 忆畅/ChallengeD app is never accidentally hidden behind a stale
-  // carecnc cache from a previous brand-compare visit.
-  try {
-    const stored = sessionStorage.getItem(SITE_STORAGE_KEY) as SiteId | null;
-    // Only restore challenged variants automatically; carecnc/duocare require
-    // an explicit ?__site param to load.
-    if (stored === "challenged" || stored === "challenged-v1") return stored;
-  } catch {}
-
+  // Default to challenged (忆畅) when nothing else matches.
   return "challenged";
 }
 
