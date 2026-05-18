@@ -539,7 +539,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
   }, [pickingOnMap, drawMode, showZoneForm, drawnPoints.length, zoneForm.shape_type]);
 
   function finishDrawing() {
-    if (drawnPoints.length < 3) { toast({ title: "Need at least 3 points", variant: "destructive" }); return; }
+    if (drawnPoints.length < 3) { toast({ title: isZh ? "至少需要3个点" : "Need at least 3 points", variant: "destructive" }); return; }
     const c = centroid(drawnPoints);
     setZoneForm(p => ({ ...p, latitude: c[0].toFixed(6), longitude: c[1].toFixed(6) }));
     setDrawMode("editing");
@@ -579,17 +579,17 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
   };
 
   const handleSaveZone = () => {
-    if (!zoneForm.name.trim()) { toast({ title: "Zone name required", variant: "destructive" }); return; }
+    if (!zoneForm.name.trim()) { toast({ title: isZh ? "请填写区域名称" : "Zone name required", variant: "destructive" }); return; }
     let lat = parseFloat(zoneForm.latitude);
     let lng = parseFloat(zoneForm.longitude);
 
     const isPolygon = zoneForm.shape_type === "polygon";
     if (isPolygon) {
-      if (drawnPoints.length < 3) { toast({ title: "Draw at least 3 polygon points", variant: "destructive" }); return; }
+      if (drawnPoints.length < 3) { toast({ title: isZh ? "请至少绘制3个多边形点" : "Draw at least 3 polygon points", variant: "destructive" }); return; }
       const c = centroid(drawnPoints);
       lat = c[0]; lng = c[1];
     } else {
-      if (isNaN(lat) || isNaN(lng)) { toast({ title: "Valid coordinates required. Use 'Pick on Map'.", variant: "destructive" }); return; }
+      if (isNaN(lat) || isNaN(lng)) { toast({ title: isZh ? "请输入有效坐标，或使用「在地图上选点」。" : "Valid coordinates required. Use 'Pick on Map'.", variant: "destructive" }); return; }
     }
 
     const color = zoneForm.zone_type === "danger" ? "#EF4444" : (CATEGORY_CONFIG[zoneForm.category]?.color || "#10B981");
@@ -612,13 +612,13 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
 
     if (editingZone) {
       updateZone.mutate({ id: editingZone.id, ...payload }, {
-        onSuccess: () => { setShowZoneForm(false); setEditingZone(null); setDrawMode("idle"); toast({ title: "Zone updated ✓" }); },
-        onError: (e: any) => toast({ title: "Failed to update", description: e.message, variant: "destructive" }),
+        onSuccess: () => { setShowZoneForm(false); setEditingZone(null); setDrawMode("idle"); toast({ title: isZh ? "区域已更新 ✓" : "Zone updated ✓" }); },
+        onError: (e: any) => toast({ title: isZh ? "更新失败" : "Failed to update", description: e.message, variant: "destructive" }),
       });
     } else {
       createZone.mutate(payload, {
-        onSuccess: () => { setShowZoneForm(false); setDrawMode("idle"); toast({ title: "Zone created ✓" }); },
-        onError: (e: any) => toast({ title: "Failed to create", description: e.message, variant: "destructive" }),
+        onSuccess: () => { setShowZoneForm(false); setDrawMode("idle"); toast({ title: isZh ? "区域已创建 ✓" : "Zone created ✓" }); },
+        onError: (e: any) => toast({ title: isZh ? "创建失败" : "Failed to create", description: e.message, variant: "destructive" }),
       });
     }
   };
@@ -627,7 +627,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
     if (!confirm(`Delete zone "${name}"?`)) return;
     deleteZone.mutate(id, {
       onSuccess: () => toast({ title: `Zone "${name}" deleted` }),
-      onError: (e: any) => toast({ title: "Failed to delete", description: e.message, variant: "destructive" }),
+      onError: (e: any) => toast({ title: isZh ? "删除失败" : "Failed to delete", description: e.message, variant: "destructive" }),
     });
   };
 
@@ -640,7 +640,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
         toast({ title: isEmergency ? "Emergency request sent 🚨" : "Location request sent ✓" });
         refetchRequests();
       },
-      onError: (e: any) => { setSendingRequest(false); toast({ title: "Failed", description: e.message, variant: "destructive" }); },
+      onError: (e: any) => { setSendingRequest(false); toast({ title: isZh ? "操作失败" : "Failed", description: e.message, variant: "destructive" }); },
     });
   };
 
@@ -648,20 +648,20 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
     setRefreshing(true);
     await Promise.all([refetchLocation(), refetchHistory(), refetchZones(), refetchAlerts(), refetchRequests(), refetchSettings()]);
     setRefreshing(false);
-    toast({ title: "Refreshed" });
+    toast({ title: isZh ? "已刷新" : "Refreshed" });
   };
 
   const handleShareMyLocation = () => {
-    if (!navigator.geolocation) { toast({ title: "Geolocation not supported", variant: "destructive" }); return; }
+    if (!navigator.geolocation) { toast({ title: isZh ? "浏览器不支持定位" : "Geolocation not supported", variant: "destructive" }); return; }
     setSharingMyLocation(true);
     navigator.geolocation.getCurrentPosition(
       pos => {
         shareLocation.mutate({ latitude: pos.coords.latitude, longitude: pos.coords.longitude, accuracy: pos.coords.accuracy }, {
-          onSuccess: () => { setSharingMyLocation(false); toast({ title: "Your location shared ✓" }); },
-          onError: (e: any) => { setSharingMyLocation(false); toast({ title: "Failed", description: e.message, variant: "destructive" }); },
+          onSuccess: () => { setSharingMyLocation(false); toast({ title: isZh ? "已分享您的位置 ✓" : "Your location shared ✓" }); },
+          onError: (e: any) => { setSharingMyLocation(false); toast({ title: isZh ? "操作失败" : "Failed", description: e.message, variant: "destructive" }); },
         });
       },
-      () => { setSharingMyLocation(false); toast({ title: "Could not get location", variant: "destructive" }); },
+      () => { setSharingMyLocation(false); toast({ title: isZh ? "无法获取位置" : "Could not get location", variant: "destructive" }); },
       { enableHighAccuracy: true, timeout: 15000 }
     );
   };
@@ -965,7 +965,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
         <div>
           {unreadAlerts > 0 && (
             <div className="flex justify-end mb-3">
-              <Button variant="outline" size="sm" onClick={() => acknowledgeAll.mutate(caredOneId, { onSuccess: () => toast({ title: "All alerts acknowledged ✓" }) })} disabled={acknowledgeAll.isPending}>
+              <Button variant="outline" size="sm" onClick={() => acknowledgeAll.mutate(caredOneId, { onSuccess: () => toast({ title: isZh ? "已确认所有警报 ✓" : "All alerts acknowledged ✓" }) })} disabled={acknowledgeAll.isPending}>
                 <CheckCircle2 className="h-3 w-3 mr-1" /> Mark all read
               </Button>
             </div>
