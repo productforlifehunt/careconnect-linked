@@ -10,17 +10,25 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Trash2, Plus, CalendarDays, Loader2 } from "lucide-react";
 import { useActivityLog, useCreateActivityLog, useDeleteActivityLog } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
-const VISIT_TYPES = [
-  { value: "in_person", label: "🏠 In-Person Visit" },
-  { value: "video", label: "📹 Video Call" },
-  { value: "phone", label: "📞 Phone Call" },
-  { value: "errand", label: "🛒 Errand / Outing" },
-];
 const emojiMap: Record<string, string> = { video: "📹", phone: "📞", errand: "🛒", in_person: "🏠" };
 
 export function VisitLogCard({ caredOneId }: { caredOneId: string }) {
   const { toast } = useToast();
+  const { i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
+  const Z = (cn: string, en: string) => (isCN ? cn : en);
+  const VISIT_TYPES = [
+    { value: "in_person", label: Z("🏠 上门探访", "🏠 In-Person Visit") },
+    { value: "video", label: Z("📹 视频通话", "📹 Video Call") },
+    { value: "phone", label: Z("📞 电话联系", "📞 Phone Call") },
+    { value: "errand", label: Z("🛒 跑腿 / 外出", "🛒 Errand / Outing") },
+  ];
+  const typeLabel = (v: string) => {
+    if (isCN) return ({ video: "视频通话", phone: "电话联系", errand: "跑腿 / 外出", in_person: "上门探访" } as any)[v] || v;
+    return String(v || "").replace(/_/g, " ");
+  };
   const { data: logs, isLoading } = useActivityLog(caredOneId);
   const create = useCreateActivityLog();
   const del = useDeleteActivityLog();
@@ -29,36 +37,36 @@ export function VisitLogCard({ caredOneId }: { caredOneId: string }) {
 
   const handleAdd = () => {
     create.mutate({ user_id: caredOneId, activity_type: form.activity_type, description: form.description || undefined }, {
-      onSuccess: () => { setForm({ activity_type: "in_person", description: "", duration_minutes: "" }); setAddOpen(false); toast({ title: "Visit logged ✓" }); }
+      onSuccess: () => { setForm({ activity_type: "in_person", description: "", duration_minutes: "" }); setAddOpen(false); toast({ title: Z("探访已记录 ✓", "Visit logged ✓") }); }
     });
   };
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-foreground">Visit Log</h2>
-        <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> Log Visit</Button>
+        <h2 className="text-lg font-bold text-foreground">{Z("探访记录", "Visit Log")}</h2>
+        <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> {Z("记录探访", "Log Visit")}</Button>
       </div>
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Log a Visit</DialogTitle>
-            <DialogDescription>Record a visit, call, or outing</DialogDescription>
+            <DialogTitle>{Z("记录一次探访", "Log a Visit")}</DialogTitle>
+            <DialogDescription>{Z("记录探访、通话或外出活动", "Record a visit, call, or outing")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Visit Type</Label>
+              <div><Label>{Z("探访类型", "Visit Type")}</Label>
                 <Select value={form.activity_type} onValueChange={v => setForm(p => ({ ...p, activity_type: v }))}>
                   <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent>{VISIT_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div><Label>Duration (min)</Label><Input type="number" value={form.duration_minutes} onChange={e => setForm(p => ({ ...p, duration_minutes: e.target.value }))} placeholder="60" className="mt-1" /></div>
+              <div><Label>{Z("时长（分钟）", "Duration (min)")}</Label><Input type="number" value={form.duration_minutes} onChange={e => setForm(p => ({ ...p, duration_minutes: e.target.value }))} placeholder="60" className="mt-1" /></div>
             </div>
-            <Textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="What happened during the visit?..." rows={3} />
+            <Textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder={Z("这次探访中发生了什么？……", "What happened during the visit?...")} rows={3} />
             <Button variant="coral" className="w-full" onClick={handleAdd} disabled={create.isPending}>
-              {create.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />} Log Visit
+              {create.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />} {Z("记录探访", "Log Visit")}
             </Button>
           </div>
         </DialogContent>
@@ -69,8 +77,8 @@ export function VisitLogCard({ caredOneId }: { caredOneId: string }) {
       ) : (logs || []).length === 0 ? (
         <div className="text-center py-12">
           <CalendarDays className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground mb-3">No visits logged yet</p>
-          <Button variant="coral" size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> Log First Visit</Button>
+          <p className="text-muted-foreground mb-3">{Z("还没有探访记录", "No visits logged yet")}</p>
+          <Button variant="coral" size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> {Z("记录第一次探访", "Log First Visit")}</Button>
         </div>
       ) : (
         <div className="space-y-2">
@@ -80,9 +88,9 @@ export function VisitLogCard({ caredOneId }: { caredOneId: string }) {
                 <div className="flex justify-between items-center gap-2">
                   <div className="flex items-center gap-2 min-w-0">
                     <span>{emojiMap[l.activity_type] || "🏠"}</span>
-                    <Badge variant="secondary" className="text-xs capitalize">{l.activity_type?.replace(/_/g, " ")}</Badge>
-                    {l.duration_minutes && <span className="text-xs text-muted-foreground">{l.duration_minutes} min</span>}
-                    <span className="text-xs text-muted-foreground ml-auto">{new Date(l.created_at).toLocaleDateString("en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+                    <Badge variant="secondary" className="text-xs capitalize">{typeLabel(l.activity_type)}</Badge>
+                    {l.duration_minutes && <span className="text-xs text-muted-foreground">{Z(`${l.duration_minutes} 分钟`, `${l.duration_minutes} min`)}</span>}
+                    <span className="text-xs text-muted-foreground ml-auto">{new Date(l.created_at).toLocaleDateString(isCN ? "zh-CN" : "en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
                   </div>
                   <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => del.mutate(l.id)}><Trash2 className="h-3 w-3" /></Button>
                 </div>

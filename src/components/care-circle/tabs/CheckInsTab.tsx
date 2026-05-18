@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { ClipboardCheck } from "lucide-react";
 import { useSite } from "@/contexts/SiteContext";
 import { CheckInCard } from "@/components/cared-ones/CheckInCard";
+import { useTranslation } from "react-i18next";
 
 interface CheckInsTabProps {
   groupCaredOnes: any[];
@@ -11,6 +12,9 @@ interface CheckInsTabProps {
 
 export function CheckInsTab({ groupCaredOnes, activeGroupId }: CheckInsTabProps) {
   const site = useSite();
+  const { i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
+  const Z = (cn: string, en: string) => (isCN ? cn : en);
   const [selectedCaredOne, setSelectedCaredOne] = useState<string | null>(null);
   const activeCOId = selectedCaredOne || (groupCaredOnes.length > 0 ? groupCaredOnes[0].user_id : null);
 
@@ -18,8 +22,8 @@ export function CheckInsTab({ groupCaredOnes, activeGroupId }: CheckInsTabProps)
     return (
       <div className="text-center py-12">
         <ClipboardCheck className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-        <p className="text-muted-foreground mb-2">No cared ones to check in on.</p>
-        <p className="text-sm text-muted-foreground">Go to the <strong>Cared Ones</strong> tab and add one first.</p>
+        <p className="text-muted-foreground mb-2">{Z("暂无可签到的亲人。", "No cared ones to check in on.")}</p>
+        <p className="text-sm text-muted-foreground">{Z("请前往「亲人」标签先添加一位亲人。", "Go to the Cared Ones tab and add one first.")}</p>
       </div>
     );
   }
@@ -29,7 +33,7 @@ export function CheckInsTab({ groupCaredOnes, activeGroupId }: CheckInsTabProps)
       {groupCaredOnes.length > 1 && (
         <div className="flex gap-2 mb-4">
           {groupCaredOnes.map((co: any) => (
-            <Badge key={co.user_id} variant={activeCOId === co.user_id ? "default" : "outline"} className="cursor-pointer" onClick={() => setSelectedCaredOne(co.user_id)}>{co.profile?.full_name || site.caredOneSingular}</Badge>
+            <Badge key={co.user_id} variant={activeCOId === co.user_id ? "default" : "outline"} className="cursor-pointer" onClick={() => setSelectedCaredOne(co.user_id)}>{co.profile?.full_name || (isCN ? "亲人" : site.caredOneSingular)}</Badge>
           ))}
         </div>
       )}

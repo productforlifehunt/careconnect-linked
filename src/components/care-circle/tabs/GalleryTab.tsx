@@ -6,6 +6,7 @@ import { Image, Trash2, Loader2, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { CommentsSection } from "@/components/comments/CommentsSection";
+import { useTranslation } from "react-i18next";
 import {
   createCareGroupGalleryItemWordPress,
   deleteCareGroupGalleryItemWordPress,
@@ -15,6 +16,9 @@ import {
 function GalleryUploadForm({ groupId }: { groupId: string }) {
   const { toast } = useToast();
   const qc = useQueryClient();
+  const { i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
+  const Z = (cn: string, en: string) => (isCN ? cn : en);
   const fileRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [caption, setCaption] = useState("");
@@ -28,23 +32,23 @@ function GalleryUploadForm({ groupId }: { groupId: string }) {
       await createCareGroupGalleryItemWordPress(groupId, mediaId, caption.trim());
       setFile(null); setCaption("");
       if (fileRef.current) fileRef.current.value = "";
-      toast({ title: "Photo added!" });
+      toast({ title: Z("照片已添加！", "Photo added!") });
       qc.invalidateQueries({ queryKey: ["care-group-gallery"] });
     } catch (e: any) {
-      toast({ title: "Failed to add photo", description: e.message || "Please try again later", variant: "destructive" });
+      toast({ title: Z("添加照片失败", "Failed to add photo"), description: e.message || Z("请稍后再试", "Please try again later"), variant: "destructive" });
     } finally { setSaving(false); }
   };
 
   return (
     <div className="space-y-2">
-      <p className="text-sm font-medium text-foreground">Add a Photo</p>
+      <p className="text-sm font-medium text-foreground">{Z("添加照片", "Add a Photo")}</p>
       <div className="flex items-center gap-2">
         <Button type="button" size="sm" variant="outline" onClick={() => fileRef.current?.click()}>
           <Upload className="h-3.5 w-3.5 mr-1.5" />
-          {file ? "Change" : "Choose image"}
+          {file ? Z("更换", "Change") : Z("选择图片", "Choose image")}
         </Button>
         <span className="text-xs text-muted-foreground truncate flex-1">
-          {file ? file.name : "No file chosen"}
+          {file ? file.name : Z("尚未选择文件", "No file chosen")}
         </span>
         <input
           ref={fileRef}
@@ -55,9 +59,9 @@ function GalleryUploadForm({ groupId }: { groupId: string }) {
         />
       </div>
       <div className="flex gap-2">
-        <Input value={caption} onChange={e => setCaption(e.target.value)} placeholder="Caption (optional)" className="flex-1" />
+        <Input value={caption} onChange={e => setCaption(e.target.value)} placeholder={Z("说明（可选）", "Caption (optional)")} className="flex-1" />
         <Button size="sm" variant="coral" onClick={handleAdd} disabled={saving || !file}>
-          {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : "Add"}
+          {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : Z("添加", "Add")}
         </Button>
       </div>
     </div>
@@ -72,6 +76,9 @@ interface GalleryTabProps {
 export function GalleryTab({ gallery, activeGroupId }: GalleryTabProps) {
   const { toast } = useToast();
   const qc = useQueryClient();
+  const { i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
+  const Z = (cn: string, en: string) => (isCN ? cn : en);
 
   return (
     <div>
@@ -96,10 +103,10 @@ export function GalleryTab({ gallery, activeGroupId }: GalleryTabProps) {
                 onClick={async () => {
                   try {
                     await deleteCareGroupGalleryItemWordPress(img.id);
-                    toast({ title: "Photo removed" });
+                    toast({ title: Z("照片已删除", "Photo removed") });
                     qc.invalidateQueries({ queryKey: ["care-group-gallery"] });
                   } catch (e: any) {
-                    toast({ title: "Failed to remove", description: e.message, variant: "destructive" });
+                    toast({ title: Z("删除失败", "Failed to remove"), description: e.message, variant: "destructive" });
                   }
                 }}
               >
@@ -115,7 +122,7 @@ export function GalleryTab({ gallery, activeGroupId }: GalleryTabProps) {
       ) : (
         <div className="text-center py-12">
           <Image className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="text-muted-foreground">No photos yet. Upload an image above!</p>
+          <p className="text-muted-foreground">{Z("暂无照片。请在上方上传图片！", "No photos yet. Upload an image above!")}</p>
         </div>
       )}
     </div>

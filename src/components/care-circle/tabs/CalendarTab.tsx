@@ -1,21 +1,25 @@
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Circle, MapPin, Clock } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface CalendarTabProps {
   tasks: any[];
 }
 
-// Group calendar = pure frontend aggregation of tasks (per data model: task date = field `g`).
 export function CalendarTab({ tasks }: CalendarTabProps) {
+  const { i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
+  const Z = (cn: string, en: string) => (isCN ? cn : en);
+
   const helpStatusColors: Record<string, string> = {
     "1": "bg-muted text-muted-foreground",
     "2": "bg-warning/10 text-warning",
     "3": "bg-success/10 text-success",
   };
   const helpStatusLabels: Record<string, string> = {
-    "1": "No help needed",
-    "2": "Needs help",
-    "3": "Help found",
+    "1": Z("无需帮助", "No help needed"),
+    "2": Z("需要帮助", "Needs help"),
+    "3": Z("已找到帮助", "Help found"),
   };
 
   const getDateKey = (t: any): string | null => {
@@ -27,7 +31,6 @@ export function CalendarTab({ tasks }: CalendarTabProps) {
   const fmtTime = (raw?: string | null) => {
     if (!raw) return "";
     const s = String(raw);
-    // accept "HH:mm", "YYYY-MM-DD HH:mm:ss", or ISO
     const m = s.match(/(\d{2}):(\d{2})/);
     return m ? `${m[1]}:${m[2]}` : "";
   };
@@ -46,7 +49,7 @@ export function CalendarTab({ tasks }: CalendarTabProps) {
       {sortedDates.map(date => (
         <div key={date} className="mb-6">
           <h3 className="text-sm font-semibold text-foreground mb-2">
-            {new Date(date + "T00:00").toLocaleDateString("en", { weekday: "long", month: "long", day: "numeric" })}
+            {new Date(date + "T00:00").toLocaleDateString(isCN ? "zh-CN" : "en", { weekday: "long", month: "long", day: "numeric" })}
           </h3>
           <div className="space-y-2">
             {tasksByDate[date]
@@ -74,7 +77,7 @@ export function CalendarTab({ tasks }: CalendarTabProps) {
                         </span>
                       )}
                       {Array.isArray(t.assignees) && t.assignees.length > 0 && (
-                        <span>{t.assignees.length} assigned</span>
+                        <span>{Z(`已分配 ${t.assignees.length} 人`, `${t.assignees.length} assigned`)}</span>
                       )}
                     </div>
                   </div>
@@ -89,6 +92,6 @@ export function CalendarTab({ tasks }: CalendarTabProps) {
       ))}
     </div>
   ) : (
-    <p className="text-center py-12 text-muted-foreground">No scheduled tasks. Add a date to a task to see it here.</p>
+    <p className="text-center py-12 text-muted-foreground">{Z("暂无安排的任务。为任务添加日期后会显示在这里。", "No scheduled tasks. Add a date to a task to see it here.")}</p>
   );
 }

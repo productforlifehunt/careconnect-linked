@@ -16,6 +16,7 @@ import { VisibilityPicker, EMPTY_VISIBILITY, type VisibilityValue } from "../Vis
 import { CommentsSection } from "@/components/comments/CommentsSection";
 import { useToast } from "@/hooks/use-toast";
 import { useUpdateAssigneeStatus } from "@/hooks/use-care-data";
+import { useTranslation } from "react-i18next";
 
 interface TasksTabProps {
   tasks: any[];
@@ -32,16 +33,16 @@ interface TasksTabProps {
 }
 
 // Task type values per data model field `c` (1..9)
-const TASK_TYPE_OPTIONS: { value: string; label: string }[] = [
-  { value: "1", label: "Preparing Meals" },
-  { value: "2", label: "Shopping/Errands" },
-  { value: "3", label: "Transportation" },
-  { value: "4", label: "Personal Care" },
-  { value: "5", label: "Medication" },
-  { value: "6", label: "Companionship" },
-  { value: "7", label: "Housekeeping" },
-  { value: "8", label: "Medical Appointments" },
-  { value: "9", label: "Occasions" },
+const TASK_TYPE_OPTIONS: { value: string; label: string; labelZh: string }[] = [
+  { value: "1", label: "Preparing Meals", labelZh: "准备餐食" },
+  { value: "2", label: "Shopping/Errands", labelZh: "购物 / 跑腿" },
+  { value: "3", label: "Transportation", labelZh: "交通接送" },
+  { value: "4", label: "Personal Care", labelZh: "个人护理" },
+  { value: "5", label: "Medication", labelZh: "用药" },
+  { value: "6", label: "Companionship", labelZh: "陪伴" },
+  { value: "7", label: "Housekeeping", labelZh: "家务清洁" },
+  { value: "8", label: "Medical Appointments", labelZh: "就医预约" },
+  { value: "9", label: "Occasions", labelZh: "重要日子" },
 ];
 
 const EMPTY_FORM = {
@@ -67,6 +68,9 @@ export function TasksTab({
   memberCategories, createTask, updateTaskStatus, deleteTask, createJob,
 }: TasksTabProps) {
   const { toast } = useToast();
+  const { i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
+  const Z = (cn: string, en: string) => (isCN ? cn : en);
   const updateAssignee = useUpdateAssigneeStatus();
   const [addOpen, setAddOpen] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
@@ -86,9 +90,9 @@ export function TasksTab({
     "3": "bg-success/10 text-success",
   };
   const helpStatusLabels: Record<string, string> = {
-    "1": "No help needed",
-    "2": "Needs help",
-    "3": "Help found",
+    "1": Z("无需帮助", "No help needed"),
+    "2": Z("需要帮助", "Needs help"),
+    "3": Z("已找到帮助", "Help found"),
   };
   const responseColors: Record<string, string> = {
     pending: "bg-warning/10 text-warning",
@@ -141,7 +145,7 @@ export function TasksTab({
           setEditingTaskId(null);
           setForm({ ...EMPTY_FORM });
           setAddOpen(false);
-          toast({ title: "Task updated" });
+          toast({ title: Z("任务已更新", "Task updated") });
         },
       });
     } else {
@@ -164,7 +168,7 @@ export function TasksTab({
           setForm({ ...EMPTY_FORM });
           setVisibility(EMPTY_VISIBILITY);
           setAddOpen(false);
-          toast({ title: "Task added" });
+          toast({ title: Z("任务已添加", "Task added") });
         },
       });
     }
@@ -195,14 +199,14 @@ export function TasksTab({
     if (!t) return;
     createJob.mutate({
       title: t.title,
-      description: t.description || `Help needed with: ${t.title}`,
+      description: t.description || Z(`需要帮助：${t.title}`, `Help needed with: ${t.title}`),
       job_source_type: "group_task",
       linked_task_id: t.id,
       linked_group_id: activeGroupId!,
       location: t.location || "",
     }, {
       onSuccess: () => {
-        toast({ title: "Posted to Job Board" });
+        toast({ title: Z("已发布到护理工作板", "Posted to Job Board") });
         setJobConfirmTask(null);
       },
     });
@@ -211,79 +215,79 @@ export function TasksTab({
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-foreground">Tasks ({pendingTasks.length} pending)</h3>
+        <h3 className="text-sm font-semibold text-foreground">{Z(`任务（${pendingTasks.length} 项待办）`, `Tasks (${pendingTasks.length} pending)`)}</h3>
         <Dialog open={addOpen} onOpenChange={(open) => {
           setAddOpen(open);
           if (!open) { setEditingTaskId(null); setForm({ ...EMPTY_FORM }); }
         }}>
           <DialogTrigger asChild>
             <Button variant="coral" size="sm" onClick={() => { setEditingTaskId(null); setForm({ ...EMPTY_FORM }); }}>
-              <Plus className="h-4 w-4 mr-1" /> Add Task
+              <Plus className="h-4 w-4 mr-1" /> {Z("添加任务", "Add Task")}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-h-[90vh] overflow-y-auto">
-            <DialogHeader><DialogTitle>{isEditing ? "Edit Task" : "Add Task"}</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{isEditing ? Z("编辑任务", "Edit Task") : Z("添加任务", "Add Task")}</DialogTitle></DialogHeader>
             <div className="space-y-4 mt-2">
-              <div><Label>Task Title *</Label><Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Pick up medication" /></div>
-              <div><Label>Description</Label><Textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Details..." rows={2} /></div>
+              <div><Label>{Z("任务标题 *", "Task Title *")}</Label><Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder={Z("例如：取药", "e.g. Pick up medication")} /></div>
+              <div><Label>{Z("描述", "Description")}</Label><Textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder={Z("详细说明……", "Details...")} rows={2} /></div>
 
               <div>
-                <Label>Task Types</Label>
+                <Label>{Z("任务类型", "Task Types")}</Label>
                 <div className="mt-2 grid grid-cols-2 gap-2 rounded-md border p-2">
                   {TASK_TYPE_OPTIONS.map((opt) => (
                     <label key={opt.value} className="flex items-center gap-2 text-sm cursor-pointer">
                       <Checkbox checked={form.task_types.includes(opt.value)} onCheckedChange={() => toggleTaskType(opt.value)} />
-                      <span>{opt.label}</span>
+                      <span>{isCN ? opt.labelZh : opt.label}</span>
                     </label>
                   ))}
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-3">
-                <div><Label>Date</Label><Input type="date" value={form.task_date} onChange={e => setForm(p => ({ ...p, task_date: e.target.value }))} /></div>
-                <div><Label>Start</Label><Input type="time" value={form.start_time} onChange={e => setForm(p => ({ ...p, start_time: e.target.value }))} /></div>
-                <div><Label>End</Label><Input type="time" value={form.end_time} onChange={e => setForm(p => ({ ...p, end_time: e.target.value }))} /></div>
+                <div><Label>{Z("日期", "Date")}</Label><Input type="date" value={form.task_date} onChange={e => setForm(p => ({ ...p, task_date: e.target.value }))} /></div>
+                <div><Label>{Z("开始", "Start")}</Label><Input type="time" value={form.start_time} onChange={e => setForm(p => ({ ...p, start_time: e.target.value }))} /></div>
+                <div><Label>{Z("结束", "End")}</Label><Input type="time" value={form.end_time} onChange={e => setForm(p => ({ ...p, end_time: e.target.value }))} /></div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div><Label>Location</Label><Input value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))} placeholder="e.g. Pharmacy" /></div>
-                <div><Label>People Needed</Label><Input type="number" min={1} value={form.people_needed} onChange={e => setForm(p => ({ ...p, people_needed: e.target.value }))} /></div>
+                <div><Label>{Z("地点", "Location")}</Label><Input value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))} placeholder={Z("例如：药房", "e.g. Pharmacy")} /></div>
+                <div><Label>{Z("所需人数", "People Needed")}</Label><Input type="number" min={1} value={form.people_needed} onChange={e => setForm(p => ({ ...p, people_needed: e.target.value }))} /></div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label>Help Status</Label>
+                  <Label>{Z("帮助状态", "Help Status")}</Label>
                   <Select value={form.help_status} onValueChange={(v) => setForm(p => ({ ...p, help_status: v }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1">No help needed</SelectItem>
-                      <SelectItem value="2">Needs help</SelectItem>
-                      <SelectItem value="3">Help found</SelectItem>
+                      <SelectItem value="1">{Z("无需帮助", "No help needed")}</SelectItem>
+                      <SelectItem value="2">{Z("需要帮助", "Needs help")}</SelectItem>
+                      <SelectItem value="3">{Z("已找到帮助", "Help found")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <div><Label>Assign To</Label>
+                <div><Label>{Z("指派给", "Assign To")}</Label>
                   <div className="mt-2 max-h-32 overflow-auto rounded-md border p-2 space-y-2">
                     {(members || []).map((m: any) => {
                       const memberId = m.user_id || `wp-${m.id}`;
                       return (
                         <label key={memberId} className="flex items-center gap-2 text-sm cursor-pointer">
                           <Checkbox checked={form.assigneeIds.includes(memberId)} onCheckedChange={() => toggleAssignee(memberId)} />
-                          <span>{m.display_name || m.profile?.full_name || "Member"}</span>
+                          <span>{m.display_name || m.profile?.full_name || Z("成员", "Member")}</span>
                         </label>
                       );
                     })}
-                    {(members || []).length === 0 && <p className="text-xs text-muted-foreground">No members available</p>}
+                    {(members || []).length === 0 && <p className="text-xs text-muted-foreground">{Z("暂无可选成员", "No members available")}</p>}
                   </div>
                 </div>
               </div>
 
               {!isEditing && (
-                <div><Label>Visibility</Label><VisibilityPicker value={visibility} onChange={setVisibility} memberCategories={memberCategories} members={members} /></div>
+                <div><Label>{Z("可见范围", "Visibility")}</Label><VisibilityPicker value={visibility} onChange={setVisibility} memberCategories={memberCategories} members={members} /></div>
               )}
               <Button variant="coral" className="w-full" onClick={submitForm} disabled={createTask.isPending || updateTaskStatus.isPending || !form.title.trim()}>
                 {(createTask.isPending || updateTaskStatus.isPending) ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
-                {isEditing ? "Save Changes" : "Add Task"}
+                {isEditing ? Z("保存更改", "Save Changes") : Z("添加任务", "Add Task")}
               </Button>
             </div>
           </DialogContent>
@@ -301,7 +305,7 @@ export function TasksTab({
             const start = fmtTime(t.start_time);
             const end = fmtTime(t.end_time);
             const dateStr = t.task_date
-              ? new Date(dateOnly(t.task_date) + "T00:00").toLocaleDateString("en", { month: "short", day: "numeric" })
+              ? new Date(dateOnly(t.task_date) + "T00:00").toLocaleDateString(isCN ? "zh-CN" : "en", { month: "short", day: "numeric" })
               : "";
             const canEdit = isAdmin || t.created_by === userId;
             return (
@@ -328,7 +332,7 @@ export function TasksTab({
                       )}
                       {t.people_needed != null && t.people_needed !== "" && Number(t.people_needed) > 0 && (
                         <span className="inline-flex items-center gap-1">
-                          <Users className="h-3 w-3" />{t.people_needed} needed
+                          <Users className="h-3 w-3" />{Z(`需要 ${t.people_needed} 人`, `${t.people_needed} needed`)}
                         </span>
                       )}
                     </div>
@@ -336,48 +340,51 @@ export function TasksTab({
                     <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                       {Array.isArray(t.task_types) && t.task_types.map((tt: string) => {
                         const opt = TASK_TYPE_OPTIONS.find((o) => o.value === String(tt));
-                        return opt ? <Badge key={tt} variant="secondary" className="text-[10px]">{opt.label}</Badge> : null;
+                        return opt ? <Badge key={tt} variant="secondary" className="text-[10px]">{isCN ? opt.labelZh : opt.label}</Badge> : null;
                       })}
                       {Array.isArray(t.assignees) && t.assignees.map((a: any) => {
                         const m = (members || []).find((mm: any) => mm.user_id === a.user_id || `wp-${mm.id}` === a.user_id);
-                        const name = m?.display_name || m?.profile?.full_name || "Member";
+                        const name = m?.display_name || m?.profile?.full_name || Z("成员", "Member");
+                        const respLabel = isCN
+                          ? (a.response === "accepted" ? "已接受" : a.response === "rejected" ? "已拒绝" : "待回应")
+                          : a.response;
                         return (
                           <Badge key={a.user_id} variant="outline" className={`text-[10px] ${responseColors[a.response] || ""}`}>
-                            {name}: {a.response}
+                            {name}: {respLabel}
                           </Badge>
                         );
                       })}
                     </div>
                   </div>
                   <Badge variant="outline" className={`shrink-0 ${helpStatusColors[String(t.help_status ?? "1")] || ""}`}>
-                    {helpStatusLabels[String(t.help_status ?? "1")] || "No help needed"}
+                    {helpStatusLabels[String(t.help_status ?? "1")] || Z("无需帮助", "No help needed")}
                   </Badge>
                   <div className="flex gap-1 shrink-0">
                     {myAssignment && myAssignment.response !== "accepted" && (
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-success hover:bg-success/10" title="Accept"
-                        onClick={() => updateAssignee.mutate({ taskId: t.id, userId: myWpId, status: "accepted" }, { onSuccess: () => toast({ title: "Accepted" }) })}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-success hover:bg-success/10" title={Z("接受", "Accept")}
+                        onClick={() => updateAssignee.mutate({ taskId: t.id, userId: myWpId, status: "accepted" }, { onSuccess: () => toast({ title: Z("已接受", "Accepted") }) })}>
                         <Check className="h-3.5 w-3.5" />
                       </Button>
                     )}
                     {myAssignment && myAssignment.response !== "rejected" && (
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10" title="Decline"
-                        onClick={() => updateAssignee.mutate({ taskId: t.id, userId: myWpId, status: "rejected" }, { onSuccess: () => toast({ title: "Declined" }) })}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10" title={Z("拒绝", "Decline")}
+                        onClick={() => updateAssignee.mutate({ taskId: t.id, userId: myWpId, status: "rejected" }, { onSuccess: () => toast({ title: Z("已拒绝", "Declined") }) })}>
                         <X className="h-3.5 w-3.5" />
                       </Button>
                     )}
-                    <Button variant="ghost" size="icon" className="h-7 w-7" title="Post to Job Board"
+                    <Button variant="ghost" size="icon" className="h-7 w-7" title={Z("发布到护理工作板", "Post to Job Board")}
                       onClick={() => setJobConfirmTask(t)}>
                       <Briefcase className="h-3.5 w-3.5" />
                     </Button>
                     {canEdit && (
-                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Edit"
+                      <Button variant="ghost" size="icon" className="h-7 w-7" title={Z("编辑", "Edit")}
                         onClick={() => openEdit(t)}>
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
                     )}
                     {canEdit && (
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10" title="Delete"
-                        onClick={() => deleteTask.mutate(t.id, { onSuccess: () => toast({ title: "Task deleted" }) })}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10" title={Z("删除", "Delete")}
+                        onClick={() => deleteTask.mutate(t.id, { onSuccess: () => toast({ title: Z("任务已删除", "Task deleted") }) })}>
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     )}
@@ -389,14 +396,14 @@ export function TasksTab({
           })}
           {completedTasks.length > 0 && (
             <>
-              <p className="text-xs font-medium text-muted-foreground pt-3 pb-1">Completed ({completedTasks.length})</p>
+              <p className="text-xs font-medium text-muted-foreground pt-3 pb-1">{Z(`已完成（${completedTasks.length}）`, `Completed (${completedTasks.length})`)}</p>
               {completedTasks.map((t: any) => (
                 <div key={t.id} className="flex items-center gap-3 p-3 rounded-lg bg-card/50 border border-transparent opacity-60 hover:opacity-80">
                   <button onClick={() => toggleTask(t.id, t.finish_status)} className="shrink-0"><CheckCircle className="h-5 w-5 text-success" /></button>
                   <p className="text-sm line-through text-muted-foreground flex-1 cursor-pointer" onClick={() => toggleTask(t.id, t.finish_status)}>{t.title}</p>
                   {(isAdmin || t.created_by === userId) && (
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10 shrink-0"
-                      onClick={() => deleteTask.mutate(t.id, { onSuccess: () => toast({ title: "Task deleted" }) })}>
+                      onClick={() => deleteTask.mutate(t.id, { onSuccess: () => toast({ title: Z("任务已删除", "Task deleted") }) })}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   )}
@@ -404,23 +411,24 @@ export function TasksTab({
               ))}
             </>
           )}
-          {(tasks || []).length === 0 && <p className="text-center py-8 text-muted-foreground">No tasks yet. Click "Add Task" to create one.</p>}
+          {(tasks || []).length === 0 && <p className="text-center py-8 text-muted-foreground">{Z("还没有任务。点击「添加任务」创建。", 'No tasks yet. Click "Add Task" to create one.')}</p>}
         </div>
       )}
 
       <AlertDialog open={!!jobConfirmTask} onOpenChange={(open) => !open && setJobConfirmTask(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Post to Job Board?</AlertDialogTitle>
+            <AlertDialogTitle>{Z("发布到护理工作板？", "Post to Job Board?")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will publish "{jobConfirmTask?.title}" to the public Job Board so caregivers outside your group can apply to help.
+              {Z(`此操作会将「${jobConfirmTask?.title ?? ""}」发布到公开的护理工作板，团聚之外的护理者也可以申请帮忙。`,
+                 `This will publish "${jobConfirmTask?.title}" to the public Job Board so caregivers outside your group can apply to help.`)}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{Z("取消", "Cancel")}</AlertDialogCancel>
             <AlertDialogAction onClick={confirmPostJob} disabled={createJob.isPending}>
               {createJob.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Briefcase className="h-4 w-4 mr-2" />}
-              Post Job
+              {Z("发布工作", "Post Job")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface MessagesTabProps {
   groupMessages: any[];
@@ -14,6 +15,9 @@ interface MessagesTabProps {
 
 export function MessagesTab({ groupMessages, userId, activeGroupId, sendMessage }: MessagesTabProps) {
   const [chatMessage, setChatMessage] = useState("");
+  const { i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
+  const Z = (cn: string, en: string) => (isCN ? cn : en);
 
   const handleSend = () => {
     if (!chatMessage.trim() || !activeGroupId) return;
@@ -33,18 +37,18 @@ export function MessagesTab({ groupMessages, userId, activeGroupId, sendMessage 
                 return (
                   <div key={msg.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
                     <div className={`max-w-[75%] rounded-xl px-3 py-2 ${isMine ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
-                      {!isMine && <p className="text-xs font-medium mb-0.5">{msg.sender?.full_name || "Member"}</p>}
+                      {!isMine && <p className="text-xs font-medium mb-0.5">{msg.sender?.full_name || Z("成员", "Member")}</p>}
                       <p className="text-sm">{msg.content || msg.message_content}</p>
-                      <p className={`text-[10px] mt-0.5 ${isMine ? "text-primary-foreground/60" : "text-muted-foreground"}`}>{new Date(msg.created_at).toLocaleTimeString("en", { hour: "numeric", minute: "2-digit" })}</p>
+                      <p className={`text-[10px] mt-0.5 ${isMine ? "text-primary-foreground/60" : "text-muted-foreground"}`}>{new Date(msg.created_at).toLocaleTimeString(isCN ? "zh-CN" : "en", { hour: "numeric", minute: "2-digit" })}</p>
                     </div>
                   </div>
                 );
               })}
-              {(groupMessages || []).length === 0 && <p className="text-center py-8 text-muted-foreground text-sm">No messages yet. Start the conversation!</p>}
+              {(groupMessages || []).length === 0 && <p className="text-center py-8 text-muted-foreground text-sm">{Z("还没有消息，开始聊天吧！", "No messages yet. Start the conversation!")}</p>}
             </div>
           </ScrollArea>
           <div className="flex gap-2 p-3 border-t">
-            <Input value={chatMessage} onChange={e => setChatMessage(e.target.value)} placeholder="Type a message..." onKeyDown={e => e.key === "Enter" && handleSend()} />
+            <Input value={chatMessage} onChange={e => setChatMessage(e.target.value)} placeholder={Z("输入消息……", "Type a message...")} onKeyDown={e => e.key === "Enter" && handleSend()} />
             <Button size="icon" onClick={handleSend} disabled={!chatMessage.trim() || sendMessage.isPending}><Send className="h-4 w-4" /></Button>
           </div>
         </div>
