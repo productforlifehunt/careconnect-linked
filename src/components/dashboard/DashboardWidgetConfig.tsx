@@ -74,6 +74,8 @@ interface SortableRowProps {
 }
 
 function SortableRow({ widget, checked, onToggle }: SortableRowProps) {
+  const { i18n } = useTranslation();
+  const isZh = i18n.language?.startsWith("zh");
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: widget.id });
   const style = {
@@ -92,7 +94,7 @@ function SortableRow({ widget, checked, onToggle }: SortableRowProps) {
           {...attributes}
           {...listeners}
           className="cursor-grab active:cursor-grabbing touch-none p-1 -m-1"
-          aria-label="Drag to reorder"
+          aria-label={isZh ? "拖动重新排序" : "Drag to reorder"}
         >
           <GripVertical className="h-4 w-4 text-muted-foreground" />
         </button>

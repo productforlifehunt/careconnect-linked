@@ -302,7 +302,7 @@ export default function ProviderSettingsTab() {
                       onValueChange={v => updateRow(idx, { serviceTypeSlug: v })}
                     >
                       <SelectTrigger className="col-span-5 h-9">
-                        <SelectValue placeholder="Service type" />
+                        <SelectValue placeholder={t("provider.serviceType", "Service type")} />
                       </SelectTrigger>
                       <SelectContent className="max-h-72">
                         {serviceTypes.map(st => (
@@ -346,7 +346,7 @@ export default function ProviderSettingsTab() {
                       size="icon"
                       className="col-span-1 h-8 w-8 text-muted-foreground hover:text-destructive justify-self-end"
                       onClick={() => removeRow(idx)}
-                      aria-label="Remove package"
+                      aria-label={t("provider.removePackage", "Remove package")}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
