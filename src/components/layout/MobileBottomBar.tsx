@@ -23,6 +23,11 @@ import {
   Briefcase,
   ClipboardList,
   Settings2,
+  HeartHandshake,
+  ShieldCheck,
+  Smile,
+  Brain,
+  HandHeart,
 } from "lucide-react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { AICompanionChatDialog } from "@/components/ai/AICompanionChatDialog";
@@ -107,9 +112,9 @@ export function MobileBottomBar() {
       ];
 
   const findWorkItems: ToolItem[] = [
-    { id: "work-jobs", title: isChinese ? "工作机会" : "Jobs", url: "/jobs", icon: Briefcase },
+    { id: "work-jobs", title: isChinese ? "已发布护理工作" : "Posted Care Jobs", url: "/jobs", icon: Briefcase },
     { id: "work-become", title: isChinese ? "成为护理者" : "Become Caregiver", url: "/become-caregiver", icon: UserPlus },
-    { id: "work-provider", title: isChinese ? "服务商面板" : "Provider Dashboard", url: "/provider-dashboard", icon: LayoutDashboard },
+    { id: "work-provider", title: isChinese ? "护理者面板" : "Caregiver Dashboard", url: "/provider-dashboard", icon: LayoutDashboard },
   ];
 
   const dailyCareItems: ToolItem[] = isChallenged
@@ -128,6 +133,11 @@ export function MobileBottomBar() {
   const resourceItems: ToolItem[] = isChallenged
     ? [
         { id: "community-resources", title: isChinese ? "资源与帮助" : "Resources & Help", url: "/resources", icon: BookOpen },
+        { id: "res-cared", title: isChinese ? "护理助手" : "CareD", url: "/care-guides", icon: HeartHandshake },
+        { id: "res-safed", title: isChinese ? "安全助手" : "SafeD", url: "/safety-guides", icon: ShieldCheck },
+        { id: "res-coped", title: isChinese ? "情绪助手" : "CopeD", url: "/coping", icon: Smile },
+        { id: "res-awared", title: isChinese ? "认知助手" : "AwareD", url: "/aware", icon: Brain },
+        { id: "res-accompd", title: isChinese ? "陪伴助手" : "AccompanieD", url: "/accompanied", icon: HandHeart },
       ]
     : [];
 
@@ -169,8 +179,8 @@ export function MobileBottomBar() {
   const allGroups: Group[] = [
     { id: "daily", label: isChinese ? "日常照护" : "Daily Care", items: dailyCareItems },
     { id: "resources", label: isChinese ? "资源与帮助" : "Resources & Help", items: resourceItems },
-    { id: "find-care", label: isChinese ? "寻找服务" : "Find Care", items: findCareItems },
-    { id: "find-work", label: isChinese ? "寻找工作" : "Find Work", items: findWorkItems },
+    { id: "find-care", label: isChinese ? "寻找护理服务" : "Find Care", items: findCareItems },
+    { id: "find-work", label: isChinese ? "寻找护理工作" : "Find Work", items: findWorkItems },
     { id: "community", label: isChinese ? "社区" : "Community", items: communityItems },
   ];
 
@@ -289,7 +299,7 @@ export function MobileBottomBar() {
                           findTab === "care" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
                         }`}
                       >
-                        {isChinese ? "找服务" : "Find Care"}
+                        {isChinese ? "寻找护理服务" : "Find Care"}
                       </button>
                       <button
                         type="button"
@@ -298,7 +308,7 @@ export function MobileBottomBar() {
                           findTab === "work" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
                         }`}
                       >
-                        {isChinese ? "找工作" : "Find Work"}
+                        {isChinese ? "寻找护理工作" : "Find Work"}
                       </button>
                     </div>
                     <div className="grid grid-cols-4 gap-2">
@@ -334,64 +344,64 @@ export function MobileBottomBar() {
                 {isChinese ? "自定义工具" : "Customize Tools"}
               </DialogPrimitive.Title>
               <p className="text-xs text-muted-foreground mt-1">
-                {isChinese ? "选择要显示的项目和默认标签" : "Pick which items show and your default tab"}
+                {isChinese ? "选择要显示的项目；在分组右侧勾选默认显示" : "Pick which items show; mark default with the checkbox"}
               </p>
             </div>
 
             <div className="p-4 space-y-5">
-              {/* Default Find tab */}
-              <div>
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                  {isChinese ? "默认标签" : "Default Tab"}
-                </h3>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setDefaultTab("care")}
-                    className={`flex-1 py-2 rounded-lg text-sm font-medium border ${
-                      prefs.defaultFindTab === "care"
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-card text-foreground"
-                    }`}
-                  >
-                    {isChinese ? "找服务" : "Find Care"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDefaultTab("work")}
-                    className={`flex-1 py-2 rounded-lg text-sm font-medium border ${
-                      prefs.defaultFindTab === "work"
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-card text-foreground"
-                    }`}
-                  >
-                    {isChinese ? "找工作" : "Find Work"}
-                  </button>
-                </div>
-              </div>
-
               {/* Item toggles */}
-              {allGroups.map((g) => (
-                <div key={g.id}>
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                    {g.label}
-                  </h3>
-                  <div className="space-y-2">
-                    {g.items.map((t) => {
-                      const shown = !prefs.hidden.includes(t.id);
-                      return (
-                        <div key={t.id} className="flex items-center justify-between gap-3 p-3 rounded-lg bg-muted/40">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <t.icon className="h-4 w-4 text-muted-foreground shrink-0" />
-                            <span className="text-sm truncate">{t.title}</span>
+              {allGroups.map((g) => {
+                const isFindCare = g.id === "find-care";
+                const isFindWork = g.id === "find-work";
+                const isFindGroup = isFindCare || isFindWork;
+                const isDefault =
+                  (isFindCare && prefs.defaultFindTab === "care") ||
+                  (isFindWork && prefs.defaultFindTab === "work");
+                return (
+                  <div key={g.id}>
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                        {g.label}
+                      </h3>
+                      {isFindGroup && (
+                        <button
+                          type="button"
+                          onClick={() => setDefaultTab(isFindCare ? "care" : "work")}
+                          className={`flex items-center gap-1.5 text-[11px] font-medium px-2 py-1 rounded-md border transition-colors ${
+                            isDefault
+                              ? "bg-primary/10 text-primary border-primary/40"
+                              : "bg-card text-muted-foreground border-border hover:text-foreground"
+                          }`}
+                          aria-pressed={isDefault}
+                        >
+                          <span
+                            className={`inline-flex h-3.5 w-3.5 items-center justify-center rounded-sm border ${
+                              isDefault ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground/50"
+                            }`}
+                          >
+                            {isDefault && <span className="text-[10px] leading-none">✓</span>}
+                          </span>
+                          {isChinese ? "设为默认" : "Set default"}
+                        </button>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      {g.items.map((t) => {
+                        const shown = !prefs.hidden.includes(t.id);
+                        return (
+                          <div key={t.id} className="flex items-center justify-between gap-3 p-3 rounded-lg bg-muted/40">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <t.icon className="h-4 w-4 text-muted-foreground shrink-0" />
+                              <span className="text-sm truncate">{t.title}</span>
+                            </div>
+                            <Switch checked={shown} onCheckedChange={(v) => togglePref(t.id, v)} />
                           </div>
-                          <Switch checked={shown} onCheckedChange={(v) => togglePref(t.id, v)} />
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </DialogPrimitive.Content>
         </DialogPrimitive.Portal>
