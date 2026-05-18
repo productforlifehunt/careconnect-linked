@@ -14,6 +14,7 @@ import {
   useUpdateSubgroupMemberRole,
 } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 function toNum(id: string | number | undefined | null): number {
   return Number(String(id ?? "").replace(/^wp-/, ""));
