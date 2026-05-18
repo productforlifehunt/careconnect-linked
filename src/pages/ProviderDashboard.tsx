@@ -412,18 +412,18 @@ export default function ProviderDashboard() {
 
         <TabsContent value="earnings" className="mt-4">
           <div className="grid sm:grid-cols-2 gap-4 mb-6">
-            <Card className="border-transparent card-elevated"><CardContent className="p-5 text-center"><p className="text-3xl font-bold text-foreground">${totalEarnings.toFixed(2)}</p><p className="text-sm text-muted-foreground mt-1">Total Earned (85% of completed)</p></CardContent></Card>
-            <Card className="border-transparent card-elevated"><CardContent className="p-5 text-center"><p className="text-3xl font-bold text-foreground">{completedBookings.length}</p><p className="text-sm text-muted-foreground mt-1">Completed Bookings</p></CardContent></Card>
+            <Card className="border-transparent card-elevated"><CardContent className="p-5 text-center"><p className="text-3xl font-bold text-foreground">${totalEarnings.toFixed(2)}</p><p className="text-sm text-muted-foreground mt-1">{isZh ? "总收入（已完成的85%）" : "Total Earned (85% of completed)"}</p></CardContent></Card>
+            <Card className="border-transparent card-elevated"><CardContent className="p-5 text-center"><p className="text-3xl font-bold text-foreground">{completedBookings.length}</p><p className="text-sm text-muted-foreground mt-1">{isZh ? "已完成预约" : "Completed Bookings"}</p></CardContent></Card>
           </div>
           <Card className="border-transparent card-elevated">
-            <CardHeader><CardTitle>Recent Payouts</CardTitle></CardHeader>
+            <CardHeader><CardTitle>{isZh ? "最近结算" : "Recent Payouts"}</CardTitle></CardHeader>
             <CardContent>
               {(payouts || []).length > 0 ? (payouts || []).map((p: any) => (
                 <div key={p.id} className="flex items-center justify-between py-3 border-b last:border-0">
                   <div><p className="text-sm font-medium text-foreground">${p.amount}</p><p className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</p></div>
                   <Badge variant={p.status === "completed" ? "default" : "secondary"}>{p.status}</Badge>
                 </div>
-              )) : <p className="text-center py-8 text-muted-foreground">No payouts yet</p>}
+              )) : <p className="text-center py-8 text-muted-foreground">{isZh ? "暂无结算记录" : "No payouts yet"}</p>}
             </CardContent>
           </Card>
         </TabsContent>
