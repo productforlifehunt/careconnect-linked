@@ -131,9 +131,9 @@ export function MobileBottomBar() {
       ]
     : [];
 
-  const communityItems: ToolItem[] = [
-    { id: "community-community", title: isChinese ? "社区" : "Community", url: "/community", icon: Newspaper },
-  ];
+  const communityItems: ToolItem[] = isChallenged
+    ? [{ id: "community-community", title: isChinese ? "社区" : "Community", url: "/community", icon: Newspaper }]
+    : [];
 
   // Filter by user prefs
   const visible = (arr: ToolItem[]) => arr.filter((t) => !prefs.hidden.includes(t.id));
