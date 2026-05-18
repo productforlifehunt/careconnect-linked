@@ -92,7 +92,7 @@ export default function Cart() {
                 params.set("status", "processing");
                 navigate(`/order-confirmation?${params.toString()}`);
               }}>
-                {doCheckout.isPending ? "Processing..." : "Checkout & Pay"}
+                {doCheckout.isPending ? (cn ? "处理中…" : "Processing...") : (cn ? "结算并支付" : "Checkout & Pay")}
               </Button>
             </CardContent>
           </Card>
