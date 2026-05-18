@@ -10,6 +10,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Pill, Plus, Loader2, Trash2, Check, X, Clock, SkipForward, Edit2, History, TrendingUp, AlertCircle, ChevronDown, ChevronUp, StickyNote, Search } from "lucide-react";
 import { useMedicines, useCreateMedicine, useDeleteMedicine, useLogMedicine, useUpdateMedicine, useTodayMedicineLogs, useMedicineLogs } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
+import i18n from "@/i18n/config";
+const isCN = () => (i18n.language || "").startsWith("zh");
+const Z = (cn: string, en: string) => (isCN() ? cn : en);
 import { motion, AnimatePresence } from "framer-motion";
 import { rxnormSuggest, rxnormLookup, type RxSuggestion } from "@/lib/rxnorm";
 
