@@ -337,14 +337,17 @@ export default function Jobs() {
 // ─── Posted Job Card (with applicant management) ─────────────
 function PostedJobCard({ job, sourceLabels }: { job: any; sourceLabels: Record<string, string> }) {
   const { toast } = useToast();
+  const { i18n } = useTranslation();
+  const zh = i18n.language?.startsWith("zh");
+  const Z = (cn: string, en: string) => (zh ? cn : en);
   const [expanded, setExpanded] = useState(false);
   const { data: applications, isLoading: appsLoading } = useJobApplications(expanded ? job.id : null);
   const updateApplication = useUpdateJobApplication();
 
   const handleAction = (appId: string, status: "accepted" | "rejected") => {
     updateApplication.mutate({ id: appId, status }, {
-      onSuccess: () => toast({ title: status === "accepted" ? "Applicant accepted ✓" : "Applicant declined" }),
-      onError: (err: any) => toast({ title: "Failed", description: err.message, variant: "destructive" }),
+      onSuccess: () => toast({ title: status === "accepted" ? Z("已接受申请人 ✓", "Applicant accepted ✓") : Z("已拒绝申请人", "Applicant declined") }),
+      onError: (err: any) => toast({ title: Z("操作失败", "Failed"), description: err.message, variant: "destructive" }),
     });
   };
 
@@ -361,7 +364,7 @@ function PostedJobCard({ job, sourceLabels }: { job: any; sourceLabels: Record<s
               <Badge variant={job.status === "open" ? "default" : "secondary"}>{job.status}</Badge>
             </div>
             {job.location && <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> {job.location}</p>}
-            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1"><Clock className="h-3 w-3" /> Posted {new Date(job.created_at).toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric" })}</p>
+            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1"><Clock className="h-3 w-3" /> {Z("发布于 ", "Posted ")}{new Date(job.created_at).toLocaleDateString(zh ? "zh-CN" : "en", { month: "short", day: "numeric", year: "numeric" })}</p>
           </div>
         </div>
 
@@ -373,7 +376,7 @@ function PostedJobCard({ job, sourceLabels }: { job: any; sourceLabels: Record<s
           onClick={() => setExpanded(!expanded)}
         >
           {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          {expanded ? "Hide" : "View"} Applicants
+          {expanded ? Z("隐藏申请人", "Hide Applicants") : Z("查看申请人", "View Applicants")}
         </button>
 
         {expanded && (
@@ -382,7 +385,7 @@ function PostedJobCard({ job, sourceLabels }: { job: any; sourceLabels: Record<s
               <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
             ) : (applications || []).length > 0 ? (
               <div className="space-y-3">
-                <p className="text-sm font-medium text-foreground">{(applications || []).length} Applicant{(applications || []).length !== 1 ? "s" : ""}</p>
+                <p className="text-sm font-medium text-foreground">{(applications || []).length} {Z("位申请人", "Applicant")}{!zh && (applications || []).length !== 1 ? "s" : ""}</p>
                 {(applications || []).map((app: any) => (
                   <div key={app.id} className="rounded-lg border p-4 bg-muted/30">
                     <div className="flex items-start justify-between gap-3 mb-2">
@@ -392,13 +395,13 @@ function PostedJobCard({ job, sourceLabels }: { job: any; sourceLabels: Record<s
                           <AvatarFallback className="text-xs">{(app.applicant?.full_name || "?")[0]}</AvatarFallback>
                         </Avatar>
                         <div className="min-w-0">
-                          <p className="text-sm font-medium text-foreground">{app.applicant?.full_name || "Applicant"}</p>
+                          <p className="text-sm font-medium text-foreground">{app.applicant?.full_name || Z("申请人", "Applicant")}</p>
                           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                            {app.applicant?.years_of_experience && <span>{app.applicant.years_of_experience} yrs exp</span>}
+                            {app.applicant?.years_of_experience && <span>{app.applicant.years_of_experience} {Z("年经验", "yrs exp")}</span>}
                             {app.applicant?.rating_average && (
                               <span className="flex items-center gap-0.5"><Star className="h-3 w-3 text-warning fill-warning" />{app.applicant.rating_average.toFixed(1)}</span>
                             )}
-                            {app.applicant?.hourly_rate && <span>${app.applicant.hourly_rate}/hr</span>}
+                            {app.applicant?.hourly_rate && <span>{zh ? `¥${app.applicant.hourly_rate}/小时` : `$${app.applicant.hourly_rate}/hr`}</span>}
                           </div>
                         </div>
                       </div>
@@ -406,18 +409,18 @@ function PostedJobCard({ job, sourceLabels }: { job: any; sourceLabels: Record<s
                         app.status === "accepted" ? "default" :
                         app.status === "rejected" ? "destructive" : "secondary"
                       } className="shrink-0">
-                        {app.status}
+                        {app.status === "accepted" ? Z("已接受", "accepted") : app.status === "rejected" ? Z("已拒绝", "rejected") : Z("待处理", "pending")}
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground bg-background rounded p-2 mb-3">{app.cover_letter}</p>
-                    <p className="text-xs text-muted-foreground mb-3">Applied {new Date(app.created_at).toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric" })}</p>
+                    <p className="text-xs text-muted-foreground mb-3">{Z("申请于 ", "Applied ")}{new Date(app.created_at).toLocaleDateString(zh ? "zh-CN" : "en", { month: "short", day: "numeric", year: "numeric" })}</p>
                     {app.status === "pending" && (
                       <div className="flex gap-2">
                         <Button size="sm" variant="default" className="bg-success hover:bg-success/90 text-success-foreground" onClick={() => handleAction(app.id, "accepted")} disabled={updateApplication.isPending}>
-                          <Check className="h-3 w-3 mr-1" /> Accept
+                          <Check className="h-3 w-3 mr-1" /> {Z("接受", "Accept")}
                         </Button>
                         <Button size="sm" variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => handleAction(app.id, "rejected")} disabled={updateApplication.isPending}>
-                          <X className="h-3 w-3 mr-1" /> Decline
+                          <X className="h-3 w-3 mr-1" /> {Z("拒绝", "Decline")}
                         </Button>
                       </div>
                     )}
@@ -427,7 +430,7 @@ function PostedJobCard({ job, sourceLabels }: { job: any; sourceLabels: Record<s
             ) : (
               <div className="text-center py-6">
                 <User className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">No applications yet</p>
+                <p className="text-sm text-muted-foreground">{Z("还没有申请", "No applications yet")}</p>
               </div>
             )}
           </div>
