@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -51,6 +52,21 @@ export function isWidgetVisible(id: string, defaults: Record<string, boolean>): 
   return prefs[id] ?? defaults[id] ?? true;
 }
 
+const ZH_WIDGET_LABELS: Record<string, string> = {
+  "patient-summaries": "亲人概览",
+  "daily-timeline": "每日时间线",
+  "caregiver-wellness": "照护者健康",
+  "stats": "统计概览",
+  "quick-actions": "快捷操作",
+  "upcoming-bookings": "即将到来的预约",
+  "care-tasks": "护理任务",
+  "community-feed": "社区动态",
+  "dementia-assistant": "智能陪伴",
+};
+function localizeWidgetLabel(id: string, fallback: string, isZh: boolean): string {
+  return isZh ? (ZH_WIDGET_LABELS[id] || fallback) : fallback;
+}
+
 interface SortableRowProps {
   widget: WidgetDef;
   checked: boolean;
@@ -97,6 +113,8 @@ interface Props {
 
 export function DashboardWidgetConfig({ widgets, visibility, order, onChange, onReorder }: Props) {
   const [open, setOpen] = useState(false);
+  const { i18n } = useTranslation();
+  const isZh = i18n.language?.startsWith("zh");
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -120,15 +138,15 @@ export function DashboardWidgetConfig({ widgets, visibility, order, onChange, on
       <SheetTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2">
           <Settings2 className="h-4 w-4" />
-          <span className="hidden sm:inline">Customize</span>
+          <span className="hidden sm:inline">{isZh ? "自定义" : "Customize"}</span>
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="w-80">
         <SheetHeader>
-          <SheetTitle>Dashboard Widgets</SheetTitle>
+          <SheetTitle>{isZh ? "面板小部件" : "Dashboard Widgets"}</SheetTitle>
         </SheetHeader>
         <p className="text-xs text-muted-foreground mt-1 mb-4">
-          Drag to reorder. Toggle to show or hide.
+          {isZh ? "拖动重新排序，点击开关显示或隐藏。" : "Drag to reorder. Toggle to show or hide."}
         </p>
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={order} strategy={verticalListSortingStrategy}>
@@ -136,7 +154,7 @@ export function DashboardWidgetConfig({ widgets, visibility, order, onChange, on
               {orderedWidgets.map((w) => (
                 <SortableRow
                   key={w.id}
-                  widget={w}
+                  widget={{ ...w, label: localizeWidgetLabel(w.id, w.label, isZh) }}
                   checked={visibility[w.id] ?? true}
                   onToggle={(v) => onChange(w.id, v)}
                 />
