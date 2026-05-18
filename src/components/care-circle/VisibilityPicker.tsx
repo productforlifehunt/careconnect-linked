@@ -30,11 +30,14 @@ function toNum(id: string | number | undefined | null): number {
  */
 export function VisibilityPicker({ value, onChange, memberCategories = [], members = [] }: VisibilityPickerProps) {
   const [open, setOpen] = useState(false);
+  const { i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
+  const Z = (cn: string, en: string) => (isCN ? cn : en);
 
   const totalSelected = value.subgroupIds.length + value.userIds.length;
   const label = totalSelected === 0
-    ? "Everyone"
-    : `${totalSelected} selected`;
+    ? Z("所有人", "Everyone")
+    : Z(`已选 ${totalSelected} 项`, `${totalSelected} selected`);
 
   const toggleSubgroup = (id: number) => {
     const exists = value.subgroupIds.includes(id);
