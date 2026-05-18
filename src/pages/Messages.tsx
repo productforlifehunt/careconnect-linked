@@ -214,7 +214,7 @@ export default function Messages() {
                     <div className="flex items-center justify-between">
                       <span className={`font-medium text-sm ${c.unread_count > 0 ? "text-foreground font-semibold" : "text-foreground"}`}>{other?.full_name || t("common.unknown")}</span>
                       <span className="text-xs text-muted-foreground">
-                        {c.last_message_at ? new Date(c.last_message_at).toLocaleDateString("en", { month: "short", day: "numeric" }) : ""}
+                        {c.last_message_at ? new Date(c.last_message_at).toLocaleDateString(i18n.language, { month: "short", day: "numeric" }) : ""}
                       </span>
                     </div>
                     <div className="flex items-center justify-between gap-2">

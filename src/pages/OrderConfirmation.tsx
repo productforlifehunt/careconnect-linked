@@ -7,7 +7,7 @@ import { CheckCircle2, CalendarDays, Clock, DollarSign, ArrowRight, Loader2 } fr
 import { useTranslation } from "react-i18next";
 
 export default function OrderConfirmation() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -62,7 +62,7 @@ export default function OrderConfirmation() {
                 <CalendarDays className="h-4 w-4" /> {t("checkout.date", "Date")}
               </span>
               <span className="font-semibold">
-                {new Date(orderDate).toLocaleDateString("en", { month: "long", day: "numeric", year: "numeric" })}
+                {new Date(orderDate).toLocaleDateString(i18n.language, { month: "long", day: "numeric", year: "numeric" })}
               </span>
             </div>
           )}
