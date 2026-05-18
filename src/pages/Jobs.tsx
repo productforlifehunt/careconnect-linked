@@ -57,10 +57,10 @@ export default function Jobs() {
       onSuccess: () => {
         setNewJob({ title: "", description: "", location: "", job_source_type: "general" });
         setCreateOpen(false);
-        toast({ title: "Job posted successfully" });
+        toast({ title: Z("职位发布成功", "Job posted successfully") });
       },
       onError: (err: any) => {
-        toast({ title: "Failed to post job", description: err?.message || "Please try again", variant: "destructive" });
+        toast({ title: Z("发布失败", "Failed to post job"), description: err?.message || Z("请重试", "Please try again"), variant: "destructive" });
       },
     });
   };
@@ -71,10 +71,10 @@ export default function Jobs() {
       onSuccess: () => {
         setCoverLetter("");
         setApplyOpen(null);
-        toast({ title: "Application submitted!" });
+        toast({ title: Z("申请已提交！", "Application submitted!") });
       },
       onError: (err: any) => {
-        toast({ title: "Failed to apply", description: err?.message || "Please try again", variant: "destructive" });
+        toast({ title: Z("申请失败", "Failed to apply"), description: err?.message || Z("请重试", "Please try again"), variant: "destructive" });
       },
     });
   };
@@ -86,7 +86,12 @@ export default function Jobs() {
     !searchQuery || j.title?.toLowerCase().includes(searchQuery.toLowerCase()) || j.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const sourceLabels: Record<string, string> = {
+  const sourceLabels: Record<string, string> = zh ? {
+    general: "通用",
+    group_task: "小组任务",
+    cared_one_checkin: "签到护理",
+    cared_one_care: "长期护理",
+  } : {
     general: "General",
     group_task: "Group Task",
     cared_one_checkin: "Check-In",
