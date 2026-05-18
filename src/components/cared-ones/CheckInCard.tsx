@@ -10,21 +10,17 @@ import { ClipboardCheck, Plus, Loader2, SkipForward, Check, AlertCircle, History
 import { useCheckins, useCreateCheckin, useUpdateCheckin, useDeleteCheckin, useCheckinLogs, useTodayCheckinLogs, useLogCheckin } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { AICheckInDialog } from "./AICheckInDialog";
+import { useTranslation } from "react-i18next";
 
-function formatSlot(slot: string) {
+function formatSlot(slot: string, isCN: boolean) {
   const [hourRaw = "8", minuteRaw = "00"] = String(slot || "08:00").split(":");
   const hour = Number(hourRaw);
   const minute = Number(minuteRaw);
+  if (isCN) return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
   const isPM = hour >= 12;
   const displayHour = hour > 12 ? hour - 12 : hour || 12;
   return `${displayHour}:${String(minute).padStart(2, "0")} ${isPM ? "PM" : "AM"}`;
 }
-
-const STATUS_LABEL: Record<string, string> = {
-  checked: "Checked",
-  skipped: "Skipped",
-  missed: "Missed",
-};
 
 const STATUS_STYLE: Record<string, string> = {
   checked: "bg-success/10 text-success border-success/30",
@@ -34,6 +30,14 @@ const STATUS_STYLE: Record<string, string> = {
 
 export function CheckInCard({ caredOneId }: { caredOneId: string }) {
   const { toast } = useToast();
+  const { i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
+  const Z = (cn: string, en: string) => (isCN ? cn : en);
+  const STATUS_LABEL: Record<string, string> = {
+    checked: Z("已签到", "Checked"),
+    skipped: Z("已跳过", "Skipped"),
+    missed: Z("未完成", "Missed"),
+  };
   const { data: checkins, isLoading } = useCheckins(caredOneId);
   const { data: logs } = useCheckinLogs(caredOneId);
   const { data: todayLogs } = useTodayCheckinLogs(caredOneId);
@@ -51,9 +55,9 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
   const [aiOpen, setAiOpen] = useState<{ open: boolean; checkin: any }>({ open: false, checkin: null });
 
   const [form, setForm] = useState({
-    name: "Daily Check-In",
+    name: Z("每日签到", "Daily Check-In"),
     detail: "",
-    frequency: "Once daily",
+    frequency: Z("每日一次", "Once daily"),
     time: "08:00",
     instructions: "",
     start_date: "",
@@ -103,11 +107,11 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
       },
       {
         onSuccess: () => {
-          setForm({ name: "Daily Check-In", detail: "", frequency: "Once daily", time: "08:00", instructions: "", start_date: "", note: "" });
+          setForm({ name: Z("每日签到", "Daily Check-In"), detail: "", frequency: Z("每日一次", "Once daily"), time: "08:00", instructions: "", start_date: "", note: "" });
           setAddOpen(false);
-          toast({ title: "Check-in schedule created ✓" });
+          toast({ title: Z("签到日程已创建 ✓", "Check-in schedule created ✓") });
         },
-        onError: (e: any) => toast({ title: "Failed", description: String(e?.message || e), variant: "destructive" }),
+        onError: (e: any) => toast({ title: Z("操作失败", "Failed"), description: String(e?.message || e), variant: "destructive" }),
       }
     );
   };
@@ -125,9 +129,9 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
         onSuccess: () => {
           setLogDialog({ open: false, checkin: null, status: "checked" });
           setLogNote("");
-          toast({ title: `Check-in ${STATUS_LABEL[status].toLowerCase()} ✓` });
+          toast({ title: Z(`签到${STATUS_LABEL[status]} ✓`, `Check-in ${STATUS_LABEL[status].toLowerCase()} ✓`) });
         },
-        onError: (e: any) => toast({ title: "Failed", description: String(e?.message || e), variant: "destructive" }),
+        onError: (e: any) => toast({ title: Z("操作失败", "Failed"), description: String(e?.message || e), variant: "destructive" }),
       }
     );
   };
@@ -136,8 +140,8 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
     update.mutate(
       { id: String(checkin.id), is_active: !checkin.is_active },
       {
-        onSuccess: () => toast({ title: checkin.is_active ? "Check-in paused" : "Check-in resumed ✓" }),
-        onError: (e: any) => toast({ title: "Failed", description: String(e?.message || e), variant: "destructive" }),
+        onSuccess: () => toast({ title: checkin.is_active ? Z("签到已暂停", "Check-in paused") : Z("签到已恢复 ✓", "Check-in resumed ✓") }),
+        onError: (e: any) => toast({ title: Z("操作失败", "Failed"), description: String(e?.message || e), variant: "destructive" }),
       }
     );
   };
@@ -147,7 +151,7 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
     setForm({
       name: checkin.name || "",
       detail: checkin.detail || "",
-      frequency: checkin.frequency || "Once daily",
+      frequency: checkin.frequency || Z("每日一次", "Once daily"),
       time: slot,
       instructions: checkin.instructions || "",
       start_date: checkin.start_date || "",
@@ -171,9 +175,9 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
       {
         onSuccess: () => {
           setEditOpen({ open: false, checkin: null });
-          toast({ title: "Check-in updated ✓" });
+          toast({ title: Z("签到已更新 ✓", "Check-in updated ✓") });
         },
-        onError: (e: any) => toast({ title: "Failed", description: String(e?.message || e), variant: "destructive" }),
+        onError: (e: any) => toast({ title: Z("操作失败", "Failed"), description: String(e?.message || e), variant: "destructive" }),
       }
     );
   };
@@ -182,62 +186,62 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
     remove.mutate(String(deleteConfirm.checkin.id), {
       onSuccess: () => {
         setDeleteConfirm({ open: false, checkin: null });
-        toast({ title: "Check-in deleted" });
+        toast({ title: Z("签到已删除", "Check-in deleted") });
       },
-      onError: (e: any) => toast({ title: "Failed", description: String(e?.message || e), variant: "destructive" }),
+      onError: (e: any) => toast({ title: Z("操作失败", "Failed"), description: String(e?.message || e), variant: "destructive" }),
     });
   };
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-foreground">Daily Check-In</h2>
-        <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> Add Check-In</Button>
+        <h2 className="text-lg font-bold text-foreground">{Z("每日签到", "Daily Check-In")}</h2>
+        <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> {Z("新增签到", "Add Check-In")}</Button>
       </div>
 
       {/* Add schedule */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Create Check-In Schedule</DialogTitle>
-            <DialogDescription>Set a recurring wellness check-in for this cared one.</DialogDescription>
+            <DialogTitle>{Z("创建签到日程", "Create Check-In Schedule")}</DialogTitle>
+            <DialogDescription>{Z("为这位亲人设置定期的健康签到。", "Set a recurring wellness check-in for this cared one.")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 mt-2">
             <div>
-              <Label className="text-sm">Name</Label>
+              <Label className="text-sm">{Z("名称", "Name")}</Label>
               <Input value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} />
             </div>
             <div>
-              <Label className="text-sm">Detail</Label>
-              <Input value={form.detail} onChange={(e) => setForm((p) => ({ ...p, detail: e.target.value }))} placeholder="Short description (optional)" />
+              <Label className="text-sm">{Z("详情", "Detail")}</Label>
+              <Input value={form.detail} onChange={(e) => setForm((p) => ({ ...p, detail: e.target.value }))} placeholder={Z("简短描述(可选)", "Short description (optional)")} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-sm">Frequency</Label>
-                <Input value={form.frequency} onChange={(e) => setForm((p) => ({ ...p, frequency: e.target.value }))} placeholder="Once daily" />
+                <Label className="text-sm">{Z("频率", "Frequency")}</Label>
+                <Input value={form.frequency} onChange={(e) => setForm((p) => ({ ...p, frequency: e.target.value }))} placeholder={Z("每日一次", "Once daily")} />
               </div>
               <div>
-                <Label className="text-sm">Scheduled time</Label>
+                <Label className="text-sm">{Z("计划时间", "Scheduled time")}</Label>
                 <Input type="time" value={form.time} onChange={(e) => setForm((p) => ({ ...p, time: e.target.value || "08:00" }))} />
               </div>
             </div>
             <div>
-              <Label className="text-sm">Start date</Label>
+              <Label className="text-sm">{Z("开始日期", "Start date")}</Label>
               <Input type="date" value={form.start_date} onChange={(e) => setForm((p) => ({ ...p, start_date: e.target.value }))} />
             </div>
             <div>
-              <Label className="text-sm">Instructions</Label>
-              <Input value={form.instructions} onChange={(e) => setForm((p) => ({ ...p, instructions: e.target.value }))} placeholder="What to ask or check" />
+              <Label className="text-sm">{Z("询问说明", "Instructions")}</Label>
+              <Input value={form.instructions} onChange={(e) => setForm((p) => ({ ...p, instructions: e.target.value }))} placeholder={Z("要询问或检查什么", "What to ask or check")} />
             </div>
             <div>
-              <Label className="text-sm">Notes</Label>
+              <Label className="text-sm">{Z("备注", "Notes")}</Label>
               <Textarea value={form.note} onChange={(e) => setForm((p) => ({ ...p, note: e.target.value }))} rows={2} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setAddOpen(false)}>{Z("取消", "Cancel")}</Button>
             <Button onClick={handleCreate} disabled={create.isPending || !form.name.trim()}>
-              {create.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <ClipboardCheck className="h-4 w-4 mr-2" />} Save
+              {create.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <ClipboardCheck className="h-4 w-4 mr-2" />} {Z("保存", "Save")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -251,15 +255,15 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
               {logDialog.status === "checked" ? <Check className="h-5 w-5 text-success" /> :
                logDialog.status === "skipped" ? <SkipForward className="h-5 w-5 text-warning" /> :
                <AlertCircle className="h-5 w-5 text-destructive" />}
-              Mark as {STATUS_LABEL[logDialog.status]}
+              {Z(`标记为${STATUS_LABEL[logDialog.status]}`, `Mark as ${STATUS_LABEL[logDialog.status]}`)}
             </DialogTitle>
-            <DialogDescription>{logDialog.checkin?.name} — add an optional note</DialogDescription>
+            <DialogDescription>{logDialog.checkin?.name} — {Z("添加可选备注", "add an optional note")}</DialogDescription>
           </DialogHeader>
-          <Textarea value={logNote} onChange={(e) => setLogNote(e.target.value)} rows={3} placeholder="How did it go?" />
+          <Textarea value={logNote} onChange={(e) => setLogNote(e.target.value)} rows={3} placeholder={Z("情况如何?", "How did it go?")} />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setLogDialog({ open: false, checkin: null, status: "checked" })}>Cancel</Button>
+            <Button variant="outline" onClick={() => setLogDialog({ open: false, checkin: null, status: "checked" })}>{Z("取消", "Cancel")}</Button>
             <Button onClick={confirmLog} disabled={logCheckin.isPending}>
-              {logCheckin.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Confirm
+              {logCheckin.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />} {Z("确认", "Confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -269,17 +273,17 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
       <Dialog open={historyOpen.open} onOpenChange={(o) => !o && setHistoryOpen({ open: false, checkin: null })}>
         <DialogContent className="sm:max-w-lg max-h-[80vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><History className="h-5 w-5 text-primary" /> {historyOpen.checkin?.name} — History</DialogTitle>
+            <DialogTitle className="flex items-center gap-2"><History className="h-5 w-5 text-primary" /> {historyOpen.checkin?.name} — {Z("历史记录", "History")}</DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto space-y-1">
             {(logs || []).filter((l: any) => String(l.checkin_id) === String(historyOpen.checkin?.id)).length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">No logs yet</p>
+              <p className="text-center text-muted-foreground py-8">{Z("暂无记录", "No logs yet")}</p>
             ) : (
               (logs || []).filter((l: any) => String(l.checkin_id) === String(historyOpen.checkin?.id)).map((log: any) => (
                 <div key={log.id} className="flex items-start gap-3 py-2 border-b border-border/50 last:border-0">
                   <Badge variant="outline" className={STATUS_STYLE[log.status] || ""}>{STATUS_LABEL[log.status] || log.status}</Badge>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-muted-foreground">{new Date(log.created_at).toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">{new Date(log.created_at).toLocaleString(isCN ? "zh-CN" : undefined)}</p>
                     {log.note && <p className="text-xs mt-0.5 flex items-start gap-1"><StickyNote className="h-3 w-3 mt-0.5 shrink-0" />{log.note}</p>}
                   </div>
                 </div>
@@ -293,24 +297,24 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
       <Dialog open={editOpen.open} onOpenChange={(o) => !o && setEditOpen({ open: false, checkin: null })}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Edit Check-In Schedule</DialogTitle>
-            <DialogDescription>Update this recurring check-in.</DialogDescription>
+            <DialogTitle>{Z("编辑签到日程", "Edit Check-In Schedule")}</DialogTitle>
+            <DialogDescription>{Z("更新这个定期签到。", "Update this recurring check-in.")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 mt-2">
-            <div><Label className="text-sm">Name</Label><Input value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} /></div>
-            <div><Label className="text-sm">Detail</Label><Input value={form.detail} onChange={(e) => setForm((p) => ({ ...p, detail: e.target.value }))} /></div>
+            <div><Label className="text-sm">{Z("名称", "Name")}</Label><Input value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} /></div>
+            <div><Label className="text-sm">{Z("详情", "Detail")}</Label><Input value={form.detail} onChange={(e) => setForm((p) => ({ ...p, detail: e.target.value }))} /></div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label className="text-sm">Frequency</Label><Input value={form.frequency} onChange={(e) => setForm((p) => ({ ...p, frequency: e.target.value }))} /></div>
-              <div><Label className="text-sm">Scheduled time</Label><Input type="time" value={form.time} onChange={(e) => setForm((p) => ({ ...p, time: e.target.value || "08:00" }))} /></div>
+              <div><Label className="text-sm">{Z("频率", "Frequency")}</Label><Input value={form.frequency} onChange={(e) => setForm((p) => ({ ...p, frequency: e.target.value }))} /></div>
+              <div><Label className="text-sm">{Z("计划时间", "Scheduled time")}</Label><Input type="time" value={form.time} onChange={(e) => setForm((p) => ({ ...p, time: e.target.value || "08:00" }))} /></div>
             </div>
-            <div><Label className="text-sm">Start date</Label><Input type="date" value={form.start_date} onChange={(e) => setForm((p) => ({ ...p, start_date: e.target.value }))} /></div>
-            <div><Label className="text-sm">Instructions</Label><Input value={form.instructions} onChange={(e) => setForm((p) => ({ ...p, instructions: e.target.value }))} /></div>
-            <div><Label className="text-sm">Notes</Label><Textarea value={form.note} onChange={(e) => setForm((p) => ({ ...p, note: e.target.value }))} rows={2} /></div>
+            <div><Label className="text-sm">{Z("开始日期", "Start date")}</Label><Input type="date" value={form.start_date} onChange={(e) => setForm((p) => ({ ...p, start_date: e.target.value }))} /></div>
+            <div><Label className="text-sm">{Z("询问说明", "Instructions")}</Label><Input value={form.instructions} onChange={(e) => setForm((p) => ({ ...p, instructions: e.target.value }))} /></div>
+            <div><Label className="text-sm">{Z("备注", "Notes")}</Label><Textarea value={form.note} onChange={(e) => setForm((p) => ({ ...p, note: e.target.value }))} rows={2} /></div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditOpen({ open: false, checkin: null })}>Cancel</Button>
+            <Button variant="outline" onClick={() => setEditOpen({ open: false, checkin: null })}>{Z("取消", "Cancel")}</Button>
             <Button onClick={handleEditSave} disabled={update.isPending || !form.name.trim()}>
-              {update.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Save
+              {update.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />} {Z("保存", "Save")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -320,13 +324,13 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
       <Dialog open={deleteConfirm.open} onOpenChange={(o) => !o && setDeleteConfirm({ open: false, checkin: null })}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><Trash2 className="h-5 w-5 text-destructive" /> Delete check-in?</DialogTitle>
-            <DialogDescription>This will permanently delete <strong>{deleteConfirm.checkin?.name}</strong>. Logged history will remain.</DialogDescription>
+            <DialogTitle className="flex items-center gap-2"><Trash2 className="h-5 w-5 text-destructive" /> {Z("删除签到?", "Delete check-in?")}</DialogTitle>
+            <DialogDescription>{isCN ? <>这将永久删除 <strong>{deleteConfirm.checkin?.name}</strong>。已记录的历史将保留。</> : <>This will permanently delete <strong>{deleteConfirm.checkin?.name}</strong>. Logged history will remain.</>}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirm({ open: false, checkin: null })}>Cancel</Button>
+            <Button variant="outline" onClick={() => setDeleteConfirm({ open: false, checkin: null })}>{Z("取消", "Cancel")}</Button>
             <Button variant="destructive" onClick={confirmDelete} disabled={remove.isPending}>
-              {remove.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Delete
+              {remove.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />} {Z("删除", "Delete")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -337,8 +341,8 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
       ) : (checkins || []).length === 0 ? (
         <div className="text-center py-12">
           <ClipboardCheck className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground mb-3">No check-in schedules yet</p>
-          <Button variant="coral" size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> First Check-In Schedule</Button>
+          <p className="text-muted-foreground mb-3">{Z("暂无签到日程", "No check-in schedules yet")}</p>
+          <Button variant="coral" size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> {Z("创建第一个签到日程", "First Check-In Schedule")}</Button>
         </div>
       ) : (
         <div className="space-y-3">
@@ -354,11 +358,11 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
                       <div className="flex items-center gap-2">
                         <ClipboardCheck className="h-4 w-4 text-primary" />
                         <span className="font-medium text-foreground">{checkin.name}</span>
-                        {!checkin.is_active && <Badge variant="outline" className="text-xs">Paused</Badge>}
+                        {!checkin.is_active && <Badge variant="outline" className="text-xs">{Z("已暂停", "Paused")}</Badge>}
                       </div>
                       {checkin.detail && <p className="text-xs text-muted-foreground mt-1">{checkin.detail}</p>}
                       <p className="text-xs text-muted-foreground mt-1">
-                        {checkin.frequency || "Once daily"} · {slots.map(formatSlot).join(", ")}
+                        {checkin.frequency || Z("每日一次", "Once daily")} · {slots.map((s: string) => formatSlot(s, isCN)).join(", ")}
                       </p>
                       {checkin.instructions && <p className="text-xs text-muted-foreground mt-1 italic">{checkin.instructions}</p>}
                       {checkin.note && <p className="text-xs text-muted-foreground mt-1">{checkin.note}</p>}
@@ -369,26 +373,26 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
                         isMissed ? STATUS_STYLE.missed :
                         "bg-muted text-muted-foreground"
                       }>
-                        {todayStatus ? STATUS_LABEL[todayStatus] + " today" :
-                         isMissed ? "Missed today" : "Pending today"}
+                        {todayStatus ? Z(`今天${STATUS_LABEL[todayStatus]}`, STATUS_LABEL[todayStatus] + " today") :
+                         isMissed ? Z("今天未完成", "Missed today") : Z("今天待办", "Pending today")}
                       </Badge>
                       {!todayStatus && (
                         <div className="flex items-center gap-1 flex-wrap justify-end">
-                          <Button size="sm" variant="outline" className="border-primary/40 text-primary hover:bg-primary/10" onClick={() => setAiOpen({ open: true, checkin })}><Bot className="h-3 w-3 mr-1" /> AI Check</Button>
-                          <Button size="sm" variant="outline" onClick={() => openLog(checkin, "skipped")} disabled={logCheckin.isPending}><SkipForward className="h-3 w-3 mr-1" /> Skip</Button>
+                          <Button size="sm" variant="outline" className="border-primary/40 text-primary hover:bg-primary/10" onClick={() => setAiOpen({ open: true, checkin })}><Bot className="h-3 w-3 mr-1" /> {Z("AI 签到", "AI Check")}</Button>
+                          <Button size="sm" variant="outline" onClick={() => openLog(checkin, "skipped")} disabled={logCheckin.isPending}><SkipForward className="h-3 w-3 mr-1" /> {Z("跳过", "Skip")}</Button>
                           {isMissed && (
-                            <Button size="sm" variant="outline" className="border-destructive/40 text-destructive hover:bg-destructive/10" onClick={() => openLog(checkin, "missed")} disabled={logCheckin.isPending}><AlertCircle className="h-3 w-3 mr-1" /> Missed</Button>
+                            <Button size="sm" variant="outline" className="border-destructive/40 text-destructive hover:bg-destructive/10" onClick={() => openLog(checkin, "missed")} disabled={logCheckin.isPending}><AlertCircle className="h-3 w-3 mr-1" /> {Z("未完成", "Missed")}</Button>
                           )}
-                          <Button size="sm" onClick={() => openLog(checkin, "checked")} disabled={logCheckin.isPending}><Check className="h-3 w-3 mr-1" /> Check</Button>
+                          <Button size="sm" onClick={() => openLog(checkin, "checked")} disabled={logCheckin.isPending}><Check className="h-3 w-3 mr-1" /> {Z("签到", "Check")}</Button>
                         </div>
                       )}
                       <div className="flex items-center gap-1">
-                        <Button size="icon" variant="ghost" className="h-7 w-7" title="History" onClick={() => setHistoryOpen({ open: true, checkin })}><History className="h-3.5 w-3.5" /></Button>
-                        <Button size="icon" variant="ghost" className="h-7 w-7" title={checkin.is_active ? "Pause" : "Resume"} onClick={() => togglePause(checkin)} disabled={update.isPending}>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" title={Z("历史", "History")} onClick={() => setHistoryOpen({ open: true, checkin })}><History className="h-3.5 w-3.5" /></Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" title={checkin.is_active ? Z("暂停", "Pause") : Z("恢复", "Resume")} onClick={() => togglePause(checkin)} disabled={update.isPending}>
                           {checkin.is_active ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
                         </Button>
-                        <Button size="icon" variant="ghost" className="h-7 w-7" title="Edit" onClick={() => openEdit(checkin)}><Edit2 className="h-3.5 w-3.5" /></Button>
-                        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10" title="Delete" onClick={() => setDeleteConfirm({ open: true, checkin })}><Trash2 className="h-3.5 w-3.5" /></Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" title={Z("编辑", "Edit")} onClick={() => openEdit(checkin)}><Edit2 className="h-3.5 w-3.5" /></Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10" title={Z("删除", "Delete")} onClick={() => setDeleteConfirm({ open: true, checkin })}><Trash2 className="h-3.5 w-3.5" /></Button>
                       </div>
                     </div>
                   </div>
@@ -398,7 +402,7 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
           })}
 
           <div className="pt-2">
-            <h3 className="text-sm font-semibold text-foreground mb-2">Recent check-in history</h3>
+            <h3 className="text-sm font-semibold text-foreground mb-2">{Z("最近签到记录", "Recent check-in history")}</h3>
             <div className="space-y-2">
               {(logs || []).slice(0, 5).map((log: any) => (
                 <Card key={log.id} className="border-transparent card-elevated">
@@ -408,11 +412,11 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
                       {log.checked_by_ai && <Badge variant="outline" className="text-xs border-primary/40 text-primary"><Bot className="h-3 w-3 mr-1" />AI</Badge>}
                       {log.note && <p className="text-xs text-muted-foreground truncate">{log.note}</p>}
                     </div>
-                    <span className="text-xs text-muted-foreground shrink-0">{new Date(log.created_at).toLocaleDateString("en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+                    <span className="text-xs text-muted-foreground shrink-0">{new Date(log.created_at).toLocaleDateString(isCN ? "zh-CN" : "en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
                   </CardContent>
                 </Card>
               ))}
-              {(logs || []).length === 0 && <p className="text-xs text-muted-foreground text-center py-4">No history yet</p>}
+              {(logs || []).length === 0 && <p className="text-xs text-muted-foreground text-center py-4">{Z("暂无历史", "No history yet")}</p>}
             </div>
           </div>
         </div>
