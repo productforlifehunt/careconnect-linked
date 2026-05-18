@@ -37,7 +37,8 @@ const zhCN = {
     caredOnes: "被照顾者", myLovedOnes: "我的亲人",
     howItWorks: "使用方法", trustSafety: "信任与安全", myProfile: "我的资料",
     notifications: "通知", becomeCaregiver: "成为护理人员", joinAsCaregiver: "加入成为护理人员",
-    jobsBoard: "工作板", providerDashboard: "服务提供者面板", community: "社区", articles: "文章", browse: "浏览", myCare: "我的护理",
+    jobsBoard: "已发布护理工作", providerDashboard: "护理者面板", community: "社区", articles: "文章", browse: "浏览", myCare: "我的护理",
+    calendar: "日历", bookings: "预约", resources: "资源与帮助",
     toggleTheme: "切换主题",
     // ChallengeD branded sections
     united: "团聚", find: "定位", awareD: "认知篇", careD: "护理篇",
