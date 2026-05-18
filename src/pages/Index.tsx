@@ -252,13 +252,10 @@ const Index = () => {
                   <img src={huchangIcon} alt="护畅" className="w-12 h-12 rounded-xl" loading="lazy" />
                 ) : site.id === "carecnc" ? (
                   <>
-                    <div className="w-10 h-10 rounded-xl hero-gradient flex items-center justify-center">
+                    <div className="w-9 h-9 rounded-xl hero-gradient flex items-center justify-center">
                       <span className="text-primary-foreground font-bold text-sm leading-none">C</span>
                     </div>
-                    <span className="flex flex-col leading-[1.05] font-bold text-primary text-[14px] tracking-tight">
-                      <span>Care</span>
-                      <span>CNC</span>
-                    </span>
+                    <span className="font-bold text-primary text-[15px] tracking-tight">Carecnc</span>
                   </>
                 ) : (
                   <>
