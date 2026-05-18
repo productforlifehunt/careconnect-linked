@@ -312,7 +312,7 @@
     --popover-foreground: 0 0% 98%;
     --primary: 173 75% 48%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 358 65% 60%;
+    --secondary: 173 75% 48%;
     --secondary-foreground: 0 0% 100%;
     --accent: 173 30% 18%;
     --accent-foreground: 173 50% 78%;
@@ -321,9 +321,8 @@
     --ring: 173 75% 48%;
     --border: 0 0% 18%;
     --input: 0 0% 18%;
-    --coral: 354 62% 62%;
+    --coral: 173 75% 48%;
     --coral-foreground: 0 0% 100%;
-    --secondary: 354 62% 62%;
   }
 }
 
