@@ -217,8 +217,8 @@ export default function CaregiverProfile() {
   if (!caregiver) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
-        <p className="text-lg text-muted-foreground">Caregiver not found</p>
-        <Button variant="outline" onClick={() => navigate("/search")}>Back to Search</Button>
+        <p className="text-lg text-muted-foreground">{isZh ? "未找到该护理者" : "Caregiver not found"}</p>
+        <Button variant="outline" onClick={() => navigate("/search")}>{isZh ? "返回搜索" : "Back to Search"}</Button>
       </div>
     );
   }
@@ -337,17 +337,17 @@ export default function CaregiverProfile() {
 
           {caregiver.bio && (
             <Card className="border-transparent card-elevated">
-              <CardHeader><CardTitle>About</CardTitle></CardHeader>
+              <CardHeader><CardTitle>{isZh ? "关于" : "About"}</CardTitle></CardHeader>
               <CardContent><p className="text-muted-foreground leading-relaxed">{caregiver.bio}</p></CardContent>
             </Card>
           )}
 
           {((caregiver.certifications && caregiver.certifications.length > 0)) && (
             <Card className="border-transparent card-elevated">
-              <CardHeader><CardTitle>Qualifications</CardTitle></CardHeader>
+              <CardHeader><CardTitle>{isZh ? "资质" : "Qualifications"}</CardTitle></CardHeader>
               <CardContent>
                 <div>
-                  <h4 className="font-medium text-sm mb-2">Certifications</h4>
+                  <h4 className="font-medium text-sm mb-2">{isZh ? "证书" : "Certifications"}</h4>
                   <div className="space-y-2">
                     {(caregiver.certifications || []).map(c => (
                       <div key={c} className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -369,23 +369,23 @@ export default function CaregiverProfile() {
           <Card className="border-transparent card-elevated">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle>Reviews ({reviews?.length || 0})</CardTitle>
+                <CardTitle>{isZh ? "评价" : "Reviews"} ({reviews?.length || 0})</CardTitle>
                 <Dialog open={reviewDialogOpen} onOpenChange={(open) => {
                     if (open && !isAuthenticated) {
-                      toast({ title: "Please sign in to write a review", variant: "destructive" });
+                      toast({ title: isZh ? "请先登录后撰写评价" : "Please sign in to write a review", variant: "destructive" });
                       navigate("/auth");
                       return;
                     }
                     setReviewDialogOpen(open);
                   }}>
                     <DialogTrigger asChild>
-                      <Button variant="coral" size="sm"><Star className="h-3.5 w-3.5 mr-1" /> Write Review</Button>
+                      <Button variant="coral" size="sm"><Star className="h-3.5 w-3.5 mr-1" /> {isZh ? "撰写评价" : "Write Review"}</Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-md">
-                      <DialogHeader><DialogTitle>Review {caregiver.full_name}</DialogTitle></DialogHeader>
+                      <DialogHeader><DialogTitle>{isZh ? "评价 " : "Review "}{caregiver.full_name}</DialogTitle></DialogHeader>
                       <div className="space-y-4 mt-4">
                         <div>
-                          <Label className="mb-2 block">Rating</Label>
+                          <Label className="mb-2 block">{isZh ? "评分" : "Rating"}</Label>
                           <div className="flex gap-1">
                             {[1, 2, 3, 4, 5].map(s => (
                               <button key={s} type="button" onClick={() => setReviewRating(s)} className="focus:outline-none">
@@ -395,21 +395,21 @@ export default function CaregiverProfile() {
                           </div>
                         </div>
                         <div>
-                          <Label>Comment</Label>
+                          <Label>{isZh ? "评论" : "Comment"}</Label>
                           <Textarea value={reviewComment} onChange={e => setReviewComment(e.target.value)} placeholder={isZh ? "分享您的体验…" : "Share your experience..."} rows={4} />
                         </div>
                         <Button variant="coral" className="w-full" disabled={createReview.isPending} onClick={async () => {
                           try {
                             await createReview.mutateAsync({ entity_id: caregiver.id, entity_type: "provider", rating: reviewRating, comment: reviewComment });
-                            toast({ title: "Review submitted!", description: "Thank you for your feedback." });
+                            toast({ title: isZh ? "评价已提交！" : "Review submitted!", description: isZh ? "感谢您的反馈。" : "Thank you for your feedback." });
                             setReviewDialogOpen(false);
                             setReviewRating(5);
                             setReviewComment("");
                           } catch (err: any) {
-                            toast({ title: "Failed to submit review", description: err.message, variant: "destructive" });
+                            toast({ title: isZh ? "提交评价失败" : "Failed to submit review", description: err.message, variant: "destructive" });
                           }
                         }}>
-                          {createReview.isPending ? "Submitting..." : "Submit Review"}
+                          {createReview.isPending ? (isZh ? "提交中…" : "Submitting...") : (isZh ? "提交评价" : "Submit Review")}
                         </Button>
                       </div>
                     </DialogContent>
@@ -454,13 +454,13 @@ export default function CaregiverProfile() {
 
               {bookingResources.length > 0 && (
                 <div className="mb-5 space-y-2">
-                  <p className="text-sm font-medium text-foreground">Service packages</p>
+                  <p className="text-sm font-medium text-foreground">{isZh ? "服务套餐" : "Service packages"}</p>
                   <div className="space-y-2">
                     {bookingResources.map((resource: BookingResourceOption) => (
                       <div key={resource.id} className="rounded-lg border border-border bg-muted/30 px-3 py-2">
                         <div className="flex items-start justify-between gap-3">
                           <span className="text-sm text-foreground">{resource.name}</span>
-                          <span className="text-sm font-semibold text-foreground">${resource.blockCost}/hr</span>
+                          <span className="text-sm font-semibold text-foreground">{isZh ? `¥${resource.blockCost}/小时` : `$${resource.blockCost}/hr`}</span>
                         </div>
                       </div>
                     ))}
@@ -470,7 +470,7 @@ export default function CaregiverProfile() {
 
               {availabilityPreview.length > 0 && (
                 <div className="mb-5 space-y-2">
-                  <p className="text-sm font-medium text-foreground">Availability</p>
+                  <p className="text-sm font-medium text-foreground">{isZh ? "可约时间" : "Availability"}</p>
                   <div className="space-y-1.5">
                     {availabilityPreview.map((slot) => (
                       <div key={slot.label} className="text-sm text-muted-foreground">{slot.label}</div>
@@ -667,7 +667,7 @@ export default function CaregiverProfile() {
                 {caregiver.care_provider_is_background_checked && (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Shield className="h-4 w-4 text-primary" />
-                    <span>Background verified</span>
+                    <span>{isZh ? "已通过背景核查" : "Background verified"}</span>
                   </div>
                 )}
                 {caregiver.years_of_experience && (

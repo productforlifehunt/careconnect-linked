@@ -22,7 +22,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 
-const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const DAYS_EN = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const DAYS_ZH = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
 
 export default function ProviderDashboard() {
   const { i18n } = useTranslation();
@@ -222,24 +223,24 @@ export default function ProviderDashboard() {
                   <div className="flex items-center gap-3">
                     {b.client?.avatar_url ? <img src={b.client.avatar_url} alt="" className="w-12 h-12 rounded-xl object-cover" /> : <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center"><User className="h-5 w-5 text-primary" /></div>}
                     <div>
-                      <h3 className="font-semibold text-foreground">{b.client?.full_name || "Client"}</h3>
-                      <p className="text-sm text-muted-foreground">{b.service_type} · {b.duration_hour}hrs</p>
-                      <p className="text-sm text-muted-foreground">{b.appointment_date ? new Date(b.appointment_date).toLocaleDateString("en", { weekday: "short", month: "short", day: "numeric" }) : ""} at {b.appointment_time || ""}</p>
+                      <h3 className="font-semibold text-foreground">{b.client?.full_name || (isZh ? "客户" : "Client")}</h3>
+                      <p className="text-sm text-muted-foreground">{b.service_type} · {b.duration_hour}{isZh ? "小时" : "hrs"}</p>
+                      <p className="text-sm text-muted-foreground">{b.appointment_date ? new Date(b.appointment_date).toLocaleDateString(isZh ? "zh-CN" : "en", { weekday: "short", month: "short", day: "numeric" }) : ""} {isZh ? "于" : "at"} {b.appointment_time || ""}</p>
                       {b.special_instruction && <p className="text-xs text-muted-foreground mt-1 italic">"{b.special_instruction}"</p>}
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     <span className="text-lg font-bold text-foreground">${b.total_cost || 0}</span>
                     <div className="flex gap-2">
-                      <Button size="sm" variant="default" onClick={() => handleBookingAction(b.id, "confirmed")} disabled={updateBookingStatus.isPending}><Check className="h-3 w-3 mr-1" /> Accept</Button>
-                      <Button size="sm" variant="outline" className="text-destructive" onClick={() => handleBookingAction(b.id, "cancelled_by_provider")} disabled={updateBookingStatus.isPending}><X className="h-3 w-3 mr-1" /> Decline</Button>
+                      <Button size="sm" variant="default" onClick={() => handleBookingAction(b.id, "confirmed")} disabled={updateBookingStatus.isPending}><Check className="h-3 w-3 mr-1" /> {isZh ? "接受" : "Accept"}</Button>
+                      <Button size="sm" variant="outline" className="text-destructive" onClick={() => handleBookingAction(b.id, "cancelled_by_provider")} disabled={updateBookingStatus.isPending}><X className="h-3 w-3 mr-1" /> {isZh ? "拒绝" : "Decline"}</Button>
                     </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
           )) : (
-            <div className="text-center py-12"><Briefcase className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" /><p className="text-muted-foreground">No pending booking requests</p></div>
+            <div className="text-center py-12"><Briefcase className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" /><p className="text-muted-foreground">{isZh ? "暂无待处理预约请求" : "No pending booking requests"}</p></div>
           )}
         </TabsContent>
 
@@ -250,29 +251,29 @@ export default function ProviderDashboard() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="text-center shrink-0">
-                      <p className="text-xs text-muted-foreground">{b.appointment_date ? new Date(b.appointment_date).toLocaleDateString("en", { month: "short" }) : ""}</p>
+                      <p className="text-xs text-muted-foreground">{b.appointment_date ? new Date(b.appointment_date).toLocaleDateString(isZh ? "zh-CN" : "en", { month: "short" }) : ""}</p>
                       <p className="text-lg font-bold text-foreground">{b.appointment_date ? new Date(b.appointment_date).getDate() : ""}</p>
                     </div>
                     <div>
-                      <h3 className="font-semibold text-foreground">{b.client?.full_name || "Client"}</h3>
-                      <p className="text-sm text-muted-foreground">{b.appointment_time} · {b.duration_hour}hrs · {b.service_type}</p>
+                      <h3 className="font-semibold text-foreground">{b.client?.full_name || (isZh ? "客户" : "Client")}</h3>
+                      <p className="text-sm text-muted-foreground">{b.appointment_time} · {b.duration_hour}{isZh ? "小时" : "hrs"} · {b.service_type}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge className={statusColors[b.status]}>{b.status}</Badge>
-                    <Button size="sm" variant="outline" onClick={() => handleBookingAction(b.id, "completed")}>Complete</Button>
+                    <Button size="sm" variant="outline" onClick={() => handleBookingAction(b.id, "completed")}>{isZh ? "完成" : "Complete"}</Button>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          )) : <p className="text-center py-12 text-muted-foreground">No confirmed bookings</p>}
+          )) : <p className="text-center py-12 text-muted-foreground">{isZh ? "暂无已确认预约" : "No confirmed bookings"}</p>}
         </TabsContent>
 
         <TabsContent value="availability" className="mt-4 space-y-6">
           <Card className="border-transparent card-elevated">
-            <CardHeader><CardTitle>Weekly Schedule</CardTitle></CardHeader>
+            <CardHeader><CardTitle>{isZh ? "每周排班" : "Weekly Schedule"}</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              {DAYS.map((day, i) => (
+              {(isZh ? DAYS_ZH : DAYS_EN).map((day, i) => (
                 <div key={i} className="flex items-center gap-4 p-3 rounded-lg bg-muted/30">
                   <div className="w-28 shrink-0">
                     <div className="flex items-center gap-2">
@@ -283,24 +284,24 @@ export default function ProviderDashboard() {
                   {schedule[i]?.enabled ? (
                     <div className="flex items-center gap-2">
                       <Input type="time" value={schedule[i]?.start || "09:00"} onChange={e => setSchedule(p => ({ ...p, [i]: { ...p[i], start: e.target.value } }))} className="w-32" />
-                      <span className="text-muted-foreground">to</span>
+                      <span className="text-muted-foreground">{isZh ? "至" : "to"}</span>
                       <Input type="time" value={schedule[i]?.end || "17:00"} onChange={e => setSchedule(p => ({ ...p, [i]: { ...p[i], end: e.target.value } }))} className="w-32" />
                     </div>
-                  ) : <span className="text-sm text-muted-foreground">Unavailable</span>}
+                  ) : <span className="text-sm text-muted-foreground">{isZh ? "不可约" : "Unavailable"}</span>}
                 </div>
               ))}
               <Button variant="coral" className="w-full mt-4" onClick={handleSaveSchedule} disabled={upsertAvailability.isPending}>
-                {upsertAvailability.isPending ? "Saving..." : "Save Weekly Schedule"}
+                {upsertAvailability.isPending ? (isZh ? "保存中…" : "Saving...") : (isZh ? "保存每周排班" : "Save Weekly Schedule")}
               </Button>
             </CardContent>
           </Card>
 
           <Card className="border-transparent card-elevated">
-            <CardHeader><CardTitle>Booking Rules</CardTitle></CardHeader>
+            <CardHeader><CardTitle>{isZh ? "预约规则" : "Booking Rules"}</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <Label>Minimum notice (hours)</Label>
+                  <Label>{isZh ? "最少提前预约（小时）" : "Minimum notice (hours)"}</Label>
                   <Input
                     type="number"
                     min="0"
@@ -310,7 +311,7 @@ export default function ProviderDashboard() {
                   />
                 </div>
                 <div>
-                  <Label>Booking window (days)</Label>
+                  <Label>{isZh ? "可预约时间范围（天）" : "Booking window (days)"}</Label>
                   <Input
                     type="number"
                     min="1"
@@ -322,7 +323,7 @@ export default function ProviderDashboard() {
               </div>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <Label>Buffer between bookings (minutes)</Label>
+                  <Label>{isZh ? "预约间隔缓冲（分钟）" : "Buffer between bookings (minutes)"}</Label>
                   <Input
                     type="number"
                     min="0"
@@ -332,7 +333,7 @@ export default function ProviderDashboard() {
                   />
                 </div>
                 <div>
-                  <Label>Default calendar availability</Label>
+                  <Label>{isZh ? "日历默认可约状态" : "Default calendar availability"}</Label>
                   <Select
                     value={availabilityRules.default_date_availability}
                     onValueChange={value => setAvailabilityRules(prev => ({ ...prev, default_date_availability: value === "non-available" ? "non-available" : "available" }))}
@@ -341,49 +342,49 @@ export default function ProviderDashboard() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="available">Available by default</SelectItem>
-                      <SelectItem value="non-available">Not available by default</SelectItem>
+                      <SelectItem value="available">{isZh ? "默认可约" : "Available by default"}</SelectItem>
+                      <SelectItem value="non-available">{isZh ? "默认不可约" : "Not available by default"}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
               <div className="flex items-center justify-between rounded-lg bg-muted/30 p-3">
                 <div>
-                  <p className="text-sm font-medium text-foreground">Allow same-day bookings</p>
-                  <p className="text-xs text-muted-foreground">Enable customers to book for the current day when a slot is available.</p>
+                  <p className="text-sm font-medium text-foreground">{isZh ? "允许当天预约" : "Allow same-day bookings"}</p>
+                  <p className="text-xs text-muted-foreground">{isZh ? "允许客户在当天有空档时直接预约。" : "Enable customers to book for the current day when a slot is available."}</p>
                 </div>
                 <Switch checked={availabilityRules.allow_same_day} onCheckedChange={c => setAvailabilityRules(prev => ({ ...prev, allow_same_day: c }))} />
               </div>
               <div className="flex items-center justify-between rounded-lg bg-muted/30 p-3">
                 <div>
-                  <p className="text-sm font-medium text-foreground">Require provider confirmation</p>
-                  <p className="text-xs text-muted-foreground">Match Woo Bookings confirmation behavior for new booking requests.</p>
+                  <p className="text-sm font-medium text-foreground">{isZh ? "需要服务者确认" : "Require provider confirmation"}</p>
+                  <p className="text-xs text-muted-foreground">{isZh ? "新预约请求需要您手动确认后才生效。" : "Match Woo Bookings confirmation behavior for new booking requests."}</p>
                 </div>
                 <Switch checked={availabilityRules.requires_confirmation} onCheckedChange={c => setAvailabilityRules(prev => ({ ...prev, requires_confirmation: c }))} />
               </div>
               <Button variant="outline" className="w-full" onClick={handleSaveAvailabilityRules} disabled={updateAvailabilitySetting.isPending}>
-                {updateAvailabilitySetting.isPending ? "Saving..." : "Save Booking Rules"}
+                {updateAvailabilitySetting.isPending ? (isZh ? "保存中…" : "Saving...") : (isZh ? "保存预约规则" : "Save Booking Rules")}
               </Button>
             </CardContent>
           </Card>
 
           <Card className="border-transparent card-elevated">
             <CardHeader className="flex-row items-center justify-between">
-              <CardTitle>Date-Specific Overrides</CardTitle>
+              <CardTitle>{isZh ? "特殊日期设置" : "Date-Specific Overrides"}</CardTitle>
               <Dialog open={addOverrideOpen} onOpenChange={setAddOverrideOpen}>
-                <DialogTrigger asChild><Button variant="outline" size="sm"><Plus className="h-4 w-4 mr-1" /> Add Override</Button></DialogTrigger>
+                <DialogTrigger asChild><Button variant="outline" size="sm"><Plus className="h-4 w-4 mr-1" /> {isZh ? "添加特殊日" : "Add Override"}</Button></DialogTrigger>
                 <DialogContent>
-                  <DialogHeader><DialogTitle>Add Date Override</DialogTitle></DialogHeader>
+                  <DialogHeader><DialogTitle>{isZh ? "添加特殊日期" : "Add Date Override"}</DialogTitle></DialogHeader>
                   <div className="space-y-4 mt-2">
-                    <div><Label>Date</Label><Input type="date" value={newOverride.date} onChange={e => setNewOverride(p => ({ ...p, date: e.target.value }))} min={new Date().toISOString().split("T")[0]} className="mt-1" /></div>
-                    <div className="flex items-center gap-2"><Switch checked={newOverride.available} onCheckedChange={c => setNewOverride(p => ({ ...p, available: c }))} /><Label>{newOverride.available ? "Available" : "Unavailable (day off)"}</Label></div>
+                    <div><Label>{isZh ? "日期" : "Date"}</Label><Input type="date" value={newOverride.date} onChange={e => setNewOverride(p => ({ ...p, date: e.target.value }))} min={new Date().toISOString().split("T")[0]} className="mt-1" /></div>
+                    <div className="flex items-center gap-2"><Switch checked={newOverride.available} onCheckedChange={c => setNewOverride(p => ({ ...p, available: c }))} /><Label>{newOverride.available ? (isZh ? "可约" : "Available") : (isZh ? "不可约（休息日）" : "Unavailable (day off)")}</Label></div>
                     {newOverride.available && (
                       <div className="flex items-center gap-2">
-                        <div className="flex-1"><Label>Start</Label><Input type="time" value={newOverride.start} onChange={e => setNewOverride(p => ({ ...p, start: e.target.value }))} className="mt-1" /></div>
-                        <div className="flex-1"><Label>End</Label><Input type="time" value={newOverride.end} onChange={e => setNewOverride(p => ({ ...p, end: e.target.value }))} className="mt-1" /></div>
+                        <div className="flex-1"><Label>{isZh ? "开始" : "Start"}</Label><Input type="time" value={newOverride.start} onChange={e => setNewOverride(p => ({ ...p, start: e.target.value }))} className="mt-1" /></div>
+                        <div className="flex-1"><Label>{isZh ? "结束" : "End"}</Label><Input type="time" value={newOverride.end} onChange={e => setNewOverride(p => ({ ...p, end: e.target.value }))} className="mt-1" /></div>
                       </div>
                     )}
-                    <Button variant="coral" className="w-full" onClick={handleAddOverride} disabled={savingOverrides || !newOverride.date}>{savingOverrides ? "Saving..." : "Save Override"}</Button>
+                    <Button variant="coral" className="w-full" onClick={handleAddOverride} disabled={savingOverrides || !newOverride.date}>{savingOverrides ? (isZh ? "保存中…" : "Saving...") : (isZh ? "保存设置" : "Save Override")}</Button>
                   </div>
                 </DialogContent>
               </Dialog>
@@ -394,35 +395,35 @@ export default function ProviderDashboard() {
                   {dateOverrides.sort((a, b) => a.date.localeCompare(b.date)).map(o => (
                     <div key={o.date} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
                       <div>
-                        <p className="text-sm font-medium text-foreground">{new Date(o.date + "T12:00:00").toLocaleDateString("en", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}</p>
-                        <p className="text-xs text-muted-foreground">{o.available ? `${o.start} – ${o.end}` : "Unavailable (day off)"}</p>
+                        <p className="text-sm font-medium text-foreground">{new Date(o.date + "T12:00:00").toLocaleDateString(isZh ? "zh-CN" : "en", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}</p>
+                        <p className="text-xs text-muted-foreground">{o.available ? `${o.start} – ${o.end}` : (isZh ? "不可约（休息日）" : "Unavailable (day off)")}</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant={o.available ? "default" : "secondary"}>{o.available ? "Available" : "Off"}</Badge>
+                        <Badge variant={o.available ? "default" : "secondary"}>{o.available ? (isZh ? "可约" : "Available") : (isZh ? "休息" : "Off")}</Badge>
                         <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteOverride(o.date)}><Trash2 className="h-3.5 w-3.5" /></Button>
                       </div>
                     </div>
                   ))}
                 </div>
-              ) : <p className="text-sm text-muted-foreground text-center py-4">No date overrides. Add overrides for holidays, special hours, or days off.</p>}
+              ) : <p className="text-sm text-muted-foreground text-center py-4">{isZh ? "暂无特殊日期。可为节假日、特殊营业时间或休息日添加设置。" : "No date overrides. Add overrides for holidays, special hours, or days off."}</p>}
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="earnings" className="mt-4">
           <div className="grid sm:grid-cols-2 gap-4 mb-6">
-            <Card className="border-transparent card-elevated"><CardContent className="p-5 text-center"><p className="text-3xl font-bold text-foreground">${totalEarnings.toFixed(2)}</p><p className="text-sm text-muted-foreground mt-1">Total Earned (85% of completed)</p></CardContent></Card>
-            <Card className="border-transparent card-elevated"><CardContent className="p-5 text-center"><p className="text-3xl font-bold text-foreground">{completedBookings.length}</p><p className="text-sm text-muted-foreground mt-1">Completed Bookings</p></CardContent></Card>
+            <Card className="border-transparent card-elevated"><CardContent className="p-5 text-center"><p className="text-3xl font-bold text-foreground">${totalEarnings.toFixed(2)}</p><p className="text-sm text-muted-foreground mt-1">{isZh ? "总收入（已完成的85%）" : "Total Earned (85% of completed)"}</p></CardContent></Card>
+            <Card className="border-transparent card-elevated"><CardContent className="p-5 text-center"><p className="text-3xl font-bold text-foreground">{completedBookings.length}</p><p className="text-sm text-muted-foreground mt-1">{isZh ? "已完成预约" : "Completed Bookings"}</p></CardContent></Card>
           </div>
           <Card className="border-transparent card-elevated">
-            <CardHeader><CardTitle>Recent Payouts</CardTitle></CardHeader>
+            <CardHeader><CardTitle>{isZh ? "最近结算" : "Recent Payouts"}</CardTitle></CardHeader>
             <CardContent>
               {(payouts || []).length > 0 ? (payouts || []).map((p: any) => (
                 <div key={p.id} className="flex items-center justify-between py-3 border-b last:border-0">
                   <div><p className="text-sm font-medium text-foreground">${p.amount}</p><p className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</p></div>
                   <Badge variant={p.status === "completed" ? "default" : "secondary"}>{p.status}</Badge>
                 </div>
-              )) : <p className="text-center py-8 text-muted-foreground">No payouts yet</p>}
+              )) : <p className="text-center py-8 text-muted-foreground">{isZh ? "暂无结算记录" : "No payouts yet"}</p>}
             </CardContent>
           </Card>
         </TabsContent>
