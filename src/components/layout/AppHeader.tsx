@@ -92,11 +92,12 @@ export function AppHeader() {
                   <img src={huchangIcon} alt="护畅" className="w-12 h-12 rounded-xl" />
                 ) : isCareCNC ? (
                   <>
-                    <div className="w-9 h-9 rounded-xl hero-gradient flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-xl hero-gradient flex items-center justify-center">
                       <span className="text-primary-foreground font-bold text-base leading-none">C</span>
                     </div>
-                    <span className="font-semibold text-[17px] tracking-tight text-primary lowercase">
-                      <span className="uppercase">C</span>are cnc
+                    <span className="flex flex-col leading-[1.05] font-bold text-primary text-[15px] tracking-tight">
+                      <span>Care</span>
+                      <span>CNC</span>
                     </span>
                   </>
                 ) : (
@@ -167,11 +168,12 @@ export function AppHeader() {
             <img src={huchangIcon} alt="护畅" className="w-12 h-12 rounded-xl" />
           ) : isCareCNC ? (
             <>
-              <div className="w-9 h-9 rounded-xl hero-gradient flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl hero-gradient flex items-center justify-center">
                 <span className="text-primary-foreground font-bold text-base leading-none">C</span>
               </div>
-              <span className="font-semibold text-[17px] tracking-tight text-primary">
-                <span>C</span><span className="lowercase">are cnc</span>
+              <span className="flex flex-col leading-[1.05] font-bold text-primary text-[15px] tracking-tight">
+                <span>Care</span>
+                <span>CNC</span>
               </span>
             </>
           ) : (

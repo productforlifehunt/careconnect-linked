@@ -57,8 +57,8 @@ const careCNCConfig: SiteConfig = {
   family: "carecnc",
   name: "CareCNC",
   tagline: "Connect. Care. Continue.",
-  logoText: "CNC",
-  logoAccent: "",
+  logoText: "Care",
+  logoAccent: "CNC",
   heroTitle: "Find Trusted Care,",
   heroHighlight: "Stay Connected",
   heroSubtitle: "Search caregivers, book appointments, coordinate with your care team, and track care in real-time — all in one place.",
@@ -190,8 +190,7 @@ const challengedV1Config: SiteConfig = {
 // Force language on the main brands so the Chinese build is fully Chinese
 // and the English builds are fully English.
 challengedConfig.forceLanguage = "zh-CN";
-careCNCConfig.forceLanguage = "en";
-duoCareConfig.forceLanguage = "en";
+// CareCNC and CareDuo are bilingual — user can switch EN/ZH via the LanguageSwitcher.
 
 /** Map hostnames to site IDs */
 const DOMAIN_MAP: Record<string, SiteId> = {
@@ -204,6 +203,12 @@ const DOMAIN_MAP: Record<string, SiteId> = {
   "localhost:5174": "challenged",
 };
 
+const SITE_STORAGE_KEY = "__lovable_site_id";
+
+function persistSite(id: SiteId) {
+  try { sessionStorage.setItem(SITE_STORAGE_KEY, id); } catch {}
+}
+
 function detectSite(): SiteId {
   if (typeof window === "undefined") return "carecnc";
 
@@ -212,13 +217,23 @@ function detectSite(): SiteId {
 
   const params = new URLSearchParams(window.location.search);
   const siteParam = params.get("__site");
-  if (siteParam === "challenged") return "challenged";
-  if (siteParam === "challenged-v1" || siteParam === "challenged-1.0" || siteParam === "yichang-v1") return "challenged-v1";
-  if (siteParam === "carecnc" || siteParam === "careconnected") return "carecnc";
-  if (siteParam === "duocare") return "duocare";
+  let resolved: SiteId | null = null;
+  if (siteParam === "challenged") resolved = "challenged";
+  else if (siteParam === "challenged-v1" || siteParam === "challenged-1.0" || siteParam === "yichang-v1") resolved = "challenged-v1";
+  else if (siteParam === "carecnc" || siteParam === "careconnected") resolved = "carecnc";
+  else if (siteParam === "duocare") resolved = "duocare";
 
-  if (DOMAIN_MAP[host]) return DOMAIN_MAP[host];
-  if (DOMAIN_MAP[hostname]) return DOMAIN_MAP[hostname];
+  if (resolved) { persistSite(resolved); return resolved; }
+
+  // Fallback: remember last site within the session so SPA navigation
+  // (which strips `?__site=` from internal Links) keeps us inside the same brand.
+  try {
+    const stored = sessionStorage.getItem(SITE_STORAGE_KEY) as SiteId | null;
+    if (stored && SITE_CONFIGS[stored]) return stored;
+  } catch {}
+
+  if (DOMAIN_MAP[host]) { persistSite(DOMAIN_MAP[host]); return DOMAIN_MAP[host]; }
+  if (DOMAIN_MAP[hostname]) { persistSite(DOMAIN_MAP[hostname]); return DOMAIN_MAP[hostname]; }
 
   return "challenged";
 }

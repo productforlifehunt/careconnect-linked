@@ -15,6 +15,7 @@ import heroImage from "@/assets/hero-image.jpg";
 import heroImageCn from "@/assets/hero-image-cn.jpg";
 import heroImageCarecnc from "@/assets/hero-image-carecnc.jpg";
 import yichangIcon from "@/assets/yichang-icon.png";
+import huchangIcon from "@/assets/huchang-icon.png";
 import type { Profile } from "@/types/care-connector";
 import { getSpecialtyKey } from "@/lib/specialty-i18n";
 
@@ -247,14 +248,28 @@ const Index = () => {
               <div className="flex items-center gap-2 mb-4">
                 {site.family === "challenged" && isChinese ? (
                   <img src={yichangIcon} alt="忆畅" className="w-12 h-12 rounded-xl" loading="lazy" />
-                ) : (
-                  <div className="w-8 h-8 rounded-lg hero-gradient flex items-center justify-center">
-                    <span className="text-primary-foreground font-bold text-xs">
-                      {site.id === "duocare" ? (isChinese ? "多护" : "CD") : site.logoText}
+                ) : site.id === "carecnc" && isChinese ? (
+                  <img src={huchangIcon} alt="护畅" className="w-12 h-12 rounded-xl" loading="lazy" />
+                ) : site.id === "carecnc" ? (
+                  <>
+                    <div className="w-10 h-10 rounded-xl hero-gradient flex items-center justify-center">
+                      <span className="text-primary-foreground font-bold text-sm leading-none">C</span>
+                    </div>
+                    <span className="flex flex-col leading-[1.05] font-bold text-primary text-[14px] tracking-tight">
+                      <span>Care</span>
+                      <span>CNC</span>
                     </span>
-                  </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-8 h-8 rounded-lg hero-gradient flex items-center justify-center">
+                      <span className="text-primary-foreground font-bold text-xs">
+                        {site.id === "duocare" ? (isChinese ? "多护" : "CD") : site.logoText}
+                      </span>
+                    </div>
+                    <span className="font-bold text-foreground">{site.id === "duocare" && isChinese ? "多护" : t(`site.${site.id}.footerBrand`)}</span>
+                  </>
                 )}
-                <span className="font-bold text-foreground">{site.id === "duocare" && isChinese ? "多护" : t(`site.${site.id}.footerBrand`)}</span>
               </div>
               <p className="text-sm text-muted-foreground">{t(`site.${site.id}.footerTagline`)}</p>
             </div>
