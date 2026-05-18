@@ -30,6 +30,14 @@ const STATUS_STYLE: Record<string, string> = {
 
 export function CheckInCard({ caredOneId }: { caredOneId: string }) {
   const { toast } = useToast();
+  const { i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
+  const Z = (cn: string, en: string) => (isCN ? cn : en);
+  const STATUS_LABEL: Record<string, string> = {
+    checked: Z("已签到", "Checked"),
+    skipped: Z("已跳过", "Skipped"),
+    missed: Z("未完成", "Missed"),
+  };
   const { data: checkins, isLoading } = useCheckins(caredOneId);
   const { data: logs } = useCheckinLogs(caredOneId);
   const { data: todayLogs } = useTodayCheckinLogs(caredOneId);
