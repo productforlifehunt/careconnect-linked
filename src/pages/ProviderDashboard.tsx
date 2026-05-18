@@ -370,21 +370,21 @@ export default function ProviderDashboard() {
 
           <Card className="border-transparent card-elevated">
             <CardHeader className="flex-row items-center justify-between">
-              <CardTitle>Date-Specific Overrides</CardTitle>
+              <CardTitle>{isZh ? "特殊日期设置" : "Date-Specific Overrides"}</CardTitle>
               <Dialog open={addOverrideOpen} onOpenChange={setAddOverrideOpen}>
-                <DialogTrigger asChild><Button variant="outline" size="sm"><Plus className="h-4 w-4 mr-1" /> Add Override</Button></DialogTrigger>
+                <DialogTrigger asChild><Button variant="outline" size="sm"><Plus className="h-4 w-4 mr-1" /> {isZh ? "添加特殊日" : "Add Override"}</Button></DialogTrigger>
                 <DialogContent>
-                  <DialogHeader><DialogTitle>Add Date Override</DialogTitle></DialogHeader>
+                  <DialogHeader><DialogTitle>{isZh ? "添加特殊日期" : "Add Date Override"}</DialogTitle></DialogHeader>
                   <div className="space-y-4 mt-2">
-                    <div><Label>Date</Label><Input type="date" value={newOverride.date} onChange={e => setNewOverride(p => ({ ...p, date: e.target.value }))} min={new Date().toISOString().split("T")[0]} className="mt-1" /></div>
-                    <div className="flex items-center gap-2"><Switch checked={newOverride.available} onCheckedChange={c => setNewOverride(p => ({ ...p, available: c }))} /><Label>{newOverride.available ? "Available" : "Unavailable (day off)"}</Label></div>
+                    <div><Label>{isZh ? "日期" : "Date"}</Label><Input type="date" value={newOverride.date} onChange={e => setNewOverride(p => ({ ...p, date: e.target.value }))} min={new Date().toISOString().split("T")[0]} className="mt-1" /></div>
+                    <div className="flex items-center gap-2"><Switch checked={newOverride.available} onCheckedChange={c => setNewOverride(p => ({ ...p, available: c }))} /><Label>{newOverride.available ? (isZh ? "可约" : "Available") : (isZh ? "不可约（休息日）" : "Unavailable (day off)")}</Label></div>
                     {newOverride.available && (
                       <div className="flex items-center gap-2">
-                        <div className="flex-1"><Label>Start</Label><Input type="time" value={newOverride.start} onChange={e => setNewOverride(p => ({ ...p, start: e.target.value }))} className="mt-1" /></div>
-                        <div className="flex-1"><Label>End</Label><Input type="time" value={newOverride.end} onChange={e => setNewOverride(p => ({ ...p, end: e.target.value }))} className="mt-1" /></div>
+                        <div className="flex-1"><Label>{isZh ? "开始" : "Start"}</Label><Input type="time" value={newOverride.start} onChange={e => setNewOverride(p => ({ ...p, start: e.target.value }))} className="mt-1" /></div>
+                        <div className="flex-1"><Label>{isZh ? "结束" : "End"}</Label><Input type="time" value={newOverride.end} onChange={e => setNewOverride(p => ({ ...p, end: e.target.value }))} className="mt-1" /></div>
                       </div>
                     )}
-                    <Button variant="coral" className="w-full" onClick={handleAddOverride} disabled={savingOverrides || !newOverride.date}>{savingOverrides ? "Saving..." : "Save Override"}</Button>
+                    <Button variant="coral" className="w-full" onClick={handleAddOverride} disabled={savingOverrides || !newOverride.date}>{savingOverrides ? (isZh ? "保存中…" : "Saving...") : (isZh ? "保存设置" : "Save Override")}</Button>
                   </div>
                 </DialogContent>
               </Dialog>
@@ -395,17 +395,17 @@ export default function ProviderDashboard() {
                   {dateOverrides.sort((a, b) => a.date.localeCompare(b.date)).map(o => (
                     <div key={o.date} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
                       <div>
-                        <p className="text-sm font-medium text-foreground">{new Date(o.date + "T12:00:00").toLocaleDateString("en", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}</p>
-                        <p className="text-xs text-muted-foreground">{o.available ? `${o.start} – ${o.end}` : "Unavailable (day off)"}</p>
+                        <p className="text-sm font-medium text-foreground">{new Date(o.date + "T12:00:00").toLocaleDateString(isZh ? "zh-CN" : "en", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}</p>
+                        <p className="text-xs text-muted-foreground">{o.available ? `${o.start} – ${o.end}` : (isZh ? "不可约（休息日）" : "Unavailable (day off)")}</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant={o.available ? "default" : "secondary"}>{o.available ? "Available" : "Off"}</Badge>
+                        <Badge variant={o.available ? "default" : "secondary"}>{o.available ? (isZh ? "可约" : "Available") : (isZh ? "休息" : "Off")}</Badge>
                         <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteOverride(o.date)}><Trash2 className="h-3.5 w-3.5" /></Button>
                       </div>
                     </div>
                   ))}
                 </div>
-              ) : <p className="text-sm text-muted-foreground text-center py-4">No date overrides. Add overrides for holidays, special hours, or days off.</p>}
+              ) : <p className="text-sm text-muted-foreground text-center py-4">{isZh ? "暂无特殊日期。可为节假日、特殊营业时间或休息日添加设置。" : "No date overrides. Add overrides for holidays, special hours, or days off."}</p>}
             </CardContent>
           </Card>
         </TabsContent>
