@@ -30,7 +30,9 @@ const POLL_INTERVAL = 15_000; // 15 seconds
 const TRAIL_MAX_POINTS = 200;
 
 export default function GPSTracking() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
+  const Z = (cn: string, en: string) => (isCN ? cn : en);
   const { toast } = useToast();
   const site = useSite();
   const { data: locationShares, isLoading, refetch } = useLocationShares(POLL_INTERVAL);
