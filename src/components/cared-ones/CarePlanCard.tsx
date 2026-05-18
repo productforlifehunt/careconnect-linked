@@ -8,9 +8,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Plus, ArrowLeft, Check, Pencil, Trash2, X, ClipboardList, Loader2 } from "lucide-react";
 import { useCarePlans, useCreateCarePlan, useUpdateCarePlan, useDeleteCarePlan, useCarePlanGoals, useCreateCarePlanGoal, useUpdateCarePlanGoal } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
+
+function useZ() {
+  const { i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
+  return { isCN, Z: (cn: string, en: string) => (isCN ? cn : en) };
+}
 
 function GoalsView({ planId }: { planId: string }) {
   const { toast } = useToast();
+  const { Z } = useZ();
   const { data: goals } = useCarePlanGoals(planId);
   const createGoal = useCreateCarePlanGoal();
   const updateGoal = useUpdateCarePlanGoal();
@@ -21,13 +29,13 @@ function GoalsView({ planId }: { planId: string }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold text-foreground">Goals</h3>
-        {total > 0 && <span className="text-xs text-muted-foreground">{completed}/{total} completed</span>}
+        <h3 className="font-semibold text-foreground">{Z("目标", "Goals")}</h3>
+        {total > 0 && <span className="text-xs text-muted-foreground">{Z(`已完成 ${completed}/${total}`, `${completed}/${total} completed`)}</span>}
       </div>
       {total > 0 && <div className="w-full bg-accent rounded-full h-2 mb-4"><div className="bg-primary h-2 rounded-full transition-all" style={{ width: `${total > 0 ? (completed / total) * 100 : 0}%` }} /></div>}
       <div className="flex gap-2 mb-4">
-        <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Add a goal..." onKeyDown={e => { if (e.key === "Enter" && title.trim()) { createGoal.mutate({ care_plan_id: planId, title: title.trim() }, { onSuccess: () => { setTitle(""); toast({ title: "Goal added" }); } }); } }} />
-        <Button size="sm" onClick={() => { if (!title.trim()) return; createGoal.mutate({ care_plan_id: planId, title: title.trim() }, { onSuccess: () => { setTitle(""); toast({ title: "Goal added" }); } }); }} disabled={createGoal.isPending}><Plus className="h-4 w-4" /></Button>
+        <Input value={title} onChange={e => setTitle(e.target.value)} placeholder={Z("添加目标…", "Add a goal...")} onKeyDown={e => { if (e.key === "Enter" && title.trim()) { createGoal.mutate({ care_plan_id: planId, title: title.trim() }, { onSuccess: () => { setTitle(""); toast({ title: Z("目标已添加", "Goal added") }); } }); } }} />
+        <Button size="sm" onClick={() => { if (!title.trim()) return; createGoal.mutate({ care_plan_id: planId, title: title.trim() }, { onSuccess: () => { setTitle(""); toast({ title: Z("目标已添加", "Goal added") }); } }); }} disabled={createGoal.isPending}><Plus className="h-4 w-4" /></Button>
       </div>
       <div className="space-y-2">
         {(goals || []).map((g: any) => (
@@ -36,7 +44,7 @@ function GoalsView({ planId }: { planId: string }) {
             <span className={`text-sm ${g.status === "completed" ? "line-through text-muted-foreground" : "text-foreground"}`}>{g.title}</span>
           </div>
         ))}
-        {total === 0 && <p className="text-center py-6 text-muted-foreground text-sm">No goals yet. Add one above.</p>}
+        {total === 0 && <p className="text-center py-6 text-muted-foreground text-sm">{Z("暂无目标。在上方添加一个。", "No goals yet. Add one above.")}</p>}
       </div>
     </div>
   );
@@ -44,6 +52,7 @@ function GoalsView({ planId }: { planId: string }) {
 
 export function CarePlanCard({ caredOneId }: { caredOneId: string }) {
   const { toast } = useToast();
+  const { Z } = useZ();
   const { data: plans, isLoading } = useCarePlans(caredOneId);
   const create = useCreateCarePlan();
   const update = useUpdateCarePlan();
@@ -59,14 +68,14 @@ export function CarePlanCard({ caredOneId }: { caredOneId: string }) {
   const saveEdit = () => {
     if (!editId || !editForm.title) return;
     update.mutate({ id: editId, title: editForm.title, description: editForm.description || undefined }, {
-      onSuccess: () => { setEditId(null); toast({ title: "Plan updated" }); }
+      onSuccess: () => { setEditId(null); toast({ title: Z("方案已更新", "Plan updated") }); }
     });
   };
 
   const handleAdd = () => {
     if (!form.title) return;
     create.mutate({ user_id: caredOneId, title: form.title, description: form.description || undefined }, {
-      onSuccess: () => { setForm({ title: "", description: "" }); setAddOpen(false); toast({ title: "Plan created" }); }
+      onSuccess: () => { setForm({ title: "", description: "" }); setAddOpen(false); toast({ title: Z("方案已创建", "Plan created") }); }
     });
   };
 
@@ -74,9 +83,9 @@ export function CarePlanCard({ caredOneId }: { caredOneId: string }) {
     return (
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-foreground">Care Plans</h2>
+          <h2 className="text-lg font-bold text-foreground">{Z("护理方案", "Care Plans")}</h2>
         </div>
-        <Button variant="ghost" size="sm" onClick={() => setSelectedPlan(null)} className="mb-2"><ArrowLeft className="h-4 w-4 mr-1" /> Back</Button>
+        <Button variant="ghost" size="sm" onClick={() => setSelectedPlan(null)} className="mb-2"><ArrowLeft className="h-4 w-4 mr-1" /> {Z("返回", "Back")}</Button>
         <GoalsView planId={selectedPlan} />
       </div>
     );
@@ -85,35 +94,33 @@ export function CarePlanCard({ caredOneId }: { caredOneId: string }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-foreground">Care Plans</h2>
-        <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> Add</Button>
+        <h2 className="text-lg font-bold text-foreground">{Z("护理方案", "Care Plans")}</h2>
+        <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> {Z("添加", "Add")}</Button>
       </div>
 
-      {/* Add Dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create Care Plan</DialogTitle>
-            <DialogDescription>Define a care plan with goals to track progress</DialogDescription>
+            <DialogTitle>{Z("创建护理方案", "Create Care Plan")}</DialogTitle>
+            <DialogDescription>{Z("制定护理方案并设定目标来追踪进展", "Define a care plan with goals to track progress")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-2">
-            <Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="Plan title (e.g. Recovery Plan)" />
-            <Textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Describe the plan goals..." rows={3} />
+            <Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder={Z("方案名称(例如:康复计划)", "Plan title (e.g. Recovery Plan)")} />
+            <Textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder={Z("描述方案目标…", "Describe the plan goals...")} rows={3} />
             <Button variant="coral" className="w-full" onClick={handleAdd} disabled={create.isPending || !form.title}>
-              {create.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />} Create Plan
+              {create.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />} {Z("创建方案", "Create Plan")}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* List */}
       {isLoading ? (
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground mx-auto my-8" />
       ) : (plans || []).length === 0 ? (
         <div className="text-center py-12">
           <ClipboardList className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground mb-3">No care plans yet</p>
-          <Button variant="coral" size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> Add First Plan</Button>
+          <p className="text-muted-foreground mb-3">{Z("暂无护理方案", "No care plans yet")}</p>
+          <Button variant="coral" size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> {Z("添加第一个方案", "Add First Plan")}</Button>
         </div>
       ) : (
         <div className="space-y-2">
@@ -122,11 +129,11 @@ export function CarePlanCard({ caredOneId }: { caredOneId: string }) {
               <CardContent className="p-4">
                 {editId === p.id ? (
                   <div className="space-y-2">
-                    <Input value={editForm.title} onChange={e => setEditForm(prev => ({ ...prev, title: e.target.value }))} placeholder="Plan title" />
+                    <Input value={editForm.title} onChange={e => setEditForm(prev => ({ ...prev, title: e.target.value }))} placeholder={Z("方案名称", "Plan title")} />
                     <Textarea value={editForm.description} onChange={e => setEditForm(prev => ({ ...prev, description: e.target.value }))} rows={2} />
                     <div className="flex gap-2 justify-end">
-                      <Button variant="ghost" size="sm" onClick={cancelEdit}><X className="h-3.5 w-3.5 mr-1" /> Cancel</Button>
-                      <Button variant="coral" size="sm" onClick={saveEdit} disabled={update.isPending}><Check className="h-3.5 w-3.5 mr-1" /> Save</Button>
+                      <Button variant="ghost" size="sm" onClick={cancelEdit}><X className="h-3.5 w-3.5 mr-1" /> {Z("取消", "Cancel")}</Button>
+                      <Button variant="coral" size="sm" onClick={saveEdit} disabled={update.isPending}><Check className="h-3.5 w-3.5 mr-1" /> {Z("保存", "Save")}</Button>
                     </div>
                   </div>
                 ) : (
@@ -134,7 +141,7 @@ export function CarePlanCard({ caredOneId }: { caredOneId: string }) {
                     <div className="min-w-0 cursor-pointer flex-1" onClick={() => setSelectedPlan(p.id)}>
                       <h4 className="font-medium text-foreground">{p.title}</h4>
                       {p.description && <p className="text-xs text-muted-foreground mt-1">{p.description}</p>}
-                      <Badge variant="secondary" className="text-xs mt-2">{p.status || "active"}</Badge>
+                      <Badge variant="secondary" className="text-xs mt-2">{Z(p.status === "completed" ? "已完成" : p.status === "paused" ? "已暂停" : "进行中", p.status || "active")}</Badge>
                     </div>
                     <div className="flex gap-1 shrink-0">
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); startEdit(p); }}><Pencil className="h-3 w-3" /></Button>
