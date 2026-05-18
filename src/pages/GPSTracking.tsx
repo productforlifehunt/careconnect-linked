@@ -313,7 +313,7 @@ export default function GPSTracking() {
   const handleSOS = async () => {
     setSosSending(true);
     try {
-      if (!userId) throw new Error("Not authenticated");
+      if (!userId) throw new Error(Z("未登录", "Not authenticated"));
       const pos = await getCurrentPosition({ timeout: 8000 });
       await writeLocationAndCheckZones(pos?.latitude ?? 0, pos?.longitude ?? 0, {
         accuracy: pos?.accuracy,
