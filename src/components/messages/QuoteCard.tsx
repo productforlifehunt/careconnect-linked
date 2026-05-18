@@ -8,22 +8,21 @@ import { useToast } from "@/hooks/use-toast";
 import { useAddToCart } from "@/hooks/use-cart";
 import { createQuoteProduct } from "@/services/quote-product";
 import { useSendMessage } from "@/hooks/use-care-data";
+import { useTranslation } from "react-i18next";
 
 interface QuoteCardProps {
   quote: QuoteData;
-  /** True if the current user is the recipient (the buyer). Only the buyer
-   *  sees the Accept & Pay / Decline buttons. */
   isRecipient: boolean;
-  /** True if current user sent the quote (seller view) — read-only state. */
   isMe: boolean;
-  /** Conversation id — needed to post the decline notification message. */
   conversationId?: string;
-  /** The other user's id (seller, when current user is the buyer). */
   otherUserId?: string;
 }
 
 export function QuoteCard({ quote, isRecipient, isMe, conversationId, otherUserId }: QuoteCardProps) {
   const { toast } = useToast();
+  const { i18n } = useTranslation();
+  const isZh = i18n.language?.startsWith("zh");
+  const Z = (cn: string, en: string) => (isZh ? cn : en);
   const navigate = useNavigate();
   const addToCart = useAddToCart();
   const sendMessage = useSendMessage();
@@ -32,9 +31,15 @@ export function QuoteCard({ quote, isRecipient, isMe, conversationId, otherUserI
 
   const status = quote.status || "pending";
 
+  const statusLabel = (s: string) =>
+    s === "accepted" ? Z("已接受", "accepted")
+      : s === "paid" ? Z("已付款", "paid")
+      : s === "declined" ? Z("已拒绝", "declined")
+      : Z("待回应", "pending");
+
   const handleAccept = async () => {
     if (!quote.vendorUserId) {
-      toast({ title: "Cannot accept", description: "Quote is missing seller info.", variant: "destructive" });
+      toast({ title: Z("无法接受", "Cannot accept"), description: Z("报价缺少卖家信息。", "Quote is missing seller info."), variant: "destructive" });
       return;
     }
     setAccepting(true);
@@ -45,14 +50,14 @@ export function QuoteCard({ quote, isRecipient, isMe, conversationId, otherUserI
       });
       await addToCart.mutateAsync({ productId });
       toast({
-        title: "Added to cart",
-        description: `Quote of $${quote.amount} ready to checkout.`,
+        title: Z("已加入购物车", "Added to cart"),
+        description: Z(`$${quote.amount} 的报价已准备结账。`, `Quote of $${quote.amount} ready to checkout.`),
       });
       navigate("/cart");
     } catch (e: any) {
       toast({
-        title: "Failed to accept quote",
-        description: e?.message || "Please try again.",
+        title: Z("接受报价失败", "Failed to accept quote"),
+        description: e?.message || Z("请重试。", "Please try again."),
         variant: "destructive",
       });
     } finally {
@@ -62,7 +67,7 @@ export function QuoteCard({ quote, isRecipient, isMe, conversationId, otherUserI
 
   const handleDecline = async () => {
     if (!conversationId || !otherUserId) {
-      toast({ title: "Cannot decline", description: "Missing conversation context.", variant: "destructive" });
+      toast({ title: Z("无法拒绝", "Cannot decline"), description: Z("缺少对话上下文。", "Missing conversation context."), variant: "destructive" });
       return;
     }
     setDeclining(true);
@@ -73,11 +78,11 @@ export function QuoteCard({ quote, isRecipient, isMe, conversationId, otherUserI
         receiverUserId: otherUserId,
         content: encodeQuote(declined),
       });
-      toast({ title: "Quote declined", description: "The sender has been notified." });
+      toast({ title: Z("已拒绝报价", "Quote declined"), description: Z("已通知发送方。", "The sender has been notified.") });
     } catch (e: any) {
       toast({
-        title: "Failed to decline",
-        description: e?.message || "Please try again.",
+        title: Z("拒绝失败", "Failed to decline"),
+        description: e?.message || Z("请重试。", "Please try again."),
         variant: "destructive",
       });
     } finally {
@@ -94,11 +99,11 @@ export function QuoteCard({ quote, isRecipient, isMe, conversationId, otherUserI
           <Tag className="h-3.5 w-3.5 text-coral" />
         </div>
         <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Price Quote
+          {Z("价格报价", "Price Quote")}
         </span>
         {status !== "pending" && (
           <Badge variant={status === "accepted" || status === "paid" ? "default" : "secondary"} className="ml-auto text-[10px]">
-            {status}
+            {statusLabel(status)}
           </Badge>
         )}
       </div>
@@ -111,11 +116,11 @@ export function QuoteCard({ quote, isRecipient, isMe, conversationId, otherUserI
         <span className="text-3xl font-bold text-foreground">${quote.amount}</span>
         {quote.mode === "hourly" && (
           <span className="text-xs text-muted-foreground">
-            ({quote.ratePerHour}/hr × {quote.hours}h)
+            ({quote.ratePerHour}/{Z("小时", "hr")} × {quote.hours}{Z("小时", "h")})
           </span>
         )}
         {quote.mode === "flat" && (
-          <span className="text-xs text-muted-foreground">flat rate</span>
+          <span className="text-xs text-muted-foreground">{Z("一口价", "flat rate")}</span>
         )}
       </div>
 
@@ -125,7 +130,7 @@ export function QuoteCard({ quote, isRecipient, isMe, conversationId, otherUserI
         ) : (
           <DollarSign className="h-3 w-3" />
         )}
-        <span>{quote.mode === "hourly" ? "Hourly billing" : "One-time payment"}</span>
+        <span>{quote.mode === "hourly" ? Z("按小时计费", "Hourly billing") : Z("一次性支付", "One-time payment")}</span>
       </div>
 
       {quote.note && (
@@ -134,7 +139,6 @@ export function QuoteCard({ quote, isRecipient, isMe, conversationId, otherUserI
         </p>
       )}
 
-      {/* Action buttons — only the recipient (buyer) can accept or decline */}
       {status === "pending" && isRecipient && (
         <div className="flex gap-2 pt-2 border-t">
           <Button
@@ -146,11 +150,11 @@ export function QuoteCard({ quote, isRecipient, isMe, conversationId, otherUserI
           >
             {accepting || addToCart.isPending ? (
               <>
-                <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> Processing…
+                <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> {Z("处理中…", "Processing…")}
               </>
             ) : (
               <>
-                <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Accept &amp; Pay ${quote.amount}
+                <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> {Z("接受并支付", "Accept & Pay")} ${quote.amount}
               </>
             )}
           </Button>
@@ -164,7 +168,7 @@ export function QuoteCard({ quote, isRecipient, isMe, conversationId, otherUserI
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : (
               <>
-                <XCircle className="h-3.5 w-3.5 mr-1" /> Decline
+                <XCircle className="h-3.5 w-3.5 mr-1" /> {Z("拒绝", "Decline")}
               </>
             )}
           </Button>
@@ -173,21 +177,21 @@ export function QuoteCard({ quote, isRecipient, isMe, conversationId, otherUserI
 
       {status === "pending" && isMe && (
         <p className="text-xs text-muted-foreground italic pt-2 border-t">
-          Awaiting acceptance…
+          {Z("等待对方回应…", "Awaiting acceptance…")}
         </p>
       )}
 
       {(status === "accepted" || status === "paid") && (
         <div className="flex items-center gap-1.5 text-xs text-success pt-2 border-t">
           <CheckCircle2 className="h-3.5 w-3.5" />
-          <span>Quote {status}</span>
+          <span>{Z(`报价${statusLabel(status)}`, `Quote ${status}`)}</span>
         </div>
       )}
 
       {status === "declined" && (
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-2 border-t">
           <XCircle className="h-3.5 w-3.5" />
-          <span>Quote declined</span>
+          <span>{Z("报价已拒绝", "Quote declined")}</span>
         </div>
       )}
     </div>
