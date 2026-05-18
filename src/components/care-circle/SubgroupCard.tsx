@@ -55,36 +55,36 @@ export function SubgroupCard({ subgroup, members, isAdmin, onDelete, currentUser
   // Show accepted members as chips
   const memberChips = accepted.map((rec) => {
     const m = members.find((mm) => toNum(mm.user_id || mm.id) === rec.user_id);
-    return { rec, name: m?.profile?.full_name || `Member ${rec.user_id}` };
+    return { rec, name: m?.profile?.full_name || (isCN ? `成员 ${rec.user_id}` : `Member ${rec.user_id}`) };
   });
 
   const togglePicker = (uid: number, checked: boolean) => {
     if (checked) {
       addMember.mutate({ subgroupId: subgroup.id, userId: uid, status: "accepted" }, {
-        onSuccess: () => toast({ title: "Added to sub-group" }),
-        onError: () => toast({ title: "Failed to add", variant: "destructive" }),
+        onSuccess: () => toast({ title: Z("已加入子分组", "Added to sub-group") }),
+        onError: () => toast({ title: Z("加入失败", "Failed to add"), variant: "destructive" }),
       });
     } else {
       removeMember.mutate({ subgroupId: subgroup.id, userId: uid }, {
-        onSuccess: () => toast({ title: "Removed from sub-group" }),
+        onSuccess: () => toast({ title: Z("已移出子分组", "Removed from sub-group") }),
       });
     }
   };
 
   const handleApprove = (uid: number) => {
     approveMember.mutate({ subgroupId: subgroup.id, userId: uid }, {
-      onSuccess: () => toast({ title: "Request approved" }),
+      onSuccess: () => toast({ title: Z("请求已批准", "Request approved") }),
     });
   };
   const handleDecline = (uid: number) => {
     declineMember.mutate({ subgroupId: subgroup.id, userId: uid }, {
-      onSuccess: () => toast({ title: "Request declined" }),
+      onSuccess: () => toast({ title: Z("请求已拒绝", "Request declined") }),
     });
   };
   const handleRequestJoin = () => {
     requestJoin.mutate({ subgroupId: subgroup.id }, {
-      onSuccess: () => toast({ title: "Join request sent" }),
-      onError: () => toast({ title: "Failed to send request", variant: "destructive" }),
+      onSuccess: () => toast({ title: Z("加入申请已发送", "Join request sent") }),
+      onError: () => toast({ title: Z("发送失败", "Failed to send request"), variant: "destructive" }),
     });
   };
 
