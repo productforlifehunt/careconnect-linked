@@ -292,11 +292,12 @@
     --sidebar-border: 0 0% 92%;
     --sidebar-ring: 173 80% 40%;
 
-    --coral: 354 70% 60%;
+    --secondary: 173 80% 40%;
+    --secondary-foreground: 0 0% 100%;
+    --coral: 173 80% 40%;
     --coral-foreground: 0 0% 100%;
-    --secondary: 354 70% 60%;
-    --hero-gradient: linear-gradient(135deg, hsl(173 80% 40%), hsl(173 80% 36%));
-    --coral-gradient: linear-gradient(135deg, hsl(354 70% 60%), hsl(348 68% 54%));
+    --hero-gradient: linear-gradient(135deg, hsl(173 80% 40%), hsl(173 80% 32%));
+    --coral-gradient: linear-gradient(135deg, hsl(173 80% 40%), hsl(173 80% 32%));
     --card-shadow: 0 6px 20px -8px hsl(0 0% 0% / 0.12);
     --card-shadow-hover: 0 12px 32px -8px hsl(0 0% 0% / 0.18);
     --radius: 0.875rem;
