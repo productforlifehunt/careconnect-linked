@@ -98,6 +98,8 @@ interface Props {
 
 export function DashboardWidgetConfig({ widgets, visibility, order, onChange, onReorder }: Props) {
   const [open, setOpen] = useState(false);
+  const { i18n } = useTranslation();
+  const isZh = i18n.language?.startsWith("zh");
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -121,15 +123,15 @@ export function DashboardWidgetConfig({ widgets, visibility, order, onChange, on
       <SheetTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2">
           <Settings2 className="h-4 w-4" />
-          <span className="hidden sm:inline">Customize</span>
+          <span className="hidden sm:inline">{isZh ? "自定义" : "Customize"}</span>
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="w-80">
         <SheetHeader>
-          <SheetTitle>Dashboard Widgets</SheetTitle>
+          <SheetTitle>{isZh ? "面板小部件" : "Dashboard Widgets"}</SheetTitle>
         </SheetHeader>
         <p className="text-xs text-muted-foreground mt-1 mb-4">
-          Drag to reorder. Toggle to show or hide.
+          {isZh ? "拖动重新排序，点击开关显示或隐藏。" : "Drag to reorder. Toggle to show or hide."}
         </p>
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={order} strategy={verticalListSortingStrategy}>
