@@ -69,7 +69,7 @@ export function MessageBubble({ message, isMe, conversationId, otherUserId }: Me
           <p className="text-sm whitespace-pre-wrap">{textContent}</p>
         )}
         <p className={`text-xs mt-1 ${isMe ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
-          {new Date(message.created_at).toLocaleTimeString("en", { hour: "numeric", minute: "2-digit" })}
+          {new Date(message.created_at).toLocaleTimeString(i18n.language, { hour: "numeric", minute: "2-digit" })}
         </p>
       </div>
     </div>
