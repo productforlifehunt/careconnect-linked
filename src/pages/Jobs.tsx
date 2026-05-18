@@ -212,13 +212,13 @@ export default function Jobs() {
                         {isAuthenticated ? (
                           myPostedJobIds.has(job.id) ? (
                             <>
-                              <Badge variant="outline" className="text-muted-foreground">Your Job</Badge>
-                              <Button size="sm" variant="outline" onClick={() => setActiveTab("my-posts")}>Manage</Button>
+                              <Badge variant="outline" className="text-muted-foreground">{Z("我发布的", "Your Job")}</Badge>
+                              <Button size="sm" variant="outline" onClick={() => setActiveTab("my-posts")}>{Z("管理", "Manage")}</Button>
                             </>
                           ) : appliedJobIds.has(job.id) ? (
                             <>
-                              <Badge variant="outline" className="text-success border-success">Applied ✓</Badge>
-                              <Button size="sm" variant="outline" onClick={() => setActiveTab("my-applications")}>View</Button>
+                              <Badge variant="outline" className="text-success border-success">{Z("已申请 ✓", "Applied ✓")}</Badge>
+                              <Button size="sm" variant="outline" onClick={() => setActiveTab("my-applications")}>{Z("查看", "View")}</Button>
                             </>
                           ) : job.status === "open" ? (
                             <>
@@ -242,22 +242,22 @@ export default function Jobs() {
                                     });
                                   }}
                                 >
-                                  <Tag className="h-3 w-3 mr-1" /> Contact & Quote
+                                  <Tag className="h-3 w-3 mr-1" /> {Z("联系与报价", "Contact & Quote")}
                                 </Button>
                               )}
                             <Dialog open={applyOpen === job.id} onOpenChange={open => { setApplyOpen(open ? job.id : null); if (!open) setCoverLetter(""); }}>
                               <DialogTrigger asChild>
-                                <Button size="sm" variant="coral"><Send className="h-3 w-3 mr-1" /> Apply</Button>
+                                <Button size="sm" variant="coral"><Send className="h-3 w-3 mr-1" /> {Z("申请", "Apply")}</Button>
                               </DialogTrigger>
                               <DialogContent>
-                                <DialogHeader><DialogTitle>Apply to: {job.title}</DialogTitle></DialogHeader>
+                                <DialogHeader><DialogTitle>{Z("申请：", "Apply to: ")}{job.title}</DialogTitle></DialogHeader>
                                 <div className="space-y-4 mt-2">
                                   <div>
-                                    <Label>Cover Letter *</Label>
-                                    <Textarea value={coverLetter} onChange={e => setCoverLetter(e.target.value)} placeholder="Introduce yourself, explain your experience and why you're a good fit..." rows={5} className="mt-1" />
+                                    <Label>{Z("求职信 *", "Cover Letter *")}</Label>
+                                    <Textarea value={coverLetter} onChange={e => setCoverLetter(e.target.value)} placeholder={Z("介绍您自己，说明您的经验以及为何适合这份工作……", "Introduce yourself, explain your experience and why you're a good fit...")} rows={5} className="mt-1" />
                                   </div>
                                   <Button variant="coral" className="w-full" onClick={() => handleApply(job.id)} disabled={applyToJob.isPending || !coverLetter.trim()}>
-                                    {applyToJob.isPending ? "Submitting..." : "Submit Application"}
+                                    {applyToJob.isPending ? Z("提交中…", "Submitting...") : Z("提交申请", "Submit Application")}
                                   </Button>
                                 </div>
                               </DialogContent>
@@ -265,7 +265,7 @@ export default function Jobs() {
                             </>
                           ) : null
                         ) : (
-                          <Badge variant="outline">Sign in to apply</Badge>
+                          <Badge variant="outline">{Z("登录后申请", "Sign in to apply")}</Badge>
                         )}
                       </div>
                     </div>
@@ -276,7 +276,7 @@ export default function Jobs() {
           ) : (
             <div className="text-center py-16">
               <Briefcase className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-muted-foreground">No jobs found</p>
+              <p className="text-muted-foreground">{Z("未找到工作", "No jobs found")}</p>
             </div>
           )}
         </TabsContent>
