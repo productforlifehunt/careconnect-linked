@@ -202,7 +202,7 @@ export default function Jobs() {
                         </div>
                       </div>
                       <span className="text-xs text-muted-foreground shrink-0">
-                        {new Date(job.created_at).toLocaleDateString("en", { month: "short", day: "numeric" })}
+                        {new Date(job.created_at).toLocaleDateString(i18n.language, { month: "short", day: "numeric" })}
                       </span>
                     </div>
                     <p className="text-sm text-muted-foreground mb-4 line-clamp-3">{job.description}</p>

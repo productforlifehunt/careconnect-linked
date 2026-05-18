@@ -4,6 +4,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Eye, Users, User, Tag } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export interface VisibilityValue {
   /** Sub-group (private member group) numeric ids selected for visibility. */
@@ -29,11 +30,14 @@ function toNum(id: string | number | undefined | null): number {
  */
 export function VisibilityPicker({ value, onChange, memberCategories = [], members = [] }: VisibilityPickerProps) {
   const [open, setOpen] = useState(false);
+  const { i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
+  const Z = (cn: string, en: string) => (isCN ? cn : en);
 
   const totalSelected = value.subgroupIds.length + value.userIds.length;
   const label = totalSelected === 0
-    ? "Everyone"
-    : `${totalSelected} selected`;
+    ? Z("所有人", "Everyone")
+    : Z(`已选 ${totalSelected} 项`, `${totalSelected} selected`);
 
   const toggleSubgroup = (id: number) => {
     const exists = value.subgroupIds.includes(id);
@@ -67,10 +71,10 @@ export function VisibilityPicker({ value, onChange, memberCategories = [], membe
       <PopoverContent className="w-72 p-0" align="start">
         <div className="p-3 border-b">
           <p className="text-xs font-medium text-foreground flex items-center gap-1.5">
-            <Eye className="h-3.5 w-3.5" /> Who can see this?
+            <Eye className="h-3.5 w-3.5" /> {Z("谁可以看到？", "Who can see this?")}
           </p>
           <p className="text-[11px] text-muted-foreground mt-0.5">
-            Leave empty to share with the whole group.
+            {Z("留空则对整个群组可见。", "Leave empty to share with the whole group.")}
           </p>
         </div>
 
@@ -78,7 +82,7 @@ export function VisibilityPicker({ value, onChange, memberCategories = [], membe
           {memberCategories.length > 0 && (
             <div className="p-3 border-b">
               <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1">
-                <Tag className="h-3 w-3" /> Sub-groups
+                <Tag className="h-3 w-3" /> {Z("子分组", "Sub-groups")}
               </p>
               <div className="space-y-1.5">
                 {memberCategories.map((cat) => {
@@ -98,14 +102,14 @@ export function VisibilityPicker({ value, onChange, memberCategories = [], membe
           {members.length > 0 && (
             <div className="p-3">
               <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1">
-                <User className="h-3 w-3" /> Specific members
+                <User className="h-3 w-3" /> {Z("指定成员", "Specific members")}
               </p>
               <div className="space-y-1.5">
                 {members.map((m) => {
                   const uid = toNum(m.user_id || m.id);
                   if (!uid) return null;
                   const checked = value.userIds.includes(uid);
-                  const name = m.profile?.full_name || `Member ${uid}`;
+                  const name = m.profile?.full_name || Z(`成员 ${uid}`, `Member ${uid}`);
                   return (
                     <label key={uid} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded px-1.5 py-1 -mx-1.5">
                       <Checkbox checked={checked} onCheckedChange={() => toggleUser(uid)} />
@@ -128,7 +132,7 @@ export function VisibilityPicker({ value, onChange, memberCategories = [], membe
             <div className="p-6 text-center">
               <Users className="h-6 w-6 text-muted-foreground/40 mx-auto mb-2" />
               <p className="text-xs text-muted-foreground">
-                No sub-groups or members yet. Create sub-groups in Members tab to limit visibility.
+                {Z("还没有子分组或成员。在「成员」标签创建子分组以限制可见性。", "No sub-groups or members yet. Create sub-groups in Members tab to limit visibility.")}
               </p>
             </div>
           )}
@@ -137,10 +141,10 @@ export function VisibilityPicker({ value, onChange, memberCategories = [], membe
         {totalSelected > 0 && (
           <div className="p-2 border-t flex justify-between items-center bg-muted/20">
             <button onClick={reset} className="text-xs text-muted-foreground hover:text-foreground">
-              Reset
+              {Z("重置", "Reset")}
             </button>
             <button onClick={() => setOpen(false)} className="text-xs font-medium text-primary hover:underline">
-              Done
+              {Z("完成", "Done")}
             </button>
           </div>
         )}

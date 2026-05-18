@@ -13,14 +13,14 @@ interface AIDailySummaryProps {
 }
 
 export function AIDailySummary({ caredOneName, medicines, tasks, checkins }: AIDailySummaryProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [summary, setSummary] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const generate = async () => {
     setLoading(true);
     try {
-      const today = new Date().toLocaleDateString("en", { weekday: "long", month: "long", day: "numeric" });
+      const today = new Date().toLocaleDateString(i18n.language, { weekday: "long", month: "long", day: "numeric" });
       const context = JSON.stringify({
         date: today,
         patient: caredOneName,
