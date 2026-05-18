@@ -218,7 +218,7 @@ export function SubgroupCard({ subgroup, members, isAdmin, onDelete, currentUser
                   <label key={uid} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded px-1.5 py-1">
                     <Checkbox checked={checked} onCheckedChange={(c) => togglePicker(uid, !!c)} />
                     <span className="text-sm text-foreground flex-1 truncate">
-                      {m.profile?.full_name || `Member ${uid}`}
+                      {m.profile?.full_name || (isCN ? `成员 ${uid}` : `Member ${uid}`)}
                     </span>
                     {isPending && <Badge variant="outline" className="text-[9px] h-4 border-warning/40 text-warning">pending</Badge>}
                   </label>
