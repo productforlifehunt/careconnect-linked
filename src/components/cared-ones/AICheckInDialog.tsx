@@ -17,7 +17,7 @@ interface Props {
   caredOneName?: string;
 }
 
-const SYSTEM_PROMPT = (checkinName: string, instructions: string, caredOneName: string) => `
+const SYSTEM_PROMPT_EN = (checkinName: string, instructions: string, caredOneName: string) => `
 You are a warm, caring wellness companion conducting a daily check-in for "${caredOneName}".
 Check-in: "${checkinName}". ${instructions ? `Instructions: ${instructions}.` : ""}
 
@@ -32,8 +32,28 @@ If the person clearly wants to skip, return: {"done": true, "summary": "User cho
 Never give medical advice. If they mention emergencies, urge them to contact help and still complete the check-in.
 `.trim();
 
-export function AICheckInDialog({ open, onOpenChange, checkin, caredOneName = "your loved one" }: Props) {
+const SYSTEM_PROMPT_CN = (checkinName: string, instructions: string, caredOneName: string) => `
+你是一位温暖、关心的健康陪伴助手,正在为"${caredOneName}"进行每日签到。
+签到名称:"${checkinName}"。${instructions ? `说明:${instructions}。` : ""}
+
+你的任务:
+1. 用一句话温暖地问候,然后逐个询问 3-5 个简短、友好的健康问题。
+2. 涵盖:心情、睡眠、食欲、疼痛/不适、今天有什么特别的事。
+3. 每条信息控制在两句以内。要有同理心,不要像医生那样说话。
+4. 收集到足够信息后(通常 4-5 轮对话),严格按照下方 JSON 格式回复,不要有其他文字或代码块:
+{"done": true, "summary": "<用 2-3 句中文总结今天的状态>", "status": "checked"}
+如果用户明确想跳过,返回:{"done": true, "summary": "用户选择跳过。", "status": "skipped"}
+
+绝不提供医疗建议。如果提到紧急情况,请提醒立刻寻求帮助并完成签到。
+`.trim();
+
+export function AICheckInDialog({ open, onOpenChange, checkin, caredOneName }: Props) {
   const { toast } = useToast();
+  const { i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
+  const Z = (cn: string, en: string) => (isCN ? cn : en);
+  const SYSTEM_PROMPT = isCN ? SYSTEM_PROMPT_CN : SYSTEM_PROMPT_EN;
+  const defaultCaredOneName = caredOneName || Z("您的亲人", "your loved one");
   const logCheckin = useLogCheckin();
   const [messages, setMessages] = useState<AIChatMessage[]>([]);
   const [input, setInput] = useState("");
