@@ -112,9 +112,9 @@ export function MobileBottomBar() {
       ];
 
   const findWorkItems: ToolItem[] = [
-    { id: "work-jobs", title: isChinese ? "工作机会" : "Jobs", url: "/jobs", icon: Briefcase },
+    { id: "work-jobs", title: isChinese ? "已发布护理工作" : "Posted Care Jobs", url: "/jobs", icon: Briefcase },
     { id: "work-become", title: isChinese ? "成为护理者" : "Become Caregiver", url: "/become-caregiver", icon: UserPlus },
-    { id: "work-provider", title: isChinese ? "服务商面板" : "Provider Dashboard", url: "/provider-dashboard", icon: LayoutDashboard },
+    { id: "work-provider", title: isChinese ? "护理者面板" : "Caregiver Dashboard", url: "/provider-dashboard", icon: LayoutDashboard },
   ];
 
   const dailyCareItems: ToolItem[] = isChallenged
@@ -133,6 +133,11 @@ export function MobileBottomBar() {
   const resourceItems: ToolItem[] = isChallenged
     ? [
         { id: "community-resources", title: isChinese ? "资源与帮助" : "Resources & Help", url: "/resources", icon: BookOpen },
+        { id: "res-cared", title: isChinese ? "护理助手" : "CareD", url: "/care-guides", icon: HeartHandshake },
+        { id: "res-safed", title: isChinese ? "安全助手" : "SafeD", url: "/safety-guides", icon: ShieldCheck },
+        { id: "res-coped", title: isChinese ? "情绪助手" : "CopeD", url: "/coping", icon: Smile },
+        { id: "res-awared", title: isChinese ? "认知助手" : "AwareD", url: "/aware", icon: Brain },
+        { id: "res-accompd", title: isChinese ? "陪伴助手" : "AccompanieD", url: "/accompanied", icon: HandHeart },
       ]
     : [];
 
