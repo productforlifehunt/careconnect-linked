@@ -15,7 +15,7 @@ function normalizeMetaList(value: unknown): string[] {
   return [];
 }
 
-// CCT slug: care_group | fields: name, description, group_type, is_active
+// CCT slug: care_group | fields: a55=name, a56=description, a57=group type, a58=join code, a59=status
 // Invite codes/links live on a separate CCT (care_group_invite, Rel 161) — not on the group itself.
 
 export async function fetchCareGroupsWordPress(): Promise<CareGroup[]> {
@@ -24,13 +24,13 @@ export async function fetchCareGroupsWordPress(): Promise<CareGroup[]> {
     if (!Array.isArray(groups)) return [];
     return groups.map((g: any) => ({
       id: String(g.id || g._ID || ""),
-      name: g.name || "",
-      description: g.description || null,
-      is_private: g.group_type === "private",
-      group_type: g.group_type || "public",
+      name: g.a55 || "",
+      description: g.a56 || null,
+      is_private: String(g.a57) === "b56",
+      group_type: String(g.a57) === "b56" ? "private" : "public",
       invite_code: null,
-      join_code: null,
-      is_active: g.is_active === "active" || g.is_active === "Active" || g.is_active === true || g.is_active === "yes",
+      join_code: g.a58 || null,
+      is_active: String(g.a59 || "b55") === "b55",
       created_by: g.cct_author_id ? `wp-${g.cct_author_id}` : (g.author_id ? `wp-${g.author_id}` : null),
       created_at: g.created_at,
     })) as unknown as CareGroup[];
@@ -84,10 +84,10 @@ export async function createCareGroupWordPress(group: { name: string; descriptio
   const result = await wordpressCCTFetch<any>("care_group", {
     method: "POST",
     body: {
-      name: group.name,
-      description: group.description || "",
-      group_type: group.is_private ? "private" : "public",
-      is_active: "active",
+      a55: group.name,
+      a56: group.description || "",
+      a57: group.is_private ? "b56" : "b55",
+      a59: "b55",
     },
   });
   // Auto-add creator as owner via JetEngine relation 72
