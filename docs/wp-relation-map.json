@@ -1,0 +1,408 @@
+[
+  {
+    "id": "41",
+    "name": "",
+    "parent": "mix::users",
+    "child": "cct::job_posting",
+    "type": "one_to_many"
+  },
+  {
+    "id": "42",
+    "name": "",
+    "parent": "mix::users",
+    "child": "cct::job_application",
+    "type": "one_to_many"
+  },
+  {
+    "id": "46",
+    "name": "46. One care group can many related 14. care group galleries",
+    "parent": "cct::care_group",
+    "child": "cct::care_group_gallery",
+    "type": "one_to_many"
+  },
+  {
+    "id": "47",
+    "name": "47. One care group can have many related private member groups",
+    "parent": "cct::care_group",
+    "child": "cct::care_group_private_member_group",
+    "type": "one_to_many"
+  },
+  {
+    "id": "48",
+    "name": "48. One care group can have many related 162. care tasks",
+    "parent": "cct::care_group",
+    "child": "cct::care_task_real",
+    "type": "one_to_many"
+  },
+  {
+    "id": "54",
+    "name": "",
+    "parent": "cct::care_plan",
+    "child": "cct::medicine",
+    "type": "one_to_many"
+  },
+  {
+    "id": "63",
+    "name": "63. One cared one can have many related cared one’s emergency contact persons",
+    "parent": "mix::users",
+    "child": "cct::emergency_contact",
+    "type": "one_to_many"
+  },
+  {
+    "id": "66",
+    "name": "66. One care facility can have many related reviews",
+    "parent": "cct::care_facility",
+    "child": "cct::review",
+    "type": "one_to_many"
+  },
+  {
+    "id": "68",
+    "name": "68. One review can have many related comments",
+    "parent": "cct::review",
+    "child": "cct::comment",
+    "type": "one_to_many"
+  },
+  {
+    "id": "69",
+    "name": "69. One comment can have many related comments",
+    "parent": "cct::comment",
+    "child": "cct::comment",
+    "type": "many_to_many"
+  },
+  {
+    "id": "71",
+    "name": "71. One care community post can have many related comments",
+    "parent": "cct::care_community_post",
+    "child": "cct::comment",
+    "type": "one_to_many"
+  },
+  {
+    "id": "72",
+    "name": "72. One care group can have many related care group members",
+    "parent": "cct::care_group",
+    "child": "mix::users",
+    "type": "many_to_many"
+  },
+  {
+    "id": "75",
+    "name": "75. One care group’s private member group can have related members",
+    "parent": "cct::care_group_private_member_group",
+    "child": "mix::users",
+    "type": "many_to_many"
+  },
+  {
+    "id": "77",
+    "name": "77. One care group can have many related not too special posts",
+    "parent": "cct::care_group",
+    "child": "cct::care_group_not_too_special_post",
+    "type": "one_to_many"
+  },
+  {
+    "id": "78",
+    "name": "78. One related not too special posts of one care group can have many related comments",
+    "parent": "cct::care_group_not_too_special_post",
+    "child": "cct::comment",
+    "type": "one_to_many"
+  },
+  {
+    "id": "79",
+    "name": "79. One user can have many related cared ones",
+    "parent": "mix::users",
+    "child": "mix::users",
+    "type": "many_to_many"
+  },
+  {
+    "id": "81",
+    "name": "81. One 162. care task can have many related users that it’s only visible to",
+    "parent": "cct::care_task_real",
+    "child": "mix::users",
+    "type": "one_to_many"
+  },
+  {
+    "id": "82",
+    "name": "82. One 162. care task can have many related comments",
+    "parent": "cct::care_task_real",
+    "child": "cct::comment",
+    "type": "one_to_many"
+  },
+  {
+    "id": "83",
+    "name": "83. One cared one can have many related cared one’s medicine schedules",
+    "parent": "mix::users",
+    "child": "cct::medicine",
+    "type": "one_to_many"
+  },
+  {
+    "id": "88",
+    "name": "88. One cared one can have many related cared one’s care tips",
+    "parent": "mix::users",
+    "child": "cct::care_tip",
+    "type": "one_to_many"
+  },
+  {
+    "id": "92",
+    "name": "92. One cared one can have many related cared one’s care notes",
+    "parent": "mix::users",
+    "child": "cct::care_note",
+    "type": "one_to_many"
+  },
+  {
+    "id": "94",
+    "name": "",
+    "parent": "mix::users",
+    "child": "cct::activity_log",
+    "type": "one_to_many"
+  },
+  {
+    "id": "95",
+    "name": "95. One cared one can have many related cared one’s care documents",
+    "parent": "mix::users",
+    "child": "cct::care_document",
+    "type": "one_to_many"
+  },
+  {
+    "id": "96",
+    "name": "",
+    "parent": "mix::users",
+    "child": "cct::health_vital",
+    "type": "one_to_many"
+  },
+  {
+    "id": "97",
+    "name": "97. One cared one can have many related cared one’s care plans",
+    "parent": "mix::users",
+    "child": "cct::care_plan",
+    "type": "one_to_many"
+  },
+  {
+    "id": "103",
+    "name": "103. One related not too special posts of one care group can have many related care group’s private member groups that it’s visible to",
+    "parent": "cct::care_group_not_too_special_post",
+    "child": "cct::care_group_private_member_group",
+    "type": "many_to_many"
+  },
+  {
+    "id": "104",
+    "name": "104. One related not too special posts of one care group can have many related users that it’s visible to",
+    "parent": "cct::care_group_not_too_special_post",
+    "child": "mix::users",
+    "type": "many_to_many"
+  },
+  {
+    "id": "109",
+    "name": "109. One 162. care task can have many related care group’s private member groups that it’s visible to",
+    "parent": "cct::care_task_real",
+    "child": "cct::care_group_private_member_group",
+    "type": "many_to_many"
+  },
+  {
+    "id": "111",
+    "name": "111. One user can have one 110. user’s extended profile",
+    "parent": "mix::users",
+    "child": "cct::users_extended_prof",
+    "type": "one_to_one"
+  },
+  {
+    "id": "118",
+    "name": "118. One user can have many related safe zones",
+    "parent": "mix::users",
+    "child": "cct::safe_zone",
+    "type": "one_to_many"
+  },
+  {
+    "id": "121",
+    "name": "121. One cared one’s medicine schedule can have many related care one’s medicine logs",
+    "parent": "cct::medicine",
+    "child": "cct::medicine_log",
+    "type": "one_to_many"
+  },
+  {
+    "id": "126",
+    "name": "126. One cared one can have many related 125. cared one’s information cards",
+    "parent": "mix::users",
+    "child": "cct::cared_ones_informat",
+    "type": "one_to_many"
+  },
+  {
+    "id": "127",
+    "name": "127. One cared one’s information card can have many related cared one’s emergency contact persons",
+    "parent": "cct::cared_ones_informat",
+    "child": "cct::emergency_contact",
+    "type": "one_to_many"
+  },
+  {
+    "id": "129",
+    "name": "129. One user can have many related user’s calendar events",
+    "parent": "mix::users",
+    "child": "cct::users_calendar_even",
+    "type": "one_to_many"
+  },
+  {
+    "id": "130",
+    "name": "130. One user’s calendar event can have many related invited users",
+    "parent": "cct::users_calendar_even",
+    "child": "mix::users",
+    "type": "one_to_many"
+  },
+  {
+    "id": "131",
+    "name": "131. One care task can have many related user’s calendar events",
+    "parent": "cct::care_task_real",
+    "child": "cct::users_calendar_even",
+    "type": "one_to_many"
+  },
+  {
+    "id": "140",
+    "name": "140. One care group can have one related group live chat conversation",
+    "parent": "cct::care_group",
+    "child": "cct::chat_conversation",
+    "type": "one_to_one"
+  },
+  {
+    "id": "141",
+    "name": "141. One 162. care task can have many related cared ones",
+    "parent": "cct::care_task_real",
+    "child": "mix::users",
+    "type": "one_to_many"
+  },
+  {
+    "id": "143",
+    "name": "143. One chat conversation can have many related chat messages",
+    "parent": "cct::chat_conversation",
+    "child": "cct::chat_message",
+    "type": "one_to_many"
+  },
+  {
+    "id": "144",
+    "name": "144. One chat message can have one parent chat message that it is specifically replying to",
+    "parent": "cct::chat_message",
+    "child": "cct::chat_message",
+    "type": "one_to_many"
+  },
+  {
+    "id": "145",
+    "name": "145. One cared one can have many related cared one’s checkin schedules",
+    "parent": "mix::users",
+    "child": "posts::post",
+    "type": "one_to_many"
+  },
+  {
+    "id": "148",
+    "name": "148. One user can have many related notifications to receive",
+    "parent": "mix::users",
+    "child": "cct::notification",
+    "type": "one_to_many"
+  },
+  {
+    "id": "149",
+    "name": "149. One user can have many related notification tokens",
+    "parent": "mix::users",
+    "child": "cct::users_notification_",
+    "type": "one_to_many"
+  },
+  {
+    "id": "150",
+    "name": "150. One cared one can have many related cared one’s checkin schedules",
+    "parent": "mix::users",
+    "child": "cct::checkin_schedule",
+    "type": "one_to_many"
+  },
+  {
+    "id": "151",
+    "name": "151. One cared one’s checkin schedule can have many related care one’s checkin logs",
+    "parent": "cct::checkin_schedule",
+    "child": "cct::checkin_log",
+    "type": "one_to_many"
+  },
+  {
+    "id": "152",
+    "name": "152. One care job can have many related cared ones",
+    "parent": "cct::care_job",
+    "child": "mix::users",
+    "type": "one_to_many"
+  },
+  {
+    "id": "153",
+    "name": "153. One care job can have many assigned caregivers",
+    "parent": "cct::care_job",
+    "child": "mix::users",
+    "type": "one_to_many"
+  },
+  {
+    "id": "154",
+    "name": "154. One care group can have many related care jobs",
+    "parent": "cct::care_group",
+    "child": "cct::care_job",
+    "type": "one_to_many"
+  },
+  {
+    "id": "155",
+    "name": "155. One care job can have many related care tasks",
+    "parent": "cct::care_job",
+    "child": "cct::universal_care_task",
+    "type": "many_to_many"
+  },
+  {
+    "id": "156",
+    "name": "156. One care job can have many related comments",
+    "parent": "cct::care_job",
+    "child": "cct::comment",
+    "type": "one_to_many"
+  },
+  {
+    "id": "158",
+    "name": "158. One Challenged App Content can have many related user’s study notes",
+    "parent": "cct::challenged_content",
+    "child": "cct::users_study_notes",
+    "type": "one_to_many"
+  },
+  {
+    "id": "159",
+    "name": "159. One Challenged App Content can have many related cared one’s care tips",
+    "parent": "cct::challenged_content",
+    "child": "cct::care_tip",
+    "type": "one_to_many"
+  },
+  {
+    "id": "161",
+    "name": "161. One care group can many related 160. care group invites",
+    "parent": "cct::care_group",
+    "child": "cct::care_group_invite",
+    "type": "one_to_many"
+  },
+  {
+    "id": "163",
+    "name": "107. One care facility can have many related facility members",
+    "parent": "cct::care_facility",
+    "child": "mix::users",
+    "type": "one_to_many"
+  },
+  {
+    "id": "164",
+    "name": "108. One 162. care task can have many related assigned caregivers",
+    "parent": "cct::care_task_real",
+    "child": "mix::users",
+    "type": "one_to_many"
+  },
+  {
+    "id": "165",
+    "name": "117. One user can have many related current location snapshots",
+    "parent": "mix::users",
+    "child": "cct::current_location",
+    "type": "one_to_many"
+  },
+  {
+    "id": "166",
+    "name": "142. One chat conversation can have many related chatters",
+    "parent": "cct::chat_conversation",
+    "child": "mix::users",
+    "type": "many_to_many"
+  },
+  {
+    "id": "167",
+    "name": "157. One user can many related finished ChallengeD learn content",
+    "parent": "mix::users",
+    "child": "cct::challenged_content",
+    "type": "one_to_many"
+  }
+]
