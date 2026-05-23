@@ -2,8 +2,8 @@ import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-c
 
 /**
  * Live JetEngine schema (verified from prd-to-wp-mapping.md):
- *   CCT chat_conversation: chat_type, chat_name, ai_chat_mode, last_message_at
- *   CCT chat_message:      chat_message_content, chat_message_type
+ *   CCT chat_conversation: a55=chat_type, a56=chat_name, a57=ai_chat_mode, a58=last_message_at
+ *   CCT chat_message:      a55=content, a56=type
  *   REL 140 (1:1)  care_group        → chat_conversation
  *   REL 142 (M:M)  chat_conversation → users           (members)
  *   REL 143 (1:M)  chat_conversation → chat_message    (messages)
@@ -72,7 +72,7 @@ export async function getOrCreateGroupConversationWordPress(groupId: string | nu
     try {
       const all = await wordpressCCTFetch<any[]>("chat_conversation", { params: { _limit: 500 } });
       const match = (Array.isArray(all) ? all : []).find(
-        (c: any) => String(c.chat_name || "") === sentinel
+        (c: any) => String(c.a56 || "") === sentinel
       );
       if (match?.id || match?._ID) {
         const id = String(match.id || match._ID);
@@ -91,10 +91,10 @@ export async function getOrCreateGroupConversationWordPress(groupId: string | nu
     const created = await wordpressCCTFetch<any>("chat_conversation", {
       method: "POST",
       body: {
-        chat_type: "Many users",
-        chat_name: sentinel,
-        ai_chat_mode: "",
-        last_message_at: new Date().toISOString().slice(0, 19).replace("T", " "),
+        a55: "b56",
+        a56: sentinel,
+        a57: "",
+        a58: new Date().toISOString().slice(0, 19).replace("T", " "),
       },
     });
     const convoId = numId(created?.item_id || created?._ID || created?.id);
@@ -155,15 +155,15 @@ export async function fetchConversationsWordPress(currentUserId?: string): Promi
       const otherId = myId ? memberIds.find((m) => m !== myId) : memberIds[0];
       return {
         id,
-        title: c.chat_name || null,
-        chat_name: c.chat_name || null,
-        chat_type: c.chat_type || "direct",
-        type: c.chat_type || "direct",
-        ai_chat_mode: c.ai_chat_mode || null,
+        title: c.a56 || null,
+        chat_name: c.a56 || null,
+        chat_type: c.a55 === "b56" ? "Many users" : c.a55 === "b57" ? "AI" : "direct",
+        type: c.a55 === "b56" ? "Many users" : c.a55 === "b57" ? "AI" : "direct",
+        ai_chat_mode: c.a57 || null,
         member_ids: memberIds.map((m) => `wp-${m}`),
         other_user_id: otherId ? `wp-${otherId}` : null,
         last_message: null,
-        last_message_at: c.last_message_at || c.updated_at || c.created_at,
+        last_message_at: c.a58 || c.updated_at || c.created_at,
         created_at: c.created_at,
       };
     }));
