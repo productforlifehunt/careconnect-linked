@@ -1,0 +1,3370 @@
+[
+  {
+    "id": "25",
+    "slug": "activity_log",
+    "name": "Activity Log",
+    "db_table_suffix": "wp_5_jet_cct_activity_log",
+    "fields": [
+      {
+        "code": "cared_one_id",
+        "label": "Cared one id",
+        "type": "number",
+        "options": []
+      },
+      {
+        "code": "user_id",
+        "label": "User id",
+        "type": "number",
+        "options": []
+      },
+      {
+        "code": "activity_type",
+        "label": "Activity type",
+        "type": "select",
+        "options": []
+      },
+      {
+        "code": "title",
+        "label": "Title",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "description",
+        "label": "Description",
+        "type": "textarea",
+        "options": []
+      },
+      {
+        "code": "duration_minutes",
+        "label": "Duration minutes",
+        "type": "number",
+        "options": []
+      },
+      {
+        "code": "activity_date",
+        "label": "Activity date",
+        "type": "datetime",
+        "options": []
+      }
+    ]
+  },
+  {
+    "id": "70",
+    "slug": "care_community_post",
+    "name": "70. Care community post",
+    "db_table_suffix": "wp_5_jet_cct_care_community_post",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "Title",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a56",
+        "label": "Content",
+        "type": "textarea",
+        "options": []
+      },
+      {
+        "code": "a57",
+        "label": "Language",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "English"
+          },
+          {
+            "key": "b56",
+            "label": "Simplified Chinese"
+          }
+        ]
+      },
+      {
+        "code": "a58",
+        "label": "app area",
+        "type": "checkbox",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Global English"
+          },
+          {
+            "key": "b56",
+            "label": "China"
+          }
+        ]
+      },
+      {
+        "code": "a59",
+        "label": "Care community post category",
+        "type": "checkbox",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Discussion"
+          },
+          {
+            "key": "b56",
+            "label": "Article"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "23",
+    "slug": "care_document",
+    "name": "23. Cared one's care document",
+    "db_table_suffix": "wp_5_jet_cct_care_document",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "Name",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a56",
+        "label": "Content",
+        "type": "textarea",
+        "options": []
+      }
+    ]
+  },
+  {
+    "id": "64",
+    "slug": "care_facility",
+    "name": "64. Care Facility",
+    "db_table_suffix": "wp_5_jet_cct_care_facility",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "name",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a56",
+        "label": "detail",
+        "type": "textarea",
+        "options": []
+      },
+      {
+        "code": "a57",
+        "label": "Care facility type",
+        "type": "checkbox",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Adult Day Care"
+          },
+          {
+            "key": "b56",
+            "label": "Assisted living"
+          },
+          {
+            "key": "b57",
+            "label": "Home Care"
+          },
+          {
+            "key": "b58",
+            "label": "Hospice"
+          },
+          {
+            "key": "b59",
+            "label": "Independent living"
+          },
+          {
+            "key": "b60",
+            "label": "Memory care"
+          },
+          {
+            "key": "b61",
+            "label": "Nursing homes"
+          },
+          {
+            "key": "b62",
+            "label": "Residential care homes"
+          },
+          {
+            "key": "b63",
+            "label": "Senior Apartments"
+          }
+        ]
+      },
+      {
+        "code": "a58",
+        "label": "Care facility can care for dementia stage",
+        "type": "checkbox",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Early-stage"
+          },
+          {
+            "key": "b56",
+            "label": "Middle-stage"
+          },
+          {
+            "key": "b57",
+            "label": "Late-stage"
+          }
+        ]
+      },
+      {
+        "code": "a59",
+        "label": "Care facility room type",
+        "type": "checkbox",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Studio"
+          },
+          {
+            "key": "b56",
+            "label": "One Bed Room"
+          },
+          {
+            "key": "b57",
+            "label": "Two Bed Room"
+          },
+          {
+            "key": "b58",
+            "label": "More Than Two Bed Room"
+          }
+        ]
+      },
+      {
+        "code": "a60",
+        "label": "Care facility provides room facility",
+        "type": "text",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Balcony"
+          },
+          {
+            "key": "b56",
+            "label": "Toilet"
+          },
+          {
+            "key": "b57",
+            "label": "Kitchen"
+          }
+        ]
+      },
+      {
+        "code": "a61",
+        "label": "Care facility provides community facility",
+        "type": "text",
+        "options": [
+          {
+            "key": "b55",
+            "label": "swimming pool"
+          },
+          {
+            "key": "b56",
+            "label": "active lifestyle"
+          },
+          {
+            "key": "b57",
+            "label": "entertainment venue"
+          },
+          {
+            "key": "b58",
+            "label": "laundry"
+          }
+        ]
+      },
+      {
+        "code": "a62",
+        "label": "Care facility people number",
+        "type": "text",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Less than 5"
+          },
+          {
+            "key": "b56",
+            "label": "5-20"
+          },
+          {
+            "key": "b57",
+            "label": "20-50"
+          },
+          {
+            "key": "b58",
+            "label": "More than 50"
+          }
+        ]
+      },
+      {
+        "code": "a63",
+        "label": "location",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a64",
+        "label": "address",
+        "type": "text",
+        "options": []
+      }
+    ]
+  },
+  {
+    "id": "9",
+    "slug": "care_group",
+    "name": "9. Care Group",
+    "db_table_suffix": "wp_5_jet_cct_care_group",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "Name",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a56",
+        "label": "Description",
+        "type": "textarea",
+        "options": []
+      },
+      {
+        "code": "a57",
+        "label": "Group type",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Public"
+          },
+          {
+            "key": "b56",
+            "label": "Private"
+          }
+        ]
+      },
+      {
+        "code": "a58",
+        "label": "Join code",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a59",
+        "label": "Status",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Active"
+          },
+          {
+            "key": "b56",
+            "label": "No"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "14",
+    "slug": "care_group_gallery",
+    "name": "14. Care Group Gallery",
+    "db_table_suffix": "wp_5_jet_cct_care_group_gallery",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "Image",
+        "type": "media",
+        "options": []
+      },
+      {
+        "code": "a56",
+        "label": "Image description",
+        "type": "textarea",
+        "options": []
+      },
+      {
+        "code": "a57",
+        "label": "Taken at",
+        "type": "datetime-local",
+        "options": []
+      }
+    ]
+  },
+  {
+    "id": "160",
+    "slug": "care_group_invite",
+    "name": "160. Care group invite",
+    "db_table_suffix": "wp_5_jet_cct_care_group_invite",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "Token",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a56",
+        "label": "Name",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a57",
+        "label": "Expires_at",
+        "type": "datetime-local",
+        "options": []
+      },
+      {
+        "code": "a58",
+        "label": "Max_uses",
+        "type": "number",
+        "options": []
+      },
+      {
+        "code": "a59",
+        "label": "Use count",
+        "type": "number",
+        "options": []
+      },
+      {
+        "code": "a60",
+        "label": "Is revoked",
+        "type": "switcher",
+        "options": []
+      }
+    ]
+  },
+  {
+    "id": "76",
+    "slug": "care_group_not_too_special_post",
+    "name": "76. The related not too special posts of one care group",
+    "db_table_suffix": "wp_5_jet_cct_care_group_not_too_special_post",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "type",
+        "type": "checkbox",
+        "options": []
+      },
+      {
+        "code": "a56",
+        "label": "title",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a57",
+        "label": "content",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a58",
+        "label": "is pinned",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Yes"
+          },
+          {
+            "key": "b56",
+            "label": "No"
+          }
+        ]
+      },
+      {
+        "code": "a59",
+        "label": "scheduled at",
+        "type": "datetime-local",
+        "options": []
+      }
+    ]
+  },
+  {
+    "id": "74",
+    "slug": "care_group_private_member_group",
+    "name": "74. The related private member groups of one care group",
+    "db_table_suffix": "wp_5_jet_cct_care_group_private_member_group",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "name",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a56",
+        "label": "description",
+        "type": "textarea",
+        "options": []
+      },
+      {
+        "code": "a57",
+        "label": "color",
+        "type": "colorpicker",
+        "options": []
+      }
+    ]
+  },
+  {
+    "id": "139",
+    "slug": "care_job",
+    "name": "139. Care Job",
+    "db_table_suffix": "wp_5_jet_cct_care_job",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "title",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a56",
+        "label": "description",
+        "type": "textarea",
+        "options": []
+      },
+      {
+        "code": "a57",
+        "label": "Due date",
+        "type": "datetime-local",
+        "options": []
+      },
+      {
+        "code": "a58",
+        "label": "Completed at",
+        "type": "datetime-local",
+        "options": []
+      },
+      {
+        "code": "a59",
+        "label": "Status",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "pending"
+          },
+          {
+            "key": "b56",
+            "label": "in progress"
+          },
+          {
+            "key": "b57",
+            "label": "completed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "22",
+    "slug": "care_note",
+    "name": "22. Cared one’s care note",
+    "db_table_suffix": "wp_5_jet_cct_care_note",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "Title",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a56",
+        "label": "Content",
+        "type": "textarea",
+        "options": []
+      }
+    ]
+  },
+  {
+    "id": "20",
+    "slug": "care_plan",
+    "name": "20. Cared one's care plan",
+    "db_table_suffix": "wp_5_jet_cct_care_plan",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "Title",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a56",
+        "label": "Content",
+        "type": "textarea",
+        "options": []
+      },
+      {
+        "code": "a57",
+        "label": "Is pinned",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Yes"
+          },
+          {
+            "key": "b56",
+            "label": "No"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "21",
+    "slug": "care_plan_goal",
+    "name": "Care Plan Goal",
+    "db_table_suffix": "wp_5_jet_cct_care_plan_goal",
+    "fields": [
+      {
+        "code": "care_plan_id",
+        "label": "Care plan id",
+        "type": "number",
+        "options": []
+      },
+      {
+        "code": "title",
+        "label": "Title",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "status",
+        "label": "Status",
+        "type": "select",
+        "options": []
+      },
+      {
+        "code": "sort_order",
+        "label": "Sort order",
+        "type": "number",
+        "options": []
+      }
+    ]
+  },
+  {
+    "id": "162",
+    "slug": "care_task_real",
+    "name": "162. Care Task",
+    "db_table_suffix": "wp_5_jet_cct_care_task_real",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "Title",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a56",
+        "label": "Description",
+        "type": "textarea",
+        "options": []
+      },
+      {
+        "code": "a57",
+        "label": "Task type",
+        "type": "checkbox",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Preparing Meals"
+          },
+          {
+            "key": "b56",
+            "label": "Giving Rides"
+          },
+          {
+            "key": "b57",
+            "label": "Shopping"
+          },
+          {
+            "key": "b58",
+            "label": "Childcare"
+          },
+          {
+            "key": "b59",
+            "label": "Visits"
+          },
+          {
+            "key": "b60",
+            "label": "Coverage"
+          },
+          {
+            "key": "b61",
+            "label": "Medications & Medical Care"
+          },
+          {
+            "key": "b62",
+            "label": "Miscellaneous"
+          },
+          {
+            "key": "b63",
+            "label": "Occasions"
+          }
+        ]
+      },
+      {
+        "code": "a58",
+        "label": "People needed",
+        "type": "number",
+        "options": []
+      },
+      {
+        "code": "a59",
+        "label": "Location",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a60",
+        "label": "Photo",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a61",
+        "label": "Date of the task",
+        "type": "date",
+        "options": []
+      },
+      {
+        "code": "a62",
+        "label": "Task start time",
+        "type": "datetime-local",
+        "options": []
+      },
+      {
+        "code": "a63",
+        "label": "Task end time",
+        "type": "datetime-local",
+        "options": []
+      },
+      {
+        "code": "a64",
+        "label": "Task completed at",
+        "type": "datetime-local",
+        "options": []
+      },
+      {
+        "code": "a65",
+        "label": "Task help status",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Task doesn't need help"
+          },
+          {
+            "key": "b56",
+            "label": "Task needs help"
+          },
+          {
+            "key": "b57",
+            "label": "Task has found help"
+          }
+        ]
+      },
+      {
+        "code": "a66",
+        "label": "Task finish status",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Not finished"
+          },
+          {
+            "key": "b56",
+            "label": "Finished"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "19",
+    "slug": "care_tip",
+    "name": "19. Cared one's care tip",
+    "db_table_suffix": "wp_5_jet_cct_care_tip",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "Title",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a56",
+        "label": "Content",
+        "type": "textarea",
+        "options": []
+      },
+      {
+        "code": "a57",
+        "label": "Category",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "tip"
+          },
+          {
+            "key": "b56",
+            "label": "avoid"
+          }
+        ]
+      },
+      {
+        "code": "a58",
+        "label": "Is pinned",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Yes"
+          },
+          {
+            "key": "b56",
+            "label": "No"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "125",
+    "slug": "cared_ones_informat",
+    "name": "125. Cared one’s information card",
+    "db_table_suffix": "wp_5_jet_cct_cared_ones_informat",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "Cared one’s name",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a56",
+        "label": "Cared one’s description",
+        "type": "textarea",
+        "options": []
+      },
+      {
+        "code": "a57",
+        "label": "Cared one’s information card name",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a58",
+        "label": "Status",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Draft"
+          },
+          {
+            "key": "b56",
+            "label": "Active"
+          },
+          {
+            "key": "b57",
+            "label": "Paused"
+          }
+        ]
+      },
+      {
+        "code": "a59",
+        "label": "Displays location",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Yes"
+          },
+          {
+            "key": "b56",
+            "label": "No"
+          }
+        ]
+      },
+      {
+        "code": "a60",
+        "label": "Share token",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a61",
+        "label": "Share expires at",
+        "type": "datetime-local",
+        "options": []
+      },
+      {
+        "code": "a62",
+        "label": "Share visibility",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Visible to public"
+          },
+          {
+            "key": "b56",
+            "label": "Visible to the care group of the cared one"
+          },
+          {
+            "key": "b57",
+            "label": "Visible to caregivers of the cared one"
+          },
+          {
+            "key": "b58",
+            "label": "Visible to author"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "101",
+    "slug": "caregiver_wellness_log",
+    "name": "Caregiver Wellness Log",
+    "db_table_suffix": "wp_5_jet_cct_caregiver_wellness_log",
+    "fields": [
+      {
+        "code": "moodmood",
+        "label": "Mood",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "stress_levelstress_level",
+        "label": "Stress Level",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "notesnotes",
+        "label": "Notes",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "logged_atlogged_at",
+        "label": "Logged At",
+        "type": "text",
+        "options": []
+      }
+    ]
+  },
+  {
+    "id": "33",
+    "slug": "cc_vote",
+    "name": "Vote",
+    "db_table_suffix": "wp_5_jet_cct_cc_vote",
+    "fields": [
+      {
+        "code": "entity_type",
+        "label": "Entity type",
+        "type": "select",
+        "options": []
+      },
+      {
+        "code": "entity_id",
+        "label": "Entity id",
+        "type": "number",
+        "options": []
+      },
+      {
+        "code": "user_id",
+        "label": "User id",
+        "type": "number",
+        "options": []
+      },
+      {
+        "code": "vote_type",
+        "label": "Vote type",
+        "type": "select",
+        "options": []
+      }
+    ]
+  },
+  {
+    "id": "100",
+    "slug": "challenged_content",
+    "name": "100. Challenged App Content",
+    "db_table_suffix": "wp_5_jet_cct_challenged_content",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "Title",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a56",
+        "label": "Content",
+        "type": "textarea",
+        "options": []
+      },
+      {
+        "code": "a57",
+        "label": "Language",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "English"
+          },
+          {
+            "key": "b56",
+            "label": "Simplified Chinese"
+          }
+        ]
+      },
+      {
+        "code": "a58",
+        "label": "app area",
+        "type": "checkbox",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Global English"
+          },
+          {
+            "key": "b56",
+            "label": "China"
+          }
+        ]
+      },
+      {
+        "code": "a59",
+        "label": "App content type",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Learn"
+          },
+          {
+            "key": "b56",
+            "label": "Care and accompany tips"
+          },
+          {
+            "key": "b57",
+            "label": "Find tips"
+          }
+        ]
+      },
+      {
+        "code": "a60",
+        "label": "Learn module number",
+        "type": "number",
+        "options": []
+      },
+      {
+        "code": "a61",
+        "label": "Learn lesson number",
+        "type": "number",
+        "options": []
+      },
+      {
+        "code": "a62",
+        "label": "Care and accompany tips category",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Eating and drinking"
+          },
+          {
+            "key": "b56",
+            "label": "Toileting and continence"
+          },
+          {
+            "key": "b57",
+            "label": "Memory loss"
+          },
+          {
+            "key": "b58",
+            "label": "Aggression"
+          },
+          {
+            "key": "b59",
+            "label": "Depression, anxiety and apathy"
+          },
+          {
+            "key": "b60",
+            "label": "Difficulty sleeping"
+          },
+          {
+            "key": "b61",
+            "label": "Delusions and hallucinations"
+          },
+          {
+            "key": "b62",
+            "label": "Repetitive behaviour"
+          },
+          {
+            "key": "b63",
+            "label": "Changes in judgement"
+          }
+        ]
+      },
+      {
+        "code": "a63",
+        "label": "Find tips category",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Wondering"
+          },
+          {
+            "key": "b56",
+            "label": "Getting lost"
+          },
+          {
+            "key": "b57",
+            "label": "Unwilling to return home"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "26",
+    "slug": "chat_conversation",
+    "name": "26. Chat Conversation",
+    "db_table_suffix": "wp_5_jet_cct_chat_conversation",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "Chat type",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "One to One"
+          },
+          {
+            "key": "b56",
+            "label": "Many users"
+          },
+          {
+            "key": "b57",
+            "label": "AI"
+          }
+        ]
+      },
+      {
+        "code": "a56",
+        "label": "Chat name",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a57",
+        "label": "AI chat mode",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a58",
+        "label": "Last message at",
+        "type": "datetime-local",
+        "options": []
+      }
+    ]
+  },
+  {
+    "id": "27",
+    "slug": "chat_message",
+    "name": "27. Chat Message",
+    "db_table_suffix": "wp_5_jet_cct_chat_message",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "Chat message content",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a56",
+        "label": "Chat message type",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Text"
+          },
+          {
+            "key": "b56",
+            "label": "Image"
+          },
+          {
+            "key": "b57",
+            "label": "AI"
+          },
+          {
+            "key": "b58",
+            "label": "System message"
+          },
+          {
+            "key": "b59",
+            "label": "Price card"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "17",
+    "slug": "checkin_log",
+    "name": "17. Checkin log",
+    "db_table_suffix": "wp_5_jet_cct_checkin_log",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "Status",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Checked"
+          },
+          {
+            "key": "b56",
+            "label": "Skipped"
+          },
+          {
+            "key": "b57",
+            "label": "Missed"
+          }
+        ]
+      },
+      {
+        "code": "a56",
+        "label": "Note",
+        "type": "textarea",
+        "options": []
+      },
+      {
+        "code": "a57",
+        "label": "Checked by AI",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Yes"
+          },
+          {
+            "key": "b56",
+            "label": "No"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "138",
+    "slug": "checkin_schedule",
+    "name": "138. Checkin schedule",
+    "db_table_suffix": "wp_5_jet_cct_checkin_schedule",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "Name",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a56",
+        "label": "Detail",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a57",
+        "label": "Frequency",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a58",
+        "label": "Time slot",
+        "type": "textarea",
+        "options": []
+      },
+      {
+        "code": "a59",
+        "label": "Instructions",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a60",
+        "label": "Start date",
+        "type": "date",
+        "options": []
+      },
+      {
+        "code": "a61",
+        "label": "Is active",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Yes"
+          },
+          {
+            "key": "b56",
+            "label": "No"
+          }
+        ]
+      },
+      {
+        "code": "a62",
+        "label": "Note",
+        "type": "textarea",
+        "options": []
+      }
+    ]
+  },
+  {
+    "id": "67",
+    "slug": "comment",
+    "name": "67. Comment",
+    "db_table_suffix": "wp_5_jet_cct_comment",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "title",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a56",
+        "label": "content",
+        "type": "textarea",
+        "options": []
+      }
+    ]
+  },
+  {
+    "id": "112",
+    "slug": "current_location",
+    "name": "112. The current location of one user",
+    "db_table_suffix": "wp_5_jet_cct_current_location",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "Latitude",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a56",
+        "label": "Longitude",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a57",
+        "label": "Accuracy meters",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a58",
+        "label": "Altitude meters",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a59",
+        "label": "Heading degrees",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a60",
+        "label": "Speed",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a61",
+        "label": "Is moving",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a62",
+        "label": "Moving type",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a63",
+        "label": "Platform",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a64",
+        "label": "Battery level",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a65",
+        "label": "Phone is charing",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a66",
+        "label": "Address text",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a67",
+        "label": "Captured at",
+        "type": "datetime-local",
+        "options": []
+      },
+      {
+        "code": "a68",
+        "label": "Is so much of an emergency that we don’t bother to ask for the cared one’s permission",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Yes"
+          },
+          {
+            "key": "b56",
+            "label": "No"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "24",
+    "slug": "emergency_contact",
+    "name": "24. Cared one’s emergency contact person",
+    "db_table_suffix": "wp_5_jet_cct_emergency_contact",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "Name",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a56",
+        "label": "Content",
+        "type": "textarea",
+        "options": []
+      },
+      {
+        "code": "a57",
+        "label": "Phone",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a58",
+        "label": "Address",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a59",
+        "label": "Relationship",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a60",
+        "label": "Note",
+        "type": "text",
+        "options": []
+      }
+    ]
+  },
+  {
+    "id": "18",
+    "slug": "health_vital",
+    "name": "Health Vital",
+    "db_table_suffix": "wp_5_jet_cct_health_vital",
+    "fields": [
+      {
+        "code": "cared_one_id",
+        "label": "Cared one id",
+        "type": "number",
+        "options": []
+      },
+      {
+        "code": "vital_type",
+        "label": "Vital type",
+        "type": "select",
+        "options": []
+      },
+      {
+        "code": "vital_value",
+        "label": "Vital value",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "vital_unit",
+        "label": "Vital unit",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "recorded_by_user_id",
+        "label": "Recorded by user id",
+        "type": "number",
+        "options": []
+      },
+      {
+        "code": "recorded_date",
+        "label": "Recorded date",
+        "type": "datetime",
+        "options": []
+      },
+      {
+        "code": "note",
+        "label": "Note",
+        "type": "textarea",
+        "options": []
+      }
+    ]
+  },
+  {
+    "id": "30",
+    "slug": "job_application",
+    "name": "Job Application",
+    "db_table_suffix": "wp_5_jet_cct_job_application",
+    "fields": [
+      {
+        "code": "job_posting_id",
+        "label": "Job posting id",
+        "type": "number",
+        "options": []
+      },
+      {
+        "code": "applicant_user_id",
+        "label": "Applicant user id",
+        "type": "number",
+        "options": []
+      },
+      {
+        "code": "cover_message",
+        "label": "Cover message",
+        "type": "textarea",
+        "options": []
+      },
+      {
+        "code": "status",
+        "label": "Status",
+        "type": "select",
+        "options": []
+      },
+      {
+        "code": "reviewed_by_user_id",
+        "label": "Reviewed by user id",
+        "type": "number",
+        "options": []
+      }
+    ]
+  },
+  {
+    "id": "29",
+    "slug": "job_posting",
+    "name": "Job Posting",
+    "db_table_suffix": "wp_5_jet_cct_job_posting",
+    "fields": [
+      {
+        "code": "care_group_id",
+        "label": "Care group id",
+        "type": "number",
+        "options": []
+      },
+      {
+        "code": "posted_by_user_id",
+        "label": "Posted by user id",
+        "type": "number",
+        "options": []
+      },
+      {
+        "code": "title",
+        "label": "Title",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "description",
+        "label": "Description",
+        "type": "textarea",
+        "options": []
+      },
+      {
+        "code": "care_type",
+        "label": "Care type",
+        "type": "select",
+        "options": []
+      },
+      {
+        "code": "location",
+        "label": "Location",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "budget",
+        "label": "Budget",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "schedule",
+        "label": "Schedule",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "special_needs",
+        "label": "Special needs",
+        "type": "textarea",
+        "options": []
+      },
+      {
+        "code": "children_ages",
+        "label": "Children ages",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "start_date",
+        "label": "Start date",
+        "type": "date",
+        "options": []
+      },
+      {
+        "code": "status",
+        "label": "Status",
+        "type": "select",
+        "options": []
+      },
+      {
+        "code": "app_area",
+        "label": "app_area",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "language",
+        "label": "language",
+        "type": "text",
+        "options": []
+      }
+    ]
+  },
+  {
+    "id": "133",
+    "slug": "location_request",
+    "name": "Location Request",
+    "db_table_suffix": "wp_5_jet_cct_location_request",
+    "fields": [
+      {
+        "code": "requester_id",
+        "label": "Requester id",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "target_user_id",
+        "label": "Target user id",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "status",
+        "label": "Status",
+        "type": "select",
+        "options": []
+      },
+      {
+        "code": "message",
+        "label": "Message",
+        "type": "textarea",
+        "options": []
+      },
+      {
+        "code": "type",
+        "label": "Type",
+        "type": "text",
+        "options": []
+      }
+    ]
+  },
+  {
+    "id": "15",
+    "slug": "medicine",
+    "name": "15. Medicine schedule",
+    "db_table_suffix": "wp_5_jet_cct_medicine",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "Name",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a56",
+        "label": "Dosage",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a57",
+        "label": "Frequency",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a58",
+        "label": "Time slot",
+        "type": "textarea",
+        "options": []
+      },
+      {
+        "code": "a59",
+        "label": "Instructions",
+        "type": "textarea",
+        "options": []
+      },
+      {
+        "code": "a60",
+        "label": "Prescribing doctor",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a61",
+        "label": "Pharmacy",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a62",
+        "label": "Side effects",
+        "type": "textarea",
+        "options": []
+      },
+      {
+        "code": "a63",
+        "label": "Start date",
+        "type": "date",
+        "options": []
+      },
+      {
+        "code": "a64",
+        "label": "End date",
+        "type": "date",
+        "options": []
+      },
+      {
+        "code": "a65",
+        "label": "Is active",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Yes"
+          },
+          {
+            "key": "b56",
+            "label": "No"
+          }
+        ]
+      },
+      {
+        "code": "a66",
+        "label": "Note",
+        "type": "textarea",
+        "options": []
+      },
+      {
+        "code": "a67",
+        "label": "Stock count",
+        "type": "number",
+        "options": []
+      },
+      {
+        "code": "a68",
+        "label": "Refill threshold",
+        "type": "number",
+        "options": []
+      }
+    ]
+  },
+  {
+    "id": "16",
+    "slug": "medicine_log",
+    "name": "16. Medicine log",
+    "db_table_suffix": "wp_5_jet_cct_medicine_log",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "Status",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Taken"
+          },
+          {
+            "key": "b56",
+            "label": "Skipped"
+          },
+          {
+            "key": "b57",
+            "label": "Missed"
+          }
+        ]
+      },
+      {
+        "code": "a56",
+        "label": "Note",
+        "type": "textarea",
+        "options": []
+      }
+    ]
+  },
+  {
+    "id": "146",
+    "slug": "notification",
+    "name": "146. Notification",
+    "db_table_suffix": "wp_5_jet_cct_notification",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "Notification type",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "User chat"
+          },
+          {
+            "key": "b56",
+            "label": "Booking"
+          },
+          {
+            "key": "b57",
+            "label": "System"
+          },
+          {
+            "key": "b58",
+            "label": "Location alert"
+          }
+        ]
+      },
+      {
+        "code": "a56",
+        "label": "Notification title",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a57",
+        "label": "Notification content",
+        "type": "textarea",
+        "options": []
+      },
+      {
+        "code": "a58",
+        "label": "Action url",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a59",
+        "label": "Notification is read",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Yes"
+          },
+          {
+            "key": "b56",
+            "label": "No"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "107",
+    "slug": "one_care_facility_facility_members",
+    "name": "107. One care facility can have many related facility members",
+    "db_table_suffix": "wp_5_jet_cct_one_care_facility_facility_members",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "Facility member type",
+        "type": "checkbox",
+        "options": []
+      },
+      {
+        "code": "a56",
+        "label": "Facility member role",
+        "type": "text",
+        "options": []
+      }
+    ]
+  },
+  {
+    "id": "108",
+    "slug": "one_care_task_assigned_caregivers",
+    "name": "108. One 162. care task can have many related assigned caregivers",
+    "db_table_suffix": "wp_5_jet_cct_one_care_task_assigned_caregivers",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "Assigned caregiver status",
+        "type": "radio",
+        "options": []
+      }
+    ]
+  },
+  {
+    "id": "142",
+    "slug": "one_chat_conversation_chatters",
+    "name": "142. One chat conversation can have many related chatters",
+    "db_table_suffix": "wp_5_jet_cct_one_chat_conversation_chatters",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "The user joined this chat conversation at this time",
+        "type": "datetime-local",
+        "options": []
+      },
+      {
+        "code": "a56",
+        "label": "The user last read this chat conversation at this time",
+        "type": "datetime-local",
+        "options": []
+      },
+      {
+        "code": "a57",
+        "label": "The user has fucking muted this chat",
+        "type": "radio",
+        "options": []
+      }
+    ]
+  },
+  {
+    "id": "117",
+    "slug": "one_user_current_location_snapshots",
+    "name": "117. One user can have many related current location snapshots",
+    "db_table_suffix": "wp_5_jet_cct_one_user_current_location_snapshots",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "User type",
+        "type": "radio",
+        "options": []
+      }
+    ]
+  },
+  {
+    "id": "157",
+    "slug": "one_user_finished_learn_content",
+    "name": "157. One user can many related finished ChallengeD learn content",
+    "db_table_suffix": "wp_5_jet_cct_one_user_finished_learn_content",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "User has finished learning this lesson",
+        "type": "radio",
+        "options": []
+      }
+    ]
+  },
+  {
+    "id": "136",
+    "slug": "ownership_claim",
+    "name": "Ownership Claim",
+    "db_table_suffix": "wp_5_jet_cct_ownership_claim",
+    "fields": [
+      {
+        "code": "entity_id",
+        "label": "Entity id",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "user_id",
+        "label": "User id",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "claim",
+        "label": "Claim",
+        "type": "textarea",
+        "options": []
+      },
+      {
+        "code": "status",
+        "label": "Status",
+        "type": "select",
+        "options": []
+      }
+    ]
+  },
+  {
+    "id": "137",
+    "slug": "ownership_dispute",
+    "name": "Ownership Dispute",
+    "db_table_suffix": "wp_5_jet_cct_ownership_dispute",
+    "fields": [
+      {
+        "code": "entity_id",
+        "label": "Entity id",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "user_id",
+        "label": "User id",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "claim",
+        "label": "Claim",
+        "type": "textarea",
+        "options": []
+      },
+      {
+        "code": "status",
+        "label": "Status",
+        "type": "select",
+        "options": []
+      },
+      {
+        "code": "reject_reason",
+        "label": "Reject reason",
+        "type": "textarea",
+        "options": []
+      }
+    ]
+  },
+  {
+    "id": "65",
+    "slug": "review",
+    "name": "65. Review",
+    "db_table_suffix": "wp_5_jet_cct_review",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "title",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a56",
+        "label": "content",
+        "type": "textarea",
+        "options": []
+      },
+      {
+        "code": "a57",
+        "label": "rating",
+        "type": "number",
+        "options": []
+      }
+    ]
+  },
+  {
+    "id": "116",
+    "slug": "safe_zone",
+    "name": "116. Safe Zone",
+    "db_table_suffix": "wp_5_jet_cct_safe_zone",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "Zone type",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Safe"
+          },
+          {
+            "key": "b56",
+            "label": "Danger"
+          }
+        ]
+      },
+      {
+        "code": "a56",
+        "label": "Shape type",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Radius"
+          },
+          {
+            "key": "b56",
+            "label": "Polygon"
+          }
+        ]
+      },
+      {
+        "code": "a57",
+        "label": "Custom name",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a58",
+        "label": "Custom description",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a59",
+        "label": "Custom color",
+        "type": "colorpicker",
+        "options": []
+      },
+      {
+        "code": "a60",
+        "label": "Latitude",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a61",
+        "label": "Longitude",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a62",
+        "label": "Radius meters",
+        "type": "number",
+        "options": []
+      },
+      {
+        "code": "a63",
+        "label": "Polygon points",
+        "type": "textarea",
+        "options": []
+      },
+      {
+        "code": "a64",
+        "label": "Notify on enter",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Off"
+          },
+          {
+            "key": "b56",
+            "label": "On"
+          }
+        ]
+      },
+      {
+        "code": "a65",
+        "label": "Notify on exit",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Off"
+          },
+          {
+            "key": "b56",
+            "label": "On"
+          }
+        ]
+      },
+      {
+        "code": "a66",
+        "label": "Schedule enabled",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Off"
+          },
+          {
+            "key": "b56",
+            "label": "On"
+          }
+        ]
+      },
+      {
+        "code": "a67",
+        "label": "Schedule start time",
+        "type": "datetime-local",
+        "options": []
+      },
+      {
+        "code": "a68",
+        "label": "Schedule end time",
+        "type": "datetime-local",
+        "options": []
+      },
+      {
+        "code": "a69",
+        "label": "Is active",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Yes"
+          },
+          {
+            "key": "b56",
+            "label": "No"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "134",
+    "slug": "safe_zone_alert",
+    "name": "Safe Zone Alert",
+    "db_table_suffix": "wp_5_jet_cct_safe_zone_alert",
+    "fields": [
+      {
+        "code": "user_id",
+        "label": "User id",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "safe_zone_id",
+        "label": "Safe zone id",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "alert_type",
+        "label": "Alert type",
+        "type": "select",
+        "options": []
+      },
+      {
+        "code": "latitude",
+        "label": "Latitude",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "longitude",
+        "label": "Longitude",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "message",
+        "label": "Message",
+        "type": "textarea",
+        "options": []
+      },
+      {
+        "code": "is_read",
+        "label": "Is read",
+        "type": "checkbox",
+        "options": []
+      },
+      {
+        "code": "acknowledged_at",
+        "label": "Acknowledged at",
+        "type": "datetime",
+        "options": []
+      }
+    ]
+  },
+  {
+    "id": "128",
+    "slug": "users_calendar_even",
+    "name": "128. User’s calendar event",
+    "db_table_suffix": "wp_5_jet_cct_users_calendar_even",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "Title",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a56",
+        "label": "Description",
+        "type": "textarea",
+        "options": []
+      },
+      {
+        "code": "a57",
+        "label": "Start at",
+        "type": "datetime-local",
+        "options": []
+      },
+      {
+        "code": "a58",
+        "label": "End at",
+        "type": "datetime-local",
+        "options": []
+      },
+      {
+        "code": "a59",
+        "label": "All day",
+        "type": "checkbox",
+        "options": []
+      },
+      {
+        "code": "a60",
+        "label": "Event type",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a61",
+        "label": "Location",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a62",
+        "label": "Timezone",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a63",
+        "label": "Status",
+        "type": "select",
+        "options": [
+          {
+            "key": "b55",
+            "label": "confirmed"
+          },
+          {
+            "key": "b56",
+            "label": "tentative"
+          },
+          {
+            "key": "b57",
+            "label": "cancelled"
+          }
+        ]
+      },
+      {
+        "code": "a64",
+        "label": "Priority",
+        "type": "select",
+        "options": [
+          {
+            "key": "b55",
+            "label": "normal"
+          },
+          {
+            "key": "b56",
+            "label": "low"
+          },
+          {
+            "key": "b57",
+            "label": "normal"
+          },
+          {
+            "key": "b58",
+            "label": "high"
+          },
+          {
+            "key": "b59",
+            "label": "urgent"
+          }
+        ]
+      },
+      {
+        "code": "a65",
+        "label": "Color",
+        "type": "colorpicker",
+        "options": []
+      },
+      {
+        "code": "a66",
+        "label": "RRULE",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a67",
+        "label": "RRULE Until",
+        "type": "datetime-local",
+        "options": []
+      },
+      {
+        "code": "a68",
+        "label": "EXDATES",
+        "type": "textarea",
+        "options": []
+      },
+      {
+        "code": "a69",
+        "label": "RDATES",
+        "type": "textarea",
+        "options": []
+      },
+      {
+        "code": "a70",
+        "label": "Recurrence ID",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a71",
+        "label": "Show as",
+        "type": "select",
+        "options": [
+          {
+            "key": "b55",
+            "label": "busy"
+          },
+          {
+            "key": "b56",
+            "label": "free"
+          },
+          {
+            "key": "b57",
+            "label": "tentative"
+          },
+          {
+            "key": "b58",
+            "label": "oof"
+          }
+        ]
+      },
+      {
+        "code": "a72",
+        "label": "Visibility",
+        "type": "select",
+        "options": [
+          {
+            "key": "b55",
+            "label": "default"
+          },
+          {
+            "key": "b56",
+            "label": "public"
+          },
+          {
+            "key": "b57",
+            "label": "private"
+          },
+          {
+            "key": "b58",
+            "label": "confidential"
+          }
+        ]
+      },
+      {
+        "code": "a73",
+        "label": "Reminders",
+        "type": "textarea",
+        "options": []
+      },
+      {
+        "code": "a74",
+        "label": "Is availability",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Yes"
+          },
+          {
+            "key": "b56",
+            "label": "No"
+          }
+        ]
+      },
+      {
+        "code": "a75",
+        "label": "Availability note",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a76",
+        "label": "RSVP required",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Yes"
+          },
+          {
+            "key": "b56",
+            "label": "No"
+          }
+        ]
+      },
+      {
+        "code": "a77",
+        "label": "Allow comments",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Yes"
+          },
+          {
+            "key": "b56",
+            "label": "No"
+          }
+        ]
+      },
+      {
+        "code": "a78",
+        "label": "External source",
+        "type": "select",
+        "options": [
+          {
+            "key": "b55",
+            "label": "internal"
+          },
+          {
+            "key": "b56",
+            "label": "google"
+          },
+          {
+            "key": "b57",
+            "label": "outlook"
+          },
+          {
+            "key": "b58",
+            "label": "apple"
+          }
+        ]
+      },
+      {
+        "code": "a79",
+        "label": "iCal UID",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a80",
+        "label": "Sequence",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a81",
+        "label": "ETag",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a82",
+        "label": "Google Event ID",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a83",
+        "label": "Meeting URL",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a84",
+        "label": "Attachments",
+        "type": "textarea",
+        "options": []
+      },
+      {
+        "code": "a85",
+        "label": "Last sync at",
+        "type": "datetime-local",
+        "options": []
+      },
+      {
+        "code": "a86",
+        "label": "Sync token",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a87",
+        "label": "Geo Lat",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a88",
+        "label": "Geo Lng",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a89",
+        "label": "Tags",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a90",
+        "label": "Custom data",
+        "type": "textarea",
+        "options": []
+      }
+    ]
+  },
+  {
+    "id": "110",
+    "slug": "users_extended_prof",
+    "name": "110. User‘s extended profile",
+    "db_table_suffix": "wp_5_jet_cct_users_extended_prof",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "Allow emergency location request",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Yes"
+          },
+          {
+            "key": "b56",
+            "label": "No"
+          }
+        ]
+      },
+      {
+        "code": "a56",
+        "label": "Location share is on",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Yes"
+          },
+          {
+            "key": "b56",
+            "label": "No"
+          }
+        ]
+      },
+      {
+        "code": "a57",
+        "label": "Notification preference",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a58",
+        "label": "General user role",
+        "type": "checkbox",
+        "options": [
+          {
+            "key": "b55",
+            "label": "cared one"
+          },
+          {
+            "key": "b56",
+            "label": "caring one"
+          }
+        ]
+      },
+      {
+        "code": "a59",
+        "label": "Is care provider",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Yes"
+          },
+          {
+            "key": "b56",
+            "label": "No"
+          }
+        ]
+      },
+      {
+        "code": "a60",
+        "label": "Care provider is active",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Yes"
+          },
+          {
+            "key": "b56",
+            "label": "No"
+          }
+        ]
+      },
+      {
+        "code": "a61",
+        "label": "Care provider is background checked",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Yes"
+          },
+          {
+            "key": "b56",
+            "label": "No"
+          }
+        ]
+      },
+      {
+        "code": "a62",
+        "label": "Care provider’s background check detail",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a63",
+        "label": "Care provider’s cancellation policy",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a64",
+        "label": "Care provider’s service area",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a65",
+        "label": "Care provider’s starts hourly rate",
+        "type": "number",
+        "options": []
+      },
+      {
+        "code": "a66",
+        "label": "Care provider offers in-person service",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Yes"
+          },
+          {
+            "key": "b56",
+            "label": "No"
+          }
+        ]
+      },
+      {
+        "code": "a67",
+        "label": "Care provider offers virtual service",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Yes"
+          },
+          {
+            "key": "b56",
+            "label": "No"
+          }
+        ]
+      },
+      {
+        "code": "a68",
+        "label": "Care provider offers care service general type",
+        "type": "checkbox",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Pet care and companion"
+          },
+          {
+            "key": "b56",
+            "label": "Child care and companion"
+          },
+          {
+            "key": "b57",
+            "label": "Adult care and companion"
+          },
+          {
+            "key": "b58",
+            "label": "Elderly care and companion"
+          },
+          {
+            "key": "b59",
+            "label": "Tutoring"
+          },
+          {
+            "key": "b60",
+            "label": "Dementia care and companion"
+          },
+          {
+            "key": "b61",
+            "label": "Housekeeping"
+          },
+          {
+            "key": "b62",
+            "label": "Errand"
+          },
+          {
+            "key": "b63",
+            "label": "Transportation"
+          },
+          {
+            "key": "b64",
+            "label": "Medical Escort"
+          },
+          {
+            "key": "b65",
+            "label": "In-person checkin"
+          },
+          {
+            "key": "b66",
+            "label": "Remote checkin and medicine supervision"
+          }
+        ]
+      },
+      {
+        "code": "a69",
+        "label": "Care provider offers pet care for",
+        "type": "checkbox",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Dogs"
+          },
+          {
+            "key": "b56",
+            "label": "Cats"
+          },
+          {
+            "key": "b57",
+            "label": "Small mammals"
+          },
+          {
+            "key": "b58",
+            "label": "Birds"
+          },
+          {
+            "key": "b59",
+            "label": "Fish"
+          }
+        ]
+      },
+      {
+        "code": "a70",
+        "label": "Care provider offers dementia care type",
+        "type": "checkbox",
+        "options": [
+          {
+            "key": "b55",
+            "label": "In-person day care"
+          },
+          {
+            "key": "b56",
+            "label": "In-person overnight care"
+          },
+          {
+            "key": "b57",
+            "label": "In-person companion"
+          },
+          {
+            "key": "b58",
+            "label": "In-person checkin"
+          },
+          {
+            "key": "b59",
+            "label": "Household help"
+          },
+          {
+            "key": "b60",
+            "label": "Remote companion"
+          },
+          {
+            "key": "b61",
+            "label": "Remote medicine management"
+          },
+          {
+            "key": "b62",
+            "label": "Remote checkin"
+          }
+        ]
+      },
+      {
+        "code": "a71",
+        "label": "Care provider offers elderly care service",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a72",
+        "label": "Care provider offers special needs care service",
+        "type": "checkbox",
+        "options": []
+      },
+      {
+        "code": "a73",
+        "label": "Care provider offers household help service",
+        "type": "checkbox",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Housekeeping"
+          },
+          {
+            "key": "b56",
+            "label": "Gardening"
+          }
+        ]
+      },
+      {
+        "code": "a74",
+        "label": "Care provider offers errand service",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a75",
+        "label": "Care provider offers transportation service",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a76",
+        "label": "Care provider offers medical escort service",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a77",
+        "label": "Care provider offers childcare service as",
+        "type": "checkbox",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Babysitter"
+          },
+          {
+            "key": "b56",
+            "label": "Nanny"
+          },
+          {
+            "key": "b57",
+            "label": "Childminder"
+          }
+        ]
+      },
+      {
+        "code": "a78",
+        "label": "Care provider offers childcare service",
+        "type": "checkbox",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Cooking / Meal preparation"
+          },
+          {
+            "key": "b56",
+            "label": "Pick-up / Drop off"
+          },
+          {
+            "key": "b57",
+            "label": "Light housekeeping"
+          },
+          {
+            "key": "b58",
+            "label": "Activities (e.g. swimming"
+          },
+          {
+            "key": "b59",
+            "label": "Putting kids to bed"
+          },
+          {
+            "key": "b60",
+            "label": "Homework help"
+          },
+          {
+            "key": "b61",
+            "label": "Bathing"
+          },
+          {
+            "key": "b62",
+            "label": "Virtual Care"
+          }
+        ]
+      },
+      {
+        "code": "a79",
+        "label": "Care provider offers dog care service type",
+        "type": "checkbox",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Dog sitting"
+          },
+          {
+            "key": "b56",
+            "label": "Dog walking"
+          },
+          {
+            "key": "b57",
+            "label": "Dog feeding"
+          },
+          {
+            "key": "b58",
+            "label": "Dog day care"
+          },
+          {
+            "key": "b59",
+            "label": "Dog transportation"
+          },
+          {
+            "key": "b60",
+            "label": "Dog overnight sitting"
+          },
+          {
+            "key": "b61",
+            "label": "Dog training"
+          },
+          {
+            "key": "b62",
+            "label": "Dog grooming"
+          }
+        ]
+      },
+      {
+        "code": "a80",
+        "label": "Care provider offers cat care service",
+        "type": "checkbox",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Cat sitting"
+          },
+          {
+            "key": "b56",
+            "label": "Cat walking"
+          },
+          {
+            "key": "b57",
+            "label": "Cat feeding"
+          },
+          {
+            "key": "b58",
+            "label": "Cat day care"
+          },
+          {
+            "key": "b59",
+            "label": "Cat transportation"
+          },
+          {
+            "key": "b60",
+            "label": "Cat overnight sitting"
+          },
+          {
+            "key": "b61",
+            "label": "Cat training"
+          },
+          {
+            "key": "b62",
+            "label": "Cat grooming"
+          }
+        ]
+      },
+      {
+        "code": "a81",
+        "label": "Care provider offers small mammal care service type",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a82",
+        "label": "Care provider offers bird care service",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a83",
+        "label": "Care provider offers fish care service",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a84",
+        "label": "Care provider is a doctor and offers care tip consultancy",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a85",
+        "label": "Care provider is a doctor and offers accompany tip consultancy",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a86",
+        "label": "Care provides can drive",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Yes"
+          },
+          {
+            "key": "b56",
+            "label": "No"
+          }
+        ]
+      },
+      {
+        "code": "a87",
+        "label": "Care provides has own transportation",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Yes"
+          },
+          {
+            "key": "b56",
+            "label": "No"
+          }
+        ]
+      },
+      {
+        "code": "a88",
+        "label": "Care provider is a Non-smoker",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Yes"
+          },
+          {
+            "key": "b56",
+            "label": "No"
+          }
+        ]
+      },
+      {
+        "code": "a89",
+        "label": "Care provider is experienced with",
+        "type": "checkbox",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Newborn (up to 12 months"
+          },
+          {
+            "key": "b56",
+            "label": "Toddler (1-3 years"
+          },
+          {
+            "key": "b57",
+            "label": "Early School Age (4-6 years"
+          },
+          {
+            "key": "b58",
+            "label": "Primary school age (7-12 years"
+          },
+          {
+            "key": "b59",
+            "label": "Teenager (12+ years"
+          },
+          {
+            "key": "b60",
+            "label": "Twins/Multiples"
+          },
+          {
+            "key": "b61",
+            "label": "Special Needs Children"
+          }
+        ]
+      },
+      {
+        "code": "a90",
+        "label": "Cared one’s AI system prompt",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a91",
+        "label": "User enabled push notification",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Yes"
+          },
+          {
+            "key": "b56",
+            "label": "No"
+          }
+        ]
+      },
+      {
+        "code": "a92",
+        "label": "User enabled email notification",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Yes"
+          },
+          {
+            "key": "b56",
+            "label": "No"
+          }
+        ]
+      },
+      {
+        "code": "a93",
+        "label": "User enabled sms notification",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Yes"
+          },
+          {
+            "key": "b56",
+            "label": "No"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "147",
+    "slug": "users_notification_",
+    "name": "147. User’s notification token",
+    "db_table_suffix": "wp_5_jet_cct_users_notification_",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "Endpoint or token",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a56",
+        "label": "Notification provider",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Web push notification"
+          },
+          {
+            "key": "b56",
+            "label": "Firebase FCM"
+          },
+          {
+            "key": "b57",
+            "label": "Apple APN"
+          },
+          {
+            "key": "b58",
+            "label": "J Push"
+          },
+          {
+            "key": "b59",
+            "label": "WeChat"
+          }
+        ]
+      },
+      {
+        "code": "a57",
+        "label": "Device label",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a58",
+        "label": "Auth Key",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a59",
+        "label": "P256dh",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a60",
+        "label": "Is active",
+        "type": "radio",
+        "options": [
+          {
+            "key": "b55",
+            "label": "Yes"
+          },
+          {
+            "key": "b56",
+            "label": "No"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "122",
+    "slug": "users_study_notes",
+    "name": "122. User’s study notes",
+    "db_table_suffix": "wp_5_jet_cct_users_study_notes",
+    "fields": [
+      {
+        "code": "a55",
+        "label": "Title",
+        "type": "text",
+        "options": []
+      },
+      {
+        "code": "a56",
+        "label": "Content",
+        "type": "textarea",
+        "options": []
+      }
+    ]
+  }
+]
