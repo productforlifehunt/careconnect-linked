@@ -498,7 +498,7 @@ export async function fetchCareGroupGalleryWordPress(groupId: string): Promise<a
     const items = await fetchRelatedCctItems(REL_GROUP_GALLERY, groupId, "care_group_gallery");
     const enriched = await Promise.all(
       items.map(async (m: any) => {
-        const mediaId = m.image ?? null;
+        const mediaId = m[F_GALLERY.IMAGE] ?? null;
         const image_url = await resolveMediaUrl(mediaId);
         return {
           id: String(m.id || m._ID),
@@ -507,8 +507,8 @@ export async function fetchCareGroupGalleryWordPress(groupId: string): Promise<a
           image_url,
           url: image_url,
           type: "image",
-          caption: m.image_description || "",
-          taken_at: m.taken_at || null,
+          caption: m[F_GALLERY.IMAGE_DESCRIPTION] || "",
+          taken_at: m[F_GALLERY.TAKEN_AT] || null,
           created_at: m.created_at,
         };
       })
@@ -523,7 +523,7 @@ export async function uploadToWPMedia(file: File): Promise<number> {
   const { getWPToken } = await import("@/services/wp-auth");
   const url = buildWPUrl("/wp-json/wp/v2/media");
   const headers = buildWPHeaders(getWPToken());
-  delete (headers as any)["Content-Type"]; // let browser set multipart boundary
+  delete (headers as any)["Content-Type"];
   headers["Content-Disposition"] = `attachment; filename="${file.name.replace(/"/g, "")}"`;
   const fd = new FormData();
   fd.append("file", file);
@@ -543,9 +543,9 @@ export async function createCareGroupGalleryItemWordPress(
   const created = await wordpressCCTFetch<any>("care_group_gallery", {
     method: "POST",
     body: {
-      image: mediaId,
-      image_description: caption || "",
-      taken_at: takenAt || new Date().toISOString().slice(0, 19).replace("T", " "),
+      [F_GALLERY.IMAGE]: mediaId,
+      [F_GALLERY.IMAGE_DESCRIPTION]: caption || "",
+      [F_GALLERY.TAKEN_AT]: takenAt || new Date().toISOString().slice(0, 19).replace("T", " "),
     },
   });
   const itemId = normalizeWpObjectId(created?.item_id || created?._ID || created?.id);
@@ -561,19 +561,16 @@ export async function deleteCareGroupGalleryItemWordPress(itemId: string): Promi
   await wordpressCCTFetch("care_group_gallery", { id: itemId, method: "DELETE" });
 }
 
-// ─── Sub-groups (private member groups) ─────────────────────
-// CCT slug: care_group_private_member_group | fields: name, description, color
-// Linked via JetEngine relation 47 (care_group → care_group_private_member_group)
-// Member assignment via JetEngine relation 75 (private_member_group → users)
+// ─── Sub-groups (CCT 74 — care_group_private_member_group) ──
 export async function fetchMemberCategoriesWordPress(groupId: string): Promise<any[]> {
   try {
     const cats = await fetchRelatedCctItems(REL_GROUP_SUBGROUP, groupId, "care_group_private_member_group");
     return cats.map((c: any) => ({
       id: String(c.id || c._ID),
       group_id: groupId,
-      name: c.name || "",
-      description: c.description || null,
-      color: c.color || null,
+      name: c[F_SUBGROUP.NAME] || "",
+      description: c[F_SUBGROUP.DESCRIPTION] || null,
+      color: c[F_SUBGROUP.COLOR] || null,
       created_at: c.created_at,
     }));
   } catch { return []; }
@@ -582,7 +579,11 @@ export async function fetchMemberCategoriesWordPress(groupId: string): Promise<a
 export async function createMemberCategoryWordPress(groupId: string, name: string, color?: string, description?: string): Promise<void> {
   const created = await wordpressCCTFetch<any>("care_group_private_member_group", {
     method: "POST",
-    body: { name, description: description || "", color: color || "" },
+    body: {
+      [F_SUBGROUP.NAME]: name,
+      [F_SUBGROUP.DESCRIPTION]: description || "",
+      [F_SUBGROUP.COLOR]: color || "",
+    },
   });
   const normalizedGroupId = normalizeWpObjectId(groupId);
   const categoryId = normalizeWpObjectId(created?.item_id || created?._ID || created?.id);
@@ -591,7 +592,6 @@ export async function createMemberCategoryWordPress(groupId: string, name: strin
       method: "POST",
       body: { parent_id: normalizedGroupId, child_id: categoryId, context: "child", store_items_type: "update" },
     });
-    // Auto-add creator as owner of the sub-group (Rel 75) — accepted by default.
     const wpUser = getStoredWPUser();
     const ownerId = wpUser?.user_id ? Number(wpUser.user_id) : 0;
     if (ownerId) {
