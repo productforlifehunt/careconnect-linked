@@ -66,7 +66,7 @@ import { fetchSavedProvidersWordPress, toggleSavedProviderWordPress } from "@/fe
 import { fetchCommentsWordPress, createCommentWordPress, updateCommentWordPress, deleteCommentWordPress } from "@/features/comments/source.wordpress";
 import { fetchVotesWordPress, fetchEntityVoteWordPress, toggleVoteWordPress } from "@/features/votes/source.wordpress";
 import { fetchLocationSharesWordPress } from "@/features/location/source.wordpress";
-import { listWordPressFeature, createWordPressFeature } from "@/features/shared/wordpress-adapter";
+
 import { getDokanVendorWithdrawals } from "@/services/woocommerce-api";
 import {
   createUserCaredOneWordPress, deleteUserCaredOneWordPress, fetchGroupCaredOnesWordPress,
