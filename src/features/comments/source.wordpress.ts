@@ -2,7 +2,7 @@ import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-c
 
 /**
  * Comments are NOT addressable by entity_type/entity_id on the CCT itself.
- * Live `comment` CCT fields: title, content (only).
+ * Live `comment` CCT fields: a55=title, a56=content.
  * Comments are linked to entities via JetEngine relations:
  *   REL 71  care_community_post → comment
  *   REL 68  review              → comment
@@ -53,8 +53,8 @@ export async function fetchCommentsWordPress(entityType: string, entityId: strin
       entity_type: entityType,
       entity_id: entityId,
       user_id: c.author_id || null,
-      title: c.title || "",
-      content: c.content || "",
+      title: c.a55 || "",
+      content: c.a56 || "",
       parent_id: null,
       created_at: c.created_at,
       updated_at: c.updated_at,
@@ -68,7 +68,7 @@ export async function createCommentWordPress(comment: { entity_type: string; ent
   if (!relId) throw new Error(`Unsupported entity_type for comments: ${comment.entity_type}`);
   const result = await wordpressCCTFetch<any>("comment", {
     method: "POST",
-    body: { title: comment.title || "", content: comment.content },
+    body: { a55: comment.title || "", a56: comment.content },
   });
   const commentId = Number(result?.item_id || result?._ID || result?.id);
   const parentId = Number(stripWp(comment.parent_id || comment.entity_id));
@@ -81,7 +81,7 @@ export async function createCommentWordPress(comment: { entity_type: string; ent
 }
 
 export async function updateCommentWordPress(id: string, content: string): Promise<void> {
-  await wordpressCCTFetch("comment", { id, method: "PUT", body: { content } });
+  await wordpressCCTFetch("comment", { id, method: "PUT", body: { a56: content } });
 }
 
 export async function deleteCommentWordPress(id: string): Promise<void> {

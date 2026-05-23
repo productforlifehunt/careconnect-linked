@@ -28,16 +28,16 @@ export async function fetchDashboardStatsWordPress(): Promise<DashboardStats> {
 
   try {
     const tasks = await wordpressCCTFetch("care_task_real", { params: { _limit: 100 } });
-    // l = finish status: "1" = not finished, "2" = finished
+    // a66 = finish status: b55 = not finished, b56 = finished
     pendingTasks = Array.isArray(tasks)
-      ? tasks.filter((t: any) => String(t.l ?? "1") !== "2").length
+      ? tasks.filter((t: any) => String(t.a66 ?? "b55") !== "b56").length
       : 0;
   } catch { /* */ }
 
   try {
     const notifs = await wordpressCCTFetch("notification", { params: { _limit: 100 } });
     if (Array.isArray(notifs)) {
-      unreadMessages = notifs.filter((n: any) => n.is_read !== true && n.is_read !== "yes").length;
+      unreadMessages = notifs.filter((n: any) => String(n.a59 ?? "b56") !== "b55").length;
     }
   } catch {
     // cc_notification CCT may not be registered yet in WordPress — silently ignore 404s

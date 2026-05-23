@@ -4,18 +4,9 @@ import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-c
  * Care Task — JetEngine CCT "162. Care Task"
  *   slug: care_task_real
  *   fields:
- *     a = Title
- *     b = Description
- *     c = Task type (checkbox / array)  values: 1..9 (Preparing Meals … Occasions)
- *     people_needed = Number
- *     e = Location (text)
- *     f = Photo
- *     g = Date of the task
- *     h = Task start time (datetime)
- *     i = Task end time (datetime)
- *     j = Task completed at (datetime)
- *     k = Task help status (radio)   1=doesn't need, 2=needs, 3=found
- *     l = Task finish status (radio) 1=Not finished, 2=Finished
+ *     a55 = Title, a56 = Description, a57 = Task type, a58 = People needed
+ *     a59 = Location, a60 = Photo, a61 = Date, a62 = Start, a63 = End
+ *     a64 = Completed at, a65 = Help status, a66 = Finish status
  *
  * Relations (per data model):
  *   REL 141 → cared ones (care_task → users)            One to Many
@@ -43,19 +34,23 @@ function normalizeWpObjectId(value: string | number | null | undefined): number 
 
 // ── Help / Finish status mapping ────────────────────────────────
 const HELP_STATUS_TO_LABEL: Record<string, string> = {
-  "1": "no_help_needed",
-  "2": "needs_help",
-  "3": "found_help",
+  "b55": "no_help_needed",
+  "b56": "needs_help",
+  "b57": "found_help",
 };
 const FINISH_STATUS_TO_LABEL: Record<string, string> = {
-  "1": "pending",
-  "2": "completed",
+  "b55": "pending",
+  "b56": "completed",
 };
 function helpStatusFromLegacy(v: any): string {
-  return String(v ?? "1");
+  const value = String(v ?? "b55");
+  if (value === "1") return "b55";
+  if (value === "2") return "b56";
+  if (value === "3") return "b57";
+  return value;
 }
 function finishStatusFromLegacy(status: any): string {
-  return status === "completed" ? "2" : "1";
+  return status === "completed" ? "b56" : "b55";
 }
 
 async function fetchAssignedUserIds(taskId: string): Promise<string[]> {
@@ -94,9 +89,9 @@ async function fetchCaredOneId(taskId: string): Promise<string | null> {
 
 function mapTask(t: any, groupId?: string | null) {
   const id = String(t._ID || t.id || "");
-  const finishCode = String(t.l ?? "1");
-  const helpCode = String(t.k ?? "1");
-  const taskTypeRaw = t.c;
+  const finishCode = String(t.a66 ?? "b55");
+  const helpCode = helpStatusFromLegacy(t.a65);
+  const taskTypeRaw = t.a57;
   const taskTypes = Array.isArray(taskTypeRaw)
     ? taskTypeRaw.map(String)
     : taskTypeRaw
@@ -105,22 +100,22 @@ function mapTask(t: any, groupId?: string | null) {
   return {
     id,
     care_group_id: groupId || null,
-    title: t.a || "",
-    description: t.b || "",
+    title: t.a55 || "",
+    description: t.a56 || "",
     task_types: taskTypes,
-    people_needed: t.people_needed ? Number(t.people_needed) : null,
-    location: t.e || "",
-    photo: t.f || "",
-    task_date: t.g || null,
-    start_time: t.h || null,
-    end_time: t.i || null,
-    completed_at: t.j || null,
+    people_needed: t.a58 ? Number(t.a58) : null,
+    location: t.a59 || "",
+    photo: t.a60 || "",
+    task_date: t.a61 || null,
+    start_time: t.a62 || null,
+    end_time: t.a63 || null,
+    completed_at: t.a64 || null,
     help_status: helpCode,
     help_status_label: HELP_STATUS_TO_LABEL[helpCode] || "no_help_needed",
     finish_status: finishCode,
     // Legacy `status` field for existing UI: completed | pending
     status: FINISH_STATUS_TO_LABEL[finishCode] || "pending",
-    due_date: t.g || null, // legacy alias
+    due_date: t.a61 || null, // legacy alias
     created_by: t.cct_author_id || t.author_id || null,
     created_at: t.cct_created || t.created_at || null,
     updated_at: t.cct_modified || t.updated_at || t.cct_created || null,
@@ -178,18 +173,18 @@ export async function createCareTaskWordPress(task: {
   due_date?: string;
 }): Promise<string | null> {
   const body: Record<string, any> = {
-    a: task.title,
-    b: task.description || "",
-    c: Array.isArray(task.task_types) ? task.task_types : [],
-    people_needed: task.people_needed != null ? String(task.people_needed) : "",
-    e: task.location || "",
-    f: task.photo || "",
-    g: task.task_date || task.due_date || "",
-    h: task.start_time || "",
-    i: task.end_time || "",
-    j: "",
-    k: task.help_status || "1",
-    l: "1", // not finished
+    a55: task.title,
+    a56: task.description || "",
+    a57: Array.isArray(task.task_types) ? task.task_types : [],
+    a58: task.people_needed != null ? String(task.people_needed) : "",
+    a59: task.location || "",
+    a60: task.photo || "",
+    a61: task.task_date || task.due_date || "",
+    a62: task.start_time || "",
+    a63: task.end_time || "",
+    a64: "",
+    a65: helpStatusFromLegacy(task.help_status),
+    a66: "b55", // not finished
   };
   const created = await wordpressCCTFetch<any>(CCT_SLUG, { method: "POST", body });
   const taskId = normalizeWpObjectId(created?.item_id || created?._ID || created?.id);
@@ -231,23 +226,23 @@ export async function updateCareTaskWordPress(id: string, updates: Record<string
   } = updates || {};
 
   const body: Record<string, any> = { ...rest };
-  if (title !== undefined) body.a = title;
-  if (description !== undefined) body.b = description;
-  if (task_types !== undefined) body.c = Array.isArray(task_types) ? task_types : [];
-  if (people_needed !== undefined) body.people_needed = people_needed != null ? String(people_needed) : "";
-  if (location !== undefined) body.e = location;
-  if (photo !== undefined) body.f = photo;
-  if (task_date !== undefined) body.g = task_date || "";
-  else if (due_date !== undefined) body.g = due_date || "";
-  if (start_time !== undefined) body.h = start_time || "";
-  if (end_time !== undefined) body.i = end_time || "";
-  if (completed_at !== undefined) body.j = completed_at || "";
-  if (help_status !== undefined) body.k = String(help_status);
-  if (finish_status !== undefined) body.l = String(finish_status);
+  if (title !== undefined) body.a55 = title;
+  if (description !== undefined) body.a56 = description;
+  if (task_types !== undefined) body.a57 = Array.isArray(task_types) ? task_types : [];
+  if (people_needed !== undefined) body.a58 = people_needed != null ? String(people_needed) : "";
+  if (location !== undefined) body.a59 = location;
+  if (photo !== undefined) body.a60 = photo;
+  if (task_date !== undefined) body.a61 = task_date || "";
+  else if (due_date !== undefined) body.a61 = due_date || "";
+  if (start_time !== undefined) body.a62 = start_time || "";
+  if (end_time !== undefined) body.a63 = end_time || "";
+  if (completed_at !== undefined) body.a64 = completed_at || "";
+  if (help_status !== undefined) body.a65 = helpStatusFromLegacy(help_status);
+  if (finish_status !== undefined) body.a66 = String(finish_status);
   // Legacy: { status: "completed" | "pending" }
   if (status !== undefined) {
-    body.l = finishStatusFromLegacy(status);
-    if (status === "completed") body.j = body.j || new Date().toISOString();
+    body.a66 = finishStatusFromLegacy(status);
+    if (status === "completed") body.a64 = body.a64 || new Date().toISOString();
   }
 
   if (Object.keys(body).length > 0) {

@@ -15,7 +15,7 @@ import { getStoredWPUser } from "@/services/wp-auth";
 
 // ─── JetEngine Relation ID (User → current_location, one-to-many) ────
 // This will be set after creating the relation via WordPress admin
-const REL_USER_CURRENT_LOCATION = 117;
+const REL_USER_CURRENT_LOCATION = 165;
 
 // ─── CCT slug ────────────────────────────────────────────────
 const CCT_SLUG = "current_location";
@@ -52,20 +52,20 @@ function parseNum(v: any, fallback: number | null = null): number | null {
 function mapSnapshot(raw: any): LocationSnapshot {
   return {
     id: String(raw._ID || raw.id || ""),
-    latitude: parseNum(raw.latitude),
-    longitude: parseNum(raw.longitude),
-    accuracy_meters: parseNum(raw.accuracy_meters),
-    altitude_meters: parseNum(raw.altitude_meters),
-    heading_degrees: parseNum(raw.heading_degrees),
-    speed: parseNum(raw.speed),
-    is_moving: raw.is_moving || null,
-    moving_type: raw.moving_type || null,
-    platform: raw.platform || null,
-    battery_level: parseNum(raw.battery_level),
-    phone_is_charging: raw.phone_is_charging || null,
-    address_text: raw.address_text || null,
-    captured_at: raw.captured_at || raw.cct_created || null,
-    is_emergency: raw.is_emergency || "No",
+    latitude: parseNum(raw.a55),
+    longitude: parseNum(raw.a56),
+    accuracy_meters: parseNum(raw.a57),
+    altitude_meters: parseNum(raw.a58),
+    heading_degrees: parseNum(raw.a59),
+    speed: parseNum(raw.a60),
+    is_moving: raw.a61 || null,
+    moving_type: raw.a62 || null,
+    platform: raw.a63 || null,
+    battery_level: parseNum(raw.a64),
+    phone_is_charging: raw.a65 || null,
+    address_text: raw.a66 || null,
+    captured_at: raw.a67 || raw.cct_created || null,
+    is_emergency: raw.a68 || "b56",
     cct_author_id: raw.cct_author_id ? Number(raw.cct_author_id) : undefined,
   };
 }
@@ -98,20 +98,20 @@ export async function writeLocationSnapshot(
   const created = await wordpressCCTFetch<any>(CCT_SLUG, {
     method: "POST",
     body: {
-      latitude: String(lat),
-      longitude: String(lng),
-      accuracy_meters: opts?.accuracy != null ? String(opts.accuracy) : "",
-      altitude_meters: opts?.altitude != null ? String(opts.altitude) : "",
-      heading_degrees: opts?.heading != null ? String(opts.heading) : "",
-      speed: opts?.speed != null ? String(opts.speed) : "",
-      is_moving: opts?.is_moving || "",
-      moving_type: opts?.moving_type || "",
-      platform: opts?.platform || detectPlatform(),
-      battery_level: opts?.battery_level != null ? String(opts.battery_level) : "",
-      phone_is_charging: opts?.phone_is_charging || "",
-      address_text: opts?.address_text || "",
-      captured_at: new Date().toISOString(),
-      is_emergency: opts?.is_emergency ? "Yes" : "No",
+      a55: String(lat),
+      a56: String(lng),
+      a57: opts?.accuracy != null ? String(opts.accuracy) : "",
+      a58: opts?.altitude != null ? String(opts.altitude) : "",
+      a59: opts?.heading != null ? String(opts.heading) : "",
+      a60: opts?.speed != null ? String(opts.speed) : "",
+      a61: opts?.is_moving || "",
+      a62: opts?.moving_type || "",
+      a63: opts?.platform || detectPlatform(),
+      a64: opts?.battery_level != null ? String(opts.battery_level) : "",
+      a65: opts?.phone_is_charging || "",
+      a66: opts?.address_text || "",
+      a67: new Date().toISOString(),
+      a68: opts?.is_emergency ? "b55" : "b56",
     },
   });
 
