@@ -219,10 +219,10 @@ export async function wpFetchCareTasks(): Promise<any[]> {
     if (!Array.isArray(tasks)) return [];
     return tasks.map((t: any) => ({
       id: String(t._ID || t.id),
-      title: t.a || "Task",
-      status: String(t.l ?? "1") === "2" ? "completed" : "pending",
+      title: t.a55 || "Task",
+      status: String(t.a66 ?? "b55") === "b56" ? "completed" : "pending",
       priority: "medium",
-      due_date: t.g || null,
+      due_date: t.a61 || null,
       assignee_profile: null,
       created_at: t.cct_created || null,
     }));
@@ -283,14 +283,15 @@ export async function wpFetchProviders(): Promise<any[]> {
 // ─── Care Groups ────────────────────────────────────────────
 export async function wpFetchCareGroups(): Promise<any[]> {
   try {
-    const groups = await wpFetchCPT("care_group");
+    const { wordpressCCTFetch } = await import("@/features/shared/wordpress-client");
+    const groups = await wordpressCCTFetch<any[]>("care_group", { params: { _limit: 50 } });
     if (!Array.isArray(groups)) return [];
     return groups.map((g: any) => ({
-      id: String(g.id),
-      name: g.title?.rendered || "Care Group",
-      description: g.content?.rendered?.replace(/<[^>]*>/g, "") || null,
-      is_private: g.acf?.is_private || false,
-      created_at: g.date,
+      id: String(g.id || g._ID),
+      name: g.a55 || "Care Group",
+      description: g.a56 || null,
+      is_private: String(g.a57) === "b56",
+      created_at: g.created_at,
       owner_id: null,
     }));
   } catch {
@@ -311,16 +312,17 @@ export async function wpFetchConversations(): Promise<any[]> {
 // ─── Notifications ──────────────────────────────────────────
 export async function wpFetchNotifications(): Promise<any[]> {
   try {
-    const notifs = await wpFetchCPT("notification");
+    const { wordpressCCTFetch } = await import("@/features/shared/wordpress-client");
+    const notifs = await wordpressCCTFetch<any[]>("notification", { params: { _limit: 100 } });
     if (!Array.isArray(notifs)) return [];
     return notifs.map((n: any) => ({
-      id: String(n.id),
-      type: n.acf?.type || "info",
-      title: n.title?.rendered || "Notification",
-      content: n.content?.rendered?.replace(/<[^>]*>/g, "") || "",
-      link_url: n.acf?.link_url || null,
-      is_read: n.acf?.is_read || false,
-      created_at: n.date,
+      id: String(n.id || n._ID),
+      type: n.a55 || "info",
+      title: n.a56 || "Notification",
+      content: n.a57 || "",
+      link_url: n.a58 || null,
+      is_read: String(n.a59) === "b55",
+      created_at: n.created_at,
     }));
   } catch {
     return [];
