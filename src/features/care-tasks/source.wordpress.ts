@@ -4,18 +4,9 @@ import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-c
  * Care Task — JetEngine CCT "162. Care Task"
  *   slug: care_task_real
  *   fields:
- *     a = Title
- *     b = Description
- *     c = Task type (checkbox / array)  values: 1..9 (Preparing Meals … Occasions)
- *     people_needed = Number
- *     e = Location (text)
- *     f = Photo
- *     g = Date of the task
- *     h = Task start time (datetime)
- *     i = Task end time (datetime)
- *     j = Task completed at (datetime)
- *     k = Task help status (radio)   1=doesn't need, 2=needs, 3=found
- *     l = Task finish status (radio) 1=Not finished, 2=Finished
+ *     a55 = Title, a56 = Description, a57 = Task type, a58 = People needed
+ *     a59 = Location, a60 = Photo, a61 = Date, a62 = Start, a63 = End
+ *     a64 = Completed at, a65 = Help status, a66 = Finish status
  *
  * Relations (per data model):
  *   REL 141 → cared ones (care_task → users)            One to Many
@@ -43,19 +34,23 @@ function normalizeWpObjectId(value: string | number | null | undefined): number 
 
 // ── Help / Finish status mapping ────────────────────────────────
 const HELP_STATUS_TO_LABEL: Record<string, string> = {
-  "1": "no_help_needed",
-  "2": "needs_help",
-  "3": "found_help",
+  "b55": "no_help_needed",
+  "b56": "needs_help",
+  "b57": "found_help",
 };
 const FINISH_STATUS_TO_LABEL: Record<string, string> = {
-  "1": "pending",
-  "2": "completed",
+  "b55": "pending",
+  "b56": "completed",
 };
 function helpStatusFromLegacy(v: any): string {
-  return String(v ?? "1");
+  const value = String(v ?? "b55");
+  if (value === "1") return "b55";
+  if (value === "2") return "b56";
+  if (value === "3") return "b57";
+  return value;
 }
 function finishStatusFromLegacy(status: any): string {
-  return status === "completed" ? "2" : "1";
+  return status === "completed" ? "b56" : "b55";
 }
 
 async function fetchAssignedUserIds(taskId: string): Promise<string[]> {
