@@ -321,17 +321,19 @@ function generateInviteToken(): string {
 
 function normalizeInvite(raw: any, groupId?: string) {
   const id = String(raw.id || raw._ID || "");
-  const expires = raw.expires_at ? String(raw.expires_at) : null;
+  const expiresRaw = raw[F_INVITE.EXPIRES_AT];
+  const expires = expiresRaw ? String(expiresRaw) : null;
   const isExpired = expires ? new Date(expires).getTime() < Date.now() : false;
-  const maxUses = Number(raw.max_uses || 0);
-  const useCount = Number(raw.use_count || 0);
-  const isRevoked = raw.is_revoked === true || raw.is_revoked === "yes" || raw.is_revoked === "1" || raw.is_revoked === 1;
+  const maxUses = Number(raw[F_INVITE.MAX_USES] || 0);
+  const useCount = Number(raw[F_INVITE.USE_COUNT] || 0);
+  const rev = raw[F_INVITE.IS_REVOKED];
+  const isRevoked = rev === true || rev === 1 || (typeof rev === "string" && ["yes","1","true","on"].includes(rev.toLowerCase()));
   const isExhausted = maxUses > 0 && useCount >= maxUses;
   return {
     id,
     group_id: groupId || null,
-    token: raw.token || "",
-    name: raw.name || "",
+    token: raw[F_INVITE.TOKEN] || "",
+    name: raw[F_INVITE.NAME] || "",
     expires_at: expires,
     max_uses: maxUses,
     use_count: useCount,
@@ -361,12 +363,12 @@ export async function createGroupInviteWordPress(input: {
   const created = await wordpressCCTFetch<any>("care_group_invite", {
     method: "POST",
     body: {
-      token,
-      name: input.name || "Invite link",
-      expires_at: input.expiresAt || "",
-      max_uses: Number(input.maxUses || 0),
-      use_count: 0,
-      is_revoked: "no",
+      [F_INVITE.TOKEN]: token,
+      [F_INVITE.NAME]: input.name || "Invite link",
+      [F_INVITE.EXPIRES_AT]: input.expiresAt || "",
+      [F_INVITE.MAX_USES]: Number(input.maxUses || 0),
+      [F_INVITE.USE_COUNT]: 0,
+      [F_INVITE.IS_REVOKED]: "0",
     },
   });
   const groupIdNum = normalizeWpObjectId(input.groupId);
@@ -377,7 +379,7 @@ export async function createGroupInviteWordPress(input: {
       body: { parent_id: groupIdNum, child_id: inviteId, context: "child", store_items_type: "update" },
     });
   }
-  return normalizeInvite({ ...created, id: inviteId, token }, input.groupId);
+  return normalizeInvite({ ...created, id: inviteId, [F_INVITE.TOKEN]: token }, input.groupId);
 }
 
 export async function updateGroupInviteWordPress(id: string, updates: {
@@ -388,11 +390,11 @@ export async function updateGroupInviteWordPress(id: string, updates: {
   isRevoked?: boolean;
 }): Promise<void> {
   const body: Record<string, any> = {};
-  if (updates.name !== undefined) body.name = updates.name;
-  if (updates.token !== undefined) body.token = updates.token;
-  if (updates.expiresAt !== undefined) body.expires_at = updates.expiresAt || "";
-  if (updates.maxUses !== undefined) body.max_uses = Number(updates.maxUses || 0);
-  if (updates.isRevoked !== undefined) body.is_revoked = updates.isRevoked ? "yes" : "no";
+  if (updates.name !== undefined) body[F_INVITE.NAME] = updates.name;
+  if (updates.token !== undefined) body[F_INVITE.TOKEN] = updates.token;
+  if (updates.expiresAt !== undefined) body[F_INVITE.EXPIRES_AT] = updates.expiresAt || "";
+  if (updates.maxUses !== undefined) body[F_INVITE.MAX_USES] = Number(updates.maxUses || 0);
+  if (updates.isRevoked !== undefined) body[F_INVITE.IS_REVOKED] = updates.isRevoked ? "1" : "0";
   await wordpressCCTFetch("care_group_invite", { id, method: "PUT", body });
 }
 
@@ -410,7 +412,7 @@ export async function joinGroupByCodeWordPress(token: string): Promise<any> {
     const invites = await wordpressCCTFetch<any[]>("care_group_invite", { params: { _limit: 500 } });
     if (!Array.isArray(invites)) throw new Error("Invalid invite link");
     const lower = trimmed.toLowerCase();
-    const match = invites.find((i: any) => String(i.token || "").trim().toLowerCase() === lower);
+    const match = invites.find((i: any) => String(i[F_INVITE.TOKEN] || "").trim().toLowerCase() === lower);
     if (!match) throw new Error("Invalid invite link");
     const invite = normalizeInvite(match);
     if (invite.is_revoked) throw new Error("This invite link has been revoked.");
@@ -427,11 +429,10 @@ export async function joinGroupByCodeWordPress(token: string): Promise<any> {
     let groupName = "Care Group";
     try {
       const g = await wordpressCCTFetch<any>("care_group", { id: String(parentGroupId) });
-      groupName = g?.name || groupName;
+      groupName = g?.[F_GROUP.NAME] || groupName;
     } catch {}
 
-    // Check membership FIRST — never re-POST to Rel 72 for an existing member
-    // (that would wipe owner/admin meta and falsely consume an invite use).
+    // Check membership FIRST
     const wpUser = getStoredWPUser();
     const userId = wpUser?.user_id ? Number(wpUser.user_id) : 0;
     if (!userId) throw new Error("Please sign in to join this group.");
@@ -447,7 +448,6 @@ export async function joinGroupByCodeWordPress(token: string): Promise<any> {
       return { group_id: String(parentGroupId), group_name: groupName, already_member: true };
     }
 
-    // Add user to group via Rel 72
     await wordpressFetch(`jet-rel/${REL_GROUP_MEMBER}`, {
       method: "POST",
       body: {
@@ -468,7 +468,7 @@ export async function joinGroupByCodeWordPress(token: string): Promise<any> {
     wordpressCCTFetch("care_group_invite", {
       id: String(inviteIdNum),
       method: "PUT",
-      body: { use_count: invite.use_count + 1 },
+      body: { [F_INVITE.USE_COUNT]: invite.use_count + 1 },
     }).catch(() => {});
 
     return { group_id: String(parentGroupId), group_name: groupName, already_member: false };
