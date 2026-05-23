@@ -1,7 +1,7 @@
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 
 // ─── Community Posts (CCT: care_community_post) ─────────────
-// Live fields: title, content, app_area, language, care_community_post_category
+// Live fields: a55=title, a56=content, a57=language, a58=app area, a59=category
 
 const SLUG = "care_community_post";
 
@@ -12,18 +12,18 @@ const REL_COMMENT_REPLY = 69;  // M:M comment → comment
 export async function fetchCommunityPostsWordPress(locale?: { area?: string; language?: string; category?: string }): Promise<any[]> {
   try {
     const params: Record<string, string | number> = { _limit: 50 };
-    if (locale?.area) params.app_area = locale.area;
-    if (locale?.language) params.language = locale.language;
-    if (locale?.category) params.care_community_post_category = locale.category;
+    if (locale?.area) params.a58 = locale.area;
+    if (locale?.language) params.a57 = locale.language;
+    if (locale?.category) params.a59 = locale.category;
     const posts = await wordpressCCTFetch<any[]>(SLUG, { params });
     if (!Array.isArray(posts)) return [];
     return posts.map((p: any) => ({
       id: p.id,
-      title: p.title || "",
-      content: p.content || "",
-      app_area: p.app_area || null,
-      language: p.language || null,
-      category: p.care_community_post_category || null,
+      title: p.a55 || "",
+      content: p.a56 || "",
+      app_area: p.a58 || null,
+      language: p.a57 || null,
+      category: p.a59 || null,
       author_id: p.author_id,
       created_at: p.created_at,
       updated_at: p.updated_at,
@@ -37,11 +37,11 @@ export async function fetchCommunityPostByIdWordPress(id: string): Promise<any |
     if (!p) return null;
     return {
       id: p.id,
-      title: p.title || "",
-      content: p.content || "",
-      app_area: p.app_area || null,
-      language: p.language || null,
-      category: p.care_community_post_category || null,
+      title: p.a55 || "",
+      content: p.a56 || "",
+      app_area: p.a58 || null,
+      language: p.a57 || null,
+      category: p.a59 || null,
       author_id: p.author_id,
       created_at: p.created_at,
       updated_at: p.updated_at,
