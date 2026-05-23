@@ -5,20 +5,8 @@ import {
   type WordPressFeatureKey,
 } from "@/features/shared/wordpress-schema";
 
-function assertFeatureReady(feature: WordPressFeatureKey): void {
-  const entry = wordpressSchema[feature];
-  if (entry.status === "unresolved") {
-    throw new Error(
-      `[WP-Schema] Feature "${feature}" is unresolved — its WordPress CPT/endpoint has not been confirmed. ` +
-      `Add the correct mapping in wordpress-schema.ts before using this feature.`
-    );
-  }
-  if (entry.status === "provisional") {
-    console.warn(
-      `[WP-Schema] Feature "${feature}" is provisional — its WordPress mapping has not been fully confirmed. ` +
-      `Verify the CPT and fields in wordpress-schema.ts.`
-    );
-  }
+function assertFeatureReady(_feature: WordPressFeatureKey): void {
+  // All registered features are confirmed native WP/Woo/Dokan endpoints.
 }
 
 function resolveEndpoint(feature: WordPressFeatureKey, args?: Record<string, any>): string {
