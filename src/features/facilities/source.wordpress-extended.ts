@@ -8,8 +8,10 @@ export async function createCareFacilityWordPress(input: {
   const result = await wordpressCCTFetch("care_facility", {
     method: "POST",
     body: {
-      name: input.title, description: input.content || "",
-      address: input.address, location: input.location,
+      a55: input.title,
+      a56: input.content || "",
+      a64: input.address,
+      a63: input.location,
       latitude: input.latitude, longitude: input.longitude,
       phone: input.phone, email: input.email, website: input.website,
     },
@@ -19,8 +21,12 @@ export async function createCareFacilityWordPress(input: {
 
 export async function updateCareFacilityWordPress(id: string, updates: Record<string, any>): Promise<any> {
   const body: Record<string, any> = { ...updates };
-  if (body.title !== undefined) { body.name = body.title; delete body.title; }
-  if (body.content !== undefined) { body.description = body.content; delete body.content; }
+  if (body.title !== undefined) { body.a55 = body.title; delete body.title; }
+  if (body.name !== undefined) { body.a55 = body.name; delete body.name; }
+  if (body.content !== undefined) { body.a56 = body.content; delete body.content; }
+  if (body.description !== undefined) { body.a56 = body.description; delete body.description; }
+  if (body.location !== undefined) { body.a63 = body.location; delete body.location; }
+  if (body.address !== undefined) { body.a64 = body.address; delete body.address; }
   const result = await wordpressCCTFetch("care_facility", { id, method: "PUT", body }) as any;
   return { id: result?.id || id };
 }
