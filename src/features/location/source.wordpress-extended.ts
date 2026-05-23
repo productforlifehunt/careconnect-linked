@@ -87,25 +87,25 @@ function normalizePolygonPoints(points: any): [number, number][] {
 // ─── Safe Zone mapping (matches new CCT fields) ─────────────
 
 function mapSafeZone(z: any, userId: string): any {
-  const polygonPoints = normalizePolygonPoints(z.polygon_points);
+  const polygonPoints = normalizePolygonPoints(z.a63);
   return {
     id: String(z._ID || z.id),
     user_id: userId,
-    name: z.custom_name || z.name || null,
-    zone_type: z.zone_type || "Safe",
-    shape_type: z.shape_type || (polygonPoints.length >= 3 ? "Polygon" : "Radius"),
-    color: z.custom_color || z.color || null,
-    latitude: parseNumber(z.latitude),
-    longitude: parseNumber(z.longitude),
-    radius_meters: parseNumber(z.radius_meters, 100) ?? 100,
+    name: z.a57 || null,
+    zone_type: z.a55 === "b56" ? "Danger" : "Safe",
+    shape_type: z.a56 === "b56" ? "Polygon" : (polygonPoints.length >= 3 ? "Polygon" : "Radius"),
+    color: z.a59 || null,
+    latitude: parseNumber(z.a60),
+    longitude: parseNumber(z.a61),
+    radius_meters: parseNumber(z.a62, 100) ?? 100,
     polygon_points: polygonPoints,
-    description: z.custom_description || z.description || null,
-    notify_on_enter: z.notify_on_enter === "On" || parseBoolean(z.notify_on_enter, true),
-    notify_on_exit: z.notify_on_exit === "On" || parseBoolean(z.notify_on_exit, true),
-    schedule_enabled: z.schedule_enabled === "On" || parseBoolean(z.schedule_enabled, false),
-    schedule_start_time: z.schedule_start_time || null,
-    schedule_end_time: z.schedule_end_time || null,
-    is_active: z.is_active === "Yes" || parseBoolean(z.is_active, true),
+    description: z.a58 || null,
+    notify_on_enter: z.a64 === "b56",
+    notify_on_exit: z.a65 === "b56",
+    schedule_enabled: z.a66 === "b56",
+    schedule_start_time: z.a67 || null,
+    schedule_end_time: z.a68 || null,
+    is_active: z.a69 !== "b56",
     created_at: z.cct_created || z.created_at,
     updated_at: z.cct_modified || z.updated_at || z.created_at,
   };
