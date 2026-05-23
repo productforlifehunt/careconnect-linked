@@ -1,13 +1,37 @@
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
+import { WP } from "@/integrations/wp-schema";
 
-// Live JetEngine relations (verified from prd-to-wp-mapping.md)
-const REL_GROUP_MEMBER = 72;          // M:M  care_group → users
-const REL_GROUP_GALLERY = 46;         // 1:M  care_group → care_group_gallery
-const REL_GROUP_SUBGROUP = 47;        // 1:M  care_group → care_group_private_member_group
-const REL_GROUP_POST = 77;            // 1:M  care_group → care_group_not_too_special_post
-const REL_SUBGROUP_MEMBERS = 75;      // M:M  care_group_private_member_group → users
-const REL_GROUP_INVITE = 161;         // 1:M  care_group → care_group_invite
+// Live JetEngine relations (per data bible)
+const REL_GROUP_MEMBER = 72;          // care_group → users
+const REL_GROUP_GALLERY = 46;         // care_group → care_group_gallery
+const REL_GROUP_SUBGROUP = 47;        // care_group → care_group_private_member_group
+const REL_GROUP_POST = 77;            // care_group → care_group_not_too_special_post
+const REL_SUBGROUP_MEMBERS = 75;      // care_group_private_member_group → users
+const REL_GROUP_INVITE = 161;         // care_group → care_group_invite
+
+// ─── Opaque field codes (bible) ──────────────────────────────
+const F_POST = WP.cct["76"].fields;       // care_group_not_too_special_post
+const F_INVITE = WP.cct["160"].fields;    // care_group_invite
+const F_GALLERY = WP.cct["14"].fields;    // care_group_gallery
+const F_SUBGROUP = WP.cct["74"].fields;   // care_group_private_member_group
+// Main care_group CCT (id 9, not in dictionary) uses fields a55-a59 verified live.
+const F_GROUP = { NAME: "a55", DESCRIPTION: "a56", GROUP_TYPE: "a57", JOIN_CODE: "a58", IS_ACTIVE: "a59" } as const;
+const YES = "b55";
+const NO = "b56";
+
+// Post type option codes — CCT 76 a55: b55=discussion, b56=announcement
+const POST_TYPE_CODE: Record<string, string> = { discussion: "b55", announcement: "b56" };
+const POST_TYPE_LABEL: Record<string, string> = { b55: "discussion", b56: "announcement" };
+
+function isYesCode(v: unknown): boolean {
+  if (v === true) return true;
+  if (typeof v === "string") {
+    const s = v.toLowerCase();
+    return s === "b55" || s === "yes" || s === "1" || s === "true";
+  }
+  return false;
+}
 
 function memberMeta(input: {
   displayName?: string;
@@ -47,24 +71,26 @@ async function fetchRelatedCctItems(relationId: number, parentId: string, cctSlu
   return items.filter(Boolean);
 }
 
-// ─── Care Group Posts ───────────────────────────────────────
-// CCT slug: care_group_not_too_special_post | fields: type, title, content, is_pinned, scheduled_at
+// ─── Care Group Posts (CCT 76) ──────────────────────────────
 export async function fetchCareGroupPostsWordPress(groupId: string, type?: string): Promise<any[]> {
   try {
     const posts = await fetchRelatedCctItems(REL_GROUP_POST, groupId, "care_group_not_too_special_post");
     if (!Array.isArray(posts)) return [];
-    const normalizeType = (t: any): string => Array.isArray(t) ? (t[0] || "discussion") : (t || "discussion");
+    const normalizeType = (raw: any): string => {
+      const v = Array.isArray(raw) ? (raw[0] || "") : (raw || "");
+      return POST_TYPE_LABEL[String(v)] || String(v) || "discussion";
+    };
     return posts
-      .filter((p: any) => !type || normalizeType(p.type) === type)
+      .filter((p: any) => !type || normalizeType(p[F_POST.TYPE]) === type)
       .map((p: any) => ({
         id: p.id,
         group_id: groupId,
         author_id: p.author_id || null,
-        type: normalizeType(p.type),
-        title: p.title || null,
-        content: p.content || null,
-        is_pinned: p.is_pinned === true || p.is_pinned === "yes" || p.is_pinned === "1",
-        scheduled_at: p.scheduled_at || null,
+        type: normalizeType(p[F_POST.TYPE]),
+        title: p[F_POST.TITLE] || null,
+        content: p[F_POST.CONTENT] || null,
+        is_pinned: isYesCode(p[F_POST.IS_PINNED]),
+        scheduled_at: p[F_POST.SCHEDULED_AT] || null,
         created_at: p.created_at,
         updated_at: p.updated_at || p.created_at,
         author: p.author_id ? { id: p.author_id, full_name: null, avatar_url: null } : null,
@@ -76,9 +102,10 @@ export async function createGroupPostWordPress(post: { group_id: string; content
   const created = await wordpressCCTFetch<any>("care_group_not_too_special_post", {
     method: "POST",
     body: {
-      title: post.title || post.content.substring(0, 50),
-      content: post.content,
-      type: post.type || "discussion",
+      [F_POST.TITLE]: post.title || post.content.substring(0, 50),
+      [F_POST.CONTENT]: post.content,
+      [F_POST.TYPE]: POST_TYPE_CODE[post.type || "discussion"] || "b55",
+      [F_POST.IS_PINNED]: NO,
     },
   });
   const groupId = normalizeWpObjectId(post.group_id);
@@ -92,11 +119,12 @@ export async function createGroupPostWordPress(post: { group_id: string; content
   return postId ? String(postId) : null;
 }
 
-export async function updateGroupPostWordPress(id: string, updates: { content?: string; title?: string; is_pinned?: boolean }): Promise<void> {
+export async function updateGroupPostWordPress(id: string, updates: { content?: string; title?: string; is_pinned?: boolean; type?: string }): Promise<void> {
   const body: Record<string, any> = {};
-  if (updates.content !== undefined) body.content = updates.content;
-  if (updates.title !== undefined) body.title = updates.title;
-  if (updates.is_pinned !== undefined) body.is_pinned = updates.is_pinned ? "yes" : "no";
+  if (updates.content !== undefined) body[F_POST.CONTENT] = updates.content;
+  if (updates.title !== undefined) body[F_POST.TITLE] = updates.title;
+  if (updates.is_pinned !== undefined) body[F_POST.IS_PINNED] = updates.is_pinned ? YES : NO;
+  if (updates.type !== undefined) body[F_POST.TYPE] = POST_TYPE_CODE[updates.type] || updates.type;
   await wordpressCCTFetch("care_group_not_too_special_post", { id, method: "PUT", body });
 }
 
@@ -104,13 +132,12 @@ export async function deleteGroupPostWordPress(id: string): Promise<void> {
   await wordpressCCTFetch("care_group_not_too_special_post", { id, method: "DELETE" });
 }
 
-// ─── Group Settings ─────────────────────────────────────────
-// CCT slug: care_group | fields: name, description, group_type, is_active
+// ─── Group Settings (CCT 9 — care_group) ────────────────────
 export async function updateCareGroupWordPress(id: string, updates: { name?: string; description?: string; is_private?: boolean }): Promise<void> {
   const body: Record<string, any> = {};
-  if (updates.name !== undefined) body.name = updates.name;
-  if (updates.description !== undefined) body.description = updates.description;
-  if (updates.is_private !== undefined) body.group_type = updates.is_private ? "private" : "public";
+  if (updates.name !== undefined) body[F_GROUP.NAME] = updates.name;
+  if (updates.description !== undefined) body[F_GROUP.DESCRIPTION] = updates.description;
+  if (updates.is_private !== undefined) body[F_GROUP.GROUP_TYPE] = updates.is_private ? "b56" : "b55";
   await wordpressCCTFetch("care_group", { id, method: "PUT", body });
 }
 
@@ -294,17 +321,19 @@ function generateInviteToken(): string {
 
 function normalizeInvite(raw: any, groupId?: string) {
   const id = String(raw.id || raw._ID || "");
-  const expires = raw.expires_at ? String(raw.expires_at) : null;
+  const expiresRaw = raw[F_INVITE.EXPIRES_AT];
+  const expires = expiresRaw ? String(expiresRaw) : null;
   const isExpired = expires ? new Date(expires).getTime() < Date.now() : false;
-  const maxUses = Number(raw.max_uses || 0);
-  const useCount = Number(raw.use_count || 0);
-  const isRevoked = raw.is_revoked === true || raw.is_revoked === "yes" || raw.is_revoked === "1" || raw.is_revoked === 1;
+  const maxUses = Number(raw[F_INVITE.MAX_USES] || 0);
+  const useCount = Number(raw[F_INVITE.USE_COUNT] || 0);
+  const rev = raw[F_INVITE.IS_REVOKED];
+  const isRevoked = rev === true || rev === 1 || (typeof rev === "string" && ["yes","1","true","on"].includes(rev.toLowerCase()));
   const isExhausted = maxUses > 0 && useCount >= maxUses;
   return {
     id,
     group_id: groupId || null,
-    token: raw.token || "",
-    name: raw.name || "",
+    token: raw[F_INVITE.TOKEN] || "",
+    name: raw[F_INVITE.NAME] || "",
     expires_at: expires,
     max_uses: maxUses,
     use_count: useCount,
@@ -334,12 +363,12 @@ export async function createGroupInviteWordPress(input: {
   const created = await wordpressCCTFetch<any>("care_group_invite", {
     method: "POST",
     body: {
-      token,
-      name: input.name || "Invite link",
-      expires_at: input.expiresAt || "",
-      max_uses: Number(input.maxUses || 0),
-      use_count: 0,
-      is_revoked: "no",
+      [F_INVITE.TOKEN]: token,
+      [F_INVITE.NAME]: input.name || "Invite link",
+      [F_INVITE.EXPIRES_AT]: input.expiresAt || "",
+      [F_INVITE.MAX_USES]: Number(input.maxUses || 0),
+      [F_INVITE.USE_COUNT]: 0,
+      [F_INVITE.IS_REVOKED]: "0",
     },
   });
   const groupIdNum = normalizeWpObjectId(input.groupId);
@@ -350,7 +379,7 @@ export async function createGroupInviteWordPress(input: {
       body: { parent_id: groupIdNum, child_id: inviteId, context: "child", store_items_type: "update" },
     });
   }
-  return normalizeInvite({ ...created, id: inviteId, token }, input.groupId);
+  return normalizeInvite({ ...created, id: inviteId, [F_INVITE.TOKEN]: token }, input.groupId);
 }
 
 export async function updateGroupInviteWordPress(id: string, updates: {
@@ -361,11 +390,11 @@ export async function updateGroupInviteWordPress(id: string, updates: {
   isRevoked?: boolean;
 }): Promise<void> {
   const body: Record<string, any> = {};
-  if (updates.name !== undefined) body.name = updates.name;
-  if (updates.token !== undefined) body.token = updates.token;
-  if (updates.expiresAt !== undefined) body.expires_at = updates.expiresAt || "";
-  if (updates.maxUses !== undefined) body.max_uses = Number(updates.maxUses || 0);
-  if (updates.isRevoked !== undefined) body.is_revoked = updates.isRevoked ? "yes" : "no";
+  if (updates.name !== undefined) body[F_INVITE.NAME] = updates.name;
+  if (updates.token !== undefined) body[F_INVITE.TOKEN] = updates.token;
+  if (updates.expiresAt !== undefined) body[F_INVITE.EXPIRES_AT] = updates.expiresAt || "";
+  if (updates.maxUses !== undefined) body[F_INVITE.MAX_USES] = Number(updates.maxUses || 0);
+  if (updates.isRevoked !== undefined) body[F_INVITE.IS_REVOKED] = updates.isRevoked ? "1" : "0";
   await wordpressCCTFetch("care_group_invite", { id, method: "PUT", body });
 }
 
@@ -383,7 +412,7 @@ export async function joinGroupByCodeWordPress(token: string): Promise<any> {
     const invites = await wordpressCCTFetch<any[]>("care_group_invite", { params: { _limit: 500 } });
     if (!Array.isArray(invites)) throw new Error("Invalid invite link");
     const lower = trimmed.toLowerCase();
-    const match = invites.find((i: any) => String(i.token || "").trim().toLowerCase() === lower);
+    const match = invites.find((i: any) => String(i[F_INVITE.TOKEN] || "").trim().toLowerCase() === lower);
     if (!match) throw new Error("Invalid invite link");
     const invite = normalizeInvite(match);
     if (invite.is_revoked) throw new Error("This invite link has been revoked.");
@@ -400,11 +429,10 @@ export async function joinGroupByCodeWordPress(token: string): Promise<any> {
     let groupName = "Care Group";
     try {
       const g = await wordpressCCTFetch<any>("care_group", { id: String(parentGroupId) });
-      groupName = g?.name || groupName;
+      groupName = g?.[F_GROUP.NAME] || groupName;
     } catch {}
 
-    // Check membership FIRST — never re-POST to Rel 72 for an existing member
-    // (that would wipe owner/admin meta and falsely consume an invite use).
+    // Check membership FIRST
     const wpUser = getStoredWPUser();
     const userId = wpUser?.user_id ? Number(wpUser.user_id) : 0;
     if (!userId) throw new Error("Please sign in to join this group.");
@@ -420,7 +448,6 @@ export async function joinGroupByCodeWordPress(token: string): Promise<any> {
       return { group_id: String(parentGroupId), group_name: groupName, already_member: true };
     }
 
-    // Add user to group via Rel 72
     await wordpressFetch(`jet-rel/${REL_GROUP_MEMBER}`, {
       method: "POST",
       body: {
@@ -441,7 +468,7 @@ export async function joinGroupByCodeWordPress(token: string): Promise<any> {
     wordpressCCTFetch("care_group_invite", {
       id: String(inviteIdNum),
       method: "PUT",
-      body: { use_count: invite.use_count + 1 },
+      body: { [F_INVITE.USE_COUNT]: invite.use_count + 1 },
     }).catch(() => {});
 
     return { group_id: String(parentGroupId), group_name: groupName, already_member: false };
@@ -471,7 +498,7 @@ export async function fetchCareGroupGalleryWordPress(groupId: string): Promise<a
     const items = await fetchRelatedCctItems(REL_GROUP_GALLERY, groupId, "care_group_gallery");
     const enriched = await Promise.all(
       items.map(async (m: any) => {
-        const mediaId = m.image ?? null;
+        const mediaId = m[F_GALLERY.IMAGE] ?? null;
         const image_url = await resolveMediaUrl(mediaId);
         return {
           id: String(m.id || m._ID),
@@ -480,8 +507,8 @@ export async function fetchCareGroupGalleryWordPress(groupId: string): Promise<a
           image_url,
           url: image_url,
           type: "image",
-          caption: m.image_description || "",
-          taken_at: m.taken_at || null,
+          caption: m[F_GALLERY.IMAGE_DESCRIPTION] || "",
+          taken_at: m[F_GALLERY.TAKEN_AT] || null,
           created_at: m.created_at,
         };
       })
@@ -496,7 +523,7 @@ export async function uploadToWPMedia(file: File): Promise<number> {
   const { getWPToken } = await import("@/services/wp-auth");
   const url = buildWPUrl("/wp-json/wp/v2/media");
   const headers = buildWPHeaders(getWPToken());
-  delete (headers as any)["Content-Type"]; // let browser set multipart boundary
+  delete (headers as any)["Content-Type"];
   headers["Content-Disposition"] = `attachment; filename="${file.name.replace(/"/g, "")}"`;
   const fd = new FormData();
   fd.append("file", file);
@@ -516,9 +543,9 @@ export async function createCareGroupGalleryItemWordPress(
   const created = await wordpressCCTFetch<any>("care_group_gallery", {
     method: "POST",
     body: {
-      image: mediaId,
-      image_description: caption || "",
-      taken_at: takenAt || new Date().toISOString().slice(0, 19).replace("T", " "),
+      [F_GALLERY.IMAGE]: mediaId,
+      [F_GALLERY.IMAGE_DESCRIPTION]: caption || "",
+      [F_GALLERY.TAKEN_AT]: takenAt || new Date().toISOString().slice(0, 19).replace("T", " "),
     },
   });
   const itemId = normalizeWpObjectId(created?.item_id || created?._ID || created?.id);
@@ -534,19 +561,16 @@ export async function deleteCareGroupGalleryItemWordPress(itemId: string): Promi
   await wordpressCCTFetch("care_group_gallery", { id: itemId, method: "DELETE" });
 }
 
-// ─── Sub-groups (private member groups) ─────────────────────
-// CCT slug: care_group_private_member_group | fields: name, description, color
-// Linked via JetEngine relation 47 (care_group → care_group_private_member_group)
-// Member assignment via JetEngine relation 75 (private_member_group → users)
+// ─── Sub-groups (CCT 74 — care_group_private_member_group) ──
 export async function fetchMemberCategoriesWordPress(groupId: string): Promise<any[]> {
   try {
     const cats = await fetchRelatedCctItems(REL_GROUP_SUBGROUP, groupId, "care_group_private_member_group");
     return cats.map((c: any) => ({
       id: String(c.id || c._ID),
       group_id: groupId,
-      name: c.name || "",
-      description: c.description || null,
-      color: c.color || null,
+      name: c[F_SUBGROUP.NAME] || "",
+      description: c[F_SUBGROUP.DESCRIPTION] || null,
+      color: c[F_SUBGROUP.COLOR] || null,
       created_at: c.created_at,
     }));
   } catch { return []; }
@@ -555,7 +579,11 @@ export async function fetchMemberCategoriesWordPress(groupId: string): Promise<a
 export async function createMemberCategoryWordPress(groupId: string, name: string, color?: string, description?: string): Promise<void> {
   const created = await wordpressCCTFetch<any>("care_group_private_member_group", {
     method: "POST",
-    body: { name, description: description || "", color: color || "" },
+    body: {
+      [F_SUBGROUP.NAME]: name,
+      [F_SUBGROUP.DESCRIPTION]: description || "",
+      [F_SUBGROUP.COLOR]: color || "",
+    },
   });
   const normalizedGroupId = normalizeWpObjectId(groupId);
   const categoryId = normalizeWpObjectId(created?.item_id || created?._ID || created?.id);
@@ -564,7 +592,6 @@ export async function createMemberCategoryWordPress(groupId: string, name: strin
       method: "POST",
       body: { parent_id: normalizedGroupId, child_id: categoryId, context: "child", store_items_type: "update" },
     });
-    // Auto-add creator as owner of the sub-group (Rel 75) — accepted by default.
     const wpUser = getStoredWPUser();
     const ownerId = wpUser?.user_id ? Number(wpUser.user_id) : 0;
     if (ownerId) {
