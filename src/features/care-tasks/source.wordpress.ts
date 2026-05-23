@@ -226,23 +226,23 @@ export async function updateCareTaskWordPress(id: string, updates: Record<string
   } = updates || {};
 
   const body: Record<string, any> = { ...rest };
-  if (title !== undefined) body.a = title;
-  if (description !== undefined) body.b = description;
-  if (task_types !== undefined) body.c = Array.isArray(task_types) ? task_types : [];
-  if (people_needed !== undefined) body.people_needed = people_needed != null ? String(people_needed) : "";
-  if (location !== undefined) body.e = location;
-  if (photo !== undefined) body.f = photo;
-  if (task_date !== undefined) body.g = task_date || "";
-  else if (due_date !== undefined) body.g = due_date || "";
-  if (start_time !== undefined) body.h = start_time || "";
-  if (end_time !== undefined) body.i = end_time || "";
-  if (completed_at !== undefined) body.j = completed_at || "";
-  if (help_status !== undefined) body.k = String(help_status);
-  if (finish_status !== undefined) body.l = String(finish_status);
+  if (title !== undefined) body.a55 = title;
+  if (description !== undefined) body.a56 = description;
+  if (task_types !== undefined) body.a57 = Array.isArray(task_types) ? task_types : [];
+  if (people_needed !== undefined) body.a58 = people_needed != null ? String(people_needed) : "";
+  if (location !== undefined) body.a59 = location;
+  if (photo !== undefined) body.a60 = photo;
+  if (task_date !== undefined) body.a61 = task_date || "";
+  else if (due_date !== undefined) body.a61 = due_date || "";
+  if (start_time !== undefined) body.a62 = start_time || "";
+  if (end_time !== undefined) body.a63 = end_time || "";
+  if (completed_at !== undefined) body.a64 = completed_at || "";
+  if (help_status !== undefined) body.a65 = helpStatusFromLegacy(help_status);
+  if (finish_status !== undefined) body.a66 = String(finish_status);
   // Legacy: { status: "completed" | "pending" }
   if (status !== undefined) {
-    body.l = finishStatusFromLegacy(status);
-    if (status === "completed") body.j = body.j || new Date().toISOString();
+    body.a66 = finishStatusFromLegacy(status);
+    if (status === "completed") body.a64 = body.a64 || new Date().toISOString();
   }
 
   if (Object.keys(body).length > 0) {
