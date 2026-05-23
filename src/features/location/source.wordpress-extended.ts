@@ -187,21 +187,21 @@ export async function createSafeZoneWordPress(zone: { user_id: string; name: str
   const created = await wordpressCCTFetch<any>("safe_zone", {
     method: "POST",
     body: {
-      zone_type: zone.zone_type || "Safe",
-      shape_type: zone.shape_type || "Radius",
-      custom_name: zone.name,
-      custom_description: zone.description || "",
-      custom_color: zone.color || "",
-      latitude: String(zone.latitude),
-      longitude: String(zone.longitude),
-      radius_meters: zone.radius_meters ?? 100,
-      polygon_points: zone.polygon_points ? JSON.stringify(zone.polygon_points) : "",
-      notify_on_enter: zone.notify_on_enter !== false ? "On" : "Off",
-      notify_on_exit: zone.notify_on_exit !== false ? "On" : "Off",
-      schedule_enabled: zone.schedule_enabled ? "On" : "Off",
-      schedule_start_time: zone.schedule_start_time || "",
-      schedule_end_time: zone.schedule_end_time || "",
-      is_active: zone.is_active === false ? "No" : "Yes",
+      a55: String(zone.zone_type || "Safe").toLowerCase() === "danger" ? "b56" : "b55",
+      a56: String(zone.shape_type || "Radius").toLowerCase() === "polygon" ? "b56" : "b55",
+      a57: zone.name,
+      a58: zone.description || "",
+      a59: zone.color || "",
+      a60: String(zone.latitude),
+      a61: String(zone.longitude),
+      a62: zone.radius_meters ?? 100,
+      a63: zone.polygon_points ? JSON.stringify(zone.polygon_points) : "",
+      a64: zone.notify_on_enter !== false ? "b56" : "b55",
+      a65: zone.notify_on_exit !== false ? "b56" : "b55",
+      a66: zone.schedule_enabled ? "b56" : "b55",
+      a67: zone.schedule_start_time || "",
+      a68: zone.schedule_end_time || "",
+      a69: zone.is_active === false ? "b56" : "b55",
     },
   });
   await attachChildToUserRelation(REL_USER_SAFE_ZONE, userId, String(created._ID || created.id));
@@ -209,21 +209,21 @@ export async function createSafeZoneWordPress(zone: { user_id: string; name: str
 
 export async function updateSafeZoneWordPress(id: string, updates: Record<string, any>): Promise<void> {
   const body: Record<string, any> = {};
-  if (updates.name !== undefined) body.custom_name = updates.name;
-  if (updates.zone_type !== undefined) body.zone_type = updates.zone_type;
-  if (updates.shape_type !== undefined) body.shape_type = updates.shape_type;
-  if (updates.color !== undefined) body.custom_color = updates.color;
-  if (updates.latitude !== undefined) body.latitude = String(updates.latitude);
-  if (updates.longitude !== undefined) body.longitude = String(updates.longitude);
-  if (updates.radius_meters !== undefined) body.radius_meters = updates.radius_meters;
-  if (updates.polygon_points !== undefined) body.polygon_points = updates.polygon_points ? JSON.stringify(updates.polygon_points) : "";
-  if (updates.description !== undefined) body.custom_description = updates.description;
-  if (updates.notify_on_enter !== undefined) body.notify_on_enter = updates.notify_on_enter ? "On" : "Off";
-  if (updates.notify_on_exit !== undefined) body.notify_on_exit = updates.notify_on_exit ? "On" : "Off";
-  if (updates.schedule_enabled !== undefined) body.schedule_enabled = updates.schedule_enabled ? "On" : "Off";
-  if (updates.schedule_start_time !== undefined) body.schedule_start_time = updates.schedule_start_time;
-  if (updates.schedule_end_time !== undefined) body.schedule_end_time = updates.schedule_end_time;
-  if (updates.is_active !== undefined) body.is_active = updates.is_active ? "Yes" : "No";
+  if (updates.name !== undefined) body.a57 = updates.name;
+  if (updates.zone_type !== undefined) body.a55 = String(updates.zone_type).toLowerCase() === "danger" ? "b56" : "b55";
+  if (updates.shape_type !== undefined) body.a56 = String(updates.shape_type).toLowerCase() === "polygon" ? "b56" : "b55";
+  if (updates.color !== undefined) body.a59 = updates.color;
+  if (updates.latitude !== undefined) body.a60 = String(updates.latitude);
+  if (updates.longitude !== undefined) body.a61 = String(updates.longitude);
+  if (updates.radius_meters !== undefined) body.a62 = updates.radius_meters;
+  if (updates.polygon_points !== undefined) body.a63 = updates.polygon_points ? JSON.stringify(updates.polygon_points) : "";
+  if (updates.description !== undefined) body.a58 = updates.description;
+  if (updates.notify_on_enter !== undefined) body.a64 = updates.notify_on_enter ? "b56" : "b55";
+  if (updates.notify_on_exit !== undefined) body.a65 = updates.notify_on_exit ? "b56" : "b55";
+  if (updates.schedule_enabled !== undefined) body.a66 = updates.schedule_enabled ? "b56" : "b55";
+  if (updates.schedule_start_time !== undefined) body.a67 = updates.schedule_start_time;
+  if (updates.schedule_end_time !== undefined) body.a68 = updates.schedule_end_time;
+  if (updates.is_active !== undefined) body.a69 = updates.is_active ? "b55" : "b56";
   await wordpressCCTFetch("safe_zone", { id, method: "PUT", body });
 }
 
