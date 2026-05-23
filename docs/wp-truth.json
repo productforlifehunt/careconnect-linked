@@ -1,0 +1,2676 @@
+{
+  "ccts": [
+    {
+      "id": 110,
+      "name": "User's extended profile",
+      "fields": [
+        {
+          "label": "Allow emergency location request",
+          "code": "a55",
+          "type": "Radio",
+          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Location share is on",
+          "code": "a56",
+          "type": "Radio",
+          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Notification preference",
+          "code": "a57",
+          "type": "",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "General user role",
+          "code": "a58",
+          "type": "Checkbox",
+          "options": "1. \"cared one\" (b55) 2. \"caring one\" (b56)",
+          "optionMap": {
+            "b55": "cared one",
+            "b56": "caring one"
+          }
+        },
+        {
+          "label": "Is care provider",
+          "code": "a59",
+          "type": "Radio",
+          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Care provider is active",
+          "code": "a60",
+          "type": "Radio",
+          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Care provider is background checked",
+          "code": "a61",
+          "type": "Radio",
+          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Care provider's background check detail",
+          "code": "a62",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Care provider's cancellation policy",
+          "code": "a63",
+          "type": "",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Care provider's service area",
+          "code": "a64",
+          "type": "",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Care provider's starts hourly rate",
+          "code": "a65",
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Care provider offers in-person service",
+          "code": "a66",
+          "type": "Radio",
+          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Care provider offers virtual service",
+          "code": "a67",
+          "type": "Radio",
+          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Care provider offers care service general type",
+          "code": "a68",
+          "type": "Checkbox",
+          "options": "1. \"Pet care and companion\" (b55) 2. \"Child care and companion\" (b56) 3. \"Adult care and companion\" (b57) 4. \"Elderly care and companion\" (b58) 5. \"Tutoring\" (b59) 6. \"Dementia care and companion\" (b60) 7. \"Housekeeping\" (b61) 8. \"Errand\" (b62) 9. \"Transportation\" (b63) 10. \"Medical Escort\" (b64) 11. \"In-person checkin\" (b65) 12. \"Remote checkin and medicine supervision\" (b66)",
+          "optionMap": {
+            "b55": "Pet care and companion",
+            "b56": "Child care and companion",
+            "b57": "Adult care and companion",
+            "b58": "Elderly care and companion",
+            "b59": "Tutoring",
+            "b60": "Dementia care and companion",
+            "b61": "Housekeeping",
+            "b62": "Errand",
+            "b63": "Transportation",
+            "b64": "Medical Escort",
+            "b65": "In-person checkin",
+            "b66": "Remote checkin and medicine supervision"
+          }
+        },
+        {
+          "label": "Care provider offers pet care for",
+          "code": "a69",
+          "type": "Checkbox",
+          "options": "1. \"Dogs\" (b55) 2. \"Cats\" (b56) 3. \"Small mammals\" (b57) 4. \"Birds\" (b58) 5. \"Fish\" (b59)",
+          "optionMap": {
+            "b55": "Dogs",
+            "b56": "Cats",
+            "b57": "Small mammals",
+            "b58": "Birds",
+            "b59": "Fish"
+          }
+        },
+        {
+          "label": "Care provider offers dementia care type",
+          "code": "a70",
+          "type": "Checkbox",
+          "options": "1. \"In-person day care\" (b55) 2. \"In-person overnight care\" (b56) 3. \"In-person companion\" (b57) 4. \"In-person checkin\" (b58) 5. \"Household help\" (b59) 6. \"Remote companion\" (b60) 7. \"Remote medicine management\" (b61) 8. \"Remote checkin\" (b62)",
+          "optionMap": {
+            "b55": "In-person day care",
+            "b56": "In-person overnight care",
+            "b57": "In-person companion",
+            "b58": "In-person checkin",
+            "b59": "Household help",
+            "b60": "Remote companion",
+            "b61": "Remote medicine management",
+            "b62": "Remote checkin"
+          }
+        },
+        {
+          "label": "Care provider offers elderly care service",
+          "code": "a71",
+          "type": "",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Care provider offers special needs care service",
+          "code": "a72",
+          "type": "Checkbox",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Care provider offers household help service",
+          "code": "a73",
+          "type": "Checkbox",
+          "options": "1. \"Housekeeping\" (b55) 2. \"Gardening\" (b56)",
+          "optionMap": {
+            "b55": "Housekeeping",
+            "b56": "Gardening"
+          }
+        },
+        {
+          "label": "Care provider offers errand service",
+          "code": "a74",
+          "type": "",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Care provider offers transportation service",
+          "code": "a75",
+          "type": "",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Care provider offers medical escort service",
+          "code": "a76",
+          "type": "",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Care provider offers childcare service as",
+          "code": "a77",
+          "type": "Checkbox",
+          "options": "1. \"Babysitter\" (b55) 2. \"Nanny\" (b56) 3. \"Childminder\" (b57)",
+          "optionMap": {
+            "b55": "Babysitter",
+            "b56": "Nanny",
+            "b57": "Childminder"
+          }
+        },
+        {
+          "label": "Care provider offers childcare service",
+          "code": "a78",
+          "type": "Checkbox",
+          "options": "1. \"Cooking / Meal preparation\" (b55) 2. \"Pick-up / Drop off\" (b56) 3. \"Light housekeeping\" (b57) 4. \"Activities (e.g. swimming)\" (b58) 5. \"Putting kids to bed\" (b59) 6. \"Homework help\" (b60) 7. \"Bathing\" (b61) 8. \"Virtual Care\" (b62)",
+          "optionMap": {
+            "b55": "Cooking / Meal preparation",
+            "b56": "Pick-up / Drop off",
+            "b57": "Light housekeeping",
+            "b58": "Activities (e.g. swimming)",
+            "b59": "Putting kids to bed",
+            "b60": "Homework help",
+            "b61": "Bathing",
+            "b62": "Virtual Care"
+          }
+        },
+        {
+          "label": "Care provider offers dog care service type",
+          "code": "a79",
+          "type": "Checkbox",
+          "options": "1. \"Dog sitting\" (b55) 2. \"Dog walking\" (b56) 3. \"Dog feeding\" (b57) 4. \"Dog day care\" (b58) 5. \"Dog transportation\" (b59) 6. \"Dog overnight sitting\" (b60) 7. \"Dog training\" (b61) 8. \"Dog grooming\" (b62)",
+          "optionMap": {
+            "b55": "Dog sitting",
+            "b56": "Dog walking",
+            "b57": "Dog feeding",
+            "b58": "Dog day care",
+            "b59": "Dog transportation",
+            "b60": "Dog overnight sitting",
+            "b61": "Dog training",
+            "b62": "Dog grooming"
+          }
+        },
+        {
+          "label": "Care provider offers cat care service",
+          "code": "a80",
+          "type": "Checkbox",
+          "options": "1. \"Cat sitting\" (b55) 2. \"Cat walking\" (b56) 3. \"Cat feeding\" (b57) 4. \"Cat day care\" (b58) 5. \"Cat transportation\" (b59) 6. \"Cat overnight sitting\" (b60) 7. \"Cat training\" (b61) 8. \"Cat grooming\" (b62)",
+          "optionMap": {
+            "b55": "Cat sitting",
+            "b56": "Cat walking",
+            "b57": "Cat feeding",
+            "b58": "Cat day care",
+            "b59": "Cat transportation",
+            "b60": "Cat overnight sitting",
+            "b61": "Cat training",
+            "b62": "Cat grooming"
+          }
+        },
+        {
+          "label": "Care provider offers small mammal care service type",
+          "code": "a81",
+          "type": "",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Care provider offers bird care service",
+          "code": "a82",
+          "type": "",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Care provider offers fish care service",
+          "code": "a83",
+          "type": "",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Care provider is a doctor and offers care tip consultancy",
+          "code": "a84",
+          "type": "",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Care provider is a doctor and offers accompany tip consultancy",
+          "code": "a85",
+          "type": "",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Care provides can drive",
+          "code": "a86",
+          "type": "Radio",
+          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Care provides has own transportation",
+          "code": "a87",
+          "type": "Radio",
+          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Care provider is a Non-smoker",
+          "code": "a88",
+          "type": "Radio",
+          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Care provider is experienced with",
+          "code": "a89",
+          "type": "Checkbox",
+          "options": "1. \"Newborn (up to 12 months)\" (b55) 2. \"Toddler (1-3 years)\" (b56) 3. \"Early School Age (4-6 years)\" (b57) 4. \"Primary school age (7-12 years)\" (b58) 5. \"Teenager (12+ years)\" (b59) 6. \"Twins/Multiples\" (b60) 7. \"Special Needs Children\" (b61)",
+          "optionMap": {
+            "b55": "Newborn (up to 12 months)",
+            "b56": "Toddler (1-3 years)",
+            "b57": "Early School Age (4-6 years)",
+            "b58": "Primary school age (7-12 years)",
+            "b59": "Teenager (12+ years)",
+            "b60": "Twins/Multiples",
+            "b61": "Special Needs Children"
+          }
+        },
+        {
+          "label": "Cared one's AI system prompt",
+          "code": "a90",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "User enabled push notification",
+          "code": "a91",
+          "type": "Radio",
+          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "User enabled email notification",
+          "code": "a92",
+          "type": "Radio",
+          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "User enabled sms notification",
+          "code": "a93",
+          "type": "Radio",
+          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        }
+      ]
+    },
+    {
+      "id": 125,
+      "name": "Cared one's information card",
+      "fields": [
+        {
+          "label": "Cared one's name",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Cared one's description",
+          "code": "a56",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Cared one's information card name",
+          "code": "a57",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Status",
+          "code": "a58",
+          "type": "Radio",
+          "options": "1. \"Draft\" (b55) 2. \"Active\" (b56) 3. \"Paused\" (b57)",
+          "optionMap": {
+            "b55": "Draft",
+            "b56": "Active",
+            "b57": "Paused"
+          }
+        },
+        {
+          "label": "Displays location",
+          "code": "a59",
+          "type": "Radio",
+          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Share token",
+          "code": "a60",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Share expires at",
+          "code": "a61",
+          "type": "Datetime",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Share visibility",
+          "code": "a62",
+          "type": "Radio",
+          "options": "1. \"Visible to public\" (b55) 2. \"Visible to the care group of the cared one\" (b56) 3. \"Visible to caregivers of the cared one\" (b57) 4. \"Visible to author\" (b58)",
+          "optionMap": {
+            "b55": "Visible to public",
+            "b56": "Visible to the care group of the cared one",
+            "b57": "Visible to caregivers of the cared one",
+            "b58": "Visible to author"
+          }
+        }
+      ]
+    },
+    {
+      "id": 128,
+      "name": "User's calendar event",
+      "fields": [
+        {
+          "label": "Title",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Description",
+          "code": "a56",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Start at",
+          "code": "a57",
+          "type": "Datetime",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "End at",
+          "code": "a58",
+          "type": "Datetime",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "All day",
+          "code": "a59",
+          "type": "Checkbox",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Event type",
+          "code": "a60",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Location",
+          "code": "a61",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Timezone",
+          "code": "a62",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Status",
+          "code": "a63",
+          "type": "Select",
+          "options": "1. \"confirmed\" (b55) 2. \"tentative\" (b56) 3. \"cancelled\" (b57)",
+          "optionMap": {
+            "b55": "confirmed",
+            "b56": "tentative",
+            "b57": "cancelled"
+          }
+        },
+        {
+          "label": "Priority",
+          "code": "a64",
+          "type": "Select",
+          "options": "1. \"normal\" (b55) 2. \"low\" (b56) 3. \"normal\" (b57) 4. \"high\" (b58) 5. \"urgent\" (b59)",
+          "optionMap": {
+            "b55": "normal",
+            "b56": "low",
+            "b57": "normal",
+            "b58": "high",
+            "b59": "urgent"
+          }
+        },
+        {
+          "label": "Color",
+          "code": "a65",
+          "type": "Colorpicker",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "RRULE",
+          "code": "a66",
+          "type": "Text",
+          "options": "iCal RRULE",
+          "optionMap": {}
+        },
+        {
+          "label": "RRULE Until",
+          "code": "a67",
+          "type": "Datetime",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "EXDATES",
+          "code": "a68",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "RDATES",
+          "code": "a69",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Recurrence ID",
+          "code": "a70",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Show as",
+          "code": "a71",
+          "type": "Select",
+          "options": "1. \"busy\" (b55) 2. \"free\" (b56) 3. \"tentative\" (b57) 4. \"oof\" (b58)",
+          "optionMap": {
+            "b55": "busy",
+            "b56": "free",
+            "b57": "tentative",
+            "b58": "oof"
+          }
+        },
+        {
+          "label": "Visibility",
+          "code": "a72",
+          "type": "Select",
+          "options": "1. \"default\" (b55) 2. \"public\" (b56) 3. \"private\" (b57) 4. \"confidential\" (b58)",
+          "optionMap": {
+            "b55": "default",
+            "b56": "public",
+            "b57": "private",
+            "b58": "confidential"
+          }
+        },
+        {
+          "label": "Reminders",
+          "code": "a73",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Is availability",
+          "code": "a74",
+          "type": "Radio",
+          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Availability note",
+          "code": "a75",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "RSVP required",
+          "code": "a76",
+          "type": "Radio",
+          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Allow comments",
+          "code": "a77",
+          "type": "Radio",
+          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "External source",
+          "code": "a78",
+          "type": "Select",
+          "options": "1. \"internal\" (b55) 2. \"google\" (b56) 3. \"outlook\" (b57) 4. \"apple\" (b58)",
+          "optionMap": {
+            "b55": "internal",
+            "b56": "google",
+            "b57": "outlook",
+            "b58": "apple"
+          }
+        },
+        {
+          "label": "iCal UID",
+          "code": "a79",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Sequence",
+          "code": "a80",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "ETag",
+          "code": "a81",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Google Event ID",
+          "code": "a82",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Meeting URL",
+          "code": "a83",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Attachments",
+          "code": "a84",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Last sync at",
+          "code": "a85",
+          "type": "Datetime",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Sync token",
+          "code": "a86",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Geo Lat",
+          "code": "a87",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Geo Lng",
+          "code": "a88",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Tags",
+          "code": "a89",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Custom data",
+          "code": "a90",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        }
+      ]
+    },
+    {
+      "id": 160,
+      "name": "Care group invite",
+      "fields": [
+        {
+          "label": "Token",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Name",
+          "code": "a56",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Expires_at",
+          "code": "a57",
+          "type": "Datetime",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Max_uses",
+          "code": "a58",
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Use count",
+          "code": "a59",
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Is revoked",
+          "code": "a60",
+          "type": "Switcher",
+          "options": "",
+          "optionMap": {}
+        }
+      ]
+    },
+    {
+      "id": 74,
+      "name": "The related private member groups of one care group",
+      "fields": [
+        {
+          "label": "name",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "description",
+          "code": "a56",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "color",
+          "code": "a57",
+          "type": "Colorpicker",
+          "options": "",
+          "optionMap": {}
+        }
+      ]
+    },
+    {
+      "id": 76,
+      "name": "The related not too special posts of one care group",
+      "fields": [
+        {
+          "label": "type",
+          "code": "a55",
+          "type": "Checkbox",
+          "options": "1. \"discussion\" (b55) — General group conversation / 一般组讨论，普通讨论默认为 discussion 2. \"announcement\" (b56) — Important group notice 重要组通知 3. \"wish\" — Wish post（birthday, get-well, encouragement）/ 祝福帖（生日、康复、鼓励）",
+          "optionMap": {
+            "b55": "discussion",
+            "b56": "announcement"
+          }
+        },
+        {
+          "label": "title",
+          "code": "a56",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "content",
+          "code": "a57",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "is pinned",
+          "code": "a58",
+          "type": "Radio",
+          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "scheduled at",
+          "code": "a59",
+          "type": "Datetime",
+          "options": "",
+          "optionMap": {}
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "name": "Care Group Gallery",
+      "fields": [
+        {
+          "label": "Image",
+          "code": "a55",
+          "type": "Media",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Image description",
+          "code": "a56",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Taken at",
+          "code": "a57",
+          "type": "Datetime",
+          "options": "",
+          "optionMap": {}
+        }
+      ]
+    },
+    {
+      "id": 162,
+      "name": "Care Task",
+      "fields": [
+        {
+          "label": "Title",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Description",
+          "code": "a56",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Task type",
+          "code": "a57",
+          "type": "Checkbox",
+          "options": "1. \"Preparing Meals\" (b55) 2. \"Giving Rides\" (b56) 3. \"Shopping\" (b57) 4. \"Childcare\" (b58) 5. \"Visits\" (b59) 6. \"Coverage\" (b60) 7. \"Medications & Medical Care\" (b61) 8. \"Miscellaneous\" (b62) 9. \"Occasions\" (b63)",
+          "optionMap": {
+            "b55": "Preparing Meals",
+            "b56": "Giving Rides",
+            "b57": "Shopping",
+            "b58": "Childcare",
+            "b59": "Visits",
+            "b60": "Coverage",
+            "b61": "Medications & Medical Care",
+            "b62": "Miscellaneous",
+            "b63": "Occasions"
+          }
+        },
+        {
+          "label": "People needed",
+          "code": "a58",
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Location",
+          "code": "a59",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Photo",
+          "code": "a60",
+          "type": "",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Date of the task",
+          "code": "a61",
+          "type": "Date",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Task start time",
+          "code": "a62",
+          "type": "Datetime",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Task end time",
+          "code": "a63",
+          "type": "Datetime",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Task completed at",
+          "code": "a64",
+          "type": "Datetime",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Task help status",
+          "code": "a65",
+          "type": "Radio",
+          "options": "1. \"Task doesn't need help\" (b55) 2. \"Task needs help\" (b56) 3. \"Task has found help\" (b57)",
+          "optionMap": {
+            "b55": "Task doesn't need help",
+            "b56": "Task needs help",
+            "b57": "Task has found help"
+          }
+        },
+        {
+          "label": "Task finish status",
+          "code": "a66",
+          "type": "Radio",
+          "options": "1. \"Not finished\" (b55) 2. \"Finished\" (b56)",
+          "optionMap": {
+            "b55": "Not finished",
+            "b56": "Finished"
+          }
+        }
+      ]
+    },
+    {
+      "id": 146,
+      "name": "Notification",
+      "fields": [
+        {
+          "label": "Notification type",
+          "code": "a55",
+          "type": "Radio",
+          "options": "1. \"User chat\" (b55) 2. \"Booking\" (b56) 3. \"System\" (b57) 4. \"Location alert\" (b58)",
+          "optionMap": {
+            "b55": "User chat",
+            "b56": "Booking",
+            "b57": "System",
+            "b58": "Location alert"
+          }
+        },
+        {
+          "label": "Notification title",
+          "code": "a56",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Notification content",
+          "code": "a57",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Action url",
+          "code": "a58",
+          "type": "Text",
+          "options": "点击跳转",
+          "optionMap": {}
+        },
+        {
+          "label": "Notification is read",
+          "code": "a59",
+          "type": "Radio",
+          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        }
+      ]
+    },
+    {
+      "id": 147,
+      "name": "User's notification token",
+      "fields": [
+        {
+          "label": "Endpoint or token",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Notification provider",
+          "code": "a56",
+          "type": "Radio",
+          "options": "1. \"Web push notification\" (b55) 2. \"Firebase FCM\" (b56) 3. \"Apple APN\" (b57) 4. \"J Push\" (b58) 5. \"WeChat\" (b59)",
+          "optionMap": {
+            "b55": "Web push notification",
+            "b56": "Firebase FCM",
+            "b57": "Apple APN",
+            "b58": "J Push",
+            "b59": "WeChat"
+          }
+        },
+        {
+          "label": "Device label",
+          "code": "a57",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Auth Key",
+          "code": "a58",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "P256dh",
+          "code": "a59",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Is active",
+          "code": "a60",
+          "type": "Radio",
+          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "name": "Medicine schedule",
+      "fields": [
+        {
+          "label": "Name",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Dosage",
+          "code": "a56",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Frequency",
+          "code": "a57",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Time slot",
+          "code": "a58",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Instructions",
+          "code": "a59",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Prescribing doctor",
+          "code": "a60",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Pharmacy",
+          "code": "a61",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Side effects",
+          "code": "a62",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Start date",
+          "code": "a63",
+          "type": "Date",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "End date",
+          "code": "a64",
+          "type": "Date",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Is active",
+          "code": "a65",
+          "type": "Radio",
+          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Note",
+          "code": "a66",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Stock count",
+          "code": "a67",
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Refill threshold",
+          "code": "a68",
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "name": "Medicine log",
+      "fields": [
+        {
+          "label": "Status",
+          "code": "a55",
+          "type": "Radio",
+          "options": "1. \"Taken\" (b55) 2. \"Skipped\" (b56) 3. \"Missed\" (b57)",
+          "optionMap": {
+            "b55": "Taken",
+            "b56": "Skipped",
+            "b57": "Missed"
+          }
+        },
+        {
+          "label": "Note",
+          "code": "a56",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        }
+      ]
+    },
+    {
+      "id": 138,
+      "name": "Checkin schedule",
+      "fields": [
+        {
+          "label": "Name",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Detail",
+          "code": "a56",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Frequency",
+          "code": "a57",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Time slot",
+          "code": "a58",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Instructions",
+          "code": "a59",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Start date",
+          "code": "a60",
+          "type": "Date",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Is active",
+          "code": "a61",
+          "type": "Radio",
+          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Note",
+          "code": "a62",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "name": "Checkin log",
+      "fields": [
+        {
+          "label": "Status",
+          "code": "a55",
+          "type": "Radio",
+          "options": "1. \"Checked\" (b55) 2. \"Skipped\" (b56) 3. \"Missed\" (b57)",
+          "optionMap": {
+            "b55": "Checked",
+            "b56": "Skipped",
+            "b57": "Missed"
+          }
+        },
+        {
+          "label": "Note",
+          "code": "a56",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Checked by AI",
+          "code": "a57",
+          "type": "Radio",
+          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "name": "Cared one's care note",
+      "fields": [
+        {
+          "label": "Title",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Content",
+          "code": "a56",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "name": "Cared one's care tip",
+      "fields": [
+        {
+          "label": "Title",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Content",
+          "code": "a56",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Category",
+          "code": "a57",
+          "type": "Radio",
+          "options": "1. \"tip\" (b55) 2. \"avoid\" (b56)",
+          "optionMap": {
+            "b55": "tip",
+            "b56": "avoid"
+          }
+        },
+        {
+          "label": "Is pinned",
+          "code": "a58",
+          "type": "Radio",
+          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "name": "Cared one's care plan",
+      "fields": [
+        {
+          "label": "Title",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Content",
+          "code": "a56",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Is pinned",
+          "code": "a57",
+          "type": "Radio",
+          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "name": "Cared one's emergency contact person",
+      "fields": [
+        {
+          "label": "Name",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Content",
+          "code": "a56",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Phone",
+          "code": "a57",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Address",
+          "code": "a58",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Relationship",
+          "code": "a59",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Note",
+          "code": "a60",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "name": "Cared one's care document",
+      "fields": [
+        {
+          "label": "Name",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Content",
+          "code": "a56",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        }
+      ]
+    },
+    {
+      "id": 112,
+      "name": "The current location of one user",
+      "fields": [
+        {
+          "label": "Latitude",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Longitude",
+          "code": "a56",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Accuracy meters",
+          "code": "a57",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Altitude meters",
+          "code": "a58",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Heading degrees",
+          "code": "a59",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Speed",
+          "code": "a60",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Is moving",
+          "code": "a61",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Moving type",
+          "code": "a62",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Platform",
+          "code": "a63",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Battery level",
+          "code": "a64",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Phone is charging",
+          "code": "a65",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Address text",
+          "code": "a66",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Captured at",
+          "code": "a67",
+          "type": "Datetime",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Is emergency (no permission needed)",
+          "code": "a68",
+          "type": "Radio",
+          "options": "1. Yes (b55) 2. No (b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        }
+      ]
+    },
+    {
+      "id": 116,
+      "name": "Safe Zone (含安全区与危险区)",
+      "fields": [
+        {
+          "label": "Zone type",
+          "code": "a55",
+          "type": "Radio",
+          "options": "1. Safe (b55) 2. Danger (b56)",
+          "optionMap": {
+            "b55": "Safe",
+            "b56": "Danger"
+          }
+        },
+        {
+          "label": "Shape type",
+          "code": "a56",
+          "type": "Radio",
+          "options": "1. Radius (b55) 2. Polygon (b56)",
+          "optionMap": {
+            "b55": "Radius",
+            "b56": "Polygon"
+          }
+        },
+        {
+          "label": "Custom name",
+          "code": "a57",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Custom description",
+          "code": "a58",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Custom color",
+          "code": "a59",
+          "type": "Colorpicker",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Latitude",
+          "code": "a60",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Longitude",
+          "code": "a61",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Radius meters",
+          "code": "a62",
+          "type": "Number",
+          "options": "Default 100",
+          "optionMap": {}
+        },
+        {
+          "label": "Polygon points",
+          "code": "a63",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Notify on enter",
+          "code": "a64",
+          "type": "Radio",
+          "options": "1. Off (b55) 2. On (b56)",
+          "optionMap": {
+            "b55": "Off",
+            "b56": "On"
+          }
+        },
+        {
+          "label": "Notify on exit",
+          "code": "a65",
+          "type": "Radio",
+          "options": "1. Off (b55) 2. On (b56)",
+          "optionMap": {
+            "b55": "Off",
+            "b56": "On"
+          }
+        },
+        {
+          "label": "Schedule enabled",
+          "code": "a66",
+          "type": "Radio",
+          "options": "1. Off (b55) 2. On (b56)",
+          "optionMap": {
+            "b55": "Off",
+            "b56": "On"
+          }
+        },
+        {
+          "label": "Schedule start time",
+          "code": "a67",
+          "type": "Datetime",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Schedule end time",
+          "code": "a68",
+          "type": "Datetime",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Is active",
+          "code": "a69",
+          "type": "Radio",
+          "options": "1. Yes (b55) 2. No (b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        }
+      ]
+    },
+    {
+      "id": 64,
+      "name": "Care Facility",
+      "fields": [
+        {
+          "label": "name",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "detail",
+          "code": "a56",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Care facility type",
+          "code": "a57",
+          "type": "Checkbox",
+          "options": "1. Adult Day Care (b55) 2. Assisted living (b56) 3. Home Care (b57) 4. Hospice (b58) 5. Independent living (b59) 6. Memory care (b60) 7. Nursing homes (b61) 8. Residential care homes (b62) 9. Senior Apartments (b63)",
+          "optionMap": {
+            "b55": "Adult Day Care",
+            "b56": "Assisted living",
+            "b57": "Home Care",
+            "b58": "Hospice",
+            "b59": "Independent living",
+            "b60": "Memory care",
+            "b61": "Nursing homes",
+            "b62": "Residential care homes",
+            "b63": "Senior Apartments"
+          }
+        },
+        {
+          "label": "Care for dementia stage",
+          "code": "a58",
+          "type": "Checkbox",
+          "options": "1. Early-stage (b55) 2. Middle-stage (b56) 3. Late-stage (b57)",
+          "optionMap": {
+            "b55": "Early-stage",
+            "b56": "Middle-stage",
+            "b57": "Late-stage"
+          }
+        },
+        {
+          "label": "Room type",
+          "code": "a59",
+          "type": "Checkbox",
+          "options": "1. Studio (b55) 2. One Bed Room (b56) 3. Two Bed Room (b57) 4. More Than Two Bed Room (b58)",
+          "optionMap": {
+            "b55": "Studio",
+            "b56": "One Bed Room",
+            "b57": "Two Bed Room",
+            "b58": "More Than Two Bed Room"
+          }
+        },
+        {
+          "label": "Room facility",
+          "code": "a60",
+          "type": "Checkbox",
+          "options": "1. Balcony (b55) 2. Toilet (b56) 3. Kitchen (b57)",
+          "optionMap": {
+            "b55": "Balcony",
+            "b56": "Toilet",
+            "b57": "Kitchen"
+          }
+        },
+        {
+          "label": "Community facility",
+          "code": "a61",
+          "type": "Checkbox",
+          "options": "1. swimming pool (b55) 2. active lifestyle (b56) 3. entertainment venue (b57) 4. laundry (b58)",
+          "optionMap": {
+            "b55": "swimming pool",
+            "b56": "active lifestyle",
+            "b57": "entertainment venue",
+            "b58": "laundry"
+          }
+        },
+        {
+          "label": "People number",
+          "code": "a62",
+          "type": "Checkbox",
+          "options": "1. Less than 5 (b55) 2. 5-20 (b56) 3. 20-50 (b57) 4. More than 50 (b58)",
+          "optionMap": {
+            "b55": "Less than 5",
+            "b58": "More than 50"
+          }
+        },
+        {
+          "label": "location",
+          "code": "a63",
+          "type": "",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "address",
+          "code": "a64",
+          "type": "",
+          "options": "",
+          "optionMap": {}
+        }
+      ]
+    },
+    {
+      "id": 65,
+      "name": "Review",
+      "fields": [
+        {
+          "label": "title",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "content",
+          "code": "a56",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "rating",
+          "code": "a57",
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
+        }
+      ]
+    },
+    {
+      "id": 139,
+      "name": "Care Job",
+      "fields": [
+        {
+          "label": "title",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "description",
+          "code": "a56",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Due date",
+          "code": "a57",
+          "type": "Datetime",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Completed at",
+          "code": "a58",
+          "type": "Datetime",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Status",
+          "code": "a59",
+          "type": "Radio",
+          "options": "1. pending (b55) 2. in progress (b56) 3. completed (b57)",
+          "optionMap": {
+            "b55": "pending",
+            "b56": "in progress",
+            "b57": "completed"
+          }
+        }
+      ]
+    },
+    {
+      "id": 70,
+      "name": "Care community post",
+      "fields": [
+        {
+          "label": "Title",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Content",
+          "code": "a56",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Language",
+          "code": "a57",
+          "type": "Radio",
+          "options": "1. English (b55) 2. Simplified Chinese (b56)",
+          "optionMap": {
+            "b55": "English",
+            "b56": "Simplified Chinese"
+          }
+        },
+        {
+          "label": "app area",
+          "code": "a58",
+          "type": "Checkbox",
+          "options": "1. Global English (b55) 2. China (b56)",
+          "optionMap": {
+            "b55": "Global English",
+            "b56": "China"
+          }
+        },
+        {
+          "label": "Category",
+          "code": "a59",
+          "type": "Checkbox",
+          "options": "1. Discussion (b55) 2. Article (b56)",
+          "optionMap": {
+            "b55": "Discussion",
+            "b56": "Article"
+          }
+        }
+      ]
+    },
+    {
+      "id": 100,
+      "name": "Challenged App Content",
+      "fields": [
+        {
+          "label": "Title",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Content",
+          "code": "a56",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Language",
+          "code": "a57",
+          "type": "Radio",
+          "options": "1. English (b55) 2. Simplified Chinese (b56)",
+          "optionMap": {
+            "b55": "English",
+            "b56": "Simplified Chinese"
+          }
+        },
+        {
+          "label": "app area",
+          "code": "a58",
+          "type": "Checkbox",
+          "options": "1. Global English (b55) 2. China (b56)",
+          "optionMap": {
+            "b55": "Global English",
+            "b56": "China"
+          }
+        },
+        {
+          "label": "App content type",
+          "code": "a59",
+          "type": "Radio",
+          "options": "1. Learn (b55) 2. Care and accompany tips (b56) 3. Find tips (b57)",
+          "optionMap": {
+            "b55": "Learn",
+            "b56": "Care and accompany tips",
+            "b57": "Find tips"
+          }
+        },
+        {
+          "label": "Learn module number",
+          "code": "a60",
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Learn lesson number",
+          "code": "a61",
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Care and accompany tips category",
+          "code": "a62",
+          "type": "Radio",
+          "options": "1. Eating and drinking (b55) 2. Toileting and continence (b56) 3. Memory loss (b57) 4. Aggression (b58) 5. Depression, anxiety and apathy (b59) 6. Difficulty sleeping (b60) 7. Delusions and hallucinations (b61) 8. Repetitive behaviour (b62) 9. Changes in judgement (b63)",
+          "optionMap": {
+            "b55": "Eating and drinking",
+            "b56": "Toileting and continence",
+            "b57": "Memory loss",
+            "b58": "Aggression",
+            "b60": "Difficulty sleeping",
+            "b61": "Delusions and hallucinations",
+            "b62": "Repetitive behaviour",
+            "b63": "Changes in judgement"
+          }
+        },
+        {
+          "label": "Find tips category",
+          "code": "a63",
+          "type": "Radio",
+          "options": "1. Wondering (b55) 2. Getting lost (b56) 3. Unwilling to return home (b57)",
+          "optionMap": {
+            "b55": "Wondering",
+            "b56": "Getting lost",
+            "b57": "Unwilling to return home"
+          }
+        }
+      ]
+    },
+    {
+      "id": 122,
+      "name": "User's study notes",
+      "fields": [
+        {
+          "label": "Title",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Content",
+          "code": "a56",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        }
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "id": 111,
+      "name": "One user can have one 110. user's extended profile",
+      "fields": [],
+      "parent": "Users",
+      "child": "110. User's extended profile",
+      "type": "One to One"
+    },
+    {
+      "id": 79,
+      "name": "One user can have many related cared ones",
+      "fields": [],
+      "parent": "Users",
+      "child": "Users",
+      "type": "Many to Many"
+    },
+    {
+      "id": 126,
+      "name": "One cared one can have many related 125. cared one's information cards",
+      "fields": [],
+      "parent": "Users",
+      "child": "125. Cared one's information card",
+      "type": "One to Many"
+    },
+    {
+      "id": 127,
+      "name": "One cared one's information card can have many related cared one's emergency contact persons",
+      "fields": [],
+      "parent": "125. Cared one's information card",
+      "child": "Users",
+      "type": "One to Many"
+    },
+    {
+      "id": 129,
+      "name": "One user can have many related user's calendar events",
+      "fields": [],
+      "parent": "Users",
+      "child": "128. User's calendar event",
+      "type": "One to Many"
+    },
+    {
+      "id": 130,
+      "name": "One user's calendar event can have many related invited users",
+      "fields": [],
+      "parent": "128. User's calendar event",
+      "child": "Users",
+      "type": "One to Many"
+    },
+    {
+      "id": 131,
+      "name": "One care task can have many related user's calendar events",
+      "fields": [
+        {
+          "label": "Name",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Description",
+          "code": "a56",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Group type",
+          "code": "a57",
+          "type": "Radio",
+          "options": "1. \"Public\" (b55) 2. \"Private\" (b56)",
+          "optionMap": {
+            "b55": "Public",
+            "b56": "Private"
+          }
+        },
+        {
+          "label": "Join code",
+          "code": "a58",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Status",
+          "code": "a59",
+          "type": "Radio",
+          "options": "1. \"Active\" (b55) 2. \"No\" (b56)",
+          "optionMap": {
+            "b55": "Active",
+            "b56": "No"
+          }
+        }
+      ],
+      "parent": "162. Care Task",
+      "child": "128. User's calendar event",
+      "type": "One to Many"
+    },
+    {
+      "id": 161,
+      "name": "One care group can have many related 160. care group invites",
+      "fields": [],
+      "parent": "9. Care Group",
+      "child": "160. Care group invite",
+      "type": "One to Many"
+    },
+    {
+      "id": 72,
+      "name": "One care group can have many related care group members",
+      "fields": [
+        {
+          "label": "care group's member display name",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "care group's member types",
+          "code": "a56",
+          "type": "Checkbox",
+          "options": "1. \"nothing special\" (b55) 2. \"owner\" (b56) 3. \"admin\" (b57)",
+          "optionMap": {
+            "b55": "nothing special",
+            "b56": "owner",
+            "b57": "admin"
+          }
+        },
+        {
+          "label": "care group's member roles",
+          "code": "a57",
+          "type": "Checkbox",
+          "options": "1. \"nothing special\" (b55) 2. \"cared one\" (b56)",
+          "optionMap": {
+            "b55": "nothing special",
+            "b56": "cared one"
+          }
+        },
+        {
+          "label": "care group's member invitation status",
+          "code": "a58",
+          "type": "Radio",
+          "options": "1. \"accepted\" (b55) 2. \"pending\" (b56) \\",
+          "optionMap": {
+            "b55": "accepted",
+            "b56": "pending"
+          }
+        }
+      ],
+      "parent": "9. Care Group",
+      "child": "Users",
+      "type": "Many to Many"
+    },
+    {
+      "id": 47,
+      "name": "One care group can have many related private member groups",
+      "fields": [],
+      "parent": "9. Care Group",
+      "child": "74. The related private member groups of one care group",
+      "type": "One to Many"
+    },
+    {
+      "id": 75,
+      "name": "One care group's private member group can have related members",
+      "fields": [
+        {
+          "label": "care group's private member group member types",
+          "code": "a55",
+          "type": "Checkbox",
+          "options": "1. \"nothing special\" (b55) 2. \"owner\" (b56) 3. \"admin\" (b57)",
+          "optionMap": {
+            "b55": "nothing special",
+            "b56": "owner",
+            "b57": "admin"
+          }
+        },
+        {
+          "label": "care group's private member group member invitation status",
+          "code": "a56",
+          "type": "Radio",
+          "options": "1. \"accepted\" (b55) 2. \"pending\" (b56) \\",
+          "optionMap": {
+            "b55": "accepted",
+            "b56": "pending"
+          }
+        }
+      ],
+      "parent": "74. The related private member groups of one care group",
+      "child": "Users",
+      "type": "Many to Many"
+    },
+    {
+      "id": 77,
+      "name": "One care group can have many related not too special posts",
+      "fields": [],
+      "parent": "9. Care Group",
+      "child": "76. The related not too special posts of one care group",
+      "type": "One to Many"
+    },
+    {
+      "id": 103,
+      "name": "One related not too special post can have many related care group's private member groups it's visible to",
+      "fields": [],
+      "parent": "76. The related not too special posts of one care group",
+      "child": "74. The related private member groups of one care group",
+      "type": "Many to Many"
+    },
+    {
+      "id": 104,
+      "name": "One related not too special post can have many related users it's visible to",
+      "fields": [],
+      "parent": "76. The related not too special posts of one care group",
+      "child": "Users",
+      "type": "Many to Many"
+    },
+    {
+      "id": 78,
+      "name": "One related not too special post can have many related comments",
+      "fields": [],
+      "parent": "76. The related not too special posts of one care group",
+      "child": "67. Comment",
+      "type": "One to Many"
+    },
+    {
+      "id": 46,
+      "name": "One care group can have many related 14. care group galleries",
+      "fields": [],
+      "parent": "9. Care Group",
+      "child": "14. Care Group Gallery",
+      "type": "One to Many"
+    },
+    {
+      "id": 141,
+      "name": "One 162. care task can have many related cared ones",
+      "fields": [],
+      "parent": "162. Care Task",
+      "child": "Users",
+      "type": "One to Many"
+    },
+    {
+      "id": 108,
+      "name": "One 162. care task can have many related assigned caregivers",
+      "fields": [
+        {
+          "label": "Assigned caregiver status",
+          "code": "a55",
+          "type": "Radio",
+          "options": "1. \"pending\" (b55) 2. \"accepted\" (b56) 3. \"rejected\" (b57)",
+          "optionMap": {
+            "b55": "pending",
+            "b56": "accepted",
+            "b57": "rejected"
+          }
+        }
+      ],
+      "parent": "162. Care Task",
+      "child": "Users",
+      "type": "One to Many"
+    },
+    {
+      "id": 48,
+      "name": "One care group can have many related 162. care tasks",
+      "fields": [],
+      "parent": "9. Care Group",
+      "child": "162. Care Task",
+      "type": "Many to Many"
+    },
+    {
+      "id": 109,
+      "name": "One care task can have many related care group's private member groups it's visible to",
+      "fields": [],
+      "parent": "162. Care Task",
+      "child": "74. The related private member groups of one care group",
+      "type": "One to Many"
+    },
+    {
+      "id": 81,
+      "name": "One 162. care task can have many related users it's only visible to",
+      "fields": [],
+      "parent": "162. Care Task",
+      "child": "Users",
+      "type": "Many to Many"
+    },
+    {
+      "id": 82,
+      "name": "One care task can have many related comments",
+      "fields": [
+        {
+          "label": "Chat type",
+          "code": "a55",
+          "type": "Radio",
+          "options": "1. \"One to One\" (b55) 2. \"Many users\" (b56) 3. \"AI\" (b57)",
+          "optionMap": {
+            "b55": "One to One",
+            "b56": "Many users",
+            "b57": "AI"
+          }
+        },
+        {
+          "label": "Chat name",
+          "code": "a56",
+          "type": "Text",
+          "options": "可为 null，除非用户闲的起个名",
+          "optionMap": {}
+        },
+        {
+          "label": "AI chat mode",
+          "code": "a57",
+          "type": "Text",
+          "options": "可为 null",
+          "optionMap": {}
+        },
+        {
+          "label": "Last message at",
+          "code": "a58",
+          "type": "Datetime",
+          "options": "",
+          "optionMap": {}
+        }
+      ],
+      "parent": "a55",
+      "child": "Radio",
+      "type": "1. \"One to One\" (b55) 2. \"Many users\" (b56) 3. \"AI\" (b57)"
+    },
+    {
+      "id": 140,
+      "name": "One care group can have one related group live chat conversation",
+      "fields": [],
+      "parent": "9. Care Group",
+      "child": "26. Chat Conversation",
+      "type": "One to One"
+    },
+    {
+      "id": 142,
+      "name": "One chat conversation can have many related chatters",
+      "fields": [
+        {
+          "label": "The user joined this chat conversation at this time",
+          "code": "a55",
+          "type": "Datetime",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "The user last read this chat conversation at this time",
+          "code": "a56",
+          "type": "Datetime",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "The user has fucking muted this chat",
+          "code": "a57",
+          "type": "Radio",
+          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Chat message content",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Chat message type",
+          "code": "a56",
+          "type": "Radio",
+          "options": "1. \"Text\" (b55) 2. \"Image\" (b56) 3. \"AI\" (b57) 4. \"System message\" (b58) 5. \"Price card\" (b59)",
+          "optionMap": {
+            "b55": "Text",
+            "b56": "Image",
+            "b57": "AI",
+            "b58": "System message",
+            "b59": "Price card"
+          }
+        }
+      ],
+      "parent": "26. Chat Conversation",
+      "child": "Users",
+      "type": "Many to Many"
+    },
+    {
+      "id": 143,
+      "name": "One chat conversation can have many related chat messages",
+      "fields": [],
+      "parent": "26. Chat Conversation",
+      "child": "27. Chat Message",
+      "type": "One to Many"
+    },
+    {
+      "id": 144,
+      "name": "One chat message can have one parent chat message it is specifically replying to",
+      "fields": [],
+      "parent": "27. Chat Message",
+      "child": "27. Chat Message",
+      "type": "One to Many"
+    },
+    {
+      "id": 148,
+      "name": "One user can have many related notifications to receive",
+      "fields": [],
+      "parent": "Users",
+      "child": "146. Notification",
+      "type": "One to Many"
+    },
+    {
+      "id": 149,
+      "name": "One user can have many related notification tokens",
+      "fields": [],
+      "parent": "Users",
+      "child": "147. User's notification token",
+      "type": "One to Many"
+    },
+    {
+      "id": 83,
+      "name": "One cared one can have many related cared one's medicine schedules",
+      "fields": [],
+      "parent": "Users",
+      "child": "15. Medicine schedule",
+      "type": "One to Many"
+    },
+    {
+      "id": 121,
+      "name": "One cared one's medicine schedule can have many related care one's medicine logs",
+      "fields": [],
+      "parent": "15. Medicine schedule",
+      "child": "16. Medicine log",
+      "type": "One to Many"
+    },
+    {
+      "id": 145,
+      "name": "One cared one can have many related cared one's checkin schedules",
+      "fields": [],
+      "parent": "Users",
+      "child": "138. Checkin schedule",
+      "type": "One to Many"
+    },
+    {
+      "id": 151,
+      "name": "One cared one's checkin schedule can have many related care one's checkin logs",
+      "fields": [],
+      "parent": "138. Checkin schedule",
+      "child": "17. Checkin log",
+      "type": "One to Many"
+    },
+    {
+      "id": 92,
+      "name": "One cared one can have many related cared one's care notes",
+      "fields": [],
+      "parent": "Users",
+      "child": "22. Cared one's care note",
+      "type": "One to Many"
+    },
+    {
+      "id": 88,
+      "name": "One cared one can have many related cared one's care tips",
+      "fields": [],
+      "parent": "Users",
+      "child": "19. Cared one's care tip",
+      "type": "One to Many"
+    },
+    {
+      "id": 97,
+      "name": "One cared one can have many related cared one's care plans",
+      "fields": [],
+      "parent": "Users",
+      "child": "20. Cared one's care plan",
+      "type": "One to Many"
+    },
+    {
+      "id": 63,
+      "name": "One cared one can have many related cared one's emergency contact persons",
+      "fields": [],
+      "parent": "Users",
+      "child": "24. Cared one's emergency contact person",
+      "type": "One to Many"
+    },
+    {
+      "id": 95,
+      "name": "One cared one can have many related cared one's care documents",
+      "fields": [],
+      "parent": "Users",
+      "child": "23. Cared one's care document",
+      "type": "One to Many"
+    },
+    {
+      "id": 117,
+      "name": "One user can have many related current location snapshots",
+      "fields": [
+        {
+          "label": "User type",
+          "code": "a55",
+          "type": "Radio",
+          "options": "1. Not someone special (b55) 2. Cared one (b56)",
+          "optionMap": {
+            "b55": "Not someone special",
+            "b56": "Cared one"
+          }
+        }
+      ],
+      "parent": "Users",
+      "child": "CCT 112",
+      "type": "One to many"
+    },
+    {
+      "id": 118,
+      "name": "One user can have many related safe zones",
+      "fields": [],
+      "parent": "Users",
+      "child": "CCT 116",
+      "type": "One to many"
+    },
+    {
+      "id": 107,
+      "name": "One care facility can have many related facility members",
+      "fields": [
+        {
+          "label": "Facility member type",
+          "code": "a55",
+          "type": "Checkbox",
+          "options": "1. nothing special (b55) 2. owner (b56) 3. admin (b57)",
+          "optionMap": {
+            "b55": "nothing special",
+            "b56": "owner",
+            "b57": "admin"
+          }
+        },
+        {
+          "label": "Facility member role",
+          "code": "a56",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        }
+      ]
+    },
+    {
+      "id": 66,
+      "name": "One care facility can have many related reviews — CCT 64 → CCT 65",
+      "fields": []
+    },
+    {
+      "id": 68,
+      "name": "One review can have many related comments — CCT 65 → CCT 67 (Comment), 1:M",
+      "fields": []
+    },
+    {
+      "id": 69,
+      "name": "One comment can have many related comments — 子评论",
+      "fields": []
+    },
+    {
+      "id": 71,
+      "name": "One care community post can have many related comments — CCT 70 → CCT 67 (1:M)",
+      "fields": []
+    },
+    {
+      "id": 157,
+      "name": "One user can have many related finished ChallengeD learn content",
+      "fields": [
+        {
+          "label": "User has finished learning this lesson",
+          "code": "a55",
+          "type": "Radio",
+          "options": "1. Yes (b55) 2. No (b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        }
+      ]
+    },
+    {
+      "id": 158,
+      "name": "One Challenged App Content can have many related user's study notes",
+      "fields": []
+    },
+    {
+      "id": 159,
+      "name": "One Challenged App Content can have many related cared one's care tips",
+      "fields": []
+    }
+  ]
+}

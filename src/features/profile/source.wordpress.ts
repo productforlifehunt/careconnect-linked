@@ -1,71 +1,88 @@
+/**
+ * User profile = WP user (core) + JetEngine CCT 110 `users_extended_prof` (bible §1).
+ *
+ * Extended profile opaque codes (only the ones the FE currently exposes):
+ *   a55=Allow emergency location request (b55 Yes | b56 No)
+ *   a56=Location share is on            (b55 Yes | b56 No)
+ *   a57=Notification preference
+ *   a58=General user role               (b55 cared one | b56 caring one)  [checkbox]
+ *   a59=Is care provider                (b55 Yes | b56 No)
+ *   a60=Care provider is active         (b55 Yes | b56 No)
+ *   a61=Background checked              (b55 Yes | b56 No)
+ *   a62=Background check detail
+ *   a63=Cancellation policy
+ *   a64=Service area
+ *   a65=Starts hourly rate              (number)
+ *   a66=Offers in-person service        (b55 Yes | b56 No)
+ *   a67=Offers virtual service          (b55 Yes | b56 No)
+ *   a68=Offers care service general type [checkbox: b55..b66]
+ *   a90=Cared one's AI system prompt
+ *   a91=Push notification enabled       (b55 Yes | b56 No)
+ *   a92=Email notification enabled      (b55 Yes | b56 No)
+ *   a93=SMS notification enabled        (b55 Yes | b56 No)
+ *
+ * Linked to user via Rel 111 (one-to-one).
+ */
 import type { Profile } from "@/types/care-connector";
 import { getWordPressFeature, updateWordPressFeature } from "@/features/shared/wordpress-adapter";
-import { wordpressFetch } from "@/features/shared/wordpress-client";
+import { wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
 
-function parseWpBoolean(value: unknown, fallback = false): boolean {
-  if (value === true || value === 1) return true;
-  if (typeof value === "string") return ["yes", "true", "1", "active", "Active"].includes(value);
-  return fallback;
-}
+const CCT_SLUG = "users_extended_prof";
 
-function parseWpList(value: unknown): string[] | null {
-  if (Array.isArray(value)) return value.map(String).filter(Boolean);
-  if (typeof value === "string" && value.trim()) {
+// Role checkbox: opaque → role label
+const ROLE_OPT_TO_LABEL: Record<string, string> = { b55: "cared one", b56: "caring one" };
+const ROLE_LABEL_TO_OPT: Record<string, string> = { "cared one": "b55", "caring one": "b56" };
+const YES = "b55", NO = "b56";
+
+const yesNoToBool = (v: any): boolean => v === YES || v === true || v === 1 || v === "1" || v === "yes";
+const boolToYesNo = (v: boolean | undefined): string => (v ? YES : NO);
+
+function parseCheckboxList(v: unknown): string[] | null {
+  if (Array.isArray(v)) return v.map((x) => ROLE_OPT_TO_LABEL[String(x)] ?? String(x)).filter(Boolean);
+  if (typeof v === "string" && v.trim()) {
     try {
-      const parsed = JSON.parse(value);
-      if (Array.isArray(parsed)) return parsed.map(String).filter(Boolean);
+      const parsed = JSON.parse(v);
+      if (Array.isArray(parsed)) return parsed.map((x) => ROLE_OPT_TO_LABEL[String(x)] ?? String(x)).filter(Boolean);
     } catch {}
-    return value.split(",").map((s) => s.trim()).filter(Boolean);
+    return v.split(",").map((s) => ROLE_OPT_TO_LABEL[s.trim()] ?? s.trim()).filter(Boolean);
   }
   return null;
 }
 
-/**
- * Fetch profile by merging WP user data + CCT extended profile data.
- * 1. GET wp/v2/users/me → core user fields
- * 2. GET jet-cct/users_extended_prof?cct_author_id={userId} → extended CCT fields
- * 3. Merge into single Profile object
- */
+function serializeRoleList(roles: string[] | null | undefined): string {
+  if (!roles || !Array.isArray(roles)) return "";
+  return JSON.stringify(roles.map((r) => ROLE_LABEL_TO_OPT[r] ?? r));
+}
+
 export async function fetchMyProfileWordPress(): Promise<Profile | null> {
   try {
-    // Step 1: Get WP user
     const wpProfile = await getWordPressFeature<Profile>("profile_me");
     if (!wpProfile) return null;
 
-    // Step 2: Try to fetch CCT extended profile for this user
     const storedUser = getStoredWPUser();
-    const wpUserId = storedUser?.user_id || wpProfile.id?.replace('wp-', '');
-    let cctData: any = null;
+    const wpUserId = storedUser?.user_id || wpProfile.id?.replace("wp-", "");
+    let cct: any = null;
     try {
-      const cctResults = await wordpressFetch("jet-cct/users_extended_prof", {
+      const list = await wordpressCCTFetch<any[]>(CCT_SLUG, {
         params: { cct_author_id: wpUserId, _limit: 1 },
       });
-      if (Array.isArray(cctResults) && cctResults.length > 0) {
-        cctData = cctResults[0];
-      }
-    } catch {
-      // CCT may not have data yet — that's fine
-    }
+      if (Array.isArray(list) && list.length > 0) cct = list[0];
+    } catch { /* no CCT record yet — fine */ }
 
-    // Step 3: Merge CCT data into profile
-    if (cctData) {
-      wpProfile.general_user_role = parseWpList(cctData.general_user_role) || wpProfile.general_user_role;
-      wpProfile.is_care_provider = parseWpBoolean(cctData.is_care_provider, wpProfile.is_care_provider);
-      wpProfile.provider_is_active = parseWpBoolean(cctData.provider_is_active, wpProfile.provider_is_active);
-      wpProfile.care_provider_is_background_checked = parseWpBoolean(cctData.care_provider_is_background_checked, wpProfile.care_provider_is_background_checked);
-      wpProfile.care_provider_background_check_detail = cctData.care_provider_background_check_detail || wpProfile.care_provider_background_check_detail;
-      wpProfile.care_provider_starts_hourly_rate = cctData.care_provider_starts_hourly_rate ? parseFloat(cctData.care_provider_starts_hourly_rate) : wpProfile.care_provider_starts_hourly_rate;
-      wpProfile.phone = cctData.phone || wpProfile.phone;
-      wpProfile.location = cctData.location || wpProfile.location;
-      wpProfile.years_of_experience = cctData.years_of_experience ? parseInt(cctData.years_of_experience) : wpProfile.years_of_experience;
-      wpProfile.certifications = parseWpList(cctData.certifications) || wpProfile.certifications;
-      wpProfile.specialty = parseWpList(cctData.specialty) || wpProfile.specialty;
+    if (cct) {
+      wpProfile.general_user_role = parseCheckboxList(cct.a58) || wpProfile.general_user_role;
+      wpProfile.is_care_provider = yesNoToBool(cct.a59);
+      wpProfile.provider_is_active = yesNoToBool(cct.a60);
+      wpProfile.care_provider_is_background_checked = yesNoToBool(cct.a61);
+      wpProfile.care_provider_background_check_detail = cct.a62 || wpProfile.care_provider_background_check_detail;
+      wpProfile.care_provider_starts_hourly_rate = cct.a65 != null && cct.a65 !== "" ? parseFloat(cct.a65) : wpProfile.care_provider_starts_hourly_rate;
+      // Phone / location / years / certifications / specialty are not in bible §110;
+      // keep WP-user-derived values where present.
     }
 
     return wpProfile;
   } catch {
-    // Fallback to stored user
     const stored = getStoredWPUser();
     if (!stored) return null;
     return {
@@ -87,11 +104,8 @@ export async function fetchMyProfileWordPress(): Promise<Profile | null> {
   }
 }
 
-/**
- * Update profile: writes WP user fields AND CCT extended profile fields.
- */
 export async function updateProfileWordPress(updates: Partial<Profile>): Promise<void> {
-  // Update WP user fields (name, bio)
+  // 1) Update WP user core fields
   const wpFields: Partial<Profile> = {};
   if (updates.first_name !== undefined) wpFields.first_name = updates.first_name;
   if (updates.last_name !== undefined) wpFields.last_name = updates.last_name;
@@ -101,43 +115,27 @@ export async function updateProfileWordPress(updates: Partial<Profile>): Promise
     await updateWordPressFeature("profile_me", wpFields);
   }
 
-  // Update CCT extended profile fields
-  const cctFields: Record<string, any> = {};
-  if (updates.general_user_role !== undefined) cctFields.general_user_role = Array.isArray(updates.general_user_role) ? updates.general_user_role.join(',') : updates.general_user_role;
-  if (updates.is_care_provider !== undefined) cctFields.is_care_provider = updates.is_care_provider ? 'yes' : 'no';
-  if (updates.provider_is_active !== undefined) cctFields.provider_is_active = updates.provider_is_active ? 'yes' : 'no';
-  if (updates.care_provider_is_background_checked !== undefined) cctFields.care_provider_is_background_checked = updates.care_provider_is_background_checked ? 'yes' : 'no';
-  if (updates.care_provider_background_check_detail !== undefined) cctFields.care_provider_background_check_detail = updates.care_provider_background_check_detail;
-  if (updates.care_provider_starts_hourly_rate !== undefined) cctFields.care_provider_starts_hourly_rate = String(updates.care_provider_starts_hourly_rate);
-  if (updates.phone !== undefined) cctFields.phone = updates.phone;
-  if (updates.location !== undefined) cctFields.location = updates.location;
-  if (updates.years_of_experience !== undefined) cctFields.years_of_experience = String(updates.years_of_experience);
-  if (updates.certifications !== undefined) cctFields.certifications = JSON.stringify(updates.certifications);
-  if (updates.specialty !== undefined) cctFields.specialty = JSON.stringify(updates.specialty);
+  // 2) Update CCT 110 extended profile (opaque codes)
+  const body: Record<string, any> = {};
+  if (updates.general_user_role !== undefined) body.a58 = serializeRoleList(updates.general_user_role as string[] | null);
+  if (updates.is_care_provider !== undefined) body.a59 = boolToYesNo(updates.is_care_provider);
+  if (updates.provider_is_active !== undefined) body.a60 = boolToYesNo(updates.provider_is_active);
+  if (updates.care_provider_is_background_checked !== undefined) body.a61 = boolToYesNo(updates.care_provider_is_background_checked);
+  if (updates.care_provider_background_check_detail !== undefined) body.a62 = updates.care_provider_background_check_detail;
+  if (updates.care_provider_starts_hourly_rate !== undefined) body.a65 = String(updates.care_provider_starts_hourly_rate ?? "");
 
-  if (Object.keys(cctFields).length > 0) {
-    // Find existing CCT record or create new one
-    const storedUser = getStoredWPUser();
-    const wpUserId = storedUser?.user_id;
-    try {
-      const existing = await wordpressFetch("jet-cct/users_extended_prof", {
-        params: { cct_author_id: wpUserId, _limit: 1 },
-      });
-      if (Array.isArray(existing) && existing.length > 0) {
-        // Update existing CCT record
-        await wordpressFetch(`jet-cct/users_extended_prof/${existing[0]._ID}`, {
-          method: "POST",
-          body: cctFields,
-        });
-      } else {
-        // Create new CCT record
-        await wordpressFetch("jet-cct/users_extended_prof", {
-          method: "POST",
-          body: { ...cctFields, cct_author_id: wpUserId },
-        });
-      }
-    } catch (err) {
-      console.warn("Failed to update CCT extended profile:", err);
+  if (Object.keys(body).length === 0) return;
+
+  const storedUser = getStoredWPUser();
+  const wpUserId = storedUser?.user_id;
+  try {
+    const existing = await wordpressCCTFetch<any[]>(CCT_SLUG, { params: { cct_author_id: wpUserId, _limit: 1 } });
+    if (Array.isArray(existing) && existing.length > 0) {
+      await wordpressCCTFetch(CCT_SLUG, { id: existing[0]._ID || existing[0].id, method: "PUT", body });
+    } else {
+      await wordpressCCTFetch(CCT_SLUG, { method: "POST", body: { ...body, cct_author_id: wpUserId } });
     }
+  } catch (err) {
+    console.warn("Failed to update CCT 110 extended profile:", err);
   }
 }
