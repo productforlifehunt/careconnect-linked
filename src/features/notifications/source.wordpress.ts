@@ -1,8 +1,7 @@
 /**
  * Notifications — JetEngine CCT `notification`
  *
- * Live fields: notification_type, notification_title, notification_content,
- *              action_url, notification_is_read
+ * Live fields: a55=type, a56=title, a57=content, a58=action url, a59=is read
  *
  * Recipient linkage is via JetEngine relation configured in WP admin.
  * Relation ID is read from VITE env so it can change without code edits.
@@ -11,15 +10,10 @@ import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-c
 import { getCurrentUserId } from "@/features/shared/current-user";
 
 const SLUG = "notification";
-// Optional: set VITE_WP_REL_USER_NOTIFICATION in WP/env if/when the relation is created.
-const REL_USER_NOTIFICATION: number | null = (() => {
-  const v = (import.meta as any).env?.VITE_WP_REL_USER_NOTIFICATION;
-  const n = v ? Number(v) : NaN;
-  return Number.isFinite(n) && n > 0 ? n : null;
-})();
+const REL_USER_NOTIFICATION = 148;
 
 function isRead(v: any): boolean {
-  return v === true || v === "yes" || v === "1" || v === 1;
+  return v === true || v === "yes" || v === "1" || v === 1 || v === "b55";
 }
 
 export async function fetchNotificationsWordPress(): Promise<any[]> {
@@ -45,11 +39,11 @@ export async function fetchNotificationsWordPress(): Promise<any[]> {
     return raw.map((n: any) => ({
       id: String(n.id ?? n._ID),
       user_id: userId,
-      type: n.notification_type || "info",
-      title: n.notification_title || null,
-      message: n.notification_content || null,
-      is_read: isRead(n.notification_is_read),
-      action_url: n.action_url || null,
+      type: n.a55 || "info",
+      title: n.a56 || null,
+      message: n.a57 || null,
+      is_read: isRead(n.a59),
+      action_url: n.a58 || null,
       created_at: n.created_at ?? n.cct_created ?? null,
     }));
   } catch {
@@ -61,7 +55,7 @@ export async function markNotificationReadWordPress(id: string): Promise<void> {
   await wordpressCCTFetch(SLUG, {
     id,
     method: "PUT",
-    body: { notification_is_read: "yes" },
+    body: { a59: "b55" },
   });
 }
 
@@ -110,11 +104,11 @@ export async function createNotificationWordPress(input: {
   const created: any = await wordpressCCTFetch(SLUG, {
     method: "POST",
     body: {
-      notification_type: input.type,
-      notification_title: input.title,
-      notification_content: input.message,
-      action_url: url,
-      notification_is_read: "no",
+      a55: input.type,
+      a56: input.title,
+      a57: input.message,
+      a58: url,
+      a59: "b56",
     },
   });
 
