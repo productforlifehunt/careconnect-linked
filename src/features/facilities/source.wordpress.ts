@@ -1,22 +1,22 @@
 import { wordpressCCTFetch } from "@/features/shared/wordpress-client";
 
-// CCT slug: care_facility | flat fields
+// CCT slug: care_facility | a55=name, a56=detail, a57=type, a63=location, a64=address
 export async function fetchCareFacilitiesWordPress(): Promise<any[]> {
   try {
     const items = await wordpressCCTFetch("care_facility", { params: { _limit: 100 } });
     if (!Array.isArray(items)) return [];
     return items.map((f: any) => ({
       id: f.id,
-      name: f.name || f.title || "Facility",
-      description: f.description || null,
-      location: f.location || null,
-      address: f.address || null,
+      name: f.a55 || "Facility",
+      description: f.a56 || null,
+      location: f.a63 || null,
+      address: f.a64 || null,
       phone: f.phone || null,
       email: f.email || null,
       website: f.website || null,
       rating_average: f.rating || f.rating_average || null,
       review_count: f.review_count || 0,
-      type: f.type || null,
+      type: f.a57 || null,
       country: f.country || null,
       c_province: f.c_province || null,
       c_city: f.c_city || null,
@@ -35,16 +35,16 @@ export async function fetchCareFacilityByIdWordPress(id: string): Promise<any | 
     if (!f) return null;
     return {
       id: f.id,
-      name: f.name || f.title || "Facility",
-      description: f.description || null,
-      location: f.location || null,
-      address: f.address || null,
+      name: f.a55 || "Facility",
+      description: f.a56 || null,
+      location: f.a63 || null,
+      address: f.a64 || null,
       phone: f.phone || null,
       email: f.email || null,
       website: f.website || null,
       rating_average: f.rating || f.rating_average || null,
       review_count: f.review_count || 0,
-      type: f.type || null,
+      type: f.a57 || null,
       country: f.country || null,
       c_province: f.c_province || null,
       c_city: f.c_city || null,
