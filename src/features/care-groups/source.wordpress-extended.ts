@@ -1,13 +1,37 @@
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
+import { WP } from "@/integrations/wp-schema";
 
-// Live JetEngine relations (verified from prd-to-wp-mapping.md)
-const REL_GROUP_MEMBER = 72;          // M:M  care_group → users
-const REL_GROUP_GALLERY = 46;         // 1:M  care_group → care_group_gallery
-const REL_GROUP_SUBGROUP = 47;        // 1:M  care_group → care_group_private_member_group
-const REL_GROUP_POST = 77;            // 1:M  care_group → care_group_not_too_special_post
-const REL_SUBGROUP_MEMBERS = 75;      // M:M  care_group_private_member_group → users
-const REL_GROUP_INVITE = 161;         // 1:M  care_group → care_group_invite
+// Live JetEngine relations (per data bible)
+const REL_GROUP_MEMBER = 72;          // care_group → users
+const REL_GROUP_GALLERY = 46;         // care_group → care_group_gallery
+const REL_GROUP_SUBGROUP = 47;        // care_group → care_group_private_member_group
+const REL_GROUP_POST = 77;            // care_group → care_group_not_too_special_post
+const REL_SUBGROUP_MEMBERS = 75;      // care_group_private_member_group → users
+const REL_GROUP_INVITE = 161;         // care_group → care_group_invite
+
+// ─── Opaque field codes (bible) ──────────────────────────────
+const F_POST = WP.cct["76"].fields;       // care_group_not_too_special_post
+const F_INVITE = WP.cct["160"].fields;    // care_group_invite
+const F_GALLERY = WP.cct["14"].fields;    // care_group_gallery
+const F_SUBGROUP = WP.cct["74"].fields;   // care_group_private_member_group
+// Main care_group CCT (id 9, not in dictionary) uses fields a55-a59 verified live.
+const F_GROUP = { NAME: "a55", DESCRIPTION: "a56", GROUP_TYPE: "a57", JOIN_CODE: "a58", IS_ACTIVE: "a59" } as const;
+const YES = "b55";
+const NO = "b56";
+
+// Post type option codes — CCT 76 a55: b55=discussion, b56=announcement
+const POST_TYPE_CODE: Record<string, string> = { discussion: "b55", announcement: "b56" };
+const POST_TYPE_LABEL: Record<string, string> = { b55: "discussion", b56: "announcement" };
+
+function isYesCode(v: unknown): boolean {
+  if (v === true) return true;
+  if (typeof v === "string") {
+    const s = v.toLowerCase();
+    return s === "b55" || s === "yes" || s === "1" || s === "true";
+  }
+  return false;
+}
 
 function memberMeta(input: {
   displayName?: string;
@@ -47,24 +71,26 @@ async function fetchRelatedCctItems(relationId: number, parentId: string, cctSlu
   return items.filter(Boolean);
 }
 
-// ─── Care Group Posts ───────────────────────────────────────
-// CCT slug: care_group_not_too_special_post | fields: type, title, content, is_pinned, scheduled_at
+// ─── Care Group Posts (CCT 76) ──────────────────────────────
 export async function fetchCareGroupPostsWordPress(groupId: string, type?: string): Promise<any[]> {
   try {
     const posts = await fetchRelatedCctItems(REL_GROUP_POST, groupId, "care_group_not_too_special_post");
     if (!Array.isArray(posts)) return [];
-    const normalizeType = (t: any): string => Array.isArray(t) ? (t[0] || "discussion") : (t || "discussion");
+    const normalizeType = (raw: any): string => {
+      const v = Array.isArray(raw) ? (raw[0] || "") : (raw || "");
+      return POST_TYPE_LABEL[String(v)] || String(v) || "discussion";
+    };
     return posts
-      .filter((p: any) => !type || normalizeType(p.type) === type)
+      .filter((p: any) => !type || normalizeType(p[F_POST.TYPE]) === type)
       .map((p: any) => ({
         id: p.id,
         group_id: groupId,
         author_id: p.author_id || null,
-        type: normalizeType(p.type),
-        title: p.title || null,
-        content: p.content || null,
-        is_pinned: p.is_pinned === true || p.is_pinned === "yes" || p.is_pinned === "1",
-        scheduled_at: p.scheduled_at || null,
+        type: normalizeType(p[F_POST.TYPE]),
+        title: p[F_POST.TITLE] || null,
+        content: p[F_POST.CONTENT] || null,
+        is_pinned: isYesCode(p[F_POST.IS_PINNED]),
+        scheduled_at: p[F_POST.SCHEDULED_AT] || null,
         created_at: p.created_at,
         updated_at: p.updated_at || p.created_at,
         author: p.author_id ? { id: p.author_id, full_name: null, avatar_url: null } : null,
@@ -76,9 +102,10 @@ export async function createGroupPostWordPress(post: { group_id: string; content
   const created = await wordpressCCTFetch<any>("care_group_not_too_special_post", {
     method: "POST",
     body: {
-      title: post.title || post.content.substring(0, 50),
-      content: post.content,
-      type: post.type || "discussion",
+      [F_POST.TITLE]: post.title || post.content.substring(0, 50),
+      [F_POST.CONTENT]: post.content,
+      [F_POST.TYPE]: POST_TYPE_CODE[post.type || "discussion"] || "b55",
+      [F_POST.IS_PINNED]: NO,
     },
   });
   const groupId = normalizeWpObjectId(post.group_id);
@@ -92,11 +119,12 @@ export async function createGroupPostWordPress(post: { group_id: string; content
   return postId ? String(postId) : null;
 }
 
-export async function updateGroupPostWordPress(id: string, updates: { content?: string; title?: string; is_pinned?: boolean }): Promise<void> {
+export async function updateGroupPostWordPress(id: string, updates: { content?: string; title?: string; is_pinned?: boolean; type?: string }): Promise<void> {
   const body: Record<string, any> = {};
-  if (updates.content !== undefined) body.content = updates.content;
-  if (updates.title !== undefined) body.title = updates.title;
-  if (updates.is_pinned !== undefined) body.is_pinned = updates.is_pinned ? "yes" : "no";
+  if (updates.content !== undefined) body[F_POST.CONTENT] = updates.content;
+  if (updates.title !== undefined) body[F_POST.TITLE] = updates.title;
+  if (updates.is_pinned !== undefined) body[F_POST.IS_PINNED] = updates.is_pinned ? YES : NO;
+  if (updates.type !== undefined) body[F_POST.TYPE] = POST_TYPE_CODE[updates.type] || updates.type;
   await wordpressCCTFetch("care_group_not_too_special_post", { id, method: "PUT", body });
 }
 
@@ -104,13 +132,12 @@ export async function deleteGroupPostWordPress(id: string): Promise<void> {
   await wordpressCCTFetch("care_group_not_too_special_post", { id, method: "DELETE" });
 }
 
-// ─── Group Settings ─────────────────────────────────────────
-// CCT slug: care_group | fields: name, description, group_type, is_active
+// ─── Group Settings (CCT 9 — care_group) ────────────────────
 export async function updateCareGroupWordPress(id: string, updates: { name?: string; description?: string; is_private?: boolean }): Promise<void> {
   const body: Record<string, any> = {};
-  if (updates.name !== undefined) body.name = updates.name;
-  if (updates.description !== undefined) body.description = updates.description;
-  if (updates.is_private !== undefined) body.group_type = updates.is_private ? "private" : "public";
+  if (updates.name !== undefined) body[F_GROUP.NAME] = updates.name;
+  if (updates.description !== undefined) body[F_GROUP.DESCRIPTION] = updates.description;
+  if (updates.is_private !== undefined) body[F_GROUP.GROUP_TYPE] = updates.is_private ? "b56" : "b55";
   await wordpressCCTFetch("care_group", { id, method: "PUT", body });
 }
 
