@@ -373,20 +373,23 @@ export async function wpFetchServiceCategories(): Promise<any[]> {
 // ─── Care Facilities ────────────────────────────────────────
 export async function wpFetchCareFacilities(): Promise<any[]> {
   try {
-    const facilities = await wpFetchCPT("care_facility");
+    const { wordpressCCTFetch } = await import("@/features/shared/wordpress-client");
+    const facilities = await wordpressCCTFetch<any[]>("care_facility", { params: { _limit: 100 } });
     if (!Array.isArray(facilities)) return [];
     return facilities.map((f: any) => ({
-      id: String(f.id),
-      title: f.title?.rendered || "Facility",
-      description: f.content?.rendered?.replace(/<[^>]*>/g, "") || null,
-      location: f.acf?.location || null,
-      address: f.acf?.address || null,
+      id: String(f.id || f._ID),
+      title: f.a55 || "Facility",
+      name: f.a55 || "Facility",
+      description: f.a56 || null,
+      location: f.a63 || null,
+      address: f.a64 || null,
       phone: f.acf?.phone || null,
       email: f.acf?.email || null,
       website: f.acf?.website || null,
       rating_average: f.acf?.rating || null,
       review_count: f.acf?.review_count || 0,
-      created_at: f.date,
+      type: f.a57 || null,
+      created_at: f.created_at,
     }));
   } catch {
     return [];
