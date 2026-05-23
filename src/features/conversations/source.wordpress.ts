@@ -187,8 +187,8 @@ export async function fetchDirectMessagesWordPress(conversationId: string): Prom
         sender_user_id: m.author_id ? `wp-${m.author_id}` : null,
         sender_id: m.author_id ? `wp-${m.author_id}` : null,
         receiver_user_id: null,
-        content: m.chat_message_content || "",
-        message_type: m.chat_message_type || "text",
+        content: m.a55 || "",
+        message_type: m.a56 === "b56" ? "image" : m.a56 === "b57" ? "ai" : m.a56 === "b58" ? "system" : m.a56 === "b59" ? "price_card" : "text",
         created_at: m.created_at,
       }))
       .sort((a, b) => (a.created_at || "").localeCompare(b.created_at || ""));
@@ -205,8 +205,8 @@ export async function sendMessageWordPress(
   const created = await wordpressCCTFetch<any>("chat_message", {
     method: "POST",
     body: {
-      chat_message_content: content,
-      chat_message_type: "text",
+      a55: content,
+      a56: "b55",
     },
   });
   const messageId = numId(created?.item_id || created?._ID || created?.id);
@@ -228,7 +228,7 @@ export async function sendMessageWordPress(
     await wordpressCCTFetch("chat_conversation", {
       id: conversationId,
       method: "PUT",
-      body: { last_message_at: new Date().toISOString().slice(0, 19).replace("T", " ") },
+      body: { a58: new Date().toISOString().slice(0, 19).replace("T", " ") },
     });
   } catch { /* non-blocking */ }
 }
