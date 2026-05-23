@@ -252,7 +252,7 @@ export async function startConversationWordPress(
     const convos = await wordpressCCTFetch<any[]>("chat_conversation", { params: { _limit: 500 } });
     if (Array.isArray(convos)) {
       for (const c of convos) {
-        if (c.chat_type && c.chat_type !== "direct") continue;
+        if (c.a55 && c.a55 !== "b55") continue;
         const memberIds = await fetchConversationMemberIds(String(c.id || c._ID));
         if (memberIds.length === 2 && memberIds.includes(me) && memberIds.includes(other)) {
           return String(c.id || c._ID);
@@ -264,10 +264,10 @@ export async function startConversationWordPress(
   const result = await wordpressCCTFetch<any>("chat_conversation", {
     method: "POST",
     body: {
-      chat_type: "direct",
-      chat_name: "",
-      ai_chat_mode: "",
-      last_message_at: new Date().toISOString().slice(0, 19).replace("T", " "),
+      a55: "b55",
+      a56: "",
+      a57: "",
+      a58: new Date().toISOString().slice(0, 19).replace("T", " "),
     },
   });
   const convoId = numId(result?.item_id || result?._ID || result?.id);
