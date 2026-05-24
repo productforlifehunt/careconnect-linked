@@ -52,7 +52,7 @@ export function QuoteCard({ quote, isRecipient, isMe, conversationId, otherUserI
       await addToCart.mutateAsync({ productId });
       toast({
         title: Z("已加入购物车", "Added to cart"),
-        description: Z(`$${quote.amount} 的报价已准备结账。`, `Quote of $${quote.amount} ready to checkout.`),
+        description: Z(`${currency}${quote.amount} 的报价已准备结账。`, `Quote of ${currency}${quote.amount} ready to checkout.`),
       });
       navigate("/cart");
     } catch (e: any) {
