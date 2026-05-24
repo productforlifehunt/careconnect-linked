@@ -420,7 +420,7 @@ export default function ProviderDashboard() {
             <CardContent>
               {(payouts || []).length > 0 ? (payouts || []).map((p: any) => (
                 <div key={p.id} className="flex items-center justify-between py-3 border-b last:border-0">
-                  <div><p className="text-sm font-medium text-foreground">${p.amount}</p><p className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</p></div>
+                  <div><p className="text-sm font-medium text-foreground">{isZh ? "¥" : "$"}{p.amount}</p><p className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</p></div>
                   <Badge variant={p.status === "completed" ? "default" : "secondary"}>{p.status}</Badge>
                 </div>
               )) : <p className="text-center py-8 text-muted-foreground">{isZh ? "暂无结算记录" : "No payouts yet"}</p>}
