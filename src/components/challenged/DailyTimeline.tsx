@@ -144,7 +144,7 @@ export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) 
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs font-medium text-muted-foreground">{item.time}</span>
                     <Badge variant="outline" className={`text-[10px] ${statusColor[item.status]}`}>
-                      {item.status}
+                      {isZh ? ({ done: "已完成", pending: "待办", missed: "未完成" } as const)[item.status] : item.status}
                     </Badge>
                   </div>
                   <p className="text-sm text-foreground truncate">{item.label}</p>
