@@ -22,14 +22,26 @@ const TIMELINE_HOURS = [
   "00:00","01:00","02:00","03:00","04:00","05:00",
 ];
 
+function hourLabel(h24: number): string {
+  if (isCN()) {
+    if (h24 === 0) return "凌晨12点";
+    if (h24 < 6) return `凌晨${h24}点`;
+    if (h24 < 12) return `上午${h24}点`;
+    if (h24 === 12) return "中午12点";
+    if (h24 < 18) return `下午${h24 - 12}点`;
+    return `晚上${h24 - 12}点`;
+  }
+  if (h24 === 0) return "12 AM";
+  if (h24 === 12) return "12 PM";
+  if (h24 < 12) return `${h24} AM`;
+  return `${h24 - 12} PM`;
+}
+
 const SCHEDULE_TIMES = [
-  { value: "06:00", label: "6:00 AM" },{ value: "07:00", label: "7:00 AM" },{ value: "08:00", label: "8:00 AM" },
-  { value: "09:00", label: "9:00 AM" },{ value: "10:00", label: "10:00 AM" },{ value: "11:00", label: "11:00 AM" },
-  { value: "12:00", label: "12:00 PM" },{ value: "13:00", label: "1:00 PM" },{ value: "14:00", label: "2:00 PM" },
-  { value: "15:00", label: "3:00 PM" },{ value: "16:00", label: "4:00 PM" },{ value: "17:00", label: "5:00 PM" },
-  { value: "18:00", label: "6:00 PM" },{ value: "19:00", label: "7:00 PM" },{ value: "20:00", label: "8:00 PM" },
-  { value: "21:00", label: "9:00 PM" },{ value: "22:00", label: "10:00 PM" },{ value: "23:00", label: "11:00 PM" },
-];
+  "06:00","07:00","08:00","09:00","10:00","11:00",
+  "12:00","13:00","14:00","15:00","16:00","17:00",
+  "18:00","19:00","20:00","21:00","22:00","23:00",
+].map(value => ({ value, label: hourLabel(parseInt(value.split(":")[0])) }));
 
 const FREQUENCIES = [
   { value: "once_daily", label: Z("每日一次","Once daily") },{ value: "twice_daily", label: Z("每日两次","Twice daily") },
@@ -39,16 +51,12 @@ const FREQUENCIES = [
 ];
 
 function formatHour(h: string): string {
-  const hour = parseInt(h.split(":")[0]);
-  if (hour === 0) return "12 AM";
-  if (hour === 12) return "12 PM";
-  if (hour < 12) return `${hour} AM`;
-  return `${hour - 12} PM`;
+  return hourLabel(parseInt(h.split(":")[0]));
 }
 
 function formatTime(dateStr: string): string {
   const d = new Date(dateStr);
-  return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  return d.toLocaleTimeString(i18n.language || [], { hour: "numeric", minute: "2-digit" });
 }
 
 // ─── Log Note Dialog ────────────────────────────────────────
