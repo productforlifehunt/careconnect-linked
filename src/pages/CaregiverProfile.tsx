@@ -597,10 +597,10 @@ export default function CaregiverProfile() {
                     </div>
                     <div className="flex justify-between items-center pt-2 border-t">
                       <span className="text-sm text-muted-foreground">{isZh ? "预估总价" : "Estimated Total"}</span>
-                      <span className="text-xl font-bold text-foreground">${total}{recurringPattern !== "none" ? `/${recurringPattern === "weekly" ? (isZh ? "周" : "wk") : recurringPattern === "biweekly" ? (isZh ? "2周" : "2wk") : (isZh ? "月" : "mo")}` : ""}</span>
+                      <span className="text-xl font-bold text-foreground">{isZh ? "¥" : "$"}{total}{recurringPattern !== "none" ? `/${recurringPattern === "weekly" ? (isZh ? "周" : "wk") : recurringPattern === "biweekly" ? (isZh ? "2周" : "2wk") : (isZh ? "月" : "mo")}` : ""}</span>
                     </div>
                     <Button variant="coral" className="w-full" onClick={handleBooking} disabled={createBooking.isPending || hasAvailabilityConflict || !selectedResource}>
-                      {createBooking.isPending ? "Submitting..." : "Confirm Booking"}
+                      {createBooking.isPending ? (isZh ? "提交中…" : "Submitting...") : (isZh ? "确认预约" : "Confirm Booking")}
                     </Button>
                     <Button
                       variant="outline"
