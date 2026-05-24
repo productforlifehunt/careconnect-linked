@@ -412,7 +412,7 @@ export default function ProviderDashboard() {
 
         <TabsContent value="earnings" className="mt-4">
           <div className="grid sm:grid-cols-2 gap-4 mb-6">
-            <Card className="border-transparent card-elevated"><CardContent className="p-5 text-center"><p className="text-3xl font-bold text-foreground">${totalEarnings.toFixed(2)}</p><p className="text-sm text-muted-foreground mt-1">{isZh ? "总收入（已完成的85%）" : "Total Earned (85% of completed)"}</p></CardContent></Card>
+            <Card className="border-transparent card-elevated"><CardContent className="p-5 text-center"><p className="text-3xl font-bold text-foreground">{isZh ? "¥" : "$"}{totalEarnings.toFixed(2)}</p><p className="text-sm text-muted-foreground mt-1">{isZh ? "总收入（已完成的85%）" : "Total Earned (85% of completed)"}</p></CardContent></Card>
             <Card className="border-transparent card-elevated"><CardContent className="p-5 text-center"><p className="text-3xl font-bold text-foreground">{completedBookings.length}</p><p className="text-sm text-muted-foreground mt-1">{isZh ? "已完成预约" : "Completed Bookings"}</p></CardContent></Card>
           </div>
           <Card className="border-transparent card-elevated">
