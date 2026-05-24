@@ -16,7 +16,7 @@ import {
   CalendarEvent,
   CalendarEventType,
   EVENT_TYPE_COLORS,
-  EVENT_TYPE_LABELS,
+  getEventTypeLabel,
 } from "@/features/calendar/types";
 import { fetchCalendarEventsWordPress } from "@/features/calendar/source.wordpress";
 import { Calendar as CalendarIcon, MapPin, Users, Clock, Repeat } from "lucide-react";
@@ -117,7 +117,7 @@ export default function CalendarPage() {
                   className="inline-block h-2.5 w-2.5 rounded-full"
                   style={{ backgroundColor: EVENT_TYPE_COLORS[t] }}
                 />
-                {EVENT_TYPE_LABELS[t]}
+                {getEventTypeLabel(t, i18n.language)}
               </button>
             );
           })}
@@ -188,7 +188,7 @@ export default function CalendarPage() {
                   </DialogTitle>
                   <DialogDescription>
                     <Badge variant="secondary" className="mr-2">
-                      {EVENT_TYPE_LABELS[selectedEvent.event_type]}
+                      {getEventTypeLabel(selectedEvent.event_type, i18n.language)}
                     </Badge>
                     <Badge variant="outline">{selectedEvent.priority}</Badge>
                   </DialogDescription>

@@ -72,6 +72,23 @@ export const EVENT_TYPE_LABELS: Record<CalendarEventType, string> = {
   check_in: "Check-in",
 };
 
+export const EVENT_TYPE_LABELS_ZH: Record<CalendarEventType, string> = {
+  personal: "个人",
+  family: "家庭",
+  medicine: "用药",
+  task: "任务",
+  appointment: "约诊",
+  availability: "可约时间",
+  birthday: "生日",
+  holiday: "假期",
+  booking: "预约",
+  check_in: "签到",
+};
+
+export function getEventTypeLabel(type: CalendarEventType, lang?: string): string {
+  return (lang?.startsWith("zh") ? EVENT_TYPE_LABELS_ZH : EVENT_TYPE_LABELS)[type] || type;
+}
+
 /** Mock data covering all event types + recurring + availability + multi-day */
 export function getMockEvents(): CalendarEvent[] {
   const today = new Date();
