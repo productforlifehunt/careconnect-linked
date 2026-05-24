@@ -155,7 +155,7 @@ export function QuoteCard({ quote, isRecipient, isMe, conversationId, otherUserI
               </>
             ) : (
               <>
-                <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> {Z("接受并支付", "Accept & Pay")} ${quote.amount}
+                <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> {Z("接受并支付", "Accept & Pay")} {currency}{quote.amount}
               </>
             )}
           </Button>
