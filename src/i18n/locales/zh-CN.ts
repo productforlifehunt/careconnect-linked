@@ -244,6 +244,8 @@ const zhCN = {
     locationsUpdated: "位置已更新", coordinates: "坐标", lastUpdated: "最后更新",
     map: "地图", alerts: "警报", zones: "区域", autoRefresh: "自动刷新",
     sharingActive: "每 15 秒分享一次", sharingInactive: "未分享",
+    zonesConfigured: "个区域", danger: "个危险区域",
+    noZones: "尚未设置任何地理围栏", noAlerts: "暂无围栏警报",
   },
   notifs: {
     notifications: "通知", unread: "{{count}}条未读",

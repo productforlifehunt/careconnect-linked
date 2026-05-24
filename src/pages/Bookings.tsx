@@ -166,7 +166,7 @@ export default function Bookings() {
         <div className="grid grid-cols-3 gap-3 text-sm">
           <div className="flex items-center gap-2 text-muted-foreground"><CalendarDays className="h-4 w-4 text-primary" /><span>{new Date(booking.appointment_date || booking.start_time || booking.created_at).toLocaleDateString(i18n.language, { month: "short", day: "numeric", year: "numeric" })}</span></div>
           <div className="flex items-center gap-2 text-muted-foreground"><Clock className="h-4 w-4 text-primary" /><span>{booking.appointment_time || ""} · {booking.duration_hour || ""}{t("common.hours")}</span></div>
-          <div className="text-right"><span className="font-bold text-foreground text-lg">${booking.total_cost || 0}</span></div>
+          <div className="text-right"><span className="font-bold text-foreground text-lg">{i18n.language?.startsWith("zh") ? "¥" : "$"}{booking.total_cost || 0}</span></div>
         </div>
         {booking.special_instruction && <p className="text-sm text-muted-foreground mt-3 p-2 rounded bg-muted/50">{booking.special_instruction}</p>}
         {booking.status === "completed" && (
@@ -290,7 +290,7 @@ export default function Bookings() {
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <div className="rounded-lg bg-muted/40 p-3 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">{t("bookings.orderTotal", "Order Total")}</span><span className="font-bold">${refundBooking?.total_cost || 0}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">{t("bookings.orderTotal", "Order Total")}</span><span className="font-bold">{i18n.language?.startsWith("zh") ? "¥" : "$"}{refundBooking?.total_cost || 0}</span></div>
             </div>
             <div>
               <Label>{t("bookings.refundReason", "Reason for refund")}</Label>

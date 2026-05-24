@@ -187,8 +187,8 @@ export default function ProviderDashboard() {
         {[
           { label: isZh ? "待处理" : "Pending Requests", value: pendingBookings.length, icon: Clock, color: "text-warning" },
           { label: isZh ? "已确认" : "Confirmed", value: confirmedBookings.length, icon: CalendarDays, color: "text-primary" },
-          { label: isZh ? "总收入" : "Total Earned", value: `$${totalEarnings.toFixed(0)}`, icon: DollarSign, color: "text-success" },
-          { label: isZh ? "待结算" : "Pending Payout", value: `$${pendingEarnings.toFixed(0)}`, icon: TrendingUp, color: "text-coral" },
+          { label: isZh ? "总收入" : "Total Earned", value: `${isZh ? "¥" : "$"}${totalEarnings.toFixed(0)}`, icon: DollarSign, color: "text-success" },
+          { label: isZh ? "待结算" : "Pending Payout", value: `${isZh ? "¥" : "$"}${pendingEarnings.toFixed(0)}`, icon: TrendingUp, color: "text-coral" },
         ].map(stat => (
           <Card key={stat.label} className="border-transparent card-elevated">
             <CardContent className="p-3 sm:p-4">
@@ -230,7 +230,7 @@ export default function ProviderDashboard() {
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2">
-                    <span className="text-lg font-bold text-foreground">${b.total_cost || 0}</span>
+                    <span className="text-lg font-bold text-foreground">{isZh ? "¥" : "$"}{b.total_cost || 0}</span>
                     <div className="flex gap-2">
                       <Button size="sm" variant="default" onClick={() => handleBookingAction(b.id, "confirmed")} disabled={updateBookingStatus.isPending}><Check className="h-3 w-3 mr-1" /> {isZh ? "接受" : "Accept"}</Button>
                       <Button size="sm" variant="outline" className="text-destructive" onClick={() => handleBookingAction(b.id, "cancelled_by_provider")} disabled={updateBookingStatus.isPending}><X className="h-3 w-3 mr-1" /> {isZh ? "拒绝" : "Decline"}</Button>
@@ -412,7 +412,7 @@ export default function ProviderDashboard() {
 
         <TabsContent value="earnings" className="mt-4">
           <div className="grid sm:grid-cols-2 gap-4 mb-6">
-            <Card className="border-transparent card-elevated"><CardContent className="p-5 text-center"><p className="text-3xl font-bold text-foreground">${totalEarnings.toFixed(2)}</p><p className="text-sm text-muted-foreground mt-1">{isZh ? "总收入（已完成的85%）" : "Total Earned (85% of completed)"}</p></CardContent></Card>
+            <Card className="border-transparent card-elevated"><CardContent className="p-5 text-center"><p className="text-3xl font-bold text-foreground">{isZh ? "¥" : "$"}{totalEarnings.toFixed(2)}</p><p className="text-sm text-muted-foreground mt-1">{isZh ? "总收入（已完成的85%）" : "Total Earned (85% of completed)"}</p></CardContent></Card>
             <Card className="border-transparent card-elevated"><CardContent className="p-5 text-center"><p className="text-3xl font-bold text-foreground">{completedBookings.length}</p><p className="text-sm text-muted-foreground mt-1">{isZh ? "已完成预约" : "Completed Bookings"}</p></CardContent></Card>
           </div>
           <Card className="border-transparent card-elevated">
@@ -420,7 +420,7 @@ export default function ProviderDashboard() {
             <CardContent>
               {(payouts || []).length > 0 ? (payouts || []).map((p: any) => (
                 <div key={p.id} className="flex items-center justify-between py-3 border-b last:border-0">
-                  <div><p className="text-sm font-medium text-foreground">${p.amount}</p><p className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</p></div>
+                  <div><p className="text-sm font-medium text-foreground">{isZh ? "¥" : "$"}{p.amount}</p><p className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</p></div>
                   <Badge variant={p.status === "completed" ? "default" : "secondary"}>{p.status}</Badge>
                 </div>
               )) : <p className="text-center py-8 text-muted-foreground">{isZh ? "暂无结算记录" : "No payouts yet"}</p>}
