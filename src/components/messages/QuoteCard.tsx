@@ -114,7 +114,7 @@ export function QuoteCard({ quote, isRecipient, isMe, conversationId, otherUserI
       )}
 
       <div className="flex items-baseline gap-1 mb-2">
-        <span className="text-3xl font-bold text-foreground">${quote.amount}</span>
+        <span className="text-3xl font-bold text-foreground">{currency}{quote.amount}</span>
         {quote.mode === "hourly" && (
           <span className="text-xs text-muted-foreground">
             ({quote.ratePerHour}/{Z("小时", "hr")} × {quote.hours}{Z("小时", "h")})
