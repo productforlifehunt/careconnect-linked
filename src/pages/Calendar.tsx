@@ -16,7 +16,7 @@ import {
   CalendarEvent,
   CalendarEventType,
   EVENT_TYPE_COLORS,
-  EVENT_TYPE_LABELS,
+  getEventTypeLabel,
 } from "@/features/calendar/types";
 import { fetchCalendarEventsWordPress } from "@/features/calendar/source.wordpress";
 import { Calendar as CalendarIcon, MapPin, Users, Clock, Repeat } from "lucide-react";
