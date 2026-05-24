@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Pill, ClipboardCheck, CheckSquare, Clock } from "lucide-react";
 import { useMedicines, useCareTasks, useCheckins, useTodayCheckinLogs, useTodayMedicineLogs } from "@/hooks/use-care-data";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 interface DailyTimelineProps {
   caredOneId: string;
