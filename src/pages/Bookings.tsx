@@ -290,7 +290,7 @@ export default function Bookings() {
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <div className="rounded-lg bg-muted/40 p-3 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">{t("bookings.orderTotal", "Order Total")}</span><span className="font-bold">${refundBooking?.total_cost || 0}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">{t("bookings.orderTotal", "Order Total")}</span><span className="font-bold">{i18n.language?.startsWith("zh") ? "¥" : "$"}{refundBooking?.total_cost || 0}</span></div>
             </div>
             <div>
               <Label>{t("bookings.refundReason", "Reason for refund")}</Label>
