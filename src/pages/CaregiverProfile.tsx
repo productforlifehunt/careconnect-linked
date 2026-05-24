@@ -510,7 +510,7 @@ export default function CaregiverProfile() {
                       )}
                       {selectedResource && (
                         <p className="text-xs text-muted-foreground mt-1.5">
-                          Rate: <span className="font-semibold text-foreground">${effectiveRate}/hr</span>
+                          {isZh ? "费率：" : "Rate: "}<span className="font-semibold text-foreground">{isZh ? `¥${effectiveRate}/小时` : `$${effectiveRate}/hr`}</span>
                         </p>
                       )}
                     </div>
