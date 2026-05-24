@@ -179,7 +179,7 @@ export default function SearchResults() {
             </div>
           </div>
           <div>
-            <Label className="text-sm font-semibold mb-3 block">{t("search.hourlyRate")}: ${priceRange[0]} - ${priceRange[1]}</Label>
+            <Label className="text-sm font-semibold mb-3 block">{t("search.hourlyRate")}: {isZh ? "¥" : "$"}{priceRange[0]} - {isZh ? "¥" : "$"}{priceRange[1]}</Label>
             <Slider value={priceRange} onValueChange={setPriceRange} min={0} max={100} step={5} className="mt-2" />
           </div>
         </>

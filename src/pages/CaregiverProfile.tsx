@@ -448,8 +448,8 @@ export default function CaregiverProfile() {
           <Card className="border-transparent card-elevated sticky top-24">
             <CardContent className="p-6">
               <div className="text-center mb-6">
-                <span className="text-3xl font-bold text-foreground">${bookingResources[0]?.blockCost || caregiver.care_provider_starts_hourly_rate || 0}</span>
-                <span className="text-muted-foreground">/hour</span>
+                <span className="text-3xl font-bold text-foreground">{isZh ? "¥" : "$"}{bookingResources[0]?.blockCost || caregiver.care_provider_starts_hourly_rate || 0}</span>
+                <span className="text-muted-foreground">{isZh ? "/小时" : "/hour"}</span>
               </div>
 
               {bookingResources.length > 0 && (
@@ -482,16 +482,16 @@ export default function CaregiverProfile() {
               <Dialog open={bookingDialogOpen} onOpenChange={setBookingDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="coral" className="w-full mb-3" size="lg">
-                    <Calendar className="mr-2 h-4 w-4" /> Book Now
+                    <Calendar className="mr-2 h-4 w-4" /> {isZh ? "立即预约" : "Book Now"}
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-md">
                   <DialogHeader>
-                    <DialogTitle>Book {caregiver.full_name}</DialogTitle>
+                    <DialogTitle>{isZh ? `预约 ${caregiver.full_name}` : `Book ${caregiver.full_name}`}</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4 mt-4">
                     <div>
-                      <Label>Service Package *</Label>
+                      <Label>{isZh ? "服务套餐 *" : "Service Package *"}</Label>
                       {bookingResources.length === 0 ? (
                         <div className="text-sm text-muted-foreground bg-muted/50 rounded-md p-3 border border-dashed">
                           {isZh ? "该护理者尚未发布服务套餐。请发消息协商定价。" : "This caregiver hasn't published any service packages yet. Send them a message to negotiate a custom price."}
@@ -502,7 +502,7 @@ export default function CaregiverProfile() {
                           <SelectContent>
                             {bookingResources.map((r: BookingResourceOption) => (
                               <SelectItem key={r.id} value={String(r.id)}>
-                                {r.name} — ${r.blockCost}/hr
+                                {r.name} — {isZh ? `¥${r.blockCost}/小时` : `$${r.blockCost}/hr`}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -510,7 +510,7 @@ export default function CaregiverProfile() {
                       )}
                       {selectedResource && (
                         <p className="text-xs text-muted-foreground mt-1.5">
-                          Rate: <span className="font-semibold text-foreground">${effectiveRate}/hr</span>
+                          {isZh ? "费率：" : "Rate: "}<span className="font-semibold text-foreground">{isZh ? `¥${effectiveRate}/小时` : `$${effectiveRate}/hr`}</span>
                         </p>
                       )}
                     </div>
@@ -597,10 +597,10 @@ export default function CaregiverProfile() {
                     </div>
                     <div className="flex justify-between items-center pt-2 border-t">
                       <span className="text-sm text-muted-foreground">{isZh ? "预估总价" : "Estimated Total"}</span>
-                      <span className="text-xl font-bold text-foreground">${total}{recurringPattern !== "none" ? `/${recurringPattern === "weekly" ? (isZh ? "周" : "wk") : recurringPattern === "biweekly" ? (isZh ? "2周" : "2wk") : (isZh ? "月" : "mo")}` : ""}</span>
+                      <span className="text-xl font-bold text-foreground">{isZh ? "¥" : "$"}{total}{recurringPattern !== "none" ? `/${recurringPattern === "weekly" ? (isZh ? "周" : "wk") : recurringPattern === "biweekly" ? (isZh ? "2周" : "2wk") : (isZh ? "月" : "mo")}` : ""}</span>
                     </div>
                     <Button variant="coral" className="w-full" onClick={handleBooking} disabled={createBooking.isPending || hasAvailabilityConflict || !selectedResource}>
-                      {createBooking.isPending ? "Submitting..." : "Confirm Booking"}
+                      {createBooking.isPending ? (isZh ? "提交中…" : "Submitting...") : (isZh ? "确认预约" : "Confirm Booking")}
                     </Button>
                     <Button
                       variant="outline"

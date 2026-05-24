@@ -24,6 +24,7 @@ export function QuoteCard({ quote, isRecipient, isMe, conversationId, otherUserI
   const isZh = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (isZh ? cn : en);
   const navigate = useNavigate();
+  const currency = isZh ? "¥" : "$";
   const addToCart = useAddToCart();
   const sendMessage = useSendMessage();
   const [accepting, setAccepting] = useState(false);
@@ -51,7 +52,7 @@ export function QuoteCard({ quote, isRecipient, isMe, conversationId, otherUserI
       await addToCart.mutateAsync({ productId });
       toast({
         title: Z("已加入购物车", "Added to cart"),
-        description: Z(`$${quote.amount} 的报价已准备结账。`, `Quote of $${quote.amount} ready to checkout.`),
+        description: Z(`${currency}${quote.amount} 的报价已准备结账。`, `Quote of ${currency}${quote.amount} ready to checkout.`),
       });
       navigate("/cart");
     } catch (e: any) {
@@ -113,7 +114,7 @@ export function QuoteCard({ quote, isRecipient, isMe, conversationId, otherUserI
       )}
 
       <div className="flex items-baseline gap-1 mb-2">
-        <span className="text-3xl font-bold text-foreground">${quote.amount}</span>
+        <span className="text-3xl font-bold text-foreground">{currency}{quote.amount}</span>
         {quote.mode === "hourly" && (
           <span className="text-xs text-muted-foreground">
             ({quote.ratePerHour}/{Z("小时", "hr")} × {quote.hours}{Z("小时", "h")})
@@ -154,7 +155,7 @@ export function QuoteCard({ quote, isRecipient, isMe, conversationId, otherUserI
               </>
             ) : (
               <>
-                <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> {Z("接受并支付", "Accept & Pay")} ${quote.amount}
+                <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> {Z("接受并支付", "Accept & Pay")} {currency}{quote.amount}
               </>
             )}
           </Button>
