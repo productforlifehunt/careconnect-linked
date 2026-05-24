@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { DollarSign, Clock, Tag } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { QuoteData, QuoteMode } from "@/lib/quote-protocol";
 
 interface QuoteDialogProps {
