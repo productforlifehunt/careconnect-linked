@@ -24,6 +24,7 @@ export function QuoteCard({ quote, isRecipient, isMe, conversationId, otherUserI
   const isZh = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (isZh ? cn : en);
   const navigate = useNavigate();
+  const currency = isZh ? "¥" : "$";
   const addToCart = useAddToCart();
   const sendMessage = useSendMessage();
   const [accepting, setAccepting] = useState(false);
