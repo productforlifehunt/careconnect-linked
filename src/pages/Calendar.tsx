@@ -117,7 +117,7 @@ export default function CalendarPage() {
                   className="inline-block h-2.5 w-2.5 rounded-full"
                   style={{ backgroundColor: EVENT_TYPE_COLORS[t] }}
                 />
-                {EVENT_TYPE_LABELS[t]}
+                {getEventTypeLabel(t, i18n.language)}
               </button>
             );
           })}
