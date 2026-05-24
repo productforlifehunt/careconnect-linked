@@ -502,7 +502,7 @@ export default function CaregiverProfile() {
                           <SelectContent>
                             {bookingResources.map((r: BookingResourceOption) => (
                               <SelectItem key={r.id} value={String(r.id)}>
-                                {r.name} — ${r.blockCost}/hr
+                                {r.name} — {isZh ? `¥${r.blockCost}/小时` : `$${r.blockCost}/hr`}
                               </SelectItem>
                             ))}
                           </SelectContent>
