@@ -40,7 +40,7 @@ export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) 
       const slots = med.time_slot || [];
       if (slots.length === 0) {
         items.push({
-          time: "Any time",
+          time: isZh ? "任意时间" : "Any time",
           sortTime: 1200,
           label: `${med.name} ${med.dosage ? `(${med.dosage})` : ""}`,
           type: "medicine",
@@ -73,7 +73,7 @@ export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) 
     });
     todaysTasks.forEach((t: any) => {
       items.push({
-        time: "Today",
+        time: isZh ? "今天" : "Today",
         sortTime: 900,
         label: t.title,
         type: "task",
@@ -94,7 +94,7 @@ export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) 
         items.push({
           time: display12,
           sortTime: hour * 100 + minute,
-          label: checkin.name || "Daily check-in",
+          label: checkin.name || (isZh ? "每日打卡" : "Daily check-in"),
           type: "checkin",
           status: checkinStatus,
           icon: ClipboardCheck,
@@ -126,7 +126,7 @@ export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) 
       <CardHeader className="pb-2">
         <CardTitle className="text-base flex items-center gap-2">
           <Clock className="h-4 w-4 text-primary" />
-          Today's Routine — {caredOneName}
+          {isZh ? `今日作息 — ${caredOneName}` : `Today's Routine — ${caredOneName}`}
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-0">
