@@ -187,8 +187,8 @@ export default function ProviderDashboard() {
         {[
           { label: isZh ? "待处理" : "Pending Requests", value: pendingBookings.length, icon: Clock, color: "text-warning" },
           { label: isZh ? "已确认" : "Confirmed", value: confirmedBookings.length, icon: CalendarDays, color: "text-primary" },
-          { label: isZh ? "总收入" : "Total Earned", value: `$${totalEarnings.toFixed(0)}`, icon: DollarSign, color: "text-success" },
-          { label: isZh ? "待结算" : "Pending Payout", value: `$${pendingEarnings.toFixed(0)}`, icon: TrendingUp, color: "text-coral" },
+          { label: isZh ? "总收入" : "Total Earned", value: `${isZh ? "¥" : "$"}${totalEarnings.toFixed(0)}`, icon: DollarSign, color: "text-success" },
+          { label: isZh ? "待结算" : "Pending Payout", value: `${isZh ? "¥" : "$"}${pendingEarnings.toFixed(0)}`, icon: TrendingUp, color: "text-coral" },
         ].map(stat => (
           <Card key={stat.label} className="border-transparent card-elevated">
             <CardContent className="p-3 sm:p-4">
