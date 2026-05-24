@@ -75,7 +75,7 @@ export default function OrderConfirmation() {
               <span className="text-lg font-semibold flex items-center gap-2">
                 <DollarSign className="h-5 w-5" /> {t("checkout.total", "Total")}
               </span>
-              <span className="text-2xl font-bold text-primary">${orderTotal}</span>
+              <span className="text-2xl font-bold text-primary">{i18n.language?.startsWith("zh") ? "¥" : "$"}{orderTotal}</span>
             </div>
           )}
         </CardContent>

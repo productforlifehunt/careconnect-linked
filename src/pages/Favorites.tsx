@@ -11,7 +11,8 @@ export default function Favorites() {
   const navigate = useNavigate();
   const { data: savedProviders, isLoading } = useSavedProviders();
   const toggleSaved = useToggleSavedProvider();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isZh = i18n.language?.startsWith("zh");
 
   const removeFavorite = (providerId: string) => {
     toggleSaved.mutate(providerId);
@@ -46,7 +47,7 @@ export default function Favorites() {
                       <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
                         <span className="flex items-center gap-1"><Star className="h-3 w-3 text-warning fill-warning" /> {cg.rating_average?.toFixed(1) || t("common.new")}</span>
                         {cg.location && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {cg.location}</span>}
-                        <span>${cg.hourly_rate || 0}{t("common.perHour")}</span>
+                        <span>{isZh ? "¥" : "$"}{cg.hourly_rate || 0}{t("common.perHour")}</span>
                       </div>
                       <div className="flex flex-wrap gap-1 mt-2">
                         {(cg.specialty || []).map((s: string) => <Badge key={s} variant="secondary" className="bg-accent text-accent-foreground text-xs">{s}</Badge>)}
