@@ -188,7 +188,7 @@ export default function CalendarPage() {
                   </DialogTitle>
                   <DialogDescription>
                     <Badge variant="secondary" className="mr-2">
-                      {EVENT_TYPE_LABELS[selectedEvent.event_type]}
+                      {getEventTypeLabel(selectedEvent.event_type, i18n.language)}
                     </Badge>
                     <Badge variant="outline">{selectedEvent.priority}</Badge>
                   </DialogDescription>
