@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Pill, ClipboardCheck, CheckSquare, Clock } from "lucide-react";
 import { useMedicines, useCareTasks, useCheckins, useTodayCheckinLogs, useTodayMedicineLogs } from "@/hooks/use-care-data";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 interface DailyTimelineProps {
   caredOneId: string;
@@ -19,6 +20,8 @@ interface TimelineItem {
 }
 
 export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) {
+  const { i18n } = useTranslation();
+  const isZh = i18n.language?.startsWith("zh");
   const { data: medicines } = useMedicines(caredOneId);
   const { data: todayLogs } = useTodayMedicineLogs(caredOneId);
   const { data: tasks } = useCareTasks();
@@ -37,7 +40,7 @@ export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) 
       const slots = med.time_slot || [];
       if (slots.length === 0) {
         items.push({
-          time: "Any time",
+          time: isZh ? "任意时间" : "Any time",
           sortTime: 1200,
           label: `${med.name} ${med.dosage ? `(${med.dosage})` : ""}`,
           type: "medicine",
@@ -70,7 +73,7 @@ export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) 
     });
     todaysTasks.forEach((t: any) => {
       items.push({
-        time: "Today",
+        time: isZh ? "今天" : "Today",
         sortTime: 900,
         label: t.title,
         type: "task",
@@ -91,7 +94,7 @@ export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) 
         items.push({
           time: display12,
           sortTime: hour * 100 + minute,
-          label: checkin.name || "Daily check-in",
+          label: checkin.name || (isZh ? "每日打卡" : "Daily check-in"),
           type: "checkin",
           status: checkinStatus,
           icon: ClipboardCheck,
@@ -123,7 +126,7 @@ export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) 
       <CardHeader className="pb-2">
         <CardTitle className="text-base flex items-center gap-2">
           <Clock className="h-4 w-4 text-primary" />
-          Today's Routine — {caredOneName}
+          {isZh ? `今日作息 — ${caredOneName}` : `Today's Routine — ${caredOneName}`}
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-0">
@@ -141,7 +144,7 @@ export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) 
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs font-medium text-muted-foreground">{item.time}</span>
                     <Badge variant="outline" className={`text-[10px] ${statusColor[item.status]}`}>
-                      {item.status}
+                      {isZh ? ({ done: "已完成", pending: "待办", missed: "未完成" } as const)[item.status] : item.status}
                     </Badge>
                   </div>
                   <p className="text-sm text-foreground truncate">{item.label}</p>
