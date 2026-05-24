@@ -137,7 +137,7 @@ export default function Messages() {
     qc.invalidateQueries({ queryKey: ["messages"] });
     qc.invalidateQueries({ queryKey: ["conversations"] });
     setQuoteDialogOpen(false);
-    toast({ title: Z("报价已发送", "Quote sent"), description: `$${quote.amount} ${quote.mode === "hourly" ? Z("（按小时）", "(hourly)") : Z("（一口价）", "(flat)")} ${Z("已发送", "sent")}.` });
+    toast({ title: Z("报价已发送", "Quote sent"), description: `${isCN ? "¥" : "$"}${quote.amount} ${quote.mode === "hourly" ? Z("（按小时）", "(hourly)") : Z("（一口价）", "(flat)")} ${Z("已发送", "sent")}.` });
   };
 
   const handleStartConversation = (person: any) => {
