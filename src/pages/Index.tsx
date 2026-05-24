@@ -189,7 +189,7 @@ const Index = () => {
                       </div>
                       <div className="flex items-center justify-end mt-4 pt-4 border-t">
                         <div className="text-right">
-                          <span className="text-lg font-bold text-foreground">${cg.care_provider_starts_hourly_rate || 0}</span>
+                          <span className="text-lg font-bold text-foreground">{isChinese ? "¥" : "$"}{cg.care_provider_starts_hourly_rate || 0}</span>
                           <span className="text-sm text-muted-foreground">{t("common.perHour")}</span>
                         </div>
                       </div>
