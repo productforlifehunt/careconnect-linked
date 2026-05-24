@@ -448,8 +448,8 @@ export default function CaregiverProfile() {
           <Card className="border-transparent card-elevated sticky top-24">
             <CardContent className="p-6">
               <div className="text-center mb-6">
-                <span className="text-3xl font-bold text-foreground">${bookingResources[0]?.blockCost || caregiver.care_provider_starts_hourly_rate || 0}</span>
-                <span className="text-muted-foreground">/hour</span>
+                <span className="text-3xl font-bold text-foreground">{isZh ? "¥" : "$"}{bookingResources[0]?.blockCost || caregiver.care_provider_starts_hourly_rate || 0}</span>
+                <span className="text-muted-foreground">{isZh ? "/小时" : "/hour"}</span>
               </div>
 
               {bookingResources.length > 0 && (
