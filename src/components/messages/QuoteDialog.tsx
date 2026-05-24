@@ -36,6 +36,10 @@ export function QuoteDialog({
   onSend,
   submitting,
 }: QuoteDialogProps) {
+  const { i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
+  const Z = (cn: string, en: string) => (isCN ? cn : en);
+  const currency = isCN ? "¥" : "$";
   const [mode, setMode] = useState<QuoteMode>("hourly");
   const [rate, setRate] = useState<string>(defaultRatePerHour ? String(defaultRatePerHour) : "");
   const [hours, setHours] = useState<string>("2");
