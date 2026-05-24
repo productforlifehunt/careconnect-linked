@@ -56,7 +56,7 @@ function formatHour(h: string): string {
 
 function formatTime(dateStr: string): string {
   const d = new Date(dateStr);
-  return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  return d.toLocaleTimeString(i18n.language || [], { hour: "numeric", minute: "2-digit" });
 }
 
 // ─── Log Note Dialog ────────────────────────────────────────
