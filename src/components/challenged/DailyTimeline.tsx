@@ -20,6 +20,8 @@ interface TimelineItem {
 }
 
 export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) {
+  const { i18n } = useTranslation();
+  const isZh = i18n.language?.startsWith("zh");
   const { data: medicines } = useMedicines(caredOneId);
   const { data: todayLogs } = useTodayMedicineLogs(caredOneId);
   const { data: tasks } = useCareTasks();
