@@ -482,16 +482,16 @@ export default function CaregiverProfile() {
               <Dialog open={bookingDialogOpen} onOpenChange={setBookingDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="coral" className="w-full mb-3" size="lg">
-                    <Calendar className="mr-2 h-4 w-4" /> Book Now
+                    <Calendar className="mr-2 h-4 w-4" /> {isZh ? "立即预约" : "Book Now"}
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-md">
                   <DialogHeader>
-                    <DialogTitle>Book {caregiver.full_name}</DialogTitle>
+                    <DialogTitle>{isZh ? `预约 ${caregiver.full_name}` : `Book ${caregiver.full_name}`}</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4 mt-4">
                     <div>
-                      <Label>Service Package *</Label>
+                      <Label>{isZh ? "服务套餐 *" : "Service Package *"}</Label>
                       {bookingResources.length === 0 ? (
                         <div className="text-sm text-muted-foreground bg-muted/50 rounded-md p-3 border border-dashed">
                           {isZh ? "该护理者尚未发布服务套餐。请发消息协商定价。" : "This caregiver hasn't published any service packages yet. Send them a message to negotiate a custom price."}
