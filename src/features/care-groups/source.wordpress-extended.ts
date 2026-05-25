@@ -167,7 +167,7 @@ export async function fetchGroupInvitationsWordPress(groupId: string): Promise<a
     const normalizedGroupId = normalizeWpObjectId(groupId);
     const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${normalizedGroupId}`);
     return (Array.isArray(rels) ? rels : [])
-      .filter((r: any) => r?.meta?.care_groups_member_invitation_status === "pending")
+      .filter((r: any) => decodeRel72Meta(r?.meta).invitationStatus === "pending")
       .map((r: any) => ({
         id: `${normalizedGroupId}:${r.child_object_id}`,
         group_id: groupId,
