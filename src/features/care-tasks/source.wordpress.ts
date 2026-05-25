@@ -10,7 +10,7 @@ import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-c
  *
  * Relations (per data model):
  *   REL 141 → cared ones (care_task → users)            One to Many
- *   REL 108 → assigned caregivers (care_task → users)   One to Many   meta: a = pending|accepted|rejected
+ *   REL 108 → assigned caregivers (care_task → users)   One to Many   meta: a55 = b55|b56|b57
  *   REL  48 → care group (care_group → care_task)       Many to Many
  *   REL 109 → private member groups (care_task → group) One to Many   visibility
  *   REL  81 → users (care_task → users)                 Many to Many  visibility
@@ -43,6 +43,8 @@ const FINISH_STATUS_TO_LABEL: Record<string, string> = {
   "b55": "pending",
   "b56": "completed",
 };
+const ASSIGNEE_STATUS_TO_CODE: Record<string, string> = { pending: "b55", accepted: "b56", rejected: "b57" };
+const ASSIGNEE_CODE_TO_STATUS: Record<string, string> = { b55: "pending", b56: "accepted", b57: "rejected" };
 function helpStatusFromLegacy(v: any): string {
   const value = String(v ?? "b55");
   if (value === "1") return "b55";
@@ -72,7 +74,7 @@ async function fetchAssignees(taskId: string): Promise<Array<{ user_id: string; 
         const id = normalizeWpObjectId(r.child_object_id);
         if (!id) return null;
         const meta = r.meta || r.meta_fields || {};
-        const response = String(meta.a || meta.response || "pending");
+        const response = ASSIGNEE_CODE_TO_STATUS[String(meta.a55 || "b55")] || "pending";
         return { user_id: `wp-${id}`, response };
       })
       .filter(Boolean) as Array<{ user_id: string; response: string }>;
@@ -204,7 +206,7 @@ export async function createCareTaskWordPress(task: {
   }
   assignedUserIds.forEach((assignedUserId) => calls.push(wordpressFetch(`jet-rel/${REL_TASK_ASSIGNEE}`, {
     method: "POST",
-    body: { parent_id: taskId, child_id: assignedUserId, context: "child", store_items_type: "update", meta: { a: "pending" } },
+    body: { parent_id: taskId, child_id: assignedUserId, context: "child", store_items_type: "update", meta: { a55: "b55" } },
   })));
   if (taskId && caredOneId) {
     calls.push(wordpressFetch(`jet-rel/${REL_TASK_CARED_ONE}`, {
@@ -257,7 +259,7 @@ export async function updateCareTaskWordPress(id: string, updates: Record<string
     for (const assignedUserId of assignedUserIds) {
       await wordpressFetch(`jet-rel/${REL_TASK_ASSIGNEE}`, {
         method: "POST",
-        body: { parent_id: taskId, child_id: assignedUserId, context: "child", store_items_type: "update", meta: { a: "pending" } },
+        body: { parent_id: taskId, child_id: assignedUserId, context: "child", store_items_type: "update", meta: { a55: "b55" } },
       });
     }
   }
@@ -287,14 +289,14 @@ export async function linkTaskToCalendarEventWordPress(taskId: string, eventId: 
   });
 }
 
-/** Update an assignee's response status (pending/accepted/rejected) on REL 108 meta field `a`. */
+/** Update an assignee's response status (pending/accepted/rejected) on REL 108 meta field `a55`. */
 export async function updateAssigneeStatusWordPress(taskId: string, userId: string, status: "pending" | "accepted" | "rejected"): Promise<void> {
   const tid = normalizeWpObjectId(taskId);
   const uid = normalizeWpObjectId(userId);
   if (!tid || !uid) return;
   await wordpressFetch(`jet-rel/${REL_TASK_ASSIGNEE}`, {
     method: "POST",
-    body: { parent_id: tid, child_id: uid, context: "child", store_items_type: "update", meta: { a: status } },
+    body: { parent_id: tid, child_id: uid, context: "child", store_items_type: "update", meta: { a55: ASSIGNEE_STATUS_TO_CODE[status] || "b55" } },
   });
 }
 
