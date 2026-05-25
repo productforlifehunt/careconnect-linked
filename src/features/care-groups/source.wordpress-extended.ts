@@ -1,6 +1,12 @@
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { WP } from "@/integrations/wp-schema";
+import {
+  encodeRel72Meta,
+  decodeRel72Meta,
+  encodeRel75Meta,
+  decodeRel75Meta,
+} from "./rel-meta";
 
 // Live JetEngine relations (per data bible)
 const REL_GROUP_MEMBER = 72;          // care_group → users
@@ -33,19 +39,8 @@ function isYesCode(v: unknown): boolean {
   return false;
 }
 
-function memberMeta(input: {
-  displayName?: string;
-  memberTypes?: string[];
-  memberRoles?: string[];
-  invitationStatus?: "accepted" | "pending" | "declined";
-} = {}) {
-  return {
-    care_groups_member_display_name_: input.displayName || "Member",
-    care_groups_member_types: input.memberTypes?.length ? input.memberTypes : ["nothing special"],
-    care_groups_member_roles: input.memberRoles?.length ? input.memberRoles : ["nothing special"],
-    care_groups_member_invitation_status: input.invitationStatus || "accepted",
-  };
-}
+/** REL 72 meta — opaque-code only (dictionary). */
+const memberMeta = encodeRel72Meta;
 
 function normalizeWpObjectId(value: string | number | null | undefined): number {
   return Number(String(value ?? "").replace(/^wp-/, ""));
