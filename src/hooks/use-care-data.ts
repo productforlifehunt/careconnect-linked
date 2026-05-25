@@ -1668,12 +1668,13 @@ export function useCaregiverWellnessLogs() {
       const logs = await wordpressCCTFetch("caregiver_wellness_log", { params: { _limit: 100 } });
       if (!Array.isArray(logs)) return [];
       return logs.map((l: any) => ({
-        id: l.id,
-        mood: l.mood || null,
-        stress_level: l.stress_level ?? null,
-        notes: l.notes || null,
-        logged_at: l.logged_at || l.created_at,
-        created_at: l.created_at,
+        id: l.id || l._ID,
+        // Live keys are duplicated (JetEngine bug); read both forms for safety.
+        mood: l.moodmood || l.mood || null,
+        stress_level: l.stress_levelstress_level ?? l.stress_level ?? null,
+        notes: l.notesnotes || l.notes || null,
+        logged_at: l.logged_atlogged_at || l.logged_at || l.cct_created || l.created_at,
+        created_at: l.cct_created || l.created_at,
       }));
     },
   });
