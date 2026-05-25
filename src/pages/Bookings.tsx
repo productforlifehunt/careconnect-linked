@@ -148,7 +148,7 @@ export default function Bookings() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Badge className={statusColors[booking.status] || "bg-muted text-muted-foreground"}>{booking.status.replace(/_/g, " ")}</Badge>
+            <Badge className={statusColors[booking.status] || "bg-muted text-muted-foreground"}>{String(t(`bookings.status.${booking.status}`, { defaultValue: booking.status.replace(/_/g, " ") }))}</Badge>
             <DropdownMenu>
               <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
               <DropdownMenuContent align="end">
