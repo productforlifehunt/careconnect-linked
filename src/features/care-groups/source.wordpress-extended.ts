@@ -762,7 +762,7 @@ export async function fetchMyPendingSubgroupRequestsWordPress(): Promise<Array<{
     const userId = Number(wpUser.user_id);
     const rels = await wordpressFetch<any[]>(`jet-rel/${REL_SUBGROUP_MEMBERS}/parents/${userId}`);
     return (Array.isArray(rels) ? rels : [])
-      .filter((r: any) => (r?.meta?.[SUBGROUP_META_STATUS] || "accepted") === "pending")
+      .filter((r: any) => decodeRel75Meta(r?.meta).status === "pending")
       .map((r: any) => ({ subgroup_id: Number(r.parent_object_id), status: "pending" }));
   } catch { return []; }
 }
