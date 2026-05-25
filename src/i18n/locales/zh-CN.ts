@@ -282,7 +282,7 @@ const zhCN = {
     selectAllApply: "选择所有适用的", certifications: "认证", yearsOfExperience: "工作年限",
     lessThan1: "不到1年", years1to3: "1-3年", years3to5: "3-5年", years5to10: "5-10年",
     years10plus: "10年以上", pricing: "定价", setYourRates: "设定您的费率",
-    hourlyRateDollar: "小时费率（$）", avgRate: "您所在地区的平均费率：$22-35/小时",
+    hourlyRateDollar: "小时费率（¥）", avgRate: "您所在地区的平均费率：¥150-300/小时",
     bgCheckAgreement: "背景调查与协议", finalStep: "完成申请的最后一步",
     bgCheckRequired: "需要背景调查", bgCheckPartner: "我们与Checkr合作进行全面的背景筛查",
     consentBgCheck: "我同意进行全面的背景调查。*",
