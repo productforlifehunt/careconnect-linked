@@ -223,7 +223,7 @@ export default function Dashboard() {
                   <p className="font-medium text-sm text-foreground truncate">{b.provider?.full_name || "Provider"}</p>
                   <p className="text-[11px] text-muted-foreground truncate">{b.appointment_time || ""} · {b.service_type || ""}</p>
                 </div>
-                <Badge className={`${statusColors[b.status] || "bg-muted text-muted-foreground"} text-[10px]`}>{b.status}</Badge>
+                <Badge className={`${statusColors[b.status] || "bg-muted text-muted-foreground"} text-[10px]`}>{t(`bookings.status.${b.status}`, { defaultValue: String(b.status ?? "") })}</Badge>
               </div>
             )) : (
               <p className="text-sm text-muted-foreground text-center py-6">{t("dashboard.noUpcomingBookings")}</p>
