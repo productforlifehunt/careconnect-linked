@@ -1391,20 +1391,10 @@ export function useCreateSymptomLog() {
 export function useCreateCaregiverWellnessLog() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (log: any) => {
-      const { wordpressCCTFetch } = await import("@/features/shared/wordpress-client");
-      // NOTE: caregiver_wellness_log CCT has duplicated JetEngine field keys
-      // (moodmood, stress_levelstress_level, notesnotes, logged_atlogged_at).
-      // These ARE the live keys — verified via /wp-json/jet-cct route discovery.
-      await wordpressCCTFetch("caregiver_wellness_log", {
-        method: "POST",
-        body: {
-          moodmood: log.mood || "",
-          stress_levelstress_level: log.stress_level ?? 0,
-          notesnotes: log.notes || "",
-          logged_atlogged_at: new Date().toISOString(),
-        },
-      });
+    mutationFn: async (_log: any) => {
+      // DEPRECATED: `caregiver_wellness_log` CCT not in current data dictionary.
+      // No-op until a canonical replacement is defined.
+      return;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["caregiverWellnessLogs"] }); },
   });
@@ -1664,18 +1654,8 @@ export function useCaregiverWellnessLogs() {
   return useQuery({
     queryKey: ["caregiverWellnessLogs"],
     queryFn: async () => {
-      const { wordpressCCTFetch } = await import("@/features/shared/wordpress-client");
-      const logs = await wordpressCCTFetch("caregiver_wellness_log", { params: { _limit: 100 } });
-      if (!Array.isArray(logs)) return [];
-      return logs.map((l: any) => ({
-        id: l.id || l._ID,
-        // Live keys are duplicated (JetEngine bug); read both forms for safety.
-        mood: l.moodmood || l.mood || null,
-        stress_level: l.stress_levelstress_level ?? l.stress_level ?? null,
-        notes: l.notesnotes || l.notes || null,
-        logged_at: l.logged_atlogged_at || l.logged_at || l.cct_created || l.created_at,
-        created_at: l.cct_created || l.created_at,
-      }));
+      // DEPRECATED: `caregiver_wellness_log` CCT not in current data dictionary.
+      return [] as any[];
     },
   });
 }
