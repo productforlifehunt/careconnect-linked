@@ -436,7 +436,7 @@ export async function joinGroupByCodeWordPress(token: string): Promise<any> {
     ).catch(() => []);
     const alreadyMember = (Array.isArray(existingMembers) ? existingMembers : [])
       .some((r: any) => Number(r.child_object_id) === userId
-        && (r?.meta?.care_groups_member_invitation_status || "accepted") === "accepted");
+        && decodeRel72Meta(r?.meta).invitationStatus === "accepted");
 
     if (alreadyMember) {
       return { group_id: String(parentGroupId), group_name: groupName, already_member: true };
