@@ -44,8 +44,7 @@ export async function fetchMySubgroupIds(): Promise<Set<number>> {
   try {
     const rels = await wordpressFetch<any[]>(`jet-rel/${REL_SUBGROUP_MEMBERS}/parents/${uid}`);
     const accepted = (Array.isArray(rels) ? rels : []).filter((r: any) => {
-      const status = r?.meta?.["care_group_s_private_member_group_member_invitation_status"] || "accepted";
-      return status === "accepted";
+      return decodeRel75Meta(r?.meta).status === "accepted";
     });
     return new Set(accepted.map((r: any) => Number(r.parent_object_id)).filter(Boolean));
   } catch { return new Set(); }
