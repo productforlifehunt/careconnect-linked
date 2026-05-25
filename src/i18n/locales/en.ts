@@ -810,6 +810,16 @@ const en = {
     defaultRate: "Default",
     custom: "Custom",
     pricingNote: "Leave blank to use your default rate. Each service uses its own rate at booking time.",
+    marketplaceIntegration: "Marketplace Integration",
+    productListed: "Service Product Listed",
+    productNotListed: "Service Product Not Listed",
+    productId: "Product ID",
+    saveToList: "Save profile to list your service on the marketplace",
+    listed: "Listed",
+    notListed: "Not Listed",
+    locationPlaceholder: "e.g. San Francisco, CA",
+    ratePlaceholder: "e.g. 35",
+    phonePlaceholder: "e.g. +1 (555) 123-4567",
   },
 
   // ═══ DOCUMENTS ═══
