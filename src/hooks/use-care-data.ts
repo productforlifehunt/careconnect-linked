@@ -1393,13 +1393,16 @@ export function useCreateCaregiverWellnessLog() {
   return useMutation({
     mutationFn: async (log: any) => {
       const { wordpressCCTFetch } = await import("@/features/shared/wordpress-client");
+      // NOTE: caregiver_wellness_log CCT has duplicated JetEngine field keys
+      // (moodmood, stress_levelstress_level, notesnotes, logged_atlogged_at).
+      // These ARE the live keys — verified via /wp-json/jet-cct route discovery.
       await wordpressCCTFetch("caregiver_wellness_log", {
         method: "POST",
         body: {
-          mood: log.mood || "",
-          stress_level: log.stress_level ?? 0,
-          notes: log.notes || "",
-          logged_at: new Date().toISOString(),
+          moodmood: log.mood || "",
+          stress_levelstress_level: log.stress_level ?? 0,
+          notesnotes: log.notes || "",
+          logged_atlogged_at: new Date().toISOString(),
         },
       });
     },
