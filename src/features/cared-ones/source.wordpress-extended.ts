@@ -1,6 +1,7 @@
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { WP } from "@/integrations/wp-schema";
+import { decodeRel72Meta } from "@/features/care-groups/rel-meta";
 
 // ─── Relations (per data bible / live WP) ────────────────────
 const REL_USER_CARED_ONE_LEGACY = 79;   // user → user (legacy)
@@ -107,17 +108,15 @@ export async function fetchGroupCaredOnesWordPress(groupId: string): Promise<any
     const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${normalizeWpObjectId(groupId)}`);
     if (!Array.isArray(rels) || rels.length === 0) return [];
     const caredOneRels = rels.filter((r: any) => {
-      const roles = Array.isArray(r?.meta?.care_groups_member_roles)
-        ? r.meta.care_groups_member_roles
-        : String(r?.meta?.care_groups_member_roles || "").split(",").map((s) => s.trim());
-      return roles.includes("cared one");
+      const { memberRoles } = decodeRel72Meta(r?.meta);
+      return memberRoles.includes("cared one");
     });
     const userIds = caredOneRels.map((r: any) => Number(r.child_object_id)).filter(Boolean);
     const caredOnes = await Promise.all(userIds.map(async (userId) => {
       try {
         const user = await wordpressFetch<any>(`wp/v2/users/${userId}?context=edit`);
         const rel = caredOneRels.find((r: any) => Number(r.child_object_id) === userId);
-        const fullName = user.name || user.slug || rel?.meta?.care_groups_member_display_name_ || "Cared One";
+        const fullName = user.name || user.slug || decodeRel72Meta(rel?.meta).displayName || "Cared One";
         return {
           id: `wp-${userId}`,
           user_id: `wp-${userId}`,

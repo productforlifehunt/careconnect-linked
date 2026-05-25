@@ -1,6 +1,12 @@
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { WP } from "@/integrations/wp-schema";
+import {
+  encodeRel72Meta,
+  decodeRel72Meta,
+  encodeRel75Meta,
+  decodeRel75Meta,
+} from "./rel-meta";
 
 // Live JetEngine relations (per data bible)
 const REL_GROUP_MEMBER = 72;          // care_group → users
@@ -33,19 +39,8 @@ function isYesCode(v: unknown): boolean {
   return false;
 }
 
-function memberMeta(input: {
-  displayName?: string;
-  memberTypes?: string[];
-  memberRoles?: string[];
-  invitationStatus?: "accepted" | "pending" | "declined";
-} = {}) {
-  return {
-    care_groups_member_display_name_: input.displayName || "Member",
-    care_groups_member_types: input.memberTypes?.length ? input.memberTypes : ["nothing special"],
-    care_groups_member_roles: input.memberRoles?.length ? input.memberRoles : ["nothing special"],
-    care_groups_member_invitation_status: input.invitationStatus || "accepted",
-  };
-}
+/** REL 72 meta — opaque-code only (dictionary). */
+const memberMeta = encodeRel72Meta;
 
 function normalizeWpObjectId(value: string | number | null | undefined): number {
   return Number(String(value ?? "").replace(/^wp-/, ""));
@@ -172,7 +167,7 @@ export async function fetchGroupInvitationsWordPress(groupId: string): Promise<a
     const normalizedGroupId = normalizeWpObjectId(groupId);
     const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${normalizedGroupId}`);
     return (Array.isArray(rels) ? rels : [])
-      .filter((r: any) => r?.meta?.care_groups_member_invitation_status === "pending")
+      .filter((r: any) => decodeRel72Meta(r?.meta).invitationStatus === "pending")
       .map((r: any) => ({
         id: `${normalizedGroupId}:${r.child_object_id}`,
         group_id: groupId,
@@ -203,7 +198,7 @@ export async function fetchMyPendingInvitationsWordPress(): Promise<any[]> {
     const userId = Number(wpUser.user_id);
     const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/parents/${userId}`);
     const pending = (Array.isArray(rels) ? rels : []).filter(
-      (r: any) => r?.meta?.care_groups_member_invitation_status === "pending"
+      (r: any) => decodeRel72Meta(r?.meta).invitationStatus === "pending"
     );
     // Enrich with real group names
     const enriched = await Promise.all(pending.map(async (r: any) => {
@@ -266,10 +261,9 @@ export async function updateMemberRoleWordPress(memberId: string, updates: any, 
   if (!normalizedGroupId || !normalizedMemberId) return;
   const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${normalizedGroupId}`).catch(() => []);
   const existing = (Array.isArray(rels) ? rels : []).find((r: any) => Number(r.child_object_id) === normalizedMemberId);
-  const currentTypes = normalizeMetaList(existing?.meta?.care_groups_member_types);
-  const currentRoles = normalizeMetaList(existing?.meta?.care_groups_member_roles);
-  const nextTypes = new Set(currentTypes.length ? currentTypes : ["nothing special"]);
-  const nextRoles = new Set(currentRoles.length ? currentRoles : ["nothing special"]);
+  const decoded = decodeRel72Meta(existing?.meta);
+  const nextTypes = new Set(decoded.memberTypes.length ? decoded.memberTypes : ["nothing special"]);
+  const nextRoles = new Set(decoded.memberRoles.length ? decoded.memberRoles : ["nothing special"]);
 
   if (typeof updates === "string") {
     nextTypes.clear();
@@ -289,10 +283,10 @@ export async function updateMemberRoleWordPress(memberId: string, updates: any, 
       context: "child",
       store_items_type: "update",
       meta: memberMeta({
-        displayName: existing?.meta?.care_groups_member_display_name_ || undefined,
+        displayName: decoded.displayName || undefined,
         memberTypes: [...nextTypes],
         memberRoles: [...nextRoles],
-        invitationStatus: existing?.meta?.care_groups_member_invitation_status || "accepted",
+        invitationStatus: decoded.invitationStatus,
       }),
     },
   });
@@ -442,7 +436,7 @@ export async function joinGroupByCodeWordPress(token: string): Promise<any> {
     ).catch(() => []);
     const alreadyMember = (Array.isArray(existingMembers) ? existingMembers : [])
       .some((r: any) => Number(r.child_object_id) === userId
-        && (r?.meta?.care_groups_member_invitation_status || "accepted") === "accepted");
+        && decodeRel72Meta(r?.meta).invitationStatus === "accepted");
 
     if (alreadyMember) {
       return { group_id: String(parentGroupId), group_name: groupName, already_member: true };
@@ -605,25 +599,14 @@ export async function deleteMemberCategoryWordPress(categoryId: string): Promise
 }
 
 // ─── Sub-group member assignment (REL 75) ───────────────────
-// Rel 75 meta fields (configured in JetEngine GUI):
-//   • care_group_s_private_member_group_member_types  (checkbox: nothing special | owner | admin)
-//   • care_group_s_private_member_group_member_invitation_status  (radio: accepted | pending | declined)
-const SUBGROUP_META_TYPES = "care_group_s_private_member_group_member_types";
-const SUBGROUP_META_STATUS = "care_group_s_private_member_group_member_invitation_status";
-
-function subgroupMeta(input: {
-  types?: string[];
-  status?: "accepted" | "pending" | "declined";
-} = {}) {
-  return {
-    [SUBGROUP_META_TYPES]: input.types?.length ? input.types : ["nothing special"],
-    [SUBGROUP_META_STATUS]: input.status || "accepted",
-  };
-}
+// Dictionary meta (opaque):
+//   a55 member_types         checkbox  { b55 nothing special, b56 owner, b57 admin }
+//   a56 invitation_status    radio     { b55 accepted, b56 pending }
+const subgroupMeta = encodeRel75Meta;
 
 export interface SubgroupMemberRecord {
   user_id: number;
-  status: "accepted" | "pending" | "declined";
+  status: "accepted" | "pending";
   types: string[];
   is_owner: boolean;
   is_admin: boolean;
@@ -638,8 +621,7 @@ async function fetchSubgroupMemberRecords(subgroupId: string): Promise<SubgroupM
       .map((r: any): SubgroupMemberRecord | null => {
         const uid = Number(r.child_object_id);
         if (!uid) return null;
-        const types = normalizeMetaList(r?.meta?.[SUBGROUP_META_TYPES]);
-        const status = (r?.meta?.[SUBGROUP_META_STATUS] || "accepted") as SubgroupMemberRecord["status"];
+        const { types, status } = decodeRel75Meta(r?.meta);
         const is_owner = types.includes("owner");
         const is_admin = types.includes("admin") || is_owner;
         return { user_id: uid, status, types: types.length ? types : ["nothing special"], is_owner, is_admin };
@@ -780,7 +762,7 @@ export async function fetchMyPendingSubgroupRequestsWordPress(): Promise<Array<{
     const userId = Number(wpUser.user_id);
     const rels = await wordpressFetch<any[]>(`jet-rel/${REL_SUBGROUP_MEMBERS}/parents/${userId}`);
     return (Array.isArray(rels) ? rels : [])
-      .filter((r: any) => (r?.meta?.[SUBGROUP_META_STATUS] || "accepted") === "pending")
+      .filter((r: any) => decodeRel75Meta(r?.meta).status === "pending")
       .map((r: any) => ({ subgroup_id: Number(r.parent_object_id), status: "pending" }));
   } catch { return []; }
 }

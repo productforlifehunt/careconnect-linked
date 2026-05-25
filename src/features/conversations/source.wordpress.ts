@@ -1,4 +1,5 @@
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
+import { decodeRel72Meta } from "@/features/care-groups/rel-meta";
 
 /**
  * Live JetEngine schema (verified from prd-to-wp-mapping.md):
@@ -115,7 +116,7 @@ export async function getOrCreateGroupConversationWordPress(groupId: string | nu
     try {
       const memberRels = await wordpressFetch<any[]>(`jet-rel/72/children/${gid}`);
       const acceptedIds = (Array.isArray(memberRels) ? memberRels : [])
-        .filter((r: any) => (r?.meta?.care_groups_member_invitation_status || "accepted") === "accepted")
+        .filter((r: any) => decodeRel72Meta(r?.meta).invitationStatus === "accepted")
         .map((r: any) => Number(r.child_object_id))
         .filter(Boolean);
       await Promise.all(acceptedIds.map((uid) =>

@@ -1,18 +1,13 @@
 import type { CareGroup } from "@/types/care-connector";
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
+import { encodeRel72Meta, decodeRel72Meta } from "./rel-meta";
 
 // Live JetEngine relations (verified from prd-to-wp-mapping.md)
 const REL_GROUP_MEMBER = 72; // M:M  care_group → users
 
 function normalizeWpObjectId(value: string | number | null | undefined): number {
   return Number(String(value ?? "").replace(/^wp-/, ""));
-}
-
-function normalizeMetaList(value: unknown): string[] {
-  if (Array.isArray(value)) return value.map(String).filter(Boolean);
-  if (typeof value === "string") return value.split(",").map((s) => s.trim()).filter(Boolean);
-  return [];
 }
 
 // CCT slug: care_group | fields: a55=name, a56=description, a57=group type, a58=join code, a59=status
@@ -51,10 +46,11 @@ export async function fetchCareGroupMembersWordPress(groupId: string): Promise<a
         try {
           const u = await wordpressFetch<any>(`wp/v2/users/${uid}`);
           const rel = rels.find((r: any) => Number(r.child_object_id) === uid);
-          const memberTypes = normalizeMetaList(rel?.meta?.care_groups_member_types);
-          const memberRoles = normalizeMetaList(rel?.meta?.care_groups_member_roles);
-          const displayName = rel?.meta?.care_groups_member_display_name_ || u.name || u.slug || "Member";
-          const invitationStatus = rel?.meta?.care_groups_member_invitation_status || "accepted";
+          const decoded = decodeRel72Meta(rel?.meta);
+          const memberTypes = decoded.memberTypes;
+          const memberRoles = decoded.memberRoles;
+          const displayName = decoded.displayName || u.name || u.slug || "Member";
+          const invitationStatus = decoded.invitationStatus;
           const isOwner = memberTypes.includes("owner");
           const isAdmin = memberTypes.includes("admin") || isOwner;
           return {
@@ -103,12 +99,12 @@ export async function createCareGroupWordPress(group: { name: string; descriptio
           child_id: userId,
           context: "child",
           store_items_type: "update",
-          meta: {
-            care_groups_member_types: ["owner", "admin"],
-            care_groups_member_roles: ["nothing special"],
-            care_groups_member_display_name_: wpUser.user_display_name || wpUser.user_login || "Owner",
-            care_groups_member_invitation_status: "accepted",
-          },
+          meta: encodeRel72Meta({
+            displayName: wpUser.user_display_name || wpUser.user_login || "Owner",
+            memberTypes: ["owner", "admin"],
+            memberRoles: ["nothing special"],
+            invitationStatus: "accepted",
+          }),
         },
       });
     } catch (e) {
