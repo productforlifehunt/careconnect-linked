@@ -1,18 +1,13 @@
 import type { CareGroup } from "@/types/care-connector";
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
+import { encodeRel72Meta, decodeRel72Meta } from "./rel-meta";
 
 // Live JetEngine relations (verified from prd-to-wp-mapping.md)
 const REL_GROUP_MEMBER = 72; // M:M  care_group → users
 
 function normalizeWpObjectId(value: string | number | null | undefined): number {
   return Number(String(value ?? "").replace(/^wp-/, ""));
-}
-
-function normalizeMetaList(value: unknown): string[] {
-  if (Array.isArray(value)) return value.map(String).filter(Boolean);
-  if (typeof value === "string") return value.split(",").map((s) => s.trim()).filter(Boolean);
-  return [];
 }
 
 // CCT slug: care_group | fields: a55=name, a56=description, a57=group type, a58=join code, a59=status
