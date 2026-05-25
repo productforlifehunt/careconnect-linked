@@ -11,7 +11,8 @@ import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-c
  */
 
 const REL_GROUP_CONV = 140;     // 1:1  care_group → chat_conversation
-const REL_CONV_MEMBER = 142;
+// Dictionary name "142. chat conversation → chatters" — live ID 166 (old 142 deleted & recreated)
+const REL_CONV_MEMBER = 166;
 const REL_CONV_MESSAGE = 143;
 
 const stripWp = (id: string | number | null | undefined): string =>

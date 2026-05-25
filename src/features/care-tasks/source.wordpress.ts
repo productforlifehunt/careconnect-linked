@@ -21,7 +21,8 @@ import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-c
 const CCT_SLUG = "care_task_real";
 
 const REL_GROUP_TASK = 48;          // M:M  care_group ↔ care_task
-const REL_TASK_ASSIGNEE = 108;      // 1:M  care_task → users (assigned caregivers)
+// Dictionary name "108. assigned caregivers" — live ID 164 (old 108 was deleted & recreated)
+const REL_TASK_ASSIGNEE = 164;      // 1:M  care_task → users (assigned caregivers)
 const REL_TASK_COMMENT = 82;
 const REL_TASK_USERS = 81;          // M:M  care_task ↔ users (visibility)
 const REL_TASK_PRIVATE_GROUPS = 109;// 1:M  care_task → private_member_group
