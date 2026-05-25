@@ -198,7 +198,7 @@ export async function fetchMyPendingInvitationsWordPress(): Promise<any[]> {
     const userId = Number(wpUser.user_id);
     const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/parents/${userId}`);
     const pending = (Array.isArray(rels) ? rels : []).filter(
-      (r: any) => r?.meta?.care_groups_member_invitation_status === "pending"
+      (r: any) => decodeRel72Meta(r?.meta).invitationStatus === "pending"
     );
     // Enrich with real group names
     const enriched = await Promise.all(pending.map(async (r: any) => {
