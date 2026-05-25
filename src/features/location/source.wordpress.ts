@@ -14,8 +14,8 @@ import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-c
 import { getStoredWPUser } from "@/services/wp-auth";
 
 // ─── JetEngine Relation ID (User → current_location, one-to-many) ────
-// This will be set after creating the relation via WordPress admin
-const REL_USER_CURRENT_LOCATION = 165;
+// Per data dictionary §relation 117. Must be created in JetEngine GUI on live.
+const REL_USER_CURRENT_LOCATION = 117;
 
 // ─── CCT slug ────────────────────────────────────────────────
 const CCT_SLUG = "current_location";
