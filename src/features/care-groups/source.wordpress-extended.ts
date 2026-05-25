@@ -599,25 +599,14 @@ export async function deleteMemberCategoryWordPress(categoryId: string): Promise
 }
 
 // ─── Sub-group member assignment (REL 75) ───────────────────
-// Rel 75 meta fields (configured in JetEngine GUI):
-//   • care_group_s_private_member_group_member_types  (checkbox: nothing special | owner | admin)
-//   • care_group_s_private_member_group_member_invitation_status  (radio: accepted | pending | declined)
-const SUBGROUP_META_TYPES = "care_group_s_private_member_group_member_types";
-const SUBGROUP_META_STATUS = "care_group_s_private_member_group_member_invitation_status";
-
-function subgroupMeta(input: {
-  types?: string[];
-  status?: "accepted" | "pending" | "declined";
-} = {}) {
-  return {
-    [SUBGROUP_META_TYPES]: input.types?.length ? input.types : ["nothing special"],
-    [SUBGROUP_META_STATUS]: input.status || "accepted",
-  };
-}
+// Dictionary meta (opaque):
+//   a55 member_types         checkbox  { b55 nothing special, b56 owner, b57 admin }
+//   a56 invitation_status    radio     { b55 accepted, b56 pending }
+const subgroupMeta = encodeRel75Meta;
 
 export interface SubgroupMemberRecord {
   user_id: number;
-  status: "accepted" | "pending" | "declined";
+  status: "accepted" | "pending";
   types: string[];
   is_owner: boolean;
   is_admin: boolean;
@@ -632,8 +621,7 @@ async function fetchSubgroupMemberRecords(subgroupId: string): Promise<SubgroupM
       .map((r: any): SubgroupMemberRecord | null => {
         const uid = Number(r.child_object_id);
         if (!uid) return null;
-        const types = normalizeMetaList(r?.meta?.[SUBGROUP_META_TYPES]);
-        const status = (r?.meta?.[SUBGROUP_META_STATUS] || "accepted") as SubgroupMemberRecord["status"];
+        const { types, status } = decodeRel75Meta(r?.meta);
         const is_owner = types.includes("owner");
         const is_admin = types.includes("admin") || is_owner;
         return { user_id: uid, status, types: types.length ? types : ["nothing special"], is_owner, is_admin };
