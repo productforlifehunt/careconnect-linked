@@ -261,10 +261,9 @@ export async function updateMemberRoleWordPress(memberId: string, updates: any, 
   if (!normalizedGroupId || !normalizedMemberId) return;
   const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${normalizedGroupId}`).catch(() => []);
   const existing = (Array.isArray(rels) ? rels : []).find((r: any) => Number(r.child_object_id) === normalizedMemberId);
-  const currentTypes = normalizeMetaList(existing?.meta?.care_groups_member_types);
-  const currentRoles = normalizeMetaList(existing?.meta?.care_groups_member_roles);
-  const nextTypes = new Set(currentTypes.length ? currentTypes : ["nothing special"]);
-  const nextRoles = new Set(currentRoles.length ? currentRoles : ["nothing special"]);
+  const decoded = decodeRel72Meta(existing?.meta);
+  const nextTypes = new Set(decoded.memberTypes.length ? decoded.memberTypes : ["nothing special"]);
+  const nextRoles = new Set(decoded.memberRoles.length ? decoded.memberRoles : ["nothing special"]);
 
   if (typeof updates === "string") {
     nextTypes.clear();
@@ -284,10 +283,10 @@ export async function updateMemberRoleWordPress(memberId: string, updates: any, 
       context: "child",
       store_items_type: "update",
       meta: memberMeta({
-        displayName: existing?.meta?.care_groups_member_display_name_ || undefined,
+        displayName: decoded.displayName || undefined,
         memberTypes: [...nextTypes],
         memberRoles: [...nextRoles],
-        invitationStatus: existing?.meta?.care_groups_member_invitation_status || "accepted",
+        invitationStatus: decoded.invitationStatus,
       }),
     },
   });
