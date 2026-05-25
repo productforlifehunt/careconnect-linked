@@ -1,10 +1,62 @@
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
+import { WP } from "@/integrations/wp-schema";
 
 // JetEngine relations (live) — CCT 125 "Cared one's information card"
 const REL_USER_INFO_CARD = 126;          // 1:M users → cared_ones_informat
 const REL_INFO_CARD_EMERGENCY = 127;     // 1:M cared_ones_informat → emergency_contact
 const CCT_SLUG = "cared_ones_informat";
+
+// Opaque field map (live verified). Values: a55 name, a56 desc, a57 card_name,
+// a58 status, a59 displays_location, a60 share_token, a61 share_expires_at,
+// a62 share_visibility.
+const F = WP.cct["125"].fields;
+
+const STATUS_TO_CODE: Record<string, string> = { Draft: "b55", Active: "b56", Paused: "b57", draft: "b55", active: "b56", paused: "b57" };
+const STATUS_FROM_CODE: Record<string, string> = { b55: "Draft", b56: "Active", b57: "Paused" };
+const YESNO_TO_CODE: Record<string, string> = { Yes: "b55", No: "b56" };
+const YESNO_FROM_CODE: Record<string, string> = { b55: "Yes", b56: "No" };
+const VIS_TO_CODE: Record<string, string> = {
+  "Visible to public": "b55",
+  "Visible to the care group of the cared one": "b56",
+  "Visible to caregivers of the cared one": "b57",
+  "Visible to author": "b58",
+};
+const VIS_FROM_CODE: Record<string, string> = {
+  b55: "Visible to public",
+  b56: "Visible to the care group of the cared one",
+  b57: "Visible to caregivers of the cared one",
+  b58: "Visible to author",
+};
+
+function decodeCard(raw: any): InformationCard {
+  return {
+    id: String(raw._ID || raw.id),
+    cared_ones_name: raw[F.CARED_ONE_S_NAME] || "",
+    cared_ones_description: raw[F.CARED_ONE_S_DESCRIPTION] || "",
+    cared_ones_information_card_name: raw[F.CARED_ONE_S_INFORMATION_CARD_NAME] || "",
+    status: STATUS_FROM_CODE[String(raw[F.STATUS])] || "Active",
+    displays_location: YESNO_FROM_CODE[String(raw[F.DISPLAYS_LOCATION])] || "No",
+    share_token: raw[F.SHARE_TOKEN] || "",
+    share_expires_at: raw[F.SHARE_EXPIRES_AT] || "",
+    share_visibility: VIS_FROM_CODE[String(raw[F.SHARE_VISIBILITY])] || "Visible to author",
+    cct_author_id: raw.cct_author_id,
+    cct_created: raw.cct_created,
+  };
+}
+
+function encodeCardUpdates(u: Partial<InformationCard>): Record<string, string> {
+  const b: Record<string, string> = {};
+  if (u.cared_ones_name !== undefined) b[F.CARED_ONE_S_NAME] = u.cared_ones_name || "";
+  if (u.cared_ones_description !== undefined) b[F.CARED_ONE_S_DESCRIPTION] = u.cared_ones_description || "";
+  if (u.cared_ones_information_card_name !== undefined) b[F.CARED_ONE_S_INFORMATION_CARD_NAME] = u.cared_ones_information_card_name || "";
+  if (u.status !== undefined) b[F.STATUS] = STATUS_TO_CODE[String(u.status)] || "b56";
+  if (u.displays_location !== undefined) b[F.DISPLAYS_LOCATION] = YESNO_TO_CODE[String(u.displays_location)] || "b56";
+  if (u.share_token !== undefined) b[F.SHARE_TOKEN] = u.share_token || "";
+  if (u.share_expires_at !== undefined) b[F.SHARE_EXPIRES_AT] = u.share_expires_at || "";
+  if (u.share_visibility !== undefined) b[F.SHARE_VISIBILITY] = VIS_TO_CODE[String(u.share_visibility)] || "b58";
+  return b;
+}
 
 export type ShareVisibility =
   | "Visible to public"
