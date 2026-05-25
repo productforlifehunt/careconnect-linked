@@ -152,6 +152,7 @@ const zhCN = {
     careTasks: "护理任务", quickActions: "快捷操作", bookCare: "预约护理", gpsTrack: "GPS追踪",
     noUpcomingBookings: "没有即将到来的预约", noPendingTasks: "没有待处理的任务",
     customizeDashboard: "自定义面板", chooseWidgets: "选择在面板上显示哪些组件",
+    timeline: "每日时间轴",
   },
   careCircle: {
     coordinateCare: "与团队协调护理", noGroupsYet: "还没有{{groups}}",
