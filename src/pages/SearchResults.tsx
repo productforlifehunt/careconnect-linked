@@ -40,7 +40,11 @@ export default function SearchResults() {
   const { t, i18n } = useTranslation();
   const { isAuthenticated } = useAuth();
   const { serviceTypeNames: allServiceTypeNames } = useServiceTypes();
-  const specialties = allServiceTypeNames.slice(0, 8);
+  // Filter out raw kebab-case slug duplicates leaking from the WC taxonomy
+  // (e.g. when both "儿童护理" and "child-care" exist as separate terms).
+  const specialties = allServiceTypeNames
+    .filter(n => !/^[a-z][a-z0-9-]*$/.test(n))
+    .slice(0, 8);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
