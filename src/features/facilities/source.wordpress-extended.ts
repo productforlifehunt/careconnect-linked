@@ -1,6 +1,12 @@
 import { wordpressCCTFetch } from "@/features/shared/wordpress-client";
 
 // ─── Facility CRUD (CCT: care_facility) ─────────────────────
+// Live opaque field map (verified):
+//   a55 name, a56 detail, a57 type, a58 dementia_stage, a59 room_type,
+//   a60 room_facility, a61 community_facility, a62 people_number,
+//   a63 location, a64 address.
+// NOTE: phone/email/website are NOT present on the live CCT and are silently
+// dropped on write until added via the JetEngine GUI.
 export async function createCareFacilityWordPress(input: {
   title: string; content?: string; address?: string; location?: string;
   latitude?: number; longitude?: number; phone?: string; email?: string; website?: string;
@@ -10,23 +16,22 @@ export async function createCareFacilityWordPress(input: {
     body: {
       a55: input.title,
       a56: input.content || "",
-      a64: input.address,
-      a63: input.location,
-      latitude: input.latitude, longitude: input.longitude,
-      phone: input.phone, email: input.email, website: input.website,
+      a63: input.location || "",
+      a64: input.address || "",
     },
   }) as any;
   return { id: result?.id || result?._ID };
 }
 
 export async function updateCareFacilityWordPress(id: string, updates: Record<string, any>): Promise<any> {
-  const body: Record<string, any> = { ...updates };
-  if (body.title !== undefined) { body.a55 = body.title; delete body.title; }
-  if (body.name !== undefined) { body.a55 = body.name; delete body.name; }
-  if (body.content !== undefined) { body.a56 = body.content; delete body.content; }
-  if (body.description !== undefined) { body.a56 = body.description; delete body.description; }
-  if (body.location !== undefined) { body.a63 = body.location; delete body.location; }
-  if (body.address !== undefined) { body.a64 = body.address; delete body.address; }
+  const body: Record<string, any> = {};
+  if (updates.title !== undefined || updates.name !== undefined) body.a55 = updates.title ?? updates.name;
+  if (updates.content !== undefined || updates.description !== undefined) body.a56 = updates.content ?? updates.description;
+  if (updates.location !== undefined) body.a63 = updates.location;
+  if (updates.address !== undefined) body.a64 = updates.address;
+  for (const k of Object.keys(updates)) {
+    if (/^a\d+$/.test(k)) body[k] = updates[k];
+  }
   const result = await wordpressCCTFetch("care_facility", { id, method: "PUT", body }) as any;
   return { id: result?.id || id };
 }
