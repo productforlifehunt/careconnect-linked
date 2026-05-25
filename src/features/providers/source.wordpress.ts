@@ -1,8 +1,11 @@
 import type { Profile } from "@/types/care-connector";
 
+import { WP } from "@/integrations/wp-schema";
 import { getWordPressFeature, listWordPressFeature } from "@/features/shared/wordpress-adapter";
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 import { fetchAllProviderProductSummaries } from "@/services/woocommerce-api";
+
+const F_PROFILE = WP.cct["110"].fields;
 
 function isActivePaidProvider(profile: Profile): boolean {
   return profile.is_care_provider === true && profile.provider_is_active === true;
@@ -27,7 +30,7 @@ function parseWpList(value: unknown): string[] | null {
 async function fetchDictionaryProviderProfiles(): Promise<Profile[]> {
   const rows = await wordpressCCTFetch<any[]>("users_extended_prof", { params: { _limit: 200 } });
   const activeRows = (Array.isArray(rows) ? rows : []).filter(
-    (row) => parseWpBoolean(row.is_care_provider) && parseWpBoolean(row.provider_is_active),
+    (row) => parseWpBoolean(row[F_PROFILE.IS_CARE_PROVIDER]) && parseWpBoolean(row[F_PROFILE.CARE_PROVIDER_IS_ACTIVE]),
   );
 
   const profiles = await Promise.all(activeRows.map(async (row) => {
@@ -46,12 +49,12 @@ async function fetchDictionaryProviderProfiles(): Promise<Profile[]> {
       user_name: user?.slug || row.user_name || null,
       avatar_url: user?.avatar_urls?.["96"] || user?.avatar_urls?.["48"] || row.avatar_url || null,
       bio: user?.description || row.bio || null,
-      general_user_role: parseWpList(row.general_user_role),
+      general_user_role: parseWpList(row[F_PROFILE.GENERAL_USER_ROLE]),
       is_care_provider: true,
       provider_is_active: true,
-      care_provider_is_background_checked: parseWpBoolean(row.care_provider_is_background_checked),
-      care_provider_background_check_detail: row.care_provider_background_check_detail || null,
-      care_provider_starts_hourly_rate: row.care_provider_starts_hourly_rate ? parseFloat(row.care_provider_starts_hourly_rate) : null,
+      care_provider_is_background_checked: parseWpBoolean(row[F_PROFILE.CARE_PROVIDER_IS_BACKGROUND_CHECKED]),
+      care_provider_background_check_detail: row[F_PROFILE.CARE_PROVIDER_S_BACKGROUND_CHECK_DETAIL] || null,
+      care_provider_starts_hourly_rate: row[F_PROFILE.CARE_PROVIDER_S_STARTS_HOURLY_RATE] ? parseFloat(row[F_PROFILE.CARE_PROVIDER_S_STARTS_HOURLY_RATE]) : null,
       phone: row.phone || null,
       location: row.location || null,
       years_of_experience: row.years_of_experience ? parseInt(row.years_of_experience, 10) : null,
