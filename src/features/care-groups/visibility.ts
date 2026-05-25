@@ -15,6 +15,7 @@
  *     • the user is a member of any linked sub-group (rel 75 ∩ rel 103/109).
  */
 import { wordpressFetch } from "@/features/shared/wordpress-client";
+import { decodeRel75Meta } from "./rel-meta";
 import { getCurrentUserIdNumber } from "@/features/shared/current-user";
 
 const REL_SUBGROUP_MEMBERS = 75;
