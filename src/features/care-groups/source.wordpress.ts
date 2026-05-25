@@ -46,10 +46,11 @@ export async function fetchCareGroupMembersWordPress(groupId: string): Promise<a
         try {
           const u = await wordpressFetch<any>(`wp/v2/users/${uid}`);
           const rel = rels.find((r: any) => Number(r.child_object_id) === uid);
-          const memberTypes = normalizeMetaList(rel?.meta?.care_groups_member_types);
-          const memberRoles = normalizeMetaList(rel?.meta?.care_groups_member_roles);
-          const displayName = rel?.meta?.care_groups_member_display_name_ || u.name || u.slug || "Member";
-          const invitationStatus = rel?.meta?.care_groups_member_invitation_status || "accepted";
+          const decoded = decodeRel72Meta(rel?.meta);
+          const memberTypes = decoded.memberTypes;
+          const memberRoles = decoded.memberRoles;
+          const displayName = decoded.displayName || u.name || u.slug || "Member";
+          const invitationStatus = decoded.invitationStatus;
           const isOwner = memberTypes.includes("owner");
           const isAdmin = memberTypes.includes("admin") || isOwner;
           return {
