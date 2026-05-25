@@ -100,7 +100,8 @@ export async function fetchInformationCardsWordPress(caredOneId: string): Promis
     const items = await Promise.all(
       rels.map(async (rel: any) => {
         try {
-          return await wordpressCCTFetch<any>(CCT_SLUG, { id: rel.child_object_id });
+          const raw = await wordpressCCTFetch<any>(CCT_SLUG, { id: rel.child_object_id });
+          return raw ? decodeCard(raw) : null;
         } catch {
           return null;
         }
@@ -114,7 +115,8 @@ export async function fetchInformationCardsWordPress(caredOneId: string): Promis
 
 export async function fetchInformationCardWordPress(cardId: string): Promise<InformationCard | null> {
   try {
-    return (await wordpressCCTFetch<any>(CCT_SLUG, { id: normalizeWpId(cardId) })) as InformationCard;
+    const raw = await wordpressCCTFetch<any>(CCT_SLUG, { id: normalizeWpId(cardId) });
+    return raw ? decodeCard(raw) : null;
   } catch {
     return null;
   }
@@ -124,19 +126,19 @@ export async function fetchInformationCardWordPress(cardId: string): Promise<Inf
 export async function fetchInformationCardByShareTokenWordPress(token: string): Promise<InformationCard | null> {
   if (!token) return null;
   try {
-    // JetEngine CCT REST supports filter via meta query: ?meta_query[]...; simplest is full list + find
-    const list = await wordpressCCTFetch<any[]>(CCT_SLUG, { params: { per_page: 100, share_token: token } });
+    // JetEngine CCT REST: filter by opaque field code for share token (a60).
+    const list = await wordpressCCTFetch<any[]>(CCT_SLUG, { params: { per_page: 100, [F.SHARE_TOKEN]: token } });
     const items = Array.isArray(list) ? list : [];
-    const card = items.find((c) => String(c.share_token || "") === token) || null;
-    if (!card) return null;
-    // Honor expiry
+    const raw = items.find((c) => String(c[F.SHARE_TOKEN] || "") === token) || null;
+    if (!raw) return null;
+    const card = decodeCard(raw);
     if (card.share_expires_at) {
       const expires = new Date(String(card.share_expires_at).replace(" ", "T"));
       if (!Number.isNaN(expires.getTime()) && expires.getTime() < Date.now()) return null;
     }
-    // Public visibility only (other levels require authenticated checks server-side later)
-    if (card.share_visibility && card.share_visibility !== "Visible to public") return null;
-    return card as InformationCard;
+    // Public visibility only at this anonymous endpoint.
+    if (card.share_visibility !== "Visible to public") return null;
+    return card;
   } catch {
     return null;
   }
@@ -156,17 +158,15 @@ export async function createInformationCardWordPress(input: {
   const parentId = normalizeWpId(input.caredOneUserId);
   if (!parentId) throw new Error("Invalid cared one");
 
-  const created = await wordpressCCTFetch<any>(CCT_SLUG, {
-    method: "POST",
-    body: {
-      cared_ones_name: input.cared_ones_name || "",
-      cared_ones_description: input.cared_ones_description || "",
-      cared_ones_information_card_name: input.cared_ones_information_card_name,
-      status: input.status || "Draft",
-      displays_location: input.displays_location || "No",
-      share_visibility: input.share_visibility || "Visible to author",
-    },
+  const body = encodeCardUpdates({
+    cared_ones_name: input.cared_ones_name || "",
+    cared_ones_description: input.cared_ones_description || "",
+    cared_ones_information_card_name: input.cared_ones_information_card_name,
+    status: input.status || "Draft",
+    displays_location: input.displays_location || "No",
+    share_visibility: input.share_visibility || "Visible to author",
   });
+  const created = await wordpressCCTFetch<any>(CCT_SLUG, { method: "POST", body });
 
   const childId = created?._ID || created?.id;
   if (childId) {
@@ -180,11 +180,12 @@ export async function createInformationCardWordPress(input: {
       },
     });
   }
-  return created as InformationCard;
+  return decodeCard(created);
 }
 
 export async function updateInformationCardWordPress(id: string, updates: Partial<InformationCard>): Promise<void> {
-  await wordpressCCTFetch(CCT_SLUG, { id: normalizeWpId(id), method: "POST", body: updates });
+  const body = encodeCardUpdates(updates);
+  await wordpressCCTFetch(CCT_SLUG, { id: normalizeWpId(id), method: "PUT", body });
 }
 
 export async function deleteInformationCardWordPress(id: string): Promise<void> {
