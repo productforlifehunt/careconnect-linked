@@ -2,21 +2,31 @@
  * Push notification tokens — JetEngine CCT `users_notification_` (CCT 147)
  * Relation 149: users → users_notification_  (1:M)
  *
- * Live fields: endpoint_or_token, notification_provider (web_push|fcm|apn|jpush|wechat),
- *              device_label, auth_key, p256dh, is_active
+ * Live opaque field map (verified):
+ *   a55 endpoint_or_token (Text)
+ *   a56 notification_provider (Radio: b55 web_push | b56 fcm | b57 apn | b58 jpush | b59 wechat)
+ *   a57 device_label (Text)
+ *   a58 auth_key (Text)
+ *   a59 p256dh (Text)
+ *   a60 is_active (Radio: b55 Yes | b56 No)
  */
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 import { getCurrentUserIdNumber } from "@/features/shared/current-user";
+import { WP } from "@/integrations/wp-schema";
 
 const SLUG = "users_notification_";
 const REL_USER_TOKEN = 149;
+const F = WP.cct["147"].fields;
 
-export type NotificationProvider =
-  | "web_push"
-  | "fcm"
-  | "apn"
-  | "jpush"
-  | "wechat";
+export type NotificationProvider = "web_push" | "fcm" | "apn" | "jpush" | "wechat";
+
+const PROVIDER_TO_CODE: Record<NotificationProvider, string> = {
+  web_push: "b55", fcm: "b56", apn: "b57", jpush: "b58", wechat: "b59",
+};
+const PROVIDER_FROM_CODE: Record<string, NotificationProvider> = {
+  b55: "web_push", b56: "fcm", b57: "apn", b58: "jpush", b59: "wechat",
+};
+const YES = "b55", NO = "b56";
 
 export interface NotificationToken {
   id: string;
@@ -28,12 +38,16 @@ export interface NotificationToken {
   is_active: boolean;
 }
 
-function asWPBool(v: boolean | undefined): string {
-  return v ? "yes" : "no";
-}
-
-function asBool(v: any): boolean {
-  return v === true || v === "yes" || v === "1" || v === 1;
+function decode(t: any): NotificationToken {
+  return {
+    id: String(t.id ?? t._ID ?? ""),
+    endpoint_or_token: t[F.ENDPOINT_OR_TOKEN] || "",
+    notification_provider: PROVIDER_FROM_CODE[String(t[F.NOTIFICATION_PROVIDER])] || "web_push",
+    device_label: t[F.DEVICE_LABEL] || "",
+    auth_key: t[F.AUTH_KEY] || "",
+    p256dh: t[F.P256DH] || "",
+    is_active: String(t[F.IS_ACTIVE]) === YES,
+  };
 }
 
 export async function fetchMyNotificationTokens(): Promise<NotificationToken[]> {
@@ -42,15 +56,7 @@ export async function fetchMyNotificationTokens(): Promise<NotificationToken[]> 
   try {
     const rels = await wordpressFetch<any[]>(`jet-rel/${REL_USER_TOKEN}/parent/${userId}`).catch(() => []);
     if (!Array.isArray(rels) || rels.length === 0) return [];
-    return rels.map((t: any) => ({
-      id: String(t.id ?? t._ID ?? ""),
-      endpoint_or_token: t.endpoint_or_token || "",
-      notification_provider: (t.notification_provider as NotificationProvider) || "web_push",
-      device_label: t.device_label || "",
-      auth_key: t.auth_key || "",
-      p256dh: t.p256dh || "",
-      is_active: asBool(t.is_active),
-    }));
+    return rels.map(decode);
   } catch {
     return [];
   }
@@ -71,7 +77,7 @@ export async function registerNotificationToken(input: {
   const dup = existing.find((t) => t.endpoint_or_token === input.endpoint_or_token);
   if (dup) {
     if (!dup.is_active) {
-      await wordpressCCTFetch(SLUG, { id: dup.id, method: "PUT", body: { is_active: "yes" } });
+      await wordpressCCTFetch(SLUG, { id: dup.id, method: "PUT", body: { [F.IS_ACTIVE]: YES } });
     }
     return { ...dup, is_active: true };
   }
@@ -79,18 +85,17 @@ export async function registerNotificationToken(input: {
   const created: any = await wordpressCCTFetch(SLUG, {
     method: "POST",
     body: {
-      endpoint_or_token: input.endpoint_or_token,
-      notification_provider: input.notification_provider,
-      device_label: input.device_label || (typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 80) : ""),
-      auth_key: input.auth_key || "",
-      p256dh: input.p256dh || "",
-      is_active: asWPBool(true),
+      [F.ENDPOINT_OR_TOKEN]: input.endpoint_or_token,
+      [F.NOTIFICATION_PROVIDER]: PROVIDER_TO_CODE[input.notification_provider] || PROVIDER_TO_CODE.web_push,
+      [F.DEVICE_LABEL]: input.device_label || (typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 80) : ""),
+      [F.AUTH_KEY]: input.auth_key || "",
+      [F.P256DH]: input.p256dh || "",
+      [F.IS_ACTIVE]: YES,
     },
   });
   const newId = Number(created?.item_id ?? created?._ID ?? created?.id ?? 0);
   if (!newId) return null;
 
-  // Link via REL 149
   try {
     await wordpressFetch(`jet-rel/${REL_USER_TOKEN}`, {
       method: "POST",
@@ -110,17 +115,13 @@ export async function registerNotificationToken(input: {
 }
 
 export async function deactivateNotificationToken(id: string): Promise<void> {
-  await wordpressCCTFetch(SLUG, { id, method: "PUT", body: { is_active: "no" } });
+  await wordpressCCTFetch(SLUG, { id, method: "PUT", body: { [F.IS_ACTIVE]: NO } });
 }
 
 export async function deleteNotificationToken(id: string): Promise<void> {
   await wordpressCCTFetch(SLUG, { id, method: "DELETE" });
 }
 
-/**
- * Convenience: subscribe the browser to web push and register the resulting
- * subscription with the backend. Falls back gracefully if push isn't available.
- */
 export async function subscribeWebPushAndRegister(vapidPublicKey?: string): Promise<NotificationToken | null> {
   if (typeof window === "undefined" || !("serviceWorker" in navigator) || !("PushManager" in window)) {
     return null;
