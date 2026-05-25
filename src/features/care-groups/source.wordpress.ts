@@ -99,12 +99,12 @@ export async function createCareGroupWordPress(group: { name: string; descriptio
           child_id: userId,
           context: "child",
           store_items_type: "update",
-          meta: {
-            care_groups_member_types: ["owner", "admin"],
-            care_groups_member_roles: ["nothing special"],
-            care_groups_member_display_name_: wpUser.user_display_name || wpUser.user_login || "Owner",
-            care_groups_member_invitation_status: "accepted",
-          },
+          meta: encodeRel72Meta({
+            displayName: wpUser.user_display_name || wpUser.user_login || "Owner",
+            memberTypes: ["owner", "admin"],
+            memberRoles: ["nothing special"],
+            invitationStatus: "accepted",
+          }),
         },
       });
     } catch (e) {
