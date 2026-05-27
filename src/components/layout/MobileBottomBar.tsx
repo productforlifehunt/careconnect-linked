@@ -127,7 +127,7 @@ export function MobileBottomBar() {
     : [
         { id: "daily-bookings", title: isChinese ? "预约" : "Bookings", url: "/bookings", icon: ClipboardList },
         { id: "daily-gps", title: isChinese ? "定位" : "GPS", url: "/gps-tracking", icon: MapPin },
-        { id: "daily-ai", title: isChinese ? "智能助手" : "AI Companion", icon: Bot, onClick: openAi },
+        { id: "daily-ai", title: isChinese ? "AI助手" : "AI Assistant", icon: Bot, onClick: openAi },
       ];
 
   const resourceItems: ToolItem[] = isChallenged
