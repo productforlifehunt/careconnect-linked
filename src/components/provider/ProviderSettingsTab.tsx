@@ -227,6 +227,11 @@ export default function ProviderSettingsTab() {
         </CardContent>
       </Card>
 
+      {/* Vendor payout accounts (Stripe / PayPal / Alipay) */}
+      <PayoutAccountsCard />
+
+
+
       {/* Basic Info */}
       <Card className="border-transparent card-elevated">
         <CardHeader><CardTitle className="flex items-center gap-2"><Briefcase className="h-5 w-5" /> {t("providerDash.basicInfo")}</CardTitle></CardHeader>
