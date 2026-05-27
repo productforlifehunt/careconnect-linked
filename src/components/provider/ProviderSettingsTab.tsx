@@ -14,6 +14,7 @@ import { useServiceTypes } from "@/hooks/use-service-types";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { ALL_CERTIFICATIONS, getCertificationKey } from "@/lib/specialty-i18n";
+import PayoutAccountsCard from "./PayoutAccountsCard";
 
 /**
  * Three-field service package row. Each row will be double-written by the
