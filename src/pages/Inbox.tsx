@@ -1,22 +1,31 @@
 import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, Bell } from "lucide-react";
+import { MessageSquare, Bell, Inbox as InboxIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import Messages from "./Messages";
 import Notifications from "./Notifications";
 import { useNotifications } from "@/hooks/use-care-data";
 
 /**
- * Unified Inbox page — merges Messages + Notifications into a single
- * mobile-friendly entry point reachable from the bottom navigation bar.
+ * Unified Inbox — 3 tabs:
+ *  - 全部 (All): default, aggregates notifications + messages
+ *  - 通知 (Notifications): notifications only
+ *  - 消息 (Messages): messages only
+ * Most users will stay on 全部; the dedicated tabs are an accessibility
+ * affordance for older users who want one stream at a time.
  */
 export default function Inbox() {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const isChinese = i18n.language?.startsWith("zh");
   const [params, setParams] = useSearchParams();
-  const initial = params.get("tab") === "messages" ? "messages" : "notifications";
+  const initial = (() => {
+    const p = params.get("tab");
+    if (p === "messages") return "messages";
+    if (p === "notifications") return "notifications";
+    return "all";
+  })();
   const [tab, setTab] = useState(initial);
 
   const { data: notifications } = useNotifications();
@@ -44,18 +53,25 @@ export default function Inbox() {
         className="w-full"
       >
         <div className="max-w-3xl mx-auto px-4">
-          <TabsList className="grid grid-cols-2 w-full h-11 bg-muted/50 rounded-xl p-1">
+          <TabsList className="grid grid-cols-3 w-full h-11 bg-muted/50 rounded-xl p-1">
+            <TabsTrigger
+              value="all"
+              className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-2"
+            >
+              <InboxIcon className="h-4 w-4" />
+              {isChinese ? "全部" : "All"}
+              {unreadNotif > 0 && (
+                <Badge className="h-5 min-w-5 px-1.5 bg-coral text-coral-foreground text-[10px]">
+                  {unreadNotif}
+                </Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger
               value="notifications"
               className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-2"
             >
               <Bell className="h-4 w-4" />
               {isChinese ? "通知" : "Notifications"}
-              {unreadNotif > 0 && (
-                <Badge className="h-5 min-w-5 px-1.5 bg-coral text-coral-foreground text-[10px]">
-                  {unreadNotif}
-                </Badge>
-              )}
             </TabsTrigger>
             <TabsTrigger
               value="messages"
@@ -67,6 +83,13 @@ export default function Inbox() {
           </TabsList>
         </div>
 
+        <TabsContent value="all" className="mt-0 focus-visible:outline-none">
+          <div className="max-w-3xl mx-auto">
+            <Notifications />
+            <div className="border-t border-border/60 mt-2" />
+            <Messages />
+          </div>
+        </TabsContent>
         <TabsContent value="notifications" className="mt-0 focus-visible:outline-none">
           <Notifications />
         </TabsContent>

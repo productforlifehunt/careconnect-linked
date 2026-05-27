@@ -14,6 +14,7 @@ import {
   ShoppingBag, Heart, BookOpen, Wand2, Briefcase, Bell, Calendar as CalIcon,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PatientSummaryCard } from "@/components/challenged/PatientSummaryCard";
 import { DailyTimeline } from "@/components/challenged/DailyTimeline";
 import { LovedOneSimpleView } from "@/components/challenged/LovedOneSimpleView";
@@ -131,28 +132,46 @@ export default function Dashboard() {
   const blocks: Record<string, ReactNode> = {
     "patient-summaries": caredOnes && caredOnes.length > 0 ? (
       <section>
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-sm font-semibold text-foreground">
-            {t("nav.myLovedOnes") || site.navLabels.caredOnes}
-          </h2>
-          <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => navigate("/cared-ones")}>
-            {t("common.viewAll")} <ArrowRight className="ml-1 h-3 w-3" />
-          </Button>
-        </div>
-        <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory -mx-4 px-4 pb-1
-          [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-          {caredOnes.map((co: any) => (
-            <div key={co.user_id} className="snap-start shrink-0 w-[85%] sm:w-[340px]">
-              <PatientSummaryCard
-                caredOneId={co.user_id}
-                name={co.cared_one?.full_name || co.cared_one?.first_name || site.caredOneSingular}
-                avatarUrl={co.cared_one?.avatar_url}
-                relationship={co.relationship}
-                onClick={() => navigate("/cared-ones")}
-              />
-            </div>
-          ))}
-        </div>
+        <h2 className="text-sm font-semibold text-foreground mb-2">
+          {t("nav.myLovedOnes") || site.navLabels.caredOnes}
+        </h2>
+        {caredOnes.length === 1 ? (
+          <PatientSummaryCard
+            caredOneId={caredOnes[0].user_id}
+            name={caredOnes[0].cared_one?.full_name || caredOnes[0].cared_one?.first_name || site.caredOneSingular}
+            avatarUrl={caredOnes[0].cared_one?.avatar_url}
+            relationship={caredOnes[0].relationship}
+            onClick={() => navigate("/cared-ones")}
+          />
+        ) : (
+          <Tabs defaultValue={caredOnes[0].user_id}>
+            <TabsList className="w-full h-auto flex-wrap justify-start gap-1 bg-muted/40 p-1 rounded-xl">
+              {caredOnes.map((co: any) => {
+                const name = co.cared_one?.full_name || co.cared_one?.first_name || site.caredOneSingular;
+                return (
+                  <TabsTrigger
+                    key={co.user_id}
+                    value={co.user_id}
+                    className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm text-xs px-3 py-1.5"
+                  >
+                    {String(name).split(" ")[0]}
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
+            {caredOnes.map((co: any) => (
+              <TabsContent key={co.user_id} value={co.user_id} className="mt-3 focus-visible:outline-none">
+                <PatientSummaryCard
+                  caredOneId={co.user_id}
+                  name={co.cared_one?.full_name || co.cared_one?.first_name || site.caredOneSingular}
+                  avatarUrl={co.cared_one?.avatar_url}
+                  relationship={co.relationship}
+                  onClick={() => navigate("/cared-ones")}
+                />
+              </TabsContent>
+            ))}
+          </Tabs>
+        )}
       </section>
     ) : null,
 

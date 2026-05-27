@@ -84,7 +84,7 @@ export function AppHeader() {
 
   return (
     <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-      <div className="flex h-16 items-center px-4 lg:px-6 gap-2">
+      <div className="flex h-16 items-center pl-2 pr-3 lg:pl-3 lg:pr-6 gap-2">
         {/* Mobile menu */}
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetContent side="left" className="w-72 p-0">
