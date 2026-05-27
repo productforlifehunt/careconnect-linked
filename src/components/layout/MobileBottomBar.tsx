@@ -86,8 +86,8 @@ export function MobileBottomBar() {
 
   const caredOnesLabel = isChinese ? "被护理者" : site.navLabels.caredOnes;
   const careGroupLabel = isChinese
-    ? (isChallenged ? "团队" : "护理群组")
-    : site.navLabels.careGroups;
+    ? (isChallenged ? "护理团队" : "护理群组")
+    : (isChallenged ? "Care Team" : site.navLabels.careGroups);
 
   const items = [
     { title: isChinese ? "首页" : "Home", url: "/dashboard", icon: LayoutDashboard },
@@ -124,12 +124,12 @@ export function MobileBottomBar() {
         { id: "daily-calendar", title: isChinese ? "日历" : "Calendar", url: "/calendar", icon: CalendarDays },
         { id: "daily-bookings", title: isChinese ? "预约" : "Bookings", url: "/bookings", icon: ClipboardList },
         { id: "daily-gps", title: isChinese ? "定位" : "GPS", url: "/gps-tracking", icon: MapPin },
-        { id: "daily-ai", title: isChinese ? "小忆" : "AI Companion", icon: Bot, onClick: openAi },
+        { id: "daily-ai", title: isChinese ? "小忆 AI 助手" : "Xiaoyi AI Assistant", icon: Bot, onClick: openAi },
       ]
     : [
         { id: "daily-bookings", title: isChinese ? "预约" : "Bookings", url: "/bookings", icon: ClipboardList },
         { id: "daily-gps", title: isChinese ? "定位" : "GPS", url: "/gps-tracking", icon: MapPin },
-        { id: "daily-ai", title: isChinese ? "AI助手" : "AI Assistant", icon: Bot, onClick: openAi },
+        { id: "daily-ai", title: isChinese ? "AI 助手" : "AI Assistant", icon: Bot, onClick: openAi },
       ];
 
   const resourceItems: ToolItem[] = isChallenged && !isV1
@@ -409,11 +409,14 @@ export function MobileBottomBar() {
         </DialogPrimitive.Portal>
       </DialogPrimitive.Root>
 
-      {isAuthenticated && (
+      {/* AI FAB is owned by <DementiaAssistant /> on the dashboard for challenged sites.
+          For non-challenged sites (or non-dashboard surfaces) we expose the chat via
+          the "工具/More" drawer instead, to avoid two stacked floating buttons. */}
+      {isAuthenticated && !isChallenged && (
         <button
           type="button"
           onClick={() => setAiOpen(true)}
-          aria-label={isChinese ? "AI助手" : "AI Assistant"}
+          aria-label={isChinese ? "AI 助手" : "AI Assistant"}
           className="fixed right-4 bottom-20 md:bottom-6 z-40 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-105 active:scale-95 transition-transform flex items-center justify-center"
         >
           <Bot className="h-5 w-5" />

@@ -79,7 +79,7 @@ export function AICompanionChatDialog({
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
         <DialogPrimitive.Content
-          className="fixed inset-0 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[440px] md:h-[640px] md:rounded-2xl z-50 bg-background flex flex-col shadow-2xl overflow-hidden"
+          className="fixed inset-x-3 top-16 bottom-[4.5rem] md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[440px] md:h-[640px] rounded-2xl z-50 bg-background flex flex-col shadow-2xl overflow-hidden border"
         >
           <div className="flex items-center justify-between px-4 py-3 border-b">
             <div className="flex items-center gap-2">
@@ -87,7 +87,7 @@ export function AICompanionChatDialog({
                 <Bot className="h-4 w-4" />
               </div>
               <DialogPrimitive.Title className="text-sm font-semibold">
-                {isZh ? "小忆 AI 陪伴" : "AI Companion"}
+                {isZh ? "小忆 AI 助手" : "Xiaoyi · AI Assistant"}
               </DialogPrimitive.Title>
             </div>
             <DialogPrimitive.Close asChild>
