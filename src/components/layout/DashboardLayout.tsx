@@ -28,7 +28,7 @@ function useSidebarItems() {
   const isChinese = i18n.language?.startsWith("zh");
   const isChallenged = site.family === "challenged";
   const isCareCNC = site.id === "carecnc";
-  // 忆畅 1.0 (challenged-v1) — trim build: hide Resources & Help (assistants + /resources)
+  // challenged-v1 — trim build: hide Resources & Help (assistants + /resources)
   const isV1 = site.id === "challenged-v1";
   const L = (zh: string, en: string) => (isChinese ? zh : en);
 
@@ -56,7 +56,7 @@ function useSidebarItems() {
     );
   }
 
-  // Resources is only for ChallengeD/忆畅 — not for CareCNC/护畅 or 忆畅 1.0
+  // Resources is only for ChallengeD/忆畅 full build — not for CareCNC/护畅 or challenged-v1
   if (!isCareCNC && !isV1) {
     base.push({ title: L("资源", "Resources"), url: "/resources", icon: BookOpen });
   }
