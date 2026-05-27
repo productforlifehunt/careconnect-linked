@@ -24,6 +24,7 @@ import { useNotifications } from "@/hooks/use-care-data";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import yichangIcon from "@/assets/yichang-icon.png";
 import huchangIcon from "@/assets/huchang-icon.png";
+import { useStandaloneMode } from "@/hooks/useStandaloneMode";
 
 export function AppHeader() {
   const { user, isAuthenticated, logout, authSource } = useAuth();
