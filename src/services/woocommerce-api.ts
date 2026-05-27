@@ -1416,12 +1416,23 @@ export async function createOrderRefund(
   orderId: number,
   options?: { amount?: string; reason?: string }
 ) {
-  const body: any = { api_refund: false };
+  // api_refund:true → WC asks the payment gateway (Stripe, PayPal) to
+  // actually return money to the customer's card. If no gateway supports
+  // refunds for that order, WC still records the refund as bookkeeping.
+  const body: any = { api_refund: true };
   if (options?.amount) body.amount = options.amount;
   if (options?.reason) body.reason = options.reason;
   return wcFetch(`orders/${orderId}/refunds`, {
     method: 'POST',
     body: JSON.stringify(body),
+  });
+}
+
+// Post a customer-facing note on an order (used for dispute / issue reports).
+export async function addOrderCustomerNote(orderId: number, note: string) {
+  return wcFetch(`orders/${orderId}/notes`, {
+    method: 'POST',
+    body: JSON.stringify({ note, customer_note: true }),
   });
 }
 
