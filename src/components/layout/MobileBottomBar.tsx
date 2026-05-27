@@ -84,8 +84,8 @@ export function MobileBottomBar() {
 
   const caredOnesLabel = isChinese ? "被护理者" : site.navLabels.caredOnes;
   const careGroupLabel = isChinese
-    ? (isChallenged ? "团队" : "圈子")
-    : site.navLabels.careGroups.split(" ")[0];
+    ? (isChallenged ? "团队" : "护理群组")
+    : site.navLabels.careGroups;
 
   const items = [
     { title: isChinese ? "首页" : "Home", url: "/dashboard", icon: LayoutDashboard },
@@ -127,7 +127,7 @@ export function MobileBottomBar() {
     : [
         { id: "daily-bookings", title: isChinese ? "预约" : "Bookings", url: "/bookings", icon: ClipboardList },
         { id: "daily-gps", title: isChinese ? "定位" : "GPS", url: "/gps-tracking", icon: MapPin },
-        { id: "daily-ai", title: isChinese ? "智能助手" : "AI Companion", icon: Bot, onClick: openAi },
+        { id: "daily-ai", title: isChinese ? "AI助手" : "AI Assistant", icon: Bot, onClick: openAi },
       ];
 
   const resourceItems: ToolItem[] = isChallenged
@@ -406,6 +406,17 @@ export function MobileBottomBar() {
           </DialogPrimitive.Content>
         </DialogPrimitive.Portal>
       </DialogPrimitive.Root>
+
+      {isAuthenticated && (
+        <button
+          type="button"
+          onClick={() => setAiOpen(true)}
+          aria-label={isChinese ? "AI助手" : "AI Assistant"}
+          className="fixed right-4 bottom-20 md:bottom-6 z-40 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-105 active:scale-95 transition-transform flex items-center justify-center"
+        >
+          <Bot className="h-5 w-5" />
+        </button>
+      )}
 
       <AICompanionChatDialog open={aiOpen} onOpenChange={setAiOpen} />
     </>

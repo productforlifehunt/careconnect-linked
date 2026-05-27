@@ -120,9 +120,11 @@ export default function Dashboard() {
     { icon: MessageSquare, label: t("nav.messages", { defaultValue: "Messages" }),   to: "/messages", color: "text-coral" },
     { icon: Briefcase,   label: t("nav.bookings", { defaultValue: "Bookings" }),     to: "/bookings", color: "text-primary" },
     { icon: Users,       label: careGroupsLabel,                                        to: "/care-circle", color: "text-success" },
-    { icon: BookOpen,    label: t("nav.resources", { defaultValue: "Resources" }),   to: "/resources", color: "text-primary" },
+    ...(isChallenged
+      ? [{ icon: BookOpen, label: t("nav.resources", { defaultValue: "Resources" }), to: "/resources", color: "text-primary" }]
+      : []),
     { icon: Bell,        label: t("nav.notifications", { defaultValue: "Alerts" }), to: "/notifications", color: "text-warning" },
-    { icon: Wand2,    label: t("nav.aiCompanion", { defaultValue: "AI Companion" }), to: "/ai-companion", color: "text-primary" },
+    { icon: Wand2,    label: isChallenged ? t("nav.aiCompanion", { defaultValue: "AI Companion" }) : (isChinese ? "AI助手" : "AI Assistant"), to: "/ai-companion", color: "text-primary" },
   ];
 
   // ── Each widget id maps to its own block; rendered in user-defined order ──
