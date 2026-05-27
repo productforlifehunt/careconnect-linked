@@ -28,6 +28,8 @@ function useSidebarItems() {
   const isChinese = i18n.language?.startsWith("zh");
   const isChallenged = site.family === "challenged";
   const isCareCNC = site.id === "carecnc";
+  // 忆畅 1.0 (challenged-v1) — trim build: hide Resources & Help (assistants + /resources)
+  const isV1 = site.id === "challenged-v1";
   const L = (zh: string, en: string) => (isChinese ? zh : en);
 
   const base = [
