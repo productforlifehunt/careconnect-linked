@@ -39,6 +39,7 @@ export function AppHeader() {
   const isChallenged = site.family === "challenged";
   const isCareDuo = site.id === "duocare";
   const isCareCNC = site.id === "carecnc";
+  const isV1 = site.id === "challenged-v1";
   const logoBrand = site.family === "challenged" || site.brandSlug.startsWith("challenged") ? "challenged" : site.id;
   const logoBadgeText = isCareDuo ? (isChinese ? "多护" : "CD") : site.logoText;
   const logoWordmarkText = isCareDuo
@@ -49,11 +50,13 @@ export function AppHeader() {
 
   const publicNav = isChallenged
     ? [
-        { title: t("nav.awareD"), url: "/aware", icon: Search },
-        { title: t("nav.careD"), url: "/care-guides", icon: Heart },
-        { title: t("nav.copeD"), url: "/coping", icon: Heart },
-        { title: t("nav.safeD"), url: "/safety-guides", icon: Heart },
-        { title: t("nav.accompanieD"), url: "/accompanied", icon: Heart },
+        ...(isV1 ? [] : [
+          { title: t("nav.awareD"), url: "/aware", icon: Search },
+          { title: t("nav.careD"), url: "/care-guides", icon: Heart },
+          { title: t("nav.copeD"), url: "/coping", icon: Heart },
+          { title: t("nav.safeD"), url: "/safety-guides", icon: Heart },
+          { title: t("nav.accompanieD"), url: "/accompanied", icon: Heart },
+        ]),
         { title: t("nav.findCaregivers"), url: "/search?service_category=care", icon: Search },
         { title: t("nav.findLocalCompanion"), url: "/search?service_category=care&service_location=in-person&service_type=companionship", icon: Heart },
         { title: t("nav.findRemoteCompanion"), url: "/search?service_category=care&service_location=remote&service_type=companionship", icon: MessageSquare },

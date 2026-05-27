@@ -80,6 +80,8 @@ export function MobileBottomBar() {
   useEffect(() => { setFindTab(prefs.defaultFindTab); }, [prefs.defaultFindTab]);
 
   const isChallenged = site.family === "challenged";
+  // challenged-v1 (忆畅 1.0) is the early-launch trim: search-only, no Resources & Help.
+  const isV1 = site.id === "challenged-v1";
   const moreActive = open;
 
   const caredOnesLabel = isChinese ? "被护理者" : site.navLabels.caredOnes;
@@ -130,7 +132,7 @@ export function MobileBottomBar() {
         { id: "daily-ai", title: isChinese ? "AI助手" : "AI Assistant", icon: Bot, onClick: openAi },
       ];
 
-  const resourceItems: ToolItem[] = isChallenged
+  const resourceItems: ToolItem[] = isChallenged && !isV1
     ? [
         { id: "community-resources", title: isChinese ? "资源与帮助" : "Resources & Help", url: "/resources", icon: BookOpen },
         { id: "res-cared", title: isChinese ? "护理助手" : "CareD", url: "/care-guides", icon: HeartHandshake },
@@ -182,7 +184,7 @@ export function MobileBottomBar() {
     { id: "find-care", label: isChinese ? "寻找护理服务" : "Find Care", items: findCareItems },
     { id: "find-work", label: isChinese ? "寻找护理工作" : "Find Work", items: findWorkItems },
     { id: "community", label: isChinese ? "社区" : "Community", items: communityItems },
-  ];
+  ].filter((g) => g.items.length > 0);
 
   const togglePref = (id: string, show: boolean) => {
     setPrefs((prev) => {
