@@ -68,6 +68,7 @@ export function MobileBottomBar() {
   const { isAuthenticated } = useAuth();
   const { i18n } = useTranslation();
   const isChinese = i18n.language?.startsWith("zh");
+  const isStandalone = useStandaloneMode();
   const { data: notifications } = useNotifications();
   const unreadCount = (notifications || []).filter((n) => !n.is_read).length;
   const [open, setOpen] = useState(false);
