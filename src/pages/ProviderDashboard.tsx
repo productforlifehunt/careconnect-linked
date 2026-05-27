@@ -13,6 +13,7 @@ import {
   CalendarDays, DollarSign, Clock, Check, X, Loader2, User, Briefcase, TrendingUp, Plus, Trash2, Settings,
 } from "lucide-react";
 import ProviderSettingsTab from "@/components/provider/ProviderSettingsTab";
+import WithdrawCard from "@/components/provider/WithdrawCard";
 import {
   useProviderBookings, useUpdateBookingStatus, useMyProfile,
   useProviderAvailability, useUpsertProviderAvailability,
