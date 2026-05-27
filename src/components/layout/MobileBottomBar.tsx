@@ -184,7 +184,7 @@ export function MobileBottomBar() {
     { id: "find-care", label: isChinese ? "寻找护理服务" : "Find Care", items: findCareItems },
     { id: "find-work", label: isChinese ? "寻找护理工作" : "Find Work", items: findWorkItems },
     { id: "community", label: isChinese ? "社区" : "Community", items: communityItems },
-  ];
+  ].filter((g) => g.items.length > 0);
 
   const togglePref = (id: string, show: boolean) => {
     setPrefs((prev) => {
