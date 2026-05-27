@@ -1333,5 +1333,6 @@ const en = {
     disclaimerText: "AI-generated content is for companionship purposes only. It does not constitute medical advice, diagnosis, or treatment. If you have medical concerns about your cared one, please consult a qualified healthcare professional immediately. While our AI is designed with extensive safety measures specifically for dementia patients, including hallucination response, behavioral adaptation, and multi-layer safeguards, no AI system is perfect. Caregiver supervision is always recommended.",
   },
 };
+(en.site as Record<string, unknown>)["challenged-v1"] = en.site.challenged;
 
 export default en;
