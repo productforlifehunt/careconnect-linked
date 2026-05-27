@@ -132,7 +132,7 @@ export function MobileBottomBar() {
         { id: "daily-ai", title: isChinese ? "AI助手" : "AI Assistant", icon: Bot, onClick: openAi },
       ];
 
-  const resourceItems: ToolItem[] = isChallenged
+  const resourceItems: ToolItem[] = isChallenged && !isV1
     ? [
         { id: "community-resources", title: isChinese ? "资源与帮助" : "Resources & Help", url: "/resources", icon: BookOpen },
         { id: "res-cared", title: isChinese ? "护理助手" : "CareD", url: "/care-guides", icon: HeartHandshake },
