@@ -30,7 +30,7 @@ const zhCN = {
     member: "成员", caredOneLabel: "被照顾者",
   },
   nav: {
-    dashboard: "控制面板", messages: "消息", favorites: "收藏", gpsTracking: "定位追踪",
+    dashboard: "控制面板", enterApp: "进入应用", messages: "消息", favorites: "收藏", gpsTracking: "定位追踪",
     myBookings: "我的预约", careGroups: "照护小组", careTeams: "照护团队", findCare: "寻找护理",
     findHelp: "寻求帮助", findCaregivers: "找寻护理", findLocalCompanion: "找寻本地陪伴",
     findRemoteCompanion: "找寻远程陪伴", aiCompanion: "智能陪伴", seniorFacilities: "养老机构",

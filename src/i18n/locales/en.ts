@@ -129,6 +129,7 @@ const en = {
   // ═══ NAVIGATION ═══
   nav: {
     dashboard: "Dashboard",
+    enterApp: "Enter App",
     messages: "Messages",
     favorites: "Favorites",
     gpsTracking: "GPS Tracking",

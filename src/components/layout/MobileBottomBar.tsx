@@ -32,6 +32,7 @@ import {
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { AICompanionChatDialog } from "@/components/ai/AICompanionChatDialog";
 import { Switch } from "@/components/ui/switch";
+import { useStandaloneMode } from "@/hooks/useStandaloneMode";
 
 type ToolItem = {
   id: string;
@@ -68,6 +69,7 @@ export function MobileBottomBar() {
   const { isAuthenticated } = useAuth();
   const { i18n } = useTranslation();
   const isChinese = i18n.language?.startsWith("zh");
+  const isStandalone = useStandaloneMode();
   const { data: notifications } = useNotifications();
   const unreadCount = (notifications || []).filter((n) => !n.is_read).length;
   const [open, setOpen] = useState(false);
@@ -203,6 +205,11 @@ export function MobileBottomBar() {
       return next;
     });
   };
+
+  // In a regular browser tab (not an installed PWA / native shell), behave like
+  // a marketing website: no bottom navigation bar. Users tap "Enter App" in the
+  // header to enter the full app experience.
+  if (!isStandalone) return null;
 
   return (
     <>
