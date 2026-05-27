@@ -603,4 +603,6 @@ const zhCN = {
     disclaimerText: "小忆AI生成内容仅用于日常陪伴目的，不构成医疗建议、诊断或治疗方案。如果您对被护理者的健康状况有任何疑虑，请立即咨询专业医疗人员。尽管小忆AI针对失智症患者的需求进行了全面的安全优化，包括幻觉应对、行为适配和多重防护机制，但任何AI系统都无法做到完美无缺。建议始终在照护者的监督下使用。",
   },
 };
+// 忆畅 1.0 (challenged-v1) shares all translations with the main 忆畅 (challenged) brand.
+(zhCN.site as Record<string, unknown>)["challenged-v1"] = zhCN.site.challenged;
 export default zhCN;
