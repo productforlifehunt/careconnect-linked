@@ -2,7 +2,7 @@
 // Headless integration for Care Connector marketplace
 // Auth: uses Vite dev-proxy + Supabase edge proxy + JWT Bearer token
 
-import { getWPToken } from './wp-auth';
+import { getWPToken, getStoredWPUser } from './wp-auth';
 import { buildWPUrl, buildWPHeaders, IS_DEV } from '@/lib/wp-url';
 import { getActiveServer } from '@/lib/wp-servers';
 import {
