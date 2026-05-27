@@ -176,14 +176,15 @@ const duoCareConfig: SiteConfig = {
   trustBadges: ["badge1", "badge2", "badge3"],
 };
 
-// ChallengeD 1.0 / 忆畅 1.0 — early-launch version.
-// Same brand and language as `challenged`, but trimmed feature set.
+// 忆畅 early-launch variant.
+// Same Chinese brand as `challenged`, but trimmed feature set.
 // Use ?__site=challenged-v1 (or its dedicated domain) to load this build.
 const challengedV1Config: SiteConfig = {
   ...challengedConfig,
   id: "challenged-v1",
-  name: "ChallengeD 1.0",
-  metaTitle: "ChallengeD 1.0 — 忆畅 早期版",
+  name: "忆畅",
+  metaTitle: "忆畅 — 失智症护理支持",
+  footerBrand: "忆畅",
   brandSlug: "challenged-v1",
   forceLanguage: "zh-CN",
 };

@@ -80,7 +80,7 @@ export function MobileBottomBar() {
   useEffect(() => { setFindTab(prefs.defaultFindTab); }, [prefs.defaultFindTab]);
 
   const isChallenged = site.family === "challenged";
-  // challenged-v1 (忆畅 1.0) is the early-launch trim: search-only, no Resources & Help.
+  // challenged-v1 is the early-launch trim: search-only, no Resources & Help.
   const isV1 = site.id === "challenged-v1";
   const moreActive = open;
 
