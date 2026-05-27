@@ -46,7 +46,7 @@ function useSidebarItems() {
     { title: L("购物车", "Cart"), url: "/cart", icon: ShoppingCart },
   ];
 
-  if (isChallenged) {
+  if (isChallenged && !isV1) {
     base.push(
       { title: L("认知助手", site.navLabels.awareD || "AwareD"), url: "/aware", icon: Lightbulb },
       { title: L("护理助手", site.navLabels.careD || "CareD"), url: "/care-guides", icon: HeartPulse },
@@ -56,8 +56,8 @@ function useSidebarItems() {
     );
   }
 
-  // Resources is only for ChallengeD/忆畅 — not for CareCNC/护畅
-  if (!isCareCNC) {
+  // Resources is only for ChallengeD/忆畅 — not for CareCNC/护畅 or 忆畅 1.0
+  if (!isCareCNC && !isV1) {
     base.push({ title: L("资源", "Resources"), url: "/resources", icon: BookOpen });
   }
 
