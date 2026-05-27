@@ -206,6 +206,11 @@ export function MobileBottomBar() {
     });
   };
 
+  // In a regular browser tab (not an installed PWA / native shell), behave like
+  // a marketing website: no bottom navigation bar. Users tap "Enter App" in the
+  // header to enter the full app experience.
+  if (!isStandalone) return null;
+
   return (
     <>
       <nav data-bottom-nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t flex items-center justify-around h-14 px-1">
