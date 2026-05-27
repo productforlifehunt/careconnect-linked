@@ -37,6 +37,8 @@ export function AppHeader() {
   const unreadCount = notifications?.filter(n => !n.is_read).length || 0;
   const { t, i18n } = useTranslation();
   const isChinese = i18n.language?.startsWith("zh");
+  const isStandalone = useStandaloneMode();
+  const dashboardLabel = isStandalone ? t("nav.dashboard") : t("nav.enterApp");
   const isChallenged = site.family === "challenged";
   const isCareDuo = site.id === "duocare";
   const isCareCNC = site.id === "carecnc";
