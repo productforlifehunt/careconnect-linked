@@ -32,6 +32,7 @@ import {
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { AICompanionChatDialog } from "@/components/ai/AICompanionChatDialog";
 import { Switch } from "@/components/ui/switch";
+import { useStandaloneMode } from "@/hooks/useStandaloneMode";
 
 type ToolItem = {
   id: string;
