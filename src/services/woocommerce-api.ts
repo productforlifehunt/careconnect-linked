@@ -1365,13 +1365,31 @@ export async function checkout(billingData?: {
   email?: string;
   phone?: string;
 }) {
-  // Server cart is auto-pulled by the careconnect-checkout snippet's
-  // rest_pre_dispatch filter when line_items is omitted.
+  // Dokan / WooCommerce default escrow flow:
+  //   1. Create the order in `pending` state (no set_paid) so funds are NOT
+  //      yet recorded as collected.
+  //   2. Redirect the customer to WC's hosted pay-for-order page, which
+  //      offers whatever gateways the admin enabled (Stripe, PayPal,
+  //      Alipay, …) and takes the real payment.
+  //   3. Once the gateway confirms, WC flips the order to `processing` and
+  //      Dokan creates the vendor sub-order and parks the commission in
+  //      the vendor's pending balance — held by the platform = escrow.
+  //   4. When the provider marks the order `completed`, Dokan releases the
+  //      commission to the vendor's available balance, which they can then
+  //      withdraw (see WithdrawCard + dokan/v1/withdraw).
+  //   5. Refunds use WC `/orders/{id}/refunds` with api_refund:true — the
+  //      gateway reverses the charge AND Dokan auto-reverses the vendor
+  //      commission. (see createOrderRefund)
+  //   6. Disputes / issue reports use customer order notes
+  //      (`/orders/{id}/notes`), visible to vendor and platform admin in
+  //      their Dokan dashboards. (see addOrderCustomerNote)
   const orderPayload: Record<string, unknown> = {
-    payment_method: 'cod',
-    payment_method_title: 'Cash on delivery',
-    set_paid: true,
-    status: 'processing',
+    // Leave payment_method blank — the customer picks one on the WC
+    // pay-for-order page from whatever gateways the admin enabled.
+    payment_method: '',
+    payment_method_title: '',
+    set_paid: false,
+    status: 'pending',
   };
 
   if (billingData) {
@@ -1400,12 +1418,19 @@ export async function checkout(billingData?: {
   }
   const order = await checkoutRes.json();
 
+  // Construct the WC pay-for-order URL ourselves so the snippet doesn't
+  // need to be redeployed. Standard WooCommerce route.
+  const server = getActiveServer();
+  const payment_url = order.payment_url
+    || `${server.baseUrl.replace(/\/$/, '')}/checkout/order-pay/${order.id}/?pay_for_order=true&key=${encodeURIComponent(order.order_key || '')}`;
+
   return {
     order_id: order.id,
     id: order.id,
     order_key: order.order_key || '',
     status: order.status,
     total: order.total,
+    payment_url,
     totals: { total_price: String(Math.round(parseFloat(order.total || '0') * 100)) },
   };
 }

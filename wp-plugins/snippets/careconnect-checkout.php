@@ -83,11 +83,16 @@ function cc_create_order_snippet(WP_REST_Request $req) {
     }
     $order->save();
 
+    // Return the hosted pay-for-order URL so the headless client can hand
+    // the customer off to whatever WC gateway the admin has enabled
+    // (Stripe, PayPal, Alipay, …). Dokan then escrows the vendor's
+    // commission until the order moves to `completed`.
     return rest_ensure_response(array(
-        'id'        => $order->get_id(),
-        'order_id'  => $order->get_id(),
-        'order_key' => $order->get_order_key(),
-        'status'    => $order->get_status(),
-        'total'     => $order->get_total(),
+        'id'          => $order->get_id(),
+        'order_id'    => $order->get_id(),
+        'order_key'   => $order->get_order_key(),
+        'status'      => $order->get_status(),
+        'total'       => $order->get_total(),
+        'payment_url' => $order->get_checkout_payment_url(true),
     ));
 }

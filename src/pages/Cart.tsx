@@ -75,7 +75,9 @@ export default function Cart() {
               <div className="flex justify-between text-lg font-bold"><span>{cn ? "合计" : "Total"}</span><span>{sym}{total}</span></div>
               <div><Label>{cn ? "账单邮箱" : "Billing Email"}</Label><Input value={email} onChange={e => setEmail(e.target.value)} placeholder={(user as any)?.email || "email@example.com"} /></div>
               <div className="rounded-lg bg-muted/40 p-3 text-sm text-muted-foreground">
-                {cn ? "支付方式：按 WooCommerce 配置使用货到付款或线下支付。" : "Payment method: Cash on delivery / offline payment as configured in WooCommerce."}
+                {cn
+                  ? "下一步：我们会把您转到平台的安全支付页面，由 Stripe / PayPal / 支付宝等已配置的支付方式完成付款。在服务完成前，款项将由平台代为托管（escrow）。"
+                  : "Next: you'll be sent to the secure payment page where Stripe / PayPal / Alipay (whichever the platform has enabled) takes the payment. Funds are held in escrow by the platform until the service is completed."}
               </div>
               <Button variant="coral" className="w-full" size="lg" disabled={doCheckout.isPending || !email.trim()} onClick={async () => {
                 const u = user as any;
@@ -85,14 +87,39 @@ export default function Cart() {
                 const orderId = (result as any)?.order_id || (result as any)?.id || "";
                 const orderKey = (result as any)?.order_key || "";
                 const orderTotal = (result as any)?.totals?.total_price ? (parseInt((result as any).totals.total_price) / 100).toFixed(2) : total;
+                const paymentUrl = (result as any)?.payment_url || "";
+
+                // Stash the order metadata so the confirmation page can show
+                // it after the user comes back from the gateway.
+                try {
+                  const params = new URLSearchParams();
+                  if (orderId) params.set("order_id", String(orderId));
+                  if (orderKey) params.set("order_key", orderKey);
+                  if (orderTotal) params.set("total", orderTotal);
+                  params.set("status", "pending");
+                  sessionStorage.setItem("cc:last_order", params.toString());
+                } catch { /* ignore */ }
+
+                // Hand the customer off to WC / Dokan's hosted pay page.
+                // This is the standard WooCommerce default — the platform
+                // collects payment via configured gateways, then Dokan
+                // escrows the vendor commission until the order is marked
+                // completed.
+                if (paymentUrl) {
+                  window.location.href = paymentUrl;
+                  return;
+                }
+
+                // Fallback (no gateway configured / payment_url missing):
+                // jump straight to the local confirmation page.
                 const params = new URLSearchParams();
                 if (orderId) params.set("order_id", String(orderId));
                 if (orderKey) params.set("order_key", orderKey);
                 if (orderTotal) params.set("total", orderTotal);
-                params.set("status", "processing");
+                params.set("status", "pending");
                 navigate(`/order-confirmation?${params.toString()}`);
               }}>
-                {doCheckout.isPending ? (cn ? "处理中…" : "Processing...") : (cn ? "结算并支付" : "Checkout & Pay")}
+                {doCheckout.isPending ? (cn ? "处理中…" : "Processing...") : (cn ? "前往安全支付" : "Continue to Secure Payment")}
               </Button>
             </CardContent>
           </Card>
