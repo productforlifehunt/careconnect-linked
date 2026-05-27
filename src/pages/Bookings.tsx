@@ -158,6 +158,7 @@ export default function Bookings() {
                 {["completed", "confirmed", "processing"].includes(booking.status) && Number(booking.total_cost || 0) > 0 && (
                   <DropdownMenuItem onClick={() => { setRefundBooking(booking); setRefundReason(""); setRefundOpen(true); }}><DollarSign className="mr-2 h-4 w-4" /> {t("bookings.requestRefund", "Request Refund")}</DropdownMenuItem>
                 )}
+                <DropdownMenuItem onClick={() => { setIssueBooking(booking); setIssueText(""); setIssueOpen(true); }}><AlertTriangle className="mr-2 h-4 w-4" /> {t("bookings.reportIssue", "Report Issue")}</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleMessage(booking)} disabled={messagingId === booking.provider_id}><MessageSquare className="mr-2 h-4 w-4" /> {t("bookings.messageProvider")}</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
