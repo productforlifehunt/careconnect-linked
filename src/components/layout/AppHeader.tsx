@@ -269,7 +269,7 @@ export function AppHeader() {
                   <p className="text-xs text-muted-foreground">{user?.email}</p>
                 </div>
                 <DropdownMenuItem onClick={() => navigate("/dashboard")}>
-                  <LayoutDashboard className="mr-2 h-4 w-4" /> {t("nav.dashboard")}
+                  <LayoutDashboard className="mr-2 h-4 w-4" /> {dashboardLabel}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/bookings")}>
                   <CalendarDays className="mr-2 h-4 w-4" /> {t("nav.myBookings")}
