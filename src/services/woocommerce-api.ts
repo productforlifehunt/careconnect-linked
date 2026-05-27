@@ -2,7 +2,7 @@
 // Headless integration for Care Connector marketplace
 // Auth: uses Vite dev-proxy + Supabase edge proxy + JWT Bearer token
 
-import { getWPToken } from './wp-auth';
+import { getWPToken, getStoredWPUser } from './wp-auth';
 import { buildWPUrl, buildWPHeaders, IS_DEV } from '@/lib/wp-url';
 import { getActiveServer } from '@/lib/wp-servers';
 import {
@@ -1416,12 +1416,23 @@ export async function createOrderRefund(
   orderId: number,
   options?: { amount?: string; reason?: string }
 ) {
-  const body: any = { api_refund: false };
+  // api_refund:true → WC asks the payment gateway (Stripe, PayPal) to
+  // actually return money to the customer's card. If no gateway supports
+  // refunds for that order, WC still records the refund as bookkeeping.
+  const body: any = { api_refund: true };
   if (options?.amount) body.amount = options.amount;
   if (options?.reason) body.reason = options.reason;
   return wcFetch(`orders/${orderId}/refunds`, {
     method: 'POST',
     body: JSON.stringify(body),
+  });
+}
+
+// Post a customer-facing note on an order (used for dispute / issue reports).
+export async function addOrderCustomerNote(orderId: number, note: string) {
+  return wcFetch(`orders/${orderId}/notes`, {
+    method: 'POST',
+    body: JSON.stringify({ note, customer_note: true }),
   });
 }
 
@@ -1670,3 +1681,72 @@ export async function getDokanVendorWithdrawals() {
     return [];
   }
 }
+
+// Vendor requests a manual withdrawal (admin then pays out via PayPal/bank/Alipay).
+export async function createDokanWithdrawalRequest(opts: {
+  amount: number;
+  method: 'paypal' | 'bank' | 'alipay' | 'stripe';
+  note?: string;
+}) {
+  return dokanFetch('withdraw', {
+    method: 'POST',
+    body: JSON.stringify({
+      amount: opts.amount,
+      method: opts.method,
+      note: opts.note || '',
+    }),
+  });
+}
+
+// ─── Vendor payout-account settings ────────────────────────
+// Stored on the Dokan store record (PayPal native; Stripe/Alipay as custom keys).
+export async function getVendorPayoutSettings(storeId: number) {
+  try {
+    const store = await dokanFetch(`stores/${storeId}`);
+    const payment = (store as any)?.payment || {};
+    return {
+      paypalEmail: payment?.paypal?.email || '',
+      stripeAccountId: payment?.custom?.stripe_account_id || '',
+      alipayId: payment?.custom?.alipay_id || '',
+      bank: payment?.bank || null,
+    };
+  } catch {
+    return { paypalEmail: '', stripeAccountId: '', alipayId: '', bank: null };
+  }
+}
+
+export async function saveVendorPayoutSettings(
+  storeId: number,
+  data: { paypalEmail?: string; stripeAccountId?: string; alipayId?: string }
+) {
+  const payment: any = {};
+  if (data.paypalEmail !== undefined) payment.paypal = { email: data.paypalEmail };
+  if (data.stripeAccountId !== undefined || data.alipayId !== undefined) {
+    payment.custom = {
+      ...(data.stripeAccountId !== undefined ? { stripe_account_id: data.stripeAccountId } : {}),
+      ...(data.alipayId !== undefined ? { alipay_id: data.alipayId } : {}),
+    };
+  }
+  return dokanFetch(`stores/${storeId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ payment }),
+  });
+}
+
+// Returns the Dokan store id for the currently logged-in vendor.
+export async function getMyDokanStoreId(): Promise<number | null> {
+  try {
+    const me = await dokanFetch('stores/current') as any;
+    return me?.id || null;
+  } catch {
+    try {
+      const wpUser = getStoredWPUser();
+      if (!wpUser?.user_id) return null;
+      const stores = await dokanFetch(`stores?author=${wpUser.user_id}`) as any[];
+      return Array.isArray(stores) && stores[0]?.id ? stores[0].id : null;
+    } catch {
+      return null;
+    }
+  }
+}
+
