@@ -138,7 +138,7 @@ export function AppHeader() {
                 <>
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 mt-6 px-3">{t("nav.myCare")}</p>
                   {[
-                    { title: t("nav.dashboard"), url: "/dashboard", icon: LayoutDashboard },
+                    { title: dashboardLabel, url: "/dashboard", icon: LayoutDashboard },
                     { title: t(site.family === "challenged" ? "nav.myLovedOnes" : "nav.caredOnes"), url: "/cared-ones", icon: Heart },
                     { title: t("nav.myBookings"), url: "/bookings", icon: CalendarDays },
                     { title: t(isChallenged ? "nav.united" : (site.family === "challenged" ? "nav.careTeams" : "nav.careGroups")), url: "/care-circle", icon: Users },
