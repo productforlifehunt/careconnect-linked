@@ -416,7 +416,7 @@ export default function ProviderDashboard() {
             <Card className="border-transparent card-elevated"><CardContent className="p-5 text-center"><p className="text-3xl font-bold text-foreground">{isZh ? "¥" : "$"}{totalEarnings.toFixed(2)}</p><p className="text-sm text-muted-foreground mt-1">{isZh ? "总收入（已完成的85%）" : "Total Earned (85% of completed)"}</p></CardContent></Card>
             <Card className="border-transparent card-elevated"><CardContent className="p-5 text-center"><p className="text-3xl font-bold text-foreground">{completedBookings.length}</p><p className="text-sm text-muted-foreground mt-1">{isZh ? "已完成预约" : "Completed Bookings"}</p></CardContent></Card>
           </div>
-          <Card className="border-transparent card-elevated">
+          <Card className="border-transparent card-elevated mb-4">
             <CardHeader><CardTitle>{isZh ? "最近结算" : "Recent Payouts"}</CardTitle></CardHeader>
             <CardContent>
               {(payouts || []).length > 0 ? (payouts || []).map((p: any) => (
@@ -427,6 +427,9 @@ export default function ProviderDashboard() {
               )) : <p className="text-center py-8 text-muted-foreground">{isZh ? "暂无结算记录" : "No payouts yet"}</p>}
             </CardContent>
           </Card>
+
+          {/* Vendor-initiated withdrawal requests (PayPal / Alipay manual payout) */}
+          <WithdrawCard availableAmount={totalEarnings + pendingEarnings} />
         </TabsContent>
 
         <TabsContent value="settings" className="mt-4">
