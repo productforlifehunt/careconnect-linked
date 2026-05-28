@@ -117,7 +117,7 @@ const challengedConfig: SiteConfig = {
   caredOneSingular: "Cared One",
   careGroupSingular: "Care Team",
   navLabels: {
-    careGroups: "UniteD",
+    careGroups: "Care Teams",
     findCare: "Find Help",
     caredOnes: "Cared Ones",
     dashboard: "Dashboard",
