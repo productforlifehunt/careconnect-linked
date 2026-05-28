@@ -96,8 +96,8 @@ export function AppHeader() {
                 {logoBrand === "challenged" && isChinese ? (
                   <img src={yichangIcon} alt="忆畅" className="w-12 h-12 rounded-xl" />
                 ) : logoBrand === "challenged" ? (
-                  <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center leading-none shadow-sm">
-                    <span className="text-primary-foreground font-bold text-[11px] tracking-tight">ChallengeD</span>
+                  <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center leading-none shadow-sm px-1">
+                    <span className="text-primary-foreground font-bold text-[8.5px] tracking-tight whitespace-nowrap">ChallengeD</span>
                   </div>
                 ) : logoBrand === "carecnc" && isChinese ? (
                   <img src={huchangIcon} alt="护畅" className="w-12 h-12 rounded-xl" />
