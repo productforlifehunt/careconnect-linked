@@ -93,8 +93,18 @@ export function AppHeader() {
           <SheetContent side="left" className="w-72 p-0">
             <div className="p-4 border-b">
               <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-2">
-                {logoBrand === "challenged" ? (
+                {logoBrand === "challenged" && isChinese ? (
                   <img src={yichangIcon} alt="忆畅" className="w-12 h-12 rounded-xl" />
+                ) : logoBrand === "challenged" ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center shadow-sm">
+                      <span className="text-primary-foreground font-bold text-base tracking-tight">CD</span>
+                    </div>
+                    <span className="font-bold text-lg">
+                      <span className="text-primary">Challenge</span>
+                      <span className="text-foreground">D</span>
+                    </span>
+                  </div>
                 ) : logoBrand === "carecnc" && isChinese ? (
                   <img src={huchangIcon} alt="护畅" className="w-12 h-12 rounded-xl" />
                 ) : logoBrand === "carecnc" ? (
