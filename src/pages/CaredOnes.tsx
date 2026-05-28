@@ -212,7 +212,7 @@ export default function CaredOnes() {
                     <card.icon className="h-4 w-4" />
                   </div>
                   <h3 className="font-semibold text-foreground text-[13px] leading-tight">{card.title}</h3>
-                  <p className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5">{card.subtitle}</p>
+                  
                 </button>
               ))}
             </div>

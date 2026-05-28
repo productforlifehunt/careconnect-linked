@@ -87,7 +87,7 @@ export function AICompanionChatDialog({
                 <Bot className="h-4 w-4" />
               </div>
               <DialogPrimitive.Title className="text-sm font-semibold">
-                {isZh ? "小忆 AI 助手" : "Xiaoyi · AI Assistant"}
+                {isZh ? "小忆 AI 助手" : "ChallengeD Assistant"}
               </DialogPrimitive.Title>
             </div>
             <DialogPrimitive.Close asChild>
