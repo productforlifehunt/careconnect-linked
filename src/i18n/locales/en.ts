@@ -159,7 +159,7 @@ const en = {
     myCare: "My Care",
     toggleTheme: "Toggle theme",
     // ChallengeD branded sections
-    united: "UniteD",
+    united: "Care Teams",
     find: "FinD",
     awareD: "AwareD",
     careD: "CareD",
