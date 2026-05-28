@@ -89,7 +89,7 @@ export function MobileBottomBar() {
   const caredOnesLabel = isChinese ? "被护理者" : site.navLabels.caredOnes;
   const careGroupLabel = isChinese
     ? (isChallenged ? "护理团队" : "护理群组")
-    : (isChallenged ? "Care Team" : site.navLabels.careGroups);
+    : (isChallenged ? "Care Teams" : site.navLabels.careGroups);
 
   const items = [
     { title: isChinese ? "首页" : "Home", url: "/dashboard", icon: LayoutDashboard },

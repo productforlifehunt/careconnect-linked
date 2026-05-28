@@ -159,7 +159,7 @@ const en = {
     myCare: "My Care",
     toggleTheme: "Toggle theme",
     // ChallengeD branded sections
-    united: "UniteD",
+    united: "Care Teams",
     find: "FinD",
     awareD: "AwareD",
     careD: "CareD",
@@ -1144,7 +1144,7 @@ const en = {
     noCheckIn: "No check-in",
     mood: "Mood",
     medications: "Medications",
-    active: "active",
+    active: "scheduled",
     location: "Location",
     ago: "ago",
     available: "Available",
