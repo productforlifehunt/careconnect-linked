@@ -45,13 +45,9 @@ export function PatientSummaryCard({ caredOneId, name, avatarUrl, relationship, 
             <h3 className="font-semibold text-foreground text-sm truncate">{name}</h3>
             {relationship && <p className="text-xs text-muted-foreground capitalize">{relationship}</p>}
           </div>
-          {hasCheckinToday ? (
+          {hasCheckinToday && (
             <Badge variant="outline" className="bg-success/10 text-success border-success/30 text-[10px]">
               <CheckCircle className="h-3 w-3 mr-1" /> {t("patientSummary.checkedIn")}
-            </Badge>
-          ) : (
-            <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30 text-[10px]">
-              <AlertTriangle className="h-3 w-3 mr-1" /> {t("patientSummary.noCheckIn")}
             </Badge>
           )}
         </div>
