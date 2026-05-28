@@ -1144,7 +1144,7 @@ const en = {
     noCheckIn: "No check-in",
     mood: "Mood",
     medications: "Medications",
-    active: "active",
+    active: "scheduled",
     location: "Location",
     ago: "ago",
     available: "Available",
