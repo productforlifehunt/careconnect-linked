@@ -34,6 +34,11 @@ export function LanguageSwitcher() {
 
   const currentFlag = LANGUAGES.find(l => l.code === currentLang)?.flag || "🌐";
 
+  const selectLanguage = (code: string) => {
+    try { localStorage.setItem("i18nextLng", code); } catch {}
+    i18n.changeLanguage(code);
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -46,7 +51,7 @@ export function LanguageSwitcher() {
         {LANGUAGES.map((lang) => (
           <DropdownMenuItem
             key={lang.code}
-            onClick={() => i18n.changeLanguage(lang.code)}
+            onClick={() => selectLanguage(lang.code)}
             className={currentLang === lang.code ? "bg-accent font-medium" : ""}
           >
             <span className="mr-2">{lang.flag}</span>
