@@ -28,8 +28,6 @@ export interface SiteConfig {
   cssClass: string;
   contactEmail: string;
   brandSlug: string;
-  /** Force a specific i18n language regardless of browser detection. */
-  forceLanguage?: string;
   /** Singular label for a cared-one */
   caredOneSingular: string;
   /** Singular label for a care group, e.g. "Care Group" or "Care Team" */
@@ -186,13 +184,9 @@ const challengedV1Config: SiteConfig = {
   metaTitle: "忆畅 — 失智症护理支持",
   footerBrand: "忆畅",
   brandSlug: "challenged-v1",
-  forceLanguage: "zh-CN",
 };
 
-// Force language on the main brands so the Chinese build is fully Chinese
-// and the English builds are fully English.
-challengedConfig.forceLanguage = "zh-CN";
-// CareCNC and CareDuo are bilingual — user can switch EN/ZH via the LanguageSwitcher.
+// All brands keep the user's explicit language choice; never auto-overwrite it.
 
 /** Map hostnames to site IDs */
 const DOMAIN_MAP: Record<string, SiteId> = {
@@ -256,12 +250,6 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) metaDesc.setAttribute("content", config.metaDescription);
 
-    // Force language so Chinese builds are fully Chinese and English builds
-    // are fully English, regardless of browser locale or saved preference.
-    if (config.forceLanguage && i18n.language !== config.forceLanguage) {
-      i18n.changeLanguage(config.forceLanguage);
-      try { localStorage.setItem("i18nextLng", config.forceLanguage); } catch {}
-    }
   }, [config]);
 
   return <SiteContext.Provider value={config}>{children}</SiteContext.Provider>;
