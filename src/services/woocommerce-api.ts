@@ -1469,6 +1469,38 @@ export async function getOrderRefunds(orderId: number) {
   }
 }
 
+// ─── Product Reviews (WooCommerce native) ──────────────────
+// Uses /wc/v3/products/reviews — zero custom CCT, fully Woo.
+export async function fetchProductReviews(productId: number) {
+  try {
+    return await wcFetch(`products/reviews?product=${productId}&per_page=50&status=approved`);
+  } catch {
+    return [];
+  }
+}
+
+export async function createProductReview(args: {
+  productId: number;
+  rating: number;
+  review: string;
+  reviewer?: string;
+  reviewerEmail?: string;
+}) {
+  const user = getStoredWPUser();
+  const body = {
+    product_id: args.productId,
+    review: args.review || '',
+    reviewer: args.reviewer || user?.display_name || user?.user_login || 'Customer',
+    reviewer_email: args.reviewerEmail || user?.user_email || 'noreply@careconnected.local',
+    rating: Math.max(1, Math.min(5, Math.round(args.rating))),
+    status: 'approved',
+  };
+  return wcFetch('products/reviews', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+}
+
 // ─── Conflict / availability types & helpers ───────────────
 
 type ProviderBookingConflictCheck = {
