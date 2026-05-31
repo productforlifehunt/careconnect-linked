@@ -1,43 +1,51 @@
 /**
- * Reviews — JetEngine CCT 65 `review` (bible §16).
- *   Fields: a55=title, a56=content, a57=rating
- *   Relations:
- *     66: care_facility → review  (1:M)
- *     68: review → comment        (1:M)
- *   Author = JetEngine default author.
+ * Reviews — WooCommerce native `/wc/v3/products/reviews`.
+ *
+ * Zero JetEngine CCT. Reviews are bookkept by WooCommerce on the provider's
+ * bookable product (one product per provider, SKU `care-provider-<id>`).
+ * Refunds / cancellations / reschedules already live on the WC order; reviews
+ * now match — the entire payment/feedback surface is Woo + Dokan native.
+ *
+ * Facility reviews: facilities are CCT-only today (not Dokan stores), so
+ * they have no Woo product to attach a review to. Returns [] until facilities
+ * are wired to Dokan vendors.
  */
-import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
-
-const SLUG = "review";
-const REL_FACILITY_REVIEW = 66;
-
-const stripWp = (v: string | number) => String(v).replace(/^wp-/, "");
+import {
+  getProviderProduct,
+  fetchProductReviews,
+  createProductReview,
+} from "@/services/woocommerce-api";
 
 function mapReview(r: any) {
   return {
-    id: String(r.id || r._ID),
-    title: r.a55 || "",
-    content: r.a56 || "",
-    rating: r.a57 != null ? Number(r.a57) : null,
-    author_id: r.author_id ? `wp-${r.author_id}` : null,
-    created_at: r.cct_created || r.created_at,
-    updated_at: r.cct_modified || r.updated_at,
+    id: String(r.id),
+    title: "",
+    content: String(r.review || "").replace(/<[^>]*>/g, ""),
+    rating: Number(r.rating || 0),
+    author_id: r.reviewer_email ? `wc-${r.reviewer_email}` : null,
+    author_name: r.reviewer || "",
+    created_at: r.date_created,
+    updated_at: r.date_created,
   };
 }
 
-export async function fetchEntityReviewsWordPress(entityId?: string): Promise<any[]> {
+async function resolveProductId(entityId: string, entityType?: string): Promise<number | null> {
+  if (entityType === "facility") return null; // facilities aren't Woo products
+  const product = await getProviderProduct(entityId).catch(() => null);
+  const pid = Number(product?.id);
+  return pid > 0 ? pid : null;
+}
+
+export async function fetchEntityReviewsWordPress(
+  entityId?: string,
+  entityType?: string,
+): Promise<any[]> {
+  if (!entityId) return [];
   try {
-    if (!entityId) {
-      const all = await wordpressCCTFetch<any[]>(SLUG, { params: { _limit: 100 } });
-      return Array.isArray(all) ? all.map(mapReview) : [];
-    }
-    // Fetch reviews linked to this facility via Rel 66
-    const parentId = stripWp(entityId);
-    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_FACILITY_REVIEW}/children/${parentId}`).catch(() => []);
-    if (!Array.isArray(rels) || rels.length === 0) return [];
-    const ids = rels.map((r: any) => String(r.child_object_id)).filter(Boolean);
-    const reviews = await Promise.all(ids.map((id) => wordpressCCTFetch<any>(SLUG, { id }).catch(() => null)));
-    return reviews.filter(Boolean).map(mapReview);
+    const productId = await resolveProductId(entityId, entityType);
+    if (!productId) return [];
+    const list = await fetchProductReviews(productId);
+    return Array.isArray(list) ? list.map(mapReview) : [];
   } catch {
     return [];
   }
@@ -50,20 +58,17 @@ export async function createReviewWordPress(review: {
   comment?: string;
   title?: string;
 }): Promise<void> {
-  const parentId = Number(stripWp(review.entity_id));
-  const created = await wordpressCCTFetch<any>(SLUG, {
-    method: "POST",
-    body: {
-      a55: review.title || "",
-      a56: review.comment || "",
-      a57: review.rating,
-    },
-  });
-  const reviewId = Number(created?.item_id || created?._ID || created?.id);
-  if (reviewId && parentId) {
-    await wordpressFetch(`jet-rel/${REL_FACILITY_REVIEW}`, {
-      method: "POST",
-      body: { parent_id: parentId, child_id: reviewId, context: "child", store_items_type: "update" },
-    }).catch(() => {});
+  const productId = await resolveProductId(review.entity_id, review.entity_type);
+  if (!productId) {
+    throw new Error(
+      review.entity_type === "facility"
+        ? "Facility reviews are not yet available (facility is not a Dokan vendor)."
+        : "Could not find a Woo product for this provider — review cannot be posted.",
+    );
   }
+  await createProductReview({
+    productId,
+    rating: review.rating,
+    review: review.comment || review.title || "",
+  });
 }
