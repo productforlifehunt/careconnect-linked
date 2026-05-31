@@ -1490,8 +1490,8 @@ export async function createProductReview(args: {
   const body = {
     product_id: args.productId,
     review: args.review || '',
-    reviewer: args.reviewer || user?.display_name || user?.user_login || 'Customer',
-    reviewer_email: args.reviewerEmail || user?.user_email || 'noreply@careconnected.local',
+    reviewer: args.reviewer || (user as any)?.display_name || user?.user_login || 'Customer',
+    reviewer_email: args.reviewerEmail || (user as any)?.user_email || 'noreply@careconnected.local',
     rating: Math.max(1, Math.min(5, Math.round(args.rating))),
     status: 'approved',
   };
