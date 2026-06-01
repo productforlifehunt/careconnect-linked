@@ -13,7 +13,7 @@ import {
   CalendarDays, DollarSign, Clock, Check, X, Loader2, User, Briefcase, TrendingUp, Plus, Trash2, Settings,
 } from "lucide-react";
 import ProviderSettingsTab from "@/components/provider/ProviderSettingsTab";
-import WithdrawCard from "@/components/provider/WithdrawCard";
+
 import {
   useProviderBookings, useUpdateBookingStatus, useMyProfile,
   useProviderAvailability, useUpsertProviderAvailability,
@@ -428,8 +428,7 @@ export default function ProviderDashboard() {
             </CardContent>
           </Card>
 
-          {/* Vendor-initiated withdrawal requests (PayPal / Alipay manual payout) */}
-          <WithdrawCard availableAmount={totalEarnings + pendingEarnings} />
+          {/* Platform does not process payments — no withdrawals. UrbanSitter-style: client pays caregiver directly. */}
         </TabsContent>
 
         <TabsContent value="settings" className="mt-4">
