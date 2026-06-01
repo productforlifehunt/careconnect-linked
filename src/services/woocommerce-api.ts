@@ -1628,33 +1628,29 @@ function rangesOverlap(startA: string, endA: string, startB: string, endB: strin
 }
 
 async function getProviderBookedTimeRanges(providerId: string) {
-  const orders = await getProviderOrders(providerId);
-  if (!Array.isArray(orders)) return [] as ProviderBookingConflictCheck[];
-
-  return orders
-    .map((order: any) => {
-      const appointmentDate = Array.isArray(order?.meta_data)
-        ? order.meta_data.find((item: any) => item?.key === '_appointment_date')?.value || ''
-        : '';
-      const appointmentTime = Array.isArray(order?.meta_data)
-        ? order.meta_data.find((item: any) => item?.key === '_appointment_time')?.value || ''
-        : '';
-      const durationValue = Array.isArray(order?.meta_data)
-        ? order.meta_data.find((item: any) => item?.key === '_duration_hours')?.value || ''
-        : '';
-
-      return {
-        orderId: Number(order?.id || 0),
-        appointmentDate,
-        appointmentTime,
-        durationHours: Number(durationValue || order?.line_items?.[0]?.quantity || 0),
-        status: String(order?.status || ''),
-      };
-    })
-    .filter((booking) => {
-      if (!booking.orderId || !booking.appointmentDate || !booking.appointmentTime || !booking.durationHours) return false;
-      return ['pending', 'on-hold', 'processing', 'completed'].includes(booking.status);
-    });
+  // Read native WC Bookings filtered to this provider's product.
+  try {
+    const product = await getProviderProduct(providerId);
+    if (!product?.id) return [] as ProviderBookingConflictCheck[];
+    const bookings = await fetchWCBookings({ product_id: product.id, per_page: 100 });
+    return bookings
+      .filter((b) => !['cancelled', 'was-in-cart'].includes(String(b.status || '')))
+      .map((b) => {
+        const { date, time } = unixToDateTime(b.start);
+        const durationHours = b.end > b.start ? (b.end - b.start) / 3600 : 0;
+        return {
+          orderId: Number(b.order_id || 0),
+          appointmentDate: date,
+          appointmentTime: time,
+          durationHours,
+          status: String(b.status || ''),
+        };
+      })
+      .filter((b) => b.appointmentDate && b.appointmentTime && b.durationHours);
+  } catch (error) {
+    console.warn('getProviderBookedTimeRanges (native) failed:', error);
+    return [] as ProviderBookingConflictCheck[];
+  }
 }
 
 export async function getProviderBookingConflictMessage(
