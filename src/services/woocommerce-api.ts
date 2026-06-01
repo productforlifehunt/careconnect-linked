@@ -1264,6 +1264,25 @@ export async function updateOrderBookingDetails(
     specialInstructions?: string;
   }
 ) {
+  // Source of truth = native WooCommerce Bookings entity. Find the booking
+  // linked to this order and PUT new start/end via /wc-bookings/v1/bookings/{id}.
+  if (details.appointmentDate && details.appointmentTime && details.durationHours) {
+    try {
+      const bookings = await fetchWCBookingsByOrder(orderId);
+      const target = bookings[0];
+      if (target?.id) {
+        await updateWCBookingSchedule(target.id, {
+          startDate: details.appointmentDate,
+          startTime: details.appointmentTime,
+          durationHours: details.durationHours,
+        });
+      }
+    } catch (error) {
+      console.warn('Failed to update native WC Booking, falling back to order meta:', error);
+    }
+  }
+
+  // Mirror to order meta + special instructions (kept for legacy readers).
   const metaData: { key: string; value: string }[] = [];
   if (details.appointmentDate) metaData.push({ key: '_appointment_date', value: details.appointmentDate });
   if (details.appointmentTime) metaData.push({ key: '_appointment_time', value: details.appointmentTime });
@@ -1274,6 +1293,87 @@ export async function updateOrderBookingDetails(
     method: 'PUT',
     body: JSON.stringify({ meta_data: metaData }),
   });
+}
+
+// ─── Native WooCommerce Bookings REST helpers ──────────────
+// Uses the WC Bookings plugin's /wc-bookings/v1/bookings endpoint.
+// `start` and `end` are integer UNIX timestamps (seconds).
+
+export interface WCNativeBooking {
+  id: number;
+  order_id: number;
+  product_id: number;
+  resource_id?: number;
+  customer_id?: number;
+  start: number;
+  end: number;
+  all_day: boolean;
+  status: string;
+  cost?: number;
+}
+
+function toUnixSeconds(dateStr: string, timeStr: string): number {
+  return Math.floor(new Date(`${dateStr}T${timeStr || '00:00'}:00`).getTime() / 1000);
+}
+
+function unixToDateTime(seconds: number): { date: string; time: string } {
+  if (!seconds) return { date: '', time: '' };
+  const d = new Date(seconds * 1000);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return {
+    date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
+    time: `${pad(d.getHours())}:${pad(d.getMinutes())}`,
+  };
+}
+
+export async function fetchWCBookings(params: Record<string, string | number> = {}): Promise<WCNativeBooking[]> {
+  try {
+    const merged: Record<string, string> = { per_page: '100' };
+    for (const [k, v] of Object.entries(params)) merged[k] = String(v);
+    const query = new URLSearchParams(merged).toString();
+    const result = await wcBookingsFetch(`bookings?${query}`);
+    return Array.isArray(result) ? result : [];
+  } catch (error) {
+    console.warn('fetchWCBookings failed:', error);
+    return [];
+  }
+}
+
+export async function fetchWCBookingsByOrder(orderId: number): Promise<WCNativeBooking[]> {
+  return fetchWCBookings({ order_id: orderId });
+}
+
+export async function updateWCBookingSchedule(
+  bookingId: number,
+  schedule: { startDate: string; startTime: string; durationHours: number },
+) {
+  const start = toUnixSeconds(schedule.startDate, schedule.startTime);
+  const end = start + Math.round(schedule.durationHours * 3600);
+  return wcBookingsFetch(`bookings/${bookingId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ start, end, all_day: false }),
+  });
+}
+
+export async function getOrderBookingMap(orderIds: number[]): Promise<Map<number, WCNativeBooking>> {
+  if (orderIds.length === 0) return new Map();
+  try {
+    const all = await fetchWCBookings({ per_page: 100 });
+    const map = new Map<number, WCNativeBooking>();
+    for (const b of all) {
+      if (b.order_id && orderIds.includes(b.order_id)) map.set(b.order_id, b);
+    }
+    return map;
+  } catch {
+    return new Map();
+  }
+}
+
+export function nativeBookingToAppointment(b: WCNativeBooking | undefined | null) {
+  if (!b) return null;
+  const { date, time } = unixToDateTime(b.start);
+  const durationHours = b.end > b.start ? Math.round(((b.end - b.start) / 3600) * 100) / 100 : 0;
+  return { appointmentDate: date, appointmentTime: time, durationHours };
 }
 
 export async function getProviderOrders(providerId: string) {
@@ -1528,33 +1628,29 @@ function rangesOverlap(startA: string, endA: string, startB: string, endB: strin
 }
 
 async function getProviderBookedTimeRanges(providerId: string) {
-  const orders = await getProviderOrders(providerId);
-  if (!Array.isArray(orders)) return [] as ProviderBookingConflictCheck[];
-
-  return orders
-    .map((order: any) => {
-      const appointmentDate = Array.isArray(order?.meta_data)
-        ? order.meta_data.find((item: any) => item?.key === '_appointment_date')?.value || ''
-        : '';
-      const appointmentTime = Array.isArray(order?.meta_data)
-        ? order.meta_data.find((item: any) => item?.key === '_appointment_time')?.value || ''
-        : '';
-      const durationValue = Array.isArray(order?.meta_data)
-        ? order.meta_data.find((item: any) => item?.key === '_duration_hours')?.value || ''
-        : '';
-
-      return {
-        orderId: Number(order?.id || 0),
-        appointmentDate,
-        appointmentTime,
-        durationHours: Number(durationValue || order?.line_items?.[0]?.quantity || 0),
-        status: String(order?.status || ''),
-      };
-    })
-    .filter((booking) => {
-      if (!booking.orderId || !booking.appointmentDate || !booking.appointmentTime || !booking.durationHours) return false;
-      return ['pending', 'on-hold', 'processing', 'completed'].includes(booking.status);
-    });
+  // Read native WC Bookings filtered to this provider's product.
+  try {
+    const product = await getProviderProduct(providerId);
+    if (!product?.id) return [] as ProviderBookingConflictCheck[];
+    const bookings = await fetchWCBookings({ product_id: product.id, per_page: 100 });
+    return bookings
+      .filter((b) => !['cancelled', 'was-in-cart'].includes(String(b.status || '')))
+      .map((b) => {
+        const { date, time } = unixToDateTime(b.start);
+        const durationHours = b.end > b.start ? (b.end - b.start) / 3600 : 0;
+        return {
+          orderId: Number(b.order_id || 0),
+          appointmentDate: date,
+          appointmentTime: time,
+          durationHours,
+          status: String(b.status || ''),
+        };
+      })
+      .filter((b) => b.appointmentDate && b.appointmentTime && b.durationHours);
+  } catch (error) {
+    console.warn('getProviderBookedTimeRanges (native) failed:', error);
+    return [] as ProviderBookingConflictCheck[];
+  }
 }
 
 export async function getProviderBookingConflictMessage(

@@ -161,7 +161,7 @@ function getOrderMeta(order: any, key: string): string {
   return order.meta_data?.find((m: any) => m.key === key)?.value || '';
 }
 
-function mapWcOrderToBooking(o: any): WPBooking {
+function mapWcOrderToBooking(o: any, nativeBookingMap?: Map<number, any>): WPBooking {
   const wcStatus = o.status;
   let status = wcStatus;
   if (wcStatus === 'processing') status = 'confirmed';
@@ -169,9 +169,25 @@ function mapWcOrderToBooking(o: any): WPBooking {
   else if (wcStatus === 'completed') status = 'completed';
   else if (wcStatus === 'cancelled') status = 'cancelled';
 
-  const appointmentDate = getOrderMeta(o, '_appointment_date');
-  const appointmentTime = getOrderMeta(o, '_appointment_time');
-  const durationHour = getOrderMeta(o, '_duration_hours') || String(o.line_items?.[0]?.quantity || '');
+  // Prefer native WooCommerce Bookings (plugin) as source of truth for schedule.
+  const nativeBooking = nativeBookingMap?.get(Number(o.id));
+  let appointmentDate = '';
+  let appointmentTime = '';
+  let durationHour = '';
+  if (nativeBooking?.start) {
+    const d = new Date(nativeBooking.start * 1000);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    appointmentDate = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    appointmentTime = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    if (nativeBooking.end > nativeBooking.start) {
+      durationHour = String(Math.round(((nativeBooking.end - nativeBooking.start) / 3600) * 100) / 100);
+    }
+  }
+  // Fallback to legacy order meta for orders predating the WC Bookings plugin.
+  if (!appointmentDate) appointmentDate = getOrderMeta(o, '_appointment_date');
+  if (!appointmentTime) appointmentTime = getOrderMeta(o, '_appointment_time');
+  if (!durationHour) durationHour = getOrderMeta(o, '_duration_hours') || String(o.line_items?.[0]?.quantity || '');
+
   const hourlyRate = parseFloat(getOrderMeta(o, '_hourly_rate') || '0');
   const serviceType = getOrderMeta(o, '_service_type') || o.line_items?.[0]?.name || 'Care Service';
   const providerId = getOrderMeta(o, '_provider_id');
@@ -204,7 +220,10 @@ export async function wpFetchBookings(): Promise<WPBooking[]> {
   try {
     const orders = await wpFetchOrders(50);
     if (!Array.isArray(orders)) return [];
-    return orders.map(mapWcOrderToBooking);
+    const orderIds = orders.map((o: any) => Number(o.id)).filter(Boolean);
+    const { getOrderBookingMap } = await import('./woocommerce-api');
+    const nativeMap = await getOrderBookingMap(orderIds);
+    return orders.map((o: any) => mapWcOrderToBooking(o, nativeMap));
   } catch {
     return [];
   }
@@ -343,10 +362,12 @@ export async function wpFetchReviews(entityId?: string): Promise<any[]> {
 // ─── Provider Bookings (orders for the current vendor via Dokan) ────
 export async function wpFetchProviderBookings(): Promise<WPBooking[]> {
   try {
-    const { getDokanVendorOrders } = await import('./woocommerce-api');
+    const { getDokanVendorOrders, getOrderBookingMap } = await import('./woocommerce-api');
     const orders = await getDokanVendorOrders();
     if (!Array.isArray(orders)) return [];
-    return orders.map(mapWcOrderToBooking);
+    const orderIds = orders.map((o: any) => Number(o.id)).filter(Boolean);
+    const nativeMap = await getOrderBookingMap(orderIds);
+    return orders.map((o: any) => mapWcOrderToBooking(o, nativeMap));
   } catch {
     return [];
   }
