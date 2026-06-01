@@ -1465,24 +1465,20 @@ export async function checkout(billingData?: {
   email?: string;
   phone?: string;
 }) {
-  // Dokan / WooCommerce default escrow flow:
+  // Direct-payment flow (Papa / UrbanSitter style — no escrow):
   //   1. Create the order in `pending` state (no set_paid) so funds are NOT
   //      yet recorded as collected.
   //   2. Redirect the customer to WC's hosted pay-for-order page, which
   //      offers whatever gateways the admin enabled (Stripe, PayPal,
-  //      Alipay, …) and takes the real payment.
-  //   3. Once the gateway confirms, WC flips the order to `processing` and
-  //      Dokan creates the vendor sub-order and parks the commission in
-  //      the vendor's pending balance — held by the platform = escrow.
-  //   4. When the provider marks the order `completed`, Dokan releases the
-  //      commission to the vendor's available balance, which they can then
-  //      withdraw (see WithdrawCard + dokan/v1/withdraw).
-  //   5. Refunds use WC `/orders/{id}/refunds` with api_refund:true — the
-  //      gateway reverses the charge AND Dokan auto-reverses the vendor
-  //      commission. (see createOrderRefund)
-  //   6. Disputes / issue reports use customer order notes
+  //      Alipay, …) and takes the real payment directly to the configured
+  //      destination — the platform does NOT hold funds in escrow.
+  //   3. Refunds use WC `/orders/{id}/refunds` with api_refund:true — the
+  //      gateway reverses the charge directly. (see createOrderRefund)
+  //   4. Disputes / issue reports use customer order notes
   //      (`/orders/{id}/notes`), visible to vendor and platform admin in
-  //      their Dokan dashboards. (see addOrderCustomerNote)
+  //      their Dokan dashboards. (see addOrderCustomerNote) The platform
+  //      does not arbitrate — parties resolve directly or via the gateway.
+
   const orderPayload: Record<string, unknown> = {
     // Leave payment_method blank — the customer picks one on the WC
     // pay-for-order page from whatever gateways the admin enabled.

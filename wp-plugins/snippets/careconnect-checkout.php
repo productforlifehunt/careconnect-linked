@@ -85,8 +85,9 @@ function cc_create_order_snippet(WP_REST_Request $req) {
 
     // Return the hosted pay-for-order URL so the headless client can hand
     // the customer off to whatever WC gateway the admin has enabled
-    // (Stripe, PayPal, Alipay, …). Dokan then escrows the vendor's
-    // commission until the order moves to `completed`.
+    // (Stripe, PayPal, Alipay, …). Direct settlement — the platform does
+    // not hold funds in escrow.
+
     return rest_ensure_response(array(
         'id'          => $order->get_id(),
         'order_id'    => $order->get_id(),
