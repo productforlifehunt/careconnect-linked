@@ -76,9 +76,10 @@ export default function Cart() {
               <div><Label>{cn ? "账单邮箱" : "Billing Email"}</Label><Input value={email} onChange={e => setEmail(e.target.value)} placeholder={(user as any)?.email || "email@example.com"} /></div>
               <div className="rounded-lg bg-muted/40 p-3 text-sm text-muted-foreground">
                 {cn
-                  ? "下一步：我们会把您转到平台的安全支付页面，由 Stripe / PayPal / 支付宝等已配置的支付方式完成付款。在服务完成前，款项将由平台代为托管（escrow）。"
-                  : "Next: you'll be sent to the secure payment page where Stripe / PayPal / Alipay (whichever the platform has enabled) takes the payment. Funds are held in escrow by the platform until the service is completed."}
+                  ? "下一步：将转到安全支付页面，由 Stripe / PayPal / 支付宝等已配置的支付方式直接完成付款。平台仅提供便利的收款入口，不代为托管款项，也不介入纠纷或退款仲裁。"
+                  : "Next: you'll be sent to the secure payment page where Stripe / PayPal / Alipay (whichever the platform has enabled) processes the payment directly. The platform only provides the payment convenience — it does not hold funds in escrow and does not arbitrate disputes or refunds."}
               </div>
+
               <Button variant="coral" className="w-full" size="lg" disabled={doCheckout.isPending || !email.trim()} onClick={async () => {
                 const u = user as any;
                 const displayName = u?.full_name || u?.user_display_name || "";
@@ -100,11 +101,10 @@ export default function Cart() {
                   sessionStorage.setItem("cc:last_order", params.toString());
                 } catch { /* ignore */ }
 
-                // Hand the customer off to WC / Dokan's hosted pay page.
-                // This is the standard WooCommerce default — the platform
-                // collects payment via configured gateways, then Dokan
-                // escrows the vendor commission until the order is marked
-                // completed.
+                // Hand the customer off to WC's hosted pay page. The
+                // platform only facilitates payment — funds settle directly
+                // through the gateway, no escrow / no platform-held balance.
+
                 if (paymentUrl) {
                   window.location.href = paymentUrl;
                   return;
