@@ -451,9 +451,17 @@ export async function getOrCreateProviderProduct(
         console.warn('Failed to convert/publish/categorize product:', e);
       }
 
-      // Bookings & availability are handled by our Calendar CCT (users_calendar_even),
-      // not WooCommerce Bookings. Packages live in `_service_packages` product meta only.
-      // await configureBookingProduct(product.id, providerData.hourlyRate, flatResources);
+      // WC Bookings is now the source of truth for per-service pricing:
+      // each ServiceResource → 1 bookable_resource with block_cost = ratePerHour.
+      // `_service_packages` meta is kept as a fast-read mirror for the
+      // marketplace/profile UI, but the cart/checkout math is driven by WC
+      // Bookings resources. Failures here must NOT break the basic product
+      // save (e.g. when WC Bookings plugin is offline).
+      try {
+        await configureBookingProduct(product.id, providerData.hourlyRate, flatResources);
+      } catch (e) {
+        console.warn('configureBookingProduct failed (kept product, skipped bookings engine):', e);
+      }
     }
 
     return product;
