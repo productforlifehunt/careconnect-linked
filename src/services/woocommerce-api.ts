@@ -1812,40 +1812,9 @@ export async function getDokanVendorOrders(perPage = 50) {
   }
 }
 
-// Get vendor withdrawal history (payouts) from Dokan
-export async function getDokanVendorWithdrawals() {
-  try {
-    const data = await dokanFetch('withdraw');
-    if (!Array.isArray(data)) return [];
-    return data.map((w: any) => ({
-      id: w.id,
-      amount: w.amount || 0,
-      status: w.status || 'pending',
-      method: w.method || '',
-      note: w.note || '',
-      created_at: w.date || w.created || new Date().toISOString(),
-    }));
-  } catch (error) {
-    console.error('Error fetching vendor withdrawals:', error);
-    return [];
-  }
-}
+// Note: Dokan withdrawal/payout APIs intentionally removed.
+// Platform does not handle funds (UrbanSitter-style); clients pay caregivers directly.
 
-// Vendor requests a manual withdrawal (admin then pays out via PayPal/bank/Alipay).
-export async function createDokanWithdrawalRequest(opts: {
-  amount: number;
-  method: 'paypal' | 'bank' | 'alipay' | 'stripe';
-  note?: string;
-}) {
-  return dokanFetch('withdraw', {
-    method: 'POST',
-    body: JSON.stringify({
-      amount: opts.amount,
-      method: opts.method,
-      note: opts.note || '',
-    }),
-  });
-}
 
 // ─── Vendor payout-account settings ────────────────────────
 // Stored on the Dokan store record (PayPal native; Stripe/Alipay as custom keys).
