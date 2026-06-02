@@ -67,7 +67,7 @@ import { fetchCommentsWordPress, createCommentWordPress, updateCommentWordPress,
 import { fetchVotesWordPress, fetchEntityVoteWordPress, toggleVoteWordPress } from "@/features/votes/source.wordpress";
 import { fetchLocationSharesWordPress } from "@/features/location/source.wordpress";
 
-import { getDokanVendorWithdrawals } from "@/services/woocommerce-api";
+
 import {
   createUserCaredOneWordPress, deleteUserCaredOneWordPress, fetchGroupCaredOnesWordPress,
   fetchCheckinsWordPress, createCheckinWordPress, updateCheckinWordPress, deleteCheckinWordPress, fetchCheckinLogsWordPress, fetchTodayCheckinLogsWordPress, logCheckinWordPress,
@@ -1575,12 +1575,8 @@ export function useUpdateProviderAvailabilitySetting() {
   });
 }
 
-export function useProviderPayouts() {
-  return useQuery({
-    queryKey: ["providerPayouts"],
-    queryFn: () => getDokanVendorWithdrawals(),
-  });
-}
+// useProviderPayouts removed — platform does not process payments.
+
 
 // ─── Jobs ────────────────────────────────────────────────────
 export function useJobPostings(filters?: { source?: string; status?: string }) {

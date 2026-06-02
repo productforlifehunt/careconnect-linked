@@ -18,7 +18,6 @@ import {
   useProviderBookings, useUpdateBookingStatus, useMyProfile,
   useProviderAvailability, useUpsertProviderAvailability,
   useProviderAvailabilitySetting, useUpdateProviderAvailabilitySetting,
-  useProviderPayouts,
 } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -39,7 +38,7 @@ export default function ProviderDashboard() {
   const upsertAvailability = useUpsertProviderAvailability();
   const { data: availabilitySetting } = useProviderAvailabilitySetting(providerId);
   const updateAvailabilitySetting = useUpdateProviderAvailabilitySetting();
-  const { data: payouts } = useProviderPayouts();
+  
 
   const [schedule, setSchedule] = useState<Record<number, { enabled: boolean; start: string; end: string }>>(() => {
     const initial: Record<number, { enabled: boolean; start: string; end: string }> = {};
@@ -168,8 +167,8 @@ export default function ProviderDashboard() {
   const pendingBookings = (bookings || []).filter((b: any) => b.status === "pending");
   const confirmedBookings = (bookings || []).filter((b: any) => b.status === "confirmed");
   const completedBookings = (bookings || []).filter((b: any) => b.status === "completed");
-  const totalEarnings = completedBookings.reduce((sum: number, b: any) => sum + (b.total_cost || 0) * 0.85, 0);
-  const pendingEarnings = confirmedBookings.reduce((sum: number, b: any) => sum + (b.total_cost || 0) * 0.85, 0);
+  const totalEarnings = completedBookings.reduce((sum: number, b: any) => sum + (b.total_cost || 0), 0);
+  const pendingEarnings = confirmedBookings.reduce((sum: number, b: any) => sum + (b.total_cost || 0), 0);
 
   const handleBookingAction = (id: string, status: string) => {
     updateBookingStatus.mutate({ id, status }, { onSuccess: () => toast({ title: `Booking ${status}` }) });
@@ -413,22 +412,16 @@ export default function ProviderDashboard() {
 
         <TabsContent value="earnings" className="mt-4">
           <div className="grid sm:grid-cols-2 gap-4 mb-6">
-            <Card className="border-transparent card-elevated"><CardContent className="p-5 text-center"><p className="text-3xl font-bold text-foreground">{isZh ? "¥" : "$"}{totalEarnings.toFixed(2)}</p><p className="text-sm text-muted-foreground mt-1">{isZh ? "总收入（已完成的85%）" : "Total Earned (85% of completed)"}</p></CardContent></Card>
+            <Card className="border-transparent card-elevated"><CardContent className="p-5 text-center"><p className="text-3xl font-bold text-foreground">{isZh ? "¥" : "$"}{totalEarnings.toFixed(2)}</p><p className="text-sm text-muted-foreground mt-1">{isZh ? "已完成订单总额" : "Completed Bookings Total"}</p></CardContent></Card>
             <Card className="border-transparent card-elevated"><CardContent className="p-5 text-center"><p className="text-3xl font-bold text-foreground">{completedBookings.length}</p><p className="text-sm text-muted-foreground mt-1">{isZh ? "已完成预约" : "Completed Bookings"}</p></CardContent></Card>
           </div>
           <Card className="border-transparent card-elevated mb-4">
-            <CardHeader><CardTitle>{isZh ? "最近结算" : "Recent Payouts"}</CardTitle></CardHeader>
-            <CardContent>
-              {(payouts || []).length > 0 ? (payouts || []).map((p: any) => (
-                <div key={p.id} className="flex items-center justify-between py-3 border-b last:border-0">
-                  <div><p className="text-sm font-medium text-foreground">{isZh ? "¥" : "$"}{p.amount}</p><p className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</p></div>
-                  <Badge variant={p.status === "completed" ? "default" : "secondary"}>{p.status}</Badge>
-                </div>
-              )) : <p className="text-center py-8 text-muted-foreground">{isZh ? "暂无结算记录" : "No payouts yet"}</p>}
+            <CardContent className="p-5 text-sm text-muted-foreground leading-relaxed">
+              {isZh
+                ? "本平台不处理资金或代收代付，亦不收取任何中介费用。请您与客户就服务费用、付款时间及方式自行协商完成。"
+                : "This platform does not process payments or hold funds, and charges no service fees. Please arrange payment amount, timing, and method directly with your client."}
             </CardContent>
           </Card>
-
-          {/* Platform does not process payments — no withdrawals. UrbanSitter-style: client pays caregiver directly. */}
         </TabsContent>
 
         <TabsContent value="settings" className="mt-4">
