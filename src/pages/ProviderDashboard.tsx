@@ -167,8 +167,8 @@ export default function ProviderDashboard() {
   const pendingBookings = (bookings || []).filter((b: any) => b.status === "pending");
   const confirmedBookings = (bookings || []).filter((b: any) => b.status === "confirmed");
   const completedBookings = (bookings || []).filter((b: any) => b.status === "completed");
-  const totalEarnings = completedBookings.reduce((sum: number, b: any) => sum + (b.total_cost || 0) * 0.85, 0);
-  const pendingEarnings = confirmedBookings.reduce((sum: number, b: any) => sum + (b.total_cost || 0) * 0.85, 0);
+  const totalEarnings = completedBookings.reduce((sum: number, b: any) => sum + (b.total_cost || 0), 0);
+  const pendingEarnings = confirmedBookings.reduce((sum: number, b: any) => sum + (b.total_cost || 0), 0);
 
   const handleBookingAction = (id: string, status: string) => {
     updateBookingStatus.mutate({ id, status }, { onSuccess: () => toast({ title: `Booking ${status}` }) });
