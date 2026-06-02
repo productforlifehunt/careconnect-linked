@@ -1575,12 +1575,8 @@ export function useUpdateProviderAvailabilitySetting() {
   });
 }
 
-export function useProviderPayouts() {
-  return useQuery({
-    queryKey: ["providerPayouts"],
-    queryFn: () => getDokanVendorWithdrawals(),
-  });
-}
+// useProviderPayouts removed — platform does not process payments.
+
 
 // ─── Jobs ────────────────────────────────────────────────────
 export function useJobPostings(filters?: { source?: string; status?: string }) {
