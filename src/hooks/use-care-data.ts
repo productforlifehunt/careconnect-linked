@@ -67,7 +67,7 @@ import { fetchCommentsWordPress, createCommentWordPress, updateCommentWordPress,
 import { fetchVotesWordPress, fetchEntityVoteWordPress, toggleVoteWordPress } from "@/features/votes/source.wordpress";
 import { fetchLocationSharesWordPress } from "@/features/location/source.wordpress";
 
-import { getDokanVendorWithdrawals } from "@/services/woocommerce-api";
+
 import {
   createUserCaredOneWordPress, deleteUserCaredOneWordPress, fetchGroupCaredOnesWordPress,
   fetchCheckinsWordPress, createCheckinWordPress, updateCheckinWordPress, deleteCheckinWordPress, fetchCheckinLogsWordPress, fetchTodayCheckinLogsWordPress, logCheckinWordPress,
