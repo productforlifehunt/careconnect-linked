@@ -18,7 +18,6 @@ import {
   useProviderBookings, useUpdateBookingStatus, useMyProfile,
   useProviderAvailability, useUpsertProviderAvailability,
   useProviderAvailabilitySetting, useUpdateProviderAvailabilitySetting,
-  useProviderPayouts,
 } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
