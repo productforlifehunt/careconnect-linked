@@ -38,7 +38,7 @@ export default function ProviderDashboard() {
   const upsertAvailability = useUpsertProviderAvailability();
   const { data: availabilitySetting } = useProviderAvailabilitySetting(providerId);
   const updateAvailabilitySetting = useUpdateProviderAvailabilitySetting();
-  const { data: payouts } = useProviderPayouts();
+  
 
   const [schedule, setSchedule] = useState<Record<number, { enabled: boolean; start: string; end: string }>>(() => {
     const initial: Record<number, { enabled: boolean; start: string; end: string }> = {};
