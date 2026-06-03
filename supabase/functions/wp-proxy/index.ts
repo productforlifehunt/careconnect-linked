@@ -7,8 +7,9 @@ const UPSTREAM_TIMEOUT_MS = 15000;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-wp-path, x-wp-method",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-wp-path, x-wp-method, cart-token, nonce, x-wc-store-api-nonce",
   "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+  "Access-Control-Expose-Headers": "Cart-Token, Nonce, X-WC-Store-API-Nonce, X-WP-Total, X-WP-TotalPages, X-WP-Upstream-Base, X-WP-Fallback-Used",
 };
 
 function buildTargetUrl(wpBase: string, wpPath: string, incomingUrl: URL): string {
