@@ -7,34 +7,20 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, DollarSign, Briefcase, Shield, Phone, Eye, EyeOff, X, Store, ShoppingBag, Plus, Trash2 } from "lucide-react";
+import { MapPin, DollarSign, Briefcase, Shield, Phone, Eye, EyeOff, X, Store, ShoppingBag } from "lucide-react";
 import { useMyProfile, useUpdateProfile } from "@/hooks/use-care-data";
 import { useSyncProviderToWooCommerce, useProviderWooCommerceProduct } from "@/hooks/use-woocommerce";
-import { useServiceTypes } from "@/hooks/use-service-types";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { ALL_CERTIFICATIONS, getCertificationKey } from "@/lib/specialty-i18n";
 import PayoutAccountsCard from "./PayoutAccountsCard";
 
 /**
- * Three-field service package row. Each row will be double-written by the
- * save handler:
- *   1) `bookable_resource` with block_cost = ratePerHour (single source of
- *      truth for checkout pricing).
- *   2) `pa_service-type` and `pa_service-location` term selections on the
- *      product attributes (for marketplace search filtering).
+ * Profile tab — Basic Info, Certifications, Active toggle, Payout accounts.
+ * Service Packages (pa_service-type + location + hourly rate) now live in the
+ * dedicated "My Booking Services" tab so the WC Bookings product setup is
+ * decoupled from profile metadata.
  */
-interface ServiceResourceRow {
-  serviceTypeSlug: string; // pa_service-type term slug
-  locationSlug: string;    // pa_service-location term slug: in-person | remote | hybrid
-  ratePerHour: string;
-}
-
-const LOCATION_OPTIONS: { slug: string; label: string }[] = [
-  { slug: "in-person", label: "In-Person" },
-  { slug: "remote",    label: "Remote" },
-  { slug: "hybrid",    label: "Both" },
-];
 
 export default function ProviderSettingsTab() {
   const { t } = useTranslation();
@@ -43,7 +29,6 @@ export default function ProviderSettingsTab() {
   const updateProfile = useUpdateProfile();
   const syncToWooCommerce = useSyncProviderToWooCommerce();
   const { data: wcProduct, isLoading: wcLoading } = useProviderWooCommerceProduct();
-  const { serviceTypes, serviceTypeBySlug } = useServiceTypes();
 
   const [location, setLocation] = useState("");
   const [hourlyRate, setHourlyRate] = useState("");
@@ -52,7 +37,6 @@ export default function ProviderSettingsTab() {
   const [experience, setExperience] = useState("");
   const [certifications, setCertifications] = useState<string[]>([]);
   const [isActive, setIsActive] = useState(false);
-  const [serviceResources, setServiceResources] = useState<ServiceResourceRow[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -64,40 +48,6 @@ export default function ProviderSettingsTab() {
       setExperience(profile.years_of_experience?.toString() || "");
       setCertifications(profile.certifications || []);
       setIsActive(profile.provider_is_active || false);
-
-      // Hydrate from WC product:
-      //   - `_service_rates`  → { name → ratePerHour }
-      //   - `_service_packages` → optional structured backup with slugs
-      // We prefer the structured backup when present; otherwise we attempt to
-      // re-derive slugs from the package name.
-      let initial: ServiceResourceRow[] = [];
-      try {
-        const meta = (wcProduct as any)?.meta_data || [];
-        const packagesRaw = meta.find?.((m: any) => m.key === "_service_packages")?.value;
-        if (packagesRaw) {
-          const parsed = typeof packagesRaw === "string" ? JSON.parse(packagesRaw) : packagesRaw;
-          initial = (Array.isArray(parsed) ? parsed : []).map((p: any) => ({
-            serviceTypeSlug: String(p.serviceTypeSlug || ""),
-            locationSlug: String(p.locationSlug || "in-person"),
-            ratePerHour: String(p.ratePerHour ?? ""),
-          }));
-        } else {
-          const ratesRaw = meta.find?.((m: any) => m.key === "_service_rates")?.value;
-          if (ratesRaw) {
-            const parsed = typeof ratesRaw === "string" ? JSON.parse(ratesRaw) : ratesRaw;
-            initial = Object.entries(parsed || {}).map(([name, rate]) => {
-              // Best-effort: try to match the name back to a service-type slug
-              return {
-                serviceTypeSlug: "",
-                locationSlug: "in-person",
-                ratePerHour: String(rate ?? ""),
-                _legacyName: name,
-              } as any;
-            });
-          }
-        }
-      } catch { /* ignore */ }
-      setServiceResources(initial);
       setLoaded(true);
     }
   }, [profile, wcProduct, loaded]);
@@ -108,45 +58,8 @@ export default function ProviderSettingsTab() {
     );
   };
 
-  const updateRow = (idx: number, patch: Partial<ServiceResourceRow>) => {
-    setServiceResources(prev => prev.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
-  };
-
-  const addRow = () => {
-    setServiceResources(prev => [
-      ...prev,
-      { serviceTypeSlug: "", locationSlug: "in-person", ratePerHour: hourlyRate || "" },
-    ]);
-  };
-
-  const removeRow = (idx: number) => {
-    setServiceResources(prev => prev.filter((_, i) => i !== idx));
-  };
-
-  // Compose a display name "Service Type · Location" for each row that the
-  // backend stores as the bookable_resource title.
-  const composeName = (serviceTypeSlug: string, locationSlug: string): string => {
-    const stName = serviceTypeBySlug.get(serviceTypeSlug)?.name || serviceTypeSlug || "";
-    const locLabel = LOCATION_OPTIONS.find(l => l.slug === locationSlug)?.label || "";
-    if (!stName) return "";
-    return locLabel ? `${stName} · ${locLabel}` : stName;
-  };
-
-  const validRows = useMemo(
-    () => serviceResources.filter(r => r.serviceTypeSlug && r.ratePerHour),
-    [serviceResources],
-  );
-
   const handleSave = async () => {
     try {
-      // Normalize: drop incomplete rows; coerce rates to numbers
-      const cleaned = validRows.map(r => ({
-        name: composeName(r.serviceTypeSlug, r.locationSlug),
-        serviceTypeSlug: r.serviceTypeSlug,
-        locationSlug: r.locationSlug || "in-person",
-        ratePerHour: parseFloat(r.ratePerHour) || 0,
-      })).filter(r => r.name);
-
       // Save profile via WordPress
       await updateProfile.mutateAsync({
         location,
@@ -154,22 +67,20 @@ export default function ProviderSettingsTab() {
         bio,
         phone,
         years_of_experience: parseInt(experience) || 0,
-        // Mirror the resource names into legacy `specialty` for display fallback
-        specialty: cleaned.map(r => r.name),
         certifications,
         provider_is_active: isActive,
       });
 
-      // Sync to WooCommerce/Dokan with the structured service-resource list
+      // Sync Basic Info → Dokan store + WC product meta. Service packages
+      // are managed in the "My Booking Services" tab and intentionally not
+      // touched here, so leave `serviceResources` undefined.
       await syncToWooCommerce.mutateAsync({
         hourlyRate: parseFloat(hourlyRate) || 0,
         bio,
-        specialties: cleaned.map(r => r.name),
         certifications,
         yearsOfExperience: parseInt(experience) || 0,
         location,
         providerIsActive: isActive,
-        serviceResources: cleaned,
       });
 
       toast({ title: t("profile.profileUpdated"), description: "Profile synced to marketplace" });
