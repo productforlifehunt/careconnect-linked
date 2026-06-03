@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createServiceOrder, updateOrderStatus } from '@/services/woocommerce-api';
+import { addToCart, checkout, updateOrderStatus } from '@/services/woocommerce-api';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
 import { getStoredWPUser } from '@/services/wp-auth';
@@ -29,22 +29,26 @@ export function useCreateBookingWithWooCommerce() {
       special_instruction?: string | null;
       status?: string;
       payment_status?: string;
+      resource_id?: number;
     }) => {
       const wpUser = getStoredWPUser();
       if (!wpUser?.user_id) throw new Error('Not authenticated');
       const userId = `wp-${wpUser.user_id}`;
 
-      const wcOrder = await createServiceOrder(bookingData.provider_id, {
+      if (!bookingData.product_id) throw new Error('Booking product is required');
+
+      await addToCart({
         productId: bookingData.product_id,
-        clientId: userId,
-        appointmentDate: bookingData.appointment_date,
-        appointmentTime: bookingData.appointment_time,
-        durationHours: bookingData.duration_hour,
-        hourlyRate: bookingData.hourly_rate,
-        totalCost: bookingData.total_cost,
-        serviceType: bookingData.service_type,
-        specialInstructions: bookingData.special_instruction || undefined,
+        booking: {
+          resourceId: bookingData.resource_id,
+          startDate: bookingData.appointment_date,
+          startTime: bookingData.appointment_time,
+          durationHours: bookingData.duration_hour,
+          serviceType: bookingData.service_type,
+          notes: bookingData.special_instruction || undefined,
+        },
       });
+      const wcOrder = await checkout({ email: wpUser.user_email || '' });
 
       if (!wcOrder || !wcOrder.id) {
         throw new Error('Failed to create WooCommerce order');
