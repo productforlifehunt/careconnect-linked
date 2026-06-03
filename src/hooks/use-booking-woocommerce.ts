@@ -49,7 +49,6 @@ export function useCreateBookingWithWooCommerce() {
         },
       });
       const wcOrder = await checkout({ email: wpUser.user_email || '' });
-
       if (!wcOrder || !wcOrder.id) {
         throw new Error('Failed to create WooCommerce order');
       }
