@@ -422,10 +422,15 @@ export async function getOrCreateProviderProduct(
       regular_price: baseProductPrice,
     };
 
+    // Resolve attribute IDs dynamically — falling back to the historical
+    // values (3 = pa_service-type, 4 = pa_service-location) only if the
+    // discovery call fails. Hard-coded IDs broke whenever the WP site
+    // restored from a backup that reshuffled term IDs.
+    const attrIds = await getServiceAttributeIds();
     const attributes: any[] = [];
     if (serviceTypeSlugs.length > 0) {
       attributes.push({
-        id: 3, // pa_service-type — primary category for marketplace search
+        id: attrIds.type ?? 3,
         visible: true,
         variation: false,
         options: serviceTypeSlugs,
@@ -433,7 +438,7 @@ export async function getOrCreateProviderProduct(
     }
     if (locationSlugs.length > 0) {
       attributes.push({
-        id: 4, // pa_service-location — in-person / remote / hybrid
+        id: attrIds.location ?? 4,
         visible: true,
         variation: false,
         options: locationSlugs,
@@ -468,6 +473,11 @@ export async function getOrCreateProviderProduct(
             status: 'publish',
             regular_price: baseProductPrice,
             categories: categoryIds.map(id => ({ id })),
+            // Dokan also tends to drop product `attributes` on its own
+            // POST/PUT, so re-apply the pa_service-type / pa_service-location
+            // terms via the admin endpoint to guarantee they stick for the
+            // marketplace filters.
+            ...(attributes.length > 0 ? { attributes } : {}),
           }),
         });
       } catch (e) {
