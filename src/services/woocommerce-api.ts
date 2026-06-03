@@ -1431,7 +1431,73 @@ export async function getProviderAvailability(providerId: string): Promise<Norma
 }
 
 export async function upsertProviderAvailability(providerId: string, slots: any[]) {
-  return upsertProviderCalendarAvailability(providerId, slots);
+  const result = await upsertProviderCalendarAvailability(providerId, slots);
+  // Best-effort: also push the same schedule into the WC Bookings product's
+  // native `availability` rules so the booking engine (date picker, conflict
+  // detection, etc.) sees the provider's real weekly schedule + date
+  // overrides — not just our CCT mirror. Silent on failure so the CCT save
+  // is never blocked by a WC Bookings outage.
+  try { await syncWeeklyScheduleToBookingProduct(providerId, slots); } catch {}
+  return result;
+}
+
+/**
+ * Push the provider's weekly schedule + date overrides into their WC
+ * Bookings product's `availability` rules array. WC Bookings uses these
+ * rules natively to compute available slots in the customer date picker.
+ *
+ * Slot shape (matches what ProviderDashboard sends):
+ *   weekly:  { day_of_week: 0-6, start_time, end_time, is_available }
+ *   date:    { specific_date: 'YYYY-MM-DD', start_time, end_time, is_available }
+ */
+const DAY_OF_WEEK_TO_NAME = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+export async function syncWeeklyScheduleToBookingProduct(
+  providerId: string,
+  slots: Array<{
+    day_of_week?: number;
+    specific_date?: string;
+    start_time?: string | null;
+    end_time?: string | null;
+    is_available: boolean;
+  }>,
+) {
+  try {
+    const product = await getProviderProduct(providerId);
+    if (!product?.id) return null;
+
+    let priority = 10;
+    const availability: any[] = [];
+    for (const slot of slots || []) {
+      if (slot.day_of_week !== undefined && slot.day_of_week !== null) {
+        const dayName = DAY_OF_WEEK_TO_NAME[Number(slot.day_of_week)];
+        if (!dayName) continue;
+        availability.push({
+          type: `time:${dayName}`,
+          bookable: slot.is_available ? 'yes' : 'no',
+          priority: priority++,
+          from: slot.start_time || '09:00',
+          to: slot.end_time || '17:00',
+        });
+      } else if (slot.specific_date) {
+        // Date overrides get a stronger priority so they win over weekly rules.
+        availability.push({
+          type: 'custom:daterange',
+          bookable: slot.is_available ? 'yes' : 'no',
+          priority: 7,
+          from: slot.specific_date,
+          to: slot.specific_date,
+        });
+      }
+    }
+
+    return await wcBookingsFetch(`products/${product.id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ availability }),
+    });
+  } catch (e) {
+    console.warn('syncWeeklyScheduleToBookingProduct failed:', e);
+    return null;
+  }
 }
 
 // ─── Server-side Cart (careconnect/v1/cart) + Elevated Checkout ─────────────
