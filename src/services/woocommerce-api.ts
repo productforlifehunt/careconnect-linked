@@ -1500,10 +1500,11 @@ export async function syncWeeklyScheduleToBookingProduct(
   }
 }
 
-// ─── Server-side Cart (careconnect/v1/cart) + Elevated Checkout ─────────────
-// Cart lives in WP user_meta via the careconnect-cart Code Snippet, so it
-// persists across devices/sessions per logged-in buyer. Frontend just calls
-// the REST endpoints — no localStorage involved.
+// ─── Native WooCommerce Cart + Checkout bridge ─────────────────────────────
+// The careconnect endpoints are only a headless REST wrapper. The WordPress
+// snippet stores/mutates the real WC()->cart and checkout uses WC_Checkout, so
+// WooCommerce Bookings, Dokan, taxes, coupons, fees, stock, and payment gateway
+// hooks stay in the native WooCommerce path.
 
 export interface CartItem {
   key: string;
