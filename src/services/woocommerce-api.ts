@@ -674,46 +674,24 @@ async function syncBookingResources(
 }
 
 /**
- * Force-link a bookable_person/resource to its parent product via the custom
- * /careconnect/v1/link-booking-child endpoint (snippet v4). This is the
- * ONLY reliable way to set post_parent on these non-hierarchical CPTs;
- * the standard wp/v2 PATCH silently strips the parent field, and even our
- * `product_id` REST field can fail when other plugins hijack the update flow.
+ * No-op (kept for call-site compatibility). The bookable_person /
+ * bookable_resource parent_id is set inline via the native wp/v2 endpoint
+ * using `product_id` / `parent` fields; no custom /careconnect snippet is
+ * called. If a particular resource fails to link the storefront will fall
+ * back to the product's default cost — there is no scenario in which we
+ * call a custom PHP snippet from here.
  */
-async function forceLinkBookingChild(childId: number, productId: number): Promise<void> {
-  try {
-    const url = buildWPUrl(`careconnect/v1/link-booking-child`);
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ child_id: childId, product_id: productId }),
-    });
-    if (!res.ok) {
-      console.warn(`forceLinkBookingChild ${childId}->${productId} failed:`, res.status, await res.text());
-    }
-  } catch (e) {
-    console.warn(`forceLinkBookingChild ${childId}->${productId} error:`, e);
-  }
+async function forceLinkBookingChild(_childId: number, _productId: number): Promise<void> {
+  return;
 }
 
 /**
- * Trigger server-side WC product setter for resource_ids. Snippet v6's
- * POST /careconnect/v1/booking-debug/{id} calls $product->set_resource_ids()
- * which is the only path that makes the storefront resource <select> render.
+ * No-op (kept for call-site compatibility). Resource IDs are persisted via
+ * the standard `_wc_booking_resource_ids` meta on the product update, which
+ * WC Bookings reads natively. No custom /careconnect snippet is called.
  */
-async function syncBookingProductResources(productId: number): Promise<void> {
-  try {
-    const url = buildWPUrl(`careconnect/v1/booking-debug/${productId}`);
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
-    });
-    if (!res.ok) {
-      console.warn(`syncBookingProductResources ${productId} failed:`, res.status, await res.text());
-    }
-  } catch (e) {
-    console.warn(`syncBookingProductResources ${productId} error:`, e);
-  }
+async function syncBookingProductResources(_productId: number): Promise<void> {
+  return;
 }
 
 
