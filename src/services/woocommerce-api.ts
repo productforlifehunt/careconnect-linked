@@ -1145,40 +1145,17 @@ export async function createServiceOrder(
       throw new Error(bookingConflictMessage);
     }
 
-    // Calculate line item total
-    const lineItemTotal = (bookingData.durationHours * bookingData.hourlyRate).toFixed(2);
-
-    // Create order
-    const order = await wcFetch('orders', {
-      method: 'POST',
-      body: JSON.stringify({
-        status: 'pending', // Will be confirmed after payment
-        line_items: [
-          {
-            product_id: product.id,
-            quantity: bookingData.durationHours,
-            total: lineItemTotal,
-            meta_data: [
-              { key: '_appointment_date', value: bookingData.appointmentDate },
-              { key: '_appointment_time', value: bookingData.appointmentTime },
-              { key: '_duration_hours', value: bookingData.durationHours.toString() },
-              { key: '_hourly_rate', value: bookingData.hourlyRate.toString() },
-              { key: '_provider_id', value: providerId },
-              { key: '_client_id', value: bookingData.clientId },
-              { key: '_service_type', value: bookingData.serviceType || 'care' },
-              { key: '_special_instructions', value: bookingData.specialInstructions || '' },
-            ],
-          },
-        ],
-        meta_data: [
-          { key: '_booking_type', value: 'care_service' },
-          { key: '_provider_id', value: providerId },
-          { key: '_client_id', value: bookingData.clientId },
-          { key: '_appointment_date', value: bookingData.appointmentDate },
-          { key: '_appointment_time', value: bookingData.appointmentTime },
-        ],
-      }),
+    await addToCart({
+      productId: product.id,
+      booking: {
+        startDate: bookingData.appointmentDate,
+        startTime: bookingData.appointmentTime,
+        durationHours: bookingData.durationHours,
+        serviceType: bookingData.serviceType || 'care',
+        notes: bookingData.specialInstructions || undefined,
+      },
     });
+    const order = await checkout();
 
     await createBookingCalendarEvent({
       providerId,
