@@ -158,7 +158,11 @@ serve(async (req) => {
         if (wpTotal) responseHeaders["X-WP-Total"] = wpTotal;
         if (wpTotalPages) responseHeaders["X-WP-TotalPages"] = wpTotalPages;
 
-        return new Response(responseBody, {
+        // Surface WC Store API session headers back to the client
+        const respCartToken = wpResponse.headers.get("Cart-Token");
+        if (respCartToken) responseHeaders["Cart-Token"] = respCartToken;
+        const respNonce = wpResponse.headers.get("Nonce");
+        if (respNonce) responseHeaders["Nonce"] = respNonce;
           status: wpResponse.status,
           headers: responseHeaders,
         });
