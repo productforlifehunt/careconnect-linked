@@ -42,7 +42,35 @@ async function getServiceTypeAttributeId(): Promise<number> {
 async function fetchServiceTypeTerms(): Promise<ServiceTypeTerm[]> {
   const attrId = await getServiceTypeAttributeId();
   const terms: ServiceTypeTerm[] = await fetchWithAuth(`products/attributes/${attrId}/terms?per_page=100`);
-  return terms.sort((a, b) => a.name.localeCompare(b.name));
+  return dedupeServiceTypeTerms(terms).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/**
+ * The WP backend sometimes contains duplicate `pa_service-type` terms — e.g.
+ * "Child Care" and "child-care" registered as separate terms. The dropdown
+ * was rendering both, which is confusing for caregivers. Collapse duplicates
+ * by normalized key (lowercase slug-form), preferring the human-readable
+ * name (one whose `name` is not just the slug spelled out).
+ */
+function dedupeServiceTypeTerms(terms: ServiceTypeTerm[]): ServiceTypeTerm[] {
+  const norm = (s: string) =>
+    (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const looksLikeSlug = (t: ServiceTypeTerm) => {
+    const n = (t.name || '').trim();
+    return n === t.slug || n === t.slug.replace(/-/g, ' ') || /^[a-z0-9-]+$/.test(n);
+  };
+  const byKey = new Map<string, ServiceTypeTerm>();
+  for (const t of terms) {
+    const key = norm(t.slug) || norm(t.name);
+    const existing = byKey.get(key);
+    if (!existing) {
+      byKey.set(key, t);
+      continue;
+    }
+    // Prefer the term whose name is NOT just the raw slug.
+    if (looksLikeSlug(existing) && !looksLikeSlug(t)) byKey.set(key, t);
+  }
+  return Array.from(byKey.values());
 }
 
 /**

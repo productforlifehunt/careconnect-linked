@@ -89,6 +89,25 @@ async function wcBookingsFetch(endpoint: string, options: RequestInit = {}) {
   return response.json();
 }
 
+// ─── Service attribute ID resolution (avoid hard-coding 3/4) ────────────
+// We cache the result for the session — the IDs rarely change.
+let _serviceAttrIdCache: { type?: number; location?: number } | null = null;
+async function getServiceAttributeIds(): Promise<{ type?: number; location?: number }> {
+  if (_serviceAttrIdCache) return _serviceAttrIdCache;
+  try {
+    const attrs = (await wcFetch('products/attributes')) as Array<{ id: number; slug: string }>;
+    const result: { type?: number; location?: number } = {};
+    for (const a of attrs || []) {
+      if (a.slug === 'service-type' || a.slug === 'pa_service-type') result.type = a.id;
+      if (a.slug === 'service-location' || a.slug === 'pa_service-location') result.location = a.id;
+    }
+    _serviceAttrIdCache = result;
+    return result;
+  } catch {
+    return {};
+  }
+}
+
 /**
  * Get or ensure a product category exists by slug
  */
@@ -232,6 +251,9 @@ export async function ensureDokanVendor(userData: {
             store_name: userData.fullName ? `${userData.fullName} Care Services` : store.store_name,
             phone: userData.phone || store.phone || '',
             address: { street_1: userData.location || '' },
+            // Mirror bio into Dokan store description so the public Dokan
+            // store page stays in sync with the caregiver profile.
+            ...(userData.bio !== undefined ? { description: userData.bio || '' } : {}),
           }),
         });
       } catch {
@@ -256,6 +278,7 @@ export async function ensureDokanVendor(userData: {
         store_name: `${userData.fullName} Care Services`,
         phone: userData.phone || '',
         address: { street_1: userData.location || '' },
+        ...(userData.bio !== undefined ? { description: userData.bio || '' } : {}),
       }),
     });
     return store;
@@ -399,10 +422,15 @@ export async function getOrCreateProviderProduct(
       regular_price: baseProductPrice,
     };
 
+    // Resolve attribute IDs dynamically — falling back to the historical
+    // values (3 = pa_service-type, 4 = pa_service-location) only if the
+    // discovery call fails. Hard-coded IDs broke whenever the WP site
+    // restored from a backup that reshuffled term IDs.
+    const attrIds = await getServiceAttributeIds();
     const attributes: any[] = [];
     if (serviceTypeSlugs.length > 0) {
       attributes.push({
-        id: 3, // pa_service-type — primary category for marketplace search
+        id: attrIds.type ?? 3,
         visible: true,
         variation: false,
         options: serviceTypeSlugs,
@@ -410,7 +438,7 @@ export async function getOrCreateProviderProduct(
     }
     if (locationSlugs.length > 0) {
       attributes.push({
-        id: 4, // pa_service-location — in-person / remote / hybrid
+        id: attrIds.location ?? 4,
         visible: true,
         variation: false,
         options: locationSlugs,
@@ -445,6 +473,11 @@ export async function getOrCreateProviderProduct(
             status: 'publish',
             regular_price: baseProductPrice,
             categories: categoryIds.map(id => ({ id })),
+            // Dokan also tends to drop product `attributes` on its own
+            // POST/PUT, so re-apply the pa_service-type / pa_service-location
+            // terms via the admin endpoint to guarantee they stick for the
+            // marketplace filters.
+            ...(attributes.length > 0 ? { attributes } : {}),
           }),
         });
       } catch (e) {
@@ -1398,7 +1431,73 @@ export async function getProviderAvailability(providerId: string): Promise<Norma
 }
 
 export async function upsertProviderAvailability(providerId: string, slots: any[]) {
-  return upsertProviderCalendarAvailability(providerId, slots);
+  const result = await upsertProviderCalendarAvailability(providerId, slots);
+  // Best-effort: also push the same schedule into the WC Bookings product's
+  // native `availability` rules so the booking engine (date picker, conflict
+  // detection, etc.) sees the provider's real weekly schedule + date
+  // overrides — not just our CCT mirror. Silent on failure so the CCT save
+  // is never blocked by a WC Bookings outage.
+  try { await syncWeeklyScheduleToBookingProduct(providerId, slots); } catch {}
+  return result;
+}
+
+/**
+ * Push the provider's weekly schedule + date overrides into their WC
+ * Bookings product's `availability` rules array. WC Bookings uses these
+ * rules natively to compute available slots in the customer date picker.
+ *
+ * Slot shape (matches what ProviderDashboard sends):
+ *   weekly:  { day_of_week: 0-6, start_time, end_time, is_available }
+ *   date:    { specific_date: 'YYYY-MM-DD', start_time, end_time, is_available }
+ */
+const DAY_OF_WEEK_TO_NAME = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+export async function syncWeeklyScheduleToBookingProduct(
+  providerId: string,
+  slots: Array<{
+    day_of_week?: number;
+    specific_date?: string;
+    start_time?: string | null;
+    end_time?: string | null;
+    is_available: boolean;
+  }>,
+) {
+  try {
+    const product = await getProviderProduct(providerId);
+    if (!product?.id) return null;
+
+    let priority = 10;
+    const availability: any[] = [];
+    for (const slot of slots || []) {
+      if (slot.day_of_week !== undefined && slot.day_of_week !== null) {
+        const dayName = DAY_OF_WEEK_TO_NAME[Number(slot.day_of_week)];
+        if (!dayName) continue;
+        availability.push({
+          type: `time:${dayName}`,
+          bookable: slot.is_available ? 'yes' : 'no',
+          priority: priority++,
+          from: slot.start_time || '09:00',
+          to: slot.end_time || '17:00',
+        });
+      } else if (slot.specific_date) {
+        // Date overrides get a stronger priority so they win over weekly rules.
+        availability.push({
+          type: 'custom:daterange',
+          bookable: slot.is_available ? 'yes' : 'no',
+          priority: 7,
+          from: slot.specific_date,
+          to: slot.specific_date,
+        });
+      }
+    }
+
+    return await wcBookingsFetch(`products/${product.id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ availability }),
+    });
+  } catch (e) {
+    console.warn('syncWeeklyScheduleToBookingProduct failed:', e);
+    return null;
+  }
 }
 
 // ─── Server-side Cart (careconnect/v1/cart) + Elevated Checkout ─────────────
@@ -1878,17 +1977,15 @@ export async function saveVendorPayoutSettings(
 // Returns the Dokan store id for the currently logged-in vendor.
 export async function getMyDokanStoreId(): Promise<number | null> {
   try {
-    const me = await dokanFetch('stores/current') as any;
-    return me?.id || null;
+    // This Dokan version doesn't ship the v3 `stores/current` endpoint, so
+    // skip it (it would return 404 and surface as an edge-function error) and
+    // go straight to the `stores?author=` lookup which works on Dokan v2+.
+    const wpUser = getStoredWPUser();
+    if (!wpUser?.user_id) return null;
+    const stores = await dokanFetch(`stores?author=${wpUser.user_id}`) as any[];
+    return Array.isArray(stores) && stores[0]?.id ? stores[0].id : null;
   } catch {
-    try {
-      const wpUser = getStoredWPUser();
-      if (!wpUser?.user_id) return null;
-      const stores = await dokanFetch(`stores?author=${wpUser.user_id}`) as any[];
-      return Array.isArray(stores) && stores[0]?.id ? stores[0].id : null;
-    } catch {
-      return null;
-    }
+    return null;
   }
 }
 
