@@ -115,7 +115,6 @@ function cc_create_order_snippet(WP_REST_Request $req) {
     $order->save();
 
     do_action('woocommerce_checkout_order_processed', $order_id, $data, $order);
-    do_action('woocommerce_new_order', $order_id, $order);
 
     WC()->cart->empty_cart();
     cc_checkout_native_persist_cart();
