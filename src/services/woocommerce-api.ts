@@ -652,6 +652,8 @@ async function syncBookingResources(
       status: 'publish',
       product_id: productId,
       meta: {
+        cost,
+        block_cost: cost,
         _wc_booking_base_cost: cost,
         _wc_booking_block_cost: cost,
         _wc_booking_qty: 1,
