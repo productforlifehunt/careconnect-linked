@@ -1124,6 +1124,7 @@ export async function createServiceOrder(
     totalCost: number;
     serviceType?: string;
     specialInstructions?: string;
+    resourceId?: number;
   }
 ) {
   try {
@@ -1148,6 +1149,7 @@ export async function createServiceOrder(
     await addToCart({
       productId: product.id,
       booking: {
+        resourceId: bookingData.resourceId,
         startDate: bookingData.appointmentDate,
         startTime: bookingData.appointmentTime,
         durationHours: bookingData.durationHours,
