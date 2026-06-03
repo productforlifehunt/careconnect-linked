@@ -71,13 +71,19 @@ serve(async (req) => {
     // Dynamic server: read wp_base from query param, fallback to default
     const wpBase = url.searchParams.get("wp_base") || DEFAULT_WP_BASE_URL;
 
-    // Forward headers (especially Authorization)
+    // Forward headers (especially Authorization and WC Store API Cart-Token / Nonce)
     const headers: Record<string, string> = {};
     const authHeader = req.headers.get("authorization");
     if (authHeader) headers["Authorization"] = authHeader;
-    
+
     const contentType = req.headers.get("content-type");
     if (contentType) headers["Content-Type"] = contentType;
+
+    // WooCommerce Store API session headers
+    const cartToken = req.headers.get("cart-token");
+    if (cartToken) headers["Cart-Token"] = cartToken;
+    const nonce = req.headers.get("nonce") || req.headers.get("x-wc-store-api-nonce");
+    if (nonce) headers["Nonce"] = nonce;
 
     // Forward the request body for non-GET methods
     let body: string | null = null;
