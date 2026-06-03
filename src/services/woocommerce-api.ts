@@ -232,6 +232,9 @@ export async function ensureDokanVendor(userData: {
             store_name: userData.fullName ? `${userData.fullName} Care Services` : store.store_name,
             phone: userData.phone || store.phone || '',
             address: { street_1: userData.location || '' },
+            // Mirror bio into Dokan store description so the public Dokan
+            // store page stays in sync with the caregiver profile.
+            ...(userData.bio !== undefined ? { description: userData.bio || '' } : {}),
           }),
         });
       } catch {
@@ -256,6 +259,7 @@ export async function ensureDokanVendor(userData: {
         store_name: `${userData.fullName} Care Services`,
         phone: userData.phone || '',
         address: { street_1: userData.location || '' },
+        ...(userData.bio !== undefined ? { description: userData.bio || '' } : {}),
       }),
     });
     return store;
@@ -1878,17 +1882,15 @@ export async function saveVendorPayoutSettings(
 // Returns the Dokan store id for the currently logged-in vendor.
 export async function getMyDokanStoreId(): Promise<number | null> {
   try {
-    const me = await dokanFetch('stores/current') as any;
-    return me?.id || null;
+    // This Dokan version doesn't ship the v3 `stores/current` endpoint, so
+    // skip it (it would return 404 and surface as an edge-function error) and
+    // go straight to the `stores?author=` lookup which works on Dokan v2+.
+    const wpUser = getStoredWPUser();
+    if (!wpUser?.user_id) return null;
+    const stores = await dokanFetch(`stores?author=${wpUser.user_id}`) as any[];
+    return Array.isArray(stores) && stores[0]?.id ? stores[0].id : null;
   } catch {
-    try {
-      const wpUser = getStoredWPUser();
-      if (!wpUser?.user_id) return null;
-      const stores = await dokanFetch(`stores?author=${wpUser.user_id}`) as any[];
-      return Array.isArray(stores) && stores[0]?.id ? stores[0].id : null;
-    } catch {
-      return null;
-    }
+    return null;
   }
 }
 
