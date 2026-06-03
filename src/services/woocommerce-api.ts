@@ -45,31 +45,6 @@ async function wcFetch(endpoint: string, options: RequestInit = {}) {
   return response.json();
 }
 
-/**
- * Fetch wrapper for WooCommerce Store API (cart / checkout — public, cookie-based)
- */
-async function storeApiFetch(endpoint: string, options: RequestInit = {}) {
-  const url = buildWPUrl(`wc/store/v1/${endpoint}`);
-
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      ...getAuthHeaders(),
-      ...options.headers,
-    },
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`WC Store API error: ${response.status} - ${error}`);
-  }
-
-  const nonce = response.headers.get('Nonce') || response.headers.get('X-WC-Store-API-Nonce') || '';
-  const data = await response.json();
-  if (nonce) (data as any)._nonce = nonce;
-  return data;
-}
-
 async function wcBookingsFetch(endpoint: string, options: RequestInit = {}) {
   const url = buildWPUrl(`wc-bookings/v1/${endpoint}`);
 
@@ -652,6 +627,8 @@ async function syncBookingResources(
       status: 'publish',
       product_id: productId,
       meta: {
+        cost,
+        block_cost: cost,
         _wc_booking_base_cost: cost,
         _wc_booking_block_cost: cost,
         _wc_booking_qty: 1,
@@ -1124,6 +1101,7 @@ export async function createServiceOrder(
     totalCost: number;
     serviceType?: string;
     specialInstructions?: string;
+    resourceId?: number;
   }
 ) {
   try {
@@ -1145,40 +1123,18 @@ export async function createServiceOrder(
       throw new Error(bookingConflictMessage);
     }
 
-    // Calculate line item total
-    const lineItemTotal = (bookingData.durationHours * bookingData.hourlyRate).toFixed(2);
-
-    // Create order
-    const order = await wcFetch('orders', {
-      method: 'POST',
-      body: JSON.stringify({
-        status: 'pending', // Will be confirmed after payment
-        line_items: [
-          {
-            product_id: product.id,
-            quantity: bookingData.durationHours,
-            total: lineItemTotal,
-            meta_data: [
-              { key: '_appointment_date', value: bookingData.appointmentDate },
-              { key: '_appointment_time', value: bookingData.appointmentTime },
-              { key: '_duration_hours', value: bookingData.durationHours.toString() },
-              { key: '_hourly_rate', value: bookingData.hourlyRate.toString() },
-              { key: '_provider_id', value: providerId },
-              { key: '_client_id', value: bookingData.clientId },
-              { key: '_service_type', value: bookingData.serviceType || 'care' },
-              { key: '_special_instructions', value: bookingData.specialInstructions || '' },
-            ],
-          },
-        ],
-        meta_data: [
-          { key: '_booking_type', value: 'care_service' },
-          { key: '_provider_id', value: providerId },
-          { key: '_client_id', value: bookingData.clientId },
-          { key: '_appointment_date', value: bookingData.appointmentDate },
-          { key: '_appointment_time', value: bookingData.appointmentTime },
-        ],
-      }),
+    await addToCart({
+      productId: product.id,
+      booking: {
+        resourceId: bookingData.resourceId,
+        startDate: bookingData.appointmentDate,
+        startTime: bookingData.appointmentTime,
+        durationHours: bookingData.durationHours,
+        serviceType: bookingData.serviceType || 'care',
+        notes: bookingData.specialInstructions || undefined,
+      },
     });
+    const order = await checkout();
 
     await createBookingCalendarEvent({
       providerId,
@@ -1500,10 +1456,11 @@ export async function syncWeeklyScheduleToBookingProduct(
   }
 }
 
-// ─── Server-side Cart (careconnect/v1/cart) + Elevated Checkout ─────────────
-// Cart lives in WP user_meta via the careconnect-cart Code Snippet, so it
-// persists across devices/sessions per logged-in buyer. Frontend just calls
-// the REST endpoints — no localStorage involved.
+// ─── Native WooCommerce Cart + Checkout bridge ─────────────────────────────
+// The careconnect endpoints are only a headless REST wrapper. The WordPress
+// snippet stores/mutates the real WC()->cart and checkout uses WC_Checkout, so
+// WooCommerce Bookings, Dokan, taxes, coupons, fees, stock, and payment gateway
+// hooks stay in the native WooCommerce path.
 
 export interface CartItem {
   key: string;

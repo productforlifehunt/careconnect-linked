@@ -3,22 +3,17 @@
  * Snippet: careconnect-cart
  * Run on: Frontend + Admin (Run snippet everywhere)
  *
- * Server-side cart for headless React app — replaces localStorage cart.
- * Persists per-user in user_meta so it survives across devices/sessions.
+ * Headless wrapper around the REAL WooCommerce cart/session.
+ * Endpoints keep the React contract stable, but every mutation goes through
+ * WC()->cart so WooCommerce Bookings, Dokan, taxes, coupons, fees, stock,
+ * validation, and cart item hooks all run normally.
  *
  * Endpoints (all require is_user_logged_in via JWT):
- *   GET    /wp-json/careconnect/v1/cart                — read
- *   POST   /wp-json/careconnect/v1/cart/items          — add { product_id, quantity?, booking?, price_override? }
- *   DELETE /wp-json/careconnect/v1/cart/items/{key}    — remove one
- *   DELETE /wp-json/careconnect/v1/cart                — clear all
- *
- * Cart shape mirrors WC Store API response so the React UI is a drop-in:
- *   { items:[{key,id,name,quantity,prices:{price,currency_code},images,totals:{line_total},booking?}], totals:{total_price,currency_code}, items_count }
- *
- * Deployed via Code Snippets plugin.
+ *   GET    /wp-json/careconnect/v1/cart
+ *   POST   /wp-json/careconnect/v1/cart/items          — { product_id, quantity?, booking?, price_override? }
+ *   DELETE /wp-json/careconnect/v1/cart/items/{key}
+ *   DELETE /wp-json/careconnect/v1/cart
  */
-
-if (!defined('CC_CART_META_KEY')) define('CC_CART_META_KEY', '_cc_headless_cart');
 
 add_action('rest_api_init', function () {
     $auth = function () { return is_user_logged_in(); };
@@ -32,213 +27,258 @@ add_action('rest_api_init', function () {
         'permission_callback' => $auth,
         'callback'            => 'cc_cart_add_item',
     ));
-    register_rest_route('careconnect/v1', '/cart/items/(?P<key>[A-Za-z0-9_]+)', array(
+    register_rest_route('careconnect/v1', '/cart/items/(?P<key>[A-Za-z0-9_\-]+)', array(
         'methods'             => 'DELETE',
         'permission_callback' => $auth,
         'callback'            => 'cc_cart_remove_item',
     ));
 });
 
-function cc_cart_load($user_id) {
-    $raw = get_user_meta($user_id, CC_CART_META_KEY, true);
-    if (!is_array($raw)) return array();
-    return $raw;
+function cc_native_wc_load_cart() {
+    if (!function_exists('WC')) {
+        return new WP_Error('wc_missing', 'WooCommerce not active', array('status' => 500));
+    }
+
+    if (function_exists('wc_load_cart')) {
+        wc_load_cart();
+    } else {
+        if (defined('WC_ABSPATH')) {
+            include_once WC_ABSPATH . 'includes/wc-cart-functions.php';
+            include_once WC_ABSPATH . 'includes/class-wc-cart.php';
+        }
+        if (method_exists(WC(), 'initialize_session') && null === WC()->session) {
+            WC()->initialize_session();
+        }
+        if (method_exists(WC(), 'initialize_cart') && null === WC()->cart) {
+            WC()->initialize_cart();
+        }
+    }
+
+    if (is_user_logged_in()) {
+        WC()->customer = new WC_Customer(get_current_user_id(), true);
+    }
+
+    if (!WC()->cart) {
+        return new WP_Error('cart_missing', 'WooCommerce cart unavailable', array('status' => 500));
+    }
+
+    // REST calls are authenticated by JWT, not browser cookies. Force the cart
+    // to use the logged-in customer's Woo session/persistent cart so this is
+    // still the native Woo cart, not a separate custom user_meta cart.
+    if (WC()->session && method_exists(WC()->session, 'set_customer_session_cookie')) {
+        WC()->session->set_customer_session_cookie(true);
+    }
+    if (method_exists(WC()->cart, 'get_cart_from_session')) {
+        WC()->cart->get_cart_from_session();
+    }
+
+    return true;
 }
 
-function cc_cart_save($user_id, $items) {
-    update_user_meta($user_id, CC_CART_META_KEY, $items);
+function cc_native_wc_persist_cart() {
+    if (!WC()->cart) return;
+    WC()->cart->calculate_totals();
+    if (method_exists(WC()->cart, 'set_session')) {
+        WC()->cart->set_session();
+    }
+    if (method_exists(WC()->cart, 'persistent_cart_update')) {
+        WC()->cart->persistent_cart_update();
+    }
+    if (WC()->session && method_exists(WC()->session, 'set_customer_session_cookie')) {
+        WC()->session->set_customer_session_cookie(true);
+    }
 }
 
-function cc_cart_format_item($it) {
-    $price_minor = (int) round(((float) $it['price']) * 100);
-    $line_total  = (int) round(((float) $it['price']) * ((int) $it['quantity']) * 100);
+function cc_cart_minor($amount) {
+    $decimals = function_exists('wc_get_price_decimals') ? wc_get_price_decimals() : 2;
+    return (string) ((int) round(((float) $amount) * pow(10, $decimals)));
+}
+
+function cc_cart_format_item($key, $it) {
+    $product = isset($it['data']) && is_object($it['data']) ? $it['data'] : wc_get_product($it['product_id'] ?? 0);
+    $currency = function_exists('get_woocommerce_currency') ? get_woocommerce_currency() : 'USD';
+    $symbol = function_exists('get_woocommerce_currency_symbol') ? get_woocommerce_currency_symbol($currency) : '$';
+    $decimals = function_exists('wc_get_price_decimals') ? wc_get_price_decimals() : 2;
+    $image_url = '';
+    if ($product && $product->get_image_id()) $image_url = wp_get_attachment_url($product->get_image_id());
+
+    $line_total = isset($it['line_total']) ? (float) $it['line_total'] : 0.0;
+    $unit_price = $product ? (float) $product->get_price() : 0.0;
+
     $out = array(
-        'key'      => $it['key'],
-        'id'       => (int) $it['product_id'],
-        'name'     => (string) ($it['name'] ?? ''),
-        'quantity' => (int) $it['quantity'],
-        'prices'   => array('price' => (string) $price_minor, 'currency_code' => 'USD', 'currency_minor_unit' => 2, 'currency_symbol' => '$'),
-        'images'   => !empty($it['image']) ? array(array('src' => $it['image'])) : array(),
-        'totals'   => array('line_total' => (string) $line_total, 'currency_code' => 'USD', 'currency_minor_unit' => 2, 'currency_symbol' => '$'),
+        'key'      => $key,
+        'id'       => (int) ($it['product_id'] ?? 0),
+        'product_id' => (int) ($it['product_id'] ?? 0),
+        'name'     => $product ? $product->get_name() : '',
+        'quantity' => (int) ($it['quantity'] ?? 1),
+        'prices'   => array('price' => cc_cart_minor($unit_price), 'currency_code' => $currency, 'currency_minor_unit' => $decimals, 'currency_symbol' => $symbol),
+        'images'   => $image_url ? array(array('src' => $image_url)) : array(),
+        'totals'   => array('line_total' => cc_cart_minor($line_total), 'currency_code' => $currency, 'currency_minor_unit' => $decimals, 'currency_symbol' => $symbol),
     );
-    if (!empty($it['provider_id'])) $out['provider_id'] = $it['provider_id'];
-    if (!empty($it['booking']))     $out['booking']     = $it['booking'];
+
+    if (!empty($it['booking']) && is_array($it['booking'])) $out['booking'] = $it['booking'];
+    if (!empty($it['cc_service_type'])) $out['service_type'] = $it['cc_service_type'];
+    if (!empty($it['cc_customer_note'])) $out['customer_note'] = $it['cc_customer_note'];
     return $out;
 }
 
-function cc_cart_response($user_id) {
-    $items = cc_cart_load($user_id);
-    $total = 0.0;
-    $count = 0;
-    $formatted = array();
-    foreach ($items as $it) {
-        $total     += ((float) $it['price']) * ((int) $it['quantity']);
-        $count     += (int) $it['quantity'];
-        $formatted[] = cc_cart_format_item($it);
+function cc_cart_response() {
+    $loaded = cc_native_wc_load_cart();
+    if (is_wp_error($loaded)) return $loaded;
+    WC()->cart->calculate_totals();
+
+    $items = array();
+    foreach (WC()->cart->get_cart() as $key => $it) {
+        $items[] = cc_cart_format_item($key, $it);
     }
+
+    $currency = function_exists('get_woocommerce_currency') ? get_woocommerce_currency() : 'USD';
+    $symbol = function_exists('get_woocommerce_currency_symbol') ? get_woocommerce_currency_symbol($currency) : '$';
+    $decimals = function_exists('wc_get_price_decimals') ? wc_get_price_decimals() : 2;
+    $total = (float) WC()->cart->get_total('edit');
     return rest_ensure_response(array(
-        'items'        => $formatted,
-        'totals'       => array(
-            'total_price' => (string) ((int) round($total * 100)),
-            'total_items' => (string) ((int) round($total * 100)),
-            'currency_code' => 'USD',
-            'currency_symbol' => '$',
-            'currency_minor_unit' => 2,
+        'items'       => $items,
+        'totals'      => array(
+            'total_price' => cc_cart_minor($total),
+            'total_items' => cc_cart_minor((float) WC()->cart->get_subtotal()),
+            'currency_code' => $currency,
+            'currency_symbol' => $symbol,
+            'currency_minor_unit' => $decimals,
         ),
-        'items_count'  => $count,
+        'items_count' => (int) WC()->cart->get_cart_contents_count(),
     ));
 }
 
 function cc_cart_get(WP_REST_Request $req) {
-    return cc_cart_response(get_current_user_id());
+    return cc_cart_response();
 }
 
 function cc_cart_clear(WP_REST_Request $req) {
-    cc_cart_save(get_current_user_id(), array());
-    return cc_cart_response(get_current_user_id());
+    $loaded = cc_native_wc_load_cart();
+    if (is_wp_error($loaded)) return $loaded;
+    WC()->cart->empty_cart();
+    cc_native_wc_persist_cart();
+    return cc_cart_response();
+}
+
+function cc_set_booking_post_value($key, $value) {
+    $_POST[$key] = $value;
+    $_REQUEST[$key] = $value;
+}
+
+function cc_populate_wc_bookings_post_fields($product_id, $booking) {
+    cc_set_booking_post_value('add-to-cart', (string) $product_id);
+    cc_set_booking_post_value('wc_bookings_field_start_date_local_timezone', function_exists('wp_timezone_string') ? wp_timezone_string() : 'UTC');
+
+    if (!empty($booking['startDate'])) {
+        $parts = explode('-', sanitize_text_field((string) $booking['startDate']));
+        if (count($parts) === 3) {
+            cc_set_booking_post_value('wc_bookings_field_start_date_year', $parts[0]);
+            cc_set_booking_post_value('wc_bookings_field_start_date_month', $parts[1]);
+            cc_set_booking_post_value('wc_bookings_field_start_date_day', $parts[2]);
+            // Back-compat aliases used by older custom code; native Bookings uses year/month/day.
+            cc_set_booking_post_value('wc_bookings_field_start_date_yy', $parts[0]);
+            cc_set_booking_post_value('wc_bookings_field_start_date_mm', $parts[1]);
+            cc_set_booking_post_value('wc_bookings_field_start_date_dd', $parts[2]);
+        }
+    }
+    if (!empty($booking['startTime'])) {
+        cc_set_booking_post_value('wc_bookings_field_start_date_time', sanitize_text_field((string) $booking['startTime']));
+    }
+    if (!empty($booking['durationHours'])) {
+        cc_set_booking_post_value('wc_bookings_field_duration', (string) max(1, (int) $booking['durationHours']));
+    }
+    if (!empty($booking['resourceId'])) {
+        cc_set_booking_post_value('wc_bookings_field_resource', (string) absint($booking['resourceId']));
+    }
+    if (!empty($booking['persons']) && is_array($booking['persons'])) {
+        foreach ($booking['persons'] as $person_id => $count) {
+            cc_set_booking_post_value('wc_bookings_field_persons_' . absint($person_id), (string) max(0, (int) $count));
+        }
+    }
 }
 
 function cc_cart_add_item(WP_REST_Request $req) {
-    if (!class_exists('WC_Product')) {
-        return new WP_Error('wc_missing', 'WooCommerce not active', array('status' => 500));
-    }
-    $params      = $req->get_json_params();
-    $product_id  = isset($params['product_id']) ? (int) $params['product_id'] : 0;
-    $quantity    = isset($params['quantity'])   ? max(1, (int) $params['quantity']) : 1;
-    $booking     = isset($params['booking']) && is_array($params['booking']) ? $params['booking'] : null;
-    $price_over  = isset($params['price_override']) ? (float) $params['price_override'] : null;
+    $loaded = cc_native_wc_load_cart();
+    if (is_wp_error($loaded)) return $loaded;
+
+    $params     = $req->get_json_params();
+    $product_id = isset($params['product_id']) ? absint($params['product_id']) : 0;
+    $quantity   = isset($params['quantity']) ? max(1, absint($params['quantity'])) : 1;
+    $booking    = isset($params['booking']) && is_array($params['booking']) ? $params['booking'] : null;
+    $price_over = isset($params['price_override']) ? (float) $params['price_override'] : null;
 
     if ($product_id <= 0) return new WP_Error('bad_product', 'product_id required', array('status' => 400));
     $product = wc_get_product($product_id);
     if (!$product) return new WP_Error('not_found', 'Product not found', array('status' => 404));
-
-    // Base unit price = product price (or override for quote products that already include negotiated total).
-    $unit_price = $price_over !== null ? $price_over : (float) $product->get_price();
-
-    // For booking products, multiply by hours and add resource block_cost × hours.
-    if ($booking && !empty($booking['durationHours'])) {
-        $hours = (int) $booking['durationHours'];
-        if ($price_over === null) $unit_price = $unit_price * $hours;
-        if (!empty($booking['resourceId']) && function_exists('get_post_meta')) {
-            $rid = (int) $booking['resourceId'];
-            $block_cost = (float) get_post_meta($rid, 'block_cost', true);
-            $unit_price += $block_cost * $hours;
-        }
+    if (!$product->is_purchasable()) return new WP_Error('not_purchasable', 'Product is not purchasable', array('status' => 400));
+    if ($product->is_type('booking') && empty($booking)) {
+        return new WP_Error('booking_required', 'Booking product requires date, time, duration, and resource data', array('status' => 400));
     }
 
-    $image_url = '';
-    $image_id  = $product->get_image_id();
-    if ($image_id) $image_url = wp_get_attachment_url($image_id);
+    $original_post = $_POST;
+    $original_request = $_REQUEST;
+    $cart_item_data = array();
 
-    $provider_id = '';
-    foreach ($product->get_meta_data() as $m) {
-        $d = $m->get_data();
-        if (($d['key'] ?? '') === '_provider_id') { $provider_id = $d['value']; break; }
-    }
-
-    $items = cc_cart_load(get_current_user_id());
+    if ($price_over !== null) $cart_item_data['cc_price_override'] = $price_over;
     if ($booking) {
-        // Always create new line for bookings (unique date/time/resource).
-        $items[] = array(
-            'key'         => 'k' . wp_generate_uuid4(),
-            'product_id'  => $product_id,
-            'name'        => $product->get_name(),
-            'price'       => $unit_price,
-            'quantity'    => $quantity,
-            'image'       => $image_url,
-            'provider_id' => $provider_id,
-            'booking'     => $booking,
-        );
-    } else {
-        $merged = false;
-        foreach ($items as &$existing) {
-            if ((int) $existing['product_id'] === $product_id && empty($existing['booking'])) {
-                $existing['quantity'] += $quantity;
-                $merged = true;
-                break;
-            }
-        }
-        unset($existing);
-        if (!$merged) {
-            $items[] = array(
-                'key'         => 'k' . wp_generate_uuid4(),
-                'product_id'  => $product_id,
-                'name'        => $product->get_name(),
-                'price'       => $unit_price,
-                'quantity'    => $quantity,
-                'image'       => $image_url,
-                'provider_id' => $provider_id,
-            );
-        }
+        cc_populate_wc_bookings_post_fields($product_id, $booking);
+        if (!empty($booking['serviceType'])) $cart_item_data['cc_service_type'] = sanitize_text_field((string) $booking['serviceType']);
+        if (!empty($booking['notes']))       $cart_item_data['cc_customer_note'] = sanitize_textarea_field((string) $booking['notes']);
     }
-    cc_cart_save(get_current_user_id(), $items);
-    return cc_cart_response(get_current_user_id());
+
+    try {
+        $cart_key = WC()->cart->add_to_cart($product_id, $quantity, 0, array(), $cart_item_data);
+    } finally {
+        $_POST = $original_post;
+        $_REQUEST = $original_request;
+    }
+
+    if (!$cart_key) {
+        $notices = function_exists('wc_get_notices') ? wc_get_notices('error') : array();
+        $message = 'Could not add product to WooCommerce cart';
+        if (!empty($notices)) {
+            $first = reset($notices);
+            if (is_array($first) && !empty($first['notice'])) $message = wp_strip_all_tags($first['notice']);
+            elseif (is_string($first)) $message = wp_strip_all_tags($first);
+        }
+        if (function_exists('wc_clear_notices')) wc_clear_notices();
+        return new WP_Error('add_to_cart_failed', $message, array('status' => 400));
+    }
+
+    cc_native_wc_persist_cart();
+    return cc_cart_response();
 }
 
 function cc_cart_remove_item(WP_REST_Request $req) {
-    $key = $req->get_param('key');
-    $items = cc_cart_load(get_current_user_id());
-    $items = array_values(array_filter($items, function ($i) use ($key) { return $i['key'] !== $key; }));
-    cc_cart_save(get_current_user_id(), $items);
-    return cc_cart_response(get_current_user_id());
+    $loaded = cc_native_wc_load_cart();
+    if (is_wp_error($loaded)) return $loaded;
+    $key = sanitize_text_field((string) $req->get_param('key'));
+    if (!$key || !WC()->cart->remove_cart_item($key)) {
+        return new WP_Error('cart_item_missing', 'Cart item not found', array('status' => 404));
+    }
+    cc_native_wc_persist_cart();
+    return cc_cart_response();
 }
 
-// ─── Hook checkout to consume the server-side cart ───
-// When the existing careconnect/v1/checkout snippet runs, if the caller
-// didn't pass line_items but we have a server cart, build line_items from it
-// and clear the cart on success.
-add_filter('rest_pre_dispatch', function ($result, $server, $request) {
-    if ($request->get_route() !== '/careconnect/v1/checkout') return $result;
-    if ($request->get_method() !== 'POST') return $result;
-    $body = $request->get_json_params();
-    if (!empty($body['line_items'])) return $result; // explicit items wins
-    if (!is_user_logged_in()) return $result;
-    $items = cc_cart_load(get_current_user_id());
-    if (empty($items)) return $result;
-    $line_items = array();
-    foreach ($items as $i) {
-        $li = array(
-            'product_id' => (int) $i['product_id'],
-            'quantity'   => (int) $i['quantity'],
-            'subtotal'   => (string) (((float) $i['price']) * ((int) $i['quantity'])),
-            'total'      => (string) (((float) $i['price']) * ((int) $i['quantity'])),
-        );
-        if (!empty($i['booking'])) {
-            $b = $i['booking'];
-            $meta = array();
-            if (!empty($b['startDate'])) {
-                $parts = explode('-', $b['startDate']);
-                if (count($parts) === 3) {
-                    $meta[] = array('key' => 'wc_bookings_field_start_date_yy', 'value' => $parts[0]);
-                    $meta[] = array('key' => 'wc_bookings_field_start_date_mm', 'value' => $parts[1]);
-                    $meta[] = array('key' => 'wc_bookings_field_start_date_dd', 'value' => $parts[2]);
-                }
-            }
-            if (!empty($b['startTime']))     $meta[] = array('key' => 'wc_bookings_field_start_date_time', 'value' => $b['startTime']);
-            if (!empty($b['durationHours'])) $meta[] = array('key' => 'wc_bookings_field_duration', 'value' => (string) $b['durationHours']);
-            if (!empty($b['resourceId']))    $meta[] = array('key' => 'wc_bookings_field_resource', 'value' => (string) $b['resourceId']);
-            if (!empty($b['persons']) && is_array($b['persons'])) {
-                foreach ($b['persons'] as $pid => $cnt) $meta[] = array('key' => 'wc_bookings_field_persons_' . $pid, 'value' => (string) $cnt);
-            }
-            if (!empty($b['serviceType'])) $meta[] = array('key' => '_service_type', 'value' => $b['serviceType']);
-            if (!empty($b['notes']))       $meta[] = array('key' => '_customer_note', 'value' => $b['notes']);
-            $li['meta_data'] = $meta;
+add_action('woocommerce_before_calculate_totals', function ($cart) {
+    if (is_admin() && !defined('DOING_AJAX')) return;
+    if (!$cart) return;
+    foreach ($cart->get_cart() as $cart_item) {
+        if (isset($cart_item['cc_price_override']) && isset($cart_item['data']) && is_object($cart_item['data'])) {
+            $cart_item['data']->set_price((float) $cart_item['cc_price_override']);
         }
-        $line_items[] = $li;
     }
-    $body['line_items'] = $line_items;
-    $request->set_body(wp_json_encode($body));
-    // Mark for post-dispatch clear.
-    $GLOBALS['cc_cart_should_clear_after_checkout'] = true;
-    return $result;
-}, 10, 3);
+}, 20);
 
-add_filter('rest_post_dispatch', function ($response, $server, $request) {
-    if ($request->get_route() !== '/careconnect/v1/checkout') return $response;
-    if (empty($GLOBALS['cc_cart_should_clear_after_checkout'])) return $response;
-    if (is_a($response, 'WP_REST_Response') && $response->get_status() < 300 && is_user_logged_in()) {
-        cc_cart_save(get_current_user_id(), array());
+add_action('woocommerce_checkout_create_order_line_item', function ($item, $cart_item_key, $values, $order) {
+    if (!empty($values['cc_service_type'])) {
+        $item->add_meta_data('_service_type', sanitize_text_field((string) $values['cc_service_type']), true);
     }
-    unset($GLOBALS['cc_cart_should_clear_after_checkout']);
-    return $response;
-}, 10, 3);
+    if (!empty($values['cc_customer_note'])) {
+        $item->add_meta_data('_customer_note', sanitize_textarea_field((string) $values['cc_customer_note']), true);
+    }
+    if (isset($values['cc_price_override'])) {
+        $item->add_meta_data('_cc_price_override', (string) ((float) $values['cc_price_override']), true);
+    }
+}, 20, 4);

@@ -13,7 +13,7 @@ import i18next from 'i18next';
 const Z = (cn: string, en: string) => (i18next.language?.startsWith('zh') ? cn : en);
 
 /**
- * Hook to fetch the current WooCommerce cart
+ * Hook to fetch the current native WooCommerce cart through the headless bridge
  */
 export function useCart() {
   return useQuery({
@@ -84,7 +84,7 @@ export function useClearCart() {
 }
 
 /**
- * Hook to perform checkout via WooCommerce Store API
+ * Hook to perform checkout via native WooCommerce checkout through the headless bridge
  */
 export function useCheckout() {
   const qc = useQueryClient();

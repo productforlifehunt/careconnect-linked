@@ -11,7 +11,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Star, MapPin, Shield, Clock, CheckCircle, Calendar, MessageSquare, Heart, ArrowLeft, Phone, Loader2 } from "lucide-react";
 import { CommentsSection } from "@/components/comments/CommentsSection";
 import { useProvider, useProviderReviews, useCreateReview, useToggleSavedProvider, useSavedProviders, useStartConversation, useProviderAvailability, useProviderAvailabilitySetting } from "@/hooks/use-care-data";
-import { useCreateBookingWithWooCommerce } from "@/hooks/use-booking-woocommerce";
 import { useAddToCart } from "@/hooks/use-cart";
 import { getAvailabilityConflictMessage, getProviderBookingConflictMessage, getProviderProduct, fetchProviderBookingOptions, type BookingResourceOption } from "@/services/woocommerce-api";
 import { useQuery } from "@tanstack/react-query";
@@ -59,7 +58,6 @@ export default function CaregiverProfile() {
   const toggleSaved = useToggleSavedProvider();
   const createReview = useCreateReview();
   const startConversation = useStartConversation();
-  const createBooking = useCreateBookingWithWooCommerce();
   const addToCart = useAddToCart();
 
   const [bookingDate, setBookingDate] = useState("");
@@ -266,24 +264,22 @@ export default function CaregiverProfile() {
     try {
       const recurringNote = recurringPattern !== "none" ? `[Recurring: ${recurringPattern}] ` : "";
       const packageNote = `[Package: ${selectedResource.name}] `;
-      const ratePerHour = effectiveRate;
-      await createBooking.mutateAsync({
-        product_id: selectedResource.productId,
-        provider_id: caregiver.id,
-        appointment_date: bookingDate,
-        appointment_time: bookingTime,
-        duration_hour: durationHours,
-        service_type: bookingTypeLabel,
-        hourly_rate: ratePerHour,
-        total_cost: ratePerHour * durationHours,
-        special_instruction: recurringNote + packageNote + (bookingNotes || "") || null,
-        status: availabilitySetting?.requires_confirmation === false ? "confirmed" : "pending",
-        payment_status: "pending",
+      await addToCart.mutateAsync({
+        productId: selectedResource.productId || providerProduct?.id,
+        booking: {
+          resourceId: selectedResource?.id,
+          startDate: bookingDate,
+          startTime: bookingTime,
+          durationHours,
+          serviceType: bookingTypeLabel,
+          notes: recurringNote + packageNote + (bookingNotes || "") || undefined,
+        },
       });
-      toast({ title: isZh ? "预约请求已发送！" : "Booking Request Sent!", description: isZh ? `已向 ${caregiver.full_name} 提交预约请求。` : `Your booking with ${caregiver.full_name} has been submitted.` });
+      toast({ title: isZh ? "已加入购物车" : "Added to cart", description: isZh ? `已加入 ${caregiver.full_name} 的 ${selectedResource?.name} 预约。` : `${caregiver.full_name}'s ${selectedResource?.name} booking added.` });
       setBookingDialogOpen(false);
+      navigate('/cart');
     } catch (err: any) {
-      toast({ title: isZh ? "预约失败" : "Booking failed", description: err.message, variant: "destructive" });
+      toast({ title: isZh ? "加入购物车失败" : "Failed to add to cart", description: err.message, variant: "destructive" });
     }
   };
 
@@ -599,52 +595,12 @@ export default function CaregiverProfile() {
                       <span className="text-sm text-muted-foreground">{isZh ? "预估总价" : "Estimated Total"}</span>
                       <span className="text-xl font-bold text-foreground">{isZh ? "¥" : "$"}{total}{recurringPattern !== "none" ? `/${recurringPattern === "weekly" ? (isZh ? "周" : "wk") : recurringPattern === "biweekly" ? (isZh ? "2周" : "2wk") : (isZh ? "月" : "mo")}` : ""}</span>
                     </div>
-                    <Button variant="coral" className="w-full" onClick={handleBooking} disabled={createBooking.isPending || hasAvailabilityConflict || !selectedResource}>
-                      {createBooking.isPending ? (isZh ? "提交中…" : "Submitting...") : (isZh ? "确认预约" : "Confirm Booking")}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      disabled={addToCart.isPending || !bookingDate || !bookingTime || !bookingEndTime || !selectedResource || hasAvailabilityConflict}
-                      onClick={async () => {
-                        if (!isAuthenticated) { navigate("/auth"); return; }
-                        try {
-                          await addToCart.mutateAsync({
-                            productId: selectedResource.productId || providerProduct?.id,
-                            booking: {
-                              resourceId: selectedResource?.id,
-                              startDate: bookingDate,
-                              startTime: bookingTime,
-                              durationHours: durationHrs,
-                              serviceType: bookingTypeLabel,
-                              notes: bookingNotes || undefined,
-                            },
-                          });
-                          toast({ title: isZh ? "已加入购物车" : "Added to cart", description: isZh ? `已加入 ${caregiver.full_name} 的 ${selectedResource?.name} 预约。` : `${caregiver.full_name}'s ${selectedResource?.name} booking added.` });
-                          setBookingDialogOpen(false);
-                          navigate('/cart');
-                        } catch (e: any) {
-                          toast({ title: isZh ? "操作失败" : "Failed", description: e.message, variant: "destructive" });
-                        }
-                      }}
-                    >
-                      {addToCart.isPending ? "Adding…" : "Add to Cart & Checkout"}
+                    <Button variant="coral" className="w-full" onClick={handleBooking} disabled={addToCart.isPending || hasAvailabilityConflict || !selectedResource}>
+                      {addToCart.isPending ? (isZh ? "加入中…" : "Adding...") : (isZh ? "加入购物车并结算" : "Add to Cart & Checkout")}
                     </Button>
                   </div>
                 </DialogContent>
               </Dialog>
-
-              <Button variant="outline" className="w-full mb-3" disabled={addToCart.isPending} onClick={async () => {
-                if (!isAuthenticated) { navigate("/auth"); return; }
-                try {
-                  const product = await getProviderProduct(caregiver.id);
-                  if (!product) { toast({ title: isZh ? "服务尚未上架" : "Service not listed yet", variant: "destructive" }); return; }
-                  await addToCart.mutateAsync({ productId: product.id });
-                  toast({ title: isZh ? "已加入购物车" : "Added to cart", description: isZh ? `已加入 ${caregiver.full_name} 的服务。` : `${caregiver.full_name}'s service added.` });
-                } catch (e: any) { toast({ title: isZh ? "操作失败" : "Failed", description: e.message, variant: "destructive" }); }
-              }}>
-                {addToCart.isPending ? "Adding..." : "Add to Cart"}
-              </Button>
 
               <Button variant="outline" className="w-full mb-3" onClick={() => {
                 if (!isAuthenticated) { navigate("/auth"); return; }
