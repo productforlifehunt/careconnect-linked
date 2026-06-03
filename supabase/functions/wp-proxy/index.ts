@@ -7,8 +7,9 @@ const UPSTREAM_TIMEOUT_MS = 15000;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-wp-path, x-wp-method",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-wp-path, x-wp-method, cart-token, nonce, x-wc-store-api-nonce",
   "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+  "Access-Control-Expose-Headers": "Cart-Token, Nonce, X-WC-Store-API-Nonce, X-WP-Total, X-WP-TotalPages, X-WP-Upstream-Base, X-WP-Fallback-Used",
 };
 
 function buildTargetUrl(wpBase: string, wpPath: string, incomingUrl: URL): string {
@@ -70,13 +71,19 @@ serve(async (req) => {
     // Dynamic server: read wp_base from query param, fallback to default
     const wpBase = url.searchParams.get("wp_base") || DEFAULT_WP_BASE_URL;
 
-    // Forward headers (especially Authorization)
+    // Forward headers (especially Authorization and WC Store API Cart-Token / Nonce)
     const headers: Record<string, string> = {};
     const authHeader = req.headers.get("authorization");
     if (authHeader) headers["Authorization"] = authHeader;
-    
+
     const contentType = req.headers.get("content-type");
     if (contentType) headers["Content-Type"] = contentType;
+
+    // WooCommerce Store API session headers
+    const cartToken = req.headers.get("cart-token");
+    if (cartToken) headers["Cart-Token"] = cartToken;
+    const nonce = req.headers.get("nonce") || req.headers.get("x-wc-store-api-nonce");
+    if (nonce) headers["Nonce"] = nonce;
 
     // Forward the request body for non-GET methods
     let body: string | null = null;
@@ -150,6 +157,12 @@ serve(async (req) => {
         const wpTotalPages = wpResponse.headers.get("X-WP-TotalPages");
         if (wpTotal) responseHeaders["X-WP-Total"] = wpTotal;
         if (wpTotalPages) responseHeaders["X-WP-TotalPages"] = wpTotalPages;
+
+        // Surface WC Store API session headers back to the client
+        const respCartToken = wpResponse.headers.get("Cart-Token");
+        if (respCartToken) responseHeaders["Cart-Token"] = respCartToken;
+        const respNonce = wpResponse.headers.get("Nonce");
+        if (respNonce) responseHeaders["Nonce"] = respNonce;
 
         return new Response(responseBody, {
           status: wpResponse.status,
