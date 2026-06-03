@@ -1732,7 +1732,24 @@ export async function getProviderAvailabilitySetting(pid: string) {
   try {
     bookingProduct = await wcBookingsFetch(`products/${p.id}`);
   } catch {
-    bookingProduct = await wpAdminFetch(`wc-bookings/v1/products/${p.id}`);
+    try {
+      bookingProduct = await wpAdminFetch(`wc-bookings/v1/products/${p.id}`);
+    } catch (e: any) {
+      // Product isn't (yet) a WC Bookings product — return sane defaults
+      // instead of bubbling a 400 "Not a bookable product" to the UI.
+      const msg = String(e?.message || '');
+      if (/Not a bookable product|\b400\b|\b404\b/i.test(msg)) {
+        return {
+          min_notice_hours: 0,
+          booking_window_days: 60,
+          allow_same_day: true,
+          requires_confirmation: false,
+          buffer_period: 0,
+          default_date_availability: 'available',
+        };
+      }
+      throw e;
+    }
   }
   const minNoticeHours = bookingProduct.min_date_unit === 'day'
     ? Number(bookingProduct.min_date_value || 0) * 24
@@ -1812,10 +1829,9 @@ export async function getDokanVendorOrders(perPage = 50) {
   try {
     return await dokanFetch(`orders?per_page=${perPage}`);
   } catch (error: any) {
-    // Non-vendor users (or expired JWT) will fail signature verification — that's expected.
-    if (!String(error?.message || '').includes('Signature verification')) {
-      console.warn('getDokanVendorOrders skipped:', error?.message || error);
-    }
+    // Non-vendor users (or expired JWT) will fail signature verification, and
+    // sites without the Dokan vendor-orders endpoint return 404 HTML. Both are
+    // expected; swallow silently so the UI doesn't surface a runtime error.
     return [];
   }
 }
