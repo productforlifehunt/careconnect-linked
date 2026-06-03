@@ -89,6 +89,25 @@ async function wcBookingsFetch(endpoint: string, options: RequestInit = {}) {
   return response.json();
 }
 
+// ─── Service attribute ID resolution (avoid hard-coding 3/4) ────────────
+// We cache the result for the session — the IDs rarely change.
+let _serviceAttrIdCache: { type?: number; location?: number } | null = null;
+async function getServiceAttributeIds(): Promise<{ type?: number; location?: number }> {
+  if (_serviceAttrIdCache) return _serviceAttrIdCache;
+  try {
+    const attrs = (await wcFetch('products/attributes')) as Array<{ id: number; slug: string }>;
+    const result: { type?: number; location?: number } = {};
+    for (const a of attrs || []) {
+      if (a.slug === 'service-type' || a.slug === 'pa_service-type') result.type = a.id;
+      if (a.slug === 'service-location' || a.slug === 'pa_service-location') result.location = a.id;
+    }
+    _serviceAttrIdCache = result;
+    return result;
+  } catch {
+    return {};
+  }
+}
+
 /**
  * Get or ensure a product category exists by slug
  */
