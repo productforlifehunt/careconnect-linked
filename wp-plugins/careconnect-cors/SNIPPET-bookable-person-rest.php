@@ -57,6 +57,8 @@ add_action( 'init', function () {
 	}
 	if ( post_type_exists( 'bookable_resource' ) ) {
 		$resource_keys = array(
+			'cost'                    => 'number',
+			'block_cost'              => 'number',
 			'_wc_booking_base_cost'   => 'number',
 			'_wc_booking_block_cost'  => 'number',
 			'_wc_booking_qty'         => 'number',
@@ -225,8 +227,10 @@ add_action( 'rest_api_init', function () {
 				foreach ( $resources as $r ) {
 					$rid = (int) $r['ID'];
 					$resource_ids[] = $rid;
-					$base_costs[ $rid ]  = (float) get_post_meta( $rid, '_wc_booking_base_cost', true );
-					$block_costs[ $rid ] = (float) get_post_meta( $rid, '_wc_booking_block_cost', true );
+					$base_raw  = get_post_meta( $rid, 'cost', true );
+					$block_raw = get_post_meta( $rid, 'block_cost', true );
+					$base_costs[ $rid ]  = (float) ( $base_raw !== '' ? $base_raw : get_post_meta( $rid, '_wc_booking_base_cost', true ) );
+					$block_costs[ $rid ] = (float) ( $block_raw !== '' ? $block_raw : get_post_meta( $rid, '_wc_booking_block_cost', true ) );
 				}
 				update_post_meta( $pid, '_wc_booking_resource_ids', $resource_ids );
 				update_post_meta( $pid, '_wc_booking_resource_base_costs', $base_costs );
