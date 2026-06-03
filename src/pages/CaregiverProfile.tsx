@@ -598,49 +598,9 @@ export default function CaregiverProfile() {
                     <Button variant="coral" className="w-full" onClick={handleBooking} disabled={addToCart.isPending || hasAvailabilityConflict || !selectedResource}>
                       {addToCart.isPending ? (isZh ? "加入中…" : "Adding...") : (isZh ? "加入购物车并结算" : "Add to Cart & Checkout")}
                     </Button>
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      disabled={addToCart.isPending || !bookingDate || !bookingTime || !bookingEndTime || !selectedResource || hasAvailabilityConflict}
-                      onClick={async () => {
-                        if (!isAuthenticated) { navigate("/auth"); return; }
-                        try {
-                          await addToCart.mutateAsync({
-                            productId: selectedResource.productId || providerProduct?.id,
-                            booking: {
-                              resourceId: selectedResource?.id,
-                              startDate: bookingDate,
-                              startTime: bookingTime,
-                              durationHours: durationHrs,
-                              serviceType: bookingTypeLabel,
-                              notes: bookingNotes || undefined,
-                            },
-                          });
-                          toast({ title: isZh ? "已加入购物车" : "Added to cart", description: isZh ? `已加入 ${caregiver.full_name} 的 ${selectedResource?.name} 预约。` : `${caregiver.full_name}'s ${selectedResource?.name} booking added.` });
-                          setBookingDialogOpen(false);
-                          navigate('/cart');
-                        } catch (e: any) {
-                          toast({ title: isZh ? "操作失败" : "Failed", description: e.message, variant: "destructive" });
-                        }
-                      }}
-                    >
-                      {addToCart.isPending ? "Adding…" : "Add to Cart & Checkout"}
-                    </Button>
                   </div>
                 </DialogContent>
               </Dialog>
-
-              <Button variant="outline" className="w-full mb-3" disabled={addToCart.isPending} onClick={async () => {
-                if (!isAuthenticated) { navigate("/auth"); return; }
-                try {
-                  const product = await getProviderProduct(caregiver.id);
-                  if (!product) { toast({ title: isZh ? "服务尚未上架" : "Service not listed yet", variant: "destructive" }); return; }
-                  await addToCart.mutateAsync({ productId: product.id });
-                  toast({ title: isZh ? "已加入购物车" : "Added to cart", description: isZh ? `已加入 ${caregiver.full_name} 的服务。` : `${caregiver.full_name}'s service added.` });
-                } catch (e: any) { toast({ title: isZh ? "操作失败" : "Failed", description: e.message, variant: "destructive" }); }
-              }}>
-                {addToCart.isPending ? "Adding..." : "Add to Cart"}
-              </Button>
 
               <Button variant="outline" className="w-full mb-3" onClick={() => {
                 if (!isAuthenticated) { navigate("/auth"); return; }
