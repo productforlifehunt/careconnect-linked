@@ -45,31 +45,6 @@ async function wcFetch(endpoint: string, options: RequestInit = {}) {
   return response.json();
 }
 
-/**
- * Fetch wrapper for WooCommerce Store API (cart / checkout — public, cookie-based)
- */
-async function storeApiFetch(endpoint: string, options: RequestInit = {}) {
-  const url = buildWPUrl(`wc/store/v1/${endpoint}`);
-
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      ...getAuthHeaders(),
-      ...options.headers,
-    },
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`WC Store API error: ${response.status} - ${error}`);
-  }
-
-  const nonce = response.headers.get('Nonce') || response.headers.get('X-WC-Store-API-Nonce') || '';
-  const data = await response.json();
-  if (nonce) (data as any)._nonce = nonce;
-  return data;
-}
-
 async function wcBookingsFetch(endpoint: string, options: RequestInit = {}) {
   const url = buildWPUrl(`wc-bookings/v1/${endpoint}`);
 
