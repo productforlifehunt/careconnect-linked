@@ -1434,11 +1434,60 @@ export async function syncWeeklyScheduleToBookingProduct(
   }
 }
 
-// ─── Native WooCommerce Cart + Checkout bridge ─────────────────────────────
-// The careconnect endpoints are only a headless REST wrapper. The WordPress
-// snippet stores/mutates the real WC()->cart and checkout uses WC_Checkout, so
-// WooCommerce Bookings, Dokan, taxes, coupons, fees, stock, and payment gateway
-// hooks stay in the native WooCommerce path.
+// ─── Native WooCommerce Store API bridge ───────────────────────────────────
+// Everything below talks to /wp-json/wc/store/v1/* — the official headless
+// API that ships in WooCommerce core. No custom PHP snippets. WC Bookings
+// line meta, Dokan vendor split, taxes, coupons, fees, gateway selection
+// and stock are all handled by the native Store API path.
+//
+// Session is tracked via the `Cart-Token` JWT the Store API issues on the
+// first cart response. We persist it in localStorage and echo it back on
+// every subsequent request so the same cart follows the user across reloads.
+
+const CART_TOKEN_KEY = 'wc_store_cart_token';
+const NONCE_KEY = 'wc_store_nonce';
+
+function getStoreToken(): { cartToken?: string; nonce?: string } {
+  if (typeof window === 'undefined') return {};
+  return {
+    cartToken: localStorage.getItem(CART_TOKEN_KEY) || undefined,
+    nonce: localStorage.getItem(NONCE_KEY) || undefined,
+  };
+}
+
+function persistStoreToken(res: Response) {
+  if (typeof window === 'undefined') return;
+  const token = res.headers.get('Cart-Token');
+  if (token) localStorage.setItem(CART_TOKEN_KEY, token);
+  const nonce = res.headers.get('Nonce');
+  if (nonce) localStorage.setItem(NONCE_KEY, nonce);
+}
+
+export function clearStoreSession() {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(CART_TOKEN_KEY);
+  localStorage.removeItem(NONCE_KEY);
+}
+
+async function storeApiFetch(path: string, init: RequestInit = {}) {
+  const url = buildWPUrl(`wc/store/v1/${path}`);
+  const { cartToken, nonce } = getStoreToken();
+  const headers: Record<string, string> = {
+    ...getAuthHeaders(),
+    ...(init.headers as Record<string, string> | undefined),
+  };
+  if (cartToken) headers['Cart-Token'] = cartToken;
+  if (nonce) headers['Nonce'] = nonce;
+
+  const res = await fetch(url, { ...init, headers });
+  persistStoreToken(res);
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Store API ${res.status}: ${text}`);
+  }
+  if (res.status === 204) return null;
+  return res.json();
+}
 
 export interface CartItem {
   key: string;
@@ -1448,128 +1497,162 @@ export interface CartItem {
   quantity: number;
   image?: string;
   provider_id?: string;
-  /** WC Bookings line meta — when set, checkout() will pass these through to
-   *  the order's line_items meta_data so WC Bookings auto-creates a booking. */
   booking?: {
     resourceId?: number;
-    persons?: Record<string | number, number>; // { person_type_id: count }
-    startDate?: string; // YYYY-MM-DD
-    startTime?: string; // HH:MM
+    persons?: Record<string | number, number>;
+    startDate?: string;
+    startTime?: string;
     durationHours?: number;
     serviceType?: string;
     notes?: string;
   };
 }
 
-async function ccCartFetch(path: string, init: RequestInit = {}) {
-  const url = buildWPUrl(`careconnect/v1/${path}`);
-  const res = await fetch(url, { ...init, headers: { ...getAuthHeaders(), ...init.headers } });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Cart API ${res.status}: ${text}`);
-  }
-  return res.json();
+/** Normalize a Store API cart response into our internal CartItem[] shape. */
+function normalizeStoreCart(cart: any) {
+  if (!cart) return { items: [] as CartItem[], totals: cart?.totals, raw: cart };
+  const items: CartItem[] = (cart.items || []).map((it: any) => ({
+    key: it.key,
+    product_id: it.id,
+    name: it.name,
+    price: parseFloat(it.prices?.price || '0') / Math.pow(10, it.prices?.currency_minor_unit ?? 2),
+    quantity: it.quantity,
+    image: it.images?.[0]?.thumbnail,
+  }));
+  return { items, totals: cart.totals, raw: cart };
 }
 
+/** GET /wc/store/v1/cart */
 export async function getCart() {
-  return ccCartFetch('cart', { method: 'GET' });
+  const cart = await storeApiFetch('cart', { method: 'GET' });
+  return normalizeStoreCart(cart);
 }
 
+/**
+ * POST /wc/store/v1/cart/add-item
+ * WC Bookings reads booking selections from the `extensions.bookings` slot
+ * on the line item — that is the native Store API extension point the
+ * WooCommerce Bookings team registers.
+ */
 export async function addToCart({
   productId,
   quantity = 1,
   booking,
-  priceOverride,
 }: {
   productId: number;
   quantity?: number;
   booking?: CartItem['booking'];
-  /** For quote products: pass the agreed total so server doesn't multiply by hours. */
+  /** @deprecated price overrides are not supported by the native Store API */
   priceOverride?: number;
 }) {
-  const body: Record<string, unknown> = { product_id: productId, quantity };
-  if (booking) body.booking = booking;
-  if (priceOverride != null) body.price_override = priceOverride;
-  return ccCartFetch('cart/items', { method: 'POST', body: JSON.stringify(body) });
+  const body: Record<string, unknown> = { id: productId, quantity };
+  if (booking) {
+    body.extensions = {
+      bookings: {
+        resource_id: booking.resourceId,
+        persons: booking.persons,
+        start_date: booking.startDate,
+        start_time: booking.startTime,
+        duration: booking.durationHours,
+        service_type: booking.serviceType,
+        notes: booking.notes,
+      },
+    };
+  }
+  const cart = await storeApiFetch('cart/add-item', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+  return normalizeStoreCart(cart);
 }
 
+/** POST /wc/store/v1/cart/remove-item */
 export async function removeCartItem(itemKey: string) {
-  return ccCartFetch(`cart/items/${encodeURIComponent(itemKey)}`, { method: 'DELETE' });
+  const cart = await storeApiFetch('cart/remove-item', {
+    method: 'POST',
+    body: JSON.stringify({ key: itemKey }),
+  });
+  return normalizeStoreCart(cart);
 }
 
+/** DELETE /wc/store/v1/cart/items */
 export async function clearCart() {
-  return ccCartFetch('cart', { method: 'DELETE' });
+  const cart = await storeApiFetch('cart/items', { method: 'DELETE' });
+  return normalizeStoreCart(cart);
 }
 
+/** POST /wc/store/v1/cart/apply-coupon */
+export async function applyCoupon(code: string) {
+  const cart = await storeApiFetch('cart/apply-coupon', {
+    method: 'POST',
+    body: JSON.stringify({ code }),
+  });
+  return normalizeStoreCart(cart);
+}
+
+/**
+ * POST /wc/store/v1/checkout
+ * Native WooCommerce headless checkout. Returns the created order plus the
+ * payment_result the gateway emitted. We pick `payment_method = ''` so WC
+ * leaves the order `pending` and routes the customer to the hosted
+ * pay-for-order page where they choose a real gateway (Stripe, PayPal,
+ * Alipay, etc.) — the platform never holds funds in escrow.
+ */
 export async function checkout(billingData?: {
   first_name?: string;
   last_name?: string;
   email?: string;
   phone?: string;
+  address_1?: string;
+  city?: string;
+  state?: string;
+  postcode?: string;
+  country?: string;
 }) {
-  // Direct-payment flow (Papa / UrbanSitter style — no escrow):
-  //   1. Create the order in `pending` state (no set_paid) so funds are NOT
-  //      yet recorded as collected.
-  //   2. Redirect the customer to WC's hosted pay-for-order page, which
-  //      offers whatever gateways the admin enabled (Stripe, PayPal,
-  //      Alipay, …) and takes the real payment directly to the configured
-  //      destination — the platform does NOT hold funds in escrow.
-  //   3. Refunds use WC `/orders/{id}/refunds` with api_refund:true — the
-  //      gateway reverses the charge directly. (see createOrderRefund)
-  //   4. Disputes / issue reports use customer order notes
-  //      (`/orders/{id}/notes`), visible to vendor and platform admin in
-  //      their Dokan dashboards. (see addOrderCustomerNote) The platform
-  //      does not arbitrate — parties resolve directly or via the gateway.
-
-  const orderPayload: Record<string, unknown> = {
-    // Leave payment_method blank — the customer picks one on the WC
-    // pay-for-order page from whatever gateways the admin enabled.
-    payment_method: '',
-    payment_method_title: '',
-    set_paid: false,
-    status: 'pending',
+  const billing = {
+    first_name: billingData?.first_name || '',
+    last_name: billingData?.last_name || '',
+    email: billingData?.email || '',
+    phone: billingData?.phone || '',
+    address_1: billingData?.address_1 || '',
+    address_2: '',
+    city: billingData?.city || '',
+    state: billingData?.state || '',
+    postcode: billingData?.postcode || '',
+    country: billingData?.country || 'US',
   };
 
-  if (billingData) {
-    orderPayload.billing = {
-      first_name: billingData.first_name || '',
-      last_name: billingData.last_name || '',
-      email: billingData.email || '',
-      phone: billingData.phone || '',
-      address_1: '',
-      city: '',
-      state: '',
-      postcode: '',
-      country: 'US',
-    };
-  }
-
-  const checkoutUrl = buildWPUrl(`careconnect/v1/checkout`);
-  const checkoutRes = await fetch(checkoutUrl, {
+  const result = await storeApiFetch('checkout', {
     method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(orderPayload),
+    body: JSON.stringify({
+      billing_address: billing,
+      shipping_address: billing,
+      payment_method: '',
+      payment_data: [],
+      extensions: {},
+    }),
   });
-  if (!checkoutRes.ok) {
-    const text = await checkoutRes.text();
-    throw new Error(`Checkout failed ${checkoutRes.status}: ${text}`);
-  }
-  const order = await checkoutRes.json();
 
-  // Construct the WC pay-for-order URL ourselves so the snippet doesn't
-  // need to be redeployed. Standard WooCommerce route.
+  const orderId = result?.order_id;
+  const orderKey = result?.order_key || '';
   const server = getActiveServer();
-  const payment_url = order.payment_url
-    || `${server.baseUrl.replace(/\/$/, '')}/checkout/order-pay/${order.id}/?pay_for_order=true&key=${encodeURIComponent(order.order_key || '')}`;
+  const payment_url = result?.payment_result?.redirect_url
+    || `${server.baseUrl.replace(/\/$/, '')}/checkout/order-pay/${orderId}/?pay_for_order=true&key=${encodeURIComponent(orderKey)}`;
+
+  // Cart is empty after a successful checkout — drop the stale token so the
+  // next add-to-cart starts a fresh session.
+  clearStoreSession();
 
   return {
-    order_id: order.id,
-    id: order.id,
-    order_key: order.order_key || '',
-    status: order.status,
-    total: order.total,
+    order_id: orderId,
+    id: orderId,
+    order_key: orderKey,
+    status: result?.status || 'pending',
+    total: result?.totals?.total_price
+      ? String(parseFloat(result.totals.total_price) / Math.pow(10, result.totals.currency_minor_unit ?? 2))
+      : '0',
     payment_url,
-    totals: { total_price: String(Math.round(parseFloat(order.total || '0') * 100)) },
+    totals: result?.totals,
   };
 }
 
