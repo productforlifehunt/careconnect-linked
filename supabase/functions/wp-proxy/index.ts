@@ -163,6 +163,8 @@ serve(async (req) => {
         if (respCartToken) responseHeaders["Cart-Token"] = respCartToken;
         const respNonce = wpResponse.headers.get("Nonce");
         if (respNonce) responseHeaders["Nonce"] = respNonce;
+
+        return new Response(responseBody, {
           status: wpResponse.status,
           headers: responseHeaders,
         });
