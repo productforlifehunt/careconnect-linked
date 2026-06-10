@@ -15,6 +15,7 @@ export const WIDGET_REGISTRY: WidgetDef[] = [
   { id: "caregiver-wellness", label: "Caregiver Wellness",         roles: ["caregiver", "provider"], challengedOnly: true },
 
   // ── Shared widgets ──
+  { id: "ai-smart-briefing",  label: "AI Smart Briefing",          roles: ["caregiver", "provider"] },
   { id: "stats",              label: "Stats Overview",             roles: ["all"] },
   { id: "quick-actions",      label: "Quick Actions",              roles: ["all"] },
   { id: "upcoming-bookings",  label: "Upcoming Bookings",          roles: ["all"] },
