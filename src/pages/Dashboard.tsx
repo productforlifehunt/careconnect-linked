@@ -25,6 +25,7 @@ import {
   getWidgetOrder, setWidgetOrder, resolveOrder,
 } from "@/components/dashboard/DashboardWidgetConfig";
 import { getAvailableWidgets, getDefaultVisibility } from "@/components/dashboard/widgets";
+import { AISmartBriefing } from "@/components/dashboard/AISmartBriefing";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -335,6 +336,8 @@ export default function Dashboard() {
     ) : null,
 
     "caregiver-wellness": <CaregiverWellness />,
+
+    "ai-smart-briefing": <AISmartBriefing />,
   };
 
   return (
