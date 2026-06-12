@@ -18,6 +18,7 @@ import yichangIcon from "@/assets/yichang-icon.png";
 import huchangIcon from "@/assets/huchang-icon.png";
 import type { Profile } from "@/types/care-connector";
 import { getSpecialtyKey } from "@/lib/specialty-i18n";
+import { searchCnCities } from "@/data/china-cities";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -96,14 +97,23 @@ const Index = () => {
                   />
                 </div>
                 <div className="relative min-w-0">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
                   <Input
                     placeholder={t("home.cityOrZip")}
                     value={locationQuery}
                     onChange={(e) => setLocationQuery(e.target.value)}
                     className="pl-9 border-0 bg-muted/50 h-12"
                     onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                    list={isChinese ? "cn-cities-list" : undefined}
+                    autoComplete="off"
                   />
+                  {isChinese && (
+                    <datalist id="cn-cities-list">
+                      {searchCnCities(locationQuery || "", 20).map(c => (
+                        <option key={c.zip + c.name} value={`${c.name} ${c.zip}`}>{c.province}</option>
+                      ))}
+                    </datalist>
+                  )}
                 </div>
                 <Button variant="coral" size="lg" className="h-12 px-8 lg:px-6 lg:min-w-[120px]" onClick={handleSearch}>
                   {t("common.search")}
