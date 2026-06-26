@@ -53,6 +53,7 @@ import ChallengedArticleDetail from "./pages/ChallengedArticleDetail";
 import Calendar from "./pages/Calendar";
 import Resources from "./pages/Resources";
 import JoinGroup from "./pages/JoinGroup";
+import XianyuListings from "./pages/XianyuListings";
 
 // Static-first defaults: no auto refetch on focus/mount/reconnect.
 // Data only fetches on first mount or explicit invalidation (after a mutation).
@@ -105,6 +106,7 @@ function AppRoutes() {
       <Route path="/articles/:id" element={<ArticlePost />} />
       <Route path="/ai-companion" element={<AICompanion />} />
       <Route path="/brand-compare" element={<BrandCompare />} />
+      <Route path="/xianyu-listings" element={<XianyuListings />} />
       <Route path="/share/card/:token" element={<SharedInformationCard />} />
       {/* ChallengeD content sections */}
       <Route path="/aware" element={<AwareD />} />
