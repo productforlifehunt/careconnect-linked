@@ -19,6 +19,9 @@ export function NotchAuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setUser(getNNUser());
     setLoading(false);
+    const onExpired = () => setUser(null);
+    window.addEventListener("nn:session-expired", onExpired);
+    return () => window.removeEventListener("nn:session-expired", onExpired);
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -32,7 +35,6 @@ export function NotchAuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     clearNNSession();
     setUser(null);
-    window.location.href = "/notch/auth";
   };
 
   return (

@@ -40,12 +40,16 @@ function decodeJwt(token: string): Record<string, any> | null {
   }
 }
 
-export async function nnLogin(email: string, password: string): Promise<NNUser> {
+export async function nnLogin(emailOrUsername: string, password: string): Promise<NNUser> {
   const url = buildWPUrl("simple-jwt-login/v1/auth", {});
+  const isEmail = emailOrUsername.includes("@");
+  const body: Record<string, string> = { password };
+  if (isEmail) body.email = emailOrUsername;
+  else body.username = emailOrUsername;
   const res = await fetch(url, {
     method: "POST",
     headers: buildWPHeaders(null, "application/json"),
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify(body),
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
@@ -58,9 +62,9 @@ export async function nnLogin(email: string, password: string): Promise<NNUser> 
   const d = payload.data ?? payload;
   const user: NNUser = {
     user_id: Number(d.user_id ?? payload.id ?? 0),
-    user_email: String(d.user_email ?? payload.email ?? email),
-    user_login: String(d.user_login ?? payload.username ?? email),
-    user_display_name: String(d.user_display_name ?? payload.username ?? email),
+    user_email: String(d.user_email ?? payload.email ?? emailOrUsername),
+    user_login: String(d.user_login ?? payload.username ?? emailOrUsername),
+    user_display_name: String(d.user_display_name ?? payload.username ?? emailOrUsername),
   };
   localStorage.setItem(TOKEN_KEY, token);
   localStorage.setItem(USER_KEY, JSON.stringify(user));

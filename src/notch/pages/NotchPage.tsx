@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useNotchPath } from "@/notch/context/NotchBaseContext";
-import { ChevronRight, Database, FileText, MoreHorizontal, Star, Image as ImageIcon, X, Share2 } from "lucide-react";
+import { ChevronRight, Database, FileText, MoreHorizontal, Star, Image as ImageIcon, X, Share2, Copy, Link as LinkIcon, Trash2 } from "lucide-react";
 import { NotionEditor } from "@/notch/components/NotionEditor";
 import { NotchDatabase } from "@/notch/components/NotchDatabase";
 import { NotchComments } from "@/notch/components/NotchComments";
 import { NotchShareModal } from "@/notch/components/NotchShareModal";
+import { EmojiPicker } from "@/notch/components/NotchEmojiPicker";
 import { useFavorites } from "@/notch/lib/nn-favorites";
-import { cctGet, cctList, cctUpdate, NN } from "@/notch/lib/nn-client";
+import { cctGet, cctList, cctUpdate, cctCreate, NN } from "@/notch/lib/nn-client";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 
 interface Block {
@@ -22,7 +23,7 @@ interface Block {
   content_order?: string;
 }
 
-const EMOJIS = ["📝","📓","📘","📗","📕","📙","📚","🗂","🗓","✅","💡","🎯","🚀","⭐","🔥","🌟","🌸","🍎","🎨","🧠","💼","🏠","🧭","📌"];
+// (emoji picker moved to NotchEmojiPicker component with search + categories)
 
 export default function NotchPage() {
   const { pageId } = useParams<{ pageId: string }>();
@@ -111,6 +112,40 @@ export default function NotchPage() {
     setShowMenu(false);
   };
 
+  const duplicatePage = async () => {
+    if (!block) return;
+    setShowMenu(false);
+    const { id } = await cctCreate(NN.block, {
+      workspace_id: block.workspace_id || "",
+      parent_id: block.parent_id || block.workspace_id || "",
+      type: block.type || "page",
+      title: (block.title || "Untitled") + " (copy)",
+      icon: block.icon || "",
+      cover: block.cover || "",
+      properties: block.properties || JSON.stringify({}),
+      content_order: JSON.stringify([]),
+      archived: 0,
+      in_trash: 0,
+      created_by: user?.user_id || 0,
+      last_edited_by: user?.user_id || 0,
+    });
+    nav(path(`/p/${id}`));
+  };
+
+  const copyLink = async () => {
+    setShowMenu(false);
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+    } catch { /* ignore */ }
+  };
+
+  const trashPage = async () => {
+    if (!pageId) return;
+    if (!confirm("Move this page to trash?")) return;
+    await cctUpdate(NN.block, pageId, { archived: 1, in_trash: 1 });
+    nav(path("/"));
+  };
+
   if (!pageId) return null;
   if (!block) return <div className="nn-page"><div style={{ opacity: 0.5 }}>Loading…</div></div>;
 
@@ -161,6 +196,18 @@ export default function NotchPage() {
                 <span className="nn-icon">{isDatabase ? <FileText size={14} /> : <Database size={14} />}</span>
                 <span className="nn-title">Turn into {isDatabase ? "page" : "database"}</span>
               </div>
+              <div onClick={duplicatePage} className="nn-sidebar-item">
+                <span className="nn-icon"><Copy size={14} /></span>
+                <span className="nn-title">Duplicate</span>
+              </div>
+              <div onClick={copyLink} className="nn-sidebar-item">
+                <span className="nn-icon"><LinkIcon size={14} /></span>
+                <span className="nn-title">Copy link</span>
+              </div>
+              <div onClick={trashPage} className="nn-sidebar-item" style={{ color: "#e03e3e" }}>
+                <span className="nn-icon"><Trash2 size={14} /></span>
+                <span className="nn-title">Move to trash</span>
+              </div>
             </div>
           )}
         </div>
@@ -180,12 +227,10 @@ export default function NotchPage() {
               {icon || <span style={{ fontSize: 24, opacity: 0.3 }}>Add icon</span>}
             </div>
             {showEmoji && (
-              <div style={{ position: "absolute", top: "100%", left: 0, background: "var(--nn-bg)", border: "1px solid var(--nn-border-strong)", borderRadius: 6, padding: 8, display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 4, zIndex: 50, boxShadow: "0 8px 24px rgba(0,0,0,0.1)" }}>
-                {EMOJIS.map((e) => (
-                  <button key={e} onClick={() => onIconChange(e)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, padding: 4, borderRadius: 4 }}>{e}</button>
-                ))}
-                <button onClick={() => onIconChange("")} style={{ gridColumn: "span 8", background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-secondary)", fontSize: 12, padding: 4 }}>Remove</button>
-              </div>
+              <EmojiPicker
+                onPick={onIconChange}
+                onClear={() => onIconChange("")}
+              />
             )}
           </div>
           <textarea
