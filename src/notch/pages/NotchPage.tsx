@@ -384,6 +384,7 @@ export default function NotchPage() {
           onPick={applyCover}
           onClose={() => setShowCoverGallery(false)}
         />
+      )}
       {showHistory && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowHistory(false)}>
           <div style={{ background: "var(--nn-bg)", borderRadius: 8, width: "100%", maxWidth: 520, padding: 20, maxHeight: "80vh", overflow: "auto" }} onClick={(e) => e.stopPropagation()}>
