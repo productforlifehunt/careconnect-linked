@@ -26,7 +26,11 @@ export default function NotchHome() {
     <div className="nn-page-scroll">
       <div className="nn-page">
         <div style={{ fontSize: 32, fontWeight: 700, marginBottom: 8 }}>
-          Good to see you, {user?.user_display_name?.split(" ")[0] || "there"} 👋
+          {(() => {
+            const h = new Date().getHours();
+            const g = h < 5 ? "Good night" : h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
+            return `${g}, ${user?.user_display_name?.split(" ")[0] || "there"}`;
+          })()}
         </div>
         <div style={{ color: "var(--nn-text-secondary)", marginBottom: 32 }}>
           Pick up where you left off, or create a new page from the sidebar.
