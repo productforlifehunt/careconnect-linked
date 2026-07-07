@@ -23,7 +23,7 @@ interface Block {
   content_order?: string;
 }
 
-const EMOJIS = ["📝","📓","📘","📗","📕","📙","📚","🗂","🗓","✅","💡","🎯","🚀","⭐","🔥","🌟","🌸","🍎","🎨","🧠","💼","🏠","🧭","📌"];
+// (emoji picker moved to NotchEmojiPicker component with search + categories)
 
 export default function NotchPage() {
   const { pageId } = useParams<{ pageId: string }>();
