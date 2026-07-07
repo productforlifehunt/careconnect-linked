@@ -362,52 +362,114 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
   );
 }
 
-function CalendarView({ month, onPrev, onNext, rows, dateProp, onOpen, onAddOnDate }: {
-  month: Date; onPrev: () => void; onNext: () => void; rows: Row[]; dateProp: PropDef | null; onOpen: (id: string) => void; onAddOnDate: (iso: string) => void;
+function CalendarView({ month, calView, setCalView, onPrev, onNext, onToday, rows, dateProp, endDateProp, checkboxProp, onOpen, onAddOnDate, onReschedule, onToggleCheckbox }: {
+  month: Date; calView: "month" | "week"; setCalView: (v: "month" | "week") => void;
+  onPrev: () => void; onNext: () => void; onToday: () => void;
+  rows: Row[]; dateProp: PropDef | null; endDateProp: PropDef | null; checkboxProp: PropDef | null;
+  onOpen: (id: string) => void; onAddOnDate: (iso: string) => void;
+  onReschedule: (row: Row, iso: string) => void; onToggleCheckbox: (row: Row) => void;
 }) {
   if (!dateProp) return <div style={{ color: "var(--nn-text-tertiary)", fontSize: 13 }}>Add a date property to enable the calendar view.</div>;
-  const first = new Date(month.getFullYear(), month.getMonth(), 1);
-  const startDow = first.getDay();
-  const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
-  const cells: Array<{ date: Date | null; iso: string; items: Row[] }> = [];
-  for (let i = 0; i < startDow; i++) cells.push({ date: null, iso: "", items: [] });
-  const getD = (r: Row): string | undefined => {
-    try { return (r.properties ? JSON.parse(r.properties) : {})[dateProp.key]; } catch { return undefined; }
+  const todayIso = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; })();
+  const getVal = (r: Row, key: string): any => { try { return (r.properties ? JSON.parse(r.properties) : {})[key]; } catch { return undefined; } };
+  const isoOf = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const rowMatchesDate = (r: Row, iso: string) => {
+    const s = String(getVal(r, dateProp.key) || "").slice(0, 10);
+    if (!s) return false;
+    const e = endDateProp ? String(getVal(r, endDateProp.key) || "").slice(0, 10) : "";
+    if (!e) return s === iso;
+    return iso >= s && iso <= e;
   };
-  for (let d = 1; d <= daysInMonth; d++) {
-    const date = new Date(month.getFullYear(), month.getMonth(), d);
-    const iso = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-    cells.push({ date, iso, items: rows.filter((r) => getD(r) === iso) });
+
+  let cells: Array<{ date: Date | null; iso: string; items: Row[] }> = [];
+  let label = "";
+  if (calView === "week") {
+    const base = new Date(month);
+    const start = new Date(base); start.setDate(base.getDate() - base.getDay());
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(start); date.setDate(start.getDate() + i);
+      const iso = isoOf(date);
+      cells.push({ date, iso, items: rows.filter((r) => rowMatchesDate(r, iso)) });
+    }
+    const end = new Date(start); end.setDate(start.getDate() + 6);
+    label = `${start.toLocaleString(undefined, { month: "short", day: "numeric" })} – ${end.toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric" })}`;
+  } else {
+    const first = new Date(month.getFullYear(), month.getMonth(), 1);
+    const startDow = first.getDay();
+    const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+    for (let i = 0; i < startDow; i++) cells.push({ date: null, iso: "", items: [] });
+    for (let d = 1; d <= daysInMonth; d++) {
+      const date = new Date(month.getFullYear(), month.getMonth(), d);
+      const iso = isoOf(date);
+      cells.push({ date, iso, items: rows.filter((r) => rowMatchesDate(r, iso)) });
+    }
+    label = month.toLocaleString(undefined, { month: "long", year: "numeric" });
   }
-  const label = month.toLocaleString(undefined, { month: "long", year: "numeric" });
   const dow = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
         <button onClick={onPrev} className="nn-topbar-btn"><ChevronLeft size={14} /></button>
-        <div style={{ fontWeight: 600 }}>{label}</div>
+        <div style={{ fontWeight: 600, minWidth: 180 }}>{label}</div>
         <button onClick={onNext} className="nn-topbar-btn"><ChevronRight size={14} /></button>
+        <button onClick={onToday} className="nn-topbar-btn">Today</button>
+        <div style={{ flex: 1 }} />
+        <button onClick={() => setCalView("month")} className="nn-topbar-btn" style={{ borderBottom: calView === "month" ? "2px solid var(--nn-text)" : "none", borderRadius: 0 }}>Month</button>
+        <button onClick={() => setCalView("week")} className="nn-topbar-btn" style={{ borderBottom: calView === "week" ? "2px solid var(--nn-text)" : "none", borderRadius: 0 }}>Week</button>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", borderTop: "1px solid var(--nn-border)", borderLeft: "1px solid var(--nn-border)" }}>
         {dow.map((d) => <div key={d} style={{ padding: 6, fontSize: 12, color: "var(--nn-text-secondary)", background: "var(--nn-bg-secondary)", borderRight: "1px solid var(--nn-border)", borderBottom: "1px solid var(--nn-border)" }}>{d}</div>)}
-        {cells.map((c, i) => (
-          <div key={i} style={{ minHeight: 90, padding: 4, borderRight: "1px solid var(--nn-border)", borderBottom: "1px solid var(--nn-border)", background: c.date ? "var(--nn-bg)" : "var(--nn-bg-secondary)" }}>
-            {c.date && (
-              <>
-                <div style={{ fontSize: 12, color: "var(--nn-text-secondary)", display: "flex", justifyContent: "space-between", marginBottom: 2 }}>
-                  <span>{c.date.getDate()}</span>
-                  <button onClick={() => onAddOnDate(c.iso)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-tertiary)", padding: 0 }}><Plus size={11} /></button>
-                </div>
-                {c.items.map((r) => (
-                  <div key={r.id} onClick={() => onOpen(r.id)} style={{ background: "var(--nn-blue-bg)", color: "var(--nn-blue)", padding: "2px 6px", borderRadius: 3, fontSize: 12, marginTop: 2, cursor: "pointer", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {r.icon || "📄"} {r.title || "Untitled"}
+        {cells.map((c, i) => {
+          const isToday = c.iso === todayIso;
+          return (
+            <div
+              key={i}
+              onDragOver={(e) => { if (c.date) e.preventDefault(); }}
+              onDrop={(e) => {
+                if (!c.date) return;
+                const id = e.dataTransfer.getData("text/nn-row-id");
+                const row = rows.find((r) => String(r.id) === id);
+                if (row) onReschedule(row, c.iso);
+              }}
+              style={{ minHeight: calView === "week" ? 300 : 90, padding: 4, borderRight: "1px solid var(--nn-border)", borderBottom: "1px solid var(--nn-border)", background: c.date ? "var(--nn-bg)" : "var(--nn-bg-secondary)" }}
+            >
+              {c.date && (
+                <>
+                  <div style={{ fontSize: 12, color: "var(--nn-text-secondary)", display: "flex", justifyContent: "space-between", marginBottom: 2 }}>
+                    <span style={isToday ? { background: "var(--nn-blue)", color: "#fff", borderRadius: "50%", width: 20, height: 20, display: "inline-flex", alignItems: "center", justifyContent: "center", fontWeight: 600 } : undefined}>{c.date.getDate()}</span>
+                    <button onClick={() => onAddOnDate(c.iso)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-tertiary)", padding: 0 }}><Plus size={11} /></button>
                   </div>
-                ))}
-              </>
-            )}
-          </div>
-        ))}
+                  {c.items.map((r) => {
+                    const done = checkboxProp ? !!getVal(r, checkboxProp.key) : false;
+                    return (
+                      <div
+                        key={r.id}
+                        draggable
+                        onDragStart={(e) => e.dataTransfer.setData("text/nn-row-id", String(r.id))}
+                        onClick={() => onOpen(r.id)}
+                        style={{ background: "var(--nn-blue-bg)", color: "var(--nn-blue)", padding: "2px 6px", borderRadius: 3, fontSize: 12, marginTop: 2, cursor: "pointer", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4, opacity: done ? 0.55 : 1 }}
+                      >
+                        {checkboxProp && (
+                          <input
+                            type="checkbox"
+                            checked={done}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={() => onToggleCheckbox(r)}
+                            style={{ margin: 0, cursor: "pointer" }}
+                          />
+                        )}
+                        <span style={{ textDecoration: done ? "line-through" : "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {r.icon || "📄"} {r.title || "Untitled"}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
