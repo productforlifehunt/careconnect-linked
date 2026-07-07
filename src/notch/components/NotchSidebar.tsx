@@ -337,6 +337,14 @@ export function NotchSidebar() {
           title="Log out"
         ><LogOut size={14} /></button>
       </div>
+      {ctx && (
+        <NotchContextMenu
+          x={ctx.x}
+          y={ctx.y}
+          items={buildCtxItems(ctx.page)}
+          onClose={() => setCtx(null)}
+        />
+      )}
     </aside>
   );
 }
