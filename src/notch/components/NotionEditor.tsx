@@ -302,7 +302,7 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
       const start = from - m[0].length;
       editor.chain().focus().deleteRange({ from: start, to: from }).run();
     }
-    item.cmd(editor, { onCreateSubpage });
+    item.cmd(editor, { onCreateSubpage, userId: user?.user_id });
     setSlash(null);
   };
 
