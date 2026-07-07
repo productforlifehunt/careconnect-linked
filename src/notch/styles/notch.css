@@ -508,3 +508,12 @@
 .nn-btn-primary:hover {
   filter: brightness(1.1);
 }
+
+/* Standalone / mobile adaptations */
+@media (max-width: 767px) {
+  .nn-sidebar { width: 82vw; max-width: 320px; }
+  .nn-page { padding: 24px 20px 80px; }
+  .nn-page-title { font-size: 30px; }
+  .nn-page-icon { font-size: 56px; }
+}
+.site-notchnote { background: var(--nn-bg); }
