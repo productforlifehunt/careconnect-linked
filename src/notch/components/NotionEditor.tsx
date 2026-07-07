@@ -307,13 +307,9 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
         continue: `Continue writing naturally where this text left off. Return only the continuation:\n\n${context}`,
         brainstorm: `Brainstorm 5 concise ideas about: ${context || "the current page topic"}. Return only the bulleted list.`,
       };
-      const res = await fetch("/functions/v1/notch-ai-assist", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: prompts[mode] }),
-      });
-      if (!res.ok) throw new Error(`AI ${res.status}`);
-      const { text } = await res.json();
+      const { data, error } = await supabase.functions.invoke("notch-ai-assist", { body: { prompt: prompts[mode] } });
+      if (error) throw error;
+      const text = (data as any)?.text;
       if (!text) throw new Error("empty response");
       if (mode === "improve" || mode === "translate") {
         if (selected) editor.chain().focus().deleteRange({ from, to }).insertContent(text).run();
