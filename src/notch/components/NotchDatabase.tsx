@@ -7,8 +7,8 @@ import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 
 interface Props { databaseId: string; workspaceId: string; }
 type ViewMode = "table" | "board" | "calendar" | "gallery" | "list";
-type PropType = "text" | "number" | "select" | "multiselect" | "date" | "checkbox" | "url" | "email" | "phone" | "person";
-interface PropDef { key: string; name: string; type: PropType; options?: string[]; }
+type PropType = "text" | "number" | "select" | "multiselect" | "date" | "checkbox" | "url" | "email" | "phone" | "person" | "formula" | "rollup";
+interface PropDef { key: string; name: string; type: PropType; options?: string[]; formula?: string; rollup?: { source: string; agg: "sum" | "avg" | "min" | "max" | "count" }; }
 interface Row { id: string; title?: string; icon?: string; cover?: string; properties?: string; }
 
 const DEFAULT_SCHEMA: PropDef[] = [
@@ -69,6 +69,45 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
     await cctUpdate(NN.block, r.id, { properties: JSON.stringify(props) });
     setRows((rs) => rs.map((x) => x.id === r.id ? { ...x, properties: JSON.stringify(props) } : x));
   };
+
+  // Evaluate a formula expression in a sandbox with numeric props exposed as vars.
+  const evalFormula = (expr: string, r: Row): string => {
+    if (!expr) return "";
+    let props: any = {};
+    try { props = r.properties ? JSON.parse(r.properties) : {}; } catch {}
+    const ctx: Record<string, any> = { title: r.title || "" };
+    for (const p of schema) {
+      const v = props[p.key];
+      const n = Number(v);
+      ctx[p.key] = !isNaN(n) && v !== "" && v !== undefined && v !== null ? n : (v ?? "");
+    }
+    try {
+      const fn = new Function(...Object.keys(ctx), `"use strict"; try { return (${expr}); } catch(e){ return "#ERR"; }`);
+      const out = fn(...Object.values(ctx));
+      return out === undefined || out === null ? "" : String(out);
+    } catch { return "#ERR"; }
+  };
+
+  // Aggregate a numeric prop across every row (rollup shows same total per row).
+  const rollupValue = (p: PropDef): string => {
+    if (!p.rollup?.source) return "";
+    const src = p.rollup.source;
+    const nums = rows.map((r) => {
+      const v = (() => { try { return JSON.parse(r.properties || "{}")[src]; } catch { return undefined; } })();
+      const n = Number(v);
+      return isNaN(n) ? null : n;
+    }).filter((n): n is number => n !== null);
+    if (p.rollup.agg === "count") return String(rows.length);
+    if (nums.length === 0) return "";
+    switch (p.rollup.agg) {
+      case "sum": return String(nums.reduce((a, b) => a + b, 0));
+      case "avg": return (nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(2);
+      case "min": return String(Math.min(...nums));
+      case "max": return String(Math.max(...nums));
+      default: return "";
+    }
+  };
+
 
   const addRow = async (preset: Record<string, any> = {}) => {
     const { id } = await cctCreate(NN.block, {
@@ -163,6 +202,12 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
     );
     if (p.type === "person") return (
       <input value={v} onChange={(e) => setProp(r, p.key, e.target.value)} placeholder="User ID" style={{ background: "transparent", border: "none", color: "var(--nn-text)", fontSize: 13, width: "100%" }} />
+    );
+    if (p.type === "formula") return (
+      <span style={{ fontSize: 13, color: "var(--nn-text-secondary)", fontFamily: "monospace" }}>{evalFormula(p.formula || "", r)}</span>
+    );
+    if (p.type === "rollup") return (
+      <span style={{ fontSize: 13, color: "var(--nn-text-secondary)" }}>{rollupValue(p)}</span>
     );
     return (
       <input value={v} onChange={(e) => setProp(r, p.key, e.target.value)} placeholder="—" style={{ background: "transparent", border: "none", color: "var(--nn-text)", fontSize: 13, width: "100%" }} />
@@ -351,7 +396,8 @@ function CalendarView({ month, onPrev, onNext, rows, dateProp, onOpen, onAddOnDa
 
 function SchemaEditor({ schema, onClose, onSave }: { schema: PropDef[]; onClose: () => void; onSave: (s: PropDef[]) => void }) {
   const [draft, setDraft] = useState<PropDef[]>(JSON.parse(JSON.stringify(schema)));
-  const TYPES: PropType[] = ["text", "number", "select", "multiselect", "date", "checkbox", "url", "email", "phone", "person"];
+  const TYPES: PropType[] = ["text", "number", "select", "multiselect", "date", "checkbox", "url", "email", "phone", "person", "formula", "rollup"];
+  const numericSources = draft.filter((p) => p.type === "number");
   const add = () => {
     const key = `prop_${Date.now().toString(36)}`;
     setDraft([...draft, { key, name: "New property", type: "text" }]);
@@ -364,19 +410,37 @@ function SchemaEditor({ schema, onClose, onSave }: { schema: PropDef[]; onClose:
   const del = (i: number) => setDraft(draft.filter((_, j) => j !== i));
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={onClose}>
-      <div style={{ background: "var(--nn-bg)", borderRadius: 8, width: "100%", maxWidth: 560, padding: 20, maxHeight: "80vh", overflow: "auto" }} onClick={(e) => e.stopPropagation()}>
+      <div style={{ background: "var(--nn-bg)", borderRadius: 8, width: "100%", maxWidth: 600, padding: 20, maxHeight: "80vh", overflow: "auto" }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
           <div style={{ fontSize: 18, fontWeight: 600 }}>Properties</div>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-secondary)" }}><X size={16} /></button>
         </div>
         {draft.map((p, i) => (
-          <div key={p.key} style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 8 }}>
-            <input value={p.name} onChange={(e) => update(i, { name: e.target.value })} className="nn-auth-input" style={{ marginBottom: 0, flex: 1 }} />
+          <div key={p.key} style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 8, flexWrap: "wrap" }}>
+            <input value={p.name} onChange={(e) => update(i, { name: e.target.value })} className="nn-auth-input" style={{ marginBottom: 0, flex: 1, minWidth: 120 }} />
             <select value={p.type} onChange={(e) => update(i, { type: e.target.value as PropType })} className="nn-auth-input" style={{ marginBottom: 0, width: 110 }}>
               {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
-            {p.type === "select" && (
-              <input value={(p.options || []).join(", ")} onChange={(e) => update(i, { options: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })} placeholder="Option A, Option B" className="nn-auth-input" style={{ marginBottom: 0, width: 180 }} />
+            {(p.type === "select" || p.type === "multiselect") && (
+              <input value={(p.options || []).join(", ")} onChange={(e) => update(i, { options: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })} placeholder="Option A, Option B" className="nn-auth-input" style={{ marginBottom: 0, width: 200 }} />
+            )}
+            {p.type === "formula" && (
+              <input value={p.formula || ""} onChange={(e) => update(i, { formula: e.target.value })} placeholder="e.g. price * qty" className="nn-auth-input" style={{ marginBottom: 0, width: 220, fontFamily: "monospace" }} />
+            )}
+            {p.type === "rollup" && (
+              <>
+                <select value={p.rollup?.source || ""} onChange={(e) => update(i, { rollup: { source: e.target.value, agg: p.rollup?.agg || "sum" } })} className="nn-auth-input" style={{ marginBottom: 0, width: 130 }}>
+                  <option value="">Source…</option>
+                  {numericSources.map((s) => <option key={s.key} value={s.key}>{s.name}</option>)}
+                </select>
+                <select value={p.rollup?.agg || "sum"} onChange={(e) => update(i, { rollup: { source: p.rollup?.source || "", agg: e.target.value as any } })} className="nn-auth-input" style={{ marginBottom: 0, width: 90 }}>
+                  <option value="sum">sum</option>
+                  <option value="avg">avg</option>
+                  <option value="min">min</option>
+                  <option value="max">max</option>
+                  <option value="count">count</option>
+                </select>
+              </>
             )}
             <button onClick={() => del(i)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-tertiary)" }}><Trash2 size={14} /></button>
           </div>

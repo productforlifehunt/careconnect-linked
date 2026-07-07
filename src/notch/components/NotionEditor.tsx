@@ -20,6 +20,9 @@ import Youtube from "@tiptap/extension-youtube";
 import { Details, DetailsSummary, DetailsContent } from "@tiptap/extension-details";
 import { useEffect, useRef, useState } from "react";
 import { Bold, Italic, Underline as UIcon, Strikethrough, Code, Link as LinkIcon, AlignLeft, AlignCenter, AlignRight, Sparkles } from "lucide-react";
+import { MathBlock, Columns, Column, buildColumns } from "./notch-extensions";
+import { nnUploadFile, pickFile } from "@/notch/lib/nn-files";
+import { useNotchAuth as _useNotchAuth } from "@/notch/context/NotchAuthContext";
 
 interface Props {
   content: any;
@@ -95,6 +98,27 @@ const SLASH_ITEMS = [
       const url = window.prompt("URL");
       if (url) e.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
     } },
+  { group: "Media", key: "file", icon: "📎", name: "File", desc: "Upload any file.", cmd: async (e: any, ctx: any) => {
+      const f = await pickFile();
+      if (!f) return;
+      try {
+        const uid = ctx?.userId || 0;
+        const up = await nnUploadFile(f, uid);
+        const isImg = up.type.startsWith("image/");
+        if (isImg) {
+          e.chain().focus().setImage({ src: up.url, alt: up.name }).run();
+        } else {
+          const size = up.size > 1024 * 1024 ? `${(up.size / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(up.size / 1024))} KB`;
+          e.chain().focus().insertContent(`<div class="nn-bookmark"><a href="${up.url}" target="_blank" rel="noopener">📎 ${up.name}<div class="nn-bookmark-url">${size}</div></a></div>`).run();
+        }
+      } catch (err: any) { alert(`Upload failed: ${err.message || err}`); }
+    } },
+  { group: "Advanced", key: "math", icon: "∑", name: "Math", desc: "Insert a LaTeX equation.",
+    cmd: (e: any) => e.chain().focus().insertContent({ type: "mathBlock", attrs: { latex: "" } }).run() },
+  { group: "Advanced", key: "cols2", icon: "▮▮", name: "2 columns", desc: "Two-column layout.",
+    cmd: (e: any) => e.chain().focus().insertContent(buildColumns(2)).run() },
+  { group: "Advanced", key: "cols3", icon: "▮▮▮", name: "3 columns", desc: "Three-column layout.",
+    cmd: (e: any) => e.chain().focus().insertContent(buildColumns(3)).run() },
   { group: "Basic", key: "subpage", icon: "📄", name: "Sub-page", desc: "Embed a new sub-page.", cmd: async (e: any, ctx: any) => {
       if (!ctx?.onCreateSubpage) return;
       const p = await ctx.onCreateSubpage();
@@ -110,6 +134,7 @@ const SLASH_ITEMS = [
 ];
 
 export function NotionEditor({ content, onChange, placeholder = "Type '/' for commands", onCreateSubpage }: Props) {
+  const { user } = _useNotchAuth();
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
@@ -131,6 +156,9 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
       Details.configure({ persist: true, HTMLAttributes: { class: "nn-toggle" } }),
       DetailsSummary,
       DetailsContent,
+      MathBlock,
+      Columns,
+      Column,
     ],
     content: content || "",
     onUpdate: ({ editor }) => onChange(editor.getJSON()),
@@ -274,7 +302,7 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
       const start = from - m[0].length;
       editor.chain().focus().deleteRange({ from: start, to: from }).run();
     }
-    item.cmd(editor, { onCreateSubpage });
+    item.cmd(editor, { onCreateSubpage, userId: user?.user_id });
     setSlash(null);
   };
 

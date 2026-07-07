@@ -724,3 +724,17 @@
   min-width: 160px;
   padding: 4px;
 }
+
+/* Columns layout */
+.nn-columns { display: grid; grid-template-columns: repeat(var(--nn-cols, auto-fit), minmax(0, 1fr)); gap: 12px; margin: 8px 0; }
+.nn-columns > .nn-col { min-width: 0; padding: 4px 8px; border-left: 1px solid var(--nn-border); }
+.nn-columns > .nn-col:first-child { border-left: none; }
+/* Explicit column counts */
+.nn-columns:has(> .nn-col:nth-child(2):last-child) { grid-template-columns: 1fr 1fr; }
+.nn-columns:has(> .nn-col:nth-child(3):last-child) { grid-template-columns: 1fr 1fr 1fr; }
+.nn-columns:has(> .nn-col:nth-child(4):last-child) { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+/* Math block */
+.nn-math { margin: 8px 0; padding: 4px 0; overflow-x: auto; text-align: center; }
+.nn-math:hover { background: var(--nn-hover); border-radius: 4px; }
+.nn-math .katex-display { margin: 0 !important; }
