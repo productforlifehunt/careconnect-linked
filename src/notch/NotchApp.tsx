@@ -14,6 +14,7 @@ import NotchTrash from "@/notch/pages/NotchTrash";
 import NotchTemplates from "@/notch/pages/NotchTemplates";
 import NotchLanding from "@/notch/pages/NotchLanding";
 import NotchNotifications from "@/notch/pages/NotchNotifications";
+import NotchPublicPage from "@/notch/pages/NotchPublicPage";
 import { acceptInviteByToken } from "@/notch/lib/nn-collab";
 import "@/notch/styles/notch.css";
 
@@ -94,6 +95,19 @@ function Shell({ standalone }: { standalone: boolean }) {
   }, [user]);
 
   if (loading) return <div className="notch-app" style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh" }}>Loading…</div>;
+
+  // Public page viewer — accessible without authentication
+  const publicMatch = /\/public\/([^/?#]+)/.exec(location.pathname);
+  if (publicMatch) {
+    return (
+      <div className="notch-app">
+        <Routes>
+          <Route path="public/:pageId" element={<NotchPublicPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </div>
+    );
+  }
 
   const authRoutes = (
     <Routes>
