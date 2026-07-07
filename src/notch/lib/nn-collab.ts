@@ -106,6 +106,8 @@ export async function acceptInviteByToken(token: string, userId: string): Promis
   await addMember(inv.workspace_id, userId, inv.role, inv.invited_by);
   await cctUpdate(NN.invite, inv.id, { status: "accepted" });
   return inv;
+}
+
 
 export async function declineInvite(inviteId: string) {
   await cctUpdate(NN.invite, inviteId, { status: "declined" });
