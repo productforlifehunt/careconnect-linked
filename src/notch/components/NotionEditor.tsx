@@ -84,6 +84,12 @@ const SLASH_ITEMS = [
         { type: "detailsContent", content: [{ type: "paragraph" }] },
       ],
     }).run() },
+  { group: "Blocks", key: "toggle_h1", icon: "▸H₁", name: "Toggle heading 1", desc: "Collapsible H1 section.",
+    cmd: (e: any) => e.chain().focus().insertContent(buildToggleHeading(1)).run() },
+  { group: "Blocks", key: "toggle_h2", icon: "▸H₂", name: "Toggle heading 2", desc: "Collapsible H2 section.",
+    cmd: (e: any) => e.chain().focus().insertContent(buildToggleHeading(2)).run() },
+  { group: "Blocks", key: "toggle_h3", icon: "▸H₃", name: "Toggle heading 3", desc: "Collapsible H3 section.",
+    cmd: (e: any) => e.chain().focus().insertContent(buildToggleHeading(3)).run() },
   { group: "Blocks", key: "table", icon: "⊞", name: "Table", desc: "Insert a 3×3 table.",
     cmd: (e: any) => e.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run() },
   { group: "Media", key: "image", icon: "🖼", name: "Image", desc: "Embed image.", cmd: async (e: any) => {
