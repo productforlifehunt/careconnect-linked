@@ -69,6 +69,12 @@ export function NotchComments({ blockId }: { blockId: string }) {
     await load();
   };
 
+  const resolve = async (id: string) => {
+    await cctUpdate(NN.comment, id, { resolved: 1 });
+    await load();
+  };
+
+
   return (
     <div style={{ marginTop: 48, borderTop: "1px solid var(--nn-border)", paddingTop: 20 }}>
       <div style={{ fontSize: 13, textTransform: "uppercase", letterSpacing: 1, color: "var(--nn-text-tertiary)", marginBottom: 12 }}>
