@@ -180,6 +180,7 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
       MathBlock,
       Columns,
       Column,
+      SyncBlock,
       NotchMention,
     ],
     content: content || "",
