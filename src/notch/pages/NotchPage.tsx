@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ChevronRight, Database, FileText, MoreHorizontal, Star, Image as ImageIcon, X } from "lucide-react";
+import { ChevronRight, Database, FileText, MoreHorizontal, Star, Image as ImageIcon, X, Share2 } from "lucide-react";
 import { NotionEditor } from "@/notch/components/NotionEditor";
 import { NotchDatabase } from "@/notch/components/NotchDatabase";
 import { NotchComments } from "@/notch/components/NotchComments";
+import { NotchShareModal } from "@/notch/components/NotchShareModal";
 import { useFavorites } from "@/notch/lib/nn-favorites";
 import { cctGet, cctList, cctUpdate, NN } from "@/notch/lib/nn-client";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
@@ -35,6 +36,7 @@ export default function NotchPage() {
   const [crumbs, setCrumbs] = useState<Block[]>([]);
   const [showEmoji, setShowEmoji] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showShare, setShowShare] = useState(false);
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const saveTimer = useRef<any>(null);
 
@@ -129,6 +131,9 @@ export default function NotchPage() {
             </span>
           ))}
         </div>
+        <button className="nn-topbar-btn" onClick={() => setShowShare(true)} title="Share">
+          <Share2 size={14} style={{ marginRight: 4 }} /> Share
+        </button>
         <button
           className="nn-topbar-btn"
           onClick={() => toggleFav(pageId)}
@@ -197,6 +202,7 @@ export default function NotchPage() {
           <NotchComments blockId={pageId} />
         </div>
       </div>
+      {showShare && <NotchShareModal blockId={pageId} onClose={() => setShowShare(false)} />}
     </>
   );
 }

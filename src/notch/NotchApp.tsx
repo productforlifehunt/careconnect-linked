@@ -7,6 +7,7 @@ import NotchPage from "@/notch/pages/NotchPage";
 import NotchSearch from "@/notch/pages/NotchSearch";
 import NotchSettings from "@/notch/pages/NotchSettings";
 import NotchTrash from "@/notch/pages/NotchTrash";
+import NotchTemplates from "@/notch/pages/NotchTemplates";
 import "@/notch/styles/notch.css";
 
 function Shell() {
@@ -36,6 +37,7 @@ function Shell() {
           <Route path="search" element={<NotchSearch />} />
           <Route path="settings" element={<NotchSettings />} />
           <Route path="trash" element={<NotchTrash />} />
+          <Route path="templates" element={<NotchTemplates />} />
           <Route path="*" element={<Navigate to="/notch" replace />} />
         </Routes>
       </div>

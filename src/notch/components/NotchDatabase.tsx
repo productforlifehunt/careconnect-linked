@@ -1,14 +1,14 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { Plus, Trash2, Table, LayoutGrid, Calendar as CalIcon, Settings2, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Trash2, Table, LayoutGrid, Calendar as CalIcon, Settings2, X, ChevronLeft, ChevronRight, Image as ImageIcon, List } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cctList, cctCreate, cctUpdate, NN } from "@/notch/lib/nn-client";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 
 interface Props { databaseId: string; workspaceId: string; }
-type ViewMode = "table" | "board" | "calendar";
-type PropType = "text" | "number" | "select" | "date" | "checkbox" | "url";
+type ViewMode = "table" | "board" | "calendar" | "gallery" | "list";
+type PropType = "text" | "number" | "select" | "multiselect" | "date" | "checkbox" | "url";
 interface PropDef { key: string; name: string; type: PropType; options?: string[]; }
-interface Row { id: string; title?: string; icon?: string; properties?: string; }
+interface Row { id: string; title?: string; icon?: string; cover?: string; properties?: string; }
 
 const DEFAULT_SCHEMA: PropDef[] = [
   { key: "status", name: "Status", type: "select", options: ["To do", "In progress", "Done"] },
@@ -101,6 +101,20 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
     if (p.type === "number") return (
       <input type="number" value={v} onChange={(e) => setProp(r, p.key, e.target.value)} style={{ background: "transparent", border: "none", color: "var(--nn-text)", fontSize: 13, width: "100%" }} />
     );
+    if (p.type === "multiselect") {
+      const arr: string[] = Array.isArray(v) ? v : (v ? String(v).split(",").map((s) => s.trim()).filter(Boolean) : []);
+      const toggle = (opt: string) => {
+        const next = arr.includes(opt) ? arr.filter((x) => x !== opt) : [...arr, opt];
+        setProp(r, p.key, next);
+      };
+      return (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+          {(p.options || []).map((o) => (
+            <span key={o} onClick={() => toggle(o)} style={{ background: arr.includes(o) ? "var(--nn-blue-bg)" : "rgba(0,0,0,0.05)", color: arr.includes(o) ? "var(--nn-blue)" : "var(--nn-text-secondary)", padding: "2px 6px", borderRadius: 3, fontSize: 11, cursor: "pointer" }}>{o}</span>
+          ))}
+        </div>
+      );
+    }
     if (p.type === "url") return v ? (
       <a href={v} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} style={{ color: "var(--nn-blue)", fontSize: 13 }}>{v}</a>
     ) : (
@@ -116,8 +130,8 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
   return (
     <div style={{ marginTop: 12 }}>
       <div style={{ display: "flex", gap: 4, borderBottom: "1px solid var(--nn-border)", marginBottom: 12 }}>
-        {(["table", "board", "calendar"] as ViewMode[]).map((v) => {
-          const Icon = v === "table" ? Table : v === "board" ? LayoutGrid : CalIcon;
+        {(["table", "board", "calendar", "gallery", "list"] as ViewMode[]).map((v) => {
+          const Icon = v === "table" ? Table : v === "board" ? LayoutGrid : v === "calendar" ? CalIcon : v === "gallery" ? ImageIcon : List;
           return (
             <button key={v} onClick={() => setView(v)} className="nn-topbar-btn" style={{ borderBottom: view === v ? "2px solid var(--nn-text)" : "none", borderRadius: 0, textTransform: "capitalize" }}>
               <Icon size={13} style={{ marginRight: 4 }} /> {v}
@@ -181,6 +195,40 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
 
       {view === "calendar" && (
         <CalendarView month={calMonth} onPrev={() => setCalMonth(new Date(calMonth.getFullYear(), calMonth.getMonth() - 1, 1))} onNext={() => setCalMonth(new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 1))} rows={rows} dateProp={dateProp} onOpen={(id) => nav(`/notch/p/${id}`)} onAddOnDate={(iso) => dateProp && addRow({ [dateProp.key]: iso })} />
+      )}
+
+      {view === "gallery" && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
+          {rows.map((r) => (
+            <div key={r.id} onClick={() => nav(`/notch/p/${r.id}`)} style={{ border: "1px solid var(--nn-border)", borderRadius: 6, overflow: "hidden", cursor: "pointer", background: "var(--nn-bg)" }}>
+              <div style={{ height: 120, background: r.cover ? `center/cover no-repeat url("${r.cover}")` : "var(--nn-bg-secondary)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, color: "var(--nn-text-tertiary)" }}>
+                {!r.cover && (r.icon || "📄")}
+              </div>
+              <div style={{ padding: 10 }}>
+                <div style={{ fontSize: 14, fontWeight: 500, display: "flex", gap: 6, alignItems: "center" }}>
+                  {r.cover && <span>{r.icon || "📄"}</span>}
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.title || "Untitled"}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+          <div onClick={() => addRow()} style={{ border: "1px dashed var(--nn-border-strong)", borderRadius: 6, minHeight: 180, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--nn-text-tertiary)", cursor: "pointer" }}>
+            <Plus size={16} style={{ marginRight: 4 }} /> New
+          </div>
+        </div>
+      )}
+
+      {view === "list" && (
+        <div>
+          {rows.map((r) => (
+            <div key={r.id} onClick={() => nav(`/notch/p/${r.id}`)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 4px", borderBottom: "1px solid var(--nn-border)", cursor: "pointer", fontSize: 14 }}>
+              <span>{r.icon || "📄"}</span>
+              <span style={{ flex: 1 }}>{r.title || "Untitled"}</span>
+              {statusProp && <span style={{ fontSize: 12, color: "var(--nn-text-secondary)" }}>{getProp(r, statusProp.key) || ""}</span>}
+            </div>
+          ))}
+          <div onClick={() => addRow()} style={{ padding: 8, color: "var(--nn-text-tertiary)", cursor: "pointer", fontSize: 13 }}>+ New page</div>
+        </div>
       )}
 
       {showSchema && (

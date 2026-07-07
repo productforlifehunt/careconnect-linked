@@ -110,6 +110,24 @@ export function NotchSidebar() {
           <div
             className={`nn-sidebar-item ${isActive ? "active" : ""}`}
             style={{ paddingLeft: 14 + depth * 12 }}
+            draggable
+            onDragStart={(e) => { e.dataTransfer.setData("text/nn-page", p.id); e.dataTransfer.effectAllowed = "move"; }}
+            onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
+            onDrop={async (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const src = e.dataTransfer.getData("text/nn-page");
+              if (!src || src === p.id) return;
+              // prevent dropping onto own descendant
+              let cur: any = pages.find((x) => x.id === p.id);
+              while (cur) {
+                if (String(cur.id) === String(src)) return;
+                cur = pages.find((x) => String(x.id) === String(cur.parent_id));
+              }
+              await cctUpdate(NN.block, src, { parent_id: p.id });
+              setExpanded((s) => ({ ...s, [p.id]: true }));
+              await loadAll();
+            }}
             onClick={() => nav(`/notch/p/${p.id}`)}
           >
             <span
@@ -155,6 +173,10 @@ export function NotchSidebar() {
         <div className="nn-sidebar-item" onClick={() => nav("/notch/settings")}>
           <span className="nn-icon"><Settings size={15} /></span>
           <span className="nn-title">Settings</span>
+        </div>
+        <div className="nn-sidebar-item" onClick={() => nav("/notch/templates")}>
+          <span className="nn-icon">🧩</span>
+          <span className="nn-title">Templates</span>
         </div>
         <div className="nn-sidebar-item" onClick={() => nav("/notch/trash")}>
           <span className="nn-icon"><Trash size={15} /></span>
