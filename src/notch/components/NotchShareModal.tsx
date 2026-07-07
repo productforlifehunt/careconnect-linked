@@ -21,6 +21,11 @@ export function NotchShareModal({ blockId, onClose }: { blockId: string; onClose
     setItems(mine.filter((p: any) => Number(p.is_public) !== 1));
   };
   useEffect(() => { load(); }, [blockId]);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
   const invite = async () => {
     const em = email.trim();
