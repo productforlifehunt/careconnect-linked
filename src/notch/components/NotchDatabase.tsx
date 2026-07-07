@@ -31,6 +31,10 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
   const [showSchema, setShowSchema] = useState(false);
   const [dbBlock, setDbBlock] = useState<any>(null);
   const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
+  const [filterKey, setFilterKey] = useState<string>("");
+  const [filterVal, setFilterVal] = useState<string>("");
+  const [sortKey, setSortKey] = useState<string>("");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   const load = useCallback(async () => {
     setLoading(true);
