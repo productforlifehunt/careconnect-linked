@@ -2,21 +2,28 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useNotchPath } from "@/notch/context/NotchBaseContext";
 import { cctList, cctUpdate, cctDelete, NN } from "@/notch/lib/nn-client";
+import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 import { RotateCcw, Trash2 } from "lucide-react";
 
 export default function NotchTrash() {
   const nav = useNavigate();
   const path = useNotchPath();
+  const { user } = useNotchAuth();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
     setLoading(true);
+    // Scope to current user's own blocks so trash never leaks across users.
     const all = await cctList<any>(NN.block);
-    setItems(all.filter((b: any) => Number(b.in_trash) === 1 || Number(b.archived) === 1));
+    setItems(
+      all
+        .filter((b: any) => Number(b.in_trash) === 1 || Number(b.archived) === 1)
+        .filter((b: any) => !user || String(b.author_id) === String(user.user_id) || String(b.created_by) === String(user.user_id))
+    );
     setLoading(false);
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [user]);
 
   const restore = async (id: string) => {
     await cctUpdate(NN.block, id, { archived: 0, in_trash: 0 });
