@@ -13,6 +13,7 @@ import NotchSettings from "@/notch/pages/NotchSettings";
 import NotchTrash from "@/notch/pages/NotchTrash";
 import NotchTemplates from "@/notch/pages/NotchTemplates";
 import NotchLanding from "@/notch/pages/NotchLanding";
+import NotchNotifications from "@/notch/pages/NotchNotifications";
 import "@/notch/styles/notch.css";
 
 interface Props {
