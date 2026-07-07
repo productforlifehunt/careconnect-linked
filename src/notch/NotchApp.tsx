@@ -16,6 +16,7 @@ import NotchLanding from "@/notch/pages/NotchLanding";
 import NotchNotifications from "@/notch/pages/NotchNotifications";
 import NotchPublicPage from "@/notch/pages/NotchPublicPage";
 import { acceptInviteByToken } from "@/notch/lib/nn-collab";
+import { nnAlert } from "@/notch/lib/nn-dialog";
 import "@/notch/styles/notch.css";
 
 interface Props {
@@ -83,10 +84,10 @@ function Shell({ standalone }: { standalone: boolean }) {
     (async () => {
       try {
         const inv = await acceptInviteByToken(token, String(user.user_id));
-        if (inv) alert("Invite accepted! You now have access to the workspace.");
-        else alert("Invite is invalid or expired.");
+        if (inv) nnAlert("You now have access to the workspace.", "Invite accepted");
+        else nnAlert("This invite is invalid or expired.", "Invite");
       } catch (e: any) {
-        alert(`Could not accept invite: ${e.message || e}`);
+        nnAlert(`Could not accept invite: ${e.message || e}`, "Invite error");
       } finally {
         url.searchParams.delete("invite");
         window.history.replaceState({}, "", url.toString());

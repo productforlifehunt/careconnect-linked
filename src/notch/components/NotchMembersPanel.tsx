@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { nnConfirm } from "@/notch/lib/nn-dialog";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 import {
   listMembers, listInvites, createInvite, revokeInvite, removeMember, updateMemberRole,
@@ -111,7 +112,7 @@ export function NotchMembersPanel() {
               <option value="member">Member</option>
               <option value="guest">Guest</option>
             </select>
-            {m.role !== "owner" && <button className="nn-topbar-btn" onClick={async () => { if (confirm("Remove this member?")) { await removeMember(m.id); load(); } }}><X size={12} /></button>}
+            {m.role !== "owner" && <button className="nn-topbar-btn" onClick={async () => { if (await nnConfirm("Remove this member from the workspace?", "Remove member")) { await removeMember(m.id); load(); } }}><X size={12} /></button>}
           </div>
         ))
       )}

@@ -5,6 +5,7 @@ import { Plus, FileText, Trash2, Copy, Sparkles, Globe, Lock, Download } from "l
 import { cctList, cctCreate, cctUpdate, cctDelete, cctGet, NN } from "@/notch/lib/nn-client";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 import { STARTER_TEMPLATES, StarterTemplate } from "@/notch/lib/nn-starter-templates";
+import { nnPrompt, nnConfirm, nnAlert } from "@/notch/lib/nn-dialog";
 
 interface Template { id: string; name?: string; icon?: string; source_block_id?: string; workspace_id?: string; author_id?: string; is_published?: boolean; }
 
@@ -68,20 +69,20 @@ export default function NotchTemplates() {
       nav(path(`/p/${id}`));
     } catch (e) {
       console.error("Starter template failed", e);
-      alert("Could not create template. Check console for details.");
+      nnAlert("Could not create template. Check console for details.");
     } finally {
       setBusyKey(null);
     }
   };
 
   const remove = async (t: Template) => {
-    if (!confirm("Delete this template?")) return;
+    if (!(await nnConfirm("This template will be removed permanently.", "Delete template?"))) return;
     await cctDelete(NN.template, t.id);
     await load();
   };
 
   const rename = async (t: Template) => {
-    const name = window.prompt("Template name", t.name || "");
+    const name = await nnPrompt("", { title: "Rename template", defaultValue: t.name || "", placeholder: "Template name" });
     if (name === null) return;
     await cctUpdate(NN.template, t.id, { name, source_block_id: t.source_block_id, is_published: !!t.is_published });
     await load();

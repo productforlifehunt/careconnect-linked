@@ -6,6 +6,7 @@ import { cctList, cctCreate, cctUpdate, cctDelete, NN } from "@/notch/lib/nn-cli
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 import { useFavorites } from "@/notch/lib/nn-favorites";
 import { unreadCount, tickReminderQueue } from "@/notch/lib/nn-notifications";
+import { nnPrompt, nnConfirm } from "@/notch/lib/nn-dialog";
 
 interface Block {
   id: string;
@@ -103,14 +104,14 @@ export function NotchSidebar() {
   };
 
   const deletePage = async (id: string) => {
-    if (!confirm("Delete this page? It will be moved to trash.")) return;
+    if (!(await nnConfirm("This page will be moved to Trash. You can restore it later.", "Delete page?"))) return;
     await cctUpdate(NN.block, id, { archived: 1, in_trash: 1 });
     if (pageId === id) nav(path("/"));
     await loadAll();
   };
 
   const renamePage = async (id: string, current: string) => {
-    const name = window.prompt("Rename page", current);
+    const name = await nnPrompt("", { title: "Rename page", defaultValue: current, placeholder: "Page name" });
     if (name === null) return;
     await cctUpdate(NN.block, id, { title: name });
     await loadAll();
@@ -190,7 +191,7 @@ export function NotchSidebar() {
           onChange={async (e) => {
             const val = e.target.value;
             if (val === "__new__") {
-              const name = window.prompt("Workspace name");
+              const name = await nnPrompt("", { title: "New workspace", placeholder: "Workspace name" });
               if (!name) return;
               const created = await cctCreate(NN.workspace, { name, icon: "📓", plan_type: "free" });
               setActiveWs(created.id);
