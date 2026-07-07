@@ -99,3 +99,97 @@ export function buildColumns(count: number) {
     })),
   };
 }
+
+/* ─── Sync Block ─────────────────────────────────────────────── */
+/** Renders a read-only mirror of another page's editor_content. */
+function SyncView({ node, updateAttributes }: any) {
+  const sourceId: string = node.attrs.sourceId || "";
+  const [loading, setLoading] = useState(false);
+  const [html, setHtml] = useState<string>("");
+  const [title, setTitle] = useState<string>("");
+  const [err, setErr] = useState<string>("");
+
+  const load = async () => {
+    if (!sourceId) return;
+    setLoading(true); setErr("");
+    try {
+      const src: any = await cctGet(NN.block, sourceId);
+      if (!src) { setErr("Source not found"); return; }
+      setTitle(src.title || "Untitled");
+      const props = src.properties ? JSON.parse(src.properties) : {};
+      const c = props.editor_content;
+      // Very light JSON→HTML: rely on browser to render text nodes recursively.
+      const toHtml = (n: any): string => {
+        if (!n) return "";
+        if (typeof n === "string") return n;
+        if (Array.isArray(n)) return n.map(toHtml).join("");
+        const kids = (n.content || []).map(toHtml).join("");
+        if (n.type === "text") return n.text || "";
+        if (n.type === "paragraph") return `<p>${kids}</p>`;
+        if (n.type === "heading") return `<h${n.attrs?.level || 2}>${kids}</h${n.attrs?.level || 2}>`;
+        if (n.type === "bulletList") return `<ul>${kids}</ul>`;
+        if (n.type === "orderedList") return `<ol>${kids}</ol>`;
+        if (n.type === "listItem") return `<li>${kids}</li>`;
+        if (n.type === "blockquote") return `<blockquote>${kids}</blockquote>`;
+        if (n.type === "codeBlock") return `<pre><code>${kids}</code></pre>`;
+        if (n.type === "hardBreak") return "<br/>";
+        return kids ? `<div>${kids}</div>` : "";
+      };
+      setHtml(toHtml(c));
+    } catch (e: any) {
+      setErr(e?.message || "Failed to load");
+    } finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [sourceId]);
+
+  if (!sourceId) {
+    return (
+      <NodeViewWrapper as="div" className="nn-sync-empty" contentEditable={false}>
+        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          <Link2 size={14} />
+          <input
+            placeholder="Paste source page ID"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                const v = (e.target as HTMLInputElement).value.trim();
+                if (v) updateAttributes({ sourceId: v });
+              }
+            }}
+            style={{ flex: 1, background: "var(--nn-bg-secondary)", border: "1px solid var(--nn-border-strong)", borderRadius: 4, padding: "4px 8px", color: "var(--nn-text)", fontSize: 13 }}
+          />
+        </div>
+      </NodeViewWrapper>
+    );
+  }
+
+  return (
+    <NodeViewWrapper as="div" className="nn-sync" contentEditable={false}>
+      <div className="nn-sync-header">
+        <Link2 size={12} />
+        <span className="nn-sync-title">{title || "Synced block"}</span>
+        <button onClick={load} title="Refresh" className="nn-sync-refresh"><RefreshCw size={12} /></button>
+      </div>
+      {loading ? (
+        <div style={{ padding: 8, opacity: 0.5, fontSize: 13 }}>Loading…</div>
+      ) : err ? (
+        <div style={{ padding: 8, color: "var(--nn-danger)", fontSize: 13 }}>{err}</div>
+      ) : (
+        <div className="nn-sync-body" dangerouslySetInnerHTML={{ __html: html }} />
+      )}
+    </NodeViewWrapper>
+  );
+}
+
+export const SyncBlock = Node.create({
+  name: "syncBlock",
+  group: "block",
+  atom: true,
+  selectable: true,
+  addAttributes() { return { sourceId: { default: "" } }; },
+  parseHTML() { return [{ tag: "div[data-sync-source]", getAttrs: (el) => ({ sourceId: (el as HTMLElement).getAttribute("data-sync-source") || "" }) }]; },
+  renderHTML({ HTMLAttributes, node }) {
+    return ["div", mergeAttributes({ "data-sync-source": node.attrs.sourceId, class: "nn-sync" }, HTMLAttributes)];
+  },
+  addNodeView() { return ReactNodeViewRenderer(SyncView); },
+});
