@@ -49,7 +49,7 @@ export function NotchShareModal({ blockId, onClose }: { blockId: string; onClose
     await load();
   };
 
-  const publicUrl = `${window.location.origin}/notch/p/${blockId}`;
+  const publicUrl = `${window.location.origin}${base}/p/${blockId}${base ? "" : "?__site=notchnote"}`;
   const copyLink = async () => { try { await navigator.clipboard.writeText(publicUrl); } catch {} };
 
   return (
