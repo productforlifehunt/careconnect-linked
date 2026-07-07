@@ -47,7 +47,7 @@ const SLASH_ITEMS = [
     } },
 ];
 
-export function NotionEditor({ content, onChange, placeholder = "Type '/' for commands" }: Props) {
+export function NotionEditor({ content, onChange, placeholder = "Type '/' for commands", onCreateSubpage }: Props) {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
