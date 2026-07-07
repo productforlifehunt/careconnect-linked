@@ -163,10 +163,17 @@ function adaptOut(slug: string, data: Record<string, any>): Record<string, any> 
     if ("granted_by" in d) { delete d.granted_by; }
   } else if (slug === "nn_template") {
     if ("name" in d) { d.tpl_name = String(d.name); delete d.name; }
-    if ("source_block_id" in d) { d.category = String(d.source_block_id); delete d.source_block_id; }
+    if ("source_block_id" in d || "is_published" in d) {
+      const src = d.source_block_id ?? "";
+      const pub = d.is_published ? ":pub" : "";
+      d.category = `${src}${pub}`;
+      delete d.source_block_id;
+      delete d.is_published;
+    }
     if ("workspace_id" in d) { delete d.workspace_id; }
     if ("body_snapshot" in d) { d.block_tree_snapshot = String(d.body_snapshot); delete d.body_snapshot; }
   }
+
   // Coerce remaining values that are numbers to strings for JetEngine's text fields.
   for (const k of Object.keys(d)) d[k] = toWpString(d[k]);
   return d;
