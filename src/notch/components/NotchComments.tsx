@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Send, Trash2 } from "lucide-react";
 import { cctList, cctCreate, cctDelete, NN } from "@/notch/lib/nn-client";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
+import { createNotification } from "@/notch/lib/nn-notifications";
 
 interface Comment {
   id: string;
