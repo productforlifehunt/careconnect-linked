@@ -178,6 +178,8 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
       MathBlock,
       Columns,
       Column,
+      NotchMention,
+      Column,
     ],
     content: content || "",
     onUpdate: ({ editor }) => onChange(editor.getJSON()),
