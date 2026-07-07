@@ -210,9 +210,8 @@ export function NotchSidebar() {
             onContextMenu={(e) => { e.preventDefault(); setCtx({ x: e.clientX, y: e.clientY, page: p }); }}
           >
             <span
-              className={`nn-caret ${isOpen ? "open" : ""}`}
+              className={`nn-caret ${isOpen ? "open" : ""} ${hasChildren ? "has-children" : ""}`}
               onClick={(e) => { e.stopPropagation(); setExpanded((s) => ({ ...s, [p.id]: !s[p.id] })); }}
-              style={{ opacity: hasChildren ? 1 : undefined }}
             >
               <ChevronRight size={12} />
             </span>
