@@ -1,0 +1,121 @@
+/**
+ * Notch Note — @mention with user autocomplete (Notion-style).
+ * Backed by nn_workspace_member CCT — resolves member user_id + display name.
+ */
+import Mention from "@tiptap/extension-mention";
+import { ReactRenderer } from "@tiptap/react";
+import { useEffect, useImperativeHandle, useState, forwardRef } from "react";
+import { cctList, NN } from "@/notch/lib/nn-client";
+
+interface MemberOption { id: string; user_id: string; label: string; }
+
+let cachedMembers: MemberOption[] | null = null;
+async function fetchMembers(workspaceId?: string): Promise<MemberOption[]> {
+  if (cachedMembers) return cachedMembers;
+  try {
+    const rows = await cctList<any>(NN.member, workspaceId ? { workspace_id: workspaceId } : undefined);
+    const list: MemberOption[] = rows.map((r: any) => ({
+      id: String(r.id),
+      user_id: String(r.user_id || ""),
+      label: r.display_name || r.email || `User ${r.user_id}`,
+    }));
+    cachedMembers = list;
+    return list;
+  } catch {
+    return [];
+  }
+}
+export function invalidateMentionCache() { cachedMembers = null; }
+
+interface Props {
+  items: MemberOption[];
+  command: (item: { id: string; label: string }) => void;
+}
+
+const MentionList = forwardRef<any, Props>((props, ref) => {
+  const [selected, setSelected] = useState(0);
+  useEffect(() => setSelected(0), [props.items]);
+
+  const pick = (i: number) => {
+    const it = props.items[i];
+    if (it) props.command({ id: it.user_id, label: it.label });
+  };
+
+  useImperativeHandle(ref, () => ({
+    onKeyDown: ({ event }: { event: KeyboardEvent }) => {
+      if (event.key === "ArrowDown") { setSelected((s) => (s + 1) % Math.max(1, props.items.length)); return true; }
+      if (event.key === "ArrowUp") { setSelected((s) => (s - 1 + props.items.length) % Math.max(1, props.items.length)); return true; }
+      if (event.key === "Enter") { pick(selected); return true; }
+      return false;
+    },
+  }));
+
+  if (!props.items.length) {
+    return <div className="nn-mention-menu"><div className="nn-mention-empty">No people</div></div>;
+  }
+  return (
+    <div className="nn-mention-menu">
+      {props.items.map((it, i) => (
+        <div
+          key={it.id}
+          className={`nn-mention-item ${i === selected ? "selected" : ""}`}
+          onMouseEnter={() => setSelected(i)}
+          onMouseDown={(e) => { e.preventDefault(); pick(i); }}
+        >
+          <span className="nn-mention-avatar">{it.label.charAt(0).toUpperCase()}</span>
+          <span className="nn-mention-label">{it.label}</span>
+        </div>
+      ))}
+    </div>
+  );
+});
+MentionList.displayName = "MentionList";
+
+export const NotchMention = Mention.configure({
+  HTMLAttributes: { class: "nn-mention" },
+  renderText: ({ node }) => `@${node.attrs.label ?? node.attrs.id}`,
+  suggestion: {
+    char: "@",
+    items: async ({ query }: { query: string }) => {
+      const list = await fetchMembers();
+      const q = query.toLowerCase();
+      return list.filter((m) => m.label.toLowerCase().includes(q)).slice(0, 8);
+    },
+    render: () => {
+      let component: ReactRenderer | null = null;
+      let popup: HTMLDivElement | null = null;
+
+      const position = (rect: DOMRect) => {
+        if (!popup) return;
+        popup.style.position = "fixed";
+        popup.style.top = `${rect.bottom + 4}px`;
+        popup.style.left = `${rect.left}px`;
+        popup.style.zIndex = "1000";
+      };
+
+      return {
+        onStart: (props: any) => {
+          component = new ReactRenderer(MentionList, { props, editor: props.editor });
+          popup = document.createElement("div");
+          popup.appendChild(component.element);
+          document.body.appendChild(popup);
+          const rect = props.clientRect?.();
+          if (rect) position(rect);
+        },
+        onUpdate: (props: any) => {
+          component?.updateProps(props);
+          const rect = props.clientRect?.();
+          if (rect) position(rect);
+        },
+        onKeyDown: (props: any) => {
+          if (props.event.key === "Escape") { popup?.remove(); popup = null; component?.destroy(); return true; }
+          return (component?.ref as any)?.onKeyDown?.(props) ?? false;
+        },
+        onExit: () => {
+          popup?.remove(); popup = null;
+          component?.destroy(); component = null;
+        },
+      };
+    },
+  },
+});
