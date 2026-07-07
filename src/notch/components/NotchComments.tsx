@@ -93,8 +93,9 @@ export function NotchComments({ blockId }: { blockId: string }) {
               </div>
               <div style={{ fontSize: 14, whiteSpace: "pre-wrap" }}>{c.body}</div>
             </div>
+            <button onClick={() => resolve(c.id)} title="Resolve" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-tertiary)" }}><Check size={13} /></button>
             {String(c.author_id) === String(user?.user_id) && (
-              <button onClick={() => remove(c.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-tertiary)" }}><Trash2 size={13} /></button>
+              <button onClick={() => remove(c.id)} title="Delete" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-tertiary)" }}><Trash2 size={13} /></button>
             )}
           </div>
         ))}
