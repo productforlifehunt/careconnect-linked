@@ -812,3 +812,31 @@
 .notch-app .nn-context-item.danger:hover { background: rgba(224,62,62,0.10); }
 .notch-app .nn-context-icon { display:flex; width:16px; opacity:0.75; }
 .notch-app .nn-context-divider { height:1px; background: var(--nn-border); margin: 4px 2px; }
+
+/* Sidebar section header collapsible */
+.notch-app .nn-sidebar-section-header {
+  display: flex; align-items: center; gap: 4px;
+  padding: 4px 8px 4px 6px;
+  font-size: 12px; font-weight: 500;
+  color: var(--nn-text-tertiary);
+  cursor: pointer; border-radius: var(--nn-radius);
+  user-select: none;
+}
+.notch-app .nn-sidebar-section-header:hover { background: var(--nn-bg-hover); color: var(--nn-text-secondary); }
+.notch-app .nn-sidebar-section-header .nn-section-caret {
+  width: 14px; height: 14px; display: inline-flex; align-items: center; justify-content: center;
+  transition: transform 0.15s;
+}
+.notch-app .nn-sidebar-section-header .nn-section-caret.open { transform: rotate(90deg); }
+.notch-app .nn-sidebar-section-header .nn-section-label { flex: 1; }
+.notch-app .nn-sidebar-section-header .nn-section-add {
+  opacity: 0; background: none; border: 0; cursor: pointer; color: inherit; padding: 2px; display: inline-flex;
+  border-radius: 3px;
+}
+.notch-app .nn-sidebar-section-header:hover .nn-section-add { opacity: 1; }
+.notch-app .nn-sidebar-section-header .nn-section-add:hover { background: var(--nn-bg-hover-strong); }
+
+/* Caret polish: keep visible when node has children */
+.notch-app .nn-sidebar-item .nn-caret.has-children { opacity: 0.6; }
+.notch-app .nn-sidebar-item:hover .nn-caret.has-children { opacity: 1; }
+.notch-app .nn-sidebar-item .nn-caret:hover { background: var(--nn-bg-hover-strong); }
