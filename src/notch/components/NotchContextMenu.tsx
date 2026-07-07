@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Copy, Link2, Pencil, Star, Trash2, Plus, StarOff } from "lucide-react";
+import { Copy, Link2, Pencil, Star, Trash2, Plus, StarOff, Users } from "lucide-react";
 
 export interface NotchContextMenuItem {
   label: string;
@@ -50,4 +50,4 @@ export function NotchContextMenu({
   );
 }
 
-export const CtxIcons = { Copy, Link2, Pencil, Star, StarOff, Trash2, Plus };
+export const CtxIcons = { Copy, Link2, Pencil, Star, StarOff, Trash2, Plus, Users };

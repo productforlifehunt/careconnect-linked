@@ -20,7 +20,7 @@ import Youtube from "@tiptap/extension-youtube";
 import { Details, DetailsSummary, DetailsContent } from "@tiptap/extension-details";
 import { useEffect, useRef, useState } from "react";
 import { Bold, Italic, Underline as UIcon, Strikethrough, Code, Link as LinkIcon, AlignLeft, AlignCenter, AlignRight, Sparkles } from "lucide-react";
-import { MathBlock, Columns, Column, buildColumns } from "./notch-extensions";
+import { MathBlock, Columns, Column, SyncBlock, buildColumns } from "./notch-extensions";
 import { NotchMention } from "./notch-mention";
 import { nnUploadFile, pickFile } from "@/notch/lib/nn-files";
 import { nnPrompt, nnAlert } from "@/notch/lib/nn-dialog";
@@ -138,6 +138,8 @@ const SLASH_ITEMS = [
     cmd: (e: any) => e.chain().focus().insertContent(buildColumns(2)).run() },
   { group: "Advanced", key: "cols3", icon: "▮▮▮", name: "3 columns", desc: "Three-column layout.",
     cmd: (e: any) => e.chain().focus().insertContent(buildColumns(3)).run() },
+  { group: "Advanced", key: "sync", icon: "🔗", name: "Sync block", desc: "Mirror another page's content, live.",
+    cmd: (e: any) => e.chain().focus().insertContent({ type: "syncBlock", attrs: { sourceId: "" } }).run() },
   { group: "Basic", key: "subpage", icon: "📄", name: "Sub-page", desc: "Embed a new sub-page.", cmd: async (e: any, ctx: any) => {
       if (!ctx?.onCreateSubpage) return;
       const p = await ctx.onCreateSubpage();
@@ -178,6 +180,7 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
       MathBlock,
       Columns,
       Column,
+      SyncBlock,
       NotchMention,
     ],
     content: content || "",
