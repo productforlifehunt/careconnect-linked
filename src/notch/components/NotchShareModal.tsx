@@ -9,6 +9,7 @@ interface Perm { id: string; block_id?: string; email?: string; role?: Role; is_
 
 export function NotchShareModal({ blockId, onClose }: { blockId: string; onClose: () => void }) {
   const { user } = useNotchAuth();
+  const base = useNotchBase();
   const [items, setItems] = useState<Perm[]>([]);
   const [publicRow, setPublicRow] = useState<Perm | null>(null);
   const [email, setEmail] = useState("");
