@@ -45,6 +45,18 @@ const SLASH_ITEMS = [
       const url = window.prompt("URL");
       if (url) e.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
     } },
+  { group: "Basic", key: "subpage", icon: "📄", name: "Sub-page", desc: "Embed a new sub-page.", cmd: async (e: any, ctx: any) => {
+      if (!ctx?.onCreateSubpage) return;
+      const p = await ctx.onCreateSubpage();
+      if (!p) return;
+      e.chain().focus()
+        .insertContent([
+          { type: "paragraph", content: [
+            { type: "text", marks: [{ type: "link", attrs: { href: p.href } }], text: `📄 ${p.title}` },
+          ] },
+        ])
+        .run();
+    } },
 ];
 
 export function NotionEditor({ content, onChange, placeholder = "Type '/' for commands", onCreateSubpage }: Props) {
