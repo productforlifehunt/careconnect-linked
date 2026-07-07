@@ -1,8 +1,9 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { ChevronRight, Plus, MoreHorizontal, Search, Trash2, FileText, Settings, LogOut, Trash } from "lucide-react";
+import { ChevronRight, Plus, MoreHorizontal, Search, Trash2, FileText, Settings, LogOut, Trash, Star } from "lucide-react";
 import { cctList, cctCreate, cctUpdate, cctDelete, NN } from "@/notch/lib/nn-client";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
+import { useFavorites } from "@/notch/lib/nn-favorites";
 
 interface Block {
   id: string;
@@ -25,6 +26,7 @@ export function NotchSidebar() {
   const nav = useNavigate();
   const location = useLocation();
   const { user, logout } = useNotchAuth();
+  const { favs } = useFavorites();
   const { pageId } = useParams<{ pageId: string }>();
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [activeWs, setActiveWs] = useState<string | null>(null);
@@ -159,6 +161,27 @@ export function NotchSidebar() {
           <span className="nn-title">Trash</span>
         </div>
       </div>
+
+      {favs.length > 0 && (
+        <div className="nn-sidebar-section">
+          <div className="nn-sidebar-section-label">Favorites</div>
+          {favs.map((f) => {
+            const p = pages.find((x) => String(x.id) === String(f.block_id));
+            if (!p) return null;
+            return (
+              <div
+                key={f.id}
+                className={`nn-sidebar-item ${pageId === p.id ? "active" : ""}`}
+                onClick={() => nav(`/notch/p/${p.id}`)}
+              >
+                <span className="nn-caret" style={{ opacity: 0 }} />
+                <span className="nn-icon">{p.icon || <Star size={14} />}</span>
+                <span className="nn-title">{p.title || "Untitled"}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       <div className="nn-sidebar-section" style={{ flex: 1 }}>
         <div className="nn-sidebar-section-label" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>

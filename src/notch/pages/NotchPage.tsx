@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ChevronRight, Database, FileText, MoreHorizontal } from "lucide-react";
+import { ChevronRight, Database, FileText, MoreHorizontal, Star, Image as ImageIcon, X } from "lucide-react";
 import { NotionEditor } from "@/notch/components/NotionEditor";
 import { NotchDatabase } from "@/notch/components/NotchDatabase";
+import { NotchComments } from "@/notch/components/NotchComments";
+import { useFavorites } from "@/notch/lib/nn-favorites";
 import { cctGet, cctList, cctUpdate, NN } from "@/notch/lib/nn-client";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 
@@ -24,9 +26,11 @@ export default function NotchPage() {
   const { pageId } = useParams<{ pageId: string }>();
   const nav = useNavigate();
   const { user } = useNotchAuth();
+  const { isFav, toggle: toggleFav } = useFavorites();
   const [block, setBlock] = useState<Block | null>(null);
   const [title, setTitle] = useState("");
   const [icon, setIcon] = useState("");
+  const [cover, setCover] = useState("");
   const [content, setContent] = useState<any>(null);
   const [crumbs, setCrumbs] = useState<Block[]>([]);
   const [showEmoji, setShowEmoji] = useState(false);
@@ -43,6 +47,7 @@ export default function NotchPage() {
       setBlock(b);
       setTitle(b.title || "");
       setIcon(b.icon || "");
+      setCover(b.cover || "");
       try {
         const props = b.properties ? JSON.parse(b.properties) : {};
         setContent(props.editor_content || null);
@@ -87,6 +92,13 @@ export default function NotchPage() {
     setContent(json);
     scheduleSave({ properties: JSON.stringify({ editor_content: json }) });
   };
+  const setCoverImage = () => {
+    const url = window.prompt("Cover image URL", cover || "");
+    if (url === null) return;
+    setCover(url);
+    scheduleSave({ cover: url });
+  };
+  const removeCover = () => { setCover(""); scheduleSave({ cover: "" }); };
 
   const convertType = async (newType: "page" | "database") => {
     if (!pageId || !block) return;
@@ -117,10 +129,27 @@ export default function NotchPage() {
             </span>
           ))}
         </div>
+        <button
+          className="nn-topbar-btn"
+          onClick={() => toggleFav(pageId)}
+          title={isFav(pageId) ? "Remove from favorites" : "Add to favorites"}
+        >
+          <Star size={15} fill={isFav(pageId) ? "#f5a623" : "none"} color={isFav(pageId) ? "#f5a623" : "currentColor"} />
+        </button>
         <div style={{ position: "relative" }}>
           <button className="nn-topbar-btn" onClick={() => setShowMenu((s) => !s)} title="More"><MoreHorizontal size={16} /></button>
           {showMenu && (
             <div style={{ position: "absolute", right: 0, top: "100%", background: "var(--nn-bg)", border: "1px solid var(--nn-border-strong)", borderRadius: 6, boxShadow: "0 6px 20px rgba(0,0,0,0.12)", zIndex: 50, minWidth: 200, padding: 4 }}>
+              <div onClick={() => { setCoverImage(); setShowMenu(false); }} className="nn-sidebar-item">
+                <span className="nn-icon"><ImageIcon size={14} /></span>
+                <span className="nn-title">{cover ? "Change cover" : "Add cover"}</span>
+              </div>
+              {cover && (
+                <div onClick={() => { removeCover(); setShowMenu(false); }} className="nn-sidebar-item">
+                  <span className="nn-icon"><X size={14} /></span>
+                  <span className="nn-title">Remove cover</span>
+                </div>
+              )}
               <div onClick={() => convertType(isDatabase ? "page" : "database")} className="nn-sidebar-item">
                 <span className="nn-icon">{isDatabase ? <FileText size={14} /> : <Database size={14} />}</span>
                 <span className="nn-title">Turn into {isDatabase ? "page" : "database"}</span>
@@ -131,7 +160,14 @@ export default function NotchPage() {
       </div>
 
       <div className="nn-page-scroll">
-        <div className="nn-page">
+        {cover && (
+          <div style={{ height: 220, background: `center/cover no-repeat url("${cover}")`, position: "relative" }}>
+            <button onClick={removeCover} className="nn-topbar-btn" style={{ position: "absolute", right: 12, bottom: 12, background: "rgba(255,255,255,0.85)" }}>
+              <X size={13} style={{ marginRight: 4 }} /> Remove
+            </button>
+          </div>
+        )}
+        <div className="nn-page" style={cover ? { paddingTop: 24 } : undefined}>
           <div style={{ position: "relative", display: "inline-block" }}>
             <div className="nn-page-icon" onClick={() => setShowEmoji((s) => !s)}>
               {icon || <span style={{ fontSize: 24, opacity: 0.3 }}>Add icon</span>}
@@ -158,6 +194,7 @@ export default function NotchPage() {
           ) : (
             <NotionEditor content={content} onChange={onContentChange} />
           )}
+          <NotchComments blockId={pageId} />
         </div>
       </div>
     </>
