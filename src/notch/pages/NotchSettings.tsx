@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 import { Moon, Sun } from "lucide-react";
+import { NotchMembersPanel } from "@/notch/components/NotchMembersPanel";
+import { requestBrowserNotificationPermission } from "@/notch/lib/nn-notifications";
 
 export default function NotchSettings() {
   const { user, logout } = useNotchAuth();
