@@ -208,8 +208,12 @@ function adaptIn(slug: string, item: any): any {
     return { ...item, block_id: bid, email: "", is_public: 0, granted_by: item.author_id };
   }
   if (slug === "nn_template") {
-    return { ...item, name: item.tpl_name, source_block_id: item.category, body_snapshot: item.block_tree_snapshot };
+    const cat = String(item.category || "");
+    const isPub = cat.endsWith(":pub");
+    const src = isPub ? cat.slice(0, -4) : cat;
+    return { ...item, name: item.tpl_name, source_block_id: src, is_published: isPub, body_snapshot: item.block_tree_snapshot };
   }
+
   return item;
 }
 
