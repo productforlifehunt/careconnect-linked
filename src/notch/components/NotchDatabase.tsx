@@ -127,7 +127,11 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
   };
 
   const statusProp = useMemo(() => schema.find((p) => p.type === "select") || null, [schema]);
-  const dateProp = useMemo(() => schema.find((p) => p.type === "date") || null, [schema]);
+  const dateProps = useMemo(() => schema.filter((p) => p.type === "date"), [schema]);
+  const dateProp = dateProps[0] || null;
+  const endDateProp = dateProps[1] || null;
+  const checkboxProp = useMemo(() => schema.find((p) => p.type === "checkbox") || null, [schema]);
+  const [calView, setCalView] = useState<"month" | "week">("month");
 
   // Apply filters and sorts before rendering (all views use `visibleRows`)
   const visibleRows = useMemo(() => {
