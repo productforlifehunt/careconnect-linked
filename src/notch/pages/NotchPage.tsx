@@ -196,6 +196,18 @@ export default function NotchPage() {
                 <span className="nn-icon">{isDatabase ? <FileText size={14} /> : <Database size={14} />}</span>
                 <span className="nn-title">Turn into {isDatabase ? "page" : "database"}</span>
               </div>
+              <div onClick={duplicatePage} className="nn-sidebar-item">
+                <span className="nn-icon"><Copy size={14} /></span>
+                <span className="nn-title">Duplicate</span>
+              </div>
+              <div onClick={copyLink} className="nn-sidebar-item">
+                <span className="nn-icon"><LinkIcon size={14} /></span>
+                <span className="nn-title">Copy link</span>
+              </div>
+              <div onClick={trashPage} className="nn-sidebar-item" style={{ color: "#e03e3e" }}>
+                <span className="nn-icon"><Trash2 size={14} /></span>
+                <span className="nn-title">Move to trash</span>
+              </div>
             </div>
           )}
         </div>
