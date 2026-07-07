@@ -98,6 +98,27 @@ const SLASH_ITEMS = [
       const url = window.prompt("URL");
       if (url) e.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
     } },
+  { group: "Media", key: "file", icon: "📎", name: "File", desc: "Upload any file.", cmd: async (e: any, ctx: any) => {
+      const f = await pickFile();
+      if (!f) return;
+      try {
+        const uid = ctx?.userId || 0;
+        const up = await nnUploadFile(f, uid);
+        const isImg = up.type.startsWith("image/");
+        if (isImg) {
+          e.chain().focus().setImage({ src: up.url, alt: up.name }).run();
+        } else {
+          const size = up.size > 1024 * 1024 ? `${(up.size / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(up.size / 1024))} KB`;
+          e.chain().focus().insertContent(`<div class="nn-bookmark"><a href="${up.url}" target="_blank" rel="noopener">📎 ${up.name}<div class="nn-bookmark-url">${size}</div></a></div>`).run();
+        }
+      } catch (err: any) { alert(`Upload failed: ${err.message || err}`); }
+    } },
+  { group: "Advanced", key: "math", icon: "∑", name: "Math", desc: "Insert a LaTeX equation.",
+    cmd: (e: any) => e.chain().focus().insertContent({ type: "mathBlock", attrs: { latex: "" } }).run() },
+  { group: "Advanced", key: "cols2", icon: "▮▮", name: "2 columns", desc: "Two-column layout.",
+    cmd: (e: any) => e.chain().focus().insertContent(buildColumns(2)).run() },
+  { group: "Advanced", key: "cols3", icon: "▮▮▮", name: "3 columns", desc: "Three-column layout.",
+    cmd: (e: any) => e.chain().focus().insertContent(buildColumns(3)).run() },
   { group: "Basic", key: "subpage", icon: "📄", name: "Sub-page", desc: "Embed a new sub-page.", cmd: async (e: any, ctx: any) => {
       if (!ctx?.onCreateSubpage) return;
       const p = await ctx.onCreateSubpage();
