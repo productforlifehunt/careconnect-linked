@@ -168,6 +168,7 @@ export function NotchSidebar() {
             <span className="nn-icon">{p.icon || <FileText size={15} strokeWidth={1.5} />}</span>
             <span className="nn-title">{p.title || "Untitled"}</span>
             <span className="nn-actions">
+              <button onClick={(e) => { e.stopPropagation(); renamePage(p.id, p.title || ""); }} title="Rename">✎</button>
               <button onClick={(e) => { e.stopPropagation(); deletePage(p.id); }} title="Delete"><Trash2 size={14} /></button>
               <button onClick={(e) => { e.stopPropagation(); createPage(p.id); }} title="Add subpage"><Plus size={14} /></button>
             </span>
