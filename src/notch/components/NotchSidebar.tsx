@@ -154,16 +154,34 @@ export function NotchSidebar() {
     catch { toast({ title: "Copy failed", description: url }); }
   };
 
+  const toggleTeamspace = async (p: Block) => {
+    let props: any = {};
+    try { props = (p as any).properties ? JSON.parse((p as any).properties) : {}; } catch {}
+    const meta = props._meta || {};
+    const nextTS = !meta.teamspace;
+    props._meta = { ...meta, teamspace: nextTS };
+    await cctUpdate(NN.block, p.id, { properties: JSON.stringify(props) });
+    toast({ title: nextTS ? "Converted to Teamspace" : "Reverted to page" });
+    await loadAll();
+  };
+
   const buildCtxItems = (p: Block) => {
     const fav = isFav(p.id);
-    return [
+    const isTopLevel = String(p.parent_id) === String(activeWs);
+    let isTeamspace = false;
+    try { const j = JSON.parse((p as any).properties || "{}"); isTeamspace = !!j?._meta?.teamspace; } catch {}
+    const items: any[] = [
       { label: "Rename", icon: <CtxIcons.Pencil size={14} />, onClick: () => renamePage(p.id, p.title || "") },
       { label: "Duplicate", icon: <CtxIcons.Copy size={14} />, onClick: () => duplicatePage(p) },
       { label: "Add subpage", icon: <CtxIcons.Plus size={14} />, onClick: () => createPage(p.id) },
       { label: fav ? "Remove from Favorites" : "Add to Favorites", icon: fav ? <CtxIcons.StarOff size={14} /> : <CtxIcons.Star size={14} />, onClick: () => toggleFav(p.id) },
       { label: "Copy link", icon: <CtxIcons.Link2 size={14} />, onClick: () => copyPageLink(p.id) },
-      { label: "Move to Trash", icon: <CtxIcons.Trash2 size={14} />, danger: true, divider: true, onClick: () => deletePage(p.id) },
     ];
+    if (isTopLevel) {
+      items.push({ label: isTeamspace ? "Revert to page" : "Convert to Teamspace", icon: <CtxIcons.Users size={14} />, onClick: () => toggleTeamspace(p) });
+    }
+    items.push({ label: "Move to Trash", icon: <CtxIcons.Trash2 size={14} />, danger: true, divider: true, onClick: () => deletePage(p.id) });
+    return items;
   };
 
   const renderTree = (parentId: string, depth = 0, seen: Set<string> = new Set()) => {
