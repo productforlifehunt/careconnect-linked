@@ -14,6 +14,7 @@ import NotchTrash from "@/notch/pages/NotchTrash";
 import NotchTemplates from "@/notch/pages/NotchTemplates";
 import NotchLanding from "@/notch/pages/NotchLanding";
 import NotchNotifications from "@/notch/pages/NotchNotifications";
+import { acceptInviteByToken } from "@/notch/lib/nn-collab";
 import "@/notch/styles/notch.css";
 
 interface Props {
