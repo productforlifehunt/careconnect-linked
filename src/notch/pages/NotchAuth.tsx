@@ -39,7 +39,7 @@ export default function NotchAuth() {
           {mode === "signup" && (
             <input className="nn-auth-input" placeholder="Display name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
           )}
-          <input className="nn-auth-input" placeholder="Email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+          <input className="nn-auth-input" placeholder="Email or username" type="text" required value={email} onChange={(e) => setEmail(e.target.value)} />
           <input className="nn-auth-input" placeholder="Password" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
           {err && <div className="nn-auth-err">{err}</div>}
           <button className="nn-auth-btn" disabled={busy}>{busy ? "…" : mode === "signup" ? "Sign up" : "Log in"}</button>
