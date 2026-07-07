@@ -51,15 +51,12 @@
         "@tiptap/extension-bubble-menu": "^3.27.2",
         "@tiptap/extension-color": "^3.27.2",
         "@tiptap/extension-details": "^3.27.2",
-        "@tiptap/extension-details-content": "^2.26.2",
-        "@tiptap/extension-details-summary": "^2.26.2",
         "@tiptap/extension-highlight": "^3.27.2",
         "@tiptap/extension-image": "^3.27.2",
         "@tiptap/extension-link": "^3.27.2",
         "@tiptap/extension-placeholder": "^3.27.2",
         "@tiptap/extension-table": "^3.27.2",
         "@tiptap/extension-table-cell": "^3.27.2",
-        "@tiptap/extension-table-header": "^3.27.2",
         "@tiptap/extension-table-row": "^3.27.2",
         "@tiptap/extension-task-item": "^3.27.2",
         "@tiptap/extension-task-list": "^3.27.2",
@@ -505,10 +502,6 @@
 
     "@tiptap/extension-details": ["@tiptap/extension-details@3.27.2", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@tiptap/extension-details/-/extension-details-3.27.2.tgz", { "peerDependencies": { "@tiptap/core": "3.27.2", "@tiptap/extension-text-style": "3.27.2", "@tiptap/pm": "3.27.2" } }, "sha512-3kem0Z+a60400thQrWXkqvBYKBhQrgDNPvh8evdA2L+27r49oxhqnm6k+2Q2rPYJNlbxS0fnGtakkzX7uUzM5Q=="],
 
-    "@tiptap/extension-details-content": ["@tiptap/extension-details-content@2.26.2", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@tiptap/extension-details-content/-/extension-details-content-2.26.2.tgz", { "peerDependencies": { "@tiptap/core": "^2.7.0", "@tiptap/extension-text-style": "^2.7.0" } }, "sha512-2Ia2KqwYucuv7dcTpA/PhytUuDhotzi8uZPXBHlGJLHVI9rAmJsSvID9cX/YWRTvCvAxyNqDp0sBH+Qx8QcloQ=="],
-
-    "@tiptap/extension-details-summary": ["@tiptap/extension-details-summary@2.26.2", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@tiptap/extension-details-summary/-/extension-details-summary-2.26.2.tgz", { "peerDependencies": { "@tiptap/core": "^2.7.0", "@tiptap/extension-text-style": "^2.7.0" } }, "sha512-rbRq6f56HKvzIuSpPHt513Ubglq728pz8Jx7WBRVqjpYF5/sTpYu9hZpbrIfLfjb2UakXI/LVU8vS50VwTwCnw=="],
-
     "@tiptap/extension-document": ["@tiptap/extension-document@3.27.2", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@tiptap/extension-document/-/extension-document-3.27.2.tgz", { "peerDependencies": { "@tiptap/core": "3.27.2" } }, "sha512-RkvCVKsAUEBxdc5EltXQfaiC33/PFByokRuVI08IeQDukwF9lrvba/O8vHAcHAh+XWTiy+U88m5ORLUO1MIlJA=="],
 
     "@tiptap/extension-dropcursor": ["@tiptap/extension-dropcursor@3.27.2", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@tiptap/extension-dropcursor/-/extension-dropcursor-3.27.2.tgz", { "peerDependencies": { "@tiptap/extensions": "3.27.2" } }, "sha512-PUMhuvP4zyv41iRR06m87DoeLCBbT6SFstz9QZCZcK6+17rk8cdifFE+LIfRPAoPYEO/+jRoCcJ7BhGrOJDWzA=="],
@@ -548,8 +541,6 @@
     "@tiptap/extension-table": ["@tiptap/extension-table@3.27.2", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@tiptap/extension-table/-/extension-table-3.27.2.tgz", { "peerDependencies": { "@tiptap/core": "3.27.2", "@tiptap/pm": "3.27.2" } }, "sha512-lOuapZby/RgOmrAg5OlTIh/4li8qYhbbTJLKXGq+vCl2BlWLZBMXrhdzPnIqqCiD7mLhNoOPA4kQOohJUah+ww=="],
 
     "@tiptap/extension-table-cell": ["@tiptap/extension-table-cell@3.27.2", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@tiptap/extension-table-cell/-/extension-table-cell-3.27.2.tgz", { "peerDependencies": { "@tiptap/extension-table": "3.27.2" } }, "sha512-OD0Zui+/3pT8XwkHWjOMrcyALrnImcOQ+Khg/4pJb+5KoKCkExBqYeH2Zq8Gz5yAO1r9ICrQvl/Kjil1JnOZuA=="],
-
-    "@tiptap/extension-table-header": ["@tiptap/extension-table-header@3.27.2", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@tiptap/extension-table-header/-/extension-table-header-3.27.2.tgz", { "peerDependencies": { "@tiptap/extension-table": "3.27.2" } }, "sha512-HWbSsuYqxGT+trU9GP/EnX4tF4p+pq/YVrQKu4qPK+gFMJUG/FiL2OH/eNRh48r+EXp+VM6znYcIHrfUhNroNw=="],
 
     "@tiptap/extension-table-row": ["@tiptap/extension-table-row@3.27.2", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@tiptap/extension-table-row/-/extension-table-row-3.27.2.tgz", { "peerDependencies": { "@tiptap/extension-table": "3.27.2" } }, "sha512-X+HxuA5aTLrGGUHKPVKrVRyZt+zst4fxG5r89ExFH96bWHs3hLQGZnIDEBpOVsMFl65FAUxE0ycw/Vh/xAT5NQ=="],
 
