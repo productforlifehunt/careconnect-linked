@@ -41,11 +41,27 @@ export function NotchComments({ blockId }: { blockId: string }) {
         resolved: 0,
         author_display: user?.user_display_name || user?.user_email || "Anonymous",
       });
+      // Parse @<user_id> mentions and fire notifications
+      const mentions = Array.from(new Set((body.match(/@(\d+)/g) || []).map((m) => m.slice(1))));
+      for (const uid of mentions) {
+        if (uid && String(uid) !== String(user?.user_id)) {
+          try {
+            await createNotification({
+              user_id: uid,
+              type: "mention",
+              block_id: String(blockId),
+              actor_user_id: user ? String(user.user_id) : "",
+              payload: JSON.stringify({ message: body.slice(0, 140) }),
+            });
+          } catch { /* noop */ }
+        }
+      }
       setText("");
       await load();
     } catch (e) { console.error("comment", e); }
     setBusy(false);
   };
+
 
   const remove = async (id: string) => {
     if (!confirm("Delete this comment?")) return;
