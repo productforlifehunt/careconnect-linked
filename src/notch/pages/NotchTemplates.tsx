@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useNotchPath } from "@/notch/context/NotchBaseContext";
-import { Plus, FileText, Trash2, Copy } from "lucide-react";
+import { Plus, FileText, Trash2, Copy, Sparkles } from "lucide-react";
 import { cctList, cctCreate, cctUpdate, cctDelete, cctGet, NN } from "@/notch/lib/nn-client";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
+import { STARTER_TEMPLATES, StarterTemplate } from "@/notch/lib/nn-starter-templates";
 
 interface Template { id: string; name?: string; icon?: string; source_block_id?: string; workspace_id?: string; }
 
@@ -14,6 +15,7 @@ export default function NotchTemplates() {
   const [items, setItems] = useState<Template[]>([]);
   const [wsId, setWsId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [busyKey, setBusyKey] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -57,6 +59,20 @@ export default function NotchTemplates() {
     nav(path(`/p/${id}`));
   };
 
+  const useStarter = async (s: StarterTemplate) => {
+    if (!wsId || busyKey) return;
+    setBusyKey(s.key);
+    try {
+      const { id } = await s.build({ workspaceId: wsId, userId: user?.user_id || 0 });
+      nav(path(`/p/${id}`));
+    } catch (e) {
+      console.error("Starter template failed", e);
+      alert("Could not create template. Check console for details.");
+    } finally {
+      setBusyKey(null);
+    }
+  };
+
   const remove = async (t: Template) => {
     if (!confirm("Delete this template?")) return;
     await cctDelete(NN.template, t.id);
@@ -80,8 +96,36 @@ export default function NotchTemplates() {
         <div style={{ color: "var(--nn-text-secondary)", marginBottom: 24 }}>
           Save reusable page layouts. Instantiate them anywhere.
         </div>
+
+        {/* ─── Starter gallery ─── */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12, fontSize: 13, fontWeight: 600, color: "var(--nn-text-secondary)", textTransform: "uppercase", letterSpacing: 0.4 }}>
+          <Sparkles size={14} /> Starter templates
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12, marginBottom: 32 }}>
+          {STARTER_TEMPLATES.map((s) => (
+            <div key={s.key} style={{ border: "1px solid var(--nn-border)", borderRadius: 8, padding: 16, background: "var(--nn-bg)", display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ fontSize: 32 }}>{s.icon}</div>
+              <div style={{ fontWeight: 600, fontSize: 15 }}>{s.name}</div>
+              <div style={{ fontSize: 12.5, color: "var(--nn-text-secondary)", flex: 1, lineHeight: 1.45 }}>{s.description}</div>
+              <button
+                className="nn-btn-primary"
+                style={{ marginTop: 6, alignSelf: "flex-start" }}
+                disabled={busyKey === s.key || !wsId}
+                onClick={() => useStarter(s)}
+                data-starter-key={s.key}
+              >
+                {busyKey === s.key ? "Creating…" : (<><Copy size={12} style={{ marginRight: 4 }} /> Use template</>)}
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {/* ─── User templates ─── */}
+        <div style={{ fontSize: 13, fontWeight: 600, color: "var(--nn-text-secondary)", textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 12 }}>
+          Your templates
+        </div>
         {loading ? <div style={{ opacity: 0.5 }}>Loading…</div> : !items.length ? (
-          <div style={{ color: "var(--nn-text-tertiary)" }}>No templates yet.</div>
+          <div style={{ color: "var(--nn-text-tertiary)" }}>No saved templates yet.</div>
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
             {items.map((t) => (
