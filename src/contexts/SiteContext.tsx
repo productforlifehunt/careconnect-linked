@@ -2,13 +2,13 @@ import React, { createContext, useContext, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n/config";
 
-export type SiteId = "carecnc" | "challenged" | "challenged-v1" | "duocare";
+export type SiteId = "carecnc" | "challenged" | "challenged-v1" | "duocare" | "notchnote";
 
 export interface SiteConfig {
   id: SiteId;
   /** Brand family — versioned variants (e.g. challenged-v1) share the
    *  same family as their parent so id-based UI checks keep working. */
-  family?: "challenged" | "carecnc" | "duocare";
+  family?: "challenged" | "carecnc" | "duocare" | "notchnote";
   name: string;
   tagline: string;
   logoText: string;
@@ -215,6 +215,7 @@ function detectSite(): SiteId {
   if (siteParam === "challenged-v1" || siteParam === "challenged-1.0" || siteParam === "yichang-v1") return "challenged-v1";
   if (siteParam === "carecnc" || siteParam === "careconnected") return "carecnc";
   if (siteParam === "duocare") return "duocare";
+  if (siteParam === "notchnote" || siteParam === "notch") return "notchnote";
 
   if (DOMAIN_MAP[host]) return DOMAIN_MAP[host];
   if (DOMAIN_MAP[hostname]) return DOMAIN_MAP[hostname];
@@ -223,11 +224,22 @@ function detectSite(): SiteId {
   return "challenged";
 }
 
+const notchNoteConfig: SiteConfig = {
+  ...careCNCConfig,
+  id: "notchnote", family: "notchnote", name: "Notch Note",
+  tagline: "The connected workspace",
+  logoText: "Notch", logoAccent: "Note",
+  metaTitle: "Notch Note — Write, plan, share",
+  metaDescription: "The connected workspace. Notion-like pages, databases, and collaboration.",
+  cssClass: "site-notchnote", brandSlug: "notchnote",
+};
+
 const SITE_CONFIGS: Record<SiteId, SiteConfig> = {
   challenged: challengedConfig,
   "challenged-v1": challengedV1Config,
   carecnc: careCNCConfig,
   duocare: duoCareConfig,
+  notchnote: notchNoteConfig,
 };
 
 const SiteContext = createContext<SiteConfig>(careCNCConfig);
@@ -242,7 +254,7 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const html = document.documentElement;
     // Remove any existing site class
-    html.classList.remove("site-carecnc", "site-challenged", "site-duocare");
+    html.classList.remove("site-carecnc", "site-challenged", "site-duocare", "site-notchnote");
     html.classList.add(config.cssClass);
 
     // Update page title
