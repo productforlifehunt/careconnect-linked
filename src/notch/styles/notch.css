@@ -38,7 +38,71 @@
   --nn-border-strong: rgba(255, 255, 255, 0.16);
   --nn-blue: rgb(35, 131, 226);
   --nn-blue-bg: rgba(35, 131, 226, 0.18);
+  --nn-danger: #ff6b6b;
+  --nn-warning: #f5a623;
 }
+
+/* Editor block styles: callout, toggle, table, embed, bookmark */
+.notch-app blockquote.nn-callout {
+  background: var(--nn-bg-hover);
+  border-left: 3px solid var(--nn-blue);
+  padding: 12px 16px;
+  border-radius: 4px;
+  margin: 8px 0;
+  color: var(--nn-text);
+  font-style: normal;
+}
+.notch-app details.nn-toggle {
+  padding: 4px 0;
+  border-radius: 4px;
+}
+.notch-app details.nn-toggle > summary {
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  outline: none;
+  font-weight: 500;
+}
+.notch-app details.nn-toggle > summary:hover { background: var(--nn-bg-hover); }
+.notch-app details.nn-toggle > div { padding: 4px 6px 4px 22px; }
+.notch-app .nn-editor table {
+  border-collapse: collapse;
+  margin: 12px 0;
+  width: 100%;
+  table-layout: fixed;
+}
+.notch-app .nn-editor table td,
+.notch-app .nn-editor table th {
+  border: 1px solid var(--nn-border-strong);
+  padding: 6px 10px;
+  min-width: 60px;
+  vertical-align: top;
+  position: relative;
+}
+.notch-app .nn-editor table th {
+  background: var(--nn-bg-secondary);
+  font-weight: 600;
+  text-align: left;
+}
+.notch-app .nn-embed {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  margin: 12px 0;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--nn-border);
+}
+.notch-app .nn-embed iframe { width: 100%; height: 100%; border: 0; }
+.notch-app .nn-bookmark {
+  border: 1px solid var(--nn-border-strong);
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 8px 0;
+  background: var(--nn-bg-secondary);
+}
+.notch-app .nn-bookmark a { text-decoration: none; color: var(--nn-text); font-weight: 500; display: block; }
+.notch-app .nn-bookmark-url { font-size: 12px; color: var(--nn-text-tertiary); margin-top: 3px; word-break: break-all; }
 
 .notch-app * {
   box-sizing: border-box;
