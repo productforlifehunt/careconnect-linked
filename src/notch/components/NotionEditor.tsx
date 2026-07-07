@@ -273,6 +273,21 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
           ))}
         </div>
       )}
+      {hoverBlock && (
+        <div className="nn-block-handles" style={{ top: hoverBlock.top }}>
+          <button title="Add block below" onClick={handlePlus}>+</button>
+          <button title="Block options" onClick={openBlockMenu}>⋮⋮</button>
+        </div>
+      )}
+      {blockMenu && (
+        <>
+          <div style={{ position: "fixed", inset: 0, zIndex: 90 }} onClick={() => setBlockMenu(null)} />
+          <div className="nn-block-menu" style={{ top: blockMenu.top + 20, left: blockMenu.left }}>
+            <div className="nn-sidebar-item" onClick={duplicateBlock}><span className="nn-title">Duplicate</span></div>
+            <div className="nn-sidebar-item" onClick={deleteBlock} style={{ color: "#e03e3e" }}><span className="nn-title">Delete</span></div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
