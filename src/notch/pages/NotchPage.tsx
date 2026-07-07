@@ -191,6 +191,30 @@ export default function NotchPage() {
 
         <button
           className="nn-topbar-btn"
+          title="Assign this page to a teammate"
+          onClick={async () => {
+            if (!user || !pageId) return;
+            const uid = window.prompt("Assign to user ID:");
+            if (!uid || !/^\d+$/.test(uid.trim())) return;
+            try {
+              await createNotification({
+                user_id: uid.trim(),
+                type: "assignment",
+                block_id: pageId,
+                actor_user_id: String(user.user_id),
+                payload: JSON.stringify({ message: `Assigned: ${title || "Untitled"}` }),
+              });
+              alert(`Assigned to user ${uid}`);
+            } catch (e: any) {
+              alert(`Failed: ${e.message || e}`);
+            }
+          }}
+        >
+          <UserPlus size={14} />
+        </button>
+
+        <button
+          className="nn-topbar-btn"
           onClick={() => toggleFav(pageId)}
           title={isFav(pageId) ? "Remove from favorites" : "Add to favorites"}
         >
