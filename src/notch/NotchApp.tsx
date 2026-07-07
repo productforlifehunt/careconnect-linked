@@ -4,6 +4,7 @@ import { Menu, X } from "lucide-react";
 import { NotchAuthProvider, useNotchAuth } from "@/notch/context/NotchAuthContext";
 import { NotchBaseContext } from "@/notch/context/NotchBaseContext";
 import { NotchSidebar } from "@/notch/components/NotchSidebar";
+import { NotchQuickFind } from "@/notch/components/NotchQuickFind";
 import NotchAuth from "@/notch/pages/NotchAuth";
 import NotchHome from "@/notch/pages/NotchHome";
 import NotchPage from "@/notch/pages/NotchPage";
