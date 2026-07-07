@@ -293,7 +293,7 @@ function CalendarView({ month, onPrev, onNext, rows, dateProp, onOpen, onAddOnDa
 
 function SchemaEditor({ schema, onClose, onSave }: { schema: PropDef[]; onClose: () => void; onSave: (s: PropDef[]) => void }) {
   const [draft, setDraft] = useState<PropDef[]>(JSON.parse(JSON.stringify(schema)));
-  const TYPES: PropType[] = ["text", "number", "select", "date", "checkbox", "url"];
+  const TYPES: PropType[] = ["text", "number", "select", "multiselect", "date", "checkbox", "url", "email", "phone", "person"];
   const add = () => {
     const key = `prop_${Date.now().toString(36)}`;
     setDraft([...draft, { key, name: "New property", type: "text" }]);
