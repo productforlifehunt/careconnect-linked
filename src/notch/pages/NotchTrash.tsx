@@ -60,7 +60,7 @@ export default function NotchTrash() {
                 <button onClick={() => restore(p.id)} title="Restore" style={{ background: "none", border: "1px solid var(--nn-border-strong)", padding: "4px 8px", borderRadius: 4, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, color: "var(--nn-text)" }}>
                   <RotateCcw size={13} /> Restore
                 </button>
-                <button onClick={() => purge(p.id)} title="Delete forever" style={{ background: "none", border: "1px solid var(--nn-border-strong)", padding: "4px 8px", borderRadius: 4, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, color: "#eb5757" }}>
+                <button onClick={() => purge(p.id)} title="Delete forever" style={{ background: "none", border: "1px solid var(--nn-border-strong)", padding: "4px 8px", borderRadius: 4, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, color: "var(--nn-danger)" }}>
                   <Trash2 size={13} /> Delete
                 </button>
               </div>

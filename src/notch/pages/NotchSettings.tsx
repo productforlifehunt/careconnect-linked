@@ -66,7 +66,7 @@ export default function NotchSettings() {
           </div>
         </div>
 
-        <button className="nn-btn-primary" onClick={logout} style={{ background: "#e03e3e" }}>Log out</button>
+        <button className="nn-btn-primary" onClick={logout} style={{ background: "var(--nn-danger)" }}>Log out</button>
       </div>
     </div>
   );
