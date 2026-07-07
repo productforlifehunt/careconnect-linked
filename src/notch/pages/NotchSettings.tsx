@@ -41,6 +41,22 @@ export default function NotchSettings() {
           </div>
         </div>
 
+        <NotchMembersPanel />
+
+        <div style={{ border: "1px solid var(--nn-border)", borderRadius: 6, padding: 16, marginBottom: 12 }}>
+          <div style={{ fontSize: 12, color: "var(--nn-text-tertiary)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Notifications</div>
+          <div style={{ fontSize: 13, color: "var(--nn-text-secondary)", marginBottom: 8 }}>
+            Enable browser push notifications so reminders and mentions reach you even when Notch Note is in the background.
+          </div>
+          <button
+            className="nn-topbar-btn"
+            onClick={async () => {
+              const r = await requestBrowserNotificationPermission();
+              alert(`Permission: ${r}`);
+            }}
+          >Enable browser notifications</button>
+        </div>
+
         <div style={{ border: "1px solid var(--nn-border)", borderRadius: 6, padding: 16, marginBottom: 12 }}>
           <div style={{ fontSize: 12, color: "var(--nn-text-tertiary)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Shortcuts</div>
           <div style={{ fontSize: 13, color: "var(--nn-text-secondary)", lineHeight: 1.8 }}>
