@@ -20,7 +20,7 @@ import Youtube from "@tiptap/extension-youtube";
 import { Details, DetailsSummary, DetailsContent } from "@tiptap/extension-details";
 import { useEffect, useRef, useState } from "react";
 import { Bold, Italic, Underline as UIcon, Strikethrough, Code, Link as LinkIcon, AlignLeft, AlignCenter, AlignRight, Sparkles } from "lucide-react";
-import { MathBlock, Columns, Column, buildColumns } from "./notch-extensions";
+import { MathBlock, Columns, Column, SyncBlock, buildColumns } from "./notch-extensions";
 import { NotchMention } from "./notch-mention";
 import { nnUploadFile, pickFile } from "@/notch/lib/nn-files";
 import { nnPrompt, nnAlert } from "@/notch/lib/nn-dialog";
