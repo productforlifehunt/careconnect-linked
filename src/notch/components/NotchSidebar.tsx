@@ -80,13 +80,13 @@ export function NotchSidebar() {
     });
     if (parentId) setExpanded((e) => ({ ...e, [parentId]: true }));
     await loadAll();
-    nav(`/notch/p/${id}`);
+    nav(path(`/p/${id}`));
   };
 
   const deletePage = async (id: string) => {
     if (!confirm("Delete this page? It will be moved to trash.")) return;
     await cctUpdate(NN.block, id, { archived: 1, in_trash: 1 });
-    if (pageId === id) nav("/notch");
+    if (pageId === id) nav(path("/"));
     await loadAll();
   };
 
@@ -128,7 +128,7 @@ export function NotchSidebar() {
               setExpanded((s) => ({ ...s, [p.id]: true }));
               await loadAll();
             }}
-            onClick={() => nav(`/notch/p/${p.id}`)}
+            onClick={() => nav(path(`/p/${p.id}`))}
           >
             <span
               className={`nn-caret ${isOpen ? "open" : ""}`}
@@ -162,23 +162,23 @@ export function NotchSidebar() {
       </div>
 
       <div className="nn-sidebar-section">
-        <div className="nn-sidebar-item" onClick={() => nav("/notch/search")}>
+        <div className="nn-sidebar-item" onClick={() => nav(path("/search"))}>
           <span className="nn-icon"><Search size={15} /></span>
           <span className="nn-title">Search</span>
         </div>
-        <div className="nn-sidebar-item" onClick={() => nav("/notch")}>
+        <div className="nn-sidebar-item" onClick={() => nav(path("/"))}>
           <span className="nn-icon">🏠</span>
           <span className="nn-title">Home</span>
         </div>
-        <div className="nn-sidebar-item" onClick={() => nav("/notch/settings")}>
+        <div className="nn-sidebar-item" onClick={() => nav(path("/settings"))}>
           <span className="nn-icon"><Settings size={15} /></span>
           <span className="nn-title">Settings</span>
         </div>
-        <div className="nn-sidebar-item" onClick={() => nav("/notch/templates")}>
+        <div className="nn-sidebar-item" onClick={() => nav(path("/templates"))}>
           <span className="nn-icon">🧩</span>
           <span className="nn-title">Templates</span>
         </div>
-        <div className="nn-sidebar-item" onClick={() => nav("/notch/trash")}>
+        <div className="nn-sidebar-item" onClick={() => nav(path("/trash"))}>
           <span className="nn-icon"><Trash size={15} /></span>
           <span className="nn-title">Trash</span>
         </div>
@@ -194,7 +194,7 @@ export function NotchSidebar() {
               <div
                 key={f.id}
                 className={`nn-sidebar-item ${pageId === p.id ? "active" : ""}`}
-                onClick={() => nav(`/notch/p/${p.id}`)}
+                onClick={() => nav(path(`/p/${p.id}`))}
               >
                 <span className="nn-caret" style={{ opacity: 0 }} />
                 <span className="nn-icon">{p.icon || <Star size={14} />}</span>

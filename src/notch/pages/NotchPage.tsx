@@ -122,7 +122,7 @@ export default function NotchPage() {
             <span key={c.id} style={{ display: "flex", alignItems: "center", gap: 4 }}>
               {i > 0 && <ChevronRight size={12} style={{ opacity: 0.5 }} />}
               <span
-                onClick={() => c.id !== pageId && nav(`/notch/p/${c.id}`)}
+                onClick={() => c.id !== pageId && nav(path(`/p/${c.id}`))}
                 style={{ cursor: c.id === pageId ? "default" : "pointer", padding: "2px 6px", borderRadius: 3, color: c.id === pageId ? "var(--nn-text)" : "var(--nn-text-secondary)" }}
               >
                 {c.icon && <span style={{ marginRight: 4 }}>{c.icon}</span>}

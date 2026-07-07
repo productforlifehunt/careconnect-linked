@@ -36,7 +36,7 @@ export default function NotchHome() {
           {recent.map((p) => (
             <div
               key={p.id}
-              onClick={() => nav(`/notch/p/${p.id}`)}
+              onClick={() => nav(path(`/p/${p.id}`))}
               style={{ border: "1px solid var(--nn-border)", borderRadius: 6, padding: 16, cursor: "pointer", background: "var(--nn-bg)", minHeight: 100 }}
             >
               <div style={{ fontSize: 22, marginBottom: 6 }}>{p.icon || <FileText size={20} />}</div>

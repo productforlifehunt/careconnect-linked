@@ -37,7 +37,7 @@ export default function NotchTemplates() {
       name: "Untitled template", icon: "🧩",
       source_block_id: String(blockId), workspace_id: String(wsId),
     });
-    nav(`/notch/p/${blockId}`);
+    nav(path(`/p/${blockId}`));
   };
 
   const useTemplate = async (t: Template) => {
@@ -52,7 +52,7 @@ export default function NotchTemplates() {
       archived: 0, in_trash: 0,
       created_by: user?.user_id || 0, last_edited_by: user?.user_id || 0,
     });
-    nav(`/notch/p/${id}`);
+    nav(path(`/p/${id}`));
   };
 
   const remove = async (t: Template) => {

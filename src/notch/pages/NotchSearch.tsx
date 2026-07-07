@@ -31,7 +31,7 @@ export default function NotchSearch() {
         />
         <div>
           {results.map((r) => (
-            <div key={r.id} onClick={() => nav(`/notch/p/${r.id}`)} style={{ padding: 10, borderRadius: 4, cursor: "pointer", display: "flex", gap: 8 }} className="nn-sidebar-item">
+            <div key={r.id} onClick={() => nav(path(`/p/${r.id}`))} style={{ padding: 10, borderRadius: 4, cursor: "pointer", display: "flex", gap: 8 }} className="nn-sidebar-item">
               <span>{r.icon || "📄"}</span>
               <span>{r.title || "Untitled"}</span>
             </div>
