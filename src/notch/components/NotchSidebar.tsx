@@ -148,7 +148,7 @@ export function NotchSidebar() {
               <button onClick={(e) => { e.stopPropagation(); createPage(p.id); }} title="Add subpage"><Plus size={14} /></button>
             </span>
           </div>
-          {isOpen && renderTree(p.id, depth + 1)}
+          {isOpen && renderTree(p.id, depth + 1, nextSeen)}
         </div>
       );
     });
