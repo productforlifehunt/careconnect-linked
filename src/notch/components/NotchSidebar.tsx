@@ -41,6 +41,15 @@ export function NotchSidebar() {
   const [loading, setLoading] = useState(true);
   const [unread, setUnread] = useState(0);
   const [ctx, setCtx] = useState<{ x: number; y: number; page: Block } | null>(null);
+  const [sectionsOpen, setSectionsOpen] = useState<Record<string, boolean>>(() => {
+    try { return JSON.parse(localStorage.getItem("nn:sidebar:sections") || "{}"); } catch { return {}; }
+  });
+  const toggleSection = (k: string) => setSectionsOpen((s) => {
+    const next = { ...s, [k]: s[k] === false ? true : false };
+    try { localStorage.setItem("nn:sidebar:sections", JSON.stringify(next)); } catch {}
+    return next;
+  });
+  const isSectionOpen = (k: string) => sectionsOpen[k] !== false;
 
   useEffect(() => {
     if (!user) return;
