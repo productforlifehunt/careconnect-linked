@@ -7,6 +7,8 @@ import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 import { useFavorites } from "@/notch/lib/nn-favorites";
 import { unreadCount, tickReminderQueue } from "@/notch/lib/nn-notifications";
 import { nnPrompt, nnConfirm } from "@/notch/lib/nn-dialog";
+import { NotchContextMenu, CtxIcons } from "@/notch/components/NotchContextMenu";
+import { toast } from "@/hooks/use-toast";
 
 interface Block {
   id: string;
@@ -30,7 +32,7 @@ export function NotchSidebar() {
   const path = useNotchPath();
   const location = useLocation();
   const { user, logout } = useNotchAuth();
-  const { favs } = useFavorites();
+  const { favs, isFav, toggle: toggleFav } = useFavorites();
   const { pageId } = useParams<{ pageId: string }>();
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [activeWs, setActiveWs] = useState<string | null>(null);
@@ -38,6 +40,7 @@ export function NotchSidebar() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [unread, setUnread] = useState(0);
+  const [ctx, setCtx] = useState<{ x: number; y: number; page: Block } | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -117,6 +120,43 @@ export function NotchSidebar() {
     await loadAll();
   };
 
+  const duplicatePage = async (src: Block) => {
+    if (!activeWs) return;
+    const { id } = await cctCreate(NN.block, {
+      workspace_id: activeWs,
+      parent_id: src.parent_id || activeWs,
+      type: src.type || "page",
+      title: src.title ? `${src.title} (copy)` : "Untitled (copy)",
+      icon: src.icon || "",
+      properties: JSON.stringify({}),
+      content_order: JSON.stringify([]),
+      archived: 0,
+      in_trash: 0,
+      created_by: user?.user_id || 0,
+      last_edited_by: user?.user_id || 0,
+    });
+    await loadAll();
+    nav(path(`/p/${id}`));
+  };
+
+  const copyPageLink = async (id: string) => {
+    const url = `${window.location.origin}${path(`/p/${id}`)}`;
+    try { await navigator.clipboard.writeText(url); toast({ title: "Link copied" }); }
+    catch { toast({ title: "Copy failed", description: url }); }
+  };
+
+  const buildCtxItems = (p: Block) => {
+    const fav = isFav(p.id);
+    return [
+      { label: "Rename", icon: <CtxIcons.Pencil size={14} />, onClick: () => renamePage(p.id, p.title || "") },
+      { label: "Duplicate", icon: <CtxIcons.Copy size={14} />, onClick: () => duplicatePage(p) },
+      { label: "Add subpage", icon: <CtxIcons.Plus size={14} />, onClick: () => createPage(p.id) },
+      { label: fav ? "Remove from Favorites" : "Add to Favorites", icon: fav ? <CtxIcons.StarOff size={14} /> : <CtxIcons.Star size={14} />, onClick: () => toggleFav(p.id) },
+      { label: "Copy link", icon: <CtxIcons.Link2 size={14} />, onClick: () => copyPageLink(p.id) },
+      { label: "Move to Trash", icon: <CtxIcons.Trash2 size={14} />, danger: true, divider: true, onClick: () => deletePage(p.id) },
+    ];
+  };
+
   const renderTree = (parentId: string, depth = 0, seen: Set<string> = new Set()) => {
     if (depth > 20 || seen.has(parentId)) return null; // cycle / depth guard
     const nextSeen = new Set(seen); nextSeen.add(parentId);
@@ -158,6 +198,7 @@ export function NotchSidebar() {
               await loadAll();
             }}
             onClick={() => nav(path(`/p/${p.id}`))}
+            onContextMenu={(e) => { e.preventDefault(); setCtx({ x: e.clientX, y: e.clientY, page: p }); }}
           >
             <span
               className={`nn-caret ${isOpen ? "open" : ""}`}
@@ -255,6 +296,7 @@ export function NotchSidebar() {
                 key={f.id}
                 className={`nn-sidebar-item ${pageId === p.id ? "active" : ""}`}
                 onClick={() => nav(path(`/p/${p.id}`))}
+                onContextMenu={(e) => { e.preventDefault(); setCtx({ x: e.clientX, y: e.clientY, page: p }); }}
               >
                 <span className="nn-caret" style={{ opacity: 0 }} />
                 <span className="nn-icon">{p.icon || <Star size={14} />}</span>
@@ -295,6 +337,14 @@ export function NotchSidebar() {
           title="Log out"
         ><LogOut size={14} /></button>
       </div>
+      {ctx && (
+        <NotchContextMenu
+          x={ctx.x}
+          y={ctx.y}
+          items={buildCtxItems(ctx.page)}
+          onClose={() => setCtx(null)}
+        />
+      )}
     </aside>
   );
 }

@@ -787,3 +787,28 @@
 
 /* Toggle-heading styling: bigger summary text based on first-child heading */
 .nn-toggle > summary { font-weight: 600; }
+
+/* ── Context menu (right-click on sidebar page) ──────────────────────── */
+.notch-app .nn-context-menu {
+  background: var(--nn-bg);
+  border: 1px solid var(--nn-border-strong);
+  border-radius: 6px;
+  box-shadow: 0 12px 32px rgba(15,15,15,0.20), 0 4px 10px rgba(15,15,15,0.12);
+  padding: 4px;
+  font-size: 13px;
+  color: var(--nn-text);
+  animation: nn-ctx-in 0.08s ease-out;
+}
+@keyframes nn-ctx-in { from { opacity:0; transform: translateY(-2px) scale(0.98);} to {opacity:1; transform:none;} }
+.notch-app .nn-context-item {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; padding: 6px 10px;
+  background: transparent; border: 0; cursor: pointer;
+  color: inherit; text-align: left; border-radius: 4px;
+  font-size: 13px; line-height: 1;
+}
+.notch-app .nn-context-item:hover { background: var(--nn-bg-hover); }
+.notch-app .nn-context-item.danger { color: var(--nn-danger); }
+.notch-app .nn-context-item.danger:hover { background: rgba(224,62,62,0.10); }
+.notch-app .nn-context-icon { display:flex; width:16px; opacity:0.75; }
+.notch-app .nn-context-divider { height:1px; background: var(--nn-border); margin: 4px 2px; }
