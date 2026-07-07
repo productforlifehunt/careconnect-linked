@@ -50,4 +50,4 @@ export function NotchContextMenu({
   );
 }
 
-export const CtxIcons = { Copy, Link2, Pencil, Star, StarOff, Trash2, Plus };
+export const CtxIcons = { Copy, Link2, Pencil, Star, StarOff, Trash2, Plus, Users };
