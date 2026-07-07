@@ -36,6 +36,22 @@ export function NotchSidebar() {
   const [pages, setPages] = useState<Block[]>([]);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
+  const [unread, setUnread] = useState(0);
+
+  useEffect(() => {
+    if (!user) return;
+    let alive = true;
+    const poll = async () => {
+      try {
+        await tickReminderQueue(String(user.user_id));
+        const n = await unreadCount(String(user.user_id));
+        if (alive) setUnread(n);
+      } catch { /* noop */ }
+    };
+    poll();
+    const t = setInterval(poll, 60_000);
+    return () => { alive = false; clearInterval(t); };
+  }, [user]);
 
   const loadAll = useCallback(async () => {
     setLoading(true);
