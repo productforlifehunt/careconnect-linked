@@ -90,6 +90,31 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
   const statusProp = useMemo(() => schema.find((p) => p.type === "select") || null, [schema]);
   const dateProp = useMemo(() => schema.find((p) => p.type === "date") || null, [schema]);
 
+  // Apply filters and sorts before rendering (all views use `visibleRows`)
+  const visibleRows = useMemo(() => {
+    let r = rows;
+    if (filterKey) {
+      if (filterKey === "__title__") {
+        const q = filterVal.toLowerCase();
+        r = r.filter((row) => (row.title || "").toLowerCase().includes(q));
+      } else if (filterVal) {
+        r = r.filter((row) => String(getProp(row, filterKey) ?? "").toLowerCase().includes(filterVal.toLowerCase()));
+      }
+    }
+    if (sortKey) {
+      const cmp = (a: Row, b: Row) => {
+        const av = sortKey === "__title__" ? (a.title || "") : String(getProp(a, sortKey) ?? "");
+        const bv = sortKey === "__title__" ? (b.title || "") : String(getProp(b, sortKey) ?? "");
+        const na = Number(av), nb = Number(bv);
+        const both = !isNaN(na) && !isNaN(nb) && av !== "" && bv !== "";
+        const res = both ? (na - nb) : av.localeCompare(bv);
+        return sortDir === "asc" ? res : -res;
+      };
+      r = [...r].sort(cmp);
+    }
+    return r;
+  }, [rows, filterKey, filterVal, sortKey, sortDir]);
+
   const renderCell = (r: Row, p: PropDef) => {
     const v = getProp(r, p.key) ?? "";
     if (p.type === "checkbox") return (
