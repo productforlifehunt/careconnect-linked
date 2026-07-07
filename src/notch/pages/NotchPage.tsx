@@ -26,9 +26,11 @@ export default function NotchPage() {
   const { pageId } = useParams<{ pageId: string }>();
   const nav = useNavigate();
   const { user } = useNotchAuth();
+  const { isFav, toggle: toggleFav } = useFavorites();
   const [block, setBlock] = useState<Block | null>(null);
   const [title, setTitle] = useState("");
   const [icon, setIcon] = useState("");
+  const [cover, setCover] = useState("");
   const [content, setContent] = useState<any>(null);
   const [crumbs, setCrumbs] = useState<Block[]>([]);
   const [showEmoji, setShowEmoji] = useState(false);
@@ -45,6 +47,7 @@ export default function NotchPage() {
       setBlock(b);
       setTitle(b.title || "");
       setIcon(b.icon || "");
+      setCover(b.cover || "");
       try {
         const props = b.properties ? JSON.parse(b.properties) : {};
         setContent(props.editor_content || null);
