@@ -60,6 +60,17 @@ function Shell({ standalone }: { standalone: boolean }) {
     return () => window.removeEventListener("nn:theme-changed", apply);
   }, [user]);
 
+  // In standalone mode, keep ?__site=notchnote in the URL so reloads/deep-links
+  // land back on the Notch Note site instead of the default challenged app.
+  useEffect(() => {
+    if (!standalone) return;
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("__site") !== "notchnote") {
+      url.searchParams.set("__site", "notchnote");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, [location.pathname, standalone]);
+
   if (loading) return <div className="notch-app" style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh" }}>Loading…</div>;
 
   const authRoutes = (
