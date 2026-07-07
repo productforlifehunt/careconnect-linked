@@ -93,3 +93,31 @@ export async function nnRegister(
   }
   return nnLogin(email, password);
 }
+
+/** Send a password reset code to the given email (Simple JWT Login). */
+export async function nnRequestPasswordReset(email: string): Promise<void> {
+  const url = buildWPUrl("simple-jwt-login/v1/user/reset_password", {});
+  const res = await fetch(url, {
+    method: "POST",
+    headers: buildWPHeaders(null, "application/json"),
+    body: JSON.stringify({ email }),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Reset request failed: ${res.status} ${text.slice(0, 200)}`);
+  }
+}
+
+/** Change password using the emailed reset code (Simple JWT Login). */
+export async function nnConfirmPasswordReset(email: string, code: string, newPassword: string): Promise<void> {
+  const url = buildWPUrl("simple-jwt-login/v1/user/reset_password", {});
+  const res = await fetch(url, {
+    method: "PUT",
+    headers: buildWPHeaders(null, "application/json"),
+    body: JSON.stringify({ email, code, new_password: newPassword }),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Reset failed: ${res.status} ${text.slice(0, 200)}`);
+  }
+}
