@@ -194,7 +194,7 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
             {schema.map((p) => <div key={p.key}>{p.name}</div>)}
             <div />
           </div>
-          {rows.map((r) => (
+          {visibleRows.map((r) => (
             <div key={r.id} style={{ display: "grid", gridTemplateColumns: `2fr ${schema.map(() => "1fr").join(" ")} 40px`, padding: "8px 12px", borderBottom: "1px solid var(--nn-border)", alignItems: "center", fontSize: 14 }}>
               <div onClick={() => nav(path(`/p/${r.id}`))} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
                 <span>{r.icon || "📄"}</span>
@@ -212,7 +212,7 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
         statusProp ? (
           <div style={{ display: "grid", gridTemplateColumns: `repeat(${(statusProp.options || []).length}, 1fr)`, gap: 12 }}>
             {(statusProp.options || []).map((s) => {
-              const col = rows.filter((r) => (getProp(r, statusProp.key) || (statusProp.options || [])[0]) === s);
+              const col = visibleRows.filter((r) => (getProp(r, statusProp.key) || (statusProp.options || [])[0]) === s);
               return (
                 <div key={s} style={{ background: "var(--nn-bg-secondary)", borderRadius: 4, padding: 8, minHeight: 200 }}>
                   <div style={{ fontSize: 12, fontWeight: 500, padding: 4, display: "flex", alignItems: "center", gap: 6 }}>
@@ -243,7 +243,7 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
 
       {view === "gallery" && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
-          {rows.map((r) => (
+          {visibleRows.map((r) => (
             <div key={r.id} onClick={() => nav(path(`/p/${r.id}`))} style={{ border: "1px solid var(--nn-border)", borderRadius: 6, overflow: "hidden", cursor: "pointer", background: "var(--nn-bg)" }}>
               <div style={{ height: 120, background: r.cover ? `center/cover no-repeat url("${r.cover}")` : "var(--nn-bg-secondary)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, color: "var(--nn-text-tertiary)" }}>
                 {!r.cover && (r.icon || "📄")}
@@ -264,7 +264,7 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
 
       {view === "list" && (
         <div>
-          {rows.map((r) => (
+          {visibleRows.map((r) => (
             <div key={r.id} onClick={() => nav(path(`/p/${r.id}`))} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 4px", borderBottom: "1px solid var(--nn-border)", cursor: "pointer", fontSize: 14 }}>
               <span>{r.icon || "📄"}</span>
               <span style={{ flex: 1 }}>{r.title || "Untitled"}</span>
@@ -297,7 +297,7 @@ function CalendarView({ month, onPrev, onNext, rows, dateProp, onOpen, onAddOnDa
   for (let d = 1; d <= daysInMonth; d++) {
     const date = new Date(month.getFullYear(), month.getMonth(), d);
     const iso = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-    cells.push({ date, iso, items: rows.filter((r) => getD(r) === iso) });
+    cells.push({ date, iso, items: visibleRows.filter((r) => getD(r) === iso) });
   }
   const label = month.toLocaleString(undefined, { month: "long", year: "numeric" });
   const dow = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
