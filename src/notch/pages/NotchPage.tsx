@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useNotchPath } from "@/notch/context/NotchBaseContext";
-import { ChevronRight, Database, FileText, MoreHorizontal, Star, Image as ImageIcon, X, Share2, Copy, Link as LinkIcon, Trash2, Bell, UserPlus } from "lucide-react";
+import { ChevronRight, Database, FileText, MoreHorizontal, Star, Image as ImageIcon, X, Share2, Copy, Link as LinkIcon, Trash2, Bell, UserPlus, Lock, Unlock, Maximize2, Minimize2, History } from "lucide-react";
 import { createReminder, createNotification } from "@/notch/lib/nn-notifications";
 import { nnPrompt, nnConfirm, nnAlert } from "@/notch/lib/nn-dialog";
 
