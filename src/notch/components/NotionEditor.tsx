@@ -18,6 +18,7 @@ interface Props {
   content: any;
   onChange: (json: any) => void;
   placeholder?: string;
+  onCreateSubpage?: () => Promise<{ id: string; title: string; href: string } | null>;
 }
 
 const HL_COLORS = ["#fff2b8", "#ffd6d6", "#d6ffd6", "#d6e4ff", "#f0d6ff", "#ffe0c2"];
