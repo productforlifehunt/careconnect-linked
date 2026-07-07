@@ -303,7 +303,22 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
       )}
 
       {view === "calendar" && (
-        <CalendarView month={calMonth} onPrev={() => setCalMonth(new Date(calMonth.getFullYear(), calMonth.getMonth() - 1, 1))} onNext={() => setCalMonth(new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 1))} rows={rows} dateProp={dateProp} onOpen={(id) => nav(path(`/p/${id}`))} onAddOnDate={(iso) => dateProp && addRow({ [dateProp.key]: iso })} />
+        <CalendarView
+          month={calMonth}
+          calView={calView}
+          setCalView={setCalView}
+          onPrev={() => setCalMonth(calView === "week" ? new Date(calMonth.getFullYear(), calMonth.getMonth(), calMonth.getDate() - 7) : new Date(calMonth.getFullYear(), calMonth.getMonth() - 1, 1))}
+          onNext={() => setCalMonth(calView === "week" ? new Date(calMonth.getFullYear(), calMonth.getMonth(), calMonth.getDate() + 7) : new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 1))}
+          onToday={() => { const d = new Date(); setCalMonth(calView === "week" ? d : new Date(d.getFullYear(), d.getMonth(), 1)); }}
+          rows={visibleRows}
+          dateProp={dateProp}
+          endDateProp={endDateProp}
+          checkboxProp={checkboxProp}
+          onOpen={(id) => nav(path(`/p/${id}`))}
+          onAddOnDate={(iso) => dateProp && addRow({ [dateProp.key]: iso })}
+          onReschedule={(row, iso) => dateProp && setProp(row, dateProp.key, iso)}
+          onToggleCheckbox={(row) => checkboxProp && setProp(row, checkboxProp.key, !getProp(row, checkboxProp.key))}
+        />
       )}
 
       {view === "gallery" && (
