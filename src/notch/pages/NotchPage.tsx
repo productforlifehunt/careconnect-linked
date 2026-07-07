@@ -101,11 +101,51 @@ export default function NotchPage() {
     }, 400);
   }, [pageId, user]);
 
-  const onTitleChange = (v: string) => { setTitle(v); scheduleSave({ title: v }); };
+  const saveProps = useCallback((extra: Record<string, any>) => {
+    scheduleSave({
+      properties: JSON.stringify({
+        editor_content: content,
+        locked: extra.locked ?? locked,
+        full_width: extra.full_width ?? fullWidth,
+        history: extra.history ?? snapshots,
+      }),
+    });
+  }, [content, locked, fullWidth, snapshots, scheduleSave]);
+
+  const onTitleChange = (v: string) => { if (locked) return; setTitle(v); scheduleSave({ title: v }); };
   const onIconChange = (v: string) => { setIcon(v); setShowEmoji(false); scheduleSave({ icon: v }); };
   const onContentChange = (json: any) => {
+    if (locked) return;
     setContent(json);
-    scheduleSave({ properties: JSON.stringify({ editor_content: json }) });
+    scheduleSave({ properties: JSON.stringify({ editor_content: json, locked, full_width: fullWidth, history: snapshots }) });
+  };
+  const toggleLock = () => {
+    const nv = !locked;
+    setLocked(nv);
+    setShowMenu(false);
+    saveProps({ locked: nv });
+  };
+  const toggleFullWidth = () => {
+    const nv = !fullWidth;
+    setFullWidth(nv);
+    setShowMenu(false);
+    saveProps({ full_width: nv });
+  };
+  const takeSnapshot = () => {
+    const snap = { ts: Date.now(), content, title };
+    const next = [snap, ...snapshots].slice(0, 30);
+    setSnapshots(next);
+    setShowMenu(false);
+    saveProps({ history: next });
+    nnAlert("Version snapshot saved.", "History");
+  };
+  const restoreSnapshot = (idx: number) => {
+    const s = snapshots[idx];
+    if (!s) return;
+    setContent(s.content);
+    setTitle(s.title);
+    setShowHistory(false);
+    scheduleSave({ title: s.title, properties: JSON.stringify({ editor_content: s.content, locked, full_width: fullWidth, history: snapshots }) });
   };
   const [showCoverGallery, setShowCoverGallery] = useState(false);
   const setCoverImage = () => { setShowCoverGallery(true); setShowMenu(false); };
