@@ -54,6 +54,7 @@ import Calendar from "./pages/Calendar";
 import Resources from "./pages/Resources";
 import JoinGroup from "./pages/JoinGroup";
 import XianyuListings from "./pages/XianyuListings";
+import NotchApp from "./notch/NotchApp";
 
 // Static-first defaults: no auto refetch on focus/mount/reconnect.
 // Data only fetches on first mount or explicit invalidation (after a mutation).
@@ -157,11 +158,16 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
-              <AppLayout>
-                <ErrorBoundary>
-                  <AppRoutes />
-                </ErrorBoundary>
-              </AppLayout>
+              <Routes>
+                <Route path="/notch/*" element={<NotchApp />} />
+                <Route path="*" element={
+                  <AppLayout>
+                    <ErrorBoundary>
+                      <AppRoutes />
+                    </ErrorBoundary>
+                  </AppLayout>
+                } />
+              </Routes>
             </BrowserRouter>
           </TooltipProvider>
         </QueryClientProvider>
