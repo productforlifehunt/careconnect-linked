@@ -127,6 +127,61 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
     };
   }, [editor, slash, selected]);
 
+  // Hover handles: track hovered top-level block within ProseMirror
+  useEffect(() => {
+    if (!editor) return;
+    const dom = editor.view.dom as HTMLElement;
+    const onMove = (e: MouseEvent) => {
+      let node = e.target as HTMLElement | null;
+      while (node && node.parentElement !== dom) node = node.parentElement;
+      if (!node) { setHoverBlock(null); return; }
+      const wr = wrapperRef.current?.getBoundingClientRect();
+      const nr = node.getBoundingClientRect();
+      setHoverBlock({ top: nr.top - (wr?.top || 0), el: node });
+    };
+    const onLeave = () => setHoverBlock(null);
+    dom.addEventListener("mousemove", onMove);
+    dom.addEventListener("mouseleave", onLeave);
+    return () => {
+      dom.removeEventListener("mousemove", onMove);
+      dom.removeEventListener("mouseleave", onLeave);
+    };
+  }, [editor]);
+
+  const handlePlus = () => {
+    if (!editor || !hoverBlock) return;
+    const pos = editor.view.posAtDOM(hoverBlock.el, 0);
+    editor.chain().focus().insertContentAt(pos + hoverBlock.el.textContent!.length + 1, { type: "paragraph" }).run();
+    setTimeout(() => {
+      editor.commands.insertContent("/");
+    }, 10);
+  };
+
+  const openBlockMenu = () => {
+    if (!hoverBlock || !wrapperRef.current) return;
+    const wr = wrapperRef.current.getBoundingClientRect();
+    const nr = hoverBlock.el.getBoundingClientRect();
+    setBlockMenu({ top: nr.top - wr.top, left: nr.left - wr.left - 10, el: hoverBlock.el });
+  };
+
+  const deleteBlock = () => {
+    if (!editor || !blockMenu) return;
+    const from = editor.view.posAtDOM(blockMenu.el, 0);
+    const size = (blockMenu.el.textContent?.length || 0) + 2;
+    editor.chain().focus().deleteRange({ from: Math.max(0, from - 1), to: from + size }).run();
+    setBlockMenu(null);
+  };
+
+  const duplicateBlock = () => {
+    if (!editor || !blockMenu) return;
+    const html = blockMenu.el.outerHTML;
+    const from = editor.view.posAtDOM(blockMenu.el, 0);
+    const size = (blockMenu.el.textContent?.length || 0) + 2;
+    editor.chain().focus().insertContentAt(from + size, html).run();
+    setBlockMenu(null);
+  };
+
+
   const filteredItems = () => {
     if (!slash) return SLASH_ITEMS;
     const q = slash.query.toLowerCase();
