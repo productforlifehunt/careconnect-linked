@@ -70,6 +70,45 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
     setRows((rs) => rs.map((x) => x.id === r.id ? { ...x, properties: JSON.stringify(props) } : x));
   };
 
+  // Evaluate a formula expression in a sandbox with numeric props exposed as vars.
+  const evalFormula = (expr: string, r: Row): string => {
+    if (!expr) return "";
+    let props: any = {};
+    try { props = r.properties ? JSON.parse(r.properties) : {}; } catch {}
+    const ctx: Record<string, any> = { title: r.title || "" };
+    for (const p of schema) {
+      const v = props[p.key];
+      const n = Number(v);
+      ctx[p.key] = !isNaN(n) && v !== "" && v !== undefined && v !== null ? n : (v ?? "");
+    }
+    try {
+      const fn = new Function(...Object.keys(ctx), `"use strict"; try { return (${expr}); } catch(e){ return "#ERR"; }`);
+      const out = fn(...Object.values(ctx));
+      return out === undefined || out === null ? "" : String(out);
+    } catch { return "#ERR"; }
+  };
+
+  // Aggregate a numeric prop across every row (rollup shows same total per row).
+  const rollupValue = (p: PropDef): string => {
+    if (!p.rollup?.source) return "";
+    const src = p.rollup.source;
+    const nums = rows.map((r) => {
+      const v = (() => { try { return JSON.parse(r.properties || "{}")[src]; } catch { return undefined; } })();
+      const n = Number(v);
+      return isNaN(n) ? null : n;
+    }).filter((n): n is number => n !== null);
+    if (p.rollup.agg === "count") return String(rows.length);
+    if (nums.length === 0) return "";
+    switch (p.rollup.agg) {
+      case "sum": return String(nums.reduce((a, b) => a + b, 0));
+      case "avg": return (nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(2);
+      case "min": return String(Math.min(...nums));
+      case "max": return String(Math.max(...nums));
+      default: return "";
+    }
+  };
+
+
   const addRow = async (preset: Record<string, any> = {}) => {
     const { id } = await cctCreate(NN.block, {
       workspace_id: workspaceId, parent_id: databaseId, type: "page",
