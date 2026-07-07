@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useNotchPath } from "@/notch/context/NotchBaseContext";
 import { cctList, NN } from "@/notch/lib/nn-client";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 import { FileText } from "lucide-react";
@@ -7,6 +8,7 @@ import { FileText } from "lucide-react";
 export default function NotchHome() {
   const { user } = useNotchAuth();
   const nav = useNavigate();
+  const path = useNotchPath();
   const [recent, setRecent] = useState<any[]>([]);
 
   useEffect(() => {

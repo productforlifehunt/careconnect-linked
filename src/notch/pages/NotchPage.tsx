@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useNotchPath } from "@/notch/context/NotchBaseContext";
 import { ChevronRight, Database, FileText, MoreHorizontal, Star, Image as ImageIcon, X, Share2 } from "lucide-react";
 import { NotionEditor } from "@/notch/components/NotionEditor";
 import { NotchDatabase } from "@/notch/components/NotchDatabase";
@@ -26,6 +27,7 @@ const EMOJIS = ["📝","📓","📘","📗","📕","📙","📚","🗂","🗓","
 export default function NotchPage() {
   const { pageId } = useParams<{ pageId: string }>();
   const nav = useNavigate();
+  const path = useNotchPath();
   const { user } = useNotchAuth();
   const { isFav, toggle: toggleFav } = useFavorites();
   const [block, setBlock] = useState<Block | null>(null);

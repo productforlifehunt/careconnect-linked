@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { Plus, Trash2, Table, LayoutGrid, Calendar as CalIcon, Settings2, X, ChevronLeft, ChevronRight, Image as ImageIcon, List } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useNotchPath } from "@/notch/context/NotchBaseContext";
 import { cctList, cctCreate, cctUpdate, NN } from "@/notch/lib/nn-client";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 
@@ -22,6 +23,7 @@ const STATUS_COLORS: Record<string, string> = {
 export function NotchDatabase({ databaseId, workspaceId }: Props) {
   const { user } = useNotchAuth();
   const nav = useNavigate();
+  const path = useNotchPath();
   const [rows, setRows] = useState<Row[]>([]);
   const [schema, setSchema] = useState<PropDef[]>(DEFAULT_SCHEMA);
   const [view, setView] = useState<ViewMode>("table");

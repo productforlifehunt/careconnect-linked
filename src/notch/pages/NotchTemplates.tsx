@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useNotchPath } from "@/notch/context/NotchBaseContext";
 import { Plus, FileText, Trash2, Copy } from "lucide-react";
 import { cctList, cctCreate, cctUpdate, cctDelete, cctGet, NN } from "@/notch/lib/nn-client";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
@@ -9,6 +10,7 @@ interface Template { id: string; name?: string; icon?: string; source_block_id?:
 export default function NotchTemplates() {
   const { user } = useNotchAuth();
   const nav = useNavigate();
+  const path = useNotchPath();
   const [items, setItems] = useState<Template[]>([]);
   const [wsId, setWsId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);

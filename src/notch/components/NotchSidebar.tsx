@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useNotchPath } from "@/notch/context/NotchBaseContext";
 import { ChevronRight, Plus, MoreHorizontal, Search, Trash2, FileText, Settings, LogOut, Trash, Star } from "lucide-react";
 import { cctList, cctCreate, cctUpdate, cctDelete, NN } from "@/notch/lib/nn-client";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
@@ -24,6 +25,7 @@ interface Workspace {
 
 export function NotchSidebar() {
   const nav = useNavigate();
+  const path = useNotchPath();
   const location = useLocation();
   const { user, logout } = useNotchAuth();
   const { favs } = useFavorites();

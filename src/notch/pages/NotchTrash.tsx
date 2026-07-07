@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useNotchPath } from "@/notch/context/NotchBaseContext";
 import { cctList, cctUpdate, cctDelete, NN } from "@/notch/lib/nn-client";
 import { RotateCcw, Trash2 } from "lucide-react";
 
 export default function NotchTrash() {
   const nav = useNavigate();
+  const path = useNotchPath();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 

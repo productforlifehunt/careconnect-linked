@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useNotchPath } from "@/notch/context/NotchBaseContext";
 import { cctList, NN } from "@/notch/lib/nn-client";
 
 export default function NotchSearch() {
   const [q, setQ] = useState("");
   const [items, setItems] = useState<any[]>([]);
   const nav = useNavigate();
+  const path = useNotchPath();
 
   useEffect(() => {
     cctList<any>(NN.block).then((b) => setItems(b.filter((x: any) => (x.type === "page" || x.type === "database") && Number(x.archived) !== 1)));
