@@ -102,7 +102,12 @@ export const NN = {
   template: "nn_template",
   favorite: "nn_favorite",
   activity: "nn_activity_log",
+  member: "nn_workspace_member",
+  invite: "nn_invite",
+  reminder: "nn_reminder",
+  notification: "nn_notification",
 } as const;
+
 
 /* ─── Field adapter: frontend field names ↔ actual CCT column names ────────
  * The WP-side CCTs were provisioned with a subset of fields. This adapter
