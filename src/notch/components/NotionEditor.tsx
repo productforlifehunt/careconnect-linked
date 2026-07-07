@@ -138,6 +138,8 @@ const SLASH_ITEMS = [
     cmd: (e: any) => e.chain().focus().insertContent(buildColumns(2)).run() },
   { group: "Advanced", key: "cols3", icon: "▮▮▮", name: "3 columns", desc: "Three-column layout.",
     cmd: (e: any) => e.chain().focus().insertContent(buildColumns(3)).run() },
+  { group: "Advanced", key: "sync", icon: "🔗", name: "Sync block", desc: "Mirror another page's content, live.",
+    cmd: (e: any) => e.chain().focus().insertContent({ type: "syncBlock", attrs: { sourceId: "" } }).run() },
   { group: "Basic", key: "subpage", icon: "📄", name: "Sub-page", desc: "Embed a new sub-page.", cmd: async (e: any, ctx: any) => {
       if (!ctx?.onCreateSubpage) return;
       const p = await ctx.onCreateSubpage();
