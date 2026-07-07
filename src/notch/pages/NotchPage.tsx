@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ChevronRight, Database, FileText, MoreHorizontal } from "lucide-react";
+import { ChevronRight, Database, FileText, MoreHorizontal, Star, Image as ImageIcon, X } from "lucide-react";
 import { NotionEditor } from "@/notch/components/NotionEditor";
 import { NotchDatabase } from "@/notch/components/NotchDatabase";
+import { NotchComments } from "@/notch/components/NotchComments";
+import { useFavorites } from "@/notch/lib/nn-favorites";
 import { cctGet, cctList, cctUpdate, NN } from "@/notch/lib/nn-client";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 
