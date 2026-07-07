@@ -134,6 +134,7 @@ const SLASH_ITEMS = [
 ];
 
 export function NotionEditor({ content, onChange, placeholder = "Type '/' for commands", onCreateSubpage }: Props) {
+  const { user } = _useNotchAuth();
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
@@ -155,6 +156,9 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
       Details.configure({ persist: true, HTMLAttributes: { class: "nn-toggle" } }),
       DetailsSummary,
       DetailsContent,
+      MathBlock,
+      Columns,
+      Column,
     ],
     content: content || "",
     onUpdate: ({ editor }) => onChange(editor.getJSON()),
