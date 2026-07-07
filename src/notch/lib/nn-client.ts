@@ -201,14 +201,4 @@ function adaptIn(slug: string, item: any): any {
   return item;
 }
 
-// Re-wrap cctList and cctGet to run adaptIn on results.
-const _origList = cctList;
-const _origGet = cctGet;
-export async function cctListAdapted<T = any>(slug: string, params?: NNFetchOpts["params"]): Promise<T[]> {
-  const raw = await _origList<any>(slug, params);
-  return raw.map((r) => adaptIn(slug, r));
-}
-export async function cctGetAdapted<T = any>(slug: string, id: string | number): Promise<T | null> {
-  const raw = await _origGet<any>(slug, id);
-  return raw ? adaptIn(slug, raw) : null;
-}
+// (Adaptation is now applied inside cctList / cctGet above.)
