@@ -199,6 +199,17 @@ export function NotchSidebar() {
           <span className="nn-icon">🧩</span>
           <span className="nn-title">Templates</span>
         </div>
+        <div className="nn-sidebar-item" onClick={() => nav(path("/notifications"))}>
+          <span className="nn-icon" style={{ position: "relative" }}>
+            <Bell size={15} />
+            {unread > 0 && (
+              <span style={{ position: "absolute", top: -4, right: -6, background: "#e03e3e", color: "#fff", borderRadius: 8, fontSize: 9, padding: "1px 4px", lineHeight: 1 }}>
+                {unread > 9 ? "9+" : unread}
+              </span>
+            )}
+          </span>
+          <span className="nn-title">Inbox</span>
+        </div>
         <div className="nn-sidebar-item" onClick={() => nav(path("/trash"))}>
           <span className="nn-icon"><Trash size={15} /></span>
           <span className="nn-title">Trash</span>
