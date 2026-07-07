@@ -183,6 +183,22 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
           );
         })}
         <div style={{ flex: 1 }} />
+        <select value={filterKey} onChange={(e) => { setFilterKey(e.target.value); if (!e.target.value) setFilterVal(""); }} className="nn-topbar-btn" style={{ padding: "4px 6px", fontSize: 12 }} title="Filter by property">
+          <option value="">Filter…</option>
+          <option value="__title__">Name</option>
+          {schema.map((p) => <option key={p.key} value={p.key}>{p.name}</option>)}
+        </select>
+        {filterKey && (
+          <input value={filterVal} onChange={(e) => setFilterVal(e.target.value)} placeholder="value" className="nn-topbar-btn" style={{ padding: "4px 8px", fontSize: 12, width: 120 }} />
+        )}
+        <select value={sortKey} onChange={(e) => setSortKey(e.target.value)} className="nn-topbar-btn" style={{ padding: "4px 6px", fontSize: 12 }} title="Sort by property">
+          <option value="">Sort…</option>
+          <option value="__title__">Name</option>
+          {schema.map((p) => <option key={p.key} value={p.key}>{p.name}</option>)}
+        </select>
+        {sortKey && (
+          <button onClick={() => setSortDir(sortDir === "asc" ? "desc" : "asc")} className="nn-topbar-btn" title="Toggle sort direction">{sortDir === "asc" ? "↑" : "↓"}</button>
+        )}
         <button onClick={() => setShowSchema(true)} className="nn-topbar-btn"><Settings2 size={13} /> Properties</button>
         <button onClick={() => addRow()} className="nn-topbar-btn"><Plus size={13} /> New</button>
       </div>
