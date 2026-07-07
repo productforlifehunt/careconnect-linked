@@ -109,6 +109,13 @@ export function NotchSidebar() {
     await loadAll();
   };
 
+  const renamePage = async (id: string, current: string) => {
+    const name = window.prompt("Rename page", current);
+    if (name === null) return;
+    await cctUpdate(NN.block, id, { title: name });
+    await loadAll();
+  };
+
   const renderTree = (parentId: string, depth = 0, seen: Set<string> = new Set()) => {
     if (depth > 20 || seen.has(parentId)) return null; // cycle / depth guard
     const nextSeen = new Set(seen); nextSeen.add(parentId);
