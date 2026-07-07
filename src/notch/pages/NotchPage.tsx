@@ -175,6 +175,22 @@ export default function NotchPage() {
         </button>
         <button
           className="nn-topbar-btn"
+          title="Set reminder"
+          onClick={async () => {
+            if (!user || !pageId) return;
+            const val = window.prompt("Remind me at (YYYY-MM-DD HH:MM, local time):", new Date(Date.now() + 3600_000).toISOString().slice(0, 16).replace("T", " "));
+            if (!val) return;
+            const d = new Date(val.replace(" ", "T"));
+            if (isNaN(d.getTime())) { alert("Invalid date"); return; }
+            await createReminder(String(user.user_id), pageId, d);
+            alert(`Reminder set for ${d.toLocaleString()}`);
+          }}
+        >
+          <Bell size={14} />
+        </button>
+
+        <button
+          className="nn-topbar-btn"
           onClick={() => toggleFav(pageId)}
           title={isFav(pageId) ? "Remove from favorites" : "Add to favorites"}
         >
