@@ -183,11 +183,30 @@ export function NotchSidebar() {
 
   return (
     <aside className="nn-sidebar">
-      <div className="nn-sidebar-header">
+      <div className="nn-sidebar-header" style={{ position: "relative" }}>
         <div className="nn-icon" style={{ fontSize: 18 }}>{activeWorkspace?.icon || "📓"}</div>
-        <div style={{ flex: 1, fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {activeWorkspace?.name || "Notch Note"}
-        </div>
+        <select
+          value={activeWs || ""}
+          onChange={async (e) => {
+            const val = e.target.value;
+            if (val === "__new__") {
+              const name = window.prompt("Workspace name");
+              if (!name) return;
+              const created = await cctCreate(NN.workspace, { name, icon: "📓", plan_type: "free" });
+              setActiveWs(created.id);
+              await loadAll();
+              return;
+            }
+            setActiveWs(val);
+          }}
+          style={{ flex: 1, fontSize: 14, fontWeight: 600, background: "transparent", border: "none", color: "inherit", cursor: "pointer", overflow: "hidden", textOverflow: "ellipsis", appearance: "none", padding: 0 }}
+          title="Switch workspace"
+        >
+          {workspaces.map((w) => (
+            <option key={w.id} value={w.id}>{w.icon || "📓"} {w.name}</option>
+          ))}
+          <option value="__new__">＋ New workspace…</option>
+        </select>
       </div>
 
       <div className="nn-sidebar-section">
