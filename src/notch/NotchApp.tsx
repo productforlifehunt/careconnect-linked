@@ -159,7 +159,8 @@ function Shell({ standalone }: { standalone: boolean }) {
           <Route path="trash" element={<NotchTrash />} />
           <Route path="templates" element={<NotchTemplates />} />
           <Route path="notifications" element={<NotchNotifications />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to={standalone ? "/" : "/notch"} replace />} />
+
         </Routes>
       </div>
       {quickFind && <NotchQuickFind onClose={() => setQuickFind(false)} />}
