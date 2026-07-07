@@ -94,19 +94,16 @@ export async function cctDelete(slug: string, id: string | number): Promise<void
 export const NN = {
   workspace: "nn_workspace",
   block: "nn_block",
-  propSchema: "nn_page_property_schema",
-  propValue: "nn_page_property_value",
-  view: "nn_view",
   comment: "nn_comment",
   permission: "nn_permission",
   template: "nn_template",
   favorite: "nn_favorite",
-  activity: "nn_activity_log",
   member: "nn_workspace_member",
   invite: "nn_invite",
   reminder: "nn_reminder",
   notification: "nn_notification",
 } as const;
+
 
 
 /* ─── Field adapter: frontend field names ↔ actual CCT column names ────────
