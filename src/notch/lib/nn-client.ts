@@ -28,7 +28,7 @@ export async function nnFetch<T = any>(endpoint: string, opts: NNFetchOpts = {})
     body: body ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) {
-    if (res.status === 404) return [] as any;
+    if (res.status === 404) return null as any;
     if (res.status === 401 || res.status === 403) {
       clearNNSession();
       // Signal expiry; NotchAuthContext listens and reroutes without losing ?__site
