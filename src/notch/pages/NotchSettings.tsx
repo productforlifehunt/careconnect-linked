@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 import { Moon, Sun } from "lucide-react";
+import { NotchMembersPanel } from "@/notch/components/NotchMembersPanel";
+import { requestBrowserNotificationPermission } from "@/notch/lib/nn-notifications";
 
 export default function NotchSettings() {
   const { user, logout } = useNotchAuth();
@@ -37,6 +39,22 @@ export default function NotchSettings() {
               style={{ padding: "6px 12px", border: theme === "dark" ? "1px solid var(--nn-blue)" : "1px solid var(--nn-border)" }}
             ><Moon size={14} style={{ marginRight: 6 }} /> Dark</button>
           </div>
+        </div>
+
+        <NotchMembersPanel />
+
+        <div style={{ border: "1px solid var(--nn-border)", borderRadius: 6, padding: 16, marginBottom: 12 }}>
+          <div style={{ fontSize: 12, color: "var(--nn-text-tertiary)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Notifications</div>
+          <div style={{ fontSize: 13, color: "var(--nn-text-secondary)", marginBottom: 8 }}>
+            Enable browser push notifications so reminders and mentions reach you even when Notch Note is in the background.
+          </div>
+          <button
+            className="nn-topbar-btn"
+            onClick={async () => {
+              const r = await requestBrowserNotificationPermission();
+              alert(`Permission: ${r}`);
+            }}
+          >Enable browser notifications</button>
         </div>
 
         <div style={{ border: "1px solid var(--nn-border)", borderRadius: 6, padding: 16, marginBottom: 12 }}>

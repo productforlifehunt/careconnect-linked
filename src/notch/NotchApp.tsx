@@ -13,6 +13,7 @@ import NotchSettings from "@/notch/pages/NotchSettings";
 import NotchTrash from "@/notch/pages/NotchTrash";
 import NotchTemplates from "@/notch/pages/NotchTemplates";
 import NotchLanding from "@/notch/pages/NotchLanding";
+import NotchNotifications from "@/notch/pages/NotchNotifications";
 import "@/notch/styles/notch.css";
 
 interface Props {
@@ -120,6 +121,7 @@ function Shell({ standalone }: { standalone: boolean }) {
           <Route path="settings" element={<NotchSettings />} />
           <Route path="trash" element={<NotchTrash />} />
           <Route path="templates" element={<NotchTemplates />} />
+          <Route path="notifications" element={<NotchNotifications />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>

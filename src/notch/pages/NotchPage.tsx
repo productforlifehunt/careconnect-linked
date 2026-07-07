@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useNotchPath } from "@/notch/context/NotchBaseContext";
-import { ChevronRight, Database, FileText, MoreHorizontal, Star, Image as ImageIcon, X, Share2, Copy, Link as LinkIcon, Trash2 } from "lucide-react";
+import { ChevronRight, Database, FileText, MoreHorizontal, Star, Image as ImageIcon, X, Share2, Copy, Link as LinkIcon, Trash2, Bell } from "lucide-react";
+import { createReminder } from "@/notch/lib/nn-notifications";
+
 import { NotionEditor } from "@/notch/components/NotionEditor";
 import { NotchDatabase } from "@/notch/components/NotchDatabase";
 import { NotchComments } from "@/notch/components/NotchComments";
@@ -171,6 +173,22 @@ export default function NotchPage() {
         <button className="nn-topbar-btn" onClick={() => setShowShare(true)} title="Share">
           <Share2 size={14} style={{ marginRight: 4 }} /> Share
         </button>
+        <button
+          className="nn-topbar-btn"
+          title="Set reminder"
+          onClick={async () => {
+            if (!user || !pageId) return;
+            const val = window.prompt("Remind me at (YYYY-MM-DD HH:MM, local time):", new Date(Date.now() + 3600_000).toISOString().slice(0, 16).replace("T", " "));
+            if (!val) return;
+            const d = new Date(val.replace(" ", "T"));
+            if (isNaN(d.getTime())) { alert("Invalid date"); return; }
+            await createReminder(String(user.user_id), pageId, d);
+            alert(`Reminder set for ${d.toLocaleString()}`);
+          }}
+        >
+          <Bell size={14} />
+        </button>
+
         <button
           className="nn-topbar-btn"
           onClick={() => toggleFav(pageId)}

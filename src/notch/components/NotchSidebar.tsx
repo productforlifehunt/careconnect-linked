@@ -1,10 +1,11 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useNotchPath } from "@/notch/context/NotchBaseContext";
-import { ChevronRight, Plus, MoreHorizontal, Search, Trash2, FileText, Settings, LogOut, Trash, Star } from "lucide-react";
+import { ChevronRight, Plus, MoreHorizontal, Search, Trash2, FileText, Settings, LogOut, Trash, Star, Bell } from "lucide-react";
 import { cctList, cctCreate, cctUpdate, cctDelete, NN } from "@/notch/lib/nn-client";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 import { useFavorites } from "@/notch/lib/nn-favorites";
+import { unreadCount, tickReminderQueue } from "@/notch/lib/nn-notifications";
 
 interface Block {
   id: string;
@@ -35,6 +36,22 @@ export function NotchSidebar() {
   const [pages, setPages] = useState<Block[]>([]);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
+  const [unread, setUnread] = useState(0);
+
+  useEffect(() => {
+    if (!user) return;
+    let alive = true;
+    const poll = async () => {
+      try {
+        await tickReminderQueue(String(user.user_id));
+        const n = await unreadCount(String(user.user_id));
+        if (alive) setUnread(n);
+      } catch { /* noop */ }
+    };
+    poll();
+    const t = setInterval(poll, 60_000);
+    return () => { alive = false; clearInterval(t); };
+  }, [user]);
 
   const loadAll = useCallback(async () => {
     setLoading(true);
@@ -181,6 +198,17 @@ export function NotchSidebar() {
         <div className="nn-sidebar-item" onClick={() => nav(path("/templates"))}>
           <span className="nn-icon">🧩</span>
           <span className="nn-title">Templates</span>
+        </div>
+        <div className="nn-sidebar-item" onClick={() => nav(path("/notifications"))}>
+          <span className="nn-icon" style={{ position: "relative" }}>
+            <Bell size={15} />
+            {unread > 0 && (
+              <span style={{ position: "absolute", top: -4, right: -6, background: "#e03e3e", color: "#fff", borderRadius: 8, fontSize: 9, padding: "1px 4px", lineHeight: 1 }}>
+                {unread > 9 ? "9+" : unread}
+              </span>
+            )}
+          </span>
+          <span className="nn-title">Inbox</span>
         </div>
         <div className="nn-sidebar-item" onClick={() => nav(path("/trash"))}>
           <span className="nn-icon"><Trash size={15} /></span>
