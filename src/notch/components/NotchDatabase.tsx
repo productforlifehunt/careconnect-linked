@@ -1,14 +1,14 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { Plus, Trash2, Table, LayoutGrid, Calendar as CalIcon, Settings2, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Trash2, Table, LayoutGrid, Calendar as CalIcon, Settings2, X, ChevronLeft, ChevronRight, Image as ImageIcon, List } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cctList, cctCreate, cctUpdate, NN } from "@/notch/lib/nn-client";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 
 interface Props { databaseId: string; workspaceId: string; }
-type ViewMode = "table" | "board" | "calendar";
-type PropType = "text" | "number" | "select" | "date" | "checkbox" | "url";
+type ViewMode = "table" | "board" | "calendar" | "gallery" | "list";
+type PropType = "text" | "number" | "select" | "multiselect" | "date" | "checkbox" | "url";
 interface PropDef { key: string; name: string; type: PropType; options?: string[]; }
-interface Row { id: string; title?: string; icon?: string; properties?: string; }
+interface Row { id: string; title?: string; icon?: string; cover?: string; properties?: string; }
 
 const DEFAULT_SCHEMA: PropDef[] = [
   { key: "status", name: "Status", type: "select", options: ["To do", "In progress", "Done"] },
@@ -101,6 +101,20 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
     if (p.type === "number") return (
       <input type="number" value={v} onChange={(e) => setProp(r, p.key, e.target.value)} style={{ background: "transparent", border: "none", color: "var(--nn-text)", fontSize: 13, width: "100%" }} />
     );
+    if (p.type === "multiselect") {
+      const arr: string[] = Array.isArray(v) ? v : (v ? String(v).split(",").map((s) => s.trim()).filter(Boolean) : []);
+      const toggle = (opt: string) => {
+        const next = arr.includes(opt) ? arr.filter((x) => x !== opt) : [...arr, opt];
+        setProp(r, p.key, next);
+      };
+      return (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+          {(p.options || []).map((o) => (
+            <span key={o} onClick={() => toggle(o)} style={{ background: arr.includes(o) ? "var(--nn-blue-bg)" : "rgba(0,0,0,0.05)", color: arr.includes(o) ? "var(--nn-blue)" : "var(--nn-text-secondary)", padding: "2px 6px", borderRadius: 3, fontSize: 11, cursor: "pointer" }}>{o}</span>
+          ))}
+        </div>
+      );
+    }
     if (p.type === "url") return v ? (
       <a href={v} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} style={{ color: "var(--nn-blue)", fontSize: 13 }}>{v}</a>
     ) : (
@@ -116,8 +130,8 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
   return (
     <div style={{ marginTop: 12 }}>
       <div style={{ display: "flex", gap: 4, borderBottom: "1px solid var(--nn-border)", marginBottom: 12 }}>
-        {(["table", "board", "calendar"] as ViewMode[]).map((v) => {
-          const Icon = v === "table" ? Table : v === "board" ? LayoutGrid : CalIcon;
+        {(["table", "board", "calendar", "gallery", "list"] as ViewMode[]).map((v) => {
+          const Icon = v === "table" ? Table : v === "board" ? LayoutGrid : v === "calendar" ? CalIcon : v === "gallery" ? ImageIcon : List;
           return (
             <button key={v} onClick={() => setView(v)} className="nn-topbar-btn" style={{ borderBottom: view === v ? "2px solid var(--nn-text)" : "none", borderRadius: 0, textTransform: "capitalize" }}>
               <Icon size={13} style={{ marginRight: 4 }} /> {v}
