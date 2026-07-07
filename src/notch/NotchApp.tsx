@@ -114,7 +114,7 @@ function Shell({ standalone }: { standalone: boolean }) {
     <Routes>
       <Route path="auth" element={<NotchAuth />} />
       {standalone && <Route index element={<NotchLanding />} />}
-      <Route path="*" element={<Navigate to={standalone ? "/" : "/auth"} replace />} />
+      <Route path="*" element={<Navigate to={standalone ? "/" : "/notch/auth"} replace />} />
     </Routes>
   );
 
@@ -126,6 +126,7 @@ function Shell({ standalone }: { standalone: boolean }) {
   if (location.pathname.endsWith("/auth")) {
     return <Navigate to={standalone ? "/" : "/notch"} replace />;
   }
+
 
   return (
     <div className="notch-app" style={{ display: "flex", height: "100vh", overflow: "hidden", position: "relative" }}>
