@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useNotchPath } from "@/notch/context/NotchBaseContext";
-import { ChevronRight, Database, FileText, MoreHorizontal, Star, Image as ImageIcon, X, Share2, Copy, Link as LinkIcon, Trash2, Bell, UserPlus } from "lucide-react";
+import { ChevronRight, Database, FileText, MoreHorizontal, Star, Image as ImageIcon, X, Share2, Copy, Link as LinkIcon, Trash2, Bell, UserPlus, Lock, Unlock, Maximize2, Minimize2, History } from "lucide-react";
 import { createReminder, createNotification } from "@/notch/lib/nn-notifications";
 import { nnPrompt, nnConfirm, nnAlert } from "@/notch/lib/nn-dialog";
 
@@ -43,6 +43,10 @@ export default function NotchPage() {
   const [showEmoji, setShowEmoji] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [locked, setLocked] = useState(false);
+  const [fullWidth, setFullWidth] = useState(false);
+  const [snapshots, setSnapshots] = useState<Array<{ ts: number; content: any; title: string }>>([]);
+  const [showHistory, setShowHistory] = useState(false);
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const saveTimer = useRef<any>(null);
 
@@ -59,6 +63,9 @@ export default function NotchPage() {
       try {
         const props = b.properties ? JSON.parse(b.properties) : {};
         setContent(props.editor_content || null);
+        setLocked(!!props.locked);
+        setFullWidth(!!props.full_width);
+        setSnapshots(Array.isArray(props.history) ? props.history : []);
       } catch { setContent(null); }
       // build breadcrumbs
       const chain: Block[] = [b];
@@ -94,11 +101,51 @@ export default function NotchPage() {
     }, 400);
   }, [pageId, user]);
 
-  const onTitleChange = (v: string) => { setTitle(v); scheduleSave({ title: v }); };
+  const saveProps = useCallback((extra: Record<string, any>) => {
+    scheduleSave({
+      properties: JSON.stringify({
+        editor_content: content,
+        locked: extra.locked ?? locked,
+        full_width: extra.full_width ?? fullWidth,
+        history: extra.history ?? snapshots,
+      }),
+    });
+  }, [content, locked, fullWidth, snapshots, scheduleSave]);
+
+  const onTitleChange = (v: string) => { if (locked) return; setTitle(v); scheduleSave({ title: v }); };
   const onIconChange = (v: string) => { setIcon(v); setShowEmoji(false); scheduleSave({ icon: v }); };
   const onContentChange = (json: any) => {
+    if (locked) return;
     setContent(json);
-    scheduleSave({ properties: JSON.stringify({ editor_content: json }) });
+    scheduleSave({ properties: JSON.stringify({ editor_content: json, locked, full_width: fullWidth, history: snapshots }) });
+  };
+  const toggleLock = () => {
+    const nv = !locked;
+    setLocked(nv);
+    setShowMenu(false);
+    saveProps({ locked: nv });
+  };
+  const toggleFullWidth = () => {
+    const nv = !fullWidth;
+    setFullWidth(nv);
+    setShowMenu(false);
+    saveProps({ full_width: nv });
+  };
+  const takeSnapshot = () => {
+    const snap = { ts: Date.now(), content, title };
+    const next = [snap, ...snapshots].slice(0, 30);
+    setSnapshots(next);
+    setShowMenu(false);
+    saveProps({ history: next });
+    nnAlert("Version snapshot saved.", "History");
+  };
+  const restoreSnapshot = (idx: number) => {
+    const s = snapshots[idx];
+    if (!s) return;
+    setContent(s.content);
+    setTitle(s.title);
+    setShowHistory(false);
+    scheduleSave({ title: s.title, properties: JSON.stringify({ editor_content: s.content, locked, full_width: fullWidth, history: snapshots }) });
   };
   const [showCoverGallery, setShowCoverGallery] = useState(false);
   const setCoverImage = () => { setShowCoverGallery(true); setShowMenu(false); };
@@ -238,6 +285,24 @@ export default function NotchPage() {
                 <span className="nn-icon">{isDatabase ? <FileText size={14} /> : <Database size={14} />}</span>
                 <span className="nn-title">Turn into {isDatabase ? "page" : "database"}</span>
               </div>
+              <div onClick={toggleFullWidth} className="nn-sidebar-item">
+                <span className="nn-icon">{fullWidth ? <Minimize2 size={14} /> : <Maximize2 size={14} />}</span>
+                <span className="nn-title">{fullWidth ? "Compact width" : "Full width"}</span>
+              </div>
+              <div onClick={toggleLock} className="nn-sidebar-item">
+                <span className="nn-icon">{locked ? <Unlock size={14} /> : <Lock size={14} />}</span>
+                <span className="nn-title">{locked ? "Unlock page" : "Lock page"}</span>
+              </div>
+              <div onClick={takeSnapshot} className="nn-sidebar-item">
+                <span className="nn-icon"><History size={14} /></span>
+                <span className="nn-title">Save version</span>
+              </div>
+              {snapshots.length > 0 && (
+                <div onClick={() => { setShowHistory(true); setShowMenu(false); }} className="nn-sidebar-item">
+                  <span className="nn-icon"><History size={14} /></span>
+                  <span className="nn-title">Page history ({snapshots.length})</span>
+                </div>
+              )}
               <div onClick={duplicatePage} className="nn-sidebar-item">
                 <span className="nn-icon"><Copy size={14} /></span>
                 <span className="nn-title">Duplicate</span>
@@ -263,7 +328,7 @@ export default function NotchPage() {
             </button>
           </div>
         )}
-        <div className="nn-page" style={cover ? { paddingTop: 24 } : undefined}>
+        <div className={`nn-page ${fullWidth ? "nn-page-full" : ""} ${locked ? "nn-page-locked" : ""}`} style={cover ? { paddingTop: 24 } : undefined}>
           <div style={{ position: "relative", display: "inline-block" }}>
             <div className="nn-page-icon" onClick={() => setShowEmoji((s) => !s)}>
               {icon || <span style={{ fontSize: 24, opacity: 0.3 }}>Add icon</span>}
@@ -319,6 +384,21 @@ export default function NotchPage() {
           onPick={applyCover}
           onClose={() => setShowCoverGallery(false)}
         />
+      )}
+      {showHistory && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowHistory(false)}>
+          <div style={{ background: "var(--nn-bg)", borderRadius: 8, width: "100%", maxWidth: 520, padding: 20, maxHeight: "80vh", overflow: "auto" }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Page history</div>
+            {snapshots.length === 0 ? (
+              <div style={{ opacity: 0.6, fontSize: 13 }}>No snapshots yet.</div>
+            ) : snapshots.map((s, i) => (
+              <div key={s.ts} className="nn-sidebar-item" onClick={() => restoreSnapshot(i)}>
+                <span className="nn-icon"><History size={14} /></span>
+                <span className="nn-title">{s.title || "Untitled"} — {new Date(s.ts).toLocaleString()}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
     </>
   );

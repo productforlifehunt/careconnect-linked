@@ -170,6 +170,9 @@ function adaptOut(slug: string, data: Record<string, any>): Record<string, any> 
     }
     if ("workspace_id" in d) { delete d.workspace_id; }
     if ("body_snapshot" in d) { d.block_tree_snapshot = String(d.body_snapshot); delete d.body_snapshot; }
+  } else if (slug === "nn_workspace_member") {
+    // Store display_name/email in the "role" field is wrong — but adaptOut kept role separate.
+    // Nothing extra to remap: fields (workspace_id, user_id, role, status, invited_by, joined_at) exist.
   }
 
   // Coerce remaining values that are numbers to strings for JetEngine's text fields.

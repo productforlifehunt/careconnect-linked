@@ -21,9 +21,21 @@ import { Details, DetailsSummary, DetailsContent } from "@tiptap/extension-detai
 import { useEffect, useRef, useState } from "react";
 import { Bold, Italic, Underline as UIcon, Strikethrough, Code, Link as LinkIcon, AlignLeft, AlignCenter, AlignRight, Sparkles } from "lucide-react";
 import { MathBlock, Columns, Column, buildColumns } from "./notch-extensions";
+import { NotchMention } from "./notch-mention";
 import { nnUploadFile, pickFile } from "@/notch/lib/nn-files";
 import { nnPrompt, nnAlert } from "@/notch/lib/nn-dialog";
 import { useNotchAuth as _useNotchAuth } from "@/notch/context/NotchAuthContext";
+
+function buildToggleHeading(level: 1 | 2 | 3) {
+  return {
+    type: "details",
+    attrs: { open: true },
+    content: [
+      { type: "detailsSummary", content: [{ type: "text", text: level === 1 ? "Heading 1" : level === 2 ? "Heading 2" : "Heading 3" }] },
+      { type: "detailsContent", content: [{ type: "paragraph" }] },
+    ],
+  };
+}
 
 interface Props {
   content: any;
@@ -72,6 +84,12 @@ const SLASH_ITEMS = [
         { type: "detailsContent", content: [{ type: "paragraph" }] },
       ],
     }).run() },
+  { group: "Blocks", key: "toggle_h1", icon: "▸H₁", name: "Toggle heading 1", desc: "Collapsible H1 section.",
+    cmd: (e: any) => e.chain().focus().insertContent(buildToggleHeading(1)).run() },
+  { group: "Blocks", key: "toggle_h2", icon: "▸H₂", name: "Toggle heading 2", desc: "Collapsible H2 section.",
+    cmd: (e: any) => e.chain().focus().insertContent(buildToggleHeading(2)).run() },
+  { group: "Blocks", key: "toggle_h3", icon: "▸H₃", name: "Toggle heading 3", desc: "Collapsible H3 section.",
+    cmd: (e: any) => e.chain().focus().insertContent(buildToggleHeading(3)).run() },
   { group: "Blocks", key: "table", icon: "⊞", name: "Table", desc: "Insert a 3×3 table.",
     cmd: (e: any) => e.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run() },
   { group: "Media", key: "image", icon: "🖼", name: "Image", desc: "Embed image.", cmd: async (e: any) => {
@@ -160,6 +178,7 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
       MathBlock,
       Columns,
       Column,
+      NotchMention,
     ],
     content: content || "",
     onUpdate: ({ editor }) => onChange(editor.getJSON()),
