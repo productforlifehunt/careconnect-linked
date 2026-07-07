@@ -873,3 +873,46 @@
 .notch-app .nn-sidebar-item .nn-caret.has-children { opacity: 0.6; }
 .notch-app .nn-sidebar-item:hover .nn-caret.has-children { opacity: 1; }
 .notch-app .nn-sidebar-item .nn-caret:hover { background: var(--nn-bg-hover-strong); }
+
+/* Sidebar sibling drop-line */
+.notch-app .nn-drop-line {
+  height: 4px;
+  margin-right: 8px;
+  border-radius: 2px;
+  background: transparent;
+  transition: background 80ms ease;
+}
+.notch-app .nn-drop-line.active {
+  background: var(--nn-blue, #2b7cff);
+}
+
+/* Page history side panel */
+.nn-history-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.28);
+  z-index: 200; display: flex; justify-content: flex-end;
+  animation: nn-fade-in 120ms ease;
+}
+.nn-history-panel {
+  width: 360px; max-width: 92vw; height: 100%;
+  background: var(--nn-bg); border-left: 1px solid var(--nn-border-strong);
+  box-shadow: -8px 0 24px rgba(0,0,0,0.14);
+  display: flex; flex-direction: column;
+  animation: nn-slide-in 160ms ease;
+}
+@keyframes nn-fade-in { from { opacity: 0 } to { opacity: 1 } }
+@keyframes nn-slide-in { from { transform: translateX(20px); opacity: 0 } to { transform: none; opacity: 1 } }
+.nn-history-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 14px; border-bottom: 1px solid var(--nn-border);
+  font-size: 14px;
+}
+.nn-history-body { flex: 1; overflow-y: auto; padding: 6px; }
+.nn-history-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; border-radius: 5px;
+}
+.nn-history-item:hover { background: var(--nn-bg-hover); }
+.nn-history-meta { flex: 1; min-width: 0; }
+.nn-history-title { font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nn-history-ts { font-size: 11px; color: var(--nn-text-secondary); }
+.nn-history-actions { display: flex; gap: 4px; }
