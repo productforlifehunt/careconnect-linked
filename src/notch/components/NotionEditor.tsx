@@ -22,6 +22,7 @@ import { useEffect, useRef, useState } from "react";
 import { Bold, Italic, Underline as UIcon, Strikethrough, Code, Link as LinkIcon, AlignLeft, AlignCenter, AlignRight, Sparkles } from "lucide-react";
 import { MathBlock, Columns, Column, buildColumns } from "./notch-extensions";
 import { nnUploadFile, pickFile } from "@/notch/lib/nn-files";
+import { nnPrompt, nnAlert } from "@/notch/lib/nn-dialog";
 import { useNotchAuth as _useNotchAuth } from "@/notch/context/NotchAuthContext";
 
 interface Props {
@@ -73,29 +74,29 @@ const SLASH_ITEMS = [
     }).run() },
   { group: "Blocks", key: "table", icon: "⊞", name: "Table", desc: "Insert a 3×3 table.",
     cmd: (e: any) => e.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run() },
-  { group: "Media", key: "image", icon: "🖼", name: "Image", desc: "Embed image.", cmd: (e: any) => {
-      const url = window.prompt("Image URL");
+  { group: "Media", key: "image", icon: "🖼", name: "Image", desc: "Embed image.", cmd: async (e: any) => {
+      const url = await nnPrompt("Paste an image URL", { title: "Image", placeholder: "https://…" });
       if (url) e.chain().focus().setImage({ src: url }).run();
     } },
   { group: "Media", key: "video", icon: "▶", name: "YouTube video", desc: "Embed a YouTube video.",
-    cmd: (e: any) => {
-      const url = window.prompt("YouTube URL");
+    cmd: async (e: any) => {
+      const url = await nnPrompt("Paste a YouTube URL", { title: "YouTube", placeholder: "https://youtu.be/…" });
       if (url) e.chain().focus().setYoutubeVideo({ src: url, width: 640, height: 360 }).run();
     } },
   { group: "Media", key: "embed", icon: "🔗", name: "Web embed", desc: "Embed any URL via iframe.",
-    cmd: (e: any) => {
-      const url = window.prompt("URL to embed");
+    cmd: async (e: any) => {
+      const url = await nnPrompt("Paste a URL to embed", { title: "Web embed", placeholder: "https://…" });
       if (url) e.chain().focus().insertContent(`<div class="nn-embed"><iframe src="${url}" frameborder="0" allowfullscreen></iframe></div>`).run();
     } },
   { group: "Media", key: "bookmark", icon: "🔖", name: "Bookmark", desc: "Insert a link preview card.",
-    cmd: (e: any) => {
-      const url = window.prompt("URL");
+    cmd: async (e: any) => {
+      const url = await nnPrompt("Paste a URL", { title: "Bookmark", placeholder: "https://…" });
       if (!url) return;
       const host = (() => { try { return new URL(url).hostname; } catch { return url; } })();
       e.chain().focus().insertContent(`<div class="nn-bookmark"><a href="${url}" target="_blank" rel="noopener">${host}<div class="nn-bookmark-url">${url}</div></a></div>`).run();
     } },
-  { group: "Media", key: "link", icon: "↗", name: "Link", desc: "Insert link.", cmd: (e: any) => {
-      const url = window.prompt("URL");
+  { group: "Media", key: "link", icon: "↗", name: "Link", desc: "Insert link.", cmd: async (e: any) => {
+      const url = await nnPrompt("Paste a URL", { title: "Link", placeholder: "https://…" });
       if (url) e.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
     } },
   { group: "Media", key: "file", icon: "📎", name: "File", desc: "Upload any file.", cmd: async (e: any, ctx: any) => {
@@ -111,7 +112,7 @@ const SLASH_ITEMS = [
           const size = up.size > 1024 * 1024 ? `${(up.size / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(up.size / 1024))} KB`;
           e.chain().focus().insertContent(`<div class="nn-bookmark"><a href="${up.url}" target="_blank" rel="noopener">📎 ${up.name}<div class="nn-bookmark-url">${size}</div></a></div>`).run();
         }
-      } catch (err: any) { alert(`Upload failed: ${err.message || err}`); }
+      } catch (err: any) { nnAlert(`Upload failed: ${err.message || err}`); }
     } },
   { group: "Advanced", key: "math", icon: "∑", name: "Math", desc: "Insert a LaTeX equation.",
     cmd: (e: any) => e.chain().focus().insertContent({ type: "mathBlock", attrs: { latex: "" } }).run() },
@@ -310,10 +311,10 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
   const groups: Record<string, typeof SLASH_ITEMS> = {};
   items.forEach((i) => { (groups[i.group] ||= []).push(i); });
 
-  const setLink = () => {
+  const setLink = async () => {
     if (!editor) return;
     const prev = editor.getAttributes("link").href || "";
-    const url = window.prompt("URL", prev);
+    const url = await nnPrompt("Paste a URL (leave empty to remove link)", { title: "Link", defaultValue: prev, placeholder: "https://…" });
     if (url === null) return;
     if (url === "") { editor.chain().focus().extendMarkRange("link").unsetLink().run(); return; }
     editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
@@ -325,7 +326,7 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
     const { from, to } = editor.state.selection;
     const selected = from !== to ? editor.state.doc.textBetween(from, to, "\n") : "";
     const context = selected || editor.state.doc.textBetween(Math.max(0, from - 500), from, "\n");
-    if (!context.trim() && mode !== "brainstorm") { alert("Select some text or write something first."); return; }
+    if (!context.trim() && mode !== "brainstorm") { nnAlert("Select some text or write something first."); return; }
     setAiBusy(true);
     try {
       const prompts: Record<string, string> = {
@@ -346,11 +347,12 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
         editor.chain().focus().insertContent("\n\n" + text).run();
       }
     } catch (e: any) {
-      alert(`AI failed: ${e.message || e}`);
+      nnAlert(`AI failed: ${e.message || e}`);
     } finally {
       setAiBusy(false);
     }
   };
+
 
   return (
     <div className="nn-editor" style={{ position: "relative" }} ref={wrapperRef}>

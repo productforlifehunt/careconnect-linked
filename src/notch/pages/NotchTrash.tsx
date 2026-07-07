@@ -4,6 +4,7 @@ import { useNotchPath } from "@/notch/context/NotchBaseContext";
 import { cctList, cctUpdate, cctDelete, NN } from "@/notch/lib/nn-client";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 import { RotateCcw, Trash2 } from "lucide-react";
+import { nnConfirm } from "@/notch/lib/nn-dialog";
 
 export default function NotchTrash() {
   const nav = useNavigate();
@@ -30,7 +31,7 @@ export default function NotchTrash() {
     await load();
   };
   const purge = async (id: string) => {
-    if (!confirm("Permanently delete this page? This cannot be undone.")) return;
+    if (!(await nnConfirm("This cannot be undone.", "Delete forever?"))) return;
     await cctDelete(NN.block, id);
     await load();
   };

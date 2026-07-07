@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { nnConfirm } from "@/notch/lib/nn-dialog";
 import { Send, Trash2, Check } from "lucide-react";
 import { cctList, cctCreate, cctUpdate, cctDelete, NN } from "@/notch/lib/nn-client";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
@@ -64,7 +65,7 @@ export function NotchComments({ blockId }: { blockId: string }) {
 
 
   const remove = async (id: string) => {
-    if (!confirm("Delete this comment?")) return;
+    if (!(await nnConfirm("This comment will be removed.", "Delete comment?"))) return;
     await cctDelete(NN.comment, id);
     await load();
   };

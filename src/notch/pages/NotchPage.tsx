@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useNotchPath } from "@/notch/context/NotchBaseContext";
 import { ChevronRight, Database, FileText, MoreHorizontal, Star, Image as ImageIcon, X, Share2, Copy, Link as LinkIcon, Trash2, Bell, UserPlus } from "lucide-react";
 import { createReminder, createNotification } from "@/notch/lib/nn-notifications";
+import { nnPrompt, nnConfirm, nnAlert } from "@/notch/lib/nn-dialog";
 
 import { NotionEditor } from "@/notch/components/NotionEditor";
 import { NotchDatabase } from "@/notch/components/NotchDatabase";
@@ -140,7 +141,7 @@ export default function NotchPage() {
 
   const trashPage = async () => {
     if (!pageId) return;
-    if (!confirm("Move this page to trash?")) return;
+    if (!(await nnConfirm("You can restore it from Trash later.", "Move to trash?"))) return;
     await cctUpdate(NN.block, pageId, { archived: 1, in_trash: 1 });
     nav(path("/"));
   };
@@ -175,12 +176,13 @@ export default function NotchPage() {
           title="Set reminder"
           onClick={async () => {
             if (!user || !pageId) return;
-            const val = window.prompt("Remind me at (YYYY-MM-DD HH:MM, local time):", new Date(Date.now() + 3600_000).toISOString().slice(0, 16).replace("T", " "));
+            const defVal = new Date(Date.now() + 3600_000).toISOString().slice(0, 16);
+            const val = await nnPrompt("Pick a time to be reminded about this page.", { title: "Set reminder", type: "datetime-local", defaultValue: defVal });
             if (!val) return;
-            const d = new Date(val.replace(" ", "T"));
-            if (isNaN(d.getTime())) { alert("Invalid date"); return; }
+            const d = new Date(val);
+            if (isNaN(d.getTime())) { nnAlert("That date could not be parsed."); return; }
             await createReminder(String(user.user_id), pageId, d);
-            alert(`Reminder set for ${d.toLocaleString()}`);
+            nnAlert(`Reminder set for ${d.toLocaleString()}`, "Reminder");
           }}
         >
           <Bell size={14} />
@@ -191,7 +193,7 @@ export default function NotchPage() {
           title="Assign this page to a teammate"
           onClick={async () => {
             if (!user || !pageId) return;
-            const uid = window.prompt("Assign to user ID:");
+            const uid = await nnPrompt("Enter the teammate's numeric user ID.", { title: "Assign page", placeholder: "e.g. 42" });
             if (!uid || !/^\d+$/.test(uid.trim())) return;
             try {
               await createNotification({
@@ -201,14 +203,15 @@ export default function NotchPage() {
                 actor_user_id: String(user.user_id),
                 payload: JSON.stringify({ message: `Assigned: ${title || "Untitled"}` }),
               });
-              alert(`Assigned to user ${uid}`);
+              nnAlert(`Assigned to user ${uid}`, "Assignment sent");
             } catch (e: any) {
-              alert(`Failed: ${e.message || e}`);
+              nnAlert(`Failed: ${e.message || e}`);
             }
           }}
         >
           <UserPlus size={14} />
         </button>
+
 
         <button
           className="nn-topbar-btn"

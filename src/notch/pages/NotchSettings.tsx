@@ -3,6 +3,7 @@ import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 import { Moon, Sun } from "lucide-react";
 import { NotchMembersPanel } from "@/notch/components/NotchMembersPanel";
 import { requestBrowserNotificationPermission } from "@/notch/lib/nn-notifications";
+import { nnAlert } from "@/notch/lib/nn-dialog";
 
 export default function NotchSettings() {
   const { user, logout } = useNotchAuth();
@@ -52,7 +53,7 @@ export default function NotchSettings() {
             className="nn-topbar-btn"
             onClick={async () => {
               const r = await requestBrowserNotificationPermission();
-              alert(`Permission: ${r}`);
+              nnAlert(`Browser permission: ${r}`, "Notifications");
             }}
           >Enable browser notifications</button>
         </div>
