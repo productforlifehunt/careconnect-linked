@@ -627,3 +627,34 @@
   padding: 4px; border-radius: 4px; line-height: 1;
 }
 .nn-emoji-grid button:hover { background: var(--nn-bg-hover); }
+
+/* Block hover handles (Notion-style) */
+.nn-block-handles {
+  position: absolute;
+  left: -46px;
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 120ms;
+  pointer-events: none;
+}
+.nn-editor:hover .nn-block-handles { opacity: 1; pointer-events: auto; }
+.nn-block-handles button {
+  width: 20px; height: 22px;
+  border: none; background: transparent;
+  color: var(--nn-text-tertiary);
+  font-size: 14px; line-height: 1;
+  cursor: pointer; border-radius: 3px;
+  display: flex; align-items: center; justify-content: center;
+}
+.nn-block-handles button:hover { background: var(--nn-hover); color: var(--nn-text); }
+.nn-block-menu {
+  position: absolute;
+  z-index: 100;
+  background: var(--nn-bg);
+  border: 1px solid var(--nn-border-strong);
+  border-radius: 6px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+  min-width: 160px;
+  padding: 4px;
+}
