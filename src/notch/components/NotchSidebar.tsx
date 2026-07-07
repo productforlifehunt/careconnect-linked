@@ -198,6 +198,7 @@ export function NotchSidebar() {
               await loadAll();
             }}
             onClick={() => nav(path(`/p/${p.id}`))}
+            onContextMenu={(e) => { e.preventDefault(); setCtx({ x: e.clientX, y: e.clientY, page: p }); }}
           >
             <span
               className={`nn-caret ${isOpen ? "open" : ""}`}
