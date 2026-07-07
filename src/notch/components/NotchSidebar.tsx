@@ -92,7 +92,9 @@ export function NotchSidebar() {
     await loadAll();
   };
 
-  const renderTree = (parentId: string, depth = 0) => {
+  const renderTree = (parentId: string, depth = 0, seen: Set<string> = new Set()) => {
+    if (depth > 20 || seen.has(parentId)) return null; // cycle / depth guard
+    const nextSeen = new Set(seen); nextSeen.add(parentId);
     const children = pages.filter((p) => String(p.parent_id) === String(parentId));
     if (!children.length) {
       if (depth === 0) return null;
@@ -146,7 +148,7 @@ export function NotchSidebar() {
               <button onClick={(e) => { e.stopPropagation(); createPage(p.id); }} title="Add subpage"><Plus size={14} /></button>
             </span>
           </div>
-          {isOpen && renderTree(p.id, depth + 1)}
+          {isOpen && renderTree(p.id, depth + 1, nextSeen)}
         </div>
       );
     });
