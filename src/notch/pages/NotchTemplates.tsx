@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useNotchPath } from "@/notch/context/NotchBaseContext";
-import { Plus, FileText, Trash2, Copy, Sparkles } from "lucide-react";
+import { Plus, FileText, Trash2, Copy, Sparkles, Globe, Lock, Download } from "lucide-react";
 import { cctList, cctCreate, cctUpdate, cctDelete, cctGet, NN } from "@/notch/lib/nn-client";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 import { STARTER_TEMPLATES, StarterTemplate } from "@/notch/lib/nn-starter-templates";
 
-interface Template { id: string; name?: string; icon?: string; source_block_id?: string; workspace_id?: string; }
+interface Template { id: string; name?: string; icon?: string; source_block_id?: string; workspace_id?: string; author_id?: string; is_published?: boolean; }
+
 
 export default function NotchTemplates() {
   const { user } = useNotchAuth();
