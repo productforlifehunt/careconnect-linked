@@ -313,7 +313,7 @@ function CalendarView({ month, onPrev, onNext, rows, dateProp, onOpen, onAddOnDa
   for (let d = 1; d <= daysInMonth; d++) {
     const date = new Date(month.getFullYear(), month.getMonth(), d);
     const iso = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-    cells.push({ date, iso, items: visibleRows.filter((r) => getD(r) === iso) });
+    cells.push({ date, iso, items: rows.filter((r) => getD(r) === iso) });
   }
   const label = month.toLocaleString(undefined, { month: "long", year: "numeric" });
   const dow = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
