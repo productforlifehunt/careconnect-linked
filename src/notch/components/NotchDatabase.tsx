@@ -396,7 +396,8 @@ function CalendarView({ month, onPrev, onNext, rows, dateProp, onOpen, onAddOnDa
 
 function SchemaEditor({ schema, onClose, onSave }: { schema: PropDef[]; onClose: () => void; onSave: (s: PropDef[]) => void }) {
   const [draft, setDraft] = useState<PropDef[]>(JSON.parse(JSON.stringify(schema)));
-  const TYPES: PropType[] = ["text", "number", "select", "multiselect", "date", "checkbox", "url", "email", "phone", "person"];
+  const TYPES: PropType[] = ["text", "number", "select", "multiselect", "date", "checkbox", "url", "email", "phone", "person", "formula", "rollup"];
+  const numericSources = draft.filter((p) => p.type === "number");
   const add = () => {
     const key = `prop_${Date.now().toString(36)}`;
     setDraft([...draft, { key, name: "New property", type: "text" }]);
@@ -409,19 +410,37 @@ function SchemaEditor({ schema, onClose, onSave }: { schema: PropDef[]; onClose:
   const del = (i: number) => setDraft(draft.filter((_, j) => j !== i));
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={onClose}>
-      <div style={{ background: "var(--nn-bg)", borderRadius: 8, width: "100%", maxWidth: 560, padding: 20, maxHeight: "80vh", overflow: "auto" }} onClick={(e) => e.stopPropagation()}>
+      <div style={{ background: "var(--nn-bg)", borderRadius: 8, width: "100%", maxWidth: 600, padding: 20, maxHeight: "80vh", overflow: "auto" }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
           <div style={{ fontSize: 18, fontWeight: 600 }}>Properties</div>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-secondary)" }}><X size={16} /></button>
         </div>
         {draft.map((p, i) => (
-          <div key={p.key} style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 8 }}>
-            <input value={p.name} onChange={(e) => update(i, { name: e.target.value })} className="nn-auth-input" style={{ marginBottom: 0, flex: 1 }} />
+          <div key={p.key} style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 8, flexWrap: "wrap" }}>
+            <input value={p.name} onChange={(e) => update(i, { name: e.target.value })} className="nn-auth-input" style={{ marginBottom: 0, flex: 1, minWidth: 120 }} />
             <select value={p.type} onChange={(e) => update(i, { type: e.target.value as PropType })} className="nn-auth-input" style={{ marginBottom: 0, width: 110 }}>
               {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
-            {p.type === "select" && (
-              <input value={(p.options || []).join(", ")} onChange={(e) => update(i, { options: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })} placeholder="Option A, Option B" className="nn-auth-input" style={{ marginBottom: 0, width: 180 }} />
+            {(p.type === "select" || p.type === "multiselect") && (
+              <input value={(p.options || []).join(", ")} onChange={(e) => update(i, { options: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })} placeholder="Option A, Option B" className="nn-auth-input" style={{ marginBottom: 0, width: 200 }} />
+            )}
+            {p.type === "formula" && (
+              <input value={p.formula || ""} onChange={(e) => update(i, { formula: e.target.value })} placeholder="e.g. price * qty" className="nn-auth-input" style={{ marginBottom: 0, width: 220, fontFamily: "monospace" }} />
+            )}
+            {p.type === "rollup" && (
+              <>
+                <select value={p.rollup?.source || ""} onChange={(e) => update(i, { rollup: { source: e.target.value, agg: p.rollup?.agg || "sum" } })} className="nn-auth-input" style={{ marginBottom: 0, width: 130 }}>
+                  <option value="">Source…</option>
+                  {numericSources.map((s) => <option key={s.key} value={s.key}>{s.name}</option>)}
+                </select>
+                <select value={p.rollup?.agg || "sum"} onChange={(e) => update(i, { rollup: { source: p.rollup?.source || "", agg: e.target.value as any } })} className="nn-auth-input" style={{ marginBottom: 0, width: 90 }}>
+                  <option value="sum">sum</option>
+                  <option value="avg">avg</option>
+                  <option value="min">min</option>
+                  <option value="max">max</option>
+                  <option value="count">count</option>
+                </select>
+              </>
             )}
             <button onClick={() => del(i)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-tertiary)" }}><Trash2 size={14} /></button>
           </div>
