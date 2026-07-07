@@ -120,6 +120,43 @@ export function NotchSidebar() {
     await loadAll();
   };
 
+  const duplicatePage = async (src: Block) => {
+    if (!activeWs) return;
+    const { id } = await cctCreate(NN.block, {
+      workspace_id: activeWs,
+      parent_id: src.parent_id || activeWs,
+      type: src.type || "page",
+      title: src.title ? `${src.title} (copy)` : "Untitled (copy)",
+      icon: src.icon || "",
+      properties: JSON.stringify({}),
+      content_order: JSON.stringify([]),
+      archived: 0,
+      in_trash: 0,
+      created_by: user?.user_id || 0,
+      last_edited_by: user?.user_id || 0,
+    });
+    await loadAll();
+    nav(path(`/p/${id}`));
+  };
+
+  const copyPageLink = async (id: string) => {
+    const url = `${window.location.origin}${path(`/p/${id}`)}`;
+    try { await navigator.clipboard.writeText(url); toast({ title: "Link copied" }); }
+    catch { toast({ title: "Copy failed", description: url }); }
+  };
+
+  const buildCtxItems = (p: Block) => {
+    const fav = isFav(p.id);
+    return [
+      { label: "Rename", icon: <CtxIcons.Pencil size={14} />, onClick: () => renamePage(p.id, p.title || "") },
+      { label: "Duplicate", icon: <CtxIcons.Copy size={14} />, onClick: () => duplicatePage(p) },
+      { label: "Add subpage", icon: <CtxIcons.Plus size={14} />, onClick: () => createPage(p.id) },
+      { label: fav ? "Remove from Favorites" : "Add to Favorites", icon: fav ? <CtxIcons.StarOff size={14} /> : <CtxIcons.Star size={14} />, onClick: () => toggleFav(p.id) },
+      { label: "Copy link", icon: <CtxIcons.Link2 size={14} />, onClick: () => copyPageLink(p.id) },
+      { label: "Move to Trash", icon: <CtxIcons.Trash2 size={14} />, danger: true, divider: true, onClick: () => deletePage(p.id) },
+    ];
+  };
+
   const renderTree = (parentId: string, depth = 0, seen: Set<string> = new Set()) => {
     if (depth > 20 || seen.has(parentId)) return null; // cycle / depth guard
     const nextSeen = new Set(seen); nextSeen.add(parentId);
