@@ -20,6 +20,9 @@ import Youtube from "@tiptap/extension-youtube";
 import { Details, DetailsSummary, DetailsContent } from "@tiptap/extension-details";
 import { useEffect, useRef, useState } from "react";
 import { Bold, Italic, Underline as UIcon, Strikethrough, Code, Link as LinkIcon, AlignLeft, AlignCenter, AlignRight, Sparkles } from "lucide-react";
+import { MathBlock, Columns, Column, buildColumns } from "./notch-extensions";
+import { nnUploadFile, pickFile } from "@/notch/lib/nn-files";
+import { useNotchAuth as _useNotchAuth } from "@/notch/context/NotchAuthContext";
 
 interface Props {
   content: any;
