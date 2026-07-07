@@ -18,6 +18,7 @@ interface Props {
   content: any;
   onChange: (json: any) => void;
   placeholder?: string;
+  onCreateSubpage?: () => Promise<{ id: string; title: string; href: string } | null>;
 }
 
 const HL_COLORS = ["#fff2b8", "#ffd6d6", "#d6ffd6", "#d6e4ff", "#f0d6ff", "#ffe0c2"];
@@ -44,9 +45,21 @@ const SLASH_ITEMS = [
       const url = window.prompt("URL");
       if (url) e.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
     } },
+  { group: "Basic", key: "subpage", icon: "📄", name: "Sub-page", desc: "Embed a new sub-page.", cmd: async (e: any, ctx: any) => {
+      if (!ctx?.onCreateSubpage) return;
+      const p = await ctx.onCreateSubpage();
+      if (!p) return;
+      e.chain().focus()
+        .insertContent([
+          { type: "paragraph", content: [
+            { type: "text", marks: [{ type: "link", attrs: { href: p.href } }], text: `📄 ${p.title}` },
+          ] },
+        ])
+        .run();
+    } },
 ];
 
-export function NotionEditor({ content, onChange, placeholder = "Type '/' for commands" }: Props) {
+export function NotionEditor({ content, onChange, placeholder = "Type '/' for commands", onCreateSubpage }: Props) {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
@@ -67,6 +80,8 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
 
   const [slash, setSlash] = useState<{ x: number; y: number; query: string } | null>(null);
   const [selected, setSelected] = useState(0);
+  const [hoverBlock, setHoverBlock] = useState<{ top: number; el: HTMLElement } | null>(null);
+  const [blockMenu, setBlockMenu] = useState<{ top: number; left: number; el: HTMLElement } | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -112,6 +127,61 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
     };
   }, [editor, slash, selected]);
 
+  // Hover handles: track hovered top-level block within ProseMirror
+  useEffect(() => {
+    if (!editor) return;
+    const dom = editor.view.dom as HTMLElement;
+    const onMove = (e: MouseEvent) => {
+      let node = e.target as HTMLElement | null;
+      while (node && node.parentElement !== dom) node = node.parentElement;
+      if (!node) { setHoverBlock(null); return; }
+      const wr = wrapperRef.current?.getBoundingClientRect();
+      const nr = node.getBoundingClientRect();
+      setHoverBlock({ top: nr.top - (wr?.top || 0), el: node });
+    };
+    const onLeave = () => setHoverBlock(null);
+    dom.addEventListener("mousemove", onMove);
+    dom.addEventListener("mouseleave", onLeave);
+    return () => {
+      dom.removeEventListener("mousemove", onMove);
+      dom.removeEventListener("mouseleave", onLeave);
+    };
+  }, [editor]);
+
+  const handlePlus = () => {
+    if (!editor || !hoverBlock) return;
+    const pos = editor.view.posAtDOM(hoverBlock.el, 0);
+    editor.chain().focus().insertContentAt(pos + hoverBlock.el.textContent!.length + 1, { type: "paragraph" }).run();
+    setTimeout(() => {
+      editor.commands.insertContent("/");
+    }, 10);
+  };
+
+  const openBlockMenu = () => {
+    if (!hoverBlock || !wrapperRef.current) return;
+    const wr = wrapperRef.current.getBoundingClientRect();
+    const nr = hoverBlock.el.getBoundingClientRect();
+    setBlockMenu({ top: nr.top - wr.top, left: nr.left - wr.left - 10, el: hoverBlock.el });
+  };
+
+  const deleteBlock = () => {
+    if (!editor || !blockMenu) return;
+    const from = editor.view.posAtDOM(blockMenu.el, 0);
+    const size = (blockMenu.el.textContent?.length || 0) + 2;
+    editor.chain().focus().deleteRange({ from: Math.max(0, from - 1), to: from + size }).run();
+    setBlockMenu(null);
+  };
+
+  const duplicateBlock = () => {
+    if (!editor || !blockMenu) return;
+    const html = blockMenu.el.outerHTML;
+    const from = editor.view.posAtDOM(blockMenu.el, 0);
+    const size = (blockMenu.el.textContent?.length || 0) + 2;
+    editor.chain().focus().insertContentAt(from + size, html).run();
+    setBlockMenu(null);
+  };
+
+
   const filteredItems = () => {
     if (!slash) return SLASH_ITEMS;
     const q = slash.query.toLowerCase();
@@ -128,7 +198,7 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
       const start = from - m[0].length;
       editor.chain().focus().deleteRange({ from: start, to: from }).run();
     }
-    item.cmd(editor);
+    item.cmd(editor, { onCreateSubpage });
     setSlash(null);
   };
 
@@ -202,6 +272,21 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
             </div>
           ))}
         </div>
+      )}
+      {hoverBlock && (
+        <div className="nn-block-handles" style={{ top: hoverBlock.top }}>
+          <button title="Add block below" onClick={handlePlus}>+</button>
+          <button title="Block options" onClick={openBlockMenu}>⋮⋮</button>
+        </div>
+      )}
+      {blockMenu && (
+        <>
+          <div style={{ position: "fixed", inset: 0, zIndex: 90 }} onClick={() => setBlockMenu(null)} />
+          <div className="nn-block-menu" style={{ top: blockMenu.top + 20, left: blockMenu.left }}>
+            <div className="nn-sidebar-item" onClick={duplicateBlock}><span className="nn-title">Duplicate</span></div>
+            <div className="nn-sidebar-item" onClick={deleteBlock} style={{ color: "#e03e3e" }}><span className="nn-title">Delete</span></div>
+          </div>
+        </>
       )}
     </div>
   );

@@ -244,7 +244,28 @@ export default function NotchPage() {
           {isDatabase ? (
             <NotchDatabase databaseId={pageId} workspaceId={String(block.workspace_id || "")} />
           ) : (
-            <NotionEditor content={content} onChange={onContentChange} />
+            <NotionEditor
+              content={content}
+              onChange={onContentChange}
+              onCreateSubpage={async () => {
+                if (!block) return null;
+                const { id } = await cctCreate(NN.block, {
+                  workspace_id: block.workspace_id || "",
+                  parent_id: pageId,
+                  type: "page",
+                  title: "Untitled",
+                  icon: "",
+                  cover: "",
+                  properties: JSON.stringify({}),
+                  content_order: JSON.stringify([]),
+                  archived: 0,
+                  in_trash: 0,
+                  created_by: user?.user_id || 0,
+                  last_edited_by: user?.user_id || 0,
+                });
+                return { id, title: "Untitled", href: path(`/p/${id}`) };
+              }}
+            />
           )}
           <NotchComments blockId={pageId} />
         </div>
