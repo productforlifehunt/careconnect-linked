@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { Plus, Trash2, Table, LayoutGrid, Calendar as CalIcon, Settings2, X, ChevronLeft, ChevronRight, Image as ImageIcon, List } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useNotchPath } from "@/notch/context/NotchBaseContext";
 import { cctList, cctCreate, cctUpdate, NN } from "@/notch/lib/nn-client";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 
@@ -22,6 +23,7 @@ const STATUS_COLORS: Record<string, string> = {
 export function NotchDatabase({ databaseId, workspaceId }: Props) {
   const { user } = useNotchAuth();
   const nav = useNavigate();
+  const path = useNotchPath();
   const [rows, setRows] = useState<Row[]>([]);
   const [schema, setSchema] = useState<PropDef[]>(DEFAULT_SCHEMA);
   const [view, setView] = useState<ViewMode>("table");
@@ -74,7 +76,7 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
       created_by: user?.user_id || 0, last_edited_by: user?.user_id || 0,
     });
     await load();
-    nav(`/notch/p/${id}`);
+    nav(path(`/p/${id}`));
   };
   const archiveRow = async (id: string) => {
     await cctUpdate(NN.block, id, { archived: 1, in_trash: 1 });
@@ -152,7 +154,7 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
           </div>
           {rows.map((r) => (
             <div key={r.id} style={{ display: "grid", gridTemplateColumns: `2fr ${schema.map(() => "1fr").join(" ")} 40px`, padding: "8px 12px", borderBottom: "1px solid var(--nn-border)", alignItems: "center", fontSize: 14 }}>
-              <div onClick={() => nav(`/notch/p/${r.id}`)} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+              <div onClick={() => nav(path(`/p/${r.id}`))} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
                 <span>{r.icon || "📄"}</span>
                 <span>{r.title || "Untitled"}</span>
               </div>
@@ -176,7 +178,7 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
                     <span style={{ color: "var(--nn-text-tertiary)" }}>{col.length}</span>
                   </div>
                   {col.map((r) => (
-                    <div key={r.id} onClick={() => nav(`/notch/p/${r.id}`)} style={{ background: "var(--nn-bg)", padding: 10, marginTop: 6, borderRadius: 4, cursor: "pointer", boxShadow: "0 1px 2px rgba(0,0,0,0.05)", fontSize: 14 }}>
+                    <div key={r.id} onClick={() => nav(path(`/p/${r.id}`))} style={{ background: "var(--nn-bg)", padding: 10, marginTop: 6, borderRadius: 4, cursor: "pointer", boxShadow: "0 1px 2px rgba(0,0,0,0.05)", fontSize: 14 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <span>{r.icon || "📄"}</span>
                         <span>{r.title || "Untitled"}</span>
@@ -194,13 +196,13 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
       )}
 
       {view === "calendar" && (
-        <CalendarView month={calMonth} onPrev={() => setCalMonth(new Date(calMonth.getFullYear(), calMonth.getMonth() - 1, 1))} onNext={() => setCalMonth(new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 1))} rows={rows} dateProp={dateProp} onOpen={(id) => nav(`/notch/p/${id}`)} onAddOnDate={(iso) => dateProp && addRow({ [dateProp.key]: iso })} />
+        <CalendarView month={calMonth} onPrev={() => setCalMonth(new Date(calMonth.getFullYear(), calMonth.getMonth() - 1, 1))} onNext={() => setCalMonth(new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 1))} rows={rows} dateProp={dateProp} onOpen={(id) => nav(path(`/p/${id}`))} onAddOnDate={(iso) => dateProp && addRow({ [dateProp.key]: iso })} />
       )}
 
       {view === "gallery" && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
           {rows.map((r) => (
-            <div key={r.id} onClick={() => nav(`/notch/p/${r.id}`)} style={{ border: "1px solid var(--nn-border)", borderRadius: 6, overflow: "hidden", cursor: "pointer", background: "var(--nn-bg)" }}>
+            <div key={r.id} onClick={() => nav(path(`/p/${r.id}`))} style={{ border: "1px solid var(--nn-border)", borderRadius: 6, overflow: "hidden", cursor: "pointer", background: "var(--nn-bg)" }}>
               <div style={{ height: 120, background: r.cover ? `center/cover no-repeat url("${r.cover}")` : "var(--nn-bg-secondary)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, color: "var(--nn-text-tertiary)" }}>
                 {!r.cover && (r.icon || "📄")}
               </div>
@@ -221,7 +223,7 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
       {view === "list" && (
         <div>
           {rows.map((r) => (
-            <div key={r.id} onClick={() => nav(`/notch/p/${r.id}`)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 4px", borderBottom: "1px solid var(--nn-border)", cursor: "pointer", fontSize: 14 }}>
+            <div key={r.id} onClick={() => nav(path(`/p/${r.id}`))} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 4px", borderBottom: "1px solid var(--nn-border)", cursor: "pointer", fontSize: 14 }}>
               <span>{r.icon || "📄"}</span>
               <span style={{ flex: 1 }}>{r.title || "Untitled"}</span>
               {statusProp && <span style={{ fontSize: 12, color: "var(--nn-text-secondary)" }}>{getProp(r, statusProp.key) || ""}</span>}

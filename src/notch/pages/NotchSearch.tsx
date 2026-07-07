@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useNotchPath } from "@/notch/context/NotchBaseContext";
 import { cctList, NN } from "@/notch/lib/nn-client";
 
 export default function NotchSearch() {
   const [q, setQ] = useState("");
   const [items, setItems] = useState<any[]>([]);
   const nav = useNavigate();
+  const path = useNotchPath();
 
   useEffect(() => {
     cctList<any>(NN.block).then((b) => setItems(b.filter((x: any) => (x.type === "page" || x.type === "database") && Number(x.archived) !== 1)));
@@ -31,7 +33,7 @@ export default function NotchSearch() {
         />
         <div>
           {results.map((r) => (
-            <div key={r.id} onClick={() => nav(`/notch/p/${r.id}`)} style={{ padding: 10, borderRadius: 4, cursor: "pointer", display: "flex", gap: 8 }} className="nn-sidebar-item">
+            <div key={r.id} onClick={() => nav(path(`/p/${r.id}`))} style={{ padding: 10, borderRadius: 4, cursor: "pointer", display: "flex", gap: 8 }} className="nn-sidebar-item">
               <span>{r.icon || "📄"}</span>
               <span>{r.title || "Untitled"}</span>
             </div>

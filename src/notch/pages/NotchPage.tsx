@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useNotchPath } from "@/notch/context/NotchBaseContext";
 import { ChevronRight, Database, FileText, MoreHorizontal, Star, Image as ImageIcon, X, Share2 } from "lucide-react";
 import { NotionEditor } from "@/notch/components/NotionEditor";
 import { NotchDatabase } from "@/notch/components/NotchDatabase";
@@ -26,6 +27,7 @@ const EMOJIS = ["📝","📓","📘","📗","📕","📙","📚","🗂","🗓","
 export default function NotchPage() {
   const { pageId } = useParams<{ pageId: string }>();
   const nav = useNavigate();
+  const path = useNotchPath();
   const { user } = useNotchAuth();
   const { isFav, toggle: toggleFav } = useFavorites();
   const [block, setBlock] = useState<Block | null>(null);
@@ -122,7 +124,7 @@ export default function NotchPage() {
             <span key={c.id} style={{ display: "flex", alignItems: "center", gap: 4 }}>
               {i > 0 && <ChevronRight size={12} style={{ opacity: 0.5 }} />}
               <span
-                onClick={() => c.id !== pageId && nav(`/notch/p/${c.id}`)}
+                onClick={() => c.id !== pageId && nav(path(`/p/${c.id}`))}
                 style={{ cursor: c.id === pageId ? "default" : "pointer", padding: "2px 6px", borderRadius: 3, color: c.id === pageId ? "var(--nn-text)" : "var(--nn-text-secondary)" }}
               >
                 {c.icon && <span style={{ marginRight: 4 }}>{c.icon}</span>}

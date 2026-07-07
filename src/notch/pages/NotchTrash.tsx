@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useNotchPath } from "@/notch/context/NotchBaseContext";
 import { cctList, cctUpdate, cctDelete, NN } from "@/notch/lib/nn-client";
 import { RotateCcw, Trash2 } from "lucide-react";
 
 export default function NotchTrash() {
   const nav = useNavigate();
+  const path = useNotchPath();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -42,7 +44,7 @@ export default function NotchTrash() {
             {items.map((p) => (
               <div key={p.id} style={{ display: "flex", alignItems: "center", padding: "10px 14px", borderBottom: "1px solid var(--nn-border)", gap: 10 }}>
                 <span style={{ fontSize: 18 }}>{p.icon || "📄"}</span>
-                <div style={{ flex: 1, cursor: "pointer" }} onClick={() => nav(`/notch/p/${p.id}`)}>
+                <div style={{ flex: 1, cursor: "pointer" }} onClick={() => nav(path(`/p/${p.id}`))}>
                   <div style={{ fontWeight: 500 }}>{p.title || "Untitled"}</div>
                   <div style={{ fontSize: 12, color: "var(--nn-text-tertiary)" }}>
                     Deleted {p.updated_at ? new Date(p.updated_at).toLocaleString() : ""}

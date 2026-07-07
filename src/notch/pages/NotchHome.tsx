@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useNotchPath } from "@/notch/context/NotchBaseContext";
 import { cctList, NN } from "@/notch/lib/nn-client";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 import { FileText } from "lucide-react";
@@ -7,6 +8,7 @@ import { FileText } from "lucide-react";
 export default function NotchHome() {
   const { user } = useNotchAuth();
   const nav = useNavigate();
+  const path = useNotchPath();
   const [recent, setRecent] = useState<any[]>([]);
 
   useEffect(() => {
@@ -36,7 +38,7 @@ export default function NotchHome() {
           {recent.map((p) => (
             <div
               key={p.id}
-              onClick={() => nav(`/notch/p/${p.id}`)}
+              onClick={() => nav(path(`/p/${p.id}`))}
               style={{ border: "1px solid var(--nn-border)", borderRadius: 6, padding: 16, cursor: "pointer", background: "var(--nn-bg)", minHeight: 100 }}
             >
               <div style={{ fontSize: 22, marginBottom: 6 }}>{p.icon || <FileText size={20} />}</div>

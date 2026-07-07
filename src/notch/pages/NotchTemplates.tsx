@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useNotchPath } from "@/notch/context/NotchBaseContext";
 import { Plus, FileText, Trash2, Copy } from "lucide-react";
 import { cctList, cctCreate, cctUpdate, cctDelete, cctGet, NN } from "@/notch/lib/nn-client";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
@@ -9,6 +10,7 @@ interface Template { id: string; name?: string; icon?: string; source_block_id?:
 export default function NotchTemplates() {
   const { user } = useNotchAuth();
   const nav = useNavigate();
+  const path = useNotchPath();
   const [items, setItems] = useState<Template[]>([]);
   const [wsId, setWsId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -37,7 +39,7 @@ export default function NotchTemplates() {
       name: "Untitled template", icon: "🧩",
       source_block_id: String(blockId), workspace_id: String(wsId),
     });
-    nav(`/notch/p/${blockId}`);
+    nav(path(`/p/${blockId}`));
   };
 
   const useTemplate = async (t: Template) => {
@@ -52,7 +54,7 @@ export default function NotchTemplates() {
       archived: 0, in_trash: 0,
       created_by: user?.user_id || 0, last_edited_by: user?.user_id || 0,
     });
-    nav(`/notch/p/${id}`);
+    nav(path(`/p/${id}`));
   };
 
   const remove = async (t: Template) => {
