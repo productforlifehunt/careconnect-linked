@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { X, Trash2, Link2, Copy } from "lucide-react";
 import { cctList, cctCreate, cctUpdate, cctDelete, NN } from "@/notch/lib/nn-client";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
+import { useNotchPath, useNotchBase } from "@/notch/context/NotchBaseContext";
 
 type Role = "viewer" | "editor" | "owner";
 interface Perm { id: string; block_id?: string; email?: string; role?: Role; is_public?: number | string; }
