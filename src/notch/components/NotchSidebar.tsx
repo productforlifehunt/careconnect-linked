@@ -174,6 +174,10 @@ export function NotchSidebar() {
           <span className="nn-icon"><Settings size={15} /></span>
           <span className="nn-title">Settings</span>
         </div>
+        <div className="nn-sidebar-item" onClick={() => nav("/notch/templates")}>
+          <span className="nn-icon">🧩</span>
+          <span className="nn-title">Templates</span>
+        </div>
         <div className="nn-sidebar-item" onClick={() => nav("/notch/trash")}>
           <span className="nn-icon"><Trash size={15} /></span>
           <span className="nn-title">Trash</span>
