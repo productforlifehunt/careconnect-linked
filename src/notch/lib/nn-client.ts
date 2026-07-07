@@ -31,9 +31,8 @@ export async function nnFetch<T = any>(endpoint: string, opts: NNFetchOpts = {})
     if (res.status === 404) return [] as any;
     if (res.status === 401 || res.status === 403) {
       clearNNSession();
-      if (!window.location.pathname.startsWith("/notch/auth")) {
-        window.location.replace("/notch/auth");
-      }
+      // Signal expiry; NotchAuthContext listens and reroutes without losing ?__site
+      window.dispatchEvent(new CustomEvent("nn:session-expired"));
       throw new Error("Session expired");
     }
     const text = await res.text().catch(() => "");
