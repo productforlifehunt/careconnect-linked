@@ -97,12 +97,13 @@ export function NotchComments({ blockId }: { blockId: string }) {
       <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
         <input
           className="nn-auth-input"
-          placeholder="Add a comment…"
+          placeholder="Add a comment… (use @123 to mention user ID 123)"
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); } }}
           style={{ marginBottom: 0, flex: 1 }}
         />
+
         <button className="nn-btn-primary" onClick={submit} disabled={busy || !text.trim()} style={{ display: "flex", alignItems: "center", gap: 4 }}>
           <Send size={13} /> Send
         </button>
