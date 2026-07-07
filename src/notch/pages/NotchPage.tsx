@@ -386,18 +386,39 @@ export default function NotchPage() {
         />
       )}
       {showHistory && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowHistory(false)}>
-          <div style={{ background: "var(--nn-bg)", borderRadius: 8, width: "100%", maxWidth: 520, padding: 20, maxHeight: "80vh", overflow: "auto" }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Page history</div>
-            {snapshots.length === 0 ? (
-              <div style={{ opacity: 0.6, fontSize: 13 }}>No snapshots yet.</div>
-            ) : snapshots.map((s, i) => (
-              <div key={s.ts} className="nn-sidebar-item" onClick={() => restoreSnapshot(i)}>
-                <span className="nn-icon"><History size={14} /></span>
-                <span className="nn-title">{s.title || "Untitled"} — {new Date(s.ts).toLocaleString()}</span>
-              </div>
-            ))}
-          </div>
+        <div className="nn-history-backdrop" onClick={() => setShowHistory(false)}>
+          <aside className="nn-history-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="nn-history-head">
+              <History size={14} />
+              <span style={{ flex: 1, fontWeight: 600 }}>Page history</span>
+              <button className="nn-topbar-btn" onClick={() => setShowHistory(false)}><X size={14} /></button>
+            </div>
+            <div className="nn-history-body">
+              {snapshots.length === 0 ? (
+                <div style={{ opacity: 0.6, fontSize: 13, padding: 12 }}>No snapshots yet.</div>
+              ) : snapshots.map((s, i) => (
+                <div key={s.ts} className="nn-history-item">
+                  <div className="nn-history-meta">
+                    <div className="nn-history-title">{s.title || "Untitled"}</div>
+                    <div className="nn-history-ts">{new Date(s.ts).toLocaleString()}</div>
+                  </div>
+                  <div className="nn-history-actions">
+                    <button className="nn-topbar-btn" onClick={() => restoreSnapshot(i)} title="Restore">Restore</button>
+                    <button
+                      className="nn-topbar-btn"
+                      title="Delete snapshot"
+                      onClick={async () => {
+                        if (!(await nnConfirm("Delete this snapshot?", "Delete"))) return;
+                        const next = snapshots.filter((_, j) => j !== i);
+                        setSnapshots(next);
+                        saveProps({ history: next });
+                      }}
+                    ><Trash2 size={13} /></button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </aside>
         </div>
       )}
     </>
