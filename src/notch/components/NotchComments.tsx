@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Send, Trash2 } from "lucide-react";
 import { cctList, cctCreate, cctDelete, NN } from "@/notch/lib/nn-client";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
+import { createNotification } from "@/notch/lib/nn-notifications";
 
 interface Comment {
   id: string;
@@ -40,11 +41,27 @@ export function NotchComments({ blockId }: { blockId: string }) {
         resolved: 0,
         author_display: user?.user_display_name || user?.user_email || "Anonymous",
       });
+      // Parse @<user_id> mentions and fire notifications
+      const mentions = Array.from(new Set((body.match(/@(\d+)/g) || []).map((m) => m.slice(1))));
+      for (const uid of mentions) {
+        if (uid && String(uid) !== String(user?.user_id)) {
+          try {
+            await createNotification({
+              user_id: uid,
+              type: "mention",
+              block_id: String(blockId),
+              actor_user_id: user ? String(user.user_id) : "",
+              payload: JSON.stringify({ message: body.slice(0, 140) }),
+            });
+          } catch { /* noop */ }
+        }
+      }
       setText("");
       await load();
     } catch (e) { console.error("comment", e); }
     setBusy(false);
   };
+
 
   const remove = async (id: string) => {
     if (!confirm("Delete this comment?")) return;
@@ -80,12 +97,13 @@ export function NotchComments({ blockId }: { blockId: string }) {
       <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
         <input
           className="nn-auth-input"
-          placeholder="Add a comment…"
+          placeholder="Add a comment… (use @123 to mention user ID 123)"
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); } }}
           style={{ marginBottom: 0, flex: 1 }}
         />
+
         <button className="nn-btn-primary" onClick={submit} disabled={busy || !text.trim()} style={{ display: "flex", alignItems: "center", gap: 4 }}>
           <Send size={13} /> Send
         </button>

@@ -163,10 +163,17 @@ function adaptOut(slug: string, data: Record<string, any>): Record<string, any> 
     if ("granted_by" in d) { delete d.granted_by; }
   } else if (slug === "nn_template") {
     if ("name" in d) { d.tpl_name = String(d.name); delete d.name; }
-    if ("source_block_id" in d) { d.category = String(d.source_block_id); delete d.source_block_id; }
+    if ("source_block_id" in d || "is_published" in d) {
+      const src = d.source_block_id ?? "";
+      const pub = d.is_published ? ":pub" : "";
+      d.category = `${src}${pub}`;
+      delete d.source_block_id;
+      delete d.is_published;
+    }
     if ("workspace_id" in d) { delete d.workspace_id; }
     if ("body_snapshot" in d) { d.block_tree_snapshot = String(d.body_snapshot); delete d.body_snapshot; }
   }
+
   // Coerce remaining values that are numbers to strings for JetEngine's text fields.
   for (const k of Object.keys(d)) d[k] = toWpString(d[k]);
   return d;
@@ -201,8 +208,12 @@ function adaptIn(slug: string, item: any): any {
     return { ...item, block_id: bid, email: "", is_public: 0, granted_by: item.author_id };
   }
   if (slug === "nn_template") {
-    return { ...item, name: item.tpl_name, source_block_id: item.category, body_snapshot: item.block_tree_snapshot };
+    const cat = String(item.category || "");
+    const isPub = cat.endsWith(":pub");
+    const src = isPub ? cat.slice(0, -4) : cat;
+    return { ...item, name: item.tpl_name, source_block_id: src, is_published: isPub, body_snapshot: item.block_tree_snapshot };
   }
+
   return item;
 }
 

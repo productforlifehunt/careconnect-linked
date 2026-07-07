@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useNotchPath } from "@/notch/context/NotchBaseContext";
-import { Plus, FileText, Trash2, Copy, Sparkles } from "lucide-react";
+import { Plus, FileText, Trash2, Copy, Sparkles, Globe, Lock, Download } from "lucide-react";
 import { cctList, cctCreate, cctUpdate, cctDelete, cctGet, NN } from "@/notch/lib/nn-client";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 import { STARTER_TEMPLATES, StarterTemplate } from "@/notch/lib/nn-starter-templates";
 
-interface Template { id: string; name?: string; icon?: string; source_block_id?: string; workspace_id?: string; }
+interface Template { id: string; name?: string; icon?: string; source_block_id?: string; workspace_id?: string; author_id?: string; is_published?: boolean; }
+
 
 export default function NotchTemplates() {
   const { user } = useNotchAuth();
@@ -82,9 +83,22 @@ export default function NotchTemplates() {
   const rename = async (t: Template) => {
     const name = window.prompt("Template name", t.name || "");
     if (name === null) return;
-    await cctUpdate(NN.template, t.id, { name });
+    await cctUpdate(NN.template, t.id, { name, source_block_id: t.source_block_id, is_published: !!t.is_published });
     await load();
   };
+
+  const togglePublish = async (t: Template) => {
+    await cctUpdate(NN.template, t.id, {
+      name: t.name || "Untitled",
+      source_block_id: t.source_block_id,
+      is_published: !t.is_published,
+    });
+    await load();
+  };
+
+  const isMine = (t: Template) => !user || String(t.author_id) === String(user.user_id);
+  const mine = items.filter(isMine);
+  const community = items.filter((t) => !isMine(t) && t.is_published);
 
   return (
     <div className="nn-page-scroll">
@@ -94,7 +108,7 @@ export default function NotchTemplates() {
           <button onClick={createFromScratch} className="nn-btn-primary"><Plus size={13} style={{ marginRight: 4 }} /> New template</button>
         </div>
         <div style={{ color: "var(--nn-text-secondary)", marginBottom: 24 }}>
-          Save reusable page layouts. Instantiate them anywhere.
+          Save reusable page layouts. Instantiate them anywhere. Publish yours to the community marketplace.
         </div>
 
         {/* ─── Starter gallery ─── */}
@@ -120,20 +134,45 @@ export default function NotchTemplates() {
           ))}
         </div>
 
+        {/* ─── Community marketplace ─── */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12, fontSize: 13, fontWeight: 600, color: "var(--nn-text-secondary)", textTransform: "uppercase", letterSpacing: 0.4 }}>
+          <Globe size={14} /> Community marketplace ({community.length})
+        </div>
+        {loading ? <div style={{ opacity: 0.5, marginBottom: 32 }}>Loading…</div> : community.length === 0 ? (
+          <div style={{ color: "var(--nn-text-tertiary)", marginBottom: 32, fontSize: 13 }}>No community templates yet. Publish one of yours to share.</div>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12, marginBottom: 32 }}>
+            {community.map((t) => (
+              <div key={t.id} style={{ border: "1px solid var(--nn-border)", borderRadius: 6, padding: 14, background: "var(--nn-bg)" }}>
+                <div style={{ fontSize: 24, marginBottom: 4 }}>{t.icon || <FileText size={20} />}</div>
+                <div style={{ fontWeight: 500, marginBottom: 2 }}>{t.name || "Untitled"}</div>
+                <div style={{ fontSize: 11, color: "var(--nn-text-tertiary)", marginBottom: 8 }}>by user {t.author_id || "?"}</div>
+                <button className="nn-btn-primary" onClick={() => useTemplate(t)}><Download size={12} style={{ marginRight: 4 }} />Install</button>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* ─── User templates ─── */}
         <div style={{ fontSize: 13, fontWeight: 600, color: "var(--nn-text-secondary)", textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 12 }}>
           Your templates
         </div>
-        {loading ? <div style={{ opacity: 0.5 }}>Loading…</div> : !items.length ? (
+        {loading ? <div style={{ opacity: 0.5 }}>Loading…</div> : !mine.length ? (
           <div style={{ color: "var(--nn-text-tertiary)" }}>No saved templates yet.</div>
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
-            {items.map((t) => (
+            {mine.map((t) => (
               <div key={t.id} style={{ border: "1px solid var(--nn-border)", borderRadius: 6, padding: 14, background: "var(--nn-bg)" }}>
                 <div style={{ fontSize: 24, marginBottom: 4 }}>{t.icon || <FileText size={20} />}</div>
-                <div style={{ fontWeight: 500, marginBottom: 8 }}>{t.name || "Untitled"}</div>
-                <div style={{ display: "flex", gap: 4 }}>
+                <div style={{ fontWeight: 500, marginBottom: 4 }}>{t.name || "Untitled"}</div>
+                <div style={{ fontSize: 11, color: t.is_published ? "var(--nn-blue)" : "var(--nn-text-tertiary)", marginBottom: 8, display: "flex", alignItems: "center", gap: 3 }}>
+                  {t.is_published ? <><Globe size={11} /> Published</> : <><Lock size={11} /> Private</>}
+                </div>
+                <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                   <button className="nn-topbar-btn" onClick={() => useTemplate(t)}><Copy size={12} style={{ marginRight: 4 }} />Use</button>
+                  <button className="nn-topbar-btn" onClick={() => togglePublish(t)} title={t.is_published ? "Unpublish" : "Publish to marketplace"}>
+                    {t.is_published ? <Lock size={12} /> : <Globe size={12} />}
+                  </button>
                   <button className="nn-topbar-btn" onClick={() => rename(t)}>Rename</button>
                   <button className="nn-topbar-btn" onClick={() => remove(t)} style={{ color: "#eb5757" }}><Trash2 size={12} /></button>
                 </div>
@@ -145,3 +184,4 @@ export default function NotchTemplates() {
     </div>
   );
 }
+
