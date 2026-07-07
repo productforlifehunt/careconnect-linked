@@ -122,6 +122,19 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
     ) : (
       <input value={v} onChange={(e) => setProp(r, p.key, e.target.value)} placeholder="—" style={{ background: "transparent", border: "none", color: "var(--nn-text)", fontSize: 13, width: "100%" }} />
     );
+    if (p.type === "email") return v ? (
+      <a href={`mailto:${v}`} onClick={(e) => e.stopPropagation()} style={{ color: "var(--nn-blue)", fontSize: 13 }}>{v}</a>
+    ) : (
+      <input type="email" value={v} onChange={(e) => setProp(r, p.key, e.target.value)} placeholder="—" style={{ background: "transparent", border: "none", color: "var(--nn-text)", fontSize: 13, width: "100%" }} />
+    );
+    if (p.type === "phone") return v ? (
+      <a href={`tel:${v}`} onClick={(e) => e.stopPropagation()} style={{ color: "var(--nn-blue)", fontSize: 13 }}>{v}</a>
+    ) : (
+      <input type="tel" value={v} onChange={(e) => setProp(r, p.key, e.target.value)} placeholder="—" style={{ background: "transparent", border: "none", color: "var(--nn-text)", fontSize: 13, width: "100%" }} />
+    );
+    if (p.type === "person") return (
+      <input value={v} onChange={(e) => setProp(r, p.key, e.target.value)} placeholder="User ID" style={{ background: "transparent", border: "none", color: "var(--nn-text)", fontSize: 13, width: "100%" }} />
+    );
     return (
       <input value={v} onChange={(e) => setProp(r, p.key, e.target.value)} placeholder="—" style={{ background: "transparent", border: "none", color: "var(--nn-text)", fontSize: 13, width: "100%" }} />
     );
