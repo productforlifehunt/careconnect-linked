@@ -215,12 +215,10 @@ export default function NotchPage() {
               {icon || <span style={{ fontSize: 24, opacity: 0.3 }}>Add icon</span>}
             </div>
             {showEmoji && (
-              <div style={{ position: "absolute", top: "100%", left: 0, background: "var(--nn-bg)", border: "1px solid var(--nn-border-strong)", borderRadius: 6, padding: 8, display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 4, zIndex: 50, boxShadow: "0 8px 24px rgba(0,0,0,0.1)" }}>
-                {EMOJIS.map((e) => (
-                  <button key={e} onClick={() => onIconChange(e)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, padding: 4, borderRadius: 4 }}>{e}</button>
-                ))}
-                <button onClick={() => onIconChange("")} style={{ gridColumn: "span 8", background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-secondary)", fontSize: 12, padding: 4 }}>Remove</button>
-              </div>
+              <EmojiPicker
+                onPick={onIconChange}
+                onClear={() => onIconChange("")}
+              />
             )}
           </div>
           <textarea
