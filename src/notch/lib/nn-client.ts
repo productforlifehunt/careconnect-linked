@@ -180,6 +180,52 @@ function adaptOut(slug: string, data: Record<string, any>): Record<string, any> 
   return d;
 }
 
+/** Notion "object" type name per CCT slug — synthesized client-side. */
+const NOTION_OBJECT_BY_SLUG: Record<string, string> = {
+  nn_workspace: "workspace",
+  nn_block: "block",
+  nn_comment: "comment",
+  nn_permission: "permission",
+  nn_template: "template",
+  nn_favorite: "favorite",
+  nn_workspace_member: "user",
+  nn_invite: "invite",
+  nn_reminder: "reminder",
+  nn_notification: "notification",
+};
+
+/** Compute a public URL for a block/page — matches the app router. */
+function nnPublicUrl(slug: string, id: string): string {
+  if (typeof window === "undefined" || !id) return "";
+  if (slug === "nn_block") return `${window.location.origin}/notch/p/${id}`;
+  if (slug === "nn_workspace") return `${window.location.origin}/notch/w/${id}`;
+  return "";
+}
+
+/** Attach Notion-standard synthesized metadata that WP doesn't store. */
+function withNotionMeta(slug: string, item: any, parentId: string = ""): any {
+  if (!item) return item;
+  const id = String(item.id ?? "");
+  const url = nnPublicUrl(slug, id);
+  const parentType = parentId
+    ? (slug === "nn_block" && item.parent_id ? "block_id" : "workspace_id")
+    : "workspace_id";
+  return {
+    ...item,
+    object: NOTION_OBJECT_BY_SLUG[slug] || slug.replace(/^nn_/, ""),
+    parent: { type: parentType, id: parentId || item.workspace_id || "" },
+    created_time: item.created_at || null,
+    last_edited_time: item.updated_at || item.created_at || null,
+    created_by: item.created_by || item.author_id || null,
+    last_edited_by: item.last_edited_by || item.created_by || item.author_id || null,
+    has_children: slug === "nn_block"
+      ? Boolean(item.content_order && String(item.content_order).length > 2)
+      : false,
+    url,
+    public_url: url,
+  };
+}
+
 /** Inverse of adaptOut — normalise a CCT row into the shape the frontend expects. */
 function adaptIn(slug: string, item: any): any {
   if (!item) return item;
@@ -187,7 +233,7 @@ function adaptIn(slug: string, item: any): any {
     let props: any = {};
     try { props = item.properties ? JSON.parse(item.properties) : {}; } catch { props = {}; }
     const meta = props._meta || {};
-    return {
+    const shaped = {
       ...item,
       title: item.plain_text || "",
       workspace_id: meta.workspace_id || "",
@@ -197,25 +243,30 @@ function adaptIn(slug: string, item: any): any {
       archived: item.archived === "1" ? 1 : 0,
       in_trash: item.in_trash === "1" ? 1 : 0,
     };
+    return withNotionMeta(slug, shaped, shaped.parent_id || shaped.workspace_id);
   }
   if (slug === "nn_comment") {
-    return { ...item, block_id: item.discussion_id, body: item.rich_text, author_id: item.author_id };
+    const shaped = { ...item, block_id: item.discussion_id, body: item.rich_text, author_id: item.author_id };
+    return withNotionMeta(slug, shaped, shaped.block_id);
   }
   if (slug === "nn_favorite") {
-    return { ...item, block_id: String(item.position || "") };
+    const shaped = { ...item, block_id: String(item.position || "") };
+    return withNotionMeta(slug, shaped, shaped.block_id);
   }
   if (slug === "nn_permission") {
     const bid = typeof item.scope_type === "string" && item.scope_type.startsWith("block:") ? item.scope_type.slice(6) : "";
-    return { ...item, block_id: bid, email: "", is_public: 0, granted_by: item.author_id };
+    const shaped = { ...item, block_id: bid, email: "", is_public: 0, granted_by: item.author_id };
+    return withNotionMeta(slug, shaped, shaped.block_id);
   }
   if (slug === "nn_template") {
     const cat = String(item.category || "");
     const isPub = cat.endsWith(":pub");
     const src = isPub ? cat.slice(0, -4) : cat;
-    return { ...item, name: item.tpl_name, source_block_id: src, is_published: isPub, body_snapshot: item.block_tree_snapshot };
+    const shaped = { ...item, name: item.tpl_name, source_block_id: src, is_published: isPub, body_snapshot: item.block_tree_snapshot };
+    return withNotionMeta(slug, shaped, shaped.source_block_id);
   }
 
-  return item;
+  return withNotionMeta(slug, item);
 }
 
 // (Adaptation is now applied inside cctList / cctGet above.)
