@@ -1,10 +1,14 @@
 ---
-name: WordPress Site URL Migration
-description: Site URL changed from http://170.106.171.59:8080/careconnected to https://app.challenged-dementia.com/careconnected
-type: feature
+name: WordPress Site URL & Admin Access
+description: HTTPS careconnected subsite; WP admin GUI fully works via Cloudflare (CSS renders correctly)
+type: reference
 ---
-WordPress site URL migrated to HTTPS domain: https://app.challenged-dementia.com/careconnected
-- The root domain (app.challenged-dementia.com) is the WP main site — NOT our app
-- Our app data lives on the /careconnected subsite
-- Old IP (170.106.171.59:8080) no longer resolves the careconnected subsite
-- WP admin CSS is broken via Cloudflare tunnel — GUI operations require SSH
+WordPress site URL: https://app.challenged-dementia.com/careconnected
+
+- Root domain `app.challenged-dementia.com` = WP main site (NOT our app)
+- Our app data lives on the `/careconnected` subsite
+- Old IP `170.106.171.59:8080` no longer resolves
+- **WP admin GUI works fully via HTTPS Cloudflare** — CSS renders, JetEngine dashboards work, no SSH needed for 90-mode browser automation
+- JetEngine CCT list: `wp-admin/admin.php?page=jet-engine-cct`
+- JetEngine CCT create: `wp-admin/admin.php?page=jet-engine-cct&cct_action=add`
+- Login: `wp-login.php` with account `challenged` / `challenged5527@@@@@`
