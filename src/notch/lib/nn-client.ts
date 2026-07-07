@@ -65,13 +65,13 @@ export function normalizeCCT(item: any): any {
 
 export async function cctList<T = any>(slug: string, params?: NNFetchOpts["params"]): Promise<T[]> {
   const raw = await nnFetch<any>(`jet-cct/${slug}`, { params });
-  return Array.isArray(raw) ? raw.map(normalizeCCT) : [];
+  return Array.isArray(raw) ? raw.map((r) => adaptIn(slug, normalizeCCT(r))) : [];
 }
 
 export async function cctGet<T = any>(slug: string, id: string | number): Promise<T | null> {
   const raw = await nnFetch<any>(`jet-cct/${slug}/${id}`);
   if (!raw) return null;
-  return normalizeCCT(raw);
+  return adaptIn(slug, normalizeCCT(raw));
 }
 
 export async function cctCreate(slug: string, data: Record<string, any>): Promise<{ id: string }> {
