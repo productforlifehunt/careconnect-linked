@@ -138,7 +138,7 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
   const { user } = _useNotchAuth();
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
+      StarterKit.configure({ heading: { levels: [1, 2, 3] }, link: false, underline: false } as any),
       Placeholder.configure({ placeholder }),
       TaskList,
       TaskItem.configure({ nested: true }),
