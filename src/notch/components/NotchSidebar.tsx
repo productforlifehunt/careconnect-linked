@@ -184,10 +184,37 @@ export function NotchSidebar() {
     return items;
   };
 
+  const getSort = (p: Block): number => {
+    try { const j = JSON.parse((p as any).properties || "{}"); const s = j?._meta?.sort; return typeof s === "number" ? s : Number.MAX_SAFE_INTEGER; } catch { return Number.MAX_SAFE_INTEGER; }
+  };
+
+  const reorderSibling = async (parentId: string, sourceId: string, targetId: string, before: boolean) => {
+    const sibs = pages
+      .filter((p) => String(p.parent_id) === String(parentId) && String(p.id) !== String(sourceId))
+      .sort((a, b) => getSort(a) - getSort(b) || String(a.id).localeCompare(String(b.id)));
+    const idx = sibs.findIndex((p) => String(p.id) === String(targetId));
+    if (idx < 0) return;
+    const insertAt = before ? idx : idx + 1;
+    sibs.splice(insertAt, 0, pages.find((p) => String(p.id) === String(sourceId))!);
+    // Re-normalize sort keys as index * 1000 and persist for changed ones.
+    for (let i = 0; i < sibs.length; i++) {
+      const cur = sibs[i];
+      const targetSort = (i + 1) * 1000;
+      if (getSort(cur) === targetSort) continue;
+      let props: any = {};
+      try { props = (cur as any).properties ? JSON.parse((cur as any).properties) : {}; } catch {}
+      props._meta = { ...(props._meta || {}), sort: targetSort };
+      try { await cctUpdate(NN.block, cur.id, { properties: JSON.stringify(props), parent_id: parentId }); } catch (e) { console.error(e); }
+    }
+    await loadAll();
+  };
+
   const renderTree = (parentId: string, depth = 0, seen: Set<string> = new Set()) => {
     if (depth > 20 || seen.has(parentId)) return null; // cycle / depth guard
     const nextSeen = new Set(seen); nextSeen.add(parentId);
-    const children = pages.filter((p) => String(p.parent_id) === String(parentId));
+    const children = pages
+      .filter((p) => String(p.parent_id) === String(parentId))
+      .sort((a, b) => getSort(a) - getSort(b) || String(a.id).localeCompare(String(b.id)));
     if (!children.length) {
       if (depth === 0) return null;
       return (
@@ -197,12 +224,28 @@ export function NotchSidebar() {
         </div>
       );
     }
-    return children.map((p) => {
+    return children.map((p, idx) => {
       const isOpen = !!expanded[p.id];
       const isActive = pageId === p.id;
       const hasChildren = pages.some((c) => String(c.parent_id) === String(p.id));
+      const dropLine = (before: boolean) => (
+        <div
+          className="nn-drop-line"
+          style={{ marginLeft: 14 + depth * 12 }}
+          onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); (e.currentTarget as HTMLElement).classList.add("active"); }}
+          onDragLeave={(e) => (e.currentTarget as HTMLElement).classList.remove("active")}
+          onDrop={async (e) => {
+            e.preventDefault(); e.stopPropagation();
+            (e.currentTarget as HTMLElement).classList.remove("active");
+            const src = e.dataTransfer.getData("text/nn-page");
+            if (!src || src === p.id) return;
+            await reorderSibling(parentId, src, p.id, before);
+          }}
+        />
+      );
       return (
         <div key={p.id}>
+          {idx === 0 && dropLine(true)}
           <div
             className={`nn-sidebar-item ${isActive ? "active" : ""}`}
             style={{ paddingLeft: 14 + depth * 12 }}
@@ -242,6 +285,7 @@ export function NotchSidebar() {
             </span>
           </div>
           {isOpen && renderTree(p.id, depth + 1, nextSeen)}
+          {dropLine(false)}
         </div>
       );
     });
