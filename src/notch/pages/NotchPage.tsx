@@ -384,6 +384,20 @@ export default function NotchPage() {
           onPick={applyCover}
           onClose={() => setShowCoverGallery(false)}
         />
+      {showHistory && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowHistory(false)}>
+          <div style={{ background: "var(--nn-bg)", borderRadius: 8, width: "100%", maxWidth: 520, padding: 20, maxHeight: "80vh", overflow: "auto" }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Page history</div>
+            {snapshots.length === 0 ? (
+              <div style={{ opacity: 0.6, fontSize: 13 }}>No snapshots yet.</div>
+            ) : snapshots.map((s, i) => (
+              <div key={s.ts} className="nn-sidebar-item" onClick={() => restoreSnapshot(i)}>
+                <span className="nn-icon"><History size={14} /></span>
+                <span className="nn-title">{s.title || "Untitled"} — {new Date(s.ts).toLocaleString()}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
     </>
   );
