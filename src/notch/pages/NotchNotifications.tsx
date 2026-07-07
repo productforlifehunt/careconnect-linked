@@ -29,8 +29,8 @@ export default function NotchNotifications() {
     if (!user) return;
     setLoading(true);
     try {
-      await tickReminderQueue(user.user_id);
-      setItems(await listNotifications(user.user_id));
+      await tickReminderQueue(String(user.user_id));
+      setItems(await listNotifications(String(user.user_id)));
     } finally {
       setLoading(false);
     }
@@ -44,7 +44,7 @@ export default function NotchNotifications() {
 
   const onRead = async (id: string) => { await markRead(id); load(); };
   const onDelete = async (id: string) => { await deleteNotification(id); load(); };
-  const onReadAll = async () => { if (user) { await markAllRead(user.user_id); load(); } };
+  const onReadAll = async () => { if (user) { await markAllRead(String(user.user_id)); load(); } };
   const onEnableBrowser = async () => { await requestBrowserNotificationPermission(); };
 
   const openTarget = async (n: AppNotification) => {
