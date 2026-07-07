@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
+import { useNotchPath } from "@/notch/context/NotchBaseContext";
 
 export default function NotchAuth() {
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [sp] = useSearchParams();
+  const [mode, setMode] = useState<"login" | "signup">(sp.get("mode") === "signup" ? "signup" : "login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -11,6 +13,7 @@ export default function NotchAuth() {
   const [busy, setBusy] = useState(false);
   const { login, register } = useNotchAuth();
   const nav = useNavigate();
+  const path = useNotchPath();
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,7 +22,7 @@ export default function NotchAuth() {
     try {
       if (mode === "signup") await register(email, password, displayName);
       else await login(email, password);
-      nav("/notch");
+      nav(path("/"));
     } catch (ex: any) {
       setErr(ex?.message || "Failed");
     } finally {
@@ -43,9 +46,9 @@ export default function NotchAuth() {
         </form>
         <div className="nn-auth-switch">
           {mode === "signup" ? (
-            <>Already have an account? <button onClick={() => setMode("login")}>Log in</button></>
+            <>Already have an account? <button type="button" onClick={() => setMode("login")}>Log in</button></>
           ) : (
-            <>No account? <button onClick={() => setMode("signup")}>Sign up</button></>
+            <>No account? <button type="button" onClick={() => setMode("signup")}>Sign up</button></>
           )}
         </div>
       </div>
