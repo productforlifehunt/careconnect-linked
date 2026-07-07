@@ -32,7 +32,7 @@ export function NotchSidebar() {
   const path = useNotchPath();
   const location = useLocation();
   const { user, logout } = useNotchAuth();
-  const { favs } = useFavorites();
+  const { favs, isFav, toggle: toggleFav } = useFavorites();
   const { pageId } = useParams<{ pageId: string }>();
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [activeWs, setActiveWs] = useState<string | null>(null);
@@ -40,6 +40,7 @@ export function NotchSidebar() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [unread, setUnread] = useState(0);
+  const [ctx, setCtx] = useState<{ x: number; y: number; page: Block } | null>(null);
 
   useEffect(() => {
     if (!user) return;
