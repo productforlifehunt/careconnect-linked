@@ -285,6 +285,24 @@ export default function NotchPage() {
                 <span className="nn-icon">{isDatabase ? <FileText size={14} /> : <Database size={14} />}</span>
                 <span className="nn-title">Turn into {isDatabase ? "page" : "database"}</span>
               </div>
+              <div onClick={toggleFullWidth} className="nn-sidebar-item">
+                <span className="nn-icon">{fullWidth ? <Minimize2 size={14} /> : <Maximize2 size={14} />}</span>
+                <span className="nn-title">{fullWidth ? "Compact width" : "Full width"}</span>
+              </div>
+              <div onClick={toggleLock} className="nn-sidebar-item">
+                <span className="nn-icon">{locked ? <Unlock size={14} /> : <Lock size={14} />}</span>
+                <span className="nn-title">{locked ? "Unlock page" : "Lock page"}</span>
+              </div>
+              <div onClick={takeSnapshot} className="nn-sidebar-item">
+                <span className="nn-icon"><History size={14} /></span>
+                <span className="nn-title">Save version</span>
+              </div>
+              {snapshots.length > 0 && (
+                <div onClick={() => { setShowHistory(true); setShowMenu(false); }} className="nn-sidebar-item">
+                  <span className="nn-icon"><History size={14} /></span>
+                  <span className="nn-title">Page history ({snapshots.length})</span>
+                </div>
+              )}
               <div onClick={duplicatePage} className="nn-sidebar-item">
                 <span className="nn-icon"><Copy size={14} /></span>
                 <span className="nn-title">Duplicate</span>
