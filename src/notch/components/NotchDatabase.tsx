@@ -7,8 +7,8 @@ import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 
 interface Props { databaseId: string; workspaceId: string; }
 type ViewMode = "table" | "board" | "calendar" | "gallery" | "list";
-type PropType = "text" | "number" | "select" | "multiselect" | "date" | "checkbox" | "url" | "email" | "phone" | "person";
-interface PropDef { key: string; name: string; type: PropType; options?: string[]; }
+type PropType = "text" | "number" | "select" | "multiselect" | "date" | "checkbox" | "url" | "email" | "phone" | "person" | "formula" | "rollup";
+interface PropDef { key: string; name: string; type: PropType; options?: string[]; formula?: string; rollup?: { source: string; agg: "sum" | "avg" | "min" | "max" | "count" }; }
 interface Row { id: string; title?: string; icon?: string; cover?: string; properties?: string; }
 
 const DEFAULT_SCHEMA: PropDef[] = [
