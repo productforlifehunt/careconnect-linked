@@ -80,6 +80,8 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
 
   const [slash, setSlash] = useState<{ x: number; y: number; query: string } | null>(null);
   const [selected, setSelected] = useState(0);
+  const [hoverBlock, setHoverBlock] = useState<{ top: number; el: HTMLElement } | null>(null);
+  const [blockMenu, setBlockMenu] = useState<{ top: number; left: number; el: HTMLElement } | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
