@@ -296,6 +296,7 @@ export function NotchSidebar() {
                 key={f.id}
                 className={`nn-sidebar-item ${pageId === p.id ? "active" : ""}`}
                 onClick={() => nav(path(`/p/${p.id}`))}
+                onContextMenu={(e) => { e.preventDefault(); setCtx({ x: e.clientX, y: e.clientY, page: p }); }}
               >
                 <span className="nn-caret" style={{ opacity: 0 }} />
                 <span className="nn-icon">{p.icon || <Star size={14} />}</span>
