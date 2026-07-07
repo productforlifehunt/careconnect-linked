@@ -1,11 +1,13 @@
 /**
- * Custom TipTap nodes for Notch Note: Math (KaTeX) + Columns layout.
+ * Custom TipTap nodes for Notch Note: Math (KaTeX) + Columns layout + Sync Block.
  */
 import { Node, mergeAttributes } from "@tiptap/core";
 import { ReactNodeViewRenderer, NodeViewWrapper, NodeViewContent } from "@tiptap/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import katex from "katex";
 import "katex/dist/katex.min.css";
+import { cctGet, NN } from "@/notch/lib/nn-client";
+import { Link2, RefreshCw } from "lucide-react";
 
 /* ─── Math Block ─────────────────────────────────────────────── */
 function MathView({ node, updateAttributes, editor }: any) {
