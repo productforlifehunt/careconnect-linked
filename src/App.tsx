@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { SiteProvider } from "@/contexts/SiteContext";
+import { SiteProvider, useSite } from "@/contexts/SiteContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { RequireAuth } from "@/components/auth/RequireAuth";
@@ -149,6 +149,27 @@ function AppRoutes() {
   return isDashboard ? <DashboardLayout>{routes}</DashboardLayout> : routes;
 }
 
+function RootRouter() {
+  const site = useSite();
+  // When Notch Note site is selected (via ?__site=notchnote or its own domain),
+  // mount the entire app as Notch Note in standalone mode.
+  if (site.id === "notchnote") {
+    return <NotchApp base="" standalone />;
+  }
+  return (
+    <Routes>
+      <Route path="/notch/*" element={<NotchApp base="/notch" />} />
+      <Route path="*" element={
+        <AppLayout>
+          <ErrorBoundary>
+            <AppRoutes />
+          </ErrorBoundary>
+        </AppLayout>
+      } />
+    </Routes>
+  );
+}
+
 const App = () => (
   <AuthProvider>
     <SiteProvider>
@@ -158,16 +179,7 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
-              <Routes>
-                <Route path="/notch/*" element={<NotchApp />} />
-                <Route path="*" element={
-                  <AppLayout>
-                    <ErrorBoundary>
-                      <AppRoutes />
-                    </ErrorBoundary>
-                  </AppLayout>
-                } />
-              </Routes>
+              <RootRouter />
             </BrowserRouter>
           </TooltipProvider>
         </QueryClientProvider>
