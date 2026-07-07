@@ -36,6 +36,7 @@ export default function NotchPage() {
   const [crumbs, setCrumbs] = useState<Block[]>([]);
   const [showEmoji, setShowEmoji] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showShare, setShowShare] = useState(false);
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const saveTimer = useRef<any>(null);
 
@@ -130,6 +131,9 @@ export default function NotchPage() {
             </span>
           ))}
         </div>
+        <button className="nn-topbar-btn" onClick={() => setShowShare(true)} title="Share">
+          <Share2 size={14} style={{ marginRight: 4 }} /> Share
+        </button>
         <button
           className="nn-topbar-btn"
           onClick={() => toggleFav(pageId)}
