@@ -68,6 +68,7 @@ export async function cctList<T = any>(slug: string, params?: NNFetchOpts["param
   return Array.isArray(raw) ? raw.map((r) => adaptIn(slug, normalizeCCT(r))) : [];
 }
 
+
 export async function cctGet<T = any>(slug: string, id: string | number): Promise<T | null> {
   const raw = await nnFetch<any>(`jet-cct/${slug}/${id}`);
   if (!raw) return null;
