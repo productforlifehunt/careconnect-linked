@@ -149,7 +149,7 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
     <div className="nn-editor" style={{ position: "relative" }} ref={wrapperRef}>
       <EditorContent editor={editor} />
       {editor && (
-        <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }}>
+        <BubbleMenu editor={editor}>
           <div className="nn-bubble">
             <button onClick={() => editor.chain().focus().toggleBold().run()} className={editor.isActive("bold") ? "active" : ""} title="Bold"><Bold size={13} /></button>
             <button onClick={() => editor.chain().focus().toggleItalic().run()} className={editor.isActive("italic") ? "active" : ""} title="Italic"><Italic size={13} /></button>
