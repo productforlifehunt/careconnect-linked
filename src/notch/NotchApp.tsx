@@ -112,6 +112,7 @@ function Shell({ standalone }: { standalone: boolean }) {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
+      {quickFind && <NotchQuickFind onClose={() => setQuickFind(false)} />}
     </div>
   );
 }
