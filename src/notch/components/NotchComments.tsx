@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
-import { Send, Trash2 } from "lucide-react";
-import { cctList, cctCreate, cctDelete, NN } from "@/notch/lib/nn-client";
+import { Send, Trash2, Check } from "lucide-react";
+import { cctList, cctCreate, cctUpdate, cctDelete, NN } from "@/notch/lib/nn-client";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 import { createNotification } from "@/notch/lib/nn-notifications";
 
@@ -69,6 +69,12 @@ export function NotchComments({ blockId }: { blockId: string }) {
     await load();
   };
 
+  const resolve = async (id: string) => {
+    await cctUpdate(NN.comment, id, { resolved: 1 });
+    await load();
+  };
+
+
   return (
     <div style={{ marginTop: 48, borderTop: "1px solid var(--nn-border)", paddingTop: 20 }}>
       <div style={{ fontSize: 13, textTransform: "uppercase", letterSpacing: 1, color: "var(--nn-text-tertiary)", marginBottom: 12 }}>
@@ -87,8 +93,9 @@ export function NotchComments({ blockId }: { blockId: string }) {
               </div>
               <div style={{ fontSize: 14, whiteSpace: "pre-wrap" }}>{c.body}</div>
             </div>
+            <button onClick={() => resolve(c.id)} title="Resolve" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-tertiary)" }}><Check size={13} /></button>
             {String(c.author_id) === String(user?.user_id) && (
-              <button onClick={() => remove(c.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-tertiary)" }}><Trash2 size={13} /></button>
+              <button onClick={() => remove(c.id)} title="Delete" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-tertiary)" }}><Trash2 size={13} /></button>
             )}
           </div>
         ))}

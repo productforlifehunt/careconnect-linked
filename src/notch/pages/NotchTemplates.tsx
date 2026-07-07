@@ -174,7 +174,7 @@ export default function NotchTemplates() {
                     {t.is_published ? <Lock size={12} /> : <Globe size={12} />}
                   </button>
                   <button className="nn-topbar-btn" onClick={() => rename(t)}>Rename</button>
-                  <button className="nn-topbar-btn" onClick={() => remove(t)} style={{ color: "#eb5757" }}><Trash2 size={12} /></button>
+                  <button className="nn-topbar-btn" onClick={() => remove(t)} style={{ color: "var(--nn-danger)" }}><Trash2 size={12} /></button>
                 </div>
               </div>
             ))}

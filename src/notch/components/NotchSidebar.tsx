@@ -109,6 +109,13 @@ export function NotchSidebar() {
     await loadAll();
   };
 
+  const renamePage = async (id: string, current: string) => {
+    const name = window.prompt("Rename page", current);
+    if (name === null) return;
+    await cctUpdate(NN.block, id, { title: name });
+    await loadAll();
+  };
+
   const renderTree = (parentId: string, depth = 0, seen: Set<string> = new Set()) => {
     if (depth > 20 || seen.has(parentId)) return null; // cycle / depth guard
     const nextSeen = new Set(seen); nextSeen.add(parentId);
@@ -161,6 +168,7 @@ export function NotchSidebar() {
             <span className="nn-icon">{p.icon || <FileText size={15} strokeWidth={1.5} />}</span>
             <span className="nn-title">{p.title || "Untitled"}</span>
             <span className="nn-actions">
+              <button onClick={(e) => { e.stopPropagation(); renamePage(p.id, p.title || ""); }} title="Rename">✎</button>
               <button onClick={(e) => { e.stopPropagation(); deletePage(p.id); }} title="Delete"><Trash2 size={14} /></button>
               <button onClick={(e) => { e.stopPropagation(); createPage(p.id); }} title="Add subpage"><Plus size={14} /></button>
             </span>
@@ -175,11 +183,30 @@ export function NotchSidebar() {
 
   return (
     <aside className="nn-sidebar">
-      <div className="nn-sidebar-header">
+      <div className="nn-sidebar-header" style={{ position: "relative" }}>
         <div className="nn-icon" style={{ fontSize: 18 }}>{activeWorkspace?.icon || "📓"}</div>
-        <div style={{ flex: 1, fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {activeWorkspace?.name || "Notch Note"}
-        </div>
+        <select
+          value={activeWs || ""}
+          onChange={async (e) => {
+            const val = e.target.value;
+            if (val === "__new__") {
+              const name = window.prompt("Workspace name");
+              if (!name) return;
+              const created = await cctCreate(NN.workspace, { name, icon: "📓", plan_type: "free" });
+              setActiveWs(created.id);
+              await loadAll();
+              return;
+            }
+            setActiveWs(val);
+          }}
+          style={{ flex: 1, fontSize: 14, fontWeight: 600, background: "transparent", border: "none", color: "inherit", cursor: "pointer", overflow: "hidden", textOverflow: "ellipsis", appearance: "none", padding: 0 }}
+          title="Switch workspace"
+        >
+          {workspaces.map((w) => (
+            <option key={w.id} value={w.id}>{w.icon || "📓"} {w.name}</option>
+          ))}
+          <option value="__new__">＋ New workspace…</option>
+        </select>
       </div>
 
       <div className="nn-sidebar-section">
@@ -203,7 +230,7 @@ export function NotchSidebar() {
           <span className="nn-icon" style={{ position: "relative" }}>
             <Bell size={15} />
             {unread > 0 && (
-              <span style={{ position: "absolute", top: -4, right: -6, background: "#e03e3e", color: "#fff", borderRadius: 8, fontSize: 9, padding: "1px 4px", lineHeight: 1 }}>
+              <span style={{ position: "absolute", top: -4, right: -6, background: "var(--nn-danger)", color: "#fff", borderRadius: 8, fontSize: 9, padding: "1px 4px", lineHeight: 1 }}>
                 {unread > 9 ? "9+" : unread}
               </span>
             )}

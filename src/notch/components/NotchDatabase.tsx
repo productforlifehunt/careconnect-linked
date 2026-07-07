@@ -7,7 +7,7 @@ import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 
 interface Props { databaseId: string; workspaceId: string; }
 type ViewMode = "table" | "board" | "calendar" | "gallery" | "list";
-type PropType = "text" | "number" | "select" | "multiselect" | "date" | "checkbox" | "url";
+type PropType = "text" | "number" | "select" | "multiselect" | "date" | "checkbox" | "url" | "email" | "phone" | "person";
 interface PropDef { key: string; name: string; type: PropType; options?: string[]; }
 interface Row { id: string; title?: string; icon?: string; cover?: string; properties?: string; }
 
@@ -31,6 +31,10 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
   const [showSchema, setShowSchema] = useState(false);
   const [dbBlock, setDbBlock] = useState<any>(null);
   const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
+  const [filterKey, setFilterKey] = useState<string>("");
+  const [filterVal, setFilterVal] = useState<string>("");
+  const [sortKey, setSortKey] = useState<string>("");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -86,6 +90,31 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
   const statusProp = useMemo(() => schema.find((p) => p.type === "select") || null, [schema]);
   const dateProp = useMemo(() => schema.find((p) => p.type === "date") || null, [schema]);
 
+  // Apply filters and sorts before rendering (all views use `visibleRows`)
+  const visibleRows = useMemo(() => {
+    let r = rows;
+    if (filterKey) {
+      if (filterKey === "__title__") {
+        const q = filterVal.toLowerCase();
+        r = r.filter((row) => (row.title || "").toLowerCase().includes(q));
+      } else if (filterVal) {
+        r = r.filter((row) => String(getProp(row, filterKey) ?? "").toLowerCase().includes(filterVal.toLowerCase()));
+      }
+    }
+    if (sortKey) {
+      const cmp = (a: Row, b: Row) => {
+        const av = sortKey === "__title__" ? (a.title || "") : String(getProp(a, sortKey) ?? "");
+        const bv = sortKey === "__title__" ? (b.title || "") : String(getProp(b, sortKey) ?? "");
+        const na = Number(av), nb = Number(bv);
+        const both = !isNaN(na) && !isNaN(nb) && av !== "" && bv !== "";
+        const res = both ? (na - nb) : av.localeCompare(bv);
+        return sortDir === "asc" ? res : -res;
+      };
+      r = [...r].sort(cmp);
+    }
+    return r;
+  }, [rows, filterKey, filterVal, sortKey, sortDir]);
+
   const renderCell = (r: Row, p: PropDef) => {
     const v = getProp(r, p.key) ?? "";
     if (p.type === "checkbox") return (
@@ -122,6 +151,19 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
     ) : (
       <input value={v} onChange={(e) => setProp(r, p.key, e.target.value)} placeholder="—" style={{ background: "transparent", border: "none", color: "var(--nn-text)", fontSize: 13, width: "100%" }} />
     );
+    if (p.type === "email") return v ? (
+      <a href={`mailto:${v}`} onClick={(e) => e.stopPropagation()} style={{ color: "var(--nn-blue)", fontSize: 13 }}>{v}</a>
+    ) : (
+      <input type="email" value={v} onChange={(e) => setProp(r, p.key, e.target.value)} placeholder="—" style={{ background: "transparent", border: "none", color: "var(--nn-text)", fontSize: 13, width: "100%" }} />
+    );
+    if (p.type === "phone") return v ? (
+      <a href={`tel:${v}`} onClick={(e) => e.stopPropagation()} style={{ color: "var(--nn-blue)", fontSize: 13 }}>{v}</a>
+    ) : (
+      <input type="tel" value={v} onChange={(e) => setProp(r, p.key, e.target.value)} placeholder="—" style={{ background: "transparent", border: "none", color: "var(--nn-text)", fontSize: 13, width: "100%" }} />
+    );
+    if (p.type === "person") return (
+      <input value={v} onChange={(e) => setProp(r, p.key, e.target.value)} placeholder="User ID" style={{ background: "transparent", border: "none", color: "var(--nn-text)", fontSize: 13, width: "100%" }} />
+    );
     return (
       <input value={v} onChange={(e) => setProp(r, p.key, e.target.value)} placeholder="—" style={{ background: "transparent", border: "none", color: "var(--nn-text)", fontSize: 13, width: "100%" }} />
     );
@@ -141,6 +183,22 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
           );
         })}
         <div style={{ flex: 1 }} />
+        <select value={filterKey} onChange={(e) => { setFilterKey(e.target.value); if (!e.target.value) setFilterVal(""); }} className="nn-topbar-btn" style={{ padding: "4px 6px", fontSize: 12 }} title="Filter by property">
+          <option value="">Filter…</option>
+          <option value="__title__">Name</option>
+          {schema.map((p) => <option key={p.key} value={p.key}>{p.name}</option>)}
+        </select>
+        {filterKey && (
+          <input value={filterVal} onChange={(e) => setFilterVal(e.target.value)} placeholder="value" className="nn-topbar-btn" style={{ padding: "4px 8px", fontSize: 12, width: 120 }} />
+        )}
+        <select value={sortKey} onChange={(e) => setSortKey(e.target.value)} className="nn-topbar-btn" style={{ padding: "4px 6px", fontSize: 12 }} title="Sort by property">
+          <option value="">Sort…</option>
+          <option value="__title__">Name</option>
+          {schema.map((p) => <option key={p.key} value={p.key}>{p.name}</option>)}
+        </select>
+        {sortKey && (
+          <button onClick={() => setSortDir(sortDir === "asc" ? "desc" : "asc")} className="nn-topbar-btn" title="Toggle sort direction">{sortDir === "asc" ? "↑" : "↓"}</button>
+        )}
         <button onClick={() => setShowSchema(true)} className="nn-topbar-btn"><Settings2 size={13} /> Properties</button>
         <button onClick={() => addRow()} className="nn-topbar-btn"><Plus size={13} /> New</button>
       </div>
@@ -152,7 +210,7 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
             {schema.map((p) => <div key={p.key}>{p.name}</div>)}
             <div />
           </div>
-          {rows.map((r) => (
+          {visibleRows.map((r) => (
             <div key={r.id} style={{ display: "grid", gridTemplateColumns: `2fr ${schema.map(() => "1fr").join(" ")} 40px`, padding: "8px 12px", borderBottom: "1px solid var(--nn-border)", alignItems: "center", fontSize: 14 }}>
               <div onClick={() => nav(path(`/p/${r.id}`))} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
                 <span>{r.icon || "📄"}</span>
@@ -170,7 +228,7 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
         statusProp ? (
           <div style={{ display: "grid", gridTemplateColumns: `repeat(${(statusProp.options || []).length}, 1fr)`, gap: 12 }}>
             {(statusProp.options || []).map((s) => {
-              const col = rows.filter((r) => (getProp(r, statusProp.key) || (statusProp.options || [])[0]) === s);
+              const col = visibleRows.filter((r) => (getProp(r, statusProp.key) || (statusProp.options || [])[0]) === s);
               return (
                 <div key={s} style={{ background: "var(--nn-bg-secondary)", borderRadius: 4, padding: 8, minHeight: 200 }}>
                   <div style={{ fontSize: 12, fontWeight: 500, padding: 4, display: "flex", alignItems: "center", gap: 6 }}>
@@ -201,7 +259,7 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
 
       {view === "gallery" && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
-          {rows.map((r) => (
+          {visibleRows.map((r) => (
             <div key={r.id} onClick={() => nav(path(`/p/${r.id}`))} style={{ border: "1px solid var(--nn-border)", borderRadius: 6, overflow: "hidden", cursor: "pointer", background: "var(--nn-bg)" }}>
               <div style={{ height: 120, background: r.cover ? `center/cover no-repeat url("${r.cover}")` : "var(--nn-bg-secondary)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, color: "var(--nn-text-tertiary)" }}>
                 {!r.cover && (r.icon || "📄")}
@@ -222,7 +280,7 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
 
       {view === "list" && (
         <div>
-          {rows.map((r) => (
+          {visibleRows.map((r) => (
             <div key={r.id} onClick={() => nav(path(`/p/${r.id}`))} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 4px", borderBottom: "1px solid var(--nn-border)", cursor: "pointer", fontSize: 14 }}>
               <span>{r.icon || "📄"}</span>
               <span style={{ flex: 1 }}>{r.title || "Untitled"}</span>
@@ -293,7 +351,7 @@ function CalendarView({ month, onPrev, onNext, rows, dateProp, onOpen, onAddOnDa
 
 function SchemaEditor({ schema, onClose, onSave }: { schema: PropDef[]; onClose: () => void; onSave: (s: PropDef[]) => void }) {
   const [draft, setDraft] = useState<PropDef[]>(JSON.parse(JSON.stringify(schema)));
-  const TYPES: PropType[] = ["text", "number", "select", "date", "checkbox", "url"];
+  const TYPES: PropType[] = ["text", "number", "select", "multiselect", "date", "checkbox", "url", "email", "phone", "person"];
   const add = () => {
     const key = `prop_${Date.now().toString(36)}`;
     setDraft([...draft, { key, name: "New property", type: "text" }]);

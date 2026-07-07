@@ -14,6 +14,7 @@ import NotchTrash from "@/notch/pages/NotchTrash";
 import NotchTemplates from "@/notch/pages/NotchTemplates";
 import NotchLanding from "@/notch/pages/NotchLanding";
 import NotchNotifications from "@/notch/pages/NotchNotifications";
+import { acceptInviteByToken } from "@/notch/lib/nn-collab";
 import "@/notch/styles/notch.css";
 
 interface Props {
@@ -71,6 +72,26 @@ function Shell({ standalone }: { standalone: boolean }) {
       window.history.replaceState({}, "", url.toString());
     }
   }, [location.pathname, standalone]);
+
+  // Handle ?invite=<token> — accept once user is authenticated
+  useEffect(() => {
+    if (!user) return;
+    const url = new URL(window.location.href);
+    const token = url.searchParams.get("invite");
+    if (!token) return;
+    (async () => {
+      try {
+        const inv = await acceptInviteByToken(token, String(user.user_id));
+        if (inv) alert("Invite accepted! You now have access to the workspace.");
+        else alert("Invite is invalid or expired.");
+      } catch (e: any) {
+        alert(`Could not accept invite: ${e.message || e}`);
+      } finally {
+        url.searchParams.delete("invite");
+        window.history.replaceState({}, "", url.toString());
+      }
+    })();
+  }, [user]);
 
   if (loading) return <div className="notch-app" style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh" }}>Loading…</div>;
 

@@ -1,5 +1,6 @@
 import { useEditor, EditorContent } from "@tiptap/react";
 import { BubbleMenu } from "@tiptap/react/menus";
+import { supabase } from "@/integrations/supabase/client";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import TaskList from "@tiptap/extension-task-list";
@@ -11,8 +12,14 @@ import Highlight from "@tiptap/extension-highlight";
 import TextAlign from "@tiptap/extension-text-align";
 import { TextStyle } from "@tiptap/extension-text-style";
 import { Color } from "@tiptap/extension-color";
+import { Table } from "@tiptap/extension-table";
+import TableRow from "@tiptap/extension-table-row";
+import { TableHeader } from "@tiptap/extension-table";
+import TableCell from "@tiptap/extension-table-cell";
+import Youtube from "@tiptap/extension-youtube";
+import { Details, DetailsSummary, DetailsContent } from "@tiptap/extension-details";
 import { useEffect, useRef, useState } from "react";
-import { Bold, Italic, Underline as UIcon, Strikethrough, Code, Link as LinkIcon, AlignLeft, AlignCenter, AlignRight } from "lucide-react";
+import { Bold, Italic, Underline as UIcon, Strikethrough, Code, Link as LinkIcon, AlignLeft, AlignCenter, AlignRight, Sparkles } from "lucide-react";
 
 interface Props {
   content: any;
@@ -21,8 +28,19 @@ interface Props {
   onCreateSubpage?: () => Promise<{ id: string; title: string; href: string } | null>;
 }
 
-const HL_COLORS = ["#fff2b8", "#ffd6d6", "#d6ffd6", "#d6e4ff", "#f0d6ff", "#ffe0c2"];
-const TEXT_COLORS = ["#37352f", "#e03e3e", "#d9730d", "#dfab01", "#0f7b6c", "#0b6e99", "#6940a5", "#ad1a72"];
+// Theme-aware colors using rgba() so opacity keeps them readable on dark bg
+const HL_COLORS = [
+  "rgba(255, 212, 0, 0.35)",   // yellow
+  "rgba(255, 90, 90, 0.30)",   // red
+  "rgba(80, 200, 120, 0.30)",  // green
+  "rgba(80, 140, 240, 0.30)",  // blue
+  "rgba(170, 100, 220, 0.30)", // purple
+  "rgba(240, 140, 60, 0.30)",  // orange
+];
+const TEXT_COLORS = [
+  "var(--nn-text)",             // default (via unset)
+  "#e03e3e", "#d9730d", "#dfab01", "#0f7b6c", "#0b6e99", "#6940a5", "#ad1a72",
+];
 
 const SLASH_ITEMS = [
   { group: "Basic", key: "text", icon: "T", name: "Text", desc: "Plain text.", cmd: (e: any) => e.chain().focus().setParagraph().run() },
@@ -35,13 +53,45 @@ const SLASH_ITEMS = [
   { group: "Blocks", key: "quote", icon: "❝", name: "Quote", desc: "Capture a quote.", cmd: (e: any) => e.chain().focus().toggleBlockquote().run() },
   { group: "Blocks", key: "code", icon: "</>", name: "Code", desc: "Code snippet.", cmd: (e: any) => e.chain().focus().toggleCodeBlock().run() },
   { group: "Blocks", key: "divider", icon: "—", name: "Divider", desc: "Divide blocks.", cmd: (e: any) => e.chain().focus().setHorizontalRule().run() },
-  { group: "Blocks", key: "callout", icon: "💡", name: "Callout", desc: "Highlighted note block.", cmd: (e: any) => e.chain().focus().insertContent({ type: "blockquote", content: [{ type: "paragraph", content: [{ type: "text", text: "💡 " }] }] }).run() },
-  { group: "Blocks", key: "toggle", icon: "▸", name: "Toggle", desc: "Collapsible details block.", cmd: (e: any) => e.chain().focus().insertContent("<details><summary>Toggle</summary><p>Hidden content…</p></details>").run() },
+  { group: "Blocks", key: "callout", icon: "💡", name: "Callout", desc: "Highlighted note block.",
+    cmd: (e: any) => e.chain().focus().insertContent({
+      type: "blockquote",
+      attrs: { class: "nn-callout" },
+      content: [{ type: "paragraph", content: [{ type: "text", text: "💡 " }] }],
+    }).run() },
+  { group: "Blocks", key: "toggle", icon: "▸", name: "Toggle", desc: "Collapsible details block.",
+    cmd: (e: any) => e.chain().focus().insertContent({
+      type: "details",
+      attrs: { open: true },
+      content: [
+        { type: "detailsSummary", content: [{ type: "text", text: "Toggle" }] },
+        { type: "detailsContent", content: [{ type: "paragraph" }] },
+      ],
+    }).run() },
+  { group: "Blocks", key: "table", icon: "⊞", name: "Table", desc: "Insert a 3×3 table.",
+    cmd: (e: any) => e.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run() },
   { group: "Media", key: "image", icon: "🖼", name: "Image", desc: "Embed image.", cmd: (e: any) => {
       const url = window.prompt("Image URL");
       if (url) e.chain().focus().setImage({ src: url }).run();
     } },
-  { group: "Media", key: "link", icon: "🔗", name: "Link", desc: "Insert link.", cmd: (e: any) => {
+  { group: "Media", key: "video", icon: "▶", name: "YouTube video", desc: "Embed a YouTube video.",
+    cmd: (e: any) => {
+      const url = window.prompt("YouTube URL");
+      if (url) e.chain().focus().setYoutubeVideo({ src: url, width: 640, height: 360 }).run();
+    } },
+  { group: "Media", key: "embed", icon: "🔗", name: "Web embed", desc: "Embed any URL via iframe.",
+    cmd: (e: any) => {
+      const url = window.prompt("URL to embed");
+      if (url) e.chain().focus().insertContent(`<div class="nn-embed"><iframe src="${url}" frameborder="0" allowfullscreen></iframe></div>`).run();
+    } },
+  { group: "Media", key: "bookmark", icon: "🔖", name: "Bookmark", desc: "Insert a link preview card.",
+    cmd: (e: any) => {
+      const url = window.prompt("URL");
+      if (!url) return;
+      const host = (() => { try { return new URL(url).hostname; } catch { return url; } })();
+      e.chain().focus().insertContent(`<div class="nn-bookmark"><a href="${url}" target="_blank" rel="noopener">${host}<div class="nn-bookmark-url">${url}</div></a></div>`).run();
+    } },
+  { group: "Media", key: "link", icon: "↗", name: "Link", desc: "Insert link.", cmd: (e: any) => {
       const url = window.prompt("URL");
       if (url) e.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
     } },
@@ -73,6 +123,14 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
       TextStyle,
       Color,
       TextAlign.configure({ types: ["heading", "paragraph"] }),
+      Table.configure({ resizable: true }),
+      TableRow,
+      TableHeader,
+      TableCell,
+      Youtube.configure({ controls: true, nocookie: true }),
+      Details.configure({ persist: true, HTMLAttributes: { class: "nn-toggle" } }),
+      DetailsSummary,
+      DetailsContent,
     ],
     content: content || "",
     onUpdate: ({ editor }) => onChange(editor.getJSON()),
@@ -82,6 +140,7 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
   const [selected, setSelected] = useState(0);
   const [hoverBlock, setHoverBlock] = useState<{ top: number; el: HTMLElement } | null>(null);
   const [blockMenu, setBlockMenu] = useState<{ top: number; left: number; el: HTMLElement } | null>(null);
+  const [aiBusy, setAiBusy] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -91,13 +150,15 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
       if (e.key === "/" && !slash) {
         setTimeout(() => {
           const rect = (window.getSelection()?.getRangeAt(0).getBoundingClientRect()) as DOMRect | undefined;
-          if (rect) {
-            const wrapperRect = wrapperRef.current?.getBoundingClientRect();
-            setSlash({
-              x: rect.left - (wrapperRect?.left || 0),
-              y: rect.bottom - (wrapperRect?.top || 0) + 4,
-              query: "",
-            });
+          if (rect && wrapperRef.current) {
+            const wr = wrapperRef.current.getBoundingClientRect();
+            // clamp within editor bounds so scroll doesn't push it out
+            const editorWidth = wr.width;
+            const menuWidth = 320;
+            let x = rect.left - wr.left;
+            x = Math.max(0, Math.min(x, editorWidth - menuWidth));
+            const y = rect.bottom - wr.top + wrapperRef.current.scrollTop + 4;
+            setSlash({ x, y, query: "" });
             setSelected(0);
           }
         }, 0);
@@ -148,13 +209,28 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
     };
   }, [editor]);
 
+  // Get the accurate node range for a top-level DOM element via ProseMirror
+  const nodeRangeFor = (el: HTMLElement): { from: number; to: number } | null => {
+    if (!editor) return null;
+    try {
+      const from = editor.view.posAtDOM(el, 0);
+      const $pos = editor.state.doc.resolve(from);
+      // Top-level node is depth 1
+      const depth = Math.max(1, $pos.depth);
+      const nodeStart = $pos.before(depth);
+      const nodeEnd = $pos.after(depth);
+      return { from: nodeStart, to: nodeEnd };
+    } catch {
+      return null;
+    }
+  };
+
   const handlePlus = () => {
     if (!editor || !hoverBlock) return;
-    const pos = editor.view.posAtDOM(hoverBlock.el, 0);
-    editor.chain().focus().insertContentAt(pos + hoverBlock.el.textContent!.length + 1, { type: "paragraph" }).run();
-    setTimeout(() => {
-      editor.commands.insertContent("/");
-    }, 10);
+    const range = nodeRangeFor(hoverBlock.el);
+    if (!range) return;
+    editor.chain().focus().insertContentAt(range.to, { type: "paragraph" }).run();
+    setTimeout(() => { editor.commands.insertContent("/"); }, 10);
   };
 
   const openBlockMenu = () => {
@@ -166,18 +242,18 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
 
   const deleteBlock = () => {
     if (!editor || !blockMenu) return;
-    const from = editor.view.posAtDOM(blockMenu.el, 0);
-    const size = (blockMenu.el.textContent?.length || 0) + 2;
-    editor.chain().focus().deleteRange({ from: Math.max(0, from - 1), to: from + size }).run();
+    const range = nodeRangeFor(blockMenu.el);
+    if (!range) { setBlockMenu(null); return; }
+    editor.chain().focus().deleteRange(range).run();
     setBlockMenu(null);
   };
 
   const duplicateBlock = () => {
     if (!editor || !blockMenu) return;
-    const html = blockMenu.el.outerHTML;
-    const from = editor.view.posAtDOM(blockMenu.el, 0);
-    const size = (blockMenu.el.textContent?.length || 0) + 2;
-    editor.chain().focus().insertContentAt(from + size, html).run();
+    const range = nodeRangeFor(blockMenu.el);
+    if (!range) { setBlockMenu(null); return; }
+    const slice = editor.state.doc.slice(range.from, range.to);
+    editor.chain().focus().insertContentAt(range.to, slice.content.toJSON()).run();
     setBlockMenu(null);
   };
 
@@ -215,34 +291,94 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
     editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
   };
 
+  // AI writing assist — uses Lovable AI Gateway via edge function
+  const runAI = async (mode: "improve" | "summarize" | "translate" | "continue" | "brainstorm") => {
+    if (!editor || aiBusy) return;
+    const { from, to } = editor.state.selection;
+    const selected = from !== to ? editor.state.doc.textBetween(from, to, "\n") : "";
+    const context = selected || editor.state.doc.textBetween(Math.max(0, from - 500), from, "\n");
+    if (!context.trim() && mode !== "brainstorm") { alert("Select some text or write something first."); return; }
+    setAiBusy(true);
+    try {
+      const prompts: Record<string, string> = {
+        improve: `Improve the writing style, grammar and clarity. Return only the improved text:\n\n${context}`,
+        summarize: `Summarize concisely in 2-3 sentences. Return only the summary:\n\n${context}`,
+        translate: `Translate to English (or Chinese if already English). Return only the translation:\n\n${context}`,
+        continue: `Continue writing naturally where this text left off. Return only the continuation:\n\n${context}`,
+        brainstorm: `Brainstorm 5 concise ideas about: ${context || "the current page topic"}. Return only the bulleted list.`,
+      };
+      const { data, error } = await supabase.functions.invoke("notch-ai-assist", { body: { prompt: prompts[mode] } });
+      if (error) throw error;
+      const text = (data as any)?.text;
+      if (!text) throw new Error("empty response");
+      if (mode === "improve" || mode === "translate") {
+        if (selected) editor.chain().focus().deleteRange({ from, to }).insertContent(text).run();
+        else editor.chain().focus().insertContent("\n\n" + text).run();
+      } else {
+        editor.chain().focus().insertContent("\n\n" + text).run();
+      }
+    } catch (e: any) {
+      alert(`AI failed: ${e.message || e}`);
+    } finally {
+      setAiBusy(false);
+    }
+  };
+
   return (
     <div className="nn-editor" style={{ position: "relative" }} ref={wrapperRef}>
       <EditorContent editor={editor} />
       {editor && (
         <BubbleMenu editor={editor}>
           <div className="nn-bubble">
-            <button onClick={() => editor.chain().focus().toggleBold().run()} className={editor.isActive("bold") ? "active" : ""} title="Bold"><Bold size={13} /></button>
-            <button onClick={() => editor.chain().focus().toggleItalic().run()} className={editor.isActive("italic") ? "active" : ""} title="Italic"><Italic size={13} /></button>
-            <button onClick={() => editor.chain().focus().toggleUnderline().run()} className={editor.isActive("underline") ? "active" : ""} title="Underline"><UIcon size={13} /></button>
-            <button onClick={() => editor.chain().focus().toggleStrike().run()} className={editor.isActive("strike") ? "active" : ""} title="Strike"><Strikethrough size={13} /></button>
-            <button onClick={() => editor.chain().focus().toggleCode().run()} className={editor.isActive("code") ? "active" : ""} title="Code"><Code size={13} /></button>
+            <button onClick={() => editor.chain().focus().toggleBold().run()} className={editor.isActive("bold") ? "active" : ""} title="Bold (⌘B)"><Bold size={13} /></button>
+            <button onClick={() => editor.chain().focus().toggleItalic().run()} className={editor.isActive("italic") ? "active" : ""} title="Italic (⌘I)"><Italic size={13} /></button>
+            <button onClick={() => editor.chain().focus().toggleUnderline().run()} className={editor.isActive("underline") ? "active" : ""} title="Underline (⌘U)"><UIcon size={13} /></button>
+            <button onClick={() => editor.chain().focus().toggleStrike().run()} className={editor.isActive("strike") ? "active" : ""} title="Strikethrough"><Strikethrough size={13} /></button>
+            <button onClick={() => editor.chain().focus().toggleCode().run()} className={editor.isActive("code") ? "active" : ""} title="Inline code"><Code size={13} /></button>
             <button onClick={setLink} className={editor.isActive("link") ? "active" : ""} title="Link"><LinkIcon size={13} /></button>
             <span className="nn-bubble-sep" />
             <button onClick={() => editor.chain().focus().setTextAlign("left").run()} title="Align left"><AlignLeft size={13} /></button>
             <button onClick={() => editor.chain().focus().setTextAlign("center").run()} title="Align center"><AlignCenter size={13} /></button>
             <button onClick={() => editor.chain().focus().setTextAlign("right").run()} title="Align right"><AlignRight size={13} /></button>
             <span className="nn-bubble-sep" />
-            <div className="nn-bubble-swatches" title="Text color">
-              {TEXT_COLORS.map((c) => (
-                <button key={"t" + c} onClick={() => editor.chain().focus().setColor(c).run()} style={{ background: c }} />
+            <div className="nn-bubble-swatches" title="Text color" aria-label="Text color">
+              {TEXT_COLORS.map((c, i) => (
+                <button key={"t" + i} aria-label={`Text color ${i}`} title={`Text color ${i}`}
+                  onClick={() => i === 0 ? editor.chain().focus().unsetColor().run() : editor.chain().focus().setColor(c).run()}
+                  style={{ background: c }} />
               ))}
-              <button onClick={() => editor.chain().focus().unsetColor().run()} style={{ background: "transparent", border: "1px dashed #999" }} title="Reset" />
             </div>
-            <div className="nn-bubble-swatches" title="Highlight">
-              {HL_COLORS.map((c) => (
-                <button key={"h" + c} onClick={() => editor.chain().focus().toggleHighlight({ color: c }).run()} style={{ background: c }} />
+            <div className="nn-bubble-swatches" title="Highlight" aria-label="Highlight">
+              {HL_COLORS.map((c, i) => (
+                <button key={"h" + i} aria-label={`Highlight ${i}`} title={`Highlight ${i}`}
+                  onClick={() => editor.chain().focus().toggleHighlight({ color: c }).run()}
+                  style={{ background: c }} />
               ))}
-              <button onClick={() => editor.chain().focus().unsetHighlight().run()} style={{ background: "transparent", border: "1px dashed #999" }} title="Clear" />
+              <button aria-label="Clear highlight" title="Clear highlight"
+                onClick={() => editor.chain().focus().unsetHighlight().run()}
+                style={{ background: "transparent", border: "1px dashed var(--nn-border-strong)" }} />
+            </div>
+            <span className="nn-bubble-sep" />
+            <div className="nn-bubble-ai" style={{ position: "relative" }}>
+              <button title="AI writing" disabled={aiBusy} onClick={(e) => {
+                const menu = (e.currentTarget.nextSibling as HTMLElement | null);
+                if (menu) menu.style.display = menu.style.display === "block" ? "none" : "block";
+              }}>
+                <Sparkles size={13} />
+              </button>
+              <div className="nn-ai-menu" style={{ display: "none", position: "absolute", top: 28, right: 0, background: "var(--nn-bg)", border: "1px solid var(--nn-border-strong)", borderRadius: 6, padding: 4, minWidth: 160, zIndex: 100, boxShadow: "0 6px 20px rgba(0,0,0,0.12)" }}>
+                {[
+                  ["improve", "Improve writing"],
+                  ["summarize", "Summarize"],
+                  ["translate", "Translate"],
+                  ["continue", "Continue writing"],
+                  ["brainstorm", "Brainstorm ideas"],
+                ].map(([k, l]) => (
+                  <div key={k} className="nn-sidebar-item" onMouseDown={(e) => { e.preventDefault(); runAI(k as any); }}>
+                    <span className="nn-title">{aiBusy ? "…" : l}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </BubbleMenu>
@@ -284,7 +420,7 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
           <div style={{ position: "fixed", inset: 0, zIndex: 90 }} onClick={() => setBlockMenu(null)} />
           <div className="nn-block-menu" style={{ top: blockMenu.top + 20, left: blockMenu.left }}>
             <div className="nn-sidebar-item" onClick={duplicateBlock}><span className="nn-title">Duplicate</span></div>
-            <div className="nn-sidebar-item" onClick={deleteBlock} style={{ color: "#e03e3e" }}><span className="nn-title">Delete</span></div>
+            <div className="nn-sidebar-item" onClick={deleteBlock} style={{ color: "var(--nn-danger, #e03e3e)" }}><span className="nn-title">Delete</span></div>
           </div>
         </>
       )}

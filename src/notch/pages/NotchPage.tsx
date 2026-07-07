@@ -99,12 +99,9 @@ export default function NotchPage() {
     setContent(json);
     scheduleSave({ properties: JSON.stringify({ editor_content: json }) });
   };
-  const setCoverImage = () => {
-    const url = window.prompt("Cover image URL", cover || "");
-    if (url === null) return;
-    setCover(url);
-    scheduleSave({ cover: url });
-  };
+  const [showCoverGallery, setShowCoverGallery] = useState(false);
+  const setCoverImage = () => { setShowCoverGallery(true); setShowMenu(false); };
+  const applyCover = (url: string) => { setCover(url); scheduleSave({ cover: url }); setShowCoverGallery(false); };
   const removeCover = () => { setCover(""); scheduleSave({ cover: "" }); };
 
   const convertType = async (newType: "page" | "database") => {
@@ -313,6 +310,47 @@ export default function NotchPage() {
         </div>
       </div>
       {showShare && <NotchShareModal blockId={pageId} onClose={() => setShowShare(false)} />}
+      {showCoverGallery && (
+        <CoverGallery
+          current={cover}
+          onPick={applyCover}
+          onClose={() => setShowCoverGallery(false)}
+        />
+      )}
     </>
   );
 }
+
+const COVER_PRESETS = [
+  "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1600",
+  "https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?w=1600",
+  "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1600",
+  "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1600",
+  "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=1600",
+  "https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=1600",
+  "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1600",
+  "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=1600",
+];
+
+function CoverGallery({ current, onPick, onClose }: { current: string; onPick: (u: string) => void; onClose: () => void }) {
+  const [url, setUrl] = useState(current || "");
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={onClose}>
+      <div style={{ background: "var(--nn-bg)", borderRadius: 8, width: "100%", maxWidth: 720, padding: 20, maxHeight: "80vh", overflow: "auto" }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Choose a cover</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 8, marginBottom: 16 }}>
+          {COVER_PRESETS.map((u) => (
+            <img key={u} src={u} alt="cover" onClick={() => onPick(u)}
+              style={{ width: "100%", height: 90, objectFit: "cover", borderRadius: 6, cursor: "pointer", border: current === u ? "2px solid var(--nn-blue)" : "2px solid transparent" }} />
+          ))}
+        </div>
+        <div style={{ fontSize: 12, color: "var(--nn-text-tertiary)", marginBottom: 6 }}>Or paste an image URL</div>
+        <div style={{ display: "flex", gap: 6 }}>
+          <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…" className="nn-auth-input" style={{ marginBottom: 0, flex: 1 }} />
+          <button className="nn-btn-primary" onClick={() => url && onPick(url)}>Use</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+

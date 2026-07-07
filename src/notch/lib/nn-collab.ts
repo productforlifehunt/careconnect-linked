@@ -95,6 +95,20 @@ export async function acceptInvite(inviteId: string, userId: string) {
   await cctUpdate(NN.invite, inviteId, { status: "accepted" });
 }
 
+export async function acceptInviteByToken(token: string, userId: string): Promise<Invite | null> {
+  const invites = await cctList<Invite>(NN.invite);
+  const inv = invites.find((i: any) => String(i.token) === String(token) && i.status === "pending");
+  if (!inv) return null;
+  if (inv.expires_at && new Date(inv.expires_at).getTime() < Date.now()) {
+    await cctUpdate(NN.invite, inv.id, { status: "expired" });
+    return null;
+  }
+  await addMember(inv.workspace_id, userId, inv.role, inv.invited_by);
+  await cctUpdate(NN.invite, inv.id, { status: "accepted" });
+  return inv;
+}
+
+
 export async function declineInvite(inviteId: string) {
   await cctUpdate(NN.invite, inviteId, { status: "declined" });
 }

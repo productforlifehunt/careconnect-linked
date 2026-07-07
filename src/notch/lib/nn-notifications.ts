@@ -113,17 +113,29 @@ export async function tickReminderQueue(userId: string): Promise<number> {
   const list = await listReminders(userId);
   const due = list.filter((r) => !r.delivered_at && new Date(r.remind_at).getTime() <= now);
   for (const r of due) {
+    // Look up the target page title so the reminder is actionable
+    let title = "your page";
+    let url: string | undefined;
+    try {
+      const { cctGet, NN } = await import("./nn-client");
+      const b = await cctGet<any>(NN.block, r.block_id);
+      if (b?.title) title = b.title;
+      url = `${window.location.origin}/?__site=notchnote#/p/${r.block_id}`;
+    } catch { /* noop */ }
     await createNotification({
       user_id: userId,
       type: "reminder",
       block_id: r.block_id,
-      payload: JSON.stringify({ remind_at: r.remind_at }),
+      payload: JSON.stringify({ remind_at: r.remind_at, message: `Reminder: ${title}` }),
     });
     await markReminderDelivered(r.id);
-    // Also fire a browser notification if the user granted permission
     try {
       if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-        new Notification("Notch Note reminder", { body: "You have a scheduled reminder." });
+        const n = new Notification("Notch Note reminder", {
+          body: title,
+          tag: `nn-reminder-${r.id}`,
+        });
+        if (url) n.onclick = () => { window.focus(); window.location.href = url!; };
       }
     } catch {
       /* noop */
@@ -141,3 +153,4 @@ export async function requestBrowserNotificationPermission() {
     return "denied";
   }
 }
+

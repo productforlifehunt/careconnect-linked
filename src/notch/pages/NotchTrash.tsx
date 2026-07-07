@@ -2,21 +2,28 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useNotchPath } from "@/notch/context/NotchBaseContext";
 import { cctList, cctUpdate, cctDelete, NN } from "@/notch/lib/nn-client";
+import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 import { RotateCcw, Trash2 } from "lucide-react";
 
 export default function NotchTrash() {
   const nav = useNavigate();
   const path = useNotchPath();
+  const { user } = useNotchAuth();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
     setLoading(true);
+    // Scope to current user's own blocks so trash never leaks across users.
     const all = await cctList<any>(NN.block);
-    setItems(all.filter((b: any) => Number(b.in_trash) === 1 || Number(b.archived) === 1));
+    setItems(
+      all
+        .filter((b: any) => Number(b.in_trash) === 1 || Number(b.archived) === 1)
+        .filter((b: any) => !user || String(b.author_id) === String(user.user_id) || String(b.created_by) === String(user.user_id))
+    );
     setLoading(false);
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [user]);
 
   const restore = async (id: string) => {
     await cctUpdate(NN.block, id, { archived: 0, in_trash: 0 });
@@ -53,7 +60,7 @@ export default function NotchTrash() {
                 <button onClick={() => restore(p.id)} title="Restore" style={{ background: "none", border: "1px solid var(--nn-border-strong)", padding: "4px 8px", borderRadius: 4, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, color: "var(--nn-text)" }}>
                   <RotateCcw size={13} /> Restore
                 </button>
-                <button onClick={() => purge(p.id)} title="Delete forever" style={{ background: "none", border: "1px solid var(--nn-border-strong)", padding: "4px 8px", borderRadius: 4, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, color: "#eb5757" }}>
+                <button onClick={() => purge(p.id)} title="Delete forever" style={{ background: "none", border: "1px solid var(--nn-border-strong)", padding: "4px 8px", borderRadius: 4, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, color: "var(--nn-danger)" }}>
                   <Trash2 size={13} /> Delete
                 </button>
               </div>
