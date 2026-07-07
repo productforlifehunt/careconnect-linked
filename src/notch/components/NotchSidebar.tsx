@@ -295,8 +295,11 @@ export function NotchSidebar() {
 
       {favs.length > 0 && (
         <div className="nn-sidebar-section">
-          <div className="nn-sidebar-section-label">Favorites</div>
-          {favs.map((f) => {
+          <div className="nn-sidebar-section-header" onClick={() => toggleSection("favorites")}>
+            <span className={`nn-section-caret ${isSectionOpen("favorites") ? "open" : ""}`}><ChevronRight size={12} /></span>
+            <span className="nn-section-label">Favorites</span>
+          </div>
+          {isSectionOpen("favorites") && favs.map((f) => {
             const p = pages.find((x) => String(x.id) === String(f.block_id));
             if (!p) return null;
             return (
@@ -315,21 +318,50 @@ export function NotchSidebar() {
         </div>
       )}
 
+      {(() => {
+        const teamspaces = pages.filter((p) => String(p.parent_id) === String(activeWs) && (p as any).properties && (() => {
+          try { const j = JSON.parse((p as any).properties); return j?._meta?.teamspace === true; } catch { return false; }
+        })());
+        if (!teamspaces.length) return null;
+        return (
+          <div className="nn-sidebar-section">
+            <div className="nn-sidebar-section-header" onClick={() => toggleSection("teamspaces")}>
+              <span className={`nn-section-caret ${isSectionOpen("teamspaces") ? "open" : ""}`}><ChevronRight size={12} /></span>
+              <span className="nn-section-label">Teamspaces</span>
+            </div>
+            {isSectionOpen("teamspaces") && teamspaces.map((p) => (
+              <div key={p.id} className={`nn-sidebar-item ${pageId === p.id ? "active" : ""}`}
+                onClick={() => nav(path(`/p/${p.id}`))}
+                onContextMenu={(e) => { e.preventDefault(); setCtx({ x: e.clientX, y: e.clientY, page: p }); }}
+              >
+                <span className="nn-caret" style={{ opacity: 0 }} />
+                <span className="nn-icon">{p.icon || "👥"}</span>
+                <span className="nn-title">{p.title || "Untitled"}</span>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
+
       <div className="nn-sidebar-section" style={{ flex: 1 }}>
-        <div className="nn-sidebar-section-label" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span>Private</span>
+        <div className="nn-sidebar-section-header">
+          <span
+            className={`nn-section-caret ${isSectionOpen("private") ? "open" : ""}`}
+            onClick={(e) => { e.stopPropagation(); toggleSection("private"); }}
+          ><ChevronRight size={12} /></span>
+          <span className="nn-section-label" onClick={() => toggleSection("private")}>Private</span>
           <button
-            onClick={() => activeWs && createPage(activeWs)}
-            style={{ background: "none", border: "none", cursor: "pointer", color: "inherit", padding: 2, display: "flex" }}
+            className="nn-section-add"
+            onClick={(e) => { e.stopPropagation(); activeWs && createPage(activeWs); }}
             title="New page"
           ><Plus size={14} /></button>
         </div>
-        {loading ? (
+        {isSectionOpen("private") && (loading ? (
           <div className="nn-sidebar-item" style={{ opacity: 0.5 }}>Loading…</div>
         ) : activeWs ? (
           renderTree(activeWs)
-        ) : null}
-        {activeWs && pages.filter((p) => String(p.parent_id) === String(activeWs)).length === 0 && !loading && (
+        ) : null)}
+        {isSectionOpen("private") && activeWs && pages.filter((p) => String(p.parent_id) === String(activeWs)).length === 0 && !loading && (
           <div className="nn-sidebar-item" onClick={() => createPage(activeWs)}>
             <span className="nn-icon"><Plus size={15} /></span>
             <span className="nn-title">Add a page</span>
