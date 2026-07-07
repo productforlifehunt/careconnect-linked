@@ -141,7 +141,7 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
       const start = from - m[0].length;
       editor.chain().focus().deleteRange({ from: start, to: from }).run();
     }
-    item.cmd(editor);
+    item.cmd(editor, { onCreateSubpage });
     setSlash(null);
   };
 
