@@ -197,6 +197,40 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
         <CalendarView month={calMonth} onPrev={() => setCalMonth(new Date(calMonth.getFullYear(), calMonth.getMonth() - 1, 1))} onNext={() => setCalMonth(new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 1))} rows={rows} dateProp={dateProp} onOpen={(id) => nav(`/notch/p/${id}`)} onAddOnDate={(iso) => dateProp && addRow({ [dateProp.key]: iso })} />
       )}
 
+      {view === "gallery" && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
+          {rows.map((r) => (
+            <div key={r.id} onClick={() => nav(`/notch/p/${r.id}`)} style={{ border: "1px solid var(--nn-border)", borderRadius: 6, overflow: "hidden", cursor: "pointer", background: "var(--nn-bg)" }}>
+              <div style={{ height: 120, background: r.cover ? `center/cover no-repeat url("${r.cover}")` : "var(--nn-bg-secondary)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, color: "var(--nn-text-tertiary)" }}>
+                {!r.cover && (r.icon || "📄")}
+              </div>
+              <div style={{ padding: 10 }}>
+                <div style={{ fontSize: 14, fontWeight: 500, display: "flex", gap: 6, alignItems: "center" }}>
+                  {r.cover && <span>{r.icon || "📄"}</span>}
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.title || "Untitled"}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+          <div onClick={() => addRow()} style={{ border: "1px dashed var(--nn-border-strong)", borderRadius: 6, minHeight: 180, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--nn-text-tertiary)", cursor: "pointer" }}>
+            <Plus size={16} style={{ marginRight: 4 }} /> New
+          </div>
+        </div>
+      )}
+
+      {view === "list" && (
+        <div>
+          {rows.map((r) => (
+            <div key={r.id} onClick={() => nav(`/notch/p/${r.id}`)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 4px", borderBottom: "1px solid var(--nn-border)", cursor: "pointer", fontSize: 14 }}>
+              <span>{r.icon || "📄"}</span>
+              <span style={{ flex: 1 }}>{r.title || "Untitled"}</span>
+              {statusProp && <span style={{ fontSize: 12, color: "var(--nn-text-secondary)" }}>{getProp(r, statusProp.key) || ""}</span>}
+            </div>
+          ))}
+          <div onClick={() => addRow()} style={{ padding: 8, color: "var(--nn-text-tertiary)", cursor: "pointer", fontSize: 13 }}>+ New page</div>
+        </div>
+      )}
+
       {showSchema && (
         <SchemaEditor schema={schema} onClose={() => setShowSchema(false)} onSave={(s) => { saveSchema(s); setShowSchema(false); }} />
       )}
