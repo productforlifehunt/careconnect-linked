@@ -99,12 +99,9 @@ export default function NotchPage() {
     setContent(json);
     scheduleSave({ properties: JSON.stringify({ editor_content: json }) });
   };
-  const setCoverImage = () => {
-    const url = window.prompt("Cover image URL", cover || "");
-    if (url === null) return;
-    setCover(url);
-    scheduleSave({ cover: url });
-  };
+  const [showCoverGallery, setShowCoverGallery] = useState(false);
+  const setCoverImage = () => { setShowCoverGallery(true); setShowMenu(false); };
+  const applyCover = (url: string) => { setCover(url); scheduleSave({ cover: url }); setShowCoverGallery(false); };
   const removeCover = () => { setCover(""); scheduleSave({ cover: "" }); };
 
   const convertType = async (newType: "page" | "database") => {
