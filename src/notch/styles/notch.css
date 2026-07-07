@@ -20,8 +20,12 @@
   --nn-sidebar-width: 260px;
 
   font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Helvetica,
-    "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
+    "Inter", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Helvetica, Arial,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
   color: var(--nn-text);
   background: var(--nn-bg);
 }
