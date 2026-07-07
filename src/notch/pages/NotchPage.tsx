@@ -63,6 +63,9 @@ export default function NotchPage() {
       try {
         const props = b.properties ? JSON.parse(b.properties) : {};
         setContent(props.editor_content || null);
+        setLocked(!!props.locked);
+        setFullWidth(!!props.full_width);
+        setSnapshots(Array.isArray(props.history) ? props.history : []);
       } catch { setContent(null); }
       // build breadcrumbs
       const chain: Block[] = [b];
