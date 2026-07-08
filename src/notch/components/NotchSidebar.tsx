@@ -51,6 +51,33 @@ export function NotchSidebar() {
   });
   const isSectionOpen = (k: string) => sectionsOpen[k] !== false;
 
+  // Persisted section order (drag to reorder). Default: favorites → teamspaces → private.
+  const DEFAULT_ORDER = ["favorites", "teamspaces", "private"];
+  const [sectionOrder, setSectionOrder] = useState<string[]>(() => {
+    try {
+      const raw = JSON.parse(localStorage.getItem("nn:sidebar:order") || "null");
+      if (Array.isArray(raw) && raw.length) {
+        const filtered = raw.filter((k: string) => DEFAULT_ORDER.includes(k));
+        for (const k of DEFAULT_ORDER) if (!filtered.includes(k)) filtered.push(k);
+        return filtered;
+      }
+    } catch {}
+    return DEFAULT_ORDER;
+  });
+  const persistOrder = (next: string[]) => {
+    setSectionOrder(next);
+    try { localStorage.setItem("nn:sidebar:order", JSON.stringify(next)); } catch {}
+  };
+  const [dragSection, setDragSection] = useState<string | null>(null);
+  const onSectionDrop = (target: string) => {
+    if (!dragSection || dragSection === target) return;
+    const next = sectionOrder.filter((k) => k !== dragSection);
+    const idx = next.indexOf(target);
+    next.splice(idx, 0, dragSection);
+    persistOrder(next);
+    setDragSection(null);
+  };
+
   useEffect(() => {
     if (!user) return;
     let alive = true;
