@@ -90,15 +90,19 @@ export function NotchSidebar() {
   const bulkDelete = async () => {
     if (!selected.size) return;
     if (!(await nnConfirm(`Move ${selected.size} page${selected.size > 1 ? "s" : ""} to trash?`))) return;
-    for (const id of selected) {
+    const ids = Array.from(selected);
+    for (const id of ids) {
       try { await cctUpdate(NN.block, id, { archived: 1 }); } catch (e) { console.error(e); }
     }
+    pushUndo(`Trashed ${ids.length} page${ids.length > 1 ? "s" : ""}`, async () => {
+      for (const id of ids) { try { await cctUpdate(NN.block, id, { archived: 0, in_trash: 0 }); } catch {} }
+      await loadAll();
+    });
     clearSelection();
     await loadAll();
   };
   const bulkMove = async (destParentId: string) => {
     if (!selected.size) return;
-    // Prevent moving into own descendant
     const isDescendant = (root: string, cand: string): boolean => {
       let cur: any = pages.find((x) => String(x.id) === String(cand));
       while (cur) {
@@ -107,14 +111,22 @@ export function NotchSidebar() {
       }
       return false;
     };
+    const originalParents = new Map<string, string>();
     for (const id of selected) {
       if (isDescendant(id, destParentId)) continue;
+      const orig = pages.find((x) => String(x.id) === String(id))?.parent_id || activeWs || "";
+      originalParents.set(String(id), String(orig));
       try { await cctUpdate(NN.block, id, { parent_id: destParentId }); } catch (e) { console.error(e); }
     }
+    pushUndo(`Moved ${originalParents.size} page${originalParents.size > 1 ? "s" : ""}`, async () => {
+      for (const [id, parent] of originalParents) { try { await cctUpdate(NN.block, id, { parent_id: parent }); } catch {} }
+      await loadAll();
+    });
     clearSelection();
     setExpanded((s) => ({ ...s, [destParentId]: true }));
     await loadAll();
   };
+
 
 
   useEffect(() => {
