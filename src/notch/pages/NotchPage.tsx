@@ -314,12 +314,80 @@ export default function NotchPage() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
+  // Export current page as a standalone HTML file with basic Notion-like styling.
+  const exportHtml = () => {
+    setShowMenu(false);
+    const inlineHtml = (nodes: any[] | undefined): string => {
+      if (!Array.isArray(nodes)) return "";
+      const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" } as any)[c]);
+      return nodes.map((n: any) => {
+        if (n.type === "hardBreak") return "<br/>";
+        if (n.type !== "text") return "";
+        let t = esc(n.text || "");
+        for (const m of (n.marks || []) as any[]) {
+          if (m.type === "bold") t = `<strong>${t}</strong>`;
+          else if (m.type === "italic") t = `<em>${t}</em>`;
+          else if (m.type === "code") t = `<code>${t}</code>`;
+          else if (m.type === "strike") t = `<s>${t}</s>`;
+          else if (m.type === "underline") t = `<u>${t}</u>`;
+          else if (m.type === "link" && m.attrs?.href) t = `<a href="${esc(m.attrs.href)}">${t}</a>`;
+        }
+        return t;
+      }).join("");
+    };
+    const toHtml = (node: any): string => {
+      if (!node) return "";
+      const kids = Array.isArray(node.content) ? node.content : [];
+      switch (node.type) {
+        case "doc": return kids.map(toHtml).join("\n");
+        case "heading": { const l = node.attrs?.level || 1; return `<h${l}>${inlineHtml(kids)}</h${l}>`; }
+        case "paragraph": return `<p>${inlineHtml(kids)}</p>`;
+        case "bulletList": return `<ul>${kids.map(toHtml).join("")}</ul>`;
+        case "orderedList": return `<ol>${kids.map(toHtml).join("")}</ol>`;
+        case "listItem": return `<li>${kids.map(toHtml).join("")}</li>`;
+        case "taskList": return `<ul class="task">${kids.map(toHtml).join("")}</ul>`;
+        case "taskItem": return `<li><input type="checkbox" ${node.attrs?.checked ? "checked" : ""} disabled/> ${inlineHtml(kids?.[0]?.content)}</li>`;
+        case "blockquote": return `<blockquote>${kids.map(toHtml).join("")}</blockquote>`;
+        case "codeBlock": return `<pre><code>${inlineHtml(kids)}</code></pre>`;
+        case "horizontalRule": return "<hr/>";
+        case "callout": return `<div class="callout">${kids.map(toHtml).join("")}</div>`;
+        case "image": return `<img src="${node.attrs?.src || ""}" alt="${node.attrs?.alt || ""}"/>`;
+        default: return kids.map(toHtml).join("");
+      }
+    };
+    const body = toHtml(content);
+    const safeTitle = (title || "Untitled");
+    const html = `<!doctype html><html><head><meta charset="utf-8"/><title>${safeTitle.replace(/</g, "&lt;")}</title><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;max-width:720px;margin:40px auto;padding:0 24px;color:#37352f;line-height:1.6}h1,h2,h3,h4{font-weight:600;margin:1.4em 0 .4em}code{background:rgba(135,131,120,.15);padding:2px 4px;border-radius:3px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.9em}pre{background:#f7f6f3;padding:14px;border-radius:6px;overflow:auto}blockquote{border-left:3px solid #37352f;padding-left:14px;margin:1em 0;color:#37352f}.callout{background:#f1f1ef;padding:12px 14px;border-radius:4px;margin:.6em 0}img{max-width:100%;border-radius:4px}hr{border:none;border-top:1px solid #e9e9e7;margin:1.4em 0}ul.task{list-style:none;padding-left:1em}</style></head><body><h1>${safeTitle.replace(/</g, "&lt;")}</h1>${body}</body></html>`;
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = `${safeTitle.replace(/[^\w\-]+/g, "_")}.html`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  // Trigger the browser's print dialog for save-as-PDF.
+  const exportPdf = () => {
+    setShowMenu(false);
+    window.print();
+  };
+
+  const [showMovePicker, setShowMovePicker] = useState(false);
+  const movePage = () => { setShowMovePicker(true); setShowMenu(false); };
+  const applyMove = async (newParentId: string) => {
+    if (!pageId) return;
+    await cctUpdate(NN.block, pageId, { parent_id: newParentId });
+    setShowMovePicker(false);
+    // Refresh crumbs by reloading the page block.
+    setLoadTick((t) => t + 1);
+  };
+
   const trashPage = async () => {
     if (!pageId) return;
     if (!(await nnConfirm("You can restore it from Trash later.", "Move to trash?"))) return;
     await cctUpdate(NN.block, pageId, { archived: 1, in_trash: 1 });
     nav(path("/"));
   };
+
 
   if (!pageId) return null;
   if (loadErr) return (
