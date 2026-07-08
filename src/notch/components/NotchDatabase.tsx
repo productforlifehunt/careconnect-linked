@@ -1003,7 +1003,18 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
       )}
 
       {view === "form" && (
-        <FormView schema={schema} onSubmit={async (title, cells) => { await addRow({ ...cells }); if (title) { /* addRow navigates; nothing else */ } }} dbTitle={dbBlock?.title || "Untitled database"} />
+        <FormView schema={schema} onSubmit={async (title, cells) => {
+          await cctCreate(NN.block, {
+            workspace_id: workspaceId, parent_id: databaseId, type: "page",
+            title: title || "", icon: "",
+            properties: JSON.stringify(cells),
+            content_order: JSON.stringify([]),
+            archived: 0, in_trash: 0,
+            created_by: user?.user_id || 0, last_edited_by: user?.user_id || 0,
+          });
+          await load();
+        }} dbTitle={dbBlock?.title || "Untitled database"} />
+
       )}
 
 
