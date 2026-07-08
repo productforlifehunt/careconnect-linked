@@ -114,14 +114,19 @@ function SyncView({ node, updateAttributes }: any) {
   const [html, setHtml] = useState<string>("");
   const [title, setTitle] = useState<string>("");
   const [err, setErr] = useState<string>("");
+  const [loadedAt, setLoadedAt] = useState<number>(0);
+  const [sourceUpdatedAt, setSourceUpdatedAt] = useState<string>("");
+  const [stale, setStale] = useState<boolean>(false);
 
   const load = async () => {
     if (!sourceId) return;
-    setLoading(true); setErr("");
+    setLoading(true); setErr(""); setStale(false);
     try {
       const src: any = await cctGet(NN.block, sourceId);
       if (!src) { setErr("Source not found"); return; }
       setTitle(src.title || "Untitled");
+      setSourceUpdatedAt(src.updated_at || src.modified || "");
+      setLoadedAt(Date.now());
       const props = src.properties ? JSON.parse(src.properties) : {};
       const c = props.editor_content;
       // Full JSON→HTML converter: mirrors all nodes the NotionEditor produces.
