@@ -11,9 +11,24 @@ export default function NotchTrash() {
   const path = useNotchPath();
   const { user } = useNotchAuth();
   const [items, setItems] = useState<any[]>([]);
+  const [allBlocks, setAllBlocks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  const collectDescendants = (rootId: string): string[] => {
+    const out = new Set<string>();
+    const walk = (id: string) => {
+      for (const b of allBlocks) {
+        if (String(b.parent_id) === String(id) && !out.has(String(b.id))) {
+          out.add(String(b.id));
+          walk(String(b.id));
+        }
+      }
+    };
+    walk(rootId);
+    return Array.from(out);
+  };
 
   const load = async () => {
     setLoading(true);
