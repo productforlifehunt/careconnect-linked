@@ -13,6 +13,7 @@ export default function NotchTrash() {
   const [items, setItems] = useState<any[]>([]);
   const [allBlocks, setAllBlocks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadErr, setLoadErr] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
