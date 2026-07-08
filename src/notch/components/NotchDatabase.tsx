@@ -13,6 +13,20 @@ type ButtonAction =
   | { kind: "increment"; prop: string; by: number }
   | { kind: "open"; url: string };
 type CondRule = { prop: string; op: "eq" | "neq" | "contains" | "gt" | "lt" | "empty" | "notempty"; value: string; color: string };
+type AutoAction =
+  | { kind: "set"; prop: string; value: string }
+  | { kind: "increment"; prop: string; by: number }
+  | { kind: "notify"; message: string }
+  | { kind: "webhook"; url: string };
+type AutoRule = {
+  id: string;
+  name: string;
+  trigger: "created" | "propChanged";
+  prop?: string;      // for propChanged
+  to?: string;        // optional match value
+  actions: AutoAction[];
+  enabled: boolean;
+};
 interface PropDef {
   key: string; name: string; type: PropType;
   options?: string[];
