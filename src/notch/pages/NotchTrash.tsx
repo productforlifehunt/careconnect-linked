@@ -33,6 +33,7 @@ export default function NotchTrash() {
   const load = async () => {
     setLoading(true);
     const all = await cctList<any>(NN.block);
+    setAllBlocks(all);
     setItems(
       all
         .filter((b: any) => Number(b.in_trash) === 1 || Number(b.archived) === 1)
@@ -44,12 +45,14 @@ export default function NotchTrash() {
   useEffect(() => { load(); }, [user]);
 
   const restore = async (id: string) => {
-    await cctUpdate(NN.block, id, { archived: 0, in_trash: 0 });
+    const ids = [id, ...collectDescendants(id)];
+    for (const x of ids) await cctUpdate(NN.block, x, { archived: 0, in_trash: 0 });
     await load();
   };
   const purge = async (id: string) => {
-    if (!(await nnConfirm("This cannot be undone.", "Delete forever?"))) return;
-    await cctDelete(NN.block, id);
+    const ids = [id, ...collectDescendants(id)];
+    if (!(await nnConfirm(`This will permanently delete ${ids.length} block${ids.length === 1 ? "" : "s"}. Cannot be undone.`, "Delete forever?"))) return;
+    for (const x of ids) await cctDelete(NN.block, x);
     await load();
   };
 
