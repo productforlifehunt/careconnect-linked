@@ -6,6 +6,7 @@ import { cctList, cctCreate, cctUpdate, cctDelete, NN } from "@/notch/lib/nn-cli
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 import { useFavorites } from "@/notch/lib/nn-favorites";
 import { unreadCount, tickReminderQueue } from "@/notch/lib/nn-notifications";
+import { useUnreadCount } from "@/notch/lib/nn-use-unread";
 import { nnPrompt, nnConfirm } from "@/notch/lib/nn-dialog";
 import { NotchContextMenu, CtxIcons } from "@/notch/components/NotchContextMenu";
 import { toast } from "@/hooks/use-toast";
