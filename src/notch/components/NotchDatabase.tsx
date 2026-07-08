@@ -286,22 +286,59 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
     } catch { return "#ERR"; }
   };
 
-  // Aggregate a numeric prop across every row (rollup shows same total per row).
+  // Format numbers per Notion-style number formats.
+  const formatNumber = (v: any, fmt?: PropDef["numberFormat"]): string => {
+    const n = Number(v);
+    if (v === "" || v === null || v === undefined || isNaN(n)) return v == null ? "" : String(v);
+    switch (fmt) {
+      case "commas": return n.toLocaleString();
+      case "percent": return (n * 100).toFixed(2).replace(/\.?0+$/, "") + "%";
+      case "usd": return "$" + n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      case "eur": return "€" + n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      case "gbp": return "£" + n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      case "yuan": return "¥" + n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      case "yen": return "¥" + Math.round(n).toLocaleString();
+      case "number": return String(n);
+      default: return String(v);
+    }
+  };
+
+  // Aggregate a prop across every row (rollup shows same value per row).
   const rollupValue = (p: PropDef): string => {
     if (!p.rollup?.source) return "";
     const src = p.rollup.source;
-    const nums = rows.map((r) => {
-      const v = (() => { try { return JSON.parse(r.properties || "{}")[src]; } catch { return undefined; } })();
-      const n = Number(v);
-      return isNaN(n) ? null : n;
-    }).filter((n): n is number => n !== null);
-    if (p.rollup.agg === "count") return String(rows.length);
-    if (nums.length === 0) return "";
+    const raw = rows.map((r) => { try { return JSON.parse(r.properties || "{}")[src]; } catch { return undefined; } });
+    const nonEmpty = raw.filter((v) => v !== "" && v !== null && v !== undefined);
+    const nums = raw.map((v) => { const n = Number(v); return isNaN(n) ? null : n; }).filter((n): n is number => n !== null);
+    const dates = raw.map((v) => { const t = new Date(v as any).getTime(); return isNaN(t) ? null : t; }).filter((t): t is number => t !== null);
+    const total = rows.length || 1;
     switch (p.rollup.agg) {
-      case "sum": return String(nums.reduce((a, b) => a + b, 0));
-      case "avg": return (nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(2);
-      case "min": return String(Math.min(...nums));
-      case "max": return String(Math.max(...nums));
+      case "count": return String(rows.length);
+      case "count_values": return String(nonEmpty.length);
+      case "count_unique": return String(new Set(nonEmpty.map((v) => JSON.stringify(v))).size);
+      case "count_empty": return String(rows.length - nonEmpty.length);
+      case "count_not_empty": return String(nonEmpty.length);
+      case "percent_empty": return ((rows.length - nonEmpty.length) / total * 100).toFixed(0) + "%";
+      case "percent_not_empty": return (nonEmpty.length / total * 100).toFixed(0) + "%";
+      case "sum": return nums.length ? String(nums.reduce((a, b) => a + b, 0)) : "";
+      case "avg": return nums.length ? (nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(2) : "";
+      case "median": {
+        if (!nums.length) return "";
+        const s = [...nums].sort((a, b) => a - b); const m = Math.floor(s.length / 2);
+        return String(s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2);
+      }
+      case "min": return nums.length ? String(Math.min(...nums)) : "";
+      case "max": return nums.length ? String(Math.max(...nums)) : "";
+      case "range": return nums.length ? String(Math.max(...nums) - Math.min(...nums)) : "";
+      case "earliest_date": return dates.length ? new Date(Math.min(...dates)).toLocaleDateString() : "";
+      case "latest_date": return dates.length ? new Date(Math.max(...dates)).toLocaleDateString() : "";
+      case "date_range": {
+        if (!dates.length) return "";
+        const d = Math.max(...dates) - Math.min(...dates);
+        return Math.round(d / 8.64e7) + " days";
+      }
+      case "show_original": return nonEmpty.slice(0, 8).map((v) => String(v)).join(", ");
+      case "show_unique": return [...new Set(nonEmpty.map((v) => String(v)))].slice(0, 8).join(", ");
       default: return "";
     }
   };
