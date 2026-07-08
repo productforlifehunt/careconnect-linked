@@ -703,10 +703,27 @@ const COVER_PRESETS = [
 
 function CoverGallery({ current, onPick, onClose }: { current: string; onPick: (u: string) => void; onClose: () => void }) {
   const [url, setUrl] = useState(current || "");
+  const [uploading, setUploading] = useState(false);
+  const { user } = useNotchAuth();
+  const handleUpload = async () => {
+    try {
+      const { pickFile, nnUploadFile } = await import("@/notch/lib/nn-files");
+      const f = await pickFile("image/*");
+      if (!f) return;
+      setUploading(true);
+      const up = await nnUploadFile(f, user?.user_id || "anon");
+      onPick(up.url);
+    } catch (e: any) {
+      nnAlert(`Upload failed: ${e?.message || e}`, "Cover");
+    } finally { setUploading(false); }
+  };
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={onClose}>
       <div style={{ background: "var(--nn-bg)", borderRadius: 8, width: "100%", maxWidth: 720, padding: 20, maxHeight: "80vh", overflow: "auto" }} onClick={(e) => e.stopPropagation()}>
-        <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Choose a cover</div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+          <div style={{ fontSize: 16, fontWeight: 600 }}>Choose a cover</div>
+          <button className="nn-btn-secondary" onClick={handleUpload} disabled={uploading}>{uploading ? "Uploading…" : "Upload image"}</button>
+        </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 8, marginBottom: 16 }}>
           {COVER_PRESETS.map((u) => (
             <img key={u} src={u} alt="cover" onClick={() => onPick(u)}
