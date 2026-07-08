@@ -1,11 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileText, Database, Home, Settings, Trash2, Search } from "lucide-react";
+import { FileText, Database, Home, Settings, Trash2, Search, Clock } from "lucide-react";
 import { cctList, NN } from "@/notch/lib/nn-client";
 import { useNotchPath } from "@/notch/context/NotchBaseContext";
 
-interface Block { id: string; title?: string; icon?: string; type?: string; archived?: string | number; }
+interface Block { id: string; title?: string; icon?: string; type?: string; archived?: string | number; updated_at?: string; }
 interface Props { onClose: () => void; }
+
+const RECENT_KEY = "nn_qf_recent";
+function getRecentIds(): string[] {
+  try { return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); } catch { return []; }
+}
+function pushRecent(id: string) {
+  const cur = getRecentIds().filter((x) => x !== id);
+  cur.unshift(id);
+  localStorage.setItem(RECENT_KEY, JSON.stringify(cur.slice(0, 10)));
+}
 
 export function NotchQuickFind({ onClose }: Props) {
   const nav = useNavigate();
@@ -31,33 +41,48 @@ export function NotchQuickFind({ onClose }: Props) {
     { key: "settings", label: "Settings", icon: <Settings size={14} />, go: () => nav(path("/settings")) },
   ], [nav, path]);
 
-  const results = useMemo(() => {
+  const groups = useMemo(() => {
     const ql = q.trim().toLowerCase();
-    const pageMatches = pages.filter((p) => !ql || (p.title || "").toLowerCase().includes(ql)).slice(0, 20).map((p) => ({
-      key: "p:" + p.id,
-      label: p.title || "Untitled",
-      icon: p.icon ? <span>{p.icon}</span> : (p.type === "database" ? <Database size={14} /> : <FileText size={14} />),
-      go: () => nav(path(`/p/${p.id}`)),
-    }));
-    const s = ql ? staticItems.filter((i) => i.label.toLowerCase().includes(ql)) : staticItems;
-    return [...pageMatches, ...s];
+    const iconFor = (p: Block) => p.icon ? <span>{p.icon}</span> : (p.type === "database" ? <Database size={14} /> : <FileText size={14} />);
+    const mkPage = (p: Block) => ({
+      key: "p:" + p.id, label: p.title || "Untitled", icon: iconFor(p),
+      go: () => { pushRecent(p.id); nav(path(`/p/${p.id}`)); },
+    });
+    if (!ql) {
+      const recentIds = getRecentIds();
+      const byId = new Map(pages.map((p) => [p.id, p]));
+      const recent = recentIds.map((id) => byId.get(id)).filter(Boolean).slice(0, 5).map((p) => mkPage(p as Block));
+      return [
+        ...(recent.length ? [{ heading: "Recent", items: recent }] : []),
+        { heading: "Jump to", items: staticItems },
+      ];
+    }
+    const pageMatches = pages.filter((p) => (p.title || "").toLowerCase().includes(ql)).slice(0, 20).map(mkPage);
+    const s = staticItems.filter((i) => i.label.toLowerCase().includes(ql));
+    return [
+      ...(pageMatches.length ? [{ heading: "Pages", items: pageMatches }] : []),
+      ...(s.length ? [{ heading: "Jump to", items: s }] : []),
+    ];
   }, [q, pages, staticItems, nav, path]);
+
+  const flat = useMemo(() => groups.flatMap((g) => g.items), [groups]);
 
   useEffect(() => { setSel(0); }, [q]);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
-      else if (e.key === "ArrowDown") { e.preventDefault(); setSel((s) => Math.min(s + 1, results.length - 1)); }
+      else if (e.key === "ArrowDown") { e.preventDefault(); setSel((s) => Math.min(s + 1, flat.length - 1)); }
       else if (e.key === "ArrowUp") { e.preventDefault(); setSel((s) => Math.max(s - 1, 0)); }
       else if (e.key === "Enter") {
-        const r = results[sel];
+        const r = flat[sel];
         if (r) { r.go(); onClose(); }
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [results, sel, onClose]);
+  }, [flat, sel, onClose]);
 
+  let idx = -1;
   return (
     <div className="nn-qf-backdrop" onClick={onClose}>
       <div className="nn-qf-modal" onClick={(e) => e.stopPropagation()}>
@@ -69,16 +94,27 @@ export function NotchQuickFind({ onClose }: Props) {
           autoFocus
         />
         <div className="nn-qf-results">
-          {results.length === 0 && <div className="nn-qf-empty">No results</div>}
-          {results.map((r, i) => (
-            <div
-              key={r.key}
-              className={`nn-qf-item ${i === sel ? "selected" : ""}`}
-              onMouseEnter={() => setSel(i)}
-              onClick={() => { r.go(); onClose(); }}
-            >
-              <span style={{ width: 18, display: "inline-flex", justifyContent: "center", color: "var(--nn-text-secondary)" }}>{r.icon}</span>
-              <span>{r.label}</span>
+          {flat.length === 0 && <div className="nn-qf-empty">No results</div>}
+          {groups.map((g) => (
+            <div key={g.heading}>
+              <div style={{ padding: "6px 12px 2px", fontSize: 10, textTransform: "uppercase", letterSpacing: 0.4, color: "var(--nn-text-tertiary)", display: "flex", alignItems: "center", gap: 6 }}>
+                {g.heading === "Recent" && <Clock size={11} />} {g.heading}
+              </div>
+              {g.items.map((r) => {
+                idx += 1;
+                const i = idx;
+                return (
+                  <div
+                    key={r.key}
+                    className={`nn-qf-item ${i === sel ? "selected" : ""}`}
+                    onMouseEnter={() => setSel(i)}
+                    onClick={() => { r.go(); onClose(); }}
+                  >
+                    <span style={{ width: 18, display: "inline-flex", justifyContent: "center", color: "var(--nn-text-secondary)" }}>{r.icon}</span>
+                    <span>{r.label}</span>
+                  </div>
+                );
+              })}
             </div>
           ))}
         </div>
