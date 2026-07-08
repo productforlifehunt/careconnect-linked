@@ -208,6 +208,7 @@ function Shell({ standalone }: { standalone: boolean }) {
       {quickFind && <NotchQuickFind onClose={() => setQuickFind(false)} />}
       {askAI && <NotchAskAI onClose={() => setAskAI(false)} />}
       {shortcuts && <NotchShortcuts onClose={() => setShortcuts(false)} />}
+      <NotchSidePeek />
     </div>
   );
 }
