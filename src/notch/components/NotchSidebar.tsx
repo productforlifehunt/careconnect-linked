@@ -41,7 +41,7 @@ export function NotchSidebar() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [loadErr, setLoadErr] = useState<string | null>(null);
-  const [unread, setUnread] = useState(0);
+  const unread = useUnreadCount(user?.user_id);
   const [ctx, setCtx] = useState<{ x: number; y: number; page: Block } | null>(null);
   const [sectionsOpen, setSectionsOpen] = useState<Record<string, boolean>>(() => {
     try { return JSON.parse(localStorage.getItem("nn:sidebar:sections") || "{}"); } catch { return {}; }
