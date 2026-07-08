@@ -754,7 +754,24 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
         <button onClick={exportCsv} className="nn-topbar-btn" title="Export CSV">⬇ CSV</button>
         <button onClick={() => csvInputRef.current?.click()} className="nn-topbar-btn" title="Import CSV">⬆ CSV</button>
         <input ref={csvInputRef} type="file" accept=".csv,text/csv" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0]; if (f) importCsv(f); e.currentTarget.value = ""; }} />
-        <button onClick={() => addRow()} className="nn-topbar-btn"><Plus size={13} /> New</button>
+        <div style={{ position: "relative", display: "inline-flex" }}>
+          <button onClick={() => { if (templates.length) setShowTmplPick((v) => !v); else addRow(); }} className="nn-topbar-btn"><Plus size={13} /> New{templates.length ? " ▾" : ""}</button>
+          {showTmplPick && templates.length > 0 && (
+            <div style={{ position: "absolute", top: "100%", right: 0, background: "var(--nn-bg)", border: "1px solid var(--nn-border)", borderRadius: 6, boxShadow: "var(--nn-shadow-md)", zIndex: 1000, minWidth: 220, padding: 4 }}>
+              <div onClick={() => { addRow(); setShowTmplPick(false); }} style={{ padding: "6px 10px", fontSize: 13, cursor: "pointer", borderRadius: 4 }} className="nn-hover">📄 Empty page</div>
+              {templates.map((t) => (
+                <div key={t.id} onClick={() => { addRow({ ...t.cells }); setShowTmplPick(false); }} style={{ padding: "6px 10px", fontSize: 13, cursor: "pointer", borderRadius: 4 }} className="nn-hover">
+                  {t.icon || "📋"} {t.name || "Untitled template"}
+                </div>
+              ))}
+              <div style={{ borderTop: "1px solid var(--nn-border)", marginTop: 4, paddingTop: 4 }}>
+                <div onClick={() => { setShowTmplEditor(true); setShowTmplPick(false); }} style={{ padding: "6px 10px", fontSize: 12, cursor: "pointer", color: "var(--nn-text-secondary)" }} className="nn-hover">＋ New template…</div>
+              </div>
+            </div>
+          )}
+        </div>
+        <button onClick={() => setShowTmplEditor(true)} className="nn-topbar-btn" title="Manage templates">📋</button>
+
       </div>
       {selectedRows.size > 0 && (
         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", background: "var(--nn-blue-bg)", border: "1px solid var(--nn-blue)", borderRadius: 4, marginBottom: 8, fontSize: 12 }}>
