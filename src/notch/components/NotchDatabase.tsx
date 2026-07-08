@@ -551,7 +551,10 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
       )}
 
       {showSchema && (
-        <SchemaEditor schema={schema} onClose={() => setShowSchema(false)} onSave={(s) => { saveSchema(s); setShowSchema(false); }} />
+        <SchemaEditor schema={schema} allBlocks={allBlocks} onClose={() => setShowSchema(false)} onSave={(s) => { saveSchema(s); setShowSchema(false); }} />
+      )}
+      {showCondEditor && (
+        <CondEditor rules={condRules} schema={schema} onClose={() => setShowCondEditor(false)} onSave={(r) => { saveCondRules(r); setShowCondEditor(false); }} />
       )}
     </div>
   );
