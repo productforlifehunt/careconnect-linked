@@ -65,6 +65,11 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
   const [schema, setSchema] = useState<PropDef[]>(DEFAULT_SCHEMA);
   const [condRules, setCondRules] = useState<CondRule[]>([]);
   const [view, setView] = useState<ViewMode>("table");
+  type Tmpl = { id: string; name: string; icon?: string; cells: Record<string, any> };
+  const [templates, setTemplates] = useState<Tmpl[]>([]);
+  const [showTmplEditor, setShowTmplEditor] = useState(false);
+  const [showTmplPick, setShowTmplPick] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [loadErr, setLoadErr] = useState<string | null>(null);
   const [showSchema, setShowSchema] = useState(false);
