@@ -73,8 +73,9 @@ export function EmojiPicker({ onPick, onClear }: Props) {
     try {
       const f = await pickFile("image/*");
       if (!f) return;
-      const url = await nnUploadFile(f);
-      onPick(`![](${url})`); // caller decides how to render; for icon, we just embed URL as text
+      const uid = (window as any).__NN_USER_ID__ || "anon";
+      const { url } = await nnUploadFile(f, uid);
+      onPick(url);
     } catch (e) { console.error(e); }
     setBusy(false);
   };
