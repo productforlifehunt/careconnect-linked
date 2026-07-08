@@ -18,12 +18,15 @@ function timeAgo(iso?: string) {
   return `${Math.floor(s / 86400)}d ago`;
 }
 
+type TabKey = "all" | "unread" | "following" | "mentions";
+
 export default function NotchNotifications() {
   const { user } = useNotchAuth();
   const path = useNotchPath();
   const nav = useNavigate();
   const [items, setItems] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<TabKey>("all");
 
   const load = useCallback(async () => {
     if (!user) return;
