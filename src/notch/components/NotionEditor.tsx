@@ -173,7 +173,7 @@ const SLASH_ITEMS = [
     } },
 ];
 
-export function NotionEditor({ content, onChange, placeholder = "Type '/' for commands", onCreateSubpage }: Props) {
+export function NotionEditor({ content, onChange, placeholder = "Write, press '/' for commands, or ⌃Space for AI…", onCreateSubpage }: Props) {
   const { user } = _useNotchAuth();
   const editor = useEditor({
     extensions: [
