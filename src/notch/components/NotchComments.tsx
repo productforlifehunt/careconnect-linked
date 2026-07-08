@@ -18,6 +18,22 @@ interface Comment {
 
 type FilterMode = "open" | "resolved" | "all";
 
+function relTime(iso?: string): string {
+  if (!iso) return "";
+  const t = new Date(iso).getTime();
+  if (!t) return "";
+  const diff = Math.max(0, Date.now() - t);
+  const s = Math.floor(diff / 1000);
+  if (s < 45) return "just now";
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `${d}d ago`;
+  return new Date(iso).toLocaleDateString();
+}
+
 export function NotchComments({ blockId }: { blockId: string }) {
   const { user } = useNotchAuth();
   const [items, setItems] = useState<Comment[]>([]);
@@ -26,6 +42,9 @@ export function NotchComments({ blockId }: { blockId: string }) {
   const [filter, setFilter] = useState<FilterMode>("open");
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
   const load = useCallback(async () => {
     const all = await cctList<Comment>(NN.comment);
@@ -58,6 +77,7 @@ export function NotchComments({ blockId }: { blockId: string }) {
         parent_id: parent_id ? String(parent_id) : "",
         body,
         resolved: 0,
+        author_id: user ? String(user.user_id) : "",
         author_display: user?.user_display_name || user?.user_email || "Anonymous",
       });
       const mentions = Array.from(new Set((body.match(/@(\d+)/g) || []).map((m) => m.slice(1))));
@@ -93,6 +113,15 @@ export function NotchComments({ blockId }: { blockId: string }) {
     await load();
   };
 
+  const saveEdit = async (id: string) => {
+    const body = editText.trim();
+    if (!body) return;
+    await cctUpdate(NN.comment, id, { body });
+    setEditId(null);
+    setEditText("");
+    await load();
+  };
+
   // Build threaded tree: top-level (no parent_id) → children by parent_id.
   const { topLevel, childrenOf, openCount, resolvedCount } = useMemo(() => {
     const kids: Record<string, Comment[]> = {};
@@ -117,6 +146,9 @@ export function NotchComments({ blockId }: { blockId: string }) {
   const renderComment = (c: Comment, depth = 0) => {
     const isResolved = Number(c.resolved) === 1;
     const kids = childrenOf[String(c.id)] || [];
+    const isMine = String(c.author_id) === String(user?.user_id);
+    const isEditing = editId === String(c.id);
+    const isCollapsed = !!collapsed[String(c.id)];
     return (
       <div key={c.id} style={{ padding: "10px 0", borderBottom: depth === 0 ? "1px solid var(--nn-border)" : "none", display: "flex", gap: 10, marginLeft: depth * 28, opacity: isResolved ? 0.65 : 1 }}>
         <div style={{ width: 28, height: 28, borderRadius: "50%", background: "var(--nn-blue-bg)", color: "var(--nn-blue)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 600, flexShrink: 0 }}>
@@ -125,13 +157,39 @@ export function NotchComments({ blockId }: { blockId: string }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 13, color: "var(--nn-text-secondary)", marginBottom: 2, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
             <strong style={{ color: "var(--nn-text)" }}>{c.author_display || "Anonymous"}</strong>
-            {c.created_at && <span style={{ fontSize: 11 }}>{new Date(c.created_at).toLocaleString()}</span>}
+            {c.created_at && <span style={{ fontSize: 11 }} title={new Date(c.created_at).toLocaleString()}>{relTime(c.created_at)}</span>}
             {isResolved && <span style={{ fontSize: 10, background: "rgba(68,131,97,0.14)", color: "#448361", padding: "1px 6px", borderRadius: 3 }}>Resolved</span>}
           </div>
-          <div style={{ fontSize: 14, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{c.body}</div>
-          <div style={{ display: "flex", gap: 10, marginTop: 4, fontSize: 12 }}>
+          {isEditing ? (
+            <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
+              <input
+                className="nn-auth-input"
+                value={editText}
+                onChange={(e) => setEditText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); saveEdit(String(c.id)); }
+                  if (e.key === "Escape") { setEditId(null); setEditText(""); }
+                }}
+                autoFocus
+                style={{ marginBottom: 0, flex: 1 }}
+              />
+              <button className="nn-btn-primary" onClick={() => saveEdit(String(c.id))} disabled={!editText.trim()} style={{ fontSize: 12 }}>Save</button>
+              <button className="nn-topbar-btn" onClick={() => { setEditId(null); setEditText(""); }} style={{ fontSize: 12 }}>Cancel</button>
+            </div>
+          ) : (
+            <div style={{ fontSize: 14, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{c.body}</div>
+          )}
+          <div style={{ display: "flex", gap: 10, marginTop: 4, fontSize: 12, color: "var(--nn-text-secondary)" }}>
             {depth === 0 && (
-              <button onClick={() => { setReplyTo(String(c.id)); setReplyText(""); }} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-secondary)", padding: 0 }}>Reply</button>
+              <button onClick={() => { setReplyTo(String(c.id)); setReplyText(""); }} style={{ background: "none", border: "none", cursor: "pointer", color: "inherit", padding: 0 }}>Reply</button>
+            )}
+            {isMine && !isEditing && (
+              <button onClick={() => { setEditId(String(c.id)); setEditText(c.body || ""); }} style={{ background: "none", border: "none", cursor: "pointer", color: "inherit", padding: 0 }}>Edit</button>
+            )}
+            {depth === 0 && kids.length > 0 && (
+              <button onClick={() => setCollapsed((s) => ({ ...s, [String(c.id)]: !isCollapsed }))} style={{ background: "none", border: "none", cursor: "pointer", color: "inherit", padding: 0 }}>
+                {isCollapsed ? `Show ${kids.length} ${kids.length === 1 ? "reply" : "replies"}` : "Hide replies"}
+              </button>
             )}
           </div>
           {replyTo === String(c.id) && (
@@ -151,7 +209,7 @@ export function NotchComments({ blockId }: { blockId: string }) {
               <button className="nn-btn-primary" onClick={() => submit(replyText, String(c.id)).then(() => { setReplyTo(null); setReplyText(""); })} disabled={busy || !replyText.trim()} style={{ fontSize: 12 }}>Reply</button>
             </div>
           )}
-          {kids.map((k) => renderComment(k, depth + 1))}
+          {!isCollapsed && kids.map((k) => renderComment(k, depth + 1))}
         </div>
         {depth === 0 && (
           isResolved ? (
@@ -160,7 +218,7 @@ export function NotchComments({ blockId }: { blockId: string }) {
             <button onClick={() => setResolved(c.id, 1)} title="Resolve" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-tertiary)" }}><Check size={13} /></button>
           )
         )}
-        {String(c.author_id) === String(user?.user_id) && (
+        {isMine && (
           <button onClick={() => remove(c.id)} title="Delete" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-tertiary)" }}><Trash2 size={13} /></button>
         )}
       </div>
