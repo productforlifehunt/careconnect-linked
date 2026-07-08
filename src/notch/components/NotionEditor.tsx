@@ -222,6 +222,7 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
       InlineDatabase,
       MultiBlockShortcuts,
       InlineCommentMark,
+      Whiteboard,
     ],
     content: content || "",
     onUpdate: ({ editor }) => onChange(editor.getJSON()),
