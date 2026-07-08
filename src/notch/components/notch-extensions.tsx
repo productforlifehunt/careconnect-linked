@@ -114,14 +114,19 @@ function SyncView({ node, updateAttributes }: any) {
   const [html, setHtml] = useState<string>("");
   const [title, setTitle] = useState<string>("");
   const [err, setErr] = useState<string>("");
+  const [loadedAt, setLoadedAt] = useState<number>(0);
+  const [sourceUpdatedAt, setSourceUpdatedAt] = useState<string>("");
+  const [stale, setStale] = useState<boolean>(false);
 
   const load = async () => {
     if (!sourceId) return;
-    setLoading(true); setErr("");
+    setLoading(true); setErr(""); setStale(false);
     try {
       const src: any = await cctGet(NN.block, sourceId);
       if (!src) { setErr("Source not found"); return; }
       setTitle(src.title || "Untitled");
+      setSourceUpdatedAt(src.updated_at || src.modified || "");
+      setLoadedAt(Date.now());
       const props = src.properties ? JSON.parse(src.properties) : {};
       const c = props.editor_content;
       // Full JSON→HTML converter: mirrors all nodes the NotionEditor produces.
@@ -194,6 +199,19 @@ function SyncView({ node, updateAttributes }: any) {
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [sourceId]);
 
+  // Poll every 30s to detect if the source page has been updated since we last loaded.
+  useEffect(() => {
+    if (!sourceId || !loadedAt) return;
+    const id = setInterval(async () => {
+      try {
+        const src: any = await cctGet(NN.block, sourceId);
+        const ts = src?.updated_at || src?.modified || "";
+        if (ts && ts !== sourceUpdatedAt) setStale(true);
+      } catch { /* ignore polling errors */ }
+    }, 30_000);
+    return () => clearInterval(id);
+  }, [sourceId, loadedAt, sourceUpdatedAt]);
+
   if (!sourceId) {
     return (
       <NodeViewWrapper as="div" className="nn-sync-empty" contentEditable={false}>
@@ -214,13 +232,31 @@ function SyncView({ node, updateAttributes }: any) {
     );
   }
 
+  const relTime = (ms: number) => {
+    const s = Math.floor((Date.now() - ms) / 1000);
+    if (s < 60) return `${s}s ago`;
+    if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+    if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+    return `${Math.floor(s / 86400)}d ago`;
+  };
+
   return (
-    <NodeViewWrapper as="div" className="nn-sync" contentEditable={false}>
+    <NodeViewWrapper as="div" className={`nn-sync${stale ? " nn-sync-stale" : ""}`} contentEditable={false}>
       <div className="nn-sync-header">
         <Link2 size={12} />
         <span className="nn-sync-title">{title || "Synced block"}</span>
+        {loadedAt > 0 && (
+          <span style={{ fontSize: 11, opacity: 0.6, marginLeft: 6 }}>synced {relTime(loadedAt)}</span>
+        )}
+        <a href={sourceId ? `/notch/p/${sourceId}` : "#"} target="_blank" rel="noreferrer" title="Open source page" style={{ marginLeft: 6, color: "var(--nn-text-secondary)", fontSize: 11 }}>↗</a>
         <button onClick={load} title="Refresh" className="nn-sync-refresh"><RefreshCw size={12} /></button>
       </div>
+      {stale && !loading && (
+        <div style={{ padding: "6px 10px", fontSize: 12, background: "var(--nn-yellow-bg, #fff7d6)", color: "var(--nn-yellow-text, #8a6d00)", borderBottom: "1px solid var(--nn-border)", display: "flex", alignItems: "center", gap: 8 }}>
+          <span>⚠️ Source has been updated</span>
+          <button onClick={load} style={{ marginLeft: "auto", background: "transparent", border: "1px solid currentColor", color: "inherit", borderRadius: 3, padding: "2px 8px", fontSize: 11, cursor: "pointer" }}>Refresh now</button>
+        </div>
+      )}
       {loading ? (
         <div style={{ padding: 8, opacity: 0.5, fontSize: 13 }}>Loading…</div>
       ) : err ? (
