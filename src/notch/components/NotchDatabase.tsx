@@ -663,8 +663,21 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
         <button onClick={() => setShowCondEditor(true)} className="nn-topbar-btn" title="Conditional formatting">🎨</button>
         <button onClick={() => setShowAuto(true)} className="nn-topbar-btn" title="Automations">⚡</button>
         <button onClick={() => setShowSchema(true)} className="nn-topbar-btn"><Settings2 size={13} /> Properties</button>
+        <button onClick={exportCsv} className="nn-topbar-btn" title="Export CSV">⬇ CSV</button>
+        <button onClick={() => csvInputRef.current?.click()} className="nn-topbar-btn" title="Import CSV">⬆ CSV</button>
+        <input ref={csvInputRef} type="file" accept=".csv,text/csv" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0]; if (f) importCsv(f); e.currentTarget.value = ""; }} />
         <button onClick={() => addRow()} className="nn-topbar-btn"><Plus size={13} /> New</button>
       </div>
+      {selectedRows.size > 0 && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", background: "var(--nn-blue-bg)", border: "1px solid var(--nn-blue)", borderRadius: 4, marginBottom: 8, fontSize: 12 }}>
+          <span style={{ color: "var(--nn-blue)", fontWeight: 500 }}>{selectedRows.size} selected</span>
+          <div style={{ flex: 1 }} />
+          <button onClick={bulkDuplicate} className="nn-topbar-btn">Duplicate</button>
+          <button onClick={bulkArchive} className="nn-topbar-btn" style={{ color: "var(--nn-danger, #e03e3e)" }}>Delete</button>
+          <button onClick={clearSelection} className="nn-topbar-btn">Cancel</button>
+        </div>
+      )}
+      <div style={{ display: "none" }}>
 
       {view === "table" && (
         <div style={{ border: "1px solid var(--nn-border)", borderRadius: 4, overflow: "auto" }}>
