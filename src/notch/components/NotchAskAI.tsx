@@ -172,7 +172,9 @@ export function NotchAskAI({ onClose }: Props) {
           {msgs.map((m, i) => (
             <div key={i} style={{ margin: "10px 0" }}>
               <div style={{ fontSize: 11, fontWeight: 600, color: "var(--nn-text-tertiary)", marginBottom: 4 }}>{m.role === "user" ? "You" : "AI"}</div>
-              <div style={{ fontSize: 14, whiteSpace: "pre-wrap", color: "var(--nn-text)" }}>{m.content}</div>
+              <div style={{ fontSize: 14, whiteSpace: "pre-wrap", color: "var(--nn-text)" }}>
+                {m.role === "assistant" ? renderAnswer(m) : m.content}
+              </div>
               {m.sources && m.sources.length > 0 && (
                 <div style={{ marginTop: 6, display: "flex", gap: 4, flexWrap: "wrap" }}>
                   {m.sources.map((s, j) => (
