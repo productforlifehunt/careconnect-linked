@@ -53,6 +53,9 @@ function Shell({ standalone }: { standalone: boolean }) {
       } else if ((e.metaKey || e.ctrlKey) && (e.key === "j" || e.key === "J")) {
         e.preventDefault();
         setAskAI((s) => !s);
+      } else if ((e.metaKey || e.ctrlKey) && e.key === "/") {
+        e.preventDefault();
+        setShortcuts((s) => !s);
       }
     };
     window.addEventListener("keydown", onKey);
