@@ -515,22 +515,85 @@
 /* Auth */
 .nn-auth-shell {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   background: var(--nn-bg);
-  padding: 20px;
+  padding: 72px 20px 40px;
+  overflow-y: auto;
+}
+@media (min-height: 700px) {
+  .nn-auth-shell { padding-top: 12vh; }
 }
 .nn-auth-card {
   width: 100%;
-  max-width: 380px;
-  padding: 40px 32px;
+  max-width: 360px;
+  padding: 24px 8px;
 }
+.nn-auth-logo {
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid var(--nn-border);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+.nn-auth-logo svg { width: 26px; height: 26px; }
 .nn-auth-title {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 700;
-  margin-bottom: 24px;
+  margin-bottom: 6px;
   text-align: center;
+  letter-spacing: -0.3px;
+}
+.nn-auth-subtitle {
+  text-align: center;
+  color: var(--nn-text-secondary);
+  font-size: 13px;
+  margin-bottom: 22px;
+}
+.nn-auth-sso {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.nn-auth-sso button {
+  width: 100%;
+  padding: 9px 12px;
+  background: var(--nn-bg);
+  color: var(--nn-text);
+  border: 1px solid var(--nn-border-strong);
+  border-radius: var(--nn-radius);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: background 0.12s;
+}
+.nn-auth-sso button:hover { background: var(--nn-bg-hover); }
+.nn-auth-sso button svg { width: 16px; height: 16px; }
+.nn-auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0;
+  color: var(--nn-text-tertiary);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.nn-auth-divider::before, .nn-auth-divider::after {
+  content: ""; flex: 1; height: 1px; background: var(--nn-border);
 }
 .nn-auth-input {
   width: 100%;
