@@ -214,10 +214,24 @@ function Shell({ standalone }: { standalone: boolean }) {
 function MobileTabbar({ onOpenMenu, onQuickFind, standalone }: { onOpenMenu: () => void; onQuickFind: () => void; standalone: boolean }) {
   const loc = useLoc2();
   const path = useNotchPath();
+  const { user } = useNotchAuth();
+  const unread = useUnreadCount(user?.user_id);
   const active = (p: string) => loc.pathname.endsWith(p) || (p === "/home" && (loc.pathname === "/notch" || loc.pathname === "/notch/" || loc.pathname === "/"));
-  const item = (to: string, icon: JSX.Element, label: string) => (
-    <Link to={path(to)} className={`nn-tab ${active(to) ? "active" : ""}`} aria-label={label}>
-      {icon}<span>{label}</span>
+  const item = (to: string, icon: JSX.Element, label: string, badge?: number) => (
+    <Link to={path(to)} className={`nn-tab ${active(to) ? "active" : ""}`} aria-label={label} style={{ position: "relative" }}>
+      {icon}
+      {badge && badge > 0 ? (
+        <span
+          aria-label={`${badge} unread`}
+          style={{
+            position: "absolute", top: 4, right: "calc(50% - 18px)",
+            background: "var(--nn-danger, #e03e3e)", color: "#fff",
+            fontSize: 9, fontWeight: 600, lineHeight: 1,
+            padding: "2px 5px", borderRadius: 999, minWidth: 14, textAlign: "center",
+          }}
+        >{badge > 9 ? "9+" : badge}</span>
+      ) : null}
+      <span>{label}</span>
     </Link>
   );
   return (
@@ -225,7 +239,7 @@ function MobileTabbar({ onOpenMenu, onQuickFind, standalone }: { onOpenMenu: () 
       {item("/home", <HomeIcon size={18} />, "Home")}
       <button className="nn-tab" onClick={onQuickFind} aria-label="Search"><SearchIcon size={18} /><span>Search</span></button>
       <button className="nn-tab nn-tab-fab" onClick={onOpenMenu} aria-label="New / Menu"><PlusIcon size={20} /></button>
-      {item("/notifications", <BellIcon size={18} />, "Inbox")}
+      {item("/notifications", <BellIcon size={18} />, "Inbox", unread)}
       {item("/settings", <SettingsIcon size={18} />, "Settings")}
     </nav>
   );
