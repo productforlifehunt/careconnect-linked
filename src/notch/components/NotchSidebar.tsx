@@ -78,6 +78,44 @@ export function NotchSidebar() {
     setDragSection(null);
   };
 
+  // Bulk selection: cmd/ctrl-click to toggle; drag any selected item to move all.
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const clearSelection = () => setSelected(new Set());
+  const toggleSelected = (id: string) => setSelected((s) => {
+    const n = new Set(s);
+    if (n.has(id)) n.delete(id); else n.add(id);
+    return n;
+  });
+  const bulkDelete = async () => {
+    if (!selected.size) return;
+    if (!(await nnConfirm(`Move ${selected.size} page${selected.size > 1 ? "s" : ""} to trash?`))) return;
+    for (const id of selected) {
+      try { await cctUpdate(NN.block, id, { archived: 1 }); } catch (e) { console.error(e); }
+    }
+    clearSelection();
+    await loadAll();
+  };
+  const bulkMove = async (destParentId: string) => {
+    if (!selected.size) return;
+    // Prevent moving into own descendant
+    const isDescendant = (root: string, cand: string): boolean => {
+      let cur: any = pages.find((x) => String(x.id) === String(cand));
+      while (cur) {
+        if (String(cur.id) === String(root)) return true;
+        cur = pages.find((x) => String(x.id) === String(cur.parent_id));
+      }
+      return false;
+    };
+    for (const id of selected) {
+      if (isDescendant(id, destParentId)) continue;
+      try { await cctUpdate(NN.block, id, { parent_id: destParentId }); } catch (e) { console.error(e); }
+    }
+    clearSelection();
+    setExpanded((s) => ({ ...s, [destParentId]: true }));
+    await loadAll();
+  };
+
+
   useEffect(() => {
     if (!user) return;
     let alive = true;
@@ -278,31 +316,50 @@ export function NotchSidebar() {
           }}
         />
       );
+      const isSelected = selected.has(String(p.id));
       return (
         <div key={p.id}>
           {idx === 0 && dropLine(true)}
           <div
-            className={`nn-sidebar-item ${isActive ? "active" : ""}`}
-            style={{ paddingLeft: 14 + depth * 12 }}
+            className={`nn-sidebar-item ${isActive ? "active" : ""} ${isSelected ? "nn-selected" : ""}`}
+            style={{ paddingLeft: 14 + depth * 12, ...(isSelected ? { background: "var(--nn-blue-bg, rgba(35,131,226,0.15))" } : {}) }}
             draggable
-            onDragStart={(e) => { e.dataTransfer.setData("text/nn-page", p.id); e.dataTransfer.effectAllowed = "move"; }}
+            onDragStart={(e) => {
+              // If dragging a selected item, carry all selected IDs; else drag single.
+              const ids = isSelected && selected.size > 1 ? Array.from(selected) : [String(p.id)];
+              e.dataTransfer.setData("text/nn-page", String(p.id));
+              e.dataTransfer.setData("text/nn-pages", JSON.stringify(ids));
+              e.dataTransfer.effectAllowed = "move";
+            }}
             onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
             onDrop={async (e) => {
               e.preventDefault();
               e.stopPropagation();
-              const src = e.dataTransfer.getData("text/nn-page");
-              if (!src || src === p.id) return;
-              // prevent dropping onto own descendant
-              let cur: any = pages.find((x) => x.id === p.id);
-              while (cur) {
-                if (String(cur.id) === String(src)) return;
-                cur = pages.find((x) => String(x.id) === String(cur.parent_id));
+              const many = e.dataTransfer.getData("text/nn-pages");
+              const ids: string[] = many ? JSON.parse(many) : [e.dataTransfer.getData("text/nn-page")].filter(Boolean);
+              if (!ids.length) return;
+              const isDescendant = (root: string, cand: string): boolean => {
+                let cur: any = pages.find((x) => String(x.id) === String(cand));
+                while (cur) {
+                  if (String(cur.id) === String(root)) return true;
+                  cur = pages.find((x) => String(x.id) === String(cur.parent_id));
+                }
+                return false;
+              };
+              for (const src of ids) {
+                if (String(src) === String(p.id)) continue;
+                if (isDescendant(src, p.id)) continue;
+                await cctUpdate(NN.block, src, { parent_id: p.id });
               }
-              await cctUpdate(NN.block, src, { parent_id: p.id });
               setExpanded((s) => ({ ...s, [p.id]: true }));
+              if (ids.length > 1) clearSelection();
               await loadAll();
             }}
-            onClick={() => nav(path(`/p/${p.id}`))}
+            onClick={(e) => {
+              if (e.metaKey || e.ctrlKey) { e.preventDefault(); toggleSelected(String(p.id)); return; }
+              if (selected.size) clearSelection();
+              nav(path(`/p/${p.id}`));
+            }}
             onContextMenu={(e) => { e.preventDefault(); setCtx({ x: e.clientX, y: e.clientY, page: p }); }}
           >
             <span
@@ -482,6 +539,33 @@ export function NotchSidebar() {
         };
         return <>{sectionOrder.map((k) => sections[k])}</>;
       })()}
+
+      {selected.size > 0 && (
+        <div style={{ margin: "8px", padding: "8px 10px", background: "var(--nn-bg-secondary)", border: "1px solid var(--nn-border-strong)", borderRadius: 6, display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
+          <span style={{ flex: 1, color: "var(--nn-text)" }}>{selected.size} selected</span>
+          <button
+            onClick={async () => {
+              const name = await nnPrompt("Move selected pages under which parent? Enter page ID (or leave blank for workspace root).", { title: "Bulk move", placeholder: "page id or blank" });
+              if (name === null) return;
+              const dest = name.trim() || activeWs;
+              if (dest) await bulkMove(dest);
+            }}
+            style={{ background: "transparent", border: "1px solid var(--nn-border)", color: "var(--nn-text)", borderRadius: 3, padding: "2px 8px", cursor: "pointer", fontSize: 11 }}
+            title="Move all selected under a parent page"
+          >Move…</button>
+          <button
+            onClick={bulkDelete}
+            style={{ background: "transparent", border: "1px solid var(--nn-border)", color: "var(--nn-danger)", borderRadius: 3, padding: "2px 8px", cursor: "pointer", fontSize: 11 }}
+          >Trash</button>
+          <button
+            onClick={clearSelection}
+            style={{ background: "transparent", border: "none", color: "var(--nn-text-secondary)", cursor: "pointer", fontSize: 14 }}
+            title="Clear selection"
+          >×</button>
+        </div>
+      )}
+
+
 
       <div style={{ padding: 8, borderTop: "1px solid var(--nn-border)", fontSize: 12, color: "var(--nn-text-secondary)", display: "flex", alignItems: "center", gap: 8 }}>
         <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.user_email}</span>
