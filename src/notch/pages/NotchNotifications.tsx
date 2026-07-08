@@ -51,13 +51,13 @@ export default function NotchNotifications() {
     return () => clearInterval(t);
   }, [load]);
 
-  const onRead = async (id: string) => { await markRead(id); load(); };
-  const onDelete = async (id: string) => { await deleteNotification(id); load(); };
-  const onReadAll = async () => { if (user) { await markAllRead(String(user.user_id)); load(); } };
+  const onRead = async (id: string) => { await markRead(id); emitUnreadChanged(); load(); };
+  const onDelete = async (id: string) => { await deleteNotification(id); emitUnreadChanged(); load(); };
+  const onReadAll = async () => { if (user) { await markAllRead(String(user.user_id)); emitUnreadChanged(); load(); } };
   const onEnableBrowser = async () => { await requestBrowserNotificationPermission(); };
 
   const openTarget = async (n: AppNotification) => {
-    if (!n.read_at) await markRead(n.id);
+    if (!n.read_at) { await markRead(n.id); emitUnreadChanged(); }
     if (n.block_id) nav(path(`/p/${n.block_id}`));
   };
 
