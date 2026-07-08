@@ -318,6 +318,94 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
     await load();
   };
 
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const toggleRowSelect = (id: string) => setSelectedRows((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const clearSelection = () => setSelectedRows(new Set());
+
+  const bulkArchive = async () => {
+    for (const id of selectedRows) await cctUpdate(NN.block, id, { archived: 1, in_trash: 1 });
+    clearSelection();
+    await load();
+  };
+  const bulkDuplicate = async () => {
+    for (const id of selectedRows) {
+      const src = rows.find((r) => r.id === id); if (!src) continue;
+      await cctCreate(NN.block, {
+        workspace_id: workspaceId, parent_id: databaseId, type: "page",
+        title: src.title ? `${src.title} (copy)` : "Untitled (copy)",
+        icon: src.icon || "", properties: src.properties || JSON.stringify({}),
+        content_order: JSON.stringify([]), archived: 0, in_trash: 0,
+        created_by: user?.user_id || 0, last_edited_by: user?.user_id || 0,
+      });
+    }
+    clearSelection();
+    await load();
+  };
+
+  // ── CSV import / export ─────────────────────────────────────────────
+  const escapeCsv = (s: string) => /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  const parseCsv = (text: string): string[][] => {
+    const rowsOut: string[][] = []; let cur: string[] = []; let val = ""; let inQ = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (inQ) {
+        if (c === '"') { if (text[i + 1] === '"') { val += '"'; i++; } else { inQ = false; } }
+        else val += c;
+      } else {
+        if (c === '"') inQ = true;
+        else if (c === ",") { cur.push(val); val = ""; }
+        else if (c === "\n" || c === "\r") { if (c === "\r" && text[i + 1] === "\n") i++; cur.push(val); rowsOut.push(cur); cur = []; val = ""; }
+        else val += c;
+      }
+    }
+    if (val || cur.length) { cur.push(val); rowsOut.push(cur); }
+    return rowsOut.filter((r) => r.some((c) => c.trim() !== ""));
+  };
+  const exportCsv = () => {
+    const cols = ["Name", ...schema.map((p) => p.name)];
+    const lines = [cols.map(escapeCsv).join(",")];
+    for (const r of visibleRows) {
+      const vals = [r.title || "", ...schema.map((p) => {
+        const v = getProp(r, p.key); return Array.isArray(v) ? v.join("|") : String(v ?? "");
+      })];
+      lines.push(vals.map(escapeCsv).join(","));
+    }
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `${dbBlock?.title || "database"}.csv`; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+  const csvInputRef = useRef<HTMLInputElement>(null);
+  const importCsv = async (file: File) => {
+    const text = await file.text();
+    const parsed = parseCsv(text);
+    if (!parsed.length) return;
+    const [header, ...body] = parsed;
+    const nameIdx = header.findIndex((h) => h.trim().toLowerCase() === "name");
+    const colMap = header.map((h) => schema.find((p) => p.name.toLowerCase() === h.trim().toLowerCase()));
+    for (const row of body) {
+      const props: Record<string, any> = {};
+      header.forEach((_h, i) => {
+        const p = colMap[i]; if (!p || i === nameIdx) return;
+        const raw = row[i] ?? "";
+        if (p.type === "multiselect") props[p.key] = raw.split("|").map((s) => s.trim()).filter(Boolean);
+        else if (p.type === "checkbox") props[p.key] = /^(1|true|yes)$/i.test(raw);
+        else if (p.type === "number") props[p.key] = raw === "" ? "" : Number(raw);
+        else props[p.key] = raw;
+      });
+      await cctCreate(NN.block, {
+        workspace_id: workspaceId, parent_id: databaseId, type: "page",
+        title: nameIdx >= 0 ? (row[nameIdx] || "") : "",
+        icon: "", properties: JSON.stringify(props), content_order: JSON.stringify([]),
+        archived: 0, in_trash: 0,
+        created_by: user?.user_id || 0, last_edited_by: user?.user_id || 0,
+      });
+    }
+    toast({ title: `Imported ${body.length} rows` });
+    await load();
+  };
+
   const statusProp = useMemo(() => schema.find((p) => p.type === "select") || null, [schema]);
   const dateProps = useMemo(() => schema.filter((p) => p.type === "date"), [schema]);
   const dateProp = dateProps[0] || null;
