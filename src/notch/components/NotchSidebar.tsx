@@ -166,7 +166,11 @@ export function NotchSidebar() {
       }
     } catch (e: any) {
       console.error("Sidebar load failed", e);
-      setLoadErr(e?.message?.includes("fetch") ? "Can't reach backend" : (e?.message || "Failed to load"));
+      const raw = String(e?.message || "");
+      let friendly = "Couldn't load your pages.";
+      if (/fetch|network|Failed to fetch/i.test(raw)) friendly = "Can't reach the server.";
+      else if (/401|403|token|jwt|unauth/i.test(raw)) friendly = "Session expired. Please sign in again.";
+      setLoadErr(friendly);
     } finally {
       setLoading(false);
     }
