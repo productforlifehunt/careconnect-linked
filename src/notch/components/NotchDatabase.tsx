@@ -752,6 +752,17 @@ function SchemaEditor({ schema, allBlocks, onClose, onSave }: { schema: PropDef[
                 )}
               </>
             )}
+            {p.type === "relation" && (
+              <select
+                value={p.relation?.databaseId || ""}
+                onChange={(e) => update(i, { relation: { databaseId: e.target.value } })}
+                className="nn-auth-input"
+                style={{ marginBottom: 0, width: 220 }}
+              >
+                <option value="">Target database…</option>
+                {databases.map((d) => <option key={d.id} value={d.id}>{d.title || "Untitled"}</option>)}
+              </select>
+            )}
             <button onClick={() => del(i)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-tertiary)" }}><Trash2 size={14} /></button>
           </div>
         ))}
