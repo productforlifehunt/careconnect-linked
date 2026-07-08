@@ -237,6 +237,7 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
   const [selected, setSelected] = useState(0);
   const [hoverBlock, setHoverBlock] = useState<{ top: number; el: HTMLElement } | null>(null);
   const [blockMenu, setBlockMenu] = useState<{ top: number; left: number; el: HTMLElement } | null>(null);
+  const [tableCtx, setTableCtx] = useState<{ top: number; left: number } | null>(null);
   const [aiBusy, setAiBusy] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const notchPath = useNotchPath();
@@ -361,6 +362,14 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
       if (tgt.closest("a[href]")) return;
       e.preventDefault();
       const wr = wrapperRef.current?.getBoundingClientRect();
+      // If inside a table cell, open dedicated table context menu instead.
+      if (tgt.closest("td, th")) {
+        setTableCtx({
+          top: (e.clientY - (wr?.top || 0)),
+          left: (e.clientX - (wr?.left || 0)),
+        });
+        return;
+      }
       const nr = node.getBoundingClientRect();
       setHoverBlock({ top: nr.top - (wr?.top || 0), el: node });
       setBlockMenu({
@@ -786,6 +795,21 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
               window.dispatchEvent(new CustomEvent("nn:open-comment", { detail: { from: range?.from, to: range?.to, threadId } }));
               setBlockMenu(null);
             }}><span className="nn-title">Comment</span></div>
+            <div className="nn-sidebar-item" onClick={async () => {
+              if (!blockMenu || !editor || !onCreateSubpage) { setBlockMenu(null); return; }
+              const range = nodeRangeFor(blockMenu.el);
+              if (!range) { setBlockMenu(null); return; }
+              const text = editor.state.doc.textBetween(range.from, range.to, " ").trim();
+              const sub = await onCreateSubpage();
+              if (sub) {
+                editor.chain().focus()
+                  .setTextSelection(range)
+                  .deleteSelection()
+                  .insertContent({ type: "paragraph", content: [{ type: "text", text: text || sub.title, marks: [{ type: "link", attrs: { href: sub.href } }] }] })
+                  .run();
+              }
+              setBlockMenu(null);
+            }}><span className="nn-title">Turn into page</span></div>
             <div className="nn-sidebar-item" onClick={deleteBlock} style={{ color: "var(--nn-danger, #e03e3e)" }}><span className="nn-title">Delete</span></div>
 
             <div style={{ borderTop: "1px solid var(--nn-border)", margin: "4px 0" }} />
@@ -820,6 +844,25 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
                 />
               ))}
             </div>
+          </div>
+        </>
+      )}
+      {tableCtx && editor && (
+        <>
+          <div style={{ position: "fixed", inset: 0, zIndex: 90 }} onClick={() => setTableCtx(null)} />
+          <div className="nn-block-menu" style={{ top: tableCtx.top, left: tableCtx.left, minWidth: 200 }}>
+            <div className="nn-sidebar-item" onClick={() => { editor.chain().focus().addRowBefore().run(); setTableCtx(null); }}><span className="nn-title">Insert row above</span></div>
+            <div className="nn-sidebar-item" onClick={() => { editor.chain().focus().addRowAfter().run(); setTableCtx(null); }}><span className="nn-title">Insert row below</span></div>
+            <div className="nn-sidebar-item" onClick={() => { editor.chain().focus().addColumnBefore().run(); setTableCtx(null); }}><span className="nn-title">Insert column left</span></div>
+            <div className="nn-sidebar-item" onClick={() => { editor.chain().focus().addColumnAfter().run(); setTableCtx(null); }}><span className="nn-title">Insert column right</span></div>
+            <div style={{ borderTop: "1px solid var(--nn-border)", margin: "4px 0" }} />
+            <div className="nn-sidebar-item" onClick={() => { editor.chain().focus().toggleHeaderRow().run(); setTableCtx(null); }}><span className="nn-title">Toggle header row</span></div>
+            <div className="nn-sidebar-item" onClick={() => { editor.chain().focus().toggleHeaderColumn().run(); setTableCtx(null); }}><span className="nn-title">Toggle header column</span></div>
+            <div className="nn-sidebar-item" onClick={() => { editor.chain().focus().mergeOrSplit().run(); setTableCtx(null); }}><span className="nn-title">Merge / split cells</span></div>
+            <div style={{ borderTop: "1px solid var(--nn-border)", margin: "4px 0" }} />
+            <div className="nn-sidebar-item" onClick={() => { editor.chain().focus().deleteRow().run(); setTableCtx(null); }} style={{ color: "var(--nn-danger, #e03e3e)" }}><span className="nn-title">Delete row</span></div>
+            <div className="nn-sidebar-item" onClick={() => { editor.chain().focus().deleteColumn().run(); setTableCtx(null); }} style={{ color: "var(--nn-danger, #e03e3e)" }}><span className="nn-title">Delete column</span></div>
+            <div className="nn-sidebar-item" onClick={() => { editor.chain().focus().deleteTable().run(); setTableCtx(null); }} style={{ color: "var(--nn-danger, #e03e3e)" }}><span className="nn-title">Delete table</span></div>
           </div>
         </>
       )}
