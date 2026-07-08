@@ -370,14 +370,25 @@ export default function NotchPage() {
               />
             )}
           </div>
-          <textarea
-            ref={titleRef}
-            className="nn-page-title"
-            placeholder={isDatabase ? "Untitled database" : "Untitled"}
-            value={title}
-            onChange={(e) => onTitleChange(e.target.value)}
-            rows={1}
-          />
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 6 }}>
+            <textarea
+              ref={titleRef}
+              className="nn-page-title"
+              placeholder={isDatabase ? "Untitled database" : "Untitled"}
+              value={title}
+              onChange={(e) => onTitleChange(e.target.value)}
+              rows={1}
+              style={{ flex: 1 }}
+            />
+            {verified && (
+              <span
+                title="Verified page — content has been reviewed by a workspace owner"
+                style={{ display: "inline-flex", alignItems: "center", gap: 4, marginTop: 14, padding: "2px 8px", background: "rgba(68,131,97,0.14)", color: "#448361", borderRadius: 12, fontSize: 12, fontWeight: 500, whiteSpace: "nowrap" }}
+              >
+                <BadgeCheck size={13} /> Verified
+              </span>
+            )}
+          </div>
           {isDatabase ? (
             <NotchDatabase databaseId={pageId} workspaceId={String(block.workspace_id || "")} />
           ) : (
