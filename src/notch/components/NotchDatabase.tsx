@@ -677,7 +677,6 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
           <button onClick={clearSelection} className="nn-topbar-btn">Cancel</button>
         </div>
       )}
-      <div style={{ display: "none" }}>
 
       {view === "table" && (
         <div style={{ border: "1px solid var(--nn-border)", borderRadius: 4, overflow: "auto" }}>
