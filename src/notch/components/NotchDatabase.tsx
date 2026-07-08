@@ -369,6 +369,8 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
   };
 
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const [subExpanded, setSubExpanded] = useState<Set<string>>(new Set());
+
   const toggleRowSelect = (id: string) => setSelectedRows((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const clearSelection = () => setSelectedRows(new Set());
 
