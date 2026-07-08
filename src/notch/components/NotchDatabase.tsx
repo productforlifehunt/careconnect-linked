@@ -321,14 +321,30 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
 
   // Apply filters and sorts before rendering (all views use `visibleRows`)
   const visibleRows = useMemo(() => {
+  const evalCond = (row: Row, c: FilterCond): boolean => {
+    const raw = c.key === "__title__" ? (row.title || "") : getProp(row, c.key);
+    const s = String(raw ?? "").toLowerCase();
+    const q = c.val.toLowerCase();
+    switch (c.op) {
+      case "eq": return s === q;
+      case "ne": return s !== q;
+      case "contains": return s.includes(q);
+      case "not_contains": return !s.includes(q);
+      case "starts": return s.startsWith(q);
+      case "ends": return s.endsWith(q);
+      case "empty": return s === "";
+      case "not_empty": return s !== "";
+      case "gt": return Number(raw) > Number(c.val);
+      case "lt": return Number(raw) < Number(c.val);
+      case "gte": return Number(raw) >= Number(c.val);
+      case "lte": return Number(raw) <= Number(c.val);
+      default: return true;
+    }
+  };
+  const visibleRows = useMemo(() => {
     let r = rows;
-    if (filterKey) {
-      if (filterKey === "__title__") {
-        const q = filterVal.toLowerCase();
-        r = r.filter((row) => (row.title || "").toLowerCase().includes(q));
-      } else if (filterVal) {
-        r = r.filter((row) => String(getProp(row, filterKey) ?? "").toLowerCase().includes(filterVal.toLowerCase()));
-      }
+    if (filterConds.length) {
+      r = r.filter((row) => filterJoin === "and" ? filterConds.every((c) => evalCond(row, c)) : filterConds.some((c) => evalCond(row, c)));
     }
     if (sortKey) {
       const cmp = (a: Row, b: Row) => {
@@ -342,7 +358,7 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
       r = [...r].sort(cmp);
     }
     return r;
-  }, [rows, filterKey, filterVal, sortKey, sortDir]);
+  }, [rows, filterConds, filterJoin, sortKey, sortDir]);
 
   const renderCell = (r: Row, p: PropDef) => {
     const v = getProp(r, p.key) ?? "";
