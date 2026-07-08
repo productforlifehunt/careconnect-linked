@@ -53,6 +53,7 @@ export default function NotchPage() {
   const [smallText, setSmallText] = useState(false);
   const [verified, setVerified] = useState(false);
   const [snapshots, setSnapshots] = useState<Array<{ ts: number; content: any; title: string }>>([]);
+  const [diffIdx, setDiffIdx] = useState<number | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const saveTimer = useRef<any>(null);
