@@ -155,12 +155,12 @@ export default function NotchSearch() {
       else if (e.key === "ArrowUp") { e.preventDefault(); setSel((s) => Math.max(0, s - 1)); }
       else if (e.key === "Enter") {
         const r = results[sel];
-        if (r) nav(path(`/p/${r.row.id}`));
+        if (r) { pushRecent(q); setRecent(loadRecent()); nav(path(`/p/${r.row.id}`)); }
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [results, sel, nav, path]);
+  }, [results, sel, nav, path, q]);
 
   useEffect(() => {
     const el = listRef.current?.querySelector<HTMLDivElement>(`[data-idx="${sel}"]`);
