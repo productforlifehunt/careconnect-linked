@@ -573,15 +573,53 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
       {hoverBlock && (
         <div className="nn-block-handles" style={{ top: hoverBlock.top }}>
           <button title="Add block below" onClick={handlePlus}>+</button>
-          <button title="Block options" onClick={openBlockMenu}>⋮⋮</button>
+          <button
+            title="Drag to move · click for options"
+            draggable
+            onDragStart={onHandleDragStart}
+            onClick={openBlockMenu}
+            style={{ cursor: "grab" }}
+          >⋮⋮</button>
         </div>
       )}
       {blockMenu && (
         <>
           <div style={{ position: "fixed", inset: 0, zIndex: 90 }} onClick={() => setBlockMenu(null)} />
-          <div className="nn-block-menu" style={{ top: blockMenu.top + 20, left: blockMenu.left }}>
+          <div className="nn-block-menu" style={{ top: blockMenu.top + 20, left: blockMenu.left, minWidth: 200 }}>
             <div className="nn-sidebar-item" onClick={duplicateBlock}><span className="nn-title">Duplicate</span></div>
             <div className="nn-sidebar-item" onClick={deleteBlock} style={{ color: "var(--nn-danger, #e03e3e)" }}><span className="nn-title">Delete</span></div>
+            <div style={{ borderTop: "1px solid var(--nn-border)", margin: "4px 0" }} />
+            <div style={{ fontSize: 11, color: "var(--nn-text-tertiary)", padding: "4px 8px", textTransform: "uppercase", letterSpacing: 0.4 }}>Turn into</div>
+            {[
+              ["paragraph", "Text"], ["h1", "Heading 1"], ["h2", "Heading 2"], ["h3", "Heading 3"],
+              ["ul", "Bulleted list"], ["ol", "Numbered list"], ["todo", "To-do"], ["quote", "Quote"],
+              ["code", "Code"], ["callout", "Callout"],
+            ].map(([k, l]) => (
+              <div key={k} className="nn-sidebar-item" onClick={() => turnInto(k as any)}>
+                <span className="nn-title" style={{ fontSize: 13 }}>{l}</span>
+              </div>
+            ))}
+            <div style={{ borderTop: "1px solid var(--nn-border)", margin: "4px 0" }} />
+            <div style={{ fontSize: 11, color: "var(--nn-text-tertiary)", padding: "4px 8px", textTransform: "uppercase", letterSpacing: 0.4 }}>Background</div>
+            <div style={{ display: "flex", gap: 4, padding: "2px 8px 6px", flexWrap: "wrap" }}>
+              {[
+                ["transparent", "None"],
+                ["rgba(241,241,239,0.6)", "Gray"],
+                ["rgba(253,235,220,0.7)", "Orange"],
+                ["rgba(251,236,213,0.7)", "Yellow"],
+                ["rgba(219,237,219,0.7)", "Green"],
+                ["rgba(211,229,239,0.7)", "Blue"],
+                ["rgba(232,222,238,0.7)", "Purple"],
+                ["rgba(255,224,224,0.7)", "Red"],
+              ].map(([bg, name]) => (
+                <button
+                  key={bg}
+                  title={name}
+                  onClick={() => colorBlock(bg)}
+                  style={{ width: 18, height: 18, borderRadius: 3, background: bg, border: bg === "transparent" ? "1px dashed var(--nn-border-strong)" : "1px solid var(--nn-border)", cursor: "pointer" }}
+                />
+              ))}
+            </div>
           </div>
         </>
       )}
