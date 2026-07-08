@@ -588,14 +588,25 @@ export default function NotchPage() {
               rows={1}
               style={{ flex: 1 }}
             />
-            {verified && (
-              <span
-                title="Verified page — content has been reviewed by a workspace owner"
-                style={{ display: "inline-flex", alignItems: "center", gap: 4, marginTop: 14, padding: "2px 8px", background: "rgba(68,131,97,0.14)", color: "#448361", borderRadius: 12, fontSize: 12, fontWeight: 500, whiteSpace: "nowrap" }}
-              >
-                <BadgeCheck size={13} /> Verified
-              </span>
-            )}
+            {verified && (() => {
+              const now = Date.now();
+              const expired = verifiedMeta?.expires ? now > verifiedMeta.expires : false;
+              const when = verifiedMeta?.at ? new Date(verifiedMeta.at).toLocaleDateString() : "";
+              const by = verifiedMeta?.by || "";
+              const tip = expired
+                ? `Verification expired — click to re-verify`
+                : `Verified${by ? ` by ${by}` : ""}${when ? ` on ${when}` : ""}. Click to re-verify.`;
+              return (
+                <span
+                  title={tip}
+                  onClick={toggleVerified}
+                  style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4, marginTop: 14, padding: "2px 8px", background: expired ? "rgba(203,145,47,0.14)" : "rgba(68,131,97,0.14)", color: expired ? "#cb912f" : "#448361", borderRadius: 12, fontSize: 12, fontWeight: 500, whiteSpace: "nowrap" }}
+                >
+                  <BadgeCheck size={13} /> {expired ? "Re-verify" : "Verified"}
+                </span>
+              );
+            })()}
+
           </div>
           {isDatabase ? (
             <NotchDatabase databaseId={pageId} workspaceId={String(block.workspace_id || "")} />
