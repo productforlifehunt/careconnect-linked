@@ -1184,3 +1184,74 @@ function AutomationEditor({ rules, schema, onClose, onSave }: {
     </div>
   );
 }
+
+const FORMULA_HELPERS = [
+  "prop", "if", "empty", "length", "contains", "concat", "slice", "lower", "upper", "format",
+  "toNumber", "round", "abs", "max", "min", "now", "today", "dateAdd", "dateBetween", "formatDate",
+  "split", "join", "replace", "replaceAll", "startsWith", "endsWith", "test", "match", "trim",
+  "map", "filter", "reduce", "some", "every", "sum", "count",
+  "year", "month", "day", "hour", "minute", "weekday", "timestamp", "fromTimestamp",
+];
+
+function FormulaInput({ value, onChange, propKeys }: { value: string; onChange: (v: string) => void; propKeys: string[] }) {
+  const [open, setOpen] = useState(false);
+  const [caret, setCaret] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const currentToken = (() => {
+    const before = value.slice(0, caret);
+    const m = before.match(/([a-zA-Z_]\w*)$/);
+    return m ? m[1] : "";
+  })();
+  const suggestions = currentToken
+    ? [...FORMULA_HELPERS, ...propKeys].filter((s) => s.toLowerCase().startsWith(currentToken.toLowerCase()) && s !== currentToken).slice(0, 8)
+    : [];
+
+  const accept = (name: string) => {
+    const before = value.slice(0, caret).replace(/[a-zA-Z_]\w*$/, "");
+    const after = value.slice(caret);
+    const insert = FORMULA_HELPERS.includes(name) ? `${name}(` : name;
+    const next = before + insert + after;
+    onChange(next);
+    setOpen(false);
+    setTimeout(() => {
+      const pos = (before + insert).length;
+      inputRef.current?.focus();
+      inputRef.current?.setSelectionRange(pos, pos);
+    }, 0);
+  };
+
+  return (
+    <div style={{ position: "relative", display: "inline-block" }}>
+      <input
+        ref={inputRef}
+        value={value}
+        onChange={(e) => { onChange(e.target.value); setCaret(e.target.selectionStart || 0); setOpen(true); }}
+        onKeyUp={(e) => setCaret((e.target as HTMLInputElement).selectionStart || 0)}
+        onClick={(e) => setCaret((e.target as HTMLInputElement).selectionStart || 0)}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        onKeyDown={(e) => {
+          if (open && suggestions.length > 0 && (e.key === "Tab" || e.key === "Enter")) {
+            e.preventDefault();
+            accept(suggestions[0]);
+          } else if (e.key === "Escape") setOpen(false);
+        }}
+        placeholder="e.g. prop('price') * prop('qty')"
+        className="nn-auth-input"
+        style={{ marginBottom: 0, width: 220, fontFamily: "monospace" }}
+      />
+      {open && suggestions.length > 0 && (
+        <div style={{ position: "absolute", top: "100%", left: 0, marginTop: 2, background: "var(--nn-bg)", border: "1px solid var(--nn-border-strong)", borderRadius: 4, boxShadow: "0 4px 16px rgba(0,0,0,0.12)", zIndex: 200, minWidth: 220, maxHeight: 200, overflow: "auto" }}>
+          {suggestions.map((s, i) => (
+            <div key={s} onMouseDown={(e) => { e.preventDefault(); accept(s); }}
+              style={{ padding: "4px 8px", fontSize: 12, fontFamily: "monospace", cursor: "pointer", background: i === 0 ? "var(--nn-bg-secondary)" : "transparent", color: "var(--nn-text)" }}>
+              {s}{FORMULA_HELPERS.includes(s) && <span style={{ color: "var(--nn-text-tertiary)" }}>(…)</span>}
+            </div>
+          ))}
+          <div style={{ padding: "3px 8px", fontSize: 10, color: "var(--nn-text-tertiary)", borderTop: "1px solid var(--nn-border)" }}>Tab or Enter to insert</div>
+        </div>
+      )}
+    </div>
+  );
+}
