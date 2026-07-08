@@ -20,7 +20,7 @@ import Youtube from "@tiptap/extension-youtube";
 import { Details, DetailsSummary, DetailsContent } from "@tiptap/extension-details";
 import { useEffect, useRef, useState } from "react";
 import { Bold, Italic, Underline as UIcon, Strikethrough, Code, Link as LinkIcon, AlignLeft, AlignCenter, AlignRight, Sparkles } from "lucide-react";
-import { MathBlock, Columns, Column, SyncBlock, buildColumns } from "./notch-extensions";
+import { MathBlock, Columns, Column, SyncBlock, buildColumns, Callout, InlineMath, AudioBlock, VideoBlock, PdfBlock, Toc, Breadcrumb, TemplateButton } from "./notch-extensions";
 import { NotchMention } from "./notch-mention";
 import { nnUploadFile, pickFile } from "@/notch/lib/nn-files";
 import { nnPrompt, nnAlert } from "@/notch/lib/nn-dialog";
@@ -69,12 +69,8 @@ const SLASH_ITEMS = [
   { group: "Blocks", key: "quote", icon: "❝", name: "Quote", desc: "Capture a quote.", cmd: (e: any) => e.chain().focus().toggleBlockquote().run() },
   { group: "Blocks", key: "code", icon: "</>", name: "Code", desc: "Code snippet.", cmd: (e: any) => e.chain().focus().toggleCodeBlock().run() },
   { group: "Blocks", key: "divider", icon: "—", name: "Divider", desc: "Divide blocks.", cmd: (e: any) => e.chain().focus().setHorizontalRule().run() },
-  { group: "Blocks", key: "callout", icon: "💡", name: "Callout", desc: "Highlighted note block.",
-    cmd: (e: any) => e.chain().focus().insertContent({
-      type: "blockquote",
-      attrs: { class: "nn-callout" },
-      content: [{ type: "paragraph", content: [{ type: "text", text: "💡 " }] }],
-    }).run() },
+  { group: "Blocks", key: "callout", icon: "💡", name: "Callout", desc: "Highlighted note with icon.",
+    cmd: (e: any) => e.chain().focus().insertContent({ type: "callout", attrs: { icon: "💡", color: "default" }, content: [{ type: "paragraph", content: [{ type: "text", text: "Note" }] }] }).run() },
   { group: "Blocks", key: "toggle", icon: "▸", name: "Toggle", desc: "Collapsible details block.",
     cmd: (e: any) => e.chain().focus().insertContent({
       type: "details",
@@ -132,14 +128,32 @@ const SLASH_ITEMS = [
         }
       } catch (err: any) { nnAlert(`Upload failed: ${err.message || err}`); }
     } },
-  { group: "Advanced", key: "math", icon: "∑", name: "Math", desc: "Insert a LaTeX equation.",
+  { group: "Advanced", key: "math", icon: "∑", name: "Math equation", desc: "Block LaTeX equation.",
     cmd: (e: any) => e.chain().focus().insertContent({ type: "mathBlock", attrs: { latex: "" } }).run() },
+  { group: "Advanced", key: "imath", icon: "√", name: "Inline equation", desc: "Inline LaTeX equation.",
+    cmd: (e: any) => e.chain().focus().insertContent({ type: "inlineMath", attrs: { latex: "" } }).run() },
   { group: "Advanced", key: "cols2", icon: "▮▮", name: "2 columns", desc: "Two-column layout.",
     cmd: (e: any) => e.chain().focus().insertContent(buildColumns(2)).run() },
   { group: "Advanced", key: "cols3", icon: "▮▮▮", name: "3 columns", desc: "Three-column layout.",
     cmd: (e: any) => e.chain().focus().insertContent(buildColumns(3)).run() },
+  { group: "Advanced", key: "cols4", icon: "▮▮▮▮", name: "4 columns", desc: "Four-column layout.",
+    cmd: (e: any) => e.chain().focus().insertContent(buildColumns(4)).run() },
+  { group: "Advanced", key: "cols5", icon: "▮▮▮▮▮", name: "5 columns", desc: "Five-column layout.",
+    cmd: (e: any) => e.chain().focus().insertContent(buildColumns(5)).run() },
   { group: "Advanced", key: "sync", icon: "🔗", name: "Sync block", desc: "Mirror another page's content, live.",
     cmd: (e: any) => e.chain().focus().insertContent({ type: "syncBlock", attrs: { sourceId: "" } }).run() },
+  { group: "Advanced", key: "toc", icon: "☰", name: "Table of contents", desc: "Auto-list of headings.",
+    cmd: (e: any) => e.chain().focus().insertContent({ type: "toc" }).run() },
+  { group: "Advanced", key: "crumb", icon: "›", name: "Breadcrumb", desc: "Show page hierarchy.",
+    cmd: (e: any) => e.chain().focus().insertContent({ type: "breadcrumb" }).run() },
+  { group: "Advanced", key: "tplbtn", icon: "⚡", name: "Template button", desc: "Click to duplicate template blocks.",
+    cmd: (e: any) => e.chain().focus().insertContent({ type: "templateButton", attrs: { label: "Add new", template: [{ type: "paragraph", content: [{ type: "text", text: "New item" }] }] } }).run() },
+  { group: "Media", key: "audio", icon: "🎵", name: "Audio", desc: "Embed audio (mp3, wav).",
+    cmd: (e: any) => e.chain().focus().insertContent({ type: "audio", attrs: { src: "" } }).run() },
+  { group: "Media", key: "video2", icon: "🎬", name: "Video", desc: "Embed video file (mp4, webm).",
+    cmd: (e: any) => e.chain().focus().insertContent({ type: "video", attrs: { src: "" } }).run() },
+  { group: "Media", key: "pdf", icon: "📄", name: "PDF", desc: "Inline PDF viewer.",
+    cmd: (e: any) => e.chain().focus().insertContent({ type: "pdf", attrs: { src: "" } }).run() },
   { group: "Basic", key: "subpage", icon: "📄", name: "Sub-page", desc: "Embed a new sub-page.", cmd: async (e: any, ctx: any) => {
       if (!ctx?.onCreateSubpage) return;
       const p = await ctx.onCreateSubpage();
@@ -178,9 +192,17 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
       DetailsSummary,
       DetailsContent,
       MathBlock,
+      InlineMath,
       Columns,
       Column,
       SyncBlock,
+      Callout,
+      AudioBlock,
+      VideoBlock,
+      PdfBlock,
+      Toc,
+      Breadcrumb,
+      TemplateButton,
       NotchMention,
     ],
     content: content || "",

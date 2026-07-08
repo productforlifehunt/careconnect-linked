@@ -916,3 +916,65 @@
 .nn-history-title { font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nn-history-ts { font-size: 11px; color: var(--nn-text-secondary); }
 .nn-history-actions { display: flex; gap: 4px; }
+
+/* ─── Callout node ─────────────────────────────────────────── */
+.nn-callout { display: flex; gap: 10px; padding: 12px 14px; border-radius: 6px; margin: 6px 0; background: rgba(120,120,120,0.08); border: 1px solid var(--nn-border); }
+.nn-callout-default { background: rgba(120,120,120,0.08); }
+.nn-callout-gray { background: rgba(120,120,120,0.16); }
+.nn-callout-brown { background: rgba(140,90,50,0.15); }
+.nn-callout-orange { background: rgba(255,140,60,0.15); }
+.nn-callout-yellow { background: rgba(255,212,0,0.18); }
+.nn-callout-green { background: rgba(80,200,120,0.15); }
+.nn-callout-blue { background: rgba(80,140,240,0.15); }
+.nn-callout-purple { background: rgba(170,100,220,0.15); }
+.nn-callout-pink { background: rgba(240,120,180,0.15); }
+.nn-callout-red { background: rgba(240,80,80,0.15); }
+.nn-callout-icon { font-size: 22px; line-height: 1; position: relative; user-select: none; }
+.nn-callout-body { flex: 1; min-width: 0; }
+.nn-callout-body > p:first-child { margin-top: 0; }
+.nn-callout-body > p:last-child { margin-bottom: 0; }
+.nn-callout-icon-picker { position: absolute; top: 28px; left: 0; background: var(--nn-bg); border: 1px solid var(--nn-border-strong); border-radius: 6px; padding: 6px; display: flex; flex-wrap: wrap; gap: 4px; z-index: 20; box-shadow: 0 6px 20px rgba(0,0,0,0.12); max-width: 220px; }
+.nn-callout-icon-picker button { background: transparent; border: 0; cursor: pointer; padding: 4px 6px; border-radius: 4px; font-size: 18px; }
+.nn-callout-icon-picker button:hover { background: var(--nn-bg-hover); }
+.nn-swatch { width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--nn-border); }
+.nn-swatch-default { background: rgba(120,120,120,0.2); }
+.nn-swatch-gray { background: #999; } .nn-swatch-brown { background: #8b5a32; }
+.nn-swatch-orange { background: #ff8c3c; } .nn-swatch-yellow { background: #ffd400; }
+.nn-swatch-green { background: #4bc47a; } .nn-swatch-blue { background: #508cf0; }
+.nn-swatch-purple { background: #aa64dc; } .nn-swatch-pink { background: #f078b4; } .nn-swatch-red { background: #f05050; }
+
+/* ─── Inline math ──────────────────────────────────────────── */
+.nn-imath { display: inline-block; padding: 0 2px; border-radius: 3px; cursor: pointer; }
+.nn-imath:hover { background: var(--nn-bg-hover); }
+.nn-imath-edit input { background: var(--nn-bg-secondary); border: 1px solid var(--nn-accent); border-radius: 3px; padding: 1px 4px; font-family: monospace; font-size: 12px; color: var(--nn-text); }
+
+/* ─── Audio / Video / PDF ──────────────────────────────────── */
+.nn-audio, .nn-video, .nn-pdf { margin: 8px 0; padding: 10px; border: 1px solid var(--nn-border); border-radius: 6px; background: var(--nn-bg-secondary); }
+.nn-audio-head, .nn-pdf-head { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--nn-text-muted); margin-bottom: 6px; }
+.nn-audio input, .nn-video input, .nn-pdf input { width: 100%; background: var(--nn-bg); border: 1px solid var(--nn-border-strong); border-radius: 4px; padding: 6px 8px; color: var(--nn-text); font-size: 13px; }
+.nn-audio figcaption input, .nn-video figcaption input { border: 0; background: transparent; font-size: 12px; text-align: center; color: var(--nn-text-muted); }
+
+/* ─── Table of contents ────────────────────────────────────── */
+.nn-toc { border: 1px solid var(--nn-border); border-radius: 6px; padding: 12px 14px; margin: 6px 0; background: var(--nn-bg-secondary); }
+.nn-toc-title { font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: var(--nn-text-muted); margin-bottom: 6px; }
+.nn-toc-empty { font-size: 13px; color: var(--nn-text-muted); font-style: italic; }
+.nn-toc-item { padding: 3px 0; cursor: pointer; font-size: 14px; color: var(--nn-text); border-radius: 3px; }
+.nn-toc-item:hover { color: var(--nn-accent); text-decoration: underline; }
+.nn-toc-l1 { padding-left: 0; font-weight: 500; }
+.nn-toc-l2 { padding-left: 16px; }
+.nn-toc-l3 { padding-left: 32px; font-size: 13px; opacity: 0.85; }
+
+/* ─── Breadcrumb block ─────────────────────────────────────── */
+.nn-crumb { font-size: 13px; color: var(--nn-text-muted); padding: 6px 0; margin: 6px 0; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+.nn-crumb-link { color: var(--nn-text); text-decoration: none; padding: 2px 6px; border-radius: 3px; }
+.nn-crumb-link:hover { background: var(--nn-bg-hover); }
+
+/* ─── Template button ──────────────────────────────────────── */
+.nn-tplbtn { display: inline-flex; align-items: center; gap: 4px; margin: 6px 0; }
+.nn-tplbtn-main { background: var(--nn-bg-secondary); border: 1px solid var(--nn-border-strong); border-radius: 4px; padding: 6px 12px; cursor: pointer; color: var(--nn-text); font-size: 13px; }
+.nn-tplbtn-main:hover { background: var(--nn-bg-hover); }
+.nn-tplbtn-cfg { background: transparent; border: 0; cursor: pointer; padding: 4px; color: var(--nn-text-muted); font-size: 13px; }
+.nn-tplbtn-cfg:hover { color: var(--nn-text); }
+.nn-tplbtn-cfg-panel { position: absolute; margin-top: 40px; background: var(--nn-bg); border: 1px solid var(--nn-border-strong); border-radius: 6px; padding: 10px; z-index: 30; box-shadow: 0 6px 20px rgba(0,0,0,0.12); display: flex; flex-direction: column; gap: 6px; min-width: 300px; }
+.nn-tplbtn-cfg-panel input, .nn-tplbtn-cfg-panel textarea { background: var(--nn-bg-secondary); border: 1px solid var(--nn-border-strong); border-radius: 4px; padding: 6px 8px; color: var(--nn-text); font-family: monospace; font-size: 12px; }
+.nn-tplbtn-cfg-panel button { align-self: flex-end; background: var(--nn-accent); color: white; border: 0; border-radius: 4px; padding: 4px 12px; cursor: pointer; font-size: 12px; }
