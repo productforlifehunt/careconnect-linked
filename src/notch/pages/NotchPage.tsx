@@ -520,14 +520,27 @@ export default function NotchPage() {
                 <span className="nn-icon" style={{ fontSize: 11, fontWeight: 700, letterSpacing: -0.5 }}>MD</span>
                 <span className="nn-title">Export as Markdown</span>
               </div>
+              <div onClick={exportHtml} className="nn-sidebar-item">
+                <span className="nn-icon"><CodeIcon size={14} /></span>
+                <span className="nn-title">Export as HTML</span>
+              </div>
+              <div onClick={exportPdf} className="nn-sidebar-item">
+                <span className="nn-icon"><Printer size={14} /></span>
+                <span className="nn-title">Export as PDF (print)</span>
+              </div>
               <div onClick={showWordCount} className="nn-sidebar-item">
                 <span className="nn-icon" style={{ fontSize: 11, fontWeight: 700 }}>Σ</span>
                 <span className="nn-title">Word count</span>
+              </div>
+              <div onClick={movePage} className="nn-sidebar-item">
+                <span className="nn-icon"><FolderInput size={14} /></span>
+                <span className="nn-title">Move to…</span>
               </div>
               <div onClick={trashPage} className="nn-sidebar-item" style={{ color: "#e03e3e" }}>
                 <span className="nn-icon"><Trash2 size={14} /></span>
                 <span className="nn-title">Move to trash</span>
               </div>
+
             </div>
           )}
         </div>
