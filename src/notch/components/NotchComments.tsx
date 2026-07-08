@@ -77,6 +77,7 @@ export function NotchComments({ blockId }: { blockId: string }) {
         parent_id: parent_id ? String(parent_id) : "",
         body,
         resolved: 0,
+        author_id: user ? String(user.user_id) : "",
         author_display: user?.user_display_name || user?.user_email || "Anonymous",
       });
       const mentions = Array.from(new Set((body.match(/@(\d+)/g) || []).map((m) => m.slice(1))));
