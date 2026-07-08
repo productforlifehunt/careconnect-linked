@@ -1,6 +1,8 @@
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Home as HomeIcon, Search as SearchIcon, Bell as BellIcon, Plus as PlusIcon, Settings as SettingsIcon } from "lucide-react";
+import { Link, useLocation as useLoc2 } from "react-router-dom";
+import { useNotchPath } from "@/notch/context/NotchBaseContext";
 import { NotchAuthProvider, useNotchAuth } from "@/notch/context/NotchAuthContext";
 import { NotchBaseContext } from "@/notch/context/NotchBaseContext";
 import { NotchSidebar } from "@/notch/components/NotchSidebar";
