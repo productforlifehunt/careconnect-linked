@@ -7,7 +7,7 @@ import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 import { toast } from "@/hooks/use-toast";
 
 interface Props { databaseId: string; workspaceId: string; }
-type ViewMode = "table" | "board" | "calendar" | "timeline" | "gallery" | "list" | "chart";
+type ViewMode = "table" | "board" | "calendar" | "timeline" | "gallery" | "list" | "chart" | "form";
 type PropType = "text" | "number" | "select" | "multiselect" | "date" | "checkbox" | "url" | "email" | "phone" | "person" | "formula" | "rollup" | "button" | "ai" | "relation";
 type RollupAgg =
   | "count" | "count_values" | "count_unique" | "count_empty" | "count_not_empty"
