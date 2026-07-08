@@ -695,6 +695,7 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
             </div>
           </div>
         </>
+      )}
       {pagePicker && (() => {
         const q = pagePicker.query.toLowerCase();
         const filtered = (q ? pagePicker.pages.filter((p) => p.title.toLowerCase().includes(q)) : pagePicker.pages).slice(0, 40);
