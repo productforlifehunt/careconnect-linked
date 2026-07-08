@@ -660,6 +660,12 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
   };
 
   if (loading) return <div style={{ opacity: 0.5, padding: 12 }}>Loading…</div>;
+  if (loadErr) return (
+    <div style={{ padding: 16, border: "1px dashed var(--nn-border)", borderRadius: 6, textAlign: "center", color: "var(--nn-text-secondary)" }}>
+      <div style={{ fontSize: 13, marginBottom: 8 }}>{loadErr}</div>
+      <button className="nn-topbar-btn" onClick={() => load()}>Retry</button>
+    </div>
+  );
 
   return (
     <div style={{ marginTop: 12 }}>
