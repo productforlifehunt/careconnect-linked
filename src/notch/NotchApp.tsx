@@ -20,6 +20,7 @@ import NotchLanding from "@/notch/pages/NotchLanding";
 import NotchNotifications from "@/notch/pages/NotchNotifications";
 import NotchPublicPage from "@/notch/pages/NotchPublicPage";
 import { acceptInviteByToken } from "@/notch/lib/nn-collab";
+import { useUnreadCount } from "@/notch/lib/nn-use-unread";
 import { nnAlert } from "@/notch/lib/nn-dialog";
 import { useNotchTitle } from "@/notch/lib/nn-title";
 import "@/notch/styles/notch.css";
