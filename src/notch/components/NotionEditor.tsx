@@ -173,6 +173,7 @@ const SLASH_ITEMS = [
         ])
         .run();
     } },
+  { group: "Basic", key: "linkpage", icon: "🔗", name: "Link to page", desc: "Insert link to another page.", cmd: (_e: any, ctx: any) => { ctx?.onOpenPagePicker?.(); } },
 ];
 
 export function NotionEditor({ content, onChange, placeholder = "Write, press '/' for commands, or ⌃Space for AI…", onCreateSubpage }: Props) {
