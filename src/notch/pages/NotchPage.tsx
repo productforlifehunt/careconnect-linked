@@ -723,6 +723,53 @@ function CoverGallery({ current, onPick, onClose }: { current: string; onPick: (
   );
 }
 
+function MovePagePicker({ workspaceId, currentId, currentParentId, onPick, onClose }:
+  { workspaceId: string; currentId: string; currentParentId: string; onPick: (id: string) => void; onClose: () => void }) {
+  const [pages, setPages] = useState<Block[]>([]);
+  const [q, setQ] = useState("");
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const list = await cctList<Block>(NN.block, { per_page: 200 });
+        if (!alive) return;
+        setPages((list || []).filter((b) => b.id !== currentId && (b.type === "page" || b.type === "database" || !b.type)));
+      } finally { if (alive) setLoading(false); }
+    })();
+    return () => { alive = false; };
+  }, [currentId]);
+  const filtered = pages.filter((p) => !q || (p.title || "Untitled").toLowerCase().includes(q.toLowerCase()));
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 200, display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: 80 }} onClick={onClose}>
+      <div style={{ background: "var(--nn-bg)", borderRadius: 8, width: "100%", maxWidth: 480, maxHeight: "70vh", display: "flex", flexDirection: "column", boxShadow: "0 12px 40px rgba(0,0,0,0.2)" }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ padding: "10px 12px", borderBottom: "1px solid var(--nn-border)", display: "flex", alignItems: "center", gap: 8 }}>
+          <SearchIcon size={14} style={{ opacity: 0.6 }} />
+          <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Move page to…" style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontSize: 14, color: "var(--nn-text)" }} />
+          <button className="nn-topbar-btn" onClick={onClose}><X size={14} /></button>
+        </div>
+        <div style={{ overflow: "auto", padding: 4 }}>
+          {workspaceId && (
+            <div className="nn-sidebar-item" onClick={() => onPick(workspaceId)} style={{ opacity: currentParentId === workspaceId ? 0.5 : 1 }}>
+              <span className="nn-icon"><FolderInput size={14} /></span>
+              <span className="nn-title">Workspace root</span>
+            </div>
+          )}
+          {loading && <div style={{ padding: 12, fontSize: 12, color: "var(--nn-text-tertiary)" }}>Loading…</div>}
+          {!loading && filtered.length === 0 && <div style={{ padding: 12, fontSize: 12, color: "var(--nn-text-tertiary)" }}>No pages found.</div>}
+          {filtered.slice(0, 100).map((p) => (
+            <div key={p.id} className="nn-sidebar-item" onClick={() => onPick(p.id)} style={{ opacity: currentParentId === p.id ? 0.5 : 1 }}>
+              <span className="nn-icon">{p.icon || (p.type === "database" ? <Database size={14} /> : <FileText size={14} />)}</span>
+              <span className="nn-title" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.title || "Untitled"}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 function BreadcrumbTrail({ crumbs, pageId, onNav }: { crumbs: Block[]; pageId: string; onNav: (id: string) => void }) {
   const [open, setOpen] = useState(false);
   const MAX = 4;
