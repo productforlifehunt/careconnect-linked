@@ -5,6 +5,7 @@ import { NotchAuthProvider, useNotchAuth } from "@/notch/context/NotchAuthContex
 import { NotchBaseContext } from "@/notch/context/NotchBaseContext";
 import { NotchSidebar } from "@/notch/components/NotchSidebar";
 import { NotchQuickFind } from "@/notch/components/NotchQuickFind";
+import { NotchAskAI } from "@/notch/components/NotchAskAI";
 import NotchAuth from "@/notch/pages/NotchAuth";
 import NotchHome from "@/notch/pages/NotchHome";
 import NotchPage from "@/notch/pages/NotchPage";
@@ -31,6 +32,7 @@ function Shell({ standalone }: { standalone: boolean }) {
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [quickFind, setQuickFind] = useState(false);
+  const [askAI, setAskAI] = useState(false);
   const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
 
   useEffect(() => {
@@ -40,12 +42,15 @@ function Shell({ standalone }: { standalone: boolean }) {
   }, []);
   useEffect(() => { setDrawerOpen(false); }, [location.pathname]);
 
-  // Cmd/Ctrl + K quick find
+  // Cmd/Ctrl + K quick find, Cmd/Ctrl + J ask AI
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "K")) {
         e.preventDefault();
         setQuickFind((s) => !s);
+      } else if ((e.metaKey || e.ctrlKey) && (e.key === "j" || e.key === "J")) {
+        e.preventDefault();
+        setAskAI((s) => !s);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -164,6 +169,7 @@ function Shell({ standalone }: { standalone: boolean }) {
         </Routes>
       </div>
       {quickFind && <NotchQuickFind onClose={() => setQuickFind(false)} />}
+      {askAI && <NotchAskAI onClose={() => setAskAI(false)} />}
     </div>
   );
 }
