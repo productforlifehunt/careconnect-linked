@@ -319,6 +319,10 @@ export default function NotchPage() {
                 <span className="nn-icon">{locked ? <Unlock size={14} /> : <Lock size={14} />}</span>
                 <span className="nn-title">{locked ? "Unlock page" : "Lock page"}</span>
               </div>
+              <div onClick={toggleVerified} className="nn-sidebar-item">
+                <span className="nn-icon"><BadgeCheck size={14} color={verified ? "#448361" : undefined} /></span>
+                <span className="nn-title">{verified ? "Remove verified" : "Mark as verified (wiki)"}</span>
+              </div>
               <div onClick={takeSnapshot} className="nn-sidebar-item">
                 <span className="nn-icon"><History size={14} /></span>
                 <span className="nn-title">Save version</span>
