@@ -5,7 +5,7 @@ import { ChevronRight, Plus, MoreHorizontal, Search, Trash2, FileText, Settings,
 import { cctList, cctCreate, cctUpdate, cctDelete, NN } from "@/notch/lib/nn-client";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 import { useFavorites } from "@/notch/lib/nn-favorites";
-import { unreadCount, tickReminderQueue } from "@/notch/lib/nn-notifications";
+import { useUnreadCount } from "@/notch/lib/nn-use-unread";
 import { nnPrompt, nnConfirm } from "@/notch/lib/nn-dialog";
 import { NotchContextMenu, CtxIcons } from "@/notch/components/NotchContextMenu";
 import { toast } from "@/hooks/use-toast";
@@ -41,7 +41,7 @@ export function NotchSidebar() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [loadErr, setLoadErr] = useState<string | null>(null);
-  const [unread, setUnread] = useState(0);
+  const unread = useUnreadCount(user?.user_id);
   const [ctx, setCtx] = useState<{ x: number; y: number; page: Block } | null>(null);
   const [sectionsOpen, setSectionsOpen] = useState<Record<string, boolean>>(() => {
     try { return JSON.parse(localStorage.getItem("nn:sidebar:sections") || "{}"); } catch { return {}; }
@@ -130,20 +130,7 @@ export function NotchSidebar() {
 
 
 
-  useEffect(() => {
-    if (!user) return;
-    let alive = true;
-    const poll = async () => {
-      try {
-        await tickReminderQueue(String(user.user_id));
-        const n = await unreadCount(String(user.user_id));
-        if (alive) setUnread(n);
-      } catch { /* noop */ }
-    };
-    poll();
-    const t = setInterval(poll, 60_000);
-    return () => { alive = false; clearInterval(t); };
-  }, [user]);
+  // Unread badge count is delivered by useUnreadCount (polls + cross-tab sync + focus).
 
   const loadAll = useCallback(async () => {
     setLoading(true);
