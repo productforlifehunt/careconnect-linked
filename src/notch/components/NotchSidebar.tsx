@@ -183,6 +183,7 @@ export function NotchSidebar() {
   const deletePage = async (id: string) => {
     if (!(await nnConfirm("This page will be moved to Trash. You can restore it later.", "Delete page?"))) return;
     await cctUpdate(NN.block, id, { archived: 1, in_trash: 1 });
+    pushUndo("Deleted page", async () => { await cctUpdate(NN.block, id, { archived: 0, in_trash: 0 }); await loadAll(); });
     if (pageId === id) nav(path("/"));
     await loadAll();
   };
@@ -191,6 +192,7 @@ export function NotchSidebar() {
     const name = await nnPrompt("", { title: "Rename page", defaultValue: current, placeholder: "Page name" });
     if (name === null) return;
     await cctUpdate(NN.block, id, { title: name });
+    pushUndo(`Renamed to "${name || "Untitled"}"`, async () => { await cctUpdate(NN.block, id, { title: current }); await loadAll(); });
     await loadAll();
   };
 
