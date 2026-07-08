@@ -246,20 +246,7 @@ export default function NotchPage() {
     <>
       {!online && <div className="nn-offline-pill">Offline — changes will sync when back online</div>}
       <div className="nn-topbar">
-        <div className="nn-breadcrumb" style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          {crumbs.map((c, i) => (
-            <span key={c.id} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-              {i > 0 && <ChevronRight size={12} style={{ opacity: 0.5 }} />}
-              <span
-                onClick={() => c.id !== pageId && nav(path(`/p/${c.id}`))}
-                style={{ cursor: c.id === pageId ? "default" : "pointer", padding: "2px 6px", borderRadius: 3, color: c.id === pageId ? "var(--nn-text)" : "var(--nn-text-secondary)" }}
-              >
-                {c.icon && <span style={{ marginRight: 4 }}>{c.icon}</span>}
-                {c.title || "Untitled"}
-              </span>
-            </span>
-          ))}
-        </div>
+        <BreadcrumbTrail crumbs={crumbs} pageId={pageId} onNav={(id) => nav(path(`/p/${id}`))} />
         <button className="nn-topbar-btn" onClick={() => setShowShare(true)} title="Share">
           <Share2 size={14} style={{ marginRight: 4 }} /> Share
         </button>
@@ -538,4 +525,49 @@ function CoverGallery({ current, onPick, onClose }: { current: string; onPick: (
     </div>
   );
 }
+
+function BreadcrumbTrail({ crumbs, pageId, onNav }: { crumbs: Block[]; pageId: string; onNav: (id: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const MAX = 4;
+  const overflow = crumbs.length > MAX;
+  const visible = overflow ? [crumbs[0], ...crumbs.slice(-2)] : crumbs;
+  const hidden = overflow ? crumbs.slice(1, -2) : [];
+  return (
+    <div className="nn-breadcrumb" style={{ display: "flex", alignItems: "center", gap: 4, minWidth: 0, flex: 1, overflow: "hidden" }}>
+      {visible.map((c, i) => {
+        const showOverflowAfter = overflow && i === 0;
+        return (
+          <span key={c.id} style={{ display: "flex", alignItems: "center", gap: 4, minWidth: 0 }}>
+            {i > 0 && <ChevronRight size={12} style={{ opacity: 0.5, flexShrink: 0 }} />}
+            <span
+              onClick={() => c.id !== pageId && onNav(c.id)}
+              title={c.title || "Untitled"}
+              style={{ cursor: c.id === pageId ? "default" : "pointer", padding: "2px 6px", borderRadius: 3, color: c.id === pageId ? "var(--nn-text)" : "var(--nn-text-secondary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 200 }}
+            >
+              {c.icon && <span style={{ marginRight: 4 }}>{c.icon}</span>}
+              {c.title || "Untitled"}
+            </span>
+            {showOverflowAfter && (
+              <span style={{ position: "relative", display: "flex", alignItems: "center", gap: 4 }}>
+                <ChevronRight size={12} style={{ opacity: 0.5, flexShrink: 0 }} />
+                <span onClick={() => setOpen((v) => !v)} style={{ cursor: "pointer", padding: "2px 6px", borderRadius: 3, color: "var(--nn-text-secondary)" }} title={`${hidden.length} more`}>…</span>
+                {open && (
+                  <div style={{ position: "absolute", top: "100%", left: 0, marginTop: 4, background: "var(--nn-bg)", border: "1px solid var(--nn-border)", borderRadius: 6, boxShadow: "0 4px 12px rgba(0,0,0,0.15)", zIndex: 100, minWidth: 180, padding: 4 }} onMouseLeave={() => setOpen(false)}>
+                    {hidden.map((h) => (
+                      <div key={h.id} onClick={() => { setOpen(false); onNav(h.id); }} style={{ padding: "6px 10px", cursor: "pointer", borderRadius: 4, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} className="nn-hover-row">
+                        {h.icon && <span style={{ marginRight: 6 }}>{h.icon}</span>}
+                        {h.title || "Untitled"}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </span>
+            )}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 
