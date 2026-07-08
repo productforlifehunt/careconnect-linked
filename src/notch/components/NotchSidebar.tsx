@@ -40,6 +40,7 @@ export function NotchSidebar() {
   const [pages, setPages] = useState<Block[]>([]);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
+  const [loadErr, setLoadErr] = useState<string | null>(null);
   const [unread, setUnread] = useState(0);
   const [ctx, setCtx] = useState<{ x: number; y: number; page: Block } | null>(null);
   const [sectionsOpen, setSectionsOpen] = useState<Record<string, boolean>>(() => {
