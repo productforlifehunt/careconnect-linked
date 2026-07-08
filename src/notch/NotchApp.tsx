@@ -38,6 +38,23 @@ function Shell({ standalone }: { standalone: boolean }) {
   const [shortcuts, setShortcuts] = useState(false);
   const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
 
+  // Route-aware document.title so browser tab reflects the current Notch view.
+  const routeTitle = (() => {
+    const p = location.pathname.replace(/^.*?\/notch/, "") || "/";
+    if (p.startsWith("/auth")) return "Log in";
+    if (p.startsWith("/home")) return "Home";
+    if (p.startsWith("/search")) return "Search";
+    if (p.startsWith("/settings")) return "Settings";
+    if (p.startsWith("/trash")) return "Trash";
+    if (p.startsWith("/templates")) return "Templates";
+    if (p.startsWith("/notifications")) return "Notifications";
+    if (p.startsWith("/p/")) return "";
+    if (p.startsWith("/public/")) return "Shared page";
+    return "";
+  })();
+  useNotchTitle(routeTitle);
+
+
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener("resize", onResize);
