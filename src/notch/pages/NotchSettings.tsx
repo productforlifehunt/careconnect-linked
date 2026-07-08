@@ -183,3 +183,74 @@ function Shortcut({ keys, label }: { keys: string[]; label: string }) {
     </div>
   );
 }
+
+function ImportPanel() {
+  const { user } = useNotchAuth();
+  const [workspaces, setWorkspaces] = useState<any[]>([]);
+  const [ws, setWs] = useState<string>("");
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    (async () => {
+      try {
+        const w = await cctList<any>(NN.workspace);
+        setWorkspaces(w || []);
+        if (w?.[0]?.id) setWs(String(w[0].id));
+      } catch { /* noop */ }
+    })();
+  }, []);
+  const uid = user?.user_id || 0;
+  const pickAndRun = async (accept: string, run: (fs: FileList) => Promise<string>) => {
+    const input = document.createElement("input");
+    input.type = "file"; input.multiple = true; input.accept = accept;
+    input.onchange = async () => {
+      if (!input.files || !input.files.length) return;
+      if (!ws) { nnAlert("No workspace found.", "Import"); return; }
+      setBusy(true);
+      try { const msg = await run(input.files); nnAlert(msg, "Import complete"); }
+      catch (e: any) { nnAlert(`Import failed: ${e?.message || e}`, "Import error"); }
+      finally { setBusy(false); }
+    };
+    input.click();
+  };
+  return (
+    <section>
+      <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 12 }}>Import</div>
+      <div style={{ border: "1px solid var(--nn-border)", borderRadius: 6, padding: 16, display: "flex", flexDirection: "column", gap: 14 }}>
+        <div>
+          <label style={{ fontSize: 12, color: "var(--nn-text-secondary)", display: "block", marginBottom: 4 }}>Workspace</label>
+          <select value={ws} onChange={(e) => setWs(e.target.value)} style={{ padding: "6px 8px", border: "1px solid var(--nn-border)", borderRadius: 4, background: "var(--nn-bg)", color: "var(--nn-text)", fontSize: 13 }}>
+            {workspaces.map((w) => <option key={w.id} value={w.id}>{w.name || `Workspace ${w.id}`}</option>)}
+          </select>
+        </div>
+
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 500 }}>Markdown files (.md)</div>
+          <div style={{ fontSize: 12, color: "var(--nn-text-secondary)", marginBottom: 6 }}>Each file becomes a new page. Headings, lists, code blocks, checkboxes, and blockquotes are preserved.</div>
+          <button
+            className="nn-btn-primary" disabled={busy || !ws}
+            onClick={() => pickAndRun(".md,.markdown,.txt", async (fs) => {
+              const r = await importMarkdownFiles(fs, { workspaceId: ws, userId: uid });
+              return `Imported ${r.created} page${r.created === 1 ? "" : "s"}.`;
+            })}
+          >Choose Markdown files…</button>
+        </div>
+
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 500 }}>CSV file (.csv)</div>
+          <div style={{ fontSize: 12, color: "var(--nn-text-secondary)", marginBottom: 6 }}>The first row becomes column names. A new database with one table view is created.</div>
+          <button
+            className="nn-btn-primary" disabled={busy || !ws}
+            onClick={() => pickAndRun(".csv,text/csv", async (fs) => {
+              const r = await importCsvAsDatabase(fs[0], { workspaceId: ws, userId: uid });
+              return `Imported ${r.rows} row${r.rows === 1 ? "" : "s"} into a new database.`;
+            })}
+          >Choose CSV file…</button>
+        </div>
+
+        <div style={{ fontSize: 11, color: "var(--nn-text-tertiary)" }}>
+          Notion export ZIPs and HTML are not yet supported — extract the .md files first, then upload here.
+        </div>
+      </div>
+    </section>
+  );
+}
