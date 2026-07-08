@@ -8,7 +8,7 @@ import { toast } from "@/hooks/use-toast";
 
 interface Props { databaseId: string; workspaceId: string; }
 type ViewMode = "table" | "board" | "calendar" | "timeline" | "gallery" | "list" | "chart" | "form";
-type PropType = "text" | "number" | "select" | "multiselect" | "date" | "checkbox" | "url" | "email" | "phone" | "person" | "formula" | "rollup" | "button" | "ai" | "relation";
+type PropType = "text" | "number" | "select" | "multiselect" | "date" | "checkbox" | "url" | "email" | "phone" | "person" | "formula" | "rollup" | "button" | "ai" | "relation" | "files" | "rating" | "created_time" | "last_edited_time" | "created_by" | "last_edited_by" | "id";
 type RollupAgg =
   | "count" | "count_values" | "count_unique" | "count_empty" | "count_not_empty"
   | "percent_empty" | "percent_not_empty"
