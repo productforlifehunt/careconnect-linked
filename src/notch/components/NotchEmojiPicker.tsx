@@ -1,6 +1,7 @@
 import { useMemo, useState, useRef } from "react";
 import { Smile, Image as ImageIcon, Upload, Shuffle, Search } from "lucide-react";
 import { nnUploadFile, pickFile } from "@/notch/lib/nn-files";
+import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 
 interface Props {
   onPick: (emoji: string) => void;
