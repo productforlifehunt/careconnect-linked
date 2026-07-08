@@ -888,7 +888,7 @@ function SchemaEditor({ schema, allBlocks, onClose, onSave }: { schema: PropDef[
               <input value={(p.options || []).join(", ")} onChange={(e) => update(i, { options: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })} placeholder="Option A, Option B" className="nn-auth-input" style={{ marginBottom: 0, width: 200 }} />
             )}
             {p.type === "formula" && (
-              <input value={p.formula || ""} onChange={(e) => update(i, { formula: e.target.value })} placeholder="e.g. price * qty" className="nn-auth-input" style={{ marginBottom: 0, width: 220, fontFamily: "monospace" }} />
+              <FormulaInput value={p.formula || ""} onChange={(v) => update(i, { formula: v })} propKeys={schema.map((sp) => sp.name)} />
             )}
             {p.type === "rollup" && (
               <>
