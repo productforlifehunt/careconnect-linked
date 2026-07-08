@@ -1,13 +1,14 @@
 /**
- * Custom TipTap nodes for Notch Note: Math (KaTeX) + Columns layout + Sync Block.
+ * Custom TipTap nodes for Notch Note: Math, Columns, Sync, Callout, Audio, PDF, TOC, Breadcrumb, TemplateButton, InlineMath.
  */
-import { Node, mergeAttributes } from "@tiptap/core";
+import { Node, Mark, mergeAttributes } from "@tiptap/core";
 import { ReactNodeViewRenderer, NodeViewWrapper, NodeViewContent } from "@tiptap/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import katex from "katex";
 import "katex/dist/katex.min.css";
 import { cctGet, NN } from "@/notch/lib/nn-client";
-import { Link2, RefreshCw } from "lucide-react";
+import { Link2, RefreshCw, Info, FileText, Music, ChevronRight, Play } from "lucide-react";
+
 
 /* ─── Math Block ─────────────────────────────────────────────── */
 function MathView({ node, updateAttributes, editor }: any) {
@@ -61,13 +62,14 @@ export const MathBlock = Node.create({
 export const Columns = Node.create({
   name: "columns",
   group: "block",
-  content: "column{2,4}",
+  content: "column{2,5}",
   isolating: true,
   parseHTML() { return [{ tag: "div.nn-columns" }]; },
   renderHTML({ HTMLAttributes }) {
     return ["div", mergeAttributes({ class: "nn-columns" }, HTMLAttributes), 0];
   },
 });
+
 
 function ColumnView() {
   return (
