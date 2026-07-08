@@ -9,6 +9,12 @@ import { toast } from "@/hooks/use-toast";
 interface Props { databaseId: string; workspaceId: string; }
 type ViewMode = "table" | "board" | "calendar" | "timeline" | "gallery" | "list" | "chart";
 type PropType = "text" | "number" | "select" | "multiselect" | "date" | "checkbox" | "url" | "email" | "phone" | "person" | "formula" | "rollup" | "button" | "ai" | "relation";
+type RollupAgg =
+  | "count" | "count_values" | "count_unique" | "count_empty" | "count_not_empty"
+  | "percent_empty" | "percent_not_empty"
+  | "sum" | "avg" | "median" | "min" | "max" | "range"
+  | "earliest_date" | "latest_date" | "date_range"
+  | "show_original" | "show_unique";
 type ButtonAction =
   | { kind: "set"; prop: string; value: string }
   | { kind: "increment"; prop: string; by: number }
