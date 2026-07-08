@@ -263,6 +263,43 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
     if (p.type === "rollup") return (
       <span style={{ fontSize: 13, color: "var(--nn-text-secondary)" }}>{rollupValue(p)}</span>
     );
+    if (p.type === "button") return (
+      <button
+        onClick={async (e) => {
+          e.stopPropagation();
+          const actions = p.button?.actions || [];
+          let props: any = {}; try { props = r.properties ? JSON.parse(r.properties) : {}; } catch {}
+          for (const a of actions) {
+            if (a.kind === "set") props[a.prop] = a.value;
+            else if (a.kind === "increment") props[a.prop] = (Number(props[a.prop]) || 0) + (a.by || 1);
+            else if (a.kind === "open") window.open(a.url, "_blank", "noopener");
+          }
+          await cctUpdate(NN.block, r.id, { properties: JSON.stringify(props) });
+          setRows((rs) => rs.map((x) => x.id === r.id ? { ...x, properties: JSON.stringify(props) } : x));
+        }}
+        style={{ background: "var(--nn-blue-bg)", color: "var(--nn-blue)", border: "none", borderRadius: 4, padding: "3px 10px", fontSize: 12, cursor: "pointer", fontWeight: 500 }}
+      >
+        {p.button?.label || "Run"}
+      </button>
+    );
+    if (p.type === "ai") {
+      const cacheKey = `__ai_${p.key}`;
+      const cached = v || (getProp(r, cacheKey) ?? "");
+      const run = async () => {
+        const src = r.title || "";
+        let out = "";
+        if (p.ai?.mode === "keywords") out = src.split(/\s+/).filter((w) => w.length > 4).slice(0, 5).join(", ");
+        else if (p.ai?.mode === "summary") out = src.slice(0, 120) + (src.length > 120 ? "…" : "");
+        else out = `[${p.ai?.lang || "en"}] ${src}`;
+        await setProp(r, p.key, out);
+      };
+      return (
+        <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+          <span style={{ fontSize: 12, color: "var(--nn-text-secondary)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{cached || <em style={{ opacity: 0.5 }}>—</em>}</span>
+          <button onClick={(e) => { e.stopPropagation(); run(); }} title="Run AI" style={{ background: "none", border: "1px solid var(--nn-border)", borderRadius: 3, fontSize: 10, padding: "1px 5px", cursor: "pointer", color: "var(--nn-text-secondary)" }}>AI</button>
+        </div>
+      );
+    }
     return (
       <input value={v} onChange={(e) => setProp(r, p.key, e.target.value)} placeholder="—" style={{ background: "transparent", border: "none", color: "var(--nn-text)", fontSize: 13, width: "100%" }} />
     );
