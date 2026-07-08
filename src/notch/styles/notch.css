@@ -1137,3 +1137,27 @@
   background: transparent;
   border-bottom-color: rgba(120, 119, 116, 0.35);
 }
+
+/* Whiteboard block */
+.nn-whiteboard {
+  border: 1px solid var(--nn-border);
+  border-radius: 6px;
+  margin: 8px 0;
+  overflow: hidden;
+  background: var(--nn-bg);
+}
+.nn-whiteboard-toolbar {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 8px;
+  background: var(--nn-bg);
+  border-bottom: 1px solid var(--nn-border);
+  flex-wrap: wrap;
+}
+.nn-whiteboard-toolbar button {
+  background: transparent; border: 1px solid transparent;
+  border-radius: 3px; padding: 3px 6px; cursor: pointer;
+  color: var(--nn-text); font-size: 13px; line-height: 1;
+}
+.nn-whiteboard-toolbar button:hover:not(:disabled) { background: var(--nn-bg-secondary); }
+.nn-whiteboard-toolbar button.active { background: var(--nn-blue-bg); color: var(--nn-blue); }
+.nn-whiteboard-toolbar button:disabled { opacity: 0.35; cursor: not-allowed; }
