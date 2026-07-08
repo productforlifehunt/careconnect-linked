@@ -366,6 +366,7 @@ export function NotchSidebar() {
             }}
             onClick={(e) => {
               if (e.metaKey || e.ctrlKey) { e.preventDefault(); toggleSelected(String(p.id)); return; }
+              if (e.altKey) { e.preventDefault(); window.dispatchEvent(new CustomEvent("nn:open-side-peek", { detail: { pageId: String(p.id) } })); return; }
               if (selected.size) clearSelection();
               nav(path(`/p/${p.id}`));
             }}
