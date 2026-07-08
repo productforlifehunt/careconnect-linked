@@ -89,18 +89,23 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const all = await cctList<any>(NN.block, { workspace_id: workspaceId });
-    setAllBlocks(all);
-    const parent = all.find((b: any) => String(b.id) === String(databaseId));
-    setDbBlock(parent);
+    setLoadErr(null);
     try {
-      const p = parent?.properties ? JSON.parse(parent.properties) : {};
-      if (Array.isArray(p.schema) && p.schema.length) setSchema(p.schema);
-      else setSchema(DEFAULT_SCHEMA);
-      setCondRules(Array.isArray(p.condRules) ? p.condRules : []);
-      setAutomations(Array.isArray(p.automations) ? p.automations : []);
-    } catch { setSchema(DEFAULT_SCHEMA); setCondRules([]); setAutomations([]); }
-    setRows(all.filter((b: any) => String(b.parent_id) === String(databaseId) && Number(b.archived) !== 1));
+      const all = await cctList<any>(NN.block, { workspace_id: workspaceId });
+      setAllBlocks(all);
+      const parent = all.find((b: any) => String(b.id) === String(databaseId));
+      setDbBlock(parent);
+      try {
+        const p = parent?.properties ? JSON.parse(parent.properties) : {};
+        if (Array.isArray(p.schema) && p.schema.length) setSchema(p.schema);
+        else setSchema(DEFAULT_SCHEMA);
+        setCondRules(Array.isArray(p.condRules) ? p.condRules : []);
+        setAutomations(Array.isArray(p.automations) ? p.automations : []);
+      } catch { setSchema(DEFAULT_SCHEMA); setCondRules([]); setAutomations([]); }
+      setRows(all.filter((b: any) => String(b.parent_id) === String(databaseId) && Number(b.archived) !== 1));
+    } catch (e: any) {
+      setLoadErr(e?.message || "Failed to load database rows. Check your connection and retry.");
+    }
     setLoading(false);
   }, [databaseId, workspaceId]);
   useEffect(() => { load(); }, [load]);
