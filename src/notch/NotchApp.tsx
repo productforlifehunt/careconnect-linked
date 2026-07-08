@@ -6,6 +6,7 @@ import { NotchBaseContext } from "@/notch/context/NotchBaseContext";
 import { NotchSidebar } from "@/notch/components/NotchSidebar";
 import { NotchQuickFind } from "@/notch/components/NotchQuickFind";
 import { NotchAskAI } from "@/notch/components/NotchAskAI";
+import { NotchShortcuts } from "@/notch/components/NotchShortcuts";
 import NotchAuth from "@/notch/pages/NotchAuth";
 import NotchHome from "@/notch/pages/NotchHome";
 import NotchPage from "@/notch/pages/NotchPage";
@@ -33,6 +34,7 @@ function Shell({ standalone }: { standalone: boolean }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [quickFind, setQuickFind] = useState(false);
   const [askAI, setAskAI] = useState(false);
+  const [shortcuts, setShortcuts] = useState(false);
   const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
 
   useEffect(() => {
@@ -51,6 +53,9 @@ function Shell({ standalone }: { standalone: boolean }) {
       } else if ((e.metaKey || e.ctrlKey) && (e.key === "j" || e.key === "J")) {
         e.preventDefault();
         setAskAI((s) => !s);
+      } else if ((e.metaKey || e.ctrlKey) && e.key === "/") {
+        e.preventDefault();
+        setShortcuts((s) => !s);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -170,6 +175,7 @@ function Shell({ standalone }: { standalone: boolean }) {
       </div>
       {quickFind && <NotchQuickFind onClose={() => setQuickFind(false)} />}
       {askAI && <NotchAskAI onClose={() => setAskAI(false)} />}
+      {shortcuts && <NotchShortcuts onClose={() => setShortcuts(false)} />}
     </div>
   );
 }

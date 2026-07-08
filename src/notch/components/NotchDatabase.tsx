@@ -318,6 +318,94 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
     await load();
   };
 
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const toggleRowSelect = (id: string) => setSelectedRows((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const clearSelection = () => setSelectedRows(new Set());
+
+  const bulkArchive = async () => {
+    for (const id of selectedRows) await cctUpdate(NN.block, id, { archived: 1, in_trash: 1 });
+    clearSelection();
+    await load();
+  };
+  const bulkDuplicate = async () => {
+    for (const id of selectedRows) {
+      const src = rows.find((r) => r.id === id); if (!src) continue;
+      await cctCreate(NN.block, {
+        workspace_id: workspaceId, parent_id: databaseId, type: "page",
+        title: src.title ? `${src.title} (copy)` : "Untitled (copy)",
+        icon: src.icon || "", properties: src.properties || JSON.stringify({}),
+        content_order: JSON.stringify([]), archived: 0, in_trash: 0,
+        created_by: user?.user_id || 0, last_edited_by: user?.user_id || 0,
+      });
+    }
+    clearSelection();
+    await load();
+  };
+
+  // ── CSV import / export ─────────────────────────────────────────────
+  const escapeCsv = (s: string) => /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  const parseCsv = (text: string): string[][] => {
+    const rowsOut: string[][] = []; let cur: string[] = []; let val = ""; let inQ = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (inQ) {
+        if (c === '"') { if (text[i + 1] === '"') { val += '"'; i++; } else { inQ = false; } }
+        else val += c;
+      } else {
+        if (c === '"') inQ = true;
+        else if (c === ",") { cur.push(val); val = ""; }
+        else if (c === "\n" || c === "\r") { if (c === "\r" && text[i + 1] === "\n") i++; cur.push(val); rowsOut.push(cur); cur = []; val = ""; }
+        else val += c;
+      }
+    }
+    if (val || cur.length) { cur.push(val); rowsOut.push(cur); }
+    return rowsOut.filter((r) => r.some((c) => c.trim() !== ""));
+  };
+  const exportCsv = () => {
+    const cols = ["Name", ...schema.map((p) => p.name)];
+    const lines = [cols.map(escapeCsv).join(",")];
+    for (const r of visibleRows) {
+      const vals = [r.title || "", ...schema.map((p) => {
+        const v = getProp(r, p.key); return Array.isArray(v) ? v.join("|") : String(v ?? "");
+      })];
+      lines.push(vals.map(escapeCsv).join(","));
+    }
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `${dbBlock?.title || "database"}.csv`; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+  const csvInputRef = useRef<HTMLInputElement>(null);
+  const importCsv = async (file: File) => {
+    const text = await file.text();
+    const parsed = parseCsv(text);
+    if (!parsed.length) return;
+    const [header, ...body] = parsed;
+    const nameIdx = header.findIndex((h) => h.trim().toLowerCase() === "name");
+    const colMap = header.map((h) => schema.find((p) => p.name.toLowerCase() === h.trim().toLowerCase()));
+    for (const row of body) {
+      const props: Record<string, any> = {};
+      header.forEach((_h, i) => {
+        const p = colMap[i]; if (!p || i === nameIdx) return;
+        const raw = row[i] ?? "";
+        if (p.type === "multiselect") props[p.key] = raw.split("|").map((s) => s.trim()).filter(Boolean);
+        else if (p.type === "checkbox") props[p.key] = /^(1|true|yes)$/i.test(raw);
+        else if (p.type === "number") props[p.key] = raw === "" ? "" : Number(raw);
+        else props[p.key] = raw;
+      });
+      await cctCreate(NN.block, {
+        workspace_id: workspaceId, parent_id: databaseId, type: "page",
+        title: nameIdx >= 0 ? (row[nameIdx] || "") : "",
+        icon: "", properties: JSON.stringify(props), content_order: JSON.stringify([]),
+        archived: 0, in_trash: 0,
+        created_by: user?.user_id || 0, last_edited_by: user?.user_id || 0,
+      });
+    }
+    toast({ title: `Imported ${body.length} rows` });
+    await load();
+  };
+
   const statusProp = useMemo(() => schema.find((p) => p.type === "select") || null, [schema]);
   const dateProps = useMemo(() => schema.filter((p) => p.type === "date"), [schema]);
   const dateProp = dateProps[0] || null;
@@ -575,12 +663,25 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
         <button onClick={() => setShowCondEditor(true)} className="nn-topbar-btn" title="Conditional formatting">🎨</button>
         <button onClick={() => setShowAuto(true)} className="nn-topbar-btn" title="Automations">⚡</button>
         <button onClick={() => setShowSchema(true)} className="nn-topbar-btn"><Settings2 size={13} /> Properties</button>
+        <button onClick={exportCsv} className="nn-topbar-btn" title="Export CSV">⬇ CSV</button>
+        <button onClick={() => csvInputRef.current?.click()} className="nn-topbar-btn" title="Import CSV">⬆ CSV</button>
+        <input ref={csvInputRef} type="file" accept=".csv,text/csv" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0]; if (f) importCsv(f); e.currentTarget.value = ""; }} />
         <button onClick={() => addRow()} className="nn-topbar-btn"><Plus size={13} /> New</button>
       </div>
+      {selectedRows.size > 0 && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", background: "var(--nn-blue-bg)", border: "1px solid var(--nn-blue)", borderRadius: 4, marginBottom: 8, fontSize: 12 }}>
+          <span style={{ color: "var(--nn-blue)", fontWeight: 500 }}>{selectedRows.size} selected</span>
+          <div style={{ flex: 1 }} />
+          <button onClick={bulkDuplicate} className="nn-topbar-btn">Duplicate</button>
+          <button onClick={bulkArchive} className="nn-topbar-btn" style={{ color: "var(--nn-danger, #e03e3e)" }}>Delete</button>
+          <button onClick={clearSelection} className="nn-topbar-btn">Cancel</button>
+        </div>
+      )}
 
       {view === "table" && (
         <div style={{ border: "1px solid var(--nn-border)", borderRadius: 4, overflow: "auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: `2fr ${schema.map(() => "1fr").join(" ")} 40px`, background: "var(--nn-bg-secondary)", fontSize: 12, color: "var(--nn-text-secondary)", padding: "8px 12px", borderBottom: "1px solid var(--nn-border)", fontWeight: 500 }}>
+          <div style={{ display: "grid", gridTemplateColumns: `28px 2fr ${schema.map(() => "1fr").join(" ")} 40px`, background: "var(--nn-bg-secondary)", fontSize: 12, color: "var(--nn-text-secondary)", padding: "8px 12px", borderBottom: "1px solid var(--nn-border)", fontWeight: 500 }}>
+            <div><input type="checkbox" checked={visibleRows.length > 0 && visibleRows.every((r) => selectedRows.has(r.id))} onChange={(e) => setSelectedRows(e.target.checked ? new Set(visibleRows.map((r) => r.id)) : new Set())} /></div>
             <div>Name</div>
             {schema.map((p) => (
               <div
@@ -598,8 +699,10 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
           </div>
           {visibleRows.map((r) => {
             const bg = rowColor(r);
+            const isSel = selectedRows.has(r.id);
             return (
-              <div key={r.id} style={{ display: "grid", gridTemplateColumns: `2fr ${schema.map(() => "1fr").join(" ")} 40px`, padding: "8px 12px", borderBottom: "1px solid var(--nn-border)", alignItems: "center", fontSize: 14, background: bg || undefined }}>
+              <div key={r.id} style={{ display: "grid", gridTemplateColumns: `28px 2fr ${schema.map(() => "1fr").join(" ")} 40px`, padding: "8px 12px", borderBottom: "1px solid var(--nn-border)", alignItems: "center", fontSize: 14, background: isSel ? "var(--nn-blue-bg)" : (bg || undefined) }}>
+                <div><input type="checkbox" checked={isSel} onChange={() => toggleRowSelect(r.id)} onClick={(e) => e.stopPropagation()} /></div>
                 <div onClick={() => nav(path(`/p/${r.id}`))} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
                   <span>{r.icon || "📄"}</span>
                   <span>{r.title || "Untitled"}</span>

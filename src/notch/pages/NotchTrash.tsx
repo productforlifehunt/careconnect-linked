@@ -11,13 +11,29 @@ export default function NotchTrash() {
   const path = useNotchPath();
   const { user } = useNotchAuth();
   const [items, setItems] = useState<any[]>([]);
+  const [allBlocks, setAllBlocks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
+  const collectDescendants = (rootId: string): string[] => {
+    const out = new Set<string>();
+    const walk = (id: string) => {
+      for (const b of allBlocks) {
+        if (String(b.parent_id) === String(id) && !out.has(String(b.id))) {
+          out.add(String(b.id));
+          walk(String(b.id));
+        }
+      }
+    };
+    walk(rootId);
+    return Array.from(out);
+  };
+
   const load = async () => {
     setLoading(true);
     const all = await cctList<any>(NN.block);
+    setAllBlocks(all);
     setItems(
       all
         .filter((b: any) => Number(b.in_trash) === 1 || Number(b.archived) === 1)
@@ -29,12 +45,14 @@ export default function NotchTrash() {
   useEffect(() => { load(); }, [user]);
 
   const restore = async (id: string) => {
-    await cctUpdate(NN.block, id, { archived: 0, in_trash: 0 });
+    const ids = [id, ...collectDescendants(id)];
+    for (const x of ids) await cctUpdate(NN.block, x, { archived: 0, in_trash: 0 });
     await load();
   };
   const purge = async (id: string) => {
-    if (!(await nnConfirm("This cannot be undone.", "Delete forever?"))) return;
-    await cctDelete(NN.block, id);
+    const ids = [id, ...collectDescendants(id)];
+    if (!(await nnConfirm(`This will permanently delete ${ids.length} block${ids.length === 1 ? "" : "s"}. Cannot be undone.`, "Delete forever?"))) return;
+    for (const x of ids) await cctDelete(NN.block, x);
     await load();
   };
 
@@ -58,16 +76,16 @@ export default function NotchTrash() {
   };
 
   const bulkRestore = async () => {
-    for (const id of Array.from(selected)) {
-      await cctUpdate(NN.block, id, { archived: 0, in_trash: 0 });
-    }
+    const ids = new Set<string>();
+    for (const id of Array.from(selected)) { ids.add(id); collectDescendants(id).forEach((d) => ids.add(d)); }
+    for (const id of Array.from(ids)) await cctUpdate(NN.block, id, { archived: 0, in_trash: 0 });
     await load();
   };
   const bulkPurge = async () => {
-    if (!(await nnConfirm(`Delete ${selected.size} item${selected.size === 1 ? "" : "s"} forever? This cannot be undone.`, "Delete forever"))) return;
-    for (const id of Array.from(selected)) {
-      await cctDelete(NN.block, id);
-    }
+    const ids = new Set<string>();
+    for (const id of Array.from(selected)) { ids.add(id); collectDescendants(id).forEach((d) => ids.add(d)); }
+    if (!(await nnConfirm(`Delete ${ids.size} block${ids.size === 1 ? "" : "s"} forever (including nested pages)? This cannot be undone.`, "Delete forever"))) return;
+    for (const id of Array.from(ids)) await cctDelete(NN.block, id);
     await load();
   };
 
