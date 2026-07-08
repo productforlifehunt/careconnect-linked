@@ -69,12 +69,8 @@ const SLASH_ITEMS = [
   { group: "Blocks", key: "quote", icon: "❝", name: "Quote", desc: "Capture a quote.", cmd: (e: any) => e.chain().focus().toggleBlockquote().run() },
   { group: "Blocks", key: "code", icon: "</>", name: "Code", desc: "Code snippet.", cmd: (e: any) => e.chain().focus().toggleCodeBlock().run() },
   { group: "Blocks", key: "divider", icon: "—", name: "Divider", desc: "Divide blocks.", cmd: (e: any) => e.chain().focus().setHorizontalRule().run() },
-  { group: "Blocks", key: "callout", icon: "💡", name: "Callout", desc: "Highlighted note block.",
-    cmd: (e: any) => e.chain().focus().insertContent({
-      type: "blockquote",
-      attrs: { class: "nn-callout" },
-      content: [{ type: "paragraph", content: [{ type: "text", text: "💡 " }] }],
-    }).run() },
+  { group: "Blocks", key: "callout", icon: "💡", name: "Callout", desc: "Highlighted note with icon.",
+    cmd: (e: any) => e.chain().focus().insertContent({ type: "callout", attrs: { icon: "💡", color: "default" }, content: [{ type: "paragraph", content: [{ type: "text", text: "Note" }] }] }).run() },
   { group: "Blocks", key: "toggle", icon: "▸", name: "Toggle", desc: "Collapsible details block.",
     cmd: (e: any) => e.chain().focus().insertContent({
       type: "details",
