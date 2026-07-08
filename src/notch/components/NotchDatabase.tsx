@@ -67,6 +67,8 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
   const [sortKey, setSortKey] = useState<string>("");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [dragCol, setDragCol] = useState<string | null>(null);
+  const [automations, setAutomations] = useState<AutoRule[]>([]);
+  const [showAuto, setShowAuto] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -79,7 +81,8 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
       if (Array.isArray(p.schema) && p.schema.length) setSchema(p.schema);
       else setSchema(DEFAULT_SCHEMA);
       setCondRules(Array.isArray(p.condRules) ? p.condRules : []);
-    } catch { setSchema(DEFAULT_SCHEMA); setCondRules([]); }
+      setAutomations(Array.isArray(p.automations) ? p.automations : []);
+    } catch { setSchema(DEFAULT_SCHEMA); setCondRules([]); setAutomations([]); }
     setRows(all.filter((b: any) => String(b.parent_id) === String(databaseId) && Number(b.archived) !== 1));
     setLoading(false);
   }, [databaseId, workspaceId]);
