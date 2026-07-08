@@ -427,6 +427,8 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
     key: "family-wall",
     name: "Family Wall",
     icon: "🏡",
+    category: "Personal",
+    cover: "https://images.unsplash.com/photo-1511895426328-dc8714191300?w=800",
     description:
       "A rich family hub — announcements, birthdays, memory lane, chore chart, grocery list, recipes database and family planning HQ. 8 pre-filled sub-pages.",
     build: buildFamilyWall,
@@ -435,6 +437,8 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
     key: "family-recipes",
     name: "Family Recipe Book",
     icon: "🍽️",
+    category: "Personal",
+    cover: "https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=800",
     description: "A recipe collection with 6 seeded family recipes — ready to be filled in.",
     build: buildFamilyRecipeBook,
   },
@@ -442,7 +446,10 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
     key: "family-planning",
     name: "Family Planning",
     icon: "📅",
+    category: "Personal",
+    cover: "https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=800",
     description: "Budget, goals and big-decisions workspace for the whole family.",
     build: buildFamilyPlanning,
   },
 ];
+
