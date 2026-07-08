@@ -56,6 +56,15 @@ function Shell({ standalone }: { standalone: boolean }) {
       } else if ((e.metaKey || e.ctrlKey) && e.key === "/") {
         e.preventDefault();
         setShortcuts((s) => !s);
+      } else if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === "z" || e.key === "Z")) {
+        // Workspace-wide undo. Only fire when focus is NOT inside a text input/editor,
+        // so per-editor Cmd+Shift+Z (redo) keeps working.
+        const t = e.target as HTMLElement | null;
+        const inEditor = !!t && (t.closest(".ProseMirror") || t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable);
+        if (!inEditor) {
+          e.preventDefault();
+          import("@/notch/lib/nn-workspace-undo").then((m) => m.popUndo());
+        }
       }
     };
     window.addEventListener("keydown", onKey);
