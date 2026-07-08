@@ -38,6 +38,7 @@ export default function NotchPage() {
   const { isFav, toggle: toggleFav } = useFavorites();
   const [block, setBlock] = useState<Block | null>(null);
   const [title, setTitle] = useState("");
+  useNotchTitle(title || "Untitled");
   const [icon, setIcon] = useState("");
   const [cover, setCover] = useState("");
   const [content, setContent] = useState<any>(null);
