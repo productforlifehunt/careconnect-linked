@@ -675,7 +675,8 @@ function CalendarView({ month, calView, setCalView, onPrev, onNext, onToday, row
 
 function SchemaEditor({ schema, allBlocks, onClose, onSave }: { schema: PropDef[]; allBlocks: any[]; onClose: () => void; onSave: (s: PropDef[]) => void }) {
   const [draft, setDraft] = useState<PropDef[]>(JSON.parse(JSON.stringify(schema)));
-  const TYPES: PropType[] = ["text", "number", "select", "multiselect", "date", "checkbox", "url", "email", "phone", "person", "formula", "rollup", "button", "ai"];
+  const TYPES: PropType[] = ["text", "number", "select", "multiselect", "date", "checkbox", "url", "email", "phone", "person", "formula", "rollup", "button", "ai", "relation"];
+  const databases = allBlocks.filter((b) => b.type === "database");
   const numericSources = draft.filter((p) => p.type === "number");
   const add = () => {
     const key = `prop_${Date.now().toString(36)}`;
