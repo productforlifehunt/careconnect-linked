@@ -4,7 +4,7 @@ import { Moon, Sun, User, SlidersHorizontal, Bell, Users, Keyboard, LogOut, Down
 import { NotchMembersPanel } from "@/notch/components/NotchMembersPanel";
 import { requestBrowserNotificationPermission } from "@/notch/lib/nn-notifications";
 import { nnAlert } from "@/notch/lib/nn-dialog";
-import { importMarkdownFiles, importCsvAsDatabase } from "@/notch/lib/nn-importers";
+import { importMarkdownFiles, importCsvAsDatabase, importNotionZip } from "@/notch/lib/nn-importers";
 import { cctList, NN } from "@/notch/lib/nn-client";
 
 type TabKey = "account" | "preferences" | "notifications" | "members" | "shortcuts" | "import";
