@@ -192,9 +192,14 @@ export default function NotchPage() {
   const toggleVerified = () => {
     const nv = !verified;
     setVerified(nv);
+    const nm = nv
+      ? { by: String(user?.email || user?.user_id || "owner"), at: Date.now(), expires: Date.now() + 90 * 86_400_000 }
+      : null;
+    setVerifiedMeta(nm);
     setShowMenu(false);
-    saveProps({ verified: nv });
+    saveProps({ verified: nv, verified_meta: nm });
   };
+
   const takeSnapshot = () => {
     const snap = { ts: Date.now(), content, title };
     const next = [snap, ...snapshots].slice(0, 30);
