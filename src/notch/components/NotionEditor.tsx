@@ -190,7 +190,7 @@ const SLASH_ITEMS = [
     cmd: (e: any) => e.chain().focus().insertContent(
       `<div class="nn-callout" data-emoji="🎙️"><strong>Meeting notes — ${new Date().toLocaleString()}</strong></div>` +
       `<p><em>Click Record to start browser transcription. Speak clearly; results stream into the paragraphs below.</em></p>` +
-      `<p data-nn-meeting-controls="1"><button type="button" data-nn-meeting-rec="1" style="padding:4px 10px;border:1px solid var(--nn-border);border-radius:4px;background:var(--nn-bg-secondary);cursor:pointer;font-size:12px;">● Record</button> <button type="button" data-nn-meeting-stop="1" style="padding:4px 10px;border:1px solid var(--nn-border);border-radius:4px;background:var(--nn-bg-secondary);cursor:pointer;font-size:12px;">■ Stop</button></p>` +
+      `<p data-nn-meeting-controls="1"><button type="button" data-nn-meeting-rec="1" style="padding:4px 10px;border:1px solid var(--nn-border);border-radius:4px;background:var(--nn-bg-secondary);cursor:pointer;font-size:12px;">● Record</button> <button type="button" data-nn-meeting-stop="1" style="padding:4px 10px;border:1px solid var(--nn-border);border-radius:4px;background:var(--nn-bg-secondary);cursor:pointer;font-size:12px;">■ Stop</button> <button type="button" data-nn-meeting-summ="1" style="padding:4px 10px;border:1px solid var(--nn-border);border-radius:4px;background:var(--nn-blue-bg);color:var(--nn-blue);cursor:pointer;font-size:12px;">✨ Summarize</button></p>` +
       `<p data-nn-meeting-transcript="1"><em>Transcript will appear here…</em></p>`
     ).run() },
 ];
