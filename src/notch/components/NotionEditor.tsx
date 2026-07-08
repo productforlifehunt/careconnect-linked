@@ -661,9 +661,14 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
               setBlockMenu(null);
             }}><span className="nn-title">Copy link to block</span></div>
             <div className="nn-sidebar-item" onClick={() => {
-              if (!blockMenu) return;
+              if (!blockMenu || !editor) return;
               const range = nodeRangeFor(blockMenu.el);
-              window.dispatchEvent(new CustomEvent("nn:open-comment", { detail: { from: range?.from, to: range?.to } }));
+              const threadId = `t_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+              if (range && range.to > range.from) {
+                editor.chain().focus().setTextSelection(range).setMark("inlineComment", { threadId }).run();
+              }
+              window.dispatchEvent(new CustomEvent("nn:open-comment-thread", { detail: { threadId, from: range?.from, to: range?.to } }));
+              window.dispatchEvent(new CustomEvent("nn:open-comment", { detail: { from: range?.from, to: range?.to, threadId } }));
               setBlockMenu(null);
             }}><span className="nn-title">Comment</span></div>
             <div className="nn-sidebar-item" onClick={deleteBlock} style={{ color: "var(--nn-danger, #e03e3e)" }}><span className="nn-title">Delete</span></div>
