@@ -57,10 +57,12 @@ export function NotchShareModal({ blockId, onClose }: { blockId: string; onClose
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
+  const emailValid = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+
   const invite = async (targetEmail?: string, targetRole?: Role) => {
     const em = (targetEmail ?? email).trim();
     const r = targetRole ?? role;
-    if (!em) return;
+    if (!em || !emailValid(em)) return;
     setBusy(true);
     try {
       await cctCreate(NN.permission, { block_id: String(blockId), email: em, role: r, is_public: 0, granted_by: user?.user_id || 0 });
