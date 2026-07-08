@@ -52,6 +52,8 @@ export default function NotchPage() {
   const [fullWidth, setFullWidth] = useState(false);
   const [smallText, setSmallText] = useState(false);
   const [verified, setVerified] = useState(false);
+  const [verifiedMeta, setVerifiedMeta] = useState<{ by?: string; at?: number; expires?: number } | null>(null);
+
   const [snapshots, setSnapshots] = useState<Array<{ ts: number; content: any; title: string }>>([]);
   const [diffIdx, setDiffIdx] = useState<number | null>(null);
   const [showHistory, setShowHistory] = useState(false);
