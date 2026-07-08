@@ -175,6 +175,7 @@ function Shell({ standalone }: { standalone: boolean }) {
       </div>
       {quickFind && <NotchQuickFind onClose={() => setQuickFind(false)} />}
       {askAI && <NotchAskAI onClose={() => setAskAI(false)} />}
+      {shortcuts && <NotchShortcuts onClose={() => setShortcuts(false)} />}
     </div>
   );
 }
