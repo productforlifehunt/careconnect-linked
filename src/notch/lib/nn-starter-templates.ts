@@ -10,6 +10,7 @@ export interface StarterTemplate {
   name: string;
   icon: string;
   cover?: string;
+  category?: string; // e.g. "Personal", "Work", "Education"
   description: string;
   build: (ctx: BuildCtx) => Promise<{ id: string }>;
 }
