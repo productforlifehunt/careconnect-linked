@@ -39,7 +39,9 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
   const nav = useNavigate();
   const path = useNotchPath();
   const [rows, setRows] = useState<Row[]>([]);
+  const [allBlocks, setAllBlocks] = useState<any[]>([]);
   const [schema, setSchema] = useState<PropDef[]>(DEFAULT_SCHEMA);
+  const [condRules, setCondRules] = useState<CondRule[]>([]);
   const [view, setView] = useState<ViewMode>("table");
   const [loading, setLoading] = useState(true);
   const [showSchema, setShowSchema] = useState(false);
@@ -49,6 +51,7 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
   const [filterVal, setFilterVal] = useState<string>("");
   const [sortKey, setSortKey] = useState<string>("");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [dragCol, setDragCol] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
