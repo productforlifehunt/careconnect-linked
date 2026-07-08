@@ -46,6 +46,7 @@ const LINE_ICONS: string[] = [
 ];
 
 export function EmojiPicker({ onPick, onClear }: Props) {
+  const { user } = useNotchAuth();
   const [tab, setTab] = useState<Tab>("emoji");
   const [q, setQ] = useState("");
   const [color, setColor] = useState<string>("");
