@@ -58,23 +58,46 @@ export function NotchAskAI({ onClose }: Props) {
 
   useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, [msgs, busy]);
 
-  const rank = (query: string, topK = 5) => {
+  // Chunk-level retrieval: split each page's text into ~600-char passages,
+  // score each passage independently, and return the top matches.
+  // This dramatically improves recall for long pages vs. the previous
+  // whole-page ranking.
+  const rank = (query: string, topK = 6) => {
     const tokens = query.toLowerCase().split(/\s+/).filter((w) => w.length > 2);
-    if (tokens.length === 0) return [];
-    return pages
-      .map((p) => {
-        const hay = ((p.title || "") + " " + p.text).toLowerCase();
-        let score = 0;
+    if (tokens.length === 0) return [] as Array<{ p: Block & { text: string }; passage: string; score: number }>;
+    const CHUNK = 600, OVERLAP = 100;
+    const scored: Array<{ p: Block & { text: string }; passage: string; score: number }> = [];
+    for (const p of pages) {
+      const hay0 = ((p.title || "") + "\n" + p.text).replace(/\s+/g, " ");
+      if (!hay0.trim()) continue;
+      for (let i = 0; i < hay0.length; i += CHUNK - OVERLAP) {
+        const passage = hay0.slice(i, i + CHUNK);
+        const hay = passage.toLowerCase();
+        let score = 0, matched = 0;
         for (const t of tokens) {
-          const idx = hay.indexOf(t);
-          if (idx >= 0) score += 1 + (hay.split(t).length - 1) * 0.3;
+          const c = hay.split(t).length - 1;
+          if (c > 0) { score += 1 + c * 0.3; matched++; }
         }
-        return { p, score };
-      })
-      .filter((x) => x.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, topK)
-      .map((x) => x.p);
+        // Title bonus for the first chunk.
+        if (i === 0 && p.title) {
+          const titleLower = p.title.toLowerCase();
+          for (const t of tokens) if (titleLower.includes(t)) score += 1.5;
+        }
+        // Require at least half the query tokens to hit — reduces noise.
+        if (matched >= Math.max(1, Math.ceil(tokens.length * 0.5))) scored.push({ p, passage, score });
+      }
+    }
+    scored.sort((a, b) => b.score - a.score);
+    // Dedupe by page id — keep the best passage per page.
+    const seen = new Set<string>();
+    const out: typeof scored = [];
+    for (const s of scored) {
+      if (seen.has(s.p.id)) continue;
+      seen.add(s.p.id);
+      out.push(s);
+      if (out.length >= topK) break;
+    }
+    return out;
   };
 
   const ask = async () => {
@@ -85,24 +108,45 @@ export function NotchAskAI({ onClose }: Props) {
     setMsgs((m) => [...m, { role: "user", content: question }]);
     setBusy(true);
     try {
-      const ctxPages = rank(question, 5);
-      const ctxText = ctxPages.map((p, i) =>
-        `[${i + 1}] ${p.title || "Untitled"}\n${(p.text || "").slice(0, 1200)}`
+      const hits = rank(question, 6);
+      const ctxText = hits.map((h, i) =>
+        `[${i + 1}] ${h.p.title || "Untitled"}\n${h.passage.slice(0, 1200)}`
       ).join("\n\n---\n\n");
-      const prompt = `You are answering a question using only the workspace notes below. Cite sources as [1], [2] where relevant. If the notes don't contain the answer, say so.\n\nNotes:\n${ctxText || "(no matching notes found)"}\n\nQuestion: ${question}\n\nAnswer:`;
+      const prompt = `You are answering a question using only the workspace notes below. Cite sources inline as [1], [2], etc. — never invent citations beyond the notes shown. If the notes don't contain the answer, say so plainly and suggest which of the listed pages might be closest.\n\nNotes:\n${ctxText || "(no matching notes found)"}\n\nQuestion: ${question}\n\nAnswer:`;
       const { data, error } = await supabase.functions.invoke("notch-ai-assist", { body: { prompt } });
       if (error) throw error;
       const text = (data as any)?.text || "(no answer)";
       setMsgs((m) => [...m, {
         role: "assistant",
         content: text,
-        sources: ctxPages.map((p) => ({ id: p.id, title: p.title || "Untitled" })),
+        sources: hits.map((h) => ({ id: h.p.id, title: h.p.title || "Untitled" })),
       }]);
     } catch (e: any) {
       setErr(e?.message || String(e));
     } finally {
       setBusy(false);
     }
+  };
+
+  // Render assistant text with [N] tokens turned into clickable superscript
+  // links that navigate to the cited page.
+  const renderAnswer = (m: Msg) => {
+    if (!m.sources || m.sources.length === 0) return m.content;
+    const parts = m.content.split(/(\[\d+\])/g);
+    return parts.map((part, i) => {
+      const mMatch = /^\[(\d+)\]$/.exec(part);
+      if (!mMatch) return <span key={i}>{part}</span>;
+      const n = Number(mMatch[1]);
+      const src = m.sources?.[n - 1];
+      if (!src) return <span key={i}>{part}</span>;
+      return (
+        <sup key={i} onClick={() => { nav(path(`/p/${src.id}`)); onClose(); }}
+          style={{ color: "var(--nn-blue)", cursor: "pointer", fontWeight: 600, fontSize: 10, margin: "0 2px", padding: "1px 4px", border: "1px solid var(--nn-blue)", borderRadius: 3, verticalAlign: "super", lineHeight: 1 }}
+          title={src.title}>
+          {n}
+        </sup>
+      );
+    });
   };
 
   return (
@@ -128,7 +172,9 @@ export function NotchAskAI({ onClose }: Props) {
           {msgs.map((m, i) => (
             <div key={i} style={{ margin: "10px 0" }}>
               <div style={{ fontSize: 11, fontWeight: 600, color: "var(--nn-text-tertiary)", marginBottom: 4 }}>{m.role === "user" ? "You" : "AI"}</div>
-              <div style={{ fontSize: 14, whiteSpace: "pre-wrap", color: "var(--nn-text)" }}>{m.content}</div>
+              <div style={{ fontSize: 14, whiteSpace: "pre-wrap", color: "var(--nn-text)" }}>
+                {m.role === "assistant" ? renderAnswer(m) : m.content}
+              </div>
               {m.sources && m.sources.length > 0 && (
                 <div style={{ marginTop: 6, display: "flex", gap: 4, flexWrap: "wrap" }}>
                   {m.sources.map((s, j) => (
