@@ -847,6 +847,25 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
           </div>
         </>
       )}
+      {tableCtx && editor && (
+        <>
+          <div style={{ position: "fixed", inset: 0, zIndex: 90 }} onClick={() => setTableCtx(null)} />
+          <div className="nn-block-menu" style={{ top: tableCtx.top, left: tableCtx.left, minWidth: 200 }}>
+            <div className="nn-sidebar-item" onClick={() => { editor.chain().focus().addRowBefore().run(); setTableCtx(null); }}><span className="nn-title">Insert row above</span></div>
+            <div className="nn-sidebar-item" onClick={() => { editor.chain().focus().addRowAfter().run(); setTableCtx(null); }}><span className="nn-title">Insert row below</span></div>
+            <div className="nn-sidebar-item" onClick={() => { editor.chain().focus().addColumnBefore().run(); setTableCtx(null); }}><span className="nn-title">Insert column left</span></div>
+            <div className="nn-sidebar-item" onClick={() => { editor.chain().focus().addColumnAfter().run(); setTableCtx(null); }}><span className="nn-title">Insert column right</span></div>
+            <div style={{ borderTop: "1px solid var(--nn-border)", margin: "4px 0" }} />
+            <div className="nn-sidebar-item" onClick={() => { editor.chain().focus().toggleHeaderRow().run(); setTableCtx(null); }}><span className="nn-title">Toggle header row</span></div>
+            <div className="nn-sidebar-item" onClick={() => { editor.chain().focus().toggleHeaderColumn().run(); setTableCtx(null); }}><span className="nn-title">Toggle header column</span></div>
+            <div className="nn-sidebar-item" onClick={() => { editor.chain().focus().mergeOrSplit().run(); setTableCtx(null); }}><span className="nn-title">Merge / split cells</span></div>
+            <div style={{ borderTop: "1px solid var(--nn-border)", margin: "4px 0" }} />
+            <div className="nn-sidebar-item" onClick={() => { editor.chain().focus().deleteRow().run(); setTableCtx(null); }} style={{ color: "var(--nn-danger, #e03e3e)" }}><span className="nn-title">Delete row</span></div>
+            <div className="nn-sidebar-item" onClick={() => { editor.chain().focus().deleteColumn().run(); setTableCtx(null); }} style={{ color: "var(--nn-danger, #e03e3e)" }}><span className="nn-title">Delete column</span></div>
+            <div className="nn-sidebar-item" onClick={() => { editor.chain().focus().deleteTable().run(); setTableCtx(null); }} style={{ color: "var(--nn-danger, #e03e3e)" }}><span className="nn-title">Delete table</span></div>
+          </div>
+        </>
+      )}
       {pagePicker && (() => {
         const q = pagePicker.query.toLowerCase();
         const filtered = (q ? pagePicker.pages.filter((p) => p.title.toLowerCase().includes(q)) : pagePicker.pages).slice(0, 40);
