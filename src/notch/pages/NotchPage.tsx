@@ -13,6 +13,7 @@ import { EmojiPicker } from "@/notch/components/NotchEmojiPicker";
 import { useFavorites } from "@/notch/lib/nn-favorites";
 import { cctGet, cctList, cctUpdate, cctCreate, NN } from "@/notch/lib/nn-client";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
+import { joinPresence, type Peer } from "@/notch/lib/nn-presence";
 
 interface Block {
   id: string;
