@@ -34,6 +34,7 @@ function Shell({ standalone }: { standalone: boolean }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [quickFind, setQuickFind] = useState(false);
   const [askAI, setAskAI] = useState(false);
+  const [shortcuts, setShortcuts] = useState(false);
   const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
 
   useEffect(() => {
