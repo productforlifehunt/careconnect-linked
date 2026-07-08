@@ -45,6 +45,7 @@ interface Props {
   onChange: (json: any) => void;
   placeholder?: string;
   onCreateSubpage?: () => Promise<{ id: string; title: string; href: string } | null>;
+  pageId?: string;
 }
 
 // Theme-aware colors using rgba() so opacity keeps them readable on dark bg
