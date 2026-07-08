@@ -768,22 +768,45 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
             ))}
             <div />
           </div>
-          {visibleRows.map((r) => {
-            const bg = rowColor(r);
-            const isSel = selectedRows.has(r.id);
-            return (
-              <div key={r.id} style={{ display: "grid", gridTemplateColumns: `28px 2fr ${schema.map(() => "1fr").join(" ")} 40px`, padding: "8px 12px", borderBottom: "1px solid var(--nn-border)", alignItems: "center", fontSize: 14, background: isSel ? "var(--nn-blue-bg)" : (bg || undefined) }}>
-                <div><input type="checkbox" checked={isSel} onChange={() => toggleRowSelect(r.id)} onClick={(e) => e.stopPropagation()} /></div>
-                <div onClick={() => nav(path(`/p/${r.id}`))} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
-                  <span>{r.icon || "📄"}</span>
-                  <span>{r.title || "Untitled"}</span>
+          {(() => {
+            // Sub-items: rows may have _parent (row id) in properties. Render as a flat list
+            // sorted so that each parent is followed by its children, indented.
+            const byId = new Map(visibleRows.map((r) => [r.id, r] as const));
+            const parentOf = (r: Row): string => { try { return (r.properties ? JSON.parse(r.properties) : {})._parent || ""; } catch { return ""; } };
+            const [expanded, setExpanded] = [subExpanded, setSubExpanded];
+            const roots = visibleRows.filter((r) => !parentOf(r) || !byId.has(parentOf(r)));
+            const orderList: { row: Row; depth: number; hasKids: boolean }[] = [];
+            const walk = (r: Row, depth: number) => {
+              const kids = visibleRows.filter((c) => parentOf(c) === r.id);
+              orderList.push({ row: r, depth, hasKids: kids.length > 0 });
+              if (expanded.has(r.id)) { for (const c of kids) walk(c, depth + 1); }
+            };
+            for (const r of roots) walk(r, 0);
+            return orderList.map(({ row: r, depth, hasKids }) => {
+              const bg = rowColor(r); const isSel = selectedRows.has(r.id);
+              return (
+                <div key={r.id} style={{ display: "grid", gridTemplateColumns: `28px 2fr ${schema.map(() => "1fr").join(" ")} 40px`, padding: "8px 12px", borderBottom: "1px solid var(--nn-border)", alignItems: "center", fontSize: 14, background: isSel ? "var(--nn-blue-bg)" : (bg || undefined) }}>
+                  <div><input type="checkbox" checked={isSel} onChange={() => toggleRowSelect(r.id)} onClick={(e) => e.stopPropagation()} /></div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, paddingLeft: depth * 20 }}>
+                    {hasKids ? (
+                      <button onClick={(e) => { e.stopPropagation(); setExpanded((s) => { const n = new Set(s); n.has(r.id) ? n.delete(r.id) : n.add(r.id); return n; }); }} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: "var(--nn-text-tertiary)" }} title="Toggle sub-items">
+                        {expanded.has(r.id) ? <ChevronDown size={12} /> : <ChevRight size={12} />}
+                      </button>
+                    ) : <span style={{ width: 12 }} />}
+                    <span onClick={() => nav(path(`/p/${r.id}`))} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                      <span>{r.icon || "📄"}</span>
+                      <span>{r.title || "Untitled"}</span>
+                    </span>
+                    <button onClick={(e) => { e.stopPropagation(); addRow({ _parent: r.id }); setSubExpanded((s) => new Set(s).add(r.id)); }} title="Add sub-item" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-tertiary)", padding: 0, marginLeft: 4, fontSize: 11 }}>+</button>
+                  </div>
+                  {schema.map((p) => <div key={p.key}>{renderCell(r, p)}</div>)}
+                  <button onClick={() => archiveRow(r.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-tertiary)" }}><Trash2 size={13} /></button>
                 </div>
-                {schema.map((p) => <div key={p.key}>{renderCell(r, p)}</div>)}
-                <button onClick={() => archiveRow(r.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-tertiary)" }}><Trash2 size={13} /></button>
-              </div>
-            );
-          })}
+              );
+            });
+          })()}
           <div onClick={() => addRow()} style={{ padding: "8px 12px", color: "var(--nn-text-tertiary)", cursor: "pointer", fontSize: 13 }}>+ New page</div>
+
         </div>
       )}
 
