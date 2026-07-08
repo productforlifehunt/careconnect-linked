@@ -1,9 +1,9 @@
 /**
- * Notch Note — Markdown / CSV importers.
- * Creates new nn_block pages from Markdown files (one page per file) and
- * new database rows from CSV files.
+ * Notch Note — Markdown / CSV / Notion ZIP importers.
  */
+import JSZip from "jszip";
 import { cctCreate, NN } from "@/notch/lib/nn-client";
+
 
 function mdToTiptap(md: string): any {
   const lines = md.split(/\r?\n/);
@@ -144,3 +144,82 @@ export async function importCsvAsDatabase(file: File, opts: { workspaceId: strin
   }
   return { databaseId: dbId, rows: inserted };
 }
+
+/**
+ * Notion export ZIP importer.
+ * Notion exports contain either .md files (Markdown export) or .html files (HTML export)
+ * organised in nested folders. Sibling folders whose name matches an .md/.html file
+ * contain that page's children. Notion appends a 32-char hash to every filename which
+ * we strip.
+ */
+const NOTION_HASH = /\s?[0-9a-f]{32}(?=\.[a-z]+$|$)/i;
+function cleanNotionName(name: string): string {
+  const base = name.replace(/\.[^.]+$/, "");
+  return base.replace(NOTION_HASH, "").trim();
+}
+function htmlToMd(html: string): string {
+  // Very small HTML→MD reducer for Notion exports.
+  return html
+    .replace(/<h([1-3])[^>]*>([\s\S]*?)<\/h\1>/gi, (_m, n, t) => `\n${"#".repeat(+n)} ${stripTags(t)}\n`)
+    .replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, (_m, t) => `- ${stripTags(t)}\n`)
+    .replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, (_m, t) => `> ${stripTags(t)}\n`)
+    .replace(/<pre[^>]*>([\s\S]*?)<\/pre>/gi, (_m, t) => `\n\`\`\`\n${stripTags(t)}\n\`\`\`\n`)
+    .replace(/<p[^>]*>([\s\S]*?)<\/p>/gi, (_m, t) => `${stripTags(t)}\n\n`)
+    .replace(/<br\s*\/?\s*>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"')
+    .trim();
+}
+function stripTags(s: string) { return s.replace(/<[^>]+>/g, "").trim(); }
+
+export async function importNotionZip(file: File, opts: { workspaceId: string; parentId?: string; userId: number | string; }): Promise<{ created: number; ids: string[] }> {
+  const zip = await JSZip.loadAsync(await file.arrayBuffer());
+  // Collect md/html entries with their folder paths.
+  const entries: { path: string; kind: "md" | "html"; text: string }[] = [];
+  const promises: Promise<void>[] = [];
+  zip.forEach((path, f) => {
+    if (f.dir) return;
+    const lower = path.toLowerCase();
+    if (lower.endsWith(".md") || lower.endsWith(".markdown")) {
+      promises.push(f.async("string").then((t) => { entries.push({ path, kind: "md", text: t }); }));
+    } else if (lower.endsWith(".html") || lower.endsWith(".htm")) {
+      promises.push(f.async("string").then((t) => { entries.push({ path, kind: "html", text: t }); }));
+    }
+  });
+  await Promise.all(promises);
+
+  // Build a nesting map: entry at "A/B/C.md" is a child of the page whose folder is "A/B/C".
+  // Sort by depth so parents are created first.
+  entries.sort((a, b) => a.path.split("/").length - b.path.split("/").length);
+  const folderToId = new Map<string, string>();
+  const ids: string[] = [];
+  for (const e of entries) {
+    const dir = e.path.includes("/") ? e.path.slice(0, e.path.lastIndexOf("/")) : "";
+    const parentId = folderToId.get(dir) || opts.parentId || "";
+    const baseName = cleanNotionName(e.path.split("/").pop() || "Imported");
+    const md = e.kind === "html" ? htmlToMd(e.text) : e.text;
+    const firstLine = md.split(/\r?\n/).find((l) => l.trim());
+    const title = firstLine && /^#{1,3}\s+/.test(firstLine) ? firstLine.replace(/^#{1,3}\s+/, "").trim() : baseName;
+    const body = mdToTiptap(md);
+    const { id } = await cctCreate(NN.block, {
+      workspace_id: opts.workspaceId,
+      parent_id: parentId,
+      type: "page",
+      title,
+      icon: "📥",
+      cover: "",
+      properties: JSON.stringify({ body }),
+      content_order: JSON.stringify([]),
+      archived: 0,
+      in_trash: 0,
+      created_by: opts.userId,
+      last_edited_by: opts.userId,
+    });
+    ids.push(id);
+    // If any siblings live under a folder named after this file (Notion pattern), map it.
+    const folderKey = e.path.replace(/\.[^.]+$/, "");
+    folderToId.set(folderKey, id);
+  }
+  return { created: ids.length, ids };
+}
+

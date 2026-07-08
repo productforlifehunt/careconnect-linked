@@ -186,7 +186,15 @@ const SLASH_ITEMS = [
     cmd: (e: any) => e.chain().focus().insertContent({ type: "bookmark", attrs: { url: "" } }).run() },
   { group: "Advanced", key: "button", icon: "🔘", name: "Button", desc: "Clickable button that runs an action.",
     cmd: (e: any) => e.chain().focus().insertContent({ type: "buttonBlock", attrs: { label: "", action: "insert_todo", target: "" } }).run() },
+  { group: "AI", key: "meeting", icon: "🎙️", name: "AI meeting notes", desc: "Record audio and auto-transcribe with the browser.",
+    cmd: (e: any) => e.chain().focus().insertContent(
+      `<div class="nn-callout" data-emoji="🎙️"><strong>Meeting notes — ${new Date().toLocaleString()}</strong></div>` +
+      `<p><em>Click Record to start browser transcription. Speak clearly; results stream into the paragraphs below.</em></p>` +
+      `<p data-nn-meeting-controls="1"><button type="button" data-nn-meeting-rec="1" style="padding:4px 10px;border:1px solid var(--nn-border);border-radius:4px;background:var(--nn-bg-secondary);cursor:pointer;font-size:12px;">● Record</button> <button type="button" data-nn-meeting-stop="1" style="padding:4px 10px;border:1px solid var(--nn-border);border-radius:4px;background:var(--nn-bg-secondary);cursor:pointer;font-size:12px;">■ Stop</button></p>` +
+      `<p data-nn-meeting-transcript="1"><em>Transcript will appear here…</em></p>`
+    ).run() },
 ];
+
 
 export function NotionEditor({ content, onChange, placeholder = "Write, press '/' for commands, or ⌃Space for AI…", onCreateSubpage, pageId }: Props) {
   const { user } = _useNotchAuth();
@@ -526,6 +534,45 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
     };
   }, [editor, dragBlock]);
 
+  // AI meeting notes: wire delegated Record/Stop clicks inside the editor DOM.
+  useEffect(() => {
+    if (!editor) return;
+    const dom = editor.view.dom as HTMLElement;
+    let rec: any = null;
+    const onClick = (ev: MouseEvent) => {
+      const t = ev.target as HTMLElement | null;
+      if (!t) return;
+      const recBtn = t.closest('[data-nn-meeting-rec="1"]') as HTMLElement | null;
+      const stopBtn = t.closest('[data-nn-meeting-stop="1"]') as HTMLElement | null;
+      if (!recBtn && !stopBtn) return;
+      ev.preventDefault(); ev.stopPropagation();
+      const SR: any = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (!SR) { alert("Browser speech recognition unavailable. Try Chrome/Edge."); return; }
+      const container = (recBtn || stopBtn)!.closest('p')!.parentElement!;
+      const transcriptP = container.querySelector('[data-nn-meeting-transcript="1"]') as HTMLElement | null;
+      if (recBtn) {
+        if (rec) { try { rec.stop(); } catch {} }
+        rec = new SR();
+        rec.continuous = true; rec.interimResults = true; rec.lang = navigator.language || "en-US";
+        let finalTxt = "";
+        rec.onresult = (e: any) => {
+          let interim = "";
+          for (let i = e.resultIndex; i < e.results.length; i++) {
+            const r = e.results[i];
+            if (r.isFinal) finalTxt += r[0].transcript + " ";
+            else interim += r[0].transcript;
+          }
+          if (transcriptP) transcriptP.textContent = (finalTxt + interim).trim() || "…";
+        };
+        rec.onerror = () => { if (transcriptP) transcriptP.textContent = (transcriptP.textContent || "") + " [error]"; };
+        rec.start();
+        recBtn.textContent = "● Recording…";
+      }
+      if (stopBtn && rec) { try { rec.stop(); } catch {} rec = null; const rb = container.querySelector('[data-nn-meeting-rec="1"]') as HTMLElement | null; if (rb) rb.textContent = "● Record"; }
+    };
+    dom.addEventListener("click", onClick);
+    return () => { dom.removeEventListener("click", onClick); try { rec?.stop(); } catch {} };
+  }, [editor]);
 
 
 
