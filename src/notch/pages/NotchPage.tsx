@@ -69,42 +69,51 @@ export default function NotchPage() {
   useEffect(() => {
     if (!pageId) return;
     let alive = true;
+    setLoadErr(null);
     (async () => {
-      const b = await cctGet<Block>(NN.block, pageId);
-      if (!alive || !b) return;
-      setBlock(b);
-      setTitle(b.title || "");
-      setIcon(b.icon || "");
-      setCover(b.cover || "");
       try {
-        const props = b.properties ? JSON.parse(b.properties) : {};
-        setContent(props.editor_content || null);
-        setLocked(!!props.locked);
-        setFullWidth(!!props.full_width);
-        setSmallText(!!props.small_text);
-        setVerified(!!props.verified);
-        setSnapshots(Array.isArray(props.history) ? props.history : []);
-      } catch { setContent(null); }
-      // build breadcrumbs
-      const chain: Block[] = [b];
-      let cursor = b;
-      const seen = new Set([b.id]);
-      const all = await cctList<Block>(NN.block, { workspace_id: b.workspace_id || undefined });
-      while (cursor.parent_id && !seen.has(String(cursor.parent_id))) {
-        const parent = all.find((x) => String(x.id) === String(cursor.parent_id));
-        if (!parent || parent.type !== "page" && parent.type !== "database") break;
-        chain.unshift(parent);
-        seen.add(parent.id);
-        cursor = parent;
+        const b = await cctGet<Block>(NN.block, pageId);
+        if (!alive) return;
+        if (!b) { setLoadErr("This page couldn't be found. It may have been deleted."); return; }
+        setBlock(b);
+        setTitle(b.title || "");
+        setIcon(b.icon || "");
+        setCover(b.cover || "");
+        try {
+          const props = b.properties ? JSON.parse(b.properties) : {};
+          setContent(props.editor_content || null);
+          setLocked(!!props.locked);
+          setFullWidth(!!props.full_width);
+          setSmallText(!!props.small_text);
+          setVerified(!!props.verified);
+          setSnapshots(Array.isArray(props.history) ? props.history : []);
+        } catch { setContent(null); }
+        // build breadcrumbs
+        const chain: Block[] = [b];
+        let cursor = b;
+        const seen = new Set([b.id]);
+        try {
+          const all = await cctList<Block>(NN.block, { workspace_id: b.workspace_id || undefined });
+          while (cursor.parent_id && !seen.has(String(cursor.parent_id))) {
+            const parent = all.find((x) => String(x.id) === String(cursor.parent_id));
+            if (!parent || parent.type !== "page" && parent.type !== "database") break;
+            chain.unshift(parent);
+            seen.add(parent.id);
+            cursor = parent;
+          }
+        } catch { /* breadcrumbs are best-effort */ }
+        setCrumbs(chain);
+        // Expose trail (excluding current page) for the <Breadcrumb> editor node.
+        (window as any).__NN_BREADCRUMB__ = chain.slice(0, -1).map((p) => ({ id: p.id, title: p.title || "Untitled" }));
+        (window as any).__NN_ACTIVE_WORKSPACE__ = b.workspace_id || "";
+        (window as any).__NN_ACTIVE_PARENT__ = b.id;
+      } catch (e: any) {
+        if (alive) setLoadErr(e?.message || "Failed to load this page. Check your connection and retry.");
       }
-      setCrumbs(chain);
-      // Expose trail (excluding current page) for the <Breadcrumb> editor node.
-      (window as any).__NN_BREADCRUMB__ = chain.slice(0, -1).map((p) => ({ id: p.id, title: p.title || "Untitled" }));
-      (window as any).__NN_ACTIVE_WORKSPACE__ = b.workspace_id || "";
-      (window as any).__NN_ACTIVE_PARENT__ = b.id;
     })();
     return () => { alive = false; };
-  }, [pageId]);
+  }, [pageId, loadTick]);
+
 
   useEffect(() => {
     if (titleRef.current) {
