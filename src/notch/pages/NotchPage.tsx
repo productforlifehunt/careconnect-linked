@@ -670,6 +670,7 @@ export default function NotchPage() {
                     <div className="nn-history-ts">{new Date(s.ts).toLocaleString()}</div>
                   </div>
                   <div className="nn-history-actions">
+                    <button className="nn-topbar-btn" onClick={() => setDiffIdx(i)} title="Diff against current">Diff</button>
                     <button className="nn-topbar-btn" onClick={() => restoreSnapshot(i)} title="Restore">Restore</button>
                     <button
                       className="nn-topbar-btn"
@@ -684,6 +685,15 @@ export default function NotchPage() {
                   </div>
                 </div>
               ))}
+              {diffIdx != null && snapshots[diffIdx] && (
+                <div style={{ borderTop: "1px solid var(--nn-border)", padding: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600 }}>Diff vs {new Date(snapshots[diffIdx].ts).toLocaleString()}</span>
+                    <button className="nn-topbar-btn" style={{ marginLeft: "auto" }} onClick={() => setDiffIdx(null)}><X size={12} /></button>
+                  </div>
+                  <DiffView oldText={extractText(snapshots[diffIdx].content)} newText={extractText(content)} />
+                </div>
+              )}
             </div>
           </aside>
         </div>
