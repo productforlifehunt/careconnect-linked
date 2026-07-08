@@ -147,6 +147,7 @@ export function NotchSidebar() {
 
   const loadAll = useCallback(async () => {
     setLoading(true);
+    setLoadErr(null);
     try {
       const ws = await cctList<Workspace>(NN.workspace);
       const mine = ws.filter((w: any) => !user || String(w.author_id) === String(user.user_id));
@@ -163,8 +164,9 @@ export function NotchSidebar() {
         const pageBlocks = blocks.filter((b: any) => (b.type === "page" || b.type === "database") && Number(b.archived) !== 1);
         setPages(pageBlocks);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("Sidebar load failed", e);
+      setLoadErr(e?.message?.includes("fetch") ? "Can't reach backend" : (e?.message || "Failed to load"));
     } finally {
       setLoading(false);
     }
