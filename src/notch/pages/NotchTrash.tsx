@@ -137,8 +137,6 @@ export default function NotchTrash() {
             <div style={{ marginBottom: 8 }}>{loadErr}</div>
             <button className="nn-topbar-btn" onClick={load}>Retry</button>
           </div>
-        ) : null}
-        {!loading && !loadErr && (
         ) : !filtered.length ? (
           <div style={{ color: "var(--nn-text-tertiary)" }}>{q ? "No matches." : "Trash is empty."}</div>
         ) : (
