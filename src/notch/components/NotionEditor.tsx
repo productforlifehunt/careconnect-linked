@@ -26,6 +26,8 @@ import { NotchInputRules } from "./notch-input-rules";
 import { nnUploadFile, pickFile } from "@/notch/lib/nn-files";
 import { nnPrompt, nnAlert } from "@/notch/lib/nn-dialog";
 import { useNotchAuth as _useNotchAuth } from "@/notch/context/NotchAuthContext";
+import { useNotchPath } from "@/notch/context/NotchBaseContext";
+import { cctList, NN } from "@/notch/lib/nn-client";
 
 function buildToggleHeading(level: 1 | 2 | 3) {
   return {
