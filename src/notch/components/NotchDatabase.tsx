@@ -1020,7 +1020,62 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
   );
 }
 
+function FormView({ schema, onSubmit, dbTitle }: { schema: PropDef[]; onSubmit: (title: string, cells: Record<string, any>) => Promise<void>; dbTitle: string }) {
+  const [title, setTitle] = useState("");
+  const [cells, setCells] = useState<Record<string, any>>({});
+  const [submitted, setSubmitted] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const set = (k: string, v: any) => setCells((c) => ({ ...c, [k]: v }));
+  const submit = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await onSubmit(title, cells);
+      setTitle(""); setCells({}); setSubmitted(true);
+      setTimeout(() => setSubmitted(false), 2500);
+    } finally { setBusy(false); }
+  };
+  return (
+    <div style={{ maxWidth: 640, margin: "0 auto", padding: 16, border: "1px solid var(--nn-border)", borderRadius: 8, background: "var(--nn-bg)" }}>
+      <div style={{ fontSize: 22, fontWeight: 600, marginBottom: 4 }}>{dbTitle}</div>
+      <div style={{ fontSize: 13, color: "var(--nn-text-secondary)", marginBottom: 16 }}>Fill out the form to create a new entry.</div>
+      <label style={{ display: "block", fontSize: 12, fontWeight: 500, marginBottom: 4 }}>Name</label>
+      <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Untitled" style={{ width: "100%", padding: "8px 10px", border: "1px solid var(--nn-border)", borderRadius: 4, marginBottom: 12, background: "var(--nn-bg)", color: "var(--nn-text)", fontSize: 14 }} />
+      {schema.filter((p) => !["formula", "rollup", "button", "ai"].includes(p.type)).map((p) => (
+        <div key={p.key} style={{ marginBottom: 12 }}>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 500, marginBottom: 4 }}>{p.name}</label>
+          {p.type === "checkbox" ? (
+            <input type="checkbox" checked={!!cells[p.key]} onChange={(e) => set(p.key, e.target.checked)} />
+          ) : p.type === "select" ? (
+            <select value={cells[p.key] || ""} onChange={(e) => set(p.key, e.target.value)} style={{ width: "100%", padding: "8px 10px", border: "1px solid var(--nn-border)", borderRadius: 4, background: "var(--nn-bg)", color: "var(--nn-text)", fontSize: 14 }}>
+              <option value="">—</option>
+              {(p.options || []).map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          ) : p.type === "multiselect" ? (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {(p.options || []).map((o) => {
+                const arr: string[] = Array.isArray(cells[p.key]) ? cells[p.key] : [];
+                const on = arr.includes(o);
+                return <span key={o} onClick={() => set(p.key, on ? arr.filter((x) => x !== o) : [...arr, o])} style={{ background: on ? "var(--nn-blue-bg)" : "rgba(0,0,0,0.05)", color: on ? "var(--nn-blue)" : "var(--nn-text-secondary)", padding: "4px 10px", borderRadius: 4, fontSize: 12, cursor: "pointer" }}>{o}</span>;
+              })}
+            </div>
+          ) : p.type === "date" ? (
+            <input type="date" value={cells[p.key] || ""} onChange={(e) => set(p.key, e.target.value)} style={{ width: "100%", padding: "8px 10px", border: "1px solid var(--nn-border)", borderRadius: 4, background: "var(--nn-bg)", color: "var(--nn-text)", fontSize: 14 }} />
+          ) : p.type === "number" ? (
+            <input type="number" value={cells[p.key] || ""} onChange={(e) => set(p.key, e.target.value)} style={{ width: "100%", padding: "8px 10px", border: "1px solid var(--nn-border)", borderRadius: 4, background: "var(--nn-bg)", color: "var(--nn-text)", fontSize: 14 }} />
+          ) : (
+            <input value={cells[p.key] || ""} onChange={(e) => set(p.key, e.target.value)} placeholder={p.type} style={{ width: "100%", padding: "8px 10px", border: "1px solid var(--nn-border)", borderRadius: 4, background: "var(--nn-bg)", color: "var(--nn-text)", fontSize: 14 }} />
+          )}
+        </div>
+      ))}
+      <button onClick={submit} disabled={busy} className="nn-btn-primary" style={{ width: "100%", padding: "10px", fontSize: 14 }}>{busy ? "Submitting…" : "Submit"}</button>
+      {submitted && <div style={{ color: "var(--nn-blue)", fontSize: 12, marginTop: 8, textAlign: "center" }}>✓ Entry created</div>}
+    </div>
+  );
+}
+
 function ChartView({ rows, schema }: { rows: Row[]; schema: PropDef[] }) {
+
   const groupProps = schema.filter((p) => p.type === "select" || p.type === "multiselect" || p.type === "checkbox");
   const numericProps = schema.filter((p) => p.type === "number" || p.type === "formula" || p.type === "rollup");
   const [groupKey, setGroupKey] = useState<string>(groupProps[0]?.key || "__title__");
