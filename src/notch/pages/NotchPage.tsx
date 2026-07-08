@@ -52,6 +52,8 @@ export default function NotchPage() {
   const [fullWidth, setFullWidth] = useState(false);
   const [smallText, setSmallText] = useState(false);
   const [verified, setVerified] = useState(false);
+  const [verifiedMeta, setVerifiedMeta] = useState<{ by?: string; at?: number; expires?: number } | null>(null);
+
   const [snapshots, setSnapshots] = useState<Array<{ ts: number; content: any; title: string }>>([]);
   const [diffIdx, setDiffIdx] = useState<number | null>(null);
   const [showHistory, setShowHistory] = useState(false);
@@ -87,6 +89,8 @@ export default function NotchPage() {
           setFullWidth(!!props.full_width);
           setSmallText(!!props.small_text);
           setVerified(!!props.verified);
+          setVerifiedMeta(props.verified_meta || null);
+
           setSnapshots(Array.isArray(props.history) ? props.history : []);
         } catch { setContent(null); }
         // build breadcrumbs
@@ -141,10 +145,12 @@ export default function NotchPage() {
         full_width: extra.full_width ?? fullWidth,
         small_text: extra.small_text ?? smallText,
         verified: extra.verified ?? verified,
+        verified_meta: extra.verified_meta ?? verifiedMeta,
         history: extra.history ?? snapshots,
       }),
     });
-  }, [content, locked, fullWidth, smallText, verified, snapshots, scheduleSave]);
+  }, [content, locked, fullWidth, smallText, verified, verifiedMeta, snapshots, scheduleSave]);
+
 
   const onTitleChange = (v: string) => { if (locked) return; setTitle(v); scheduleSave({ title: v }); };
   const onIconChange = (v: string) => { setIcon(v); setShowEmoji(false); scheduleSave({ icon: v }); };
@@ -186,9 +192,14 @@ export default function NotchPage() {
   const toggleVerified = () => {
     const nv = !verified;
     setVerified(nv);
+    const nm = nv
+      ? { by: String((user as any)?.email || user?.user_id || "owner"), at: Date.now(), expires: Date.now() + 90 * 86_400_000 }
+      : null;
+    setVerifiedMeta(nm);
     setShowMenu(false);
-    saveProps({ verified: nv });
+    saveProps({ verified: nv, verified_meta: nm });
   };
+
   const takeSnapshot = () => {
     const snap = { ts: Date.now(), content, title };
     const next = [snap, ...snapshots].slice(0, 30);
@@ -577,14 +588,25 @@ export default function NotchPage() {
               rows={1}
               style={{ flex: 1 }}
             />
-            {verified && (
-              <span
-                title="Verified page — content has been reviewed by a workspace owner"
-                style={{ display: "inline-flex", alignItems: "center", gap: 4, marginTop: 14, padding: "2px 8px", background: "rgba(68,131,97,0.14)", color: "#448361", borderRadius: 12, fontSize: 12, fontWeight: 500, whiteSpace: "nowrap" }}
-              >
-                <BadgeCheck size={13} /> Verified
-              </span>
-            )}
+            {verified && (() => {
+              const now = Date.now();
+              const expired = verifiedMeta?.expires ? now > verifiedMeta.expires : false;
+              const when = verifiedMeta?.at ? new Date(verifiedMeta.at).toLocaleDateString() : "";
+              const by = verifiedMeta?.by || "";
+              const tip = expired
+                ? `Verification expired — click to re-verify`
+                : `Verified${by ? ` by ${by}` : ""}${when ? ` on ${when}` : ""}. Click to re-verify.`;
+              return (
+                <span
+                  title={tip}
+                  onClick={toggleVerified}
+                  style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4, marginTop: 14, padding: "2px 8px", background: expired ? "rgba(203,145,47,0.14)" : "rgba(68,131,97,0.14)", color: expired ? "#cb912f" : "#448361", borderRadius: 12, fontSize: 12, fontWeight: 500, whiteSpace: "nowrap" }}
+                >
+                  <BadgeCheck size={13} /> {expired ? "Re-verify" : "Verified"}
+                </span>
+              );
+            })()}
+
           </div>
           {isDatabase ? (
             <NotchDatabase databaseId={pageId} workspaceId={String(block.workspace_id || "")} />

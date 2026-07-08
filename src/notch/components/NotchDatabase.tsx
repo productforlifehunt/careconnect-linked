@@ -65,6 +65,11 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
   const [schema, setSchema] = useState<PropDef[]>(DEFAULT_SCHEMA);
   const [condRules, setCondRules] = useState<CondRule[]>([]);
   const [view, setView] = useState<ViewMode>("table");
+  type Tmpl = { id: string; name: string; icon?: string; cells: Record<string, any> };
+  const [templates, setTemplates] = useState<Tmpl[]>([]);
+  const [showTmplEditor, setShowTmplEditor] = useState(false);
+  const [showTmplPick, setShowTmplPick] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [loadErr, setLoadErr] = useState<string | null>(null);
   const [showSchema, setShowSchema] = useState(false);
@@ -101,7 +106,9 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
         else setSchema(DEFAULT_SCHEMA);
         setCondRules(Array.isArray(p.condRules) ? p.condRules : []);
         setAutomations(Array.isArray(p.automations) ? p.automations : []);
-      } catch { setSchema(DEFAULT_SCHEMA); setCondRules([]); setAutomations([]); }
+        setTemplates(Array.isArray(p.templates) ? p.templates : []);
+      } catch { setSchema(DEFAULT_SCHEMA); setCondRules([]); setAutomations([]); setTemplates([]); }
+
       setRows(all.filter((b: any) => String(b.parent_id) === String(databaseId) && Number(b.archived) !== 1));
     } catch (e: any) {
       setLoadErr(e?.message || "Failed to load database rows. Check your connection and retry.");
@@ -131,6 +138,14 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
     props.automations = next;
     await cctUpdate(NN.block, databaseId, { properties: JSON.stringify(props) });
   };
+  const saveTemplates = async (next: Tmpl[]) => {
+    setTemplates(next);
+    let props: any = {};
+    try { props = dbBlock?.properties ? JSON.parse(dbBlock.properties) : {}; } catch {}
+    props.templates = next;
+    await cctUpdate(NN.block, databaseId, { properties: JSON.stringify(props) });
+  };
+
 
   const runAutomationActions = async (r: Row, actions: AutoAction[]) => {
     let props: any = {};
@@ -739,7 +754,24 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
         <button onClick={exportCsv} className="nn-topbar-btn" title="Export CSV">⬇ CSV</button>
         <button onClick={() => csvInputRef.current?.click()} className="nn-topbar-btn" title="Import CSV">⬆ CSV</button>
         <input ref={csvInputRef} type="file" accept=".csv,text/csv" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0]; if (f) importCsv(f); e.currentTarget.value = ""; }} />
-        <button onClick={() => addRow()} className="nn-topbar-btn"><Plus size={13} /> New</button>
+        <div style={{ position: "relative", display: "inline-flex" }}>
+          <button onClick={() => { if (templates.length) setShowTmplPick((v) => !v); else addRow(); }} className="nn-topbar-btn"><Plus size={13} /> New{templates.length ? " ▾" : ""}</button>
+          {showTmplPick && templates.length > 0 && (
+            <div style={{ position: "absolute", top: "100%", right: 0, background: "var(--nn-bg)", border: "1px solid var(--nn-border)", borderRadius: 6, boxShadow: "var(--nn-shadow-md)", zIndex: 1000, minWidth: 220, padding: 4 }}>
+              <div onClick={() => { addRow(); setShowTmplPick(false); }} style={{ padding: "6px 10px", fontSize: 13, cursor: "pointer", borderRadius: 4 }} className="nn-hover">📄 Empty page</div>
+              {templates.map((t) => (
+                <div key={t.id} onClick={() => { addRow({ ...t.cells }); setShowTmplPick(false); }} style={{ padding: "6px 10px", fontSize: 13, cursor: "pointer", borderRadius: 4 }} className="nn-hover">
+                  {t.icon || "📋"} {t.name || "Untitled template"}
+                </div>
+              ))}
+              <div style={{ borderTop: "1px solid var(--nn-border)", marginTop: 4, paddingTop: 4 }}>
+                <div onClick={() => { setShowTmplEditor(true); setShowTmplPick(false); }} style={{ padding: "6px 10px", fontSize: 12, cursor: "pointer", color: "var(--nn-text-secondary)" }} className="nn-hover">＋ New template…</div>
+              </div>
+            </div>
+          )}
+        </div>
+        <button onClick={() => setShowTmplEditor(true)} className="nn-topbar-btn" title="Manage templates">📋</button>
+
       </div>
       {selectedRows.size > 0 && (
         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", background: "var(--nn-blue-bg)", border: "1px solid var(--nn-blue)", borderRadius: 4, marginBottom: 8, fontSize: 12 }}>
@@ -1027,11 +1059,67 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
       {showAuto && (
         <AutomationEditor rules={automations} schema={schema} onClose={() => setShowAuto(false)} onSave={(r) => { saveAutomations(r); setShowAuto(false); }} />
       )}
+      {showTmplEditor && (
+        <TemplateEditor templates={templates} schema={schema} onClose={() => setShowTmplEditor(false)} onSave={(t) => { saveTemplates(t); setShowTmplEditor(false); }} />
+      )}
+
+    </div>
+  );
+}
+
+function TemplateEditor({ templates, schema, onClose, onSave }: { templates: { id: string; name: string; icon?: string; cells: Record<string, any> }[]; schema: PropDef[]; onClose: () => void; onSave: (t: any[]) => void }) {
+  const [list, setList] = useState(templates.length ? templates : [{ id: `t_${Date.now()}`, name: "New template", icon: "📋", cells: {} as Record<string, any> }]);
+  const update = (i: number, patch: any) => setList((L) => L.map((t, j) => j === i ? { ...t, ...patch } : t));
+  const setCell = (i: number, k: string, v: any) => setList((L) => L.map((t, j) => j === i ? { ...t, cells: { ...t.cells, [k]: v } } : t));
+  const add = () => setList((L) => [...L, { id: `t_${Date.now()}`, name: "New template", icon: "📋", cells: {} }]);
+  const rm = (i: number) => setList((L) => L.filter((_, j) => j !== i));
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(15,15,15,0.5)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: "var(--nn-bg)", border: "1px solid var(--nn-border)", borderRadius: 8, padding: 20, width: 620, maxHeight: "80vh", overflow: "auto" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+          <div style={{ fontSize: 16, fontWeight: 600 }}>Database templates</div>
+          <button className="nn-topbar-btn" onClick={onClose}><X size={14} /></button>
+        </div>
+        <div style={{ fontSize: 12, color: "var(--nn-text-secondary)", marginBottom: 12 }}>Templates pre-fill property values when creating a new page. Choose one from the New button dropdown.</div>
+        {list.map((t, i) => (
+          <div key={t.id} style={{ padding: 12, border: "1px solid var(--nn-border)", borderRadius: 6, marginBottom: 10 }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
+              <input value={t.icon || ""} onChange={(e) => update(i, { icon: e.target.value })} className="nn-auth-input" placeholder="📋" style={{ marginBottom: 0, width: 50, textAlign: "center" }} />
+              <input value={t.name} onChange={(e) => update(i, { name: e.target.value })} className="nn-auth-input" placeholder="Template name" style={{ marginBottom: 0, flex: 1 }} />
+              <button className="nn-topbar-btn" onClick={() => rm(i)}>Delete</button>
+            </div>
+            <div style={{ fontSize: 11, color: "var(--nn-text-tertiary)", marginBottom: 6 }}>Preset values</div>
+            {schema.filter((p) => !["formula", "rollup", "button", "ai"].includes(p.type)).map((p) => (
+              <div key={p.key} style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: 8, alignItems: "center", marginBottom: 6 }}>
+                <div style={{ fontSize: 12, color: "var(--nn-text-secondary)" }}>{p.name}</div>
+                {p.type === "select" ? (
+                  <select value={t.cells[p.key] || ""} onChange={(e) => setCell(i, p.key, e.target.value)} className="nn-auth-input" style={{ marginBottom: 0 }}>
+                    <option value="">—</option>
+                    {(p.options || []).map((o) => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                ) : p.type === "checkbox" ? (
+                  <input type="checkbox" checked={!!t.cells[p.key]} onChange={(e) => setCell(i, p.key, e.target.checked)} />
+                ) : p.type === "date" ? (
+                  <input type="date" value={t.cells[p.key] || ""} onChange={(e) => setCell(i, p.key, e.target.value)} className="nn-auth-input" style={{ marginBottom: 0 }} />
+                ) : (
+                  <input value={t.cells[p.key] || ""} onChange={(e) => setCell(i, p.key, e.target.value)} className="nn-auth-input" placeholder="—" style={{ marginBottom: 0 }} />
+                )}
+              </div>
+            ))}
+          </div>
+        ))}
+        <button className="nn-topbar-btn" onClick={add} style={{ marginBottom: 10 }}>+ Add template</button>
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+          <button className="nn-topbar-btn" onClick={onClose}>Cancel</button>
+          <button className="nn-btn-primary" onClick={() => onSave(list)}>Save</button>
+        </div>
+      </div>
     </div>
   );
 }
 
 function FormView({ schema, onSubmit, dbTitle }: { schema: PropDef[]; onSubmit: (title: string, cells: Record<string, any>) => Promise<void>; dbTitle: string }) {
+
   const [title, setTitle] = useState("");
   const [cells, setCells] = useState<Record<string, any>>({});
   const [submitted, setSubmitted] = useState(false);
