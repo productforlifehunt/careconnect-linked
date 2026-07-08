@@ -128,14 +128,32 @@ const SLASH_ITEMS = [
         }
       } catch (err: any) { nnAlert(`Upload failed: ${err.message || err}`); }
     } },
-  { group: "Advanced", key: "math", icon: "∑", name: "Math", desc: "Insert a LaTeX equation.",
+  { group: "Advanced", key: "math", icon: "∑", name: "Math equation", desc: "Block LaTeX equation.",
     cmd: (e: any) => e.chain().focus().insertContent({ type: "mathBlock", attrs: { latex: "" } }).run() },
+  { group: "Advanced", key: "imath", icon: "√", name: "Inline equation", desc: "Inline LaTeX equation.",
+    cmd: (e: any) => e.chain().focus().insertContent({ type: "inlineMath", attrs: { latex: "" } }).run() },
   { group: "Advanced", key: "cols2", icon: "▮▮", name: "2 columns", desc: "Two-column layout.",
     cmd: (e: any) => e.chain().focus().insertContent(buildColumns(2)).run() },
   { group: "Advanced", key: "cols3", icon: "▮▮▮", name: "3 columns", desc: "Three-column layout.",
     cmd: (e: any) => e.chain().focus().insertContent(buildColumns(3)).run() },
+  { group: "Advanced", key: "cols4", icon: "▮▮▮▮", name: "4 columns", desc: "Four-column layout.",
+    cmd: (e: any) => e.chain().focus().insertContent(buildColumns(4)).run() },
+  { group: "Advanced", key: "cols5", icon: "▮▮▮▮▮", name: "5 columns", desc: "Five-column layout.",
+    cmd: (e: any) => e.chain().focus().insertContent(buildColumns(5)).run() },
   { group: "Advanced", key: "sync", icon: "🔗", name: "Sync block", desc: "Mirror another page's content, live.",
     cmd: (e: any) => e.chain().focus().insertContent({ type: "syncBlock", attrs: { sourceId: "" } }).run() },
+  { group: "Advanced", key: "toc", icon: "☰", name: "Table of contents", desc: "Auto-list of headings.",
+    cmd: (e: any) => e.chain().focus().insertContent({ type: "toc" }).run() },
+  { group: "Advanced", key: "crumb", icon: "›", name: "Breadcrumb", desc: "Show page hierarchy.",
+    cmd: (e: any) => e.chain().focus().insertContent({ type: "breadcrumb" }).run() },
+  { group: "Advanced", key: "tplbtn", icon: "⚡", name: "Template button", desc: "Click to duplicate template blocks.",
+    cmd: (e: any) => e.chain().focus().insertContent({ type: "templateButton", attrs: { label: "Add new", template: [{ type: "paragraph", content: [{ type: "text", text: "New item" }] }] } }).run() },
+  { group: "Media", key: "audio", icon: "🎵", name: "Audio", desc: "Embed audio (mp3, wav).",
+    cmd: (e: any) => e.chain().focus().insertContent({ type: "audio", attrs: { src: "" } }).run() },
+  { group: "Media", key: "video2", icon: "🎬", name: "Video", desc: "Embed video file (mp4, webm).",
+    cmd: (e: any) => e.chain().focus().insertContent({ type: "video", attrs: { src: "" } }).run() },
+  { group: "Media", key: "pdf", icon: "📄", name: "PDF", desc: "Inline PDF viewer.",
+    cmd: (e: any) => e.chain().focus().insertContent({ type: "pdf", attrs: { src: "" } }).run() },
   { group: "Basic", key: "subpage", icon: "📄", name: "Sub-page", desc: "Embed a new sub-page.", cmd: async (e: any, ctx: any) => {
       if (!ctx?.onCreateSubpage) return;
       const p = await ctx.onCreateSubpage();
