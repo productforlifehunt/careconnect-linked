@@ -629,7 +629,9 @@ export default function NotchPage() {
               </div>
             );
           })()}
+          <Backlinks pageId={pageId} />
           <NotchComments blockId={pageId} />
+
         </div>
       </div>
       {showShare && <NotchShareModal blockId={pageId} onClose={() => setShowShare(false)} />}
@@ -884,3 +886,46 @@ function PresenceLayer({ pageId, me }: { pageId: string; me: { id: string; name:
     </div>
   );
 }
+
+function Backlinks({ pageId }: { pageId: string }) {
+  const path = useNotchPath();
+  const [refs, setRefs] = useState<Array<{ id: string; title: string; icon?: string }>>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const all = await cctList<any>(NN.block, { per_page: 300 });
+        const hits: Array<{ id: string; title: string; icon?: string }> = [];
+        const needle1 = `page:${pageId}`;
+        const needle2 = `/p/${pageId}`;
+        for (const b of all || []) {
+          if (b.id === pageId || b.in_trash) continue;
+          const props = typeof b.properties === "string" ? b.properties : JSON.stringify(b.properties || {});
+          if (props && (props.includes(needle1) || props.includes(needle2))) {
+            hits.push({ id: b.id, title: b.title || "Untitled", icon: b.icon });
+          }
+        }
+        if (alive) setRefs(hits);
+      } finally { if (alive) setLoading(false); }
+    })();
+    return () => { alive = false; };
+  }, [pageId]);
+  if (loading || refs.length === 0) return null;
+  return (
+    <div style={{ marginTop: 32, borderTop: "1px solid var(--nn-border)", paddingTop: 16 }}>
+      <div style={{ fontSize: 11, fontWeight: 600, color: "var(--nn-text-tertiary)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>
+        {refs.length} {refs.length === 1 ? "backlink" : "backlinks"}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        {refs.map((r) => (
+          <a key={r.id} href={path(`/p/${r.id}`)} className="nn-sidebar-item" style={{ textDecoration: "none" }}>
+            <span className="nn-icon">{r.icon || "📄"}</span>
+            <span className="nn-title">{r.title}</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
