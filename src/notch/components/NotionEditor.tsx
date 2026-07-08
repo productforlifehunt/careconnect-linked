@@ -22,6 +22,7 @@ import { useEffect, useRef, useState } from "react";
 import { Bold, Italic, Underline as UIcon, Strikethrough, Code, Link as LinkIcon, AlignLeft, AlignCenter, AlignRight, Sparkles } from "lucide-react";
 import { MathBlock, Columns, Column, SyncBlock, buildColumns, Callout, InlineMath, AudioBlock, VideoBlock, PdfBlock, Toc, Breadcrumb, TemplateButton } from "./notch-extensions";
 import { NotchMention } from "./notch-mention";
+import { NotchInputRules } from "./notch-input-rules";
 import { nnUploadFile, pickFile } from "@/notch/lib/nn-files";
 import { nnPrompt, nnAlert } from "@/notch/lib/nn-dialog";
 import { useNotchAuth as _useNotchAuth } from "@/notch/context/NotchAuthContext";
@@ -204,6 +205,7 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
       Breadcrumb,
       TemplateButton,
       NotchMention,
+      NotchInputRules,
     ],
     content: content || "",
     onUpdate: ({ editor }) => onChange(editor.getJSON()),
