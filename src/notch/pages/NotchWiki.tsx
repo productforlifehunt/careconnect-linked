@@ -30,7 +30,7 @@ export default function NotchWiki() {
     (async () => {
       setLoading(true);
       try {
-        const wsAll = await cctList<any>(NN.workspaceMember, { user_id: (user as any)?.user_id }).catch(() => []);
+        const wsAll = await cctList<any>(NN.member, { user_id: (user as any)?.user_id }).catch(() => []);
         const wsIds: string[] = Array.from(new Set(wsAll.map((m: any) => String(m.workspace_id)).filter(Boolean)));
         const now = Date.now();
         const collected: Entry[] = [];
