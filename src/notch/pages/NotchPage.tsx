@@ -45,6 +45,7 @@ export default function NotchPage() {
   const [showShare, setShowShare] = useState(false);
   const [locked, setLocked] = useState(false);
   const [fullWidth, setFullWidth] = useState(false);
+  const [smallText, setSmallText] = useState(false);
   const [verified, setVerified] = useState(false);
   const [snapshots, setSnapshots] = useState<Array<{ ts: number; content: any; title: string }>>([]);
   const [showHistory, setShowHistory] = useState(false);
@@ -68,6 +69,7 @@ export default function NotchPage() {
         setContent(props.editor_content || null);
         setLocked(!!props.locked);
         setFullWidth(!!props.full_width);
+        setSmallText(!!props.small_text);
         setVerified(!!props.verified);
         setSnapshots(Array.isArray(props.history) ? props.history : []);
       } catch { setContent(null); }
@@ -113,11 +115,12 @@ export default function NotchPage() {
         editor_content: extra.editor_content ?? content,
         locked: extra.locked ?? locked,
         full_width: extra.full_width ?? fullWidth,
+        small_text: extra.small_text ?? smallText,
         verified: extra.verified ?? verified,
         history: extra.history ?? snapshots,
       }),
     });
-  }, [content, locked, fullWidth, verified, snapshots, scheduleSave]);
+  }, [content, locked, fullWidth, smallText, verified, snapshots, scheduleSave]);
 
   const onTitleChange = (v: string) => { if (locked) return; setTitle(v); scheduleSave({ title: v }); };
   const onIconChange = (v: string) => { setIcon(v); setShowEmoji(false); scheduleSave({ icon: v }); };
@@ -149,6 +152,12 @@ export default function NotchPage() {
     setFullWidth(nv);
     setShowMenu(false);
     saveProps({ full_width: nv });
+  };
+  const toggleSmallText = () => {
+    const nv = !smallText;
+    setSmallText(nv);
+    setShowMenu(false);
+    saveProps({ small_text: nv });
   };
   const toggleVerified = () => {
     const nv = !verified;
@@ -315,6 +324,10 @@ export default function NotchPage() {
                 <span className="nn-icon">{fullWidth ? <Minimize2 size={14} /> : <Maximize2 size={14} />}</span>
                 <span className="nn-title">{fullWidth ? "Compact width" : "Full width"}</span>
               </div>
+              <div onClick={toggleSmallText} className="nn-sidebar-item">
+                <span className="nn-icon" style={{ fontSize: 12, fontWeight: 600 }}>{smallText ? "A" : "a"}</span>
+                <span className="nn-title">{smallText ? "Default text size" : "Small text"}</span>
+              </div>
               <div onClick={toggleLock} className="nn-sidebar-item">
                 <span className="nn-icon">{locked ? <Unlock size={14} /> : <Lock size={14} />}</span>
                 <span className="nn-title">{locked ? "Unlock page" : "Lock page"}</span>
@@ -358,7 +371,7 @@ export default function NotchPage() {
             </button>
           </div>
         )}
-        <div className={`nn-page ${fullWidth ? "nn-page-full" : ""} ${locked ? "nn-page-locked" : ""}`} style={cover ? { paddingTop: 24 } : undefined}>
+        <div className={`nn-page ${fullWidth ? "nn-page-full" : ""} ${locked ? "nn-page-locked" : ""} ${smallText ? "nn-page-small" : ""}`} style={cover ? { paddingTop: 24 } : undefined}>
           <div style={{ position: "relative", display: "inline-block" }}>
             <div className="nn-page-icon" onClick={() => setShowEmoji((s) => !s)}>
               {icon || <span style={{ fontSize: 24, opacity: 0.3 }}>Add icon</span>}
@@ -415,6 +428,23 @@ export default function NotchPage() {
               }}
             />
           )}
+          {!isDatabase && (() => {
+            // Live word/char count from the JSON content.
+            const walk = (n: any): string => {
+              if (!n) return "";
+              if (Array.isArray(n)) return n.map(walk).join(" ");
+              if (n.type === "text") return n.text || "";
+              return (n.content || []).map(walk).join(" ");
+            };
+            const txt = walk(content).trim();
+            const words = txt ? txt.split(/\s+/).length : 0;
+            const chars = txt.length;
+            return (
+              <div style={{ marginTop: 24, fontSize: 11, color: "var(--nn-text-tertiary)", textAlign: "right" }}>
+                {words.toLocaleString()} words · {chars.toLocaleString()} characters
+              </div>
+            );
+          })()}
           <NotchComments blockId={pageId} />
         </div>
       </div>

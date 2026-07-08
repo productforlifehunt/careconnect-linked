@@ -613,11 +613,34 @@
 }
 
 /* Standalone / mobile adaptations */
+@media (max-width: 900px) {
+  .nn-page { padding: 24px 32px 80px; }
+}
 @media (max-width: 767px) {
   .nn-sidebar { width: 82vw; max-width: 320px; }
   .nn-page { padding: 24px 20px 80px; }
   .nn-page-title { font-size: 30px; }
   .nn-page-icon { font-size: 56px; }
+  /* Topbar wraps, buttons breathe. */
+  .nn-topbar { flex-wrap: wrap; height: auto; min-height: 45px; padding: 6px 10px; row-gap: 4px; }
+  .nn-topbar-btn { min-height: 32px; }
+  /* Block hover handles are pointer-only — hide on touch. */
+  .nn-block-handles { display: none !important; }
+  /* Bubble menu wraps and buttons are tappable. */
+  .nn-bubble { flex-wrap: wrap; max-width: 92vw; }
+  .nn-bubble button { min-width: 32px; min-height: 32px; }
+  /* Slash menu clamped to viewport. */
+  .nn-slash-menu { max-width: 92vw; max-height: 60vh; overflow-y: auto; }
+  /* Emoji picker fits on narrow phones. */
+  .nn-emoji-picker { width: min(320px, 92vw) !important; }
+  /* Full-width mode: tighter side padding. */
+  .nn-page.nn-page-full { padding-left: 12px !important; padding-right: 12px !important; }
+  /* Template-button config popover fits. */
+  .nn-tplbtn-cfg-panel { min-width: min(300px, 92vw); max-width: 92vw; }
+  /* Overflow menus anchor to the right edge and cap width. */
+  .nn-block-menu { max-width: 92vw; }
+  /* Prevent iOS input auto-zoom. */
+  .nn-auth-input, textarea.nn-auth-input, .nn-topbar-btn, input[type="text"], input[type="email"], input[type="tel"], input[type="url"] { font-size: 16px; }
 }
 .site-notchnote { background: var(--nn-bg); }
 
@@ -778,6 +801,11 @@
 
 /* Full-width & locked page */
 .nn-page.nn-page-full { max-width: 100% !important; padding-left: 48px; padding-right: 48px; }
+.nn-page.nn-page-small .ProseMirror { font-size: 14px; line-height: 1.5; }
+.nn-page.nn-page-small .ProseMirror h1 { font-size: 24px; }
+.nn-page.nn-page-small .ProseMirror h2 { font-size: 20px; }
+.nn-page.nn-page-small .ProseMirror h3 { font-size: 17px; }
+.nn-page.nn-page-small .nn-page-title { font-size: 30px; }
 .nn-page.nn-page-locked .ProseMirror,
 .nn-page.nn-page-locked .nn-page-title { pointer-events: none; opacity: 0.85; }
 .nn-page.nn-page-locked::before {

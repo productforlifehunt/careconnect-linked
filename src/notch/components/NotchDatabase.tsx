@@ -1,17 +1,18 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { Plus, Trash2, Table, LayoutGrid, Calendar as CalIcon, Settings2, X, ChevronLeft, ChevronRight, Image as ImageIcon, List } from "lucide-react";
+import { Plus, Trash2, Table, LayoutGrid, Calendar as CalIcon, Settings2, X, ChevronLeft, ChevronRight, Image as ImageIcon, List, GanttChart, Link as LinkIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useNotchPath } from "@/notch/context/NotchBaseContext";
 import { cctList, cctCreate, cctUpdate, NN } from "@/notch/lib/nn-client";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 
 interface Props { databaseId: string; workspaceId: string; }
-type ViewMode = "table" | "board" | "calendar" | "gallery" | "list";
-type PropType = "text" | "number" | "select" | "multiselect" | "date" | "checkbox" | "url" | "email" | "phone" | "person" | "formula" | "rollup" | "button" | "ai";
+type ViewMode = "table" | "board" | "calendar" | "timeline" | "gallery" | "list";
+type PropType = "text" | "number" | "select" | "multiselect" | "date" | "checkbox" | "url" | "email" | "phone" | "person" | "formula" | "rollup" | "button" | "ai" | "relation";
 type ButtonAction =
   | { kind: "set"; prop: string; value: string }
   | { kind: "increment"; prop: string; by: number }
   | { kind: "open"; url: string };
+type CondRule = { prop: string; op: "eq" | "neq" | "contains" | "gt" | "lt" | "empty" | "notempty"; value: string; color: string };
 interface PropDef {
   key: string; name: string; type: PropType;
   options?: string[];
@@ -19,8 +20,10 @@ interface PropDef {
   rollup?: { source: string; agg: "sum" | "avg" | "min" | "max" | "count" };
   button?: { label: string; actions: ButtonAction[] };
   ai?: { mode: "summary" | "translate" | "keywords"; lang?: string };
+  relation?: { databaseId: string };
 }
 interface Row { id: string; title?: string; icon?: string; cover?: string; properties?: string; }
+
 
 const DEFAULT_SCHEMA: PropDef[] = [
   { key: "status", name: "Status", type: "select", options: ["To do", "In progress", "Done"] },
@@ -36,27 +39,33 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
   const nav = useNavigate();
   const path = useNotchPath();
   const [rows, setRows] = useState<Row[]>([]);
+  const [allBlocks, setAllBlocks] = useState<any[]>([]);
   const [schema, setSchema] = useState<PropDef[]>(DEFAULT_SCHEMA);
+  const [condRules, setCondRules] = useState<CondRule[]>([]);
   const [view, setView] = useState<ViewMode>("table");
   const [loading, setLoading] = useState(true);
   const [showSchema, setShowSchema] = useState(false);
+  const [showCondEditor, setShowCondEditor] = useState(false);
   const [dbBlock, setDbBlock] = useState<any>(null);
   const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
   const [filterKey, setFilterKey] = useState<string>("");
   const [filterVal, setFilterVal] = useState<string>("");
   const [sortKey, setSortKey] = useState<string>("");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [dragCol, setDragCol] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     const all = await cctList<any>(NN.block, { workspace_id: workspaceId });
+    setAllBlocks(all);
     const parent = all.find((b: any) => String(b.id) === String(databaseId));
     setDbBlock(parent);
     try {
       const p = parent?.properties ? JSON.parse(parent.properties) : {};
       if (Array.isArray(p.schema) && p.schema.length) setSchema(p.schema);
       else setSchema(DEFAULT_SCHEMA);
-    } catch { setSchema(DEFAULT_SCHEMA); }
+      setCondRules(Array.isArray(p.condRules) ? p.condRules : []);
+    } catch { setSchema(DEFAULT_SCHEMA); setCondRules([]); }
     setRows(all.filter((b: any) => String(b.parent_id) === String(databaseId) && Number(b.archived) !== 1));
     setLoading(false);
   }, [databaseId, workspaceId]);
@@ -69,6 +78,47 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
     props.schema = next;
     await cctUpdate(NN.block, databaseId, { properties: JSON.stringify(props) });
   };
+  const saveCondRules = async (next: CondRule[]) => {
+    setCondRules(next);
+    let props: any = {};
+    try { props = dbBlock?.properties ? JSON.parse(dbBlock.properties) : {}; } catch {}
+    props.condRules = next;
+    await cctUpdate(NN.block, databaseId, { properties: JSON.stringify(props) });
+  };
+
+  // Compute background color for a row/cell given the conditional-formatting rules.
+  const rowColor = (r: Row): string => {
+    for (const rule of condRules) {
+      const v = (rule.prop === "__title__") ? (r.title || "") : (() => {
+        try { return (r.properties ? JSON.parse(r.properties) : {})[rule.prop]; } catch { return ""; }
+      })();
+      const s = String(v ?? "");
+      const rv = String(rule.value ?? "");
+      let match = false;
+      if (rule.op === "eq") match = s === rv;
+      else if (rule.op === "neq") match = s !== rv;
+      else if (rule.op === "contains") match = s.toLowerCase().includes(rv.toLowerCase());
+      else if (rule.op === "gt") match = Number(s) > Number(rv);
+      else if (rule.op === "lt") match = Number(s) < Number(rv);
+      else if (rule.op === "empty") match = s === "" || s == null;
+      else if (rule.op === "notempty") match = s !== "" && s != null;
+      if (match) return rule.color;
+    }
+    return "";
+  };
+
+  // Reorder a schema column by drag (persists to properties).
+  const reorderColumn = async (srcKey: string, tgtKey: string) => {
+    if (srcKey === tgtKey) return;
+    const srcIdx = schema.findIndex((p) => p.key === srcKey);
+    const tgtIdx = schema.findIndex((p) => p.key === tgtKey);
+    if (srcIdx < 0 || tgtIdx < 0) return;
+    const next = [...schema];
+    const [moved] = next.splice(srcIdx, 1);
+    next.splice(tgtIdx, 0, moved);
+    await saveSchema(next);
+  };
+
 
   const getProp = (r: Row, key: string) => {
     try { return (r.properties ? JSON.parse(r.properties) : {})[key]; } catch { return undefined; }
@@ -300,6 +350,35 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
         </div>
       );
     }
+    if (p.type === "relation") {
+      // Value stored as a comma-separated list of block IDs. Show titles resolved from allBlocks.
+      const ids: string[] = Array.isArray(v) ? v : (v ? String(v).split(",").map((s) => s.trim()).filter(Boolean) : []);
+      const targetDbId = p.relation?.databaseId || "";
+      const candidates = allBlocks.filter((b) => targetDbId ? String(b.parent_id) === String(targetDbId) : b.type === "page");
+      const titleOf = (id: string) => allBlocks.find((b) => String(b.id) === String(id))?.title || id;
+      return (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, alignItems: "center" }}>
+          {ids.map((id) => (
+            <span key={id} onClick={(e) => { e.stopPropagation(); nav(path(`/p/${id}`)); }}
+              style={{ background: "var(--nn-blue-bg)", color: "var(--nn-blue)", padding: "1px 6px", borderRadius: 3, fontSize: 11, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 3 }}>
+              <LinkIcon size={10} /> {titleOf(id)}
+              <span onClick={(e) => { e.stopPropagation(); setProp(r, p.key, ids.filter((x) => x !== id)); }} style={{ opacity: 0.6, cursor: "pointer" }}>×</span>
+            </span>
+          ))}
+          <select
+            value=""
+            onChange={(e) => { const v2 = e.target.value; if (v2 && !ids.includes(v2)) setProp(r, p.key, [...ids, v2]); }}
+            style={{ background: "transparent", border: "1px dashed var(--nn-border)", borderRadius: 3, fontSize: 11, padding: "1px 2px", color: "var(--nn-text-secondary)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <option value="">+ link</option>
+            {candidates.filter((c) => !ids.includes(String(c.id)) && String(c.id) !== String(r.id)).slice(0, 200).map((c) => (
+              <option key={c.id} value={c.id}>{c.title || "Untitled"}</option>
+            ))}
+          </select>
+        </div>
+      );
+    }
     return (
       <input value={v} onChange={(e) => setProp(r, p.key, e.target.value)} placeholder="—" style={{ background: "transparent", border: "none", color: "var(--nn-text)", fontSize: 13, width: "100%" }} />
     );
@@ -310,8 +389,8 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
   return (
     <div style={{ marginTop: 12 }}>
       <div style={{ display: "flex", gap: 4, borderBottom: "1px solid var(--nn-border)", marginBottom: 12 }}>
-        {(["table", "board", "calendar", "gallery", "list"] as ViewMode[]).map((v) => {
-          const Icon = v === "table" ? Table : v === "board" ? LayoutGrid : v === "calendar" ? CalIcon : v === "gallery" ? ImageIcon : List;
+        {(["table", "board", "calendar", "timeline", "gallery", "list"] as ViewMode[]).map((v) => {
+          const Icon = v === "table" ? Table : v === "board" ? LayoutGrid : v === "calendar" ? CalIcon : v === "timeline" ? GanttChart : v === "gallery" ? ImageIcon : List;
           return (
             <button key={v} onClick={() => setView(v)} className="nn-topbar-btn" style={{ borderBottom: view === v ? "2px solid var(--nn-text)" : "none", borderRadius: 0, textTransform: "capitalize" }}>
               <Icon size={13} style={{ marginRight: 4 }} /> {v}
@@ -335,6 +414,7 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
         {sortKey && (
           <button onClick={() => setSortDir(sortDir === "asc" ? "desc" : "asc")} className="nn-topbar-btn" title="Toggle sort direction">{sortDir === "asc" ? "↑" : "↓"}</button>
         )}
+        <button onClick={() => setShowCondEditor(true)} className="nn-topbar-btn" title="Conditional formatting">🎨</button>
         <button onClick={() => setShowSchema(true)} className="nn-topbar-btn"><Settings2 size={13} /> Properties</button>
         <button onClick={() => addRow()} className="nn-topbar-btn"><Plus size={13} /> New</button>
       </div>
@@ -343,19 +423,33 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
         <div style={{ border: "1px solid var(--nn-border)", borderRadius: 4, overflow: "auto" }}>
           <div style={{ display: "grid", gridTemplateColumns: `2fr ${schema.map(() => "1fr").join(" ")} 40px`, background: "var(--nn-bg-secondary)", fontSize: 12, color: "var(--nn-text-secondary)", padding: "8px 12px", borderBottom: "1px solid var(--nn-border)", fontWeight: 500 }}>
             <div>Name</div>
-            {schema.map((p) => <div key={p.key}>{p.name}</div>)}
+            {schema.map((p) => (
+              <div
+                key={p.key}
+                draggable
+                onDragStart={(e) => { setDragCol(p.key); e.dataTransfer.effectAllowed = "move"; }}
+                onDragOver={(e) => { if (dragCol && dragCol !== p.key) e.preventDefault(); }}
+                onDrop={(e) => { e.preventDefault(); if (dragCol) reorderColumn(dragCol, p.key); setDragCol(null); }}
+                onDragEnd={() => setDragCol(null)}
+                title="Drag to reorder column"
+                style={{ cursor: "grab", opacity: dragCol === p.key ? 0.5 : 1, userSelect: "none" }}
+              >{p.name}</div>
+            ))}
             <div />
           </div>
-          {visibleRows.map((r) => (
-            <div key={r.id} style={{ display: "grid", gridTemplateColumns: `2fr ${schema.map(() => "1fr").join(" ")} 40px`, padding: "8px 12px", borderBottom: "1px solid var(--nn-border)", alignItems: "center", fontSize: 14 }}>
-              <div onClick={() => nav(path(`/p/${r.id}`))} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
-                <span>{r.icon || "📄"}</span>
-                <span>{r.title || "Untitled"}</span>
+          {visibleRows.map((r) => {
+            const bg = rowColor(r);
+            return (
+              <div key={r.id} style={{ display: "grid", gridTemplateColumns: `2fr ${schema.map(() => "1fr").join(" ")} 40px`, padding: "8px 12px", borderBottom: "1px solid var(--nn-border)", alignItems: "center", fontSize: 14, background: bg || undefined }}>
+                <div onClick={() => nav(path(`/p/${r.id}`))} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                  <span>{r.icon || "📄"}</span>
+                  <span>{r.title || "Untitled"}</span>
+                </div>
+                {schema.map((p) => <div key={p.key}>{renderCell(r, p)}</div>)}
+                <button onClick={() => archiveRow(r.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-tertiary)" }}><Trash2 size={13} /></button>
               </div>
-              {schema.map((p) => <div key={p.key}>{renderCell(r, p)}</div>)}
-              <button onClick={() => archiveRow(r.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-tertiary)" }}><Trash2 size={13} /></button>
-            </div>
-          ))}
+            );
+          })}
           <div onClick={() => addRow()} style={{ padding: "8px 12px", color: "var(--nn-text-tertiary)", cursor: "pointer", fontSize: 13 }}>+ New page</div>
         </div>
       )}
@@ -408,6 +502,20 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
         />
       )}
 
+      {view === "timeline" && (
+        <TimelineView
+          rows={visibleRows}
+          dateProp={dateProp}
+          endDateProp={endDateProp}
+          rowColor={rowColor}
+          onOpen={(id) => nav(path(`/p/${id}`))}
+          onReschedule={(row, iso, isEnd) => {
+            const target = isEnd && endDateProp ? endDateProp : dateProp;
+            if (target) setProp(row, target.key, iso);
+          }}
+        />
+      )}
+
       {view === "gallery" && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
           {visibleRows.map((r) => (
@@ -443,7 +551,10 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
       )}
 
       {showSchema && (
-        <SchemaEditor schema={schema} onClose={() => setShowSchema(false)} onSave={(s) => { saveSchema(s); setShowSchema(false); }} />
+        <SchemaEditor schema={schema} allBlocks={allBlocks} onClose={() => setShowSchema(false)} onSave={(s) => { saveSchema(s); setShowSchema(false); }} />
+      )}
+      {showCondEditor && (
+        <CondEditor rules={condRules} schema={schema} onClose={() => setShowCondEditor(false)} onSave={(r) => { saveCondRules(r); setShowCondEditor(false); }} />
       )}
     </div>
   );
@@ -562,9 +673,10 @@ function CalendarView({ month, calView, setCalView, onPrev, onNext, onToday, row
   );
 }
 
-function SchemaEditor({ schema, onClose, onSave }: { schema: PropDef[]; onClose: () => void; onSave: (s: PropDef[]) => void }) {
+function SchemaEditor({ schema, allBlocks, onClose, onSave }: { schema: PropDef[]; allBlocks: any[]; onClose: () => void; onSave: (s: PropDef[]) => void }) {
   const [draft, setDraft] = useState<PropDef[]>(JSON.parse(JSON.stringify(schema)));
-  const TYPES: PropType[] = ["text", "number", "select", "multiselect", "date", "checkbox", "url", "email", "phone", "person", "formula", "rollup", "button", "ai"];
+  const TYPES: PropType[] = ["text", "number", "select", "multiselect", "date", "checkbox", "url", "email", "phone", "person", "formula", "rollup", "button", "ai", "relation"];
+  const databases = allBlocks.filter((b) => b.type === "database");
   const numericSources = draft.filter((p) => p.type === "number");
   const add = () => {
     const key = `prop_${Date.now().toString(36)}`;
@@ -640,10 +752,157 @@ function SchemaEditor({ schema, onClose, onSave }: { schema: PropDef[]; onClose:
                 )}
               </>
             )}
+            {p.type === "relation" && (
+              <select
+                value={p.relation?.databaseId || ""}
+                onChange={(e) => update(i, { relation: { databaseId: e.target.value } })}
+                className="nn-auth-input"
+                style={{ marginBottom: 0, width: 220 }}
+              >
+                <option value="">Target database…</option>
+                {databases.map((d) => <option key={d.id} value={d.id}>{d.title || "Untitled"}</option>)}
+              </select>
+            )}
             <button onClick={() => del(i)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-tertiary)" }}><Trash2 size={14} /></button>
           </div>
         ))}
         <button onClick={add} className="nn-topbar-btn" style={{ marginTop: 8 }}><Plus size={13} /> Add property</button>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 20 }}>
+          <button onClick={onClose} className="nn-topbar-btn">Cancel</button>
+          <button onClick={() => onSave(draft)} className="nn-btn-primary">Save</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Timeline / Gantt view ─────────────────────────────────── */
+function TimelineView({ rows, dateProp, endDateProp, rowColor, onOpen, onReschedule }: {
+  rows: Row[]; dateProp: PropDef | null; endDateProp: PropDef | null;
+  rowColor: (r: Row) => string;
+  onOpen: (id: string) => void;
+  onReschedule: (row: Row, iso: string, isEnd: boolean) => void;
+}) {
+  if (!dateProp) return <div style={{ color: "var(--nn-text-tertiary)", fontSize: 13 }}>Add a date property to enable the timeline view.</div>;
+  const getVal = (r: Row, key: string): string => { try { return String((r.properties ? JSON.parse(r.properties) : {})[key] || "").slice(0, 10); } catch { return ""; } };
+  // Compute date range: min → max +7 days (or 30 days if empty).
+  const dates = rows.flatMap((r) => [getVal(r, dateProp.key), endDateProp ? getVal(r, endDateProp.key) : ""].filter(Boolean));
+  const today = new Date();
+  const minD = dates.length ? new Date(Math.min(...dates.map((d) => new Date(d).getTime()))) : new Date(today.getFullYear(), today.getMonth(), 1);
+  const maxD = dates.length ? new Date(Math.max(...dates.map((d) => new Date(d).getTime()))) : new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  const start = new Date(minD); start.setDate(start.getDate() - 3);
+  const end = new Date(maxD); end.setDate(end.getDate() + 7);
+  const dayMs = 86400000;
+  const totalDays = Math.max(14, Math.ceil((end.getTime() - start.getTime()) / dayMs));
+  const cellW = 32;
+  const iso = (d: Date) => d.toISOString().slice(0, 10);
+  const days: Date[] = [];
+  for (let i = 0; i < totalDays; i++) { const d = new Date(start); d.setDate(start.getDate() + i); days.push(d); }
+  const todayIso = iso(today);
+  return (
+    <div style={{ border: "1px solid var(--nn-border)", borderRadius: 4, overflow: "auto" }}>
+      <div style={{ display: "grid", gridTemplateColumns: `200px repeat(${totalDays}, ${cellW}px)`, position: "sticky", top: 0, background: "var(--nn-bg-secondary)", borderBottom: "1px solid var(--nn-border)", fontSize: 11, color: "var(--nn-text-secondary)" }}>
+        <div style={{ padding: "6px 8px", fontWeight: 500 }}>Task</div>
+        {days.map((d) => {
+          const isFirst = d.getDate() === 1;
+          const isTd = iso(d) === todayIso;
+          return (
+            <div key={d.toISOString()} style={{ textAlign: "center", padding: "6px 2px", borderLeft: "1px solid var(--nn-border)", background: isTd ? "var(--nn-blue-bg)" : undefined, color: isTd ? "var(--nn-blue)" : undefined, fontWeight: isFirst ? 600 : 400 }}>
+              <div>{d.getDate()}</div>
+              {isFirst && <div style={{ fontSize: 9, opacity: 0.7 }}>{d.toLocaleString(undefined, { month: "short" })}</div>}
+            </div>
+          );
+        })}
+      </div>
+      {rows.map((r) => {
+        const s = getVal(r, dateProp.key);
+        const e = endDateProp ? getVal(r, endDateProp.key) : "";
+        if (!s) return null;
+        const sD = new Date(s), eD = e ? new Date(e) : sD;
+        const off = Math.max(0, Math.round((sD.getTime() - start.getTime()) / dayMs));
+        const span = Math.max(1, Math.round((eD.getTime() - sD.getTime()) / dayMs) + 1);
+        const bg = rowColor(r) || "var(--nn-blue-bg)";
+        return (
+          <div key={r.id} style={{ display: "grid", gridTemplateColumns: `200px repeat(${totalDays}, ${cellW}px)`, borderBottom: "1px solid var(--nn-border)", alignItems: "center", minHeight: 32 }}>
+            <div onClick={() => onOpen(r.id)} style={{ padding: "6px 8px", cursor: "pointer", fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <span>{r.icon || "📄"}</span> {r.title || "Untitled"}
+            </div>
+            <div style={{ gridColumn: `${2 + off} / span ${span}`, position: "relative", padding: "0 2px" }}>
+              <div
+                onClick={() => onOpen(r.id)}
+                draggable
+                onDragStart={(ev) => ev.dataTransfer.setData("text/nn-tl", r.id)}
+                title={`${s}${e ? " → " + e : ""}`}
+                style={{ background: bg, color: "var(--nn-blue)", height: 20, borderRadius: 4, cursor: "pointer", fontSize: 11, padding: "2px 6px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", border: "1px solid var(--nn-blue)" }}
+              >
+                {r.title || "Untitled"}
+              </div>
+            </div>
+            {days.map((d, i) => (
+              <div
+                key={i}
+                onDragOver={(ev) => { ev.preventDefault(); }}
+                onDrop={(ev) => { ev.preventDefault(); const id = ev.dataTransfer.getData("text/nn-tl"); if (id === r.id) onReschedule(r, iso(d), false); }}
+                style={{ position: "absolute", pointerEvents: "none" }}
+              />
+            ))}
+          </div>
+        );
+      })}
+      {!rows.length && <div style={{ padding: 12, color: "var(--nn-text-tertiary)", fontSize: 13 }}>No rows with a date to show.</div>}
+    </div>
+  );
+}
+
+/* ─── Conditional formatting editor ─────────────────────────── */
+function CondEditor({ rules, schema, onClose, onSave }: {
+  rules: CondRule[]; schema: PropDef[];
+  onClose: () => void; onSave: (r: CondRule[]) => void;
+}) {
+  const [draft, setDraft] = useState<CondRule[]>(JSON.parse(JSON.stringify(rules)));
+  const OPS: CondRule["op"][] = ["eq", "neq", "contains", "gt", "lt", "empty", "notempty"];
+  const OP_LABEL: Record<CondRule["op"], string> = { eq: "equals", neq: "not equals", contains: "contains", gt: ">", lt: "<", empty: "is empty", notempty: "is not empty" };
+  const COLORS = [
+    ["rgba(241,241,239,0.6)", "Gray"],
+    ["rgba(253,235,220,0.7)", "Orange"],
+    ["rgba(251,236,213,0.7)", "Yellow"],
+    ["rgba(219,237,219,0.7)", "Green"],
+    ["rgba(211,229,239,0.7)", "Blue"],
+    ["rgba(232,222,238,0.7)", "Purple"],
+    ["rgba(255,224,224,0.7)", "Red"],
+  ];
+  const add = () => setDraft([...draft, { prop: schema[0]?.key || "__title__", op: "eq", value: "", color: COLORS[0][0] }]);
+  const upd = (i: number, patch: Partial<CondRule>) => { const n = [...draft]; n[i] = { ...n[i], ...patch }; setDraft(n); };
+  const del = (i: number) => setDraft(draft.filter((_, j) => j !== i));
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={onClose}>
+      <div style={{ background: "var(--nn-bg)", borderRadius: 8, width: "100%", maxWidth: 680, padding: 20, maxHeight: "80vh", overflow: "auto" }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+          <div style={{ fontSize: 18, fontWeight: 600 }}>Conditional formatting</div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-secondary)" }}><X size={16} /></button>
+        </div>
+        <div style={{ fontSize: 12, color: "var(--nn-text-secondary)", marginBottom: 12 }}>Rules apply in order — the first match wins.</div>
+        {draft.map((r, i) => (
+          <div key={i} style={{ display: "flex", gap: 6, marginBottom: 8, alignItems: "center", flexWrap: "wrap" }}>
+            <select value={r.prop} onChange={(e) => upd(i, { prop: e.target.value })} className="nn-auth-input" style={{ marginBottom: 0, width: 130 }}>
+              <option value="__title__">Name</option>
+              {schema.map((p) => <option key={p.key} value={p.key}>{p.name}</option>)}
+            </select>
+            <select value={r.op} onChange={(e) => upd(i, { op: e.target.value as CondRule["op"] })} className="nn-auth-input" style={{ marginBottom: 0, width: 120 }}>
+              {OPS.map((o) => <option key={o} value={o}>{OP_LABEL[o]}</option>)}
+            </select>
+            {r.op !== "empty" && r.op !== "notempty" && (
+              <input value={r.value} onChange={(e) => upd(i, { value: e.target.value })} placeholder="value" className="nn-auth-input" style={{ marginBottom: 0, width: 140 }} />
+            )}
+            <div style={{ display: "flex", gap: 4 }}>
+              {COLORS.map(([c, name]) => (
+                <button key={c} onClick={() => upd(i, { color: c })} title={name} style={{ width: 20, height: 20, borderRadius: 3, background: c, border: r.color === c ? "2px solid var(--nn-blue)" : "1px solid var(--nn-border)", cursor: "pointer" }} />
+              ))}
+            </div>
+            <button onClick={() => del(i)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-tertiary)" }}><Trash2 size={14} /></button>
+          </div>
+        ))}
+        <button onClick={add} className="nn-topbar-btn" style={{ marginTop: 8 }}><Plus size={13} /> Add rule</button>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 20 }}>
           <button onClick={onClose} className="nn-topbar-btn">Cancel</button>
           <button onClick={() => onSave(draft)} className="nn-btn-primary">Save</button>
