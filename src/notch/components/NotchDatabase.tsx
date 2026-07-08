@@ -233,6 +233,33 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
       formatDate: (d: any, opts?: Intl.DateTimeFormatOptions) => {
         const dt = new Date(d); return isNaN(dt.getTime()) ? "" : dt.toLocaleDateString(undefined, opts);
       },
+      // Notion V2 formula helpers — string manipulation
+      split: (s: any, sep: string) => String(s ?? "").split(sep),
+      join: (arr: any, sep: string) => (Array.isArray(arr) ? arr : [arr]).map((x) => String(x ?? "")).join(sep),
+      replace: (s: any, find: string, rep: string) => String(s ?? "").split(find).join(rep),
+      replaceAll: (s: any, find: string, rep: string) => String(s ?? "").split(find).join(rep),
+      startsWith: (s: any, p: string) => String(s ?? "").startsWith(p),
+      endsWith: (s: any, p: string) => String(s ?? "").endsWith(p),
+      test: (s: any, re: string) => new RegExp(re).test(String(s ?? "")),
+      match: (s: any, re: string) => { const m = String(s ?? "").match(new RegExp(re)); return m ? m[0] : ""; },
+      trim: (s: any) => String(s ?? "").trim(),
+      // Lambda-style array helpers (accept fn arguments)
+      map: (arr: any, fn: (v: any) => any) => (Array.isArray(arr) ? arr : []).map(fn),
+      filter: (arr: any, fn: (v: any) => any) => (Array.isArray(arr) ? arr : []).filter(fn),
+      reduce: (arr: any, fn: (a: any, v: any) => any, init: any) => (Array.isArray(arr) ? arr : []).reduce(fn, init),
+      some: (arr: any, fn: (v: any) => any) => (Array.isArray(arr) ? arr : []).some(fn),
+      every: (arr: any, fn: (v: any) => any) => (Array.isArray(arr) ? arr : []).every(fn),
+      sum: (arr: any) => (Array.isArray(arr) ? arr : []).reduce((a: number, b: any) => a + (Number(b) || 0), 0),
+      count: (arr: any) => (Array.isArray(arr) ? arr : []).length,
+      // Date V2
+      year: (d: any) => new Date(d).getFullYear(),
+      month: (d: any) => new Date(d).getMonth() + 1,
+      day: (d: any) => new Date(d).getDate(),
+      hour: (d: any) => new Date(d).getHours(),
+      minute: (d: any) => new Date(d).getMinutes(),
+      weekday: (d: any) => new Date(d).getDay(),
+      timestamp: (d: any) => new Date(d).getTime(),
+      fromTimestamp: (t: any) => new Date(Number(t) || 0),
     };
     try {
       const names = [...Object.keys(ctx), ...Object.keys(helpers)];

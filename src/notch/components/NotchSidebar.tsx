@@ -156,6 +156,14 @@ export function NotchSidebar() {
     await loadAll();
   };
 
+  const changeIcon = async (id: string, current: string) => {
+    const icon = await nnPrompt("Emoji or 1-2 characters (empty to clear)", { title: "Page icon", defaultValue: current || "", placeholder: "📄" });
+    if (icon === null) return;
+    await cctUpdate(NN.block, id, { icon: icon.slice(0, 4) });
+    await loadAll();
+  };
+
+
   const duplicatePage = async (src: Block) => {
     if (!activeWs) return;
     const { id } = await cctCreate(NN.block, {
@@ -303,7 +311,7 @@ export function NotchSidebar() {
             >
               <ChevronRight size={12} />
             </span>
-            <span className="nn-icon">{p.icon || <FileText size={15} strokeWidth={1.5} />}</span>
+            <span className="nn-icon" onClick={(e) => { e.stopPropagation(); changeIcon(p.id, p.icon || ""); }} title="Change icon" style={{ cursor: "pointer" }}>{p.icon || <FileText size={15} strokeWidth={1.5} />}</span>
             <span className="nn-title">{p.title || "Untitled"}</span>
             <span className="nn-actions">
               <button onClick={(e) => { e.stopPropagation(); renamePage(p.id, p.title || ""); }} title="Rename">✎</button>

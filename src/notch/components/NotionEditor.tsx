@@ -173,7 +173,7 @@ const SLASH_ITEMS = [
     } },
 ];
 
-export function NotionEditor({ content, onChange, placeholder = "Type '/' for commands", onCreateSubpage }: Props) {
+export function NotionEditor({ content, onChange, placeholder = "Write, press '/' for commands, or ⌃Space for AI…", onCreateSubpage }: Props) {
   const { user } = _useNotchAuth();
   const editor = useEditor({
     extensions: [
@@ -248,6 +248,11 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
         if (e.key === "ArrowDown") { e.preventDefault(); setSelected((s) => (s + 1) % filteredItems().length); return; }
         if (e.key === "ArrowUp") { e.preventDefault(); setSelected((s) => (s - 1 + filteredItems().length) % filteredItems().length); return; }
         if (e.key === "Enter") { e.preventDefault(); runItem(filteredItems()[selected]); return; }
+      }
+      // Ctrl/Cmd + Space → inline AI continue
+      if (e.code === "Space" && (e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        runAI("continue");
       }
     };
     const inputHandler = () => {
