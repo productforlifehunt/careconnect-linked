@@ -131,20 +131,7 @@ export function NotchSidebar() {
 
 
 
-  useEffect(() => {
-    if (!user) return;
-    let alive = true;
-    const poll = async () => {
-      try {
-        await tickReminderQueue(String(user.user_id));
-        const n = await unreadCount(String(user.user_id));
-        if (alive) setUnread(n);
-      } catch { /* noop */ }
-    };
-    poll();
-    const t = setInterval(poll, 60_000);
-    return () => { alive = false; clearInterval(t); };
-  }, [user]);
+  // Unread badge count is delivered by useUnreadCount (polls + cross-tab sync + focus).
 
   const loadAll = useCallback(async () => {
     setLoading(true);
