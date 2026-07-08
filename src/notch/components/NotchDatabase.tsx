@@ -680,7 +680,8 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
 
       {view === "table" && (
         <div style={{ border: "1px solid var(--nn-border)", borderRadius: 4, overflow: "auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: `2fr ${schema.map(() => "1fr").join(" ")} 40px`, background: "var(--nn-bg-secondary)", fontSize: 12, color: "var(--nn-text-secondary)", padding: "8px 12px", borderBottom: "1px solid var(--nn-border)", fontWeight: 500 }}>
+          <div style={{ display: "grid", gridTemplateColumns: `28px 2fr ${schema.map(() => "1fr").join(" ")} 40px`, background: "var(--nn-bg-secondary)", fontSize: 12, color: "var(--nn-text-secondary)", padding: "8px 12px", borderBottom: "1px solid var(--nn-border)", fontWeight: 500 }}>
+            <div><input type="checkbox" checked={visibleRows.length > 0 && visibleRows.every((r) => selectedRows.has(r.id))} onChange={(e) => setSelectedRows(e.target.checked ? new Set(visibleRows.map((r) => r.id)) : new Set())} /></div>
             <div>Name</div>
             {schema.map((p) => (
               <div
@@ -698,8 +699,10 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
           </div>
           {visibleRows.map((r) => {
             const bg = rowColor(r);
+            const isSel = selectedRows.has(r.id);
             return (
-              <div key={r.id} style={{ display: "grid", gridTemplateColumns: `2fr ${schema.map(() => "1fr").join(" ")} 40px`, padding: "8px 12px", borderBottom: "1px solid var(--nn-border)", alignItems: "center", fontSize: 14, background: bg || undefined }}>
+              <div key={r.id} style={{ display: "grid", gridTemplateColumns: `28px 2fr ${schema.map(() => "1fr").join(" ")} 40px`, padding: "8px 12px", borderBottom: "1px solid var(--nn-border)", alignItems: "center", fontSize: 14, background: isSel ? "var(--nn-blue-bg)" : (bg || undefined) }}>
+                <div><input type="checkbox" checked={isSel} onChange={() => toggleRowSelect(r.id)} onClick={(e) => e.stopPropagation()} /></div>
                 <div onClick={() => nav(path(`/p/${r.id}`))} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
                   <span>{r.icon || "📄"}</span>
                   <span>{r.title || "Untitled"}</span>
