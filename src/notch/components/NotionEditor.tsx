@@ -19,7 +19,7 @@ import TableCell from "@tiptap/extension-table-cell";
 import Youtube from "@tiptap/extension-youtube";
 import { Details, DetailsSummary, DetailsContent } from "@tiptap/extension-details";
 import { useEffect, useRef, useState } from "react";
-import { Bold, Italic, Underline as UIcon, Strikethrough, Code, Link as LinkIcon, AlignLeft, AlignCenter, AlignRight, Sparkles, MessageSquare, Type, ChevronDown } from "lucide-react";
+import { Bold, Italic, Underline as UIcon, Strikethrough, Code, Link as LinkIcon, AlignLeft, AlignCenter, AlignRight, Sparkles, MessageSquare, Type, ChevronDown, Plus, Minus, Trash2, Rows, Columns as ColumnsIcon } from "lucide-react";
 import { MathBlock, Columns, Column, SyncBlock, buildColumns, Callout, InlineMath, AudioBlock, VideoBlock, PdfBlock, Toc, Breadcrumb, TemplateButton, TabsBlock, HtmlEmbed, InlineDatabase, MultiBlockShortcuts, InlineCommentMark, Whiteboard } from "./notch-extensions";
 import { NotchMention } from "./notch-mention";
 import { BlockSync } from "@/notch/lib/nn-block-sync";
