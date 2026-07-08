@@ -540,6 +540,33 @@ export function NotchSidebar() {
         return <>{sectionOrder.map((k) => sections[k])}</>;
       })()}
 
+      {selected.size > 0 && (
+        <div style={{ margin: "8px", padding: "8px 10px", background: "var(--nn-bg-secondary)", border: "1px solid var(--nn-border-strong)", borderRadius: 6, display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
+          <span style={{ flex: 1, color: "var(--nn-text)" }}>{selected.size} selected</span>
+          <button
+            onClick={async () => {
+              const name = await nnPrompt("Move selected pages under which parent? Enter page ID (or leave blank for workspace root).", { title: "Bulk move", placeholder: "page id or blank" });
+              if (name === null) return;
+              const dest = name.trim() || activeWs;
+              if (dest) await bulkMove(dest);
+            }}
+            style={{ background: "transparent", border: "1px solid var(--nn-border)", color: "var(--nn-text)", borderRadius: 3, padding: "2px 8px", cursor: "pointer", fontSize: 11 }}
+            title="Move all selected under a parent page"
+          >Move…</button>
+          <button
+            onClick={bulkDelete}
+            style={{ background: "transparent", border: "1px solid var(--nn-border)", color: "var(--nn-danger)", borderRadius: 3, padding: "2px 8px", cursor: "pointer", fontSize: 11 }}
+          >Trash</button>
+          <button
+            onClick={clearSelection}
+            style={{ background: "transparent", border: "none", color: "var(--nn-text-secondary)", cursor: "pointer", fontSize: 14 }}
+            title="Clear selection"
+          >×</button>
+        </div>
+      )}
+
+
+
       <div style={{ padding: 8, borderTop: "1px solid var(--nn-border)", fontSize: 12, color: "var(--nn-text-secondary)", display: "flex", alignItems: "center", gap: 8 }}>
         <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.user_email}</span>
         <button
