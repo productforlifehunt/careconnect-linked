@@ -193,7 +193,7 @@ export default function NotchPage() {
     const nv = !verified;
     setVerified(nv);
     const nm = nv
-      ? { by: String(user?.email || user?.user_id || "owner"), at: Date.now(), expires: Date.now() + 90 * 86_400_000 }
+      ? { by: String((user as any)?.email || user?.user_id || "owner"), at: Date.now(), expires: Date.now() + 90 * 86_400_000 }
       : null;
     setVerifiedMeta(nm);
     setShowMenu(false);
