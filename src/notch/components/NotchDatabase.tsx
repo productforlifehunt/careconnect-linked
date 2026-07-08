@@ -610,6 +610,36 @@ function SchemaEditor({ schema, onClose, onSave }: { schema: PropDef[]; onClose:
                 </select>
               </>
             )}
+            {p.type === "button" && (
+              <input
+                value={p.button?.label || ""}
+                onChange={(e) => update(i, { button: { label: e.target.value, actions: p.button?.actions || [] } })}
+                placeholder="Button label (actions via JSON below)"
+                className="nn-auth-input"
+                style={{ marginBottom: 0, width: 220 }}
+              />
+            )}
+            {p.type === "button" && (
+              <input
+                value={JSON.stringify(p.button?.actions || [])}
+                onChange={(e) => { try { const a = JSON.parse(e.target.value); update(i, { button: { label: p.button?.label || "Run", actions: a } }); } catch {} }}
+                placeholder='[{"kind":"set","prop":"status","value":"Done"}]'
+                className="nn-auth-input"
+                style={{ marginBottom: 0, width: 260, fontFamily: "monospace", fontSize: 11 }}
+              />
+            )}
+            {p.type === "ai" && (
+              <>
+                <select value={p.ai?.mode || "summary"} onChange={(e) => update(i, { ai: { mode: e.target.value as any, lang: p.ai?.lang } })} className="nn-auth-input" style={{ marginBottom: 0, width: 120 }}>
+                  <option value="summary">summary</option>
+                  <option value="keywords">keywords</option>
+                  <option value="translate">translate</option>
+                </select>
+                {p.ai?.mode === "translate" && (
+                  <input value={p.ai?.lang || ""} onChange={(e) => update(i, { ai: { mode: "translate", lang: e.target.value } })} placeholder="lang (e.g. es)" className="nn-auth-input" style={{ marginBottom: 0, width: 90 }} />
+                )}
+              </>
+            )}
             <button onClick={() => del(i)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-tertiary)" }}><Trash2 size={14} /></button>
           </div>
         ))}
