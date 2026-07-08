@@ -198,12 +198,18 @@ export default function NotchSearch() {
             {loading ? "Loading…" : q.trim() === "" ? "Type to search" : `${results.length} result${results.length === 1 ? "" : "s"}`}
           </div>
         </div>
+        {loadErr && (
+          <div style={{ padding: 16, border: "1px solid var(--nn-border)", borderRadius: 6, color: "var(--nn-text-secondary)", marginBottom: 12 }}>
+            <div style={{ marginBottom: 8 }}>{loadErr}</div>
+            <button className="nn-topbar-btn" onClick={load}>Retry</button>
+          </div>
+        )}
         <div ref={listRef}>
           {results.map(({ row: r, snippet }, i) => (
             <div
               key={r.id}
               data-idx={i}
-              onClick={() => nav(path(`/p/${r.id}`))}
+              onClick={() => { pushRecent(q); setRecent(loadRecent()); nav(path(`/p/${r.id}`)); }}
               onMouseEnter={() => setSel(i)}
               className="nn-sidebar-item"
               style={{ padding: "12px 14px", borderRadius: 6, cursor: "pointer", display: "flex", gap: 12, flexDirection: "column", background: sel === i ? "var(--nn-bg-hover)" : "transparent", marginBottom: 2 }}
@@ -224,14 +230,44 @@ export default function NotchSearch() {
               )}
             </div>
           ))}
-          {!loading && !results.length && q.trim() && (
+          {!loading && !loadErr && !results.length && q.trim() && (
             <div style={{ color: "var(--nn-text-tertiary)", padding: "24px 0", textAlign: "center" }}>
               No results for "{q}". Try a shorter query or different keywords.
             </div>
           )}
-          {!loading && !results.length && !q.trim() && (
-            <div style={{ color: "var(--nn-text-tertiary)", padding: "24px 0", textAlign: "center" }}>Start typing to search.</div>
+          {!loading && !loadErr && !results.length && !q.trim() && (
+            <div style={{ padding: "16px 0" }}>
+              {recent.length > 0 ? (
+                <>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                    <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 0.8, color: "var(--nn-text-tertiary)" }}>Recent searches</div>
+                    <button
+                      className="nn-topbar-btn"
+                      style={{ fontSize: 11, padding: "2px 8px" }}
+                      onClick={() => { localStorage.removeItem(RECENT_KEY); setRecent([]); }}
+                    >Clear</button>
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {recent.map((r) => (
+                      <button
+                        key={r}
+                        onClick={() => setQ(r)}
+                        className="nn-topbar-btn"
+                        style={{ fontSize: 12, padding: "4px 10px", borderRadius: 999 }}
+                      >{r}</button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div style={{ color: "var(--nn-text-tertiary)", textAlign: "center", padding: 24 }}>Start typing to search.</div>
+              )}
+            </div>
           )}
+        </div>
+        <div style={{ marginTop: 20, display: "flex", gap: 12, fontSize: 11, color: "var(--nn-text-tertiary)", flexWrap: "wrap" }}>
+          <span><kbd style={kbdStyle}>↑</kbd> <kbd style={kbdStyle}>↓</kbd> Navigate</span>
+          <span><kbd style={kbdStyle}>↵</kbd> Open</span>
+          <span><kbd style={kbdStyle}>Esc</kbd> Close</span>
         </div>
       </div>
     </div>
