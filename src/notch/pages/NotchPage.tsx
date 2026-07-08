@@ -153,6 +153,12 @@ export default function NotchPage() {
     setShowMenu(false);
     saveProps({ full_width: nv });
   };
+  const toggleSmallText = () => {
+    const nv = !smallText;
+    setSmallText(nv);
+    setShowMenu(false);
+    saveProps({ small_text: nv });
+  };
   const toggleVerified = () => {
     const nv = !verified;
     setVerified(nv);
