@@ -22,11 +22,23 @@ export async function nnFetch<T = any>(endpoint: string, opts: NNFetchOpts = {})
   }
   const url = buildWPUrl(endpoint, clean);
   const token = getNNToken();
-  const res = await fetch(url, {
-    method,
-    headers: buildWPHeaders(token, "application/json"),
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  // 20s timeout so a hung upstream can't leave the UI stuck at "Loading…" forever.
+  const ac = new AbortController();
+  const t = setTimeout(() => ac.abort(), 20000);
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method,
+      headers: buildWPHeaders(token, "application/json"),
+      body: body ? JSON.stringify(body) : undefined,
+      signal: ac.signal,
+    });
+  } catch (err: any) {
+    clearTimeout(t);
+    if (err?.name === "AbortError") throw new Error(`NN API ${endpoint}: request timed out`);
+    throw err;
+  }
+  clearTimeout(t);
   if (!res.ok) {
     if (res.status === 404) return null as any;
     if (res.status === 401 || res.status === 403) {
