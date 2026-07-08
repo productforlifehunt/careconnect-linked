@@ -1,12 +1,12 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { Plus, Trash2, Table, LayoutGrid, Calendar as CalIcon, Settings2, X, ChevronLeft, ChevronRight, Image as ImageIcon, List, GanttChart, Link as LinkIcon } from "lucide-react";
+import { Plus, Trash2, Table, LayoutGrid, Calendar as CalIcon, Settings2, X, ChevronLeft, ChevronRight, Image as ImageIcon, List, GanttChart, Link as LinkIcon, BarChart3 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useNotchPath } from "@/notch/context/NotchBaseContext";
 import { cctList, cctCreate, cctUpdate, NN } from "@/notch/lib/nn-client";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 
 interface Props { databaseId: string; workspaceId: string; }
-type ViewMode = "table" | "board" | "calendar" | "timeline" | "gallery" | "list";
+type ViewMode = "table" | "board" | "calendar" | "timeline" | "gallery" | "list" | "chart";
 type PropType = "text" | "number" | "select" | "multiselect" | "date" | "checkbox" | "url" | "email" | "phone" | "person" | "formula" | "rollup" | "button" | "ai" | "relation";
 type ButtonAction =
   | { kind: "set"; prop: string; value: string }
@@ -389,8 +389,8 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
   return (
     <div style={{ marginTop: 12 }}>
       <div style={{ display: "flex", gap: 4, borderBottom: "1px solid var(--nn-border)", marginBottom: 12 }}>
-        {(["table", "board", "calendar", "timeline", "gallery", "list"] as ViewMode[]).map((v) => {
-          const Icon = v === "table" ? Table : v === "board" ? LayoutGrid : v === "calendar" ? CalIcon : v === "timeline" ? GanttChart : v === "gallery" ? ImageIcon : List;
+        {(["table", "board", "calendar", "timeline", "gallery", "list", "chart"] as ViewMode[]).map((v) => {
+          const Icon = v === "table" ? Table : v === "board" ? LayoutGrid : v === "calendar" ? CalIcon : v === "timeline" ? GanttChart : v === "gallery" ? ImageIcon : v === "chart" ? BarChart3 : List;
           return (
             <button key={v} onClick={() => setView(v)} className="nn-topbar-btn" style={{ borderBottom: view === v ? "2px solid var(--nn-text)" : "none", borderRadius: 0, textTransform: "capitalize" }}>
               <Icon size={13} style={{ marginRight: 4 }} /> {v}
@@ -548,6 +548,10 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
           ))}
           <div onClick={() => addRow()} style={{ padding: 8, color: "var(--nn-text-tertiary)", cursor: "pointer", fontSize: 13 }}>+ New page</div>
         </div>
+      )}
+
+      {view === "chart" && (
+        <ChartView rows={visibleRows} schema={schema} />
       )}
 
       {showSchema && (
