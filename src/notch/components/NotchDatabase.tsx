@@ -7,8 +7,19 @@ import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 
 interface Props { databaseId: string; workspaceId: string; }
 type ViewMode = "table" | "board" | "calendar" | "gallery" | "list";
-type PropType = "text" | "number" | "select" | "multiselect" | "date" | "checkbox" | "url" | "email" | "phone" | "person" | "formula" | "rollup";
-interface PropDef { key: string; name: string; type: PropType; options?: string[]; formula?: string; rollup?: { source: string; agg: "sum" | "avg" | "min" | "max" | "count" }; }
+type PropType = "text" | "number" | "select" | "multiselect" | "date" | "checkbox" | "url" | "email" | "phone" | "person" | "formula" | "rollup" | "button" | "ai";
+type ButtonAction =
+  | { kind: "set"; prop: string; value: string }
+  | { kind: "increment"; prop: string; by: number }
+  | { kind: "open"; url: string };
+interface PropDef {
+  key: string; name: string; type: PropType;
+  options?: string[];
+  formula?: string;
+  rollup?: { source: string; agg: "sum" | "avg" | "min" | "max" | "count" };
+  button?: { label: string; actions: ButtonAction[] };
+  ai?: { mode: "summary" | "translate" | "keywords"; lang?: string };
+}
 interface Row { id: string; title?: string; icon?: string; cover?: string; properties?: string; }
 
 const DEFAULT_SCHEMA: PropDef[] = [
@@ -70,7 +81,7 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
     setRows((rs) => rs.map((x) => x.id === r.id ? { ...x, properties: JSON.stringify(props) } : x));
   };
 
-  // Evaluate a formula expression in a sandbox with numeric props exposed as vars.
+  // Evaluate a formula expression in a sandbox with numeric props and Notion-style helpers.
   const evalFormula = (expr: string, r: Row): string => {
     if (!expr) return "";
     let props: any = {};
@@ -81,9 +92,48 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
       const n = Number(v);
       ctx[p.key] = !isNaN(n) && v !== "" && v !== undefined && v !== null ? n : (v ?? "");
     }
+    // Notion-style helpers
+    const helpers = {
+      prop: (k: string) => ctx[k] ?? "",
+      if: (c: any, a: any, b: any) => (c ? a : b),
+      empty: (v: any) => v === "" || v === null || v === undefined,
+      length: (v: any) => (v == null ? 0 : String(v).length),
+      contains: (a: any, b: any) => String(a ?? "").includes(String(b ?? "")),
+      concat: (...args: any[]) => args.map((x) => String(x ?? "")).join(""),
+      slice: (s: any, a: number, b?: number) => String(s ?? "").slice(a, b),
+      lower: (s: any) => String(s ?? "").toLowerCase(),
+      upper: (s: any) => String(s ?? "").toUpperCase(),
+      format: (n: any) => (typeof n === "number" ? n.toLocaleString() : String(n ?? "")),
+      toNumber: (v: any) => Number(v) || 0,
+      round: (n: any) => Math.round(Number(n) || 0),
+      abs: (n: any) => Math.abs(Number(n) || 0),
+      max: (...a: number[]) => Math.max(...a.map((n) => Number(n) || 0)),
+      min: (...a: number[]) => Math.min(...a.map((n) => Number(n) || 0)),
+      now: () => new Date(),
+      today: () => new Date(new Date().toDateString()),
+      dateAdd: (d: any, n: number, unit: "days" | "months" | "years" = "days") => {
+        const dt = new Date(d || Date.now());
+        if (unit === "days") dt.setDate(dt.getDate() + n);
+        else if (unit === "months") dt.setMonth(dt.getMonth() + n);
+        else if (unit === "years") dt.setFullYear(dt.getFullYear() + n);
+        return dt.toISOString().slice(0, 10);
+      },
+      dateBetween: (a: any, b: any, unit: "days" | "hours" = "days") => {
+        const ma = new Date(a).getTime(), mb = new Date(b).getTime();
+        if (isNaN(ma) || isNaN(mb)) return 0;
+        const diff = ma - mb;
+        return unit === "hours" ? Math.round(diff / 3.6e6) : Math.round(diff / 8.64e7);
+      },
+      formatDate: (d: any, opts?: Intl.DateTimeFormatOptions) => {
+        const dt = new Date(d); return isNaN(dt.getTime()) ? "" : dt.toLocaleDateString(undefined, opts);
+      },
+    };
     try {
-      const fn = new Function(...Object.keys(ctx), `"use strict"; try { return (${expr}); } catch(e){ return "#ERR"; }`);
-      const out = fn(...Object.values(ctx));
+      const names = [...Object.keys(ctx), ...Object.keys(helpers)];
+      const values = [...Object.values(ctx), ...Object.values(helpers)];
+      const fn = new Function(...names, `"use strict"; try { return (${expr}); } catch(e){ return "#ERR"; }`);
+      const out = fn(...values);
+      if (out instanceof Date) return out.toLocaleDateString();
       return out === undefined || out === null ? "" : String(out);
     } catch { return "#ERR"; }
   };
@@ -213,6 +263,43 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
     if (p.type === "rollup") return (
       <span style={{ fontSize: 13, color: "var(--nn-text-secondary)" }}>{rollupValue(p)}</span>
     );
+    if (p.type === "button") return (
+      <button
+        onClick={async (e) => {
+          e.stopPropagation();
+          const actions = p.button?.actions || [];
+          let props: any = {}; try { props = r.properties ? JSON.parse(r.properties) : {}; } catch {}
+          for (const a of actions) {
+            if (a.kind === "set") props[a.prop] = a.value;
+            else if (a.kind === "increment") props[a.prop] = (Number(props[a.prop]) || 0) + (a.by || 1);
+            else if (a.kind === "open") window.open(a.url, "_blank", "noopener");
+          }
+          await cctUpdate(NN.block, r.id, { properties: JSON.stringify(props) });
+          setRows((rs) => rs.map((x) => x.id === r.id ? { ...x, properties: JSON.stringify(props) } : x));
+        }}
+        style={{ background: "var(--nn-blue-bg)", color: "var(--nn-blue)", border: "none", borderRadius: 4, padding: "3px 10px", fontSize: 12, cursor: "pointer", fontWeight: 500 }}
+      >
+        {p.button?.label || "Run"}
+      </button>
+    );
+    if (p.type === "ai") {
+      const cacheKey = `__ai_${p.key}`;
+      const cached = v || (getProp(r, cacheKey) ?? "");
+      const run = async () => {
+        const src = r.title || "";
+        let out = "";
+        if (p.ai?.mode === "keywords") out = src.split(/\s+/).filter((w) => w.length > 4).slice(0, 5).join(", ");
+        else if (p.ai?.mode === "summary") out = src.slice(0, 120) + (src.length > 120 ? "…" : "");
+        else out = `[${p.ai?.lang || "en"}] ${src}`;
+        await setProp(r, p.key, out);
+      };
+      return (
+        <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+          <span style={{ fontSize: 12, color: "var(--nn-text-secondary)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{cached || <em style={{ opacity: 0.5 }}>—</em>}</span>
+          <button onClick={(e) => { e.stopPropagation(); run(); }} title="Run AI" style={{ background: "none", border: "1px solid var(--nn-border)", borderRadius: 3, fontSize: 10, padding: "1px 5px", cursor: "pointer", color: "var(--nn-text-secondary)" }}>AI</button>
+        </div>
+      );
+    }
     return (
       <input value={v} onChange={(e) => setProp(r, p.key, e.target.value)} placeholder="—" style={{ background: "transparent", border: "none", color: "var(--nn-text)", fontSize: 13, width: "100%" }} />
     );
@@ -477,7 +564,7 @@ function CalendarView({ month, calView, setCalView, onPrev, onNext, onToday, row
 
 function SchemaEditor({ schema, onClose, onSave }: { schema: PropDef[]; onClose: () => void; onSave: (s: PropDef[]) => void }) {
   const [draft, setDraft] = useState<PropDef[]>(JSON.parse(JSON.stringify(schema)));
-  const TYPES: PropType[] = ["text", "number", "select", "multiselect", "date", "checkbox", "url", "email", "phone", "person", "formula", "rollup"];
+  const TYPES: PropType[] = ["text", "number", "select", "multiselect", "date", "checkbox", "url", "email", "phone", "person", "formula", "rollup", "button", "ai"];
   const numericSources = draft.filter((p) => p.type === "number");
   const add = () => {
     const key = `prop_${Date.now().toString(36)}`;
@@ -521,6 +608,36 @@ function SchemaEditor({ schema, onClose, onSave }: { schema: PropDef[]; onClose:
                   <option value="max">max</option>
                   <option value="count">count</option>
                 </select>
+              </>
+            )}
+            {p.type === "button" && (
+              <input
+                value={p.button?.label || ""}
+                onChange={(e) => update(i, { button: { label: e.target.value, actions: p.button?.actions || [] } })}
+                placeholder="Button label (actions via JSON below)"
+                className="nn-auth-input"
+                style={{ marginBottom: 0, width: 220 }}
+              />
+            )}
+            {p.type === "button" && (
+              <input
+                value={JSON.stringify(p.button?.actions || [])}
+                onChange={(e) => { try { const a = JSON.parse(e.target.value); update(i, { button: { label: p.button?.label || "Run", actions: a } }); } catch {} }}
+                placeholder='[{"kind":"set","prop":"status","value":"Done"}]'
+                className="nn-auth-input"
+                style={{ marginBottom: 0, width: 260, fontFamily: "monospace", fontSize: 11 }}
+              />
+            )}
+            {p.type === "ai" && (
+              <>
+                <select value={p.ai?.mode || "summary"} onChange={(e) => update(i, { ai: { mode: e.target.value as any, lang: p.ai?.lang } })} className="nn-auth-input" style={{ marginBottom: 0, width: 120 }}>
+                  <option value="summary">summary</option>
+                  <option value="keywords">keywords</option>
+                  <option value="translate">translate</option>
+                </select>
+                {p.ai?.mode === "translate" && (
+                  <input value={p.ai?.lang || ""} onChange={(e) => update(i, { ai: { mode: "translate", lang: e.target.value } })} placeholder="lang (e.g. es)" className="nn-auth-input" style={{ marginBottom: 0, width: 90 }} />
+                )}
               </>
             )}
             <button onClick={() => del(i)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-tertiary)" }}><Trash2 size={14} /></button>

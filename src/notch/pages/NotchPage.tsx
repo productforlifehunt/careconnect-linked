@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useNotchPath } from "@/notch/context/NotchBaseContext";
-import { ChevronRight, Database, FileText, MoreHorizontal, Star, Image as ImageIcon, X, Share2, Copy, Link as LinkIcon, Trash2, Bell, UserPlus, Lock, Unlock, Maximize2, Minimize2, History } from "lucide-react";
+import { ChevronRight, Database, FileText, MoreHorizontal, Star, Image as ImageIcon, X, Share2, Copy, Link as LinkIcon, Trash2, Bell, UserPlus, Lock, Unlock, Maximize2, Minimize2, History, BadgeCheck } from "lucide-react";
 import { createReminder, createNotification } from "@/notch/lib/nn-notifications";
 import { nnPrompt, nnConfirm, nnAlert } from "@/notch/lib/nn-dialog";
 
@@ -45,10 +45,13 @@ export default function NotchPage() {
   const [showShare, setShowShare] = useState(false);
   const [locked, setLocked] = useState(false);
   const [fullWidth, setFullWidth] = useState(false);
+  const [verified, setVerified] = useState(false);
   const [snapshots, setSnapshots] = useState<Array<{ ts: number; content: any; title: string }>>([]);
   const [showHistory, setShowHistory] = useState(false);
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const saveTimer = useRef<any>(null);
+  const autoSnapTimer = useRef<any>(null);
+  const lastSnapAt = useRef<number>(0);
 
   useEffect(() => {
     if (!pageId) return;
@@ -65,6 +68,7 @@ export default function NotchPage() {
         setContent(props.editor_content || null);
         setLocked(!!props.locked);
         setFullWidth(!!props.full_width);
+        setVerified(!!props.verified);
         setSnapshots(Array.isArray(props.history) ? props.history : []);
       } catch { setContent(null); }
       // build breadcrumbs
@@ -106,20 +110,33 @@ export default function NotchPage() {
   const saveProps = useCallback((extra: Record<string, any>) => {
     scheduleSave({
       properties: JSON.stringify({
-        editor_content: content,
+        editor_content: extra.editor_content ?? content,
         locked: extra.locked ?? locked,
         full_width: extra.full_width ?? fullWidth,
+        verified: extra.verified ?? verified,
         history: extra.history ?? snapshots,
       }),
     });
-  }, [content, locked, fullWidth, snapshots, scheduleSave]);
+  }, [content, locked, fullWidth, verified, snapshots, scheduleSave]);
 
   const onTitleChange = (v: string) => { if (locked) return; setTitle(v); scheduleSave({ title: v }); };
   const onIconChange = (v: string) => { setIcon(v); setShowEmoji(false); scheduleSave({ icon: v }); };
   const onContentChange = (json: any) => {
     if (locked) return;
     setContent(json);
-    scheduleSave({ properties: JSON.stringify({ editor_content: json, locked, full_width: fullWidth, history: snapshots }) });
+    saveProps({ editor_content: json });
+    // Auto-snapshot: at most once every 5 minutes of active editing, debounced by 30s of inactivity.
+    clearTimeout(autoSnapTimer.current);
+    autoSnapTimer.current = setTimeout(() => {
+      const now = Date.now();
+      if (now - lastSnapAt.current < 5 * 60_000) return;
+      lastSnapAt.current = now;
+      setSnapshots((prev) => {
+        const next = [{ ts: now, content: json, title }, ...prev].slice(0, 30);
+        saveProps({ history: next, editor_content: json });
+        return next;
+      });
+    }, 30_000);
   };
   const toggleLock = () => {
     const nv = !locked;
@@ -133,10 +150,17 @@ export default function NotchPage() {
     setShowMenu(false);
     saveProps({ full_width: nv });
   };
+  const toggleVerified = () => {
+    const nv = !verified;
+    setVerified(nv);
+    setShowMenu(false);
+    saveProps({ verified: nv });
+  };
   const takeSnapshot = () => {
     const snap = { ts: Date.now(), content, title };
     const next = [snap, ...snapshots].slice(0, 30);
     setSnapshots(next);
+    lastSnapAt.current = snap.ts;
     setShowMenu(false);
     saveProps({ history: next });
     nnAlert("Version snapshot saved.", "History");
@@ -295,6 +319,10 @@ export default function NotchPage() {
                 <span className="nn-icon">{locked ? <Unlock size={14} /> : <Lock size={14} />}</span>
                 <span className="nn-title">{locked ? "Unlock page" : "Lock page"}</span>
               </div>
+              <div onClick={toggleVerified} className="nn-sidebar-item">
+                <span className="nn-icon"><BadgeCheck size={14} color={verified ? "#448361" : undefined} /></span>
+                <span className="nn-title">{verified ? "Remove verified" : "Mark as verified (wiki)"}</span>
+              </div>
               <div onClick={takeSnapshot} className="nn-sidebar-item">
                 <span className="nn-icon"><History size={14} /></span>
                 <span className="nn-title">Save version</span>
@@ -342,14 +370,25 @@ export default function NotchPage() {
               />
             )}
           </div>
-          <textarea
-            ref={titleRef}
-            className="nn-page-title"
-            placeholder={isDatabase ? "Untitled database" : "Untitled"}
-            value={title}
-            onChange={(e) => onTitleChange(e.target.value)}
-            rows={1}
-          />
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 6 }}>
+            <textarea
+              ref={titleRef}
+              className="nn-page-title"
+              placeholder={isDatabase ? "Untitled database" : "Untitled"}
+              value={title}
+              onChange={(e) => onTitleChange(e.target.value)}
+              rows={1}
+              style={{ flex: 1 }}
+            />
+            {verified && (
+              <span
+                title="Verified page — content has been reviewed by a workspace owner"
+                style={{ display: "inline-flex", alignItems: "center", gap: 4, marginTop: 14, padding: "2px 8px", background: "rgba(68,131,97,0.14)", color: "#448361", borderRadius: 12, fontSize: 12, fontWeight: 500, whiteSpace: "nowrap" }}
+              >
+                <BadgeCheck size={13} /> Verified
+              </span>
+            )}
+          </div>
           {isDatabase ? (
             <NotchDatabase databaseId={pageId} workspaceId={String(block.workspace_id || "")} />
           ) : (
