@@ -1066,3 +1066,93 @@ function CondEditor({ rules, schema, onClose, onSave }: {
     </div>
   );
 }
+
+function AutomationEditor({ rules, schema, onClose, onSave }: {
+  rules: AutoRule[]; schema: PropDef[];
+  onClose: () => void; onSave: (r: AutoRule[]) => void;
+}) {
+  const [list, setList] = useState<AutoRule[]>(rules);
+  const upd = (i: number, patch: Partial<AutoRule>) => setList((L) => L.map((r, j) => j === i ? { ...r, ...patch } : r));
+  const updAction = (i: number, ai: number, patch: any) => setList((L) => L.map((r, j) => j === i ? { ...r, actions: r.actions.map((a, k) => k === ai ? { ...a, ...patch } : a) } : r));
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ background: "var(--nn-bg)", borderRadius: 6, width: 620, maxHeight: "85vh", overflow: "auto", padding: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+          <div style={{ fontWeight: 600, fontSize: 15 }}>⚡ Automations</div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-tertiary)", fontSize: 18 }}>×</button>
+        </div>
+        <div style={{ fontSize: 12, color: "var(--nn-text-tertiary)", marginBottom: 12 }}>Run actions when a row is created or a property changes.</div>
+        {list.map((r, i) => (
+          <div key={r.id} style={{ border: "1px solid var(--nn-border)", borderRadius: 4, padding: 10, marginBottom: 8 }}>
+            <div style={{ display: "flex", gap: 6, marginBottom: 6, alignItems: "center" }}>
+              <input value={r.name} onChange={(e) => upd(i, { name: e.target.value })} placeholder="Name" style={{ flex: 1, background: "transparent", border: "1px solid var(--nn-border)", borderRadius: 3, padding: "3px 6px", fontSize: 13, color: "var(--nn-text)" }} />
+              <label style={{ fontSize: 12, display: "flex", gap: 4, alignItems: "center" }}>
+                <input type="checkbox" checked={r.enabled} onChange={(e) => upd(i, { enabled: e.target.checked })} /> On
+              </label>
+              <button onClick={() => setList((L) => L.filter((_, j) => j !== i))} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-red)", fontSize: 16 }}>×</button>
+            </div>
+            <div style={{ display: "flex", gap: 6, marginBottom: 6, fontSize: 12, alignItems: "center" }}>
+              <span>When</span>
+              <select value={r.trigger} onChange={(e) => upd(i, { trigger: e.target.value as any })} style={{ padding: 3, fontSize: 12 }}>
+                <option value="created">Row created</option>
+                <option value="propChanged">Property changes</option>
+              </select>
+              {r.trigger === "propChanged" && (
+                <>
+                  <select value={r.prop || ""} onChange={(e) => upd(i, { prop: e.target.value })} style={{ padding: 3, fontSize: 12 }}>
+                    <option value="">any property</option>
+                    {schema.map((p) => <option key={p.key} value={p.key}>{p.name}</option>)}
+                  </select>
+                  <span>equals</span>
+                  <input value={r.to || ""} onChange={(e) => upd(i, { to: e.target.value })} placeholder="(any)" style={{ background: "transparent", border: "1px solid var(--nn-border)", borderRadius: 3, padding: "2px 5px", fontSize: 12, width: 80, color: "var(--nn-text)" }} />
+                </>
+              )}
+            </div>
+            <div style={{ fontSize: 12, marginBottom: 4 }}>Then:</div>
+            {r.actions.map((a, ai) => (
+              <div key={ai} style={{ display: "flex", gap: 4, marginBottom: 4, fontSize: 12, alignItems: "center", paddingLeft: 12 }}>
+                <select value={a.kind} onChange={(e) => {
+                  const k = e.target.value;
+                  const next: any = k === "set" ? { kind: "set", prop: schema[0]?.key || "", value: "" }
+                    : k === "increment" ? { kind: "increment", prop: schema.find(p => p.type === "number")?.key || "", by: 1 }
+                    : k === "notify" ? { kind: "notify", message: "" }
+                    : { kind: "webhook", url: "" };
+                  updAction(i, ai, next);
+                }} style={{ padding: 3, fontSize: 12 }}>
+                  <option value="set">Set property</option>
+                  <option value="increment">Increment number</option>
+                  <option value="notify">Show toast</option>
+                  <option value="webhook">POST webhook</option>
+                </select>
+                {(a.kind === "set" || a.kind === "increment") && (
+                  <select value={(a as any).prop} onChange={(e) => updAction(i, ai, { prop: e.target.value })} style={{ padding: 3, fontSize: 12 }}>
+                    {schema.map((p) => <option key={p.key} value={p.key}>{p.name}</option>)}
+                  </select>
+                )}
+                {a.kind === "set" && (
+                  <input value={(a as any).value} onChange={(e) => updAction(i, ai, { value: e.target.value })} placeholder="value" style={{ background: "transparent", border: "1px solid var(--nn-border)", borderRadius: 3, padding: "2px 5px", fontSize: 12, flex: 1, color: "var(--nn-text)" }} />
+                )}
+                {a.kind === "increment" && (
+                  <input type="number" value={(a as any).by} onChange={(e) => updAction(i, ai, { by: Number(e.target.value) || 1 })} style={{ background: "transparent", border: "1px solid var(--nn-border)", borderRadius: 3, padding: "2px 5px", fontSize: 12, width: 60, color: "var(--nn-text)" }} />
+                )}
+                {a.kind === "notify" && (
+                  <input value={(a as any).message} onChange={(e) => updAction(i, ai, { message: e.target.value })} placeholder="Toast message" style={{ background: "transparent", border: "1px solid var(--nn-border)", borderRadius: 3, padding: "2px 5px", fontSize: 12, flex: 1, color: "var(--nn-text)" }} />
+                )}
+                {a.kind === "webhook" && (
+                  <input value={(a as any).url} onChange={(e) => updAction(i, ai, { url: e.target.value })} placeholder="https://…" style={{ background: "transparent", border: "1px solid var(--nn-border)", borderRadius: 3, padding: "2px 5px", fontSize: 12, flex: 1, color: "var(--nn-text)" }} />
+                )}
+                <button onClick={() => upd(i, { actions: r.actions.filter((_, k) => k !== ai) })} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-tertiary)" }}>×</button>
+              </div>
+            ))}
+            <button onClick={() => upd(i, { actions: [...r.actions, { kind: "set", prop: schema[0]?.key || "", value: "" }] })} className="nn-topbar-btn" style={{ fontSize: 11, marginLeft: 12 }}>+ Action</button>
+          </div>
+        ))}
+        <button onClick={() => setList([...list, { id: `a_${Date.now()}`, name: "New automation", trigger: "propChanged", actions: [{ kind: "set", prop: schema[0]?.key || "", value: "" }], enabled: true }])} className="nn-topbar-btn" style={{ fontSize: 12 }}>+ Add automation</button>
+        <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", marginTop: 12 }}>
+          <button onClick={onClose} className="nn-topbar-btn" style={{ fontSize: 12 }}>Cancel</button>
+          <button onClick={() => onSave(list)} className="nn-btn-primary" style={{ fontSize: 12 }}>Save</button>
+        </div>
+      </div>
+    </div>
+  );
+}
