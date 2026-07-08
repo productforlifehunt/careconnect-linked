@@ -78,6 +78,44 @@ export function NotchSidebar() {
     setDragSection(null);
   };
 
+  // Bulk selection: cmd/ctrl-click to toggle; drag any selected item to move all.
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const clearSelection = () => setSelected(new Set());
+  const toggleSelected = (id: string) => setSelected((s) => {
+    const n = new Set(s);
+    if (n.has(id)) n.delete(id); else n.add(id);
+    return n;
+  });
+  const bulkDelete = async () => {
+    if (!selected.size) return;
+    if (!(await nnConfirm(`Move ${selected.size} page${selected.size > 1 ? "s" : ""} to trash?`))) return;
+    for (const id of selected) {
+      try { await cctUpdate(NN.block, id, { archived: 1 }); } catch (e) { console.error(e); }
+    }
+    clearSelection();
+    await loadAll();
+  };
+  const bulkMove = async (destParentId: string) => {
+    if (!selected.size) return;
+    // Prevent moving into own descendant
+    const isDescendant = (root: string, cand: string): boolean => {
+      let cur: any = pages.find((x) => String(x.id) === String(cand));
+      while (cur) {
+        if (String(cur.id) === String(root)) return true;
+        cur = pages.find((x) => String(x.id) === String(cur.parent_id));
+      }
+      return false;
+    };
+    for (const id of selected) {
+      if (isDescendant(id, destParentId)) continue;
+      try { await cctUpdate(NN.block, id, { parent_id: destParentId }); } catch (e) { console.error(e); }
+    }
+    clearSelection();
+    setExpanded((s) => ({ ...s, [destParentId]: true }));
+    await loadAll();
+  };
+
+
   useEffect(() => {
     if (!user) return;
     let alive = true;
