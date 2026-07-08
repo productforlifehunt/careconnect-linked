@@ -106,7 +106,9 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
         else setSchema(DEFAULT_SCHEMA);
         setCondRules(Array.isArray(p.condRules) ? p.condRules : []);
         setAutomations(Array.isArray(p.automations) ? p.automations : []);
-      } catch { setSchema(DEFAULT_SCHEMA); setCondRules([]); setAutomations([]); }
+        setTemplates(Array.isArray(p.templates) ? p.templates : []);
+      } catch { setSchema(DEFAULT_SCHEMA); setCondRules([]); setAutomations([]); setTemplates([]); }
+
       setRows(all.filter((b: any) => String(b.parent_id) === String(databaseId) && Number(b.archived) !== 1));
     } catch (e: any) {
       setLoadErr(e?.message || "Failed to load database rows. Check your connection and retry.");
