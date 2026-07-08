@@ -226,6 +226,35 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
   const [blockMenu, setBlockMenu] = useState<{ top: number; left: number; el: HTMLElement } | null>(null);
   const [aiBusy, setAiBusy] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const notchPath = useNotchPath();
+  const [pagePicker, setPagePicker] = useState<{ x: number; y: number; query: string; pages: { id: string; title: string }[]; sel: number } | null>(null);
+  const openPagePicker = async () => {
+    let x = 40, y = 40;
+    try {
+      const rect = (window.getSelection()?.getRangeAt(0).getBoundingClientRect()) as DOMRect | undefined;
+      if (rect && wrapperRef.current) {
+        const wr = wrapperRef.current.getBoundingClientRect();
+        x = Math.max(0, rect.left - wr.left);
+        y = rect.bottom - wr.top + wrapperRef.current.scrollTop + 4;
+      }
+    } catch {}
+    setPagePicker({ x, y, query: "", pages: [], sel: 0 });
+    try {
+      const rows = await cctList<any>(NN.block);
+      const pages = rows
+        .filter((b: any) => (b.type === "page" || b.type === "database") && Number(b.archived) !== 1)
+        .map((b: any) => ({ id: String(b.id), title: b.title || "Untitled" }));
+      setPagePicker((p) => (p ? { ...p, pages } : p));
+    } catch {}
+  };
+  const insertPageLink = (id: string, title: string) => {
+    if (!editor) return;
+    const href = notchPath(`/p/${id}`);
+    editor.chain().focus()
+      .insertContent([{ type: "text", marks: [{ type: "link", attrs: { href } }], text: `📄 ${title || "Untitled"}` }])
+      .run();
+    setPagePicker(null);
+  };
 
   useEffect(() => {
     if (!editor) return;
