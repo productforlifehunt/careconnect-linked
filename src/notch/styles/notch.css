@@ -1123,3 +1123,17 @@
   box-shadow: 0 2px 6px rgba(35,131,226,0.4);
 }
 .nn-mobile-tabbar .nn-tab-fab span { display: none; }
+
+/* Inline comment highlight (Notion-style yellow underline) */
+.nn-inline-comment {
+  background: rgba(255, 212, 0, 0.28);
+  border-bottom: 2px solid rgba(255, 178, 0, 0.75);
+  cursor: pointer;
+  border-radius: 1px;
+  transition: background 0.12s ease;
+}
+.nn-inline-comment:hover { background: rgba(255, 212, 0, 0.45); }
+.nn-inline-comment[data-nn-comment-resolved="1"] {
+  background: transparent;
+  border-bottom-color: rgba(120, 119, 116, 0.35);
+}

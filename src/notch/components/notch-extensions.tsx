@@ -801,3 +801,49 @@ export const MultiBlockShortcuts = Node.create({
     } as any;
   },
 });
+
+/* ─── Inline Comment Mark ─────────────────────────────────────
+ * Notion-style highlighted text ranges that anchor threaded
+ * comments. Applied via the bubble menu "Comment" action or the
+ * Cmd/Ctrl+Shift+M shortcut. Renders as a yellow-tinted <span>
+ * with data-nn-comment-thread=<id>; clicking dispatches
+ * `nn:open-comment-thread` so the comment sidebar can scroll to
+ * that thread.
+ */
+export const InlineCommentMark = Mark.create({
+  name: "inlineComment",
+  inclusive: false,
+  addAttributes() {
+    return {
+      threadId: {
+        default: "",
+        parseHTML: (el) => (el as HTMLElement).getAttribute("data-nn-comment-thread") || "",
+        renderHTML: (attrs) => (attrs.threadId ? { "data-nn-comment-thread": attrs.threadId } : {}),
+      },
+      resolved: {
+        default: false,
+        parseHTML: (el) => (el as HTMLElement).getAttribute("data-nn-comment-resolved") === "1",
+        renderHTML: (attrs) => (attrs.resolved ? { "data-nn-comment-resolved": "1" } : {}),
+      },
+    };
+  },
+  parseHTML() {
+    return [{ tag: "span[data-nn-comment-thread]" }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return ["span", mergeAttributes({ class: "nn-inline-comment" }, HTMLAttributes), 0];
+  },
+  addKeyboardShortcuts() {
+    return {
+      "Mod-Shift-m": ({ editor }: any) => {
+        const { from, to } = editor.state.selection;
+        if (from === to) return false;
+        const threadId = `t_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+        editor.chain().focus().setMark("inlineComment", { threadId }).run();
+        window.dispatchEvent(new CustomEvent("nn:open-comment-thread", { detail: { threadId, from, to } }));
+        return true;
+      },
+    };
+  },
+});
+

@@ -20,7 +20,7 @@ import Youtube from "@tiptap/extension-youtube";
 import { Details, DetailsSummary, DetailsContent } from "@tiptap/extension-details";
 import { useEffect, useRef, useState } from "react";
 import { Bold, Italic, Underline as UIcon, Strikethrough, Code, Link as LinkIcon, AlignLeft, AlignCenter, AlignRight, Sparkles } from "lucide-react";
-import { MathBlock, Columns, Column, SyncBlock, buildColumns, Callout, InlineMath, AudioBlock, VideoBlock, PdfBlock, Toc, Breadcrumb, TemplateButton, TabsBlock, HtmlEmbed, InlineDatabase, MultiBlockShortcuts } from "./notch-extensions";
+import { MathBlock, Columns, Column, SyncBlock, buildColumns, Callout, InlineMath, AudioBlock, VideoBlock, PdfBlock, Toc, Breadcrumb, TemplateButton, TabsBlock, HtmlEmbed, InlineDatabase, MultiBlockShortcuts, InlineCommentMark } from "./notch-extensions";
 import { NotchMention } from "./notch-mention";
 import { NotchInputRules } from "./notch-input-rules";
 import { nnUploadFile, pickFile } from "@/notch/lib/nn-files";
@@ -221,6 +221,7 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
       NotchInputRules,
       InlineDatabase,
       MultiBlockShortcuts,
+      InlineCommentMark,
     ],
     content: content || "",
     onUpdate: ({ editor }) => onChange(editor.getJSON()),
@@ -233,6 +234,21 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
   const [aiBusy, setAiBusy] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const notchPath = useNotchPath();
+  // Delegated click handler: opening an inline-comment thread.
+  useEffect(() => {
+    const el = wrapperRef.current;
+    if (!el) return;
+    const onClick = (e: MouseEvent) => {
+      const target = (e.target as HTMLElement).closest<HTMLElement>("[data-nn-comment-thread]");
+      if (!target) return;
+      const threadId = target.getAttribute("data-nn-comment-thread") || "";
+      if (!threadId) return;
+      window.dispatchEvent(new CustomEvent("nn:open-comment-thread", { detail: { threadId } }));
+      window.dispatchEvent(new CustomEvent("nn:add-comment"));
+    };
+    el.addEventListener("click", onClick);
+    return () => el.removeEventListener("click", onClick);
+  }, []);
   const [pagePicker, setPagePicker] = useState<{ x: number; y: number; query: string; pages: { id: string; title: string }[]; sel: number } | null>(null);
   const openPagePicker = async () => {
     let x = 40, y = 40;
@@ -660,9 +676,14 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
               setBlockMenu(null);
             }}><span className="nn-title">Copy link to block</span></div>
             <div className="nn-sidebar-item" onClick={() => {
-              if (!blockMenu) return;
+              if (!blockMenu || !editor) return;
               const range = nodeRangeFor(blockMenu.el);
-              window.dispatchEvent(new CustomEvent("nn:open-comment", { detail: { from: range?.from, to: range?.to } }));
+              const threadId = `t_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+              if (range && range.to > range.from) {
+                editor.chain().focus().setTextSelection(range).setMark("inlineComment", { threadId }).run();
+              }
+              window.dispatchEvent(new CustomEvent("nn:open-comment-thread", { detail: { threadId, from: range?.from, to: range?.to } }));
+              window.dispatchEvent(new CustomEvent("nn:open-comment", { detail: { from: range?.from, to: range?.to, threadId } }));
               setBlockMenu(null);
             }}><span className="nn-title">Comment</span></div>
             <div className="nn-sidebar-item" onClick={deleteBlock} style={{ color: "var(--nn-danger, #e03e3e)" }}><span className="nn-title">Delete</span></div>
