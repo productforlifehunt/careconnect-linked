@@ -175,17 +175,18 @@ export function NotchShareModal({ blockId, onClose }: { blockId: string; onClose
                 <div style={{ fontSize: 14, fontWeight: 500 }}>Publish to web</div>
                 <div style={{ fontSize: 12, color: "var(--nn-text-tertiary)" }}>{publicRow ? (isExpired ? "Link has expired." : "Anyone with the link can view.") : "Publish this page to the internet."}</div>
               </div>
-              <label style={{ display: "inline-flex", alignItems: "center", gap: 4, cursor: "pointer" }}>
-                <input type="checkbox" checked={!!publicRow} onChange={togglePublic} />
-              </label>
+              <Switch checked={!!publicRow} onChange={togglePublic} />
             </div>
 
             {publicRow && (
               <>
                 <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
-                  <input readOnly value={publicUrl} className="nn-auth-input" style={{ marginBottom: 0, flex: 1, fontSize: 12 }} onFocus={(e) => e.currentTarget.select()} />
-                  <button onClick={copyLink} className="nn-topbar-btn"><CopyIcon size={13} style={{ marginRight: 4 }} />{copied ? "Copied" : "Copy"}</button>
+                  <input readOnly value={publicUrl} disabled={!!isExpired} className="nn-auth-input" style={{ marginBottom: 0, flex: 1, fontSize: 12, opacity: isExpired ? 0.55 : 1 }} onFocus={(e) => e.currentTarget.select()} />
+                  <button onClick={copyLink} disabled={!!isExpired} className="nn-topbar-btn" style={{ opacity: isExpired ? 0.55 : 1, cursor: isExpired ? "not-allowed" : "pointer" }}><CopyIcon size={13} style={{ marginRight: 4 }} />{copied ? "Copied" : "Copy"}</button>
                 </div>
+                {isExpired && (
+                  <div style={{ fontSize: 12, color: "var(--nn-danger, #e03e3e)", marginBottom: 10 }}>This link has expired. Clear or update the expiration below to re-enable it.</div>
+                )}
 
                 <div style={{ borderTop: "1px solid var(--nn-border)", paddingTop: 12 }}>
                   <div style={{ fontSize: 12, color: "var(--nn-text-secondary)", marginBottom: 6 }}>Link options</div>
