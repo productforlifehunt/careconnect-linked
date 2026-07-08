@@ -19,6 +19,7 @@ import NotchNotifications from "@/notch/pages/NotchNotifications";
 import NotchPublicPage from "@/notch/pages/NotchPublicPage";
 import { acceptInviteByToken } from "@/notch/lib/nn-collab";
 import { nnAlert } from "@/notch/lib/nn-dialog";
+import { useNotchTitle } from "@/notch/lib/nn-title";
 import "@/notch/styles/notch.css";
 
 interface Props {
