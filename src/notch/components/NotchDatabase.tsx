@@ -9,6 +9,12 @@ import { toast } from "@/hooks/use-toast";
 interface Props { databaseId: string; workspaceId: string; }
 type ViewMode = "table" | "board" | "calendar" | "timeline" | "gallery" | "list" | "chart";
 type PropType = "text" | "number" | "select" | "multiselect" | "date" | "checkbox" | "url" | "email" | "phone" | "person" | "formula" | "rollup" | "button" | "ai" | "relation";
+type RollupAgg =
+  | "count" | "count_values" | "count_unique" | "count_empty" | "count_not_empty"
+  | "percent_empty" | "percent_not_empty"
+  | "sum" | "avg" | "median" | "min" | "max" | "range"
+  | "earliest_date" | "latest_date" | "date_range"
+  | "show_original" | "show_unique";
 type ButtonAction =
   | { kind: "set"; prop: string; value: string }
   | { kind: "increment"; prop: string; by: number }
@@ -32,7 +38,8 @@ interface PropDef {
   key: string; name: string; type: PropType;
   options?: string[];
   formula?: string;
-  rollup?: { source: string; agg: "sum" | "avg" | "min" | "max" | "count" };
+  rollup?: { source: string; agg: RollupAgg };
+  numberFormat?: "plain" | "number" | "commas" | "percent" | "usd" | "eur" | "gbp" | "yuan" | "yen";
   button?: { label: string; actions: ButtonAction[] };
   ai?: { mode: "summary" | "translate" | "keywords"; lang?: string };
   relation?: { databaseId: string };
@@ -279,22 +286,59 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
     } catch { return "#ERR"; }
   };
 
-  // Aggregate a numeric prop across every row (rollup shows same total per row).
+  // Format numbers per Notion-style number formats.
+  const formatNumber = (v: any, fmt?: PropDef["numberFormat"]): string => {
+    const n = Number(v);
+    if (v === "" || v === null || v === undefined || isNaN(n)) return v == null ? "" : String(v);
+    switch (fmt) {
+      case "commas": return n.toLocaleString();
+      case "percent": return (n * 100).toFixed(2).replace(/\.?0+$/, "") + "%";
+      case "usd": return "$" + n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      case "eur": return "€" + n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      case "gbp": return "£" + n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      case "yuan": return "¥" + n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      case "yen": return "¥" + Math.round(n).toLocaleString();
+      case "number": return String(n);
+      default: return String(v);
+    }
+  };
+
+  // Aggregate a prop across every row (rollup shows same value per row).
   const rollupValue = (p: PropDef): string => {
     if (!p.rollup?.source) return "";
     const src = p.rollup.source;
-    const nums = rows.map((r) => {
-      const v = (() => { try { return JSON.parse(r.properties || "{}")[src]; } catch { return undefined; } })();
-      const n = Number(v);
-      return isNaN(n) ? null : n;
-    }).filter((n): n is number => n !== null);
-    if (p.rollup.agg === "count") return String(rows.length);
-    if (nums.length === 0) return "";
+    const raw = rows.map((r) => { try { return JSON.parse(r.properties || "{}")[src]; } catch { return undefined; } });
+    const nonEmpty = raw.filter((v) => v !== "" && v !== null && v !== undefined);
+    const nums = raw.map((v) => { const n = Number(v); return isNaN(n) ? null : n; }).filter((n): n is number => n !== null);
+    const dates = raw.map((v) => { const t = new Date(v as any).getTime(); return isNaN(t) ? null : t; }).filter((t): t is number => t !== null);
+    const total = rows.length || 1;
     switch (p.rollup.agg) {
-      case "sum": return String(nums.reduce((a, b) => a + b, 0));
-      case "avg": return (nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(2);
-      case "min": return String(Math.min(...nums));
-      case "max": return String(Math.max(...nums));
+      case "count": return String(rows.length);
+      case "count_values": return String(nonEmpty.length);
+      case "count_unique": return String(new Set(nonEmpty.map((v) => JSON.stringify(v))).size);
+      case "count_empty": return String(rows.length - nonEmpty.length);
+      case "count_not_empty": return String(nonEmpty.length);
+      case "percent_empty": return ((rows.length - nonEmpty.length) / total * 100).toFixed(0) + "%";
+      case "percent_not_empty": return (nonEmpty.length / total * 100).toFixed(0) + "%";
+      case "sum": return nums.length ? String(nums.reduce((a, b) => a + b, 0)) : "";
+      case "avg": return nums.length ? (nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(2) : "";
+      case "median": {
+        if (!nums.length) return "";
+        const s = [...nums].sort((a, b) => a - b); const m = Math.floor(s.length / 2);
+        return String(s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2);
+      }
+      case "min": return nums.length ? String(Math.min(...nums)) : "";
+      case "max": return nums.length ? String(Math.max(...nums)) : "";
+      case "range": return nums.length ? String(Math.max(...nums) - Math.min(...nums)) : "";
+      case "earliest_date": return dates.length ? new Date(Math.min(...dates)).toLocaleDateString() : "";
+      case "latest_date": return dates.length ? new Date(Math.max(...dates)).toLocaleDateString() : "";
+      case "date_range": {
+        if (!dates.length) return "";
+        const d = Math.max(...dates) - Math.min(...dates);
+        return Math.round(d / 8.64e7) + " days";
+      }
+      case "show_original": return nonEmpty.slice(0, 8).map((v) => String(v)).join(", ");
+      case "show_unique": return [...new Set(nonEmpty.map((v) => String(v)))].slice(0, 8).join(", ");
       default: return "";
     }
   };
@@ -477,9 +521,13 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
     if (p.type === "date") return (
       <input type="date" value={v} onChange={(e) => setProp(r, p.key, e.target.value)} style={{ background: "transparent", border: "none", color: "var(--nn-text)", fontSize: 13 }} />
     );
-    if (p.type === "number") return (
-      <input type="number" value={v} onChange={(e) => setProp(r, p.key, e.target.value)} style={{ background: "transparent", border: "none", color: "var(--nn-text)", fontSize: 13, width: "100%" }} />
-    );
+    if (p.type === "number") {
+      const fmt = p.numberFormat || "plain";
+      const [editing, display] = [fmt === "plain" || v === "" || v === null || v === undefined, formatNumber(v, fmt)];
+      return editing
+        ? <input type="number" value={v} onChange={(e) => setProp(r, p.key, e.target.value)} style={{ background: "transparent", border: "none", color: "var(--nn-text)", fontSize: 13, width: "100%" }} />
+        : <input value={display} onFocus={(e) => { e.currentTarget.type = "number"; e.currentTarget.value = String(v ?? ""); }} onBlur={(e) => { e.currentTarget.type = "text"; e.currentTarget.value = display; }} onChange={(e) => setProp(r, p.key, e.currentTarget.value)} style={{ background: "transparent", border: "none", color: "var(--nn-text)", fontSize: 13, width: "100%" }} />;
+    }
     if (p.type === "multiselect") {
       const arr: string[] = Array.isArray(v) ? v : (v ? String(v).split(",").map((s) => s.trim()).filter(Boolean) : []);
       const toggle = (opt: string) => {
@@ -1171,16 +1219,50 @@ function SchemaEditor({ schema, allBlocks, onClose, onSave }: { schema: PropDef[
               <>
                 <select value={p.rollup?.source || ""} onChange={(e) => update(i, { rollup: { source: e.target.value, agg: p.rollup?.agg || "sum" } })} className="nn-auth-input" style={{ marginBottom: 0, width: 130 }}>
                   <option value="">Source…</option>
-                  {numericSources.map((s) => <option key={s.key} value={s.key}>{s.name}</option>)}
+                  {schema.filter(sp => sp.key !== p.key).map((s) => <option key={s.key} value={s.key}>{s.name}</option>)}
                 </select>
-                <select value={p.rollup?.agg || "sum"} onChange={(e) => update(i, { rollup: { source: p.rollup?.source || "", agg: e.target.value as any } })} className="nn-auth-input" style={{ marginBottom: 0, width: 90 }}>
-                  <option value="sum">sum</option>
-                  <option value="avg">avg</option>
-                  <option value="min">min</option>
-                  <option value="max">max</option>
-                  <option value="count">count</option>
+                <select value={p.rollup?.agg || "sum"} onChange={(e) => update(i, { rollup: { source: p.rollup?.source || "", agg: e.target.value as any } })} className="nn-auth-input" style={{ marginBottom: 0, width: 140 }}>
+                  <optgroup label="Count">
+                    <option value="count">Count all</option>
+                    <option value="count_values">Count values</option>
+                    <option value="count_unique">Count unique</option>
+                    <option value="count_empty">Count empty</option>
+                    <option value="count_not_empty">Count not empty</option>
+                    <option value="percent_empty">% empty</option>
+                    <option value="percent_not_empty">% not empty</option>
+                  </optgroup>
+                  <optgroup label="Number">
+                    <option value="sum">Sum</option>
+                    <option value="avg">Average</option>
+                    <option value="median">Median</option>
+                    <option value="min">Min</option>
+                    <option value="max">Max</option>
+                    <option value="range">Range</option>
+                  </optgroup>
+                  <optgroup label="Date">
+                    <option value="earliest_date">Earliest date</option>
+                    <option value="latest_date">Latest date</option>
+                    <option value="date_range">Date range</option>
+                  </optgroup>
+                  <optgroup label="Show">
+                    <option value="show_original">Show original</option>
+                    <option value="show_unique">Show unique</option>
+                  </optgroup>
                 </select>
               </>
+            )}
+            {p.type === "number" && (
+              <select value={p.numberFormat || "plain"} onChange={(e) => update(i, { numberFormat: e.target.value as any })} className="nn-auth-input" style={{ marginBottom: 0, width: 110 }}>
+                <option value="plain">Plain</option>
+                <option value="number">Number</option>
+                <option value="commas">1,000</option>
+                <option value="percent">Percent</option>
+                <option value="usd">USD $</option>
+                <option value="eur">EUR €</option>
+                <option value="gbp">GBP £</option>
+                <option value="yuan">Yuan ¥</option>
+                <option value="yen">Yen ¥</option>
+              </select>
             )}
             {p.type === "button" && (
               <input
