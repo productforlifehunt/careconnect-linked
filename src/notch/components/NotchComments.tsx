@@ -113,6 +113,15 @@ export function NotchComments({ blockId }: { blockId: string }) {
     await load();
   };
 
+  const saveEdit = async (id: string) => {
+    const body = editText.trim();
+    if (!body) return;
+    await cctUpdate(NN.comment, id, { body });
+    setEditId(null);
+    setEditText("");
+    await load();
+  };
+
   // Build threaded tree: top-level (no parent_id) → children by parent_id.
   const { topLevel, childrenOf, openCount, resolvedCount } = useMemo(() => {
     const kids: Record<string, Comment[]> = {};
