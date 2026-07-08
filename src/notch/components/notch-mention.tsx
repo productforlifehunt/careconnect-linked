@@ -98,15 +98,16 @@ export const NotchMention = Mention.configure({
   suggestion: {
     char: "@",
     items: async ({ query }: { query: string }) => {
-      const list = await fetchMembers();
+      const [members, pages] = await Promise.all([fetchMembers(), fetchPages()]);
       const q = query.toLowerCase();
-      const people = list.filter((m) => m.label.toLowerCase().includes(q)).slice(0, 6);
+      const people = members.filter((m) => m.label.toLowerCase().includes(q)).slice(0, 5);
+      const pageMatches = pages.filter((p) => p.label.toLowerCase().includes(q)).slice(0, 5);
       // Date suggestions — Notion-style. Match "today", "tomorrow", "yesterday", or ISO/MM-DD input.
       const dates: MemberOption[] = [];
       const mkDate = (offsetDays: number, label: string) => {
         const d = new Date(); d.setDate(d.getDate() + offsetDays);
         const iso = d.toISOString().slice(0, 10);
-        return { id: `date:${iso}`, user_id: `date:${iso}`, label: `📅 ${label} (${iso})` };
+        return { id: `date:${iso}`, user_id: `date:${iso}`, label: `📅 ${label} (${iso})`, kind: "date" as const };
       };
       const dateKeywords = [
         { k: "today", d: 0 }, { k: "tomorrow", d: 1 }, { k: "yesterday", d: -1 },
@@ -115,16 +116,16 @@ export const NotchMention = Mention.configure({
       for (const dk of dateKeywords) {
         if (!q || dk.k.includes(q)) dates.push(mkDate(dk.d, dk.k[0].toUpperCase() + dk.k.slice(1)));
       }
-      // Try to parse the query itself as a date
       if (q && /^\d/.test(q)) {
         const parsed = new Date(q);
         if (!isNaN(parsed.getTime())) {
           const iso = parsed.toISOString().slice(0, 10);
-          dates.unshift({ id: `date:${iso}`, user_id: `date:${iso}`, label: `📅 ${iso}` });
+          dates.unshift({ id: `date:${iso}`, user_id: `date:${iso}`, label: `📅 ${iso}`, kind: "date" as const });
         }
       }
-      return [...dates.slice(0, 4), ...people];
+      return [...people, ...pageMatches, ...dates.slice(0, 4)];
     },
+
     render: () => {
       let component: ReactRenderer | null = null;
       let popup: HTMLDivElement | null = null;
