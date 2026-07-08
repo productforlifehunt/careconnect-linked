@@ -81,7 +81,7 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
     setRows((rs) => rs.map((x) => x.id === r.id ? { ...x, properties: JSON.stringify(props) } : x));
   };
 
-  // Evaluate a formula expression in a sandbox with numeric props exposed as vars.
+  // Evaluate a formula expression in a sandbox with numeric props and Notion-style helpers.
   const evalFormula = (expr: string, r: Row): string => {
     if (!expr) return "";
     let props: any = {};
@@ -92,9 +92,48 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
       const n = Number(v);
       ctx[p.key] = !isNaN(n) && v !== "" && v !== undefined && v !== null ? n : (v ?? "");
     }
+    // Notion-style helpers
+    const helpers = {
+      prop: (k: string) => ctx[k] ?? "",
+      if: (c: any, a: any, b: any) => (c ? a : b),
+      empty: (v: any) => v === "" || v === null || v === undefined,
+      length: (v: any) => (v == null ? 0 : String(v).length),
+      contains: (a: any, b: any) => String(a ?? "").includes(String(b ?? "")),
+      concat: (...args: any[]) => args.map((x) => String(x ?? "")).join(""),
+      slice: (s: any, a: number, b?: number) => String(s ?? "").slice(a, b),
+      lower: (s: any) => String(s ?? "").toLowerCase(),
+      upper: (s: any) => String(s ?? "").toUpperCase(),
+      format: (n: any) => (typeof n === "number" ? n.toLocaleString() : String(n ?? "")),
+      toNumber: (v: any) => Number(v) || 0,
+      round: (n: any) => Math.round(Number(n) || 0),
+      abs: (n: any) => Math.abs(Number(n) || 0),
+      max: (...a: number[]) => Math.max(...a.map((n) => Number(n) || 0)),
+      min: (...a: number[]) => Math.min(...a.map((n) => Number(n) || 0)),
+      now: () => new Date(),
+      today: () => new Date(new Date().toDateString()),
+      dateAdd: (d: any, n: number, unit: "days" | "months" | "years" = "days") => {
+        const dt = new Date(d || Date.now());
+        if (unit === "days") dt.setDate(dt.getDate() + n);
+        else if (unit === "months") dt.setMonth(dt.getMonth() + n);
+        else if (unit === "years") dt.setFullYear(dt.getFullYear() + n);
+        return dt.toISOString().slice(0, 10);
+      },
+      dateBetween: (a: any, b: any, unit: "days" | "hours" = "days") => {
+        const ma = new Date(a).getTime(), mb = new Date(b).getTime();
+        if (isNaN(ma) || isNaN(mb)) return 0;
+        const diff = ma - mb;
+        return unit === "hours" ? Math.round(diff / 3.6e6) : Math.round(diff / 8.64e7);
+      },
+      formatDate: (d: any, opts?: Intl.DateTimeFormatOptions) => {
+        const dt = new Date(d); return isNaN(dt.getTime()) ? "" : dt.toLocaleDateString(undefined, opts);
+      },
+    };
     try {
-      const fn = new Function(...Object.keys(ctx), `"use strict"; try { return (${expr}); } catch(e){ return "#ERR"; }`);
-      const out = fn(...Object.values(ctx));
+      const names = [...Object.keys(ctx), ...Object.keys(helpers)];
+      const values = [...Object.values(ctx), ...Object.values(helpers)];
+      const fn = new Function(...names, `"use strict"; try { return (${expr}); } catch(e){ return "#ERR"; }`);
+      const out = fn(...values);
+      if (out instanceof Date) return out.toLocaleDateString();
       return out === undefined || out === null ? "" : String(out);
     } catch { return "#ERR"; }
   };
