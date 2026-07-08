@@ -695,7 +695,49 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
             </div>
           </div>
         </>
-      )}
+      {pagePicker && (() => {
+        const q = pagePicker.query.toLowerCase();
+        const filtered = (q ? pagePicker.pages.filter((p) => p.title.toLowerCase().includes(q)) : pagePicker.pages).slice(0, 40);
+        return (
+          <>
+            <div style={{ position: "fixed", inset: 0, zIndex: 90 }} onClick={() => setPagePicker(null)} />
+            <div className="nn-slash-menu" style={{ left: pagePicker.x, top: pagePicker.y, minWidth: 320, zIndex: 100 }}>
+              <div style={{ padding: 6, borderBottom: "1px solid var(--nn-border)" }}>
+                <input
+                  autoFocus
+                  value={pagePicker.query}
+                  onChange={(e) => setPagePicker((p) => (p ? { ...p, query: e.target.value, sel: 0 } : p))}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") { e.preventDefault(); setPagePicker(null); }
+                    else if (e.key === "ArrowDown") { e.preventDefault(); setPagePicker((p) => (p ? { ...p, sel: Math.min(filtered.length - 1, p.sel + 1) } : p)); }
+                    else if (e.key === "ArrowUp") { e.preventDefault(); setPagePicker((p) => (p ? { ...p, sel: Math.max(0, p.sel - 1) } : p)); }
+                    else if (e.key === "Enter") { e.preventDefault(); const it = filtered[pagePicker.sel]; if (it) insertPageLink(it.id, it.title); }
+                  }}
+                  placeholder="Search pages…"
+                  style={{ width: "100%", padding: "6px 8px", background: "transparent", border: "1px solid var(--nn-border)", borderRadius: 4, color: "var(--nn-text)", fontSize: 13 }}
+                />
+              </div>
+              <div style={{ maxHeight: 320, overflowY: "auto" }}>
+                {filtered.length === 0 ? (
+                  <div style={{ padding: 12, color: "var(--nn-text-tertiary)", fontSize: 12 }}>{pagePicker.pages.length === 0 ? "Loading…" : "No pages"}</div>
+                ) : filtered.map((it, i) => (
+                  <div
+                    key={it.id}
+                    className={`nn-slash-menu-item ${i === pagePicker.sel ? "selected" : ""}`}
+                    onMouseEnter={() => setPagePicker((p) => (p ? { ...p, sel: i } : p))}
+                    onMouseDown={(e) => { e.preventDefault(); insertPageLink(it.id, it.title); }}
+                  >
+                    <div className="nn-slash-icon">📄</div>
+                    <div className="nn-slash-body">
+                      <div className="nn-slash-name">{it.title}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        );
+      })()}
     </div>
   );
 }
