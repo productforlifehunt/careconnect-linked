@@ -110,20 +110,33 @@ export default function NotchPage() {
   const saveProps = useCallback((extra: Record<string, any>) => {
     scheduleSave({
       properties: JSON.stringify({
-        editor_content: content,
+        editor_content: extra.editor_content ?? content,
         locked: extra.locked ?? locked,
         full_width: extra.full_width ?? fullWidth,
+        verified: extra.verified ?? verified,
         history: extra.history ?? snapshots,
       }),
     });
-  }, [content, locked, fullWidth, snapshots, scheduleSave]);
+  }, [content, locked, fullWidth, verified, snapshots, scheduleSave]);
 
   const onTitleChange = (v: string) => { if (locked) return; setTitle(v); scheduleSave({ title: v }); };
   const onIconChange = (v: string) => { setIcon(v); setShowEmoji(false); scheduleSave({ icon: v }); };
   const onContentChange = (json: any) => {
     if (locked) return;
     setContent(json);
-    scheduleSave({ properties: JSON.stringify({ editor_content: json, locked, full_width: fullWidth, history: snapshots }) });
+    saveProps({ editor_content: json });
+    // Auto-snapshot: at most once every 5 minutes of active editing, debounced by 30s of inactivity.
+    clearTimeout(autoSnapTimer.current);
+    autoSnapTimer.current = setTimeout(() => {
+      const now = Date.now();
+      if (now - lastSnapAt.current < 5 * 60_000) return;
+      lastSnapAt.current = now;
+      setSnapshots((prev) => {
+        const next = [{ ts: now, content: json, title }, ...prev].slice(0, 30);
+        saveProps({ history: next, editor_content: json });
+        return next;
+      });
+    }, 30_000);
   };
   const toggleLock = () => {
     const nv = !locked;
@@ -137,10 +150,17 @@ export default function NotchPage() {
     setShowMenu(false);
     saveProps({ full_width: nv });
   };
+  const toggleVerified = () => {
+    const nv = !verified;
+    setVerified(nv);
+    setShowMenu(false);
+    saveProps({ verified: nv });
+  };
   const takeSnapshot = () => {
     const snap = { ts: Date.now(), content, title };
     const next = [snap, ...snapshots].slice(0, 30);
     setSnapshots(next);
+    lastSnapAt.current = snap.ts;
     setShowMenu(false);
     saveProps({ history: next });
     nnAlert("Version snapshot saved.", "History");
