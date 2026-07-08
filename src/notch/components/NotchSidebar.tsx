@@ -316,31 +316,50 @@ export function NotchSidebar() {
           }}
         />
       );
+      const isSelected = selected.has(String(p.id));
       return (
         <div key={p.id}>
           {idx === 0 && dropLine(true)}
           <div
-            className={`nn-sidebar-item ${isActive ? "active" : ""}`}
-            style={{ paddingLeft: 14 + depth * 12 }}
+            className={`nn-sidebar-item ${isActive ? "active" : ""} ${isSelected ? "nn-selected" : ""}`}
+            style={{ paddingLeft: 14 + depth * 12, ...(isSelected ? { background: "var(--nn-blue-bg, rgba(35,131,226,0.15))" } : {}) }}
             draggable
-            onDragStart={(e) => { e.dataTransfer.setData("text/nn-page", p.id); e.dataTransfer.effectAllowed = "move"; }}
+            onDragStart={(e) => {
+              // If dragging a selected item, carry all selected IDs; else drag single.
+              const ids = isSelected && selected.size > 1 ? Array.from(selected) : [String(p.id)];
+              e.dataTransfer.setData("text/nn-page", String(p.id));
+              e.dataTransfer.setData("text/nn-pages", JSON.stringify(ids));
+              e.dataTransfer.effectAllowed = "move";
+            }}
             onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
             onDrop={async (e) => {
               e.preventDefault();
               e.stopPropagation();
-              const src = e.dataTransfer.getData("text/nn-page");
-              if (!src || src === p.id) return;
-              // prevent dropping onto own descendant
-              let cur: any = pages.find((x) => x.id === p.id);
-              while (cur) {
-                if (String(cur.id) === String(src)) return;
-                cur = pages.find((x) => String(x.id) === String(cur.parent_id));
+              const many = e.dataTransfer.getData("text/nn-pages");
+              const ids: string[] = many ? JSON.parse(many) : [e.dataTransfer.getData("text/nn-page")].filter(Boolean);
+              if (!ids.length) return;
+              const isDescendant = (root: string, cand: string): boolean => {
+                let cur: any = pages.find((x) => String(x.id) === String(cand));
+                while (cur) {
+                  if (String(cur.id) === String(root)) return true;
+                  cur = pages.find((x) => String(x.id) === String(cur.parent_id));
+                }
+                return false;
+              };
+              for (const src of ids) {
+                if (String(src) === String(p.id)) continue;
+                if (isDescendant(src, p.id)) continue;
+                await cctUpdate(NN.block, src, { parent_id: p.id });
               }
-              await cctUpdate(NN.block, src, { parent_id: p.id });
               setExpanded((s) => ({ ...s, [p.id]: true }));
+              if (ids.length > 1) clearSelection();
               await loadAll();
             }}
-            onClick={() => nav(path(`/p/${p.id}`))}
+            onClick={(e) => {
+              if (e.metaKey || e.ctrlKey) { e.preventDefault(); toggleSelected(String(p.id)); return; }
+              if (selected.size) clearSelection();
+              nav(path(`/p/${p.id}`));
+            }}
             onContextMenu={(e) => { e.preventDefault(); setCtx({ x: e.clientX, y: e.clientY, page: p }); }}
           >
             <span
