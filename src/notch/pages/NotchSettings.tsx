@@ -134,6 +134,10 @@ export default function NotchSettings() {
               </section>
             )}
 
+            {tab === "import" && <ImportPanel />}
+
+
+
             {tab === "shortcuts" && (
               <section>
                 <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 12 }}>Keyboard shortcuts</div>
