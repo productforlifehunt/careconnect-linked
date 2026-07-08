@@ -56,13 +56,15 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
   const load = useCallback(async () => {
     setLoading(true);
     const all = await cctList<any>(NN.block, { workspace_id: workspaceId });
+    setAllBlocks(all);
     const parent = all.find((b: any) => String(b.id) === String(databaseId));
     setDbBlock(parent);
     try {
       const p = parent?.properties ? JSON.parse(parent.properties) : {};
       if (Array.isArray(p.schema) && p.schema.length) setSchema(p.schema);
       else setSchema(DEFAULT_SCHEMA);
-    } catch { setSchema(DEFAULT_SCHEMA); }
+      setCondRules(Array.isArray(p.condRules) ? p.condRules : []);
+    } catch { setSchema(DEFAULT_SCHEMA); setCondRules([]); }
     setRows(all.filter((b: any) => String(b.parent_id) === String(databaseId) && Number(b.archived) !== 1));
     setLoading(false);
   }, [databaseId, workspaceId]);
@@ -75,6 +77,47 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
     props.schema = next;
     await cctUpdate(NN.block, databaseId, { properties: JSON.stringify(props) });
   };
+  const saveCondRules = async (next: CondRule[]) => {
+    setCondRules(next);
+    let props: any = {};
+    try { props = dbBlock?.properties ? JSON.parse(dbBlock.properties) : {}; } catch {}
+    props.condRules = next;
+    await cctUpdate(NN.block, databaseId, { properties: JSON.stringify(props) });
+  };
+
+  // Compute background color for a row/cell given the conditional-formatting rules.
+  const rowColor = (r: Row): string => {
+    for (const rule of condRules) {
+      const v = (rule.prop === "__title__") ? (r.title || "") : (() => {
+        try { return (r.properties ? JSON.parse(r.properties) : {})[rule.prop]; } catch { return ""; }
+      })();
+      const s = String(v ?? "");
+      const rv = String(rule.value ?? "");
+      let match = false;
+      if (rule.op === "eq") match = s === rv;
+      else if (rule.op === "neq") match = s !== rv;
+      else if (rule.op === "contains") match = s.toLowerCase().includes(rv.toLowerCase());
+      else if (rule.op === "gt") match = Number(s) > Number(rv);
+      else if (rule.op === "lt") match = Number(s) < Number(rv);
+      else if (rule.op === "empty") match = s === "" || s == null;
+      else if (rule.op === "notempty") match = s !== "" && s != null;
+      if (match) return rule.color;
+    }
+    return "";
+  };
+
+  // Reorder a schema column by drag (persists to properties).
+  const reorderColumn = async (srcKey: string, tgtKey: string) => {
+    if (srcKey === tgtKey) return;
+    const srcIdx = schema.findIndex((p) => p.key === srcKey);
+    const tgtIdx = schema.findIndex((p) => p.key === tgtKey);
+    if (srcIdx < 0 || tgtIdx < 0) return;
+    const next = [...schema];
+    const [moved] = next.splice(srcIdx, 1);
+    next.splice(tgtIdx, 0, moved);
+    await saveSchema(next);
+  };
+
 
   const getProp = (r: Row, key: string) => {
     try { return (r.properties ? JSON.parse(r.properties) : {})[key]; } catch { return undefined; }
