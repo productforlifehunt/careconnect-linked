@@ -727,30 +727,91 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
       )}
 
       {view === "board" && (
-        statusProp ? (
-          <div style={{ display: "grid", gridTemplateColumns: `repeat(${(statusProp.options || []).length}, 1fr)`, gap: 12 }}>
-            {(statusProp.options || []).map((s) => {
-              const col = visibleRows.filter((r) => (getProp(r, statusProp.key) || (statusProp.options || [])[0]) === s);
-              return (
-                <div key={s} style={{ background: "var(--nn-bg-secondary)", borderRadius: 4, padding: 8, minHeight: 200 }}>
-                  <div style={{ fontSize: 12, fontWeight: 500, padding: 4, display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ background: STATUS_COLORS[s] || "rgba(0,0,0,0.06)", padding: "2px 8px", borderRadius: 3 }}>{s}</span>
-                    <span style={{ color: "var(--nn-text-tertiary)" }}>{col.length}</span>
-                  </div>
-                  {col.map((r) => (
-                    <div key={r.id} onClick={() => nav(path(`/p/${r.id}`))} style={{ background: "var(--nn-bg)", padding: 10, marginTop: 6, borderRadius: 4, cursor: "pointer", boxShadow: "0 1px 2px rgba(0,0,0,0.05)", fontSize: 14 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <span>{r.icon || "📄"}</span>
-                        <span>{r.title || "Untitled"}</span>
-                      </div>
+        statusProp ? (() => {
+          const cols = statusProp.options || [];
+          const swim = swimlaneProp;
+          // Compute swimlane buckets: array of { key, label, rows }
+          const lanes: { key: string; label: string; rows: Row[] }[] = swim
+            ? (() => {
+                const opts = swim.options || [];
+                const acc: Record<string, Row[]> = {};
+                for (const o of opts) acc[o] = [];
+                acc["(empty)"] = [];
+                for (const r of visibleRows) {
+                  const raw = getProp(r, swim.key);
+                  const keys: string[] = Array.isArray(raw) && raw.length ? raw.map(String) : [String(raw ?? "") || "(empty)"];
+                  for (const k of keys) { (acc[k] ||= []).push(r); }
+                }
+                return Object.entries(acc).filter(([, v]) => v.length > 0 || opts.includes(v as any)).map(([k, rs]) => ({ key: k, label: k, rows: rs }));
+              })()
+            : [{ key: "__all__", label: "", rows: visibleRows }];
+          const renderLaneCols = (laneRows: Row[], laneKey: string) => (
+            <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols.length}, 1fr)`, gap: 12 }}>
+              {cols.map((s) => {
+                const col = laneRows.filter((r) => (getProp(r, statusProp.key) || cols[0]) === s);
+                return (
+                  <div key={s} style={{ background: "var(--nn-bg-secondary)", borderRadius: 4, padding: 8, minHeight: 120 }}
+                    onDragOver={(ev) => ev.preventDefault()}
+                    onDrop={(ev) => {
+                      ev.preventDefault();
+                      const id = ev.dataTransfer.getData("text/nn-card");
+                      const row = rows.find((x) => x.id === id);
+                      if (!row) return;
+                      setProp(row, statusProp.key, s);
+                      if (swim && laneKey !== "__all__" && laneKey !== "(empty)") setProp(row, swim.key, swim.type === "multiselect" ? [laneKey] : laneKey);
+                    }}
+                  >
+                    <div style={{ fontSize: 12, fontWeight: 500, padding: 4, display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ background: STATUS_COLORS[s] || "rgba(0,0,0,0.06)", padding: "2px 8px", borderRadius: 3 }}>{s}</span>
+                      <span style={{ color: "var(--nn-text-tertiary)" }}>{col.length}</span>
                     </div>
-                  ))}
-                  <div onClick={() => addRow({ [statusProp.key]: s })} style={{ padding: 6, marginTop: 4, color: "var(--nn-text-tertiary)", cursor: "pointer", fontSize: 12 }}>+ New</div>
+                    {col.map((r) => (
+                      <div key={r.id}
+                        draggable
+                        onDragStart={(ev) => ev.dataTransfer.setData("text/nn-card", r.id)}
+                        onClick={() => nav(path(`/p/${r.id}`))}
+                        style={{ background: "var(--nn-bg)", padding: 10, marginTop: 6, borderRadius: 4, cursor: "pointer", boxShadow: "0 1px 2px rgba(0,0,0,0.05)", fontSize: 14 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <span>{r.icon || "📄"}</span>
+                          <span>{r.title || "Untitled"}</span>
+                        </div>
+                      </div>
+                    ))}
+                    <div onClick={() => {
+                      const seed: any = { [statusProp.key]: s };
+                      if (swim && laneKey !== "__all__" && laneKey !== "(empty)") seed[swim.key] = swim.type === "multiselect" ? [laneKey] : laneKey;
+                      addRow(seed);
+                    }} style={{ padding: 6, marginTop: 4, color: "var(--nn-text-tertiary)", cursor: "pointer", fontSize: 12 }}>+ New</div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+          return (
+            <div>
+              {selectishProps.length > 0 && (
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, fontSize: 12, color: "var(--nn-text-secondary)" }}>
+                  <span>Swimlanes:</span>
+                  <select value={swimlaneKey} onChange={(e) => setSwimlaneKey(e.target.value)} className="nn-topbar-btn" style={{ fontSize: 12, padding: "3px 6px" }}>
+                    <option value="">None</option>
+                    {selectishProps.filter((p) => p.key !== statusProp.key).map((p) => <option key={p.key} value={p.key}>{p.name}</option>)}
+                  </select>
                 </div>
-              );
-            })}
-          </div>
-        ) : (
+              )}
+              {swim ? (
+                lanes.map((lane) => (
+                  <div key={lane.key} style={{ marginBottom: 16 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6, padding: "4px 8px", background: "var(--nn-bg-secondary)", borderRadius: 4, fontSize: 12, fontWeight: 600, color: "var(--nn-text-secondary)" }}>
+                      <span>{lane.label || "(empty)"}</span>
+                      <span style={{ color: "var(--nn-text-tertiary)", fontWeight: 400 }}>{lane.rows.length}</span>
+                    </div>
+                    {renderLaneCols(lane.rows, lane.key)}
+                  </div>
+                ))
+              ) : renderLaneCols(visibleRows, "__all__")}
+            </div>
+          );
+        })() : (
           <div style={{ color: "var(--nn-text-tertiary)", fontSize: 13 }}>Add a select property (e.g. Status) to enable the board view.</div>
         )
       )}
@@ -775,36 +836,65 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
       )}
 
       {view === "timeline" && (
-        <TimelineView
-          rows={visibleRows}
-          dateProp={dateProp}
-          endDateProp={endDateProp}
-          rowColor={rowColor}
-          onOpen={(id) => nav(path(`/p/${id}`))}
-          onReschedule={(row, iso, isEnd) => {
-            const target = isEnd && endDateProp ? endDateProp : dateProp;
-            if (target) setProp(row, target.key, iso);
-          }}
-        />
+        <div>
+          {relationProps.length > 0 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, fontSize: 12, color: "var(--nn-text-secondary)" }}>
+              <span>Dependencies:</span>
+              <select value={depKey} onChange={(e) => setDepKey(e.target.value)} className="nn-topbar-btn" style={{ fontSize: 12, padding: "3px 6px" }}>
+                <option value="">None</option>
+                {relationProps.map((p) => <option key={p.key} value={p.key}>{p.name}</option>)}
+              </select>
+            </div>
+          )}
+          <TimelineView
+            rows={visibleRows}
+            dateProp={dateProp}
+            endDateProp={endDateProp}
+            depProp={depProp}
+            rowColor={rowColor}
+            onOpen={(id) => nav(path(`/p/${id}`))}
+            onReschedule={(row, iso, isEnd) => {
+              const target = isEnd && endDateProp ? endDateProp : dateProp;
+              if (target) setProp(row, target.key, iso);
+            }}
+            getProp={getProp}
+          />
+        </div>
       )}
 
       {view === "gallery" && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
-          {visibleRows.map((r) => (
-            <div key={r.id} onClick={() => nav(path(`/p/${r.id}`))} style={{ border: "1px solid var(--nn-border)", borderRadius: 6, overflow: "hidden", cursor: "pointer", background: "var(--nn-bg)" }}>
-              <div style={{ height: 120, background: r.cover ? `center/cover no-repeat url("${r.cover}")` : "var(--nn-bg-secondary)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, color: "var(--nn-text-tertiary)" }}>
-                {!r.cover && (r.icon || "📄")}
-              </div>
-              <div style={{ padding: 10 }}>
-                <div style={{ fontSize: 14, fontWeight: 500, display: "flex", gap: 6, alignItems: "center" }}>
-                  {r.cover && <span>{r.icon || "📄"}</span>}
-                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.title || "Untitled"}</span>
-                </div>
-              </div>
+        <div>
+          {(urlProps.length > 0) && (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, fontSize: 12, color: "var(--nn-text-secondary)" }}>
+              <span>Card cover:</span>
+              <select value={galleryCoverKey} onChange={(e) => setGalleryCoverKey(e.target.value)} className="nn-topbar-btn" style={{ fontSize: 12, padding: "3px 6px" }}>
+                <option value="__cover__">Page cover</option>
+                {urlProps.map((p) => <option key={p.key} value={p.key}>{p.name}</option>)}
+              </select>
+              <span style={{ marginLeft: 8 }}>Fit:</span>
+              <button onClick={() => setGalleryFit(galleryFit === "cover" ? "contain" : "cover")} className="nn-topbar-btn" style={{ fontSize: 12 }}>{galleryFit}</button>
             </div>
-          ))}
-          <div onClick={() => addRow()} style={{ border: "1px dashed var(--nn-border-strong)", borderRadius: 6, minHeight: 180, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--nn-text-tertiary)", cursor: "pointer" }}>
-            <Plus size={16} style={{ marginRight: 4 }} /> New
+          )}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
+            {visibleRows.map((r) => {
+              const coverUrl = galleryCoverKey === "__cover__" ? r.cover : String(getProp(r, galleryCoverKey) || "");
+              return (
+                <div key={r.id} onClick={() => nav(path(`/p/${r.id}`))} style={{ border: "1px solid var(--nn-border)", borderRadius: 6, overflow: "hidden", cursor: "pointer", background: "var(--nn-bg)" }}>
+                  <div style={{ height: 120, background: coverUrl ? `center/${galleryFit} no-repeat url("${coverUrl}")` : "var(--nn-bg-secondary)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, color: "var(--nn-text-tertiary)" }}>
+                    {!coverUrl && (r.icon || "📄")}
+                  </div>
+                  <div style={{ padding: 10 }}>
+                    <div style={{ fontSize: 14, fontWeight: 500, display: "flex", gap: 6, alignItems: "center" }}>
+                      {coverUrl && <span>{r.icon || "📄"}</span>}
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.title || "Untitled"}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            <div onClick={() => addRow()} style={{ border: "1px dashed var(--nn-border-strong)", borderRadius: 6, minHeight: 180, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--nn-text-tertiary)", cursor: "pointer" }}>
+              <Plus size={16} style={{ marginRight: 4 }} /> New
+            </div>
           </div>
         </div>
       )}
