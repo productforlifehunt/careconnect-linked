@@ -371,7 +371,7 @@ export default function NotchPage() {
             </button>
           </div>
         )}
-        <div className={`nn-page ${fullWidth ? "nn-page-full" : ""} ${locked ? "nn-page-locked" : ""}`} style={cover ? { paddingTop: 24 } : undefined}>
+        <div className={`nn-page ${fullWidth ? "nn-page-full" : ""} ${locked ? "nn-page-locked" : ""} ${smallText ? "nn-page-small" : ""}`} style={cover ? { paddingTop: 24 } : undefined}>
           <div style={{ position: "relative", display: "inline-block" }}>
             <div className="nn-page-icon" onClick={() => setShowEmoji((s) => !s)}>
               {icon || <span style={{ fontSize: 24, opacity: 0.3 }}>Add icon</span>}
