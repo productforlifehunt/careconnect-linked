@@ -499,14 +499,49 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
           );
         })}
         <div style={{ flex: 1 }} />
-        <select value={filterKey} onChange={(e) => { setFilterKey(e.target.value); if (!e.target.value) setFilterVal(""); }} className="nn-topbar-btn" style={{ padding: "4px 6px", fontSize: 12 }} title="Filter by property">
-          <option value="">Filter…</option>
-          <option value="__title__">Name</option>
-          {schema.map((p) => <option key={p.key} value={p.key}>{p.name}</option>)}
-        </select>
-        {filterKey && (
-          <input value={filterVal} onChange={(e) => setFilterVal(e.target.value)} placeholder="value" className="nn-topbar-btn" style={{ padding: "4px 8px", fontSize: 12, width: 120 }} />
-        )}
+        <div style={{ position: "relative" }}>
+          <button onClick={() => setShowFilterPop((v) => !v)} className="nn-topbar-btn" title="Filter" style={{ padding: "4px 8px", fontSize: 12 }}>
+            Filter{filterConds.length > 0 ? ` (${filterConds.length})` : ""}
+          </button>
+          {showFilterPop && (
+            <div style={{ position: "absolute", top: "calc(100% + 4px)", right: 0, background: "var(--nn-bg)", border: "1px solid var(--nn-border)", borderRadius: 6, boxShadow: "var(--nn-shadow-md)", padding: 10, zIndex: 1000, minWidth: 380 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                <div style={{ display: "flex", gap: 4 }}>
+                  <button onClick={() => setFilterJoin("and")} className="nn-topbar-btn" style={{ fontSize: 11, background: filterJoin === "and" ? "var(--nn-bg-tertiary)" : "transparent" }}>AND</button>
+                  <button onClick={() => setFilterJoin("or")} className="nn-topbar-btn" style={{ fontSize: 11, background: filterJoin === "or" ? "var(--nn-bg-tertiary)" : "transparent" }}>OR</button>
+                </div>
+                <button onClick={() => setFilterConds([])} className="nn-topbar-btn" style={{ fontSize: 11 }}>Clear</button>
+              </div>
+              {filterConds.map((c, i) => (
+                <div key={i} style={{ display: "flex", gap: 4, marginBottom: 6 }}>
+                  <select value={c.key} onChange={(e) => setFilterConds((L) => L.map((x, j) => j === i ? { ...x, key: e.target.value } : x))} className="nn-topbar-btn" style={{ fontSize: 11, flex: 1 }}>
+                    <option value="__title__">Name</option>
+                    {schema.map((p) => <option key={p.key} value={p.key}>{p.name}</option>)}
+                  </select>
+                  <select value={c.op} onChange={(e) => setFilterConds((L) => L.map((x, j) => j === i ? { ...x, op: e.target.value } : x))} className="nn-topbar-btn" style={{ fontSize: 11 }}>
+                    <option value="contains">contains</option>
+                    <option value="not_contains">not contains</option>
+                    <option value="eq">equals</option>
+                    <option value="ne">not equals</option>
+                    <option value="starts">starts with</option>
+                    <option value="ends">ends with</option>
+                    <option value="empty">is empty</option>
+                    <option value="not_empty">not empty</option>
+                    <option value="gt">&gt;</option>
+                    <option value="lt">&lt;</option>
+                    <option value="gte">≥</option>
+                    <option value="lte">≤</option>
+                  </select>
+                  {!["empty", "not_empty"].includes(c.op) && (
+                    <input value={c.val} onChange={(e) => setFilterConds((L) => L.map((x, j) => j === i ? { ...x, val: e.target.value } : x))} placeholder="value" className="nn-topbar-btn" style={{ fontSize: 11, width: 100 }} />
+                  )}
+                  <button onClick={() => setFilterConds((L) => L.filter((_, j) => j !== i))} className="nn-topbar-btn" style={{ fontSize: 11 }}>×</button>
+                </div>
+              ))}
+              <button onClick={() => setFilterConds((L) => [...L, { key: "__title__", op: "contains", val: "" }])} className="nn-topbar-btn" style={{ fontSize: 11, width: "100%", marginTop: 4 }}>+ Add filter</button>
+            </div>
+          )}
+        </div>
         <select value={sortKey} onChange={(e) => setSortKey(e.target.value)} className="nn-topbar-btn" style={{ padding: "4px 6px", fontSize: 12 }} title="Sort by property">
           <option value="">Sort…</option>
           <option value="__title__">Name</option>
