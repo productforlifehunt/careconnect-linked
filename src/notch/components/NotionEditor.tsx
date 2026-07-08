@@ -429,6 +429,15 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
 
 
 
+  const getRecentSlash = (): string[] => {
+    try { return JSON.parse(localStorage.getItem("nn_slash_recent") || "[]"); } catch { return []; }
+  };
+  const pushRecentSlash = (key: string) => {
+    const cur = getRecentSlash().filter((k) => k !== key);
+    cur.unshift(key);
+    localStorage.setItem("nn_slash_recent", JSON.stringify(cur.slice(0, 6)));
+  };
+
   const filteredItems = () => {
     if (!slash) return SLASH_ITEMS;
     const q = slash.query.toLowerCase();
@@ -446,11 +455,18 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
       editor.chain().focus().deleteRange({ from: start, to: from }).run();
     }
     item.cmd(editor, { onCreateSubpage, userId: user?.user_id });
+    pushRecentSlash(item.key);
     setSlash(null);
   };
 
   const items = filteredItems();
   const groups: Record<string, typeof SLASH_ITEMS> = {};
+  // Recently used group only when no filter
+  if (slash && !slash.query) {
+    const recentKeys = getRecentSlash();
+    const recent = recentKeys.map((k) => SLASH_ITEMS.find((i) => i.key === k)).filter(Boolean) as typeof SLASH_ITEMS;
+    if (recent.length) groups["Recently used"] = recent.slice(0, 6);
+  }
   items.forEach((i) => { (groups[i.group] ||= []).push(i); });
 
   const setLink = async () => {
@@ -598,7 +614,21 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
           <div style={{ position: "fixed", inset: 0, zIndex: 90 }} onClick={() => setBlockMenu(null)} />
           <div className="nn-block-menu" style={{ top: blockMenu.top + 20, left: blockMenu.left, minWidth: 200 }}>
             <div className="nn-sidebar-item" onClick={duplicateBlock}><span className="nn-title">Duplicate</span></div>
+            <div className="nn-sidebar-item" onClick={() => {
+              if (!blockMenu) return;
+              const range = nodeRangeFor(blockMenu.el);
+              const anchor = range ? `#b-${range.from}` : "";
+              try { navigator.clipboard.writeText(window.location.href.split("#")[0] + anchor); } catch { /* noop */ }
+              setBlockMenu(null);
+            }}><span className="nn-title">Copy link to block</span></div>
+            <div className="nn-sidebar-item" onClick={() => {
+              if (!blockMenu) return;
+              const range = nodeRangeFor(blockMenu.el);
+              window.dispatchEvent(new CustomEvent("nn:open-comment", { detail: { from: range?.from, to: range?.to } }));
+              setBlockMenu(null);
+            }}><span className="nn-title">Comment</span></div>
             <div className="nn-sidebar-item" onClick={deleteBlock} style={{ color: "var(--nn-danger, #e03e3e)" }}><span className="nn-title">Delete</span></div>
+
             <div style={{ borderTop: "1px solid var(--nn-border)", margin: "4px 0" }} />
             <div style={{ fontSize: 11, color: "var(--nn-text-tertiary)", padding: "4px 8px", textTransform: "uppercase", letterSpacing: 0.4 }}>Turn into</div>
             {[

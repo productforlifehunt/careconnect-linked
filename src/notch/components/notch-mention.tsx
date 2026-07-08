@@ -79,7 +79,30 @@ export const NotchMention = Mention.configure({
     items: async ({ query }: { query: string }) => {
       const list = await fetchMembers();
       const q = query.toLowerCase();
-      return list.filter((m) => m.label.toLowerCase().includes(q)).slice(0, 8);
+      const people = list.filter((m) => m.label.toLowerCase().includes(q)).slice(0, 6);
+      // Date suggestions — Notion-style. Match "today", "tomorrow", "yesterday", or ISO/MM-DD input.
+      const dates: MemberOption[] = [];
+      const mkDate = (offsetDays: number, label: string) => {
+        const d = new Date(); d.setDate(d.getDate() + offsetDays);
+        const iso = d.toISOString().slice(0, 10);
+        return { id: `date:${iso}`, user_id: `date:${iso}`, label: `📅 ${label} (${iso})` };
+      };
+      const dateKeywords = [
+        { k: "today", d: 0 }, { k: "tomorrow", d: 1 }, { k: "yesterday", d: -1 },
+        { k: "next week", d: 7 }, { k: "last week", d: -7 },
+      ];
+      for (const dk of dateKeywords) {
+        if (!q || dk.k.includes(q)) dates.push(mkDate(dk.d, dk.k[0].toUpperCase() + dk.k.slice(1)));
+      }
+      // Try to parse the query itself as a date
+      if (q && /^\d/.test(q)) {
+        const parsed = new Date(q);
+        if (!isNaN(parsed.getTime())) {
+          const iso = parsed.toISOString().slice(0, 10);
+          dates.unshift({ id: `date:${iso}`, user_id: `date:${iso}`, label: `📅 ${iso}` });
+        }
+      }
+      return [...dates.slice(0, 4), ...people];
     },
     render: () => {
       let component: ReactRenderer | null = null;

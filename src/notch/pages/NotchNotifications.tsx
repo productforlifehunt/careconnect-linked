@@ -18,12 +18,15 @@ function timeAgo(iso?: string) {
   return `${Math.floor(s / 86400)}d ago`;
 }
 
+type TabKey = "all" | "unread" | "following" | "mentions";
+
 export default function NotchNotifications() {
   const { user } = useNotchAuth();
   const path = useNotchPath();
   const nav = useNavigate();
   const [items, setItems] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<TabKey>("all");
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -65,6 +68,21 @@ export default function NotchNotifications() {
           </div>
         </div>
 
+        <div style={{ display: "flex", gap: 4, borderBottom: "1px solid var(--nn-border)", marginBottom: 12 }}>
+          {(["all","unread","following","mentions"] as TabKey[]).map((k) => (
+            <button
+              key={k}
+              onClick={() => setTab(k)}
+              className="nn-topbar-btn"
+              style={{
+                border: "none", borderRadius: 0, background: "transparent",
+                borderBottom: tab === k ? "2px solid var(--nn-text-primary)" : "2px solid transparent",
+                fontWeight: tab === k ? 600 : 400, textTransform: "capitalize", padding: "6px 10px",
+              }}
+            >{k}</button>
+          ))}
+        </div>
+
         {loading && <div style={{ color: "var(--nn-text-tertiary)" }}>Loading…</div>}
         {!loading && items.length === 0 && (
           <div style={{ padding: 40, textAlign: "center", color: "var(--nn-text-tertiary)" }}>
@@ -74,7 +92,14 @@ export default function NotchNotifications() {
         )}
 
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          {items.map((n) => {
+          {items
+            .filter((n) => {
+              if (tab === "unread") return !n.read_at;
+              if (tab === "mentions") return n.type === "mention";
+              if (tab === "following") return n.type === "comment" || n.type === "assignment" || n.type === "share";
+              return true;
+            })
+            .map((n) => {
             let payload: any = {};
             try { payload = n.payload ? JSON.parse(n.payload as any) : {}; } catch { /* noop */ }
             return (
