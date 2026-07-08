@@ -361,6 +361,14 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
       if (tgt.closest("a[href]")) return;
       e.preventDefault();
       const wr = wrapperRef.current?.getBoundingClientRect();
+      // If inside a table cell, open dedicated table context menu instead.
+      if (tgt.closest("td, th")) {
+        setTableCtx({
+          top: (e.clientY - (wr?.top || 0)),
+          left: (e.clientX - (wr?.left || 0)),
+        });
+        return;
+      }
       const nr = node.getBoundingClientRect();
       setHoverBlock({ top: nr.top - (wr?.top || 0), el: node });
       setBlockMenu({
