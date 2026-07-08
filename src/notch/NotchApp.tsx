@@ -1,6 +1,8 @@
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Home as HomeIcon, Search as SearchIcon, Bell as BellIcon, Plus as PlusIcon, Settings as SettingsIcon } from "lucide-react";
+import { Link, useLocation as useLoc2 } from "react-router-dom";
+import { useNotchPath } from "@/notch/context/NotchBaseContext";
 import { NotchAuthProvider, useNotchAuth } from "@/notch/context/NotchAuthContext";
 import { NotchBaseContext } from "@/notch/context/NotchBaseContext";
 import { NotchSidebar } from "@/notch/components/NotchSidebar";
@@ -19,6 +21,7 @@ import NotchNotifications from "@/notch/pages/NotchNotifications";
 import NotchPublicPage from "@/notch/pages/NotchPublicPage";
 import { acceptInviteByToken } from "@/notch/lib/nn-collab";
 import { nnAlert } from "@/notch/lib/nn-dialog";
+import { useNotchTitle } from "@/notch/lib/nn-title";
 import "@/notch/styles/notch.css";
 
 interface Props {
@@ -36,6 +39,23 @@ function Shell({ standalone }: { standalone: boolean }) {
   const [askAI, setAskAI] = useState(false);
   const [shortcuts, setShortcuts] = useState(false);
   const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
+
+  // Route-aware document.title so browser tab reflects the current Notch view.
+  const routeTitle = (() => {
+    const p = location.pathname.replace(/^.*?\/notch/, "") || "/";
+    if (p.startsWith("/auth")) return "Log in";
+    if (p.startsWith("/home")) return "Home";
+    if (p.startsWith("/search")) return "Search";
+    if (p.startsWith("/settings")) return "Settings";
+    if (p.startsWith("/trash")) return "Trash";
+    if (p.startsWith("/templates")) return "Templates";
+    if (p.startsWith("/notifications")) return "Notifications";
+    if (p.startsWith("/p/")) return "";
+    if (p.startsWith("/public/")) return "Shared page";
+    return "";
+  })();
+  useNotchTitle(routeTitle);
+
 
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth < 768);
@@ -132,8 +152,8 @@ function Shell({ standalone }: { standalone: boolean }) {
   const authRoutes = (
     <Routes>
       <Route path="auth" element={<NotchAuth />} />
-      {standalone && <Route index element={<NotchLanding />} />}
-      <Route path="*" element={<Navigate to={standalone ? "/" : "/notch/auth"} replace />} />
+      <Route index element={<NotchLanding />} />
+      <Route path="*" element={<Navigate to={standalone ? "/auth" : "/notch/auth"} replace />} />
     </Routes>
   );
 
@@ -143,7 +163,7 @@ function Shell({ standalone }: { standalone: boolean }) {
 
   // Prevent authenticated users from lingering on /auth
   if (location.pathname.endsWith("/auth")) {
-    return <Navigate to={standalone ? "/" : "/notch"} replace />;
+    return <Navigate to={standalone ? "/home" : "/notch/home"} replace />;
   }
 
 
@@ -161,17 +181,18 @@ function Shell({ standalone }: { standalone: boolean }) {
       ) : (
         <NotchSidebar />
       )}
-      <div className="nn-main">
+      <div className="nn-main" style={isMobile ? { paddingBottom: "calc(56px + env(safe-area-inset-bottom))" } : undefined}>
         {isMobile && (
-          <div style={{ display: "flex", alignItems: "center", height: 45, padding: "0 8px", borderBottom: "1px solid var(--nn-border)", gap: 6 }}>
+          <div className="nn-mobile-topbar">
             <button className="nn-topbar-btn" onClick={() => setDrawerOpen((s) => !s)} aria-label="Menu">
               {drawerOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
-            <div style={{ fontWeight: 600, fontSize: 14 }}>Notch Note</div>
+            <div style={{ fontWeight: 600, fontSize: 14, flex: 1, textAlign: "center", marginRight: 30 }}>Notch Note</div>
           </div>
         )}
         <Routes>
           <Route index element={<NotchHome />} />
+          <Route path="home" element={<NotchHome />} />
           <Route path="p/:pageId" element={<NotchPage />} />
           <Route path="search" element={<NotchSearch />} />
           <Route path="settings" element={<NotchSettings />} />
@@ -179,13 +200,33 @@ function Shell({ standalone }: { standalone: boolean }) {
           <Route path="templates" element={<NotchTemplates />} />
           <Route path="notifications" element={<NotchNotifications />} />
           <Route path="*" element={<Navigate to={standalone ? "/" : "/notch"} replace />} />
-
         </Routes>
       </div>
+      {isMobile && <MobileTabbar onOpenMenu={() => setDrawerOpen(true)} onQuickFind={() => setQuickFind(true)} standalone={standalone} />}
       {quickFind && <NotchQuickFind onClose={() => setQuickFind(false)} />}
       {askAI && <NotchAskAI onClose={() => setAskAI(false)} />}
       {shortcuts && <NotchShortcuts onClose={() => setShortcuts(false)} />}
     </div>
+  );
+}
+
+function MobileTabbar({ onOpenMenu, onQuickFind, standalone }: { onOpenMenu: () => void; onQuickFind: () => void; standalone: boolean }) {
+  const loc = useLoc2();
+  const path = useNotchPath();
+  const active = (p: string) => loc.pathname.endsWith(p) || (p === "/home" && (loc.pathname === "/notch" || loc.pathname === "/notch/" || loc.pathname === "/"));
+  const item = (to: string, icon: JSX.Element, label: string) => (
+    <Link to={path(to)} className={`nn-tab ${active(to) ? "active" : ""}`} aria-label={label}>
+      {icon}<span>{label}</span>
+    </Link>
+  );
+  return (
+    <nav className="nn-mobile-tabbar" role="navigation" aria-label="Primary">
+      {item("/home", <HomeIcon size={18} />, "Home")}
+      <button className="nn-tab" onClick={onQuickFind} aria-label="Search"><SearchIcon size={18} /><span>Search</span></button>
+      <button className="nn-tab nn-tab-fab" onClick={onOpenMenu} aria-label="New / Menu"><PlusIcon size={20} /></button>
+      {item("/notifications", <BellIcon size={18} />, "Inbox")}
+      {item("/settings", <SettingsIcon size={18} />, "Settings")}
+    </nav>
   );
 }
 

@@ -14,6 +14,7 @@ import { useFavorites } from "@/notch/lib/nn-favorites";
 import { cctGet, cctList, cctUpdate, cctCreate, NN } from "@/notch/lib/nn-client";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 import { joinPresence, type Peer } from "@/notch/lib/nn-presence";
+import { useNotchTitle } from "@/notch/lib/nn-title";
 
 interface Block {
   id: string;
@@ -37,6 +38,7 @@ export default function NotchPage() {
   const { isFav, toggle: toggleFav } = useFavorites();
   const [block, setBlock] = useState<Block | null>(null);
   const [title, setTitle] = useState("");
+  useNotchTitle(title || "Untitled");
   const [icon, setIcon] = useState("");
   const [cover, setCover] = useState("");
   const [content, setContent] = useState<any>(null);

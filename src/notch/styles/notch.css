@@ -515,22 +515,85 @@
 /* Auth */
 .nn-auth-shell {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   background: var(--nn-bg);
-  padding: 20px;
+  padding: 72px 20px 40px;
+  overflow-y: auto;
+}
+@media (min-height: 700px) {
+  .nn-auth-shell { padding-top: 12vh; }
 }
 .nn-auth-card {
   width: 100%;
-  max-width: 380px;
-  padding: 40px 32px;
+  max-width: 360px;
+  padding: 24px 8px;
 }
+.nn-auth-logo {
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid var(--nn-border);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+.nn-auth-logo svg { width: 26px; height: 26px; }
 .nn-auth-title {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 700;
-  margin-bottom: 24px;
+  margin-bottom: 6px;
   text-align: center;
+  letter-spacing: -0.3px;
+}
+.nn-auth-subtitle {
+  text-align: center;
+  color: var(--nn-text-secondary);
+  font-size: 13px;
+  margin-bottom: 22px;
+}
+.nn-auth-sso {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.nn-auth-sso button {
+  width: 100%;
+  padding: 9px 12px;
+  background: var(--nn-bg);
+  color: var(--nn-text);
+  border: 1px solid var(--nn-border-strong);
+  border-radius: var(--nn-radius);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: background 0.12s;
+}
+.nn-auth-sso button:hover { background: var(--nn-bg-hover); }
+.nn-auth-sso button svg { width: 16px; height: 16px; }
+.nn-auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0;
+  color: var(--nn-text-tertiary);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.nn-auth-divider::before, .nn-auth-divider::after {
+  content: ""; flex: 1; height: 1px; background: var(--nn-border);
 }
 .nn-auth-input {
   width: 100%;
@@ -1032,3 +1095,31 @@
 .nn-chart-bar-track { flex: 1; height: 20px; background: var(--nn-bg); border-radius: 3px; overflow: hidden; position: relative; }
 .nn-chart-bar-fill { height: 100%; background: var(--nn-blue); transition: width .3s; }
 .nn-chart-bar-value { width: 60px; text-align: right; color: var(--nn-text); font-variant-numeric: tabular-nums; }
+
+/* Mobile top + bottom chrome */
+.nn-mobile-topbar {
+  display: flex; align-items: center; height: 48px; padding: 0 8px;
+  border-bottom: 1px solid var(--nn-border); gap: 6px;
+  position: sticky; top: 0; background: var(--nn-bg); z-index: 20;
+}
+.nn-mobile-tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 42;
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  height: calc(56px + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--nn-bg); border-top: 1px solid var(--nn-border);
+  box-shadow: 0 -1px 3px rgba(0,0,0,0.04);
+}
+.nn-mobile-tabbar .nn-tab {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; font-size: 10px; color: var(--nn-text-tertiary);
+  background: transparent; border: none; cursor: pointer; text-decoration: none;
+  font-family: inherit; padding: 0;
+}
+.nn-mobile-tabbar .nn-tab.active { color: var(--nn-blue); }
+.nn-mobile-tabbar .nn-tab-fab {
+  color: white; background: var(--nn-blue); width: 46px; height: 46px;
+  border-radius: 50%; align-self: center; justify-self: center;
+  box-shadow: 0 2px 6px rgba(35,131,226,0.4);
+}
+.nn-mobile-tabbar .nn-tab-fab span { display: none; }
