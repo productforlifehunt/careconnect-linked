@@ -388,8 +388,8 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
   return (
     <div style={{ marginTop: 12 }}>
       <div style={{ display: "flex", gap: 4, borderBottom: "1px solid var(--nn-border)", marginBottom: 12 }}>
-        {(["table", "board", "calendar", "gallery", "list"] as ViewMode[]).map((v) => {
-          const Icon = v === "table" ? Table : v === "board" ? LayoutGrid : v === "calendar" ? CalIcon : v === "gallery" ? ImageIcon : List;
+        {(["table", "board", "calendar", "timeline", "gallery", "list"] as ViewMode[]).map((v) => {
+          const Icon = v === "table" ? Table : v === "board" ? LayoutGrid : v === "calendar" ? CalIcon : v === "timeline" ? GanttChart : v === "gallery" ? ImageIcon : List;
           return (
             <button key={v} onClick={() => setView(v)} className="nn-topbar-btn" style={{ borderBottom: view === v ? "2px solid var(--nn-text)" : "none", borderRadius: 0, textTransform: "capitalize" }}>
               <Icon size={13} style={{ marginRight: 4 }} /> {v}
