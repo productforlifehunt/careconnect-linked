@@ -197,7 +197,9 @@ export default function NotchTemplates() {
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12, fontSize: 13, fontWeight: 600, color: "var(--nn-text-secondary)", textTransform: "uppercase", letterSpacing: 0.4 }}>
           <Globe size={14} /> Community marketplace ({filteredCommunity.length})
         </div>
-        {loading ? <div style={{ opacity: 0.5, marginBottom: 32 }}>Loading…</div> : filteredCommunity.length === 0 ? (
+        {loading ? <div style={{ opacity: 0.5, marginBottom: 32 }}>Loading…</div> : loadErr ? (
+          <div style={{ marginBottom: 32, color: "var(--nn-text-secondary)", fontSize: 13 }}>{loadErr} <button className="nn-topbar-btn" style={{ marginLeft: 6 }} onClick={load}>Retry</button></div>
+        ) : filteredCommunity.length === 0 ? (
           <div style={{ color: "var(--nn-text-tertiary)", marginBottom: 32, fontSize: 13 }}>No community templates{ql ? " match your search" : " yet. Publish one of yours to share"}.</div>
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12, marginBottom: 32 }}>
