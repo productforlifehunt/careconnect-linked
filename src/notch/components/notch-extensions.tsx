@@ -6,8 +6,12 @@ import { ReactNodeViewRenderer, NodeViewWrapper, NodeViewContent } from "@tiptap
 import { useEffect, useState, useMemo } from "react";
 import katex from "katex";
 import "katex/dist/katex.min.css";
-import { cctGet, NN } from "@/notch/lib/nn-client";
-import { Link2, RefreshCw, Info, FileText, Music, ChevronRight, Play } from "lucide-react";
+import { cctGet, cctList, cctCreate, NN } from "@/notch/lib/nn-client";
+import { Link2, RefreshCw, Info, FileText, Music, ChevronRight, Play, Database as DatabaseIcon, Plus } from "lucide-react";
+import { NotchDatabase } from "@/notch/components/NotchDatabase";
+import { useNavigate } from "react-router-dom";
+import { useNotchPath } from "@/notch/context/NotchBaseContext";
+import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 
 
 /* ─── Math Block ─────────────────────────────────────────────── */
