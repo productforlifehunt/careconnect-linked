@@ -82,22 +82,41 @@ function Highlight({ text, tokens }: { text: string; tokens: string[] }) {
   return <>{parts.map((p, i) => re.test(p) ? <mark key={i} style={{ background: "rgba(35,131,226,0.18)", color: "inherit", padding: 0 }}>{p}</mark> : <span key={i}>{p}</span>)}</>;
 }
 
+const RECENT_KEY = "nn_recent_searches";
+function loadRecent(): string[] {
+  try { return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); } catch { return []; }
+}
+function pushRecent(q: string) {
+  const t = q.trim(); if (!t) return;
+  const cur = loadRecent().filter((x) => x !== t);
+  cur.unshift(t);
+  localStorage.setItem(RECENT_KEY, JSON.stringify(cur.slice(0, 8)));
+}
+
 export default function NotchSearch() {
   const [q, setQ] = useState("");
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadErr, setLoadErr] = useState<string | null>(null);
   const [sel, setSel] = useState(0);
   const [scope, setScope] = useState<"all" | "page" | "database">("all");
+  const [recent, setRecent] = useState<string[]>(() => loadRecent());
   const nav = useNavigate();
   const path = useNotchPath();
   const listRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  const load = () => {
     setLoading(true);
+    setLoadErr(null);
     cctList<any>(NN.block)
       .then((b) => setItems(b.filter((x: any) => (x.type === "page" || x.type === "database") && Number(x.archived) !== 1)))
+      .catch((e: any) => {
+        const raw = String(e?.message || "");
+        setLoadErr(/fetch|network/i.test(raw) ? "Can't reach the server." : "Couldn't load search index.");
+      })
       .finally(() => setLoading(false));
-  }, []);
+  };
+  useEffect(() => { load(); }, []);
 
   const tokens = useMemo(() => q.trim().split(/\s+/).filter(Boolean), [q]);
 
