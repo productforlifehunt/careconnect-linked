@@ -234,6 +234,21 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
   const [aiBusy, setAiBusy] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const notchPath = useNotchPath();
+  // Delegated click handler: opening an inline-comment thread.
+  useEffect(() => {
+    const el = wrapperRef.current;
+    if (!el) return;
+    const onClick = (e: MouseEvent) => {
+      const target = (e.target as HTMLElement).closest<HTMLElement>("[data-nn-comment-thread]");
+      if (!target) return;
+      const threadId = target.getAttribute("data-nn-comment-thread") || "";
+      if (!threadId) return;
+      window.dispatchEvent(new CustomEvent("nn:open-comment-thread", { detail: { threadId } }));
+      window.dispatchEvent(new CustomEvent("nn:add-comment"));
+    };
+    el.addEventListener("click", onClick);
+    return () => el.removeEventListener("click", onClick);
+  }, []);
   const [pagePicker, setPagePicker] = useState<{ x: number; y: number; query: string; pages: { id: string; title: string }[]; sel: number } | null>(null);
   const openPagePicker = async () => {
     let x = 40, y = 40;
