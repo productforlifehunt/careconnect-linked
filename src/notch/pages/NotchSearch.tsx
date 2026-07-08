@@ -82,22 +82,41 @@ function Highlight({ text, tokens }: { text: string; tokens: string[] }) {
   return <>{parts.map((p, i) => re.test(p) ? <mark key={i} style={{ background: "rgba(35,131,226,0.18)", color: "inherit", padding: 0 }}>{p}</mark> : <span key={i}>{p}</span>)}</>;
 }
 
+const RECENT_KEY = "nn_recent_searches";
+function loadRecent(): string[] {
+  try { return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); } catch { return []; }
+}
+function pushRecent(q: string) {
+  const t = q.trim(); if (!t) return;
+  const cur = loadRecent().filter((x) => x !== t);
+  cur.unshift(t);
+  localStorage.setItem(RECENT_KEY, JSON.stringify(cur.slice(0, 8)));
+}
+
 export default function NotchSearch() {
   const [q, setQ] = useState("");
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadErr, setLoadErr] = useState<string | null>(null);
   const [sel, setSel] = useState(0);
   const [scope, setScope] = useState<"all" | "page" | "database">("all");
+  const [recent, setRecent] = useState<string[]>(() => loadRecent());
   const nav = useNavigate();
   const path = useNotchPath();
   const listRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  const load = () => {
     setLoading(true);
+    setLoadErr(null);
     cctList<any>(NN.block)
       .then((b) => setItems(b.filter((x: any) => (x.type === "page" || x.type === "database") && Number(x.archived) !== 1)))
+      .catch((e: any) => {
+        const raw = String(e?.message || "");
+        setLoadErr(/fetch|network/i.test(raw) ? "Can't reach the server." : "Couldn't load search index.");
+      })
       .finally(() => setLoading(false));
-  }, []);
+  };
+  useEffect(() => { load(); }, []);
 
   const tokens = useMemo(() => q.trim().split(/\s+/).filter(Boolean), [q]);
 
@@ -136,12 +155,12 @@ export default function NotchSearch() {
       else if (e.key === "ArrowUp") { e.preventDefault(); setSel((s) => Math.max(0, s - 1)); }
       else if (e.key === "Enter") {
         const r = results[sel];
-        if (r) nav(path(`/p/${r.row.id}`));
+        if (r) { pushRecent(q); setRecent(loadRecent()); nav(path(`/p/${r.row.id}`)); }
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [results, sel, nav, path]);
+  }, [results, sel, nav, path, q]);
 
   useEffect(() => {
     const el = listRef.current?.querySelector<HTMLDivElement>(`[data-idx="${sel}"]`);
@@ -179,12 +198,18 @@ export default function NotchSearch() {
             {loading ? "Loading…" : q.trim() === "" ? "Type to search" : `${results.length} result${results.length === 1 ? "" : "s"}`}
           </div>
         </div>
+        {loadErr && (
+          <div style={{ padding: 16, border: "1px solid var(--nn-border)", borderRadius: 6, color: "var(--nn-text-secondary)", marginBottom: 12 }}>
+            <div style={{ marginBottom: 8 }}>{loadErr}</div>
+            <button className="nn-topbar-btn" onClick={load}>Retry</button>
+          </div>
+        )}
         <div ref={listRef}>
           {results.map(({ row: r, snippet }, i) => (
             <div
               key={r.id}
               data-idx={i}
-              onClick={() => nav(path(`/p/${r.id}`))}
+              onClick={() => { pushRecent(q); setRecent(loadRecent()); nav(path(`/p/${r.id}`)); }}
               onMouseEnter={() => setSel(i)}
               className="nn-sidebar-item"
               style={{ padding: "12px 14px", borderRadius: 6, cursor: "pointer", display: "flex", gap: 12, flexDirection: "column", background: sel === i ? "var(--nn-bg-hover)" : "transparent", marginBottom: 2 }}
@@ -205,16 +230,55 @@ export default function NotchSearch() {
               )}
             </div>
           ))}
-          {!loading && !results.length && q.trim() && (
+          {!loading && !loadErr && !results.length && q.trim() && (
             <div style={{ color: "var(--nn-text-tertiary)", padding: "24px 0", textAlign: "center" }}>
               No results for "{q}". Try a shorter query or different keywords.
             </div>
           )}
-          {!loading && !results.length && !q.trim() && (
-            <div style={{ color: "var(--nn-text-tertiary)", padding: "24px 0", textAlign: "center" }}>Start typing to search.</div>
+          {!loading && !loadErr && !results.length && !q.trim() && (
+            <div style={{ padding: "16px 0" }}>
+              {recent.length > 0 ? (
+                <>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                    <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 0.8, color: "var(--nn-text-tertiary)" }}>Recent searches</div>
+                    <button
+                      className="nn-topbar-btn"
+                      style={{ fontSize: 11, padding: "2px 8px" }}
+                      onClick={() => { localStorage.removeItem(RECENT_KEY); setRecent([]); }}
+                    >Clear</button>
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {recent.map((r) => (
+                      <button
+                        key={r}
+                        onClick={() => setQ(r)}
+                        className="nn-topbar-btn"
+                        style={{ fontSize: 12, padding: "4px 10px", borderRadius: 999 }}
+                      >{r}</button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div style={{ color: "var(--nn-text-tertiary)", textAlign: "center", padding: 24 }}>Start typing to search.</div>
+              )}
+            </div>
           )}
+        </div>
+        <div style={{ marginTop: 20, display: "flex", gap: 12, fontSize: 11, color: "var(--nn-text-tertiary)", flexWrap: "wrap" }}>
+          <span><kbd style={kbdStyle}>↑</kbd> <kbd style={kbdStyle}>↓</kbd> Navigate</span>
+          <span><kbd style={kbdStyle}>↵</kbd> Open</span>
+          <span><kbd style={kbdStyle}>Esc</kbd> Close</span>
         </div>
       </div>
     </div>
   );
 }
+
+const kbdStyle: React.CSSProperties = {
+  padding: "1px 5px",
+  background: "var(--nn-bg-secondary)",
+  border: "1px solid var(--nn-border)",
+  borderRadius: 3,
+  fontSize: 10,
+  fontFamily: "inherit",
+};
