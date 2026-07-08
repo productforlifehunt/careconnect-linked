@@ -66,6 +66,7 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
   const [condRules, setCondRules] = useState<CondRule[]>([]);
   const [view, setView] = useState<ViewMode>("table");
   const [loading, setLoading] = useState(true);
+  const [loadErr, setLoadErr] = useState<string | null>(null);
   const [showSchema, setShowSchema] = useState(false);
   const [showCondEditor, setShowCondEditor] = useState(false);
   const [dbBlock, setDbBlock] = useState<any>(null);
