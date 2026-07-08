@@ -413,6 +413,7 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
         {sortKey && (
           <button onClick={() => setSortDir(sortDir === "asc" ? "desc" : "asc")} className="nn-topbar-btn" title="Toggle sort direction">{sortDir === "asc" ? "↑" : "↓"}</button>
         )}
+        <button onClick={() => setShowCondEditor(true)} className="nn-topbar-btn" title="Conditional formatting">🎨</button>
         <button onClick={() => setShowSchema(true)} className="nn-topbar-btn"><Settings2 size={13} /> Properties</button>
         <button onClick={() => addRow()} className="nn-topbar-btn"><Plus size={13} /> New</button>
       </div>
@@ -421,19 +422,33 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
         <div style={{ border: "1px solid var(--nn-border)", borderRadius: 4, overflow: "auto" }}>
           <div style={{ display: "grid", gridTemplateColumns: `2fr ${schema.map(() => "1fr").join(" ")} 40px`, background: "var(--nn-bg-secondary)", fontSize: 12, color: "var(--nn-text-secondary)", padding: "8px 12px", borderBottom: "1px solid var(--nn-border)", fontWeight: 500 }}>
             <div>Name</div>
-            {schema.map((p) => <div key={p.key}>{p.name}</div>)}
+            {schema.map((p) => (
+              <div
+                key={p.key}
+                draggable
+                onDragStart={(e) => { setDragCol(p.key); e.dataTransfer.effectAllowed = "move"; }}
+                onDragOver={(e) => { if (dragCol && dragCol !== p.key) e.preventDefault(); }}
+                onDrop={(e) => { e.preventDefault(); if (dragCol) reorderColumn(dragCol, p.key); setDragCol(null); }}
+                onDragEnd={() => setDragCol(null)}
+                title="Drag to reorder column"
+                style={{ cursor: "grab", opacity: dragCol === p.key ? 0.5 : 1, userSelect: "none" }}
+              >{p.name}</div>
+            ))}
             <div />
           </div>
-          {visibleRows.map((r) => (
-            <div key={r.id} style={{ display: "grid", gridTemplateColumns: `2fr ${schema.map(() => "1fr").join(" ")} 40px`, padding: "8px 12px", borderBottom: "1px solid var(--nn-border)", alignItems: "center", fontSize: 14 }}>
-              <div onClick={() => nav(path(`/p/${r.id}`))} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
-                <span>{r.icon || "📄"}</span>
-                <span>{r.title || "Untitled"}</span>
+          {visibleRows.map((r) => {
+            const bg = rowColor(r);
+            return (
+              <div key={r.id} style={{ display: "grid", gridTemplateColumns: `2fr ${schema.map(() => "1fr").join(" ")} 40px`, padding: "8px 12px", borderBottom: "1px solid var(--nn-border)", alignItems: "center", fontSize: 14, background: bg || undefined }}>
+                <div onClick={() => nav(path(`/p/${r.id}`))} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                  <span>{r.icon || "📄"}</span>
+                  <span>{r.title || "Untitled"}</span>
+                </div>
+                {schema.map((p) => <div key={p.key}>{renderCell(r, p)}</div>)}
+                <button onClick={() => archiveRow(r.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-tertiary)" }}><Trash2 size={13} /></button>
               </div>
-              {schema.map((p) => <div key={p.key}>{renderCell(r, p)}</div>)}
-              <button onClick={() => archiveRow(r.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-tertiary)" }}><Trash2 size={13} /></button>
-            </div>
-          ))}
+            );
+          })}
           <div onClick={() => addRow()} style={{ padding: "8px 12px", color: "var(--nn-text-tertiary)", cursor: "pointer", fontSize: 13 }}>+ New page</div>
         </div>
       )}
