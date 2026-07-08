@@ -62,13 +62,14 @@ export const MathBlock = Node.create({
 export const Columns = Node.create({
   name: "columns",
   group: "block",
-  content: "column{2,4}",
+  content: "column{2,5}",
   isolating: true,
   parseHTML() { return [{ tag: "div.nn-columns" }]; },
   renderHTML({ HTMLAttributes }) {
     return ["div", mergeAttributes({ class: "nn-columns" }, HTMLAttributes), 0];
   },
 });
+
 
 function ColumnView() {
   return (
