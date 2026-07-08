@@ -102,6 +102,43 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
     props.condRules = next;
     await cctUpdate(NN.block, databaseId, { properties: JSON.stringify(props) });
   };
+  const saveAutomations = async (next: AutoRule[]) => {
+    setAutomations(next);
+    let props: any = {};
+    try { props = dbBlock?.properties ? JSON.parse(dbBlock.properties) : {}; } catch {}
+    props.automations = next;
+    await cctUpdate(NN.block, databaseId, { properties: JSON.stringify(props) });
+  };
+
+  const runAutomationActions = async (r: Row, actions: AutoAction[]) => {
+    let props: any = {};
+    try { props = r.properties ? JSON.parse(r.properties) : {}; } catch {}
+    let touched = false;
+    for (const a of actions) {
+      if (a.kind === "set") { props[a.prop] = a.value; touched = true; }
+      else if (a.kind === "increment") { props[a.prop] = (Number(props[a.prop]) || 0) + (a.by || 1); touched = true; }
+      else if (a.kind === "notify") {
+        try { window.dispatchEvent(new CustomEvent("nn:toast", { detail: { message: a.message || "Automation ran" } })); } catch {}
+      } else if (a.kind === "webhook" && a.url) {
+        try { fetch(a.url, { method: "POST", mode: "no-cors", headers: { "content-type": "application/json" }, body: JSON.stringify({ row: { id: r.id, title: r.title, properties: props } }) }); } catch {}
+      }
+    }
+    if (touched) {
+      await cctUpdate(NN.block, r.id, { properties: JSON.stringify(props) });
+      setRows((rs) => rs.map((x) => x.id === r.id ? { ...x, properties: JSON.stringify(props) } : x));
+    }
+  };
+  const fireAutomations = async (r: Row, trigger: "created" | "propChanged", changedProp?: string, newValue?: any) => {
+    for (const rule of automations) {
+      if (!rule.enabled) continue;
+      if (rule.trigger !== trigger) continue;
+      if (trigger === "propChanged") {
+        if (rule.prop && rule.prop !== changedProp) continue;
+        if (rule.to !== undefined && rule.to !== "" && String(newValue ?? "") !== rule.to) continue;
+      }
+      await runAutomationActions(r, rule.actions);
+    }
+  };
 
   // Compute background color for a row/cell given the conditional-formatting rules.
   const rowColor = (r: Row): string => {
@@ -146,6 +183,7 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
     props[key] = value;
     await cctUpdate(NN.block, r.id, { properties: JSON.stringify(props) });
     setRows((rs) => rs.map((x) => x.id === r.id ? { ...x, properties: JSON.stringify(props) } : x));
+    fireAutomations({ ...r, properties: JSON.stringify(props) }, "propChanged", key, value);
   };
 
   // Evaluate a formula expression in a sandbox with numeric props and Notion-style helpers.
