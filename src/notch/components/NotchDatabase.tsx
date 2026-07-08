@@ -775,3 +775,139 @@ function SchemaEditor({ schema, allBlocks, onClose, onSave }: { schema: PropDef[
     </div>
   );
 }
+
+/* ─── Timeline / Gantt view ─────────────────────────────────── */
+function TimelineView({ rows, dateProp, endDateProp, rowColor, onOpen, onReschedule }: {
+  rows: Row[]; dateProp: PropDef | null; endDateProp: PropDef | null;
+  rowColor: (r: Row) => string;
+  onOpen: (id: string) => void;
+  onReschedule: (row: Row, iso: string, isEnd: boolean) => void;
+}) {
+  if (!dateProp) return <div style={{ color: "var(--nn-text-tertiary)", fontSize: 13 }}>Add a date property to enable the timeline view.</div>;
+  const getVal = (r: Row, key: string): string => { try { return String((r.properties ? JSON.parse(r.properties) : {})[key] || "").slice(0, 10); } catch { return ""; } };
+  // Compute date range: min → max +7 days (or 30 days if empty).
+  const dates = rows.flatMap((r) => [getVal(r, dateProp.key), endDateProp ? getVal(r, endDateProp.key) : ""].filter(Boolean));
+  const today = new Date();
+  const minD = dates.length ? new Date(Math.min(...dates.map((d) => new Date(d).getTime()))) : new Date(today.getFullYear(), today.getMonth(), 1);
+  const maxD = dates.length ? new Date(Math.max(...dates.map((d) => new Date(d).getTime()))) : new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  const start = new Date(minD); start.setDate(start.getDate() - 3);
+  const end = new Date(maxD); end.setDate(end.getDate() + 7);
+  const dayMs = 86400000;
+  const totalDays = Math.max(14, Math.ceil((end.getTime() - start.getTime()) / dayMs));
+  const cellW = 32;
+  const iso = (d: Date) => d.toISOString().slice(0, 10);
+  const days: Date[] = [];
+  for (let i = 0; i < totalDays; i++) { const d = new Date(start); d.setDate(start.getDate() + i); days.push(d); }
+  const todayIso = iso(today);
+  return (
+    <div style={{ border: "1px solid var(--nn-border)", borderRadius: 4, overflow: "auto" }}>
+      <div style={{ display: "grid", gridTemplateColumns: `200px repeat(${totalDays}, ${cellW}px)`, position: "sticky", top: 0, background: "var(--nn-bg-secondary)", borderBottom: "1px solid var(--nn-border)", fontSize: 11, color: "var(--nn-text-secondary)" }}>
+        <div style={{ padding: "6px 8px", fontWeight: 500 }}>Task</div>
+        {days.map((d) => {
+          const isFirst = d.getDate() === 1;
+          const isTd = iso(d) === todayIso;
+          return (
+            <div key={d.toISOString()} style={{ textAlign: "center", padding: "6px 2px", borderLeft: "1px solid var(--nn-border)", background: isTd ? "var(--nn-blue-bg)" : undefined, color: isTd ? "var(--nn-blue)" : undefined, fontWeight: isFirst ? 600 : 400 }}>
+              <div>{d.getDate()}</div>
+              {isFirst && <div style={{ fontSize: 9, opacity: 0.7 }}>{d.toLocaleString(undefined, { month: "short" })}</div>}
+            </div>
+          );
+        })}
+      </div>
+      {rows.map((r) => {
+        const s = getVal(r, dateProp.key);
+        const e = endDateProp ? getVal(r, endDateProp.key) : "";
+        if (!s) return null;
+        const sD = new Date(s), eD = e ? new Date(e) : sD;
+        const off = Math.max(0, Math.round((sD.getTime() - start.getTime()) / dayMs));
+        const span = Math.max(1, Math.round((eD.getTime() - sD.getTime()) / dayMs) + 1);
+        const bg = rowColor(r) || "var(--nn-blue-bg)";
+        return (
+          <div key={r.id} style={{ display: "grid", gridTemplateColumns: `200px repeat(${totalDays}, ${cellW}px)`, borderBottom: "1px solid var(--nn-border)", alignItems: "center", minHeight: 32 }}>
+            <div onClick={() => onOpen(r.id)} style={{ padding: "6px 8px", cursor: "pointer", fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <span>{r.icon || "📄"}</span> {r.title || "Untitled"}
+            </div>
+            <div style={{ gridColumn: `${2 + off} / span ${span}`, position: "relative", padding: "0 2px" }}>
+              <div
+                onClick={() => onOpen(r.id)}
+                draggable
+                onDragStart={(ev) => ev.dataTransfer.setData("text/nn-tl", r.id)}
+                title={`${s}${e ? " → " + e : ""}`}
+                style={{ background: bg, color: "var(--nn-blue)", height: 20, borderRadius: 4, cursor: "pointer", fontSize: 11, padding: "2px 6px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", border: "1px solid var(--nn-blue)" }}
+              >
+                {r.title || "Untitled"}
+              </div>
+            </div>
+            {days.map((d, i) => (
+              <div
+                key={i}
+                onDragOver={(ev) => { ev.preventDefault(); }}
+                onDrop={(ev) => { ev.preventDefault(); const id = ev.dataTransfer.getData("text/nn-tl"); if (id === r.id) onReschedule(r, iso(d), false); }}
+                style={{ position: "absolute", pointerEvents: "none" }}
+              />
+            ))}
+          </div>
+        );
+      })}
+      {!rows.length && <div style={{ padding: 12, color: "var(--nn-text-tertiary)", fontSize: 13 }}>No rows with a date to show.</div>}
+    </div>
+  );
+}
+
+/* ─── Conditional formatting editor ─────────────────────────── */
+function CondEditor({ rules, schema, onClose, onSave }: {
+  rules: CondRule[]; schema: PropDef[];
+  onClose: () => void; onSave: (r: CondRule[]) => void;
+}) {
+  const [draft, setDraft] = useState<CondRule[]>(JSON.parse(JSON.stringify(rules)));
+  const OPS: CondRule["op"][] = ["eq", "neq", "contains", "gt", "lt", "empty", "notempty"];
+  const OP_LABEL: Record<CondRule["op"], string> = { eq: "equals", neq: "not equals", contains: "contains", gt: ">", lt: "<", empty: "is empty", notempty: "is not empty" };
+  const COLORS = [
+    ["rgba(241,241,239,0.6)", "Gray"],
+    ["rgba(253,235,220,0.7)", "Orange"],
+    ["rgba(251,236,213,0.7)", "Yellow"],
+    ["rgba(219,237,219,0.7)", "Green"],
+    ["rgba(211,229,239,0.7)", "Blue"],
+    ["rgba(232,222,238,0.7)", "Purple"],
+    ["rgba(255,224,224,0.7)", "Red"],
+  ];
+  const add = () => setDraft([...draft, { prop: schema[0]?.key || "__title__", op: "eq", value: "", color: COLORS[0][0] }]);
+  const upd = (i: number, patch: Partial<CondRule>) => { const n = [...draft]; n[i] = { ...n[i], ...patch }; setDraft(n); };
+  const del = (i: number) => setDraft(draft.filter((_, j) => j !== i));
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={onClose}>
+      <div style={{ background: "var(--nn-bg)", borderRadius: 8, width: "100%", maxWidth: 680, padding: 20, maxHeight: "80vh", overflow: "auto" }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+          <div style={{ fontSize: 18, fontWeight: 600 }}>Conditional formatting</div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-secondary)" }}><X size={16} /></button>
+        </div>
+        <div style={{ fontSize: 12, color: "var(--nn-text-secondary)", marginBottom: 12 }}>Rules apply in order — the first match wins.</div>
+        {draft.map((r, i) => (
+          <div key={i} style={{ display: "flex", gap: 6, marginBottom: 8, alignItems: "center", flexWrap: "wrap" }}>
+            <select value={r.prop} onChange={(e) => upd(i, { prop: e.target.value })} className="nn-auth-input" style={{ marginBottom: 0, width: 130 }}>
+              <option value="__title__">Name</option>
+              {schema.map((p) => <option key={p.key} value={p.key}>{p.name}</option>)}
+            </select>
+            <select value={r.op} onChange={(e) => upd(i, { op: e.target.value as CondRule["op"] })} className="nn-auth-input" style={{ marginBottom: 0, width: 120 }}>
+              {OPS.map((o) => <option key={o} value={o}>{OP_LABEL[o]}</option>)}
+            </select>
+            {r.op !== "empty" && r.op !== "notempty" && (
+              <input value={r.value} onChange={(e) => upd(i, { value: e.target.value })} placeholder="value" className="nn-auth-input" style={{ marginBottom: 0, width: 140 }} />
+            )}
+            <div style={{ display: "flex", gap: 4 }}>
+              {COLORS.map(([c, name]) => (
+                <button key={c} onClick={() => upd(i, { color: c })} title={name} style={{ width: 20, height: 20, borderRadius: 3, background: c, border: r.color === c ? "2px solid var(--nn-blue)" : "1px solid var(--nn-border)", cursor: "pointer" }} />
+              ))}
+            </div>
+            <button onClick={() => del(i)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-tertiary)" }}><Trash2 size={14} /></button>
+          </div>
+        ))}
+        <button onClick={add} className="nn-topbar-btn" style={{ marginTop: 8 }}><Plus size={13} /> Add rule</button>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 20 }}>
+          <button onClick={onClose} className="nn-topbar-btn">Cancel</button>
+          <button onClick={() => onSave(draft)} className="nn-btn-primary">Save</button>
+        </div>
+      </div>
+    </div>
+  );
+}
