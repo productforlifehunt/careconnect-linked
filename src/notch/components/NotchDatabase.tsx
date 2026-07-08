@@ -138,6 +138,14 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
     props.automations = next;
     await cctUpdate(NN.block, databaseId, { properties: JSON.stringify(props) });
   };
+  const saveTemplates = async (next: Tmpl[]) => {
+    setTemplates(next);
+    let props: any = {};
+    try { props = dbBlock?.properties ? JSON.parse(dbBlock.properties) : {}; } catch {}
+    props.templates = next;
+    await cctUpdate(NN.block, databaseId, { properties: JSON.stringify(props) });
+  };
+
 
   const runAutomationActions = async (r: Row, actions: AutoAction[]) => {
     let props: any = {};
