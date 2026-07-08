@@ -95,6 +95,8 @@ export default function NotchPage() {
       setCrumbs(chain);
       // Expose trail (excluding current page) for the <Breadcrumb> editor node.
       (window as any).__NN_BREADCRUMB__ = chain.slice(0, -1).map((p) => ({ id: p.id, title: p.title || "Untitled" }));
+      (window as any).__NN_ACTIVE_WORKSPACE__ = b.workspace_id || "";
+      (window as any).__NN_ACTIVE_PARENT__ = b.id;
     })();
     return () => { alive = false; };
   }, [pageId]);
