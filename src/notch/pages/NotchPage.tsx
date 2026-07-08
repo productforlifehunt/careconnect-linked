@@ -246,20 +246,7 @@ export default function NotchPage() {
     <>
       {!online && <div className="nn-offline-pill">Offline — changes will sync when back online</div>}
       <div className="nn-topbar">
-        <div className="nn-breadcrumb" style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          {crumbs.map((c, i) => (
-            <span key={c.id} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-              {i > 0 && <ChevronRight size={12} style={{ opacity: 0.5 }} />}
-              <span
-                onClick={() => c.id !== pageId && nav(path(`/p/${c.id}`))}
-                style={{ cursor: c.id === pageId ? "default" : "pointer", padding: "2px 6px", borderRadius: 3, color: c.id === pageId ? "var(--nn-text)" : "var(--nn-text-secondary)" }}
-              >
-                {c.icon && <span style={{ marginRight: 4 }}>{c.icon}</span>}
-                {c.title || "Untitled"}
-              </span>
-            </span>
-          ))}
-        </div>
+        <BreadcrumbTrail crumbs={crumbs} pageId={pageId} onNav={(id) => nav(path(`/p/${id}`))} />
         <button className="nn-topbar-btn" onClick={() => setShowShare(true)} title="Share">
           <Share2 size={14} style={{ marginRight: 4 }} /> Share
         </button>
