@@ -217,7 +217,9 @@ export default function NotchTemplates() {
         <div style={{ fontSize: 13, fontWeight: 600, color: "var(--nn-text-secondary)", textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 12 }}>
           Your templates
         </div>
-        {loading ? <div style={{ opacity: 0.5 }}>Loading…</div> : !filteredMine.length ? (
+        {loading ? <div style={{ opacity: 0.5 }}>Loading…</div> : loadErr ? (
+          <div style={{ color: "var(--nn-text-secondary)", fontSize: 13 }}>{loadErr} <button className="nn-topbar-btn" style={{ marginLeft: 6 }} onClick={load}>Retry</button></div>
+        ) : !filteredMine.length ? (
           <div style={{ color: "var(--nn-text-tertiary)" }}>{ql ? "No matches." : "No saved templates yet."}</div>
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
