@@ -219,6 +219,7 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
       HtmlEmbed,
       NotchMention,
       NotchInputRules,
+      InlineDatabase,
     ],
     content: content || "",
     onUpdate: ({ editor }) => onChange(editor.getJSON()),
