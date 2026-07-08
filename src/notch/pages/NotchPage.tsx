@@ -324,6 +324,10 @@ export default function NotchPage() {
                 <span className="nn-icon">{fullWidth ? <Minimize2 size={14} /> : <Maximize2 size={14} />}</span>
                 <span className="nn-title">{fullWidth ? "Compact width" : "Full width"}</span>
               </div>
+              <div onClick={toggleSmallText} className="nn-sidebar-item">
+                <span className="nn-icon" style={{ fontSize: 12, fontWeight: 600 }}>{smallText ? "A" : "a"}</span>
+                <span className="nn-title">{smallText ? "Default text size" : "Small text"}</span>
+              </div>
               <div onClick={toggleLock} className="nn-sidebar-item">
                 <span className="nn-icon">{locked ? <Unlock size={14} /> : <Lock size={14} />}</span>
                 <span className="nn-title">{locked ? "Unlock page" : "Lock page"}</span>
