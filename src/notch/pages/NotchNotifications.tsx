@@ -89,7 +89,13 @@ export default function NotchNotifications() {
         </div>
 
         {loading && <div style={{ color: "var(--nn-text-tertiary)" }}>Loading…</div>}
-        {!loading && items.length === 0 && (
+        {!loading && loadErr && (
+          <div style={{ padding: 16, border: "1px solid var(--nn-border)", borderRadius: 6, color: "var(--nn-text-secondary)" }}>
+            <div style={{ marginBottom: 8 }}>{loadErr}</div>
+            <button className="nn-topbar-btn" onClick={load}>Retry</button>
+          </div>
+        )}
+        {!loading && !loadErr && items.length === 0 && (
           <div style={{ padding: 40, textAlign: "center", color: "var(--nn-text-tertiary)" }}>
             <Bell size={40} style={{ opacity: 0.3 }} />
             <div style={{ marginTop: 10 }}>No notifications yet.</div>
