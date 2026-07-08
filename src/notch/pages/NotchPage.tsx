@@ -629,7 +629,9 @@ export default function NotchPage() {
               </div>
             );
           })()}
+          <Backlinks pageId={pageId} />
           <NotchComments blockId={pageId} />
+
         </div>
       </div>
       {showShare && <NotchShareModal blockId={pageId} onClose={() => setShowShare(false)} />}
