@@ -76,16 +76,16 @@ export default function NotchTrash() {
   };
 
   const bulkRestore = async () => {
-    for (const id of Array.from(selected)) {
-      await cctUpdate(NN.block, id, { archived: 0, in_trash: 0 });
-    }
+    const ids = new Set<string>();
+    for (const id of Array.from(selected)) { ids.add(id); collectDescendants(id).forEach((d) => ids.add(d)); }
+    for (const id of Array.from(ids)) await cctUpdate(NN.block, id, { archived: 0, in_trash: 0 });
     await load();
   };
   const bulkPurge = async () => {
-    if (!(await nnConfirm(`Delete ${selected.size} item${selected.size === 1 ? "" : "s"} forever? This cannot be undone.`, "Delete forever"))) return;
-    for (const id of Array.from(selected)) {
-      await cctDelete(NN.block, id);
-    }
+    const ids = new Set<string>();
+    for (const id of Array.from(selected)) { ids.add(id); collectDescendants(id).forEach((d) => ids.add(d)); }
+    if (!(await nnConfirm(`Delete ${ids.size} block${ids.size === 1 ? "" : "s"} forever (including nested pages)? This cannot be undone.`, "Delete forever"))) return;
+    for (const id of Array.from(ids)) await cctDelete(NN.block, id);
     await load();
   };
 
