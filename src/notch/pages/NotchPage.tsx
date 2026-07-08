@@ -252,7 +252,18 @@ export default function NotchPage() {
   };
 
   if (!pageId) return null;
+  if (loadErr) return (
+    <div className="nn-page" style={{ paddingTop: 60 }}>
+      <div style={{ maxWidth: 420, margin: "0 auto", textAlign: "center", color: "var(--nn-text-secondary)" }}>
+        <div style={{ fontSize: 32, marginBottom: 8 }}>⚠️</div>
+        <div style={{ fontSize: 15, fontWeight: 500, color: "var(--nn-text)", marginBottom: 4 }}>Couldn't load this page</div>
+        <div style={{ fontSize: 13, marginBottom: 16 }}>{loadErr}</div>
+        <button className="nn-btn-primary" onClick={() => setLoadTick((t) => t + 1)}>Retry</button>
+      </div>
+    </div>
+  );
   if (!block) return <div className="nn-page"><div style={{ opacity: 0.5 }}>Loading…</div></div>;
+
 
   const isDatabase = block.type === "database";
 
