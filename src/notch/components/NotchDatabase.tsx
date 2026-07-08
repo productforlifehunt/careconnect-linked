@@ -66,6 +66,7 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
   const [condRules, setCondRules] = useState<CondRule[]>([]);
   const [view, setView] = useState<ViewMode>("table");
   const [loading, setLoading] = useState(true);
+  const [loadErr, setLoadErr] = useState<string | null>(null);
   const [showSchema, setShowSchema] = useState(false);
   const [showCondEditor, setShowCondEditor] = useState(false);
   const [dbBlock, setDbBlock] = useState<any>(null);
@@ -88,18 +89,23 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const all = await cctList<any>(NN.block, { workspace_id: workspaceId });
-    setAllBlocks(all);
-    const parent = all.find((b: any) => String(b.id) === String(databaseId));
-    setDbBlock(parent);
+    setLoadErr(null);
     try {
-      const p = parent?.properties ? JSON.parse(parent.properties) : {};
-      if (Array.isArray(p.schema) && p.schema.length) setSchema(p.schema);
-      else setSchema(DEFAULT_SCHEMA);
-      setCondRules(Array.isArray(p.condRules) ? p.condRules : []);
-      setAutomations(Array.isArray(p.automations) ? p.automations : []);
-    } catch { setSchema(DEFAULT_SCHEMA); setCondRules([]); setAutomations([]); }
-    setRows(all.filter((b: any) => String(b.parent_id) === String(databaseId) && Number(b.archived) !== 1));
+      const all = await cctList<any>(NN.block, { workspace_id: workspaceId });
+      setAllBlocks(all);
+      const parent = all.find((b: any) => String(b.id) === String(databaseId));
+      setDbBlock(parent);
+      try {
+        const p = parent?.properties ? JSON.parse(parent.properties) : {};
+        if (Array.isArray(p.schema) && p.schema.length) setSchema(p.schema);
+        else setSchema(DEFAULT_SCHEMA);
+        setCondRules(Array.isArray(p.condRules) ? p.condRules : []);
+        setAutomations(Array.isArray(p.automations) ? p.automations : []);
+      } catch { setSchema(DEFAULT_SCHEMA); setCondRules([]); setAutomations([]); }
+      setRows(all.filter((b: any) => String(b.parent_id) === String(databaseId) && Number(b.archived) !== 1));
+    } catch (e: any) {
+      setLoadErr(e?.message || "Failed to load database rows. Check your connection and retry.");
+    }
     setLoading(false);
   }, [databaseId, workspaceId]);
   useEffect(() => { load(); }, [load]);
@@ -654,6 +660,12 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
   };
 
   if (loading) return <div style={{ opacity: 0.5, padding: 12 }}>Loading…</div>;
+  if (loadErr) return (
+    <div style={{ padding: 16, border: "1px dashed var(--nn-border)", borderRadius: 6, textAlign: "center", color: "var(--nn-text-secondary)" }}>
+      <div style={{ fontSize: 13, marginBottom: 8 }}>{loadErr}</div>
+      <button className="nn-topbar-btn" onClick={() => load()}>Retry</button>
+    </div>
+  );
 
   return (
     <div style={{ marginTop: 12 }}>
@@ -661,7 +673,7 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
         {(["table", "board", "calendar", "timeline", "gallery", "list", "chart"] as ViewMode[]).map((v) => {
           const Icon = v === "table" ? Table : v === "board" ? LayoutGrid : v === "calendar" ? CalIcon : v === "timeline" ? GanttChart : v === "gallery" ? ImageIcon : v === "chart" ? BarChart3 : List;
           return (
-            <button key={v} onClick={() => setView(v)} className="nn-topbar-btn" style={{ borderBottom: view === v ? "2px solid var(--nn-text)" : "none", borderRadius: 0, textTransform: "capitalize" }}>
+            <button key={v} data-testid={`nn-view-${v}`} onClick={() => setView(v)} className="nn-topbar-btn" style={{ borderBottom: view === v ? "2px solid var(--nn-text)" : "none", borderRadius: 0, textTransform: "capitalize" }}>
               <Icon size={13} style={{ marginRight: 4 }} /> {v}
             </button>
           );
