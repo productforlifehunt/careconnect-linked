@@ -581,12 +581,53 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
       {editor && (
         <BubbleMenu editor={editor}>
           <div className="nn-bubble">
+            <div className="nn-bubble-ai" style={{ position: "relative" }}>
+              <button title="Turn into" onClick={(e) => {
+                const menu = (e.currentTarget.nextSibling as HTMLElement | null);
+                if (menu) menu.style.display = menu.style.display === "block" ? "none" : "block";
+              }} style={{ display: "inline-flex", alignItems: "center", gap: 2 }}>
+                <Type size={13} /><ChevronDown size={10} />
+              </button>
+              <div className="nn-ai-menu" style={{ display: "none", position: "absolute", top: 28, left: 0, background: "var(--nn-bg)", border: "1px solid var(--nn-border-strong)", borderRadius: 6, padding: 4, minWidth: 160, zIndex: 100, boxShadow: "0 6px 20px rgba(0,0,0,0.12)" }}>
+                {[
+                  ["paragraph", "Text"], ["h1", "Heading 1"], ["h2", "Heading 2"], ["h3", "Heading 3"],
+                  ["ul", "Bulleted list"], ["ol", "Numbered list"], ["todo", "To-do"], ["quote", "Quote"],
+                  ["code", "Code"], ["callout", "Callout"],
+                ].map(([k, l]) => (
+                  <div key={k} className="nn-sidebar-item" onMouseDown={(ev) => {
+                    ev.preventDefault();
+                    const chain = editor.chain().focus();
+                    if (k === "paragraph") chain.setParagraph().run();
+                    else if (k === "h1") chain.toggleHeading({ level: 1 }).run();
+                    else if (k === "h2") chain.toggleHeading({ level: 2 }).run();
+                    else if (k === "h3") chain.toggleHeading({ level: 3 }).run();
+                    else if (k === "ul") chain.toggleBulletList().run();
+                    else if (k === "ol") chain.toggleOrderedList().run();
+                    else if (k === "todo") chain.toggleTaskList().run();
+                    else if (k === "quote") chain.toggleBlockquote().run();
+                    else if (k === "code") chain.toggleCodeBlock().run();
+                    else if (k === "callout") editor.chain().focus().insertContent({ type: "callout", content: [{ type: "paragraph" }] }).run();
+                  }}>
+                    <span className="nn-title" style={{ fontSize: 13 }}>{l}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <span className="nn-bubble-sep" />
             <button onClick={() => editor.chain().focus().toggleBold().run()} className={editor.isActive("bold") ? "active" : ""} title="Bold (⌘B)"><Bold size={13} /></button>
             <button onClick={() => editor.chain().focus().toggleItalic().run()} className={editor.isActive("italic") ? "active" : ""} title="Italic (⌘I)"><Italic size={13} /></button>
             <button onClick={() => editor.chain().focus().toggleUnderline().run()} className={editor.isActive("underline") ? "active" : ""} title="Underline (⌘U)"><UIcon size={13} /></button>
             <button onClick={() => editor.chain().focus().toggleStrike().run()} className={editor.isActive("strike") ? "active" : ""} title="Strikethrough"><Strikethrough size={13} /></button>
             <button onClick={() => editor.chain().focus().toggleCode().run()} className={editor.isActive("code") ? "active" : ""} title="Inline code"><Code size={13} /></button>
             <button onClick={setLink} className={editor.isActive("link") ? "active" : ""} title="Link"><LinkIcon size={13} /></button>
+            <button onClick={() => {
+              const { from, to } = editor.state.selection;
+              if (to <= from) return;
+              const threadId = `t_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+              editor.chain().focus().setMark("inlineComment", { threadId }).run();
+              window.dispatchEvent(new CustomEvent("nn:open-comment-thread", { detail: { threadId, from, to } }));
+              window.dispatchEvent(new CustomEvent("nn:open-comment", { detail: { from, to, threadId } }));
+            }} title="Comment"><MessageSquare size={13} /></button>
             <span className="nn-bubble-sep" />
             <button onClick={() => editor.chain().focus().setTextAlign("left").run()} title="Align left"><AlignLeft size={13} /></button>
             <button onClick={() => editor.chain().focus().setTextAlign("center").run()} title="Align center"><AlignCenter size={13} /></button>
