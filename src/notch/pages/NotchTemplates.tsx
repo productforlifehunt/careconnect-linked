@@ -16,6 +16,7 @@ export default function NotchTemplates() {
   const [items, setItems] = useState<Template[]>([]);
   const [wsId, setWsId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadErr, setLoadErr] = useState<string | null>(null);
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<string>("All");
@@ -23,12 +24,19 @@ export default function NotchTemplates() {
 
   const load = async () => {
     setLoading(true);
-    const ws = await cctList<any>(NN.workspace);
-    const w = ws[0]?.id;
-    setWsId(w || null);
-    const all = await cctList<any>(NN.template);
-    setItems(all);
-    setLoading(false);
+    setLoadErr(null);
+    try {
+      const ws = await cctList<any>(NN.workspace);
+      const w = ws[0]?.id;
+      setWsId(w || null);
+      const all = await cctList<any>(NN.template);
+      setItems(all);
+    } catch (e: any) {
+      const raw = String(e?.message || "");
+      setLoadErr(/fetch|network/i.test(raw) ? "Can't reach the server." : "Couldn't load templates.");
+    } finally {
+      setLoading(false);
+    }
   };
   useEffect(() => { load(); }, []);
 
@@ -189,7 +197,9 @@ export default function NotchTemplates() {
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12, fontSize: 13, fontWeight: 600, color: "var(--nn-text-secondary)", textTransform: "uppercase", letterSpacing: 0.4 }}>
           <Globe size={14} /> Community marketplace ({filteredCommunity.length})
         </div>
-        {loading ? <div style={{ opacity: 0.5, marginBottom: 32 }}>Loading…</div> : filteredCommunity.length === 0 ? (
+        {loading ? <div style={{ opacity: 0.5, marginBottom: 32 }}>Loading…</div> : loadErr ? (
+          <div style={{ marginBottom: 32, color: "var(--nn-text-secondary)", fontSize: 13 }}>{loadErr} <button className="nn-topbar-btn" style={{ marginLeft: 6 }} onClick={load}>Retry</button></div>
+        ) : filteredCommunity.length === 0 ? (
           <div style={{ color: "var(--nn-text-tertiary)", marginBottom: 32, fontSize: 13 }}>No community templates{ql ? " match your search" : " yet. Publish one of yours to share"}.</div>
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12, marginBottom: 32 }}>
@@ -207,7 +217,9 @@ export default function NotchTemplates() {
         <div style={{ fontSize: 13, fontWeight: 600, color: "var(--nn-text-secondary)", textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 12 }}>
           Your templates
         </div>
-        {loading ? <div style={{ opacity: 0.5 }}>Loading…</div> : !filteredMine.length ? (
+        {loading ? <div style={{ opacity: 0.5 }}>Loading…</div> : loadErr ? (
+          <div style={{ color: "var(--nn-text-secondary)", fontSize: 13 }}>{loadErr} <button className="nn-topbar-btn" style={{ marginLeft: 6 }} onClick={load}>Retry</button></div>
+        ) : !filteredMine.length ? (
           <div style={{ color: "var(--nn-text-tertiary)" }}>{ql ? "No matches." : "No saved templates yet."}</div>
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>

@@ -13,6 +13,7 @@ export default function NotchTrash() {
   const [items, setItems] = useState<any[]>([]);
   const [allBlocks, setAllBlocks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadErr, setLoadErr] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
@@ -32,15 +33,22 @@ export default function NotchTrash() {
 
   const load = async () => {
     setLoading(true);
-    const all = await cctList<any>(NN.block);
-    setAllBlocks(all);
-    setItems(
-      all
-        .filter((b: any) => Number(b.in_trash) === 1 || Number(b.archived) === 1)
-        .filter((b: any) => !user || String(b.author_id) === String(user.user_id) || String(b.created_by) === String(user.user_id))
-    );
-    setSelected(new Set());
-    setLoading(false);
+    setLoadErr(null);
+    try {
+      const all = await cctList<any>(NN.block);
+      setAllBlocks(all);
+      setItems(
+        all
+          .filter((b: any) => Number(b.in_trash) === 1 || Number(b.archived) === 1)
+          .filter((b: any) => !user || String(b.author_id) === String(user.user_id) || String(b.created_by) === String(user.user_id))
+      );
+      setSelected(new Set());
+    } catch (e: any) {
+      const raw = String(e?.message || "");
+      setLoadErr(/fetch|network/i.test(raw) ? "Can't reach the server." : "Couldn't load trash.");
+    } finally {
+      setLoading(false);
+    }
   };
   useEffect(() => { load(); }, [user]);
 
@@ -124,6 +132,11 @@ export default function NotchTrash() {
         </div>
         {loading ? (
           <div style={{ opacity: 0.5 }}>Loading…</div>
+        ) : loadErr ? (
+          <div style={{ padding: 16, border: "1px solid var(--nn-border)", borderRadius: 6, color: "var(--nn-text-secondary)" }}>
+            <div style={{ marginBottom: 8 }}>{loadErr}</div>
+            <button className="nn-topbar-btn" onClick={load}>Retry</button>
+          </div>
         ) : !filtered.length ? (
           <div style={{ color: "var(--nn-text-tertiary)" }}>{q ? "No matches." : "Trash is empty."}</div>
         ) : (
