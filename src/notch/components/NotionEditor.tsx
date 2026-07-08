@@ -19,7 +19,7 @@ import TableCell from "@tiptap/extension-table-cell";
 import Youtube from "@tiptap/extension-youtube";
 import { Details, DetailsSummary, DetailsContent } from "@tiptap/extension-details";
 import { useEffect, useRef, useState } from "react";
-import { Bold, Italic, Underline as UIcon, Strikethrough, Code, Link as LinkIcon, AlignLeft, AlignCenter, AlignRight, Sparkles, MessageSquare, Type, ChevronDown } from "lucide-react";
+import { Bold, Italic, Underline as UIcon, Strikethrough, Code, Link as LinkIcon, AlignLeft, AlignCenter, AlignRight, Sparkles, MessageSquare, Type, ChevronDown, Plus, Minus, Trash2, Rows, Columns as ColumnsIcon } from "lucide-react";
 import { MathBlock, Columns, Column, SyncBlock, buildColumns, Callout, InlineMath, AudioBlock, VideoBlock, PdfBlock, Toc, Breadcrumb, TemplateButton, TabsBlock, HtmlEmbed, InlineDatabase, MultiBlockShortcuts, InlineCommentMark, Whiteboard } from "./notch-extensions";
 import { NotchMention } from "./notch-mention";
 import { BlockSync } from "@/notch/lib/nn-block-sync";
@@ -675,6 +675,33 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
           </div>
         </BubbleMenu>
       )}
+      {editor && (
+        <BubbleMenu
+          editor={editor}
+          pluginKey="nn-table-menu"
+          shouldShow={({ editor: ed }) => ed.isActive("table")}
+          options={{ placement: "top" as any }}
+        >
+          <div className="nn-bubble" role="toolbar" aria-label="Table controls">
+            <button title="Toggle header row" onClick={() => editor.chain().focus().toggleHeaderRow().run()}>H↕</button>
+            <button title="Toggle header column" onClick={() => editor.chain().focus().toggleHeaderColumn().run()}>H↔</button>
+            <span className="nn-bubble-sep" />
+            <button title="Insert row above" onClick={() => editor.chain().focus().addRowBefore().run()}><Rows size={13} />↑</button>
+            <button title="Insert row below" onClick={() => editor.chain().focus().addRowAfter().run()}><Rows size={13} />↓</button>
+            <button title="Delete row" onClick={() => editor.chain().focus().deleteRow().run()}><Rows size={13} /><Minus size={11} /></button>
+            <span className="nn-bubble-sep" />
+            <button title="Insert column left" onClick={() => editor.chain().focus().addColumnBefore().run()}><ColumnsIcon size={13} />←</button>
+            <button title="Insert column right" onClick={() => editor.chain().focus().addColumnAfter().run()}><ColumnsIcon size={13} />→</button>
+            <button title="Delete column" onClick={() => editor.chain().focus().deleteColumn().run()}><ColumnsIcon size={13} /><Minus size={11} /></button>
+            <span className="nn-bubble-sep" />
+            <button title="Merge cells" onClick={() => editor.chain().focus().mergeCells().run()}>⊟</button>
+            <button title="Split cell" onClick={() => editor.chain().focus().splitCell().run()}>⊞</button>
+            <span className="nn-bubble-sep" />
+            <button title="Delete table" onClick={() => editor.chain().focus().deleteTable().run()} style={{ color: "#e03e3e" }}><Trash2 size={13} /></button>
+          </div>
+        </BubbleMenu>
+      )}
+
       {slash && items.length > 0 && (
         <div className="nn-slash-menu" style={{ left: slash.x, top: slash.y }}>
           {Object.entries(groups).map(([g, gitems]) => (
