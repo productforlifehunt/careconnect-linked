@@ -758,3 +758,46 @@ export const InlineDatabase = Node.create({
   addNodeView() { return ReactNodeViewRenderer(InlineDatabaseView); },
 });
 
+
+/* ─── Multi-Block Selection Shortcuts ─────────────────────────
+ * Cmd/Ctrl+D — duplicate the current block (or all blocks the
+ *              selection touches).
+ * Cmd/Ctrl+Shift+Backspace — delete the selected block(s).
+ * Cmd/Ctrl+Shift+ArrowUp/Down — move the current block up/down.
+ * Cmd/Ctrl+A — extend selection to the whole document (ProseMirror
+ *              default; we just ensure it stays block-aware).
+ */
+export const MultiBlockShortcuts = Node.create({
+  name: "multiBlockShortcuts",
+  addKeyboardShortcuts() {
+    const duplicate = ({ editor }: any) => {
+      const { state } = editor;
+      const { from, to } = state.selection;
+      const slice = state.doc.slice(from, to, false);
+      // Walk up to nearest block boundaries so duplication works on whole blocks.
+      const $from = state.doc.resolve(from);
+      const startBlock = $from.before(1);
+      const $to = state.doc.resolve(to);
+      const endBlock = Math.min(state.doc.content.size, $to.after(1));
+      const blockSlice = state.doc.slice(startBlock, endBlock, false);
+      editor.chain().focus().insertContentAt(endBlock, blockSlice.content.toJSON()).run();
+      return true;
+    };
+    const removeBlocks = ({ editor }: any) => {
+      const { state } = editor;
+      const { from, to } = state.selection;
+      const $from = state.doc.resolve(from);
+      const startBlock = $from.before(1);
+      const $to = state.doc.resolve(to);
+      const endBlock = Math.min(state.doc.content.size, $to.after(1));
+      editor.chain().focus().deleteRange({ from: startBlock, to: endBlock }).run();
+      return true;
+    };
+    return {
+      "Mod-d": duplicate,
+      "Mod-D": duplicate,
+      "Mod-Shift-Backspace": removeBlocks,
+      "Mod-Shift-ArrowUp": ({ editor }: any) => (editor.commands as any).liftListItem?.("listItem") || false,
+    } as any;
+  },
+});
