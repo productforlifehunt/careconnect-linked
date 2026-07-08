@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useNotchPath } from "@/notch/context/NotchBaseContext";
-import { ChevronRight, Database, FileText, MoreHorizontal, Star, Image as ImageIcon, X, Share2, Copy, Link as LinkIcon, Trash2, Bell, UserPlus, Lock, Unlock, Maximize2, Minimize2, History, BadgeCheck } from "lucide-react";
+import { ChevronRight, Database, FileText, MoreHorizontal, Star, Image as ImageIcon, X, Share2, Copy, Link as LinkIcon, Trash2, Bell, UserPlus, Lock, Unlock, Maximize2, Minimize2, History, BadgeCheck, Printer, FolderInput, Search as SearchIcon, Code as CodeIcon } from "lucide-react";
 import { createReminder, createNotification } from "@/notch/lib/nn-notifications";
 import { nnPrompt, nnConfirm, nnAlert } from "@/notch/lib/nn-dialog";
 
@@ -314,12 +314,80 @@ export default function NotchPage() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
+  // Export current page as a standalone HTML file with basic Notion-like styling.
+  const exportHtml = () => {
+    setShowMenu(false);
+    const inlineHtml = (nodes: any[] | undefined): string => {
+      if (!Array.isArray(nodes)) return "";
+      const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" } as any)[c]);
+      return nodes.map((n: any) => {
+        if (n.type === "hardBreak") return "<br/>";
+        if (n.type !== "text") return "";
+        let t = esc(n.text || "");
+        for (const m of (n.marks || []) as any[]) {
+          if (m.type === "bold") t = `<strong>${t}</strong>`;
+          else if (m.type === "italic") t = `<em>${t}</em>`;
+          else if (m.type === "code") t = `<code>${t}</code>`;
+          else if (m.type === "strike") t = `<s>${t}</s>`;
+          else if (m.type === "underline") t = `<u>${t}</u>`;
+          else if (m.type === "link" && m.attrs?.href) t = `<a href="${esc(m.attrs.href)}">${t}</a>`;
+        }
+        return t;
+      }).join("");
+    };
+    const toHtml = (node: any): string => {
+      if (!node) return "";
+      const kids = Array.isArray(node.content) ? node.content : [];
+      switch (node.type) {
+        case "doc": return kids.map(toHtml).join("\n");
+        case "heading": { const l = node.attrs?.level || 1; return `<h${l}>${inlineHtml(kids)}</h${l}>`; }
+        case "paragraph": return `<p>${inlineHtml(kids)}</p>`;
+        case "bulletList": return `<ul>${kids.map(toHtml).join("")}</ul>`;
+        case "orderedList": return `<ol>${kids.map(toHtml).join("")}</ol>`;
+        case "listItem": return `<li>${kids.map(toHtml).join("")}</li>`;
+        case "taskList": return `<ul class="task">${kids.map(toHtml).join("")}</ul>`;
+        case "taskItem": return `<li><input type="checkbox" ${node.attrs?.checked ? "checked" : ""} disabled/> ${inlineHtml(kids?.[0]?.content)}</li>`;
+        case "blockquote": return `<blockquote>${kids.map(toHtml).join("")}</blockquote>`;
+        case "codeBlock": return `<pre><code>${inlineHtml(kids)}</code></pre>`;
+        case "horizontalRule": return "<hr/>";
+        case "callout": return `<div class="callout">${kids.map(toHtml).join("")}</div>`;
+        case "image": return `<img src="${node.attrs?.src || ""}" alt="${node.attrs?.alt || ""}"/>`;
+        default: return kids.map(toHtml).join("");
+      }
+    };
+    const body = toHtml(content);
+    const safeTitle = (title || "Untitled");
+    const html = `<!doctype html><html><head><meta charset="utf-8"/><title>${safeTitle.replace(/</g, "&lt;")}</title><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;max-width:720px;margin:40px auto;padding:0 24px;color:#37352f;line-height:1.6}h1,h2,h3,h4{font-weight:600;margin:1.4em 0 .4em}code{background:rgba(135,131,120,.15);padding:2px 4px;border-radius:3px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.9em}pre{background:#f7f6f3;padding:14px;border-radius:6px;overflow:auto}blockquote{border-left:3px solid #37352f;padding-left:14px;margin:1em 0;color:#37352f}.callout{background:#f1f1ef;padding:12px 14px;border-radius:4px;margin:.6em 0}img{max-width:100%;border-radius:4px}hr{border:none;border-top:1px solid #e9e9e7;margin:1.4em 0}ul.task{list-style:none;padding-left:1em}</style></head><body><h1>${safeTitle.replace(/</g, "&lt;")}</h1>${body}</body></html>`;
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = `${safeTitle.replace(/[^\w\-]+/g, "_")}.html`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  // Trigger the browser's print dialog for save-as-PDF.
+  const exportPdf = () => {
+    setShowMenu(false);
+    window.print();
+  };
+
+  const [showMovePicker, setShowMovePicker] = useState(false);
+  const movePage = () => { setShowMovePicker(true); setShowMenu(false); };
+  const applyMove = async (newParentId: string) => {
+    if (!pageId) return;
+    await cctUpdate(NN.block, pageId, { parent_id: newParentId });
+    setShowMovePicker(false);
+    // Refresh crumbs by reloading the page block.
+    setLoadTick((t) => t + 1);
+  };
+
   const trashPage = async () => {
     if (!pageId) return;
     if (!(await nnConfirm("You can restore it from Trash later.", "Move to trash?"))) return;
     await cctUpdate(NN.block, pageId, { archived: 1, in_trash: 1 });
     nav(path("/"));
   };
+
 
   if (!pageId) return null;
   if (loadErr) return (
@@ -452,14 +520,27 @@ export default function NotchPage() {
                 <span className="nn-icon" style={{ fontSize: 11, fontWeight: 700, letterSpacing: -0.5 }}>MD</span>
                 <span className="nn-title">Export as Markdown</span>
               </div>
+              <div onClick={exportHtml} className="nn-sidebar-item">
+                <span className="nn-icon"><CodeIcon size={14} /></span>
+                <span className="nn-title">Export as HTML</span>
+              </div>
+              <div onClick={exportPdf} className="nn-sidebar-item">
+                <span className="nn-icon"><Printer size={14} /></span>
+                <span className="nn-title">Export as PDF (print)</span>
+              </div>
               <div onClick={showWordCount} className="nn-sidebar-item">
                 <span className="nn-icon" style={{ fontSize: 11, fontWeight: 700 }}>Σ</span>
                 <span className="nn-title">Word count</span>
+              </div>
+              <div onClick={movePage} className="nn-sidebar-item">
+                <span className="nn-icon"><FolderInput size={14} /></span>
+                <span className="nn-title">Move to…</span>
               </div>
               <div onClick={trashPage} className="nn-sidebar-item" style={{ color: "#e03e3e" }}>
                 <span className="nn-icon"><Trash2 size={14} /></span>
                 <span className="nn-title">Move to trash</span>
               </div>
+
             </div>
           )}
         </div>
@@ -559,6 +640,16 @@ export default function NotchPage() {
           onClose={() => setShowCoverGallery(false)}
         />
       )}
+      {showMovePicker && block && (
+        <MovePagePicker
+          workspaceId={block.workspace_id || ""}
+          currentId={pageId}
+          currentParentId={block.parent_id || ""}
+          onPick={applyMove}
+          onClose={() => setShowMovePicker(false)}
+        />
+      )}
+
       {showHistory && (
         <div className="nn-history-backdrop" onClick={() => setShowHistory(false)}>
           <aside className="nn-history-panel" onClick={(e) => e.stopPropagation()}>
@@ -631,6 +722,53 @@ function CoverGallery({ current, onPick, onClose }: { current: string; onPick: (
     </div>
   );
 }
+
+function MovePagePicker({ workspaceId, currentId, currentParentId, onPick, onClose }:
+  { workspaceId: string; currentId: string; currentParentId: string; onPick: (id: string) => void; onClose: () => void }) {
+  const [pages, setPages] = useState<Block[]>([]);
+  const [q, setQ] = useState("");
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const list = await cctList<Block>(NN.block, { per_page: 200 });
+        if (!alive) return;
+        setPages((list || []).filter((b) => b.id !== currentId && (b.type === "page" || b.type === "database" || !b.type)));
+      } finally { if (alive) setLoading(false); }
+    })();
+    return () => { alive = false; };
+  }, [currentId]);
+  const filtered = pages.filter((p) => !q || (p.title || "Untitled").toLowerCase().includes(q.toLowerCase()));
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 200, display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: 80 }} onClick={onClose}>
+      <div style={{ background: "var(--nn-bg)", borderRadius: 8, width: "100%", maxWidth: 480, maxHeight: "70vh", display: "flex", flexDirection: "column", boxShadow: "0 12px 40px rgba(0,0,0,0.2)" }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ padding: "10px 12px", borderBottom: "1px solid var(--nn-border)", display: "flex", alignItems: "center", gap: 8 }}>
+          <SearchIcon size={14} style={{ opacity: 0.6 }} />
+          <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Move page to…" style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontSize: 14, color: "var(--nn-text)" }} />
+          <button className="nn-topbar-btn" onClick={onClose}><X size={14} /></button>
+        </div>
+        <div style={{ overflow: "auto", padding: 4 }}>
+          {workspaceId && (
+            <div className="nn-sidebar-item" onClick={() => onPick(workspaceId)} style={{ opacity: currentParentId === workspaceId ? 0.5 : 1 }}>
+              <span className="nn-icon"><FolderInput size={14} /></span>
+              <span className="nn-title">Workspace root</span>
+            </div>
+          )}
+          {loading && <div style={{ padding: 12, fontSize: 12, color: "var(--nn-text-tertiary)" }}>Loading…</div>}
+          {!loading && filtered.length === 0 && <div style={{ padding: 12, fontSize: 12, color: "var(--nn-text-tertiary)" }}>No pages found.</div>}
+          {filtered.slice(0, 100).map((p) => (
+            <div key={p.id} className="nn-sidebar-item" onClick={() => onPick(p.id)} style={{ opacity: currentParentId === p.id ? 0.5 : 1 }}>
+              <span className="nn-icon">{p.icon || (p.type === "database" ? <Database size={14} /> : <FileText size={14} />)}</span>
+              <span className="nn-title" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.title || "Untitled"}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 function BreadcrumbTrail({ crumbs, pageId, onNav }: { crumbs: Block[]; pageId: string; onNav: (id: string) => void }) {
   const [open, setOpen] = useState(false);
