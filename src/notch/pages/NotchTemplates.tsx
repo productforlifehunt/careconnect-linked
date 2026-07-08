@@ -24,12 +24,19 @@ export default function NotchTemplates() {
 
   const load = async () => {
     setLoading(true);
-    const ws = await cctList<any>(NN.workspace);
-    const w = ws[0]?.id;
-    setWsId(w || null);
-    const all = await cctList<any>(NN.template);
-    setItems(all);
-    setLoading(false);
+    setLoadErr(null);
+    try {
+      const ws = await cctList<any>(NN.workspace);
+      const w = ws[0]?.id;
+      setWsId(w || null);
+      const all = await cctList<any>(NN.template);
+      setItems(all);
+    } catch (e: any) {
+      const raw = String(e?.message || "");
+      setLoadErr(/fetch|network/i.test(raw) ? "Can't reach the server." : "Couldn't load templates.");
+    } finally {
+      setLoading(false);
+    }
   };
   useEffect(() => { load(); }, []);
 
