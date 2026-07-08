@@ -1215,16 +1215,50 @@ function SchemaEditor({ schema, allBlocks, onClose, onSave }: { schema: PropDef[
               <>
                 <select value={p.rollup?.source || ""} onChange={(e) => update(i, { rollup: { source: e.target.value, agg: p.rollup?.agg || "sum" } })} className="nn-auth-input" style={{ marginBottom: 0, width: 130 }}>
                   <option value="">Source…</option>
-                  {numericSources.map((s) => <option key={s.key} value={s.key}>{s.name}</option>)}
+                  {schema.filter(sp => sp.key !== p.key).map((s) => <option key={s.key} value={s.key}>{s.name}</option>)}
                 </select>
-                <select value={p.rollup?.agg || "sum"} onChange={(e) => update(i, { rollup: { source: p.rollup?.source || "", agg: e.target.value as any } })} className="nn-auth-input" style={{ marginBottom: 0, width: 90 }}>
-                  <option value="sum">sum</option>
-                  <option value="avg">avg</option>
-                  <option value="min">min</option>
-                  <option value="max">max</option>
-                  <option value="count">count</option>
+                <select value={p.rollup?.agg || "sum"} onChange={(e) => update(i, { rollup: { source: p.rollup?.source || "", agg: e.target.value as any } })} className="nn-auth-input" style={{ marginBottom: 0, width: 140 }}>
+                  <optgroup label="Count">
+                    <option value="count">Count all</option>
+                    <option value="count_values">Count values</option>
+                    <option value="count_unique">Count unique</option>
+                    <option value="count_empty">Count empty</option>
+                    <option value="count_not_empty">Count not empty</option>
+                    <option value="percent_empty">% empty</option>
+                    <option value="percent_not_empty">% not empty</option>
+                  </optgroup>
+                  <optgroup label="Number">
+                    <option value="sum">Sum</option>
+                    <option value="avg">Average</option>
+                    <option value="median">Median</option>
+                    <option value="min">Min</option>
+                    <option value="max">Max</option>
+                    <option value="range">Range</option>
+                  </optgroup>
+                  <optgroup label="Date">
+                    <option value="earliest_date">Earliest date</option>
+                    <option value="latest_date">Latest date</option>
+                    <option value="date_range">Date range</option>
+                  </optgroup>
+                  <optgroup label="Show">
+                    <option value="show_original">Show original</option>
+                    <option value="show_unique">Show unique</option>
+                  </optgroup>
                 </select>
               </>
+            )}
+            {p.type === "number" && (
+              <select value={p.numberFormat || "plain"} onChange={(e) => update(i, { numberFormat: e.target.value as any })} className="nn-auth-input" style={{ marginBottom: 0, width: 110 }}>
+                <option value="plain">Plain</option>
+                <option value="number">Number</option>
+                <option value="commas">1,000</option>
+                <option value="percent">Percent</option>
+                <option value="usd">USD $</option>
+                <option value="eur">EUR €</option>
+                <option value="gbp">GBP £</option>
+                <option value="yuan">Yuan ¥</option>
+                <option value="yen">Yen ¥</option>
+              </select>
             )}
             {p.type === "button" && (
               <input
