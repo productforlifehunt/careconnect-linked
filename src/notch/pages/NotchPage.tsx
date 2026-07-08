@@ -246,8 +246,10 @@ export default function NotchPage() {
   return (
     <>
       {!online && <div className="nn-offline-pill">Offline — changes will sync when back online</div>}
+      <PresenceLayer pageId={pageId} me={{ id: String(user?.user_id || "anon"), name: user?.user_display_name || user?.user_email || "Guest" }} />
       <div className="nn-topbar">
         <BreadcrumbTrail crumbs={crumbs} pageId={pageId} onNav={(id) => nav(path(`/p/${id}`))} />
+        <PresenceAvatars pageId={pageId} me={{ id: String(user?.user_id || "anon"), name: user?.user_display_name || user?.user_email || "Guest" }} />
         <button className="nn-topbar-btn" onClick={() => setShowShare(true)} title="Share">
           <Share2 size={14} style={{ marginRight: 4 }} /> Share
         </button>
