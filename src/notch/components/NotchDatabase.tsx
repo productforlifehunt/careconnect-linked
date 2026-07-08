@@ -1,12 +1,12 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { Plus, Trash2, Table, LayoutGrid, Calendar as CalIcon, Settings2, X, ChevronLeft, ChevronRight, Image as ImageIcon, List, GanttChart, Link as LinkIcon } from "lucide-react";
+import { Plus, Trash2, Table, LayoutGrid, Calendar as CalIcon, Settings2, X, ChevronLeft, ChevronRight, Image as ImageIcon, List, GanttChart, Link as LinkIcon, BarChart3 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useNotchPath } from "@/notch/context/NotchBaseContext";
 import { cctList, cctCreate, cctUpdate, NN } from "@/notch/lib/nn-client";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 
 interface Props { databaseId: string; workspaceId: string; }
-type ViewMode = "table" | "board" | "calendar" | "timeline" | "gallery" | "list";
+type ViewMode = "table" | "board" | "calendar" | "timeline" | "gallery" | "list" | "chart";
 type PropType = "text" | "number" | "select" | "multiselect" | "date" | "checkbox" | "url" | "email" | "phone" | "person" | "formula" | "rollup" | "button" | "ai" | "relation";
 type ButtonAction =
   | { kind: "set"; prop: string; value: string }
@@ -389,8 +389,8 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
   return (
     <div style={{ marginTop: 12 }}>
       <div style={{ display: "flex", gap: 4, borderBottom: "1px solid var(--nn-border)", marginBottom: 12 }}>
-        {(["table", "board", "calendar", "timeline", "gallery", "list"] as ViewMode[]).map((v) => {
-          const Icon = v === "table" ? Table : v === "board" ? LayoutGrid : v === "calendar" ? CalIcon : v === "timeline" ? GanttChart : v === "gallery" ? ImageIcon : List;
+        {(["table", "board", "calendar", "timeline", "gallery", "list", "chart"] as ViewMode[]).map((v) => {
+          const Icon = v === "table" ? Table : v === "board" ? LayoutGrid : v === "calendar" ? CalIcon : v === "timeline" ? GanttChart : v === "gallery" ? ImageIcon : v === "chart" ? BarChart3 : List;
           return (
             <button key={v} onClick={() => setView(v)} className="nn-topbar-btn" style={{ borderBottom: view === v ? "2px solid var(--nn-text)" : "none", borderRadius: 0, textTransform: "capitalize" }}>
               <Icon size={13} style={{ marginRight: 4 }} /> {v}
@@ -550,11 +550,106 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
         </div>
       )}
 
+      {view === "chart" && (
+        <ChartView rows={visibleRows} schema={schema} />
+      )}
+
       {showSchema && (
         <SchemaEditor schema={schema} allBlocks={allBlocks} onClose={() => setShowSchema(false)} onSave={(s) => { saveSchema(s); setShowSchema(false); }} />
       )}
       {showCondEditor && (
         <CondEditor rules={condRules} schema={schema} onClose={() => setShowCondEditor(false)} onSave={(r) => { saveCondRules(r); setShowCondEditor(false); }} />
+      )}
+    </div>
+  );
+}
+
+function ChartView({ rows, schema }: { rows: Row[]; schema: PropDef[] }) {
+  const groupProps = schema.filter((p) => p.type === "select" || p.type === "multiselect" || p.type === "checkbox");
+  const numericProps = schema.filter((p) => p.type === "number" || p.type === "formula" || p.type === "rollup");
+  const [groupKey, setGroupKey] = useState<string>(groupProps[0]?.key || "__title__");
+  const [metricKey, setMetricKey] = useState<string>("__count__");
+  const [chartType, setChartType] = useState<"bar" | "pie">("bar");
+
+  const getProp = (r: Row, key: string): any => { try { return (r.properties ? JSON.parse(r.properties) : {})[key]; } catch { return undefined; } };
+
+  const buckets = useMemo(() => {
+    const map = new Map<string, { label: string; count: number; sum: number }>();
+    for (const r of rows) {
+      let raw: any = groupKey === "__title__" ? (r.title || "Untitled") : getProp(r, groupKey);
+      const keys: string[] = Array.isArray(raw) ? (raw.length ? raw.map(String) : ["(empty)"]) : [String(raw ?? "") || "(empty)"];
+      const metric = metricKey === "__count__" ? 1 : (Number(getProp(r, metricKey)) || 0);
+      for (const k of keys) {
+        const cur = map.get(k) || { label: k, count: 0, sum: 0 };
+        cur.count += 1;
+        cur.sum += metric;
+        map.set(k, cur);
+      }
+    }
+    return [...map.values()].sort((a, b) => b.sum - a.sum);
+  }, [rows, groupKey, metricKey]);
+
+  const total = buckets.reduce((a, b) => a + b.sum, 0) || 1;
+  const max = Math.max(...buckets.map((b) => b.sum), 1);
+  const palette = ["#2383e2", "#eb5757", "#d9730d", "#0f7b6c", "#6940a5", "#ad1a72", "#dfab01", "#0b6e99"];
+
+  if (rows.length === 0) return <div style={{ color: "var(--nn-text-tertiary)", fontSize: 13 }}>No rows to chart.</div>;
+
+  return (
+    <div className="nn-chart">
+      <div style={{ display: "flex", gap: 8, marginBottom: 12, alignItems: "center", flexWrap: "wrap" }}>
+        <label style={{ fontSize: 12, color: "var(--nn-text-secondary)" }}>Group by</label>
+        <select value={groupKey} onChange={(e) => setGroupKey(e.target.value)} className="nn-topbar-btn" style={{ padding: "4px 6px", fontSize: 12 }}>
+          <option value="__title__">Name</option>
+          {groupProps.map((p) => <option key={p.key} value={p.key}>{p.name}</option>)}
+        </select>
+        <label style={{ fontSize: 12, color: "var(--nn-text-secondary)" }}>Metric</label>
+        <select value={metricKey} onChange={(e) => setMetricKey(e.target.value)} className="nn-topbar-btn" style={{ padding: "4px 6px", fontSize: 12 }}>
+          <option value="__count__">Count</option>
+          {numericProps.map((p) => <option key={p.key} value={p.key}>Sum of {p.name}</option>)}
+        </select>
+        <button onClick={() => setChartType(chartType === "bar" ? "pie" : "bar")} className="nn-topbar-btn" style={{ fontSize: 12 }}>{chartType === "bar" ? "→ Pie" : "→ Bar"}</button>
+      </div>
+      {chartType === "bar" ? (
+        <div>
+          {buckets.map((b, i) => (
+            <div key={b.label} className="nn-chart-bar-row">
+              <div className="nn-chart-bar-label" title={b.label}>{b.label}</div>
+              <div className="nn-chart-bar-track">
+                <div className="nn-chart-bar-fill" style={{ width: `${(b.sum / max) * 100}%`, background: palette[i % palette.length] }} />
+              </div>
+              <div className="nn-chart-bar-value">{b.sum.toLocaleString()}</div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div style={{ display: "flex", gap: 20, alignItems: "center", flexWrap: "wrap" }}>
+          <svg width="200" height="200" viewBox="0 0 100 100">
+            {(() => {
+              let acc = 0;
+              return buckets.map((b, i) => {
+                const frac = b.sum / total;
+                const start = acc * 2 * Math.PI - Math.PI / 2;
+                acc += frac;
+                const end = acc * 2 * Math.PI - Math.PI / 2;
+                const x1 = 50 + 50 * Math.cos(start), y1 = 50 + 50 * Math.sin(start);
+                const x2 = 50 + 50 * Math.cos(end), y2 = 50 + 50 * Math.sin(end);
+                const large = frac > 0.5 ? 1 : 0;
+                const d = `M50,50 L${x1},${y1} A50,50 0 ${large} 1 ${x2},${y2} Z`;
+                return <path key={b.label} d={d} fill={palette[i % palette.length]} />;
+              });
+            })()}
+          </svg>
+          <div style={{ fontSize: 13 }}>
+            {buckets.map((b, i) => (
+              <div key={b.label} style={{ display: "flex", alignItems: "center", gap: 6, margin: "4px 0" }}>
+                <span style={{ width: 10, height: 10, background: palette[i % palette.length], borderRadius: 2 }} />
+                <span>{b.label}</span>
+                <span style={{ color: "var(--nn-text-tertiary)" }}>{b.sum} ({Math.round((b.sum / total) * 100)}%)</span>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );

@@ -20,7 +20,7 @@ import Youtube from "@tiptap/extension-youtube";
 import { Details, DetailsSummary, DetailsContent } from "@tiptap/extension-details";
 import { useEffect, useRef, useState } from "react";
 import { Bold, Italic, Underline as UIcon, Strikethrough, Code, Link as LinkIcon, AlignLeft, AlignCenter, AlignRight, Sparkles } from "lucide-react";
-import { MathBlock, Columns, Column, SyncBlock, buildColumns, Callout, InlineMath, AudioBlock, VideoBlock, PdfBlock, Toc, Breadcrumb, TemplateButton } from "./notch-extensions";
+import { MathBlock, Columns, Column, SyncBlock, buildColumns, Callout, InlineMath, AudioBlock, VideoBlock, PdfBlock, Toc, Breadcrumb, TemplateButton, TabsBlock, HtmlEmbed } from "./notch-extensions";
 import { NotchMention } from "./notch-mention";
 import { NotchInputRules } from "./notch-input-rules";
 import { nnUploadFile, pickFile } from "@/notch/lib/nn-files";
@@ -149,6 +149,10 @@ const SLASH_ITEMS = [
     cmd: (e: any) => e.chain().focus().insertContent({ type: "breadcrumb" }).run() },
   { group: "Advanced", key: "tplbtn", icon: "⚡", name: "Template button", desc: "Click to duplicate template blocks.",
     cmd: (e: any) => e.chain().focus().insertContent({ type: "templateButton", attrs: { label: "Add new", template: [{ type: "paragraph", content: [{ type: "text", text: "New item" }] }] } }).run() },
+  { group: "Advanced", key: "tabs", icon: "▤", name: "Tabs", desc: "Tabbed content sections.",
+    cmd: (e: any) => e.chain().focus().insertContent({ type: "tabsBlock", attrs: { tabs: [{ label: "Tab 1", content: "" }, { label: "Tab 2", content: "" }] } }).run() },
+  { group: "Advanced", key: "html", icon: "</>", name: "HTML embed", desc: "Render custom HTML.",
+    cmd: (e: any) => e.chain().focus().insertContent({ type: "htmlEmbed", attrs: { html: "" } }).run() },
   { group: "Media", key: "audio", icon: "🎵", name: "Audio", desc: "Embed audio (mp3, wav).",
     cmd: (e: any) => e.chain().focus().insertContent({ type: "audio", attrs: { src: "" } }).run() },
   { group: "Media", key: "video2", icon: "🎬", name: "Video", desc: "Embed video file (mp4, webm).",
@@ -204,6 +208,8 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
       Toc,
       Breadcrumb,
       TemplateButton,
+      TabsBlock,
+      HtmlEmbed,
       NotchMention,
       NotchInputRules,
     ],

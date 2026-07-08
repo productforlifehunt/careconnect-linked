@@ -1006,3 +1006,29 @@
 .nn-tplbtn-cfg-panel { position: absolute; margin-top: 40px; background: var(--nn-bg); border: 1px solid var(--nn-border-strong); border-radius: 6px; padding: 10px; z-index: 30; box-shadow: 0 6px 20px rgba(0,0,0,0.12); display: flex; flex-direction: column; gap: 6px; min-width: 300px; }
 .nn-tplbtn-cfg-panel input, .nn-tplbtn-cfg-panel textarea { background: var(--nn-bg-secondary); border: 1px solid var(--nn-border-strong); border-radius: 4px; padding: 6px 8px; color: var(--nn-text); font-family: monospace; font-size: 12px; }
 .nn-tplbtn-cfg-panel button { align-self: flex-end; background: var(--nn-accent); color: white; border: 0; border-radius: 4px; padding: 4px 12px; cursor: pointer; font-size: 12px; }
+
+/* Tabs block */
+.nn-tabs { border: 1px solid var(--nn-border); border-radius: 4px; margin: 6px 0; overflow: hidden; }
+.nn-tabs-bar { display: flex; gap: 2px; background: var(--nn-bg-secondary); padding: 4px 4px 0; align-items: end; border-bottom: 1px solid var(--nn-border); }
+.nn-tabs-tab { display: inline-flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 4px 4px 0 0; cursor: pointer; color: var(--nn-text-secondary); font-size: 13px; }
+.nn-tabs-tab.active { background: var(--nn-bg); color: var(--nn-text); border: 1px solid var(--nn-border); border-bottom: 1px solid var(--nn-bg); position: relative; top: 1px; }
+.nn-tabs-x { opacity: .5; padding: 0 2px; }
+.nn-tabs-x:hover { opacity: 1; }
+.nn-tabs-add { background: none; border: none; color: var(--nn-text-tertiary); cursor: pointer; padding: 6px 10px; font-size: 14px; }
+.nn-tabs-body { width: 100%; min-height: 80px; border: none; padding: 10px 12px; background: var(--nn-bg); color: var(--nn-text); font-size: 14px; resize: vertical; outline: none; }
+
+/* HTML embed */
+.nn-html-embed { margin: 6px 0; }
+
+/* Offline pill */
+.nn-offline-pill { position: fixed; bottom: 16px; right: 16px; background: rgba(224, 62, 62, 0.95); color: white; padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 500; z-index: 200; box-shadow: 0 2px 8px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 6px; }
+.nn-offline-pill::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: white; animation: nn-blink 1.4s ease-in-out infinite; }
+@keyframes nn-blink { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
+
+/* Chart view */
+.nn-chart { padding: 12px; background: var(--nn-bg-secondary); border-radius: 6px; }
+.nn-chart-bar-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; font-size: 13px; }
+.nn-chart-bar-label { width: 140px; color: var(--nn-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nn-chart-bar-track { flex: 1; height: 20px; background: var(--nn-bg); border-radius: 3px; overflow: hidden; position: relative; }
+.nn-chart-bar-fill { height: 100%; background: var(--nn-blue); transition: width .3s; }
+.nn-chart-bar-value { width: 60px; text-align: right; color: var(--nn-text); font-variant-numeric: tabular-nums; }

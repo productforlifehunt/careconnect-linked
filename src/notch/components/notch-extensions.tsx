@@ -502,3 +502,84 @@ export const TemplateButton = Node.create({
   renderHTML({ HTMLAttributes, node }) { return ["div", mergeAttributes({ "data-tplbtn": "", "data-label": node.attrs.label, "data-tpl": JSON.stringify(node.attrs.template || []), class: "nn-tplbtn" }, HTMLAttributes)]; },
   addNodeView() { return ReactNodeViewRenderer(TplBtnView); },
 });
+
+/* ─── Tabs Block ──────────────────────────────────────────────── */
+function TabsView({ node, updateAttributes }: any) {
+  const tabs: { label: string; content: string }[] = Array.isArray(node.attrs.tabs) && node.attrs.tabs.length
+    ? node.attrs.tabs
+    : [{ label: "Tab 1", content: "" }, { label: "Tab 2", content: "" }];
+  const [active, setActive] = useState(0);
+  const update = (next: any[]) => updateAttributes({ tabs: next });
+  return (
+    <NodeViewWrapper as="div" className="nn-tabs" contentEditable={false}>
+      <div className="nn-tabs-bar">
+        {tabs.map((t, i) => (
+          <div key={i} className={`nn-tabs-tab ${i === active ? "active" : ""}`} onClick={() => setActive(i)}>
+            <input
+              value={t.label}
+              onChange={(e) => { const n = [...tabs]; n[i] = { ...n[i], label: e.target.value }; update(n); }}
+              style={{ background: "transparent", border: "none", color: "inherit", fontSize: 13, width: `${Math.max(4, t.label.length)}ch` }}
+            />
+            {tabs.length > 1 && (
+              <span className="nn-tabs-x" onClick={(e) => { e.stopPropagation(); const n = tabs.filter((_, j) => j !== i); update(n); setActive(Math.max(0, active - (i <= active ? 1 : 0))); }}>×</span>
+            )}
+          </div>
+        ))}
+        <button className="nn-tabs-add" onClick={() => { update([...tabs, { label: `Tab ${tabs.length + 1}`, content: "" }]); setActive(tabs.length); }}>+</button>
+      </div>
+      <textarea
+        className="nn-tabs-body"
+        value={tabs[active]?.content || ""}
+        onChange={(e) => { const n = [...tabs]; n[active] = { ...n[active], content: e.target.value }; update(n); }}
+        placeholder="Tab content…"
+        rows={4}
+      />
+    </NodeViewWrapper>
+  );
+}
+export const TabsBlock = Node.create({
+  name: "tabsBlock",
+  group: "block",
+  atom: true,
+  selectable: true,
+  addAttributes() { return { tabs: { default: [{ label: "Tab 1", content: "" }, { label: "Tab 2", content: "" }] } }; },
+  parseHTML() { return [{ tag: "div[data-tabs]", getAttrs: (el) => { try { return { tabs: JSON.parse((el as HTMLElement).getAttribute("data-tabs") || "[]") }; } catch { return { tabs: [] }; } } }]; },
+  renderHTML({ HTMLAttributes, node }) { return ["div", mergeAttributes({ "data-tabs": JSON.stringify(node.attrs.tabs || []), class: "nn-tabs" }, HTMLAttributes)]; },
+  addNodeView() { return ReactNodeViewRenderer(TabsView); },
+});
+
+/* ─── HTML Embed ──────────────────────────────────────────────── */
+function HtmlEmbedView({ node, updateAttributes }: any) {
+  const [editing, setEditing] = useState(!node.attrs.html);
+  const [val, setVal] = useState(node.attrs.html || "");
+  return (
+    <NodeViewWrapper as="div" className="nn-html-embed" contentEditable={false}>
+      {editing ? (
+        <div>
+          <textarea
+            autoFocus value={val} onChange={(e) => setVal(e.target.value)}
+            placeholder="<div>Your HTML here…</div>" rows={6}
+            style={{ width: "100%", background: "var(--nn-bg-secondary)", border: "1px solid var(--nn-border-strong)", borderRadius: 4, padding: 8, fontFamily: "monospace", fontSize: 12, color: "var(--nn-text)" }}
+          />
+          <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
+            <button onClick={() => { updateAttributes({ html: val }); setEditing(false); }} className="nn-btn-primary" style={{ fontSize: 12 }}>Render</button>
+            <button onClick={() => setEditing(false)} className="nn-topbar-btn" style={{ fontSize: 12 }}>Cancel</button>
+          </div>
+        </div>
+      ) : (
+        <div onClick={() => { setVal(node.attrs.html || ""); setEditing(true); }} style={{ cursor: "pointer", padding: 8, border: "1px dashed var(--nn-border)", borderRadius: 4 }}
+          dangerouslySetInnerHTML={{ __html: node.attrs.html || "<em style='opacity:.5'>Click to edit HTML</em>" }} />
+      )}
+    </NodeViewWrapper>
+  );
+}
+export const HtmlEmbed = Node.create({
+  name: "htmlEmbed",
+  group: "block",
+  atom: true,
+  selectable: true,
+  addAttributes() { return { html: { default: "" } }; },
+  parseHTML() { return [{ tag: "div[data-html-embed]", getAttrs: (el) => ({ html: (el as HTMLElement).getAttribute("data-html") || "" }) }]; },
+  renderHTML({ HTMLAttributes, node }) { return ["div", mergeAttributes({ "data-html-embed": "", "data-html": node.attrs.html, class: "nn-html-embed" }, HTMLAttributes)]; },
+  addNodeView() { return ReactNodeViewRenderer(HtmlEmbedView); },
+});
