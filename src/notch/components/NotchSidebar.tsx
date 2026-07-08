@@ -40,6 +40,7 @@ export function NotchSidebar() {
   const [pages, setPages] = useState<Block[]>([]);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
+  const [loadErr, setLoadErr] = useState<string | null>(null);
   const [unread, setUnread] = useState(0);
   const [ctx, setCtx] = useState<{ x: number; y: number; page: Block } | null>(null);
   const [sectionsOpen, setSectionsOpen] = useState<Record<string, boolean>>(() => {
@@ -146,6 +147,7 @@ export function NotchSidebar() {
 
   const loadAll = useCallback(async () => {
     setLoading(true);
+    setLoadErr(null);
     try {
       const ws = await cctList<Workspace>(NN.workspace);
       const mine = ws.filter((w: any) => !user || String(w.author_id) === String(user.user_id));
@@ -162,8 +164,9 @@ export function NotchSidebar() {
         const pageBlocks = blocks.filter((b: any) => (b.type === "page" || b.type === "database") && Number(b.archived) !== 1);
         setPages(pageBlocks);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("Sidebar load failed", e);
+      setLoadErr(e?.message?.includes("fetch") ? "Can't reach backend" : (e?.message || "Failed to load"));
     } finally {
       setLoading(false);
     }
@@ -540,10 +543,15 @@ export function NotchSidebar() {
               </div>
               {isSectionOpen("private") && (loading ? (
                 <div className="nn-sidebar-item" style={{ opacity: 0.5 }}>Loading…</div>
+              ) : loadErr ? (
+                <div className="nn-sidebar-item" style={{ display: "block", opacity: 0.75 }}>
+                  <div style={{ fontSize: 12, color: "var(--nn-red, #e03e3e)" }}>{loadErr}</div>
+                  <button onClick={() => loadAll()} className="nn-topbar-btn" style={{ marginTop: 4, fontSize: 11 }}>Retry</button>
+                </div>
               ) : activeWs ? (
                 renderTree(activeWs)
               ) : null)}
-              {isSectionOpen("private") && activeWs && pages.filter((p) => String(p.parent_id) === String(activeWs)).length === 0 && !loading && (
+              {isSectionOpen("private") && activeWs && !loadErr && pages.filter((p) => String(p.parent_id) === String(activeWs)).length === 0 && !loading && (
                 <div className="nn-sidebar-item" onClick={() => createPage(activeWs)}>
                   <span className="nn-icon"><Plus size={15} /></span>
                   <span className="nn-title">Add a page</span>

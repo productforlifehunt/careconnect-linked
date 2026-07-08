@@ -176,7 +176,7 @@ export default function NotchSearch() {
             </button>
           ))}
           <div style={{ marginLeft: "auto", color: "var(--nn-text-tertiary)", fontSize: 11, alignSelf: "center" }}>
-            {loading ? "Loading…" : `${results.length} result${results.length === 1 ? "" : "s"}`}
+            {loading ? "Loading…" : q.trim() === "" ? "Type to search" : `${results.length} result${results.length === 1 ? "" : "s"}`}
           </div>
         </div>
         <div ref={listRef}>
