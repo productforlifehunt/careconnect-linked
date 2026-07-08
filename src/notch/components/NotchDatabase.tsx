@@ -502,6 +502,20 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
         />
       )}
 
+      {view === "timeline" && (
+        <TimelineView
+          rows={visibleRows}
+          dateProp={dateProp}
+          endDateProp={endDateProp}
+          rowColor={rowColor}
+          onOpen={(id) => nav(path(`/p/${id}`))}
+          onReschedule={(row, iso, isEnd) => {
+            const target = isEnd && endDateProp ? endDateProp : dateProp;
+            if (target) setProp(row, target.key, iso);
+          }}
+        />
+      )}
+
       {view === "gallery" && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
           {visibleRows.map((r) => (
