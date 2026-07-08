@@ -220,6 +220,7 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
       NotchMention,
       NotchInputRules,
       InlineDatabase,
+      MultiBlockShortcuts,
     ],
     content: content || "",
     onUpdate: ({ editor }) => onChange(editor.getJSON()),
