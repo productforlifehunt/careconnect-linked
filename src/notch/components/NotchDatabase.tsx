@@ -1002,6 +1002,11 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
         <ChartView rows={visibleRows} schema={schema} />
       )}
 
+      {view === "form" && (
+        <FormView schema={schema} onSubmit={async (title, cells) => { await addRow({ ...cells }); if (title) { /* addRow navigates; nothing else */ } }} dbTitle={dbBlock?.title || "Untitled database"} />
+      )}
+
+
       {showSchema && (
         <SchemaEditor schema={schema} allBlocks={allBlocks} onClose={() => setShowSchema(false)} onSave={(s) => { saveSchema(s); setShowSchema(false); }} />
       )}
