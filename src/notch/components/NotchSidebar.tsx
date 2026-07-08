@@ -543,10 +543,15 @@ export function NotchSidebar() {
               </div>
               {isSectionOpen("private") && (loading ? (
                 <div className="nn-sidebar-item" style={{ opacity: 0.5 }}>Loading…</div>
+              ) : loadErr ? (
+                <div className="nn-sidebar-item" style={{ display: "block", opacity: 0.75 }}>
+                  <div style={{ fontSize: 12, color: "var(--nn-red, #e03e3e)" }}>{loadErr}</div>
+                  <button onClick={() => loadAll()} className="nn-topbar-btn" style={{ marginTop: 4, fontSize: 11 }}>Retry</button>
+                </div>
               ) : activeWs ? (
                 renderTree(activeWs)
               ) : null)}
-              {isSectionOpen("private") && activeWs && pages.filter((p) => String(p.parent_id) === String(activeWs)).length === 0 && !loading && (
+              {isSectionOpen("private") && activeWs && !loadErr && pages.filter((p) => String(p.parent_id) === String(activeWs)).length === 0 && !loading && (
                 <div className="nn-sidebar-item" onClick={() => createPage(activeWs)}>
                   <span className="nn-icon"><Plus size={15} /></span>
                   <span className="nn-title">Add a page</span>
