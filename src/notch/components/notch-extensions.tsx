@@ -120,22 +120,67 @@ function SyncView({ node, updateAttributes }: any) {
       setTitle(src.title || "Untitled");
       const props = src.properties ? JSON.parse(src.properties) : {};
       const c = props.editor_content;
-      // Very light JSON→HTML: rely on browser to render text nodes recursively.
+      // Full JSON→HTML converter: mirrors all nodes the NotionEditor produces.
+      const esc = (s: string) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
+      const applyMarks = (text: string, marks: any[]): string => {
+        if (!marks || !marks.length) return esc(text);
+        let out = esc(text);
+        for (const m of marks) {
+          if (m.type === "bold") out = `<strong>${out}</strong>`;
+          else if (m.type === "italic") out = `<em>${out}</em>`;
+          else if (m.type === "underline") out = `<u>${out}</u>`;
+          else if (m.type === "strike") out = `<s>${out}</s>`;
+          else if (m.type === "code") out = `<code>${out}</code>`;
+          else if (m.type === "highlight") out = `<mark>${out}</mark>`;
+          else if (m.type === "link") out = `<a href="${esc(m.attrs?.href || "#")}" target="_blank" rel="noreferrer">${out}</a>`;
+          else if (m.type === "textStyle" && m.attrs?.color) out = `<span style="color:${esc(m.attrs.color)}">${out}</span>`;
+        }
+        return out;
+      };
       const toHtml = (n: any): string => {
         if (!n) return "";
-        if (typeof n === "string") return n;
         if (Array.isArray(n)) return n.map(toHtml).join("");
+        if (n.type === "text") return applyMarks(n.text || "", n.marks || []);
         const kids = (n.content || []).map(toHtml).join("");
-        if (n.type === "text") return n.text || "";
-        if (n.type === "paragraph") return `<p>${kids}</p>`;
-        if (n.type === "heading") return `<h${n.attrs?.level || 2}>${kids}</h${n.attrs?.level || 2}>`;
-        if (n.type === "bulletList") return `<ul>${kids}</ul>`;
-        if (n.type === "orderedList") return `<ol>${kids}</ol>`;
-        if (n.type === "listItem") return `<li>${kids}</li>`;
-        if (n.type === "blockquote") return `<blockquote>${kids}</blockquote>`;
-        if (n.type === "codeBlock") return `<pre><code>${kids}</code></pre>`;
-        if (n.type === "hardBreak") return "<br/>";
-        return kids ? `<div>${kids}</div>` : "";
+        const a = n.attrs || {};
+        switch (n.type) {
+          case "doc": return kids;
+          case "paragraph": return `<p>${kids || "<br/>"}</p>`;
+          case "heading": return `<h${a.level || 2}>${kids}</h${a.level || 2}>`;
+          case "bulletList": return `<ul>${kids}</ul>`;
+          case "orderedList": return `<ol${a.start ? ` start="${a.start}"` : ""}>${kids}</ol>`;
+          case "listItem": return `<li>${kids}</li>`;
+          case "taskList": return `<ul class="nn-tasks" style="list-style:none;padding-left:0">${kids}</ul>`;
+          case "taskItem": return `<li style="display:flex;gap:6px;align-items:flex-start"><input type="checkbox" disabled ${a.checked ? "checked" : ""} style="margin-top:4px"/><div style="flex:1${a.checked ? ";opacity:.55;text-decoration:line-through" : ""}">${kids}</div></li>`;
+          case "blockquote": return `<blockquote>${kids}</blockquote>`;
+          case "codeBlock": return `<pre><code${a.language ? ` class="language-${esc(a.language)}"` : ""}>${kids}</code></pre>`;
+          case "hardBreak": return "<br/>";
+          case "horizontalRule": return "<hr/>";
+          case "image": return `<img src="${esc(a.src || "")}" alt="${esc(a.alt || "")}" style="max-width:100%;border-radius:4px"/>`;
+          case "table": return `<table class="nn-table">${kids}</table>`;
+          case "tableRow": return `<tr>${kids}</tr>`;
+          case "tableHeader": return `<th${a.colspan ? ` colspan="${a.colspan}"` : ""}${a.rowspan ? ` rowspan="${a.rowspan}"` : ""}>${kids}</th>`;
+          case "tableCell": return `<td${a.colspan ? ` colspan="${a.colspan}"` : ""}${a.rowspan ? ` rowspan="${a.rowspan}"` : ""}>${kids}</td>`;
+          case "callout": return `<div class="nn-callout" style="display:flex;gap:8px;padding:12px;border-radius:4px;background:${esc(a.color || "rgba(241,241,239,0.6)")};margin:4px 0"><div style="font-size:18px">${esc(a.icon || "💡")}</div><div style="flex:1">${kids}</div></div>`;
+          case "columns": return `<div class="nn-columns" style="display:grid;grid-template-columns:repeat(${(n.content || []).length},1fr);gap:16px">${kids}</div>`;
+          case "column": return `<div class="nn-col">${kids}</div>`;
+          case "mathBlock": {
+            try { return `<div class="nn-math">${katex.renderToString(a.latex || "", { throwOnError: false, displayMode: true })}</div>`; }
+            catch { return `<div class="nn-math"><code>${esc(a.latex || "")}</code></div>`; }
+          }
+          case "inlineMath": {
+            try { return katex.renderToString(a.latex || "", { throwOnError: false, displayMode: false }); }
+            catch { return `<code>${esc(a.latex || "")}</code>`; }
+          }
+          case "audioBlock": return `<audio controls src="${esc(a.source || "")}" style="width:100%"></audio>`;
+          case "pdfBlock": return `<a href="${esc(a.source || "#")}" target="_blank" rel="noreferrer" style="display:inline-flex;gap:6px;padding:8px;border:1px solid var(--nn-border);border-radius:4px">📄 PDF</a>`;
+          case "toc": return `<div class="nn-toc" style="opacity:.6;font-size:12px">[Table of contents]</div>`;
+          case "breadcrumb": return `<div class="nn-breadcrumb" style="opacity:.6;font-size:12px">[Breadcrumb]</div>`;
+          case "templateButton": return `<button disabled style="padding:4px 10px;border-radius:4px;border:1px solid var(--nn-border)">${esc(a.label || "Template")}</button>`;
+          case "syncBlock": return `<div style="opacity:.6;font-size:12px">[Nested synced block]</div>`;
+          case "mention": return `<span class="nn-mention" style="color:var(--nn-blue)">@${esc(a.label || a.id || "")}</span>`;
+          default: return kids ? `<div>${kids}</div>` : "";
+        }
       };
       setHtml(toHtml(c));
     } catch (e: any) {

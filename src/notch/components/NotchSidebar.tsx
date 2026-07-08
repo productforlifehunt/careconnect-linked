@@ -51,6 +51,33 @@ export function NotchSidebar() {
   });
   const isSectionOpen = (k: string) => sectionsOpen[k] !== false;
 
+  // Persisted section order (drag to reorder). Default: favorites → teamspaces → private.
+  const DEFAULT_ORDER = ["favorites", "teamspaces", "private"];
+  const [sectionOrder, setSectionOrder] = useState<string[]>(() => {
+    try {
+      const raw = JSON.parse(localStorage.getItem("nn:sidebar:order") || "null");
+      if (Array.isArray(raw) && raw.length) {
+        const filtered = raw.filter((k: string) => DEFAULT_ORDER.includes(k));
+        for (const k of DEFAULT_ORDER) if (!filtered.includes(k)) filtered.push(k);
+        return filtered;
+      }
+    } catch {}
+    return DEFAULT_ORDER;
+  });
+  const persistOrder = (next: string[]) => {
+    setSectionOrder(next);
+    try { localStorage.setItem("nn:sidebar:order", JSON.stringify(next)); } catch {}
+  };
+  const [dragSection, setDragSection] = useState<string | null>(null);
+  const onSectionDrop = (target: string) => {
+    if (!dragSection || dragSection === target) return;
+    const next = sectionOrder.filter((k) => k !== dragSection);
+    const idx = next.indexOf(target);
+    next.splice(idx, 0, dragSection);
+    persistOrder(next);
+    setDragSection(null);
+  };
+
   useEffect(() => {
     if (!user) return;
     let alive = true;
@@ -355,81 +382,92 @@ export function NotchSidebar() {
         </div>
       </div>
 
-      {favs.length > 0 && (
-        <div className="nn-sidebar-section">
-          <div className="nn-sidebar-section-header" onClick={() => toggleSection("favorites")}>
-            <span className={`nn-section-caret ${isSectionOpen("favorites") ? "open" : ""}`}><ChevronRight size={12} /></span>
-            <span className="nn-section-label">Favorites</span>
-          </div>
-          {isSectionOpen("favorites") && favs.map((f) => {
-            const p = pages.find((x) => String(x.id) === String(f.block_id));
-            if (!p) return null;
-            return (
-              <div
-                key={f.id}
-                className={`nn-sidebar-item ${pageId === p.id ? "active" : ""}`}
-                onClick={() => nav(path(`/p/${p.id}`))}
-                onContextMenu={(e) => { e.preventDefault(); setCtx({ x: e.clientX, y: e.clientY, page: p }); }}
-              >
-                <span className="nn-caret" style={{ opacity: 0 }} />
-                <span className="nn-icon">{p.icon || <Star size={14} />}</span>
-                <span className="nn-title">{p.title || "Untitled"}</span>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
       {(() => {
         const teamspaces = pages.filter((p) => String(p.parent_id) === String(activeWs) && (p as any).properties && (() => {
           try { const j = JSON.parse((p as any).properties); return j?._meta?.teamspace === true; } catch { return false; }
         })());
-        if (!teamspaces.length) return null;
-        return (
-          <div className="nn-sidebar-section">
-            <div className="nn-sidebar-section-header" onClick={() => toggleSection("teamspaces")}>
-              <span className={`nn-section-caret ${isSectionOpen("teamspaces") ? "open" : ""}`}><ChevronRight size={12} /></span>
-              <span className="nn-section-label">Teamspaces</span>
-            </div>
-            {isSectionOpen("teamspaces") && teamspaces.map((p) => (
-              <div key={p.id} className={`nn-sidebar-item ${pageId === p.id ? "active" : ""}`}
-                onClick={() => nav(path(`/p/${p.id}`))}
-                onContextMenu={(e) => { e.preventDefault(); setCtx({ x: e.clientX, y: e.clientY, page: p }); }}
-              >
-                <span className="nn-caret" style={{ opacity: 0 }} />
-                <span className="nn-icon">{p.icon || "👥"}</span>
-                <span className="nn-title">{p.title || "Untitled"}</span>
+        const dragProps = (key: string) => ({
+          draggable: true,
+          onDragStart: (e: React.DragEvent) => { setDragSection(key); e.dataTransfer.effectAllowed = "move"; },
+          onDragOver: (e: React.DragEvent) => { if (dragSection && dragSection !== key) e.preventDefault(); },
+          onDrop: (e: React.DragEvent) => { e.preventDefault(); onSectionDrop(key); },
+          onDragEnd: () => setDragSection(null),
+          style: { cursor: "grab", opacity: dragSection === key ? 0.5 : 1 } as React.CSSProperties,
+          title: "Drag to reorder section",
+        });
+        const sections: Record<string, React.ReactNode> = {
+          favorites: favs.length > 0 ? (
+            <div key="favorites" className="nn-sidebar-section">
+              <div className="nn-sidebar-section-header" {...dragProps("favorites")} onClick={() => toggleSection("favorites")}>
+                <span className={`nn-section-caret ${isSectionOpen("favorites") ? "open" : ""}`}><ChevronRight size={12} /></span>
+                <span className="nn-section-label">Favorites</span>
               </div>
-            ))}
-          </div>
-        );
+              {isSectionOpen("favorites") && favs.map((f) => {
+                const p = pages.find((x) => String(x.id) === String(f.block_id));
+                if (!p) return null;
+                return (
+                  <div
+                    key={f.id}
+                    className={`nn-sidebar-item ${pageId === p.id ? "active" : ""}`}
+                    onClick={() => nav(path(`/p/${p.id}`))}
+                    onContextMenu={(e) => { e.preventDefault(); setCtx({ x: e.clientX, y: e.clientY, page: p }); }}
+                  >
+                    <span className="nn-caret" style={{ opacity: 0 }} />
+                    <span className="nn-icon">{p.icon || <Star size={14} />}</span>
+                    <span className="nn-title">{p.title || "Untitled"}</span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : null,
+          teamspaces: teamspaces.length > 0 ? (
+            <div key="teamspaces" className="nn-sidebar-section">
+              <div className="nn-sidebar-section-header" {...dragProps("teamspaces")} onClick={() => toggleSection("teamspaces")}>
+                <span className={`nn-section-caret ${isSectionOpen("teamspaces") ? "open" : ""}`}><ChevronRight size={12} /></span>
+                <span className="nn-section-label">Teamspaces</span>
+              </div>
+              {isSectionOpen("teamspaces") && teamspaces.map((p) => (
+                <div key={p.id} className={`nn-sidebar-item ${pageId === p.id ? "active" : ""}`}
+                  onClick={() => nav(path(`/p/${p.id}`))}
+                  onContextMenu={(e) => { e.preventDefault(); setCtx({ x: e.clientX, y: e.clientY, page: p }); }}
+                >
+                  <span className="nn-caret" style={{ opacity: 0 }} />
+                  <span className="nn-icon">{p.icon || "👥"}</span>
+                  <span className="nn-title">{p.title || "Untitled"}</span>
+                </div>
+              ))}
+            </div>
+          ) : null,
+          private: (
+            <div key="private" className="nn-sidebar-section" style={{ flex: 1 }}>
+              <div className="nn-sidebar-section-header" {...dragProps("private")}>
+                <span
+                  className={`nn-section-caret ${isSectionOpen("private") ? "open" : ""}`}
+                  onClick={(e) => { e.stopPropagation(); toggleSection("private"); }}
+                ><ChevronRight size={12} /></span>
+                <span className="nn-section-label" onClick={() => toggleSection("private")}>Private</span>
+                <button
+                  className="nn-section-add"
+                  onClick={(e) => { e.stopPropagation(); activeWs && createPage(activeWs); }}
+                  title="New page"
+                ><Plus size={14} /></button>
+              </div>
+              {isSectionOpen("private") && (loading ? (
+                <div className="nn-sidebar-item" style={{ opacity: 0.5 }}>Loading…</div>
+              ) : activeWs ? (
+                renderTree(activeWs)
+              ) : null)}
+              {isSectionOpen("private") && activeWs && pages.filter((p) => String(p.parent_id) === String(activeWs)).length === 0 && !loading && (
+                <div className="nn-sidebar-item" onClick={() => createPage(activeWs)}>
+                  <span className="nn-icon"><Plus size={15} /></span>
+                  <span className="nn-title">Add a page</span>
+                </div>
+              )}
+            </div>
+          ),
+        };
+        return <>{sectionOrder.map((k) => sections[k])}</>;
       })()}
-
-      <div className="nn-sidebar-section" style={{ flex: 1 }}>
-        <div className="nn-sidebar-section-header">
-          <span
-            className={`nn-section-caret ${isSectionOpen("private") ? "open" : ""}`}
-            onClick={(e) => { e.stopPropagation(); toggleSection("private"); }}
-          ><ChevronRight size={12} /></span>
-          <span className="nn-section-label" onClick={() => toggleSection("private")}>Private</span>
-          <button
-            className="nn-section-add"
-            onClick={(e) => { e.stopPropagation(); activeWs && createPage(activeWs); }}
-            title="New page"
-          ><Plus size={14} /></button>
-        </div>
-        {isSectionOpen("private") && (loading ? (
-          <div className="nn-sidebar-item" style={{ opacity: 0.5 }}>Loading…</div>
-        ) : activeWs ? (
-          renderTree(activeWs)
-        ) : null)}
-        {isSectionOpen("private") && activeWs && pages.filter((p) => String(p.parent_id) === String(activeWs)).length === 0 && !loading && (
-          <div className="nn-sidebar-item" onClick={() => createPage(activeWs)}>
-            <span className="nn-icon"><Plus size={15} /></span>
-            <span className="nn-title">Add a page</span>
-          </div>
-        )}
-      </div>
 
       <div style={{ padding: 8, borderTop: "1px solid var(--nn-border)", fontSize: 12, color: "var(--nn-text-secondary)", display: "flex", alignItems: "center", gap: 8 }}>
         <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.user_email}</span>
