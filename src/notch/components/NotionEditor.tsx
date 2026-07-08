@@ -227,6 +227,8 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
       MultiBlockShortcuts,
       InlineCommentMark,
       Whiteboard,
+      Bookmark,
+      ButtonBlock,
       BlockSync.configure({ pageId: pageId || "" }),
     ],
     content: content || "",
