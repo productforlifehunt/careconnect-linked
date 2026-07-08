@@ -18,6 +18,22 @@ interface Comment {
 
 type FilterMode = "open" | "resolved" | "all";
 
+function relTime(iso?: string): string {
+  if (!iso) return "";
+  const t = new Date(iso).getTime();
+  if (!t) return "";
+  const diff = Math.max(0, Date.now() - t);
+  const s = Math.floor(diff / 1000);
+  if (s < 45) return "just now";
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `${d}d ago`;
+  return new Date(iso).toLocaleDateString();
+}
+
 export function NotchComments({ blockId }: { blockId: string }) {
   const { user } = useNotchAuth();
   const [items, setItems] = useState<Comment[]>([]);
@@ -26,6 +42,9 @@ export function NotchComments({ blockId }: { blockId: string }) {
   const [filter, setFilter] = useState<FilterMode>("open");
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
   const load = useCallback(async () => {
     const all = await cctList<Comment>(NN.comment);
