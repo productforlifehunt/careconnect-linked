@@ -587,3 +587,95 @@ export const HtmlEmbed = Node.create({
   renderHTML({ HTMLAttributes, node }) { return ["div", mergeAttributes({ "data-html-embed": "", "data-html": node.attrs.html, class: "nn-html-embed" }, HTMLAttributes)]; },
   addNodeView() { return ReactNodeViewRenderer(HtmlEmbedView); },
 });
+
+/* ─── Inline Database Block ──────────────────────────────────── */
+function InlineDatabaseView({ node, updateAttributes }: any) {
+  const id: string = node.attrs.databaseId || "";
+  const mode: "inline" | "linked" = (node.attrs.mode as any) || "inline";
+  const [dbInfo, setDbInfo] = useState<{ title: string; workspace_id: string; icon?: string } | null>(null);
+  const [candidates, setCandidates] = useState<any[]>([]);
+  const [creating, setCreating] = useState(false);
+  const nav = useNavigate();
+  const path = useNotchPath();
+  const { user } = useNotchAuth();
+
+  useEffect(() => {
+    if (id) {
+      cctGet<any>(NN.block, id).then((b) => b && setDbInfo({ title: b.title || "Untitled", workspace_id: String(b.workspace_id || ""), icon: b.icon })).catch(() => setDbInfo(null));
+    } else {
+      cctList<any>(NN.block).then((rows) => setCandidates(rows.filter((b: any) => b.type === "database" && Number(b.archived) !== 1))).catch(() => setCandidates([]));
+    }
+  }, [id]);
+
+  const createDatabase = async () => {
+    setCreating(true);
+    try {
+      const wsId = (window as any).__NN_ACTIVE_WORKSPACE__ || "";
+      const { id: newId } = await cctCreate(NN.block, {
+        workspace_id: String(wsId),
+        parent_id: String(wsId),
+        type: "database",
+        title: "Untitled database",
+        icon: "🗄", cover: "",
+        properties: JSON.stringify({ schema: [{ key: "status", name: "Status", type: "select", options: ["To do", "In progress", "Done"] }] }),
+        content_order: JSON.stringify([]),
+        archived: 0, in_trash: 0,
+        created_by: user?.user_id || 0, last_edited_by: user?.user_id || 0,
+      });
+      updateAttributes({ databaseId: newId });
+    } catch (e) { console.error(e); }
+    setCreating(false);
+  };
+
+  if (!id) {
+    return (
+      <NodeViewWrapper as="div" className="nn-inline-db-picker" contentEditable={false} style={{ border: "1px dashed var(--nn-border-strong)", borderRadius: 6, padding: 12, margin: "8px 0", background: "var(--nn-bg-secondary)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, fontSize: 13, color: "var(--nn-text-secondary)" }}>
+          <DatabaseIcon size={14} />
+          <span style={{ flex: 1, fontWeight: 500 }}>Inline database</span>
+          <select value="" onChange={(e) => e.target.value && updateAttributes({ databaseId: e.target.value })} className="nn-topbar-btn" style={{ fontSize: 12 }}>
+            <option value="">Link existing…</option>
+            {candidates.map((c: any) => <option key={c.id} value={c.id}>{c.title || "Untitled"}</option>)}
+          </select>
+          <button onClick={createDatabase} disabled={creating} className="nn-btn-primary" style={{ fontSize: 12 }}>
+            <Plus size={12} style={{ marginRight: 4 }} /> {creating ? "Creating…" : "New"}
+          </button>
+        </div>
+      </NodeViewWrapper>
+    );
+  }
+
+  if (!dbInfo) return <NodeViewWrapper as="div" contentEditable={false} style={{ opacity: 0.5, padding: 8 }}>Loading database…</NodeViewWrapper>;
+
+  return (
+    <NodeViewWrapper as="div" className="nn-inline-db" contentEditable={false} style={{ border: "1px solid var(--nn-border)", borderRadius: 6, padding: 10, margin: "8px 0", background: "var(--nn-bg)" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, fontSize: 13 }}>
+        <span>{dbInfo.icon || "🗄"}</span>
+        <span onClick={() => nav(path(`/p/${id}`))} style={{ fontWeight: 600, cursor: "pointer" }} title="Open database">{dbInfo.title}</span>
+        <span style={{ flex: 1 }} />
+        <button onClick={() => updateAttributes({ mode: mode === "inline" ? "linked" : "inline" })} className="nn-topbar-btn" style={{ fontSize: 11 }} title="Toggle inline/linked">
+          {mode === "inline" ? "Inline" : "Linked"}
+        </button>
+        <button onClick={() => updateAttributes({ databaseId: "" })} className="nn-topbar-btn" style={{ fontSize: 11 }} title="Unlink">Unlink</button>
+      </div>
+      {mode === "inline" ? (
+        <NotchDatabase databaseId={id} workspaceId={dbInfo.workspace_id} />
+      ) : (
+        <div onClick={() => nav(path(`/p/${id}`))} style={{ padding: 12, background: "var(--nn-bg-secondary)", borderRadius: 4, cursor: "pointer", fontSize: 13, color: "var(--nn-text-secondary)", display: "flex", alignItems: "center", gap: 6 }}>
+          <DatabaseIcon size={14} /> Open linked database →
+        </div>
+      )}
+    </NodeViewWrapper>
+  );
+}
+export const InlineDatabase = Node.create({
+  name: "inlineDatabase",
+  group: "block",
+  atom: true,
+  selectable: true,
+  addAttributes() { return { databaseId: { default: "" }, mode: { default: "inline" } }; },
+  parseHTML() { return [{ tag: "div[data-inline-db]", getAttrs: (el) => ({ databaseId: (el as HTMLElement).getAttribute("data-db-id") || "", mode: (el as HTMLElement).getAttribute("data-db-mode") || "inline" }) }]; },
+  renderHTML({ HTMLAttributes, node }) { return ["div", mergeAttributes({ "data-inline-db": "", "data-db-id": node.attrs.databaseId, "data-db-mode": node.attrs.mode, class: "nn-inline-db" }, HTMLAttributes)]; },
+  addNodeView() { return ReactNodeViewRenderer(InlineDatabaseView); },
+});
+
