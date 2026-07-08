@@ -72,6 +72,12 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
   const [dragCol, setDragCol] = useState<string | null>(null);
   const [automations, setAutomations] = useState<AutoRule[]>([]);
   const [showAuto, setShowAuto] = useState(false);
+  const [memberOpts, setMemberOpts] = useState<{ id: string; user_id: string; label: string }[]>([]);
+  useEffect(() => {
+    cctList<any>(NN.member, { workspace_id: workspaceId }).then((rows) => {
+      setMemberOpts(rows.map((r: any) => ({ id: String(r.id), user_id: String(r.user_id || ""), label: r.display_name || r.email || `User ${r.user_id}` })));
+    }).catch(() => setMemberOpts([]));
+  }, [workspaceId]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -405,9 +411,25 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
     ) : (
       <input type="tel" value={v} onChange={(e) => setProp(r, p.key, e.target.value)} placeholder="—" style={{ background: "transparent", border: "none", color: "var(--nn-text)", fontSize: 13, width: "100%" }} />
     );
-    if (p.type === "person") return (
-      <input value={v} onChange={(e) => setProp(r, p.key, e.target.value)} placeholder="User ID" style={{ background: "transparent", border: "none", color: "var(--nn-text)", fontSize: 13, width: "100%" }} />
-    );
+    if (p.type === "person") {
+      const ids: string[] = Array.isArray(v) ? v : (v ? String(v).split(",").map((s) => s.trim()).filter(Boolean) : []);
+      const labelOf = (id: string) => memberOpts.find((m) => String(m.user_id) === String(id))?.label || id;
+      return (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, alignItems: "center" }}>
+          {ids.map((id) => (
+            <span key={id} style={{ background: "var(--nn-blue-bg)", color: "var(--nn-blue)", padding: "1px 6px", borderRadius: 3, fontSize: 11, display: "inline-flex", alignItems: "center", gap: 4 }}>
+              <span style={{ width: 14, height: 14, borderRadius: "50%", background: "var(--nn-blue)", color: "#fff", fontSize: 9, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>{labelOf(id).charAt(0).toUpperCase()}</span>
+              {labelOf(id)}
+              <span onClick={(e) => { e.stopPropagation(); setProp(r, p.key, ids.filter((x) => x !== id)); }} style={{ opacity: 0.6, cursor: "pointer" }}>×</span>
+            </span>
+          ))}
+          <select value="" onChange={(e) => { const v2 = e.target.value; if (v2 && !ids.includes(v2)) setProp(r, p.key, [...ids, v2]); }} onClick={(e) => e.stopPropagation()} style={{ background: "transparent", border: "1px dashed var(--nn-border)", borderRadius: 3, fontSize: 11, padding: "1px 2px", color: "var(--nn-text-secondary)" }}>
+            <option value="">+ person</option>
+            {memberOpts.filter((m) => !ids.includes(m.user_id)).map((m) => <option key={m.id} value={m.user_id}>{m.label}</option>)}
+          </select>
+        </div>
+      );
+    }
     if (p.type === "formula") return (
       <span style={{ fontSize: 13, color: "var(--nn-text-secondary)", fontFamily: "monospace" }}>{evalFormula(p.formula || "", r)}</span>
     );

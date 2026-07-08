@@ -26,6 +26,8 @@ import { NotchInputRules } from "./notch-input-rules";
 import { nnUploadFile, pickFile } from "@/notch/lib/nn-files";
 import { nnPrompt, nnAlert } from "@/notch/lib/nn-dialog";
 import { useNotchAuth as _useNotchAuth } from "@/notch/context/NotchAuthContext";
+import { useNotchPath } from "@/notch/context/NotchBaseContext";
+import { cctList, NN } from "@/notch/lib/nn-client";
 
 function buildToggleHeading(level: 1 | 2 | 3) {
   return {
@@ -171,6 +173,7 @@ const SLASH_ITEMS = [
         ])
         .run();
     } },
+  { group: "Basic", key: "linkpage", icon: "🔗", name: "Link to page", desc: "Insert link to another page.", cmd: (_e: any, ctx: any) => { ctx?.onOpenPagePicker?.(); } },
 ];
 
 export function NotionEditor({ content, onChange, placeholder = "Write, press '/' for commands, or ⌃Space for AI…", onCreateSubpage }: Props) {
@@ -223,6 +226,35 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
   const [blockMenu, setBlockMenu] = useState<{ top: number; left: number; el: HTMLElement } | null>(null);
   const [aiBusy, setAiBusy] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const notchPath = useNotchPath();
+  const [pagePicker, setPagePicker] = useState<{ x: number; y: number; query: string; pages: { id: string; title: string }[]; sel: number } | null>(null);
+  const openPagePicker = async () => {
+    let x = 40, y = 40;
+    try {
+      const rect = (window.getSelection()?.getRangeAt(0).getBoundingClientRect()) as DOMRect | undefined;
+      if (rect && wrapperRef.current) {
+        const wr = wrapperRef.current.getBoundingClientRect();
+        x = Math.max(0, rect.left - wr.left);
+        y = rect.bottom - wr.top + wrapperRef.current.scrollTop + 4;
+      }
+    } catch {}
+    setPagePicker({ x, y, query: "", pages: [], sel: 0 });
+    try {
+      const rows = await cctList<any>(NN.block);
+      const pages = rows
+        .filter((b: any) => (b.type === "page" || b.type === "database") && Number(b.archived) !== 1)
+        .map((b: any) => ({ id: String(b.id), title: b.title || "Untitled" }));
+      setPagePicker((p) => (p ? { ...p, pages } : p));
+    } catch {}
+  };
+  const insertPageLink = (id: string, title: string) => {
+    if (!editor) return;
+    const href = notchPath(`/p/${id}`);
+    editor.chain().focus()
+      .insertContent([{ type: "text", marks: [{ type: "link", attrs: { href } }], text: `📄 ${title || "Untitled"}` }])
+      .run();
+    setPagePicker(null);
+  };
 
   useEffect(() => {
     if (!editor) return;
@@ -454,7 +486,7 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
       const start = from - m[0].length;
       editor.chain().focus().deleteRange({ from: start, to: from }).run();
     }
-    item.cmd(editor, { onCreateSubpage, userId: user?.user_id });
+    item.cmd(editor, { onCreateSubpage, userId: user?.user_id, onOpenPagePicker: openPagePicker });
     pushRecentSlash(item.key);
     setSlash(null);
   };
@@ -664,6 +696,49 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
           </div>
         </>
       )}
+      {pagePicker && (() => {
+        const q = pagePicker.query.toLowerCase();
+        const filtered = (q ? pagePicker.pages.filter((p) => p.title.toLowerCase().includes(q)) : pagePicker.pages).slice(0, 40);
+        return (
+          <>
+            <div style={{ position: "fixed", inset: 0, zIndex: 90 }} onClick={() => setPagePicker(null)} />
+            <div className="nn-slash-menu" style={{ left: pagePicker.x, top: pagePicker.y, minWidth: 320, zIndex: 100 }}>
+              <div style={{ padding: 6, borderBottom: "1px solid var(--nn-border)" }}>
+                <input
+                  autoFocus
+                  value={pagePicker.query}
+                  onChange={(e) => setPagePicker((p) => (p ? { ...p, query: e.target.value, sel: 0 } : p))}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") { e.preventDefault(); setPagePicker(null); }
+                    else if (e.key === "ArrowDown") { e.preventDefault(); setPagePicker((p) => (p ? { ...p, sel: Math.min(filtered.length - 1, p.sel + 1) } : p)); }
+                    else if (e.key === "ArrowUp") { e.preventDefault(); setPagePicker((p) => (p ? { ...p, sel: Math.max(0, p.sel - 1) } : p)); }
+                    else if (e.key === "Enter") { e.preventDefault(); const it = filtered[pagePicker.sel]; if (it) insertPageLink(it.id, it.title); }
+                  }}
+                  placeholder="Search pages…"
+                  style={{ width: "100%", padding: "6px 8px", background: "transparent", border: "1px solid var(--nn-border)", borderRadius: 4, color: "var(--nn-text)", fontSize: 13 }}
+                />
+              </div>
+              <div style={{ maxHeight: 320, overflowY: "auto" }}>
+                {filtered.length === 0 ? (
+                  <div style={{ padding: 12, color: "var(--nn-text-tertiary)", fontSize: 12 }}>{pagePicker.pages.length === 0 ? "Loading…" : "No pages"}</div>
+                ) : filtered.map((it, i) => (
+                  <div
+                    key={it.id}
+                    className={`nn-slash-menu-item ${i === pagePicker.sel ? "selected" : ""}`}
+                    onMouseEnter={() => setPagePicker((p) => (p ? { ...p, sel: i } : p))}
+                    onMouseDown={(e) => { e.preventDefault(); insertPageLink(it.id, it.title); }}
+                  >
+                    <div className="nn-slash-icon">📄</div>
+                    <div className="nn-slash-body">
+                      <div className="nn-slash-name">{it.title}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        );
+      })()}
     </div>
   );
 }
