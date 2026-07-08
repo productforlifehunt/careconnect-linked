@@ -428,6 +428,23 @@ export default function NotchPage() {
               }}
             />
           )}
+          {!isDatabase && (() => {
+            // Live word/char count from the JSON content.
+            const walk = (n: any): string => {
+              if (!n) return "";
+              if (Array.isArray(n)) return n.map(walk).join(" ");
+              if (n.type === "text") return n.text || "";
+              return (n.content || []).map(walk).join(" ");
+            };
+            const txt = walk(content).trim();
+            const words = txt ? txt.split(/\s+/).length : 0;
+            const chars = txt.length;
+            return (
+              <div style={{ marginTop: 24, fontSize: 11, color: "var(--nn-text-tertiary)", textAlign: "right" }}>
+                {words.toLocaleString()} words · {chars.toLocaleString()} characters
+              </div>
+            );
+          })()}
           <NotchComments blockId={pageId} />
         </div>
       </div>
