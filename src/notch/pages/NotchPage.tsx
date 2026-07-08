@@ -408,6 +408,7 @@ export default function NotchPage() {
             <NotchDatabase databaseId={pageId} workspaceId={String(block.workspace_id || "")} />
           ) : (
             <NotionEditor
+              pageId={pageId}
               content={content}
               onChange={onContentChange}
               onCreateSubpage={async () => {
