@@ -45,10 +45,13 @@ export default function NotchPage() {
   const [showShare, setShowShare] = useState(false);
   const [locked, setLocked] = useState(false);
   const [fullWidth, setFullWidth] = useState(false);
+  const [verified, setVerified] = useState(false);
   const [snapshots, setSnapshots] = useState<Array<{ ts: number; content: any; title: string }>>([]);
   const [showHistory, setShowHistory] = useState(false);
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const saveTimer = useRef<any>(null);
+  const autoSnapTimer = useRef<any>(null);
+  const lastSnapAt = useRef<number>(0);
 
   useEffect(() => {
     if (!pageId) return;
