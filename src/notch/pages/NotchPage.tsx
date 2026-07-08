@@ -940,3 +940,52 @@ function Backlinks({ pageId }: { pageId: string }) {
   );
 }
 
+function extractText(doc: any): string {
+  if (!doc) return "";
+  const out: string[] = [];
+  const walk = (n: any) => {
+    if (!n) return;
+    if (Array.isArray(n)) { n.forEach(walk); return; }
+    if (n.type === "text" && typeof n.text === "string") out.push(n.text);
+    else if (n.type === "heading" || n.type === "paragraph") { (n.content || []).forEach(walk); out.push("\n"); }
+    else (n.content || []).forEach(walk);
+  };
+  walk(doc);
+  return out.join("").split("\n").map((l) => l.trim()).filter(Boolean).join("\n");
+}
+
+function DiffView({ oldText, newText }: { oldText: string; newText: string }) {
+  const a = oldText.split("\n");
+  const b = newText.split("\n");
+  const n = a.length, m = b.length;
+  const dp: number[][] = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) {
+    dp[i][j] = a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+  }
+  const rows: Array<{ t: " " | "-" | "+"; line: string }> = [];
+  let i = 0, j = 0;
+  while (i < n && j < m) {
+    if (a[i] === b[j]) { rows.push({ t: " ", line: a[i] }); i++; j++; }
+    else if (dp[i + 1][j] >= dp[i][j + 1]) { rows.push({ t: "-", line: a[i] }); i++; }
+    else { rows.push({ t: "+", line: b[j] }); j++; }
+  }
+  while (i < n) { rows.push({ t: "-", line: a[i++] }); }
+  while (j < m) { rows.push({ t: "+", line: b[j++] }); }
+  return (
+    <div style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 12, lineHeight: 1.5, maxHeight: 320, overflow: "auto", border: "1px solid var(--nn-border)", borderRadius: 4 }}>
+      {rows.map((r, k) => (
+        <div key={k} style={{
+          padding: "1px 8px",
+          background: r.t === "+" ? "rgba(80,200,120,0.15)" : r.t === "-" ? "rgba(224,62,62,0.13)" : "transparent",
+          color: r.t === "+" ? "#2f8f5a" : r.t === "-" ? "#c53030" : "var(--nn-text)",
+          whiteSpace: "pre-wrap",
+        }}>
+          <span style={{ opacity: 0.6, marginRight: 6 }}>{r.t}</span>{r.line || " "}
+        </div>
+      ))}
+      {rows.length === 0 && <div style={{ padding: 12, color: "var(--nn-text-tertiary)" }}>No differences.</div>}
+    </div>
+  );
+}
+
+
