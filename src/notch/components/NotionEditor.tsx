@@ -510,8 +510,9 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
   const runItem = (item: (typeof SLASH_ITEMS)[number] | undefined) => {
     if (!item || !editor) return;
     const { from } = editor.state.selection;
-    const before = editor.state.doc.textBetween(Math.max(0, from - 30), from, "\n");
-    const m = before.match(/\/([^/\s]*)$/);
+    const before = editor.state.doc.textBetween(Math.max(0, from - 60), from, "\n");
+    // Match same shape as the slash input handler above (allow spaces in the query).
+    const m = before.match(/\/([^/\n]{0,40})$/);
     if (m) {
       const start = from - m[0].length;
       editor.chain().focus().deleteRange({ from: start, to: from }).run();
