@@ -336,7 +336,8 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
     };
   }, [editor, slash, selected]);
 
-  // Hover handles: track hovered top-level block within ProseMirror
+  // Hover handles: track hovered top-level block within ProseMirror.
+  // Also captures right-click to open the same block menu (Notion parity).
   useEffect(() => {
     if (!editor) return;
     const dom = editor.view.dom as HTMLElement;
@@ -349,13 +350,35 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
       setHoverBlock({ top: nr.top - (wr?.top || 0), el: node });
     };
     const onLeave = () => setHoverBlock(null);
+    const onContext = (e: MouseEvent) => {
+      // Only intercept when caret / target is inside an editable block; let native
+      // menu appear on selected text so users can still access spellcheck if needed.
+      let node = e.target as HTMLElement | null;
+      while (node && node.parentElement !== dom) node = node.parentElement;
+      if (!node) return;
+      // Skip when user is right-clicking a link (browser link menu is more useful).
+      const tgt = e.target as HTMLElement;
+      if (tgt.closest("a[href]")) return;
+      e.preventDefault();
+      const wr = wrapperRef.current?.getBoundingClientRect();
+      const nr = node.getBoundingClientRect();
+      setHoverBlock({ top: nr.top - (wr?.top || 0), el: node });
+      setBlockMenu({
+        top: (e.clientY - (wr?.top || 0)),
+        left: (e.clientX - (wr?.left || 0)),
+        el: node,
+      });
+    };
     dom.addEventListener("mousemove", onMove);
     dom.addEventListener("mouseleave", onLeave);
+    dom.addEventListener("contextmenu", onContext);
     return () => {
       dom.removeEventListener("mousemove", onMove);
       dom.removeEventListener("mouseleave", onLeave);
+      dom.removeEventListener("contextmenu", onContext);
     };
   }, [editor]);
+
 
   // Get the accurate node range for a top-level DOM element via ProseMirror
   const nodeRangeFor = (el: HTMLElement): { from: number; to: number } | null => {
