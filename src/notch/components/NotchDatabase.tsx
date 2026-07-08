@@ -7,8 +7,19 @@ import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 
 interface Props { databaseId: string; workspaceId: string; }
 type ViewMode = "table" | "board" | "calendar" | "gallery" | "list";
-type PropType = "text" | "number" | "select" | "multiselect" | "date" | "checkbox" | "url" | "email" | "phone" | "person" | "formula" | "rollup";
-interface PropDef { key: string; name: string; type: PropType; options?: string[]; formula?: string; rollup?: { source: string; agg: "sum" | "avg" | "min" | "max" | "count" }; }
+type PropType = "text" | "number" | "select" | "multiselect" | "date" | "checkbox" | "url" | "email" | "phone" | "person" | "formula" | "rollup" | "button" | "ai";
+type ButtonAction =
+  | { kind: "set"; prop: string; value: string }
+  | { kind: "increment"; prop: string; by: number }
+  | { kind: "open"; url: string };
+interface PropDef {
+  key: string; name: string; type: PropType;
+  options?: string[];
+  formula?: string;
+  rollup?: { source: string; agg: "sum" | "avg" | "min" | "max" | "count" };
+  button?: { label: string; actions: ButtonAction[] };
+  ai?: { mode: "summary" | "translate" | "keywords"; lang?: string };
+}
 interface Row { id: string; title?: string; icon?: string; cover?: string; properties?: string; }
 
 const DEFAULT_SCHEMA: PropDef[] = [
