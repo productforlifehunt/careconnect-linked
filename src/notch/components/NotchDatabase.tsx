@@ -412,6 +412,16 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
   const endDateProp = dateProps[1] || null;
   const checkboxProp = useMemo(() => schema.find((p) => p.type === "checkbox") || null, [schema]);
   const [calView, setCalView] = useState<"month" | "week">("month");
+  // View-specific settings (persisted per-view in state; simple local UX toggles).
+  const [swimlaneKey, setSwimlaneKey] = useState<string>(""); // board: secondary group (select/multiselect prop key)
+  const [galleryCoverKey, setGalleryCoverKey] = useState<string>("__cover__"); // gallery: property (url) for card image
+  const [galleryFit, setGalleryFit] = useState<"cover" | "contain">("cover");
+  const [depKey, setDepKey] = useState<string>(""); // timeline: relation prop key used for dependencies
+  const selectishProps = useMemo(() => schema.filter((p) => p.type === "select" || p.type === "multiselect"), [schema]);
+  const urlProps = useMemo(() => schema.filter((p) => p.type === "url"), [schema]);
+  const relationProps = useMemo(() => schema.filter((p) => p.type === "relation"), [schema]);
+  const swimlaneProp = useMemo(() => schema.find((p) => p.key === swimlaneKey) || null, [schema, swimlaneKey]);
+  const depProp = useMemo(() => schema.find((p) => p.key === depKey && p.type === "relation") || null, [schema, depKey]);
 
   // Apply filters and sorts before rendering (all views use `visibleRows`)
   const evalCond = (row: Row, c: FilterCond): boolean => {
