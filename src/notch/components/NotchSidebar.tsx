@@ -9,6 +9,7 @@ import { unreadCount, tickReminderQueue } from "@/notch/lib/nn-notifications";
 import { nnPrompt, nnConfirm } from "@/notch/lib/nn-dialog";
 import { NotchContextMenu, CtxIcons } from "@/notch/components/NotchContextMenu";
 import { toast } from "@/hooks/use-toast";
+import { pushUndo } from "@/notch/lib/nn-workspace-undo";
 
 interface Block {
   id: string;
