@@ -33,15 +33,22 @@ export default function NotchTrash() {
 
   const load = async () => {
     setLoading(true);
-    const all = await cctList<any>(NN.block);
-    setAllBlocks(all);
-    setItems(
-      all
-        .filter((b: any) => Number(b.in_trash) === 1 || Number(b.archived) === 1)
-        .filter((b: any) => !user || String(b.author_id) === String(user.user_id) || String(b.created_by) === String(user.user_id))
-    );
-    setSelected(new Set());
-    setLoading(false);
+    setLoadErr(null);
+    try {
+      const all = await cctList<any>(NN.block);
+      setAllBlocks(all);
+      setItems(
+        all
+          .filter((b: any) => Number(b.in_trash) === 1 || Number(b.archived) === 1)
+          .filter((b: any) => !user || String(b.author_id) === String(user.user_id) || String(b.created_by) === String(user.user_id))
+      );
+      setSelected(new Set());
+    } catch (e: any) {
+      const raw = String(e?.message || "");
+      setLoadErr(/fetch|network/i.test(raw) ? "Can't reach the server." : "Couldn't load trash.");
+    } finally {
+      setLoading(false);
+    }
   };
   useEffect(() => { load(); }, [user]);
 
