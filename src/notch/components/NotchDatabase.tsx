@@ -72,6 +72,12 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
   const [dragCol, setDragCol] = useState<string | null>(null);
   const [automations, setAutomations] = useState<AutoRule[]>([]);
   const [showAuto, setShowAuto] = useState(false);
+  const [memberOpts, setMemberOpts] = useState<{ id: string; user_id: string; label: string }[]>([]);
+  useEffect(() => {
+    cctList<any>(NN.member, { workspace_id: workspaceId }).then((rows) => {
+      setMemberOpts(rows.map((r: any) => ({ id: String(r.id), user_id: String(r.user_id || ""), label: r.display_name || r.email || `User ${r.user_id}` })));
+    }).catch(() => setMemberOpts([]));
+  }, [workspaceId]);
 
   const load = useCallback(async () => {
     setLoading(true);
