@@ -237,6 +237,7 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
   const [selected, setSelected] = useState(0);
   const [hoverBlock, setHoverBlock] = useState<{ top: number; el: HTMLElement } | null>(null);
   const [blockMenu, setBlockMenu] = useState<{ top: number; left: number; el: HTMLElement } | null>(null);
+  const [tableCtx, setTableCtx] = useState<{ top: number; left: number } | null>(null);
   const [aiBusy, setAiBusy] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const notchPath = useNotchPath();
