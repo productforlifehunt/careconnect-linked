@@ -89,6 +89,8 @@ export default function NotchPage() {
           setFullWidth(!!props.full_width);
           setSmallText(!!props.small_text);
           setVerified(!!props.verified);
+          setVerifiedMeta(props.verified_meta || null);
+
           setSnapshots(Array.isArray(props.history) ? props.history : []);
         } catch { setContent(null); }
         // build breadcrumbs
