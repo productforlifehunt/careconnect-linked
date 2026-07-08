@@ -45,6 +45,7 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
   const [view, setView] = useState<ViewMode>("table");
   const [loading, setLoading] = useState(true);
   const [showSchema, setShowSchema] = useState(false);
+  const [showCondEditor, setShowCondEditor] = useState(false);
   const [dbBlock, setDbBlock] = useState<any>(null);
   const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
   const [filterKey, setFilterKey] = useState<string>("");
