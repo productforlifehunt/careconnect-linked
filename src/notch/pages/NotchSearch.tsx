@@ -273,3 +273,12 @@ export default function NotchSearch() {
     </div>
   );
 }
+
+const kbdStyle: React.CSSProperties = {
+  padding: "1px 5px",
+  background: "var(--nn-bg-secondary)",
+  border: "1px solid var(--nn-border)",
+  borderRadius: 3,
+  fontSize: 10,
+  fontFamily: "inherit",
+};
