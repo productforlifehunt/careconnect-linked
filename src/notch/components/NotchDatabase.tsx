@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useNotchPath } from "@/notch/context/NotchBaseContext";
 import { cctList, cctCreate, cctUpdate, NN } from "@/notch/lib/nn-client";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
+import { toast } from "@/hooks/use-toast";
 
 interface Props { databaseId: string; workspaceId: string; }
 type ViewMode = "table" | "board" | "calendar" | "timeline" | "gallery" | "list" | "chart";
@@ -13,6 +14,20 @@ type ButtonAction =
   | { kind: "increment"; prop: string; by: number }
   | { kind: "open"; url: string };
 type CondRule = { prop: string; op: "eq" | "neq" | "contains" | "gt" | "lt" | "empty" | "notempty"; value: string; color: string };
+type AutoAction =
+  | { kind: "set"; prop: string; value: string }
+  | { kind: "increment"; prop: string; by: number }
+  | { kind: "notify"; message: string }
+  | { kind: "webhook"; url: string };
+type AutoRule = {
+  id: string;
+  name: string;
+  trigger: "created" | "propChanged";
+  prop?: string;      // for propChanged
+  to?: string;        // optional match value
+  actions: AutoAction[];
+  enabled: boolean;
+};
 interface PropDef {
   key: string; name: string; type: PropType;
   options?: string[];
@@ -53,6 +68,8 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
   const [sortKey, setSortKey] = useState<string>("");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [dragCol, setDragCol] = useState<string | null>(null);
+  const [automations, setAutomations] = useState<AutoRule[]>([]);
+  const [showAuto, setShowAuto] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -65,7 +82,8 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
       if (Array.isArray(p.schema) && p.schema.length) setSchema(p.schema);
       else setSchema(DEFAULT_SCHEMA);
       setCondRules(Array.isArray(p.condRules) ? p.condRules : []);
-    } catch { setSchema(DEFAULT_SCHEMA); setCondRules([]); }
+      setAutomations(Array.isArray(p.automations) ? p.automations : []);
+    } catch { setSchema(DEFAULT_SCHEMA); setCondRules([]); setAutomations([]); }
     setRows(all.filter((b: any) => String(b.parent_id) === String(databaseId) && Number(b.archived) !== 1));
     setLoading(false);
   }, [databaseId, workspaceId]);
@@ -84,6 +102,43 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
     try { props = dbBlock?.properties ? JSON.parse(dbBlock.properties) : {}; } catch {}
     props.condRules = next;
     await cctUpdate(NN.block, databaseId, { properties: JSON.stringify(props) });
+  };
+  const saveAutomations = async (next: AutoRule[]) => {
+    setAutomations(next);
+    let props: any = {};
+    try { props = dbBlock?.properties ? JSON.parse(dbBlock.properties) : {}; } catch {}
+    props.automations = next;
+    await cctUpdate(NN.block, databaseId, { properties: JSON.stringify(props) });
+  };
+
+  const runAutomationActions = async (r: Row, actions: AutoAction[]) => {
+    let props: any = {};
+    try { props = r.properties ? JSON.parse(r.properties) : {}; } catch {}
+    let touched = false;
+    for (const a of actions) {
+      if (a.kind === "set") { props[a.prop] = a.value; touched = true; }
+      else if (a.kind === "increment") { props[a.prop] = (Number(props[a.prop]) || 0) + (a.by || 1); touched = true; }
+      else if (a.kind === "notify") {
+        try { toast({ title: a.message || "Automation ran" }); } catch {}
+      } else if (a.kind === "webhook" && a.url) {
+        try { fetch(a.url, { method: "POST", mode: "no-cors", headers: { "content-type": "application/json" }, body: JSON.stringify({ row: { id: r.id, title: r.title, properties: props } }) }); } catch {}
+      }
+    }
+    if (touched) {
+      await cctUpdate(NN.block, r.id, { properties: JSON.stringify(props) });
+      setRows((rs) => rs.map((x) => x.id === r.id ? { ...x, properties: JSON.stringify(props) } : x));
+    }
+  };
+  const fireAutomations = async (r: Row, trigger: "created" | "propChanged", changedProp?: string, newValue?: any) => {
+    for (const rule of automations) {
+      if (!rule.enabled) continue;
+      if (rule.trigger !== trigger) continue;
+      if (trigger === "propChanged") {
+        if (rule.prop && rule.prop !== changedProp) continue;
+        if (rule.to !== undefined && rule.to !== "" && String(newValue ?? "") !== rule.to) continue;
+      }
+      await runAutomationActions(r, rule.actions);
+    }
   };
 
   // Compute background color for a row/cell given the conditional-formatting rules.
@@ -129,6 +184,7 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
     props[key] = value;
     await cctUpdate(NN.block, r.id, { properties: JSON.stringify(props) });
     setRows((rs) => rs.map((x) => x.id === r.id ? { ...x, properties: JSON.stringify(props) } : x));
+    fireAutomations({ ...r, properties: JSON.stringify(props) }, "propChanged", key, value);
   };
 
   // Evaluate a formula expression in a sandbox with numeric props and Notion-style helpers.
@@ -219,6 +275,7 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
       created_by: user?.user_id || 0, last_edited_by: user?.user_id || 0,
     });
     await load();
+    fireAutomations({ id, title: "", properties: JSON.stringify(preset) } as Row, "created");
     nav(path(`/p/${id}`));
   };
   const archiveRow = async (id: string) => {
@@ -415,6 +472,7 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
           <button onClick={() => setSortDir(sortDir === "asc" ? "desc" : "asc")} className="nn-topbar-btn" title="Toggle sort direction">{sortDir === "asc" ? "↑" : "↓"}</button>
         )}
         <button onClick={() => setShowCondEditor(true)} className="nn-topbar-btn" title="Conditional formatting">🎨</button>
+        <button onClick={() => setShowAuto(true)} className="nn-topbar-btn" title="Automations">⚡</button>
         <button onClick={() => setShowSchema(true)} className="nn-topbar-btn"><Settings2 size={13} /> Properties</button>
         <button onClick={() => addRow()} className="nn-topbar-btn"><Plus size={13} /> New</button>
       </div>
@@ -559,6 +617,9 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
       )}
       {showCondEditor && (
         <CondEditor rules={condRules} schema={schema} onClose={() => setShowCondEditor(false)} onSave={(r) => { saveCondRules(r); setShowCondEditor(false); }} />
+      )}
+      {showAuto && (
+        <AutomationEditor rules={automations} schema={schema} onClose={() => setShowAuto(false)} onSave={(r) => { saveAutomations(r); setShowAuto(false); }} />
       )}
     </div>
   );
@@ -1001,6 +1062,96 @@ function CondEditor({ rules, schema, onClose, onSave }: {
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 20 }}>
           <button onClick={onClose} className="nn-topbar-btn">Cancel</button>
           <button onClick={() => onSave(draft)} className="nn-btn-primary">Save</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AutomationEditor({ rules, schema, onClose, onSave }: {
+  rules: AutoRule[]; schema: PropDef[];
+  onClose: () => void; onSave: (r: AutoRule[]) => void;
+}) {
+  const [list, setList] = useState<AutoRule[]>(rules);
+  const upd = (i: number, patch: Partial<AutoRule>) => setList((L) => L.map((r, j) => j === i ? { ...r, ...patch } : r));
+  const updAction = (i: number, ai: number, patch: any) => setList((L) => L.map((r, j) => j === i ? { ...r, actions: r.actions.map((a, k) => k === ai ? { ...a, ...patch } : a) } : r));
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ background: "var(--nn-bg)", borderRadius: 6, width: 620, maxHeight: "85vh", overflow: "auto", padding: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+          <div style={{ fontWeight: 600, fontSize: 15 }}>⚡ Automations</div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-tertiary)", fontSize: 18 }}>×</button>
+        </div>
+        <div style={{ fontSize: 12, color: "var(--nn-text-tertiary)", marginBottom: 12 }}>Run actions when a row is created or a property changes.</div>
+        {list.map((r, i) => (
+          <div key={r.id} style={{ border: "1px solid var(--nn-border)", borderRadius: 4, padding: 10, marginBottom: 8 }}>
+            <div style={{ display: "flex", gap: 6, marginBottom: 6, alignItems: "center" }}>
+              <input value={r.name} onChange={(e) => upd(i, { name: e.target.value })} placeholder="Name" style={{ flex: 1, background: "transparent", border: "1px solid var(--nn-border)", borderRadius: 3, padding: "3px 6px", fontSize: 13, color: "var(--nn-text)" }} />
+              <label style={{ fontSize: 12, display: "flex", gap: 4, alignItems: "center" }}>
+                <input type="checkbox" checked={r.enabled} onChange={(e) => upd(i, { enabled: e.target.checked })} /> On
+              </label>
+              <button onClick={() => setList((L) => L.filter((_, j) => j !== i))} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-red)", fontSize: 16 }}>×</button>
+            </div>
+            <div style={{ display: "flex", gap: 6, marginBottom: 6, fontSize: 12, alignItems: "center" }}>
+              <span>When</span>
+              <select value={r.trigger} onChange={(e) => upd(i, { trigger: e.target.value as any })} style={{ padding: 3, fontSize: 12 }}>
+                <option value="created">Row created</option>
+                <option value="propChanged">Property changes</option>
+              </select>
+              {r.trigger === "propChanged" && (
+                <>
+                  <select value={r.prop || ""} onChange={(e) => upd(i, { prop: e.target.value })} style={{ padding: 3, fontSize: 12 }}>
+                    <option value="">any property</option>
+                    {schema.map((p) => <option key={p.key} value={p.key}>{p.name}</option>)}
+                  </select>
+                  <span>equals</span>
+                  <input value={r.to || ""} onChange={(e) => upd(i, { to: e.target.value })} placeholder="(any)" style={{ background: "transparent", border: "1px solid var(--nn-border)", borderRadius: 3, padding: "2px 5px", fontSize: 12, width: 80, color: "var(--nn-text)" }} />
+                </>
+              )}
+            </div>
+            <div style={{ fontSize: 12, marginBottom: 4 }}>Then:</div>
+            {r.actions.map((a, ai) => (
+              <div key={ai} style={{ display: "flex", gap: 4, marginBottom: 4, fontSize: 12, alignItems: "center", paddingLeft: 12 }}>
+                <select value={a.kind} onChange={(e) => {
+                  const k = e.target.value;
+                  const next: any = k === "set" ? { kind: "set", prop: schema[0]?.key || "", value: "" }
+                    : k === "increment" ? { kind: "increment", prop: schema.find(p => p.type === "number")?.key || "", by: 1 }
+                    : k === "notify" ? { kind: "notify", message: "" }
+                    : { kind: "webhook", url: "" };
+                  updAction(i, ai, next);
+                }} style={{ padding: 3, fontSize: 12 }}>
+                  <option value="set">Set property</option>
+                  <option value="increment">Increment number</option>
+                  <option value="notify">Show toast</option>
+                  <option value="webhook">POST webhook</option>
+                </select>
+                {(a.kind === "set" || a.kind === "increment") && (
+                  <select value={(a as any).prop} onChange={(e) => updAction(i, ai, { prop: e.target.value })} style={{ padding: 3, fontSize: 12 }}>
+                    {schema.map((p) => <option key={p.key} value={p.key}>{p.name}</option>)}
+                  </select>
+                )}
+                {a.kind === "set" && (
+                  <input value={(a as any).value} onChange={(e) => updAction(i, ai, { value: e.target.value })} placeholder="value" style={{ background: "transparent", border: "1px solid var(--nn-border)", borderRadius: 3, padding: "2px 5px", fontSize: 12, flex: 1, color: "var(--nn-text)" }} />
+                )}
+                {a.kind === "increment" && (
+                  <input type="number" value={(a as any).by} onChange={(e) => updAction(i, ai, { by: Number(e.target.value) || 1 })} style={{ background: "transparent", border: "1px solid var(--nn-border)", borderRadius: 3, padding: "2px 5px", fontSize: 12, width: 60, color: "var(--nn-text)" }} />
+                )}
+                {a.kind === "notify" && (
+                  <input value={(a as any).message} onChange={(e) => updAction(i, ai, { message: e.target.value })} placeholder="Toast message" style={{ background: "transparent", border: "1px solid var(--nn-border)", borderRadius: 3, padding: "2px 5px", fontSize: 12, flex: 1, color: "var(--nn-text)" }} />
+                )}
+                {a.kind === "webhook" && (
+                  <input value={(a as any).url} onChange={(e) => updAction(i, ai, { url: e.target.value })} placeholder="https://…" style={{ background: "transparent", border: "1px solid var(--nn-border)", borderRadius: 3, padding: "2px 5px", fontSize: 12, flex: 1, color: "var(--nn-text)" }} />
+                )}
+                <button onClick={() => upd(i, { actions: r.actions.filter((_, k) => k !== ai) })} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nn-text-tertiary)" }}>×</button>
+              </div>
+            ))}
+            <button onClick={() => upd(i, { actions: [...r.actions, { kind: "set", prop: schema[0]?.key || "", value: "" }] })} className="nn-topbar-btn" style={{ fontSize: 11, marginLeft: 12 }}>+ Action</button>
+          </div>
+        ))}
+        <button onClick={() => setList([...list, { id: `a_${Date.now()}`, name: "New automation", trigger: "propChanged", actions: [{ kind: "set", prop: schema[0]?.key || "", value: "" }], enabled: true }])} className="nn-topbar-btn" style={{ fontSize: 12 }}>+ Add automation</button>
+        <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", marginTop: 12 }}>
+          <button onClick={onClose} className="nn-topbar-btn" style={{ fontSize: 12 }}>Cancel</button>
+          <button onClick={() => onSave(list)} className="nn-btn-primary" style={{ fontSize: 12 }}>Save</button>
         </div>
       </div>
     </div>
