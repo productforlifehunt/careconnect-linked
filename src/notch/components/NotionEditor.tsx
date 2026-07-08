@@ -598,7 +598,21 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
           <div style={{ position: "fixed", inset: 0, zIndex: 90 }} onClick={() => setBlockMenu(null)} />
           <div className="nn-block-menu" style={{ top: blockMenu.top + 20, left: blockMenu.left, minWidth: 200 }}>
             <div className="nn-sidebar-item" onClick={duplicateBlock}><span className="nn-title">Duplicate</span></div>
+            <div className="nn-sidebar-item" onClick={() => {
+              if (!blockMenu) return;
+              const range = nodeRangeFor(blockMenu.el);
+              const anchor = range ? `#b-${range.from}` : "";
+              try { navigator.clipboard.writeText(window.location.href.split("#")[0] + anchor); } catch { /* noop */ }
+              setBlockMenu(null);
+            }}><span className="nn-title">Copy link to block</span></div>
+            <div className="nn-sidebar-item" onClick={() => {
+              if (!blockMenu) return;
+              const range = nodeRangeFor(blockMenu.el);
+              window.dispatchEvent(new CustomEvent("nn:open-comment", { detail: { from: range?.from, to: range?.to } }));
+              setBlockMenu(null);
+            }}><span className="nn-title">Comment</span></div>
             <div className="nn-sidebar-item" onClick={deleteBlock} style={{ color: "var(--nn-danger, #e03e3e)" }}><span className="nn-title">Delete</span></div>
+
             <div style={{ borderTop: "1px solid var(--nn-border)", margin: "4px 0" }} />
             <div style={{ fontSize: 11, color: "var(--nn-text-tertiary)", padding: "4px 8px", textTransform: "uppercase", letterSpacing: 0.4 }}>Turn into</div>
             {[
