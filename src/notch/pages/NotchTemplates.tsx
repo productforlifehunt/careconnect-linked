@@ -16,6 +16,7 @@ export default function NotchTemplates() {
   const [items, setItems] = useState<Template[]>([]);
   const [wsId, setWsId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadErr, setLoadErr] = useState<string | null>(null);
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<string>("All");
