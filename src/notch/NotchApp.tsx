@@ -179,17 +179,18 @@ function Shell({ standalone }: { standalone: boolean }) {
       ) : (
         <NotchSidebar />
       )}
-      <div className="nn-main">
+      <div className="nn-main" style={isMobile ? { paddingBottom: "calc(56px + env(safe-area-inset-bottom))" } : undefined}>
         {isMobile && (
-          <div style={{ display: "flex", alignItems: "center", height: 45, padding: "0 8px", borderBottom: "1px solid var(--nn-border)", gap: 6 }}>
+          <div className="nn-mobile-topbar">
             <button className="nn-topbar-btn" onClick={() => setDrawerOpen((s) => !s)} aria-label="Menu">
               {drawerOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
-            <div style={{ fontWeight: 600, fontSize: 14 }}>Notch Note</div>
+            <div style={{ fontWeight: 600, fontSize: 14, flex: 1, textAlign: "center", marginRight: 30 }}>Notch Note</div>
           </div>
         )}
         <Routes>
           <Route index element={<NotchHome />} />
+          <Route path="home" element={<NotchHome />} />
           <Route path="p/:pageId" element={<NotchPage />} />
           <Route path="search" element={<NotchSearch />} />
           <Route path="settings" element={<NotchSettings />} />
@@ -197,9 +198,9 @@ function Shell({ standalone }: { standalone: boolean }) {
           <Route path="templates" element={<NotchTemplates />} />
           <Route path="notifications" element={<NotchNotifications />} />
           <Route path="*" element={<Navigate to={standalone ? "/" : "/notch"} replace />} />
-
         </Routes>
       </div>
+      {isMobile && <MobileTabbar onOpenMenu={() => setDrawerOpen(true)} onQuickFind={() => setQuickFind(true)} standalone={standalone} />}
       {quickFind && <NotchQuickFind onClose={() => setQuickFind(false)} />}
       {askAI && <NotchAskAI onClose={() => setAskAI(false)} />}
       {shortcuts && <NotchShortcuts onClose={() => setShortcuts(false)} />}
