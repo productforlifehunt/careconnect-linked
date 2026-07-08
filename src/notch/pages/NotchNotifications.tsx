@@ -26,14 +26,19 @@ export default function NotchNotifications() {
   const nav = useNavigate();
   const [items, setItems] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadErr, setLoadErr] = useState<string | null>(null);
   const [tab, setTab] = useState<TabKey>("all");
 
   const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
+    setLoadErr(null);
     try {
       await tickReminderQueue(String(user.user_id));
       setItems(await listNotifications(String(user.user_id)));
+    } catch (e: any) {
+      const raw = String(e?.message || "");
+      setLoadErr(/fetch|network/i.test(raw) ? "Can't reach the server." : "Couldn't load notifications.");
     } finally {
       setLoading(false);
     }
