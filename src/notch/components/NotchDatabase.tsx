@@ -521,9 +521,13 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
     if (p.type === "date") return (
       <input type="date" value={v} onChange={(e) => setProp(r, p.key, e.target.value)} style={{ background: "transparent", border: "none", color: "var(--nn-text)", fontSize: 13 }} />
     );
-    if (p.type === "number") return (
-      <input type="number" value={v} onChange={(e) => setProp(r, p.key, e.target.value)} style={{ background: "transparent", border: "none", color: "var(--nn-text)", fontSize: 13, width: "100%" }} />
-    );
+    if (p.type === "number") {
+      const fmt = p.numberFormat || "plain";
+      const [editing, display] = [fmt === "plain" || v === "" || v === null || v === undefined, formatNumber(v, fmt)];
+      return editing
+        ? <input type="number" value={v} onChange={(e) => setProp(r, p.key, e.target.value)} style={{ background: "transparent", border: "none", color: "var(--nn-text)", fontSize: 13, width: "100%" }} />
+        : <input value={display} onFocus={(e) => { e.currentTarget.type = "number"; e.currentTarget.value = String(v ?? ""); }} onBlur={(e) => { e.currentTarget.type = "text"; e.currentTarget.value = display; }} onChange={(e) => setProp(r, p.key, e.currentTarget.value)} style={{ background: "transparent", border: "none", color: "var(--nn-text)", fontSize: 13, width: "100%" }} />;
+    }
     if (p.type === "multiselect") {
       const arr: string[] = Array.isArray(v) ? v : (v ? String(v).split(",").map((s) => s.trim()).filter(Boolean) : []);
       const toggle = (opt: string) => {
