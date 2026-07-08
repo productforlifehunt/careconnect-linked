@@ -414,12 +414,55 @@ export const VideoBlock = Node.create({
 /* ─── PDF Block ──────────────────────────────────────────────── */
 function PdfView({ node, updateAttributes }: any) {
   const src = node.attrs.src || "";
+  const [page, setPage] = useState<number>(1);
+  const [draft, setDraft] = useState("");
+  const [showNotes, setShowNotes] = useState(true);
+  let notes: { page: number; text: string; ts: number }[] = [];
+  try { notes = JSON.parse(node.attrs.notes || "[]"); } catch { notes = []; }
+  const saveNotes = (next: typeof notes) => updateAttributes({ notes: JSON.stringify(next) });
+  const addNote = () => {
+    const t = draft.trim();
+    if (!t) return;
+    saveNotes([...notes, { page, text: t, ts: Date.now() }]);
+    setDraft("");
+  };
+  const removeNote = (ts: number) => saveNotes(notes.filter((n) => n.ts !== ts));
+  const pageSrc = src ? `${src}${src.includes("#") ? "&" : "#"}page=${page}` : "";
   return (
     <NodeViewWrapper as="figure" className="nn-pdf" contentEditable={false}>
       {src ? (
         <>
-          <div className="nn-pdf-head"><FileText size={14} /> <a href={src} target="_blank" rel="noopener">{node.attrs.name || src}</a></div>
-          <iframe src={src} title="PDF" style={{ width: "100%", height: 480, border: "1px solid var(--nn-border)", borderRadius: 6 }} />
+          <div className="nn-pdf-head" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <FileText size={14} />
+            <a href={src} target="_blank" rel="noopener" style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{node.attrs.name || src}</a>
+            <label style={{ fontSize: 11, color: "var(--nn-text-secondary)" }}>Page</label>
+            <input type="number" min={1} value={page} onChange={(e) => setPage(Math.max(1, Number(e.target.value) || 1))} style={{ width: 56, padding: "2px 4px", background: "var(--nn-bg-secondary)", border: "1px solid var(--nn-border)", borderRadius: 3, color: "var(--nn-text)", fontSize: 12 }} />
+            <button onClick={() => setShowNotes((v) => !v)} title="Toggle annotations" style={{ background: "transparent", border: "1px solid var(--nn-border)", color: "var(--nn-text)", borderRadius: 3, padding: "2px 8px", cursor: "pointer", fontSize: 11 }}>
+              {showNotes ? "Hide" : "Show"} notes ({notes.length})
+            </button>
+          </div>
+          <div style={{ display: "flex", gap: 12 }}>
+            <iframe src={pageSrc} title="PDF" style={{ flex: showNotes ? 2 : 1, height: 480, border: "1px solid var(--nn-border)", borderRadius: 6 }} />
+            {showNotes && (
+              <div style={{ flex: 1, minWidth: 220, maxWidth: 320, height: 480, border: "1px solid var(--nn-border)", borderRadius: 6, padding: 8, display: "flex", flexDirection: "column", gap: 6, background: "var(--nn-bg-secondary)" }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "var(--nn-text)" }}>Annotations</div>
+                <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
+                  {notes.length === 0 && <div style={{ fontSize: 12, color: "var(--nn-text-tertiary)", padding: "8px 0" }}>No notes yet. Add one below.</div>}
+                  {[...notes].sort((a, b) => a.page - b.page || a.ts - b.ts).map((n) => (
+                    <div key={n.ts} style={{ padding: 6, background: "var(--nn-bg)", border: "1px solid var(--nn-border)", borderRadius: 4, display: "flex", gap: 6, alignItems: "flex-start" }}>
+                      <button onClick={() => setPage(n.page)} title="Jump to page" style={{ background: "var(--nn-blue-bg, rgba(35,131,226,0.15))", color: "var(--nn-blue, #2383e2)", border: "none", borderRadius: 3, padding: "1px 6px", fontSize: 10, cursor: "pointer", flexShrink: 0 }}>p.{n.page}</button>
+                      <div style={{ flex: 1, fontSize: 12, color: "var(--nn-text)", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{n.text}</div>
+                      <button onClick={() => removeNote(n.ts)} title="Delete" style={{ background: "transparent", border: "none", color: "var(--nn-text-tertiary)", cursor: "pointer", fontSize: 12, padding: 0 }}>×</button>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: "flex", gap: 4 }}>
+                  <textarea value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={`Note on page ${page}…`} rows={2} style={{ flex: 1, background: "var(--nn-bg)", border: "1px solid var(--nn-border)", borderRadius: 3, padding: "4px 6px", color: "var(--nn-text)", fontSize: 12, resize: "vertical" }} onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); addNote(); } }} />
+                </div>
+                <button onClick={addNote} disabled={!draft.trim()} style={{ background: "var(--nn-blue, #2383e2)", color: "white", border: "none", borderRadius: 3, padding: "4px 10px", cursor: draft.trim() ? "pointer" : "not-allowed", opacity: draft.trim() ? 1 : 0.5, fontSize: 12 }}>Add note</button>
+              </div>
+            )}
+          </div>
         </>
       ) : (
         <input placeholder="Paste PDF URL…" onKeyDown={e => { if (e.key === "Enter") updateAttributes({ src: (e.target as HTMLInputElement).value.trim() }); }} />
@@ -432,9 +475,9 @@ export const PdfBlock = Node.create({
   group: "block",
   atom: true,
   selectable: true,
-  addAttributes() { return { src: { default: "" }, name: { default: "" } }; },
-  parseHTML() { return [{ tag: "figure[data-pdf]", getAttrs: (el) => ({ src: (el as HTMLElement).getAttribute("data-src") || "", name: (el as HTMLElement).getAttribute("data-name") || "" }) }]; },
-  renderHTML({ HTMLAttributes, node }) { return ["figure", mergeAttributes({ "data-pdf": "", "data-src": node.attrs.src, "data-name": node.attrs.name, class: "nn-pdf" }, HTMLAttributes)]; },
+  addAttributes() { return { src: { default: "" }, name: { default: "" }, notes: { default: "[]" } }; },
+  parseHTML() { return [{ tag: "figure[data-pdf]", getAttrs: (el) => ({ src: (el as HTMLElement).getAttribute("data-src") || "", name: (el as HTMLElement).getAttribute("data-name") || "", notes: (el as HTMLElement).getAttribute("data-notes") || "[]" }) }]; },
+  renderHTML({ HTMLAttributes, node }) { return ["figure", mergeAttributes({ "data-pdf": "", "data-src": node.attrs.src, "data-name": node.attrs.name, "data-notes": node.attrs.notes, class: "nn-pdf" }, HTMLAttributes)]; },
   addNodeView() { return ReactNodeViewRenderer(PdfView); },
 });
 
