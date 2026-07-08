@@ -320,7 +320,6 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
   const [calView, setCalView] = useState<"month" | "week">("month");
 
   // Apply filters and sorts before rendering (all views use `visibleRows`)
-  const visibleRows = useMemo(() => {
   const evalCond = (row: Row, c: FilterCond): boolean => {
     const raw = c.key === "__title__" ? (row.title || "") : getProp(row, c.key);
     const s = String(raw ?? "").toLowerCase();
