@@ -53,6 +53,13 @@ export default function NotchPage() {
   const saveTimer = useRef<any>(null);
   const autoSnapTimer = useRef<any>(null);
   const lastSnapAt = useRef<number>(0);
+  const [online, setOnline] = useState(typeof navigator === "undefined" ? true : navigator.onLine);
+  const [saving, setSaving] = useState<"idle" | "pending" | "saved">("idle");
+  useEffect(() => {
+    const on = () => setOnline(true); const off = () => setOnline(false);
+    window.addEventListener("online", on); window.addEventListener("offline", off);
+    return () => { window.removeEventListener("online", on); window.removeEventListener("offline", off); };
+  }, []);
 
   useEffect(() => {
     if (!pageId) return;
@@ -235,6 +242,7 @@ export default function NotchPage() {
 
   return (
     <>
+      {!online && <div className="nn-offline-pill">Offline — changes will sync when back online</div>}
       <div className="nn-topbar">
         <div className="nn-breadcrumb" style={{ display: "flex", alignItems: "center", gap: 4 }}>
           {crumbs.map((c, i) => (
