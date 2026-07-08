@@ -246,3 +246,39 @@ function SettingRow({ icon, label, hint, children }: { icon: React.ReactNode; la
     </div>
   );
 }
+
+function Switch({ checked, onChange }: { checked: boolean; onChange: () => void }) {
+  return (
+    <button
+      role="switch"
+      aria-checked={checked}
+      onClick={onChange}
+      style={{
+        width: 32,
+        height: 18,
+        borderRadius: 999,
+        border: "none",
+        cursor: "pointer",
+        background: checked ? "var(--nn-blue, #2383e2)" : "var(--nn-border, #d3d1cb)",
+        position: "relative",
+        transition: "background 120ms ease",
+        padding: 0,
+        flexShrink: 0,
+      }}
+    >
+      <span
+        style={{
+          position: "absolute",
+          top: 2,
+          left: checked ? 16 : 2,
+          width: 14,
+          height: 14,
+          borderRadius: "50%",
+          background: "#fff",
+          boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
+          transition: "left 120ms ease",
+        }}
+      />
+    </button>
+  );
+}
