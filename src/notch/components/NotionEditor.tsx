@@ -155,6 +155,8 @@ const SLASH_ITEMS = [
     cmd: (e: any) => e.chain().focus().insertContent({ type: "tabsBlock", attrs: { tabs: [{ label: "Tab 1", content: "" }, { label: "Tab 2", content: "" }] } }).run() },
   { group: "Advanced", key: "html", icon: "</>", name: "HTML embed", desc: "Render custom HTML.",
     cmd: (e: any) => e.chain().focus().insertContent({ type: "htmlEmbed", attrs: { html: "" } }).run() },
+  { group: "Advanced", key: "whiteboard", icon: "🎨", name: "Whiteboard", desc: "Freehand drawing canvas.",
+    cmd: (e: any) => e.chain().focus().insertContent({ type: "whiteboard", attrs: { strokes: "[]" } }).run() },
   { group: "Media", key: "audio", icon: "🎵", name: "Audio", desc: "Embed audio (mp3, wav).",
     cmd: (e: any) => e.chain().focus().insertContent({ type: "audio", attrs: { src: "" } }).run() },
   { group: "Media", key: "video2", icon: "🎬", name: "Video", desc: "Embed video file (mp4, webm).",
