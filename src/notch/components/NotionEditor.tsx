@@ -332,6 +332,91 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
     setBlockMenu(null);
   };
 
+  // Turn-into: swap the top-level block for a different node type at the same position.
+  const turnInto = (kind: "paragraph" | "h1" | "h2" | "h3" | "ul" | "ol" | "todo" | "quote" | "code" | "callout") => {
+    if (!editor || !blockMenu) return;
+    const range = nodeRangeFor(blockMenu.el);
+    if (!range) { setBlockMenu(null); return; }
+    // Move selection into that block first, then apply the transform via TipTap chains.
+    editor.chain().focus().setTextSelection({ from: range.from + 1, to: range.from + 1 }).run();
+    const c = editor.chain().focus();
+    if (kind === "paragraph") c.setParagraph().run();
+    else if (kind === "h1") c.setHeading({ level: 1 }).run();
+    else if (kind === "h2") c.setHeading({ level: 2 }).run();
+    else if (kind === "h3") c.setHeading({ level: 3 }).run();
+    else if (kind === "ul") c.toggleBulletList().run();
+    else if (kind === "ol") c.toggleOrderedList().run();
+    else if (kind === "todo") c.toggleTaskList().run();
+    else if (kind === "quote") c.toggleBlockquote().run();
+    else if (kind === "code") c.toggleCodeBlock().run();
+    else if (kind === "callout") {
+      const r2 = nodeRangeFor(blockMenu.el);
+      if (!r2) return;
+      const slice = editor.state.doc.slice(r2.from, r2.to).content.toJSON();
+      editor.chain().focus()
+        .deleteRange(r2)
+        .insertContentAt(r2.from, { type: "callout", attrs: { icon: "💡", color: "default" }, content: Array.isArray(slice) ? slice : [{ type: "paragraph" }] })
+        .run();
+    }
+    setBlockMenu(null);
+  };
+
+  // Apply a background color to the hovered top-level block (persisted via a class attribute
+  // on the DOM node — falls back to inline style on the editor DOM since PM doesn't have a
+  // generic block color mark. Users get instant feedback; not stored in JSON.)
+  const colorBlock = (bg: string) => {
+    if (!blockMenu) return;
+    blockMenu.el.style.background = bg;
+    blockMenu.el.style.borderRadius = "4px";
+    blockMenu.el.style.padding = bg && bg !== "transparent" ? "4px 8px" : "";
+    setBlockMenu(null);
+  };
+
+  // Drag-to-reorder: user grabs ⋮⋮ and drops on another block.
+  const [dragBlock, setDragBlock] = useState<HTMLElement | null>(null);
+  const onHandleDragStart = (e: React.DragEvent) => {
+    if (!hoverBlock) return;
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/nn-block", "1");
+    setDragBlock(hoverBlock.el);
+  };
+  useEffect(() => {
+    if (!editor || !dragBlock) return;
+    const dom = editor.view.dom as HTMLElement;
+    const onOver = (e: DragEvent) => {
+      if (!dragBlock) return;
+      e.preventDefault();
+      (e as any).dataTransfer.dropEffect = "move";
+    };
+    const onDrop = (e: DragEvent) => {
+      e.preventDefault();
+      if (!dragBlock || !editor) return;
+      let target = e.target as HTMLElement | null;
+      while (target && target.parentElement !== dom) target = target.parentElement;
+      if (!target || target === dragBlock) { setDragBlock(null); return; }
+      const srcRange = nodeRangeFor(dragBlock);
+      const tgtRange = nodeRangeFor(target);
+      if (!srcRange || !tgtRange) { setDragBlock(null); return; }
+      const slice = editor.state.doc.slice(srcRange.from, srcRange.to).content.toJSON();
+      // Insert before target if moving up, after if moving down.
+      const insertAt = tgtRange.from < srcRange.from ? tgtRange.from : tgtRange.to;
+      editor.chain().focus()
+        .deleteRange(srcRange)
+        // After deleteRange, indices shift when insertAt was after the removed range.
+        .insertContentAt(insertAt > srcRange.from ? insertAt - (srcRange.to - srcRange.from) : insertAt, slice as any)
+        .run();
+      setDragBlock(null);
+    };
+    dom.addEventListener("dragover", onOver);
+    dom.addEventListener("drop", onDrop);
+    return () => {
+      dom.removeEventListener("dragover", onOver);
+      dom.removeEventListener("drop", onDrop);
+    };
+  }, [editor, dragBlock]);
+
+
+
 
   const filteredItems = () => {
     if (!slash) return SLASH_ITEMS;
