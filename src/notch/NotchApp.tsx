@@ -210,6 +210,26 @@ function Shell({ standalone }: { standalone: boolean }) {
   );
 }
 
+function MobileTabbar({ onOpenMenu, onQuickFind, standalone }: { onOpenMenu: () => void; onQuickFind: () => void; standalone: boolean }) {
+  const loc = useLoc2();
+  const path = useNotchPath();
+  const active = (p: string) => loc.pathname.endsWith(p) || (p === "/home" && (loc.pathname === "/notch" || loc.pathname === "/notch/" || loc.pathname === "/"));
+  const item = (to: string, icon: JSX.Element, label: string) => (
+    <Link to={path(to)} className={`nn-tab ${active(to) ? "active" : ""}`} aria-label={label}>
+      {icon}<span>{label}</span>
+    </Link>
+  );
+  return (
+    <nav className="nn-mobile-tabbar" role="navigation" aria-label="Primary">
+      {item("/home", <HomeIcon size={18} />, "Home")}
+      <button className="nn-tab" onClick={onQuickFind} aria-label="Search"><SearchIcon size={18} /><span>Search</span></button>
+      <button className="nn-tab nn-tab-fab" onClick={onOpenMenu} aria-label="New / Menu"><PlusIcon size={20} /></button>
+      {item("/notifications", <BellIcon size={18} />, "Inbox")}
+      {item("/settings", <SettingsIcon size={18} />, "Settings")}
+    </nav>
+  );
+}
+
 export default function NotchApp({ base = "/notch", standalone = false }: Props) {
   return (
     <NotchBaseContext.Provider value={standalone ? "" : base}>
