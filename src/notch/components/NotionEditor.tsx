@@ -249,6 +249,11 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
         if (e.key === "ArrowUp") { e.preventDefault(); setSelected((s) => (s - 1 + filteredItems().length) % filteredItems().length); return; }
         if (e.key === "Enter") { e.preventDefault(); runItem(filteredItems()[selected]); return; }
       }
+      // Ctrl/Cmd + Space → inline AI continue
+      if (e.code === "Space" && (e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        runAI("continue");
+      }
     };
     const inputHandler = () => {
       if (!slash) return;
