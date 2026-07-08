@@ -6,6 +6,7 @@ import { useNotchPath } from "@/notch/context/NotchBaseContext";
 import { NotchAuthProvider, useNotchAuth } from "@/notch/context/NotchAuthContext";
 import { NotchBaseContext } from "@/notch/context/NotchBaseContext";
 import { NotchSidebar } from "@/notch/components/NotchSidebar";
+import { NotchSidePeek } from "@/notch/components/NotchSidePeek";
 import { NotchQuickFind } from "@/notch/components/NotchQuickFind";
 import { NotchAskAI } from "@/notch/components/NotchAskAI";
 import { NotchShortcuts } from "@/notch/components/NotchShortcuts";
@@ -207,6 +208,7 @@ function Shell({ standalone }: { standalone: boolean }) {
       {quickFind && <NotchQuickFind onClose={() => setQuickFind(false)} />}
       {askAI && <NotchAskAI onClose={() => setAskAI(false)} />}
       {shortcuts && <NotchShortcuts onClose={() => setShortcuts(false)} />}
+      <NotchSidePeek />
     </div>
   );
 }

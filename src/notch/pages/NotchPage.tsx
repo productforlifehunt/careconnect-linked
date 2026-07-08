@@ -53,6 +53,7 @@ export default function NotchPage() {
   const [smallText, setSmallText] = useState(false);
   const [verified, setVerified] = useState(false);
   const [snapshots, setSnapshots] = useState<Array<{ ts: number; content: any; title: string }>>([]);
+  const [diffIdx, setDiffIdx] = useState<number | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const saveTimer = useRef<any>(null);
@@ -670,6 +671,7 @@ export default function NotchPage() {
                     <div className="nn-history-ts">{new Date(s.ts).toLocaleString()}</div>
                   </div>
                   <div className="nn-history-actions">
+                    <button className="nn-topbar-btn" onClick={() => setDiffIdx(i)} title="Diff against current">Diff</button>
                     <button className="nn-topbar-btn" onClick={() => restoreSnapshot(i)} title="Restore">Restore</button>
                     <button
                       className="nn-topbar-btn"
@@ -684,6 +686,15 @@ export default function NotchPage() {
                   </div>
                 </div>
               ))}
+              {diffIdx != null && snapshots[diffIdx] && (
+                <div style={{ borderTop: "1px solid var(--nn-border)", padding: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600 }}>Diff vs {new Date(snapshots[diffIdx].ts).toLocaleString()}</span>
+                    <button className="nn-topbar-btn" style={{ marginLeft: "auto" }} onClick={() => setDiffIdx(null)}><X size={12} /></button>
+                  </div>
+                  <DiffView oldText={extractText(snapshots[diffIdx].content)} newText={extractText(content)} />
+                </div>
+              )}
             </div>
           </aside>
         </div>
@@ -928,4 +939,53 @@ function Backlinks({ pageId }: { pageId: string }) {
     </div>
   );
 }
+
+function extractText(doc: any): string {
+  if (!doc) return "";
+  const out: string[] = [];
+  const walk = (n: any) => {
+    if (!n) return;
+    if (Array.isArray(n)) { n.forEach(walk); return; }
+    if (n.type === "text" && typeof n.text === "string") out.push(n.text);
+    else if (n.type === "heading" || n.type === "paragraph") { (n.content || []).forEach(walk); out.push("\n"); }
+    else (n.content || []).forEach(walk);
+  };
+  walk(doc);
+  return out.join("").split("\n").map((l) => l.trim()).filter(Boolean).join("\n");
+}
+
+function DiffView({ oldText, newText }: { oldText: string; newText: string }) {
+  const a = oldText.split("\n");
+  const b = newText.split("\n");
+  const n = a.length, m = b.length;
+  const dp: number[][] = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) {
+    dp[i][j] = a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+  }
+  const rows: Array<{ t: " " | "-" | "+"; line: string }> = [];
+  let i = 0, j = 0;
+  while (i < n && j < m) {
+    if (a[i] === b[j]) { rows.push({ t: " ", line: a[i] }); i++; j++; }
+    else if (dp[i + 1][j] >= dp[i][j + 1]) { rows.push({ t: "-", line: a[i] }); i++; }
+    else { rows.push({ t: "+", line: b[j] }); j++; }
+  }
+  while (i < n) { rows.push({ t: "-", line: a[i++] }); }
+  while (j < m) { rows.push({ t: "+", line: b[j++] }); }
+  return (
+    <div style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 12, lineHeight: 1.5, maxHeight: 320, overflow: "auto", border: "1px solid var(--nn-border)", borderRadius: 4 }}>
+      {rows.map((r, k) => (
+        <div key={k} style={{
+          padding: "1px 8px",
+          background: r.t === "+" ? "rgba(80,200,120,0.15)" : r.t === "-" ? "rgba(224,62,62,0.13)" : "transparent",
+          color: r.t === "+" ? "#2f8f5a" : r.t === "-" ? "#c53030" : "var(--nn-text)",
+          whiteSpace: "pre-wrap",
+        }}>
+          <span style={{ opacity: 0.6, marginRight: 6 }}>{r.t}</span>{r.line || " "}
+        </div>
+      ))}
+      {rows.length === 0 && <div style={{ padding: 12, color: "var(--nn-text-tertiary)" }}>No differences.</div>}
+    </div>
+  );
+}
+
 

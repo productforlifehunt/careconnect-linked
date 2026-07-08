@@ -20,7 +20,7 @@ import Youtube from "@tiptap/extension-youtube";
 import { Details, DetailsSummary, DetailsContent } from "@tiptap/extension-details";
 import { useEffect, useRef, useState } from "react";
 import { Bold, Italic, Underline as UIcon, Strikethrough, Code, Link as LinkIcon, AlignLeft, AlignCenter, AlignRight, Sparkles, MessageSquare, Type, ChevronDown, Plus, Minus, Trash2, Rows, Columns as ColumnsIcon } from "lucide-react";
-import { MathBlock, Columns, Column, SyncBlock, buildColumns, Callout, InlineMath, AudioBlock, VideoBlock, PdfBlock, Toc, Breadcrumb, TemplateButton, TabsBlock, HtmlEmbed, InlineDatabase, MultiBlockShortcuts, InlineCommentMark, Whiteboard } from "./notch-extensions";
+import { MathBlock, Columns, Column, SyncBlock, buildColumns, Callout, InlineMath, AudioBlock, VideoBlock, PdfBlock, Toc, Breadcrumb, TemplateButton, TabsBlock, HtmlEmbed, InlineDatabase, MultiBlockShortcuts, InlineCommentMark, Whiteboard, Bookmark, ButtonBlock } from "./notch-extensions";
 import { NotchMention } from "./notch-mention";
 import { BlockSync } from "@/notch/lib/nn-block-sync";
 import { NotchInputRules } from "./notch-input-rules";
@@ -182,6 +182,10 @@ const SLASH_ITEMS = [
     cmd: (e: any) => e.chain().focus().insertContent({ type: "inlineDatabase", attrs: { databaseId: "", mode: "inline" } }).run() },
   { group: "Database", key: "db_linked", icon: "🔗", name: "Linked database", desc: "Reference an existing database.",
     cmd: (e: any) => e.chain().focus().insertContent({ type: "inlineDatabase", attrs: { databaseId: "", mode: "linked" } }).run() },
+  { group: "Media", key: "bookmark", icon: "🔖", name: "Web bookmark", desc: "Save a link as a visual bookmark.",
+    cmd: (e: any) => e.chain().focus().insertContent({ type: "bookmark", attrs: { url: "" } }).run() },
+  { group: "Advanced", key: "button", icon: "🔘", name: "Button", desc: "Clickable button that runs an action.",
+    cmd: (e: any) => e.chain().focus().insertContent({ type: "buttonBlock", attrs: { label: "", action: "insert_todo", target: "" } }).run() },
 ];
 
 export function NotionEditor({ content, onChange, placeholder = "Write, press '/' for commands, or ⌃Space for AI…", onCreateSubpage, pageId }: Props) {
@@ -227,6 +231,8 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
       MultiBlockShortcuts,
       InlineCommentMark,
       Whiteboard,
+      Bookmark,
+      ButtonBlock,
       BlockSync.configure({ pageId: pageId || "" }),
     ],
     content: content || "",

@@ -1,17 +1,20 @@
 import { useEffect, useState } from "react";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
-import { Moon, Sun, User, SlidersHorizontal, Bell, Users, Keyboard, LogOut } from "lucide-react";
+import { Moon, Sun, User, SlidersHorizontal, Bell, Users, Keyboard, LogOut, Download } from "lucide-react";
 import { NotchMembersPanel } from "@/notch/components/NotchMembersPanel";
 import { requestBrowserNotificationPermission } from "@/notch/lib/nn-notifications";
 import { nnAlert } from "@/notch/lib/nn-dialog";
+import { importMarkdownFiles, importCsvAsDatabase } from "@/notch/lib/nn-importers";
+import { cctList, NN } from "@/notch/lib/nn-client";
 
-type TabKey = "account" | "preferences" | "notifications" | "members" | "shortcuts";
+type TabKey = "account" | "preferences" | "notifications" | "members" | "shortcuts" | "import";
 
 const TABS: { key: TabKey; label: string; icon: any }[] = [
   { key: "account", label: "My account", icon: User },
   { key: "preferences", label: "My settings", icon: SlidersHorizontal },
   { key: "notifications", label: "My notifications", icon: Bell },
   { key: "members", label: "People", icon: Users },
+  { key: "import", label: "Import", icon: Download },
   { key: "shortcuts", label: "Shortcuts", icon: Keyboard },
 ];
 
@@ -131,6 +134,10 @@ export default function NotchSettings() {
               </section>
             )}
 
+            {tab === "import" && <ImportPanel />}
+
+
+
             {tab === "shortcuts" && (
               <section>
                 <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 12 }}>Keyboard shortcuts</div>
@@ -174,5 +181,76 @@ function Shortcut({ keys, label }: { keys: string[]; label: string }) {
         ))}
       </span>
     </div>
+  );
+}
+
+function ImportPanel() {
+  const { user } = useNotchAuth();
+  const [workspaces, setWorkspaces] = useState<any[]>([]);
+  const [ws, setWs] = useState<string>("");
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    (async () => {
+      try {
+        const w = await cctList<any>(NN.workspace);
+        setWorkspaces(w || []);
+        if (w?.[0]?.id) setWs(String(w[0].id));
+      } catch { /* noop */ }
+    })();
+  }, []);
+  const uid = user?.user_id || 0;
+  const pickAndRun = async (accept: string, run: (fs: FileList) => Promise<string>) => {
+    const input = document.createElement("input");
+    input.type = "file"; input.multiple = true; input.accept = accept;
+    input.onchange = async () => {
+      if (!input.files || !input.files.length) return;
+      if (!ws) { nnAlert("No workspace found.", "Import"); return; }
+      setBusy(true);
+      try { const msg = await run(input.files); nnAlert(msg, "Import complete"); }
+      catch (e: any) { nnAlert(`Import failed: ${e?.message || e}`, "Import error"); }
+      finally { setBusy(false); }
+    };
+    input.click();
+  };
+  return (
+    <section>
+      <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 12 }}>Import</div>
+      <div style={{ border: "1px solid var(--nn-border)", borderRadius: 6, padding: 16, display: "flex", flexDirection: "column", gap: 14 }}>
+        <div>
+          <label style={{ fontSize: 12, color: "var(--nn-text-secondary)", display: "block", marginBottom: 4 }}>Workspace</label>
+          <select value={ws} onChange={(e) => setWs(e.target.value)} style={{ padding: "6px 8px", border: "1px solid var(--nn-border)", borderRadius: 4, background: "var(--nn-bg)", color: "var(--nn-text)", fontSize: 13 }}>
+            {workspaces.map((w) => <option key={w.id} value={w.id}>{w.name || `Workspace ${w.id}`}</option>)}
+          </select>
+        </div>
+
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 500 }}>Markdown files (.md)</div>
+          <div style={{ fontSize: 12, color: "var(--nn-text-secondary)", marginBottom: 6 }}>Each file becomes a new page. Headings, lists, code blocks, checkboxes, and blockquotes are preserved.</div>
+          <button
+            className="nn-btn-primary" disabled={busy || !ws}
+            onClick={() => pickAndRun(".md,.markdown,.txt", async (fs) => {
+              const r = await importMarkdownFiles(fs, { workspaceId: ws, userId: uid });
+              return `Imported ${r.created} page${r.created === 1 ? "" : "s"}.`;
+            })}
+          >Choose Markdown files…</button>
+        </div>
+
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 500 }}>CSV file (.csv)</div>
+          <div style={{ fontSize: 12, color: "var(--nn-text-secondary)", marginBottom: 6 }}>The first row becomes column names. A new database with one table view is created.</div>
+          <button
+            className="nn-btn-primary" disabled={busy || !ws}
+            onClick={() => pickAndRun(".csv,text/csv", async (fs) => {
+              const r = await importCsvAsDatabase(fs[0], { workspaceId: ws, userId: uid });
+              return `Imported ${r.rows} row${r.rows === 1 ? "" : "s"} into a new database.`;
+            })}
+          >Choose CSV file…</button>
+        </div>
+
+        <div style={{ fontSize: 11, color: "var(--nn-text-tertiary)" }}>
+          Notion export ZIPs and HTML are not yet supported — extract the .md files first, then upload here.
+        </div>
+      </div>
+    </section>
   );
 }

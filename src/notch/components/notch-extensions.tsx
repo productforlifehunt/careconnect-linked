@@ -963,3 +963,141 @@ export const InlineCommentMark = Mark.create({
   },
 });
 
+/* ─── Bookmark Block ─────────────────────────────────────────── */
+function BookmarkView({ node, updateAttributes }: any) {
+  const [url, setUrl] = useState(node.attrs.url || "");
+  const [loading, setLoading] = useState(false);
+  const commit = async (raw: string) => {
+    const u = raw.trim(); if (!u) return;
+    setLoading(true);
+    try {
+      const parsed = new URL(u.startsWith("http") ? u : `https://${u}`);
+      const host = parsed.hostname;
+      const title = node.attrs.title || host;
+      const desc = node.attrs.description || "";
+      const favicon = `https://www.google.com/s2/favicons?sz=64&domain=${host}`;
+      updateAttributes({ url: parsed.toString(), title, description: desc, favicon });
+    } catch {
+      updateAttributes({ url: u });
+    } finally { setLoading(false); }
+  };
+  if (!node.attrs.url) {
+    return (
+      <NodeViewWrapper as="div" className="nn-bookmark-empty" contentEditable={false}>
+        <input
+          autoFocus placeholder="Paste a link to bookmark…" value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") commit((e.target as HTMLInputElement).value); }}
+          onBlur={(e) => commit(e.target.value)}
+          style={{ width: "100%", padding: "10px 12px", border: "1px solid var(--nn-border)", borderRadius: 4, background: "var(--nn-bg-secondary)", color: "var(--nn-text)", fontSize: 13 }}
+        />
+      </NodeViewWrapper>
+    );
+  }
+  return (
+    <NodeViewWrapper as="a" href={node.attrs.url} target="_blank" rel="noopener noreferrer" className="nn-bookmark" contentEditable={false}
+      style={{ display: "flex", border: "1px solid var(--nn-border)", borderRadius: 4, overflow: "hidden", textDecoration: "none", color: "inherit", margin: "6px 0", background: "var(--nn-bg-secondary)" }}>
+      <div style={{ flex: 1, padding: "12px 14px", overflow: "hidden" }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: "var(--nn-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{node.attrs.title || node.attrs.url}</div>
+        {node.attrs.description && <div style={{ fontSize: 12, color: "var(--nn-text-secondary)", marginTop: 4, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{node.attrs.description}</div>}
+        <div style={{ fontSize: 11, color: "var(--nn-text-tertiary)", marginTop: 6, display: "flex", alignItems: "center", gap: 6 }}>
+          {node.attrs.favicon && <img src={node.attrs.favicon} alt="" style={{ width: 14, height: 14 }} />}
+          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{node.attrs.url}</span>
+        </div>
+      </div>
+      {node.attrs.image && <img src={node.attrs.image} alt="" style={{ width: 120, objectFit: "cover" }} />}
+    </NodeViewWrapper>
+  );
+}
+export const Bookmark = Node.create({
+  name: "bookmark",
+  group: "block",
+  atom: true,
+  selectable: true,
+  addAttributes() {
+    return {
+      url: { default: "" }, title: { default: "" }, description: { default: "" }, favicon: { default: "" }, image: { default: "" },
+    };
+  },
+  parseHTML() { return [{ tag: "a[data-bookmark]", getAttrs: (el) => ({ url: (el as HTMLElement).getAttribute("href") || "", title: (el as HTMLElement).getAttribute("data-title") || "" }) }]; },
+  renderHTML({ HTMLAttributes, node }) {
+    return ["a", mergeAttributes({ "data-bookmark": "", href: node.attrs.url, "data-title": node.attrs.title, class: "nn-bookmark", target: "_blank", rel: "noopener noreferrer" }, HTMLAttributes),
+      node.attrs.title || node.attrs.url];
+  },
+  addNodeView() { return ReactNodeViewRenderer(BookmarkView); },
+});
+
+/* ─── Button Block (actionable) ──────────────────────────────── */
+function ButtonView({ node, updateAttributes, editor, getPos }: any) {
+  const [editing, setEditing] = useState(!node.attrs.label);
+  const [label, setLabel] = useState(node.attrs.label || "Click me");
+  const [action, setAction] = useState<string>(node.attrs.action || "insert_todo");
+  const [target, setTarget] = useState<string>(node.attrs.target || "");
+  const save = () => { updateAttributes({ label, action, target }); setEditing(false); };
+  const run = () => {
+    if (!editor) return;
+    const pos = (typeof getPos === "function") ? getPos() : null;
+    const after = (pos != null) ? pos + node.nodeSize : editor.state.selection.to;
+    const chain = editor.chain().focus().setTextSelection(after);
+    switch (action) {
+      case "insert_todo":
+        chain.insertContentAt(after, { type: "taskList", content: [{ type: "taskItem", attrs: { checked: false }, content: [{ type: "paragraph", content: [{ type: "text", text: target || "New task" }] }] }] }).run();
+        break;
+      case "insert_heading":
+        chain.insertContentAt(after, { type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: target || "New section" }] }).run();
+        break;
+      case "insert_callout":
+        chain.insertContentAt(after, { type: "callout", attrs: { emoji: "💡", color: "gray" }, content: [{ type: "paragraph", content: [{ type: "text", text: target || "Note" }] }] }).run();
+        break;
+      case "insert_divider":
+        chain.insertContentAt(after, { type: "horizontalRule" }).run();
+        break;
+      case "open_url":
+        if (target) window.open(target, "_blank", "noopener,noreferrer");
+        break;
+      case "insert_date":
+        chain.insertContentAt(after, { type: "paragraph", content: [{ type: "text", text: new Date().toLocaleString() }] }).run();
+        break;
+    }
+  };
+  return (
+    <NodeViewWrapper as="div" className="nn-btn-block" contentEditable={false} style={{ margin: "6px 0" }}>
+      {editing ? (
+        <div style={{ border: "1px solid var(--nn-border)", borderRadius: 4, padding: 10, background: "var(--nn-bg-secondary)", display: "flex", flexDirection: "column", gap: 6 }}>
+          <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Button label" style={{ padding: "6px 8px", border: "1px solid var(--nn-border)", borderRadius: 3, background: "var(--nn-bg)", color: "var(--nn-text)", fontSize: 13 }} />
+          <select value={action} onChange={(e) => setAction(e.target.value)} style={{ padding: "6px 8px", border: "1px solid var(--nn-border)", borderRadius: 3, background: "var(--nn-bg)", color: "var(--nn-text)", fontSize: 13 }}>
+            <option value="insert_todo">Add a to-do below</option>
+            <option value="insert_heading">Add a heading below</option>
+            <option value="insert_callout">Add a callout below</option>
+            <option value="insert_divider">Add a divider below</option>
+            <option value="insert_date">Insert current date/time</option>
+            <option value="open_url">Open URL</option>
+          </select>
+          <input value={target} onChange={(e) => setTarget(e.target.value)} placeholder={action === "open_url" ? "https://…" : "Text (optional)"} style={{ padding: "6px 8px", border: "1px solid var(--nn-border)", borderRadius: 3, background: "var(--nn-bg)", color: "var(--nn-text)", fontSize: 13 }} />
+          <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+            <button onClick={() => setEditing(false)} style={{ padding: "4px 12px", border: "1px solid var(--nn-border)", borderRadius: 3, background: "transparent", color: "var(--nn-text)", cursor: "pointer", fontSize: 12 }}>Cancel</button>
+            <button onClick={save} style={{ padding: "4px 12px", border: "none", borderRadius: 3, background: "var(--nn-blue, #2383e2)", color: "white", cursor: "pointer", fontSize: 12 }}>Save</button>
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <button onClick={run} style={{ padding: "6px 14px", background: "var(--nn-bg-secondary)", border: "1px solid var(--nn-border)", borderRadius: 4, color: "var(--nn-text)", cursor: "pointer", fontSize: 13, fontWeight: 500 }}>{label}</button>
+          <button onClick={() => setEditing(true)} style={{ padding: "4px 8px", background: "transparent", border: "none", color: "var(--nn-text-tertiary)", cursor: "pointer", fontSize: 11 }}>Edit</button>
+        </div>
+      )}
+    </NodeViewWrapper>
+  );
+}
+export const ButtonBlock = Node.create({
+  name: "buttonBlock",
+  group: "block",
+  atom: true,
+  selectable: true,
+  addAttributes() { return { label: { default: "" }, action: { default: "insert_todo" }, target: { default: "" } }; },
+  parseHTML() { return [{ tag: "button[data-nn-button]", getAttrs: (el) => ({ label: (el as HTMLElement).textContent || "", action: (el as HTMLElement).getAttribute("data-action") || "insert_todo", target: (el as HTMLElement).getAttribute("data-target") || "" }) }]; },
+  renderHTML({ HTMLAttributes, node }) {
+    return ["button", mergeAttributes({ "data-nn-button": "", "data-action": node.attrs.action, "data-target": node.attrs.target, class: "nn-btn-block" }, HTMLAttributes), node.attrs.label];
+  },
+  addNodeView() { return ReactNodeViewRenderer(ButtonView); },
+});
+
