@@ -1059,6 +1059,10 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
       {showAuto && (
         <AutomationEditor rules={automations} schema={schema} onClose={() => setShowAuto(false)} onSave={(r) => { saveAutomations(r); setShowAuto(false); }} />
       )}
+      {showTmplEditor && (
+        <TemplateEditor templates={templates} schema={schema} onClose={() => setShowTmplEditor(false)} onSave={(t) => { saveTemplates(t); setShowTmplEditor(false); }} />
+      )}
+
     </div>
   );
 }
