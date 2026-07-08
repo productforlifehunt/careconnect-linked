@@ -352,6 +352,12 @@ export function NotchSidebar() {
         <div className="nn-sidebar-item" onClick={() => nav(path("/search"))}>
           <span className="nn-icon"><Search size={15} /></span>
           <span className="nn-title">Search</span>
+          <span style={{ marginLeft: "auto", fontSize: 10, opacity: 0.5 }}>⌘K</span>
+        </div>
+        <div className="nn-sidebar-item" onClick={() => { const e = new KeyboardEvent("keydown", { key: "j", ctrlKey: true, metaKey: true }); window.dispatchEvent(e); }}>
+          <span className="nn-icon">✨</span>
+          <span className="nn-title">Ask AI</span>
+          <span style={{ marginLeft: "auto", fontSize: 10, opacity: 0.5 }}>⌘J</span>
         </div>
         <div className="nn-sidebar-item" onClick={() => nav(path("/"))}>
           <span className="nn-icon">🏠</span>
