@@ -7,9 +7,10 @@ import { ReactRenderer } from "@tiptap/react";
 import { useEffect, useImperativeHandle, useState, forwardRef } from "react";
 import { cctList, NN } from "@/notch/lib/nn-client";
 
-interface MemberOption { id: string; user_id: string; label: string; }
+interface MemberOption { id: string; user_id: string; label: string; kind?: "person" | "date" | "page" }
 
 let cachedMembers: MemberOption[] | null = null;
+let cachedPages: MemberOption[] | null = null;
 async function fetchMembers(workspaceId?: string): Promise<MemberOption[]> {
   if (cachedMembers) return cachedMembers;
   try {
@@ -18,6 +19,7 @@ async function fetchMembers(workspaceId?: string): Promise<MemberOption[]> {
       id: String(r.id),
       user_id: String(r.user_id || ""),
       label: r.display_name || r.email || `User ${r.user_id}`,
+      kind: "person" as const,
     }));
     cachedMembers = list;
     return list;
@@ -25,7 +27,26 @@ async function fetchMembers(workspaceId?: string): Promise<MemberOption[]> {
     return [];
   }
 }
-export function invalidateMentionCache() { cachedMembers = null; }
+async function fetchPages(): Promise<MemberOption[]> {
+  if (cachedPages) return cachedPages;
+  try {
+    const rows = await cctList<any>(NN.block, { per_page: 200 });
+    const list: MemberOption[] = (rows || [])
+      .filter((r: any) => (r.type === "page" || r.type === "database" || !r.type) && !r.in_trash)
+      .map((r: any) => ({
+        id: `page:${r.id}`,
+        user_id: `page:${r.id}`,
+        label: `${r.icon || (r.type === "database" ? "🗄️" : "📄")} ${r.title || "Untitled"}`,
+        kind: "page" as const,
+      }));
+    cachedPages = list;
+    return list;
+  } catch {
+    return [];
+  }
+}
+export function invalidateMentionCache() { cachedMembers = null; cachedPages = null; }
+
 
 interface Props {
   items: MemberOption[];
