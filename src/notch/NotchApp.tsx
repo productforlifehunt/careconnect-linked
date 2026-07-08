@@ -6,6 +6,7 @@ import { NotchBaseContext } from "@/notch/context/NotchBaseContext";
 import { NotchSidebar } from "@/notch/components/NotchSidebar";
 import { NotchQuickFind } from "@/notch/components/NotchQuickFind";
 import { NotchAskAI } from "@/notch/components/NotchAskAI";
+import { NotchShortcuts } from "@/notch/components/NotchShortcuts";
 import NotchAuth from "@/notch/pages/NotchAuth";
 import NotchHome from "@/notch/pages/NotchHome";
 import NotchPage from "@/notch/pages/NotchPage";
