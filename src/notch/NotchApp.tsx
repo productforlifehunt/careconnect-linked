@@ -132,8 +132,8 @@ function Shell({ standalone }: { standalone: boolean }) {
   const authRoutes = (
     <Routes>
       <Route path="auth" element={<NotchAuth />} />
-      {standalone && <Route index element={<NotchLanding />} />}
-      <Route path="*" element={<Navigate to={standalone ? "/" : "/notch/auth"} replace />} />
+      <Route index element={<NotchLanding />} />
+      <Route path="*" element={<Navigate to={standalone ? "/auth" : "/notch/auth"} replace />} />
     </Routes>
   );
 
@@ -143,7 +143,7 @@ function Shell({ standalone }: { standalone: boolean }) {
 
   // Prevent authenticated users from lingering on /auth
   if (location.pathname.endsWith("/auth")) {
-    return <Navigate to={standalone ? "/" : "/notch"} replace />;
+    return <Navigate to={standalone ? "/home" : "/notch/home"} replace />;
   }
 
 
