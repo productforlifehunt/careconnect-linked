@@ -37,6 +37,8 @@ export default function NotchPage() {
   const { user } = useNotchAuth();
   const { isFav, toggle: toggleFav } = useFavorites();
   const [block, setBlock] = useState<Block | null>(null);
+  const [loadErr, setLoadErr] = useState<string | null>(null);
+  const [loadTick, setLoadTick] = useState(0);
   const [title, setTitle] = useState("");
   useNotchTitle(title || "Untitled");
   const [icon, setIcon] = useState("");
