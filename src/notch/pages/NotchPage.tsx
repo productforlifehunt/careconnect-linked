@@ -640,6 +640,16 @@ export default function NotchPage() {
           onClose={() => setShowCoverGallery(false)}
         />
       )}
+      {showMovePicker && block && (
+        <MovePagePicker
+          workspaceId={block.workspace_id || ""}
+          currentId={pageId}
+          currentParentId={block.parent_id || ""}
+          onPick={applyMove}
+          onClose={() => setShowMovePicker(false)}
+        />
+      )}
+
       {showHistory && (
         <div className="nn-history-backdrop" onClick={() => setShowHistory(false)}>
           <aside className="nn-history-panel" onClick={(e) => e.stopPropagation()}>
