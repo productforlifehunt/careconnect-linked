@@ -429,6 +429,15 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
 
 
 
+  const getRecentSlash = (): string[] => {
+    try { return JSON.parse(localStorage.getItem("nn_slash_recent") || "[]"); } catch { return []; }
+  };
+  const pushRecentSlash = (key: string) => {
+    const cur = getRecentSlash().filter((k) => k !== key);
+    cur.unshift(key);
+    localStorage.setItem("nn_slash_recent", JSON.stringify(cur.slice(0, 6)));
+  };
+
   const filteredItems = () => {
     if (!slash) return SLASH_ITEMS;
     const q = slash.query.toLowerCase();
@@ -446,11 +455,18 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
       editor.chain().focus().deleteRange({ from: start, to: from }).run();
     }
     item.cmd(editor, { onCreateSubpage, userId: user?.user_id });
+    pushRecentSlash(item.key);
     setSlash(null);
   };
 
   const items = filteredItems();
   const groups: Record<string, typeof SLASH_ITEMS> = {};
+  // Recently used group only when no filter
+  if (slash && !slash.query) {
+    const recentKeys = getRecentSlash();
+    const recent = recentKeys.map((k) => SLASH_ITEMS.find((i) => i.key === k)).filter(Boolean) as typeof SLASH_ITEMS;
+    if (recent.length) groups["Recently used"] = recent.slice(0, 6);
+  }
   items.forEach((i) => { (groups[i.group] ||= []).push(i); });
 
   const setLink = async () => {
