@@ -1,17 +1,18 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { Plus, Trash2, Table, LayoutGrid, Calendar as CalIcon, Settings2, X, ChevronLeft, ChevronRight, Image as ImageIcon, List } from "lucide-react";
+import { Plus, Trash2, Table, LayoutGrid, Calendar as CalIcon, Settings2, X, ChevronLeft, ChevronRight, Image as ImageIcon, List, GanttChart, Link as LinkIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useNotchPath } from "@/notch/context/NotchBaseContext";
 import { cctList, cctCreate, cctUpdate, NN } from "@/notch/lib/nn-client";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
 
 interface Props { databaseId: string; workspaceId: string; }
-type ViewMode = "table" | "board" | "calendar" | "gallery" | "list";
-type PropType = "text" | "number" | "select" | "multiselect" | "date" | "checkbox" | "url" | "email" | "phone" | "person" | "formula" | "rollup" | "button" | "ai";
+type ViewMode = "table" | "board" | "calendar" | "timeline" | "gallery" | "list";
+type PropType = "text" | "number" | "select" | "multiselect" | "date" | "checkbox" | "url" | "email" | "phone" | "person" | "formula" | "rollup" | "button" | "ai" | "relation";
 type ButtonAction =
   | { kind: "set"; prop: string; value: string }
   | { kind: "increment"; prop: string; by: number }
   | { kind: "open"; url: string };
+type CondRule = { prop: string; op: "eq" | "neq" | "contains" | "gt" | "lt" | "empty" | "notempty"; value: string; color: string };
 interface PropDef {
   key: string; name: string; type: PropType;
   options?: string[];
@@ -19,8 +20,10 @@ interface PropDef {
   rollup?: { source: string; agg: "sum" | "avg" | "min" | "max" | "count" };
   button?: { label: string; actions: ButtonAction[] };
   ai?: { mode: "summary" | "translate" | "keywords"; lang?: string };
+  relation?: { databaseId: string };
 }
 interface Row { id: string; title?: string; icon?: string; cover?: string; properties?: string; }
+
 
 const DEFAULT_SCHEMA: PropDef[] = [
   { key: "status", name: "Status", type: "select", options: ["To do", "In progress", "Done"] },
