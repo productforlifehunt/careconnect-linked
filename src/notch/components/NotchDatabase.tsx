@@ -1067,7 +1067,59 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
   );
 }
 
+function TemplateEditor({ templates, schema, onClose, onSave }: { templates: { id: string; name: string; icon?: string; cells: Record<string, any> }[]; schema: PropDef[]; onClose: () => void; onSave: (t: any[]) => void }) {
+  const [list, setList] = useState(templates.length ? templates : [{ id: `t_${Date.now()}`, name: "New template", icon: "📋", cells: {} as Record<string, any> }]);
+  const update = (i: number, patch: any) => setList((L) => L.map((t, j) => j === i ? { ...t, ...patch } : t));
+  const setCell = (i: number, k: string, v: any) => setList((L) => L.map((t, j) => j === i ? { ...t, cells: { ...t.cells, [k]: v } } : t));
+  const add = () => setList((L) => [...L, { id: `t_${Date.now()}`, name: "New template", icon: "📋", cells: {} }]);
+  const rm = (i: number) => setList((L) => L.filter((_, j) => j !== i));
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(15,15,15,0.5)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: "var(--nn-bg)", border: "1px solid var(--nn-border)", borderRadius: 8, padding: 20, width: 620, maxHeight: "80vh", overflow: "auto" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+          <div style={{ fontSize: 16, fontWeight: 600 }}>Database templates</div>
+          <button className="nn-topbar-btn" onClick={onClose}><X size={14} /></button>
+        </div>
+        <div style={{ fontSize: 12, color: "var(--nn-text-secondary)", marginBottom: 12 }}>Templates pre-fill property values when creating a new page. Choose one from the New button dropdown.</div>
+        {list.map((t, i) => (
+          <div key={t.id} style={{ padding: 12, border: "1px solid var(--nn-border)", borderRadius: 6, marginBottom: 10 }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
+              <input value={t.icon || ""} onChange={(e) => update(i, { icon: e.target.value })} className="nn-auth-input" placeholder="📋" style={{ marginBottom: 0, width: 50, textAlign: "center" }} />
+              <input value={t.name} onChange={(e) => update(i, { name: e.target.value })} className="nn-auth-input" placeholder="Template name" style={{ marginBottom: 0, flex: 1 }} />
+              <button className="nn-topbar-btn" onClick={() => rm(i)}>Delete</button>
+            </div>
+            <div style={{ fontSize: 11, color: "var(--nn-text-tertiary)", marginBottom: 6 }}>Preset values</div>
+            {schema.filter((p) => !["formula", "rollup", "button", "ai"].includes(p.type)).map((p) => (
+              <div key={p.key} style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: 8, alignItems: "center", marginBottom: 6 }}>
+                <div style={{ fontSize: 12, color: "var(--nn-text-secondary)" }}>{p.name}</div>
+                {p.type === "select" ? (
+                  <select value={t.cells[p.key] || ""} onChange={(e) => setCell(i, p.key, e.target.value)} className="nn-auth-input" style={{ marginBottom: 0 }}>
+                    <option value="">—</option>
+                    {(p.options || []).map((o) => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                ) : p.type === "checkbox" ? (
+                  <input type="checkbox" checked={!!t.cells[p.key]} onChange={(e) => setCell(i, p.key, e.target.checked)} />
+                ) : p.type === "date" ? (
+                  <input type="date" value={t.cells[p.key] || ""} onChange={(e) => setCell(i, p.key, e.target.value)} className="nn-auth-input" style={{ marginBottom: 0 }} />
+                ) : (
+                  <input value={t.cells[p.key] || ""} onChange={(e) => setCell(i, p.key, e.target.value)} className="nn-auth-input" placeholder="—" style={{ marginBottom: 0 }} />
+                )}
+              </div>
+            ))}
+          </div>
+        ))}
+        <button className="nn-topbar-btn" onClick={add} style={{ marginBottom: 10 }}>+ Add template</button>
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+          <button className="nn-topbar-btn" onClick={onClose}>Cancel</button>
+          <button className="nn-btn-primary" onClick={() => onSave(list)}>Save</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function FormView({ schema, onSubmit, dbTitle }: { schema: PropDef[]; onSubmit: (title: string, cells: Record<string, any>) => Promise<void>; dbTitle: string }) {
+
   const [title, setTitle] = useState("");
   const [cells, setCells] = useState<Record<string, any>>({});
   const [submitted, setSubmitted] = useState(false);
