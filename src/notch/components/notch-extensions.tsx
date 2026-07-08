@@ -759,6 +759,122 @@ export const InlineDatabase = Node.create({
 });
 
 
+/* ─── Whiteboard Block ────────────────────────────────────────
+ * Inline freehand drawing surface. Persists strokes as an array
+ * of { color, width, points[] } inside the node's `strokes`
+ * attribute (JSON-stringified). Supports pen/eraser/color/size,
+ * undo, and clear.
+ */
+type Stroke = { color: string; width: number; points: [number, number][] };
+
+function WhiteboardView({ node, updateAttributes }: any) {
+  const svgRef = useMemo(() => ({ current: null as SVGSVGElement | null }), []);
+  const [strokes, setStrokes] = useState<Stroke[]>(() => {
+    try { return JSON.parse(node.attrs.strokes || "[]"); } catch { return []; }
+  });
+  const [tool, setTool] = useState<"pen" | "eraser">("pen");
+  const [color, setColor] = useState("#2383e2");
+  const [width, setWidth] = useState(2);
+  const [drawing, setDrawing] = useState<Stroke | null>(null);
+  const [redoStack, setRedoStack] = useState<Stroke[]>([]);
+
+  const commit = (next: Stroke[]) => {
+    setStrokes(next);
+    updateAttributes({ strokes: JSON.stringify(next) });
+  };
+
+  const pt = (e: React.PointerEvent<SVGSVGElement>): [number, number] => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    return [Math.round(e.clientX - rect.left), Math.round(e.clientY - rect.top)];
+  };
+
+  const onDown = (e: React.PointerEvent<SVGSVGElement>) => {
+    (e.target as Element).setPointerCapture?.(e.pointerId);
+    if (tool === "eraser") {
+      const [x, y] = pt(e);
+      const keep = strokes.filter((s) => !s.points.some(([px, py]) => Math.hypot(px - x, py - y) < 10));
+      if (keep.length !== strokes.length) { setRedoStack([]); commit(keep); }
+      return;
+    }
+    setDrawing({ color, width, points: [pt(e)] });
+  };
+  const onMove = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (tool === "eraser" && e.buttons === 1) {
+      const [x, y] = pt(e);
+      const keep = strokes.filter((s) => !s.points.some(([px, py]) => Math.hypot(px - x, py - y) < 10));
+      if (keep.length !== strokes.length) commit(keep);
+      return;
+    }
+    if (!drawing) return;
+    setDrawing({ ...drawing, points: [...drawing.points, pt(e)] });
+  };
+  const onUp = () => {
+    if (drawing && drawing.points.length > 1) { setRedoStack([]); commit([...strokes, drawing]); }
+    setDrawing(null);
+  };
+
+  const undo = () => {
+    if (!strokes.length) return;
+    const last = strokes[strokes.length - 1];
+    setRedoStack((r) => [...r, last]);
+    commit(strokes.slice(0, -1));
+  };
+  const redo = () => {
+    if (!redoStack.length) return;
+    const s = redoStack[redoStack.length - 1];
+    setRedoStack((r) => r.slice(0, -1));
+    commit([...strokes, s]);
+  };
+  const clear = () => { setRedoStack(strokes); commit([]); };
+
+  const toPath = (s: Stroke) => "M " + s.points.map(([x, y]) => `${x} ${y}`).join(" L ");
+  const colors = ["#2383e2", "#e03e3e", "#448361", "#d9730d", "#9065b0", "#37352f"];
+
+  return (
+    <NodeViewWrapper as="div" className="nn-whiteboard" contentEditable={false}>
+      <div className="nn-whiteboard-toolbar">
+        <button onClick={() => setTool("pen")} className={tool === "pen" ? "active" : ""} title="Pen">✏️</button>
+        <button onClick={() => setTool("eraser")} className={tool === "eraser" ? "active" : ""} title="Eraser">🩹</button>
+        <span style={{ width: 1, height: 16, background: "var(--nn-border)" }} />
+        {colors.map((c) => (
+          <button key={c} onClick={() => { setColor(c); setTool("pen"); }} title={c}
+            style={{ background: c, width: 18, height: 18, border: color === c ? "2px solid var(--nn-text)" : "1px solid var(--nn-border)", borderRadius: 3, padding: 0 }} />
+        ))}
+        <span style={{ width: 1, height: 16, background: "var(--nn-border)" }} />
+        <input type="range" min={1} max={12} value={width} onChange={(e) => setWidth(Number(e.target.value))} style={{ width: 70 }} title={`Size: ${width}`} />
+        <span style={{ width: 1, height: 16, background: "var(--nn-border)" }} />
+        <button onClick={undo} disabled={!strokes.length} title="Undo">↶</button>
+        <button onClick={redo} disabled={!redoStack.length} title="Redo">↷</button>
+        <button onClick={clear} disabled={!strokes.length} title="Clear all">🗑</button>
+      </div>
+      <svg
+        ref={(el) => { svgRef.current = el; }}
+        onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerLeave={onUp}
+        width="100%" height={340}
+        style={{ background: "var(--nn-bg-secondary)", borderRadius: 4, cursor: tool === "eraser" ? "cell" : "crosshair", touchAction: "none", display: "block" }}
+      >
+        {strokes.map((s, i) => (
+          <path key={i} d={toPath(s)} stroke={s.color} strokeWidth={s.width} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        ))}
+        {drawing && <path d={toPath(drawing)} stroke={drawing.color} strokeWidth={drawing.width} fill="none" strokeLinecap="round" strokeLinejoin="round" />}
+      </svg>
+    </NodeViewWrapper>
+  );
+}
+
+export const Whiteboard = Node.create({
+  name: "whiteboard",
+  group: "block",
+  atom: true,
+  selectable: true,
+  addAttributes() { return { strokes: { default: "[]" } }; },
+  parseHTML() { return [{ tag: "div[data-whiteboard]", getAttrs: (el) => ({ strokes: (el as HTMLElement).getAttribute("data-strokes") || "[]" }) }]; },
+  renderHTML({ HTMLAttributes, node }) { return ["div", mergeAttributes({ "data-whiteboard": "", "data-strokes": node.attrs.strokes, class: "nn-whiteboard" }, HTMLAttributes)]; },
+  addNodeView() { return ReactNodeViewRenderer(WhiteboardView); },
+});
+
+
+
 /* ─── Multi-Block Selection Shortcuts ─────────────────────────
  * Cmd/Ctrl+D — duplicate the current block (or all blocks the
  *              selection touches).
