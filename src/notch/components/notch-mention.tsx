@@ -72,24 +72,33 @@ const MentionList = forwardRef<any, Props>((props, ref) => {
   }));
 
   if (!props.items.length) {
-    return <div className="nn-mention-menu"><div className="nn-mention-empty">No people</div></div>;
+    return <div className="nn-mention-menu"><div className="nn-mention-empty">No results</div></div>;
   }
+  const groupLabel = (k?: string) => k === "person" ? "People" : k === "page" ? "Pages" : k === "date" ? "Dates" : "Other";
+  let lastKind: string | undefined;
   return (
     <div className="nn-mention-menu">
-      {props.items.map((it, i) => (
-        <div
-          key={it.id}
-          className={`nn-mention-item ${i === selected ? "selected" : ""}`}
-          onMouseEnter={() => setSelected(i)}
-          onMouseDown={(e) => { e.preventDefault(); pick(i); }}
-        >
-          <span className="nn-mention-avatar">{it.label.charAt(0).toUpperCase()}</span>
-          <span className="nn-mention-label">{it.label}</span>
-        </div>
-      ))}
+      {props.items.map((it, i) => {
+        const showHeader = it.kind !== lastKind;
+        lastKind = it.kind;
+        return (
+          <div key={it.id}>
+            {showHeader && <div className="nn-slash-menu-group" style={{ padding: "6px 10px 2px", fontSize: 10, opacity: 0.55, textTransform: "uppercase", letterSpacing: 0.5 }}>{groupLabel(it.kind)}</div>}
+            <div
+              className={`nn-mention-item ${i === selected ? "selected" : ""}`}
+              onMouseEnter={() => setSelected(i)}
+              onMouseDown={(e) => { e.preventDefault(); pick(i); }}
+            >
+              <span className="nn-mention-avatar">{it.label.replace(/^[^\w]+/, "").charAt(0).toUpperCase() || "•"}</span>
+              <span className="nn-mention-label">{it.label}</span>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 });
+
 MentionList.displayName = "MentionList";
 
 export const NotchMention = Mention.configure({
