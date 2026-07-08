@@ -69,6 +69,7 @@ export default function NotchPage() {
         setContent(props.editor_content || null);
         setLocked(!!props.locked);
         setFullWidth(!!props.full_width);
+        setSmallText(!!props.small_text);
         setVerified(!!props.verified);
         setSnapshots(Array.isArray(props.history) ? props.history : []);
       } catch { setContent(null); }
