@@ -32,7 +32,8 @@ interface PropDef {
   key: string; name: string; type: PropType;
   options?: string[];
   formula?: string;
-  rollup?: { source: string; agg: "sum" | "avg" | "min" | "max" | "count" };
+  rollup?: { source: string; agg: RollupAgg };
+  numberFormat?: "plain" | "number" | "commas" | "percent" | "usd" | "eur" | "gbp" | "yuan" | "yen";
   button?: { label: string; actions: ButtonAction[] };
   ai?: { mode: "summary" | "translate" | "keywords"; lang?: string };
   relation?: { databaseId: string };
