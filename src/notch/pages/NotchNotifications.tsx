@@ -7,6 +7,7 @@ import {
   tickReminderQueue, requestBrowserNotificationPermission,
   type AppNotification,
 } from "@/notch/lib/nn-notifications";
+import { emitUnreadChanged } from "@/notch/lib/nn-use-unread";
 import { Bell, Check, Trash2, CheckCheck } from "lucide-react";
 
 function timeAgo(iso?: string) {
