@@ -75,7 +75,7 @@ export function EmojiPicker({ onPick, onClear }: Props) {
     try {
       const f = await pickFile("image/*");
       if (!f) return;
-      const uid = (window as any).__NN_USER_ID__ || "anon";
+      const uid = user?.user_id || "anon";
       const { url } = await nnUploadFile(f, uid);
       onPick(url);
     } catch (e) { console.error(e); }
