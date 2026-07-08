@@ -124,8 +124,11 @@ export function NotchShareModal({ blockId, onClose }: { blockId: string; onClose
                 <option value="editor">Can edit</option>
                 <option value="owner">Full access</option>
               </select>
-              <button onClick={() => invite()} disabled={busy || !email.trim()} className="nn-btn-primary">Invite</button>
-              {email && filteredMembers.length > 0 && (
+              <button onClick={() => invite()} disabled={busy || !emailValid(email)} className="nn-btn-primary">Invite</button>
+              {email && !emailValid(email) && (
+                <div style={{ position: "absolute", top: "100%", left: 0, marginTop: 4, fontSize: 11, color: "var(--nn-danger, #e03e3e)" }}>Enter a valid email address.</div>
+              )}
+              {email && emailValid(email) && filteredMembers.length > 0 && (
                 <div style={{ position: "absolute", top: "100%", left: 0, right: 140, background: "var(--nn-bg)", border: "1px solid var(--nn-border)", borderRadius: 6, marginTop: 4, boxShadow: "var(--nn-shadow-md)", zIndex: 10, maxHeight: 200, overflow: "auto" }}>
                   {filteredMembers.map((m) => (
                     <div key={m.id} onClick={() => { setEmail(""); setMemberQuery(""); invite(m.email, role); }} style={{ padding: "6px 10px", cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", gap: 8 }} onMouseDown={(e) => e.preventDefault()}>
