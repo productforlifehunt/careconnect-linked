@@ -22,6 +22,7 @@ import { useEffect, useRef, useState } from "react";
 import { Bold, Italic, Underline as UIcon, Strikethrough, Code, Link as LinkIcon, AlignLeft, AlignCenter, AlignRight, Sparkles } from "lucide-react";
 import { MathBlock, Columns, Column, SyncBlock, buildColumns, Callout, InlineMath, AudioBlock, VideoBlock, PdfBlock, Toc, Breadcrumb, TemplateButton, TabsBlock, HtmlEmbed, InlineDatabase, MultiBlockShortcuts, InlineCommentMark, Whiteboard } from "./notch-extensions";
 import { NotchMention } from "./notch-mention";
+import { BlockSync } from "@/notch/lib/nn-block-sync";
 import { NotchInputRules } from "./notch-input-rules";
 import { nnUploadFile, pickFile } from "@/notch/lib/nn-files";
 import { nnPrompt, nnAlert } from "@/notch/lib/nn-dialog";
@@ -45,6 +46,7 @@ interface Props {
   onChange: (json: any) => void;
   placeholder?: string;
   onCreateSubpage?: () => Promise<{ id: string; title: string; href: string } | null>;
+  pageId?: string;
 }
 
 // Theme-aware colors using rgba() so opacity keeps them readable on dark bg
@@ -182,7 +184,7 @@ const SLASH_ITEMS = [
     cmd: (e: any) => e.chain().focus().insertContent({ type: "inlineDatabase", attrs: { databaseId: "", mode: "linked" } }).run() },
 ];
 
-export function NotionEditor({ content, onChange, placeholder = "Write, press '/' for commands, or ⌃Space for AI…", onCreateSubpage }: Props) {
+export function NotionEditor({ content, onChange, placeholder = "Write, press '/' for commands, or ⌃Space for AI…", onCreateSubpage, pageId }: Props) {
   const { user } = _useNotchAuth();
   const editor = useEditor({
     extensions: [
@@ -225,6 +227,7 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
       MultiBlockShortcuts,
       InlineCommentMark,
       Whiteboard,
+      BlockSync.configure({ pageId: pageId || "" }),
     ],
     content: content || "",
     onUpdate: ({ editor }) => onChange(editor.getJSON()),
