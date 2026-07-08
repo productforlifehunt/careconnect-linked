@@ -205,6 +205,7 @@ export function NotionEditor({ content, onChange, placeholder = "Type '/' for co
       Breadcrumb,
       TemplateButton,
       NotchMention,
+      NotchInputRules,
     ],
     content: content || "",
     onUpdate: ({ editor }) => onChange(editor.getJSON()),
