@@ -486,7 +486,7 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
       const start = from - m[0].length;
       editor.chain().focus().deleteRange({ from: start, to: from }).run();
     }
-    item.cmd(editor, { onCreateSubpage, userId: user?.user_id });
+    item.cmd(editor, { onCreateSubpage, userId: user?.user_id, onOpenPagePicker: openPagePicker });
     pushRecentSlash(item.key);
     setSlash(null);
   };
