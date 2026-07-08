@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useNotchPath } from "@/notch/context/NotchBaseContext";
 import { cctList, cctCreate, cctUpdate, NN } from "@/notch/lib/nn-client";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
+import { toast } from "@/hooks/use-toast";
 
 interface Props { databaseId: string; workspaceId: string; }
 type ViewMode = "table" | "board" | "calendar" | "timeline" | "gallery" | "list" | "chart";
@@ -118,7 +119,7 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
       if (a.kind === "set") { props[a.prop] = a.value; touched = true; }
       else if (a.kind === "increment") { props[a.prop] = (Number(props[a.prop]) || 0) + (a.by || 1); touched = true; }
       else if (a.kind === "notify") {
-        try { window.dispatchEvent(new CustomEvent("nn:toast", { detail: { message: a.message || "Automation ran" } })); } catch {}
+        try { toast({ title: a.message || "Automation ran" }); } catch {}
       } else if (a.kind === "webhook" && a.url) {
         try { fetch(a.url, { method: "POST", mode: "no-cors", headers: { "content-type": "application/json" }, body: JSON.stringify({ row: { id: r.id, title: r.title, properties: props } }) }); } catch {}
       }
