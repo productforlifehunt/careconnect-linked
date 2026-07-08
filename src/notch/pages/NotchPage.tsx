@@ -244,6 +244,76 @@ export default function NotchPage() {
     } catch { /* ignore */ }
   };
 
+  // Word / char count over the page's TipTap JSON content.
+  const countWords = (): { words: number; chars: number } => {
+    const collect = (n: any, acc: string[]): void => {
+      if (!n) return;
+      if (typeof n.text === "string") acc.push(n.text);
+      if (Array.isArray(n.content)) n.content.forEach((c: any) => collect(c, acc));
+    };
+    const parts: string[] = [];
+    collect(content, parts);
+    const text = (title + " " + parts.join(" ")).trim();
+    const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
+    return { words, chars: text.length };
+  };
+
+  const showWordCount = async () => {
+    setShowMenu(false);
+    const { words, chars } = countWords();
+    await nnAlert(`${words.toLocaleString()} words · ${chars.toLocaleString()} characters`, "Word count");
+  };
+
+  // Export the current page as Markdown and trigger a browser download.
+  const exportMarkdown = () => {
+    setShowMenu(false);
+    const inline = (nodes: any[] | undefined): string => {
+      if (!Array.isArray(nodes)) return "";
+      return nodes.map((n: any) => {
+        if (n.type !== "text") return n.type === "hardBreak" ? "  \n" : "";
+        let t = n.text || "";
+        const marks = (n.marks || []) as any[];
+        for (const m of marks) {
+          if (m.type === "bold") t = `**${t}**`;
+          else if (m.type === "italic") t = `*${t}*`;
+          else if (m.type === "code") t = `\`${t}\``;
+          else if (m.type === "strike") t = `~~${t}~~`;
+          else if (m.type === "link" && m.attrs?.href) t = `[${t}](${m.attrs.href})`;
+        }
+        return t;
+      }).join("");
+    };
+    const blockToMd = (node: any, depth = 0): string => {
+      if (!node) return "";
+      const pad = "  ".repeat(depth);
+      const kids = Array.isArray(node.content) ? node.content : [];
+      switch (node.type) {
+        case "doc": return kids.map((k: any) => blockToMd(k, 0)).join("\n\n");
+        case "heading": return `${"#".repeat(node.attrs?.level || 1)} ${inline(kids)}`;
+        case "paragraph": return `${pad}${inline(kids)}`;
+        case "bulletList": return kids.map((li: any) => blockToMd(li, depth)).join("\n");
+        case "orderedList": return kids.map((li: any, i: number) => `${pad}${i + 1}. ${inline(li.content?.[0]?.content)}`).join("\n");
+        case "listItem": return `${pad}- ${inline(kids?.[0]?.content)}`;
+        case "taskList": return kids.map((li: any) => blockToMd(li, depth)).join("\n");
+        case "taskItem": return `${pad}- [${node.attrs?.checked ? "x" : " "}] ${inline(kids?.[0]?.content)}`;
+        case "blockquote": return kids.map((k: any) => `> ${blockToMd(k, 0)}`).join("\n");
+        case "codeBlock": return "```" + (node.attrs?.language || "") + "\n" + inline(kids) + "\n```";
+        case "horizontalRule": return "---";
+        case "callout": return kids.map((k: any) => `> ${blockToMd(k, 0)}`).join("\n");
+        case "image": return `![${node.attrs?.alt || ""}](${node.attrs?.src || ""})`;
+        default: return kids.map((k: any) => blockToMd(k, depth)).join("\n");
+      }
+    };
+    const md = `# ${title || "Untitled"}\n\n${blockToMd(content)}`;
+    const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${(title || "Untitled").replace(/[^\w\-]+/g, "_")}.md`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
   const trashPage = async () => {
     if (!pageId) return;
     if (!(await nnConfirm("You can restore it from Trash later.", "Move to trash?"))) return;
@@ -377,6 +447,14 @@ export default function NotchPage() {
               <div onClick={copyLink} className="nn-sidebar-item">
                 <span className="nn-icon"><LinkIcon size={14} /></span>
                 <span className="nn-title">Copy link</span>
+              </div>
+              <div onClick={exportMarkdown} className="nn-sidebar-item">
+                <span className="nn-icon" style={{ fontSize: 11, fontWeight: 700, letterSpacing: -0.5 }}>MD</span>
+                <span className="nn-title">Export as Markdown</span>
+              </div>
+              <div onClick={showWordCount} className="nn-sidebar-item">
+                <span className="nn-icon" style={{ fontSize: 11, fontWeight: 700 }}>Σ</span>
+                <span className="nn-title">Word count</span>
               </div>
               <div onClick={trashPage} className="nn-sidebar-item" style={{ color: "#e03e3e" }}>
                 <span className="nn-icon"><Trash2 size={14} /></span>
