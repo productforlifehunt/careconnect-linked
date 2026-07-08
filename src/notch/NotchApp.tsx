@@ -20,6 +20,8 @@ import NotchTemplates from "@/notch/pages/NotchTemplates";
 import NotchLanding from "@/notch/pages/NotchLanding";
 import NotchNotifications from "@/notch/pages/NotchNotifications";
 import NotchPublicPage from "@/notch/pages/NotchPublicPage";
+import NotchWiki from "@/notch/pages/NotchWiki";
+
 import { acceptInviteByToken } from "@/notch/lib/nn-collab";
 import { useUnreadCount } from "@/notch/lib/nn-use-unread";
 import { nnAlert } from "@/notch/lib/nn-dialog";
@@ -200,6 +202,8 @@ function Shell({ standalone }: { standalone: boolean }) {
           <Route path="settings" element={<NotchSettings />} />
           <Route path="trash" element={<NotchTrash />} />
           <Route path="templates" element={<NotchTemplates />} />
+          <Route path="wiki" element={<NotchWiki />} />
+
           <Route path="notifications" element={<NotchNotifications />} />
           <Route path="*" element={<Navigate to={standalone ? "/" : "/notch"} replace />} />
         </Routes>

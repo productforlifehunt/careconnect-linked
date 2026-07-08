@@ -8,7 +8,7 @@ import { toast } from "@/hooks/use-toast";
 
 interface Props { databaseId: string; workspaceId: string; }
 type ViewMode = "table" | "board" | "calendar" | "timeline" | "gallery" | "list" | "chart" | "form";
-type PropType = "text" | "number" | "select" | "multiselect" | "date" | "checkbox" | "url" | "email" | "phone" | "person" | "formula" | "rollup" | "button" | "ai" | "relation";
+type PropType = "text" | "number" | "select" | "multiselect" | "date" | "checkbox" | "url" | "email" | "phone" | "person" | "formula" | "rollup" | "button" | "ai" | "relation" | "files" | "rating" | "created_time" | "last_edited_time" | "created_by" | "last_edited_by" | "id";
 type RollupAgg =
   | "count" | "count_values" | "count_unique" | "count_empty" | "count_not_empty"
   | "percent_empty" | "percent_not_empty"
@@ -671,10 +671,44 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
         </div>
       );
     }
+    if (p.type === "files") {
+      const arr: string[] = Array.isArray(v) ? v : (v ? [String(v)] : []);
+      const add = () => {
+        const url = prompt("Paste a URL for the file/image:");
+        if (url) setProp(r, p.key, [...arr, url]);
+      };
+      return (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, alignItems: "center" }}>
+          {arr.map((u, i) => {
+            const isImg = /\.(png|jpe?g|gif|webp|svg)(\?|$)/i.test(u);
+            return isImg
+              ? <img key={i} src={u} alt="" onClick={(e) => { e.stopPropagation(); window.open(u, "_blank"); }} style={{ width: 22, height: 22, borderRadius: 3, objectFit: "cover", cursor: "pointer" }} />
+              : <a key={i} href={u} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} style={{ color: "var(--nn-blue)", fontSize: 11, background: "var(--nn-blue-bg)", padding: "1px 6px", borderRadius: 3 }}>📎 {u.split("/").pop()?.slice(0, 12) || "file"}</a>;
+          })}
+          <button onClick={(e) => { e.stopPropagation(); add(); }} style={{ background: "transparent", border: "1px dashed var(--nn-border)", borderRadius: 3, fontSize: 11, padding: "1px 4px", cursor: "pointer", color: "var(--nn-text-secondary)" }}>+</button>
+        </div>
+      );
+    }
+    if (p.type === "rating") {
+      const n = Number(v) || 0;
+      return (
+        <div style={{ display: "inline-flex", gap: 1 }}>
+          {[1, 2, 3, 4, 5].map((i) => (
+            <span key={i} onClick={(e) => { e.stopPropagation(); setProp(r, p.key, n === i ? 0 : i); }} style={{ cursor: "pointer", color: i <= n ? "#f5a623" : "var(--nn-border-strong)", fontSize: 14 }}>★</span>
+          ))}
+        </div>
+      );
+    }
+    if (p.type === "created_time") return <span style={{ fontSize: 12, color: "var(--nn-text-secondary)" }}>{(r as any).created_time ? new Date((r as any).created_time).toLocaleString() : ""}</span>;
+    if (p.type === "last_edited_time") return <span style={{ fontSize: 12, color: "var(--nn-text-secondary)" }}>{(r as any).last_edited_time ? new Date((r as any).last_edited_time).toLocaleString() : ""}</span>;
+    if (p.type === "created_by") return <span style={{ fontSize: 12, color: "var(--nn-text-secondary)" }}>{memberOpts.find((m) => String(m.user_id) === String((r as any).created_by))?.label || (r as any).created_by || ""}</span>;
+    if (p.type === "last_edited_by") return <span style={{ fontSize: 12, color: "var(--nn-text-secondary)" }}>{memberOpts.find((m) => String(m.user_id) === String((r as any).last_edited_by))?.label || (r as any).last_edited_by || ""}</span>;
+    if (p.type === "id") return <span style={{ fontSize: 11, color: "var(--nn-text-tertiary)", fontFamily: "monospace" }}>{String(r.id).slice(0, 8)}</span>;
     return (
       <input value={v} onChange={(e) => setProp(r, p.key, e.target.value)} placeholder="—" style={{ background: "transparent", border: "none", color: "var(--nn-text)", fontSize: 13, width: "100%" }} />
     );
   };
+
 
   if (loading) return <div style={{ opacity: 0.5, padding: 12 }}>Loading…</div>;
   if (loadErr) return (
@@ -1380,7 +1414,7 @@ function CalendarView({ month, calView, setCalView, onPrev, onNext, onToday, row
 
 function SchemaEditor({ schema, allBlocks, onClose, onSave }: { schema: PropDef[]; allBlocks: any[]; onClose: () => void; onSave: (s: PropDef[]) => void }) {
   const [draft, setDraft] = useState<PropDef[]>(JSON.parse(JSON.stringify(schema)));
-  const TYPES: PropType[] = ["text", "number", "select", "multiselect", "date", "checkbox", "url", "email", "phone", "person", "formula", "rollup", "button", "ai", "relation"];
+  const TYPES: PropType[] = ["text", "number", "select", "multiselect", "date", "checkbox", "url", "email", "phone", "person", "files", "rating", "formula", "rollup", "button", "ai", "relation", "created_time", "last_edited_time", "created_by", "last_edited_by", "id"];
   const databases = allBlocks.filter((b) => b.type === "database");
   const numericSources = draft.filter((p) => p.type === "number");
   const add = () => {

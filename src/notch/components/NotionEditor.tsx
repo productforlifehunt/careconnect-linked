@@ -190,7 +190,7 @@ const SLASH_ITEMS = [
     cmd: (e: any) => e.chain().focus().insertContent(
       `<div class="nn-callout" data-emoji="🎙️"><strong>Meeting notes — ${new Date().toLocaleString()}</strong></div>` +
       `<p><em>Click Record to start browser transcription. Speak clearly; results stream into the paragraphs below.</em></p>` +
-      `<p data-nn-meeting-controls="1"><button type="button" data-nn-meeting-rec="1" style="padding:4px 10px;border:1px solid var(--nn-border);border-radius:4px;background:var(--nn-bg-secondary);cursor:pointer;font-size:12px;">● Record</button> <button type="button" data-nn-meeting-stop="1" style="padding:4px 10px;border:1px solid var(--nn-border);border-radius:4px;background:var(--nn-bg-secondary);cursor:pointer;font-size:12px;">■ Stop</button></p>` +
+      `<p data-nn-meeting-controls="1"><button type="button" data-nn-meeting-rec="1" style="padding:4px 10px;border:1px solid var(--nn-border);border-radius:4px;background:var(--nn-bg-secondary);cursor:pointer;font-size:12px;">● Record</button> <button type="button" data-nn-meeting-stop="1" style="padding:4px 10px;border:1px solid var(--nn-border);border-radius:4px;background:var(--nn-bg-secondary);cursor:pointer;font-size:12px;">■ Stop</button> <button type="button" data-nn-meeting-summ="1" style="padding:4px 10px;border:1px solid var(--nn-border);border-radius:4px;background:var(--nn-blue-bg);color:var(--nn-blue);cursor:pointer;font-size:12px;">✨ Summarize</button></p>` +
       `<p data-nn-meeting-transcript="1"><em>Transcript will appear here…</em></p>`
     ).run() },
 ];
@@ -544,12 +544,35 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
       if (!t) return;
       const recBtn = t.closest('[data-nn-meeting-rec="1"]') as HTMLElement | null;
       const stopBtn = t.closest('[data-nn-meeting-stop="1"]') as HTMLElement | null;
-      if (!recBtn && !stopBtn) return;
+      const summBtn = t.closest('[data-nn-meeting-summ="1"]') as HTMLElement | null;
+      if (!recBtn && !stopBtn && !summBtn) return;
       ev.preventDefault(); ev.stopPropagation();
+      const container = (recBtn || stopBtn || summBtn)!.closest('p')!.parentElement!;
+      const transcriptP = container.querySelector('[data-nn-meeting-transcript="1"]') as HTMLElement | null;
+
+      if (summBtn) {
+        const text = (transcriptP?.textContent || "").trim();
+        if (!text || text === "Transcript will appear here…") { alert("No transcript to summarize yet."); return; }
+        // Extractive summary: rank sentences by length/keyword density, keep top 5.
+        const sents = text.split(/(?<=[.!?])\s+/).filter((s) => s.trim().length > 20);
+        const wordFreq: Record<string, number> = {};
+        for (const s of sents) for (const w of s.toLowerCase().split(/\W+/)) { if (w.length > 3) wordFreq[w] = (wordFreq[w] || 0) + 1; }
+        const scored = sents.map((s) => ({ s, score: s.toLowerCase().split(/\W+/).reduce((a, w) => a + (wordFreq[w] || 0), 0) / Math.max(1, s.length) }));
+        scored.sort((a, b) => b.score - a.score);
+        const top = scored.slice(0, 5).map((x) => x.s.trim());
+        const bullets = top.map((s) => `<li>${s}</li>`).join("");
+        const summaryHtml = `<div class="nn-callout" data-emoji="📝"><strong>Summary</strong><ul>${bullets}</ul></div>`;
+        const nextSummary = container.querySelector('[data-nn-meeting-summary="1"]');
+        if (nextSummary) nextSummary.remove();
+        const div = document.createElement('div');
+        div.setAttribute('data-nn-meeting-summary', '1');
+        div.innerHTML = summaryHtml;
+        container.appendChild(div);
+        return;
+      }
+
       const SR: any = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       if (!SR) { alert("Browser speech recognition unavailable. Try Chrome/Edge."); return; }
-      const container = (recBtn || stopBtn)!.closest('p')!.parentElement!;
-      const transcriptP = container.querySelector('[data-nn-meeting-transcript="1"]') as HTMLElement | null;
       if (recBtn) {
         if (rec) { try { rec.stop(); } catch {} }
         rec = new SR();
@@ -569,6 +592,7 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
         recBtn.textContent = "● Recording…";
       }
       if (stopBtn && rec) { try { rec.stop(); } catch {} rec = null; const rb = container.querySelector('[data-nn-meeting-rec="1"]') as HTMLElement | null; if (rb) rb.textContent = "● Record"; }
+
     };
     dom.addEventListener("click", onClick);
     return () => { dom.removeEventListener("click", onClick); try { rec?.stop(); } catch {} };

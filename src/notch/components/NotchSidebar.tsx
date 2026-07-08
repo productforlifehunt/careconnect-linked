@@ -449,6 +449,11 @@ export function NotchSidebar() {
           <span className="nn-icon">🧩</span>
           <span className="nn-title">Templates</span>
         </div>
+        <div className="nn-sidebar-item" onClick={() => nav(path("/wiki"))}>
+          <span className="nn-icon">📚</span>
+          <span className="nn-title">Wiki</span>
+        </div>
+
         <div className="nn-sidebar-item" onClick={() => nav(path("/notifications"))}>
           <span className="nn-icon" style={{ position: "relative" }}>
             <Bell size={15} />
