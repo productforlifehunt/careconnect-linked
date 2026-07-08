@@ -45,6 +45,7 @@ export default function NotchPage() {
   const [showShare, setShowShare] = useState(false);
   const [locked, setLocked] = useState(false);
   const [fullWidth, setFullWidth] = useState(false);
+  const [smallText, setSmallText] = useState(false);
   const [verified, setVerified] = useState(false);
   const [snapshots, setSnapshots] = useState<Array<{ ts: number; content: any; title: string }>>([]);
   const [showHistory, setShowHistory] = useState(false);
