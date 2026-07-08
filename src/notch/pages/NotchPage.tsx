@@ -80,6 +80,8 @@ export default function NotchPage() {
         cursor = parent;
       }
       setCrumbs(chain);
+      // Expose trail (excluding current page) for the <Breadcrumb> editor node.
+      (window as any).__NN_BREADCRUMB__ = chain.slice(0, -1).map((p) => ({ id: p.id, title: p.title || "Untitled" }));
     })();
     return () => { alive = false; };
   }, [pageId]);
