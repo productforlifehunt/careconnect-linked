@@ -317,8 +317,10 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
     };
     const inputHandler = () => {
       if (!slash) return;
-      const text = editor.state.doc.textBetween(Math.max(0, editor.state.selection.from - 30), editor.state.selection.from, "\n");
-      const m = text.match(/\/([^/\s]*)$/);
+      // Notion allows spaces inside the slash query (e.g. "/heading 1", "/to do").
+      // Only close on newline, another slash, or a query longer than 40 chars.
+      const text = editor.state.doc.textBetween(Math.max(0, editor.state.selection.from - 60), editor.state.selection.from, "\n");
+      const m = text.match(/\/([^/\n]{0,40})$/);
       if (m) {
         setSlash((s) => (s ? { ...s, query: m[1] } : s));
         setSelected(0);
@@ -508,8 +510,9 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
   const runItem = (item: (typeof SLASH_ITEMS)[number] | undefined) => {
     if (!item || !editor) return;
     const { from } = editor.state.selection;
-    const before = editor.state.doc.textBetween(Math.max(0, from - 30), from, "\n");
-    const m = before.match(/\/([^/\s]*)$/);
+    const before = editor.state.doc.textBetween(Math.max(0, from - 60), from, "\n");
+    // Match same shape as the slash input handler above (allow spaces in the query).
+    const m = before.match(/\/([^/\n]{0,40})$/);
     if (m) {
       const start = from - m[0].length;
       editor.chain().focus().deleteRange({ from: start, to: from }).run();
