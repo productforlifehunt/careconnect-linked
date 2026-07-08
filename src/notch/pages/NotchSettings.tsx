@@ -247,10 +247,19 @@ function ImportPanel() {
           >Choose CSV file…</button>
         </div>
 
-        <div style={{ fontSize: 11, color: "var(--nn-text-tertiary)" }}>
-          Notion export ZIPs and HTML are not yet supported — extract the .md files first, then upload here.
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 500 }}>Notion export (.zip)</div>
+          <div style={{ fontSize: 12, color: "var(--nn-text-secondary)", marginBottom: 6 }}>Upload a Notion "Markdown & CSV" or "HTML" export. Nested pages, headings, lists, code blocks, and quotes are preserved.</div>
+          <button
+            className="nn-btn-primary" disabled={busy || !ws}
+            onClick={() => pickAndRun(".zip,application/zip", async (fs) => {
+              const r = await importNotionZip(fs[0], { workspaceId: ws, userId: uid });
+              return `Imported ${r.created} page${r.created === 1 ? "" : "s"} from Notion export.`;
+            })}
+          >Choose Notion ZIP…</button>
         </div>
       </div>
     </section>
   );
 }
+
