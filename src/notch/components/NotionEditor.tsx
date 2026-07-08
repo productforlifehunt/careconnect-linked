@@ -795,6 +795,21 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
               window.dispatchEvent(new CustomEvent("nn:open-comment", { detail: { from: range?.from, to: range?.to, threadId } }));
               setBlockMenu(null);
             }}><span className="nn-title">Comment</span></div>
+            <div className="nn-sidebar-item" onClick={async () => {
+              if (!blockMenu || !editor || !onCreateSubpage) { setBlockMenu(null); return; }
+              const range = nodeRangeFor(blockMenu.el);
+              if (!range) { setBlockMenu(null); return; }
+              const text = editor.state.doc.textBetween(range.from, range.to, " ").trim();
+              const sub = await onCreateSubpage();
+              if (sub) {
+                editor.chain().focus()
+                  .setTextSelection(range)
+                  .deleteSelection()
+                  .insertContent({ type: "paragraph", content: [{ type: "text", text: text || sub.title, marks: [{ type: "link", attrs: { href: sub.href } }] }] })
+                  .run();
+              }
+              setBlockMenu(null);
+            }}><span className="nn-title">Turn into page</span></div>
             <div className="nn-sidebar-item" onClick={deleteBlock} style={{ color: "var(--nn-danger, #e03e3e)" }}><span className="nn-title">Delete</span></div>
 
             <div style={{ borderTop: "1px solid var(--nn-border)", margin: "4px 0" }} />
