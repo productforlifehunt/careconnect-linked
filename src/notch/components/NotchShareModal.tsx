@@ -57,10 +57,12 @@ export function NotchShareModal({ blockId, onClose }: { blockId: string; onClose
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
+  const emailValid = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+
   const invite = async (targetEmail?: string, targetRole?: Role) => {
     const em = (targetEmail ?? email).trim();
     const r = targetRole ?? role;
-    if (!em) return;
+    if (!em || !emailValid(em)) return;
     setBusy(true);
     try {
       await cctCreate(NN.permission, { block_id: String(blockId), email: em, role: r, is_public: 0, granted_by: user?.user_id || 0 });
@@ -122,8 +124,11 @@ export function NotchShareModal({ blockId, onClose }: { blockId: string; onClose
                 <option value="editor">Can edit</option>
                 <option value="owner">Full access</option>
               </select>
-              <button onClick={() => invite()} disabled={busy || !email.trim()} className="nn-btn-primary">Invite</button>
-              {email && filteredMembers.length > 0 && (
+              <button onClick={() => invite()} disabled={busy || !emailValid(email)} className="nn-btn-primary">Invite</button>
+              {email && !emailValid(email) && (
+                <div style={{ position: "absolute", top: "100%", left: 0, marginTop: 4, fontSize: 11, color: "var(--nn-danger, #e03e3e)" }}>Enter a valid email address.</div>
+              )}
+              {email && emailValid(email) && filteredMembers.length > 0 && (
                 <div style={{ position: "absolute", top: "100%", left: 0, right: 140, background: "var(--nn-bg)", border: "1px solid var(--nn-border)", borderRadius: 6, marginTop: 4, boxShadow: "var(--nn-shadow-md)", zIndex: 10, maxHeight: 200, overflow: "auto" }}>
                   {filteredMembers.map((m) => (
                     <div key={m.id} onClick={() => { setEmail(""); setMemberQuery(""); invite(m.email, role); }} style={{ padding: "6px 10px", cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", gap: 8 }} onMouseDown={(e) => e.preventDefault()}>
@@ -170,17 +175,18 @@ export function NotchShareModal({ blockId, onClose }: { blockId: string; onClose
                 <div style={{ fontSize: 14, fontWeight: 500 }}>Publish to web</div>
                 <div style={{ fontSize: 12, color: "var(--nn-text-tertiary)" }}>{publicRow ? (isExpired ? "Link has expired." : "Anyone with the link can view.") : "Publish this page to the internet."}</div>
               </div>
-              <label style={{ display: "inline-flex", alignItems: "center", gap: 4, cursor: "pointer" }}>
-                <input type="checkbox" checked={!!publicRow} onChange={togglePublic} />
-              </label>
+              <Switch checked={!!publicRow} onChange={togglePublic} />
             </div>
 
             {publicRow && (
               <>
                 <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
-                  <input readOnly value={publicUrl} className="nn-auth-input" style={{ marginBottom: 0, flex: 1, fontSize: 12 }} onFocus={(e) => e.currentTarget.select()} />
-                  <button onClick={copyLink} className="nn-topbar-btn"><CopyIcon size={13} style={{ marginRight: 4 }} />{copied ? "Copied" : "Copy"}</button>
+                  <input readOnly value={publicUrl} disabled={!!isExpired} className="nn-auth-input" style={{ marginBottom: 0, flex: 1, fontSize: 12, opacity: isExpired ? 0.55 : 1 }} onFocus={(e) => e.currentTarget.select()} />
+                  <button onClick={copyLink} disabled={!!isExpired} className="nn-topbar-btn" style={{ opacity: isExpired ? 0.55 : 1, cursor: isExpired ? "not-allowed" : "pointer" }}><CopyIcon size={13} style={{ marginRight: 4 }} />{copied ? "Copied" : "Copy"}</button>
                 </div>
+                {isExpired && (
+                  <div style={{ fontSize: 12, color: "var(--nn-danger, #e03e3e)", marginBottom: 10 }}>This link has expired. Clear or update the expiration below to re-enable it.</div>
+                )}
 
                 <div style={{ borderTop: "1px solid var(--nn-border)", paddingTop: 12 }}>
                   <div style={{ fontSize: 12, color: "var(--nn-text-secondary)", marginBottom: 6 }}>Link options</div>
@@ -238,5 +244,41 @@ function SettingRow({ icon, label, hint, children }: { icon: React.ReactNode; la
       </div>
       {children}
     </div>
+  );
+}
+
+function Switch({ checked, onChange }: { checked: boolean; onChange: () => void }) {
+  return (
+    <button
+      role="switch"
+      aria-checked={checked}
+      onClick={onChange}
+      style={{
+        width: 32,
+        height: 18,
+        borderRadius: 999,
+        border: "none",
+        cursor: "pointer",
+        background: checked ? "var(--nn-blue, #2383e2)" : "var(--nn-border, #d3d1cb)",
+        position: "relative",
+        transition: "background 120ms ease",
+        padding: 0,
+        flexShrink: 0,
+      }}
+    >
+      <span
+        style={{
+          position: "absolute",
+          top: 2,
+          left: checked ? 16 : 2,
+          width: 14,
+          height: 14,
+          borderRadius: "50%",
+          background: "#fff",
+          boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
+          transition: "left 120ms ease",
+        }}
+      />
+    </button>
   );
 }
