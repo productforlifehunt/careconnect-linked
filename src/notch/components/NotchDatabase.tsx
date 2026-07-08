@@ -349,6 +349,35 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
         </div>
       );
     }
+    if (p.type === "relation") {
+      // Value stored as a comma-separated list of block IDs. Show titles resolved from allBlocks.
+      const ids: string[] = Array.isArray(v) ? v : (v ? String(v).split(",").map((s) => s.trim()).filter(Boolean) : []);
+      const targetDbId = p.relation?.databaseId || "";
+      const candidates = allBlocks.filter((b) => targetDbId ? String(b.parent_id) === String(targetDbId) : b.type === "page");
+      const titleOf = (id: string) => allBlocks.find((b) => String(b.id) === String(id))?.title || id;
+      return (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, alignItems: "center" }}>
+          {ids.map((id) => (
+            <span key={id} onClick={(e) => { e.stopPropagation(); nav(path(`/p/${id}`)); }}
+              style={{ background: "var(--nn-blue-bg)", color: "var(--nn-blue)", padding: "1px 6px", borderRadius: 3, fontSize: 11, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 3 }}>
+              <LinkIcon size={10} /> {titleOf(id)}
+              <span onClick={(e) => { e.stopPropagation(); setProp(r, p.key, ids.filter((x) => x !== id)); }} style={{ opacity: 0.6, cursor: "pointer" }}>×</span>
+            </span>
+          ))}
+          <select
+            value=""
+            onChange={(e) => { const v2 = e.target.value; if (v2 && !ids.includes(v2)) setProp(r, p.key, [...ids, v2]); }}
+            style={{ background: "transparent", border: "1px dashed var(--nn-border)", borderRadius: 3, fontSize: 11, padding: "1px 2px", color: "var(--nn-text-secondary)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <option value="">+ link</option>
+            {candidates.filter((c) => !ids.includes(String(c.id)) && String(c.id) !== String(r.id)).slice(0, 200).map((c) => (
+              <option key={c.id} value={c.id}>{c.title || "Untitled"}</option>
+            ))}
+          </select>
+        </div>
+      );
+    }
     return (
       <input value={v} onChange={(e) => setProp(r, p.key, e.target.value)} placeholder="—" style={{ background: "transparent", border: "none", color: "var(--nn-text)", fontSize: 13, width: "100%" }} />
     );
