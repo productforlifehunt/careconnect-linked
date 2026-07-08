@@ -182,6 +182,10 @@ const SLASH_ITEMS = [
     cmd: (e: any) => e.chain().focus().insertContent({ type: "inlineDatabase", attrs: { databaseId: "", mode: "inline" } }).run() },
   { group: "Database", key: "db_linked", icon: "🔗", name: "Linked database", desc: "Reference an existing database.",
     cmd: (e: any) => e.chain().focus().insertContent({ type: "inlineDatabase", attrs: { databaseId: "", mode: "linked" } }).run() },
+  { group: "Media", key: "bookmark", icon: "🔖", name: "Web bookmark", desc: "Save a link as a visual bookmark.",
+    cmd: (e: any) => e.chain().focus().insertContent({ type: "bookmark", attrs: { url: "" } }).run() },
+  { group: "Advanced", key: "button", icon: "🔘", name: "Button", desc: "Clickable button that runs an action.",
+    cmd: (e: any) => e.chain().focus().insertContent({ type: "buttonBlock", attrs: { label: "", action: "insert_todo", target: "" } }).run() },
 ];
 
 export function NotionEditor({ content, onChange, placeholder = "Write, press '/' for commands, or ⌃Space for AI…", onCreateSubpage, pageId }: Props) {
