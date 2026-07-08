@@ -115,11 +115,12 @@ export default function NotchPage() {
         editor_content: extra.editor_content ?? content,
         locked: extra.locked ?? locked,
         full_width: extra.full_width ?? fullWidth,
+        small_text: extra.small_text ?? smallText,
         verified: extra.verified ?? verified,
         history: extra.history ?? snapshots,
       }),
     });
-  }, [content, locked, fullWidth, verified, snapshots, scheduleSave]);
+  }, [content, locked, fullWidth, smallText, verified, snapshots, scheduleSave]);
 
   const onTitleChange = (v: string) => { if (locked) return; setTitle(v); scheduleSave({ title: v }); };
   const onIconChange = (v: string) => { setIcon(v); setShowEmoji(false); scheduleSave({ icon: v }); };
