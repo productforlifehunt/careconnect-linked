@@ -1,17 +1,20 @@
 import { useEffect, useState } from "react";
 import { useNotchAuth } from "@/notch/context/NotchAuthContext";
-import { Moon, Sun, User, SlidersHorizontal, Bell, Users, Keyboard, LogOut } from "lucide-react";
+import { Moon, Sun, User, SlidersHorizontal, Bell, Users, Keyboard, LogOut, Download } from "lucide-react";
 import { NotchMembersPanel } from "@/notch/components/NotchMembersPanel";
 import { requestBrowserNotificationPermission } from "@/notch/lib/nn-notifications";
 import { nnAlert } from "@/notch/lib/nn-dialog";
+import { importMarkdownFiles, importCsvAsDatabase } from "@/notch/lib/nn-importers";
+import { cctList, NN } from "@/notch/lib/nn-client";
 
-type TabKey = "account" | "preferences" | "notifications" | "members" | "shortcuts";
+type TabKey = "account" | "preferences" | "notifications" | "members" | "shortcuts" | "import";
 
 const TABS: { key: TabKey; label: string; icon: any }[] = [
   { key: "account", label: "My account", icon: User },
   { key: "preferences", label: "My settings", icon: SlidersHorizontal },
   { key: "notifications", label: "My notifications", icon: Bell },
   { key: "members", label: "People", icon: Users },
+  { key: "import", label: "Import", icon: Download },
   { key: "shortcuts", label: "Shortcuts", icon: Keyboard },
 ];
 
