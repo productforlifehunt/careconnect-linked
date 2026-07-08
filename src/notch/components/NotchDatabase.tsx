@@ -274,6 +274,7 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
       created_by: user?.user_id || 0, last_edited_by: user?.user_id || 0,
     });
     await load();
+    fireAutomations({ id, title: "", properties: JSON.stringify(preset) } as Row, "created");
     nav(path(`/p/${id}`));
   };
   const archiveRow = async (id: string) => {
@@ -470,6 +471,7 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
           <button onClick={() => setSortDir(sortDir === "asc" ? "desc" : "asc")} className="nn-topbar-btn" title="Toggle sort direction">{sortDir === "asc" ? "↑" : "↓"}</button>
         )}
         <button onClick={() => setShowCondEditor(true)} className="nn-topbar-btn" title="Conditional formatting">🎨</button>
+        <button onClick={() => setShowAuto(true)} className="nn-topbar-btn" title="Automations">⚡</button>
         <button onClick={() => setShowSchema(true)} className="nn-topbar-btn"><Settings2 size={13} /> Properties</button>
         <button onClick={() => addRow()} className="nn-topbar-btn"><Plus size={13} /> New</button>
       </div>
@@ -614,6 +616,9 @@ export function NotchDatabase({ databaseId, workspaceId }: Props) {
       )}
       {showCondEditor && (
         <CondEditor rules={condRules} schema={schema} onClose={() => setShowCondEditor(false)} onSave={(r) => { saveCondRules(r); setShowCondEditor(false); }} />
+      )}
+      {showAuto && (
+        <AutomationEditor rules={automations} schema={schema} onClose={() => setShowAuto(false)} onSave={(r) => { saveAutomations(r); setShowAuto(false); }} />
       )}
     </div>
   );
