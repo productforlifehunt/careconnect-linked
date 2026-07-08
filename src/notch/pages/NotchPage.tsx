@@ -574,3 +574,55 @@ function BreadcrumbTrail({ crumbs, pageId, onNav }: { crumbs: Block[]; pageId: s
 }
 
 
+
+function PresenceAvatars({ pageId, me }: { pageId: string; me: { id: string; name: string } }) {
+  const [peers, setPeers] = useState<Peer[]>([]);
+  useEffect(() => {
+    if (!pageId) return;
+    const p = joinPresence(pageId, me.id, me.name);
+    const off = p.onChange(() => setPeers(Array.from(p.peers.values())));
+    setPeers(Array.from(p.peers.values()));
+    return () => { off(); };
+  }, [pageId, me.id, me.name]);
+  if (!peers.length) return null;
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: -6, marginRight: 6 }} title={`${peers.length} other viewer${peers.length > 1 ? "s" : ""}`}>
+      {peers.slice(0, 4).map((p) => (
+        <div key={p.id} style={{ width: 22, height: 22, borderRadius: "50%", background: p.color, color: "white", fontSize: 10, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid var(--nn-bg)", marginLeft: -6 }} title={p.name}>
+          {p.name.slice(0, 1).toUpperCase()}
+        </div>
+      ))}
+      {peers.length > 4 && (
+        <div style={{ width: 22, height: 22, borderRadius: "50%", background: "var(--nn-bg-secondary)", color: "var(--nn-text)", fontSize: 10, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid var(--nn-bg)", marginLeft: -6 }}>+{peers.length - 4}</div>
+      )}
+    </div>
+  );
+}
+
+function PresenceLayer({ pageId, me }: { pageId: string; me: { id: string; name: string } }) {
+  const [peers, setPeers] = useState<Peer[]>([]);
+  useEffect(() => {
+    if (!pageId) return;
+    const p = joinPresence(pageId, me.id, me.name);
+    const off = p.onChange(() => setPeers(Array.from(p.peers.values())));
+    const onMove = (e: MouseEvent) => p.cursor(e.clientX, e.clientY);
+    let raf = 0;
+    const throttled = (e: MouseEvent) => { if (raf) return; raf = requestAnimationFrame(() => { raf = 0; onMove(e); }); };
+    window.addEventListener("mousemove", throttled);
+    return () => { off(); window.removeEventListener("mousemove", throttled); };
+  }, [pageId, me.id, me.name]);
+  return (
+    <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 200 }}>
+      {peers.map((p) => (
+        typeof p.x === "number" && typeof p.y === "number" ? (
+          <div key={p.id} style={{ position: "absolute", left: p.x, top: p.y, transform: "translate(-2px, -2px)", transition: "left 120ms linear, top 120ms linear" }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" style={{ display: "block" }}>
+              <path d="M2 2 L2 18 L7 14 L10 22 L13 21 L10 13 L18 13 Z" fill={p.color} stroke="white" strokeWidth="1" />
+            </svg>
+            <div style={{ marginLeft: 12, marginTop: -4, background: p.color, color: "white", fontSize: 10, padding: "2px 6px", borderRadius: 3, whiteSpace: "nowrap" }}>{p.name}</div>
+          </div>
+        ) : null
+      ))}
+    </div>
+  );
+}
