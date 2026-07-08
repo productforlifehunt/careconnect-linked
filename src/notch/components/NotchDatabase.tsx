@@ -1237,15 +1237,16 @@ function SchemaEditor({ schema, allBlocks, onClose, onSave }: { schema: PropDef[
 }
 
 /* ─── Timeline / Gantt view ─────────────────────────────────── */
-function TimelineView({ rows, dateProp, endDateProp, rowColor, onOpen, onReschedule }: {
+function TimelineView({ rows, dateProp, endDateProp, depProp, rowColor, onOpen, onReschedule, getProp: outerGetProp }: {
   rows: Row[]; dateProp: PropDef | null; endDateProp: PropDef | null;
+  depProp?: PropDef | null;
   rowColor: (r: Row) => string;
   onOpen: (id: string) => void;
   onReschedule: (row: Row, iso: string, isEnd: boolean) => void;
+  getProp?: (r: Row, key: string) => any;
 }) {
   if (!dateProp) return <div style={{ color: "var(--nn-text-tertiary)", fontSize: 13 }}>Add a date property to enable the timeline view.</div>;
   const getVal = (r: Row, key: string): string => { try { return String((r.properties ? JSON.parse(r.properties) : {})[key] || "").slice(0, 10); } catch { return ""; } };
-  // Compute date range: min → max +7 days (or 30 days if empty).
   const dates = rows.flatMap((r) => [getVal(r, dateProp.key), endDateProp ? getVal(r, endDateProp.key) : ""].filter(Boolean));
   const today = new Date();
   const minD = dates.length ? new Date(Math.min(...dates.map((d) => new Date(d).getTime()))) : new Date(today.getFullYear(), today.getMonth(), 1);
@@ -1255,13 +1256,37 @@ function TimelineView({ rows, dateProp, endDateProp, rowColor, onOpen, onResched
   const dayMs = 86400000;
   const totalDays = Math.max(14, Math.ceil((end.getTime() - start.getTime()) / dayMs));
   const cellW = 32;
+  const rowH = 32;
+  const labelW = 200;
   const iso = (d: Date) => d.toISOString().slice(0, 10);
   const days: Date[] = [];
   for (let i = 0; i < totalDays; i++) { const d = new Date(start); d.setDate(start.getDate() + i); days.push(d); }
   const todayIso = iso(today);
+  // Pre-compute bar geometry per row for dependency arrows.
+  const geom = new Map<string, { off: number; span: number; index: number }>();
+  const visible: Row[] = [];
+  rows.forEach((r) => {
+    const s = getVal(r, dateProp.key);
+    if (!s) return;
+    const e = endDateProp ? getVal(r, endDateProp.key) : "";
+    const sD = new Date(s), eD = e ? new Date(e) : sD;
+    const off = Math.max(0, Math.round((sD.getTime() - start.getTime()) / dayMs));
+    const span = Math.max(1, Math.round((eD.getTime() - sD.getTime()) / dayMs) + 1);
+    geom.set(r.id, { off, span, index: visible.length });
+    visible.push(r);
+  });
+  const totalW = labelW + totalDays * cellW;
+  const totalH = visible.length * rowH;
+  const depsResolve = (r: Row): string[] => {
+    if (!depProp) return [];
+    const raw = outerGetProp ? outerGetProp(r, depProp.key) : undefined;
+    if (Array.isArray(raw)) return raw.map(String);
+    if (typeof raw === "string" && raw) return raw.split(",").map((s) => s.trim()).filter(Boolean);
+    return [];
+  };
   return (
-    <div style={{ border: "1px solid var(--nn-border)", borderRadius: 4, overflow: "auto" }}>
-      <div style={{ display: "grid", gridTemplateColumns: `200px repeat(${totalDays}, ${cellW}px)`, position: "sticky", top: 0, background: "var(--nn-bg-secondary)", borderBottom: "1px solid var(--nn-border)", fontSize: 11, color: "var(--nn-text-secondary)" }}>
+    <div style={{ border: "1px solid var(--nn-border)", borderRadius: 4, overflow: "auto", position: "relative" }}>
+      <div style={{ display: "grid", gridTemplateColumns: `${labelW}px repeat(${totalDays}, ${cellW}px)`, position: "sticky", top: 0, background: "var(--nn-bg-secondary)", borderBottom: "1px solid var(--nn-border)", fontSize: 11, color: "var(--nn-text-secondary)", zIndex: 2 }}>
         <div style={{ padding: "6px 8px", fontWeight: 500 }}>Task</div>
         {days.map((d) => {
           const isFirst = d.getDate() === 1;
@@ -1274,45 +1299,67 @@ function TimelineView({ rows, dateProp, endDateProp, rowColor, onOpen, onResched
           );
         })}
       </div>
-      {rows.map((r) => {
-        const s = getVal(r, dateProp.key);
-        const e = endDateProp ? getVal(r, endDateProp.key) : "";
-        if (!s) return null;
-        const sD = new Date(s), eD = e ? new Date(e) : sD;
-        const off = Math.max(0, Math.round((sD.getTime() - start.getTime()) / dayMs));
-        const span = Math.max(1, Math.round((eD.getTime() - sD.getTime()) / dayMs) + 1);
-        const bg = rowColor(r) || "var(--nn-blue-bg)";
-        return (
-          <div key={r.id} style={{ display: "grid", gridTemplateColumns: `200px repeat(${totalDays}, ${cellW}px)`, borderBottom: "1px solid var(--nn-border)", alignItems: "center", minHeight: 32 }}>
-            <div onClick={() => onOpen(r.id)} style={{ padding: "6px 8px", cursor: "pointer", fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              <span>{r.icon || "📄"}</span> {r.title || "Untitled"}
-            </div>
-            <div style={{ gridColumn: `${2 + off} / span ${span}`, position: "relative", padding: "0 2px" }}>
-              <div
-                onClick={() => onOpen(r.id)}
-                draggable
-                onDragStart={(ev) => ev.dataTransfer.setData("text/nn-tl", r.id)}
-                title={`${s}${e ? " → " + e : ""}`}
-                style={{ background: bg, color: "var(--nn-blue)", height: 20, borderRadius: 4, cursor: "pointer", fontSize: 11, padding: "2px 6px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", border: "1px solid var(--nn-blue)" }}
-              >
-                {r.title || "Untitled"}
+      <div style={{ position: "relative", minWidth: totalW }}>
+        {visible.map((r) => {
+          const g = geom.get(r.id)!;
+          const s = getVal(r, dateProp.key);
+          const e = endDateProp ? getVal(r, endDateProp.key) : "";
+          const bg = rowColor(r) || "var(--nn-blue-bg)";
+          return (
+            <div key={r.id} style={{ display: "grid", gridTemplateColumns: `${labelW}px repeat(${totalDays}, ${cellW}px)`, borderBottom: "1px solid var(--nn-border)", alignItems: "center", minHeight: rowH }}>
+              <div onClick={() => onOpen(r.id)} style={{ padding: "6px 8px", cursor: "pointer", fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <span>{r.icon || "📄"}</span> {r.title || "Untitled"}
               </div>
+              <div style={{ gridColumn: `${2 + g.off} / span ${g.span}`, position: "relative", padding: "0 2px" }}>
+                <div
+                  onClick={() => onOpen(r.id)}
+                  draggable
+                  onDragStart={(ev) => ev.dataTransfer.setData("text/nn-tl", r.id)}
+                  title={`${s}${e ? " → " + e : ""}`}
+                  style={{ background: bg, color: "var(--nn-blue)", height: 20, borderRadius: 4, cursor: "pointer", fontSize: 11, padding: "2px 6px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", border: "1px solid var(--nn-blue)" }}
+                >
+                  {r.title || "Untitled"}
+                </div>
+              </div>
+              {days.map((d, i) => (
+                <div
+                  key={i}
+                  onDragOver={(ev) => { ev.preventDefault(); }}
+                  onDrop={(ev) => { ev.preventDefault(); const id = ev.dataTransfer.getData("text/nn-tl"); if (id === r.id) onReschedule(r, iso(d), false); }}
+                  style={{ position: "absolute", pointerEvents: "none" }}
+                />
+              ))}
             </div>
-            {days.map((d, i) => (
-              <div
-                key={i}
-                onDragOver={(ev) => { ev.preventDefault(); }}
-                onDrop={(ev) => { ev.preventDefault(); const id = ev.dataTransfer.getData("text/nn-tl"); if (id === r.id) onReschedule(r, iso(d), false); }}
-                style={{ position: "absolute", pointerEvents: "none" }}
-              />
-            ))}
-          </div>
-        );
-      })}
+          );
+        })}
+        {depProp && visible.length > 0 && (
+          <svg width={totalW} height={totalH} style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none" }}>
+            <defs>
+              <marker id="nn-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="#eb5757" />
+              </marker>
+            </defs>
+            {visible.flatMap((r) => {
+              const g = geom.get(r.id)!;
+              const yTo = g.index * rowH + rowH / 2;
+              const xTo = labelW + g.off * cellW;
+              return depsResolve(r).map((depId) => {
+                const gd = geom.get(depId); if (!gd) return null;
+                const xFrom = labelW + (gd.off + gd.span) * cellW;
+                const yFrom = gd.index * rowH + rowH / 2;
+                const mx = (xFrom + xTo) / 2;
+                const d = `M ${xFrom} ${yFrom} C ${mx} ${yFrom}, ${mx} ${yTo}, ${xTo} ${yTo}`;
+                return <path key={r.id + "->" + depId} d={d} stroke="#eb5757" strokeWidth={1.5} fill="none" markerEnd="url(#nn-arrow)" opacity={0.75} />;
+              }).filter(Boolean);
+            })}
+          </svg>
+        )}
+      </div>
       {!rows.length && <div style={{ padding: 12, color: "var(--nn-text-tertiary)", fontSize: 13 }}>No rows with a date to show.</div>}
     </div>
   );
 }
+
 
 /* ─── Conditional formatting editor ─────────────────────────── */
 function CondEditor({ rules, schema, onClose, onSave }: {
