@@ -174,6 +174,10 @@ const SLASH_ITEMS = [
         .run();
     } },
   { group: "Basic", key: "linkpage", icon: "🔗", name: "Link to page", desc: "Insert link to another page.", cmd: (_e: any, ctx: any) => { ctx?.onOpenPagePicker?.(); } },
+  { group: "Database", key: "db_inline", icon: "🗄", name: "Database — inline", desc: "Full inline database view.",
+    cmd: (e: any) => e.chain().focus().insertContent({ type: "inlineDatabase", attrs: { databaseId: "", mode: "inline" } }).run() },
+  { group: "Database", key: "db_linked", icon: "🔗", name: "Linked database", desc: "Reference an existing database.",
+    cmd: (e: any) => e.chain().focus().insertContent({ type: "inlineDatabase", attrs: { databaseId: "", mode: "linked" } }).run() },
 ];
 
 export function NotionEditor({ content, onChange, placeholder = "Write, press '/' for commands, or ⌃Space for AI…", onCreateSubpage }: Props) {
