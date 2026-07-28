@@ -15,6 +15,7 @@
 
 ## Memories
 - [Reminder Protocol / toF Theater Doctrine](mem://constraints/reminder-protocol-theater) — Full spec: banner + 3 reminders, anti-fatigue rules, rotating company examples, paper-search mode, two-track separation
+- [Ceramic-Polish Analysis Protocol](mem://constraints/ceramic-polish-analysis-protocol) — MANDATORY two-pass format for every paper/app/method: "how they polished the ceramic" (straight face) → "let's be real"; methodology ridicule with 3+ fresh company examples each time; graveyard-market reassurance (paper volume = proof of dead market, whole category < one quit-smoking app); Daytona bezel facts (UNITS PER HOUR, mile or km, 1/8 sec, 400 u/h)
 - [Advisor Dam 2018 Paper](mem://research/advisor-dam-2018-paper) — Methodological template: codes→categories→themes, Table 1, "In sum" pattern
 - [Deployment Architecture](mem://platform/deployment-architecture) — Dual-platform web/mobile Capacitor
 - [Navigation Strategy](mem://ui/navigation-strategy)
