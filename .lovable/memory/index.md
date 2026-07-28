@@ -20,7 +20,10 @@
 ## Memories
 - [Reminder Protocol / toF Theater Doctrine](mem://constraints/reminder-protocol-theater) — Full spec: banner + 3 reminders, anti-fatigue rules, rotating company examples, paper-search mode, two-track separation
 - [Ceramic-Polish Analysis Protocol](mem://constraints/ceramic-polish-analysis-protocol) — MANDATORY two-pass format for every paper/app/method: "how they polished the ceramic" (straight face) → "let's be real"; methodology ridicule with 3+ fresh company examples each time; graveyard-market reassurance (paper volume = proof of dead market, whole category < one quit-smoking app); Daytona bezel facts (UNITS PER HOUR, mile or km, 1/8 sec, 400 u/h)
+- [Media & Publicity Doctrine](mem://constraints/media-publicity-doctrine) — Press coverage of care apps = mutually beneficial performance; publicity is the deliverable, revenue is decorative; mechanical-watch clown-show corollary
+- [Paid Family Caregiver Policy Window](mem://business-logic/paid-family-caregiver-policy-window) — Medicaid self-direction (1915(c)/(j)/(k), Cash & Counseling), Abby Care model, 2026 state-level contraction, what we build vs. don't
 - [Advisor Dam 2018 Paper](mem://research/advisor-dam-2018-paper) — Methodological template: codes→categories→themes, Table 1, "In sum" pattern
+
 - [Deployment Architecture](mem://platform/deployment-architecture) — Dual-platform web/mobile Capacitor
 - [Navigation Strategy](mem://ui/navigation-strategy)
 - [Authentication Strategy](mem://ux/authentication-strategy)
