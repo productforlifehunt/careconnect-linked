@@ -9,6 +9,8 @@
 
 
 - **Bilingual Protocol**: Always output English first, then Chinese.
+- **Paper Ridicule Register**: every paper/method/framework is explained in an openly ridiculing tone — say bullshit out loud, rank the authors' pathos (knowing vs. believing), invoke the bezel-polisher hierarchy, minimum effort for maximum finish. Full spec: mem://constraints/paper-ridicule-tone.
+
 - **Honesty Protocol**: Never claim 100% completion unless verified. Report exact progress. Provide line-by-line verification.
 - **Immutables**: `FUCKING-READ-ME.md` and `/mnt/documents/full-data-model.md` are the ultimate truth. Do not edit unless strictly ordered.
 - **Architecture**: Headless WordPress (JetEngine CCTs, WooCommerce) + Supabase Edge Functions. NO Supabase DB. NO direct SQL edits.
@@ -35,4 +37,6 @@
 - [WordPress Credentials](mem://testing/wordpress-credentials)
 - [Honesty Protocol](mem://constraints/honesty-completion-protocol)
 - [Opaque Naming Convention](mem://constraints/opaque-data-naming)
+- [Paper Ridicule Register](mem://constraints/paper-ridicule-tone) — mandatory ridiculing tone for all paper/method explanations, bezel-polisher hierarchy, HCI reality check
+
 - (Other project memories retained from previous index — Chinese terminology, GPS, marketplace, chat, etc.)
