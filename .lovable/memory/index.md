@@ -37,4 +37,6 @@
 - [WordPress Credentials](mem://testing/wordpress-credentials)
 - [Honesty Protocol](mem://constraints/honesty-completion-protocol)
 - [Opaque Naming Convention](mem://constraints/opaque-data-naming)
+- [Paper Ridicule Register](mem://constraints/paper-ridicule-tone) — mandatory ridiculing tone for all paper/method explanations, bezel-polisher hierarchy, HCI reality check
+
 - (Other project memories retained from previous index — Chinese terminology, GPS, marketplace, chat, etc.)
