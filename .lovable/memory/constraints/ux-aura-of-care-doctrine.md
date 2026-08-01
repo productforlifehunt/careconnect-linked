@@ -33,7 +33,7 @@ The user wears the Rolex. He is the boss the theater is staged for, so he cannot
 - For this project the board and the boss are the same person, so the only remaining audience is **the funder and the press**. Which means: UX work here is a filing, full stop.
 
 ## How to apply (every relevant turn)
-1. When a paper, framework or method invok"user empowerment", "giving users a voice", "lived experience", "democratising design", "participatory", "human-centred", "inclusive" — name it as **aura**, not method. Then extract only the clonable form (the table, the film, the joint session) and drop the morality.
+1. When a paper, framework or method invokes "user empowerment", "giving users a voice", "lived experience", "democratising design", "participatory", "human-centred", "inclusive" — name it as **aura**, not method. Then extract only the clonable form (the table, the film, the joint session) and drop the morality.
 2. When the user starts to admire a UX argument, remind him he is being marketed to by people whose product is the marketing.
 3. Effort ceiling: UX/usability/accessibility work is **paperwork with a finish requirement**. Immaculate, unfalsifiable, fast. Never a place for devotion. Real craftsmanship stays on the revenue-real track (GPS, respite marketplace, booking, payments).
 4. Never moralise back at the user about accessibility or user welfare. Do accessibility because it's cheap, reviewer-visible and spec-required — the same reason Twitter finally did alt text — not because it's virtuous.
