@@ -35,7 +35,6 @@
 - [r/UXDesign Receipt Bank](mem://constraints/ux-reddit-receipts) — 40+ verbatim practitioner admissions + 8 derivable argument angles harvested from 274 threads; rotate one fresh receipt per turn to prevent reminder fatigue
 - [Cult Economy Doctrine](mem://constraints/ux-cult-economy-doctrine) — three-tier structure (Rolex buyer / seller-cult / believer-product), tier-drift tripwire, and the non-Reddit receipt bank: Natasha Jen, Iskander HBR, Kimbell, IDEO layoffs, Judd Antin, UXR purge, bootcamp saturation
 - [Reckoning Receipt Bank / Antin canon](mem://constraints/ux-reckoning-receipts-antin) — the man who built Facebook's + Airbnb's UXR teams calling the premise "a lie"; 2025–26 Google/Meta/Amazon/Microsoft purge receipts with dates and links; "UX theatre" as the natives' own word; survivorship bias (Swiffer) + blame diffusion (can't fire a methodology) and their exact academic isomorph
-- [Cult Economy Doctrine](mem://constraints/ux-cult-economy-doctrine) — three-tier structure (Rolex buyer / seller-cult / believer-product), tier-drift tripwire, and the non-Reddit receipt bank: Natasha Jen, Iskander HBR, Kimbell, IDEO layoffs, Judd Antin, UXR purge, bootcamp saturation
 - [Advisor Dam 2018 Paper](mem://research/advisor-dam-2018-paper) — Methodological template: codes→categories→themes, Table 1, "In sum" pattern
 
 - [Deployment Architecture](mem://platform/deployment-architecture) — Dual-platform web/mobile Capacitor
