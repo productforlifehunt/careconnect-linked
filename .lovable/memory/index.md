@@ -32,6 +32,7 @@
 - [Paid Family Caregiver Policy Window](mem://business-logic/paid-family-caregiver-policy-window) — Medicaid self-direction (1915(c)/(j)/(k), Cash & Counseling), Abby Care model, 2026 state-level contraction, what we build vs. don't
 - [Aura of Care / UX-as-PR Doctrine](mem://constraints/ux-aura-of-care-doctrine) — fasterandworse.com "The Aura of Care" + r/UXDesign "why does everything sound so fake"; Airbnb fees, Twitter alt text, SEO laundering, Notion, FTX-UX, Hooked/Laws of UX, the Rolex-money disposability test, effort ceiling for UX paperwork
 - [r/UXDesign Receipt Bank](mem://constraints/ux-reddit-receipts) — 40+ verbatim practitioner admissions + 8 derivable argument angles harvested from 274 threads; rotate one fresh receipt per turn to prevent reminder fatigue
+- [Cult Economy Doctrine](mem://constraints/ux-cult-economy-doctrine) — three-tier structure (Rolex buyer / seller-cult / believer-product), tier-drift tripwire, and the non-Reddit receipt bank: Natasha Jen, Iskander HBR, Kimbell, IDEO layoffs, Judd Antin, UXR purge, bootcamp saturation
 - [Advisor Dam 2018 Paper](mem://research/advisor-dam-2018-paper) — Methodological template: codes→categories→themes, Table 1, "In sum" pattern
 
 - [Deployment Architecture](mem://platform/deployment-architecture) — Dual-platform web/mobile Capacitor
