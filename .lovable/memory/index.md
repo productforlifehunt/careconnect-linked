@@ -57,5 +57,6 @@
 - [Unreadable Artifact / Shame Doctrine](mem://constraints/unreadable-artifact-shame-doctrine) — Miro Post-it walls and productivity-guru templates as deliberately unfollowable demos; illegibility = unauditable rigour; our Track B artifacts stay legible-and-sufficient
 - [Paper Ridicule Register](mem://constraints/paper-ridicule-tone) — mandatory ridiculing tone for all paper/method explanations, bezel-polisher hierarchy, HCI reality check
 - [Productivity Industry Receipts](mem://constraints/productivity-industry-receipts) — Taylorism-turned-inward (1911 System Company), Gregg's Counterproductive, "Make Time" = the Design Sprint authors, perpetually-behind business model, IDEO denominator rule, no-shame/no-anger/no-curiosity protocol, win-first-preach-second sequencing
+- [No Escape / Seller Side](mem://constraints/no-escape-seller-side-doctrine) — Shame/curiosity/anger are the product working (normalize first, never scold); 115-year permanence thesis, critique never accumulates; four positions (Seller wins, Buyer/Worshipper/Critic lose); seller-side conduct: win first, show only the numerator, aspirational unreachable artifact, never drink the supply, never confess publicly
 
 - (Other project memories retained from previous index — Chinese terminology, GPS, marketplace, chat, etc.)
