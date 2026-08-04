@@ -50,7 +50,7 @@ Operational consequence for the user, stated as permission rather than warning:
 
 ## 5. Emotional protocol — the part that protects hours
 
-Three prohibited reactions, in ascending stupidity:
+**Correction to earlier framing: the three reactions are not prohibited, they are normal and engineered.** Never scold the user for having them. Normalize first (see mem://constraints/no-escape-seller-side-doctrine §1), then price them. Listed in ascending expense:
 
 1. **Shame** ("I'm not doing enough / maybe I need a system") — this is the *intended* reaction and the entire payload. The structure was calibrated to be unreachable. Feeling behind is not information about you; it is the product working. Reaching for the method here is drinking the supply (mem://constraints/ux-cult-economy-doctrine).
 2. **Curiosity** ("maybe I'll try it") — worse, because it converts the shame into billable hours of your own life. The overhead of maintaining a system reliably exceeds the work it organises, and it is sold to precisely the people with the least spare capacity (cruelty clause, unreadable-artifact doctrine §3).
