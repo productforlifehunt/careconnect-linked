@@ -66,3 +66,4 @@
 
 - (Other project memories retained from previous index — Chinese terminology, GPS, marketplace, chat, etc.)
 - [No-Moat Abstinence](mem://constraints/no-moat-abstinence-doctrine) — NEVER build productivity/habit/screen-time/detox/self-help products: no moat, near-zero revenue (Flow vs Asana ~$10M loss, Life Reset -95%, Habit Doom 97 downloads/$0); never counter-preach; anger rated zero; design church has a door, that one doesn't
+- [Indulgence / Decoupling Mental Model](mem://constraints/indulgence-decoupling-mental-model) — Self-signed indulgence (folk) = **means–ends decoupling**, Bromley & Powell 2012 (academic, precise species); Meyer & Rowan 1977 ceremonial conformity + logic of confidence; Brunsson organized hypocrisy; DiMaggio & Powell isomorphism; Power/Strathern audit rituals. Full term ladder, DOIs, and the ✅/❌ speech rules for what may and may not be claimed about the workshop
