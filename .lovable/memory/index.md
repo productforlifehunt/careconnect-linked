@@ -54,6 +54,7 @@
 - [WordPress Credentials](mem://testing/wordpress-credentials)
 - [Honesty Protocol](mem://constraints/honesty-completion-protocol)
 - [Opaque Naming Convention](mem://constraints/opaque-data-naming)
+- [Unreadable Artifact / Shame Doctrine](mem://constraints/unreadable-artifact-shame-doctrine) — Miro Post-it walls and productivity-guru templates as deliberately unfollowable demos; illegibility = unauditable rigour; our Track B artifacts stay legible-and-sufficient
 - [Paper Ridicule Register](mem://constraints/paper-ridicule-tone) — mandatory ridiculing tone for all paper/method explanations, bezel-polisher hierarchy, HCI reality check
 
 - (Other project memories retained from previous index — Chinese terminology, GPS, marketplace, chat, etc.)
