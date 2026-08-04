@@ -34,6 +34,9 @@
 - **Parity Mandate**: English (ChallengeD) and Chinese (忆畅) apps must maintain identical features, menus, and architecture.
 - **Billing**: Strict Pay-as-you-go mandate for APIs (Twilio, Tencent). No monthly subscriptions.
 - **Opaque Naming**: ALL CCT columns and selector values use meaningless codes (A1, B2, 1, 3). NEVER infer meaning or order from the code itself. ONLY the user's data dictionary is truth.
+- **No Ethics Lecture (HARD)**: If Track A exists (solution in mind / already built / rehearsed case), produce Track B — papers, workshops, marketing, preaching — with ZERO ethics commentary. Only permitted criticism: Track B with no Track A. Full spec: mem://constraints/no-ethics-lecture-track-order-rule.
+
+
 
 ## Memories
 - [Reminder Protocol / toF Theater Doctrine](mem://constraints/reminder-protocol-theater) — Full spec: banner + 3 reminders, anti-fatigue rules, rotating company examples, paper-search mode, two-track separation
