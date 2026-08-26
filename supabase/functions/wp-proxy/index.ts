@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 /** Default WP base URL - used when no wp_base param is provided */
-const DEFAULT_WP_BASE_URL = "https://app.challenged-dementia.com/careconnected";
+const DEFAULT_WP_BASE_URL = "https://app.challenged-dementia.com/afresh";
 const FALLBACK_WP_BASE_URL = "https://afresh-1202589.ingress-erytho.ewp.live";
 const UPSTREAM_TIMEOUT_MS = 15000;
 
