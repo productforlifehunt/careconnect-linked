@@ -12,10 +12,10 @@ import { appScopeBody, appScopeParams, filterAppScope } from "@/features/shared/
  *   REL 138 (1:M) chat conversation → chat message (messages)
  *   REL 139 (1:M) chat message      → chat message (reply parent)
  *
- * NOTE: the data dictionary has NO relation from ChallengeD care group (199) to
- * chat conversation (121) — relation 140 belongs to the Afresh care group (9).
- * Group chat therefore resolves through the sentinel chat-name fallback below
- * until that relation is added in the JetEngine UI.
+ * NOTE: relation 265 (1:1 care group 199 → chat conversation 121) is the live
+ * link for ChallengeD group chat — relation 140 belongs to the Afresh care
+ * group (9). The sentinel chat-name scan below stays only as a recovery path
+ * for conversations created before 265 existed.
  */
 
 const CONV = T.chatConversation.slug;
@@ -25,7 +25,8 @@ const MSG = T.chatMessage.slug;
 const MF = T.chatMessage.f;
 const MT = T.chatMessage.opt.CHAT_MESSAGE_TYPE;
 
-const REL_GROUP_CONV = 0;       // not defined for care group 199 → conversation 121
+const REL_GROUP_CONV = R.careGroupChat;   // 1:1 care group (199) → chat conversation (121)
+
 const REL_CONV_MEMBER = R.conversationMembers;
 const REL_CONV_MESSAGE = R.conversationMessages;
 
