@@ -5,7 +5,7 @@
 import { wordpressFetch } from "@/features/shared/wordpress-client";
 import { R } from "@/integrations/wp-schema";
 
-const REL_JOB_TASK = R.jobTasks;
+const REL_JOB_TASK = R.careJobTasks;
 
 function n(id: string | number): number {
   return Number(String(id).replace(/^wp-/, ""));
