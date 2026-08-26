@@ -10,6 +10,8 @@
  */
 
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
+import { T, R } from "@/integrations/wp-schema";
+import { appScopeBody } from "@/features/shared/app-scope";
 import { supabase } from "@/integrations/supabase/client";
 
 export type AIMode =
@@ -34,9 +36,13 @@ export interface InvokeAIOptions {
   messages?: AIChatMessage[];
 }
 
-const CONVERSATION_SLUG = "chat_conversation";
-const MESSAGE_SLUG = "chat_message";
-const REL_CONV_MESSAGE = 138; // 1:M chat_conversation → chat_message
+const CONVERSATION_SLUG = T.chatConversation.slug;
+const CF = T.chatConversation.f;
+const CT = T.chatConversation.opt.CHAT_TYPE;
+const MESSAGE_SLUG = T.chatMessage.slug;
+const MF = T.chatMessage.f;
+const MT = T.chatMessage.opt.CHAT_MESSAGE_TYPE;
+const REL_CONV_MESSAGE = R.conversationMessages; // 1:M chat conversation → chat message
 
 function nowWPDateTime() {
   return new Date().toISOString().slice(0, 19).replace("T", " ");
@@ -67,10 +73,10 @@ async function ensureConversation(mode: AIMode, options: InvokeAIOptions = {}): 
   const result = await wordpressCCTFetch<any>(CONVERSATION_SLUG, {
     method: "POST",
     body: {
-      chat_type: "AI",
-      chat_name: options.title || "",
-      ai_chat_mode: mode,
-      last_message_at: nowWPDateTime(),
+      [CF.CHAT_TYPE]: CT.AI,
+      [CF.CHAT_NAME]: options.title || "",
+      [CF.LAST_MESSAGE_AT]: nowWPDateTime(),
+      ...appScopeBody("chatConversation"),
     },
   });
   const createdId = String(result?.item_id || result?._ID || result?.id);
@@ -82,8 +88,8 @@ async function createMessage(conversationId: string, role: AIChatMessage["role"]
   const result = await wordpressCCTFetch<any>(MESSAGE_SLUG, {
     method: "POST",
     body: {
-      chat_message_content: content,
-      chat_message_type: role === "assistant" ? "ai" : "text",
+      [MF.CHAT_MESSAGE_CONTENT]: content,
+      [MF.CHAT_MESSAGE_TYPE]: role === "assistant" ? MT.AI : MT.TEXT,
     },
   });
   const messageId = numId(result?.item_id || result?._ID || result?.id);
@@ -103,7 +109,7 @@ async function touchConversation(conversationId: string) {
     await wordpressCCTFetch(CONVERSATION_SLUG, {
       id: conversationId,
       method: "PUT",
-      body: { last_message_at: nowWPDateTime() },
+      body: { [CF.LAST_MESSAGE_AT]: nowWPDateTime() },
     });
   } catch { /* non-blocking */ }
 }

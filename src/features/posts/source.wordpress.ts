@@ -6,9 +6,10 @@ import {
   updateCommunityPostWordPress,
   deleteCommunityPostWordPress,
 } from "@/features/community-posts/source.wordpress";
+import { T } from "@/integrations/wp-schema";
 
 // CCT-based post types that should NOT go through wp/v2
-const CCT_POST_TYPES = ["care_community_post"];
+const CCT_POST_TYPES = ["care_community_post", "community_post", T.afreshCommunityPost.slug];
 
 export async function fetchPostsWordPress(postType: string, _area?: string, _childPostType?: string | null): Promise<any[]> {
   if (CCT_POST_TYPES.includes(postType)) {

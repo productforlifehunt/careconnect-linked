@@ -15,7 +15,7 @@ import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-c
  *   REL 109 → private member groups (care_task → group) One to Many   visibility
  *   REL  81 → users (care_task → users)                 Many to Many  visibility
  *   REL  82 → comments
- *   REL 131 → users_calendar_even
+ *   REL 263 → 187. User's calendar event
  */
 
 const CCT_SLUG = "care_task";
@@ -278,7 +278,7 @@ export async function deleteCareTaskWordPress(id: string): Promise<void> {
   await wordpressCCTFetch(CCT_SLUG, { id, method: "DELETE" });
 }
 
-/** Link a calendar event to a task via REL 131 (universal_care_task → users_calendar_even). */
+/** Link a calendar event to a task via REL 263 (204. Care Task → 187. User's calendar event). */
 export async function linkTaskToCalendarEventWordPress(taskId: string, eventId: string): Promise<void> {
   const tid = normalizeWpObjectId(taskId);
   const eid = normalizeWpObjectId(eventId);
