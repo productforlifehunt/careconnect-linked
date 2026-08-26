@@ -229,7 +229,19 @@ export async function createSafeZoneWordPress(zone: { user_id: string; name: str
 
 export async function updateSafeZoneWordPress(id: string, updates: Record<string, any>): Promise<void> {
   const body: Record<string, any> = {};
-  if (updates.name !== undefined) body.a57 = updates.name;
+  // name + description share a58 — read the current row so a partial update
+  // never wipes the other half.
+  if (updates.name !== undefined || updates.description !== undefined) {
+    let current = { name: null as string | null, description: null as string | null };
+    try {
+      const row = await wordpressCCTFetch<any>("safe_zone", { id });
+      current = unpackNameDesc(row?.a58);
+    } catch { /* fall back to what the caller gave us */ }
+    body.a58 = packNameDesc(
+      updates.name !== undefined ? updates.name : current.name,
+      updates.description !== undefined ? updates.description : current.description,
+    );
+  }
   if (updates.zone_type !== undefined) body.a55 = String(updates.zone_type).toLowerCase() === "danger" ? "b56" : "b55";
   if (updates.shape_type !== undefined) body.a56 = String(updates.shape_type).toLowerCase() === "polygon" ? "b56" : "b55";
   if (updates.color !== undefined) body.a59 = updates.color;
@@ -237,7 +249,6 @@ export async function updateSafeZoneWordPress(id: string, updates: Record<string
   if (updates.longitude !== undefined) body.a61 = String(updates.longitude);
   if (updates.radius_meters !== undefined) body.a62 = updates.radius_meters;
   if (updates.polygon_points !== undefined) body.a63 = updates.polygon_points ? JSON.stringify(updates.polygon_points) : "";
-  if (updates.description !== undefined) body.a58 = updates.description;
   if (updates.notify_on_enter !== undefined) body.a64 = updates.notify_on_enter ? "b56" : "b55";
   if (updates.notify_on_exit !== undefined) body.a65 = updates.notify_on_exit ? "b56" : "b55";
   if (updates.schedule_enabled !== undefined) body.a66 = updates.schedule_enabled ? "b56" : "b55";
@@ -246,6 +257,7 @@ export async function updateSafeZoneWordPress(id: string, updates: Record<string
   if (updates.is_active !== undefined) body.a69 = updates.is_active ? "b55" : "b56";
   await wordpressCCTFetch("safe_zone", { id, method: "PUT", body });
 }
+
 
 export async function deleteSafeZoneWordPress(id: string): Promise<void> {
   await wordpressCCTFetch("safe_zone", { id, method: "DELETE" });
