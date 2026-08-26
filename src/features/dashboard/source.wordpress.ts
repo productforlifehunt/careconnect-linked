@@ -27,7 +27,7 @@ export async function fetchDashboardStatsWordPress(): Promise<DashboardStats> {
   } catch { /* */ }
 
   try {
-    const tasks = await wordpressCCTFetch("care_task_real", { params: { _limit: 100 } });
+    const tasks = await wordpressCCTFetch("care_task", { params: { _limit: 100 } });
     // a66 = finish status: b55 = not finished, b56 = finished
     pendingTasks = Array.isArray(tasks)
       ? tasks.filter((t: any) => String(t.a66 ?? "b55") !== "b56").length
@@ -35,7 +35,7 @@ export async function fetchDashboardStatsWordPress(): Promise<DashboardStats> {
   } catch { /* */ }
 
   try {
-    const notifs = await wordpressCCTFetch("notification", { params: { _limit: 100 } });
+    const notifs = await wordpressCCTFetch("users_notification", { params: { _limit: 100 } });
     if (Array.isArray(notifs)) {
       unreadMessages = notifs.filter((n: any) => String(n.a59 ?? "b56") !== "b55").length;
     }

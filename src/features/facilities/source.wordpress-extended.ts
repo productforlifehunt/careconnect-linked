@@ -20,7 +20,7 @@ import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-c
  */
 
 const CCT_SLUG = "care_facility";
-const REL_FACILITY_MEMBER = 163;
+const REL_FACILITY_MEMBER = 249;
 
 const MEMBER_TYPE_TO_CODE: Record<string, string> = {
   member: "b55", nothing: "b55", "nothing special": "b55",

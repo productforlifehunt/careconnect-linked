@@ -36,7 +36,7 @@ export interface InvokeAIOptions {
 
 const CONVERSATION_SLUG = "chat_conversation";
 const MESSAGE_SLUG = "chat_message";
-const REL_CONV_MESSAGE = 143; // 1:M chat_conversation → chat_message
+const REL_CONV_MESSAGE = 138; // 1:M chat_conversation → chat_message
 
 function nowWPDateTime() {
   return new Date().toISOString().slice(0, 19).replace("T", " ");

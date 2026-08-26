@@ -13,8 +13,8 @@ import { decodeRel72Meta } from "@/features/care-groups/rel-meta";
 
 const REL_GROUP_CONV = 140;     // 1:1  care_group → chat_conversation
 // Dictionary name "142. chat conversation → chatters" — live ID 166 (old 142 deleted & recreated)
-const REL_CONV_MEMBER = 166;
-const REL_CONV_MESSAGE = 143;
+const REL_CONV_MEMBER = 137;
+const REL_CONV_MESSAGE = 138;
 
 const stripWp = (id: string | number | null | undefined): string =>
   id == null ? "" : String(id).replace(/^wp-/, "");

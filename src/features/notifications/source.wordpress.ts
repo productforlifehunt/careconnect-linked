@@ -9,8 +9,8 @@
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 import { getCurrentUserId } from "@/features/shared/current-user";
 
-const SLUG = "notification";
-const REL_USER_NOTIFICATION = 148;
+const SLUG = "users_notification";
+const REL_USER_NOTIFICATION = 188;
 
 function isRead(v: any): boolean {
   return v === true || v === "yes" || v === "1" || v === 1 || v === "b55";

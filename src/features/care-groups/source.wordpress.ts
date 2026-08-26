@@ -4,7 +4,7 @@ import { getStoredWPUser } from "@/services/wp-auth";
 import { encodeRel72Meta, decodeRel72Meta } from "./rel-meta";
 
 // Live JetEngine relations (verified from prd-to-wp-mapping.md)
-const REL_GROUP_MEMBER = 72; // M:M  care_group → users
+const REL_GROUP_MEMBER = 223; // M:M  care_group → users
 
 function normalizeWpObjectId(value: string | number | null | undefined): number {
   return Number(String(value ?? "").replace(/^wp-/, ""));

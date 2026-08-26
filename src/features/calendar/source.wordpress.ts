@@ -22,8 +22,8 @@ import { getCurrentUserId } from "@/features/shared/current-user";
 import type { CalendarEvent, CalendarEventType } from "./types";
 
 const SLUG = "users_calendar_even";
-const REL_USER_EVENT = 129;
-const REL_EVENT_INVITEES = 130;
+const REL_USER_EVENT = 190;
+const REL_EVENT_INVITEES = 262;
 
 // Option dictionaries (label → opaque code)
 const STATUS_OUT: Record<string, string> = { confirmed: "b55", tentative: "b56", cancelled: "b57" };

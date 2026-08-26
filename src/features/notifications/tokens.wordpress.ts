@@ -12,11 +12,11 @@
  */
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 import { getCurrentUserIdNumber } from "@/features/shared/current-user";
-import { WP } from "@/integrations/wp-schema";
+import { T } from "@/integrations/wp-schema";
 
-const SLUG = "users_notification_";
-const REL_USER_TOKEN = 149;
-const F = WP.cct["147"].fields;
+const SLUG = T.notificationToken.slug;
+const REL_USER_TOKEN = 189;
+const F = T.notificationToken.f;
 
 export type NotificationProvider = "web_push" | "fcm" | "apn" | "jpush" | "wechat";
 

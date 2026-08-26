@@ -6,8 +6,8 @@ import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-c
 const SLUG = "care_community_post";
 
 // Live JetEngine relations
-const REL_POST_COMMENT = 71;   // 1:M care_community_post → comment
-const REL_COMMENT_REPLY = 69;  // M:M comment → comment
+const REL_POST_COMMENT = 229;   // 1:M care_community_post → comment
+const REL_COMMENT_REPLY = 142;  // M:M comment → comment
 
 export async function fetchCommunityPostsWordPress(locale?: { area?: string; language?: string; category?: string }): Promise<any[]> {
   try {

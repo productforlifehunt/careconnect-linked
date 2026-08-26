@@ -234,7 +234,7 @@ export async function wpFetchCareTasks(): Promise<any[]> {
   try {
     // Care tasks live in JetEngine CCT `care_task_real`, not as a CPT
     const { wordpressCCTFetch } = await import("@/features/shared/wordpress-client");
-    const tasks = await wordpressCCTFetch<any[]>("care_task_real", { params: { _limit: 100 } });
+    const tasks = await wordpressCCTFetch<any[]>("care_task", { params: { _limit: 100 } });
     if (!Array.isArray(tasks)) return [];
     return tasks.map((t: any) => ({
       id: String(t._ID || t.id),
@@ -332,7 +332,7 @@ export async function wpFetchConversations(): Promise<any[]> {
 export async function wpFetchNotifications(): Promise<any[]> {
   try {
     const { wordpressCCTFetch } = await import("@/features/shared/wordpress-client");
-    const notifs = await wordpressCCTFetch<any[]>("notification", { params: { _limit: 100 } });
+    const notifs = await wordpressCCTFetch<any[]>("users_notification", { params: { _limit: 100 } });
     if (!Array.isArray(notifs)) return [];
     return notifs.map((n: any) => ({
       id: String(n.id || n._ID),

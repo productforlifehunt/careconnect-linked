@@ -1,11 +1,11 @@
 import type { Profile } from "@/types/care-connector";
 
-import { WP } from "@/integrations/wp-schema";
+import { T } from "@/integrations/wp-schema";
 import { getWordPressFeature, listWordPressFeature } from "@/features/shared/wordpress-adapter";
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 import { fetchAllProviderProductSummaries } from "@/services/woocommerce-api";
 
-const F_PROFILE = WP.cct["110"].fields;
+const F_PROFILE = T.userProfile.f;
 
 function isActivePaidProvider(profile: Profile): boolean {
   return profile.is_care_provider === true && profile.provider_is_active === true;
