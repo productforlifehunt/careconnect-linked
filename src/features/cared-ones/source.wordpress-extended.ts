@@ -1,22 +1,22 @@
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
-import { T } from "@/integrations/wp-schema";
+import { T, R } from "@/integrations/wp-schema";
 import { decodeRel72Meta } from "@/features/care-groups/rel-meta";
 
 // ─── Relations (per data bible / live WP) ────────────────────
-const REL_USER_CARED_ONE_LEGACY = 219;   // user → user (legacy)
-const REL_USER_CARED_ONE_CARD = 220;    // user → cared_ones_informat (CCT 125)
-const REL_CARED_CARD_EMERGENCY = 221;   // cared_ones_informat → emergency_contact
-const REL_GROUP_MEMBER = 223;            // care_group → users
-const REL_USER_MEDICINE = 237;
-const REL_MEDICINE_LOG = 238;
-const REL_USER_CHECKIN = 239;           // both 145 and 150 exist on live; existing data is on 150
-const REL_CHECKIN_LOG = 240;
-const REL_USER_CARE_TIP = 243;
-const REL_USER_EMERGENCY_CONTACT = 245;
-const REL_USER_CARE_NOTE = 242;
-const REL_USER_CARE_DOCUMENT = 246;
-const REL_USER_CARE_PLAN = 244;
+const REL_USER_CARED_ONE_LEGACY = R.userCaredOnes;   // user → user (legacy)
+const REL_USER_CARED_ONE_CARD = R.caredOneInfoCards;    // user → cared_ones_informat (CCT 125)
+const REL_CARED_CARD_EMERGENCY = R.infoCardEmergencyContacts;   // cared_ones_informat → emergency_contact
+const REL_GROUP_MEMBER = R.careGroupMembers;            // care_group → users
+const REL_USER_MEDICINE = R.caredOneMedicineSchedules;
+const REL_MEDICINE_LOG = R.medicineScheduleLogs;
+const REL_USER_CHECKIN = R.caredOneCheckinSchedules;           // both 145 and 150 exist on live; existing data is on 150
+const REL_CHECKIN_LOG = R.checkinScheduleLogs;
+const REL_USER_CARE_TIP = R.caredOneCareTips;
+const REL_USER_EMERGENCY_CONTACT = R.caredOneEmergencyContacts;
+const REL_USER_CARE_NOTE = R.caredOneCareNotes;
+const REL_USER_CARE_DOCUMENT = R.caredOneCareDocuments;
+const REL_USER_CARE_PLAN = R.caredOneCarePlans;
 
 // ─── Opaque field aliases (bible) ────────────────────────────
 const F_MED = T.medicineSchedule.f;          // medicine
@@ -145,7 +145,7 @@ export async function fetchCaredOnesCardsWordPress(): Promise<any[]> {
   try {
     const stored = getStoredWPUser();
     if (!stored?.user_id) return [];
-    const cards = await fetchRelatedCctChildren(REL_USER_CARED_ONE_CARD, String(stored.user_id), "cared_one_info_card");
+    const cards = await fetchRelatedCctChildren(REL_USER_CARED_ONE_CARD, String(stored.user_id), T.infoCard.slug);
     return cards.map((c: any) => ({
       id: String(c.id || c._ID),
       user_id: `wp-${stored.user_id}`,
@@ -163,7 +163,7 @@ export async function createCaredOnesCardWordPress(card: { name: string; descrip
   const stored = getStoredWPUser();
   if (!stored?.user_id) throw new Error("Not authenticated");
   const statusCode = card.status === "paused" ? "b57" : card.status === "draft" ? "b55" : "b56";
-  const created = await wordpressCCTFetch<any>("cared_one_info_card", {
+  const created = await wordpressCCTFetch<any>(T.infoCard.slug, {
     method: "POST",
     body: {
       [F_CARD.CARED_ONE_S_NAME]: card.name,
@@ -179,7 +179,7 @@ export async function createCaredOnesCardWordPress(card: { name: string; descrip
 // ─── Check-in Schedule (CCT 138) ─────────────────────────────
 export async function fetchCheckinsWordPress(caredOneId: string): Promise<any[]> {
   try {
-    const items = await fetchRelatedCctChildren(REL_USER_CHECKIN, caredOneId, "checkin_schedule");
+    const items = await fetchRelatedCctChildren(REL_USER_CHECKIN, caredOneId, T.checkinSchedule.slug);
     return items.map((i: any) => ({
       id: String(i.id || i._ID),
       user_id: caredOneId,
@@ -197,7 +197,7 @@ export async function fetchCheckinsWordPress(caredOneId: string): Promise<any[]>
 }
 
 export async function createCheckinWordPress(checkin: { user_id: string; name: string; detail?: string; frequency?: string; time_slot?: string[]; instructions?: string; start_date?: string; note?: string }): Promise<void> {
-  const result = await wordpressCCTFetch<any>("checkin_schedule", {
+  const result = await wordpressCCTFetch<any>(T.checkinSchedule.slug, {
     method: "POST",
     body: {
       [F_CHK.NAME]: checkin.name,
@@ -224,11 +224,11 @@ export async function updateCheckinWordPress(id: string, updates: Record<string,
   if (updates.start_date !== undefined) body[F_CHK.START_DATE] = updates.start_date;
   if (updates.note !== undefined) body[F_CHK.NOTE] = updates.note;
   if (updates.is_active !== undefined) body[F_CHK.IS_ACTIVE] = updates.is_active ? YES : NO;
-  await wordpressCCTFetch("checkin_schedule", { id, method: "PUT", body });
+  await wordpressCCTFetch(T.checkinSchedule.slug, { id, method: "PUT", body });
 }
 
 export async function deleteCheckinWordPress(id: string): Promise<void> {
-  await wordpressCCTFetch("checkin_schedule", { id, method: "DELETE" });
+  await wordpressCCTFetch(T.checkinSchedule.slug, { id, method: "DELETE" });
 }
 
 // ─── Check-in Log (CCT 17) ───────────────────────────────────
@@ -245,7 +245,7 @@ export async function fetchCheckinLogsWordPress(caredOneId: string): Promise<any
         if (!Array.isArray(rels) || rels.length === 0) return [];
         const logs = await Promise.all(rels.map(async (rel: any) => {
           try {
-            const item = await wordpressCCTFetch<any>("checkin_log", { id: rel.child_object_id });
+            const item = await wordpressCCTFetch<any>(T.checkinLog.slug, { id: rel.child_object_id });
             const statusCode = String(item[F_CHKLOG.STATUS] || "b55");
             return {
               id: String(item.id || item._ID || rel.child_object_id),
@@ -272,7 +272,7 @@ export async function fetchTodayCheckinLogsWordPress(caredOneId: string): Promis
 
 export async function logCheckinWordPress(log: { medicine_id?: string; checkin_id?: string; status?: "checked" | "skipped" | "missed"; note?: string; checked_by_ai?: boolean }): Promise<void> {
   const statusCode = CHK_STATUS_CODE[log.status || "checked"] || "b55";
-  const result = await wordpressCCTFetch<any>("checkin_log", {
+  const result = await wordpressCCTFetch<any>(T.checkinLog.slug, {
     method: "POST",
     body: {
       [F_CHKLOG.STATUS]: statusCode,
@@ -288,7 +288,7 @@ export async function logCheckinWordPress(log: { medicine_id?: string; checkin_i
 // ─── Medicine (CCT 15) ───────────────────────────────────────
 export async function fetchMedicinesWordPress(caredOneId: string): Promise<any[]> {
   try {
-    const meds = await fetchRelatedCctChildren(REL_USER_MEDICINE, caredOneId, "medicine_schedule");
+    const meds = await fetchRelatedCctChildren(REL_USER_MEDICINE, caredOneId, T.medicineSchedule.slug);
     return meds.map((m: any) => ({
       id: String(m.id || m._ID),
       user_id: caredOneId,
@@ -312,7 +312,7 @@ export async function fetchMedicinesWordPress(caredOneId: string): Promise<any[]
 }
 
 export async function createMedicineWordPress(med: { user_id: string; name: string; dosage?: string; frequency?: string; time_slot?: string[]; instructions?: string; prescribing_doctor?: string; pharmacy?: string; side_effects?: string; start_date?: string; end_date?: string; note?: string; stock_count?: number; refill_threshold?: number }): Promise<void> {
-  const result = await wordpressCCTFetch<any>("medicine_schedule", {
+  const result = await wordpressCCTFetch<any>(T.medicineSchedule.slug, {
     method: "POST",
     body: {
       [F_MED.NAME]: med.name,
@@ -351,11 +351,11 @@ export async function updateMedicineWordPress(id: string, updates: Record<string
   if (updates.is_active !== undefined) body[F_MED.IS_ACTIVE] = updates.is_active ? YES : NO;
   if (updates.stock_count !== undefined) body[F_MED.STOCK_COUNT] = updates.stock_count;
   if (updates.refill_threshold !== undefined) body[F_MED.REFILL_THRESHOLD] = updates.refill_threshold;
-  await wordpressCCTFetch("medicine_schedule", { id, method: "PUT", body });
+  await wordpressCCTFetch(T.medicineSchedule.slug, { id, method: "PUT", body });
 }
 
 export async function deleteMedicineWordPress(id: string): Promise<void> {
-  await wordpressCCTFetch("medicine_schedule", { id, method: "DELETE" });
+  await wordpressCCTFetch(T.medicineSchedule.slug, { id, method: "DELETE" });
 }
 
 // ─── Medicine Log (CCT 16) ───────────────────────────────────
@@ -365,7 +365,7 @@ const MED_STATUS_LABEL: Record<string, string> = { b55: "taken", b56: "skipped",
 
 export async function fetchMedicineLogsWordPress(medicineId: string): Promise<any[]> {
   try {
-    const logs = await fetchRelatedCctChildren(REL_MEDICINE_LOG, medicineId, "medicine_log");
+    const logs = await fetchRelatedCctChildren(REL_MEDICINE_LOG, medicineId, T.medicineLog.slug);
     return logs.map((l: any) => ({
       id: String(l.id || l._ID),
       medicine_id: medicineId,
@@ -399,7 +399,7 @@ export async function fetchTodayMedicineLogsWordPress(caredOneId: string): Promi
 
 export async function logMedicineWordPress(log: { medicine_id: string; status?: string; note?: string; user_id?: string }): Promise<void> {
   const statusCode = MED_STATUS_CODE[(log.status || "taken").toLowerCase()] || "b55";
-  const result = await wordpressCCTFetch<any>("medicine_log", {
+  const result = await wordpressCCTFetch<any>(T.medicineLog.slug, {
     method: "POST",
     body: {
       [F_MEDLOG.STATUS]: statusCode,
@@ -417,7 +417,7 @@ const TIP_CATEGORY_LABEL: Record<string, string> = { b55: "tip", b56: "avoid" };
 
 export async function fetchCareTipsWordPress(caredOneId: string): Promise<any[]> {
   try {
-    const tips = await fetchRelatedCctChildren(REL_USER_CARE_TIP, caredOneId, "care_tip");
+    const tips = await fetchRelatedCctChildren(REL_USER_CARE_TIP, caredOneId, T.careTip.slug);
     return tips.map((t: any) => ({
       id: String(t.id || t._ID),
       user_id: caredOneId,
@@ -433,7 +433,7 @@ export async function fetchCareTipsWordPress(caredOneId: string): Promise<any[]>
 }
 
 export async function createCareTipWordPress(tip: { user_id: string; title?: string; content: string; category?: string; is_pinned?: boolean }): Promise<void> {
-  const created = await wordpressCCTFetch<any>("care_tip", {
+  const created = await wordpressCCTFetch<any>(T.careTip.slug, {
     method: "POST",
     body: {
       [F_TIP.TITLE]: tip.title || tip.content.substring(0, 50),
@@ -453,17 +453,17 @@ export async function updateCareTipWordPress(id: string, updates: Record<string,
   if (updates.category !== undefined) body[F_TIP.CATEGORY] = TIP_CATEGORY_CODE[updates.category] || updates.category;
   const pinned = updates.is_pinned ?? updates.is_important;
   if (pinned !== undefined) body[F_TIP.IS_PINNED] = pinned ? YES : NO;
-  await wordpressCCTFetch("care_tip", { id, method: "PUT", body });
+  await wordpressCCTFetch(T.careTip.slug, { id, method: "PUT", body });
 }
 
 export async function deleteCareTipWordPress(id: string): Promise<void> {
-  await wordpressCCTFetch("care_tip", { id, method: "DELETE" });
+  await wordpressCCTFetch(T.careTip.slug, { id, method: "DELETE" });
 }
 
 // ─── Care Plan (CCT 20) ──────────────────────────────────────
 export async function fetchCarePlansWordPress(caredOneId: string): Promise<any[]> {
   try {
-    const plans = await fetchRelatedCctChildren(REL_USER_CARE_PLAN, caredOneId, "care_plan");
+    const plans = await fetchRelatedCctChildren(REL_USER_CARE_PLAN, caredOneId, T.carePlan.slug);
     return plans.map((p: any) => ({
       id: String(p.id || p._ID),
       user_id: caredOneId,
@@ -479,7 +479,7 @@ export async function fetchCarePlansWordPress(caredOneId: string): Promise<any[]
 }
 
 export async function createCarePlanWordPress(plan: { user_id: string; title: string; description?: string; content?: string; is_pinned?: boolean }): Promise<void> {
-  const created = await wordpressCCTFetch<any>("care_plan", {
+  const created = await wordpressCCTFetch<any>(T.carePlan.slug, {
     method: "POST",
     body: {
       [F_PLAN.TITLE]: plan.title,
@@ -496,11 +496,11 @@ export async function updateCarePlanWordPress(id: string, updates: Record<string
   if (updates.title !== undefined) body[F_PLAN.TITLE] = updates.title;
   if (updates.content !== undefined || updates.description !== undefined) body[F_PLAN.CONTENT] = updates.content ?? updates.description;
   if (updates.is_pinned !== undefined) body[F_PLAN.IS_PINNED] = updates.is_pinned ? YES : NO;
-  await wordpressCCTFetch("care_plan", { id, method: "PUT", body });
+  await wordpressCCTFetch(T.carePlan.slug, { id, method: "PUT", body });
 }
 
 export async function deleteCarePlanWordPress(id: string): Promise<void> {
-  await wordpressCCTFetch("care_plan", { id, method: "DELETE" });
+  await wordpressCCTFetch(T.carePlan.slug, { id, method: "DELETE" });
 }
 
 // ─── Care Plan Goals (CCT 21 — not in bible field map) ───────
@@ -512,7 +512,7 @@ export async function updateCarePlanGoalWordPress(_id: string, _updates: Record<
 // ─── Care Note (CCT 22) ──────────────────────────────────────
 export async function fetchCareNotesWordPress(caredOneId: string): Promise<any[]> {
   try {
-    const notes = await fetchRelatedCctChildren(REL_USER_CARE_NOTE, caredOneId, "care_note");
+    const notes = await fetchRelatedCctChildren(REL_USER_CARE_NOTE, caredOneId, T.careNote.slug);
     return notes.map((n: any) => ({
       id: String(n.id || n._ID),
       user_id: caredOneId,
@@ -526,7 +526,7 @@ export async function fetchCareNotesWordPress(caredOneId: string): Promise<any[]
 }
 
 export async function createCareNoteWordPress(note: { user_id: string; title?: string; content: string; category?: string }): Promise<void> {
-  const created = await wordpressCCTFetch<any>("care_note", {
+  const created = await wordpressCCTFetch<any>(T.careNote.slug, {
     method: "POST",
     body: {
       [F_NOTE.TITLE]: note.title || note.content.substring(0, 50),
@@ -541,18 +541,18 @@ export async function updateCareNoteWordPress(id: string, updates: Record<string
   const body: Record<string, any> = {};
   if (updates.title !== undefined) body[F_NOTE.TITLE] = updates.title;
   if (updates.content !== undefined) body[F_NOTE.CONTENT] = updates.content;
-  await wordpressCCTFetch("care_note", { id, method: "PUT", body });
+  await wordpressCCTFetch(T.careNote.slug, { id, method: "PUT", body });
 }
 
 export async function deleteCareNoteWordPress(id: string): Promise<void> {
-  await wordpressCCTFetch("care_note", { id, method: "DELETE" });
+  await wordpressCCTFetch(T.careNote.slug, { id, method: "DELETE" });
 }
 
 // ─── Emergency Contacts (CCT 24) ─────────────────────────────
 // a55=name, a56=content, a57=phone, a58=address, a59=relationship, a60=note
 export async function fetchEmergencyContactsWordPress(caredOneId: string): Promise<any[]> {
   try {
-    const contacts = await fetchRelatedCctChildren(REL_USER_EMERGENCY_CONTACT, caredOneId, "emergency_contact");
+    const contacts = await fetchRelatedCctChildren(REL_USER_EMERGENCY_CONTACT, caredOneId, T.emergencyContact.slug);
     return contacts.map((c: any) => ({
       id: String(c.id || c._ID),
       user_id: caredOneId,
@@ -570,7 +570,7 @@ export async function fetchEmergencyContactsWordPress(caredOneId: string): Promi
 }
 
 export async function createEmergencyContactWordPress(contact: { user_id: string; name: string; phone?: string; email?: string; address?: string; relationship?: string; note?: string; content?: string }): Promise<void> {
-  const created = await wordpressCCTFetch<any>("emergency_contact", {
+  const created = await wordpressCCTFetch<any>(T.emergencyContact.slug, {
     method: "POST",
     body: {
       [F_EMG.NAME]: contact.name,
@@ -593,11 +593,11 @@ export async function updateEmergencyContactWordPress(id: string, updates: Recor
   if (updates.relationship !== undefined) body[F_EMG.RELATIONSHIP] = updates.relationship;
   if (updates.content !== undefined) body[F_EMG.CONTENT] = updates.content;
   if (updates.note !== undefined) body[F_EMG.NOTE] = updates.note;
-  await wordpressCCTFetch("emergency_contact", { id, method: "PUT", body });
+  await wordpressCCTFetch(T.emergencyContact.slug, { id, method: "PUT", body });
 }
 
 export async function deleteEmergencyContactWordPress(id: string): Promise<void> {
-  await wordpressCCTFetch("emergency_contact", { id, method: "DELETE" });
+  await wordpressCCTFetch(T.emergencyContact.slug, { id, method: "DELETE" });
 }
 
 // ─── Activity Log / Health Vital / Symptom Log ───────────────
@@ -613,7 +613,7 @@ export async function createSymptomLogWordPress(_log: any): Promise<void> { /* n
 // ─── Cared One Documents (CCT 23) ────────────────────────────
 export async function fetchCaredOneDocumentsWordPress(caredOneId: string): Promise<any[]> {
   try {
-    const docs = await fetchRelatedCctChildren(REL_USER_CARE_DOCUMENT, caredOneId, "care_document");
+    const docs = await fetchRelatedCctChildren(REL_USER_CARE_DOCUMENT, caredOneId, T.careDocument.slug);
     return docs.map((d: any) => ({
       id: String(d.id || d._ID),
       user_id: caredOneId,
@@ -633,7 +633,7 @@ export async function createCaredOneDocumentWordPress(doc: { user_id: string; ti
   const contentParts = [doc.description || ""];
   if (doc.file_url) contentParts.push(`URL: ${doc.file_url}`);
   if (doc.document_type) contentParts.push(`Type: ${doc.document_type}`);
-  const created = await wordpressCCTFetch<any>("care_document", {
+  const created = await wordpressCCTFetch<any>(T.careDocument.slug, {
     method: "POST",
     body: {
       [F_DOC.NAME]: doc.title,
@@ -650,11 +650,11 @@ export async function updateCaredOneDocumentWordPress(id: string, updates: Recor
   if (updates.name !== undefined) body[F_DOC.NAME] = updates.name;
   if (updates.description !== undefined) body[F_DOC.CONTENT] = updates.description;
   if (updates.content !== undefined) body[F_DOC.CONTENT] = updates.content;
-  await wordpressCCTFetch("care_document", { id, method: "PUT", body });
+  await wordpressCCTFetch(T.careDocument.slug, { id, method: "PUT", body });
 }
 
 export async function deleteCaredOneDocumentWordPress(id: string): Promise<void> {
-  await wordpressCCTFetch("care_document", { id, method: "DELETE" });
+  await wordpressCCTFetch(T.careDocument.slug, { id, method: "DELETE" });
 }
 
 // ─── Dementia Stage ─────────────────────────────────────────

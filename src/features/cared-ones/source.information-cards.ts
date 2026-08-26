@@ -1,10 +1,10 @@
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
-import { T } from "@/integrations/wp-schema";
+import { T, R } from "@/integrations/wp-schema";
 
 // JetEngine relations (live) — CCT 125 "Cared one's information card"
-const REL_USER_INFO_CARD = 220;          // 1:M users → cared_ones_informat
-const REL_INFO_CARD_EMERGENCY = 221;     // 1:M cared_ones_informat → emergency_contact
+const REL_USER_INFO_CARD = R.caredOneInfoCards;          // 1:M users → cared_ones_informat
+const REL_INFO_CARD_EMERGENCY = R.infoCardEmergencyContacts;     // 1:M cared_ones_informat → emergency_contact
 const CCT_SLUG = T.infoCard.slug;
 
 // Opaque field map (live verified). Values: a55 name, a56 desc, a57 card_name,

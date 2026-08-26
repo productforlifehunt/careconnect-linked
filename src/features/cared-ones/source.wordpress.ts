@@ -1,7 +1,8 @@
 import { wordpressFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
+import { T, R } from "@/integrations/wp-schema";
 
-const REL_USER_CARED_ONE = 219;
+const REL_USER_CARED_ONE = R.userCaredOnes;
 
 // Cared ones via JetEngine relation 79: users -> users
 export async function fetchUserCaredOnesWordPress(): Promise<any[]> {

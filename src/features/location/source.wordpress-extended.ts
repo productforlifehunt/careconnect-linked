@@ -9,6 +9,7 @@
 
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
+import { T, R } from "@/integrations/wp-schema";
 import { createNotificationWordPress } from "@/features/notifications/source.wordpress";
 import { fetchCurrentLocation, fetchLocationHistory, writeLocationAndCheckZones } from "@/features/location/source.wordpress";
 
@@ -22,7 +23,7 @@ const ALERT_DEDUP_WINDOW_MS = 5 * 60 * 1000;
 
 
 // ─── Relation IDs ────────────────────────────────────────────
-const REL_USER_SAFE_ZONE = 248;
+const REL_USER_SAFE_ZONE = R.userSafeZones;
 
 type SafeZoneAlertType = "exited_safe_zone" | "entered_safe_zone" | "entered_danger_zone" | "exited_danger_zone";
 
@@ -192,7 +193,7 @@ export async function fetchSafeZonesWordPress(userId: string): Promise<any[]> {
     const zones = await Promise.all(
       zoneIds.map(async (zoneId) => {
         try {
-          const zone = await wordpressCCTFetch<any>("safe_zone", { id: zoneId });
+          const zone = await wordpressCCTFetch<any>(T.safeZone.slug, { id: zoneId });
           return mapSafeZone(zone, userId);
         } catch { return null; }
       }),
@@ -204,7 +205,7 @@ export async function fetchSafeZonesWordPress(userId: string): Promise<any[]> {
 export async function createSafeZoneWordPress(zone: { user_id: string; name: string; latitude: number; longitude: number; radius_meters?: number; [key: string]: any }): Promise<void> {
   const userId = normalizeWpUserId(zone.user_id);
   if (!userId) throw new Error("Invalid user");
-  const created = await wordpressCCTFetch<any>("safe_zone", {
+  const created = await wordpressCCTFetch<any>(T.safeZone.slug, {
     method: "POST",
     body: {
       a55: String(zone.zone_type || "Safe").toLowerCase() === "danger" ? "b56" : "b55",
@@ -234,7 +235,7 @@ export async function updateSafeZoneWordPress(id: string, updates: Record<string
   if (updates.name !== undefined || updates.description !== undefined) {
     let current = { name: null as string | null, description: null as string | null };
     try {
-      const row = await wordpressCCTFetch<any>("safe_zone", { id });
+      const row = await wordpressCCTFetch<any>(T.safeZone.slug, { id });
       current = unpackNameDesc(row?.a58);
     } catch { /* fall back to what the caller gave us */ }
     body.a58 = packNameDesc(
@@ -255,12 +256,12 @@ export async function updateSafeZoneWordPress(id: string, updates: Record<string
   if (updates.schedule_start_time !== undefined) body.a67 = updates.schedule_start_time;
   if (updates.schedule_end_time !== undefined) body.a68 = updates.schedule_end_time;
   if (updates.is_active !== undefined) body.a69 = updates.is_active ? "b55" : "b56";
-  await wordpressCCTFetch("safe_zone", { id, method: "PUT", body });
+  await wordpressCCTFetch(T.safeZone.slug, { id, method: "PUT", body });
 }
 
 
 export async function deleteSafeZoneWordPress(id: string): Promise<void> {
-  await wordpressCCTFetch("safe_zone", { id, method: "DELETE" });
+  await wordpressCCTFetch(T.safeZone.slug, { id, method: "DELETE" });
 }
 
 // ─── Safe Zone Alerts ───────────────────────────────────────
