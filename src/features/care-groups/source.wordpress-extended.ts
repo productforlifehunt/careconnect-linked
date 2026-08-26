@@ -94,7 +94,7 @@ export async function fetchCareGroupPostsWordPress(groupId: string, type?: strin
 }
 
 export async function createGroupPostWordPress(post: { group_id: string; content: string; type?: string; title?: string }): Promise<string | null> {
-  const created = await wordpressCCTFetch<any>("care_group_post", {
+  const created = await wordpressCCTFetch<any>(T.careGroupPost.slug, {
     method: "POST",
     body: {
       [F_POST.TITLE]: post.title || post.content.substring(0, 50),
@@ -120,11 +120,11 @@ export async function updateGroupPostWordPress(id: string, updates: { content?: 
   if (updates.title !== undefined) body[F_POST.TITLE] = updates.title;
   if (updates.is_pinned !== undefined) body[F_POST.IS_PINNED] = updates.is_pinned ? YES : NO;
   if (updates.type !== undefined) body[F_POST.TYPE] = POST_TYPE_CODE[updates.type] || updates.type;
-  await wordpressCCTFetch("care_group_post", { id, method: "PUT", body });
+  await wordpressCCTFetch(T.careGroupPost.slug, { id, method: "PUT", body });
 }
 
 export async function deleteGroupPostWordPress(id: string): Promise<void> {
-  await wordpressCCTFetch("care_group_post", { id, method: "DELETE" });
+  await wordpressCCTFetch(T.careGroupPost.slug, { id, method: "DELETE" });
 }
 
 // ─── Group Settings (CCT 9 — care_group) ────────────────────
@@ -133,11 +133,11 @@ export async function updateCareGroupWordPress(id: string, updates: { name?: str
   if (updates.name !== undefined) body[F_GROUP.NAME] = updates.name;
   if (updates.description !== undefined) body[F_GROUP.DESCRIPTION] = updates.description;
   if (updates.is_private !== undefined) body[F_GROUP.GROUP_TYPE] = updates.is_private ? "b56" : "b55";
-  await wordpressCCTFetch("care_group", { id, method: "PUT", body });
+  await wordpressCCTFetch(T.careGroup.slug, { id, method: "PUT", body });
 }
 
 export async function deleteCareGroupWordPress(id: string): Promise<void> {
-  await wordpressCCTFetch("care_group", { id, method: "DELETE" });
+  await wordpressCCTFetch(T.careGroup.slug, { id, method: "DELETE" });
 }
 
 // ─── Invitations ────────────────────────────────────────────
@@ -206,7 +206,7 @@ export async function fetchMyPendingInvitationsWordPress(): Promise<any[]> {
       let groupName = "Care Group";
       if (groupId) {
         try {
-          const g = await wordpressCCTFetch<any>("care_group", { id: groupId });
+          const g = await wordpressCCTFetch<any>(T.careGroup.slug, { id: groupId });
           groupName = g?.name || groupName;
         } catch {}
       }
@@ -354,7 +354,7 @@ export async function createGroupInviteWordPress(input: {
   token?: string;
 }): Promise<any> {
   const token = (input.token || generateInviteToken()).trim();
-  const created = await wordpressCCTFetch<any>("care_group_invite", {
+  const created = await wordpressCCTFetch<any>(T.careGroupInvite.slug, {
     method: "POST",
     body: {
       [F_INVITE.TOKEN]: token,
@@ -389,11 +389,11 @@ export async function updateGroupInviteWordPress(id: string, updates: {
   if (updates.expiresAt !== undefined) body[F_INVITE.EXPIRES_AT] = updates.expiresAt || "";
   if (updates.maxUses !== undefined) body[F_INVITE.MAX_USES] = Number(updates.maxUses || 0);
   if (updates.isRevoked !== undefined) body[F_INVITE.IS_REVOKED] = updates.isRevoked ? "1" : "0";
-  await wordpressCCTFetch("care_group_invite", { id, method: "PUT", body });
+  await wordpressCCTFetch(T.careGroupInvite.slug, { id, method: "PUT", body });
 }
 
 export async function deleteGroupInviteWordPress(id: string): Promise<void> {
-  await wordpressCCTFetch("care_group_invite", { id, method: "DELETE" });
+  await wordpressCCTFetch(T.careGroupInvite.slug, { id, method: "DELETE" });
 }
 
 // ─── Join by Token ──────────────────────────────────────────
@@ -403,7 +403,7 @@ export async function joinGroupByCodeWordPress(token: string): Promise<any> {
   try {
     const trimmed = (token || "").trim();
     if (!trimmed) throw new Error("Invalid invite link");
-    const invites = await wordpressCCTFetch<any[]>("care_group_invite", { params: { _limit: 500 } });
+    const invites = await wordpressCCTFetch<any[]>(T.careGroupInvite.slug, { params: { _limit: 500 } });
     if (!Array.isArray(invites)) throw new Error("Invalid invite link");
     const lower = trimmed.toLowerCase();
     const match = invites.find((i: any) => String(i[F_INVITE.TOKEN] || "").trim().toLowerCase() === lower);
@@ -422,7 +422,7 @@ export async function joinGroupByCodeWordPress(token: string): Promise<any> {
     // Fetch group name for confirmation
     let groupName = "Care Group";
     try {
-      const g = await wordpressCCTFetch<any>("care_group", { id: String(parentGroupId) });
+      const g = await wordpressCCTFetch<any>(T.careGroup.slug, { id: String(parentGroupId) });
       groupName = g?.[F_GROUP.NAME] || groupName;
     } catch {}
 
@@ -459,7 +459,7 @@ export async function joinGroupByCodeWordPress(token: string): Promise<any> {
     });
 
     // Increment use_count only on real join (best-effort)
-    wordpressCCTFetch("care_group_invite", {
+    wordpressCCTFetch(T.careGroupInvite.slug, {
       id: String(inviteIdNum),
       method: "PUT",
       body: { [F_INVITE.USE_COUNT]: invite.use_count + 1 },
@@ -534,7 +534,7 @@ export async function createCareGroupGalleryItemWordPress(
   takenAt?: string,
 ): Promise<void> {
   const normalizedGroupId = normalizeWpObjectId(groupId);
-  const created = await wordpressCCTFetch<any>("care_group_gallery", {
+  const created = await wordpressCCTFetch<any>(T.careGroupGallery.slug, {
     method: "POST",
     body: {
       [F_GALLERY.IMAGE]: mediaId,
@@ -552,7 +552,7 @@ export async function createCareGroupGalleryItemWordPress(
 }
 
 export async function deleteCareGroupGalleryItemWordPress(itemId: string): Promise<void> {
-  await wordpressCCTFetch("care_group_gallery", { id: itemId, method: "DELETE" });
+  await wordpressCCTFetch(T.careGroupGallery.slug, { id: itemId, method: "DELETE" });
 }
 
 // ─── Sub-groups (CCT 74 — care_group_private_member_group) ──
@@ -571,7 +571,7 @@ export async function fetchMemberCategoriesWordPress(groupId: string): Promise<a
 }
 
 export async function createMemberCategoryWordPress(groupId: string, name: string, color?: string, description?: string): Promise<void> {
-  const created = await wordpressCCTFetch<any>("care_group_pmg", {
+  const created = await wordpressCCTFetch<any>(T.careGroupPrivateMemberGroup.slug, {
     method: "POST",
     body: {
       [F_SUBGROUP.NAME]: name,
@@ -595,7 +595,7 @@ export async function createMemberCategoryWordPress(groupId: string, name: strin
 }
 
 export async function deleteMemberCategoryWordPress(categoryId: string): Promise<void> {
-  await wordpressCCTFetch("care_group_pmg", { id: categoryId, method: "DELETE" });
+  await wordpressCCTFetch(T.careGroupPrivateMemberGroup.slug, { id: categoryId, method: "DELETE" });
 }
 
 // ─── Sub-group member assignment (REL 75) ───────────────────

@@ -1,9 +1,10 @@
 import { wordpressCCTFetch } from "@/features/shared/wordpress-client";
+import { T } from "@/integrations/wp-schema";
 
 // CCT slug: care_facility | a55=name, a56=detail, a57=type, a63=location, a64=address
 export async function fetchCareFacilitiesWordPress(): Promise<any[]> {
   try {
-    const items = await wordpressCCTFetch("care_facility", { params: { _limit: 100 } });
+    const items = await wordpressCCTFetch(T.careFacility.slug, { params: { _limit: 100 } });
     if (!Array.isArray(items)) return [];
     return items.map((f: any) => ({
       id: f.id,
@@ -31,7 +32,7 @@ export async function fetchCareFacilitiesWordPress(): Promise<any[]> {
 
 export async function fetchCareFacilityByIdWordPress(id: string): Promise<any | null> {
   try {
-    const f = await wordpressCCTFetch("care_facility", { id }) as any;
+    const f = await wordpressCCTFetch(T.careFacility.slug, { id }) as any;
     if (!f) return null;
     return {
       id: f.id,

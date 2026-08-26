@@ -6,6 +6,7 @@
 
 import { getWPToken } from "./wp-auth";
 import { buildWPUrl, buildWPHeaders } from "@/lib/wp-url";
+import { T } from "@/integrations/wp-schema";
 
 interface WPFetchOptions {
   method?: string;
@@ -234,7 +235,7 @@ export async function wpFetchCareTasks(): Promise<any[]> {
   try {
     // Care tasks live in JetEngine CCT `care_task_real`, not as a CPT
     const { wordpressCCTFetch } = await import("@/features/shared/wordpress-client");
-    const tasks = await wordpressCCTFetch<any[]>("care_task", { params: { _limit: 100 } });
+    const tasks = await wordpressCCTFetch<any[]>(T.careTask.slug, { params: { _limit: 100 } });
     if (!Array.isArray(tasks)) return [];
     return tasks.map((t: any) => ({
       id: String(t._ID || t.id),
@@ -303,7 +304,7 @@ export async function wpFetchProviders(): Promise<any[]> {
 export async function wpFetchCareGroups(): Promise<any[]> {
   try {
     const { wordpressCCTFetch } = await import("@/features/shared/wordpress-client");
-    const groups = await wordpressCCTFetch<any[]>("care_group", { params: { _limit: 50 } });
+    const groups = await wordpressCCTFetch<any[]>(T.careGroup.slug, { params: { _limit: 50 } });
     if (!Array.isArray(groups)) return [];
     return groups.map((g: any) => ({
       id: String(g.id || g._ID),
@@ -400,7 +401,7 @@ export async function wpFetchServiceCategories(): Promise<any[]> {
 export async function wpFetchCareFacilities(): Promise<any[]> {
   try {
     const { wordpressCCTFetch } = await import("@/features/shared/wordpress-client");
-    const facilities = await wordpressCCTFetch<any[]>("care_facility", { params: { _limit: 100 } });
+    const facilities = await wordpressCCTFetch<any[]>(T.careFacility.slug, { params: { _limit: 100 } });
     if (!Array.isArray(facilities)) return [];
     return facilities.map((f: any) => ({
       id: String(f.id || f._ID),

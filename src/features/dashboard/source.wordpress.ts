@@ -24,7 +24,7 @@ export async function fetchDashboardStatsWordPress(): Promise<DashboardStats> {
   } catch { /* */ }
 
   try {
-    const groups = await wordpressCCTFetch("care_group", { params: { _limit: 100 } });
+    const groups = await wordpressCCTFetch(T.careGroup.slug, { params: { _limit: 100 } });
     careGroups = Array.isArray(groups) ? groups.length : 0;
   } catch { /* */ }
 
