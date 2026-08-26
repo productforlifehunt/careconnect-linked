@@ -209,8 +209,8 @@ export async function createSafeZoneWordPress(zone: { user_id: string; name: str
     body: {
       a55: String(zone.zone_type || "Safe").toLowerCase() === "danger" ? "b56" : "b55",
       a56: String(zone.shape_type || "Radius").toLowerCase() === "polygon" ? "b56" : "b55",
-      a57: zone.name,
-      a58: zone.description || "",
+      a58: packNameDesc(zone.name, zone.description),
+
       a59: zone.color || "",
       a60: String(zone.latitude),
       a61: String(zone.longitude),
