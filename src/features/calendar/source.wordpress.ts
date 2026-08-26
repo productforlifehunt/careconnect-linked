@@ -1,10 +1,12 @@
 /**
- * Calendar — JetEngine CCT 128 `users_calendar_even`
- * Bible (最新数据字典.md §128):
+ * Calendar — JetEngine CCT 187 `users_calendar_event`
+ * Shared across every app on the backend: field a91 (App) scopes each event, so
+ * reads filter it and writes stamp it (see features/shared/app-scope).
+ * Field map (data dictionary CCT 187):
  *   a55=title  a56=description  a57=start_at  a58=end_at  a59=all_day
  *   a60=event_type  a61=location  a62=timezone
  *   a63=status   (b55 confirmed | b56 tentative | b57 cancelled)
- *   a64=priority (b55 normal | b56 low | b57 normal | b58 high | b59 urgent)
+ *   a64=priority (b55 normal | b56 low | b57 high | b58 urgent)
  *   a65=color  a66=rrule  a67=rrule_until  a68=exdates  a69=rdates
  *   a70=recurrence_id
  *   a71=show_as  (b55 busy | b56 free | b57 tentative | b58 oof)
@@ -14,22 +16,24 @@
  *   a78=external_source (b55 internal | b56 google | b57 outlook | b58 apple)
  *   a79=ical_uid  a80=sequence  a81=etag  a82=google_event_id  a83=meeting_url
  *   a84=attachments  a85=last_sync_at  a86=sync_token  a87=geo_lat  a88=geo_lng
- *   a89=tags  a90=custom_data
- * Relations: 129 users→event (owner), 130 event→users (invitees), 131 task→events
+ *   a89=tags  a90=custom_data  a91=App
+ * Relations: 190 users→event (owner), 262 event→users (invitees)
  */
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 import { getCurrentUserId } from "@/features/shared/current-user";
 import type { CalendarEvent, CalendarEventType } from "./types";
+import { T } from "@/integrations/wp-schema";
+import { appScopeBody, isInAppScope } from "@/features/shared/app-scope";
 
-const SLUG = "users_calendar_even";
+const SLUG = T.calendarEvent.slug;
 const REL_USER_EVENT = 190;
 const REL_EVENT_INVITEES = 262;
 
 // Option dictionaries (label → opaque code)
 const STATUS_OUT: Record<string, string> = { confirmed: "b55", tentative: "b56", cancelled: "b57" };
 const STATUS_IN: Record<string, string>  = { b55: "confirmed", b56: "tentative", b57: "cancelled" };
-const PRIO_OUT:  Record<string, string> = { normal: "b55", low: "b56", high: "b58", urgent: "b59" };
-const PRIO_IN:   Record<string, string> = { b55: "normal", b56: "low", b57: "normal", b58: "high", b59: "urgent" };
+const PRIO_OUT:  Record<string, string> = { normal: "b55", low: "b56", high: "b57", urgent: "b58" };
+const PRIO_IN:   Record<string, string> = { b55: "normal", b56: "low", b57: "high", b58: "urgent" };
 const SHOWAS_OUT: Record<string, string> = { busy: "b55", free: "b56", tentative: "b57", oof: "b58" };
 const SHOWAS_IN:  Record<string, string> = { b55: "busy", b56: "free", b57: "tentative", b58: "oof" };
 const VIS_OUT: Record<string, string> = { default: "b55", public: "b56", private: "b57", confidential: "b58" };
@@ -113,7 +117,10 @@ export async function fetchCalendarEventsForUserWordPress(userIdInput: string | 
     const allIds = Array.from(new Set([...ownedIds, ...invitedIds]));
     if (allIds.length === 0) return [];
     const rows = await Promise.all(allIds.map((id) => wordpressCCTFetch<any>(SLUG, { id }).catch(() => null)));
-    return rows.filter(Boolean).map(mapEventFromWP);
+    // Drop events belonging to the other apps sharing this CCT.
+    return rows
+      .filter((r): r is any => Boolean(r) && isInAppScope("calendarEvent", r))
+      .map(mapEventFromWP);
   } catch {
     return [];
   }
@@ -131,7 +138,7 @@ export async function createCalendarEventForUserWordPress(
 ): Promise<CalendarEvent | null> {
   const userId = normalizeWPUserId(ownerUserIdInput);
   if (!userId) return null;
-  const created: any = await wordpressCCTFetch(SLUG, { method: "POST", body: mapEventToWP(event) });
+  const created: any = await wordpressCCTFetch(SLUG, { method: "POST", body: { ...mapEventToWP(event), ...appScopeBody("calendarEvent") } });
   const newId = String(created?.item_id ?? created?._ID ?? created?.id ?? "");
   if (!newId) return null;
   try {
