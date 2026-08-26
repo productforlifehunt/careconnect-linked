@@ -1,5 +1,5 @@
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
-import { R } from "@/integrations/wp-schema";
+import { R, T } from "@/integrations/wp-schema";
 
 /**
  * Comments are NOT addressable by entity_type/entity_id on the CCT itself.
@@ -47,7 +47,7 @@ export async function fetchCommentsWordPress(entityType: string, entityId: strin
     if (!Array.isArray(rels) || rels.length === 0) return [];
     const ids = rels.map((r: any) => String(r.child_object_id)).filter(Boolean);
     const items = await Promise.all(ids.map(async (id) => {
-      try { return await wordpressCCTFetch<any>("comment", { id }); }
+      try { return await wordpressCCTFetch<any>(T.comment.slug, { id }); }
       catch { return null; }
     }));
     return (items.filter(Boolean) as any[]).map((c: any) => ({
@@ -55,8 +55,8 @@ export async function fetchCommentsWordPress(entityType: string, entityId: strin
       entity_type: entityType,
       entity_id: entityId,
       user_id: c.author_id || null,
-      title: c.a55 || "",
-      content: c.a56 || "",
+      title: c[T.comment.f.TITLE] || "",
+      content: c[T.comment.f.CONTENT] || "",
       parent_id: null,
       created_at: c.created_at,
       updated_at: c.updated_at,
@@ -68,9 +68,9 @@ export async function fetchCommentsWordPress(entityType: string, entityId: strin
 export async function createCommentWordPress(comment: { entity_type: string; entity_id: string; content: string; title?: string; parent_id?: string }): Promise<void> {
   const relId = comment.parent_id ? R.commentReplies : relForEntity(comment.entity_type);
   if (!relId) throw new Error(`Unsupported entity_type for comments: ${comment.entity_type}`);
-  const result = await wordpressCCTFetch<any>("comment", {
+  const result = await wordpressCCTFetch<any>(T.comment.slug, {
     method: "POST",
-    body: { a55: comment.title || "", a56: comment.content },
+    body: { [T.comment.f.TITLE]: comment.title || "", [T.comment.f.CONTENT]: comment.content },
   });
   const commentId = Number(result?.item_id || result?._ID || result?.id);
   const parentId = Number(stripWp(comment.parent_id || comment.entity_id));
@@ -83,9 +83,9 @@ export async function createCommentWordPress(comment: { entity_type: string; ent
 }
 
 export async function updateCommentWordPress(id: string, content: string): Promise<void> {
-  await wordpressCCTFetch("comment", { id, method: "PUT", body: { a56: content } });
+  await wordpressCCTFetch(T.comment.slug, { id, method: "PUT", body: { [T.comment.f.CONTENT]: content } });
 }
 
 export async function deleteCommentWordPress(id: string): Promise<void> {
-  await wordpressCCTFetch("comment", { id, method: "DELETE" });
+  await wordpressCCTFetch(T.comment.slug, { id, method: "DELETE" });
 }

@@ -1,29 +1,35 @@
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
+import { T, R } from "@/integrations/wp-schema";
+import { communityTypeCode } from "@/features/shared/app-scope";
 
-// ─── Community Posts (CCT: care_community_post) ─────────────
-// Live fields: a55=title, a56=content, a57=language, a58=app area, a59=category
+// ─── Community Posts (CCT 149 "Afresh community post") ──────
+// Shared across apps: the "Community type" radio scopes rows to ChallengeD /
+// Care-CNC, so every read filters and every write stamps it.
 
-const SLUG = "care_community_post";
+const SLUG = T.afreshCommunityPost.slug;
+const F = T.afreshCommunityPost.f;
 
-// Live JetEngine relations
-const REL_POST_COMMENT = 229;   // 1:M care_community_post → comment
-const REL_COMMENT_REPLY = 142;  // M:M comment → comment
+// JetEngine relations
+const REL_POST_COMMENT = R.communityPostComments; // 1:M community post → comment
+const REL_COMMENT_REPLY = R.commentReplies;       // M:M comment → comment
 
 export async function fetchCommunityPostsWordPress(locale?: { area?: string; language?: string; category?: string }): Promise<any[]> {
   try {
     const params: Record<string, string | number> = { _limit: 50 };
-    if (locale?.area) params.a58 = locale.area;
-    if (locale?.language) params.a57 = locale.language;
-    if (locale?.category) params.a59 = locale.category;
+    params[F.COMMUNITY_TYPE] = communityTypeCode();
+    if (locale?.area) params[F.APP_AREA] = locale.area;
+    if (locale?.language) params[F.LANGUAGE] = locale.language;
+    if (locale?.category) params[F.COMMUNITY_POST_CATEGORY] = locale.category;
     const posts = await wordpressCCTFetch<any[]>(SLUG, { params });
     if (!Array.isArray(posts)) return [];
     return posts.map((p: any) => ({
       id: p.id,
-      title: p.a55 || "",
-      content: p.a56 || "",
-      app_area: p.a58 || null,
-      language: p.a57 || null,
-      category: p.a59 || null,
+      title: p[F.TITLE] || "",
+      content: p[F.CONTENT] || "",
+      community_type: p[F.COMMUNITY_TYPE] || null,
+      app_area: p[F.APP_AREA] || null,
+      language: p[F.LANGUAGE] || null,
+      category: p[F.COMMUNITY_POST_CATEGORY] || null,
       author_id: p.author_id,
       created_at: p.created_at,
       updated_at: p.updated_at,
@@ -37,11 +43,12 @@ export async function fetchCommunityPostByIdWordPress(id: string): Promise<any |
     if (!p) return null;
     return {
       id: p.id,
-      title: p.a55 || "",
-      content: p.a56 || "",
-      app_area: p.a58 || null,
-      language: p.a57 || null,
-      category: p.a59 || null,
+      title: p[F.TITLE] || "",
+      content: p[F.CONTENT] || "",
+      community_type: p[F.COMMUNITY_TYPE] || null,
+      app_area: p[F.APP_AREA] || null,
+      language: p[F.LANGUAGE] || null,
+      category: p[F.COMMUNITY_POST_CATEGORY] || null,
       author_id: p.author_id,
       created_at: p.created_at,
       updated_at: p.updated_at,
@@ -59,11 +66,12 @@ export async function createCommunityPostWordPress(post: {
   const result = (await wordpressCCTFetch(SLUG, {
     method: "POST",
     body: {
-      a55: post.title,
-      a56: post.content,
-      a58: post.app_area || "",
-      a57: post.language || "",
-      a59: post.category || "",
+      [F.TITLE]: post.title,
+      [F.CONTENT]: post.content,
+      [F.COMMUNITY_TYPE]: communityTypeCode(),
+      [F.APP_AREA]: post.app_area || "",
+      [F.LANGUAGE]: post.language || "",
+      [F.COMMUNITY_POST_CATEGORY]: post.category || "",
     },
   })) as any;
   return { id: String(result?.item_id || result?.id || result?._ID) };
@@ -74,11 +82,11 @@ export async function updateCommunityPostWordPress(
   updates: { title?: string; content?: string; app_area?: string; language?: string; category?: string },
 ): Promise<void> {
   const body: Record<string, any> = {};
-  if (updates.title !== undefined) body.a55 = updates.title;
-  if (updates.content !== undefined) body.a56 = updates.content;
-  if (updates.app_area !== undefined) body.a58 = updates.app_area;
-  if (updates.language !== undefined) body.a57 = updates.language;
-  if (updates.category !== undefined) body.a59 = updates.category;
+  if (updates.title !== undefined) body[F.TITLE] = updates.title;
+  if (updates.content !== undefined) body[F.CONTENT] = updates.content;
+  if (updates.app_area !== undefined) body[F.APP_AREA] = updates.app_area;
+  if (updates.language !== undefined) body[F.LANGUAGE] = updates.language;
+  if (updates.category !== undefined) body[F.COMMUNITY_POST_CATEGORY] = updates.category;
   await wordpressCCTFetch(SLUG, { id, method: "PUT", body });
 }
 
@@ -89,7 +97,8 @@ export async function deleteCommunityPostWordPress(id: string): Promise<void> {
 // ─── Comments (CCT: comment) via JetEngine relations ────────
 // Live fields: title, content. Linked to entities ONLY via relations.
 
-const COMMENT_SLUG = "comment";
+const COMMENT_SLUG = T.comment.slug;
+const CF = T.comment.f;
 
 async function fetchCommentById(id: string, parentId: string | null = null): Promise<any | null> {
   try {
@@ -97,8 +106,8 @@ async function fetchCommentById(id: string, parentId: string | null = null): Pro
     if (!c) return null;
     return {
       id: String(c.id || id),
-      title: c.a55 || "",
-      content: c.a56 || "",
+      title: c[CF.TITLE] || "",
+      content: c[CF.CONTENT] || "",
       author_id: c.author_id || null,
       created_at: c.created_at || null,
       updated_at: c.updated_at || null,
@@ -133,7 +142,7 @@ export async function createPostCommentWordPress(
 ): Promise<{ id: string }> {
   const result = (await wordpressCCTFetch(COMMENT_SLUG, {
     method: "POST",
-    body: { a55: comment.title || "", a56: comment.content },
+    body: { [CF.TITLE]: comment.title || "", [CF.CONTENT]: comment.content },
   })) as any;
   const commentId = String(result?.item_id || result?.id || result?._ID);
   await wordpressFetch(`jet-rel/${REL_POST_COMMENT}`, {
@@ -149,7 +158,7 @@ export async function createCommentReplyWordPress(
 ): Promise<{ id: string }> {
   const result = (await wordpressCCTFetch(COMMENT_SLUG, {
     method: "POST",
-    body: { a55: reply.title || "", a56: reply.content },
+    body: { [CF.TITLE]: reply.title || "", [CF.CONTENT]: reply.content },
   })) as any;
   const replyId = String(result?.item_id || result?.id || result?._ID);
   await wordpressFetch(`jet-rel/${REL_COMMENT_REPLY}`, {
@@ -164,8 +173,8 @@ export async function updateCommentCCTWordPress(
   updates: { content?: string; title?: string },
 ): Promise<void> {
   const body: Record<string, any> = {};
-  if (updates.title !== undefined) body.a55 = updates.title;
-  if (updates.content !== undefined) body.a56 = updates.content;
+  if (updates.title !== undefined) body[CF.TITLE] = updates.title;
+  if (updates.content !== undefined) body[CF.CONTENT] = updates.content;
   await wordpressCCTFetch(COMMENT_SLUG, { id, method: "PUT", body });
 }
 
