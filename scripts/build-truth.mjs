@@ -134,6 +134,23 @@ for (const r of relations) for (const f of r.fields) f.optionMap = parseOptions(
 const cleanCcts = ccts.filter((c) => c.name && c.name.length > 1);
 const cleanRels = relations.filter((r) => r.name && r.parent && r.child);
 
+// Relations created in the JetEngine UI after this dictionary revision was
+// exported. Verified live against /wp-json/jet-rel/<id>.
+const EXTRA_RELATIONS = [
+  {
+    id: 265,
+    name: 'One 199. care group can have one related group live 121. chat conversation',
+    parent: '199. care group',
+    child: '121. Chat Conversation',
+    type: 'One to One',
+    fields: [],
+  },
+];
+for (const extra of EXTRA_RELATIONS) {
+  if (!cleanRels.some((r) => r.id === extra.id)) cleanRels.push(extra);
+}
+
+
 fs.mkdirSync('docs', { recursive: true });
 fs.writeFileSync('docs/wp-truth.json', JSON.stringify({ source: SRC, ccts: cleanCcts, relations: cleanRels }, null, 2));
 console.log('CCTs:', cleanCcts.length, 'Relations:', cleanRels.length);
