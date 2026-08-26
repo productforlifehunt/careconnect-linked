@@ -66,7 +66,7 @@ export async function fetchCommentsWordPress(entityType: string, entityId: strin
 }
 
 export async function createCommentWordPress(comment: { entity_type: string; entity_id: string; content: string; title?: string; parent_id?: string }): Promise<void> {
-  const relId = comment.parent_id ? 69 : relForEntity(comment.entity_type);
+  const relId = comment.parent_id ? R.commentReplies : relForEntity(comment.entity_type);
   if (!relId) throw new Error(`Unsupported entity_type for comments: ${comment.entity_type}`);
   const result = await wordpressCCTFetch<any>("comment", {
     method: "POST",
