@@ -85,13 +85,32 @@ function normalizePolygonPoints(points: any): [number, number][] {
 }
 
 // ─── Safe Zone mapping (matches new CCT fields) ─────────────
+//
+// CCT 214 Safe Zone has NO dedicated name column — the live table only exposes
+// a55, a56, a58..a69 (verified against the backend; a57 does not exist). a58 is
+// "Custom description", so the zone name and its description share it, joined by
+// NAME_DESC_SEP. Never write a57: JetEngine silently drops unknown columns.
+const NAME_DESC_SEP = " — ";
+
+function packNameDesc(name?: string | null, description?: string | null): string {
+  return [name || "", description || ""].filter(Boolean).join(NAME_DESC_SEP);
+}
+
+function unpackNameDesc(raw: any): { name: string | null; description: string | null } {
+  const value = typeof raw === "string" ? raw : "";
+  if (!value) return { name: null, description: null };
+  const idx = value.indexOf(NAME_DESC_SEP);
+  if (idx === -1) return { name: value, description: null };
+  return { name: value.slice(0, idx) || null, description: value.slice(idx + NAME_DESC_SEP.length) || null };
+}
 
 function mapSafeZone(z: any, userId: string): any {
   const polygonPoints = normalizePolygonPoints(z.a63);
+  const { name, description } = unpackNameDesc(z.a58);
   return {
     id: String(z._ID || z.id),
     user_id: userId,
-    name: z.a57 || null,
+    name,
     zone_type: z.a55 === "b56" ? "Danger" : "Safe",
     shape_type: z.a56 === "b56" ? "Polygon" : (polygonPoints.length >= 3 ? "Polygon" : "Radius"),
     color: z.a59 || null,
@@ -99,7 +118,7 @@ function mapSafeZone(z: any, userId: string): any {
     longitude: parseNumber(z.a61),
     radius_meters: parseNumber(z.a62, 100) ?? 100,
     polygon_points: polygonPoints,
-    description: z.a58 || null,
+    description,
     notify_on_enter: z.a64 === "b56",
     notify_on_exit: z.a65 === "b56",
     schedule_enabled: z.a66 === "b56",
@@ -110,6 +129,7 @@ function mapSafeZone(z: any, userId: string): any {
     updated_at: z.cct_modified || z.updated_at || z.created_at,
   };
 }
+
 
 // ─── Geo math ────────────────────────────────────────────────
 
