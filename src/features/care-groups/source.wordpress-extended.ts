@@ -537,7 +537,9 @@ export async function createCareGroupGalleryItemWordPress(
   const created = await wordpressCCTFetch<any>(T.careGroupGallery.slug, {
     method: "POST",
     body: {
-      [F_GALLERY.IMAGE]: mediaId,
+      // JetEngine REST rejects numeric payloads (rest_invalid_type) — always send strings
+      [F_GALLERY.IMAGE]: String(mediaId),
+
       [F_GALLERY.IMAGE_DESCRIPTION]: caption || "",
       [F_GALLERY.TAKEN_AT]: takenAt || new Date().toISOString().slice(0, 19).replace("T", " "),
     },

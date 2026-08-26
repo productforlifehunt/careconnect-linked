@@ -66,8 +66,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let cancelled = false;
 
     // Proactively purge stale tokens issued by old hostnames (pre domain migration).
-    // Current valid issuer must contain "challenged-dementia.com" or "170.106.171.59".
-    // Any other iss = legacy token signed with a different secret → will fail JWT verification.
+    // NOTE: simple-jwt-login on this install issues tokens WITHOUT `iss`/`site`
+    // claims, so absence of those claims must never invalidate a token — only a
+    // claim that explicitly points at a foreign host, or an expired token, does.
     try {
       const token = localStorage.getItem("cc_wp_token");
       if (token) {
@@ -76,13 +77,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(parts[1].length / 4) * 4, "=")));
           const iss: string = payload?.iss || "";
           const site: string = payload?.site || "";
-          const looksValid =
+          const hasHostClaim = !!(iss || site);
+          const hostOk =
+            !hasHostClaim ||
             /challenged-dementia\.com/i.test(iss) ||
             /challenged-dementia\.com/i.test(site) ||
             /170\.106\.171\.59/.test(iss);
           // Also drop if expired
           const expired = typeof payload?.exp === "number" && payload.exp * 1000 <= Date.now();
-          if (!looksValid || expired) {
+          if (!hostOk || expired) {
             localStorage.removeItem("cc_wp_token");
             localStorage.removeItem("cc_wp_user");
           }
@@ -91,6 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch {
       // If we can't parse, leave it — the API call will trigger auto-recovery
     }
+
 
     // Restore WP session from localStorage (fast, no network)
     const storedWP = getStoredWPUser();
