@@ -8,12 +8,16 @@
  */
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 import { getCurrentUserId } from "@/features/shared/current-user";
+import { T, R } from "@/integrations/wp-schema";
+import { appScopeBody, appScopeParams, filterAppScope } from "@/features/shared/app-scope";
 
-const SLUG = "users_notification";
-const REL_USER_NOTIFICATION = 188;
+const SLUG = T.notification.slug;
+const F = T.notification.f;
+const READ = T.notification.opt.NOTIFICATION_IS_READ;
+const REL_USER_NOTIFICATION = R.userNotifications;
 
 function isRead(v: any): boolean {
-  return v === true || v === "yes" || v === "1" || v === 1 || v === "b55";
+  return v === true || v === "yes" || v === "1" || v === 1 || v === READ.YES;
 }
 
 export async function fetchNotificationsWordPress(): Promise<any[]> {
@@ -32,18 +36,22 @@ export async function fetchNotificationsWordPress(): Promise<any[]> {
 
     // Fallback: pull all (only if relation lookup empty/disabled)
     if (!Array.isArray(raw) || raw.length === 0) {
-      const all = await wordpressCCTFetch(SLUG, { params: { _limit: 100, _orderby: "cct_created", _order: "desc" } });
+      const all = await wordpressCCTFetch(SLUG, {
+        params: { _limit: 100, _orderby: "cct_created", _order: "desc", ...appScopeParams("notification") },
+      });
       raw = Array.isArray(all) ? all : [];
     }
 
-    return raw.map((n: any) => ({
+    // The notification CCT is shared by every app on the backend — drop rows
+    // stamped for Afresh/Adry/Ablocked/BeNotch so no foreign data leaks in.
+    return filterAppScope("notification", raw).map((n: any) => ({
       id: String(n.id ?? n._ID),
       user_id: userId,
-      type: n.a55 || "info",
-      title: n.a56 || null,
-      message: n.a57 || null,
-      is_read: isRead(n.a59),
-      action_url: n.a58 || null,
+      type: n[F.NOTIFICATION_TYPE] || "info",
+      title: n[F.NOTIFICATION_TITLE] || null,
+      message: n[F.NOTIFICATION_CONTENT] || null,
+      is_read: isRead(n[F.NOTIFICATION_IS_READ]),
+      action_url: n[F.ACTION_URL] || null,
       created_at: n.created_at ?? n.cct_created ?? null,
     }));
   } catch {
@@ -55,7 +63,7 @@ export async function markNotificationReadWordPress(id: string): Promise<void> {
   await wordpressCCTFetch(SLUG, {
     id,
     method: "PUT",
-    body: { a59: "b55" },
+    body: { [F.NOTIFICATION_IS_READ]: READ.YES },
   });
 }
 
@@ -71,7 +79,7 @@ export async function markAllNotificationsReadWordPress(): Promise<void> {
 }
 
 /**
- * Create a notification and link it to the recipient via Relation 148.
+ * Create a notification and link it to the recipient via the user→notification relation.
  * `action_url` is a frontend route like "/tasks/123" or "/messages/abc".
  */
 export async function createNotificationWordPress(input: {
@@ -104,11 +112,12 @@ export async function createNotificationWordPress(input: {
   const created: any = await wordpressCCTFetch(SLUG, {
     method: "POST",
     body: {
-      a55: input.type,
-      a56: input.title,
-      a57: input.message,
-      a58: url,
-      a59: "b56",
+      [F.NOTIFICATION_TYPE]: input.type,
+      [F.NOTIFICATION_TITLE]: input.title,
+      [F.NOTIFICATION_CONTENT]: input.message,
+      [F.ACTION_URL]: url,
+      [F.NOTIFICATION_IS_READ]: READ.NO,
+      ...appScopeBody("notification"),
     },
   });
 
