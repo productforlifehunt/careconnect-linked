@@ -278,16 +278,25 @@ export async function deleteCareTaskWordPress(id: string): Promise<void> {
   await wordpressCCTFetch(CCT_SLUG, { id, method: "DELETE" });
 }
 
-/** Link a calendar event to a task via REL 263 (204. Care Task → 187. User's calendar event). */
+/**
+ * Link a calendar event to a task via REL 263 (204. Care Task → 187. User's
+ * calendar event). Relation 263 is defined in the dictionary but not yet
+ * registered on the live backend, so a 404 must never break task creation.
+ */
 export async function linkTaskToCalendarEventWordPress(taskId: string, eventId: string): Promise<void> {
   const tid = normalizeWpObjectId(taskId);
   const eid = normalizeWpObjectId(eventId);
   if (!tid || !eid) return;
-  await wordpressFetch(`jet-rel/${REL_TASK_CALENDAR}`, {
-    method: "POST",
-    body: { parent_id: tid, child_id: eid, context: "child", store_items_type: "update" },
-  });
+  try {
+    await wordpressFetch(`jet-rel/${REL_TASK_CALENDAR}`, {
+      method: "POST",
+      body: { parent_id: tid, child_id: eid, context: "child", store_items_type: "update" },
+    });
+  } catch {
+    /* relation not registered on this install — task itself is already saved */
+  }
 }
+
 
 /** Update an assignee's response status (pending/accepted/rejected) on REL 108 meta field `a55`. */
 export async function updateAssigneeStatusWordPress(taskId: string, userId: string, status: "pending" | "accepted" | "rejected"): Promise<void> {
