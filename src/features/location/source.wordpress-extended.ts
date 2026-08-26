@@ -215,7 +215,7 @@ export async function createSafeZoneWordPress(zone: { user_id: string; name: str
       a59: zone.color || "",
       a60: String(zone.latitude),
       a61: String(zone.longitude),
-      a62: zone.radius_meters ?? 100,
+      a62: String(zone.radius_meters ?? 100),
       a63: zone.polygon_points ? JSON.stringify(zone.polygon_points) : "",
       a64: zone.notify_on_enter !== false ? "b56" : "b55",
       a65: zone.notify_on_exit !== false ? "b56" : "b55",
