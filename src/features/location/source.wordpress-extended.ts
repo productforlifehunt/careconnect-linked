@@ -85,13 +85,32 @@ function normalizePolygonPoints(points: any): [number, number][] {
 }
 
 // ─── Safe Zone mapping (matches new CCT fields) ─────────────
+//
+// CCT 214 Safe Zone has NO dedicated name column — the live table only exposes
+// a55, a56, a58..a69 (verified against the backend; a57 does not exist). a58 is
+// "Custom description", so the zone name and its description share it, joined by
+// NAME_DESC_SEP. Never write a57: JetEngine silently drops unknown columns.
+const NAME_DESC_SEP = " — ";
+
+function packNameDesc(name?: string | null, description?: string | null): string {
+  return [name || "", description || ""].filter(Boolean).join(NAME_DESC_SEP);
+}
+
+function unpackNameDesc(raw: any): { name: string | null; description: string | null } {
+  const value = typeof raw === "string" ? raw : "";
+  if (!value) return { name: null, description: null };
+  const idx = value.indexOf(NAME_DESC_SEP);
+  if (idx === -1) return { name: value, description: null };
+  return { name: value.slice(0, idx) || null, description: value.slice(idx + NAME_DESC_SEP.length) || null };
+}
 
 function mapSafeZone(z: any, userId: string): any {
   const polygonPoints = normalizePolygonPoints(z.a63);
+  const { name, description } = unpackNameDesc(z.a58);
   return {
     id: String(z._ID || z.id),
     user_id: userId,
-    name: z.a57 || null,
+    name,
     zone_type: z.a55 === "b56" ? "Danger" : "Safe",
     shape_type: z.a56 === "b56" ? "Polygon" : (polygonPoints.length >= 3 ? "Polygon" : "Radius"),
     color: z.a59 || null,
@@ -99,7 +118,7 @@ function mapSafeZone(z: any, userId: string): any {
     longitude: parseNumber(z.a61),
     radius_meters: parseNumber(z.a62, 100) ?? 100,
     polygon_points: polygonPoints,
-    description: z.a58 || null,
+    description,
     notify_on_enter: z.a64 === "b56",
     notify_on_exit: z.a65 === "b56",
     schedule_enabled: z.a66 === "b56",
@@ -110,6 +129,7 @@ function mapSafeZone(z: any, userId: string): any {
     updated_at: z.cct_modified || z.updated_at || z.created_at,
   };
 }
+
 
 // ─── Geo math ────────────────────────────────────────────────
 
@@ -189,8 +209,8 @@ export async function createSafeZoneWordPress(zone: { user_id: string; name: str
     body: {
       a55: String(zone.zone_type || "Safe").toLowerCase() === "danger" ? "b56" : "b55",
       a56: String(zone.shape_type || "Radius").toLowerCase() === "polygon" ? "b56" : "b55",
-      a57: zone.name,
-      a58: zone.description || "",
+      a58: packNameDesc(zone.name, zone.description),
+
       a59: zone.color || "",
       a60: String(zone.latitude),
       a61: String(zone.longitude),
@@ -209,7 +229,19 @@ export async function createSafeZoneWordPress(zone: { user_id: string; name: str
 
 export async function updateSafeZoneWordPress(id: string, updates: Record<string, any>): Promise<void> {
   const body: Record<string, any> = {};
-  if (updates.name !== undefined) body.a57 = updates.name;
+  // name + description share a58 — read the current row so a partial update
+  // never wipes the other half.
+  if (updates.name !== undefined || updates.description !== undefined) {
+    let current = { name: null as string | null, description: null as string | null };
+    try {
+      const row = await wordpressCCTFetch<any>("safe_zone", { id });
+      current = unpackNameDesc(row?.a58);
+    } catch { /* fall back to what the caller gave us */ }
+    body.a58 = packNameDesc(
+      updates.name !== undefined ? updates.name : current.name,
+      updates.description !== undefined ? updates.description : current.description,
+    );
+  }
   if (updates.zone_type !== undefined) body.a55 = String(updates.zone_type).toLowerCase() === "danger" ? "b56" : "b55";
   if (updates.shape_type !== undefined) body.a56 = String(updates.shape_type).toLowerCase() === "polygon" ? "b56" : "b55";
   if (updates.color !== undefined) body.a59 = updates.color;
@@ -217,7 +249,6 @@ export async function updateSafeZoneWordPress(id: string, updates: Record<string
   if (updates.longitude !== undefined) body.a61 = String(updates.longitude);
   if (updates.radius_meters !== undefined) body.a62 = updates.radius_meters;
   if (updates.polygon_points !== undefined) body.a63 = updates.polygon_points ? JSON.stringify(updates.polygon_points) : "";
-  if (updates.description !== undefined) body.a58 = updates.description;
   if (updates.notify_on_enter !== undefined) body.a64 = updates.notify_on_enter ? "b56" : "b55";
   if (updates.notify_on_exit !== undefined) body.a65 = updates.notify_on_exit ? "b56" : "b55";
   if (updates.schedule_enabled !== undefined) body.a66 = updates.schedule_enabled ? "b56" : "b55";
@@ -226,6 +257,7 @@ export async function updateSafeZoneWordPress(id: string, updates: Record<string
   if (updates.is_active !== undefined) body.a69 = updates.is_active ? "b55" : "b56";
   await wordpressCCTFetch("safe_zone", { id, method: "PUT", body });
 }
+
 
 export async function deleteSafeZoneWordPress(id: string): Promise<void> {
   await wordpressCCTFetch("safe_zone", { id, method: "DELETE" });

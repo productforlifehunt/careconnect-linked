@@ -158,9 +158,19 @@ export async function deleteCalendarEventWordPress(id: string): Promise<void> {
   await wordpressCCTFetch(SLUG, { id, method: "DELETE" });
 }
 
+/**
+ * Invite a user to an event via REL 262. The relation exists in the dictionary
+ * but is not registered on the live backend yet — swallow 404s so the event
+ * itself still saves.
+ */
 export async function inviteUserToEventWordPress(eventId: string, userId: string): Promise<void> {
-  await wordpressFetch(`jet-rel/${REL_EVENT_INVITEES}`, {
-    method: "POST",
-    body: { parent_id: eventId, child_id: userId, context: "child", store_items_type: "update" },
-  });
+  try {
+    await wordpressFetch(`jet-rel/${REL_EVENT_INVITEES}`, {
+      method: "POST",
+      body: { parent_id: eventId, child_id: userId, context: "child", store_items_type: "update" },
+    });
+  } catch {
+    /* relation not registered on this install */
+  }
 }
+
