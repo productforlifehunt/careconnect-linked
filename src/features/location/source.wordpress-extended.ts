@@ -22,7 +22,7 @@ const ALERT_DEDUP_WINDOW_MS = 5 * 60 * 1000;
 
 
 // ─── Relation IDs ────────────────────────────────────────────
-const REL_USER_SAFE_ZONE = 118;
+const REL_USER_SAFE_ZONE = 248;
 
 type SafeZoneAlertType = "exited_safe_zone" | "entered_safe_zone" | "entered_danger_zone" | "exited_danger_zone";
 

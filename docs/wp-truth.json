@@ -1,14 +1,1219 @@
 {
+  "source": "/mnt/documents/最新数据字典-2026-08.txt",
   "ccts": [
     {
-      "id": 110,
-      "name": "User's extended profile",
+      "id": 140,
+      "name": "Product",
+      "fields": [
+        {
+          "label": "Name",
+          "code": "a55",
+          "type": "Text",
+          "options": "产品名称，e.g., \"ZYN Cool Mint 6mg\"",
+          "optionMap": {}
+        },
+        {
+          "label": "Description",
+          "code": "a56",
+          "type": "Textarea",
+          "options": "产品详情",
+          "optionMap": {}
+        },
+        {
+          "label": "Product type",
+          "code": "a57",
+          "type": "Checkbox",
+          "options": "1. “Nicotine product” (Name/ID: b55) 2. “Alcohol product” (Name/ID: b56) 3. “Food” (Name/ID: b57) 4. “Supplement” (Name/ID: b58) 5. “Medicine” (Name/ID: b59) 6. “Gear” (Name/ID: b60) 7. “Giftcard” (Name/ID: b61)",
+          "optionMap": {
+            "b55": "Nicotine product",
+            "b56": "Alcohol product",
+            "b57": "Food",
+            "b58": "Supplement",
+            "b59": "Medicine",
+            "b60": "Gear",
+            "b61": "Giftcard"
+          }
+        },
+        {
+          "label": "The supplement is GLP-1",
+          "code": "a571",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)\t是GLP-1的supplement勾选以便于分类，不是的不需要勾选",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "GLP-1 product category",
+          "code": "a572",
+          "type": "",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "The supplement is Peptides",
+          "code": "a573",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Supplement product category",
+          "code": "a574",
+          "type": "Radio",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "The food/supplement contains caffeine",
+          "code": "a575",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "The food/supplement contains protein",
+          "code": "a576",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Giftcard type",
+          "code": "a577",
+          "type": "Radio",
+          "options": "1. “Amazon” (Name/ID: b55)",
+          "optionMap": {
+            "b55": "Amazon"
+          }
+        },
+        {
+          "label": "Giftcard price",
+          "code": "a578",
+          "type": "Number",
+          "options": "记录礼品卡的价格，注意：这里是指我们送出的亚马逊礼品卡的价值，不是我们卖出的价格，如果礼品卡也是可售的，我们使用通用的MSRP shop记录方式，即关联到MSRP shop用jet relation 116来记录价格",
+          "optionMap": {}
+        },
+        {
+          "label": "The product is a Nrt product",
+          "code": "a58",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)\t尼古丁产品的设计用途为戒烟产品",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Nrt certification institute",
+          "code": "a59",
+          "type": "Checkbox",
+          "options": "尼古丁戒烟产品的认证机构（你说你的用途是戒烟，那经过了哪些权威机构认证你可以作为戒烟产品吗？）注意：这里显示的是我们已经批准的，选项由我们添加，用户添加使用单独的添加表单",
+          "optionMap": {}
+        },
+        {
+          "label": "The nicotine product is a smokeless nicotine product",
+          "code": "a60",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)\t这个尼古丁产品是无烟产品，可以是尼古丁pouch这种鼓励使用尼古丁的产品，也可以是NRT这种目的是戒烟的产品，NRT再额外勾选a58",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Nicotine product category",
+          "code": "a61",
+          "type": "Radio",
+          "options": "1. “Cigarette” (Name/ID: b55) 2. “Cigar” (Name/ID: b56) 3. “Cigarillo” (Name/ID: b57) 4. “Pipe” (Name/ID: b58) 5. “Hookah” (Name/ID: b59) 6. “Hand roll” (Name/ID: b60) 7. “Heated tobacco” (Name/ID: b61) 8. “Vape” (Name/ID: b62) 9. “Moist snuff/Dip” (Name/ID: b63) 10. “Nasal snuff” (Name/ID: b64) 11. “Tobacco pouch/Snus” (Name/ID: b65) 12. “Chewing tobacco” (Name/ID: b66) 13. “Nicotine pouch” (Name/ID: b67) 14. “Nicotine gum” (Name/ID: b68) 15. “Nicotine strip” (Name/ID: b69) 16. “Nicotine lozenge / mint” (Name/ID: b70) 17. “Nicotine sublingual tablet” (Name/ID: b71) 18. “Nicotine nasal spray” (Name/ID: b72) 19. “Nicotine cotton” (Name/ID: b73) 20. “Nicotine hard candy” (Name/ID: b74) 21. “Nicotine pearl” (Name/ID: b75) 22. “Nicotine toothpick” (Name/ID: b76) 23. “Nicotine mouth spray” (Name/ID: b77) 24. “Nicotine inhaler” (Name/ID: b78) 25. “Nicotine gel” (Name/ID: b79) 26. “Nicotine lollipops / suckers” (Name/ID: b80)",
+          "optionMap": {
+            "b55": "Cigarette",
+            "b56": "Cigar",
+            "b57": "Cigarillo",
+            "b58": "Pipe",
+            "b59": "Hookah",
+            "b60": "Hand roll",
+            "b61": "Heated tobacco",
+            "b62": "Vape",
+            "b63": "Moist snuff/Dip",
+            "b64": "Nasal snuff",
+            "b65": "Tobacco pouch/Snus",
+            "b66": "Chewing tobacco",
+            "b67": "Nicotine pouch",
+            "b68": "Nicotine gum",
+            "b69": "Nicotine strip",
+            "b70": "Nicotine lozenge / mint",
+            "b71": "Nicotine sublingual tablet",
+            "b72": "Nicotine nasal spray",
+            "b73": "Nicotine cotton",
+            "b74": "Nicotine hard candy",
+            "b75": "Nicotine pearl",
+            "b76": "Nicotine toothpick",
+            "b77": "Nicotine mouth spray",
+            "b78": "Nicotine inhaler",
+            "b79": "Nicotine gel",
+            "b80": "Nicotine lollipops / suckers"
+          }
+        },
+        {
+          "label": "The product contains tobacco",
+          "code": "a62",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)\t是否含有烟草，注意：nicotine pouch也需要填写此栏，因为有些pouch为了合规或者税务愿意，比如挪威的nicotine pouch也会加入少量的烟草",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Nicotine Strength in mg",
+          "code": "a63",
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Smokeless product strength category",
+          "code": "a64",
+          "type": "Radio",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Nrt product stage category",
+          "code": "a65",
+          "type": "Radio",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "The product is approved",
+          "code": "a66",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "How many products in a pack",
+          "code": "a67",
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Images",
+          "code": "a68",
+          "type": "Gallery",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "google_product_category_id",
+          "code": "a69",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "coin allowance",
+          "code": "a70",
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Custom food detail",
+          "code": "a71",
+          "type": "Textarea",
+          "options": "对于用户自行添加的食品，严格按照OFF的字段和结构去记录成json",
+          "optionMap": {}
+        },
+        {
+          "label": "Custom medicine detail",
+          "code": "a712",
+          "type": "",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Alcohol product category",
+          "code": "a72",
+          "type": "Checkbox",
+          "options": "1. “Beer” (Name/ID: b55) 2. “Cider” (Name/ID: b56) 3. “Wine” (Name/ID: b57) 4. “Fortified wine” (Name/ID: b58) 5. “Spirits” (Name/ID: b59) 6. “Alcopops” (Name/ID: b60) 7. “Prosecco/Champagne” (Name/ID: b61)\t参照Try dry的分类方式，共7类，使用Checkbox的原因不是为了在前端多选，是为了日后数据迁移拓展方便，只要复选即可",
+          "optionMap": {
+            "b55": "Beer",
+            "b56": "Cider",
+            "b57": "Wine",
+            "b58": "Fortified wine",
+            "b59": "Spirits",
+            "b60": "Alcopops",
+            "b61": "Prosecco/Champagne"
+          }
+        },
+        {
+          "label": "Alcohol percentage",
+          "code": "a73",
+          "type": "Number",
+          "options": "酒精度",
+          "optionMap": {}
+        },
+        {
+          "label": "Alcohol volume per bottle",
+          "code": "a74",
+          "type": "Number",
+          "options": "一瓶多大",
+          "optionMap": {}
+        },
+        {
+          "label": "Product listing type",
+          "code": "a75",
+          "type": "Checkbox",
+          "options": "1. “Our non-specific category product customizable by users” (Name/ID: b55) 2. “User‘s personal products” (Name/ID: b56) 3. “Directory products” \t1. 为类别产品，目的是为了戒烟、戒酒用户选择baseline或者记录用，此类产品只允许我们自己添加，且不在directory系统或marketplace中显示 2. 为用户的自我建立产品，通常是用户为了戒烟戒酒记录而建立的个人产品，用户也可以把个人产品提交到directory，批准则既是2也是3，未批准即只是2，不影响使用",
+          "optionMap": {
+            "b55": "Our non-specific category product customizable by users",
+            "b56": "User‘s personal products"
+          }
+        }
+      ]
+    },
+    {
+      "id": 146,
+      "name": "Product’s brand",
+      "fields": [
+        {
+          "label": "Brand name",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Brand image",
+          "code": "a56",
+          "type": "Gallery",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Brand is approved",
+          "code": "a57",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)\t是否批准，如果是用户上传的品牌分类，需要先经过批准",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Brand is still active",
+          "code": "a58",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        }
+      ]
+    },
+    {
+      "id": 114,
+      "name": "Product's flavor",
+      "fields": [
+        {
+          "label": "Flavor name",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Flavor is approved",
+          "code": "a56",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)\t是否批准，如果是用户上传的口味分类，需要先经过批准",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Flavor is still active",
+          "code": "a57",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        }
+      ]
+    },
+    {
+      "id": 174,
+      "name": "Product's ingredient",
+      "fields": [
+        {
+          "label": "Ingredient name",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Ingredient is approved",
+          "code": "a56",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)\t是否批准，如果是用户上传的配料，需要先经过批准",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Ingredient is still active",
+          "code": "a57",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        }
+      ]
+    },
+    {
+      "id": 168,
+      "name": "Recipe",
+      "fields": [
+        {
+          "label": "Name",
+          "code": "a55",
+          "type": "Text",
+          "options": "名称",
+          "optionMap": {}
+        },
+        {
+          "label": "Servings",
+          "code": "a56",
+          "type": "Text",
+          "options": "份数",
+          "optionMap": {}
+        },
+        {
+          "label": "Recipe detail",
+          "code": "a57",
+          "type": "Textarea",
+          "options": "以schema.org/recipe格式和字段名严格以json记录",
+          "optionMap": {}
+        },
+        {
+          "label": "Image",
+          "code": "a58",
+          "type": "",
+          "options": "照片",
+          "optionMap": {}
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Shop",
+      "fields": [
+        {
+          "label": "Shop name",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Shop description",
+          "code": "a56",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Shop website",
+          "code": "a57",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Shop country",
+          "code": "a58",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Shop address",
+          "code": "a59",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Shop phone",
+          "code": "a60",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Shop email",
+          "code": "a61",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Shop is online",
+          "code": "a62",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Online shop type",
+          "code": "a63",
+          "type": "Checkbox",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Shop is local",
+          "code": "a64",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Local shop type",
+          "code": "a65",
+          "type": "Checkbox",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Shop's shipping regions",
+          "code": "a66",
+          "type": "Checkbox",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Shop is approved",
+          "code": "a67",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Shop is still active",
+          "code": "a68",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "This shop is one of our official shops",
+          "code": "a69",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Owner User ID",
+          "code": "a70",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Claim Status",
+          "code": "a71",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Claim Email",
+          "code": "a72",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Claim Proof",
+          "code": "a73",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Phone",
+          "code": "a74",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Default coin allowance",
+          "code": "a75",
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "The shop has joined our marketplace as a marketplace seller",
+          "code": "a76",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "This is the hidden shop to store type 4 price for shop that is on our directory list and also chooses to sell on our market place",
+          "code": "a77",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "This shop chooses to sell on our marketplace but doesn’t deserve to be listed on our directory",
+          "code": "a78",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        }
+      ]
+    },
+    {
+      "id": 149,
+      "name": "Afresh community post",
+      "fields": [
+        {
+          "label": "Title",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Content",
+          "code": "a56",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Community type",
+          "code": "a57",
+          "type": "Radio",
+          "options": "1. “Afresh” (Name/ID: b55) 2. “NRTList” (Name/ID: b56) 3. “PouchList” (Name/ID: b57) 4. “ChallengeD” (Name/ID: b58) 5. “Care-CNC” (Name/ID: b59) \tAfresh是指在Afresh app里显示，NRTList即NRTList,ChallengeD即ChallengeD，Care-CNC即Care-CNC；注意：这里指的是不同子App内的论坛，发帖在后端写入对应的子app且前端展示时务必只展示对应的子app post",
+          "optionMap": {
+            "b55": "Afresh",
+            "b56": "NRTList",
+            "b57": "PouchList",
+            "b58": "ChallengeD",
+            "b59": "Care-CNC"
+          }
+        },
+        {
+          "label": "Language",
+          "code": "a58",
+          "type": "Radio",
+          "options": "1. “English” (Name/ID: b55) 2. “Simplified Chinese” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "English",
+            "b56": "Simplified Chinese"
+          }
+        },
+        {
+          "label": "app area",
+          "code": "a59",
+          "type": "Checkbox",
+          "options": "1. “Global English” (Name/ID: b55) 2. “China” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Global English",
+            "b56": "China"
+          }
+        },
+        {
+          "label": "Community post category",
+          "code": "a60",
+          "type": "Radio",
+          "options": "1. “Discussion” (Name/ID: b55) 2. “Article” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Discussion",
+            "b56": "Article"
+          }
+        }
+      ]
+    },
+    {
+      "id": 141,
+      "name": "Comment",
+      "fields": [
+        {
+          "label": "title",
+          "code": "a55",
+          "type": "text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "content",
+          "code": "a56",
+          "type": "textarea",
+          "options": "",
+          "optionMap": {}
+        }
+      ]
+    },
+    {
+      "id": 30,
+      "name": "Vote",
+      "fields": [
+        {
+          "label": "Upvote or downvote",
+          "code": "a55",
+          "type": "Radio",
+          "options": "1. “Upvote” (Name/ID: b55) 2. “Downvote” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Upvote",
+            "b56": "Downvote"
+          }
+        }
+      ]
+    },
+    {
+      "id": 31,
+      "name": "Review",
+      "fields": [
+        {
+          "label": "title",
+          "code": "a55",
+          "type": "text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "content",
+          "code": "a56",
+          "type": "textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "rating",
+          "code": "a57",
+          "type": "number",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Product flavor rating",
+          "code": "a58",
+          "type": "number",
+          "options": "Applies to edible product",
+          "optionMap": {}
+        },
+        {
+          "label": "Nicotine product nicotine hit rating",
+          "code": "a59",
+          "type": "number",
+          "options": "Applies to nicotine product",
+          "optionMap": {}
+        },
+        {
+          "label": "Nicotine product nicotine release rating",
+          "code": "a60",
+          "type": "number",
+          "options": "Applies to nicotine product",
+          "optionMap": {}
+        },
+        {
+          "label": "Nicotine product gum friendliness rating",
+          "code": "a61",
+          "type": "number",
+          "options": "Applies to nicotine product",
+          "optionMap": {}
+        }
+      ]
+    },
+    {
+      "id": 151,
+      "name": "User‘s extended profile",
+      "fields": [
+        {
+          "label": "User name",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "User name in community",
+          "code": "a56",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Timezone",
+          "code": "a57",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Language",
+          "code": "a58",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Currency",
+          "code": "a59",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "User's general role for afresh",
+          "code": "a60",
+          "type": "Checkbox",
+          "options": "1. “Quitter” (Name/ID: b55) 2. “Doctor” (Name/ID: b56) 3. “Researcher” (Name/ID: b57)\t暂时不需要，所有用户都是Quitter",
+          "optionMap": {
+            "b55": "Quitter",
+            "b56": "Doctor",
+            "b57": "Researcher"
+          }
+        },
+        {
+          "label": "User’s goal for quit smoking",
+          "code": "a61",
+          "type": "Radio",
+          "options": "1. “Get Afresh” (Name/ID: b55) 2. “Get fresher” (Name/ID: b56) 3. “Stay Fresh” （Name/ID: b57）",
+          "optionMap": {
+            "b55": "Get Afresh",
+            "b56": "Get fresher",
+            "b57": "Stay Fresh"
+          }
+        },
+        {
+          "label": "User’s goal for quit drinking alcohol",
+          "code": "a611",
+          "type": "Radio",
+          "options": "1. “Get Adry” (Name/ID: b55) 2. “Get dryer” (Name/ID: b56) 3. “Stay Dry” （Name/ID: b57）",
+          "optionMap": {
+            "b55": "Get Adry",
+            "b56": "Get dryer",
+            "b57": "Stay Dry"
+          }
+        },
+        {
+          "label": "User’s goal for quit porn",
+          "code": "a612",
+          "type": "Radio",
+          "options": "1. “Get Ablocked” (Name/ID: b55) 2. “Get more blocked” (Name/ID: b56) 3. “Stay Blocked” （Name/ID: b57）",
+          "optionMap": {
+            "b55": "Get Ablocked",
+            "b56": "Get more blocked",
+            "b57": "Stay Blocked"
+          }
+        },
+        {
+          "label": "AI tone",
+          "code": "a62",
+          "type": "Radio",
+          "options": "1. “Coach” (Name/ID: b55) 2. “Friend” (Name/ID: b56) 3. “Butler” (Name/ID: b57) 4. “Fella” (Name/ID: b58) 5. “Custom” (Name/ID: b59)\t“Fella“ means speaking like Joe Pesci in good fella",
+          "optionMap": {
+            "b55": "Coach",
+            "b56": "Friend",
+            "b57": "Butler",
+            "b58": "Fella",
+            "b59": "Custom"
+          }
+        },
+        {
+          "label": "Custom AI tone",
+          "code": "a63",
+          "type": "Text",
+          "options": "自定义AI角色",
+          "optionMap": {}
+        },
+        {
+          "label": "Allows speaking \"F\" word in Fella mode",
+          "code": "a64",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)\t选择fella时适用",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "How should fella call you",
+          "code": "a65",
+          "type": "Text",
+          "options": "选择fella时适用",
+          "optionMap": {}
+        },
+        {
+          "label": "How much fella-ness should our fella be",
+          "code": "a66",
+          "type": "Number",
+          "options": "选择fella时适用",
+          "optionMap": {}
+        },
+        {
+          "label": "Ai strictness level",
+          "code": "a67",
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Custom ai system prompt",
+          "code": "a68",
+          "type": "Textarea",
+          "options": "Allows the user to write custom system prompt to the AI",
+          "optionMap": {}
+        },
+        {
+          "label": "Quit smoking start date",
+          "code": "a69",
+          "type": "Timedate",
+          "options": "即用户在onborading时设置的quit时间，不随用户吸烟记录更改，吸烟记录前端检索最近的记录或依据plan设定的日期来决定",
+          "optionMap": {}
+        },
+        {
+          "label": "Quit drinking alcohol start date",
+          "code": "a691",
+          "type": "Timedate",
+          "options": "即用户在onborading时设置的quit时间，不随用户喝酒记录更改，喝酒记录前端检索最近的记录或依据plan设定的日期来决定",
+          "optionMap": {}
+        },
+        {
+          "label": "User finished or skipped onboarding for afresh",
+          "code": "a70",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)\t如果用户点了skip也不要再弹onboaring烦人了",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "User finished or skipped onboarding for adry",
+          "code": "a71",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)\t如果用户点了skip也不要再弹onboaring烦人了",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "User finished or skipped onboarding for benotch",
+          "code": "a72",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)\t如果用户点了skip也不要再弹onboaring烦人了",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Notification enabled",
+          "code": "a73",
+          "type": "",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "User’s baseline porn watch time per day",
+          "code": "a74",
+          "type": "Number",
+          "options": "用户的baseline每天看黄片时长",
+          "optionMap": {}
+        },
+        {
+          "label": "User’s baseline porn watching category",
+          "code": "a75",
+          "type": "Text",
+          "options": "用户的baseline每天看黄片类别",
+          "optionMap": {}
+        },
+        {
+          "label": "User’s baseline porn watching detail",
+          "code": "a76",
+          "type": "Text",
+          "options": "用户的baseline每天看黄片详情",
+          "optionMap": {}
+        },
+        {
+          "label": "Quit porn start date",
+          "code": "a77",
+          "type": "Datetime",
+          "options": "即用户在onborading时设置的quit时间，不随用户看黄片记录更改",
+          "optionMap": {}
+        },
+        {
+          "label": "User’s gold freshcoin balance",
+          "code": "a78",
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "User’s silver freshcoin balance",
+          "code": "a781",
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "User’s gold drycoin balance",
+          "code": "a79",
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "User’s silver drycoin balance",
+          "code": "a791",
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "User’s gold blocked coin balance",
+          "code": "a80",
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "User’s silver blocked coin balance",
+          "code": "a801",
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "User’s gold notch coin balance",
+          "code": "a81",
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "User’s silver notch coin balance",
+          "code": "a811",
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "User’s biologicalSex",
+          "code": "a82",
+          "type": "Radio",
+          "options": "1. “notSet=0” (Name/ID: b55) 2. “female=1” (Name/ID: b56) 3. “male=2” (Name/ID: b57) 4. “other=3” (Name/ID: b58)\t对应苹果健康的四个枚举值，前端显示female，male和other，苹果没有other的自定义输入，咱们也就对应这几个，暂不考虑变性的写法，爱写男女都行；注意：苹果健康性别是只读不可写，而且我们读到的信息大概率是0，1，2，3这些数值，我们只通过苹果健康读出的数值在前端提示用户在我们请将性别设置保持与苹果健康一致，但是如果用户就是懒得改咱们也不要多事，就按咱们这里储存的信息去做ai分析",
+          "optionMap": {
+            "b55": "notSet=0",
+            "b56": "female=1",
+            "b57": "male=2",
+            "b58": "other=3"
+          }
+        },
+        {
+          "label": "User’s other sex detail",
+          "code": "a821",
+          "type": "Text",
+          "options": "备注other sex的详情，这里这是作为我们ai分析的辅助信息",
+          "optionMap": {}
+        },
+        {
+          "label": "User’s sex detail",
+          "code": "a822",
+          "type": "Text",
+          "options": "用户可以备注一切sex detail, 比如变性、使用性激素等一切，这里也不存入苹果健康，只是我们ai分析的辅助信息",
+          "optionMap": {}
+        },
+        {
+          "label": "User’s DateOfBirth",
+          "code": "a83",
+          "type": "Datetime",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "User’s BloodType",
+          "code": "a84",
+          "type": "Radio",
+          "options": "1. “notSet=0” (Name/ID: b55) 2. “aPositive=1” (Name/ID: b56) 3. “aNegative=2” (Name/ID: b57) 4. “bPositive=3” (Name/ID: b58) 5. “bNegative=4” (Name/ID: b59) 6. “abPositive=5” (Name/ID: b57) 7. “abNegative=6” (Name/ID: b58) 8. “oPositive=7” (Name/ID: b59) 9. “oNegative=8” (Name/ID: b59)",
+          "optionMap": {
+            "b55": "notSet=0",
+            "b56": "aPositive=1",
+            "b57": "abPositive=5",
+            "b58": "abNegative=6",
+            "b59": "oNegative=8"
+          }
+        },
+        {
+          "label": "FitzpatrickSkinType",
+          "code": "a85",
+          "type": "Radio",
+          "options": "1. “notSet=0” (Name/ID: b55) 2. “I=1” (Name/ID: b56) 3. “II=2” (Name/ID: b57) 4. “III=3” (Name/ID: b58) 5. “IV=4” (Name/ID: b59) 6. “V=5” (Name/ID: b57) 7. “VI=6” (Name/ID: b58)\t这里使用苹果健康的标准写法，大致来说，1=总是晒伤，从不晒黑（极白），2=容易晒伤，很少晒黑，3=有时轻微晒伤，逐渐晒黑，4=很少晒伤，容易晒黑，5=极少晒伤，很容易晒黑（深色），6=从不晒伤（最深色）  咱们只要直接对应就行",
+          "optionMap": {
+            "b55": "notSet=0",
+            "b56": "I=1",
+            "b57": "V=5",
+            "b58": "VI=6",
+            "b59": "IV=4"
+          }
+        },
+        {
+          "label": "WheelchairUse",
+          "code": "a86",
+          "type": "Radio",
+          "options": "1. “notSet=0” (Name/ID: b55) 2. “no=1” (Name/ID: b56) 3. “yes=2” (Name/ID: b57)",
+          "optionMap": {
+            "b55": "notSet=0",
+            "b56": "no=1",
+            "b57": "yes=2"
+          }
+        },
+        {
+          "label": "User’s app setting for afresh",
+          "code": "a87",
+          "type": "Textarea",
+          "options": "普通其他afresh设定直接json塞到这里",
+          "optionMap": {}
+        },
+        {
+          "label": "User’s app setting for adry",
+          "code": "a88",
+          "type": "Textarea",
+          "options": "普通其他adry设定直接json塞到这里",
+          "optionMap": {}
+        },
+        {
+          "label": "User’s app setting for ablocked",
+          "code": "a89",
+          "type": "Textarea",
+          "options": "普通其他ablocked设定直接json塞到这里",
+          "optionMap": {}
+        },
+        {
+          "label": "User’s app setting for benotch",
+          "code": "a90",
+          "type": "Textarea",
+          "options": "普通其他benotch设定直接json塞到这里",
+          "optionMap": {}
+        },
+        {
+          "label": "User’s ai credits for afresh",
+          "code": "a91",
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "User’s ai credits for adry",
+          "code": "a92",
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "User’s ai credits for ablocked",
+          "code": "a93",
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "User’s ai credits for benotch",
+          "code": "a94",
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "User’s app setting for challenged",
+          "code": "a95",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "User’s app setting for carecnc",
+          "code": "a96",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        }
+      ]
+    },
+    {
+      "id": 258,
+      "name": "User‘s extended profile 2",
       "fields": [
         {
           "label": "Allow emergency location request",
           "code": "a55",
           "type": "Radio",
-          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56) 当用户设定为”Yes”时，护理者可以不经过用户允许直接获取被护理者位置",
           "optionMap": {
             "b55": "Yes",
             "b56": "No"
@@ -18,7 +1223,7 @@
           "label": "Location share is on",
           "code": "a56",
           "type": "Radio",
-          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56) 当用户设为“Yes“时开启共享信息，当用户接受允许共享信息时此radio也写入为“Yes”",
           "optionMap": {
             "b55": "Yes",
             "b56": "No"
@@ -35,7 +1240,7 @@
           "label": "General user role",
           "code": "a58",
           "type": "Checkbox",
-          "options": "1. \"cared one\" (b55) 2. \"caring one\" (b56)",
+          "options": "1. “cared one” (Name/ID: b55) 2. “caring one” (Name/ID: b56) 注意：这里的用户角色区分仅用作综合用户角色界定，onboarding等，用户可以多选，也可以先不选，选择cared one不代表什么，选择caring one也不代表成为付费护理者，因为这个平台大部分用户其实是家庭非付费护理者",
           "optionMap": {
             "b55": "cared one",
             "b56": "caring one"
@@ -45,7 +1250,7 @@
           "label": "Is care provider",
           "code": "a59",
           "type": "Radio",
-          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
           "optionMap": {
             "b55": "Yes",
             "b56": "No"
@@ -55,7 +1260,7 @@
           "label": "Care provider is active",
           "code": "a60",
           "type": "Radio",
-          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56) 时暂不可在护理市场搜索",
           "optionMap": {
             "b55": "Yes",
             "b56": "No"
@@ -65,245 +1270,89 @@
           "label": "Care provider is background checked",
           "code": "a61",
           "type": "Radio",
-          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
           "optionMap": {
             "b55": "Yes",
             "b56": "No"
           }
         },
         {
-          "label": "Care provider's background check detail",
+          "label": "Care provider’s background check detail",
           "code": "a62",
           "type": "Text",
           "options": "",
           "optionMap": {}
         },
         {
-          "label": "Care provider's cancellation policy",
+          "label": "Care provider’s cancellation policy",
           "code": "a63",
           "type": "",
           "options": "",
           "optionMap": {}
         },
         {
-          "label": "Care provider's service area",
+          "label": "Care provider’s location",
           "code": "a64",
           "type": "",
           "options": "",
           "optionMap": {}
         },
         {
-          "label": "Care provider's starts hourly rate",
+          "label": "Care provider offers service type",
           "code": "a65",
+          "type": "Checkbox",
+          "options": "1. “In person” (Name/ID: b55) 2. “Virture” (Name/ID: b56) 此toggle为care provider 提供服务的大类，作为护理市场和用户设置页面大的分类快速区分",
+          "optionMap": {
+            "b55": "In person",
+            "b56": "Virture"
+          }
+        },
+        {
+          "label": "Care provider’s hourly rate for in person service",
+          "code": "a66",
           "type": "Number",
           "options": "",
           "optionMap": {}
         },
         {
-          "label": "Care provider offers in-person service",
-          "code": "a66",
-          "type": "Radio",
-          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
-          "optionMap": {
-            "b55": "Yes",
-            "b56": "No"
-          }
-        },
-        {
-          "label": "Care provider offers virtual service",
+          "label": "Care provider’s hourly rate for remote service",
           "code": "a67",
-          "type": "Radio",
-          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
-          "optionMap": {
-            "b55": "Yes",
-            "b56": "No"
-          }
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
         },
         {
-          "label": "Care provider offers care service general type",
+          "label": "Care provider offers care service type",
           "code": "a68",
           "type": "Checkbox",
-          "options": "1. \"Pet care and companion\" (b55) 2. \"Child care and companion\" (b56) 3. \"Adult care and companion\" (b57) 4. \"Elderly care and companion\" (b58) 5. \"Tutoring\" (b59) 6. \"Dementia care and companion\" (b60) 7. \"Housekeeping\" (b61) 8. \"Errand\" (b62) 9. \"Transportation\" (b63) 10. \"Medical Escort\" (b64) 11. \"In-person checkin\" (b65) 12. \"Remote checkin and medicine supervision\" (b66)",
+          "options": "1. “Pet care and companion” (Name/ID: b55) 2. “In person Child care and companion” (Name/ID: b56) 3. “Remote Child companion” (Name/ID: b57) 4. “Adult care and companion” (Name/ID: b58) 5. “Adult Remote companion” (Name/ID: b59). 6.“ In person Elderly care and companion” (Name/ID: b60) 7. “Remote Elderly companion” (Name/ID: b61) 8.  “Housekeeping” (Name/ID: b62) 9. “Errand and Delivery” (Name/ID: b63) 10. “Transportation” (Name/ID: b64) 11. “Medical Escort” (Name/ID: b65) 12. “In-person checkin” (Name/ID: b66) 13. “Remote checkin” (Name/ID: b67) 14. “Remote medicine supervision (Name/ID: b68) 注意：我们主要参照care.com分类",
           "optionMap": {
             "b55": "Pet care and companion",
-            "b56": "Child care and companion",
-            "b57": "Adult care and companion",
-            "b58": "Elderly care and companion",
-            "b59": "Tutoring",
-            "b60": "Dementia care and companion",
-            "b61": "Housekeeping",
-            "b62": "Errand",
-            "b63": "Transportation",
-            "b64": "Medical Escort",
-            "b65": "In-person checkin",
-            "b66": "Remote checkin and medicine supervision"
+            "b56": "In person Child care and companion",
+            "b57": "Remote Child companion",
+            "b58": "Adult care and companion",
+            "b59": "Adult Remote companion",
+            "b60": "In person Elderly care and companion",
+            "b61": "Remote Elderly companion",
+            "b62": "Housekeeping",
+            "b63": "Errand and Delivery",
+            "b64": "Transportation",
+            "b65": "Medical Escort",
+            "b66": "In-person checkin",
+            "b67": "Remote checkin"
           }
         },
         {
-          "label": "Care provider offers pet care for",
+          "label": "Care provider’s rate for remote checkins",
           "code": "a69",
-          "type": "Checkbox",
-          "options": "1. \"Dogs\" (b55) 2. \"Cats\" (b56) 3. \"Small mammals\" (b57) 4. \"Birds\" (b58) 5. \"Fish\" (b59)",
-          "optionMap": {
-            "b55": "Dogs",
-            "b56": "Cats",
-            "b57": "Small mammals",
-            "b58": "Birds",
-            "b59": "Fish"
-          }
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
         },
         {
-          "label": "Care provider offers dementia care type",
+          "label": "Care provider’s rate for remote medicine supervision",
           "code": "a70",
-          "type": "Checkbox",
-          "options": "1. \"In-person day care\" (b55) 2. \"In-person overnight care\" (b56) 3. \"In-person companion\" (b57) 4. \"In-person checkin\" (b58) 5. \"Household help\" (b59) 6. \"Remote companion\" (b60) 7. \"Remote medicine management\" (b61) 8. \"Remote checkin\" (b62)",
-          "optionMap": {
-            "b55": "In-person day care",
-            "b56": "In-person overnight care",
-            "b57": "In-person companion",
-            "b58": "In-person checkin",
-            "b59": "Household help",
-            "b60": "Remote companion",
-            "b61": "Remote medicine management",
-            "b62": "Remote checkin"
-          }
-        },
-        {
-          "label": "Care provider offers elderly care service",
-          "code": "a71",
-          "type": "",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Care provider offers special needs care service",
-          "code": "a72",
-          "type": "Checkbox",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Care provider offers household help service",
-          "code": "a73",
-          "type": "Checkbox",
-          "options": "1. \"Housekeeping\" (b55) 2. \"Gardening\" (b56)",
-          "optionMap": {
-            "b55": "Housekeeping",
-            "b56": "Gardening"
-          }
-        },
-        {
-          "label": "Care provider offers errand service",
-          "code": "a74",
-          "type": "",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Care provider offers transportation service",
-          "code": "a75",
-          "type": "",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Care provider offers medical escort service",
-          "code": "a76",
-          "type": "",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Care provider offers childcare service as",
-          "code": "a77",
-          "type": "Checkbox",
-          "options": "1. \"Babysitter\" (b55) 2. \"Nanny\" (b56) 3. \"Childminder\" (b57)",
-          "optionMap": {
-            "b55": "Babysitter",
-            "b56": "Nanny",
-            "b57": "Childminder"
-          }
-        },
-        {
-          "label": "Care provider offers childcare service",
-          "code": "a78",
-          "type": "Checkbox",
-          "options": "1. \"Cooking / Meal preparation\" (b55) 2. \"Pick-up / Drop off\" (b56) 3. \"Light housekeeping\" (b57) 4. \"Activities (e.g. swimming)\" (b58) 5. \"Putting kids to bed\" (b59) 6. \"Homework help\" (b60) 7. \"Bathing\" (b61) 8. \"Virtual Care\" (b62)",
-          "optionMap": {
-            "b55": "Cooking / Meal preparation",
-            "b56": "Pick-up / Drop off",
-            "b57": "Light housekeeping",
-            "b58": "Activities (e.g. swimming)",
-            "b59": "Putting kids to bed",
-            "b60": "Homework help",
-            "b61": "Bathing",
-            "b62": "Virtual Care"
-          }
-        },
-        {
-          "label": "Care provider offers dog care service type",
-          "code": "a79",
-          "type": "Checkbox",
-          "options": "1. \"Dog sitting\" (b55) 2. \"Dog walking\" (b56) 3. \"Dog feeding\" (b57) 4. \"Dog day care\" (b58) 5. \"Dog transportation\" (b59) 6. \"Dog overnight sitting\" (b60) 7. \"Dog training\" (b61) 8. \"Dog grooming\" (b62)",
-          "optionMap": {
-            "b55": "Dog sitting",
-            "b56": "Dog walking",
-            "b57": "Dog feeding",
-            "b58": "Dog day care",
-            "b59": "Dog transportation",
-            "b60": "Dog overnight sitting",
-            "b61": "Dog training",
-            "b62": "Dog grooming"
-          }
-        },
-        {
-          "label": "Care provider offers cat care service",
-          "code": "a80",
-          "type": "Checkbox",
-          "options": "1. \"Cat sitting\" (b55) 2. \"Cat walking\" (b56) 3. \"Cat feeding\" (b57) 4. \"Cat day care\" (b58) 5. \"Cat transportation\" (b59) 6. \"Cat overnight sitting\" (b60) 7. \"Cat training\" (b61) 8. \"Cat grooming\" (b62)",
-          "optionMap": {
-            "b55": "Cat sitting",
-            "b56": "Cat walking",
-            "b57": "Cat feeding",
-            "b58": "Cat day care",
-            "b59": "Cat transportation",
-            "b60": "Cat overnight sitting",
-            "b61": "Cat training",
-            "b62": "Cat grooming"
-          }
-        },
-        {
-          "label": "Care provider offers small mammal care service type",
-          "code": "a81",
-          "type": "",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Care provider offers bird care service",
-          "code": "a82",
-          "type": "",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Care provider offers fish care service",
-          "code": "a83",
-          "type": "",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Care provider is a doctor and offers care tip consultancy",
-          "code": "a84",
-          "type": "",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Care provider is a doctor and offers accompany tip consultancy",
-          "code": "a85",
-          "type": "",
+          "type": "Number",
           "options": "",
           "optionMap": {}
         },
@@ -311,7 +1360,7 @@
           "label": "Care provides can drive",
           "code": "a86",
           "type": "Radio",
-          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
           "optionMap": {
             "b55": "Yes",
             "b56": "No"
@@ -321,7 +1370,7 @@
           "label": "Care provides has own transportation",
           "code": "a87",
           "type": "Radio",
-          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
           "optionMap": {
             "b55": "Yes",
             "b56": "No"
@@ -331,7 +1380,7 @@
           "label": "Care provider is a Non-smoker",
           "code": "a88",
           "type": "Radio",
-          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
           "optionMap": {
             "b55": "Yes",
             "b56": "No"
@@ -341,19 +1390,19 @@
           "label": "Care provider is experienced with",
           "code": "a89",
           "type": "Checkbox",
-          "options": "1. \"Newborn (up to 12 months)\" (b55) 2. \"Toddler (1-3 years)\" (b56) 3. \"Early School Age (4-6 years)\" (b57) 4. \"Primary school age (7-12 years)\" (b58) 5. \"Teenager (12+ years)\" (b59) 6. \"Twins/Multiples\" (b60) 7. \"Special Needs Children\" (b61)",
+          "options": "1. “Newborn (up to 12 months” (Name/ID: b55) 2. “Toddler (1-3 years” (Name/ID: b56) 3. “Early School Age (4-6 years” (Name/ID: b57) 4. “Primary school age (7-12 years” (Name/ID: b58) 5. “Teenager (12+ years” (Name/ID: b59) 6. “Twins/Multiples” (Name/ID: b60) 7. “Special Needs Children” (Name/ID: b61)",
           "optionMap": {
-            "b55": "Newborn (up to 12 months)",
-            "b56": "Toddler (1-3 years)",
-            "b57": "Early School Age (4-6 years)",
-            "b58": "Primary school age (7-12 years)",
-            "b59": "Teenager (12+ years)",
+            "b55": "Newborn (up to 12 months",
+            "b56": "Toddler (1-3 years",
+            "b57": "Early School Age (4-6 years",
+            "b58": "Primary school age (7-12 years",
+            "b59": "Teenager (12+ years",
             "b60": "Twins/Multiples",
             "b61": "Special Needs Children"
           }
         },
         {
-          "label": "Cared one's AI system prompt",
+          "label": "Cared one’s AI system prompt",
           "code": "a90",
           "type": "Text",
           "options": "",
@@ -363,7 +1412,7 @@
           "label": "User enabled push notification",
           "code": "a91",
           "type": "Radio",
-          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
           "optionMap": {
             "b55": "Yes",
             "b56": "No"
@@ -373,7 +1422,7 @@
           "label": "User enabled email notification",
           "code": "a92",
           "type": "Radio",
-          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
           "optionMap": {
             "b55": "Yes",
             "b56": "No"
@@ -383,90 +1432,958 @@
           "label": "User enabled sms notification",
           "code": "a93",
           "type": "Radio",
-          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
           "optionMap": {
             "b55": "Yes",
             "b56": "No"
           }
+        },
+        {
+          "label": "Cared one’s custom zone 1 name",
+          "code": "a95",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Cared one’s custom zone 2 name",
+          "code": "a96",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Cared one’s custom zone 3 name",
+          "code": "a97",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Cared one’s custom zone 4 name",
+          "code": "a98",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Cared one’s custom zone 5 name",
+          "code": "a99",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Cared one’s custom zone 6 name",
+          "code": "a100",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Cared one’s custom zone 7 name",
+          "code": "a101",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Cared one’s low battery level to notify",
+          "code": "a102",
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Cared one’s time not reporting to notify",
+          "code": "a103",
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Cared one’s condition type",
+          "code": "a104",
+          "type": "Checkbox",
+          "options": "1. \"Substance Use\" (Name/ID: b55) 2. \"Substance Use Disorder\" (Name/ID: b56) 3. \"Brain Cancer\" (Name/ID: b57) 4. \"Breast Cancer\" (Name/ID: b58) 5. \"Colorectal Cancer\" (Name/ID: b59) 6. \"Endometrial (Uterine)\" (Name/ID: b60) 7. \"Kidney/Bladder Cancer\" (Name/ID: b61) 8. \"Leukemia\" (Name/ID: b62) 9. \"Liver Cancer\" (Name/ID: b63) 10. \"Lung Cancer\" (Name/ID: b64) 11. \"Lymphoma\" (Name/ID: b65) 12. \"Myeloma Cancer\" (Name/ID: b66) 13. \"Neuroblastoma\" (Name/ID: b67) 14. \"Oral Cancer\" (Name/ID: b68) 15. \"Osteosarcoma\" (Name/ID: b69) 16. \"Other Cancer\" (Name/ID: b70) 17. \"Ovarian Cancer\" (Name/ID: b71) 18. \"Pancreatic Cancer\" (Name/ID: b72) 19. \"Prostate Cancer\" (Name/ID: b73) 20. \"Skin/Melanoma Cancer\" (Name/ID: b74) 21. \"Stomach/Esophageal Cancer\" (Name/ID: b75) 22. \"Thyroid Cancer\" (Name/ID: b76) 23. \"Aneurysm\" (Name/ID: b77) 24. \"Artery Disease\" (Name/ID: b78) 25. \"Cardiovascular/Stroke\" (Name/ID: b79) 26. \"Congenital Heart Disease\" (Name/ID: b80) 27. \"Heart Attack\" (Name/ID: b81) 28. \"Heart Failure\" (Name/ID: b82) 29. \"Heart Surgery\" (Name/ID: b83) 30. \"Other Cardiovascular/Stroke\" (Name/ID: b84) 31. \"Stroke\" (Name/ID: b85) 32. \"Congenital/Immune Disorder\" (Name/ID: b86) 33. \"COVID-19\" (Name/ID: b87) 34. \"Crohn's/Colitis/IBS\" (Name/ID: b88) 35. \"Cystic Fibrosis\" (Name/ID: b89) 36. \"Heart Defect\" (Name/ID: b90) 37. \"HIV/AIDS\" (Name/ID: b91) 38. \"Lupus\" (Name/ID: b92) 39. \"Other Congenital/Immune Disorder\" (Name/ID: b93) 40. \"Adoption\" (Name/ID: b94) 41. \"Complications\" (Name/ID: b95) 42. \"High-Risk Pregnancy\" (Name/ID: b96) 43. \"Infant/Childbirth\" (Name/ID: b97) 44. \"Other Infant/Childbirth\" (Name/ID: b98) 45. \"Premature Birth\" (Name/ID: b99) 46. \"Brain Injury\" (Name/ID: b100) 47. \"Broken Bones/Internal Injury\" (Name/ID: b101) 48. \"Burn\" (Name/ID: b102) 49. \"Injury\" (Name/ID: b103) 50. \"Motor Vehicle Injury\" (Name/ID: b104) 51. \"Other Injury\" (Name/ID: b105) 52. \"Spinal Cord Injury\" (Name/ID: b106) 53. \"War Injury\" (Name/ID: b107) 54. \"ALS (Amyotrophic Lateral Sclerosis)\" (Name/ID: b108) 55. \"Alzheimer's\" (Name/ID: b109) 56. \"Brain Damage\" (Name/ID: b110) 57. \"Brain Tumor (Non-Cancer)\" (Name/ID: b111) 58. \"Cerebral Palsy\" (Name/ID: b112) 59. \"Dementia\" (Name/ID: b113) 60. \"Epilepsy/Seizure Disorders\" (Name/ID: b114) 61. \"Mental Illness\" (Name/ID: b115) 62. \"Multiple Sclerosis\" (Name/ID: b116) 63. \"Neurological Condition\" (Name/ID: b117) 64. \"Other Neurological Condition\" (Name/ID: b118) 65. \"Parkinson's\" (Name/ID: b119) 66. \"Other Condition\" (Name/ID: b120) 67. \"Prefer not to say\" (Name/ID: b121) 68. \"Bone Marrow Transplant\" (Name/ID: b122) 69. \"Organ Transplant\" (Name/ID: b123) 70. \"Other Surgery/Transplantation\" (Name/ID: b124) 71. \"Surgery\" (Name/ID: b125) 72. \"Surgery/Transplantation\" (Name/ID: b126)",
+          "optionMap": {
+            "b55": "Substance Use",
+            "b56": "Substance Use Disorder",
+            "b57": "Brain Cancer",
+            "b58": "Breast Cancer",
+            "b59": "Colorectal Cancer",
+            "b60": "Endometrial (Uterine)",
+            "b61": "Kidney/Bladder Cancer",
+            "b62": "Leukemia",
+            "b63": "Liver Cancer",
+            "b64": "Lung Cancer",
+            "b65": "Lymphoma",
+            "b66": "Myeloma Cancer",
+            "b67": "Neuroblastoma",
+            "b68": "Oral Cancer",
+            "b69": "Osteosarcoma",
+            "b70": "Other Cancer",
+            "b71": "Ovarian Cancer",
+            "b72": "Pancreatic Cancer",
+            "b73": "Prostate Cancer",
+            "b74": "Skin/Melanoma Cancer",
+            "b75": "Stomach/Esophageal Cancer",
+            "b76": "Thyroid Cancer",
+            "b77": "Aneurysm",
+            "b78": "Artery Disease",
+            "b79": "Cardiovascular/Stroke",
+            "b80": "Congenital Heart Disease",
+            "b81": "Heart Attack",
+            "b82": "Heart Failure",
+            "b83": "Heart Surgery",
+            "b84": "Other Cardiovascular/Stroke",
+            "b85": "Stroke",
+            "b86": "Congenital/Immune Disorder",
+            "b87": "COVID-19",
+            "b89": "Cystic Fibrosis",
+            "b90": "Heart Defect",
+            "b91": "HIV/AIDS",
+            "b92": "Lupus",
+            "b93": "Other Congenital/Immune Disorder",
+            "b94": "Adoption",
+            "b95": "Complications",
+            "b96": "High-Risk Pregnancy",
+            "b97": "Infant/Childbirth",
+            "b98": "Other Infant/Childbirth",
+            "b99": "Premature Birth",
+            "b100": "Brain Injury",
+            "b101": "Broken Bones/Internal Injury",
+            "b102": "Burn",
+            "b103": "Injury",
+            "b104": "Motor Vehicle Injury",
+            "b105": "Other Injury",
+            "b106": "Spinal Cord Injury",
+            "b107": "War Injury",
+            "b108": "ALS (Amyotrophic Lateral Sclerosis)",
+            "b110": "Brain Damage",
+            "b111": "Brain Tumor (Non-Cancer)",
+            "b112": "Cerebral Palsy",
+            "b113": "Dementia",
+            "b114": "Epilepsy/Seizure Disorders",
+            "b115": "Mental Illness",
+            "b116": "Multiple Sclerosis",
+            "b117": "Neurological Condition",
+            "b118": "Other Neurological Condition",
+            "b120": "Other Condition",
+            "b121": "Prefer not to say",
+            "b122": "Bone Marrow Transplant",
+            "b123": "Organ Transplant",
+            "b124": "Other Surgery/Transplantation",
+            "b125": "Surgery",
+            "b126": "Surgery/Transplantation"
+          }
+        },
+        {
+          "label": "Cared one’s custom condition name",
+          "code": "a105",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
         }
       ]
     },
     {
-      "id": 125,
-      "name": "Cared one's information card",
+      "id": 181,
+      "name": "User‘s reason to quit",
       "fields": [
         {
-          "label": "Cared one's name",
+          "label": "Name",
           "code": "a55",
           "type": "Text",
           "options": "",
           "optionMap": {}
         },
         {
-          "label": "Cared one's description",
+          "label": "Detail",
           "code": "a56",
           "type": "Textarea",
           "options": "",
           "optionMap": {}
         },
         {
-          "label": "Cared one's information card name",
+          "label": "Reasons to quit what",
           "code": "a57",
+          "type": "Radio",
+          "options": "1. “Quit smoking” (Name/ID: b55) 2. “Quit drinking” (Name/ID: b56) 3. “Quit porn” (Name/ID: b57)",
+          "optionMap": {
+            "b55": "Quit smoking",
+            "b56": "Quit drinking",
+            "b57": "Quit porn"
+          }
+        },
+        {
+          "label": "Reasons type",
+          "code": "a58",
+          "type": "Radio",
+          "options": "1. “My health” (Name/ID: b55) 2. “My family” (Name/ID: b56) 3. “My well-being” (Name/ID: b57) 4. “To save money” (Name/ID: b58) 5. “To have a child” (Name/ID: b59) 6. “My freedom” (Name/ID: b60) 7. “Other” (Name/ID: b61)",
+          "optionMap": {
+            "b55": "My health",
+            "b56": "My family",
+            "b57": "My well-being",
+            "b58": "To save money",
+            "b59": "To have a child",
+            "b60": "My freedom",
+            "b61": "Other"
+          }
+        },
+        {
+          "label": "Other name",
+          "code": "a59",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        }
+      ]
+    },
+    {
+      "id": 153,
+      "name": "User's quit plan",
+      "fields": [
+        {
+          "label": "Plan name",
+          "code": "a55",
           "type": "Text",
           "options": "",
           "optionMap": {}
         },
         {
-          "label": "Status",
-          "code": "a58",
+          "label": "Quit smoking Plan type",
+          "code": "a56",
           "type": "Radio",
-          "options": "1. \"Draft\" (b55) 2. \"Active\" (b56) 3. \"Paused\" (b57)",
+          "options": "1. “Get Afresh” (Name/ID: b55) 2. “Get fresher” (Name/ID: b56) 3. “Stay Fresh” （Name/ID: b57）",
           "optionMap": {
-            "b55": "Draft",
-            "b56": "Active",
-            "b57": "Paused"
+            "b55": "Get Afresh",
+            "b56": "Get fresher",
+            "b57": "Stay Fresh"
           }
         },
         {
-          "label": "Displays location",
-          "code": "a59",
+          "label": "Quit drinking Plan type",
+          "code": "a561",
           "type": "Radio",
-          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "options": "1. “Get Adry” (Name/ID: b55) 2. “Get dryer” (Name/ID: b56) 3. “Stay Dry” （Name/ID: b57）",
+          "optionMap": {
+            "b55": "Get Adry",
+            "b56": "Get dryer",
+            "b57": "Stay Dry"
+          }
+        },
+        {
+          "label": "Quit porn Plan type",
+          "code": "a562",
+          "type": "Radio",
+          "options": "1. “Get Ablocked” (Name/ID: b55) 2. “Get more blocked” (Name/ID: b56) 3. “Stay Blocked” （Name/ID: b57）",
+          "optionMap": {
+            "b55": "Get Ablocked",
+            "b56": "Get more blocked",
+            "b57": "Stay Blocked"
+          }
+        },
+        {
+          "label": "Afresh method",
+          "code": "a57",
+          "type": "Radio",
+          "options": "1. “Cold turkey afresh” (Name/ID: b55) 2. “Gradually afresh” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Cold turkey afresh",
+            "b56": "Gradually afresh"
+          }
+        },
+        {
+          "label": "Adry method",
+          "code": "a571",
+          "type": "Radio",
+          "options": "1. “Get Adry now” (Name/ID: b55) 2. “Gradually Adry” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Get Adry now",
+            "b56": "Gradually Adry"
+          }
+        },
+        {
+          "label": "Ablocked method",
+          "code": "a572",
+          "type": "Radio",
+          "options": "1. “Get Ablocked now” (Name/ID: b55) 2. “Gradually Ablocked” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Get Ablocked now",
+            "b56": "Gradually Ablocked"
+          }
+        },
+        {
+          "label": "Gradually afresh time target",
+          "code": "a59",
+          "type": "Number",
+          "options": "计划多少天戒掉，前端默认7天",
+          "optionMap": {}
+        },
+        {
+          "label": "Get fresher target",
+          "code": "a60",
+          "type": "Number",
+          "options": "计划减到百分之多少，比如80即80%",
+          "optionMap": {}
+        },
+        {
+          "label": "Combines with NRT",
+          "code": "a61",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
           "optionMap": {
             "b55": "Yes",
             "b56": "No"
           }
         },
         {
-          "label": "Share token",
-          "code": "a60",
+          "label": "Combines with quitting medicine",
+          "code": "a62",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)\t指是否使用戒烟药物，不包括NRT，因为NRT是OTC，不需要处方",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Status",
+          "code": "a63",
+          "type": "Radio",
+          "options": "1. “Draft” (Name/ID: b55) 2. “Active” (Name/ID: b56) 3. “Paused” (Name/ID: b57) 4. “Completed” (Name/ID: b58) 5. “Abandoned” (Name/ID: b59)",
+          "optionMap": {
+            "b55": "Draft",
+            "b56": "Active",
+            "b57": "Paused",
+            "b58": "Completed",
+            "b59": "Abandoned"
+          }
+        },
+        {
+          "label": "Custom ai system prompt",
+          "code": "a64",
+          "type": "Textarea",
+          "options": "Allows the user to write custom system prompt to the AI",
+          "optionMap": {}
+        }
+      ]
+    },
+    {
+      "id": 51,
+      "name": "User's blocked keyword and domain",
+      "fields": [
+        {
+          "label": "Purpose of block",
+          "code": "a55",
+          "type": "Radio",
+          "options": "1. “Quit smoking” (Name/ID: b55) 2. “Quit drinking” (Name/ID: b56) 3. “Quit porn” (Name/ID: b57) 4. “Other” (Name/ID: b58)",
+          "optionMap": {
+            "b55": "Quit smoking",
+            "b56": "Quit drinking",
+            "b57": "Quit porn",
+            "b58": "Other"
+          }
+        },
+        {
+          "label": "Other purpose name",
+          "code": "a56",
           "type": "Text",
           "options": "",
           "optionMap": {}
         },
         {
-          "label": "Share expires at",
-          "code": "a61",
-          "type": "Datetime",
+          "label": "Blocked keywords",
+          "code": "a57",
+          "type": "Text",
           "options": "",
           "optionMap": {}
         },
         {
-          "label": "Share visibility",
-          "code": "a62",
+          "label": "Blocked domains",
+          "code": "a58",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        }
+      ]
+    },
+    {
+      "id": 171,
+      "name": "User's apple health or google health log event",
+      "fields": [
+        {
+          "label": "Apple health or google health log type slug",
+          "code": "a55",
+          "type": "Text",
+          "options": "前端决定对应Apple health或者Google health的slug，务必严格按照Apple health或者Google health的slug值，包括大小写和拼写",
+          "optionMap": {}
+        },
+        {
+          "label": "Apple health or google health log type value",
+          "code": "a56",
+          "type": "Textarea",
+          "options": "前端决定对应Apple health或者Google health的值，必须严格按照Apple health或者Google health每一条slug期待的值和格式写入，key或者枚举值必须严格对应Apple health或者Google health的slug期待的输入值、输入信息、枚举值等，大小写和拼写都需要严格对应Apple health或者Google health文档里slug期待的值",
+          "optionMap": {}
+        },
+        {
+          "label": "Start time",
+          "code": "a57",
+          "type": "Text",
+          "options": "对应Apple health或者Google health的开始时间",
+          "optionMap": {}
+        },
+        {
+          "label": "End time",
+          "code": "a58",
+          "type": "Text",
+          "options": "对应Apple health或者Google health的结束时间",
+          "optionMap": {}
+        },
+        {
+          "label": "Time",
+          "code": "a59",
+          "type": "Text",
+          "options": "对应Google health的瞬时时间，注意：Apple health对瞬时的记录方式是同时记录开始时间和结束时间，不需要记录瞬时时间，前端写入应严格对应Apple health或者Google health期待的值",
+          "optionMap": {}
+        },
+        {
+          "label": "Source",
+          "code": "a60",
           "type": "Radio",
-          "options": "1. \"Visible to public\" (b55) 2. \"Visible to the care group of the cared one\" (b56) 3. \"Visible to caregivers of the cared one\" (b57) 4. \"Visible to author\" (b58)",
+          "options": "1. “Apple Health” (Name/ID: b55) 2. “Google Health” (Name/ID: b56)\t选择记录格式是苹果健康还是谷歌健康",
           "optionMap": {
-            "b55": "Visible to public",
-            "b56": "Visible to the care group of the cared one",
-            "b57": "Visible to caregivers of the cared one",
-            "b58": "Visible to author"
+            "b55": "Apple Health",
+            "b56": "Google Health"
+          }
+        },
+        {
+          "label": "Apple health or google health log UUID",
+          "code": "a61",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Recording device",
+          "code": "a62",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        }
+      ]
+    },
+    {
+      "id": 161,
+      "name": "User’s other log event",
+      "fields": [
+        {
+          "label": "Log event name",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Log event content",
+          "code": "a56",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Log event type",
+          "code": "a57",
+          "type": "Radio",
+          "options": "1. “Smoking” (Name/ID: b55) 2. “Drinking (alcohol)” (Name/ID: b56) 3. “Porn” (Name/ID: b57) 4. “Water ” (Name/ID: b58) 5. “Food” (Name/ID: b59) 6. “Breathing exercise” (Name/ID: b60) 7. “Workout” (Name/ID: b61) 8. “Motivation” (Name/ID: b62) 9. “Pledge” (Name/ID: b63) 10. “Memory” (Name/ID: b64) 11. “Sleep” (Name/ID: b65)                                    12. “Mood ” （Name/ID: b66） 13. “Apple health symptoms” (Name/ID: b67) 作为Apple health已有symptoms 14. “Custom health symptoms” (Name/ID: b68) 15. “Custom medicine” (Name/ID: b69)",
+          "optionMap": {
+            "b55": "Smoking",
+            "b56": "Drinking (alcohol)",
+            "b57": "Porn",
+            "b58": "Water",
+            "b59": "Food",
+            "b60": "Breathing exercise",
+            "b61": "Workout",
+            "b62": "Motivation",
+            "b63": "Pledge",
+            "b64": "Memory",
+            "b65": "Sleep",
+            "b66": "Mood",
+            "b67": "Apple health symptoms",
+            "b68": "Custom health symptoms",
+            "b69": "Custom medicine"
+          }
+        },
+        {
+          "label": "Log smoking type",
+          "code": "a58",
+          "type": "Radio",
+          "options": "1. “Smoked” (Name/ID: b55) 2. “Resisted” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Smoked",
+            "b56": "Resisted"
+          }
+        },
+        {
+          "label": "Log drinking alcohol type",
+          "code": "a59",
+          "type": "Radio",
+          "options": "1. “Drank” (Name/ID: b55) 2. “Resisted” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Drank",
+            "b56": "Resisted"
+          }
+        },
+        {
+          "label": "Log porn type",
+          "code": "a60",
+          "type": "Radio",
+          "options": "1. “Watched” (Name/ID: b55) 2. “Resisted” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Watched",
+            "b56": "Resisted"
+          }
+        },
+        {
+          "label": "Log event time",
+          "code": "a61",
+          "type": "Datetime",
+          "options": "用户在前端勾选是否是现在发生，现在发生就记载现在时间，补充其他时间就记载用户输入的其他时间",
+          "optionMap": {}
+        },
+        {
+          "label": "Mood detail",
+          "code": "a62",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Craving intensity before craving",
+          "code": "a63",
+          "type": "Number",
+          "options": "How strong is the craving",
+          "optionMap": {}
+        },
+        {
+          "label": "Craving/Smoking context",
+          "code": "a64",
+          "type": "Checkbox",
+          "options": "1. “I'm drinking a glass of alcohol” (Name/ID: b55) 2. “I’m taking a break” (Name/ID: b56) 3. “Other” (Name/ID: b57)",
+          "optionMap": {
+            "b56": "I’m taking a break",
+            "b57": "Other"
+          }
+        },
+        {
+          "label": "Other Craving/Smoking context content",
+          "code": "a65",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Energy level",
+          "code": "a66",
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Sleep quality",
+          "code": "a67",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Stress level",
+          "code": "a68",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Craving/SmokingTrigger category",
+          "code": "a69",
+          "type": "Radio",
+          "options": "1. “Stress” (Name/ID: b55) 2. “Social” (Name/ID: b56) 3. “Boredom” (Name/ID: b57) 4. “Alcohol” (Name/ID: b58) 5. “Coffee” (Name/ID: b59) 6. “Meal” (Name/ID: b60) 7. “Emotion” (Name/ID: b61) 8. “Habit” (Name/ID: b62) 9. “Other” (Name/ID: b63)\tAllows the user to write custom system prompt to the AI",
+          "optionMap": {
+            "b55": "Stress",
+            "b56": "Social",
+            "b57": "Boredom",
+            "b58": "Alcohol",
+            "b59": "Coffee",
+            "b60": "Meal",
+            "b61": "Emotion",
+            "b62": "Habit",
+            "b63": "Other"
+          }
+        },
+        {
+          "label": "Other Craving/Smoking trigger",
+          "code": "a70",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Location category",
+          "code": "a71",
+          "type": "Radio",
+          "options": "1. “Home” (Name/ID: b55) 2. “Work” (Name/ID: b56) 3. “Bar” (Name/ID: b57) 4. “Restaurant” (Name/ID: b58) 5. “Car” (Name/ID: b59) 6. “Outdoor” (Name/ID: b60)",
+          "optionMap": {
+            "b55": "Home",
+            "b56": "Work",
+            "b57": "Bar",
+            "b58": "Restaurant",
+            "b59": "Car",
+            "b60": "Outdoor"
+          }
+        },
+        {
+          "label": "Location detail",
+          "code": "a72",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "CBT thought record",
+          "code": "a73",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "CBT reframed thought",
+          "code": "a75",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Craving intensity after craving/smoking or whatever shit",
+          "code": "a76",
+          "type": "Number",
+          "options": "模仿Kwit模式，无论是通过呼吸、CBT等克服了还是吸了，都再记录之后的craving level，因为吸了烟也可能还有craving，所以都要记录，戒酒戒黄片戒一切都通用这个",
+          "optionMap": {}
+        },
+        {
+          "label": "Note content or detail content",
+          "code": "a77",
+          "type": "Textarea",
+          "options": "对于无特殊需求的Note或文字详情，全部使用Note content记录",
+          "optionMap": {}
+        },
+        {
+          "label": "Meal type",
+          "code": "a78",
+          "type": "Radio",
+          "options": "1. “Breakfast” (Name/ID: b55) 2. “Lunch” (Name/ID: b56) 3. “Dinner” (Name/ID: b57) 4. “Snack” (Name/ID: b58)",
+          "optionMap": {
+            "b55": "Breakfast",
+            "b56": "Lunch",
+            "b57": "Dinner",
+            "b58": "Snack"
           }
         }
       ]
     },
     {
-      "id": 128,
+      "id": 177,
+      "name": "User’s custom workout",
+      "fields": [
+        {
+          "label": "Custom workout name",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        }
+      ]
+    },
+    {
+      "id": 178,
+      "name": "User’s custom symptom",
+      "fields": [
+        {
+          "label": "Custom symptom name",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        }
+      ]
+    },
+    {
+      "id": 162,
+      "name": "Use's non-custom and custom choice and alternative choice",
+      "fields": [
+        {
+          "label": "This choice is a non-custom choice",
+          "code": "a55",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Non-custom choice and alternative choice name",
+          "code": "a56",
+          "type": "Text",
+          "options": "当非可自定义时使用这个colomn显示名字。我们目前有9种非可自定义选项： 1. “Letting the craving go” 2. “Getting motivated” 3. “Breathing” 4. “Entertaining myself” 5. “Drinking water or beverage” 6. “Use NRT” 7. Eat a candy or snack 8. “Mindful smoking” 9. “Smoking”",
+          "optionMap": {}
+        },
+        {
+          "label": "Non-custom choice and alternative choice display order",
+          "code": "a57",
+          "type": "Text",
+          "options": "当非可自定义时使用这个colomn显示顺序",
+          "optionMap": {}
+        },
+        {
+          "label": "Custom choice and alternative choice name",
+          "code": "a58",
+          "type": "Text",
+          "options": "当可自定义时使用这个colomn显示名字",
+          "optionMap": {}
+        },
+        {
+          "label": "Custom alternative strategy icon",
+          "code": "a59",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        }
+      ]
+    },
+    {
+      "id": 121,
+      "name": "Chat Conversation",
+      "fields": [
+        {
+          "label": "Chat type",
+          "code": "a55",
+          "type": "Radio",
+          "options": "1. “One to One” (Name/ID: b55) 2. “Many users” (Name/ID: b56) 3. “AI” (Name/ID: b57)",
+          "optionMap": {
+            "b55": "One to One",
+            "b56": "Many users",
+            "b57": "AI"
+          }
+        },
+        {
+          "label": "Chat name",
+          "code": "a56",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Last message at",
+          "code": "a57",
+          "type": "Datetime",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "App",
+          "code": "a58",
+          "type": "Radio",
+          "options": "1. “Afresh” (Name/ID: b55) 2. “Adry” (Name/ID: b56) 3. “Ablocked” (Name/ID: b57) 4. “BeNotch” (Name/ID: b58) 5. “ChallengeD” (Name/ID: b59) 6. “CareCNC” (Name/ID: b60)",
+          "optionMap": {
+            "b55": "Afresh",
+            "b56": "Adry",
+            "b57": "Ablocked",
+            "b58": "BeNotch",
+            "b59": "ChallengeD",
+            "b60": "CareCNC"
+          }
+        }
+      ]
+    },
+    {
+      "id": 126,
+      "name": "Chat Message",
+      "fields": [
+        {
+          "label": "Chat message content",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Chat message type",
+          "code": "a56",
+          "type": "Radio",
+          "options": "1. “Text” (Name/ID: b55) 2. “Image” (Name/ID: b56) 3. “AI” (Name/ID: b57) 4. “System message” (Name/ID: b58) 5. “Price card” (Name/ID: b59)",
+          "optionMap": {
+            "b55": "Text",
+            "b56": "Image",
+            "b57": "AI",
+            "b58": "System message",
+            "b59": "Price card"
+          }
+        },
+        {
+          "label": "Image url",
+          "code": "a57",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Price card data",
+          "code": "a58",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        }
+      ]
+    },
+    {
+      "id": 185,
+      "name": "Notification",
+      "fields": [
+        {
+          "label": "Notification type",
+          "code": "a55",
+          "type": "Radio",
+          "options": "1. “User chat” (Name/ID: b55) 2. “Booking” (Name/ID: b56) 3. “System” (Name/ID: b57) 4. “Location alert” (Name/ID: b58) 5. “Check in” (Name/ID: b59) 6. “Medicine” (Name/ID: b60)",
+          "optionMap": {
+            "b55": "User chat",
+            "b56": "Booking",
+            "b57": "System",
+            "b58": "Location alert",
+            "b59": "Check in",
+            "b60": "Medicine"
+          }
+        },
+        {
+          "label": "Notification title",
+          "code": "a56",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Notification content",
+          "code": "a57",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Action url",
+          "code": "a58",
+          "type": "Text",
+          "options": "点击跳转",
+          "optionMap": {}
+        },
+        {
+          "label": "Notification is read",
+          "code": "a59",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "This is the notification for App",
+          "code": "a60",
+          "type": "Radio",
+          "options": "1. “Afresh” (Name/ID: b55) 2. “Adry” (Name/ID: b56) 3. “Ablocked” (Name/ID: b57) 4. “BeNotch” (Name/ID: b58) 5. “ChallengeD” (Name/ID: b59) 6. “CareCNC” (Name/ID: b60)",
+          "optionMap": {
+            "b55": "Afresh",
+            "b56": "Adry",
+            "b57": "Ablocked",
+            "b58": "BeNotch",
+            "b59": "ChallengeD",
+            "b60": "CareCNC"
+          }
+        }
+      ]
+    },
+    {
+      "id": 186,
+      "name": "User's notification token",
+      "fields": [
+        {
+          "label": "Endpoint or token",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Notification provider",
+          "code": "a56",
+          "type": "Radio",
+          "options": "1. “Web push notification” (Name/ID: b55) 2. “Firebase FCM” (Name/ID: b56) 3. “Apple APN” (Name/ID: b57) 4. “J Push” (Name/ID: b58) 5. “WeChat” (Name/ID: b59)",
+          "optionMap": {
+            "b55": "Web push notification",
+            "b56": "Firebase FCM",
+            "b57": "Apple APN",
+            "b58": "J Push",
+            "b59": "WeChat"
+          }
+        },
+        {
+          "label": "Device label",
+          "code": "a57",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Auth Key",
+          "code": "a58",
+          "type": "Text",
+          "options": "点击跳转",
+          "optionMap": {}
+        },
+        {
+          "label": "P256dh",
+          "code": "a59",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Is active",
+          "code": "a60",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "App",
+          "code": "a61",
+          "type": "Radio",
+          "options": "1. “Afresh” (Name/ID: b55) 2. “Adry” (Name/ID: b56) 3. “Ablocked” (Name/ID: b57) 4. “BeNotch” (Name/ID: b58) 5. “ChallengeD” (Name/ID: b59) 6. “CareCNC” (Name/ID: b60)",
+          "optionMap": {
+            "b55": "Afresh",
+            "b56": "Adry",
+            "b57": "Ablocked",
+            "b58": "BeNotch",
+            "b59": "ChallengeD",
+            "b60": "CareCNC"
+          }
+        }
+      ]
+    },
+    {
+      "id": 187,
       "name": "User's calendar event",
       "fields": [
         {
@@ -529,7 +2446,7 @@
           "label": "Status",
           "code": "a63",
           "type": "Select",
-          "options": "1. \"confirmed\" (b55) 2. \"tentative\" (b56) 3. \"cancelled\" (b57)",
+          "options": "1. “confirmed” (Name/ID: b55) 2. “tentative” (Name/ID: b56) 3. “cancelled” (Name/ID: b57)",
           "optionMap": {
             "b55": "confirmed",
             "b56": "tentative",
@@ -540,13 +2457,12 @@
           "label": "Priority",
           "code": "a64",
           "type": "Select",
-          "options": "1. \"normal\" (b55) 2. \"low\" (b56) 3. \"normal\" (b57) 4. \"high\" (b58) 5. \"urgent\" (b59)",
+          "options": "1. “normal” (Name/ID: b55) 2. “low” (Name/ID: b56) 3. “high” (Name/ID: b57) 4. “urgent” (Name/ID: b58)",
           "optionMap": {
             "b55": "normal",
             "b56": "low",
-            "b57": "normal",
-            "b58": "high",
-            "b59": "urgent"
+            "b57": "high",
+            "b58": "urgent"
           }
         },
         {
@@ -595,7 +2511,7 @@
           "label": "Show as",
           "code": "a71",
           "type": "Select",
-          "options": "1. \"busy\" (b55) 2. \"free\" (b56) 3. \"tentative\" (b57) 4. \"oof\" (b58)",
+          "options": "1. “busy” (Name/ID: b55) 2. “free” (Name/ID: b56) 3. “tentative” (Name/ID: b57) 4. “oof” (Name/ID: b58)",
           "optionMap": {
             "b55": "busy",
             "b56": "free",
@@ -607,7 +2523,7 @@
           "label": "Visibility",
           "code": "a72",
           "type": "Select",
-          "options": "1. \"default\" (b55) 2. \"public\" (b56) 3. \"private\" (b57) 4. \"confidential\" (b58)",
+          "options": "1. “default” (Name/ID: b55) 2. “public” (Name/ID: b56) 3. “private” (Name/ID: b57) 4. “confidential” (Name/ID: b58)",
           "optionMap": {
             "b55": "default",
             "b56": "public",
@@ -626,7 +2542,7 @@
           "label": "Is availability",
           "code": "a74",
           "type": "Radio",
-          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
           "optionMap": {
             "b55": "Yes",
             "b56": "No"
@@ -643,7 +2559,7 @@
           "label": "RSVP required",
           "code": "a76",
           "type": "Radio",
-          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
           "optionMap": {
             "b55": "Yes",
             "b56": "No"
@@ -653,7 +2569,7 @@
           "label": "Allow comments",
           "code": "a77",
           "type": "Radio",
-          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
           "optionMap": {
             "b55": "Yes",
             "b56": "No"
@@ -663,7 +2579,7 @@
           "label": "External source",
           "code": "a78",
           "type": "Select",
-          "options": "1. \"internal\" (b55) 2. \"google\" (b56) 3. \"outlook\" (b57) 4. \"apple\" (b58)",
+          "options": "1. “internal” (Name/ID: b55) 2. “google” (Name/ID: b56) 3. “outlook” (Name/ID: b57) 4. “apple” (Name/ID: b58)",
           "optionMap": {
             "b55": "internal",
             "b56": "google",
@@ -754,11 +2670,380 @@
           "type": "Textarea",
           "options": "",
           "optionMap": {}
+        },
+        {
+          "label": "App",
+          "code": "a91",
+          "type": "Radio",
+          "options": "1. “Afresh” (Name/ID: b55) 2. “Adry” (Name/ID: b56) 3. “Ablocked” (Name/ID: b57) 4. “BeNotch” (Name/ID: b58) 5. “ChallengeD” (Name/ID: b59) 6. “CareCNC” (Name/ID: b60)",
+          "optionMap": {
+            "b55": "Afresh",
+            "b56": "Adry",
+            "b57": "Ablocked",
+            "b58": "BeNotch",
+            "b59": "ChallengeD",
+            "b60": "CareCNC"
+          }
         }
       ]
     },
     {
-      "id": 160,
+      "id": 6,
+      "name": "FreshCoin Transaction",
+      "fields": [
+        {
+          "label": "Amount",
+          "code": "a55",
+          "type": "Number",
+          "options": "数量，可正可负，写法均由前端写入，我们不担心用户破解，因为我们的逻辑就是用户捡的金币越多，越有可能在我们商店消费",
+          "optionMap": {}
+        }
+      ]
+    },
+    {
+      "id": 192,
+      "name": "User's subscription",
+      "fields": [
+        {
+          "label": "product id",
+          "code": "a55",
+          "type": "Text",
+          "options": "写入苹果或谷歌订阅的SKU名称",
+          "optionMap": {}
+        },
+        {
+          "label": "Platform",
+          "code": "a56",
+          "type": "Radio",
+          "options": "1. “Apple App Store” (Name/ID: b55) 2. “Google Play” (Name/ID: b56) 3. “Stripe” (Name/ID: b57) 4. “Manual” (Name/ID: b58) 5. “Promo” (Name/ID: b59)",
+          "optionMap": {
+            "b55": "Apple App Store",
+            "b56": "Google Play",
+            "b57": "Stripe",
+            "b58": "Manual",
+            "b59": "Promo"
+          }
+        },
+        {
+          "label": "Status",
+          "code": "a57",
+          "type": "Radio",
+          "options": "1. “Active” (Name/ID: b55) 2. “In trial” (Name/ID: b56) 3. “In grace period” (Name/ID: b57) 4. “In billing retry” (Name/ID: b58) 5. “Cancelled but not expired” (Name/ID: b59) 6. “Expired” (Name/ID: b60) 7. “Refunded or revoked ” (Name/ID: b61) 8. “Paused” (Name/ID: b62)",
+          "optionMap": {
+            "b55": "Active",
+            "b56": "In trial",
+            "b57": "In grace period",
+            "b58": "In billing retry",
+            "b59": "Cancelled but not expired",
+            "b60": "Expired",
+            "b61": "Refunded or revoked",
+            "b62": "Paused"
+          }
+        },
+        {
+          "label": "original transaction id",
+          "code": "a58",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "purchased at",
+          "code": "a59",
+          "type": "Datetime",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "expires at",
+          "code": "a60",
+          "type": "Datetime",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Auto renew",
+          "code": "a61",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "environment",
+          "code": "a62",
+          "type": "Radio",
+          "options": "1. “Production” (Name/ID: b55) 2. “Sandbox” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Production",
+            "b56": "Sandbox"
+          }
+        },
+        {
+          "label": "last event at",
+          "code": "a63",
+          "type": "datetime",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "store payload",
+          "code": "a64",
+          "type": "textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "plan",
+          "code": "a65",
+          "type": "Radio",
+          "options": "1. “Monthly” (Name/ID: b55) 2. “Quarterly” (Name/ID: b56) 3. “Annual” (Name/ID: b57) 4. “Lifetime” (Name/ID: b58) 这里准确记录我们实际的订阅周期，以防止product id，即苹果或谷歌订阅的SKU名称产生歧义，这里将作为我们前端计算的依据",
+          "optionMap": {
+            "b55": "Monthly",
+            "b56": "Quarterly",
+            "b57": "Annual",
+            "b58": "Lifetime"
+          }
+        },
+        {
+          "label": "The subscription is for app",
+          "code": "a66",
+          "type": "Radio",
+          "options": "1. “Afresh” (Name/ID: b55) 2. “Adry” (Name/ID: b56) 3. “Ablocked” (Name/ID: b57) 4. “Benotch” (Name/ID: b58)",
+          "optionMap": {
+            "b55": "Afresh",
+            "b56": "Adry",
+            "b57": "Ablocked",
+            "b58": "Benotch"
+          }
+        }
+      ]
+    },
+    {
+      "id": 193,
+      "name": "User's ai credit",
+      "fields": [
+        {
+          "label": "product id",
+          "code": "a55",
+          "type": "Text",
+          "options": "写入苹果或谷歌订阅的SKU名称",
+          "optionMap": {}
+        },
+        {
+          "label": "Platform",
+          "code": "a56",
+          "type": "Radio",
+          "options": "1. “Apple App Store” (Name/ID: b55) 2. “Google Play” (Name/ID: b56) 3. “Stripe” (Name/ID: b57) 4. “Manual” (Name/ID: b58) 5. “Promo” (Name/ID: b59)",
+          "optionMap": {
+            "b55": "Apple App Store",
+            "b56": "Google Play",
+            "b57": "Stripe",
+            "b58": "Manual",
+            "b59": "Promo"
+          }
+        },
+        {
+          "label": "original transaction id",
+          "code": "a57",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Amount",
+          "code": "a58",
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Reason",
+          "code": "a59",
+          "type": "Radio",
+          "options": "1. “Purchase” (Name/ID: b55) 2. “Subscription grant” (Name/ID: b56) 3. “Promo or gift” (Name/ID: b57) 4. “Refund or revoke” (Name/ID: b58) 5. “Spend on chat” (Name/ID: b59) 6. “Spend on scan” (Name/ID: b60) 7. “Manual adjustment” (Name/ID: b61) 7. “Sign up reward” (Name/ID: b62) 8. “Invite reward” (Name/ID: b63)",
+          "optionMap": {
+            "b55": "Purchase",
+            "b56": "Subscription grant",
+            "b57": "Promo or gift",
+            "b58": "Refund or revoke",
+            "b59": "Spend on chat",
+            "b60": "Spend on scan",
+            "b61": "Manual adjustment",
+            "b62": "Sign up reward",
+            "b63": "Invite reward"
+          }
+        },
+        {
+          "label": "purchased at",
+          "code": "a60",
+          "type": "Datetime",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "expires at",
+          "code": "a61",
+          "type": "Datetime",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "environment",
+          "code": "a62",
+          "type": "Radio",
+          "options": "1. “Production” (Name/ID: b55) 2. “Sandbox” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Production",
+            "b56": "Sandbox"
+          }
+        },
+        {
+          "label": "store payload",
+          "code": "a63",
+          "type": "textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "The subscription is for app",
+          "code": "a64",
+          "type": "Radio",
+          "options": "1. “Afresh” (Name/ID: b55) 2. “Adry” (Name/ID: b56) 3. “Ablocked” (Name/ID: b57) 4. “Benotch” (Name/ID: b58)",
+          "optionMap": {
+            "b55": "Afresh",
+            "b56": "Adry",
+            "b57": "Ablocked",
+            "b58": "Benotch"
+          }
+        }
+      ]
+    },
+    {
+      "id": 198,
+      "name": "Cared one's information card",
+      "fields": [
+        {
+          "label": "Cared one’s name",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Cared one’s description",
+          "code": "a56",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Cared one’s information card name",
+          "code": "a57",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Status",
+          "code": "a58",
+          "type": "Radio",
+          "options": "1. “Draft” (Name/ID: b55) 2. “Active” (Name/ID: b56) 3. “Paused” (Name/ID: b57)",
+          "optionMap": {
+            "b55": "Draft",
+            "b56": "Active",
+            "b57": "Paused"
+          }
+        },
+        {
+          "label": "Displays location",
+          "code": "a59",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Share token",
+          "code": "a60",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Share expires at",
+          "code": "a61",
+          "type": "Datetime",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Share visibility",
+          "code": "a62",
+          "type": "Radio",
+          "options": "1. “Visible to public” (Name/ID: b55) 2. “Visible to the care group of the cared one” (Name/ID: b56) 3. “Visible to caregivers of the cared one” (Name/ID: b57) 4. “Visible to author” (Name/ID: b58)",
+          "optionMap": {
+            "b55": "Visible to public",
+            "b56": "Visible to the care group of the cared one",
+            "b57": "Visible to caregivers of the cared one",
+            "b58": "Visible to author"
+          }
+        }
+      ]
+    },
+    {
+      "id": 199,
+      "name": "Care Group",
+      "fields": [
+        {
+          "label": "Name",
+          "code": "a55",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Description",
+          "code": "a56",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Group type",
+          "code": "a57",
+          "type": "Radio",
+          "options": "1. “Public” (Name/ID: b55) 2. “Private” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Public",
+            "b56": "Private"
+          }
+        },
+        {
+          "label": "Join code",
+          "code": "a58",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Status",
+          "code": "a59",
+          "type": "Radio",
+          "options": "1. “Active” (Name/ID: b55) 2. “No” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Active",
+            "b56": "No"
+          }
+        }
+      ]
+    },
+    {
+      "id": 200,
       "name": "Care group invite",
       "fields": [
         {
@@ -806,8 +3091,8 @@
       ]
     },
     {
-      "id": 74,
-      "name": "The related private member groups of one care group",
+      "id": 201,
+      "name": "The related private member groups of one 199. care group",
       "fields": [
         {
           "label": "name",
@@ -833,14 +3118,14 @@
       ]
     },
     {
-      "id": 76,
+      "id": 202,
       "name": "The related not too special posts of one care group",
       "fields": [
         {
           "label": "type",
           "code": "a55",
           "type": "Checkbox",
-          "options": "1. \"discussion\" (b55) — General group conversation / 一般组讨论，普通讨论默认为 discussion 2. \"announcement\" (b56) — Important group notice 重要组通知 3. \"wish\" — Wish post（birthday, get-well, encouragement）/ 祝福帖（生日、康复、鼓励）",
+          "options": "护理小组讨论类型。 1. “discussion” (Name/ID: b55) `→ General group conversation / 一般组讨论，普通讨论默认为discussion 2. “announcement” (Name/ID: b56) → Important group notice 重要组通知 3”wish”(Name/ID: b57) → Wish post (birthday, get-well, encouragement) / 祝福帖（生日、康复、鼓励",
           "optionMap": {
             "b55": "discussion",
             "b56": "announcement"
@@ -864,7 +3149,7 @@
           "label": "is pinned",
           "code": "a58",
           "type": "Radio",
-          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
           "optionMap": {
             "b55": "Yes",
             "b56": "No"
@@ -880,7 +3165,7 @@
       ]
     },
     {
-      "id": 14,
+      "id": 203,
       "name": "Care Group Gallery",
       "fields": [
         {
@@ -907,7 +3192,7 @@
       ]
     },
     {
-      "id": 162,
+      "id": 204,
       "name": "Care Task",
       "fields": [
         {
@@ -920,7 +3205,7 @@
         {
           "label": "Description",
           "code": "a56",
-          "type": "Textarea",
+          "type": "textarea",
           "options": "",
           "optionMap": {}
         },
@@ -928,7 +3213,7 @@
           "label": "Task type",
           "code": "a57",
           "type": "Checkbox",
-          "options": "1. \"Preparing Meals\" (b55) 2. \"Giving Rides\" (b56) 3. \"Shopping\" (b57) 4. \"Childcare\" (b58) 5. \"Visits\" (b59) 6. \"Coverage\" (b60) 7. \"Medications & Medical Care\" (b61) 8. \"Miscellaneous\" (b62) 9. \"Occasions\" (b63)",
+          "options": "1. “Preparing Meals” (Name/ID: b55) 2. “Giving Rides” (Name/ID: b56) 3. “Shopping” (Name/ID: b57) 4. “Childcare” (Name/ID: b58) 5. “Visits” (Name/ID: b59) 6. “Coverage” (Name/ID: b60) 7. “Medications & Medical Care” (Name/ID: b61) 8. “Miscellaneous” (Name/ID: b62) 9. “Occasions” (Name/ID: b63)",
           "optionMap": {
             "b55": "Preparing Meals",
             "b56": "Giving Rides",
@@ -994,9 +3279,9 @@
           "label": "Task help status",
           "code": "a65",
           "type": "Radio",
-          "options": "1. \"Task doesn't need help\" (b55) 2. \"Task needs help\" (b56) 3. \"Task has found help\" (b57)",
+          "options": "1. “Task doesn’t need help” (Name/ID: b55) 2. “Task needs help” (Name/ID: b56) 3. “Task has found help” (Name/ID: b57)",
           "optionMap": {
-            "b55": "Task doesn't need help",
+            "b55": "Task doesn’t need help",
             "b56": "Task needs help",
             "b57": "Task has found help"
           }
@@ -1005,7 +3290,7 @@
           "label": "Task finish status",
           "code": "a66",
           "type": "Radio",
-          "options": "1. \"Not finished\" (b55) 2. \"Finished\" (b56)",
+          "options": "1. “Not finished” (Name/ID: b55) 2. “Finished” (Name/ID: b56)",
           "optionMap": {
             "b55": "Not finished",
             "b56": "Finished"
@@ -1014,113 +3299,7 @@
       ]
     },
     {
-      "id": 146,
-      "name": "Notification",
-      "fields": [
-        {
-          "label": "Notification type",
-          "code": "a55",
-          "type": "Radio",
-          "options": "1. \"User chat\" (b55) 2. \"Booking\" (b56) 3. \"System\" (b57) 4. \"Location alert\" (b58)",
-          "optionMap": {
-            "b55": "User chat",
-            "b56": "Booking",
-            "b57": "System",
-            "b58": "Location alert"
-          }
-        },
-        {
-          "label": "Notification title",
-          "code": "a56",
-          "type": "Text",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Notification content",
-          "code": "a57",
-          "type": "Textarea",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Action url",
-          "code": "a58",
-          "type": "Text",
-          "options": "点击跳转",
-          "optionMap": {}
-        },
-        {
-          "label": "Notification is read",
-          "code": "a59",
-          "type": "Radio",
-          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
-          "optionMap": {
-            "b55": "Yes",
-            "b56": "No"
-          }
-        }
-      ]
-    },
-    {
-      "id": 147,
-      "name": "User's notification token",
-      "fields": [
-        {
-          "label": "Endpoint or token",
-          "code": "a55",
-          "type": "Text",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Notification provider",
-          "code": "a56",
-          "type": "Radio",
-          "options": "1. \"Web push notification\" (b55) 2. \"Firebase FCM\" (b56) 3. \"Apple APN\" (b57) 4. \"J Push\" (b58) 5. \"WeChat\" (b59)",
-          "optionMap": {
-            "b55": "Web push notification",
-            "b56": "Firebase FCM",
-            "b57": "Apple APN",
-            "b58": "J Push",
-            "b59": "WeChat"
-          }
-        },
-        {
-          "label": "Device label",
-          "code": "a57",
-          "type": "Text",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Auth Key",
-          "code": "a58",
-          "type": "Text",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "P256dh",
-          "code": "a59",
-          "type": "Text",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Is active",
-          "code": "a60",
-          "type": "Radio",
-          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
-          "optionMap": {
-            "b55": "Yes",
-            "b56": "No"
-          }
-        }
-      ]
-    },
-    {
-      "id": 15,
+      "id": 205,
       "name": "Medicine schedule",
       "fields": [
         {
@@ -1197,7 +3376,7 @@
           "label": "Is active",
           "code": "a65",
           "type": "Radio",
-          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
           "optionMap": {
             "b55": "Yes",
             "b56": "No"
@@ -1223,18 +3402,39 @@
           "type": "Number",
           "options": "",
           "optionMap": {}
+        },
+        {
+          "label": "Reminder time before",
+          "code": "a69",
+          "type": "Number",
+          "options": "提前提醒时间，默认为0",
+          "optionMap": {}
+        },
+        {
+          "label": "Time to send to caregiver",
+          "code": "a70",
+          "type": "Number",
+          "options": "多长时间没吃就发送给caregiver",
+          "optionMap": {}
+        },
+        {
+          "label": "Time to be considered as missing",
+          "code": "a71",
+          "type": "Number",
+          "options": "多长时间没吃就被记录为missing",
+          "optionMap": {}
         }
       ]
     },
     {
-      "id": 16,
+      "id": 206,
       "name": "Medicine log",
       "fields": [
         {
           "label": "Status",
           "code": "a55",
           "type": "Radio",
-          "options": "1. \"Taken\" (b55) 2. \"Skipped\" (b56) 3. \"Missed\" (b57)",
+          "options": "1. “Taken” (Name/ID: b55) 2. “Skipped” (Name/ID: b56) 3. “Missed” (Name/ID: b57)",
           "optionMap": {
             "b55": "Taken",
             "b56": "Skipped",
@@ -1245,13 +3445,13 @@
           "label": "Note",
           "code": "a56",
           "type": "Textarea",
-          "options": "",
+          "options": "Fr",
           "optionMap": {}
         }
       ]
     },
     {
-      "id": 138,
+      "id": 207,
       "name": "Checkin schedule",
       "fields": [
         {
@@ -1265,7 +3465,7 @@
           "label": "Detail",
           "code": "a56",
           "type": "Text",
-          "options": "",
+          "options": "Fr",
           "optionMap": {}
         },
         {
@@ -1300,7 +3500,7 @@
           "label": "Is active",
           "code": "a61",
           "type": "Radio",
-          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
           "optionMap": {
             "b55": "Yes",
             "b56": "No"
@@ -1312,18 +3512,49 @@
           "type": "Textarea",
           "options": "",
           "optionMap": {}
+        },
+        {
+          "label": "Reminder time before",
+          "code": "a63",
+          "type": "Number",
+          "options": "提前多长时间提醒",
+          "optionMap": {}
+        },
+        {
+          "label": "Time to send to caregiver",
+          "code": "a64",
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Time to be considered as missing",
+          "code": "a65",
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Check in type",
+          "code": "a66",
+          "type": "Radio",
+          "options": "1. “AI” (Name/ID: b55) 2. “Human” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "AI",
+            "b56": "Human"
+          }
         }
       ]
     },
     {
-      "id": 17,
+      "id": 208,
       "name": "Checkin log",
       "fields": [
         {
           "label": "Status",
           "code": "a55",
           "type": "Radio",
-          "options": "1. \"Checked\" (b55) 2. \"Skipped\" (b56) 3. \"Missed\" (b57)",
+          "options": "1. “Checked” (Name/ID: b55) 2. “Skipped” (Name/ID: b56) 3. “Missed” (Name/ID: b57)",
           "optionMap": {
             "b55": "Checked",
             "b56": "Skipped",
@@ -1334,14 +3565,14 @@
           "label": "Note",
           "code": "a56",
           "type": "Textarea",
-          "options": "",
+          "options": "Fr",
           "optionMap": {}
         },
         {
           "label": "Checked by AI",
           "code": "a57",
           "type": "Radio",
-          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
           "optionMap": {
             "b55": "Yes",
             "b56": "No"
@@ -1350,7 +3581,7 @@
       ]
     },
     {
-      "id": 22,
+      "id": 197,
       "name": "Cared one's care note",
       "fields": [
         {
@@ -1364,13 +3595,13 @@
           "label": "Content",
           "code": "a56",
           "type": "Textarea",
-          "options": "",
+          "options": "Fr",
           "optionMap": {}
         }
       ]
     },
     {
-      "id": 19,
+      "id": 209,
       "name": "Cared one's care tip",
       "fields": [
         {
@@ -1384,14 +3615,14 @@
           "label": "Content",
           "code": "a56",
           "type": "Textarea",
-          "options": "",
+          "options": "Fr",
           "optionMap": {}
         },
         {
           "label": "Category",
           "code": "a57",
           "type": "Radio",
-          "options": "1. \"tip\" (b55) 2. \"avoid\" (b56)",
+          "options": "1. “tip” (Name/ID: b55) 2. “avoid” (Name/ID: b56)",
           "optionMap": {
             "b55": "tip",
             "b56": "avoid"
@@ -1401,7 +3632,7 @@
           "label": "Is pinned",
           "code": "a58",
           "type": "Radio",
-          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
           "optionMap": {
             "b55": "Yes",
             "b56": "No"
@@ -1410,7 +3641,7 @@
       ]
     },
     {
-      "id": 20,
+      "id": 210,
       "name": "Cared one's care plan",
       "fields": [
         {
@@ -1424,14 +3655,14 @@
           "label": "Content",
           "code": "a56",
           "type": "Textarea",
-          "options": "",
+          "options": "Fr",
           "optionMap": {}
         },
         {
           "label": "Is pinned",
           "code": "a57",
           "type": "Radio",
-          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
           "optionMap": {
             "b55": "Yes",
             "b56": "No"
@@ -1440,7 +3671,7 @@
       ]
     },
     {
-      "id": 24,
+      "id": 211,
       "name": "Cared one's emergency contact person",
       "fields": [
         {
@@ -1488,7 +3719,7 @@
       ]
     },
     {
-      "id": 23,
+      "id": 212,
       "name": "Cared one's care document",
       "fields": [
         {
@@ -1508,7 +3739,7 @@
       ]
     },
     {
-      "id": 112,
+      "id": 213,
       "name": "The current location of one user",
       "fields": [
         {
@@ -1582,7 +3813,7 @@
           "optionMap": {}
         },
         {
-          "label": "Phone is charging",
+          "label": "Phone is charing",
           "code": "a65",
           "type": "Text",
           "options": "",
@@ -1603,10 +3834,10 @@
           "optionMap": {}
         },
         {
-          "label": "Is emergency (no permission needed)",
+          "label": "Is so much of an emergency that we don’t bother to ask for the cared one’s permission",
           "code": "a68",
           "type": "Radio",
-          "options": "1. Yes (b55) 2. No (b56)",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56) 当用户Allow emergency location request 设为 “Yes“时，允许在紧急模式下不经过用户允许获取用户信息，紧急模式下所有位置snapshot均写入紧急模式为“Yes”，这样用户可以在查看记录时知道这段时间未经允许被获取了位置",
           "optionMap": {
             "b55": "Yes",
             "b56": "No"
@@ -1615,40 +3846,40 @@
       ]
     },
     {
-      "id": 116,
-      "name": "Safe Zone (含安全区与危险区)",
+      "id": 214,
+      "name": "Safe Zone",
       "fields": [
         {
           "label": "Zone type",
           "code": "a55",
           "type": "Radio",
-          "options": "1. Safe (b55) 2. Danger (b56)",
+          "options": "1. “Safe” (Name/ID: b55) 2. “Danger” (Name/ID: b56) 3. “Custom 1” (Name/ID: b57) 4. “Custom 2” (Name/ID: b58) 5. “Custom 3” (Name/ID: b59) 6. “Custom 4” (Name/ID: b60) 7. Custom 5” (Name/ID: b61) 8. Custom 6” (Name/ID: b62) 9. Custom 7” (Name/ID: b63) 用户也可以自定义7个区域类型，自定义区域名称储存在cared one的extended profile",
           "optionMap": {
             "b55": "Safe",
-            "b56": "Danger"
+            "b56": "Danger",
+            "b57": "Custom 1",
+            "b58": "Custom 2",
+            "b59": "Custom 3",
+            "b60": "Custom 4",
+            "b61": "Custom 5”",
+            "b62": "Custom 6”",
+            "b63": "Custom 7”"
           }
         },
         {
           "label": "Shape type",
           "code": "a56",
           "type": "Radio",
-          "options": "1. Radius (b55) 2. Polygon (b56)",
+          "options": "1. “Radius” (Name/ID: b55) 2. “Polygon” (Name/ID: b56)",
           "optionMap": {
             "b55": "Radius",
             "b56": "Polygon"
           }
         },
         {
-          "label": "Custom name",
-          "code": "a57",
-          "type": "Text",
-          "options": "",
-          "optionMap": {}
-        },
-        {
           "label": "Custom description",
           "code": "a58",
-          "type": "Textarea",
+          "type": "Text",
           "options": "",
           "optionMap": {}
         },
@@ -1663,21 +3894,21 @@
           "label": "Latitude",
           "code": "a60",
           "type": "Text",
-          "options": "",
+          "options": "Only applies to Radius",
           "optionMap": {}
         },
         {
           "label": "Longitude",
           "code": "a61",
           "type": "Text",
-          "options": "",
+          "options": "Only applies to Radius",
           "optionMap": {}
         },
         {
           "label": "Radius meters",
           "code": "a62",
           "type": "Number",
-          "options": "Default 100",
+          "options": "Default:100 Only applies to Radius",
           "optionMap": {}
         },
         {
@@ -1691,7 +3922,7 @@
           "label": "Notify on enter",
           "code": "a64",
           "type": "Radio",
-          "options": "1. Off (b55) 2. On (b56)",
+          "options": "1. “Off” (Name/ID: b55) 2. “On” (Name/ID: b56)",
           "optionMap": {
             "b55": "Off",
             "b56": "On"
@@ -1701,7 +3932,7 @@
           "label": "Notify on exit",
           "code": "a65",
           "type": "Radio",
-          "options": "1. Off (b55) 2. On (b56)",
+          "options": "1. “Off” (Name/ID: b55) 2. “On” (Name/ID: b56)",
           "optionMap": {
             "b55": "Off",
             "b56": "On"
@@ -1711,7 +3942,7 @@
           "label": "Schedule enabled",
           "code": "a66",
           "type": "Radio",
-          "options": "1. Off (b55) 2. On (b56)",
+          "options": "1. “Off” (Name/ID: b55) 2. “On” (Name/ID: b56) 是否在预设时间启用",
           "optionMap": {
             "b55": "Off",
             "b56": "On"
@@ -1721,21 +3952,21 @@
           "label": "Schedule start time",
           "code": "a67",
           "type": "Datetime",
-          "options": "",
+          "options": "预设启用时间开始时间",
           "optionMap": {}
         },
         {
           "label": "Schedule end time",
           "code": "a68",
           "type": "Datetime",
-          "options": "",
+          "options": "预设启用时间结束时间",
           "optionMap": {}
         },
         {
           "label": "Is active",
           "code": "a69",
           "type": "Radio",
-          "options": "1. Yes (b55) 2. No (b56)",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56) 是否启用，如果预设时间来临则overide是否active",
           "optionMap": {
             "b55": "Yes",
             "b56": "No"
@@ -1744,20 +3975,20 @@
       ]
     },
     {
-      "id": 64,
+      "id": 215,
       "name": "Care Facility",
       "fields": [
         {
           "label": "name",
           "code": "a55",
-          "type": "Text",
+          "type": "text",
           "options": "",
           "optionMap": {}
         },
         {
           "label": "detail",
           "code": "a56",
-          "type": "Textarea",
+          "type": "textarea",
           "options": "",
           "optionMap": {}
         },
@@ -1765,7 +3996,7 @@
           "label": "Care facility type",
           "code": "a57",
           "type": "Checkbox",
-          "options": "1. Adult Day Care (b55) 2. Assisted living (b56) 3. Home Care (b57) 4. Hospice (b58) 5. Independent living (b59) 6. Memory care (b60) 7. Nursing homes (b61) 8. Residential care homes (b62) 9. Senior Apartments (b63)",
+          "options": "1. “Adult Day Care” (Name/ID: b55) 2. “Assisted living” (Name/ID: b56) 3. “Home Care” (Name/ID: b57) 4. “Hospice” (Name/ID: b58) 5. “Independent living” (Name/ID: b59) 6. “Memory care” (Name/ID: b60) 7. “Nursing homes” (Name/ID: b61) 8. “Residential care homes” (Name/ID: b62) 9. “Senior Apartments” (Name/ID: b63)",
           "optionMap": {
             "b55": "Adult Day Care",
             "b56": "Assisted living",
@@ -1779,10 +4010,10 @@
           }
         },
         {
-          "label": "Care for dementia stage",
+          "label": "Care facility can care for dementia stage",
           "code": "a58",
           "type": "Checkbox",
-          "options": "1. Early-stage (b55) 2. Middle-stage (b56) 3. Late-stage (b57)",
+          "options": "1. “Early-stage” (Name/ID: b55) 2. “Middle-stage” (Name/ID: b56) 3. “Late-stage” (Name/ID: b57)",
           "optionMap": {
             "b55": "Early-stage",
             "b56": "Middle-stage",
@@ -1790,10 +4021,10 @@
           }
         },
         {
-          "label": "Room type",
+          "label": "Care facility room type",
           "code": "a59",
           "type": "Checkbox",
-          "options": "1. Studio (b55) 2. One Bed Room (b56) 3. Two Bed Room (b57) 4. More Than Two Bed Room (b58)",
+          "options": "1. “Studio” (Name/ID: b55) 2. “One Bed Room” (Name/ID: b56) 3. “Two Bed Room” (Name/ID: b57) 4. “More Than Two Bed Room” (Name/ID: b58)",
           "optionMap": {
             "b55": "Studio",
             "b56": "One Bed Room",
@@ -1802,10 +4033,10 @@
           }
         },
         {
-          "label": "Room facility",
+          "label": "Care facility provides room facility",
           "code": "a60",
           "type": "Checkbox",
-          "options": "1. Balcony (b55) 2. Toilet (b56) 3. Kitchen (b57)",
+          "options": "1. “Balcony” (Name/ID: b55) 2. “Toilet” (Name/ID: b56) 3. “Kitchen” (Name/ID: b57)",
           "optionMap": {
             "b55": "Balcony",
             "b56": "Toilet",
@@ -1813,10 +4044,10 @@
           }
         },
         {
-          "label": "Community facility",
+          "label": "Care facility provides community facility",
           "code": "a61",
           "type": "Checkbox",
-          "options": "1. swimming pool (b55) 2. active lifestyle (b56) 3. entertainment venue (b57) 4. laundry (b58)",
+          "options": "1. “swimming pool” (Name/ID: b55) 2. “active lifestyle” (Name/ID: b56) 3. “entertainment venue” (Name/ID: b57) 4. “laundry” (Name/ID: b58)",
           "optionMap": {
             "b55": "swimming pool",
             "b56": "active lifestyle",
@@ -1825,60 +4056,59 @@
           }
         },
         {
-          "label": "People number",
+          "label": "Care facility people number",
           "code": "a62",
-          "type": "Checkbox",
-          "options": "1. Less than 5 (b55) 2. 5-20 (b56) 3. 20-50 (b57) 4. More than 50 (b58)",
+          "type": "Radio",
+          "options": "1. “Less than 5” (Name/ID: b55) 2. “5-20” (Name/ID: b56) 3. “20-50” (Name/ID: b57) 4. “More than 50” (Name/ID: b58)",
           "optionMap": {
             "b55": "Less than 5",
+            "b56": "5-20",
+            "b57": "20-50",
             "b58": "More than 50"
           }
         },
         {
           "label": "location",
           "code": "a63",
-          "type": "",
+          "type": "Text",
           "options": "",
           "optionMap": {}
         },
         {
           "label": "address",
           "code": "a64",
-          "type": "",
-          "options": "",
-          "optionMap": {}
-        }
-      ]
-    },
-    {
-      "id": 65,
-      "name": "Review",
-      "fields": [
-        {
-          "label": "title",
-          "code": "a55",
           "type": "Text",
           "options": "",
           "optionMap": {}
         },
         {
-          "label": "content",
-          "code": "a56",
-          "type": "Textarea",
+          "label": "Facility is approved",
+          "code": "a65",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56) 用户提交时默认为“No”，管理员审核通过后批准为“Yes”，只有Yes才在列表显示",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "phone",
+          "code": "a66",
+          "type": "Text",
           "options": "",
           "optionMap": {}
         },
         {
-          "label": "rating",
-          "code": "a57",
-          "type": "Number",
+          "label": "email",
+          "code": "a67",
+          "type": "text",
           "options": "",
           "optionMap": {}
         }
       ]
     },
     {
-      "id": 139,
+      "id": 216,
       "name": "Care Job",
       "fields": [
         {
@@ -1891,7 +4121,7 @@
         {
           "label": "description",
           "code": "a56",
-          "type": "Textarea",
+          "type": "textarea",
           "options": "",
           "optionMap": {}
         },
@@ -1913,7 +4143,7 @@
           "label": "Status",
           "code": "a59",
           "type": "Radio",
-          "options": "1. pending (b55) 2. in progress (b56) 3. completed (b57)",
+          "options": "1. “pending” (Name/ID: b55) 2. “in progress” (Name/ID: b56) 3. “completed” (Name/ID: b57)",
           "optionMap": {
             "b55": "pending",
             "b56": "in progress",
@@ -1923,57 +4153,7 @@
       ]
     },
     {
-      "id": 70,
-      "name": "Care community post",
-      "fields": [
-        {
-          "label": "Title",
-          "code": "a55",
-          "type": "Text",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Content",
-          "code": "a56",
-          "type": "Textarea",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Language",
-          "code": "a57",
-          "type": "Radio",
-          "options": "1. English (b55) 2. Simplified Chinese (b56)",
-          "optionMap": {
-            "b55": "English",
-            "b56": "Simplified Chinese"
-          }
-        },
-        {
-          "label": "app area",
-          "code": "a58",
-          "type": "Checkbox",
-          "options": "1. Global English (b55) 2. China (b56)",
-          "optionMap": {
-            "b55": "Global English",
-            "b56": "China"
-          }
-        },
-        {
-          "label": "Category",
-          "code": "a59",
-          "type": "Checkbox",
-          "options": "1. Discussion (b55) 2. Article (b56)",
-          "optionMap": {
-            "b55": "Discussion",
-            "b56": "Article"
-          }
-        }
-      ]
-    },
-    {
-      "id": 100,
+      "id": 217,
       "name": "Challenged App Content",
       "fields": [
         {
@@ -1994,7 +4174,7 @@
           "label": "Language",
           "code": "a57",
           "type": "Radio",
-          "options": "1. English (b55) 2. Simplified Chinese (b56)",
+          "options": "1. “English” (Name/ID: b55) 2. “Simplified Chinese” (Name/ID: b56)",
           "optionMap": {
             "b55": "English",
             "b56": "Simplified Chinese"
@@ -2004,7 +4184,7 @@
           "label": "app area",
           "code": "a58",
           "type": "Checkbox",
-          "options": "1. Global English (b55) 2. China (b56)",
+          "options": "1. “Global English” (Name/ID: b55) 2. “China” (Name/ID: b56)",
           "optionMap": {
             "b55": "Global English",
             "b56": "China"
@@ -2014,7 +4194,7 @@
           "label": "App content type",
           "code": "a59",
           "type": "Radio",
-          "options": "1. Learn (b55) 2. Care and accompany tips (b56) 3. Find tips (b57)",
+          "options": "1. “Learn” (Name/ID: b55) 2. “Care and accompany tips” (Name/ID: b56) 3. “Find tips” (Name/ID: b57) 注意：Learn即完全照搬WHO所推出的isupport的内容，内容储存在前端，CCT的目的只是链接学习笔记，不储存内容",
           "optionMap": {
             "b55": "Learn",
             "b56": "Care and accompany tips",
@@ -2025,26 +4205,27 @@
           "label": "Learn module number",
           "code": "a60",
           "type": "Number",
-          "options": "",
+          "options": "对应isupport模块编号",
           "optionMap": {}
         },
         {
           "label": "Learn lesson number",
           "code": "a61",
           "type": "Number",
-          "options": "",
+          "options": "对应isupport课程编号",
           "optionMap": {}
         },
         {
           "label": "Care and accompany tips category",
           "code": "a62",
           "type": "Radio",
-          "options": "1. Eating and drinking (b55) 2. Toileting and continence (b56) 3. Memory loss (b57) 4. Aggression (b58) 5. Depression, anxiety and apathy (b59) 6. Difficulty sleeping (b60) 7. Delusions and hallucinations (b61) 8. Repetitive behaviour (b62) 9. Changes in judgement (b63)",
+          "options": "1. “Eating and drinking” (Name/ID: b55) 2. “Toileting and continence” (Name/ID: b56) 3. “Memory loss” (Name/ID: b57) 4. “Aggression” (Name/ID: b58) 5. “Depression, anxiety and apathy” (Name/ID: b59) 6. “Difficulty sleeping” (Name/ID: b60) 7. “Delusions and hallucinations” (Name/ID: b61) 8. “Repetitive behaviour” (Name/ID: b62) 9. “Changes in judgement” (Name/ID: b63)",
           "optionMap": {
             "b55": "Eating and drinking",
             "b56": "Toileting and continence",
             "b57": "Memory loss",
             "b58": "Aggression",
+            "b59": "Depression, anxiety and apathy",
             "b60": "Difficulty sleeping",
             "b61": "Delusions and hallucinations",
             "b62": "Repetitive behaviour",
@@ -2055,7 +4236,7 @@
           "label": "Find tips category",
           "code": "a63",
           "type": "Radio",
-          "options": "1. Wondering (b55) 2. Getting lost (b56) 3. Unwilling to return home (b57)",
+          "options": "1. “Wondering” (Name/ID: b55) 2. “Getting lost” (Name/ID: b56) 3. “Unwilling to return home” (Name/ID: b57)",
           "optionMap": {
             "b55": "Wondering",
             "b56": "Getting lost",
@@ -2065,7 +4246,7 @@
       ]
     },
     {
-      "id": 122,
+      "id": 218,
       "name": "User's study notes",
       "fields": [
         {
@@ -2087,340 +4268,578 @@
   ],
   "relations": [
     {
-      "id": 111,
-      "name": "One user can have one 110. user's extended profile",
-      "fields": [],
-      "parent": "Users",
-      "child": "110. User's extended profile",
-      "type": "One to One"
+      "id": 117,
+      "name": "One product can have many related woo products to be sold through woo on each shop",
+      "parent": "140. Product",
+      "child": "Products （CPT Products，即woo commerce products)",
+      "type": "One to many",
+      "fields": []
     },
     {
-      "id": 79,
-      "name": "One user can have many related cared ones",
-      "fields": [],
-      "parent": "Users",
-      "child": "Users",
-      "type": "Many to Many"
+      "id": 147,
+      "name": "One 140. product can have many related 146. product’s brand",
+      "parent": "140. Product",
+      "child": "146. Product’s brand",
+      "type": "One to many",
+      "fields": []
     },
     {
-      "id": 126,
-      "name": "One cared one can have many related 125. cared one's information cards",
-      "fields": [],
-      "parent": "Users",
-      "child": "125. Cared one's information card",
-      "type": "One to Many"
+      "id": 112,
+      "name": "One 140. product can have many related 114. product’s flavor",
+      "parent": "140. Product",
+      "child": "114. Product's flavor",
+      "type": "One to many",
+      "fields": []
     },
     {
-      "id": 127,
-      "name": "One cared one's information card can have many related cared one's emergency contact persons",
-      "fields": [],
-      "parent": "125. Cared one's information card",
-      "child": "Users",
-      "type": "One to Many"
+      "id": 175,
+      "name": "One 140. product can have many related 174. product’s ingredients",
+      "parent": "140. Product",
+      "child": "174. product’s ingredients",
+      "type": "One to many",
+      "fields": []
     },
     {
-      "id": 129,
-      "name": "One user can have many related user's calendar events",
-      "fields": [],
-      "parent": "Users",
-      "child": "128. User's calendar event",
-      "type": "One to Many"
+      "id": 169,
+      "name": "One 168. recipe can have many related 140. products",
+      "parent": "168. recipe",
+      "child": "140. Product",
+      "type": "One to many",
+      "fields": []
     },
     {
-      "id": 130,
-      "name": "One user's calendar event can have many related invited users",
-      "fields": [],
-      "parent": "128. User's calendar event",
-      "child": "Users",
-      "type": "One to Many"
+      "id": 148,
+      "name": "One directory marketplace shop like amazon can have many related vendors selling on it",
+      "parent": "2. Shop",
+      "child": "2. Shop",
+      "type": "One to many",
+      "fields": []
     },
     {
-      "id": 131,
-      "name": "One care task can have many related user's calendar events",
+      "id": 116,
+      "name": "One shop can have many related products to sell and here we also store the price of the product on this nicotine shop",
+      "parent": "2. Shop",
+      "child": "140. Product",
+      "type": "Many to many",
       "fields": [
         {
-          "label": "Name",
+          "label": "price_one_unit",
           "code": "a55",
-          "type": "Text",
+          "type": "Number",
           "options": "",
           "optionMap": {}
         },
         {
-          "label": "Description",
+          "label": "price_five_unit",
           "code": "a56",
-          "type": "Textarea",
+          "type": "Number",
           "options": "",
           "optionMap": {}
         },
         {
-          "label": "Group type",
+          "label": "price_ten_unit",
           "code": "a57",
-          "type": "Radio",
-          "options": "1. \"Public\" (b55) 2. \"Private\" (b56)",
-          "optionMap": {
-            "b55": "Public",
-            "b56": "Private"
-          }
-        },
-        {
-          "label": "Join code",
-          "code": "a58",
-          "type": "Text",
+          "type": "Number",
           "options": "",
           "optionMap": {}
         },
         {
-          "label": "Status",
+          "label": "price_max_unit",
+          "code": "a58",
+          "type": "Number",
+          "options": "最大批量价格",
+          "optionMap": {}
+        },
+        {
+          "label": "max_units",
           "code": "a59",
+          "type": "Number",
+          "options": "最大批量对应批量",
+          "optionMap": {}
+        },
+        {
+          "label": "product_url",
+          "code": "a60",
+          "type": "Text",
+          "options": "产品在商店里的链接",
+          "optionMap": {}
+        },
+        {
+          "label": "in_stock",
+          "code": "a61",
           "type": "Radio",
-          "options": "1. \"Active\" (b55) 2. \"No\" (b56)",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)\t是否还有货",
           "optionMap": {
-            "b55": "Active",
+            "b55": "Yes",
             "b56": "No"
           }
-        }
-      ],
-      "parent": "162. Care Task",
-      "child": "128. User's calendar event",
-      "type": "One to Many"
-    },
-    {
-      "id": 161,
-      "name": "One care group can have many related 160. care group invites",
-      "fields": [],
-      "parent": "9. Care Group",
-      "child": "160. Care group invite",
-      "type": "One to Many"
-    },
-    {
-      "id": 72,
-      "name": "One care group can have many related care group members",
-      "fields": [
+        },
         {
-          "label": "care group's member display name",
-          "code": "a55",
-          "type": "Text",
+          "label": "Shop type",
+          "code": "a62",
+          "type": "Radio",
+          "options": "1. “MSRP” (Name/ID: b55) 2. “Directory display, not purchasable” (Name/ID: b56) 3. “One of our official shops, purchasable” (Name/ID: b57) 4. “One of our marketplace shops, purchasable” (Name/ID: b58)",
+          "optionMap": {
+            "b55": "MSRP",
+            "b56": "Directory display, not purchasable",
+            "b57": "One of our official shops, purchasable",
+            "b58": "One of our marketplace shops, purchasable"
+          }
+        },
+        {
+          "label": "Coin allowance",
+          "code": "a63",
+          "type": "Number",
           "options": "",
           "optionMap": {}
         },
         {
-          "label": "care group's member types",
-          "code": "a56",
-          "type": "Checkbox",
-          "options": "1. \"nothing special\" (b55) 2. \"owner\" (b56) 3. \"admin\" (b57)",
-          "optionMap": {
-            "b55": "nothing special",
-            "b56": "owner",
-            "b57": "admin"
-          }
-        },
-        {
-          "label": "care group's member roles",
-          "code": "a57",
-          "type": "Checkbox",
-          "options": "1. \"nothing special\" (b55) 2. \"cared one\" (b56)",
-          "optionMap": {
-            "b55": "nothing special",
-            "b56": "cared one"
-          }
-        },
-        {
-          "label": "care group's member invitation status",
-          "code": "a58",
-          "type": "Radio",
-          "options": "1. \"accepted\" (b55) 2. \"pending\" (b56) \\",
-          "optionMap": {
-            "b55": "accepted",
-            "b56": "pending"
-          }
-        }
-      ],
-      "parent": "9. Care Group",
-      "child": "Users",
-      "type": "Many to Many"
-    },
-    {
-      "id": 47,
-      "name": "One care group can have many related private member groups",
-      "fields": [],
-      "parent": "9. Care Group",
-      "child": "74. The related private member groups of one care group",
-      "type": "One to Many"
-    },
-    {
-      "id": 75,
-      "name": "One care group's private member group can have related members",
-      "fields": [
-        {
-          "label": "care group's private member group member types",
-          "code": "a55",
-          "type": "Checkbox",
-          "options": "1. \"nothing special\" (b55) 2. \"owner\" (b56) 3. \"admin\" (b57)",
-          "optionMap": {
-            "b55": "nothing special",
-            "b56": "owner",
-            "b57": "admin"
-          }
-        },
-        {
-          "label": "care group's private member group member invitation status",
-          "code": "a56",
-          "type": "Radio",
-          "options": "1. \"accepted\" (b55) 2. \"pending\" (b56) \\",
-          "optionMap": {
-            "b55": "accepted",
-            "b56": "pending"
-          }
-        }
-      ],
-      "parent": "74. The related private member groups of one care group",
-      "child": "Users",
-      "type": "Many to Many"
-    },
-    {
-      "id": 77,
-      "name": "One care group can have many related not too special posts",
-      "fields": [],
-      "parent": "9. Care Group",
-      "child": "76. The related not too special posts of one care group",
-      "type": "One to Many"
-    },
-    {
-      "id": 103,
-      "name": "One related not too special post can have many related care group's private member groups it's visible to",
-      "fields": [],
-      "parent": "76. The related not too special posts of one care group",
-      "child": "74. The related private member groups of one care group",
-      "type": "Many to Many"
-    },
-    {
-      "id": 104,
-      "name": "One related not too special post can have many related users it's visible to",
-      "fields": [],
-      "parent": "76. The related not too special posts of one care group",
-      "child": "Users",
-      "type": "Many to Many"
-    },
-    {
-      "id": 78,
-      "name": "One related not too special post can have many related comments",
-      "fields": [],
-      "parent": "76. The related not too special posts of one care group",
-      "child": "67. Comment",
-      "type": "One to Many"
-    },
-    {
-      "id": 46,
-      "name": "One care group can have many related 14. care group galleries",
-      "fields": [],
-      "parent": "9. Care Group",
-      "child": "14. Care Group Gallery",
-      "type": "One to Many"
-    },
-    {
-      "id": 141,
-      "name": "One 162. care task can have many related cared ones",
-      "fields": [],
-      "parent": "162. Care Task",
-      "child": "Users",
-      "type": "One to Many"
-    },
-    {
-      "id": 108,
-      "name": "One 162. care task can have many related assigned caregivers",
-      "fields": [
-        {
-          "label": "Assigned caregiver status",
-          "code": "a55",
-          "type": "Radio",
-          "options": "1. \"pending\" (b55) 2. \"accepted\" (b56) 3. \"rejected\" (b57)",
-          "optionMap": {
-            "b55": "pending",
-            "b56": "accepted",
-            "b57": "rejected"
-          }
-        }
-      ],
-      "parent": "162. Care Task",
-      "child": "Users",
-      "type": "One to Many"
-    },
-    {
-      "id": 48,
-      "name": "One care group can have many related 162. care tasks",
-      "fields": [],
-      "parent": "9. Care Group",
-      "child": "162. Care Task",
-      "type": "Many to Many"
-    },
-    {
-      "id": 109,
-      "name": "One care task can have many related care group's private member groups it's visible to",
-      "fields": [],
-      "parent": "162. Care Task",
-      "child": "74. The related private member groups of one care group",
-      "type": "One to Many"
-    },
-    {
-      "id": 81,
-      "name": "One 162. care task can have many related users it's only visible to",
-      "fields": [],
-      "parent": "162. Care Task",
-      "child": "Users",
-      "type": "Many to Many"
-    },
-    {
-      "id": 82,
-      "name": "One care task can have many related comments",
-      "fields": [
-        {
-          "label": "Chat type",
-          "code": "a55",
-          "type": "Radio",
-          "options": "1. \"One to One\" (b55) 2. \"Many users\" (b56) 3. \"AI\" (b57)",
-          "optionMap": {
-            "b55": "One to One",
-            "b56": "Many users",
-            "b57": "AI"
-          }
-        },
-        {
-          "label": "Chat name",
-          "code": "a56",
-          "type": "Text",
-          "options": "可为 null，除非用户闲的起个名",
+          "label": "Regions ships to",
+          "code": "a64",
+          "type": "Textarea",
+          "options": "以ISO 3166-1 和 -2以json写入可发件区域",
           "optionMap": {}
         },
         {
-          "label": "AI chat mode",
-          "code": "a57",
-          "type": "Text",
-          "options": "可为 null",
+          "label": "Regions doesn’t ship to",
+          "code": "a65",
+          "type": "Textarea",
+          "options": "以ISO 3166-1 和 -2以json写入不可发件区域",
           "optionMap": {}
         },
         {
-          "label": "Last message at",
+          "label": "Currency",
+          "code": "a66",
+          "type": "Text",
+          "options": "以ISO 4217写入币种",
+          "optionMap": {}
+        }
+      ]
+    },
+    {
+      "id": 118,
+      "name": "One user can have one dokan shop and here we relate it to its one and only related nicotine shop",
+      "parent": "Users",
+      "child": "2. Shop",
+      "type": "One to one",
+      "fields": []
+    },
+    {
+      "id": 119,
+      "name": "One nicotine shop that is already listed on our directory can have one related hidden nicotine shop to store price if the shop also chooses to sell on our app",
+      "parent": "2. Shop",
+      "child": "2. Shop",
+      "type": "One to one",
+      "fields": []
+    },
+    {
+      "id": 150,
+      "name": "One 149. Community post can have many related comments",
+      "parent": "149. Community post",
+      "child": "141. Comment",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 142,
+      "name": "One comment can have many related comments",
+      "parent": "141. Comment",
+      "child": "141. Comment",
+      "type": "Many to Many",
+      "fields": []
+    },
+    {
+      "id": 144,
+      "name": "One product shop can have many related reviews",
+      "parent": "2. Shop",
+      "child": "31. Review",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 264,
+      "name": "One care provider can have many related 31. reviews",
+      "parent": "Users",
+      "child": "31. Review",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 143,
+      "name": "One review can have many related comments",
+      "parent": "31. Review",
+      "child": "141. Comment",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 145,
+      "name": "One nicotine product can have many related reviews",
+      "parent": "140. Product",
+      "child": "31. Review",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 152,
+      "name": "One user can have one related user's extended profile",
+      "parent": "Users",
+      "child": "151. User's extended profile",
+      "type": "One to One",
+      "fields": []
+    },
+    {
+      "id": 259,
+      "name": "One user can have one 258. user‘s extended profile 2",
+      "parent": "Users",
+      "child": "258. User‘s extended profile 2",
+      "type": "One to One",
+      "fields": []
+    },
+    {
+      "id": 182,
+      "name": "One user can have many related user‘s 181. User‘s reason to quit",
+      "parent": "Users",
+      "child": "181. User‘s reason to quit",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 128,
+      "name": "One user can have many related nicotine products",
+      "parent": "Users",
+      "child": "140. Product",
+      "type": "One to Many",
+      "fields": [
+        {
+          "label": "Nicotine product usage type",
+          "code": "a55",
+          "type": "Radio",
+          "options": "1. “Baseline usage” (Name/ID: b55) 2. “Currently using” (Name/ID: b56) 3. “Nrt usage” (Name/ID: b57) 4. “Alternative product usage” (Name/ID: b58) 5. “My most frequently used nicotine product” (Name/ID: b59)\tAlternative产品指比如糖果、咖啡因口香糖等替代食品",
+          "optionMap": {
+            "b55": "Baseline usage",
+            "b56": "Currently using",
+            "b57": "Nrt usage",
+            "b58": "Alternative product usage",
+            "b59": "My most frequently used nicotine product"
+          }
+        },
+        {
+          "label": "Usage number per day",
+          "code": "a56",
+          "type": "Number",
+          "options": "applies to cigarettes, cigar, pouch and other countable products",
+          "optionMap": {}
+        },
+        {
+          "label": "Usage nicotine mg per day",
+          "code": "a57",
+          "type": "Number",
+          "options": "applies to uncountable products，注意：可数产品不可以此作为尼古丁的计算依据，可数产品应以份数计算尼古丁含量，这里只适用于可补充烟油这种完全不可计数的产品，对于dip\\烟斗等不方便记录也可以使用此列记录尼古丁摄入量，普通电子烟不可使用此列，仅使用a56",
+          "optionMap": {}
+        },
+        {
+          "label": "Use MSRP",
           "code": "a58",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Custom purchase price per unit",
+          "code": "a59",
+          "type": "Number",
+          "options": "自定义每单位产品价格，如每支烟、每个电子烟弹、每个nicotine pouch的价格，这里作为我们计算的标准；Custom purchase price per pack仅作为方便用户前端输入的方式，如果用户只输入Custom purchase price per pack和Custom number per pack，我们需要计算出Custom purchase price per unit并储存作为我们的计算值",
+          "optionMap": {}
+        },
+        {
+          "label": "Custom number per pack",
+          "code": "a591",
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Custom purchase price per pack",
+          "code": "a592",
+          "type": "Number",
+          "options": "一包烟的价格、一包pouch的价格等一包的价格，只为输入便利，计算用户吸烟等时以Custom purchase price per unit作为单位计算，因为用户记录只会记录抽了一只烟、一个pouch，而不会记录抽了一包烟",
+          "optionMap": {}
+        },
+        {
+          "label": "Custom alcohol purchase price per ml",
+          "code": "a593",
+          "type": "Number",
+          "options": "自定义每ml酒的价格，与烟的逻辑类似，用户大概不会知道每ml的价格，因此我们需要通过用户输入的单位换算成每ml价格写入这里作为我们的计算值",
+          "optionMap": {}
+        },
+        {
+          "label": "Custom alcohol purchase price per unit",
+          "code": "a594",
+          "type": "Number",
+          "options": "用户输入的自定义的每单位酒的购买价格，这个单位可以是一杯或者一瓶，我们将它折算成a593储存作为计算标准",
+          "optionMap": {}
+        },
+        {
+          "label": "Custom alcohol unit ml",
+          "code": "a595",
+          "type": "Number",
+          "options": "用户输入的自定义的每单位酒的ml",
+          "optionMap": {}
+        },
+        {
+          "label": "Started using at",
+          "code": "a60",
           "type": "Datetime",
           "options": "",
           "optionMap": {}
+        },
+        {
+          "label": "Stopped using at",
+          "code": "a61",
+          "type": "Datetime",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Purchase source",
+          "code": "a62",
+          "type": "Radio",
+          "options": "1. “Our official shop” (Name/ID: b55) 2. “Our marketplace shop” (Name/ID: b56) 3. “Other” (Name/ID: b57)\t我们的店目前还没有开放，因此不要在前端显示，默认写入other",
+          "optionMap": {
+            "b55": "Our official shop",
+            "b56": "Our marketplace shop",
+            "b57": "Other"
+          }
+        },
+        {
+          "label": "Product source",
+          "code": "a63",
+          "type": "Radio",
+          "options": "1. “From our product catalog” (Name/ID: b55) 2. “Custom product made by user” (Name/ID: b56) 3. “Our non-specific category product customizable by users” (Name/ID: b57)\t用户可以选择是从我们的产品目录里找还是新建一个, “Custom made by user”是指完全自定义的产品，用户可以选择提交加入我们的产品库，“Our non-specific category product”是指我们提供的无特指分类产品，比如只是香烟，用户可以自定义价格，品牌等只做个人记录使用，不添加到我们的catalog，用户也可以不填自定义信息，只做简要记录。注意：在前端显示关联产品信息时，每条属性有就显示，没有就连分类名(如Brand）也不要显示",
+          "optionMap": {
+            "b55": "From our product catalog",
+            "b56": "Custom product made by user",
+            "b57": "Our non-specific category product customizable by users"
+          }
+        },
+        {
+          "label": "Alcohol product usage type",
+          "code": "a64",
+          "type": "Radio",
+          "options": "1. “Baseline usage” (Name/ID: b55) 2. “Currently using” (Name/ID: b56)   3. “Alternative product usage” (Name/ID: b57) 4. “My most frequently used alcohol product” (Name/ID: b58)",
+          "optionMap": {
+            "b55": "Baseline usage",
+            "b56": "Currently using",
+            "b57": "Alternative product usage",
+            "b58": "My most frequently used alcohol product"
+          }
+        },
+        {
+          "label": "Alcohol glass or serving volume Per drink",
+          "code": "a65",
+          "type": "Number",
+          "options": "用户可以选择每喝一次的计量单位容积，此量作为用户记录时在前端显示的默认记录值，滑轨允许用户记录其他值",
+          "optionMap": {}
+        },
+        {
+          "label": "Number of drinks per day",
+          "code": "a66",
+          "type": "Number",
+          "options": "用户可以选择每天喝的量",
+          "optionMap": {}
+        },
+        {
+          "label": "Add to my most frequently used nicotine product list",
+          "code": "a67",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)\t记录尼古丁产品时， 1. “Baseline usage” (Name/ID: b55) 2. “Currently using” (Name/ID: b56) 3. “Nrt usage” (Name/ID: b57) 均默认记入频繁使用产品列表，5. “My most frequently used nicotine product” (Name/ID: b59)用来补充记录频繁使用产品，记录时需要检索去重，重复时提示用户已添加，频繁使用列表不应有重复产品",
+          "optionMap": {
+            "b55": "Baseline usage",
+            "b56": "Currently using",
+            "b57": "Nrt usage",
+            "b59": "My most frequently used nicotine product"
+          }
+        },
+        {
+          "label": "Add to my most frequently used alcohol product list",
+          "code": "a68",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)\t记录酒精用品时，1. “Baseline usage” (Name/ID: b55) 2. “Currently using” (Name/ID: b56)   3. “Alternative product usage” (Name/ID: b57)均默认记入频繁使用产品列表，4. “My most frequently used alcohol product” (Name/ID: b58)用来补充记录频繁使用产品，记录时需要检索去重，重复时提示用户已添加，频繁使用列表不应有重复产品",
+          "optionMap": {
+            "b55": "Baseline usage",
+            "b56": "Currently using",
+            "b57": "Alternative product usage",
+            "b58": "My most frequently used alcohol product"
+          }
+        },
+        {
+          "label": "Add to my most frequently used alternative product for nicotine product list",
+          "code": "a69",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)\t当用户记录尼古丁产品的替代产品时，即4. “Alternative product usage” (Name/ID: b58)，同时勾选此项添加入常用替代产品列表，此表单也可以用来记录补充频繁使用产品，记录时需要检索去重，重复时提示用户已添加，频繁使用列表不应有重复产品",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No",
+            "b58": "Alternative product usage"
+          }
+        },
+        {
+          "label": "Add to my most frequently used alternative product for alcohol product list",
+          "code": "a70",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)\t当用户记录酒精产品的替代产品时，即3. “Alternative product usage” (Name/ID: b57)，同时勾选此项添加入常用替代产品列表，此表单也可以用来记录补充频繁使用产品，记录时需要检索去重，重复时提示用户已添加，频繁使用列表不应有重复产品",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No",
+            "b57": "Alternative product usage"
+          }
         }
-      ],
-      "parent": "a55",
-      "child": "Radio",
-      "type": "1. \"One to One\" (b55) 2. \"Many users\" (b56) 3. \"AI\" (b57)"
+      ]
+    },
+    {
+      "id": 129,
+      "name": "One user can have many user's quit plans",
+      "parent": "Users",
+      "child": "User‘s quit plan",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 154,
+      "name": "One user's quit plan can have many related nicotine products",
+      "parent": "153. User's quit plan",
+      "child": "140. Product",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 183,
+      "name": "One user can have many related 51. User's blocked keyword and domain",
+      "parent": "Users",
+      "child": "51. User's blocked keyword and domain",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 172,
+      "name": "One user can have many related 171. User's apple health or google health log event",
+      "parent": "Users",
+      "child": "171. User's apple health or google health log event",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 173,
+      "name": "One user can have many related 161. User’s other log event",
+      "parent": "Users",
+      "child": "161. User’s other log event",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 176,
+      "name": "One 171. User's apple health or google health log event can have many related 161. User’s other log events",
+      "parent": "171. User's apple health or google health log event",
+      "child": "161. User’s other log event",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 179,
+      "name": "One 161. User’s other log events can have many related 177. User’s custom workouts",
+      "parent": "161. User’s other log event",
+      "child": "177. User’s custom workout",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 180,
+      "name": "One 161. User’s other log events can have many related 178. User’s custom symptom",
+      "parent": "161. User’s other log event",
+      "child": "178. User’s custom symptom",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 163,
+      "name": "One user's log event can have one related user's non-custom and custom choice and alternative choice",
+      "parent": "161. User's log event",
+      "child": "162. Use's non-custom and custom choice and alternative choice",
+      "type": "One to One",
+      "fields": []
+    },
+    {
+      "id": 164,
+      "name": "One user can have many related user's custom choice and alternative choices",
+      "parent": "Users",
+      "child": "162. Use's non-custom and custom choice and alternative choice",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 165,
+      "name": "One user's log event can have many related products",
+      "parent": "161. User's log event",
+      "child": "140. Product",
+      "type": "One to Many",
+      "fields": [
+        {
+          "label": "User's logged product type （use this for quit smoking and logging NRT)",
+          "code": "a55",
+          "type": "Radio",
+          "options": "1. “Nicotine product” (Name/ID: b55) 2. “NRT product” (Name/ID: b56) 3. “Other product” (Name/ID: b57)\t注意：我们在这里不把NRT算作Nicotine product，因为他的目的是戒烟",
+          "optionMap": {
+            "b55": "Nicotine product",
+            "b56": "NRT product",
+            "b57": "Other product"
+          }
+        },
+        {
+          "label": "User’s logged product quantity",
+          "code": "a66",
+          "type": "Number",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "User's logged product type （use this for quit drinking)",
+          "code": "a67",
+          "type": "Radio",
+          "options": "1. “Alcohol product” (Name/ID: b55)",
+          "optionMap": {
+            "b55": "Alcohol product"
+          }
+        },
+        {
+          "label": "Log alcohol bought type",
+          "code": "a68",
+          "type": "Radio",
+          "options": "1. “Shop bought” (Name/ID: b55) 2. “Bar/Pub/Restaurant” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Shop bought",
+            "b56": "Bar/Pub/Restaurant"
+          }
+        }
+      ]
     },
     {
       "id": 140,
       "name": "One care group can have one related group live chat conversation",
-      "fields": [],
       "parent": "9. Care Group",
       "child": "26. Chat Conversation",
-      "type": "One to One"
+      "type": "One to One",
+      "fields": []
     },
     {
-      "id": 142,
+      "id": 137,
       "name": "One chat conversation can have many related chatters",
+      "parent": "121. Chat Conversation",
+      "child": "Users",
+      "type": "Many to Many",
       "fields": [
         {
           "label": "The user joined this chat conversation at this time",
@@ -2440,177 +4859,448 @@
           "label": "The user has fucking muted this chat",
           "code": "a57",
           "type": "Radio",
-          "options": "1. \"Yes\" (b55) 2. \"No\" (b56)",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
           "optionMap": {
             "b55": "Yes",
             "b56": "No"
           }
-        },
+        }
+      ]
+    },
+    {
+      "id": 138,
+      "name": "One chat conversation can have many related chat messages",
+      "parent": "121. Chat Conversation",
+      "child": "126. Chat Message",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 139,
+      "name": "One chat message can have one parent chat message that it is specifically replying to",
+      "parent": "126. Chat Message",
+      "child": "126. Chat Message",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 188,
+      "name": "One user can have many related 185. Notifications to receive",
+      "parent": "Users",
+      "child": "185. Notification",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 189,
+      "name": "One user can have many related 186. User's notification token",
+      "parent": "Users",
+      "child": "186. User's notification token",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 190,
+      "name": "One user can have many related 187. User's calendar event",
+      "parent": "Users",
+      "child": "187. User's calendar event",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 262,
+      "name": "One 187. user's calendar event can have many related invited users",
+      "parent": "187. User's calendar event",
+      "child": "Users",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 191,
+      "name": "One 187. user's calendar event can have many related 161. user's log events",
+      "parent": "187. User's calendar event",
+      "child": "161. user's log events",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 263,
+      "name": "One care task can have many related user's calendar events",
+      "parent": "204. Care Task",
+      "child": "187. User's calendar event",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 103,
+      "name": "One user can have many related 6. FreshCoin Transaction",
+      "parent": "Users",
+      "child": "6. FreshCoin Transaction",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 194,
+      "name": "One user can have many related 192. User's subscription",
+      "parent": "Users",
+      "child": "192. User's subscription",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 195,
+      "name": "One user can have many related 193. User's ai credit",
+      "parent": "Users",
+      "child": "193. User's ai credit",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 219,
+      "name": "One user can have many related cared ones",
+      "parent": "Users",
+      "child": "Users",
+      "type": "Many to Many",
+      "fields": []
+    },
+    {
+      "id": 220,
+      "name": "One cared one can have many related 198. cared one's information cards",
+      "parent": "Users",
+      "child": "198. Cared one's information card",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 221,
+      "name": "One cared one's information card can have many related cared one's emergency contact persons",
+      "parent": "198. Cared one's information card",
+      "child": "Users",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 222,
+      "name": "One 199. care group can many related 200. care group invites",
+      "parent": "199. Care Group",
+      "child": "200. Care group invite",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 223,
+      "name": "One care group can have many related 199. care group members",
+      "parent": "199. Care Group",
+      "child": "Users",
+      "type": "Many to Many",
+      "fields": [
         {
-          "label": "Chat message content",
+          "label": "care group's member display name",
           "code": "a55",
           "type": "Text",
           "options": "",
           "optionMap": {}
         },
         {
-          "label": "Chat message type",
+          "label": "care group's member types",
           "code": "a56",
-          "type": "Radio",
-          "options": "1. \"Text\" (b55) 2. \"Image\" (b56) 3. \"AI\" (b57) 4. \"System message\" (b58) 5. \"Price card\" (b59)",
+          "type": "Checkbox",
+          "options": "1. “nothing special” (Name/ID: b55) 2. “owner” (Name/ID: b56) 3. “admin” (Name/ID: b57)",
           "optionMap": {
-            "b55": "Text",
-            "b56": "Image",
-            "b57": "AI",
-            "b58": "System message",
-            "b59": "Price card"
+            "b55": "nothing special",
+            "b56": "owner",
+            "b57": "admin"
+          }
+        },
+        {
+          "label": "care group's member roles",
+          "code": "a57",
+          "type": "Checkbox",
+          "options": "1. “nothing special” (Name/ID: b55) 2. “cared one” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "nothing special",
+            "b56": "cared one"
+          }
+        },
+        {
+          "label": "care group's member invitation status",
+          "code": "a58",
+          "type": "Radio",
+          "options": "1. “accepted” (Name/ID: b55) 2. “pending” (Name/ID: b56) 3. “declined” (Name/ID: b57)群组创建者自动把invitation status设为accepted",
+          "optionMap": {
+            "b55": "accepted",
+            "b56": "pending",
+            "b57": "declined"
           }
         }
-      ],
-      "parent": "26. Chat Conversation",
+      ]
+    },
+    {
+      "id": 224,
+      "name": "One care group can have many related private member groups",
+      "parent": "199. Care Group",
+      "child": "201. The related private member groups of one care group",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 225,
+      "name": "One 201. care group's private member group can have related members",
+      "parent": "201. The related private member groups of one care group",
       "child": "Users",
-      "type": "Many to Many"
+      "type": "Many to Many",
+      "fields": [
+        {
+          "label": "care group's private member group member types",
+          "code": "a55",
+          "type": "Checkbox",
+          "options": "1. “nothing special” (Name/ID: b55) 2. “owner” (Name/ID: b56) 3. “admin” (Name/ID: b57)",
+          "optionMap": {
+            "b55": "nothing special",
+            "b56": "owner",
+            "b57": "admin"
+          }
+        },
+        {
+          "label": "care group's private member group member invitation status",
+          "code": "a56",
+          "type": "Radio",
+          "options": "1. “accepted” (Name/ID: b55) 2. “pending” (Name/ID: b56) 3.“declined” (Name/ID: b57)私密子群组创建者自动把invitation status设为accepted",
+          "optionMap": {
+            "b55": "accepted",
+            "b56": "pending",
+            "b57": "declined"
+          }
+        }
+      ]
     },
     {
-      "id": 143,
-      "name": "One chat conversation can have many related chat messages",
-      "fields": [],
-      "parent": "26. Chat Conversation",
-      "child": "27. Chat Message",
-      "type": "One to Many"
+      "id": 226,
+      "name": "One care group can have many related not too special posts",
+      "parent": "199. Care Group",
+      "child": "202. The related not too special posts of one care group",
+      "type": "One to Many",
+      "fields": []
     },
     {
-      "id": 144,
-      "name": "One chat message can have one parent chat message it is specifically replying to",
-      "fields": [],
-      "parent": "27. Chat Message",
-      "child": "27. Chat Message",
-      "type": "One to Many"
+      "id": 227,
+      "name": "One 202. related not too special posts of one care group can have many 201. related care group's private member groups that it's visible to",
+      "parent": "202. The related not too special posts of one care group",
+      "child": "201. The related private member groups of one care group",
+      "type": "Many to Many",
+      "fields": []
     },
     {
-      "id": 148,
-      "name": "One user can have many related notifications to receive",
-      "fields": [],
+      "id": 228,
+      "name": "One related not too special posts of one care group can have many related users that it's visible to",
+      "parent": "202. The related not too special posts of one care group",
+      "child": "Users",
+      "type": "Many to Many",
+      "fields": []
+    },
+    {
+      "id": 229,
+      "name": "One 202 related not too special posts of one care group can have many related 141. comments",
+      "parent": "202. The related not too special posts of one care group",
+      "child": "141. Comment",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 230,
+      "name": "One care group can many related 203. care group galleries",
+      "parent": "199. Care Group",
+      "child": "203. Care Group Gallery",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 231,
+      "name": "One 204. care task can have many related cared ones",
+      "parent": "204.  Care Task",
+      "child": "Users",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 232,
+      "name": "One 204. care task can have many related assigned caregivers",
+      "parent": "204. Care Task",
+      "child": "Users",
+      "type": "One to Many",
+      "fields": [
+        {
+          "label": "Assigned caregiver status",
+          "code": "a55",
+          "type": "Radio",
+          "options": "1. “pending” (Name/ID: b55) 2. “accepted” (Name/ID: b56) 3. “rejected” (Name/ID: b57)",
+          "optionMap": {
+            "b55": "pending",
+            "b56": "accepted",
+            "b57": "rejected"
+          }
+        }
+      ]
+    },
+    {
+      "id": 233,
+      "name": "One care group can have many related 204. care tasks",
+      "parent": "199. Care Group",
+      "child": "204. Care Task",
+      "type": "Many to Many",
+      "fields": []
+    },
+    {
+      "id": 234,
+      "name": "One 204. care task can have many 201. related care group's private member groups that it's visible to",
+      "parent": "204. Care Task",
+      "child": "201. The related private member groups of one care group",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 235,
+      "name": "One 204. care task can have many related users that it's only visible to",
+      "parent": "204. Care Task",
+      "child": "Users",
+      "type": "Many to Many",
+      "fields": []
+    },
+    {
+      "id": 236,
+      "name": "One 204. care task can have many related comments",
+      "parent": "204. Care Task",
+      "child": "141. Comment",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 237,
+      "name": "One cared one can have many related 205. cared one's medicine schedules",
       "parent": "Users",
-      "child": "146. Notification",
-      "type": "One to Many"
+      "child": "205. Cared one’s medicine schedule",
+      "type": "One to Many",
+      "fields": []
     },
     {
-      "id": 149,
-      "name": "One user can have many related notification tokens",
-      "fields": [],
+      "id": 238,
+      "name": "One 205. cared one's medicine schedule can have many related 206. care one's medicine logs",
+      "parent": "205. Cared one’s medicine schedule",
+      "child": "206. Care one's medicine log",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 239,
+      "name": "One cared one can have many related cared one's 207. checkin schedules",
       "parent": "Users",
-      "child": "147. User's notification token",
-      "type": "One to Many"
+      "child": "207. Checkin schedule",
+      "type": "One to Many",
+      "fields": []
     },
     {
-      "id": 83,
-      "name": "One cared one can have many related cared one's medicine schedules",
-      "fields": [],
+      "id": 240,
+      "name": "One 207. cared one's checkin schedule can have many related 208. care one's checkin logs",
+      "parent": "207. Checkin schedule",
+      "child": "208. Care one's checkin log",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 241,
+      "name": "One check in schedule can have many related asigned check-in persons",
+      "parent": "207. Checkin schedule",
+      "child": "Users",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 260,
+      "name": "One 207. check in schedule can have many related asigned check-in persons",
+      "parent": "207. Checkin schedule",
+      "child": "Users",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 242,
+      "name": "One cared one can have many related 197. cared one's care notes",
       "parent": "Users",
-      "child": "15. Medicine schedule",
-      "type": "One to Many"
+      "child": "197. Cared one's care note",
+      "type": "One to Many",
+      "fields": []
     },
     {
-      "id": 121,
-      "name": "One cared one's medicine schedule can have many related care one's medicine logs",
-      "fields": [],
-      "parent": "15. Medicine schedule",
-      "child": "16. Medicine log",
-      "type": "One to Many"
-    },
-    {
-      "id": 145,
-      "name": "One cared one can have many related cared one's checkin schedules",
-      "fields": [],
-      "parent": "Users",
-      "child": "138. Checkin schedule",
-      "type": "One to Many"
-    },
-    {
-      "id": 151,
-      "name": "One cared one's checkin schedule can have many related care one's checkin logs",
-      "fields": [],
-      "parent": "138. Checkin schedule",
-      "child": "17. Checkin log",
-      "type": "One to Many"
-    },
-    {
-      "id": 92,
-      "name": "One cared one can have many related cared one's care notes",
-      "fields": [],
-      "parent": "Users",
-      "child": "22. Cared one's care note",
-      "type": "One to Many"
-    },
-    {
-      "id": 88,
+      "id": 243,
       "name": "One cared one can have many related cared one's care tips",
-      "fields": [],
       "parent": "Users",
-      "child": "19. Cared one's care tip",
-      "type": "One to Many"
+      "child": "209. Cared one's care tip",
+      "type": "One to Many",
+      "fields": []
     },
     {
-      "id": 97,
+      "id": 244,
       "name": "One cared one can have many related cared one's care plans",
-      "fields": [],
       "parent": "Users",
-      "child": "20. Cared one's care plan",
-      "type": "One to Many"
+      "child": "210. Cared one's care plan",
+      "type": "One to Many",
+      "fields": []
     },
     {
-      "id": 63,
-      "name": "One cared one can have many related cared one's emergency contact persons",
-      "fields": [],
+      "id": 245,
+      "name": "One cared one can have many related 211. cared one's emergency contact persons",
       "parent": "Users",
-      "child": "24. Cared one's emergency contact person",
-      "type": "One to Many"
+      "child": "211. Cared one's emergency contact person",
+      "type": "One to Many",
+      "fields": []
     },
     {
-      "id": 95,
-      "name": "One cared one can have many related cared one's care documents",
-      "fields": [],
+      "id": 246,
+      "name": "One cared one can have many related 212. cared one's care documents",
       "parent": "Users",
-      "child": "23. Cared one's care document",
-      "type": "One to Many"
+      "child": "212. Cared one's care document",
+      "type": "One to Many",
+      "fields": []
     },
     {
-      "id": 117,
+      "id": 247,
       "name": "One user can have many related current location snapshots",
+      "parent": "Users",
+      "child": "213. The current location of one user",
+      "type": "One to many",
       "fields": [
         {
           "label": "User type",
           "code": "a55",
           "type": "Radio",
-          "options": "1. Not someone special (b55) 2. Cared one (b56)",
+          "options": "1. “Not someone special” (Name/ID: b55) 2. “Cared one” (Name/ID: b56) 如果是cared one，选Cared one",
           "optionMap": {
             "b55": "Not someone special",
             "b56": "Cared one"
           }
         }
-      ],
-      "parent": "Users",
-      "child": "CCT 112",
-      "type": "One to many"
+      ]
     },
     {
-      "id": 118,
+      "id": 248,
       "name": "One user can have many related safe zones",
-      "fields": [],
       "parent": "Users",
-      "child": "CCT 116",
-      "type": "One to many"
+      "child": "214. Safe Zone",
+      "type": "One to many",
+      "fields": []
     },
     {
-      "id": 107,
+      "id": 249,
       "name": "One care facility can have many related facility members",
+      "parent": "215. Care Facility",
+      "child": "Users",
+      "type": "One to Many",
       "fields": [
         {
           "label": "Facility member type",
           "code": "a55",
-          "type": "Checkbox",
-          "options": "1. nothing special (b55) 2. owner (b56) 3. admin (b57)",
+          "type": "Checkbos",
+          "options": "1. “nothing special” (Name/ID: b55) 2. “owner” (Name/ID: b56) 3. “admin” (Name/ID: b57) 普通成员为nothing special 主人为owner，主人只能由一个，主人可以把多个成员添加为管理员，管理员有主人一样牛逼的权限",
           "optionMap": {
             "b55": "nothing special",
             "b56": "owner",
@@ -2621,40 +5311,63 @@
           "label": "Facility member role",
           "code": "a56",
           "type": "Text",
-          "options": "",
+          "options": "Self-described role, like I’m the fucking boss",
           "optionMap": {}
         }
       ]
     },
     {
-      "id": 66,
-      "name": "One care facility can have many related reviews — CCT 64 → CCT 65",
+      "id": 250,
+      "name": "One care job can have many related cared ones",
+      "parent": "216. Care Job",
+      "child": "Users",
+      "type": "One to Many",
       "fields": []
     },
     {
-      "id": 68,
-      "name": "One review can have many related comments — CCT 65 → CCT 67 (Comment), 1:M",
+      "id": 251,
+      "name": "One 216. care job can have many assigned caregivers",
+      "parent": "216. Care Job",
+      "child": "Users",
+      "type": "One to Many",
       "fields": []
     },
     {
-      "id": 69,
-      "name": "One comment can have many related comments — 子评论",
+      "id": 252,
+      "name": "One care group can have many related care jobs",
+      "parent": "199. Care Group",
+      "child": "216. Care Job",
+      "type": "Many to Many",
       "fields": []
     },
     {
-      "id": 71,
-      "name": "One care community post can have many related comments — CCT 70 → CCT 67 (1:M)",
+      "id": 253,
+      "name": "One 216. care job can have many related 204. care tasks",
+      "parent": "216. Care Job",
+      "child": "204. Care Task",
+      "type": "Many to Many",
       "fields": []
     },
     {
-      "id": 157,
-      "name": "One user can have many related finished ChallengeD learn content",
+      "id": 254,
+      "name": "One care job can have many related comments",
+      "parent": "216. Care Job",
+      "child": "141. Comment",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 255,
+      "name": "One user can many related finished ChallengeD learn content",
+      "parent": "Users",
+      "child": "217. Challenged App Content",
+      "type": "One to Many",
       "fields": [
         {
           "label": "User has finished learning this lesson",
           "code": "a55",
           "type": "Radio",
-          "options": "1. Yes (b55) 2. No (b56)",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
           "optionMap": {
             "b55": "Yes",
             "b56": "No"
@@ -2663,13 +5376,19 @@
       ]
     },
     {
-      "id": 158,
-      "name": "One Challenged App Content can have many related user's study notes",
+      "id": 256,
+      "name": "One 217. Challenged App Content can have many related user’s study notes",
+      "parent": "217. Challenged App Content",
+      "child": "218. User's study notes",
+      "type": "One to Many",
       "fields": []
     },
     {
-      "id": 159,
+      "id": 257,
       "name": "One Challenged App Content can have many related cared one's care tips",
+      "parent": "217. Challenged App Content",
+      "child": "209. Cared one's care tip",
+      "type": "One to Many",
       "fields": []
     }
   ]

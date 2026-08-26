@@ -1,6 +1,6 @@
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
-import { WP } from "@/integrations/wp-schema";
+import { T } from "@/integrations/wp-schema";
 import {
   encodeRel72Meta,
   decodeRel72Meta,
@@ -9,18 +9,18 @@ import {
 } from "./rel-meta";
 
 // Live JetEngine relations (per data bible)
-const REL_GROUP_MEMBER = 72;          // care_group → users
-const REL_GROUP_GALLERY = 46;         // care_group → care_group_gallery
-const REL_GROUP_SUBGROUP = 47;        // care_group → care_group_private_member_group
-const REL_GROUP_POST = 77;            // care_group → care_group_not_too_special_post
-const REL_SUBGROUP_MEMBERS = 75;      // care_group_private_member_group → users
-const REL_GROUP_INVITE = 161;         // care_group → care_group_invite
+const REL_GROUP_MEMBER = 223;          // care_group → users
+const REL_GROUP_GALLERY = 230;         // care_group → care_group_gallery
+const REL_GROUP_SUBGROUP = 224;        // care_group → care_group_private_member_group
+const REL_GROUP_POST = 226;            // care_group → care_group_not_too_special_post
+const REL_SUBGROUP_MEMBERS = 225;      // care_group_private_member_group → users
+const REL_GROUP_INVITE = 222;         // care_group → care_group_invite
 
 // ─── Opaque field codes (bible) ──────────────────────────────
-const F_POST = WP.cct["76"].fields;       // care_group_not_too_special_post
-const F_INVITE = WP.cct["160"].fields;    // care_group_invite
-const F_GALLERY = WP.cct["14"].fields;    // care_group_gallery
-const F_SUBGROUP = WP.cct["74"].fields;   // care_group_private_member_group
+const F_POST = T.careGroupPost.f;       // care_group_not_too_special_post
+const F_INVITE = T.careGroupInvite.f;    // care_group_invite
+const F_GALLERY = T.careGroupGallery.f;    // care_group_gallery
+const F_SUBGROUP = T.careGroupPrivateMemberGroup.f;   // care_group_private_member_group
 // Main care_group CCT (id 9, not in dictionary) uses fields a55-a59 verified live.
 const F_GROUP = { NAME: "a55", DESCRIPTION: "a56", GROUP_TYPE: "a57", JOIN_CODE: "a58", IS_ACTIVE: "a59" } as const;
 const YES = "b55";
@@ -69,7 +69,7 @@ async function fetchRelatedCctItems(relationId: number, parentId: string, cctSlu
 // ─── Care Group Posts (CCT 76) ──────────────────────────────
 export async function fetchCareGroupPostsWordPress(groupId: string, type?: string): Promise<any[]> {
   try {
-    const posts = await fetchRelatedCctItems(REL_GROUP_POST, groupId, "care_group_not_too_special_post");
+    const posts = await fetchRelatedCctItems(REL_GROUP_POST, groupId, "care_group_post");
     if (!Array.isArray(posts)) return [];
     const normalizeType = (raw: any): string => {
       const v = Array.isArray(raw) ? (raw[0] || "") : (raw || "");
@@ -94,7 +94,7 @@ export async function fetchCareGroupPostsWordPress(groupId: string, type?: strin
 }
 
 export async function createGroupPostWordPress(post: { group_id: string; content: string; type?: string; title?: string }): Promise<string | null> {
-  const created = await wordpressCCTFetch<any>("care_group_not_too_special_post", {
+  const created = await wordpressCCTFetch<any>("care_group_post", {
     method: "POST",
     body: {
       [F_POST.TITLE]: post.title || post.content.substring(0, 50),
@@ -120,11 +120,11 @@ export async function updateGroupPostWordPress(id: string, updates: { content?: 
   if (updates.title !== undefined) body[F_POST.TITLE] = updates.title;
   if (updates.is_pinned !== undefined) body[F_POST.IS_PINNED] = updates.is_pinned ? YES : NO;
   if (updates.type !== undefined) body[F_POST.TYPE] = POST_TYPE_CODE[updates.type] || updates.type;
-  await wordpressCCTFetch("care_group_not_too_special_post", { id, method: "PUT", body });
+  await wordpressCCTFetch("care_group_post", { id, method: "PUT", body });
 }
 
 export async function deleteGroupPostWordPress(id: string): Promise<void> {
-  await wordpressCCTFetch("care_group_not_too_special_post", { id, method: "DELETE" });
+  await wordpressCCTFetch("care_group_post", { id, method: "DELETE" });
 }
 
 // ─── Group Settings (CCT 9 — care_group) ────────────────────
@@ -558,7 +558,7 @@ export async function deleteCareGroupGalleryItemWordPress(itemId: string): Promi
 // ─── Sub-groups (CCT 74 — care_group_private_member_group) ──
 export async function fetchMemberCategoriesWordPress(groupId: string): Promise<any[]> {
   try {
-    const cats = await fetchRelatedCctItems(REL_GROUP_SUBGROUP, groupId, "care_group_private_member_group");
+    const cats = await fetchRelatedCctItems(REL_GROUP_SUBGROUP, groupId, "care_group_pmg");
     return cats.map((c: any) => ({
       id: String(c.id || c._ID),
       group_id: groupId,
@@ -571,7 +571,7 @@ export async function fetchMemberCategoriesWordPress(groupId: string): Promise<a
 }
 
 export async function createMemberCategoryWordPress(groupId: string, name: string, color?: string, description?: string): Promise<void> {
-  const created = await wordpressCCTFetch<any>("care_group_private_member_group", {
+  const created = await wordpressCCTFetch<any>("care_group_pmg", {
     method: "POST",
     body: {
       [F_SUBGROUP.NAME]: name,
@@ -595,7 +595,7 @@ export async function createMemberCategoryWordPress(groupId: string, name: strin
 }
 
 export async function deleteMemberCategoryWordPress(categoryId: string): Promise<void> {
-  await wordpressCCTFetch("care_group_private_member_group", { id: categoryId, method: "DELETE" });
+  await wordpressCCTFetch("care_group_pmg", { id: categoryId, method: "DELETE" });
 }
 
 // ─── Sub-group member assignment (REL 75) ───────────────────

@@ -15,19 +15,19 @@ import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-c
  *   REL 109 → private member groups (care_task → group) One to Many   visibility
  *   REL  81 → users (care_task → users)                 Many to Many  visibility
  *   REL  82 → comments
- *   REL 131 → users_calendar_even
+ *   REL 263 → 187. User's calendar event
  */
 
-const CCT_SLUG = "care_task_real";
+const CCT_SLUG = "care_task";
 
-const REL_GROUP_TASK = 48;          // M:M  care_group ↔ care_task
+const REL_GROUP_TASK = 233;          // M:M  care_group ↔ care_task
 // Dictionary name "108. assigned caregivers" — live ID 164 (old 108 was deleted & recreated)
-const REL_TASK_ASSIGNEE = 164;      // 1:M  care_task → users (assigned caregivers)
-const REL_TASK_COMMENT = 82;
-const REL_TASK_USERS = 81;          // M:M  care_task ↔ users (visibility)
-const REL_TASK_PRIVATE_GROUPS = 109;// 1:M  care_task → private_member_group
-const REL_TASK_CARED_ONE = 141;     // 1:M  care_task → users (cared ones)
-const REL_TASK_CALENDAR = 131;
+const REL_TASK_ASSIGNEE = 232;      // 1:M  care_task → users (assigned caregivers)
+const REL_TASK_COMMENT = 236;
+const REL_TASK_USERS = 235;          // M:M  care_task ↔ users (visibility)
+const REL_TASK_PRIVATE_GROUPS = 234;// 1:M  care_task → private_member_group
+const REL_TASK_CARED_ONE = 231;     // 1:M  care_task → users (cared ones)
+const REL_TASK_CALENDAR = 263;
 
 function normalizeWpObjectId(value: string | number | null | undefined): number {
   return Number(String(value ?? "").replace(/^wp-/, ""));
@@ -278,7 +278,7 @@ export async function deleteCareTaskWordPress(id: string): Promise<void> {
   await wordpressCCTFetch(CCT_SLUG, { id, method: "DELETE" });
 }
 
-/** Link a calendar event to a task via REL 131 (universal_care_task → users_calendar_even). */
+/** Link a calendar event to a task via REL 263 (204. Care Task → 187. User's calendar event). */
 export async function linkTaskToCalendarEventWordPress(taskId: string, eventId: string): Promise<void> {
   const tid = normalizeWpObjectId(taskId);
   const eid = normalizeWpObjectId(eventId);

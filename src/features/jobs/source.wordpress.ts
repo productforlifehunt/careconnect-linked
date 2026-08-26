@@ -17,10 +17,10 @@ import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-c
 import { getStoredWPUser } from "@/services/wp-auth";
 
 const SLUG = "care_job";
-const REL_JOB_CARED_ONES = 152;
-const REL_JOB_CAREGIVERS = 153;
-const REL_GROUP_JOBS = 154;
-const REL_JOB_TASKS = 155;
+const REL_JOB_CARED_ONES = 250;
+const REL_JOB_CAREGIVERS = 251;
+const REL_GROUP_JOBS = 252;
+const REL_JOB_TASKS = 253;
 
 const STATUS_OUT: Record<string, string> = { pending: "b55", in_progress: "b56", "in progress": "b56", completed: "b57", open: "b55" };
 const STATUS_IN: Record<string, string>  = { b55: "open", b56: "in_progress", b57: "completed" };

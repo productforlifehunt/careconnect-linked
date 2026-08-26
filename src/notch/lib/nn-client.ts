@@ -203,7 +203,7 @@ const NOTION_OBJECT_BY_SLUG: Record<string, string> = {
   nn_workspace_member: "user",
   nn_invite: "invite",
   nn_reminder: "reminder",
-  nn_notification: "notification",
+  nn_notification: "users_notification",
 };
 
 /** Compute a public URL for a block/page — matches the app router. */

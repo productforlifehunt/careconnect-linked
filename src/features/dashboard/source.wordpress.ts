@@ -1,4 +1,6 @@
 import { listWordPressFeature } from "@/features/shared/wordpress-adapter";
+import { T } from "@/integrations/wp-schema";
+import { appScopeParams, filterAppScope } from "@/features/shared/app-scope";
 import { wordpressCCTFetch } from "@/features/shared/wordpress-client";
 
 export interface DashboardStats {
@@ -27,17 +29,23 @@ export async function fetchDashboardStatsWordPress(): Promise<DashboardStats> {
   } catch { /* */ }
 
   try {
-    const tasks = await wordpressCCTFetch("care_task_real", { params: { _limit: 100 } });
-    // a66 = finish status: b55 = not finished, b56 = finished
+    const tasks = await wordpressCCTFetch(T.careTask.slug, { params: { _limit: 100 } });
+    const FIN = T.careTask.f.TASK_FINISH_STATUS;
+    const FIN_OPT = T.careTask.opt.TASK_FINISH_STATUS;
     pendingTasks = Array.isArray(tasks)
-      ? tasks.filter((t: any) => String(t.a66 ?? "b55") !== "b56").length
+      ? tasks.filter((t: any) => String(t[FIN] ?? FIN_OPT.NOT_FINISHED) !== FIN_OPT.FINISHED).length
       : 0;
   } catch { /* */ }
 
   try {
-    const notifs = await wordpressCCTFetch("notification", { params: { _limit: 100 } });
+    const notifs = await wordpressCCTFetch(T.notification.slug, {
+      params: { _limit: 100, ...appScopeParams("notification") },
+    });
     if (Array.isArray(notifs)) {
-      unreadMessages = notifs.filter((n: any) => String(n.a59 ?? "b56") !== "b55").length;
+      unreadMessages = filterAppScope("notification", notifs).filter(
+        (n: any) => String(n[T.notification.f.NOTIFICATION_IS_READ] ?? T.notification.opt.NOTIFICATION_IS_READ.NO)
+          !== T.notification.opt.NOTIFICATION_IS_READ.YES,
+      ).length;
     }
   } catch {
     // cc_notification CCT may not be registered yet in WordPress — silently ignore 404s

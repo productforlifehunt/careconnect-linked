@@ -1,16 +1,16 @@
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
-import { WP } from "@/integrations/wp-schema";
+import { T } from "@/integrations/wp-schema";
 
 // JetEngine relations (live) — CCT 125 "Cared one's information card"
-const REL_USER_INFO_CARD = 126;          // 1:M users → cared_ones_informat
-const REL_INFO_CARD_EMERGENCY = 127;     // 1:M cared_ones_informat → emergency_contact
-const CCT_SLUG = "cared_ones_informat";
+const REL_USER_INFO_CARD = 220;          // 1:M users → cared_ones_informat
+const REL_INFO_CARD_EMERGENCY = 221;     // 1:M cared_ones_informat → emergency_contact
+const CCT_SLUG = T.infoCard.slug;
 
 // Opaque field map (live verified). Values: a55 name, a56 desc, a57 card_name,
 // a58 status, a59 displays_location, a60 share_token, a61 share_expires_at,
 // a62 share_visibility.
-const F = WP.cct["125"].fields;
+const F = T.infoCard.f;
 
 const STATUS_TO_CODE: Record<string, string> = { Draft: "b55", Active: "b56", Paused: "b57", draft: "b55", active: "b56", paused: "b57" };
 const STATUS_FROM_CODE: Record<string, string> = { b55: "Draft", b56: "Active", b57: "Paused" };

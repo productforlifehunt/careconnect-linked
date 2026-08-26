@@ -10,9 +10,9 @@ import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-c
 import { getCurrentUserIdNumber } from "@/features/shared/current-user";
 
 const SLUG = "users_study_notes";
-const REL_ARTICLE_NOTES = 158;
+const REL_ARTICLE_NOTES = 256;
 // Dictionary name "157. finished ChallengeD content" — live ID 167 (old 157 deleted & recreated)
-const REL_USER_FINISHED = 167;
+const REL_USER_FINISHED = 255;
 
 export interface StudyNote {
   id: string;

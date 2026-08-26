@@ -234,7 +234,7 @@ export async function wpFetchCareTasks(): Promise<any[]> {
   try {
     // Care tasks live in JetEngine CCT `care_task_real`, not as a CPT
     const { wordpressCCTFetch } = await import("@/features/shared/wordpress-client");
-    const tasks = await wordpressCCTFetch<any[]>("care_task_real", { params: { _limit: 100 } });
+    const tasks = await wordpressCCTFetch<any[]>("care_task", { params: { _limit: 100 } });
     if (!Array.isArray(tasks)) return [];
     return tasks.map((t: any) => ({
       id: String(t._ID || t.id),
@@ -332,15 +332,20 @@ export async function wpFetchConversations(): Promise<any[]> {
 export async function wpFetchNotifications(): Promise<any[]> {
   try {
     const { wordpressCCTFetch } = await import("@/features/shared/wordpress-client");
-    const notifs = await wordpressCCTFetch<any[]>("notification", { params: { _limit: 100 } });
+    const { T } = await import("@/integrations/wp-schema");
+    const { appScopeParams, filterAppScope } = await import("@/features/shared/app-scope");
+    const F = T.notification.f;
+    const notifs = await wordpressCCTFetch<any[]>(T.notification.slug, {
+      params: { _limit: 100, ...appScopeParams("notification") },
+    });
     if (!Array.isArray(notifs)) return [];
-    return notifs.map((n: any) => ({
+    return filterAppScope("notification", notifs).map((n: any) => ({
       id: String(n.id || n._ID),
-      type: n.a55 || "info",
-      title: n.a56 || "Notification",
-      content: n.a57 || "",
-      link_url: n.a58 || null,
-      is_read: String(n.a59) === "b55",
+      type: n[F.NOTIFICATION_TYPE] || "info",
+      title: n[F.NOTIFICATION_TITLE] || "Notification",
+      content: n[F.NOTIFICATION_CONTENT] || "",
+      link_url: n[F.ACTION_URL] || null,
+      is_read: String(n[F.NOTIFICATION_IS_READ]) === T.notification.opt.NOTIFICATION_IS_READ.YES,
       created_at: n.created_at,
     }));
   } catch {

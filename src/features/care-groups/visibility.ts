@@ -18,11 +18,11 @@ import { wordpressFetch } from "@/features/shared/wordpress-client";
 import { decodeRel75Meta } from "./rel-meta";
 import { getCurrentUserIdNumber } from "@/features/shared/current-user";
 
-const REL_SUBGROUP_MEMBERS = 75;
-const REL_POST_SUBGROUPS = 103;
-const REL_POST_USERS = 104;
-const REL_TASK_USERS = 81;
-const REL_TASK_SUBGROUPS = 109;
+const REL_SUBGROUP_MEMBERS = 225;
+const REL_POST_SUBGROUPS = 227;
+const REL_POST_USERS = 228;
+const REL_TASK_USERS = 235;
+const REL_TASK_SUBGROUPS = 234;
 
 async function relChildren(rel: number, parentId: number): Promise<number[]> {
   try {

@@ -1,34 +1,34 @@
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
-import { WP } from "@/integrations/wp-schema";
+import { T } from "@/integrations/wp-schema";
 import { decodeRel72Meta } from "@/features/care-groups/rel-meta";
 
 // ─── Relations (per data bible / live WP) ────────────────────
-const REL_USER_CARED_ONE_LEGACY = 79;   // user → user (legacy)
-const REL_USER_CARED_ONE_CARD = 126;    // user → cared_ones_informat (CCT 125)
-const REL_CARED_CARD_EMERGENCY = 127;   // cared_ones_informat → emergency_contact
-const REL_GROUP_MEMBER = 72;            // care_group → users
-const REL_USER_MEDICINE = 83;
-const REL_MEDICINE_LOG = 121;
-const REL_USER_CHECKIN = 150;           // both 145 and 150 exist on live; existing data is on 150
-const REL_CHECKIN_LOG = 151;
-const REL_USER_CARE_TIP = 88;
-const REL_USER_EMERGENCY_CONTACT = 63;
-const REL_USER_CARE_NOTE = 92;
-const REL_USER_CARE_DOCUMENT = 95;
-const REL_USER_CARE_PLAN = 97;
+const REL_USER_CARED_ONE_LEGACY = 219;   // user → user (legacy)
+const REL_USER_CARED_ONE_CARD = 220;    // user → cared_ones_informat (CCT 125)
+const REL_CARED_CARD_EMERGENCY = 221;   // cared_ones_informat → emergency_contact
+const REL_GROUP_MEMBER = 223;            // care_group → users
+const REL_USER_MEDICINE = 237;
+const REL_MEDICINE_LOG = 238;
+const REL_USER_CHECKIN = 239;           // both 145 and 150 exist on live; existing data is on 150
+const REL_CHECKIN_LOG = 240;
+const REL_USER_CARE_TIP = 243;
+const REL_USER_EMERGENCY_CONTACT = 245;
+const REL_USER_CARE_NOTE = 242;
+const REL_USER_CARE_DOCUMENT = 246;
+const REL_USER_CARE_PLAN = 244;
 
 // ─── Opaque field aliases (bible) ────────────────────────────
-const F_MED = WP.cct["15"].fields;          // medicine
-const F_MEDLOG = WP.cct["16"].fields;       // medicine_log
-const F_CHK = WP.cct["138"].fields;         // checkin_schedule
-const F_CHKLOG = WP.cct["17"].fields;       // checkin_log
-const F_NOTE = WP.cct["22"].fields;         // care_note
-const F_TIP = WP.cct["19"].fields;          // care_tip
-const F_PLAN = WP.cct["20"].fields;         // care_plan
-const F_EMG = WP.cct["24"].fields;          // emergency_contact
-const F_DOC = WP.cct["23"].fields;          // care_document
-const F_CARD = WP.cct["125"].fields;        // cared_ones_informat
+const F_MED = T.medicineSchedule.f;          // medicine
+const F_MEDLOG = T.medicineLog.f;       // medicine_log
+const F_CHK = T.checkinSchedule.f;         // checkin_schedule
+const F_CHKLOG = T.checkinLog.f;       // checkin_log
+const F_NOTE = T.careNote.f;         // care_note
+const F_TIP = T.careTip.f;          // care_tip
+const F_PLAN = T.carePlan.f;         // care_plan
+const F_EMG = T.emergencyContact.f;          // emergency_contact
+const F_DOC = T.careDocument.f;          // care_document
+const F_CARD = T.infoCard.f;        // cared_ones_informat
 
 // Boolean radio codes used by JetEngine: b55=Yes, b56=No (across most CCTs)
 const YES = "b55";
@@ -145,7 +145,7 @@ export async function fetchCaredOnesCardsWordPress(): Promise<any[]> {
   try {
     const stored = getStoredWPUser();
     if (!stored?.user_id) return [];
-    const cards = await fetchRelatedCctChildren(REL_USER_CARED_ONE_CARD, String(stored.user_id), "cared_ones_informat");
+    const cards = await fetchRelatedCctChildren(REL_USER_CARED_ONE_CARD, String(stored.user_id), "cared_one_info_card");
     return cards.map((c: any) => ({
       id: String(c.id || c._ID),
       user_id: `wp-${stored.user_id}`,
@@ -163,7 +163,7 @@ export async function createCaredOnesCardWordPress(card: { name: string; descrip
   const stored = getStoredWPUser();
   if (!stored?.user_id) throw new Error("Not authenticated");
   const statusCode = card.status === "paused" ? "b57" : card.status === "draft" ? "b55" : "b56";
-  const created = await wordpressCCTFetch<any>("cared_ones_informat", {
+  const created = await wordpressCCTFetch<any>("cared_one_info_card", {
     method: "POST",
     body: {
       [F_CARD.CARED_ONE_S_NAME]: card.name,
@@ -288,7 +288,7 @@ export async function logCheckinWordPress(log: { medicine_id?: string; checkin_i
 // ─── Medicine (CCT 15) ───────────────────────────────────────
 export async function fetchMedicinesWordPress(caredOneId: string): Promise<any[]> {
   try {
-    const meds = await fetchRelatedCctChildren(REL_USER_MEDICINE, caredOneId, "medicine");
+    const meds = await fetchRelatedCctChildren(REL_USER_MEDICINE, caredOneId, "medicine_schedule");
     return meds.map((m: any) => ({
       id: String(m.id || m._ID),
       user_id: caredOneId,
@@ -312,7 +312,7 @@ export async function fetchMedicinesWordPress(caredOneId: string): Promise<any[]
 }
 
 export async function createMedicineWordPress(med: { user_id: string; name: string; dosage?: string; frequency?: string; time_slot?: string[]; instructions?: string; prescribing_doctor?: string; pharmacy?: string; side_effects?: string; start_date?: string; end_date?: string; note?: string; stock_count?: number; refill_threshold?: number }): Promise<void> {
-  const result = await wordpressCCTFetch<any>("medicine", {
+  const result = await wordpressCCTFetch<any>("medicine_schedule", {
     method: "POST",
     body: {
       [F_MED.NAME]: med.name,
@@ -351,11 +351,11 @@ export async function updateMedicineWordPress(id: string, updates: Record<string
   if (updates.is_active !== undefined) body[F_MED.IS_ACTIVE] = updates.is_active ? YES : NO;
   if (updates.stock_count !== undefined) body[F_MED.STOCK_COUNT] = updates.stock_count;
   if (updates.refill_threshold !== undefined) body[F_MED.REFILL_THRESHOLD] = updates.refill_threshold;
-  await wordpressCCTFetch("medicine", { id, method: "PUT", body });
+  await wordpressCCTFetch("medicine_schedule", { id, method: "PUT", body });
 }
 
 export async function deleteMedicineWordPress(id: string): Promise<void> {
-  await wordpressCCTFetch("medicine", { id, method: "DELETE" });
+  await wordpressCCTFetch("medicine_schedule", { id, method: "DELETE" });
 }
 
 // ─── Medicine Log (CCT 16) ───────────────────────────────────

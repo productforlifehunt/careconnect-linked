@@ -15,7 +15,7 @@ import { getStoredWPUser } from "@/services/wp-auth";
 
 // ─── JetEngine Relation ID (User → current_location, one-to-many) ────
 // Dictionary name "117. current location snapshots" — live ID 165 (old 117 was deleted & recreated).
-const REL_USER_CURRENT_LOCATION = 165;
+const REL_USER_CURRENT_LOCATION = 247;
 
 // ─── CCT slug ────────────────────────────────────────────────
 const CCT_SLUG = "current_location";

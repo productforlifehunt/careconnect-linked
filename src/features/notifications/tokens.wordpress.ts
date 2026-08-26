@@ -1,6 +1,7 @@
 /**
- * Push notification tokens — JetEngine CCT `users_notification_` (CCT 147)
- * Relation 149: users → users_notification_  (1:M)
+ * Push notification tokens — JetEngine CCT 186 `users_notif_token`
+ * Relation 189: users → user's notification token (1:M)
+ * Shared across apps: field APP scopes each token to one app.
  *
  * Live opaque field map (verified):
  *   a55 endpoint_or_token (Text)
@@ -12,11 +13,12 @@
  */
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 import { getCurrentUserIdNumber } from "@/features/shared/current-user";
-import { WP } from "@/integrations/wp-schema";
+import { T, R } from "@/integrations/wp-schema";
+import { appScopeBody, filterAppScope } from "@/features/shared/app-scope";
 
-const SLUG = "users_notification_";
-const REL_USER_TOKEN = 149;
-const F = WP.cct["147"].fields;
+const SLUG = T.notificationToken.slug;
+const REL_USER_TOKEN = R.userNotificationTokens;
+const F = T.notificationToken.f;
 
 export type NotificationProvider = "web_push" | "fcm" | "apn" | "jpush" | "wechat";
 
@@ -56,7 +58,7 @@ export async function fetchMyNotificationTokens(): Promise<NotificationToken[]> 
   try {
     const rels = await wordpressFetch<any[]>(`jet-rel/${REL_USER_TOKEN}/parent/${userId}`).catch(() => []);
     if (!Array.isArray(rels) || rels.length === 0) return [];
-    return rels.map(decode);
+    return filterAppScope("notificationToken", rels).map(decode);
   } catch {
     return [];
   }
@@ -91,6 +93,7 @@ export async function registerNotificationToken(input: {
       [F.AUTH_KEY]: input.auth_key || "",
       [F.P256DH]: input.p256dh || "",
       [F.IS_ACTIVE]: YES,
+      ...appScopeBody("notificationToken"),
     },
   });
   const newId = Number(created?.item_id ?? created?._ID ?? created?.id ?? 0);

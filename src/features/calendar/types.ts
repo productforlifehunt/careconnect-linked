@@ -114,7 +114,7 @@ export function getMockEvents(): CalendarEvent[] {
       visibility: "private",
       is_availability: false,
       rrule: "FREQ=DAILY",
-      source_cct_slug: "medicine",
+      source_cct_slug: "medicine_schedule",
       source_item_id: "12",
       cared_one_id: "co-1",
     },
@@ -180,7 +180,7 @@ export function getMockEvents(): CalendarEvent[] {
       show_as: "busy",
       visibility: "default",
       is_availability: false,
-      source_cct_slug: "care_task_real",
+      source_cct_slug: "care_task",
       source_item_id: "44",
     },
     {
