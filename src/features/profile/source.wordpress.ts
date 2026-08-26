@@ -1,7 +1,7 @@
 /**
- * User profile = WP user (core) + JetEngine CCT 110 `users_extended_prof` (bible §1).
+ * User profile = WP user (core) + JetEngine CCT 258 `user_ext_profile_2`.
  *
- * Extended profile opaque codes (only the ones the FE currently exposes):
+ * Extended profile 2 opaque codes (only the ones the FE currently exposes):
  *   a55=Allow emergency location request (b55 Yes | b56 No)
  *   a56=Location share is on            (b55 Yes | b56 No)
  *   a57=Notification preference
@@ -11,24 +11,27 @@
  *   a61=Background checked              (b55 Yes | b56 No)
  *   a62=Background check detail
  *   a63=Cancellation policy
- *   a64=Service area
- *   a65=Starts hourly rate              (number)
- *   a66=Offers in-person service        (b55 Yes | b56 No)
- *   a67=Offers virtual service          (b55 Yes | b56 No)
- *   a68=Offers care service general type [checkbox: b55..b66]
+ *   a64=Care provider's location
+ *   a65=Offers service type              [checkbox: b55 in person | b56 virtual]
+ *   a66=Hourly rate for in-person service (number)
+ *   a67=Hourly rate for remote service    (number)
+ *   a68=Offers care service type          [checkbox]
  *   a90=Cared one's AI system prompt
  *   a91=Push notification enabled       (b55 Yes | b56 No)
  *   a92=Email notification enabled      (b55 Yes | b56 No)
  *   a93=SMS notification enabled        (b55 Yes | b56 No)
  *
- * Linked to user via Rel 111 (one-to-one).
+ * Linked to user via Rel 259 (one-to-one).
  */
 import type { Profile } from "@/types/care-connector";
 import { getWordPressFeature, updateWordPressFeature } from "@/features/shared/wordpress-adapter";
 import { wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
+import { T } from "@/integrations/wp-schema";
 
-const CCT_SLUG = "users_extended_prof";
+const P2 = T.userProfile2;
+const F = P2.f;
+const CCT_SLUG = P2.slug;
 
 // Role checkbox: opaque → role label
 const ROLE_OPT_TO_LABEL: Record<string, string> = { b55: "cared one", b56: "caring one" };
@@ -71,13 +74,17 @@ export async function fetchMyProfileWordPress(): Promise<Profile | null> {
     } catch { /* no CCT record yet — fine */ }
 
     if (cct) {
-      wpProfile.general_user_role = parseCheckboxList(cct.a58) || wpProfile.general_user_role;
-      wpProfile.is_care_provider = yesNoToBool(cct.a59);
-      wpProfile.provider_is_active = yesNoToBool(cct.a60);
-      wpProfile.care_provider_is_background_checked = yesNoToBool(cct.a61);
-      wpProfile.care_provider_background_check_detail = cct.a62 || wpProfile.care_provider_background_check_detail;
-      wpProfile.care_provider_starts_hourly_rate = cct.a65 != null && cct.a65 !== "" ? parseFloat(cct.a65) : wpProfile.care_provider_starts_hourly_rate;
-      // Phone / location / years / certifications / specialty are not in bible §110;
+      wpProfile.general_user_role = parseCheckboxList(cct[F.GENERAL_USER_ROLE]) || wpProfile.general_user_role;
+      wpProfile.is_care_provider = yesNoToBool(cct[F.IS_CARE_PROVIDER]);
+      wpProfile.provider_is_active = yesNoToBool(cct[F.CARE_PROVIDER_IS_ACTIVE]);
+      wpProfile.care_provider_is_background_checked = yesNoToBool(cct[F.CARE_PROVIDER_IS_BACKGROUND_CHECKED]);
+      wpProfile.care_provider_background_check_detail = cct[F.CARE_PROVIDER_S_BACKGROUND_CHECK_DETAIL] || wpProfile.care_provider_background_check_detail;
+      {
+        const rate = cct[F.CARE_PROVIDER_S_HOURLY_RATE_FOR_IN_PERSON_SERVICE];
+        wpProfile.care_provider_starts_hourly_rate =
+          rate != null && rate !== "" ? parseFloat(rate) : wpProfile.care_provider_starts_hourly_rate;
+      }
+      // Phone / location / years / certifications / specialty are not on this CCT;
       // keep WP-user-derived values where present.
     }
 
@@ -115,14 +122,14 @@ export async function updateProfileWordPress(updates: Partial<Profile>): Promise
     await updateWordPressFeature("profile_me", wpFields);
   }
 
-  // 2) Update CCT 110 extended profile (opaque codes)
+  // 2) Update CCT 258 extended profile 2 (opaque codes)
   const body: Record<string, any> = {};
-  if (updates.general_user_role !== undefined) body.a58 = serializeRoleList(updates.general_user_role as string[] | null);
-  if (updates.is_care_provider !== undefined) body.a59 = boolToYesNo(updates.is_care_provider);
-  if (updates.provider_is_active !== undefined) body.a60 = boolToYesNo(updates.provider_is_active);
-  if (updates.care_provider_is_background_checked !== undefined) body.a61 = boolToYesNo(updates.care_provider_is_background_checked);
-  if (updates.care_provider_background_check_detail !== undefined) body.a62 = updates.care_provider_background_check_detail;
-  if (updates.care_provider_starts_hourly_rate !== undefined) body.a65 = String(updates.care_provider_starts_hourly_rate ?? "");
+  if (updates.general_user_role !== undefined) body[F.GENERAL_USER_ROLE] = serializeRoleList(updates.general_user_role as string[] | null);
+  if (updates.is_care_provider !== undefined) body[F.IS_CARE_PROVIDER] = boolToYesNo(updates.is_care_provider);
+  if (updates.provider_is_active !== undefined) body[F.CARE_PROVIDER_IS_ACTIVE] = boolToYesNo(updates.provider_is_active);
+  if (updates.care_provider_is_background_checked !== undefined) body[F.CARE_PROVIDER_IS_BACKGROUND_CHECKED] = boolToYesNo(updates.care_provider_is_background_checked);
+  if (updates.care_provider_background_check_detail !== undefined) body[F.CARE_PROVIDER_S_BACKGROUND_CHECK_DETAIL] = updates.care_provider_background_check_detail;
+  if (updates.care_provider_starts_hourly_rate !== undefined) body[F.CARE_PROVIDER_S_HOURLY_RATE_FOR_IN_PERSON_SERVICE] = String(updates.care_provider_starts_hourly_rate ?? "");
 
   if (Object.keys(body).length === 0) return;
 
@@ -136,6 +143,6 @@ export async function updateProfileWordPress(updates: Partial<Profile>): Promise
       await wordpressCCTFetch(CCT_SLUG, { method: "POST", body: { ...body, cct_author_id: wpUserId } });
     }
   } catch (err) {
-    console.warn("Failed to update CCT 110 extended profile:", err);
+    console.warn("Failed to update CCT 258 extended profile:", err);
   }
 }
