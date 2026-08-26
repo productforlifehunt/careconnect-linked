@@ -2,9 +2,10 @@ import type { CareGroup } from "@/types/care-connector";
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { encodeRel72Meta, decodeRel72Meta } from "./rel-meta";
+import { T, R } from "@/integrations/wp-schema";
 
 // Live JetEngine relations (verified from prd-to-wp-mapping.md)
-const REL_GROUP_MEMBER = 223; // M:M  care_group → users
+const REL_GROUP_MEMBER = R.careGroupMembers; // M:M  care_group → users
 
 function normalizeWpObjectId(value: string | number | null | undefined): number {
   return Number(String(value ?? "").replace(/^wp-/, ""));
@@ -15,7 +16,7 @@ function normalizeWpObjectId(value: string | number | null | undefined): number 
 
 export async function fetchCareGroupsWordPress(): Promise<CareGroup[]> {
   try {
-    const groups = await wordpressCCTFetch<any[]>("care_group", { params: { _limit: 50 } });
+    const groups = await wordpressCCTFetch<any[]>(T.careGroup.slug, { params: { _limit: 50 } });
     if (!Array.isArray(groups)) return [];
     return groups.map((g: any) => ({
       id: String(g.id || g._ID || ""),
@@ -77,7 +78,7 @@ export async function fetchCareGroupMembersWordPress(groupId: string): Promise<a
 }
 
 export async function createCareGroupWordPress(group: { name: string; description?: string; is_private?: boolean }): Promise<CareGroup> {
-  const result = await wordpressCCTFetch<any>("care_group", {
+  const result = await wordpressCCTFetch<any>(T.careGroup.slug, {
     method: "POST",
     body: {
       a55: group.name,

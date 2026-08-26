@@ -12,13 +12,14 @@
 
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
+import { T, R } from "@/integrations/wp-schema";
 
 // ─── JetEngine Relation ID (User → current_location, one-to-many) ────
 // Dictionary name "117. current location snapshots" — live ID 165 (old 117 was deleted & recreated).
-const REL_USER_CURRENT_LOCATION = 247;
+const REL_USER_CURRENT_LOCATION = R.userCurrentLocations;
 
 // ─── CCT slug ────────────────────────────────────────────────
-const CCT_SLUG = "current_location";
+const CCT_SLUG = T.currentLocation.slug;
 
 // ─── Types ───────────────────────────────────────────────────
 

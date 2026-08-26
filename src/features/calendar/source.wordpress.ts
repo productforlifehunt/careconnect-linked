@@ -22,12 +22,12 @@
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 import { getCurrentUserId } from "@/features/shared/current-user";
 import type { CalendarEvent, CalendarEventType } from "./types";
-import { T } from "@/integrations/wp-schema";
+import { T, R } from "@/integrations/wp-schema";
 import { appScopeBody, isInAppScope } from "@/features/shared/app-scope";
 
 const SLUG = T.calendarEvent.slug;
-const REL_USER_EVENT = 190;
-const REL_EVENT_INVITEES = 262;
+const REL_USER_EVENT = R.userCalendarEvents;
+const REL_EVENT_INVITEES = R.calendarEventInvitees;
 
 // Option dictionaries (label → opaque code)
 const STATUS_OUT: Record<string, string> = { confirmed: "b55", tentative: "b56", cancelled: "b57" };
