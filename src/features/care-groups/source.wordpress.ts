@@ -2,9 +2,10 @@ import type { CareGroup } from "@/types/care-connector";
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { encodeRel72Meta, decodeRel72Meta } from "./rel-meta";
+import { R } from "@/integrations/wp-schema";
 
 // Live JetEngine relations (verified from prd-to-wp-mapping.md)
-const REL_GROUP_MEMBER = 223; // M:M  care_group → users
+const REL_GROUP_MEMBER = R.careGroupMembers; // M:M  care_group → users
 
 function normalizeWpObjectId(value: string | number | null | undefined): number {
   return Number(String(value ?? "").replace(/^wp-/, ""));

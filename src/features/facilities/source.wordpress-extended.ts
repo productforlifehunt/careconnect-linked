@@ -1,4 +1,5 @@
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
+import { R } from "@/integrations/wp-schema";
 
 /**
  * Care Facility extended ops.
@@ -20,7 +21,7 @@ import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-c
  */
 
 const CCT_SLUG = "care_facility";
-const REL_FACILITY_MEMBER = 249;
+const REL_FACILITY_MEMBER = R.careFacilityMembers;
 
 const MEMBER_TYPE_TO_CODE: Record<string, string> = {
   member: "b55", nothing: "b55", "nothing special": "b55",

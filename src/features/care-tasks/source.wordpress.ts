@@ -1,4 +1,5 @@
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
+import { R } from "@/integrations/wp-schema";
 
 /**
  * Care Task — JetEngine CCT "162. Care Task"
@@ -20,14 +21,14 @@ import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-c
 
 const CCT_SLUG = "care_task";
 
-const REL_GROUP_TASK = 233;          // M:M  care_group ↔ care_task
+const REL_GROUP_TASK = R.careGroupTasks;          // M:M  care_group ↔ care_task
 // Dictionary name "108. assigned caregivers" — live ID 164 (old 108 was deleted & recreated)
-const REL_TASK_ASSIGNEE = 232;      // 1:M  care_task → users (assigned caregivers)
-const REL_TASK_COMMENT = 236;
-const REL_TASK_USERS = 235;          // M:M  care_task ↔ users (visibility)
-const REL_TASK_PRIVATE_GROUPS = 234;// 1:M  care_task → private_member_group
-const REL_TASK_CARED_ONE = 231;     // 1:M  care_task → users (cared ones)
-const REL_TASK_CALENDAR = 263;
+const REL_TASK_ASSIGNEE = R.careTaskAssignees;      // 1:M  care_task → users (assigned caregivers)
+const REL_TASK_COMMENT = R.careTaskComments;
+const REL_TASK_USERS = R.careTaskVisibleUsers;          // M:M  care_task ↔ users (visibility)
+const REL_TASK_PRIVATE_GROUPS = R.careTaskPrivateMemberGroups;// 1:M  care_task → private_member_group
+const REL_TASK_CARED_ONE = R.careTaskCaredOnes;     // 1:M  care_task → users (cared ones)
+const REL_TASK_CALENDAR = R.careTaskCalendarEvents;
 
 function normalizeWpObjectId(value: string | number | null | undefined): number {
   return Number(String(value ?? "").replace(/^wp-/, ""));

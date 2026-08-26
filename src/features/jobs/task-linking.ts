@@ -3,8 +3,9 @@
  * Used to share a Care Task to the marketplace by attaching it to a Job posting.
  */
 import { wordpressFetch } from "@/features/shared/wordpress-client";
+import { R } from "@/integrations/wp-schema";
 
-const REL_JOB_TASK = 253;
+const REL_JOB_TASK = R.jobTasks;
 
 function n(id: string | number): number {
   return Number(String(id).replace(/^wp-/, ""));

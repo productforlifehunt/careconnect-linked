@@ -1,6 +1,6 @@
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
-import { T } from "@/integrations/wp-schema";
+import { T, R } from "@/integrations/wp-schema";
 import {
   encodeRel72Meta,
   decodeRel72Meta,
@@ -9,12 +9,12 @@ import {
 } from "./rel-meta";
 
 // Live JetEngine relations (per data bible)
-const REL_GROUP_MEMBER = 223;          // care_group → users
-const REL_GROUP_GALLERY = 230;         // care_group → care_group_gallery
-const REL_GROUP_SUBGROUP = 224;        // care_group → care_group_private_member_group
-const REL_GROUP_POST = 226;            // care_group → care_group_not_too_special_post
-const REL_SUBGROUP_MEMBERS = 225;      // care_group_private_member_group → users
-const REL_GROUP_INVITE = 222;         // care_group → care_group_invite
+const REL_GROUP_MEMBER = R.careGroupMembers;          // care_group → users
+const REL_GROUP_GALLERY = R.careGroupGalleries;         // care_group → care_group_gallery
+const REL_GROUP_SUBGROUP = R.careGroupPrivateMemberGroups;        // care_group → care_group_private_member_group
+const REL_GROUP_POST = R.careGroupPosts;            // care_group → care_group_not_too_special_post
+const REL_SUBGROUP_MEMBERS = R.privateMemberGroupMembers;      // care_group_private_member_group → users
+const REL_GROUP_INVITE = R.careGroupInvites;         // care_group → care_group_invite
 
 // ─── Opaque field codes (bible) ──────────────────────────────
 const F_POST = T.careGroupPost.f;       // care_group_not_too_special_post
