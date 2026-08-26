@@ -1,6 +1,7 @@
 /**
- * Push notification tokens — JetEngine CCT `users_notification_` (CCT 147)
- * Relation 149: users → users_notification_  (1:M)
+ * Push notification tokens — JetEngine CCT 186 `users_notif_token`
+ * Relation 189: users → user's notification token (1:M)
+ * Shared across apps: field APP scopes each token to one app.
  *
  * Live opaque field map (verified):
  *   a55 endpoint_or_token (Text)
@@ -12,7 +13,8 @@
  */
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 import { getCurrentUserIdNumber } from "@/features/shared/current-user";
-import { T } from "@/integrations/wp-schema";
+import { T, R } from "@/integrations/wp-schema";
+import { appScopeBody, filterAppScope } from "@/features/shared/app-scope";
 
 const SLUG = T.notificationToken.slug;
 const REL_USER_TOKEN = R.userNotificationTokens;
