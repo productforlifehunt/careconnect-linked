@@ -33,7 +33,7 @@ function GalleryUploadForm({ groupId }: { groupId: string }) {
       setFile(null); setCaption("");
       if (fileRef.current) fileRef.current.value = "";
       toast({ title: Z("照片已添加！", "Photo added!") });
-      qc.invalidateQueries({ queryKey: ["care-group-gallery"] });
+      qc.invalidateQueries({ queryKey: ["careGroupGallery"] });
     } catch (e: any) {
       toast({ title: Z("添加照片失败", "Failed to add photo"), description: e.message || Z("请稍后再试", "Please try again later"), variant: "destructive" });
     } finally { setSaving(false); }
@@ -104,7 +104,7 @@ export function GalleryTab({ gallery, activeGroupId }: GalleryTabProps) {
                   try {
                     await deleteCareGroupGalleryItemWordPress(img.id);
                     toast({ title: Z("照片已删除", "Photo removed") });
-                    qc.invalidateQueries({ queryKey: ["care-group-gallery"] });
+                    qc.invalidateQueries({ queryKey: ["careGroupGallery"] });
                   } catch (e: any) {
                     toast({ title: Z("删除失败", "Failed to remove"), description: e.message, variant: "destructive" });
                   }
