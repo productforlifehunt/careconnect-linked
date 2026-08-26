@@ -5,7 +5,9 @@ import { getWordPressFeature, listWordPressFeature } from "@/features/shared/wor
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 import { fetchAllProviderProductSummaries } from "@/services/woocommerce-api";
 
-const F_PROFILE = T.userProfile.f;
+// Provider fields live on CCT 258 "User's extended profile 2".
+const P2 = T.userProfile2;
+const F_PROFILE = P2.f;
 
 function isActivePaidProvider(profile: Profile): boolean {
   return profile.is_care_provider === true && profile.provider_is_active === true;
@@ -28,9 +30,10 @@ function parseWpList(value: unknown): string[] | null {
 }
 
 async function fetchDictionaryProviderProfiles(): Promise<Profile[]> {
-  const rows = await wordpressCCTFetch<any[]>("users_extended_prof", { params: { _limit: 200 } });
+  const rows = await wordpressCCTFetch<any[]>(P2.slug, { params: { _limit: 200 } });
   const activeRows = (Array.isArray(rows) ? rows : []).filter(
-    (row) => parseWpBoolean(row[F_PROFILE.IS_CARE_PROVIDER]) && parseWpBoolean(row[F_PROFILE.CARE_PROVIDER_IS_ACTIVE]),
+    (row) => String(row[F_PROFILE.IS_CARE_PROVIDER]) === P2.opt.IS_CARE_PROVIDER.YES
+      && String(row[F_PROFILE.CARE_PROVIDER_IS_ACTIVE]) === P2.opt.CARE_PROVIDER_IS_ACTIVE.YES,
   );
 
   const profiles = await Promise.all(activeRows.map(async (row) => {
@@ -52,9 +55,14 @@ async function fetchDictionaryProviderProfiles(): Promise<Profile[]> {
       general_user_role: parseWpList(row[F_PROFILE.GENERAL_USER_ROLE]),
       is_care_provider: true,
       provider_is_active: true,
-      care_provider_is_background_checked: parseWpBoolean(row[F_PROFILE.CARE_PROVIDER_IS_BACKGROUND_CHECKED]),
+      care_provider_is_background_checked: String(row[F_PROFILE.CARE_PROVIDER_IS_BACKGROUND_CHECKED]) === P2.opt.CARE_PROVIDER_IS_BACKGROUND_CHECKED.YES,
       care_provider_background_check_detail: row[F_PROFILE.CARE_PROVIDER_S_BACKGROUND_CHECK_DETAIL] || null,
-      care_provider_starts_hourly_rate: row[F_PROFILE.CARE_PROVIDER_S_STARTS_HOURLY_RATE] ? parseFloat(row[F_PROFILE.CARE_PROVIDER_S_STARTS_HOURLY_RATE]) : null,
+      care_provider_starts_hourly_rate: (() => {
+        const inPerson = parseFloat(row[F_PROFILE.CARE_PROVIDER_S_HOURLY_RATE_FOR_IN_PERSON_SERVICE]);
+        const remote = parseFloat(row[F_PROFILE.CARE_PROVIDER_S_HOURLY_RATE_FOR_REMOTE_SERVICE]);
+        const rates = [inPerson, remote].filter((n) => Number.isFinite(n) && n > 0);
+        return rates.length ? Math.min(...rates) : null;
+      })(),
       phone: row.phone || null,
       location: row.location || null,
       years_of_experience: row.years_of_experience ? parseInt(row.years_of_experience, 10) : null,
