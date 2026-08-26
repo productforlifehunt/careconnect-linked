@@ -29,10 +29,11 @@ export async function fetchDashboardStatsWordPress(): Promise<DashboardStats> {
   } catch { /* */ }
 
   try {
-    const tasks = await wordpressCCTFetch("care_task", { params: { _limit: 100 } });
-    // a66 = finish status: b55 = not finished, b56 = finished
+    const tasks = await wordpressCCTFetch(T.careTask.slug, { params: { _limit: 100 } });
+    const FIN = T.careTask.f.TASK_FINISH_STATUS;
+    const FIN_OPT = T.careTask.opt.TASK_FINISH_STATUS;
     pendingTasks = Array.isArray(tasks)
-      ? tasks.filter((t: any) => String(t.a66 ?? "b55") !== "b56").length
+      ? tasks.filter((t: any) => String(t[FIN] ?? FIN_OPT.NOT_FINISHED) !== FIN_OPT.FINISHED).length
       : 0;
   } catch { /* */ }
 
