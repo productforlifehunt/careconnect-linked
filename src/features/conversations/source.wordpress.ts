@@ -70,34 +70,38 @@ export async function getOrCreateGroupConversationWordPress(groupId: string | nu
   if (_groupConvoInflight.has(gid)) return _groupConvoInflight.get(gid)!;
 
   const promise = (async (): Promise<string | null> => {
-    // 2a) Try REL 140 (works only if route exists)
-    try {
-      const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_CONV}/children/${gid}`);
-      const existing = (Array.isArray(rels) ? rels : [])[0]?.child_object_id;
-      if (existing) {
-        const id = String(existing);
-        _groupConvoCache.set(gid, id);
-        writeSessionConvoId(gid, id);
-        return id;
-      }
-    } catch { /* fall through */ }
+    // 2a) Try the group→conversation relation (only if one is configured)
+    if (REL_GROUP_CONV) {
+      try {
+        const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_CONV}/children/${gid}`);
+        const existing = (Array.isArray(rels) ? rels : [])[0]?.child_object_id;
+        if (existing) {
+          const id = String(existing);
+          _groupConvoCache.set(gid, id);
+          writeSessionConvoId(gid, id);
+          return id;
+        }
+      } catch { /* fall through */ }
+    }
 
     // 2b) Fallback: scan chat_conversation CCT for sentinel chat_name
     const sentinel = `__group:${gid}`;
     try {
       const all = await wordpressCCTFetch<any[]>(CONV, { params: { _limit: 500, ...appScopeParams("chatConversation") } });
       const match = (Array.isArray(all) ? all : []).find(
-        (c: any) => String(c.a56 || "") === sentinel
+        (c: any) => String(c[CF.CHAT_NAME] || "") === sentinel
       );
       if (match?.id || match?._ID) {
         const id = String(match.id || match._ID);
         _groupConvoCache.set(gid, id);
         writeSessionConvoId(gid, id);
-        // Best-effort REL 140 link (no-op if route missing)
-        wordpressFetch(`jet-rel/${REL_GROUP_CONV}`, {
-          method: "POST",
-          body: { parent_id: gid, child_id: Number(id), context: "child", store_items_type: "replace" },
-        }).catch(() => {});
+        // Best-effort relation link (skipped while no relation is configured)
+        if (REL_GROUP_CONV) {
+          wordpressFetch(`jet-rel/${REL_GROUP_CONV}`, {
+            method: "POST",
+            body: { parent_id: gid, child_id: Number(id), context: "child", store_items_type: "replace" },
+          }).catch(() => {});
+        }
         return id;
       }
     } catch { /* fall through */ }
@@ -106,10 +110,10 @@ export async function getOrCreateGroupConversationWordPress(groupId: string | nu
     const created = await wordpressCCTFetch<any>(CONV, {
       method: "POST",
       body: {
-        a55: "b56",
-        a56: sentinel,
-        a57: "",
-        a58: new Date().toISOString().slice(0, 19).replace("T", " "),
+        [CF.CHAT_TYPE]: CT.MANY_USERS,
+        [CF.CHAT_NAME]: sentinel,
+        [CF.LAST_MESSAGE_AT]: new Date().toISOString().slice(0, 19).replace("T", " "),
+        ...appScopeBody("chatConversation"),
       },
     });
     const convoId = numId(created?.item_id || created?._ID || created?.id);
@@ -119,15 +123,17 @@ export async function getOrCreateGroupConversationWordPress(groupId: string | nu
     _groupConvoCache.set(gid, String(convoId));
     writeSessionConvoId(gid, String(convoId));
 
-    // 2e) Best-effort REL 140 link (route may not exist — non-blocking)
-    wordpressFetch(`jet-rel/${REL_GROUP_CONV}`, {
-      method: "POST",
-      body: { parent_id: gid, child_id: convoId, context: "child", store_items_type: "replace" },
-    }).catch(() => {});
+    // 2e) Best-effort relation link (skipped while no relation is configured)
+    if (REL_GROUP_CONV) {
+      wordpressFetch(`jet-rel/${REL_GROUP_CONV}`, {
+        method: "POST",
+        body: { parent_id: gid, child_id: convoId, context: "child", store_items_type: "replace" },
+      }).catch(() => {});
+    }
 
-    // 2f) Add accepted group members as chatters (REL 142 — works)
+    // 2f) Add accepted group members as chatters (care group members relation)
     try {
-      const memberRels = await wordpressFetch<any[]>(`jet-rel/72/children/${gid}`);
+      const memberRels = await wordpressFetch<any[]>(`jet-rel/${R.careGroupMembers}/children/${gid}`);
       const acceptedIds = (Array.isArray(memberRels) ? memberRels : [])
         .filter((r: any) => decodeRel72Meta(r?.meta).invitationStatus === "accepted")
         .map((r: any) => Number(r.child_object_id))
@@ -202,8 +208,13 @@ export async function fetchDirectMessagesWordPress(conversationId: string): Prom
         sender_user_id: m.author_id ? `wp-${m.author_id}` : null,
         sender_id: m.author_id ? `wp-${m.author_id}` : null,
         receiver_user_id: null,
-        content: m.a55 || "",
-        message_type: m.a56 === "b56" ? "image" : m.a56 === "b57" ? "ai" : m.a56 === "b58" ? "system" : m.a56 === "b59" ? "price_card" : "text",
+        content: m[MF.CHAT_MESSAGE_CONTENT] || "",
+        message_type:
+          m[MF.CHAT_MESSAGE_TYPE] === MT.IMAGE ? "image"
+          : m[MF.CHAT_MESSAGE_TYPE] === MT.AI ? "ai"
+          : m[MF.CHAT_MESSAGE_TYPE] === MT.SYSTEM_MESSAGE ? "system"
+          : m[MF.CHAT_MESSAGE_TYPE] === MT.PRICE_CARD ? "price_card"
+          : "text",
         created_at: m.created_at,
       }))
       .sort((a, b) => (a.created_at || "").localeCompare(b.created_at || ""));
