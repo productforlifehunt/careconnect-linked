@@ -248,7 +248,10 @@ export async function updateSafeZoneWordPress(id: string, updates: Record<string
   if (updates.color !== undefined) body.a59 = updates.color;
   if (updates.latitude !== undefined) body.a60 = String(updates.latitude);
   if (updates.longitude !== undefined) body.a61 = String(updates.longitude);
-  if (updates.radius_meters !== undefined) body.a62 = updates.radius_meters;
+  // JetEngine's CCT REST schema types every column as string — a raw number is
+  // rejected with rest_invalid_param, so always coerce.
+  if (updates.radius_meters !== undefined) body.a62 = String(updates.radius_meters);
+
   if (updates.polygon_points !== undefined) body.a63 = updates.polygon_points ? JSON.stringify(updates.polygon_points) : "";
   if (updates.notify_on_enter !== undefined) body.a64 = updates.notify_on_enter ? "b56" : "b55";
   if (updates.notify_on_exit !== undefined) body.a65 = updates.notify_on_exit ? "b56" : "b55";
