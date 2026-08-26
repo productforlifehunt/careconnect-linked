@@ -5390,6 +5390,14 @@
       "child": "209. Cared one's care tip",
       "type": "One to Many",
       "fields": []
+    },
+    {
+      "id": 265,
+      "name": "One 199. care group can have one related group live 121. chat conversation",
+      "parent": "199. care group",
+      "child": "121. Chat Conversation",
+      "type": "One to One",
+      "fields": []
     }
   ]
 }
