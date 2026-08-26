@@ -154,6 +154,8 @@ const REL_ALIASES = {
   262: 'calendarEventInvitees',
   263: 'careTaskCalendarEvents',
   264: 'providerReviews',
+  265: 'careGroupChat',
+
 };
 
 const missingSlug = truth.ccts.filter((c) => !slugs[String(c.id)]);
