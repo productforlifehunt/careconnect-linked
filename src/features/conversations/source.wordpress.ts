@@ -172,19 +172,22 @@ async function fetchConversationMemberIds(convoId: string | number): Promise<num
 async function fetchConversationMemberMap(): Promise<Map<string, number[]>> {
   const map = new Map<string, number[]>();
   try {
-    const rows = await wordpressFetch<any[]>(`jet-rel/${REL_CONV_MEMBER}`);
-    if (!Array.isArray(rows)) return map;
-    for (const r of rows) {
-      const parent = String(r?.parent_object_id ?? "");
-      const child = Number(r?.child_object_id);
-      if (!parent || !child) continue;
-      const list = map.get(parent) || [];
-      if (!list.includes(child)) list.push(child);
-      map.set(parent, list);
+    // JetEngine returns { "<parentId>": [{ child_object_id, meta? }, ...], ... }
+    const rows = await wordpressFetch<Record<string, any[]>>(`jet-rel/${REL_CONV_MEMBER}`);
+    if (!rows || typeof rows !== "object" || Array.isArray(rows)) return map;
+    for (const [parent, children] of Object.entries(rows)) {
+      if (!Array.isArray(children)) continue;
+      const list: number[] = [];
+      for (const c of children) {
+        const child = Number(c?.child_object_id);
+        if (child && !list.includes(child)) list.push(child);
+      }
+      if (list.length) map.set(String(parent), list);
     }
   } catch { /* empty map → callers fall back to per-conversation lookup */ }
   return map;
 }
+
 
 export async function fetchConversationsWordPress(currentUserId?: string): Promise<any[]> {
   try {
