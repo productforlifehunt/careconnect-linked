@@ -109,11 +109,17 @@ export default function CalendarPage() {
   return (
     <div className="container mx-auto px-4 py-5 sm:py-8 space-y-5 max-w-5xl">
       <header className="space-y-2">
-        <div className="flex items-center gap-2.5">
-          <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
-            <CalendarIcon className="h-5 w-5 text-primary" />
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
+              <CalendarIcon className="h-5 w-5 text-primary" />
+            </div>
+            <h1 className="text-[22px] sm:text-3xl font-semibold tracking-tight">{isZh ? "日历" : "Calendar"}</h1>
           </div>
-          <h1 className="text-[22px] sm:text-3xl font-semibold tracking-tight">{isZh ? "日历" : "Calendar"}</h1>
+          <Button size="sm" className="rounded-full shrink-0" onClick={openCreate}>
+            <Plus className="h-4 w-4 mr-1.5" />
+            {isZh ? "新建事件" : "New event"}
+          </Button>
         </div>
         <p className="text-[13px] sm:text-sm text-muted-foreground leading-relaxed">
           {isZh ? "家庭日程、护理任务、用药与可约时间，一目了然。" : "Family schedule, care tasks, medicine & availability — all in one view."}
@@ -122,6 +128,7 @@ export default function CalendarPage() {
           {isLoading ? (isZh ? "加载中…" : "Loading…") : (isZh ? `${allEvents.length} 条 · 实时` : `${allEvents.length} event${allEvents.length === 1 ? "" : "s"} · live`)}
         </Badge>
       </header>
+
 
       {/* Type filter chips */}
       <Card className="p-4 rounded-2xl border-border/60 shadow-none">
