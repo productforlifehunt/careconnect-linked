@@ -2,6 +2,8 @@ import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-c
 import { getStoredWPUser } from "@/services/wp-auth";
 import { T, R } from "@/integrations/wp-schema";
 import { decodeRel72Meta } from "@/features/care-groups/rel-meta";
+import { dedupeRead, fetchRelChildrenMap, invalidateRead } from "@/features/shared/rel-batch";
+
 
 // ─── Relations (per data bible / live WP) ────────────────────
 const REL_USER_CARED_ONE_LEGACY = R.userCaredOnes;   // user → user (legacy)
