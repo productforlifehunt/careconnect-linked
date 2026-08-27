@@ -304,17 +304,22 @@ export async function startConversationWordPress(
 
   // Find existing direct conversation containing both members
   try {
-    const convos = await wordpressCCTFetch<any[]>(CONV, { params: { _limit: 500, ...appScopeParams("chatConversation") } });
+    const [convos, memberMap] = await Promise.all([
+      wordpressCCTFetch<any[]>(CONV, { params: { _limit: 500, ...appScopeParams("chatConversation") } }),
+      fetchConversationMemberMap(),
+    ]);
     if (Array.isArray(convos)) {
       for (const c of convos) {
         if (c[CF.CHAT_TYPE] && c[CF.CHAT_TYPE] !== CT.ONE_TO_ONE) continue;
-        const memberIds = await fetchConversationMemberIds(String(c.id || c._ID));
+        const cid = String(c.id || c._ID);
+        const memberIds = memberMap.size > 0 ? (memberMap.get(cid) || []) : await fetchConversationMemberIds(cid);
         if (memberIds.length === 2 && memberIds.includes(me) && memberIds.includes(other)) {
-          return String(c.id || c._ID);
+          return cid;
         }
       }
     }
   } catch { /* fall through */ }
+
 
   const result = await wordpressCCTFetch<any>(CONV, {
     method: "POST",
