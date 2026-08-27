@@ -32,7 +32,6 @@ export function LanguageSwitcher() {
   const { t, i18n } = useTranslation();
   const currentLang = i18n.language;
 
-  const currentFlag = LANGUAGES.find(l => l.code === currentLang)?.flag || "🌐";
 
   const selectLanguage = (code: string) => {
     try { localStorage.setItem("i18nextLng", code); } catch {}
@@ -42,8 +41,9 @@ export function LanguageSwitcher() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" title={t("language.label")}>
-          <span className="text-base leading-none">{currentFlag}</span>
+        <Button variant="ghost" size="sm" className="gap-1.5 px-2 text-muted-foreground hover:text-foreground" title={t("language.label")}>
+          <Globe className="h-4 w-4" />
+          <span className="text-xs font-medium uppercase leading-none">{(currentLang || "en").split("-")[0]}</span>
           <span className="sr-only">{t("language.label")}</span>
         </Button>
       </DropdownMenuTrigger>

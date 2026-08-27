@@ -24,13 +24,6 @@ export const WP_SERVERS: WPServer[] = [
     sitePath: "afresh",
     isPrimary: true,
   },
-  {
-    id: "backup-ewp",
-    label: "Backup Server (EWP Live)",
-    baseUrl: "https://afresh-1202589.ingress-erytho.ewp.live",
-    sitePath: "",
-    isPrimary: false,
-  },
 ];
 
 const STORAGE_KEY = "cc_active_wp_server";

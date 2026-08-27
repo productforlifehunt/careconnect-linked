@@ -11,13 +11,13 @@ import { useSite } from "@/contexts/SiteContext";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { wpRequestPasswordReset } from "@/services/wp-auth";
-import { Heart, Shield } from "lucide-react";
+import { BrandMark } from "@/components/BrandMark";
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const initialMode = searchParams.get("mode") === "signup" ? "signup" : "login";
   const navigate = useNavigate();
-  const { login, loginWithWP, signup } = useAuth();
+  const { login, signup } = useAuth();
   const site = useSite();
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -31,9 +31,6 @@ export default function Auth() {
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotLoading, setForgotLoading] = useState(false);
-  const [wpEmail, setWpEmail] = useState("");
-  const [wpPassword, setWpPassword] = useState("");
-  const [wpLoading, setWpLoading] = useState(false);
 
   const passwordStrength = (pw: string) => {
     if (!pw) return { score: 0, label: "", color: "" };
@@ -50,23 +47,6 @@ export default function Auth() {
   };
 
   const pwStrength = passwordStrength(signupPassword);
-
-  const handleWpLogin = async () => {
-    if (!wpEmail || !wpPassword) {
-      toast({ title: t("auth.fillAllFields"), variant: "destructive" });
-      return;
-    }
-    setWpLoading(true);
-    try {
-      await loginWithWP(wpEmail, wpPassword);
-      toast({ title: t("auth.welcomeBack") });
-      navigate("/dashboard");
-    } catch (err: any) {
-      toast({ title: t("auth.loginFailed"), description: err.message, variant: "destructive" });
-    } finally {
-      setWpLoading(false);
-    }
-  };
 
   const handleLogin = async () => {
     if (!loginEmail || !loginPassword) {
@@ -113,18 +93,17 @@ export default function Auth() {
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
       <Card className="w-full max-w-md border-transparent card-elevated">
         <CardHeader className="text-center">
-          <div className="mx-auto w-12 h-12 rounded-xl hero-gradient flex items-center justify-center mb-3">
-            <Heart className="h-6 w-6 text-primary-foreground" />
+          <div className="flex justify-center mb-3">
+            <BrandMark size={56} />
           </div>
           <CardTitle className="text-2xl">{site.name}</CardTitle>
           <CardDescription>{t(`site.${site.id}.authSubtitle`)}</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue={initialMode}>
-            <TabsList className="grid w-full grid-cols-3 h-auto">
+            <TabsList className="grid w-full grid-cols-2 h-auto">
               <TabsTrigger value="login" className="text-xs sm:text-sm px-1.5 py-1.5">{t("common.signIn")}</TabsTrigger>
               <TabsTrigger value="signup" className="text-xs sm:text-sm px-1.5 py-1.5">{t("common.signUp")}</TabsTrigger>
-              <TabsTrigger value="auth2" className="text-xs sm:text-sm px-1.5 py-1.5 flex items-center gap-1"><Shield className="h-3 w-3 shrink-0" /><span className="truncate">2FA</span></TabsTrigger>
             </TabsList>
             <TabsContent value="login" className="space-y-4 mt-4">
               <div>
@@ -188,20 +167,6 @@ export default function Auth() {
               </div>
               <Button variant="coral" className="w-full" onClick={handleSignup} disabled={loading}>
                 {loading ? t("auth.creatingAccount") : t("common.signUp")}
-              </Button>
-            </TabsContent>
-            <TabsContent value="auth2" className="space-y-4 mt-4">
-              <p className="text-sm text-muted-foreground">{t("auth.backupSignInDesc", "Sign in with your backup account for uninterrupted access.")}</p>
-              <div>
-                <Label>{t("common.email")} / {t("auth.username", "Username")}</Label>
-                <Input type="text" value={wpEmail} onChange={e => setWpEmail(e.target.value)} placeholder={t("auth.emailOrUsername", "Email or username")} onKeyDown={e => e.key === "Enter" && handleWpLogin()} />
-              </div>
-              <div>
-                <Label>{t("common.password")}</Label>
-                <PasswordInput value={wpPassword} onChange={e => setWpPassword(e.target.value)} placeholder={t("common.password")} onKeyDown={e => e.key === "Enter" && handleWpLogin()} />
-              </div>
-              <Button variant="coral" className="w-full" onClick={handleWpLogin} disabled={wpLoading}>
-                {wpLoading ? t("auth.signingIn", "Signing in...") : t("auth.signIn", "Sign In")}
               </Button>
             </TabsContent>
           </Tabs>

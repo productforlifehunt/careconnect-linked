@@ -16,7 +16,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { NavLink } from "@/components/NavLink";
-import { Menu, User, LogOut, LayoutDashboard, Bell, Heart, Search, HelpCircle, CalendarDays, Users, MapPin, MessageSquare, Sun, Moon, Newspaper, Bot, Building2, Settings } from "lucide-react";
+import { Menu, User, LogOut, LayoutDashboard, Bell, Heart, Search, HelpCircle, CalendarDays, Users, MapPin, MessageSquare, Sun, Moon, Newspaper, Bot, Building2, Settings, ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { useTheme } from "next-themes";
@@ -25,6 +25,7 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import yichangIcon from "@/assets/yichang-icon.png";
 import huchangIcon from "@/assets/huchang-icon.png";
 import { useStandaloneMode } from "@/hooks/useStandaloneMode";
+import { BrandMark } from "@/components/BrandMark";
 
 export function AppHeader() {
   const { user, isAuthenticated, logout, authSource } = useAuth();
@@ -77,6 +78,14 @@ export function AppHeader() {
         { title: t("nav.howItWorks"), url: "/how-it-works", icon: HelpCircle },
       ];
 
+  // Keep the header on one row: show the first links inline, rest under "More".
+  const PRIMARY_COUNT = 5;
+  const primaryNav = publicNav.slice(0, PRIMARY_COUNT);
+  const overflowNav = publicNav.slice(PRIMARY_COUNT);
+  const currentUrl = `${location.pathname}${location.search}`;
+  const isNavActive = (url: string) =>
+    url.includes("?") ? currentUrl === url : location.pathname === url;
+
   const displayName = user?.full_name || user?.first_name || user?.email || t("common.anonymous");
   const initials = displayName.charAt(0).toUpperCase();
 
@@ -90,39 +99,15 @@ export function AppHeader() {
       <div className="flex h-16 items-center pl-2 pr-3 lg:pl-3 lg:pr-6 gap-2">
         {/* Mobile menu */}
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon" className="lg:hidden shrink-0" aria-label={t("nav.browse")}>
+              <Menu className="h-5 w-5" />
+            </Button>
+          </SheetTrigger>
           <SheetContent side="left" className="w-72 p-0">
             <div className="p-4 border-b">
               <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-2">
-                {logoBrand === "challenged" && isChinese ? (
-                  <img src={yichangIcon} alt="忆畅" className="w-12 h-12 rounded-xl" />
-                ) : logoBrand === "challenged" ? (
-                  <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center leading-none shadow-sm px-2 overflow-hidden">
-                    <span className="text-primary-foreground font-bold text-[7px] tracking-normal whitespace-nowrap">ChallengeD</span>
-                  </div>
-                ) : logoBrand === "carecnc" && isChinese ? (
-                  <img src={huchangIcon} alt="护畅" className="w-12 h-12 rounded-xl" />
-                ) : logoBrand === "carecnc" ? (
-                  <div className="w-12 h-12 rounded-[22%] hero-gradient flex flex-col items-center justify-center leading-none shadow-sm">
-                    <span className="text-primary-foreground font-bold text-[13px] tracking-tight">Care</span>
-                    <span className="text-primary-foreground font-bold text-[13px] tracking-tight">cnc</span>
-                  </div>
-                ) : (
-                  <>
-                    <div className="w-9 h-9 rounded-lg hero-gradient flex items-center justify-center">
-                      <span className="text-primary-foreground font-bold text-sm">{logoBadgeText}</span>
-                    </div>
-                    <span className="font-bold text-lg">
-                      {isCareDuo ? (
-                        <span className="text-primary">{logoWordmarkText}</span>
-                      ) : (
-                        <>
-                          <span className="text-primary">{site.logoText}</span>
-                          {site.logoAccent && <span className="text-muted-foreground">{site.logoAccent}</span>}
-                        </>
-                      )}
-                    </span>
-                  </>
-                )}
+                <BrandMark size={44} showWordmark />
               </Link>
             </div>
             <nav className="p-4 space-y-1">
@@ -168,57 +153,50 @@ export function AppHeader() {
 
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 shrink-0">
-          {logoBrand === "challenged" && isChinese ? (
-            <img src={yichangIcon} alt="忆畅" className="w-12 h-12 rounded-xl" />
-          ) : logoBrand === "challenged" ? (
-            <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center leading-none shadow-sm px-2 overflow-hidden">
-              <span className="text-primary-foreground font-bold text-[7px] tracking-normal whitespace-nowrap">ChallengeD</span>
-            </div>
-          ) : logoBrand === "carecnc" && isChinese ? (
-            <img src={huchangIcon} alt="护畅" className="w-12 h-12 rounded-xl" />
-          ) : logoBrand === "carecnc" ? (
-            <div className="w-12 h-12 rounded-[22%] hero-gradient flex flex-col items-center justify-center leading-none shadow-sm">
-              <span className="text-primary-foreground font-bold text-[13px] tracking-tight">Care</span>
-              <span className="text-primary-foreground font-bold text-[13px] tracking-tight">cnc</span>
-            </div>
-          ) : (
-            <>
-              <div className="w-9 h-9 rounded-lg hero-gradient flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">{logoBadgeText}</span>
-              </div>
-              <span className="font-bold text-lg hidden sm:inline">
-                {isCareDuo ? (
-                  <span className="text-primary">{logoWordmarkText}</span>
-                ) : (
-                  <>
-                    <span className="text-primary">{site.logoText}</span>
-                    {site.logoAccent && <span className="text-muted-foreground">{site.logoAccent}</span>}
-                  </>
-                )}
-              </span>
-            </>
-          )}
+          <BrandMark size={40} showWordmark />
         </Link>
 
-        {/* Desktop horizontal nav */}
-        <nav className="hidden md:flex items-center gap-1 ml-4 flex-wrap">
-          {publicNav.map(item => (
-            <NavLink
+        {/* Desktop horizontal nav — primary links inline, the rest in a More menu
+            so items never wrap below the header border. */}
+        <nav className="hidden lg:flex items-center gap-0.5 ml-3 min-w-0 flex-nowrap">
+          {primaryNav.map(item => (
+            <Link
               key={item.url}
               to={item.url}
-              className="px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors flex items-center gap-1"
-              activeClassName="text-primary font-medium bg-accent/50"
+              className={`shrink-0 whitespace-nowrap px-2.5 py-2 rounded-lg text-sm transition-colors flex items-center gap-1 ${
+                isNavActive(item.url)
+                  ? "text-primary font-medium bg-accent/50"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+              }`}
             >
               <span className="relative">
                 {item.title}
                 {"badge" in item && item.badge && (
-                  <span className="absolute -top-2.5 -right-8 px-1 py-px text-[9px] font-bold text-coral bg-coral/10 border border-coral/30 rounded-full whitespace-nowrap leading-tight">
+                  <span className="absolute -top-2.5 -right-7 px-1 py-px text-[9px] font-bold text-coral bg-coral/10 border border-coral/30 rounded-full whitespace-nowrap leading-tight">
                     {item.badge}
                   </span>
                 )}
               </span>
-            </NavLink>
+            </Link>
           ))}
+          {overflowNav.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="shrink-0 text-sm text-muted-foreground hover:text-foreground gap-1">
+                  {t("nav.more", "More")}
+                  <ChevronDown className="h-3.5 w-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56 bg-card border shadow-lg z-[60]">
+                {overflowNav.map(item => (
+                  <DropdownMenuItem key={item.url} onClick={() => navigate(item.url)}>
+                    <item.icon className="mr-2 h-4 w-4" />
+                    <span className="truncate">{item.title}</span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </nav>
 
         <div className="flex-1" />
