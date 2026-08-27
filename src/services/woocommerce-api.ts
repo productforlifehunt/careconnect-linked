@@ -945,9 +945,10 @@ export async function fetchAllProviderProductSummaries(): Promise<Map<string, Pr
     // (WC `/products` listing requires `read` cap → JWT alone returns 401).
     // NOTE: WC REST `type` enum only accepts simple|grouped|external|variable.
     // Custom `booking` type is rejected (400). Fetch all and filter client-side via `_provider_id`.
-    const products = await wpAdminFetch(
-      `wc/v3/products?per_page=100&status=publish`,
+    const products = await wcFetch(
+      `products?per_page=100&status=publish`,
     );
+
     if (!Array.isArray(products)) return map;
 
     const toSlug = (s: string) => String(s).trim().toLowerCase().replace(/\s+/g, '-');
