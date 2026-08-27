@@ -32,5 +32,19 @@ export async function updateBookingStatusWordPress(id: string, status: string): 
     : status.startsWith("cancelled")
     ? "cancelled"
     : "pending";
-  await updateOrderStatus(parseInt(id, 10), mapped as any);
+  const order: any = await updateOrderStatus(parseInt(id, 10), mapped as any);
+
+  // Notify both sides of the booking — non-blocking, never fails the update.
+  try {
+    const recipients: Array<string | number> = [];
+    if (order?.customer_id) recipients.push(order.customer_id);
+    const vendorMeta = Array.isArray(order?.meta_data)
+      ? order.meta_data.find((m: any) => m?.key === "_dokan_vendor_id")
+      : null;
+    if (vendorMeta?.value) recipients.push(vendorMeta.value);
+    if (recipients.length > 0) {
+      const { notifyBookingStatus } = await import("@/features/notifications/notify-events");
+      await notifyBookingStatus(recipients, id, status);
+    }
+  } catch { /* non-blocking */ }
 }

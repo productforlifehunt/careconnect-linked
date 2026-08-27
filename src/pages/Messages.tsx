@@ -44,17 +44,28 @@ export default function Messages({ embedded = false }: { embedded?: boolean } = 
   const [handledNavState, setHandledNavState] = useState(false);
 
   // Conversation rows from the WP adapter are flat: participant_1_id / participant_2_id / other_user_id (already prefixed wp-).
-  // We surface the "other" side as a minimal user stub; full name/avatar can be fetched lazily later.
+  // The adapter resolves other_user_name/avatar in one batched users request; the
+  // branches below only cover rows that have no resolvable counterpart (e.g. a
+  // group chat, or a legacy conversation whose second member link is missing) —
+  // those must never render as "User undefined".
   const getOtherUser = (convo: any) => {
     if (!convo) return null;
-    const otherId =
+    const rawOther =
       convo.other_user_id ||
-      (profile?.id && String(convo.participant_1_id) === String(profile.id).replace(/^wp-/, "")
-        ? `wp-${convo.participant_2_id}`
-        : `wp-${convo.participant_1_id}`);
+      (convo.participant_1_id && convo.participant_2_id
+        ? profile?.id && String(convo.participant_1_id) === String(profile.id).replace(/^wp-/, "")
+          ? `wp-${convo.participant_2_id}`
+          : `wp-${convo.participant_1_id}`
+        : null);
+    const numeric = rawOther ? String(rawOther).replace(/^wp-/, "") : "";
+    const fallback = convo.chat_name && !String(convo.chat_name).startsWith("__group:")
+      ? String(convo.chat_name)
+      : numeric
+      ? isCN ? `用户 ${numeric}` : `User ${numeric}`
+      : isCN ? "对话" : "Conversation";
     return {
-      id: otherId,
-      full_name: convo.other_user_name || `User ${String(otherId).replace(/^wp-/, "")}`,
+      id: rawOther || null,
+      full_name: convo.other_user_name || fallback,
       avatar_url: convo.other_user_avatar || null,
     };
   };
@@ -118,23 +129,26 @@ export default function Messages({ embedded = false }: { embedded?: boolean } = 
   }, [messages]);
 
   const handleSend = () => {
-    if ((!newMessage.trim() && !pendingAttachment) || !selectedConvoId || !selectedOtherUser?.id) return;
+    // Only the conversation is required: recipients are resolved from the
+    // conversation's member relation, so group chats and conversations with an
+    // unresolved counterpart can still be replied to.
+    if ((!newMessage.trim() && !pendingAttachment) || !selectedConvoId) return;
     sendMessage.mutate({
       conversationId: selectedConvoId,
       content: newMessage || (pendingAttachment ? (pendingAttachment.type === "image" ? "📷 Image" : "📎 File") : ""),
-      receiverUserId: selectedOtherUser.id,
+      receiverUserId: selectedOtherUser?.id || undefined,
     });
     setNewMessage("");
     setPendingAttachment(null);
   };
 
   const handleSendQuote = async (quote: QuoteData) => {
-    if (!selectedConvoId || !selectedOtherUser?.id) return;
+    if (!selectedConvoId) return;
     const encoded = encodeQuote(quote);
     await sendMessage.mutateAsync({
       conversationId: selectedConvoId,
       content: encoded,
-      receiverUserId: selectedOtherUser.id,
+      receiverUserId: selectedOtherUser?.id || undefined,
     });
     qc.invalidateQueries({ queryKey: ["messages"] });
     qc.invalidateQueries({ queryKey: ["conversations"] });

@@ -116,12 +116,24 @@ export async function applyToJobWordPress(jobId: string, _coverLetter?: string):
   const applicantId = stored?.user_id ? Number(stored.user_id) : null;
   if (!applicantId) throw new Error("Not authenticated");
   const jid = numId(jobId);
-  if (!jid) return;
-  // Apply == request to be assigned (Rel 153 caregiver link)
+  if (!jid) throw new Error("Invalid job id");
+  // Apply == request to be assigned (Rel 153 caregiver link).
+  // Errors surface to the caller so the UI can show a real failure instead of
+  // a silent "applied" state.
   await wordpressFetch(`jet-rel/${REL_JOB_CAREGIVERS}`, {
     method: "POST",
     body: { parent_id: jid, child_id: applicantId, context: "child", store_items_type: "update" },
-  }).catch(() => {});
+  });
+
+  // Notify the job poster (CCT author) — non-blocking.
+  try {
+    const job = await wordpressCCTFetch<any>(SLUG, { id: String(jid) });
+    const posterId = job?.author_id ?? job?.cct_author_id;
+    if (posterId) {
+      const { notifyJobApplication } = await import("@/features/notifications/notify-events");
+      await notifyJobApplication(posterId, String(job?.a55 || "a care job"), String(jid));
+    }
+  } catch { /* non-blocking */ }
 }
 
 export async function fetchMyJobPostingsWordPress(): Promise<any[]> {
