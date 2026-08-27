@@ -66,14 +66,19 @@ function serializeTimeSlot(value: unknown): string {
 async function fetchRelatedCctChildren(relationId: number, parentId: string, cctSlug: string): Promise<any[]> {
   const pid = normalizeWpObjectId(parentId);
   if (!pid) return [];
-  const rels = await wordpressFetch<any[]>(`jet-rel/${relationId}/children/${pid}`);
-  if (!Array.isArray(rels) || rels.length === 0) return [];
-  const items = await Promise.all(rels.map(async (r: any) => {
-    try { return await wordpressCCTFetch<any>(cctSlug, { id: r.child_object_id }); }
-    catch { return null; }
-  }));
-  return items.filter(Boolean);
+  // Short-lived dedupe: sibling dashboard widgets asking for the same relation
+  // within the same render pass share one round-trip instead of repeating it.
+  return dedupeRead(`rel-children:${relationId}:${pid}:${cctSlug}`, async () => {
+    const rels = await wordpressFetch<any[]>(`jet-rel/${relationId}/children/${pid}`);
+    if (!Array.isArray(rels) || rels.length === 0) return [];
+    const items = await Promise.all(rels.map(async (r: any) => {
+      try { return await wordpressCCTFetch<any>(cctSlug, { id: r.child_object_id }); }
+      catch { return null; }
+    }));
+    return items.filter(Boolean);
+  });
 }
+
 
 async function linkRel(relId: number, parentId: number, childId: number) {
   if (!parentId || !childId) return;
