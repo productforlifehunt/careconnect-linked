@@ -391,7 +391,16 @@ export default function SearchResults() {
                             </div>
                           </div>
                           <div className="sm:text-right shrink-0 flex sm:flex-col items-center sm:items-end gap-3">
-                            <div><span className="text-2xl font-bold text-foreground">{isZh ? "¥" : "$"}{cg.care_provider_starts_hourly_rate || 0}</span><span className="text-sm text-muted-foreground">{t("common.perHour")}</span></div>
+                            <div>
+                              {cg.care_provider_starts_hourly_rate ? (
+                                <>
+                                  <span className="text-2xl font-bold text-foreground">{isZh ? "¥" : "$"}{cg.care_provider_starts_hourly_rate}</span>
+                                  <span className="text-sm text-muted-foreground">{t("common.perHour")}</span>
+                                </>
+                              ) : (
+                                <span className="text-sm font-medium text-muted-foreground">{isZh ? "价格待询" : "Rate on request"}</span>
+                              )}
+                            </div>
                             <Button variant="coral" size="sm">{t("common.bookNow")}</Button>
                           </div>
                         </div>

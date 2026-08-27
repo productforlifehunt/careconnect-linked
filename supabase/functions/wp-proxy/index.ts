@@ -36,6 +36,63 @@ function canUseCatalogKeys(method: string, wpPath: string, hasAuth: boolean): bo
   return PUBLIC_WC_READ_PATHS.some((re) => re.test(wpPath));
 }
 
+const WP_ADMIN_USER = Deno.env.get("WP_ADMIN_USER") ?? "";
+const WP_ADMIN_APP_PASSWORD = Deno.env.get("WP_ADMIN_APP_PASSWORD") ?? "";
+
+/**
+ * CCT 258 "User's extended profile 2" requires the `read` capability, so guests
+ * cannot list it. The public caregiver search legitimately needs the *provider*
+ * rows, so we read it with admin credentials and then strip the response down
+ * to active providers and their public marketplace columns only. Nothing about
+ * care recipients, locations, notification prefs or AI prompts ever leaves.
+ */
+const PUBLIC_PROVIDER_PROFILE_PATH = /wp-json\/jet-cct\/user_ext_profile_2(\/|\?|$)/i;
+const PROVIDER_PUBLIC_COLUMNS = new Set([
+  "_ID", "cct_author_id", "cct_status", "cct_created", "cct_modified",
+  "a58", // general user role
+  "a59", // is care provider
+  "a60", // provider is active
+  "a61", // background checked
+  "a62", // background check detail
+  "a63", // cancellation policy
+  "a64", // provider service location (city/region)
+  "a65", // offers service type
+  "a66", // hourly rate in person
+  "a67", // hourly rate remote
+  "a68", // offers care service type
+  "a69", // rate remote checkins
+  "a70", // rate remote medicine supervision
+  "a86", // can drive
+  "a87", // own transportation
+  "a88", // non smoker
+  "a89", // experienced with
+]);
+
+function canUseAdminForPublicProviderRead(method: string, wpPath: string, hasAuth: boolean): boolean {
+  if (method !== "GET" || hasAuth) return false;
+  if (!WP_ADMIN_USER || !WP_ADMIN_APP_PASSWORD) return false;
+  return PUBLIC_PROVIDER_PROFILE_PATH.test(wpPath);
+}
+
+function sanitizeProviderRows(responseBody: string): string {
+  try {
+    const parsed = JSON.parse(responseBody);
+    const rows = Array.isArray(parsed) ? parsed : [parsed];
+    const publicRows = rows
+      .filter((row) => row && typeof row === "object" && String(row.a59) === "b55" && String(row.a60) === "b55")
+      .map((row) => {
+        const out: Record<string, unknown> = {};
+        for (const key of Object.keys(row)) {
+          if (PROVIDER_PUBLIC_COLUMNS.has(key)) out[key] = row[key];
+        }
+        return out;
+      });
+    return JSON.stringify(Array.isArray(parsed) ? publicRows : (publicRows[0] ?? null));
+  } catch {
+    return "[]";
+  }
+}
+
 function buildTargetUrl(wpBase: string, wpPath: string, incomingUrl: URL, withCatalogKeys = false): string {
   const trimmedBase = wpBase.endsWith("/") ? wpBase.slice(0, -1) : wpBase;
   const cleanPath = wpPath.startsWith("/") ? wpPath : `/${wpPath}`;
@@ -126,6 +183,11 @@ serve(async (req) => {
     let lastError: { baseUrl: string; targetUrl: string; status?: number; body?: string; error?: string } | null = null;
 
     const useCatalogKeys = canUseCatalogKeys(req.method, wpPath, Boolean(authHeader));
+    const usePublicProviderRead = canUseAdminForPublicProviderRead(req.method, wpPath, Boolean(authHeader));
+    if (usePublicProviderRead) {
+      headers["Authorization"] = `Basic ${btoa(`${WP_ADMIN_USER}:${WP_ADMIN_APP_PASSWORD}`)}`;
+    }
+
 
     for (let i = 0; i < candidateBases.length; i++) {
       const baseUrl = candidateBases[i];
@@ -197,7 +259,11 @@ serve(async (req) => {
         const respNonce = wpResponse.headers.get("Nonce");
         if (respNonce) responseHeaders["Nonce"] = respNonce;
 
-        return new Response(responseBody, {
+        const outBody = usePublicProviderRead && wpResponse.ok
+          ? sanitizeProviderRows(responseBody)
+          : responseBody;
+
+        return new Response(outBody, {
           status: wpResponse.status,
           headers: responseHeaders,
         });

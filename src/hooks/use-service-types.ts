@@ -24,8 +24,11 @@ interface WCAttribute {
 
 async function fetchWithAuth(endpoint: string) {
   const token = getWPToken();
-  const url = buildWPUrl(`wc/v3/${endpoint}`);
-  const res = await fetch(url, { headers: buildWPHeaders(token, 'application/json') });
+  // Guests must go through the backend proxy, which injects the read-only
+  // WooCommerce catalog keys. The local dev proxy has no credentials.
+  const forceEdge = !token;
+  const url = buildWPUrl(`wc/v3/${endpoint}`, undefined, { forceEdge });
+  const res = await fetch(url, { headers: buildWPHeaders(token, 'application/json', { forceEdge }) });
   if (!res.ok) throw new Error(`WC API ${res.status}`);
   return res.json();
 }
