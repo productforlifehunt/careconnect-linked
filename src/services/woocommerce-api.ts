@@ -1833,7 +1833,7 @@ export async function getProviderAvailabilitySetting(pid: string) {
     bookingProduct = await wcBookingsFetch(`products/${p.id}`);
   } catch {
     try {
-      bookingProduct = await wpAdminFetch(`wc-bookings/v1/products/${p.id}`);
+      bookingProduct = await adminOp('get_bookings_product', { product_id: p.id });
     } catch (e: any) {
       // Product isn't (yet) a WC Bookings product — return sane defaults
       // instead of bubbling a 400 "Not a bookable product" to the UI.
