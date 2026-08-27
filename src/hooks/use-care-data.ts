@@ -73,15 +73,12 @@ import {
   fetchCheckinsWordPress, createCheckinWordPress, updateCheckinWordPress, deleteCheckinWordPress, fetchCheckinLogsWordPress, fetchTodayCheckinLogsWordPress, logCheckinWordPress,
   fetchMedicinesWordPress, createMedicineWordPress, updateMedicineWordPress, deleteMedicineWordPress,
   fetchMedicineLogsWordPress, fetchTodayMedicineLogsWordPress, logMedicineWordPress,
-  fetchHealthVitalsWordPress, createHealthVitalWordPress,
   fetchCareTipsWordPress, createCareTipWordPress, updateCareTipWordPress, deleteCareTipWordPress,
   fetchCarePlansWordPress, createCarePlanWordPress, updateCarePlanWordPress, deleteCarePlanWordPress,
   fetchCarePlanGoalsWordPress, createCarePlanGoalWordPress, updateCarePlanGoalWordPress,
   fetchCareNotesWordPress, createCareNoteWordPress, updateCareNoteWordPress, deleteCareNoteWordPress,
   fetchEmergencyContactsWordPress, createEmergencyContactWordPress, updateEmergencyContactWordPress, deleteEmergencyContactWordPress,
-  fetchActivityLogWordPress, createActivityLogWordPress, deleteActivityLogWordPress,
   fetchCaredOneDocumentsWordPress, createCaredOneDocumentWordPress, updateCaredOneDocumentWordPress, deleteCaredOneDocumentWordPress,
-  fetchSymptomLogsWordPress, createSymptomLogWordPress,
   updateDementiaStageWordPress,
 } from "@/features/cared-ones/source.wordpress-extended";
 import {

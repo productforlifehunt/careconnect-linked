@@ -17,12 +17,10 @@ import {
   useUserCaredOnes, useCreateUserCaredOne, useSearchProfiles,
   useMedicines, useCreateMedicine, useDeleteMedicine, useLogMedicine,
   useCheckinLogs, useCreateCheckinLog,
-  useHealthVitals, useCreateHealthVital,
   useCareTips, useCreateCareTip, useDeleteCareTip,
   useCarePlans, useCreateCarePlan, useCarePlanGoals, useCreateCarePlanGoal, useUpdateCarePlanGoal,
   useCareNotes, useCreateCareNote, useDeleteCareNote,
   useEmergencyContacts, useCreateEmergencyContact, useDeleteEmergencyContact,
-  useActivityLog, useCreateActivityLog,
   useCaredOneDocuments, useCreateCaredOneDocument, useDeleteCaredOneDocument,
   useDeleteUserCaredOne,
 } from "@/hooks/use-care-data";
@@ -33,27 +31,23 @@ import { useTranslation } from "react-i18next";
 
 import { MedicineCard } from "@/components/cared-ones/MedicineCard";
 import { CheckInCard } from "@/components/cared-ones/CheckInCard";
-import { HealthCard } from "@/components/cared-ones/HealthCard";
 import { TipsCard } from "@/components/cared-ones/TipsCard";
 import { CarePlanCard } from "@/components/cared-ones/CarePlanCard";
 import { NotesCard } from "@/components/cared-ones/NotesCard";
 import { EmergencyCard } from "@/components/cared-ones/EmergencyCard";
 import { DocumentsCard } from "@/components/cared-ones/DocumentsCard";
-import { VisitLogCard } from "@/components/cared-ones/VisitLogCard";
 import { InformationCardCard } from "@/components/cared-ones/InformationCardCard";
 
 function FeatureDetail({ cardKey, caredOneId, caredOneName }: { cardKey: string; caredOneId: string; caredOneName: string }) {
   switch (cardKey) {
     case "medicine": return <MedicineCard caredOneId={caredOneId} />;
     case "checkin": return <CheckInCard caredOneId={caredOneId} />;
-    case "health": return <HealthCard caredOneId={caredOneId} />;
     case "tips": return <TipsCard caredOneId={caredOneId} />;
     case "plan": return <CarePlanCard caredOneId={caredOneId} />;
     case "notes": return <NotesCard caredOneId={caredOneId} />;
     case "emergency": return <EmergencyCard caredOneId={caredOneId} />;
     case "location": return <LocationCard caredOneId={caredOneId} caredOneName={caredOneName} />;
     case "documents": return <DocumentsCard caredOneId={caredOneId} />;
-    case "visits": return <VisitLogCard caredOneId={caredOneId} />;
     case "info-card": return <InformationCardCard caredOneId={caredOneId} />;
     default: return null;
   }
@@ -83,14 +77,12 @@ export default function CaredOnes() {
   const featureCards = [
     { key: "medicine", title: t("caredOnes.medicineTracker"), icon: Pill, subtitle: t("caredOnes.trackMedications") },
     { key: "checkin", title: t("caredOnes.dailyCheckIns"), icon: ClipboardCheck, subtitle: t("caredOnes.dailyWellness") },
-    { key: "health", title: t("caredOnes.healthTracking"), icon: HeartPulse, subtitle: t("caredOnes.vitalsHealth") },
     { key: "tips", title: t("caredOnes.careTips"), icon: Lightbulb, subtitle: t("caredOnes.helpfulReminders") },
     { key: "plan", title: t("caredOnes.carePlan"), icon: Target, subtitle: t("caredOnes.structuredGoals") },
     { key: "notes", title: t("caredOnes.careNotes"), icon: FileText, subtitle: t("caredOnes.freeFormNotes") },
     { key: "emergency", title: t("caredOnes.emergencyContacts"), icon: Phone, subtitle: t("caredOnes.emergencyList") },
     { key: "location", title: t("caredOnes.locationSafeZones"), icon: MapPin, subtitle: t("caredOnes.gpsSafeZones") },
     { key: "documents", title: t("caredOnes.documents"), icon: FolderOpen, subtitle: t("caredOnes.medicalDocs") },
-    { key: "visits", title: t("caredOnes.visitLog"), icon: Activity, subtitle: t("caredOnes.visitHistory") },
     { key: "info-card", title: t("caredOnes.informationCards"), icon: IdCard, subtitle: t("caredOnes.informationCardsSubtitle") },
   ];
 

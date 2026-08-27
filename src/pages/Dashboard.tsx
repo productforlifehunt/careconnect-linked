@@ -19,7 +19,6 @@ import { PatientSummaryCard } from "@/components/challenged/PatientSummaryCard";
 import { DailyTimeline } from "@/components/challenged/DailyTimeline";
 import { LovedOneSimpleView } from "@/components/challenged/LovedOneSimpleView";
 import { DementiaAssistant } from "@/components/challenged/DementiaAssistant";
-import { CaregiverWellness } from "@/components/challenged/CaregiverWellness";
 import {
   DashboardWidgetConfig, getWidgetPrefs, setWidgetPrefs,
   getWidgetOrder, setWidgetOrder, resolveOrder,
@@ -336,7 +335,6 @@ export default function Dashboard() {
       </section>
     ) : null,
 
-    "caregiver-wellness": <CaregiverWellness />,
 
     "ai-smart-briefing": <AISmartBriefing />,
   };
