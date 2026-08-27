@@ -895,7 +895,7 @@ export interface ProviderProductSummary {
 export async function fetchAllProviderProductSummaries(): Promise<Map<string, ProviderProductSummary>> {
   const map = new Map<string, ProviderProductSummary>();
   try {
-    // Use admin Basic Auth via wpAdminFetch so unauthenticated visitors and
+    // Reads go through the backend proxy's store keys so unauthenticated visitors and
     // non-admin logged-in customers can still hydrate the marketplace listing
     // (WC `/products` listing requires `read` cap → JWT alone returns 401).
     // NOTE: WC REST `type` enum only accepts simple|grouped|external|variable.
