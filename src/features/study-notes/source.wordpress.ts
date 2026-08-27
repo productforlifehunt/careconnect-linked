@@ -1,19 +1,26 @@
 /**
  * Study notes & lesson-completion tracking.
- * Bible (§19):
- *   CCT 122 users_study_notes: a55=title, a56=content
- *   REL 158: challenged_content → users_study_notes (1:M)
- *   REL 157: users → challenged_content (1:M, "user finished learning lesson")
- *            Relation field a55 = USER_HAS_FINISHED_LEARNING_THIS_LESSON (b55 Yes | b56 No)
+ * Data dictionary (the only source of truth):
+ *   CCT 218 `study_notes` — a55 Title, a56 Content
+ *   REL 256: 217. Challenged App Content → 218. User's study notes (1:M, no meta)
+ *   REL 255: Users → 217. Challenged App Content (1:M)
+ *            meta a55 = "User has finished learning this lesson" { b55 Yes | b56 No }
  */
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 import { getCurrentUserIdNumber } from "@/features/shared/current-user";
-import { R } from "@/integrations/wp-schema";
+import { R, T, WP } from "@/integrations/wp-schema";
 
-const SLUG = "users_study_notes";
+const SLUG = T.studyNote.slug;
+const F = { title: T.studyNote.f.TITLE, content: T.studyNote.f.CONTENT };
 const REL_ARTICLE_NOTES = R.contentStudyNotes;
-// Dictionary name "157. finished ChallengeD content" — live ID 167 (old 157 deleted & recreated)
 const REL_USER_FINISHED = R.userFinishedContent;
+const REL255 = WP.rel["255"] as unknown as {
+  f: Record<string, string>;
+  opt: Record<string, Record<string, string>>;
+};
+const FINISHED_FIELD = REL255.f.USER_HAS_FINISHED_LEARNING_THIS_LESSON;
+const FINISHED_YES = REL255.opt.USER_HAS_FINISHED_LEARNING_THIS_LESSON.YES;
+
 
 export interface StudyNote {
   id: string;
