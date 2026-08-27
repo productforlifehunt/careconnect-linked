@@ -611,6 +611,8 @@ export function useSubmitProviderApplication() {
         bio: input.bio || '',
         location: input.location || '',
         years_of_experience: input.yearsOfExperience || input.years_of_experience || 0,
+        phone: input.phone || input.phone_number || undefined,
+
       });
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["myProfile"] }); },
