@@ -302,7 +302,13 @@ export default function SearchResults() {
         </aside>
 
         <div className="flex-1">
+          <h1 className="text-2xl font-bold text-foreground mb-4">
+            {isFacilityMode
+              ? (isZh ? "养老机构搜索结果" : "Care facility search results")
+              : (isZh ? "护理者搜索结果" : "Caregiver search results")}
+          </h1>
           {loading ? (
+
             <div className="space-y-4">
               {[1, 2, 3, 4].map(i => (
                 <div key={i} className="bg-card rounded-xl border p-5">
