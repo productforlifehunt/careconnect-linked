@@ -395,6 +395,3 @@ export const wordpressSchema: Record<WordPressFeatureKey, WordPressSchemaEntry<a
   },
 };
 
-export function getStoredWordPressProfileFallback() {
-  return mapStoredWPUserToProfile();
-}
