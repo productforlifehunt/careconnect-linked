@@ -84,8 +84,10 @@ export async function fetchMyProfileWordPress(): Promise<Profile | null> {
         wpProfile.care_provider_starts_hourly_rate =
           rate != null && rate !== "" ? parseFloat(rate) : wpProfile.care_provider_starts_hourly_rate;
       }
-      // Phone / location / years / certifications / specialty are not on this CCT;
+      wpProfile.location = cct[F.CARE_PROVIDER_S_LOCATION] || wpProfile.location;
+      // Phone / years / certifications / specialty have no column in CCT 258;
       // keep WP-user-derived values where present.
+
     }
 
     return wpProfile;
@@ -130,19 +132,20 @@ export async function updateProfileWordPress(updates: Partial<Profile>): Promise
   if (updates.care_provider_is_background_checked !== undefined) body[F.CARE_PROVIDER_IS_BACKGROUND_CHECKED] = boolToYesNo(updates.care_provider_is_background_checked);
   if (updates.care_provider_background_check_detail !== undefined) body[F.CARE_PROVIDER_S_BACKGROUND_CHECK_DETAIL] = updates.care_provider_background_check_detail;
   if (updates.care_provider_starts_hourly_rate !== undefined) body[F.CARE_PROVIDER_S_HOURLY_RATE_FOR_IN_PERSON_SERVICE] = String(updates.care_provider_starts_hourly_rate ?? "");
+  // Dictionary: a64 = care provider's location (the only location column in CCT 258).
+  if (updates.location !== undefined) body[F.CARE_PROVIDER_S_LOCATION] = updates.location ?? "";
+
 
   if (Object.keys(body).length === 0) return;
 
   const storedUser = getStoredWPUser();
-  const wpUserId = storedUser?.user_id;
-  try {
-    const existing = await wordpressCCTFetch<any[]>(CCT_SLUG, { params: { cct_author_id: wpUserId, _limit: 1 } });
-    if (Array.isArray(existing) && existing.length > 0) {
-      await wordpressCCTFetch(CCT_SLUG, { id: existing[0]._ID || existing[0].id, method: "PUT", body });
-    } else {
-      await wordpressCCTFetch(CCT_SLUG, { method: "POST", body: { ...body, cct_author_id: wpUserId } });
-    }
-  } catch (err) {
-    console.warn("Failed to update CCT 258 extended profile:", err);
+  const wpUserId = storedUser?.user_id != null ? String(storedUser.user_id) : "";
+  const existing = await wordpressCCTFetch<any[]>(CCT_SLUG, { params: { cct_author_id: wpUserId, _limit: 1 } });
+  if (Array.isArray(existing) && existing.length > 0) {
+    await wordpressCCTFetch(CCT_SLUG, { id: existing[0]._ID || existing[0].id, method: "PUT", body });
+  } else {
+    // JetEngine CCT REST requires cct_author_id as a string.
+    await wordpressCCTFetch(CCT_SLUG, { method: "POST", body: { ...body, cct_author_id: wpUserId } });
   }
 }
+

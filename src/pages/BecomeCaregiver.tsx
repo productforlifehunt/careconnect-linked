@@ -52,7 +52,16 @@ export default function BecomeCaregiver() {
     if (!isAuthenticated) { toast({ title: t("becomeCaregiver.pleaseSignInFirst"), variant: "destructive" }); navigate("/auth"); return; }
     const expMap: Record<string, number> = { "0-1": 1, "1-3": 2, "3-5": 4, "5-10": 7, "10+": 12 };
     try {
-      await submitApplication.mutateAsync({ bio, specialty: selectedSpecialties, certification: selectedCerts, years_of_experience: expMap[experience] || 1, hourly_rate: parseFloat(hourlyRate) || 25, phone_number: phone, location: city });
+      await submitApplication.mutateAsync({
+        bio,
+        specialty: selectedSpecialties,
+        certifications: selectedCerts,
+        years_of_experience: expMap[experience] || 1,
+        care_provider_starts_hourly_rate: parseFloat(hourlyRate) || 0,
+        phone: phone,
+        location: city,
+      });
+
       toast({ title: t("becomeCaregiver.applicationSubmitted"), description: t("becomeCaregiver.applicationSubmittedDesc") });
       navigate("/dashboard");
     } catch (err: any) { toast({ title: t("becomeCaregiver.submissionFailed"), description: err.message, variant: "destructive" }); }
@@ -107,7 +116,15 @@ export default function BecomeCaregiver() {
           <CardContent className="space-y-6">
             <div>
               <Label className="mb-3 block">{t("becomeCaregiver.specialties")} * ({t("becomeCaregiver.selectAllApply")})</Label>
-              <div className="flex flex-wrap gap-2">{allSpecialties.map(s => (<Badge key={s} variant={selectedSpecialties.includes(s) ? "default" : "outline"} className="cursor-pointer text-sm py-1.5 px-3" onClick={() => toggleItem(selectedSpecialties, s, setSelectedSpecialties)}>{t(getSpecialtyKey(s))}</Badge>))}</div>
+              {serviceTypesLoading ? (
+                <div className="flex flex-wrap gap-2">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div key={i} className="h-8 w-24 rounded-full bg-muted animate-pulse" />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">{allSpecialties.map(s => (<Badge key={s} variant={selectedSpecialties.includes(s) ? "default" : "outline"} className="cursor-pointer text-sm py-1.5 px-3" onClick={() => toggleItem(selectedSpecialties, s, setSelectedSpecialties)}>{t(getSpecialtyKey(s))}</Badge>))}</div>
+              )}
             </div>
             <div>
               <Label className="mb-3 block">{t("becomeCaregiver.certifications")}</Label>
