@@ -205,14 +205,7 @@ export default function Profile() {
         </TabsContent>
 
         <TabsContent value="notifications" className="space-y-6">
-          <Card className="border-transparent card-elevated">
-            <CardHeader><CardTitle>{t("profile.notificationPrefs")}</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between"><Label>{t("profile.emailNotifications")}</Label><Switch checked={emailNotifs} onCheckedChange={setEmailNotifs} /></div>
-              <div className="flex items-center justify-between"><Label>{t("profile.pushNotifications")}</Label><Switch checked={pushNotifs} onCheckedChange={setPushNotifs} /></div>
-            </CardContent>
-          </Card>
-          <Button variant="coral" onClick={handleSave} disabled={updateProfile.isPending}>{t("profile.savePreferences")}</Button>
+          <AppSettingsPanel />
         </TabsContent>
 
         <TabsContent value="privacy" className="space-y-6">
