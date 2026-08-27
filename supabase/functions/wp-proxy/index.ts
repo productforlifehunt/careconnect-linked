@@ -26,7 +26,9 @@ const PUBLIC_WC_READ_PATHS = [
   /wp-json\/wc\/v3\/products\/attributes/i,
   /wp-json\/wc\/v3\/products\/categories/i,
   /wp-json\/wc\/v3\/products\/tags/i,
+  /wp-json\/wc\/v3\/products\/reviews/i,
 ];
+
 
 function canUseCatalogKeys(method: string, wpPath: string, hasAuth: boolean): boolean {
   if (method !== "GET" || hasAuth) return false;
