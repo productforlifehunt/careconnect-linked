@@ -269,58 +269,16 @@ export default function CareFacilityProfile() {
             <CardHeader>
               <div className="flex items-center justify-between gap-3">
                 <CardTitle>{isZh ? `评价（${reviews?.length || 0}）` : `Reviews (${reviews?.length || 0})`}</CardTitle>
-                <Dialog
-                  open={reviewDialogOpen}
-                  onOpenChange={(open) => {
-                    if (open && !isAuthenticated) {
-                      toast({ title: isZh ? "请先登录后评价" : "Please sign in to write a review", variant: "destructive" });
-                      navigate("/auth");
-                      return;
-                    }
-                    setReviewDialogOpen(open);
-                  }}
-                >
-                  <DialogTrigger asChild>
-                    <Button variant="coral" size="sm"><Star className="h-3.5 w-3.5 mr-1" />{isZh ? "写评价" : "Write Review"}</Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-md">
-                    <DialogHeader><DialogTitle>{isZh ? `评价 ${facility.name}` : `Review ${facility.name}`}</DialogTitle></DialogHeader>
-                    <div className="space-y-4 mt-4">
-                      <div>
-                        <Label className="mb-2 block">{t("common.rating")}</Label>
-                        <div className="flex gap-1">
-                          {[1, 2, 3, 4, 5].map((s) => (
-                            <button key={s} type="button" onClick={() => setReviewRating(s)} className="focus:outline-none">
-                              <Star className={`h-7 w-7 cursor-pointer transition-colors ${s <= reviewRating ? "text-warning fill-warning" : "text-muted-foreground/30"}`} />
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <Label>{isZh ? "评价内容" : "Comment"}</Label>
-                        <Textarea value={reviewComment} onChange={(e) => setReviewComment(e.target.value)} placeholder={isZh ? "分享您对机构环境、服务、照护质量的体验..." : "Share your experience with the environment, staff, and care quality..."} rows={4} />
-                      </div>
-                      <Button
-                        variant="coral"
-                        className="w-full"
-                        disabled={createReview.isPending}
-                        onClick={async () => {
-                          try {
-                            await createReview.mutateAsync({ entity_id: facility.id, rating: reviewRating, comment: reviewComment, entity_type: "facility" });
-                            toast({ title: isZh ? "评价已提交" : "Review submitted", description: isZh ? "感谢您的反馈。" : "Thank you for your feedback." });
-                            setReviewDialogOpen(false);
-                            setReviewRating(5);
-                            setReviewComment("");
-                          } catch (err: any) {
-                            toast({ title: isZh ? "提交评价失败" : "Failed to submit review", description: err.message, variant: "destructive" });
-                          }
-                        }}
-                      >
-                        {createReview.isPending ? t("common.loading") : (isZh ? "提交评价" : "Submit Review")}
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                {/*
+                  Facility reviews have no relation in the data model (144 = shop,
+                  264 = care provider user, 145 = product). Until a
+                  "care facility -> 31. Review" relation exists we do not offer a
+                  write path that would silently fail or attach to the wrong parent.
+                */}
+                <span className="text-xs text-muted-foreground">
+                  {isZh ? "机构评价暂未开放" : "Facility reviews not open yet"}
+                </span>
+
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
