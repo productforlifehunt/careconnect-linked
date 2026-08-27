@@ -184,26 +184,30 @@ export default function CalendarPage() {
         <FullCalendar
           plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin, rrulePlugin]}
           initialView="dayGridMonth"
+          locale={isZh ? "zh-cn" : "en"}
+          firstDay={isZh ? 1 : 0}
           headerToolbar={{
             left: "prev,next today",
             center: "title",
             right: "dayGridMonth,timeGridWeek,listWeek",
           }}
-          buttonText={{
-            today: "Today",
-            month: "Month",
-            week: "Week",
-            day: "Day",
-            list: "List",
-          }}
+          buttonText={
+            isZh
+              ? { today: "今天", month: "月", week: "周", day: "日", list: "列表" }
+              : { today: "Today", month: "Month", week: "Week", day: "Day", list: "List" }
+          }
+          allDayText={isZh ? "全天" : "all-day"}
+          noEventsText={isZh ? "本周没有日程" : "No events this week"}
           events={fcEvents}
           height="auto"
           nowIndicator
           dayMaxEvents={2}
           fixedWeekCount={false}
+          dateClick={openCreate}
           eventClick={(info) => {
             setSelectedEvent(info.event.extendedProps as CalendarEvent);
           }}
+
         />
       </Card>
 
