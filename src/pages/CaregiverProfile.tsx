@@ -562,6 +562,15 @@ export default function CaregiverProfile() {
                         </Select>
                       </div>
                     </div>
+                    {bookingDate && startTimeOptions.length === 0 && (
+                      <div className="text-sm text-muted-foreground bg-muted/40 rounded-lg p-2.5 flex items-center gap-2">
+                        <Clock className="h-4 w-4 shrink-0" />
+                        {isZh
+                          ? "该护理者未在此日期开放时段，请选择其他日期。"
+                          : "This caregiver has no published availability on this date. Please pick another day."}
+                      </div>
+                    )}
+
                     {availabilityWarning && (
                       <div className="text-sm text-warning bg-warning/10 rounded-lg p-2.5 flex items-center gap-2">
                         <Clock className="h-4 w-4 shrink-0" />
