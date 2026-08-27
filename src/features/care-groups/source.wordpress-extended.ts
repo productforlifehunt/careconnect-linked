@@ -78,6 +78,13 @@ export async function fetchCareGroupPostsWordPress(groupId: string, type?: strin
     };
     return posts
       .filter((p: any) => !type || normalizeType(p[F_POST.TYPE]) === type)
+      // Newest first, deterministic: relation order is not guaranteed.
+      .sort((a: any, b: any) => {
+        const ta = Date.parse(a.created_at || "") || 0;
+        const tb = Date.parse(b.created_at || "") || 0;
+        if (tb !== ta) return tb - ta;
+        return Number(b.id || b._ID || 0) - Number(a.id || a._ID || 0);
+      })
       .map((p: any) => ({
         id: p.id,
         group_id: groupId,

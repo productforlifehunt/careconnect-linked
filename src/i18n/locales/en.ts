@@ -282,7 +282,7 @@ const en = {
     sendingResetLink: "Sending...",
     resetLinkSent: "Reset link sent!",
     resetLinkSentDesc: "Check your email for a password reset link.",
-    emailPlaceholder: "you@example.com",
+    emailOrUsername: "Email or username", emailOrUsernamePlaceholder: "you@example.com or username", emailPlaceholder: "you@example.com",
     passwordPlaceholder: "••••••••",
     namePlaceholder: "Jane Doe",
     passwordHint: "Min 8 chars, uppercase, number, symbol",

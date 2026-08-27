@@ -17,6 +17,7 @@ interface HomeTabProps {
   pendingTasksCount: number;
   membersCount: number;
   caredOnesCount: number;
+  statsLoading?: boolean;
   allPosts: any[];
   activeGroupId: string | null;
   userId: string | undefined;
@@ -30,7 +31,7 @@ interface HomeTabProps {
 }
 
 export function HomeTab({
-  pendingTasksCount, membersCount, caredOnesCount,
+  pendingTasksCount, membersCount, caredOnesCount, statsLoading,
   allPosts, activeGroupId, userId, isAdmin, memberCategories, members,
   createPost, onEditPost, onTogglePin, onDeletePost,
 }: HomeTabProps) {
@@ -74,7 +75,12 @@ export function HomeTab({
           <Card key={s.label} className="border-transparent card-elevated">
             <CardContent className="p-3 sm:p-4 flex items-center gap-2">
               <s.icon className="h-4 w-4 sm:h-5 sm:w-5 text-primary shrink-0" />
-              <div className="min-w-0"><p className="text-base sm:text-xl font-bold text-foreground leading-tight">{s.value}</p><p className="text-[11px] sm:text-xs text-muted-foreground truncate">{s.label}</p></div>
+              <div className="min-w-0">
+                {statsLoading
+                  ? <div className="h-5 sm:h-7 w-8 rounded bg-muted animate-pulse" aria-label="loading" />
+                  : <p className="text-base sm:text-xl font-bold text-foreground leading-tight">{s.value}</p>}
+                <p className="text-[11px] sm:text-xs text-muted-foreground leading-tight break-words">{s.label}</p>
+              </div>
             </CardContent>
           </Card>
         ))}
