@@ -162,7 +162,8 @@ export async function invokeAI(mode: AIMode, context: string, options: InvokeAIO
     conversationId = await ensureConversation(mode, options);
     await createMessage(conversationId, "user", userMessage);
   } catch (e) {
-    console.warn("Chat CCT persistence unavailable, continuing without:", e);
+    if (isNetworkAbort(e)) console.debug("Chat CCT persistence skipped (request aborted)");
+    else console.warn("Chat CCT persistence unavailable, continuing without:", e);
   }
 
   // Critical path

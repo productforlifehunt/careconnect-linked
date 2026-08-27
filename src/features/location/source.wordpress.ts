@@ -157,7 +157,8 @@ export async function fetchCurrentLocation(userId: string | number): Promise<Loc
     if (!Array.isArray(items) || items.length === 0) return null;
     return mapSnapshot(items[0]);
   } catch (err) {
-    console.warn("[Location] fetchCurrentLocation failed:", err);
+    if (isNetworkAbort(err)) console.debug("[Location] current-location request aborted (route change)");
+    else console.warn("[Location] fetchCurrentLocation failed:", err);
     return null;
   }
 }
@@ -187,7 +188,8 @@ export async function fetchLocationHistory(
       .map(mapSnapshot)
       .filter(s => s.latitude != null && s.longitude != null);
   } catch (err) {
-    console.warn("[Location] fetchLocationHistory failed:", err);
+    if (isNetworkAbort(err)) console.debug("[Location] history request aborted (route change)");
+    else console.warn("[Location] fetchLocationHistory failed:", err);
     return [];
   }
 }
