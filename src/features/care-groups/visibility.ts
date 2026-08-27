@@ -25,12 +25,6 @@ const REL_POST_USERS = R.careGroupPostMentionedUsers;
 const REL_TASK_USERS = R.careTaskVisibleUsers;
 const REL_TASK_SUBGROUPS = R.careTaskPrivateMemberGroups;
 
-async function relChildren(rel: number, parentId: number): Promise<number[]> {
-  try {
-    const r = await wordpressFetch<any[]>(`jet-rel/${rel}/children/${parentId}`);
-    return (Array.isArray(r) ? r : []).map((x: any) => Number(x.child_object_id)).filter(Boolean);
-  } catch { return []; }
-}
 
 /**
  * Whole-relation map: `{ parentId: [childId, ...] }`.
