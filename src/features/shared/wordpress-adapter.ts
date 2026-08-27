@@ -1,6 +1,5 @@
 import { wordpressFetch } from "@/features/shared/wordpress-client";
 import {
-  getStoredWordPressProfileFallback,
   wordpressSchema,
   type WordPressFeatureKey,
 } from "@/features/shared/wordpress-schema";
@@ -114,10 +113,3 @@ export async function deleteWordPressFeature(
   });
 }
 
-export async function getMyWordPressProfileOrStoredFallback() {
-  try {
-    return await getWordPressFeature("profile_me");
-  } catch {
-    return getStoredWordPressProfileFallback();
-  }
-}

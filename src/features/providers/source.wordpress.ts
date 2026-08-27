@@ -4,14 +4,11 @@ import { T } from "@/integrations/wp-schema";
 import { getWordPressFeature, listWordPressFeature } from "@/features/shared/wordpress-adapter";
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 import { fetchAllProviderProductSummaries } from "@/services/woocommerce-api";
+import { fetchProviderRatingSummary } from "@/features/reviews/source.wordpress";
 
 // Provider fields live on CCT 258 "User's extended profile 2".
 const P2 = T.userProfile2;
 const F_PROFILE = P2.f;
-
-function isActivePaidProvider(profile: Profile): boolean {
-  return profile.is_care_provider === true && profile.provider_is_active === true;
-}
 
 function parseWpBoolean(value: unknown): boolean {
   return value === true || value === 1 || (typeof value === "string" && ["yes", "true", "1", "active", "Active"].includes(value));
@@ -108,30 +105,55 @@ export async function fetchProvidersWordPress(filters?: ProviderFilters): Promis
       fetchAllProviderProductSummaries().catch(() => new Map()),
     ]);
 
+    // Single source of truth for "is this a listed care provider": CCT 258
+    // (a59 = is care provider, a60 = provider is active). Dokan stores only
+    // enrich these rows — a store is never promoted into a provider listing.
     const activeProfileIds = new Set(dictionaryProfiles.map((p) => String(p.id).replace(/^wp-/, "")));
-    const sourceProfiles = dictionaryProfiles.length > 0
-      ? dictionaryProfiles
-      : (storeResults || []).filter(isActivePaidProvider);
+    const sourceProfiles = dictionaryProfiles;
+
+    const storeById = new Map<string, Profile>();
+    (storeResults || []).forEach((s: Profile) => {
+      storeById.set(String(s.id).replace(/^wp-/, ""), s);
+    });
+
+    // Real rating aggregates from CCT 31 "Review" via relation 264.
+    const ratingSummaries = new Map<string, { average: number | null; count: number }>();
+    await Promise.all(
+      sourceProfiles.map(async (p) => {
+        const uid = String(p.id).replace(/^wp-/, "");
+        ratingSummaries.set(uid, await fetchProviderRatingSummary(uid).catch(() => ({ average: null, count: 0 })));
+      }),
+    );
 
     let results: Profile[] = sourceProfiles.map((p) => {
       const numericId = String(p.id).replace(/^wp-/, "");
+      const store = storeById.get(numericId);
       const summary = productSummaries.get(String(p.id)) || productSummaries.get(numericId) || productSummaries.get(String(p.user_id || "").replace(/^wp-/, ""));
-      if (!summary) return p;
-      return {
+      const rating = ratingSummaries.get(numericId) || { average: null, count: 0 };
+      const merged: Profile = {
         ...p,
+        // Dokan store data only fills gaps the dictionary profile left empty.
+        avatar_url: p.avatar_url || store?.avatar_url || null,
+        bio: p.bio || store?.bio || null,
+        location: p.location || store?.location || null,
+        rating_average: rating.average,
+        rating_count: rating.count,
+      };
+      if (!summary) return merged;
+      return {
+        ...merged,
         min_block_cost: summary.minBlockCost || null,
         service_type_slugs: summary.serviceTypeSlugs,
         service_location_slugs: summary.serviceLocationSlugs,
         // Mirror min_block_cost into the legacy hourly_rate field so existing
         // card UI ("$X / hour") shows the real package price.
         care_provider_starts_hourly_rate:
-          summary.minBlockCost > 0 ? summary.minBlockCost : p.care_provider_starts_hourly_rate,
+          summary.minBlockCost > 0 ? summary.minBlockCost : merged.care_provider_starts_hourly_rate,
       };
     });
 
-    if (dictionaryProfiles.length > 0) {
-      results = results.filter((p) => activeProfileIds.has(String(p.id).replace(/^wp-/, "")));
-    }
+    results = results.filter((p) => activeProfileIds.has(String(p.id).replace(/^wp-/, "")));
+
 
     if (filters?.query) {
       const q = filters.query.toLowerCase();
@@ -163,17 +185,17 @@ export async function fetchProvidersWordPress(filters?: ProviderFilters): Promis
       );
     }
 
-    // Sorting
-    if (filters?.sortBy === "rating") results.sort((a, b) => (b.rating_average ?? 0) - (a.rating_average ?? 0));
+    // Sorting. Providers with no price / no reviews sort last instead of being
+    // treated as "0", which would rank unpriced listings above real ones.
+    const byRatingDesc = (a: Profile, b: Profile) =>
+      (b.rating_average ?? -1) - (a.rating_average ?? -1);
+    const priceOf = (p: Profile) => p.care_provider_starts_hourly_rate;
+    if (filters?.sortBy === "rating") results.sort(byRatingDesc);
     else if (filters?.sortBy === "price-low")
-      results.sort(
-        (a, b) => (a.care_provider_starts_hourly_rate ?? 0) - (b.care_provider_starts_hourly_rate ?? 0),
-      );
+      results.sort((a, b) => (priceOf(a) ?? Number.POSITIVE_INFINITY) - (priceOf(b) ?? Number.POSITIVE_INFINITY));
     else if (filters?.sortBy === "price-high")
-      results.sort(
-        (a, b) => (b.care_provider_starts_hourly_rate ?? 0) - (a.care_provider_starts_hourly_rate ?? 0),
-      );
-    else results.sort((a, b) => (b.rating_average ?? 0) - (a.rating_average ?? 0));
+      results.sort((a, b) => (priceOf(b) ?? -1) - (priceOf(a) ?? -1));
+    else results.sort(byRatingDesc);
 
     return results;
   } catch {
@@ -183,8 +205,14 @@ export async function fetchProvidersWordPress(filters?: ProviderFilters): Promis
 
 export async function fetchProviderByIdWordPress(id: string): Promise<Profile | null> {
   try {
-    return await getWordPressFeature<Profile>("provider", { endpointArgs: { id } });
+    const profile = await getWordPressFeature<Profile>("provider", { endpointArgs: { id } });
+    if (!profile) return null;
+    // Ratings always come from CCT 31 "Review" (relation 264), never from the
+    // Dokan/Woo store aggregate, so profile and search agree.
+    const rating = await fetchProviderRatingSummary(id).catch(() => ({ average: null, count: 0 }));
+    return { ...profile, rating_average: rating.average, rating_count: rating.count };
   } catch {
     return null;
   }
 }
+

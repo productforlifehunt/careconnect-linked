@@ -183,37 +183,6 @@ function mapWPUserToProfile(user: WPUserEntity): Profile {
   };
 }
 
-function mapStoredWPUserToProfile(): Profile | null {
-  const stored = getStoredWPUser();
-  if (!stored) return null;
-  const nameParts = (stored.user_display_name || stored.user_login).split(" ");
-  return {
-    id: `wp-${stored.user_id}`,
-    user_id: `wp-${stored.user_id}`,
-    email: stored.user_email,
-    first_name: nameParts[0] || null,
-    last_name: nameParts.slice(1).join(" ") || null,
-    full_name: stored.user_display_name || stored.user_login,
-    user_name: stored.user_login,
-    avatar_url: null,
-    bio: null,
-    general_user_role: null,
-    is_care_provider: false,
-    provider_is_active: false,
-    care_provider_is_background_checked: false,
-    care_provider_background_check_detail: null,
-    care_provider_starts_hourly_rate: null,
-    phone: null,
-    location: null,
-    years_of_experience: null,
-    certifications: null,
-    specialty: null,
-    rating_average: null,
-    rating_count: null,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  };
-}
 
 function mapWPPostToArticle(post: WPPostEntity) {
   return {
@@ -395,6 +364,3 @@ export const wordpressSchema: Record<WordPressFeatureKey, WordPressSchemaEntry<a
   },
 };
 
-export function getStoredWordPressProfileFallback() {
-  return mapStoredWPUserToProfile();
-}
