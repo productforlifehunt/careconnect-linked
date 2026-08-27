@@ -114,26 +114,49 @@ export async function fetchProvidersWordPress(filters?: ProviderFilters): Promis
     const activeProfileIds = new Set(dictionaryProfiles.map((p) => String(p.id).replace(/^wp-/, "")));
     const sourceProfiles = dictionaryProfiles;
 
+    const storeById = new Map<string, Profile>();
+    (storeResults || []).forEach((s: Profile) => {
+      storeById.set(String(s.id).replace(/^wp-/, ""), s);
+    });
+
+    // Real rating aggregates from CCT 31 "Review" via relation 264.
+    const ratingSummaries = new Map<string, { average: number | null; count: number }>();
+    await Promise.all(
+      sourceProfiles.map(async (p) => {
+        const uid = String(p.id).replace(/^wp-/, "");
+        ratingSummaries.set(uid, await fetchProviderRatingSummary(uid).catch(() => ({ average: null, count: 0 })));
+      }),
+    );
 
     let results: Profile[] = sourceProfiles.map((p) => {
       const numericId = String(p.id).replace(/^wp-/, "");
+      const store = storeById.get(numericId);
       const summary = productSummaries.get(String(p.id)) || productSummaries.get(numericId) || productSummaries.get(String(p.user_id || "").replace(/^wp-/, ""));
-      if (!summary) return p;
-      return {
+      const rating = ratingSummaries.get(numericId) || { average: null, count: 0 };
+      const merged: Profile = {
         ...p,
+        // Dokan store data only fills gaps the dictionary profile left empty.
+        avatar_url: p.avatar_url || store?.avatar_url || null,
+        bio: p.bio || store?.bio || null,
+        location: p.location || store?.location || null,
+        rating_average: rating.average,
+        rating_count: rating.count,
+      };
+      if (!summary) return merged;
+      return {
+        ...merged,
         min_block_cost: summary.minBlockCost || null,
         service_type_slugs: summary.serviceTypeSlugs,
         service_location_slugs: summary.serviceLocationSlugs,
         // Mirror min_block_cost into the legacy hourly_rate field so existing
         // card UI ("$X / hour") shows the real package price.
         care_provider_starts_hourly_rate:
-          summary.minBlockCost > 0 ? summary.minBlockCost : p.care_provider_starts_hourly_rate,
+          summary.minBlockCost > 0 ? summary.minBlockCost : merged.care_provider_starts_hourly_rate,
       };
     });
 
-    if (dictionaryProfiles.length > 0) {
-      results = results.filter((p) => activeProfileIds.has(String(p.id).replace(/^wp-/, "")));
-    }
+    results = results.filter((p) => activeProfileIds.has(String(p.id).replace(/^wp-/, "")));
+
 
     if (filters?.query) {
       const q = filters.query.toLowerCase();
