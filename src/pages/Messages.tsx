@@ -16,7 +16,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
-export default function Messages() {
+export default function Messages({ embedded = false }: { embedded?: boolean } = {}) {
+  const Heading = (embedded ? "h2" : "h1") as "h1" | "h2";
   const { t, i18n } = useTranslation();
   const isCN = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (isCN ? cn : en);
@@ -179,8 +180,8 @@ export default function Messages() {
       <div className={`w-full md:w-80 border-r flex flex-col bg-card ${selectedConvoId ? "hidden md:flex" : "flex"}`}>
         <div className="p-4 border-b">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold text-foreground">{t("messages.messages")}</h2>
-            <Button variant="ghost" size="icon" onClick={() => setNewConvoOpen(true)} title={t("messages.newConversation")}>
+            <Heading className="text-lg font-bold text-foreground">{t("messages.messages")}</Heading>
+            <Button variant="ghost" size="icon" onClick={() => setNewConvoOpen(true)} title={t("messages.newConversation")} aria-label={t("messages.newConversation")}>
               <Plus className="h-4 w-4" />
             </Button>
           </div>

@@ -64,8 +64,12 @@ export default function CareCircle() {
   const activeGroupId = selectedGroupId || (groups && groups.length > 0 ? groups[0].id : null);
   const activeGroup = (groups || []).find((g: any) => g.id === activeGroupId);
 
-  const { data: members, isLoading: membersLoading } = useCareGroupMembers(activeGroupId);
-  const { data: tasks, isLoading: tasksLoading } = useCareTasks(activeGroupId);
+  const { data: members, isLoading: membersLoadingRaw } = useCareGroupMembers(activeGroupId);
+  const membersLoading = !!activeGroupId && membersLoadingRaw;
+  const { data: tasks, isLoading: tasksLoadingRaw } = useCareTasks(activeGroupId);
+  // Disabled react-query queries stay `isLoading` forever — only treat them as
+  // loading when a group is actually selected, otherwise skeletons never clear.
+  const tasksLoading = !!activeGroupId && tasksLoadingRaw;
   const { data: allPosts } = useCareGroupPosts(activeGroupId);
   const { data: announcements, isLoading: announcementsLoading } = useCareGroupPosts(activeGroupId, "announcement");
   const { data: wishes, isLoading: wishesLoading } = useCareGroupPosts(activeGroupId, "wish");
