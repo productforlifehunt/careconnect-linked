@@ -1151,22 +1151,6 @@ export function useUpdateMedicine() {
   });
 }
 
-export function useHealthVitals(caredOneId: string | null) {
-  return useQuery({
-    queryKey: ["healthVitals", caredOneId],
-    queryFn: () => fetchHealthVitalsWordPress(caredOneId!),
-    enabled: !!caredOneId,
-  });
-}
-
-export function useCreateHealthVital() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (vital: { user_id: string; vital_type: string; value: number; unit?: string; notes?: string; display_value?: string }) => createHealthVitalWordPress(vital),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["healthVitals"] }); },
-  });
-}
-
 export function useCareTips(caredOneId: string | null) {
   return useQuery({
     queryKey: ["careTips", caredOneId],
@@ -1319,30 +1303,6 @@ export function useDeleteEmergencyContact() {
   });
 }
 
-export function useActivityLog(caredOneId: string | null) {
-  return useQuery({
-    queryKey: ["activityLog", caredOneId],
-    queryFn: () => fetchActivityLogWordPress(caredOneId!),
-    enabled: !!caredOneId,
-  });
-}
-
-export function useCreateActivityLog() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (log: { user_id: string; activity_type?: string; description?: string }) => createActivityLogWordPress(log),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["activityLog"] }); },
-  });
-}
-
-export function useDeleteActivityLog() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => deleteActivityLogWordPress(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["activityLog"] }); },
-  });
-}
-
 export function useSafeZones(caredOneId: string | null) {
   return useQuery({
     queryKey: ["safeZones", caredOneId],
@@ -1404,26 +1364,6 @@ export function useDeleteCaredOneDocument() {
   return useMutation({
     mutationFn: (id: string) => deleteCaredOneDocumentWordPress(id),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["caredOneDocuments"] }); },
-  });
-}
-
-export function useCreateSymptomLog() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (log: { user_id: string; symptom: string; severity?: number; notes?: string }) => createSymptomLogWordPress(log),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["symptomLogs"] }); },
-  });
-}
-
-export function useCreateCaregiverWellnessLog() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (_log: any) => {
-      // DEPRECATED: `caregiver_wellness_log` CCT not in current data dictionary.
-      // No-op until a canonical replacement is defined.
-      return;
-    },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["caregiverWellnessLogs"] }); },
   });
 }
 
@@ -1669,25 +1609,6 @@ export function useCreateExternalTestJob() {
       await createJobPostingWordPress({ ...job, start_date: new Date().toISOString() });
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["jobPostings"] }); },
-  });
-}
-
-// ─── Caregiver Wellness & Symptom Logs (queries) ─────────────
-export function useCaregiverWellnessLogs() {
-  return useQuery({
-    queryKey: ["caregiverWellnessLogs"],
-    queryFn: async () => {
-      // DEPRECATED: `caregiver_wellness_log` CCT not in current data dictionary.
-      return [] as any[];
-    },
-  });
-}
-
-export function useSymptomLogs(caredOneId: string | null) {
-  return useQuery({
-    queryKey: ["symptomLogs", caredOneId],
-    queryFn: () => fetchSymptomLogsWordPress(caredOneId!),
-    enabled: !!caredOneId,
   });
 }
 
