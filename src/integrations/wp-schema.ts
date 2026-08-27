@@ -441,9 +441,9 @@ export const WP = {
       f: {
         "APPLE_HEALTH_OR_GOOGLE_HEALTH_LOG_TYPE_SLUG": "a55",  // Text
         "APPLE_HEALTH_OR_GOOGLE_HEALTH_LOG_TYPE_VALUE": "a56",  // Textarea
-        "START_TIME": "a57",  // Text
-        "END_TIME": "a58",  // Text
-        "TIME": "a59",  // Text
+        "START_TIME": "a57",  // Datetime
+        "END_TIME": "a58",  // Datetime
+        "TIME": "a59",  // Datetime
         "SOURCE": "a60",  // Radio
         "APPLE_HEALTH_OR_GOOGLE_HEALTH_LOG_UUID": "a61",  // Text
         "RECORDING_DEVICE": "a62",  // Text
@@ -800,8 +800,7 @@ export const WP = {
         "SCHEDULED_AT": "a59",  // Datetime
       },
       opt: {
-        // Live CCT 202 checkbox options (verified in JetEngine GUI): b57 = wish
-        "TYPE": { "DISCUSSION": "b55", "ANNOUNCEMENT": "b56", "WISH": "b57" },
+        "TYPE": { "DISCUSSION": "b55", "ANNOUNCEMENT": "b56" },
         "IS_PINNED": { "YES": "b55", "NO": "b56" },
       },
     },
@@ -1192,8 +1191,8 @@ export const WP = {
     "164": { id: 164, parent: "Users", child: "162. Use's non-custom and custom choice and alternative choice", type: "One to Many" },
     /** 165. One user's log event can have many related products — 161. User's log event -> 140. Product (One to Many) */
     "165": { id: 165, parent: "161. User's log event", child: "140. Product", type: "One to Many", f: { "USER_S_LOGGED_PRODUCT_TYPE_USE_THIS_FOR_QUIT_SMOKING_AND_LOGGING_NRT": "a55", "USER_S_LOGGED_PRODUCT_QUANTITY": "a66", "USER_S_LOGGED_PRODUCT_TYPE_USE_THIS_FOR_QUIT_DRINKING": "a67", "LOG_ALCOHOL_BOUGHT_TYPE": "a68" }, opt: { "USER_S_LOGGED_PRODUCT_TYPE_USE_THIS_FOR_QUIT_SMOKING_AND_LOGGING_NRT": { "NICOTINE_PRODUCT": "b55", "NRT_PRODUCT": "b56", "OTHER_PRODUCT": "b57" }, "USER_S_LOGGED_PRODUCT_TYPE_USE_THIS_FOR_QUIT_DRINKING": { "ALCOHOL_PRODUCT": "b55" }, "LOG_ALCOHOL_BOUGHT_TYPE": { "SHOP_BOUGHT": "b55", "BAR_PUB_RESTAURANT": "b56" } } },
-    /** 140. One care group can have one related group live chat conversation — 9. Care Group -> 26. Chat Conversation (One to One) */
-    "140": { id: 140, parent: "9. Care Group", child: "26. Chat Conversation", type: "One to One" },
+    /** 265. One 199. care group can have one related group live 121. chat conversation — 199. care group -> 121. Chat Conversation (One to One) */
+    "265": { id: 265, parent: "199. care group", child: "121. Chat Conversation", type: "One to One" },
     /** 137. One chat conversation can have many related chatters — 121. Chat Conversation -> Users (Many to Many) */
     "137": { id: 137, parent: "121. Chat Conversation", child: "Users", type: "Many to Many", f: { "THE_USER_JOINED_THIS_CHAT_CONVERSATION_AT_THIS_TIME": "a55", "THE_USER_LAST_READ_THIS_CHAT_CONVERSATION_AT_THIS_TIME": "a56", "THE_USER_HAS_FUCKING_MUTED_THIS_CHAT": "a57" }, opt: { "THE_USER_HAS_FUCKING_MUTED_THIS_CHAT": { "YES": "b55", "NO": "b56" } } },
     /** 138. One chat conversation can have many related chat messages — 121. Chat Conversation -> 126. Chat Message (One to Many) */
@@ -1298,8 +1297,6 @@ export const WP = {
     "256": { id: 256, parent: "217. Challenged App Content", child: "218. User's study notes", type: "One to Many" },
     /** 257. One Challenged App Content can have many related cared one's care tips — 217. Challenged App Content -> 209. Cared one's care tip (One to Many) */
     "257": { id: 257, parent: "217. Challenged App Content", child: "209. Cared one's care tip", type: "One to Many" },
-    /** 265. One 199. care group can have one related group live 121. chat conversation — 199. care group -> 121. Chat Conversation (One to One) */
-    "265": { id: 265, parent: "199. care group", child: "121. Chat Conversation", type: "One to One" },
   },
 } as const;
 
@@ -1473,6 +1470,8 @@ export const R = {
   userChoices: 164,
   /** 165. One user's log event can have many related products */
   logEventProducts: 165,
+  /** 265. One 199. care group can have one related group live 121. chat conversation */
+  careGroupChat: 265,
   /** 137. One chat conversation can have many related chatters */
   conversationMembers: 137,
   /** 138. One chat conversation can have many related chat messages */
@@ -1485,12 +1484,12 @@ export const R = {
   userNotificationTokens: 189,
   /** 190. One user can have many related 187. User's calendar event */
   userCalendarEvents: 190,
-  /** 266. One 187. user's calendar event can have many related invited users (live recreation of dead 262) */
-  calendarEventInvitees: 266,
+  /** 262. One 187. user's calendar event can have many related invited users */
+  calendarEventInvitees: 262,
   /** 191. One 187. user's calendar event can have many related 161. user's log events */
   calendarEventLogEvents: 191,
-  /** 267. One care task can have many related user's calendar events (live recreation of dead 263) */
-  careTaskCalendarEvents: 267,
+  /** 263. One care task can have many related user's calendar events */
+  careTaskCalendarEvents: 263,
   /** 103. One user can have many related 6. FreshCoin Transaction */
   userFreshcoinTransactions: 103,
   /** 194. One user can have many related 192. User's subscription */
@@ -1543,8 +1542,8 @@ export const R = {
   checkinScheduleLogs: 240,
   /** 241. One check in schedule can have many related asigned check-in persons */
   checkinScheduleAssignees: 241,
-  /** 268. One 207. check in schedule can have many related assigned check-in persons (live recreation of dead 260) */
-  checkinNotificationReceivers: 268,
+  /** 260. One 207. check in schedule can have many related asigned check-in persons */
+  checkinNotificationReceivers: 260,
   /** 242. One cared one can have many related 197. cared one's care notes */
   caredOneCareNotes: 242,
   /** 243. One cared one can have many related cared one's care tips */
@@ -1577,8 +1576,6 @@ export const R = {
   contentStudyNotes: 256,
   /** 257. One Challenged App Content can have many related cared one's care tips */
   contentCareTips: 257,
-  /** 265. One 199. care group can have one related group live 121. chat conversation */
-  careGroupChat: 265,
 } as const;
 
 /** Dictionary CCT number -> live JetEngine REST slug. */

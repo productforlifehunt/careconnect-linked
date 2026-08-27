@@ -1830,21 +1830,21 @@
         {
           "label": "Start time",
           "code": "a57",
-          "type": "Text",
+          "type": "Datetime",
           "options": "对应Apple health或者Google health的开始时间",
           "optionMap": {}
         },
         {
           "label": "End time",
           "code": "a58",
-          "type": "Text",
+          "type": "Datetime",
           "options": "对应Apple health或者Google health的结束时间",
           "optionMap": {}
         },
         {
           "label": "Time",
           "code": "a59",
-          "type": "Text",
+          "type": "Datetime",
           "options": "对应Google health的瞬时时间，注意：Apple health对瞬时的记录方式是同时记录开始时间和结束时间，不需要记录瞬时时间，前端写入应严格对应Apple health或者Google health期待的值",
           "optionMap": {}
         },
@@ -4827,10 +4827,10 @@
       ]
     },
     {
-      "id": 140,
-      "name": "One care group can have one related group live chat conversation",
-      "parent": "9. Care Group",
-      "child": "26. Chat Conversation",
+      "id": 265,
+      "name": "One 199. care group can have one related group live 121. chat conversation",
+      "parent": "199. care group",
+      "child": "121. Chat Conversation",
       "type": "One to One",
       "fields": []
     },
@@ -5389,14 +5389,6 @@
       "parent": "217. Challenged App Content",
       "child": "209. Cared one's care tip",
       "type": "One to Many",
-      "fields": []
-    },
-    {
-      "id": 265,
-      "name": "One 199. care group can have one related group live 121. chat conversation",
-      "parent": "199. care group",
-      "child": "121. Chat Conversation",
-      "type": "One to One",
       "fields": []
     }
   ]
