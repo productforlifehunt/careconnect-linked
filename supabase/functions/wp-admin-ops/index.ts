@@ -82,10 +82,15 @@ Deno.serve(async (req) => {
       }
 
       case "get_my_store": {
-        const res = await fetch(`${wpBase}/wp-json/dokan/v1/stores?include=${userId}`, {
+        // Dokan ignores `include` on some versions, so filter defensively:
+        // a Dokan store id is always the vendor's WP user id.
+        const res = await fetch(`${wpBase}/wp-json/dokan/v1/stores?include=${userId}&per_page=100`, {
           headers: adminHeaders(),
         });
-        const data = await res.json().catch(() => null);
+        const raw = await res.json().catch(() => null);
+        const data = Array.isArray(raw)
+          ? raw.filter((store: any) => Number(store?.id) === userId)
+          : [];
         return json({ ok: res.ok, data }, res.ok ? 200 : 502);
       }
 
@@ -98,11 +103,24 @@ Deno.serve(async (req) => {
           ...(store.description !== undefined ? { description: String(store.description) } : {}),
         };
         // Always scoped to the caller's own store id (= WP user id in Dokan).
-        const res = await fetch(`${wpBase}/wp-json/dokan/v1/stores/${userId}`, {
-          method: "PUT",
-          headers: adminHeaders(),
-          body: JSON.stringify(body),
-        });
+        const putStore = () =>
+          fetch(`${wpBase}/wp-json/dokan/v1/stores/${userId}`, {
+            method: "PUT",
+            headers: adminHeaders(),
+            body: JSON.stringify(body),
+          });
+
+        let res = await putStore();
+        if (res.status === 404) {
+          // No Dokan store yet — promote to seller (this provisions the store),
+          // then retry once.
+          await fetch(`${wpBase}/wp-json/wp/v2/users/${userId}`, {
+            method: "POST",
+            headers: adminHeaders(),
+            body: JSON.stringify({ roles: ["seller"] }),
+          });
+          res = await putStore();
+        }
         const data = await res.json().catch(() => null);
         return json({ ok: res.ok, data }, res.ok ? 200 : 502);
       }
