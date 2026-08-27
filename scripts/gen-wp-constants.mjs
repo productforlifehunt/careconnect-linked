@@ -82,7 +82,6 @@ const REL_ALIASES = {
   137: 'conversationMembers',
   138: 'conversationMessages',
   139: 'messageParentMessage',
-  140: 'careGroupConversation',
   142: 'commentReplies',
   143: 'reviewComments',
   144: 'shopReviews',
