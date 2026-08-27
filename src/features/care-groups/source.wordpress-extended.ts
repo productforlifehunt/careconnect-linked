@@ -132,6 +132,22 @@ export async function createGroupPostWordPress(post: { group_id: string; content
       body: { parent_id: groupId, child_id: postId, context: "child", store_items_type: "update" },
     });
   }
+
+  // Notify group members — non-blocking, never fails the post.
+  if (groupId && postId) {
+    try {
+      const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${groupId}`).catch(() => []);
+      const memberIds = Array.isArray(rels) ? rels.map((r: any) => r.child_object_id).filter(Boolean) : [];
+      const { notifyGroupPost } = await import("@/features/notifications/notify-events");
+      await notifyGroupPost(
+        memberIds,
+        String(groupId),
+        post.title || post.content.substring(0, 50),
+        (post.type || "discussion") === "announcement",
+      );
+    } catch { /* non-blocking */ }
+  }
+
   return postId ? String(postId) : null;
 }
 

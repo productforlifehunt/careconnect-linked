@@ -225,6 +225,15 @@ export async function createCareTaskWordPress(task: {
     }));
   }
   await Promise.all(calls);
+
+  // Notify assignees — non-blocking, never fails task creation.
+  if (taskId && assignedUserIds.length > 0) {
+    try {
+      const { notifyTaskAssigned } = await import("@/features/notifications/notify-events");
+      await notifyTaskAssigned(assignedUserIds, task.title, String(taskId));
+    } catch { /* non-blocking */ }
+  }
+
   return taskId ? String(taskId) : null;
 }
 

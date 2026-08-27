@@ -14,7 +14,49 @@ import { appScopeBody, appScopeParams, filterAppScope } from "@/features/shared/
 const SLUG = T.notification.slug;
 const F = T.notification.f;
 const READ = T.notification.opt.NOTIFICATION_IS_READ;
+const TYPE = T.notification.opt.NOTIFICATION_TYPE;
 const REL_USER_NOTIFICATION = R.userNotifications;
+
+/**
+ * a55 is a RADIO field: only the dictionary codes below are valid values.
+ * Semantic event names used across the app map onto those codes; anything
+ * without its own code (task, job, group post) is a SYSTEM notification.
+ * Mirrors TYPE_CODE in supabase/functions/_shared/notify-core.ts.
+ */
+const TYPE_CODE: Record<string, string> = {
+  chat: TYPE.USER_CHAT,
+  message: TYPE.USER_CHAT,
+  booking: TYPE.BOOKING,
+  system: TYPE.SYSTEM,
+  task: TYPE.SYSTEM,
+  job: TYPE.SYSTEM,
+  community: TYPE.SYSTEM,
+  location: TYPE.LOCATION_ALERT,
+  safe_zone: TYPE.LOCATION_ALERT,
+  location_alert: TYPE.LOCATION_ALERT,
+  check_in: TYPE.CHECK_IN,
+  checkin: TYPE.CHECK_IN,
+  medicine: TYPE.MEDICINE,
+};
+
+/** Radio code → semantic type the UI filters and icons are keyed on. */
+const CODE_TYPE: Record<string, string> = {
+  [TYPE.USER_CHAT]: "chat",
+  [TYPE.BOOKING]: "booking",
+  [TYPE.SYSTEM]: "system",
+  [TYPE.LOCATION_ALERT]: "location",
+  [TYPE.CHECK_IN]: "check_in",
+  [TYPE.MEDICINE]: "medicine",
+};
+
+function typeToCode(type: string): string {
+  return TYPE_CODE[type] ?? TYPE.SYSTEM;
+}
+
+function codeToType(code: any): string {
+  const raw = String(code ?? "");
+  return CODE_TYPE[raw] ?? (raw && !/^b\d+$/.test(raw) ? raw : "system");
+}
 
 function isRead(v: any): boolean {
   return v === true || v === "yes" || v === "1" || v === 1 || v === READ.YES;
@@ -47,7 +89,7 @@ export async function fetchNotificationsWordPress(): Promise<any[]> {
     return filterAppScope("notification", raw).map((n: any) => ({
       id: String(n.id ?? n._ID),
       user_id: userId,
-      type: n[F.NOTIFICATION_TYPE] || "info",
+      type: codeToType(n[F.NOTIFICATION_TYPE]),
       title: n[F.NOTIFICATION_TITLE] || null,
       message: n[F.NOTIFICATION_CONTENT] || null,
       is_read: isRead(n[F.NOTIFICATION_IS_READ]),
@@ -127,7 +169,7 @@ export async function createNotificationWordPress(input: {
   const created: any = await wordpressCCTFetch(SLUG, {
     method: "POST",
     body: {
-      [F.NOTIFICATION_TYPE]: input.type,
+      [F.NOTIFICATION_TYPE]: typeToCode(input.type),
       [F.NOTIFICATION_TITLE]: input.title,
       [F.NOTIFICATION_CONTENT]: input.message,
       [F.ACTION_URL]: url,
