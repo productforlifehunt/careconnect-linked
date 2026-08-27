@@ -69,7 +69,7 @@ export default function HowItWorks() {
         <p className="text-primary-foreground/80 mb-6">{t("howItWorks.searchForFree")}</p>
         <div className="flex gap-3 justify-center">
           <Button variant="coral" size="lg" onClick={() => navigate("/search")}>{t(`site.${site.id}.ctaButton`)}</Button>
-          <Button variant="outline" size="lg" className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10" onClick={() => navigate("/auth?mode=signup")}>{t("howItWorks.createAccount")}</Button>
+          <Button variant="outline" size="lg" className="bg-transparent border-primary-foreground/50 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground" onClick={() => navigate("/auth?mode=signup")}>{t("howItWorks.createAccount")}</Button>
         </div>
       </div>
     </div>

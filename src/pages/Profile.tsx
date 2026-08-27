@@ -16,7 +16,6 @@ import { User, Bell, Shield, MapPin, Loader2, Upload, Camera, Download, Trash2 }
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSite } from "@/contexts/SiteContext";
 import { useTranslation } from "react-i18next";
-import { WPServerSwitch } from "@/components/admin/WPServerSwitch";
 
 export default function Profile() {
   const { t } = useTranslation();
@@ -252,9 +251,6 @@ export default function Profile() {
               </AlertDialog>
             </CardContent>
           </Card>
-
-          {/* Admin: WP Server Switch */}
-          <WPServerSwitch />
         </TabsContent>
       </Tabs>
     </div>

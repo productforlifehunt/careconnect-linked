@@ -25,6 +25,7 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import yichangIcon from "@/assets/yichang-icon.png";
 import huchangIcon from "@/assets/huchang-icon.png";
 import { useStandaloneMode } from "@/hooks/useStandaloneMode";
+import { BrandMark } from "@/components/BrandMark";
 
 export function AppHeader() {
   const { user, isAuthenticated, logout, authSource } = useAuth();
@@ -201,12 +202,12 @@ export function AppHeader() {
         </Link>
 
         {/* Desktop horizontal nav */}
-        <nav className="hidden md:flex items-center gap-1 ml-4 flex-wrap">
+        <nav className="hidden md:flex items-center gap-0.5 ml-3 min-w-0 flex-nowrap overflow-x-auto no-scrollbar">
           {publicNav.map(item => (
             <NavLink
               key={item.url}
               to={item.url}
-              className="px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors flex items-center gap-1"
+              className="shrink-0 whitespace-nowrap px-2.5 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors flex items-center gap-1"
               activeClassName="text-primary font-medium bg-accent/50"
             >
               <span className="relative">
