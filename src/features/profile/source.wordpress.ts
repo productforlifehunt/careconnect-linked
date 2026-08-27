@@ -130,6 +130,9 @@ export async function updateProfileWordPress(updates: Partial<Profile>): Promise
   if (updates.care_provider_is_background_checked !== undefined) body[F.CARE_PROVIDER_IS_BACKGROUND_CHECKED] = boolToYesNo(updates.care_provider_is_background_checked);
   if (updates.care_provider_background_check_detail !== undefined) body[F.CARE_PROVIDER_S_BACKGROUND_CHECK_DETAIL] = updates.care_provider_background_check_detail;
   if (updates.care_provider_starts_hourly_rate !== undefined) body[F.CARE_PROVIDER_S_HOURLY_RATE_FOR_IN_PERSON_SERVICE] = String(updates.care_provider_starts_hourly_rate ?? "");
+  // Dictionary: a64 = care provider's location (the only location column in CCT 258).
+  if (updates.location !== undefined) body[F.CARE_PROVIDER_S_LOCATION] = updates.location ?? "";
+
 
   if (Object.keys(body).length === 0) return;
 
