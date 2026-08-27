@@ -608,7 +608,7 @@ const subgroupMeta = encodeRel75Meta;
 
 export interface SubgroupMemberRecord {
   user_id: number;
-  status: "accepted" | "pending";
+  status: InvitationStatus;
   types: string[];
   is_owner: boolean;
   is_admin: boolean;
@@ -647,7 +647,7 @@ export async function fetchSubgroupMemberRecordsWordPress(subgroupId: string): P
 export async function addMemberToSubgroupWordPress(
   subgroupId: string,
   userId: string | number,
-  opts: { status?: "accepted" | "pending"; types?: string[] } = {},
+  opts: { status?: InvitationStatus; types?: string[] } = {},
 ): Promise<void> {
   const sid = normalizeWpObjectId(subgroupId);
   const uid = normalizeWpObjectId(userId);
