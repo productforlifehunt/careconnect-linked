@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -67,13 +67,32 @@ export default function CareCircle() {
   const { data: members, isLoading: membersLoading } = useCareGroupMembers(activeGroupId);
   const { data: tasks, isLoading: tasksLoading } = useCareTasks(activeGroupId);
   const { data: allPosts } = useCareGroupPosts(activeGroupId);
-  const { data: announcements } = useCareGroupPosts(activeGroupId, "announcement");
-  const { data: wishes } = useCareGroupPosts(activeGroupId, "wish");
+  const { data: announcements, isLoading: announcementsLoading } = useCareGroupPosts(activeGroupId, "announcement");
+  const { data: wishes, isLoading: wishesLoading } = useCareGroupPosts(activeGroupId, "wish");
   const { data: gallery } = useCareGroupGallery(activeGroupId);
   const { data: groupCaredOnes } = useGroupCaredOnes(activeGroupId);
   const { data: groupMessages } = useGroupMessages(activeGroupId);
   const { data: pendingInvitations } = useGroupInvitations(activeGroupId);
   const { data: memberCategories } = useMemberCategories(activeGroupId);
+
+  /**
+   * Posts carry only the WP author id (CCT `cct_author_id`); the display name
+   * lives on the Rel 223 membership meta. Resolve it here so every tab shows a
+   * real member name instead of a generic placeholder.
+   */
+  const withAuthors = useCallback((list: any[] | undefined) => {
+    const byId = new Map<string, any>((members || []).map((m: any) => [String(m.id), m]));
+    return (list || []).map((p: any) => {
+      const m = p.author_id ? byId.get(String(p.author_id).replace(/^wp-/, "")) : null;
+      return m
+        ? { ...p, author: { id: p.author_id, full_name: m.display_name || m.profile?.full_name || null, avatar_url: m.profile?.avatar_url || null } }
+        : p;
+    });
+  }, [members]);
+  const allPostsWithAuthors = useMemo(() => withAuthors(allPosts), [withAuthors, allPosts]);
+  const announcementsWithAuthors = useMemo(() => withAuthors(announcements), [withAuthors, announcements]);
+  const wishesWithAuthors = useMemo(() => withAuthors(wishes), [withAuthors, wishes]);
+
 
   const createTask = useCreateTask();
   const updateTaskStatus = useUpdateTaskStatus();
@@ -233,15 +252,15 @@ export default function CareCircle() {
         </div>
 
         <TabsContent value="home" className="mt-4">
-          <HomeTab pendingTasksCount={pendingTasks.length} membersCount={(members || []).length} caredOnesCount={(groupCaredOnes || []).length} allPosts={allPosts || []} activeGroupId={activeGroupId} userId={profile?.id} isAdmin={!!isAdmin} memberCategories={memberCategories || []} members={members || []} createPost={createPost} onEditPost={setEditingPost} onTogglePin={handleTogglePin} onDeletePost={handleDeletePost} />
+          <HomeTab pendingTasksCount={pendingTasks.length} membersCount={(members || []).length} caredOnesCount={(groupCaredOnes || []).length} allPosts={allPostsWithAuthors} activeGroupId={activeGroupId} userId={profile?.id} isAdmin={!!isAdmin} memberCategories={memberCategories || []} members={members || []} createPost={createPost} onEditPost={setEditingPost} onTogglePin={handleTogglePin} onDeletePost={handleDeletePost} />
         </TabsContent>
         <TabsContent value="calendar" className="mt-4"><CalendarTab tasks={tasks || []} /></TabsContent>
-        <TabsContent value="announcements" className="mt-4"><AnnouncementsTab announcements={announcements || []} activeGroupId={activeGroupId} userId={profile?.id} isAdmin={!!isAdmin} memberCategories={memberCategories || []} members={members || []} createPost={createPost} onEditPost={setEditingPost} onTogglePin={handleTogglePin} onDeletePost={handleDeletePost} /></TabsContent>
+        <TabsContent value="announcements" className="mt-4"><AnnouncementsTab announcements={announcementsWithAuthors} announcementsLoading={announcementsLoading} activeGroupId={activeGroupId} userId={profile?.id} isAdmin={!!isAdmin} memberCategories={memberCategories || []} members={members || []} createPost={createPost} onEditPost={setEditingPost} onTogglePin={handleTogglePin} onDeletePost={handleDeletePost} /></TabsContent>
         <TabsContent value="tasks" className="mt-4"><TasksTab tasks={tasks || []} tasksLoading={tasksLoading} members={members || []} activeGroupId={activeGroupId} userId={profile?.id} isAdmin={!!isAdmin} memberCategories={memberCategories || []} createTask={createTask} updateTaskStatus={updateTaskStatus} deleteTask={deleteTask} createJob={createJob} /></TabsContent>
         <TabsContent value="cared-ones" className="mt-4"><CaredOnesTab groupCaredOnes={groupCaredOnes || []} isAdmin={!!isAdmin} onAddCaredOne={() => setAddCaredOneOpen(true)} /></TabsContent>
         <TabsContent value="checkins" className="mt-4"><CheckInsTab groupCaredOnes={groupCaredOnes || []} activeGroupId={activeGroupId} /></TabsContent>
         <TabsContent value="messages" className="mt-4"><MessagesTab groupMessages={groupMessages || []} userId={profile?.id} activeGroupId={activeGroupId} sendMessage={sendMessage} /></TabsContent>
-        <TabsContent value="wishes" className="mt-4"><WishesTab wishes={wishes || []} activeGroupId={activeGroupId} userId={profile?.id} isAdmin={!!isAdmin} createPost={createPost} onEditPost={setEditingPost} onTogglePin={handleTogglePin} onDeletePost={handleDeletePost} /></TabsContent>
+        <TabsContent value="wishes" className="mt-4"><WishesTab wishes={wishesWithAuthors} wishesLoading={wishesLoading} activeGroupId={activeGroupId} userId={profile?.id} isAdmin={!!isAdmin} createPost={createPost} onEditPost={setEditingPost} onTogglePin={handleTogglePin} onDeletePost={handleDeletePost} /></TabsContent>
         <TabsContent value="members" className="mt-4"><MembersTab members={members || []} activeGroup={activeGroup} activeGroupId={activeGroupId} userId={profile?.id} isAdmin={!!isAdmin} isOwner={!!isOwner} currentMember={currentMember} pendingInvitations={pendingInvitations || []} memberCategories={memberCategories || []} inviteToGroup={inviteToGroup} updateRole={updateRole} removeMember={removeMember} cancelInvitation={cancelInvitation} createCategory={createCategory} deleteCategory={deleteCategory} /></TabsContent>
         <TabsContent value="gallery" className="mt-4"><GalleryTab gallery={gallery || []} activeGroupId={activeGroupId} /></TabsContent>
       </Tabs>

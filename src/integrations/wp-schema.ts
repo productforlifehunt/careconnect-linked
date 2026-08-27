@@ -800,7 +800,8 @@ export const WP = {
         "SCHEDULED_AT": "a59",  // Datetime
       },
       opt: {
-        "TYPE": { "DISCUSSION": "b55", "ANNOUNCEMENT": "b56" },
+        // Live CCT 202 checkbox options (verified in JetEngine GUI): b57 = wish
+        "TYPE": { "DISCUSSION": "b55", "ANNOUNCEMENT": "b56", "WISH": "b57" },
         "IS_PINNED": { "YES": "b55", "NO": "b56" },
       },
     },
