@@ -27,11 +27,24 @@ export async function wordpressFetchRaw(endpoint: string, options: WordPressFetc
   const url = buildWPUrl(endpoint, cleanParams, { forceEdge });
   const headers = buildWPHeaders(token, "application/json", { forceEdge });
 
-  const response = await fetch(url, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch (err) {
+    // Route changes abort in-flight requests (net::ERR_ABORTED → "Failed to
+    // fetch"). That is not a backend failure, so tag it and let callers keep
+    // it out of the console.
+    const detail = err instanceof Error ? err.message : String(err);
+    const e = new Error(`WP API ${endpoint}: request aborted (${detail})`) as Error & { isNetworkAbort?: boolean };
+
+    e.isNetworkAbort = true;
+    throw e;
+  }
+
 
   if (!response.ok) {
     // Treat 404 on JetEngine relation lookups as "no relations" — the relation
@@ -132,4 +145,9 @@ export async function wordpressCCTFetch<T = Record<string, any>[]>(
     return { ...raw, _ID: raw.item_id, id: String(raw.item_id) } as unknown as T;
   }
   return raw as T;
+}
+
+/** True for requests dropped by the browser (route change / page unload). */
+export function isNetworkAbort(err: unknown): boolean {
+  return Boolean(err && typeof err === "object" && (err as any).isNetworkAbort);
 }

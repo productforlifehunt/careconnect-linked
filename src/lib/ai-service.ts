@@ -9,7 +9,7 @@
  * NO separate ai_conversations / ai_messages CCTs. Those were hallucinations.
  */
 
-import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
+import { wordpressCCTFetch, wordpressFetch, isNetworkAbort } from "@/features/shared/wordpress-client";
 import { T, R } from "@/integrations/wp-schema";
 import { appScopeBody } from "@/features/shared/app-scope";
 import { supabase } from "@/integrations/supabase/client";
@@ -162,7 +162,8 @@ export async function invokeAI(mode: AIMode, context: string, options: InvokeAIO
     conversationId = await ensureConversation(mode, options);
     await createMessage(conversationId, "user", userMessage);
   } catch (e) {
-    console.warn("Chat CCT persistence unavailable, continuing without:", e);
+    if (isNetworkAbort(e)) console.debug("Chat CCT persistence skipped (request aborted)");
+    else console.warn("Chat CCT persistence unavailable, continuing without:", e);
   }
 
   // Critical path
