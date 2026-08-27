@@ -15,7 +15,7 @@ import { currentAppScope } from "@/features/shared/app-scope";
 
 const SLUG = T.userProfile.slug;
 const F = T.userProfile.f;
-const REL_USER_PROFILE = R.userProfile ?? 152;
+const REL_USER_PROFILE = R.userProfileRel;
 
 /** Which blob field this app writes to. */
 function settingsField(): string {
