@@ -72,7 +72,7 @@ export async function fetchMySubgroupIds(): Promise<Set<number>> {
   } catch { return new Set(); }
 }
 
-/** Filter a list of posts to those visible to the current user. */
+
 /**
  * Resolve visibility for a list of entities while PRESERVING input order.
  * (An earlier version pushed into an array from inside `Promise.all`, which made
