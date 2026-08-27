@@ -11,6 +11,7 @@ import { useCheckins, useCreateCheckin, useUpdateCheckin, useDeleteCheckin, useC
 import { useToast } from "@/hooks/use-toast";
 import { AICheckInDialog } from "./AICheckInDialog";
 import { useTranslation } from "react-i18next";
+import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 function formatSlot(slot: string, isCN: boolean) {
   const [hourRaw = "8", minuteRaw = "00"] = String(slot || "08:00").split(":");
@@ -283,7 +284,7 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
                 <div key={log.id} className="flex items-start gap-3 py-2 border-b border-border/50 last:border-0">
                   <Badge variant="outline" className={STATUS_STYLE[log.status] || ""}>{STATUS_LABEL[log.status] || log.status}</Badge>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-muted-foreground">{new Date(log.created_at).toLocaleString(isCN ? "zh-CN" : undefined)}</p>
+                    <p className="text-xs text-muted-foreground">{formatDateTime(log.created_at, isCN ? "zh-CN" : undefined)}</p>
                     {log.note && <p className="text-xs mt-0.5 flex items-start gap-1"><StickyNote className="h-3 w-3 mt-0.5 shrink-0" />{log.note}</p>}
                   </div>
                 </div>
@@ -412,7 +413,7 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
                       {log.checked_by_ai && <Badge variant="outline" className="text-xs border-primary/40 text-primary"><Bot className="h-3 w-3 mr-1" />AI</Badge>}
                       {log.note && <p className="text-xs text-muted-foreground truncate">{log.note}</p>}
                     </div>
-                    <span className="text-xs text-muted-foreground shrink-0">{new Date(log.created_at).toLocaleDateString(isCN ? "zh-CN" : "en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+                    <span className="text-xs text-muted-foreground shrink-0">{formatDate(log.created_at, isCN ? "zh-CN" : "en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
                   </CardContent>
                 </Card>
               ))}

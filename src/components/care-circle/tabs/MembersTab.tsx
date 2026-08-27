@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { SubgroupCard } from "../SubgroupCard";
 import { useGroupInvites, useCreateGroupInvite, useUpdateGroupInvite, useDeleteGroupInvite } from "@/hooks/use-care-data";
+import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 interface MembersTabProps {
   members: any[];
@@ -191,7 +192,7 @@ export function MembersTab({
                               <Badge variant={inv.is_active ? "default" : "outline"} className="text-[10px] h-4">{status}</Badge>
                             </div>
                             <p className="text-xs text-muted-foreground">
-                              {inv.expires_at ? Z(`过期时间：${new Date(inv.expires_at).toLocaleString("zh-CN")}`, `Expires ${new Date(inv.expires_at).toLocaleString()}`) : Z("永不过期", "Never expires")}
+                              {inv.expires_at ? Z(`过期时间：${formatDateTime(inv.expires_at, "zh-CN")}`, `Expires ${formatDateTime(inv.expires_at)}`) : Z("永不过期", "Never expires")}
                               {" · "}
                               {inv.max_uses > 0 ? Z(`已使用 ${inv.use_count}/${inv.max_uses}`, `${inv.use_count}/${inv.max_uses} uses`) : Z(`已使用 ${inv.use_count} 次（无限）`, `${inv.use_count} uses (unlimited)`)}
                             </p>
@@ -263,7 +264,7 @@ export function MembersTab({
                 <CardContent className="p-3 flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-foreground">{inv.invitee_email || inv.invited_email || Z("未知", "Unknown")}</p>
-                    <p className="text-xs text-muted-foreground">{Z(`邀请于 ${new Date(inv.created_at).toLocaleDateString("zh-CN", { month: "short", day: "numeric" })}`, `Invited ${new Date(inv.created_at).toLocaleDateString("en", { month: "short", day: "numeric" })}`)}</p>
+                    <p className="text-xs text-muted-foreground">{Z(`邀请于 ${formatDate(inv.created_at, "zh-CN", { month: "short", day: "numeric" })}`, `Invited ${formatDate(inv.created_at, "en", { month: "short", day: "numeric" })}`)}</p>
                   </div>
                   <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => cancelInvitation.mutate(inv.id)}><X className="h-4 w-4 mr-1" /> {Z("取消", "Cancel")}</Button>
                 </CardContent>

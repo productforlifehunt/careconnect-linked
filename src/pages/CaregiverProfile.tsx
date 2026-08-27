@@ -17,6 +17,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 const TIME_STEP_MINUTES = 30;
 
@@ -417,7 +418,7 @@ export default function CaregiverProfile() {
                 <div key={review.id} className="border-b last:border-0 pb-4 last:pb-0">
                   <div className="flex items-center justify-between mb-1">
                     <span className="font-medium text-sm text-foreground">{review.reviewer?.full_name || "Anonymous"}</span>
-                    <span className="text-xs text-muted-foreground">{new Date(review.created_at).toLocaleDateString(i18n.language, { month: "short", day: "numeric", year: "numeric" })}</span>
+                    <span className="text-xs text-muted-foreground">{formatDate(review.created_at, i18n.language, { month: "short", day: "numeric", year: "numeric" })}</span>
                   </div>
                   <div className="flex gap-0.5 mb-2">
                     {Array.from({ length: review.rating }).map((_, j) => (

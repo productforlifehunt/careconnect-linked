@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { CommentsSection } from "@/components/comments/CommentsSection";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 import {
   useCareFacility,
   useClaimFacilityOwnership,
@@ -359,7 +360,7 @@ export default function CareFacilityProfile() {
                 <div key={review.id} className="border-b last:border-0 pb-4 last:pb-0">
                   <div className="flex items-center justify-between mb-1 gap-3">
                     <span className="font-medium text-sm text-foreground">{review.reviewer?.full_name || t("common.anonymous")}</span>
-                    <span className="text-xs text-muted-foreground">{new Date(review.created_at).toLocaleDateString(isZh ? "zh-CN" : "en", { month: "short", day: "numeric", year: "numeric" })}</span>
+                    <span className="text-xs text-muted-foreground">{formatDate(review.created_at, isZh ? "zh-CN" : "en", { month: "short", day: "numeric", year: "numeric" })}</span>
                   </div>
                   <div className="flex gap-0.5 mb-2">
                     {Array.from({ length: review.rating }).map((_, j) => (

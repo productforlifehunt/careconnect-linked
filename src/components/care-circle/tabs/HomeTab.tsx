@@ -11,6 +11,7 @@ import { CommentsSection } from "@/components/comments/CommentsSection";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 interface HomeTabProps {
   pendingTasksCount: number;
@@ -105,7 +106,7 @@ export function HomeTab({
                 <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">{(p.author?.full_name || "?")[0]}</div>
                 <span className="text-sm font-medium text-foreground">{p.author?.full_name || (isCN ? "成员" : "Member")}</span>
                 <Badge variant="outline" className="text-xs ml-auto">{isCN ? ({ discussion: "讨论", announcement: "公告", wish: "祝福" } as any)[p.type] || p.type : p.type}</Badge>
-                <span className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString(isCN ? "zh-CN" : "en", { month: "short", day: "numeric" })}</span>
+                <span className="text-xs text-muted-foreground">{formatDate(p.created_at, isCN ? "zh-CN" : "en", { month: "short", day: "numeric" })}</span>
                 <PostActions post={p} userId={userId} isAdmin={isAdmin} onEdit={onEditPost} onTogglePin={onTogglePin} onDelete={onDeletePost} />
               </div>
               {p.title && <p className="font-medium text-sm text-foreground mb-1">{p.title}</p>}

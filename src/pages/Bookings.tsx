@@ -17,6 +17,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 export default function Bookings() {
   const { t, i18n } = useTranslation();
@@ -169,7 +170,7 @@ export default function Bookings() {
           </div>
         </div>
         <div className="grid grid-cols-3 gap-3 text-sm">
-          <div className="flex items-center gap-2 text-muted-foreground"><CalendarDays className="h-4 w-4 text-primary" /><span>{new Date(booking.appointment_date || booking.start_time || booking.created_at).toLocaleDateString(i18n.language, { month: "short", day: "numeric", year: "numeric" })}</span></div>
+          <div className="flex items-center gap-2 text-muted-foreground"><CalendarDays className="h-4 w-4 text-primary" /><span>{formatDate(booking.appointment_date || booking.start_time || booking.created_at, i18n.language, { month: "short", day: "numeric", year: "numeric" })}</span></div>
           <div className="flex items-center gap-2 text-muted-foreground"><Clock className="h-4 w-4 text-primary" /><span>{booking.appointment_time || ""} · {booking.duration_hour || ""}{t("common.hours")}</span></div>
           <div className="text-right"><span className="font-bold text-foreground text-lg">{i18n.language?.startsWith("zh") ? "¥" : "$"}{booking.total_cost || 0}</span></div>
         </div>

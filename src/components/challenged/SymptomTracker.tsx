@@ -16,6 +16,7 @@ import { useSymptomLogs, useCreateSymptomLog } from "@/hooks/use-care-data";
 import { invokeAI } from "@/lib/ai-service";
 import { toast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 interface SymptomTrackerProps {
   caredOneId: string;
@@ -199,7 +200,7 @@ export function SymptomTracker({ caredOneId, caredOneName }: SymptomTrackerProps
                     {t("symptoms.sev")} {log.severity}/5
                   </Badge>
                   <span className="text-[10px] text-muted-foreground shrink-0">
-                    {new Date(log.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                    {formatDate(log.created_at, undefined, { month: "short", day: "numeric" })}
                   </span>
                 </div>
               );

@@ -17,6 +17,7 @@ import { CommentsSection } from "@/components/comments/CommentsSection";
 import { useToast } from "@/hooks/use-toast";
 import { useUpdateAssigneeStatus } from "@/hooks/use-care-data";
 import { useTranslation } from "react-i18next";
+import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 interface TasksTabProps {
   tasks: any[];
@@ -305,7 +306,7 @@ export function TasksTab({
             const start = fmtTime(t.start_time);
             const end = fmtTime(t.end_time);
             const dateStr = t.task_date
-              ? new Date(dateOnly(t.task_date) + "T00:00").toLocaleDateString(isCN ? "zh-CN" : "en", { month: "short", day: "numeric" })
+              ? formatDate(dateOnly(t.task_date) + "T00:00", isCN ? "zh-CN" : "en", { month: "short", day: "numeric" })
               : "";
             const canEdit = isAdmin || t.created_by === userId;
             return (

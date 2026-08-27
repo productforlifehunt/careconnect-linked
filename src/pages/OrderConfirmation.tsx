@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, CalendarDays, Clock, DollarSign, ArrowRight, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 export default function OrderConfirmation() {
   const { t, i18n } = useTranslation();
@@ -62,7 +63,7 @@ export default function OrderConfirmation() {
                 <CalendarDays className="h-4 w-4" /> {t("checkout.date", "Date")}
               </span>
               <span className="font-semibold">
-                {new Date(orderDate).toLocaleDateString(i18n.language, { month: "long", day: "numeric", year: "numeric" })}
+                {formatDate(orderDate, i18n.language, { month: "long", day: "numeric", year: "numeric" })}
               </span>
             </div>
           )}

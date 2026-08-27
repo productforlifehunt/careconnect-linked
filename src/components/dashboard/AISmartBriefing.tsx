@@ -6,6 +6,7 @@ import { Sparkles, AlertTriangle, Lightbulb, ListChecks, RefreshCw, Loader2 } fr
 import { useTranslation } from "react-i18next";
 import { invokeAI, parseAIJson } from "@/lib/ai-service";
 import { useUserCaredOnes, useCareTasks, useBookings, useCheckinLogs } from "@/hooks/use-care-data";
+import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 interface Briefing {
   alerts: { level: "high" | "medium" | "low"; text: string }[];
@@ -112,7 +113,7 @@ export function AISmartBriefing() {
     setLoading(true);
     setError(null);
     try {
-      const today = new Date().toLocaleDateString(i18n.language, {
+      const today = formatDate(new Date(), i18n.language, {
         weekday: "long",
         month: "long",
         day: "numeric",

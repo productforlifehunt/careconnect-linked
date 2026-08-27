@@ -24,7 +24,11 @@ function canUseLocalViteProxy(): boolean {
  * In dev mode with the primary server, uses Vite proxy.
  * Otherwise routes through the edge function with a dynamic base URL header.
  */
-export function buildWPUrl(wpJsonPath: string, params?: Record<string, string | number | boolean | undefined | null>): string {
+export function buildWPUrl(
+  wpJsonPath: string,
+  params?: Record<string, string | number | boolean | undefined | null>,
+  options?: { forceEdge?: boolean },
+): string {
   const server = getActiveServer();
   const qs = new URLSearchParams();
   if (params) {
@@ -37,7 +41,7 @@ export function buildWPUrl(wpJsonPath: string, params?: Record<string, string | 
   const path = wpJsonPath.startsWith('/') ? wpJsonPath : `/wp-json/${wpJsonPath}`;
 
   // Local dev with primary server → use Vite proxy. Remote previews must use the backend proxy.
-  if (canUseLocalViteProxy() && server.isPrimary) {
+  if (!options?.forceEdge && canUseLocalViteProxy() && server.isPrimary) {
     const devBase = `/wp-proxy/${server.sitePath}`;
     const query = qs.toString();
     return `${devBase}${path}${query ? `?${query}` : ''}`;
@@ -52,14 +56,18 @@ export function buildWPUrl(wpJsonPath: string, params?: Record<string, string | 
 /**
  * Build headers for WP requests. In production, includes the Supabase anon key.
  */
-export function buildWPHeaders(token?: string | null, contentType?: string): Record<string, string> {
+export function buildWPHeaders(
+  token?: string | null,
+  contentType?: string,
+  options?: { forceEdge?: boolean },
+): Record<string, string> {
   const server = getActiveServer();
   const headers: Record<string, string> = {};
   if (contentType) headers['Content-Type'] = contentType;
   if (token) headers['Authorization'] = `Bearer ${token}`;
   
   // Need anon key when going through edge function (prod, or dev with non-primary server)
-  const useEdgeFunction = !canUseLocalViteProxy() || !server.isPrimary;
+  const useEdgeFunction = options?.forceEdge === true || !canUseLocalViteProxy() || !server.isPrimary;
   if (useEdgeFunction) {
     const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
     if (anonKey) headers['apikey'] = anonKey;

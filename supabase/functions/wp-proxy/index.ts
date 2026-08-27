@@ -11,7 +11,32 @@ const corsHeaders = {
   "Access-Control-Expose-Headers": "Cart-Token, Nonce, X-WC-Store-API-Nonce, X-WP-Total, X-WP-TotalPages, X-WP-Upstream-Base, X-WP-Fallback-Used",
 };
 
-function buildTargetUrl(wpBase: string, wpPath: string, incomingUrl: URL): string {
+/**
+ * WooCommerce read-only catalog keys. Used ONLY to serve public (unauthenticated)
+ * GET requests to the wc/v3 catalog endpoints, so anonymous visitors can browse
+ * services, attributes and terms without logging in. Never applied to writes and
+ * never applied when the caller already sent an Authorization header.
+ */
+const WC_CONSUMER_KEY = Deno.env.get("WC_CONSUMER_KEY") ?? "";
+const WC_CONSUMER_SECRET = Deno.env.get("WC_CONSUMER_SECRET") ?? "";
+
+/** wc/v3 catalog paths that are safe to expose publicly (read-only). */
+const PUBLIC_WC_READ_PATHS = [
+  /wp-json\/wc\/v3\/products(\/|\?|$)/i,
+  /wp-json\/wc\/v3\/products\/attributes/i,
+  /wp-json\/wc\/v3\/products\/categories/i,
+  /wp-json\/wc\/v3\/products\/tags/i,
+  /wp-json\/wc\/v3\/products\/reviews/i,
+];
+
+
+function canUseCatalogKeys(method: string, wpPath: string, hasAuth: boolean): boolean {
+  if (method !== "GET" || hasAuth) return false;
+  if (!WC_CONSUMER_KEY || !WC_CONSUMER_SECRET) return false;
+  return PUBLIC_WC_READ_PATHS.some((re) => re.test(wpPath));
+}
+
+function buildTargetUrl(wpBase: string, wpPath: string, incomingUrl: URL, withCatalogKeys = false): string {
   const trimmedBase = wpBase.endsWith("/") ? wpBase.slice(0, -1) : wpBase;
   const cleanPath = wpPath.startsWith("/") ? wpPath : `/${wpPath}`;
   const targetUrl = new URL(`${trimmedBase}${cleanPath}`);
@@ -22,7 +47,17 @@ function buildTargetUrl(wpBase: string, wpPath: string, incomingUrl: URL): strin
     }
   });
 
+  if (withCatalogKeys) {
+    targetUrl.searchParams.set("consumer_key", WC_CONSUMER_KEY);
+    targetUrl.searchParams.set("consumer_secret", WC_CONSUMER_SECRET);
+  }
+
   return targetUrl.toString();
+}
+
+
+function redactUrl(u: string): string {
+  return u.replace(/consumer_key=[^&]*/gi, "consumer_key=***").replace(/consumer_secret=[^&]*/gi, "consumer_secret=***");
 }
 
 function shouldRetryUpstream(status: number, body: string): boolean {
@@ -90,9 +125,11 @@ serve(async (req) => {
     const candidateBases = getCandidateBases(wpBase);
     let lastError: { baseUrl: string; targetUrl: string; status?: number; body?: string; error?: string } | null = null;
 
+    const useCatalogKeys = canUseCatalogKeys(req.method, wpPath, Boolean(authHeader));
+
     for (let i = 0; i < candidateBases.length; i++) {
       const baseUrl = candidateBases[i];
-      const targetUrl = buildTargetUrl(baseUrl, wpPath, url);
+      const targetUrl = buildTargetUrl(baseUrl, wpPath, url, useCatalogKeys);
 
       try {
         const wpResponse = await fetch(targetUrl, {
@@ -106,7 +143,7 @@ serve(async (req) => {
         const shouldRetry = i < candidateBases.length - 1 && shouldRetryUpstream(wpResponse.status, responseBody);
 
         if (shouldRetry) {
-          lastError = { baseUrl, targetUrl, status: wpResponse.status, body: responseBody };
+          lastError = { baseUrl, targetUrl: redactUrl(targetUrl), status: wpResponse.status, body: responseBody };
           continue;
         }
 
@@ -132,7 +169,7 @@ serve(async (req) => {
               attempted_base: baseUrl,
               fallback_used: i > 0,
               requested_path: wpPath,
-              target_url: targetUrl,
+              target_url: redactUrl(targetUrl),
               upstream_status: wpResponse.status,
               upstream_body_preview: responseBody.slice(0, 400),
             },
@@ -167,7 +204,7 @@ serve(async (req) => {
       } catch (error) {
         lastError = {
           baseUrl,
-          targetUrl,
+          targetUrl: redactUrl(targetUrl),
           error: error instanceof Error ? error.message : String(error),
         };
       }

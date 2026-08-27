@@ -2,6 +2,7 @@ import { FileText, ExternalLink } from "lucide-react";
 import { extractQuote, stripQuoteMarker } from "@/lib/quote-protocol";
 import { QuoteCard } from "./QuoteCard";
 import { useTranslation } from "react-i18next";
+import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 interface MessageBubbleProps {
   message: any;
@@ -69,7 +70,7 @@ export function MessageBubble({ message, isMe, conversationId, otherUserId }: Me
           <p className="text-sm whitespace-pre-wrap">{textContent}</p>
         )}
         <p className={`text-xs mt-1 ${isMe ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
-          {new Date(message.created_at).toLocaleTimeString(i18n.language, { hour: "numeric", minute: "2-digit" })}
+          {formatTime(message.created_at, i18n.language, { hour: "numeric", minute: "2-digit" })}
         </p>
       </div>
     </div>

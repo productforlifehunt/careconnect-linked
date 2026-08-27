@@ -15,14 +15,27 @@ const REL_COMMENT_REPLY = R.commentReplies;       // M:M comment → comment
 
 export async function fetchCommunityPostsWordPress(locale?: { area?: string; language?: string; category?: string }): Promise<any[]> {
   try {
+    // Only scalar radio fields are filtered server-side. "App area" is a
+    // checkbox (stored serialized), so it is matched leniently in JS instead.
     const params: Record<string, string | number> = { _limit: 50 };
     params[F.COMMUNITY_TYPE] = communityTypeCode();
-    if (locale?.area) params[F.APP_AREA] = locale.area;
-    if (locale?.language) params[F.LANGUAGE] = locale.language;
     if (locale?.category) params[F.COMMUNITY_POST_CATEGORY] = locale.category;
     const posts = await wordpressCCTFetch<any[]>(SLUG, { params });
     if (!Array.isArray(posts)) return [];
-    return posts.map((p: any) => ({
+    const matchesLocale = (p: any) => {
+      if (locale?.area) {
+        const raw = p[F.APP_AREA];
+        const value = raw === null || raw === undefined ? "" : String(raw);
+        // Empty = legacy row written before scoping: keep it visible.
+        if (value && !value.includes(locale.area)) return false;
+      }
+      if (locale?.language) {
+        const value = p[F.LANGUAGE] ? String(p[F.LANGUAGE]) : "";
+        if (value && value !== locale.language) return false;
+      }
+      return true;
+    };
+    return posts.filter(matchesLocale).map((p: any) => ({
       id: p.id,
       title: p[F.TITLE] || "",
       content: p[F.CONTENT] || "",
@@ -36,6 +49,7 @@ export async function fetchCommunityPostsWordPress(locale?: { area?: string; lan
     }));
   } catch { return []; }
 }
+
 
 export async function fetchCommunityPostByIdWordPress(id: string): Promise<any | null> {
   try {

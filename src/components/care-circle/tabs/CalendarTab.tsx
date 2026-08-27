@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Circle, MapPin, Clock } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 interface CalendarTabProps {
   tasks: any[];
@@ -49,7 +50,7 @@ export function CalendarTab({ tasks }: CalendarTabProps) {
       {sortedDates.map(date => (
         <div key={date} className="mb-6">
           <h3 className="text-sm font-semibold text-foreground mb-2">
-            {new Date(date + "T00:00").toLocaleDateString(isCN ? "zh-CN" : "en", { weekday: "long", month: "long", day: "numeric" })}
+            {formatDate(date + "T00:00", isCN ? "zh-CN" : "en", { weekday: "long", month: "long", day: "numeric" })}
           </h3>
           <div className="space-y-2">
             {tasksByDate[date]

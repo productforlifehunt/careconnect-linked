@@ -9,6 +9,7 @@ import { VisibilityPicker, EMPTY_VISIBILITY, type VisibilityValue } from "../Vis
 import { CommentsSection } from "@/components/comments/CommentsSection";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 interface AnnouncementsTabProps {
   announcements: any[];
@@ -76,7 +77,7 @@ export function AnnouncementsTab({
               <div className="flex items-center gap-2 mb-2">
                 {a.is_pinned && <Pin className="h-3.5 w-3.5 text-primary" />}
                 <span className="text-sm font-medium text-foreground">{a.author?.full_name || Z("管理员", "Admin")}</span>
-                <span className="text-xs text-muted-foreground ml-auto">{new Date(a.created_at).toLocaleDateString(isCN ? "zh-CN" : "en", { month: "short", day: "numeric" })}</span>
+                <span className="text-xs text-muted-foreground ml-auto">{formatDate(a.created_at, isCN ? "zh-CN" : "en", { month: "short", day: "numeric" })}</span>
                 <PostActions post={a} userId={userId} isAdmin={isAdmin} onEdit={onEditPost} onTogglePin={onTogglePin} onDelete={onDeletePost} />
               </div>
               {a.title && <h4 className="font-semibold text-foreground mb-1">{a.title}</h4>}

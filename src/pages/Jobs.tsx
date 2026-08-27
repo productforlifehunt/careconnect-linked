@@ -22,6 +22,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 export default function Jobs() {
   const { toast } = useToast();
@@ -202,7 +203,7 @@ export default function Jobs() {
                         </div>
                       </div>
                       <span className="text-xs text-muted-foreground shrink-0">
-                        {new Date(job.created_at).toLocaleDateString(i18n.language, { month: "short", day: "numeric" })}
+                        {formatDate(job.created_at, i18n.language, { month: "short", day: "numeric" })}
                       </span>
                     </div>
                     <p className="text-sm text-muted-foreground mb-4 line-clamp-3">{job.description}</p>
@@ -299,7 +300,7 @@ export default function Jobs() {
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground line-clamp-2">{app.cover_letter}</p>
-                <p className="text-xs text-muted-foreground mt-2">{Z("申请于 ", "Applied ")}{new Date(app.created_at).toLocaleDateString(zh ? "zh-CN" : "en", { month: "short", day: "numeric", year: "numeric" })}</p>
+                <p className="text-xs text-muted-foreground mt-2">{Z("申请于 ", "Applied ")}{formatDate(app.created_at, zh ? "zh-CN" : "en", { month: "short", day: "numeric", year: "numeric" })}</p>
               </CardContent>
             </Card>
           )) : (
@@ -364,7 +365,7 @@ function PostedJobCard({ job, sourceLabels }: { job: any; sourceLabels: Record<s
               <Badge variant={job.status === "open" ? "default" : "secondary"}>{job.status}</Badge>
             </div>
             {job.location && <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> {job.location}</p>}
-            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1"><Clock className="h-3 w-3" /> {Z("发布于 ", "Posted ")}{new Date(job.created_at).toLocaleDateString(zh ? "zh-CN" : "en", { month: "short", day: "numeric", year: "numeric" })}</p>
+            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1"><Clock className="h-3 w-3" /> {Z("发布于 ", "Posted ")}{formatDate(job.created_at, zh ? "zh-CN" : "en", { month: "short", day: "numeric", year: "numeric" })}</p>
           </div>
         </div>
 
@@ -413,7 +414,7 @@ function PostedJobCard({ job, sourceLabels }: { job: any; sourceLabels: Record<s
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground bg-background rounded p-2 mb-3">{app.cover_letter}</p>
-                    <p className="text-xs text-muted-foreground mb-3">{Z("申请于 ", "Applied ")}{new Date(app.created_at).toLocaleDateString(zh ? "zh-CN" : "en", { month: "short", day: "numeric", year: "numeric" })}</p>
+                    <p className="text-xs text-muted-foreground mb-3">{Z("申请于 ", "Applied ")}{formatDate(app.created_at, zh ? "zh-CN" : "en", { month: "short", day: "numeric", year: "numeric" })}</p>
                     {app.status === "pending" && (
                       <div className="flex gap-2">
                         <Button size="sm" variant="default" className="bg-success hover:bg-success/90 text-success-foreground" onClick={() => handleAction(app.id, "accepted")} disabled={updateApplication.isPending}>

@@ -18,24 +18,50 @@ export const CARE_SERVICES_CATEGORY = 'care-services';
 /**
  * Build auth headers using JWT Bearer token
  */
-function getAuthHeaders(): Record<string, string> {
+function getAuthHeaders(forceEdge = false): Record<string, string> {
   const token = getWPToken();
-  return buildWPHeaders(token, 'application/json');
+  return buildWPHeaders(token, 'application/json', { forceEdge });
 }
 
 /**
- * Fetch wrapper for WooCommerce REST API v3 (admin endpoints)
+ * Fetch wrapper for WooCommerce REST API v3 (admin endpoints).
+ *
+ * Anonymous visitors have no JWT, so read-only catalog calls are routed through
+ * the backend proxy, which attaches server-side read-only store keys. This keeps
+ * public browsing (services, attributes, categories) working without login while
+ * never exposing credentials to the browser.
  */
-async function wcFetch(endpoint: string, options: RequestInit = {}) {
-  const url = buildWPUrl(`wc/v3/${endpoint}`);
+/** Read-only catalog endpoints that any visitor (logged in or not) may read. */
+const PUBLIC_CATALOG_PREFIXES = [
+  'products',
+  'products/categories',
+  'products/attributes',
+  'products/tags',
+  'products/reviews',
+];
 
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      ...getAuthHeaders(),
-      ...options.headers,
-    },
-  });
+function isPublicCatalogEndpoint(endpoint: string): boolean {
+  const path = endpoint.split('?')[0].replace(/^\/+|\/+$/g, '');
+  return PUBLIC_CATALOG_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`));
+}
+
+async function wcFetch(endpoint: string, options: RequestInit = {}) {
+  const isGet = !options.method || options.method.toUpperCase() === 'GET';
+  // Store keys live server-side in the proxy. Subscriber-level JWTs are not
+  // allowed to read wc/v3, so ALL catalog GETs go through the proxy — whether
+  // the visitor is anonymous or signed in.
+  const useProxyKeys = isGet && isPublicCatalogEndpoint(endpoint);
+  const url = buildWPUrl(`wc/v3/${endpoint}`, undefined, { forceEdge: useProxyKeys });
+
+  const headers: Record<string, string> = {
+    ...getAuthHeaders(useProxyKeys),
+    ...(options.headers as Record<string, string> | undefined),
+  };
+  // Never send a user JWT on proxy-key calls — WP would prefer it and 401.
+  if (useProxyKeys) delete headers.Authorization;
+
+  const response = await fetch(url, { ...options, headers });
+
 
   if (!response.ok) {
     const error = await response.text();
@@ -44,6 +70,7 @@ async function wcFetch(endpoint: string, options: RequestInit = {}) {
 
   return response.json();
 }
+
 
 async function wcBookingsFetch(endpoint: string, options: RequestInit = {}) {
   const url = buildWPUrl(`wc-bookings/v1/${endpoint}`);
@@ -147,58 +174,29 @@ export interface ServiceResource {
   ratePerHour: number;
 }
 
-// ─── Admin Basic Auth for Dokan admin operations ───────────
-const WP_ADMIN_USER = 'challenged';
-const WP_APP_PASSWORD = 'vPKl An2l fwQi TmUl ASPCYIoM'.replace(/ /g, '');
+// ─── Privileged WP/Dokan operations (admin creds live server-side) ───────
+// The browser never holds WordPress admin credentials. The `wp-admin-ops`
+// edge function validates the caller's own WP JWT and performs the operation
+// scoped to that user only.
+const ADMIN_OPS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/wp-admin-ops`;
 
-function getAdminBasicAuth(): string {
-  return btoa(`${WP_ADMIN_USER}:${WP_APP_PASSWORD}`);
-}
-
-function getAdminHeaders(contentType?: string): Record<string, string> {
-  const headers: Record<string, string> = {
-    'Authorization': `Basic ${getAdminBasicAuth()}`,
-  };
-  if (contentType) headers['Content-Type'] = contentType;
-  const server = getActiveServer();
-  const useEdgeFunction = !IS_DEV || !server.isPrimary;
-  if (useEdgeFunction) {
-    const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-    if (anonKey) headers['apikey'] = anonKey;
-  }
-  return headers;
-}
-
-async function wpAdminFetch(wpJsonPath: string, options: RequestInit = {}) {
-  const url = buildWPUrl(wpJsonPath);
-  const response = await fetch(url, {
-    ...options,
+async function adminOp<T = any>(action: string, body: Record<string, unknown> = {}): Promise<T | null> {
+  const token = getWPToken();
+  if (!token) return null;
+  const response = await fetch(ADMIN_OPS_URL, {
+    method: 'POST',
     headers: {
-      ...getAdminHeaders('application/json'),
-      ...options.headers,
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '',
     },
+    body: JSON.stringify({ action, wp_base: getActiveServer().baseUrl, ...body }),
   });
+  const payload = await response.json().catch(() => null);
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`WP Admin API error: ${response.status} - ${error}`);
+    throw new Error(`wp-admin-ops ${action} failed: ${response.status} - ${payload?.error ?? ''}`);
   }
-  return response.json();
-}
-
-async function dokanAdminFetch(endpoint: string, options: RequestInit = {}) {
-  const url = buildWPUrl(`dokan/v1/${endpoint}`);
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      ...getAdminHeaders('application/json'),
-      ...options.headers,
-    },
-  });
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Dokan Admin API error: ${response.status} - ${error}`);
-  }
-  return response.json();
+  return (payload?.data ?? payload) as T;
 }
 
 export async function ensureDokanVendor(userData: {
@@ -215,53 +213,37 @@ export async function ensureDokanVendor(userData: {
     return null;
   }
 
-  try {
-    const stores = await dokanAdminFetch(`stores?include=${wpUserId}`);
-    if (Array.isArray(stores) && stores.length > 0) {
-      const store = stores[0];
-      try {
-        return await dokanAdminFetch(`stores/${store.id}`, {
-          method: 'PUT',
-          body: JSON.stringify({
-            store_name: userData.fullName ? `${userData.fullName} Care Services` : store.store_name,
-            phone: userData.phone || store.phone || '',
-            address: { street_1: userData.location || '' },
-            // Mirror bio into Dokan store description so the public Dokan
-            // store page stays in sync with the caregiver profile.
-            ...(userData.bio !== undefined ? { description: userData.bio || '' } : {}),
-          }),
-        });
-      } catch {
-        return store;
-      }
-    }
-  } catch { /* no store found */ }
+  const storePayload = {
+    store_name: userData.fullName ? `${userData.fullName} Care Services` : undefined,
+    phone: userData.phone || '',
+    address: { street_1: userData.location || '' },
+    // Mirror bio into the Dokan store description so the public store page
+    // stays in sync with the caregiver profile.
+    ...(userData.bio !== undefined ? { description: userData.bio || '' } : {}),
+  };
 
+  let existingStore: any = null;
   try {
-    await wpAdminFetch(`wp/v2/users/${wpUserId}`, {
-      method: 'POST',
-      body: JSON.stringify({ roles: ['seller'] }),
-    });
-  } catch (e) {
-    console.warn('ensureDokanVendor: role assignment error', e);
+    const stores = await adminOp<any[]>('get_my_store');
+    if (Array.isArray(stores) && stores.length > 0) existingStore = stores[0];
+  } catch { /* no store yet */ }
+
+  if (!existingStore) {
+    try {
+      await adminOp('ensure_seller_role');
+    } catch (e) {
+      console.warn('ensureDokanVendor: role assignment error', e);
+    }
   }
 
   try {
-    const store = await dokanAdminFetch(`stores/${wpUserId}`, {
-      method: 'PUT',
-      body: JSON.stringify({
-        store_name: `${userData.fullName} Care Services`,
-        phone: userData.phone || '',
-        address: { street_1: userData.location || '' },
-        ...(userData.bio !== undefined ? { description: userData.bio || '' } : {}),
-      }),
-    });
-    return store;
+    return await adminOp('upsert_my_store', { store: storePayload });
   } catch (e) {
     console.warn('ensureDokanVendor: store setup error', e);
-    return null;
+    return existingStore;
   }
 }
+
 
 /**
  * Get or create provider's bookable service product.
@@ -710,7 +692,7 @@ export async function getProviderProducts(providerId: string) {
   try {
     // NOTE: WC REST `type` enum only accepts simple|grouped|external|variable.
     // Custom `booking` type is rejected (400). Fetch all and filter client-side.
-    const products = await wpAdminFetch(`wc/v3/products?per_page=100&status=publish`);
+    const products = await wcFetch(`products?per_page=100&status=publish`);
     if (!Array.isArray(products)) return [];
 
     return products
@@ -751,7 +733,7 @@ export async function getProviderProduct(providerId: string) {
     }
 
     try {
-      const allProducts = await wpAdminFetch(`wc/v3/products?per_page=100&status=any`);
+      const allProducts = await wcFetch(`products?per_page=100&status=any`);
       if (Array.isArray(allProducts)) {
         const matchedProduct = allProducts.find(matchesProvider);
         if (matchedProduct) return matchedProduct;
@@ -837,7 +819,7 @@ export async function fetchProductBookingResources(productId: number): Promise<B
   // Service packages are stored on the product's `_service_packages` meta — we
   // no longer query WooCommerce Bookings' `bookable_resource` endpoint.
   try {
-    const product = await wpAdminFetch(`wc/v3/products/${productId}`);
+    const product = await wcFetch(`products/${productId}`);
     return extractBookingResourcesFromProductMeta(product);
   } catch (e) {
     console.warn('fetchProductBookingResources failed:', e);
@@ -913,14 +895,15 @@ export interface ProviderProductSummary {
 export async function fetchAllProviderProductSummaries(): Promise<Map<string, ProviderProductSummary>> {
   const map = new Map<string, ProviderProductSummary>();
   try {
-    // Use admin Basic Auth via wpAdminFetch so unauthenticated visitors and
+    // Reads go through the backend proxy's store keys so unauthenticated visitors and
     // non-admin logged-in customers can still hydrate the marketplace listing
     // (WC `/products` listing requires `read` cap → JWT alone returns 401).
     // NOTE: WC REST `type` enum only accepts simple|grouped|external|variable.
     // Custom `booking` type is rejected (400). Fetch all and filter client-side via `_provider_id`.
-    const products = await wpAdminFetch(
-      `wc/v3/products?per_page=100&status=publish`,
+    const products = await wcFetch(
+      `products?per_page=100&status=publish`,
     );
+
     if (!Array.isArray(products)) return map;
 
     const toSlug = (s: string) => String(s).trim().toLowerCase().replace(/\s+/g, '-');
@@ -1084,7 +1067,7 @@ export async function createServiceOrder(
 ) {
   try {
     const product = bookingData.productId
-      ? await wpAdminFetch(`wc/v3/products/${bookingData.productId}`)
+      ? await wcFetch(`products/${bookingData.productId}`)
       : await getProviderProduct(providerId);
     
     if (!product) {
@@ -1850,7 +1833,7 @@ export async function getProviderAvailabilitySetting(pid: string) {
     bookingProduct = await wcBookingsFetch(`products/${p.id}`);
   } catch {
     try {
-      bookingProduct = await wpAdminFetch(`wc-bookings/v1/products/${p.id}`);
+      bookingProduct = await adminOp('get_bookings_product', { product_id: p.id });
     } catch (e: any) {
       // Product isn't (yet) a WC Bookings product — return sane defaults
       // instead of bubbling a 400 "Not a bookable product" to the UI.

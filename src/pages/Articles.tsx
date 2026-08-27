@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCreatePost, useDeletePost, useMyProfile, usePostTypes, usePosts, useToggleVote, useUpdatePost, useVoteSummary } from "@/hooks/use-care-data";
+import { useCreatePost, useDeletePost, useMyProfile, usePosts, useToggleVote, useUpdatePost, useVoteSummary } from "@/hooks/use-care-data";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
+
 import { Plus, Loader2, Newspaper, MoreHorizontal, Pencil, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
@@ -65,13 +65,7 @@ export default function Articles() {
   const isZh = i18n.language?.startsWith("zh");
   const area = isZh ? "china" : "global";
   const articlePostType = "challenged_article";
-  const { data: articleSubtypes = [] } = usePostTypes(2);
-  const availableSubtypes = useMemo(
-    () => articleSubtypes.filter((item) => ["challenged_user_article", "challenged_expert_article", "challenged_official_article"].includes(item.key)),
-    [articleSubtypes]
-  );
   const [articleScope, setArticleScope] = useState<string>("all");
-  const [selectedSubtype, setSelectedSubtype] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newContent, setNewContent] = useState("");
@@ -79,8 +73,7 @@ export default function Articles() {
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
   const [pendingDeleteArticle, setPendingDeleteArticle] = useState<any | null>(null);
-  const activeSubtype = selectedSubtype === "all" ? null : selectedSubtype;
-  const { data: posts, isLoading } = usePosts(articlePostType, area, activeSubtype);
+  const { data: posts, isLoading } = usePosts(articlePostType, area);
   const createPost = useCreatePost();
   const deletePost = useDeletePost();
   const updatePost = useUpdatePost();
@@ -97,7 +90,7 @@ export default function Articles() {
       return;
     }
     createPost.mutate(
-      { title: newTitle.trim(), content: newContent.trim(), postType: articlePostType, area },
+      { title: newTitle.trim(), content: newContent.trim(), postType: articlePostType, area, language: i18n.language },
       {
         onSuccess: () => {
           setDialogOpen(false);
@@ -163,18 +156,10 @@ export default function Articles() {
       </div>
 
       <Tabs value={articleScope} onValueChange={setArticleScope}>
-        <div className="flex items-center gap-3 flex-wrap">
-          <TabsList>
-            <TabsTrigger value="all">{isZh ? "全部文章" : "All Articles"}</TabsTrigger>
-            <TabsTrigger value="mine">{isZh ? "我的文章" : "My Articles"}</TabsTrigger>
-          </TabsList>
-          <TabsList>
-            <TabsTrigger value="all" onClick={() => setSelectedSubtype("all")}>{isZh ? "全部类型" : "All Types"}</TabsTrigger>
-            {availableSubtypes.map((item) => (
-              <TabsTrigger key={item.id} value={item.key} onClick={() => setSelectedSubtype(item.key)}>{item.name || item.key}</TabsTrigger>
-            ))}
-          </TabsList>
-        </div>
+        <TabsList>
+          <TabsTrigger value="all">{isZh ? "全部文章" : "All Articles"}</TabsTrigger>
+          <TabsTrigger value="mine">{isZh ? "我的文章" : "My Articles"}</TabsTrigger>
+        </TabsList>
       </Tabs>
 
       {isLoading ? (
@@ -184,7 +169,7 @@ export default function Articles() {
       ) : (
         <div className="space-y-4">
           {filteredPosts.map((post: any) => {
-            const subtype = availableSubtypes.find((item) => item.id === post.child_post_type_id);
+
             return (
               <Card key={post.id} className="overflow-hidden">
                 <CardHeader className="pb-2">
@@ -192,7 +177,6 @@ export default function Articles() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-medium text-sm text-foreground">{post.author?.full_name || (isZh ? "匿名" : "Anonymous")}</span>
-                        {subtype ? <Badge variant="outline">{subtype.name || subtype.key}</Badge> : null}
                         <span className="text-[11px] text-muted-foreground ml-auto shrink-0">{formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: dateLocale })}</span>
                       </div>
                       <Link to={`/articles/${post.id}`} className="block hover:opacity-90 transition-opacity"><h3 className="text-lg font-semibold mt-1 text-foreground">{post.title}</h3></Link>

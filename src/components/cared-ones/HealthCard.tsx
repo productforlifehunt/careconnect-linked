@@ -10,6 +10,7 @@ import { Plus, Activity, Loader2 } from "lucide-react";
 import { useHealthVitals, useCreateHealthVital } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 export function HealthCard({ caredOneId }: { caredOneId: string }) {
   const { toast } = useToast();
@@ -89,7 +90,7 @@ export function HealthCard({ caredOneId }: { caredOneId: string }) {
                   <span className="font-semibold text-foreground text-sm">{v.vital_type === "blood_pressure" && v.note ? v.note.split(" - ")[0] : v.value} {v.unit}</span></div>
                   {v.note && v.vital_type !== "blood_pressure" && <p className="text-xs text-muted-foreground mt-0.5">{v.note}</p>}
                 </div>
-                <span className="text-xs text-muted-foreground">{new Date(v.created_at).toLocaleDateString(isCN ? "zh-CN" : "en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+                <span className="text-xs text-muted-foreground">{formatDate(v.created_at, isCN ? "zh-CN" : "en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
               </CardContent>
             </Card>
           ))}

@@ -10,6 +10,7 @@ import { Pencil, Trash2, X, Check, Plus, FileText, Loader2 } from "lucide-react"
 import { useCaredOneDocuments, useCreateCaredOneDocument, useUpdateCaredOneDocument, useDeleteCaredOneDocument } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 const DOC_VALUES = ["Medical Record", "Insurance", "Prescription", "Lab Result", "Legal", "ID", "Emergency Plan", "Other"];
 const DOC_ZH: Record<string,string> = { "Medical Record":"病历", Insurance:"保险", Prescription:"处方", "Lab Result":"化验结果", Legal:"法律文件", ID:"身份证件", "Emergency Plan":"应急预案", Other:"其他" };
@@ -113,7 +114,7 @@ export function DocumentsCard({ caredOneId }: { caredOneId: string }) {
                       <h4 className="font-medium text-foreground text-sm">{d.title || d.file_name || Z("文件", "Document")}</h4>
                       <div className="flex items-center gap-2 mt-0.5">
                         <Badge variant="secondary" className="text-[10px]">{docLabel(d.document_type || "Other")}</Badge>
-                        <span className="text-[10px] text-muted-foreground">{new Date(d.created_at).toLocaleDateString(isCN ? "zh-CN" : undefined)}</span>
+                        <span className="text-[10px] text-muted-foreground">{formatDate(d.created_at, isCN ? "zh-CN" : undefined)}</span>
                       </div>
                       {d.notes && <p className="text-xs text-muted-foreground mt-0.5">{d.notes}</p>}
                     </div>
