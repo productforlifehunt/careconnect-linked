@@ -71,7 +71,8 @@ export async function fetchCareGroupMembersWordPress(groupId: string): Promise<a
         } catch { return null; }
       })
     );
-    return members.filter(Boolean);
+    // Declined invitations are not members — hide them from the roster.
+    return members.filter((m: any) => m && m.invitation_status !== "declined");
   } catch {
     return [];
   }
