@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -18,9 +18,11 @@ import {
   EVENT_TYPE_COLORS,
   getEventTypeLabel,
 } from "@/features/calendar/types";
-import { fetchCalendarEventsWordPress } from "@/features/calendar/source.wordpress";
-import { Calendar as CalendarIcon, MapPin, Users, Clock, Repeat } from "lucide-react";
+import { fetchCalendarEventsWordPress, deleteCalendarEventWordPress } from "@/features/calendar/source.wordpress";
+import EventFormDialog from "@/features/calendar/EventFormDialog";
+import { Calendar as CalendarIcon, MapPin, Users, Clock, Repeat, Plus, Pencil, Trash2 } from "lucide-react";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
+import { toast } from "sonner";
 
 const ALL_TYPES: CalendarEventType[] = [
   "personal", "family", "medicine", "task", "appointment",
@@ -30,14 +32,38 @@ const ALL_TYPES: CalendarEventType[] = [
 export default function CalendarPage() {
   const { i18n } = useTranslation();
   const isZh = i18n.language?.startsWith("zh");
+  const queryClient = useQueryClient();
   const [enabledTypes, setEnabledTypes] = useState<Set<CalendarEventType>>(new Set(ALL_TYPES));
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<CalendarEvent | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const { data: allEvents = [], isLoading } = useQuery({
     queryKey: ["calendar-events"],
     queryFn: fetchCalendarEventsWordPress,
     staleTime: 60_000,
   });
+
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ["calendar-events"] });
+
+  const openCreate = () => { setEditing(null); setFormOpen(true); };
+  const openEdit = (e: CalendarEvent) => { setSelectedEvent(null); setEditing(e); setFormOpen(true); };
+
+  const removeEvent = async (e: CalendarEvent) => {
+    setDeleting(true);
+    try {
+      await deleteCalendarEventWordPress(e.id);
+      toast.success(isZh ? "事件已删除" : "Event deleted");
+      setSelectedEvent(null);
+      refresh();
+    } catch {
+      toast.error(isZh ? "删除失败，请重试" : "Could not delete the event. Please try again.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
 
   /** Convert CCT-shaped events → FullCalendar EventInput, with RRULE support */
   const fcEvents = useMemo(() => {
@@ -83,11 +109,17 @@ export default function CalendarPage() {
   return (
     <div className="container mx-auto px-4 py-5 sm:py-8 space-y-5 max-w-5xl">
       <header className="space-y-2">
-        <div className="flex items-center gap-2.5">
-          <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
-            <CalendarIcon className="h-5 w-5 text-primary" />
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
+              <CalendarIcon className="h-5 w-5 text-primary" />
+            </div>
+            <h1 className="text-[22px] sm:text-3xl font-semibold tracking-tight">{isZh ? "日历" : "Calendar"}</h1>
           </div>
-          <h1 className="text-[22px] sm:text-3xl font-semibold tracking-tight">{isZh ? "日历" : "Calendar"}</h1>
+          <Button size="sm" className="rounded-full shrink-0" onClick={openCreate}>
+            <Plus className="h-4 w-4 mr-1.5" />
+            {isZh ? "新建事件" : "New event"}
+          </Button>
         </div>
         <p className="text-[13px] sm:text-sm text-muted-foreground leading-relaxed">
           {isZh ? "家庭日程、护理任务、用药与可约时间，一目了然。" : "Family schedule, care tasks, medicine & availability — all in one view."}
@@ -96,6 +128,7 @@ export default function CalendarPage() {
           {isLoading ? (isZh ? "加载中…" : "Loading…") : (isZh ? `${allEvents.length} 条 · 实时` : `${allEvents.length} event${allEvents.length === 1 ? "" : "s"} · live`)}
         </Badge>
       </header>
+
 
       {/* Type filter chips */}
       <Card className="p-4 rounded-2xl border-border/60 shadow-none">
@@ -151,26 +184,30 @@ export default function CalendarPage() {
         <FullCalendar
           plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin, rrulePlugin]}
           initialView="dayGridMonth"
+          locale={isZh ? "zh-cn" : "en"}
+          firstDay={isZh ? 1 : 0}
           headerToolbar={{
             left: "prev,next today",
             center: "title",
             right: "dayGridMonth,timeGridWeek,listWeek",
           }}
-          buttonText={{
-            today: "Today",
-            month: "Month",
-            week: "Week",
-            day: "Day",
-            list: "List",
-          }}
+          buttonText={
+            isZh
+              ? { today: "今天", month: "月", week: "周", day: "日", list: "列表" }
+              : { today: "Today", month: "Month", week: "Week", day: "Day", list: "List" }
+          }
+          allDayText={isZh ? "全天" : "all-day"}
+          noEventsText={isZh ? "本周没有日程" : "No events this week"}
           events={fcEvents}
           height="auto"
           nowIndicator
           dayMaxEvents={2}
           fixedWeekCount={false}
+          dateClick={openCreate}
           eventClick={(info) => {
             setSelectedEvent(info.event.extendedProps as CalendarEvent);
           }}
+
         />
       </Card>
 
@@ -202,7 +239,7 @@ export default function CalendarPage() {
                     <Clock className="h-4 w-4 text-muted-foreground" />
                     <span>
                       {selectedEvent.all_day
-                        ? "All day"
+                        ? (isZh ? `${formatDate(selectedEvent.start_at)} · 全天` : `${formatDate(selectedEvent.start_at)} · All day`)
                         : `${formatDateTime(selectedEvent.start_at)} → ${formatTime(selectedEvent.end_at)}`}
                     </span>
                   </div>
@@ -227,18 +264,50 @@ export default function CalendarPage() {
                   {selectedEvent.meeting_url && (
                     <Button asChild variant="outline" size="sm" className="w-full">
                       <a href={selectedEvent.meeting_url} target="_blank" rel="noreferrer">
-                        Join meeting
+                        {isZh ? "加入会议" : "Join meeting"}
                       </a>
                     </Button>
+                  )}
+                  {selectedEvent.source_cct_slug ? (
+                    <p className="text-[12px] text-muted-foreground">
+                      {isZh
+                        ? "此事件由其他功能自动同步，请到对应页面修改。"
+                        : "This event is synced from another feature — edit it there."}
+                    </p>
+                  ) : (
+                    <div className="flex gap-2 pt-1">
+                      <Button variant="outline" size="sm" className="flex-1" onClick={() => openEdit(selectedEvent)}>
+                        <Pencil className="h-4 w-4 mr-1.5" />
+                        {isZh ? "编辑" : "Edit"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 text-destructive hover:text-destructive"
+                        disabled={deleting}
+                        onClick={() => removeEvent(selectedEvent)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-1.5" />
+                        {deleting ? (isZh ? "删除中…" : "Deleting…") : isZh ? "删除" : "Delete"}
+                      </Button>
+                    </div>
                   )}
                 </div>
               </>
             )}
           </DialogContent>
       </Dialog>
+
+      <EventFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        event={editing}
+        onSaved={refresh}
+      />
     </div>
   );
 }
+
 
 function msToDuration(ms: number): string {
   const totalMin = Math.max(1, Math.round(ms / 60000));

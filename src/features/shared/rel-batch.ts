@@ -51,13 +51,26 @@ export function invalidateRead(fragment?: string) {
   }
 }
 
-/** One request per relation → Map<parentId, RelChild[]>. */
-export function fetchRelChildrenMap(relationId: number | string): Promise<Map<string, RelChild[]>> {
+/**
+ * Map of parentId → children, plus `loaded`: true when the batch request
+ * succeeded (including a legitimately empty relation, which JetEngine returns
+ * as `[]`). Callers must branch on `loaded`, never on `size` — an empty
+ * relation is a real answer, not a failure, and re-querying row by row in that
+ * case is exactly the N+1 storm we removed.
+ */
+export class RelChildMap extends Map<string, RelChild[]> {
+  loaded = false;
+}
+
+/** One request per relation → RelChildMap. */
+export function fetchRelChildrenMap(relationId: number | string): Promise<RelChildMap> {
   return dedupeRead(`rel-map:${relationId}`, async () => {
-    const map = new Map<string, RelChild[]>();
+    const map = new RelChildMap();
     try {
-      const rows = await wordpressFetch<Record<string, any[]>>(`jet-rel/${relationId}`);
-      if (!rows || typeof rows !== "object" || Array.isArray(rows)) return map;
+      const rows = await wordpressFetch<Record<string, any[]> | any[]>(`jet-rel/${relationId}`);
+      // `[]` = relation exists but has no rows. Anything non-object = unusable.
+      if (Array.isArray(rows)) { map.loaded = true; return map; }
+      if (!rows || typeof rows !== "object") return map;
       for (const [parent, children] of Object.entries(rows)) {
         if (!Array.isArray(children)) continue;
         const list: RelChild[] = [];
@@ -68,10 +81,12 @@ export function fetchRelChildrenMap(relationId: number | string): Promise<Map<st
         }
         if (list.length) map.set(String(parent), list);
       }
-    } catch { /* empty map → callers fall back to per-parent lookups */ }
+      map.loaded = true;
+    } catch { /* loaded stays false → callers fall back to per-parent lookups */ }
     return map;
   });
 }
+
 
 /** One request per relation → Map<childId, parentIds[]> (reverse direction). */
 export function fetchRelParentsMap(relationId: number | string): Promise<Map<string, string[]>> {
