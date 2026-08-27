@@ -35,11 +35,23 @@ export function HealthCard({ caredOneId }: { caredOneId: string }) {
 
   const handleSubmit = () => {
     if (!form.value) return;
-    const numericValue = form.vital_type === "blood_pressure" ? 0 : parseFloat(form.value);
-    const noteWithBP = form.vital_type === "blood_pressure" ? [form.value, form.note].filter(Boolean).join(" - ") : form.note || undefined;
-    create.mutate({ user_id: caredOneId, vital_type: form.vital_type, value: numericValue, unit: selectedType.unit, notes: noteWithBP || undefined }, {
-      onSuccess: () => { setForm({ vital_type: "blood_pressure", value: "", note: "" }); setAddOpen(false); toast({ title: Z("已记录指标 ✓", "Vital recorded ✓") }); }
-    });
+    // Blood pressure is a "120/80" pair: the systolic number carries the numeric
+    // slot, the raw pair is kept as the display value.
+    const numericValue = parseFloat(form.value) || 0;
+    create.mutate(
+      {
+        user_id: caredOneId,
+        vital_type: form.vital_type,
+        value: numericValue,
+        unit: selectedType.unit,
+        display_value: form.value,
+        notes: form.note || undefined,
+      },
+      {
+        onSuccess: () => { setForm({ vital_type: "blood_pressure", value: "", note: "" }); setAddOpen(false); toast({ title: Z("已记录指标 ✓", "Vital recorded ✓") }); },
+        onError: (e: any) => toast({ title: Z("记录失败", "Could not record vital"), description: String(e?.message || e), variant: "destructive" }),
+      },
+    );
   };
 
   return (
@@ -87,8 +99,8 @@ export function HealthCard({ caredOneId }: { caredOneId: string }) {
             <Card key={v.id} className="border-transparent card-elevated">
               <CardContent className="p-3 flex justify-between items-center">
                 <div><div className="flex items-center gap-2"><Badge variant="secondary" className="text-xs">{VITAL_TYPES.find(t => t.value === v.vital_type)?.label || v.vital_type}</Badge>
-                  <span className="font-semibold text-foreground text-sm">{v.vital_type === "blood_pressure" && v.note ? v.note.split(" - ")[0] : v.value} {v.unit}</span></div>
-                  {v.note && v.vital_type !== "blood_pressure" && <p className="text-xs text-muted-foreground mt-0.5">{v.note}</p>}
+                  <span className="font-semibold text-foreground text-sm">{v.display_value ?? v.value} {v.unit}</span></div>
+                  {(v.notes || v.note) && <p className="text-xs text-muted-foreground mt-0.5">{v.notes || v.note}</p>}
                 </div>
                 <span className="text-xs text-muted-foreground">{formatDate(v.created_at, isCN ? "zh-CN" : "en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
               </CardContent>

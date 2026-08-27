@@ -1162,7 +1162,7 @@ export function useHealthVitals(caredOneId: string | null) {
 export function useCreateHealthVital() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (vital: { user_id: string; vital_type: string; value: number; unit?: string; notes?: string }) => createHealthVitalWordPress(vital),
+    mutationFn: (vital: { user_id: string; vital_type: string; value: number; unit?: string; notes?: string; display_value?: string }) => createHealthVitalWordPress(vital),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["healthVitals"] }); },
   });
 }
