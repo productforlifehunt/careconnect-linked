@@ -265,20 +265,20 @@ export function useUpdateCareFacility() {
   });
 }
 
-export function useEntityReviews(entityId: string | undefined) {
+export function useEntityReviews(entityId: string | undefined, entityType: string = "provider") {
   return useQuery({
-    queryKey: ["entityReviews", entityId],
-    queryFn: () => fetchEntityReviewsWordPress(entityId!),
+    queryKey: ["entityReviews", entityType, entityId],
+    queryFn: () => fetchEntityReviewsWordPress(entityId!, entityType),
     enabled: !!entityId,
   });
 }
 
 export function useProviderReviews(providerId: string | undefined) {
-  return useEntityReviews(providerId);
+  return useEntityReviews(providerId, "provider");
 }
 
 export function useFacilityReviews(facilityId: string | undefined) {
-  return useEntityReviews(facilityId);
+  return useEntityReviews(facilityId, "facility");
 }
 
 export function useCreateReview() {
