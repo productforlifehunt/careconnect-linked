@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -18,9 +18,11 @@ import {
   EVENT_TYPE_COLORS,
   getEventTypeLabel,
 } from "@/features/calendar/types";
-import { fetchCalendarEventsWordPress } from "@/features/calendar/source.wordpress";
-import { Calendar as CalendarIcon, MapPin, Users, Clock, Repeat } from "lucide-react";
+import { fetchCalendarEventsWordPress, deleteCalendarEventWordPress } from "@/features/calendar/source.wordpress";
+import EventFormDialog from "@/features/calendar/EventFormDialog";
+import { Calendar as CalendarIcon, MapPin, Users, Clock, Repeat, Plus, Pencil, Trash2 } from "lucide-react";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
+import { toast } from "sonner";
 
 const ALL_TYPES: CalendarEventType[] = [
   "personal", "family", "medicine", "task", "appointment",
@@ -30,14 +32,38 @@ const ALL_TYPES: CalendarEventType[] = [
 export default function CalendarPage() {
   const { i18n } = useTranslation();
   const isZh = i18n.language?.startsWith("zh");
+  const queryClient = useQueryClient();
   const [enabledTypes, setEnabledTypes] = useState<Set<CalendarEventType>>(new Set(ALL_TYPES));
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<CalendarEvent | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const { data: allEvents = [], isLoading } = useQuery({
     queryKey: ["calendar-events"],
     queryFn: fetchCalendarEventsWordPress,
     staleTime: 60_000,
   });
+
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ["calendar-events"] });
+
+  const openCreate = () => { setEditing(null); setFormOpen(true); };
+  const openEdit = (e: CalendarEvent) => { setSelectedEvent(null); setEditing(e); setFormOpen(true); };
+
+  const removeEvent = async (e: CalendarEvent) => {
+    setDeleting(true);
+    try {
+      await deleteCalendarEventWordPress(e.id);
+      toast.success(isZh ? "事件已删除" : "Event deleted");
+      setSelectedEvent(null);
+      refresh();
+    } catch {
+      toast.error(isZh ? "删除失败，请重试" : "Could not delete the event. Please try again.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
 
   /** Convert CCT-shaped events → FullCalendar EventInput, with RRULE support */
   const fcEvents = useMemo(() => {
