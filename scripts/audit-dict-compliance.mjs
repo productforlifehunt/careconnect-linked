@@ -90,6 +90,17 @@ for (const file of walk('src')) {
       c.options.forEach((x) => options.add(x));
     }
   }
+  const slugs = JSON.parse(fs.readFileSync('scripts/wp-cct-slugs.json', 'utf8'));
+  for (const [id, slug] of Object.entries(slugs)) {
+    if (id === '_note') continue;
+    if (!new RegExp(`["'\`/]${slug}(?:["'\`/]|$)`).test(src)) continue;
+    const n = Number(id);
+    if (!cctById.has(n)) continue;
+    refs.push(`CCT ${n}`);
+    const c = codesOf(cctById.get(n));
+    c.fields.forEach((x) => fields.add(x));
+    c.options.forEach((x) => options.add(x));
+  }
   for (const m of src.matchAll(/\bR\.(\w+)\b/g)) {
     const id = relAliasToId.get(m[1]);
     if (id && relById.has(id)) {
