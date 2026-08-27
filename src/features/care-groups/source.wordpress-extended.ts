@@ -6,6 +6,7 @@ import {
   decodeRel72Meta,
   encodeRel75Meta,
   decodeRel75Meta,
+  type InvitationStatus,
 } from "./rel-meta";
 
 // Live JetEngine relations (per data bible)
