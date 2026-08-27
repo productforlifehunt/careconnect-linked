@@ -28,8 +28,8 @@ const YES = "b55";
 const NO = "b56";
 
 // Post type option codes — CCT 76 a55: b55=discussion, b56=announcement
-const POST_TYPE_CODE: Record<string, string> = { discussion: "b55", announcement: "b56" };
-const POST_TYPE_LABEL: Record<string, string> = { b55: "discussion", b56: "announcement" };
+const POST_TYPE_CODE: Record<string, string> = { discussion: "b55", announcement: "b56", wish: "b57" };
+const POST_TYPE_LABEL: Record<string, string> = { b55: "discussion", b56: "announcement", b57: "wish" };
 
 function isYesCode(v: unknown): boolean {
   if (v === true) return true;

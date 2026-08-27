@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Pin, Megaphone } from "lucide-react";
+import { Pin, Megaphone, Loader2 } from "lucide-react";
 import { PostActions } from "../PostActions";
 import { VisibilityPicker, EMPTY_VISIBILITY, type VisibilityValue } from "../VisibilityPicker";
 import { CommentsSection } from "@/components/comments/CommentsSection";
@@ -13,6 +13,7 @@ import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 interface AnnouncementsTabProps {
   announcements: any[];
+  announcementsLoading?: boolean;
   activeGroupId: string | null;
   userId: string | undefined;
   isAdmin: boolean;
@@ -25,7 +26,7 @@ interface AnnouncementsTabProps {
 }
 
 export function AnnouncementsTab({
-  announcements, activeGroupId, userId, isAdmin, memberCategories, members,
+  announcements, announcementsLoading, activeGroupId, userId, isAdmin, memberCategories, members,
   createPost, onEditPost, onTogglePin, onDeletePost,
 }: AnnouncementsTabProps) {
   const { toast } = useToast();
@@ -86,7 +87,10 @@ export function AnnouncementsTab({
             </CardContent>
           </Card>
         ))}
-        {(announcements || []).length === 0 && <p className="text-center py-12 text-muted-foreground">{Z("暂无公告。", "No announcements yet.")}</p>}
+        {announcementsLoading && (announcements || []).length === 0 && (
+          <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+        )}
+        {!announcementsLoading && (announcements || []).length === 0 && <p className="text-center py-12 text-muted-foreground">{Z("暂无公告。", "No announcements yet.")}</p>}
       </div>
     </div>
   );

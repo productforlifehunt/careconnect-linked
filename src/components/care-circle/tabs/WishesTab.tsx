@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Star } from "lucide-react";
+import { Star, Loader2 } from "lucide-react";
 import { PostActions } from "../PostActions";
 import { CommentsSection } from "@/components/comments/CommentsSection";
 import { useToast } from "@/hooks/use-toast";
@@ -11,6 +11,7 @@ import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 interface WishesTabProps {
   wishes: any[];
+  wishesLoading?: boolean;
   activeGroupId: string | null;
   userId: string | undefined;
   isAdmin: boolean;
@@ -20,7 +21,7 @@ interface WishesTabProps {
   onDeletePost: (id: string) => void;
 }
 
-export function WishesTab({ wishes, activeGroupId, userId, isAdmin, createPost, onEditPost, onTogglePin, onDeletePost }: WishesTabProps) {
+export function WishesTab({ wishes, wishesLoading, activeGroupId, userId, isAdmin, createPost, onEditPost, onTogglePin, onDeletePost }: WishesTabProps) {
   const { toast } = useToast();
   const { i18n } = useTranslation();
   const isCN = i18n.language?.startsWith("zh");
@@ -55,7 +56,10 @@ export function WishesTab({ wishes, activeGroupId, userId, isAdmin, createPost, 
             </CardContent>
           </Card>
         ))}
-        {(wishes || []).length === 0 && <p className="text-center py-12 text-muted-foreground">{Z("还没有祝福，来做第一个吧！", "No well wishes yet. Be the first!")}</p>}
+        {wishesLoading && (wishes || []).length === 0 && (
+          <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+        )}
+        {!wishesLoading && (wishes || []).length === 0 && <p className="text-center py-12 text-muted-foreground">{Z("还没有祝福，来做第一个吧！", "No well wishes yet. Be the first!")}</p>}
       </div>
     </div>
   );
