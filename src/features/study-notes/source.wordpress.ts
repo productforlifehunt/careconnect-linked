@@ -1,19 +1,26 @@
 /**
  * Study notes & lesson-completion tracking.
- * Bible (§19):
- *   CCT 122 users_study_notes: a55=title, a56=content
- *   REL 158: challenged_content → users_study_notes (1:M)
- *   REL 157: users → challenged_content (1:M, "user finished learning lesson")
- *            Relation field a55 = USER_HAS_FINISHED_LEARNING_THIS_LESSON (b55 Yes | b56 No)
+ * Data dictionary (the only source of truth):
+ *   CCT 218 `study_notes` — a55 Title, a56 Content
+ *   REL 256: 217. Challenged App Content → 218. User's study notes (1:M, no meta)
+ *   REL 255: Users → 217. Challenged App Content (1:M)
+ *            meta a55 = "User has finished learning this lesson" { b55 Yes | b56 No }
  */
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 import { getCurrentUserIdNumber } from "@/features/shared/current-user";
-import { R } from "@/integrations/wp-schema";
+import { R, T, WP } from "@/integrations/wp-schema";
 
-const SLUG = "users_study_notes";
+const SLUG = T.studyNote.slug;
+const F = { title: T.studyNote.f.TITLE, content: T.studyNote.f.CONTENT };
 const REL_ARTICLE_NOTES = R.contentStudyNotes;
-// Dictionary name "157. finished ChallengeD content" — live ID 167 (old 157 deleted & recreated)
 const REL_USER_FINISHED = R.userFinishedContent;
+const REL255 = WP.rel["255"] as unknown as {
+  f: Record<string, string>;
+  opt: Record<string, Record<string, string>>;
+};
+const FINISHED_FIELD = REL255.f.USER_HAS_FINISHED_LEARNING_THIS_LESSON;
+const FINISHED_YES = REL255.opt.USER_HAS_FINISHED_LEARNING_THIS_LESSON.YES;
+
 
 export interface StudyNote {
   id: string;
@@ -44,8 +51,8 @@ export async function fetchStudyNotesForArticle(articleId: string | number): Pro
       .filter((n: any) => !userId || Number(n.author_id) === userId)
       .map((n: any) => ({
         id: String(n.id ?? n._ID),
-        title: n.a55 ?? "",
-        content: n.a56 ?? "",
+        title: n[F.title] ?? "",
+        content: n[F.content] ?? "",
         article_id: String(articleId),
         created_at: n.created_at ?? null,
         updated_at: n.updated_at ?? null,
@@ -64,7 +71,7 @@ export async function createStudyNote(input: {
   if (!aid) return null;
   const created: any = await wordpressCCTFetch(SLUG, {
     method: "POST",
-    body: { a55: input.title, a56: input.content },
+    body: { [F.title]: input.title, [F.content]: input.content },
   });
   const newId = Number(created?.item_id ?? created?._ID ?? created?.id ?? 0);
   if (!newId) return null;
@@ -79,8 +86,8 @@ export async function createStudyNote(input: {
 
 export async function updateStudyNote(id: string, patch: { title?: string; content?: string }): Promise<void> {
   const body: Record<string, any> = {};
-  if (patch.title !== undefined) body.a55 = patch.title;
-  if (patch.content !== undefined) body.a56 = patch.content;
+  if (patch.title !== undefined) body[F.title] = patch.title;
+  if (patch.content !== undefined) body[F.content] = patch.content;
   await wordpressCCTFetch(SLUG, { id, method: "PUT", body });
 }
 
@@ -94,10 +101,12 @@ export async function isLessonFinished(articleId: string | number): Promise<bool
   if (!userId || !aid) return false;
   try {
     const rels = await wordpressFetch<any[]>(`jet-rel/${REL_USER_FINISHED}/children/${userId}`).catch(() => []);
-    // Rel field a55=b55 means "Yes, finished"
-    return (Array.isArray(rels) ? rels : []).some(
-      (r: any) => Number(r.child_object_id) === aid && (r.a55 === "b55" || r.a55 === undefined),
-    );
+    // Relation meta: FINISHED_FIELD === "Yes" means the lesson is done.
+    return (Array.isArray(rels) ? rels : []).some((r: any) => {
+      if (Number(r.child_object_id) !== aid) return false;
+      const v = r?.meta?.[FINISHED_FIELD] ?? r?.[FINISHED_FIELD];
+      return v === undefined || String(v) === FINISHED_YES;
+    });
   } catch {
     return false;
   }
@@ -110,7 +119,7 @@ export async function markLessonFinished(articleId: string | number, finished = 
   if (finished) {
     await wordpressFetch(`jet-rel/${REL_USER_FINISHED}`, {
       method: "POST",
-      body: { parent_id: userId, child_id: aid, context: "child", store_items_type: "update", meta: { a55: "b55" } },
+      body: { parent_id: userId, child_id: aid, context: "child", store_items_type: "update", meta: { [FINISHED_FIELD]: FINISHED_YES } },
     });
   } else {
     await wordpressFetch(`jet-rel/${REL_USER_FINISHED}`, {
