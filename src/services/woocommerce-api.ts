@@ -174,58 +174,29 @@ export interface ServiceResource {
   ratePerHour: number;
 }
 
-// ─── Admin Basic Auth for Dokan admin operations ───────────
-const WP_ADMIN_USER = 'challenged';
-const WP_APP_PASSWORD = 'vPKl An2l fwQi TmUl ASPCYIoM'.replace(/ /g, '');
+// ─── Privileged WP/Dokan operations (admin creds live server-side) ───────
+// The browser never holds WordPress admin credentials. The `wp-admin-ops`
+// edge function validates the caller's own WP JWT and performs the operation
+// scoped to that user only.
+const ADMIN_OPS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/wp-admin-ops`;
 
-function getAdminBasicAuth(): string {
-  return btoa(`${WP_ADMIN_USER}:${WP_APP_PASSWORD}`);
-}
-
-function getAdminHeaders(contentType?: string): Record<string, string> {
-  const headers: Record<string, string> = {
-    'Authorization': `Basic ${getAdminBasicAuth()}`,
-  };
-  if (contentType) headers['Content-Type'] = contentType;
-  const server = getActiveServer();
-  const useEdgeFunction = !IS_DEV || !server.isPrimary;
-  if (useEdgeFunction) {
-    const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-    if (anonKey) headers['apikey'] = anonKey;
-  }
-  return headers;
-}
-
-async function wpAdminFetch(wpJsonPath: string, options: RequestInit = {}) {
-  const url = buildWPUrl(wpJsonPath);
-  const response = await fetch(url, {
-    ...options,
+async function adminOp<T = any>(action: string, body: Record<string, unknown> = {}): Promise<T | null> {
+  const token = getWPToken();
+  if (!token) return null;
+  const response = await fetch(ADMIN_OPS_URL, {
+    method: 'POST',
     headers: {
-      ...getAdminHeaders('application/json'),
-      ...options.headers,
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '',
     },
+    body: JSON.stringify({ action, wp_base: getActiveServer().baseUrl, ...body }),
   });
+  const payload = await response.json().catch(() => null);
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`WP Admin API error: ${response.status} - ${error}`);
+    throw new Error(`wp-admin-ops ${action} failed: ${response.status} - ${payload?.error ?? ''}`);
   }
-  return response.json();
-}
-
-async function dokanAdminFetch(endpoint: string, options: RequestInit = {}) {
-  const url = buildWPUrl(`dokan/v1/${endpoint}`);
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      ...getAdminHeaders('application/json'),
-      ...options.headers,
-    },
-  });
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Dokan Admin API error: ${response.status} - ${error}`);
-  }
-  return response.json();
+  return (payload?.data ?? payload) as T;
 }
 
 export async function ensureDokanVendor(userData: {
@@ -242,53 +213,37 @@ export async function ensureDokanVendor(userData: {
     return null;
   }
 
-  try {
-    const stores = await dokanAdminFetch(`stores?include=${wpUserId}`);
-    if (Array.isArray(stores) && stores.length > 0) {
-      const store = stores[0];
-      try {
-        return await dokanAdminFetch(`stores/${store.id}`, {
-          method: 'PUT',
-          body: JSON.stringify({
-            store_name: userData.fullName ? `${userData.fullName} Care Services` : store.store_name,
-            phone: userData.phone || store.phone || '',
-            address: { street_1: userData.location || '' },
-            // Mirror bio into Dokan store description so the public Dokan
-            // store page stays in sync with the caregiver profile.
-            ...(userData.bio !== undefined ? { description: userData.bio || '' } : {}),
-          }),
-        });
-      } catch {
-        return store;
-      }
-    }
-  } catch { /* no store found */ }
+  const storePayload = {
+    store_name: userData.fullName ? `${userData.fullName} Care Services` : undefined,
+    phone: userData.phone || '',
+    address: { street_1: userData.location || '' },
+    // Mirror bio into the Dokan store description so the public store page
+    // stays in sync with the caregiver profile.
+    ...(userData.bio !== undefined ? { description: userData.bio || '' } : {}),
+  };
 
+  let existingStore: any = null;
   try {
-    await wpAdminFetch(`wp/v2/users/${wpUserId}`, {
-      method: 'POST',
-      body: JSON.stringify({ roles: ['seller'] }),
-    });
-  } catch (e) {
-    console.warn('ensureDokanVendor: role assignment error', e);
+    const stores = await adminOp<any[]>('get_my_store');
+    if (Array.isArray(stores) && stores.length > 0) existingStore = stores[0];
+  } catch { /* no store yet */ }
+
+  if (!existingStore) {
+    try {
+      await adminOp('ensure_seller_role');
+    } catch (e) {
+      console.warn('ensureDokanVendor: role assignment error', e);
+    }
   }
 
   try {
-    const store = await dokanAdminFetch(`stores/${wpUserId}`, {
-      method: 'PUT',
-      body: JSON.stringify({
-        store_name: `${userData.fullName} Care Services`,
-        phone: userData.phone || '',
-        address: { street_1: userData.location || '' },
-        ...(userData.bio !== undefined ? { description: userData.bio || '' } : {}),
-      }),
-    });
-    return store;
+    return await adminOp('upsert_my_store', { store: storePayload });
   } catch (e) {
     console.warn('ensureDokanVendor: store setup error', e);
-    return null;
+    return existingStore;
   }
 }
+
 
 /**
  * Get or create provider's bookable service product.
