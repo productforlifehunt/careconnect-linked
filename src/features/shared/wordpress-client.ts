@@ -38,7 +38,9 @@ export async function wordpressFetchRaw(endpoint: string, options: WordPressFetc
     // Route changes abort in-flight requests (net::ERR_ABORTED → "Failed to
     // fetch"). That is not a backend failure, so tag it and let callers keep
     // it out of the console.
-    const e = new Error(`WP API ${endpoint}: request aborted`, { cause: err }) as Error & { isNetworkAbort?: boolean };
+    const detail = err instanceof Error ? err.message : String(err);
+    const e = new Error(`WP API ${endpoint}: request aborted (${detail})`) as Error & { isNetworkAbort?: boolean };
+
     e.isNetworkAbort = true;
     throw e;
   }
