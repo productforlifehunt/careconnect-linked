@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 interface MessagesTabProps {
   groupMessages: any[];
@@ -39,7 +40,7 @@ export function MessagesTab({ groupMessages, userId, activeGroupId, sendMessage 
                     <div className={`max-w-[75%] rounded-xl px-3 py-2 ${isMine ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
                       {!isMine && <p className="text-xs font-medium mb-0.5">{msg.sender?.full_name || Z("成员", "Member")}</p>}
                       <p className="text-sm">{msg.content || msg.message_content}</p>
-                      <p className={`text-[10px] mt-0.5 ${isMine ? "text-primary-foreground/60" : "text-muted-foreground"}`}>{new Date(msg.created_at).toLocaleTimeString(isCN ? "zh-CN" : "en", { hour: "numeric", minute: "2-digit" })}</p>
+                      <p className={`text-[10px] mt-0.5 ${isMine ? "text-primary-foreground/60" : "text-muted-foreground"}`}>{formatTime(msg.created_at, isCN ? "zh-CN" : "en", { hour: "numeric", minute: "2-digit" })}</p>
                     </div>
                   </div>
                 );

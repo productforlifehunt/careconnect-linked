@@ -9,6 +9,7 @@ import { useComments, useCreateComment, useDeleteComment, useToggleVote, useUpda
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 interface CommentsSectionProps {
   entityType: "post" | "community_post" | "review" | "gallery" | "task" | "comment";
@@ -104,7 +105,7 @@ function CommentItem({
               <div className="flex items-center gap-2 mb-1 flex-wrap">
                 <span className="text-xs font-semibold text-foreground">{comment.author?.full_name || "User"}</span>
                 <span className="text-[10px] text-muted-foreground">
-                  {new Date(comment.created_at).toLocaleDateString(i18n.language, { month: "short", day: "numeric" })}
+                  {formatDate(comment.created_at, i18n.language, { month: "short", day: "numeric" })}
                 </span>
                 {depth > 0 ? (
                   <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">

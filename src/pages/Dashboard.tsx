@@ -26,6 +26,7 @@ import {
 } from "@/components/dashboard/DashboardWidgetConfig";
 import { getAvailableWidgets, getDefaultVisibility } from "@/components/dashboard/widgets";
 import { AISmartBriefing } from "@/components/dashboard/AISmartBriefing";
+import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -238,7 +239,7 @@ export default function Dashboard() {
             ) : upcomingBookings.length > 0 ? upcomingBookings.map((b: any) => (
               <div key={b.id} className="flex items-center gap-3 p-2 rounded-lg bg-muted/40">
                 <div className="text-center shrink-0 w-10">
-                  <p className="text-[10px] text-muted-foreground">{new Date(b.appointment_date || b.start_time || b.created_at).toLocaleDateString(i18n.language, { month: "short" })}</p>
+                  <p className="text-[10px] text-muted-foreground">{formatDate(b.appointment_date || b.start_time || b.created_at, i18n.language, { month: "short" })}</p>
                   <p className="text-base font-bold text-foreground leading-none">{new Date(b.appointment_date || b.start_time || b.created_at).getDate()}</p>
                 </div>
                 <div className="flex-1 min-w-0">
@@ -281,7 +282,7 @@ export default function Dashboard() {
                   <p className="font-medium text-sm text-foreground truncate">{tk.title}</p>
                   <p className="text-[11px] text-muted-foreground truncate">
                     {tk.assignee_profile?.full_name || "Unassigned"}
-                    {tk.due_date && ` · ${new Date(tk.due_date).toLocaleDateString(i18n.language, { month: "short", day: "numeric" })}`}
+                    {tk.due_date && ` · ${formatDate(tk.due_date, i18n.language, { month: "short", day: "numeric" })}`}
                   </p>
                 </div>
                 <Badge variant="outline" className={`${priorityColors[tk.priority] || ""} text-[10px]`}>{tk.priority}</Badge>

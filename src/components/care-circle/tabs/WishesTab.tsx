@@ -7,6 +7,7 @@ import { PostActions } from "../PostActions";
 import { CommentsSection } from "@/components/comments/CommentsSection";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 interface WishesTabProps {
   wishes: any[];
@@ -46,7 +47,7 @@ export function WishesTab({ wishes, activeGroupId, userId, isAdmin, createPost, 
               <div className="flex items-center gap-2 mb-2">
                 <Star className="h-4 w-4 text-warning" />
                 <span className="font-medium text-sm text-foreground">{w.author?.full_name || Z("某成员", "Someone")}</span>
-                <span className="text-xs text-muted-foreground ml-auto">{new Date(w.created_at).toLocaleDateString(isCN ? "zh-CN" : "en", { month: "short", day: "numeric" })}</span>
+                <span className="text-xs text-muted-foreground ml-auto">{formatDate(w.created_at, isCN ? "zh-CN" : "en", { month: "short", day: "numeric" })}</span>
                 <PostActions post={w} userId={userId} isAdmin={isAdmin} onEdit={onEditPost} onTogglePin={onTogglePin} onDelete={onDeletePost} />
               </div>
               <p className="text-sm text-muted-foreground">{w.content}</p>

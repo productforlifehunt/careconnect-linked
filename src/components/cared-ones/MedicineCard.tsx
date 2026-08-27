@@ -15,6 +15,7 @@ const isCN = () => (i18n.language || "").startsWith("zh");
 const Z = (cn: string, en: string) => (isCN() ? cn : en);
 import { motion, AnimatePresence } from "framer-motion";
 import { rxnormSuggest, rxnormLookup, type RxSuggestion } from "@/lib/rxnorm";
+import { formatDate, formatTime as formatLocaleTime, formatDateTime } from "@/lib/locale";
 
 const TIMELINE_HOURS = [
   "06:00","07:00","08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00",
@@ -55,8 +56,7 @@ function formatHour(h: string): string {
 }
 
 function formatTime(dateStr: string): string {
-  const d = new Date(dateStr);
-  return d.toLocaleTimeString(i18n.language || [], { hour: "numeric", minute: "2-digit" });
+  return formatLocaleTime(dateStr, i18n.language, { hour: "numeric", minute: "2-digit" });
 }
 
 // ─── Log Note Dialog ────────────────────────────────────────
@@ -157,7 +157,7 @@ function MedHistoryDialog({ open, onClose, med }: { open: boolean; onClose: () =
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium capitalize">{log.status}</span>
-                    <span className="text-xs text-muted-foreground">{new Date(log.created_at).toLocaleDateString()} · {formatTime(log.created_at)}</span>
+                    <span className="text-xs text-muted-foreground">{formatDate(log.created_at)} · {formatTime(log.created_at)}</span>
                   </div>
                   {log.note && (
                     <p className="text-xs text-muted-foreground mt-0.5 flex items-start gap-1">

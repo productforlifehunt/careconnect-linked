@@ -20,6 +20,7 @@ import {
 } from "@/features/calendar/types";
 import { fetchCalendarEventsWordPress } from "@/features/calendar/source.wordpress";
 import { Calendar as CalendarIcon, MapPin, Users, Clock, Repeat } from "lucide-react";
+import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 const ALL_TYPES: CalendarEventType[] = [
   "personal", "family", "medicine", "task", "appointment",
@@ -202,7 +203,7 @@ export default function CalendarPage() {
                     <span>
                       {selectedEvent.all_day
                         ? "All day"
-                        : `${new Date(selectedEvent.start_at).toLocaleString()} → ${new Date(selectedEvent.end_at).toLocaleTimeString()}`}
+                        : `${formatDateTime(selectedEvent.start_at)} → ${formatTime(selectedEvent.end_at)}`}
                     </span>
                   </div>
                   {selectedEvent.location && (

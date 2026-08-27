@@ -7,6 +7,7 @@ import { ArrowLeft, Clock, Calendar, Share2 } from "lucide-react";
 import { fetchChallengedContentById } from "@/features/challenged-content/source.wordpress";
 import { StudyNotesPanel } from "@/components/challenged/StudyNotesPanel";
 import { useTranslation } from "react-i18next";
+import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 /** Maps category to route base */
 const CATEGORY_ROUTES: Record<string, string> = {
@@ -90,7 +91,7 @@ export default function ChallengedArticleDetail() {
           {article.created_at && (
             <span className="text-sm text-muted-foreground flex items-center gap-1">
               <Calendar className="h-3.5 w-3.5" />
-              {new Date(article.created_at).toLocaleDateString()}
+              {formatDate(article.created_at)}
             </span>
           )}
         </div>

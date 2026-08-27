@@ -24,6 +24,7 @@ import {
 } from "@/hooks/use-care-data";
 
 import { useToast } from "@/hooks/use-toast";
+import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 // ─── Inject Leaflet CSS once ────────────────────────────────
 if (typeof document !== "undefined" && !document.getElementById("leaflet-css")) {
@@ -689,7 +690,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
     return "";
   }, [drawMode, drawnPoints.length]);
 
-  const lastSeen = currentLocation ? new Date(currentLocation.created_at).toLocaleString() : null;
+  const lastSeen = currentLocation ? formatDateTime(currentLocation.created_at) : null;
 
   return (
     <div className="space-y-4">
@@ -814,7 +815,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
                   <span className="text-sm font-semibold text-foreground">Current Location</span>
-                  <span className="text-xs text-muted-foreground">· {new Date(currentLocation.created_at).toLocaleString()}</span>
+                  <span className="text-xs text-muted-foreground">· {formatDateTime(currentLocation.created_at)}</span>
                 </div>
                 {currentLocation.address_text && <p className="text-sm text-foreground">{currentLocation.address_text}</p>}
                 <p className="text-xs text-muted-foreground font-mono">
@@ -908,7 +909,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                             {req.is_emergency && <Badge variant="destructive" className="text-[10px]">EMERGENCY</Badge>}
                           </div>
                           {req.message && <p className="text-xs text-muted-foreground mt-0.5">"{req.message}"</p>}
-                          <p className="text-xs text-muted-foreground">{new Date(req.created_at).toLocaleString()}</p>
+                          <p className="text-xs text-muted-foreground">{formatDateTime(req.created_at)}</p>
                         </div>
                         <Button variant="ghost" size="sm" className="text-destructive text-xs h-7"
                           onClick={() => cancelRequest.mutate(req.id)}
@@ -942,7 +943,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                           {req.is_emergency && req.status !== "emergency_approved" && <Badge variant="destructive" className="text-[10px]">Emergency</Badge>}
                         </div>
                         {req.message && <p className="text-xs text-muted-foreground mt-0.5">"{req.message}"</p>}
-                        <p className="text-xs text-muted-foreground">{new Date(req.created_at).toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">{formatDateTime(req.created_at)}</p>
                       </CardContent>
                     </Card>
                   );
@@ -1000,7 +1001,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                           {alert.distance_from_center != null && (
                             <p className="text-xs text-muted-foreground">{Math.round(alert.distance_from_center)}m from center</p>
                           )}
-                          <p className="text-xs text-muted-foreground mt-1">{new Date(alert.created_at).toLocaleString()}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{formatDateTime(alert.created_at)}</p>
                         </div>
                         {!alert.is_read ? (
                           <Button variant="outline" size="sm" className="text-xs h-7 shrink-0"
@@ -1353,7 +1354,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                       <span className={`text-xs font-medium ${idx === 0 ? "text-success" : "text-muted-foreground"}`}>
                         {idx === 0 ? "Current" : "Previous"}
                       </span>
-                      <span className="text-xs text-muted-foreground">{new Date(entry.created_at).toLocaleString()}</span>
+                      <span className="text-xs text-muted-foreground">{formatDateTime(entry.created_at)}</span>
                     </div>
                     {entry.address && <p className="text-sm mt-0.5">{entry.address}</p>}
                     {entry.location_name && !entry.address && <p className="text-sm">{entry.location_name}</p>}

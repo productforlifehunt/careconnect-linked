@@ -18,24 +18,50 @@ export const CARE_SERVICES_CATEGORY = 'care-services';
 /**
  * Build auth headers using JWT Bearer token
  */
-function getAuthHeaders(): Record<string, string> {
+function getAuthHeaders(forceEdge = false): Record<string, string> {
   const token = getWPToken();
-  return buildWPHeaders(token, 'application/json');
+  return buildWPHeaders(token, 'application/json', { forceEdge });
 }
 
 /**
- * Fetch wrapper for WooCommerce REST API v3 (admin endpoints)
+ * Fetch wrapper for WooCommerce REST API v3 (admin endpoints).
+ *
+ * Anonymous visitors have no JWT, so read-only catalog calls are routed through
+ * the backend proxy, which attaches server-side read-only store keys. This keeps
+ * public browsing (services, attributes, categories) working without login while
+ * never exposing credentials to the browser.
  */
-async function wcFetch(endpoint: string, options: RequestInit = {}) {
-  const url = buildWPUrl(`wc/v3/${endpoint}`);
+/** Read-only catalog endpoints that any visitor (logged in or not) may read. */
+const PUBLIC_CATALOG_PREFIXES = [
+  'products',
+  'products/categories',
+  'products/attributes',
+  'products/tags',
+  'products/reviews',
+];
 
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      ...getAuthHeaders(),
-      ...options.headers,
-    },
-  });
+function isPublicCatalogEndpoint(endpoint: string): boolean {
+  const path = endpoint.split('?')[0].replace(/^\/+|\/+$/g, '');
+  return PUBLIC_CATALOG_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`));
+}
+
+async function wcFetch(endpoint: string, options: RequestInit = {}) {
+  const isGet = !options.method || options.method.toUpperCase() === 'GET';
+  // Store keys live server-side in the proxy. Subscriber-level JWTs are not
+  // allowed to read wc/v3, so ALL catalog GETs go through the proxy — whether
+  // the visitor is anonymous or signed in.
+  const useProxyKeys = isGet && isPublicCatalogEndpoint(endpoint);
+  const url = buildWPUrl(`wc/v3/${endpoint}`, undefined, { forceEdge: useProxyKeys });
+
+  const headers: Record<string, string> = {
+    ...getAuthHeaders(useProxyKeys),
+    ...(options.headers as Record<string, string> | undefined),
+  };
+  // Never send a user JWT on proxy-key calls — WP would prefer it and 401.
+  if (useProxyKeys) delete headers.Authorization;
+
+  const response = await fetch(url, { ...options, headers });
+
 
   if (!response.ok) {
     const error = await response.text();
@@ -44,6 +70,7 @@ async function wcFetch(endpoint: string, options: RequestInit = {}) {
 
   return response.json();
 }
+
 
 async function wcBookingsFetch(endpoint: string, options: RequestInit = {}) {
   const url = buildWPUrl(`wc-bookings/v1/${endpoint}`);

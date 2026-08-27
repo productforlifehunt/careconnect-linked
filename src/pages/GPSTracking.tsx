@@ -25,6 +25,7 @@ import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useTranslation } from "react-i18next";
 import { getCurrentPosition } from "@/lib/geolocation";
+import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 const POLL_INTERVAL = 15_000; // 15 seconds
 const TRAIL_MAX_POINTS = 200;
@@ -96,7 +97,7 @@ export default function GPSTracking() {
       lastLocation: ls.address_text || `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
       coordinates: { lat, lng },
       lastUpdated: ls.updated_at
-        ? new Date(typeof ls.updated_at === "number" ? ls.updated_at * 1000 : ls.updated_at).toLocaleTimeString("en", { hour: "numeric", minute: "2-digit" })
+        ? formatTime(typeof ls.updated_at === "number" ? ls.updated_at * 1000 : ls.updated_at, "en", { hour: "numeric", minute: "2-digit" })
         : "",
       status: "active" as const,
       isSharing: ls.sharing_status !== "off" && ls.is_sharing_enabled !== false,
@@ -436,7 +437,7 @@ export default function GPSTracking() {
                               {alert.alert_type?.includes("danger") ? "⚠️" : "📍"} {alert.message || alert.alert_type?.replace(/_/g, " ")}
                             </p>
                             <p className="text-xs text-muted-foreground mt-1">
-                              {alert.created_at ? new Date(alert.created_at).toLocaleString() : ""}
+                              {alert.created_at ? formatDateTime(alert.created_at) : ""}
                             </p>
                           </div>
                           {!alert.is_read && (

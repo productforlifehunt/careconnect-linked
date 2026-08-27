@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getStoredWPUser } from "@/services/wp-auth";
+import { getStoredWPUser, getWPToken } from "@/services/wp-auth";
 // ─── Feature source modules (backend-specific) ─────────────
 import { fetchProvidersWordPress, fetchProviderByIdWordPress } from "@/features/providers/source.wordpress";
 import { fetchBookingsWordPress, fetchProviderBookingsWordPress, createBookingWordPress, updateBookingStatusWordPress } from "@/features/bookings/source.wordpress";
@@ -535,6 +535,7 @@ export function useNotifications() {
   return useQuery({
     queryKey: ["notifications"],
     queryFn: () => fetchNotificationsWordPress(),
+    enabled: hasWPSession(),
   });
 }
 
@@ -571,10 +572,20 @@ export function useToggleSavedProvider() {
 }
 
 // ─── Profile ────────────────────────────────────────────────
+
+/**
+ * True when a WordPress session token is present. Private CCT reads are gated on
+ * this so anonymous visitors on public pages never fire 401 background polls.
+ */
+export function hasWPSession(): boolean {
+  return Boolean(getWPToken());
+}
+
 export function useMyProfile() {
   return useQuery({
     queryKey: ["myProfile"],
     queryFn: () => fetchMyProfileWordPress(),
+    enabled: hasWPSession(),
   });
 }
 
@@ -938,7 +949,7 @@ export function usePost(id: string | null, postType?: string) {
 export function useCreatePost() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (post: { title: string; content?: string; post_type?: string; postType?: string; status?: string; area?: string }) => createPostWordPress(post),
+    mutationFn: (post: { title: string; content?: string; post_type?: string; postType?: string; status?: string; area?: string; language?: string }) => createPostWordPress(post),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["posts"] }); },
   });
 }
@@ -964,6 +975,7 @@ export function useLocationShares(refetchIntervalMs = 15000) {
   return useQuery({
     queryKey: ["locationShares"],
     queryFn: () => fetchLocationSharesWordPress(),
+    enabled: hasWPSession(),
     refetchInterval: refetchIntervalMs,
     refetchIntervalInBackground: false,
   });

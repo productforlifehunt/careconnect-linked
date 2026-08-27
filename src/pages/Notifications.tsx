@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useSite } from "@/contexts/SiteContext";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 export default function Notifications() {
   const { t, i18n } = useTranslation();
@@ -93,7 +94,7 @@ export default function Notifications() {
                           {inv.group?.description ? inv.group.description.substring(0, 60) + (inv.group.description.length > 60 ? "…" : "") : `You've been invited to join this ${site.careGroupSingular.toLowerCase()}`}
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {t("notifs.received")} {new Date(inv.created_at).toLocaleDateString(i18n.language, { month: "short", day: "numeric" })}
+                          {t("notifs.received")} {formatDate(inv.created_at, i18n.language, { month: "short", day: "numeric" })}
                         </p>
                       </div>
                     </div>
@@ -144,8 +145,8 @@ export default function Notifications() {
                     </div>
                     {n.content && <p className="text-sm text-muted-foreground mt-0.5">{n.content}</p>}
                     <p className="text-xs text-muted-foreground mt-1">
-                      {new Date(n.created_at).toLocaleDateString(i18n.language, { month: "short", day: "numeric" })} {t("common.at")}{" "}
-                      {new Date(n.created_at).toLocaleTimeString("en", { hour: "numeric", minute: "2-digit" })}
+                      {formatDate(n.created_at, i18n.language, { month: "short", day: "numeric" })} {t("common.at")}{" "}
+                      {formatTime(n.created_at, "en", { hour: "numeric", minute: "2-digit" })}
                     </p>
                   </div>
                 </CardContent>

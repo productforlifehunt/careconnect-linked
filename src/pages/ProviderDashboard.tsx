@@ -22,6 +22,7 @@ import {
 } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 const DAYS_EN = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const DAYS_ZH = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
@@ -227,7 +228,7 @@ export default function ProviderDashboard() {
                     <div>
                       <h3 className="font-semibold text-foreground">{b.client?.full_name || (isZh ? "客户" : "Client")}</h3>
                       <p className="text-sm text-muted-foreground">{b.service_type} · {b.duration_hour}{isZh ? "小时" : "hrs"}</p>
-                      <p className="text-sm text-muted-foreground">{b.appointment_date ? new Date(b.appointment_date).toLocaleDateString(isZh ? "zh-CN" : "en", { weekday: "short", month: "short", day: "numeric" }) : ""} {isZh ? "于" : "at"} {b.appointment_time || ""}</p>
+                      <p className="text-sm text-muted-foreground">{b.appointment_date ? formatDate(b.appointment_date, isZh ? "zh-CN" : "en", { weekday: "short", month: "short", day: "numeric" }) : ""} {isZh ? "于" : "at"} {b.appointment_time || ""}</p>
                       {b.special_instruction && <p className="text-xs text-muted-foreground mt-1 italic">"{b.special_instruction}"</p>}
                     </div>
                   </div>
@@ -253,7 +254,7 @@ export default function ProviderDashboard() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="text-center shrink-0">
-                      <p className="text-xs text-muted-foreground">{b.appointment_date ? new Date(b.appointment_date).toLocaleDateString(isZh ? "zh-CN" : "en", { month: "short" }) : ""}</p>
+                      <p className="text-xs text-muted-foreground">{b.appointment_date ? formatDate(b.appointment_date, isZh ? "zh-CN" : "en", { month: "short" }) : ""}</p>
                       <p className="text-lg font-bold text-foreground">{b.appointment_date ? new Date(b.appointment_date).getDate() : ""}</p>
                     </div>
                     <div>
@@ -397,7 +398,7 @@ export default function ProviderDashboard() {
                   {dateOverrides.sort((a, b) => a.date.localeCompare(b.date)).map(o => (
                     <div key={o.date} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
                       <div>
-                        <p className="text-sm font-medium text-foreground">{new Date(o.date + "T12:00:00").toLocaleDateString(isZh ? "zh-CN" : "en", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}</p>
+                        <p className="text-sm font-medium text-foreground">{formatDate(o.date + "T12:00:00", isZh ? "zh-CN" : "en", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}</p>
                         <p className="text-xs text-muted-foreground">{o.available ? `${o.start} – ${o.end}` : (isZh ? "不可约（休息日）" : "Unavailable (day off)")}</p>
                       </div>
                       <div className="flex items-center gap-2">

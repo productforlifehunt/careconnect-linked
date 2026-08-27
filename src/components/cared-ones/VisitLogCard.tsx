@@ -11,6 +11,7 @@ import { Trash2, Plus, CalendarDays, Loader2 } from "lucide-react";
 import { useActivityLog, useCreateActivityLog, useDeleteActivityLog } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 const emojiMap: Record<string, string> = { video: "📹", phone: "📞", errand: "🛒", in_person: "🏠" };
 
@@ -90,7 +91,7 @@ export function VisitLogCard({ caredOneId }: { caredOneId: string }) {
                     <span>{emojiMap[l.activity_type] || "🏠"}</span>
                     <Badge variant="secondary" className="text-xs capitalize">{typeLabel(l.activity_type)}</Badge>
                     {l.duration_minutes && <span className="text-xs text-muted-foreground">{Z(`${l.duration_minutes} 分钟`, `${l.duration_minutes} min`)}</span>}
-                    <span className="text-xs text-muted-foreground ml-auto">{new Date(l.created_at).toLocaleDateString(isCN ? "zh-CN" : "en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+                    <span className="text-xs text-muted-foreground ml-auto">{formatDate(l.created_at, isCN ? "zh-CN" : "en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
                   </div>
                   <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => del.mutate(l.id)}><Trash2 className="h-3 w-3" /></Button>
                 </div>

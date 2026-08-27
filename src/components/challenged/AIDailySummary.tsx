@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { FileText, Loader2, RefreshCw } from "lucide-react";
 import { invokeAI } from "@/lib/ai-service";
 import { useTranslation } from "react-i18next";
+import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 interface AIDailySummaryProps {
   caredOneName: string;
@@ -20,7 +21,7 @@ export function AIDailySummary({ caredOneName, medicines, tasks, checkins }: AID
   const generate = async () => {
     setLoading(true);
     try {
-      const today = new Date().toLocaleDateString(i18n.language, { weekday: "long", month: "long", day: "numeric" });
+      const today = formatDate(new Date(), i18n.language, { weekday: "long", month: "long", day: "numeric" });
       const context = JSON.stringify({
         date: today,
         patient: caredOneName,

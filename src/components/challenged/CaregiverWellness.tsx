@@ -12,6 +12,7 @@ import { useCaregiverWellnessLogs, useCreateCaregiverWellnessLog } from "@/hooks
 import { invokeAI } from "@/lib/ai-service";
 import { toast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 export function CaregiverWellness() {
   const { t } = useTranslation();
@@ -160,7 +161,7 @@ export function CaregiverWellness() {
                     {t("wellness.stress")} {log.stress_level}/10
                   </Badge>
                   <span className="text-[10px] text-muted-foreground shrink-0">
-                    {new Date(log.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                    {formatDate(log.created_at, undefined, { month: "short", day: "numeric" })}
                   </span>
                 </div>
               );

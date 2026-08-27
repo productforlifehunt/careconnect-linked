@@ -9,6 +9,7 @@ import { Pencil, Trash2, X, Check, Plus, StickyNote, Loader2 } from "lucide-reac
 import { useCareNotes, useCreateCareNote, useUpdateCareNote, useDeleteCareNote } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 export function NotesCard({ caredOneId }: { caredOneId: string }) {
   const { toast } = useToast();
@@ -94,7 +95,7 @@ export function NotesCard({ caredOneId }: { caredOneId: string }) {
                       <p className="text-xs text-muted-foreground whitespace-pre-wrap">{n.content}</p>
                       <div className="flex gap-2 mt-1">
                         {n.category && <Badge variant="secondary" className="text-[10px]">{n.category}</Badge>}
-                        <span className="text-[10px] text-muted-foreground">{new Date(n.created_at).toLocaleDateString(isCN ? "zh-CN" : "en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+                        <span className="text-[10px] text-muted-foreground">{formatDate(n.created_at, isCN ? "zh-CN" : "en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
                       </div>
                     </div>
                     <div className="flex gap-1 shrink-0">

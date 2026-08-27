@@ -1206,11 +1206,11 @@ export const WP = {
     /** 190. One user can have many related 187. User's calendar event — Users -> 187. User's calendar event (One to Many) */
     "190": { id: 190, parent: "Users", child: "187. User's calendar event", type: "One to Many" },
     /** 262. One 187. user's calendar event can have many related invited users — 187. User's calendar event -> Users (One to Many) */
-    "262": { id: 262, parent: "187. User's calendar event", child: "Users", type: "One to Many" },
+    "266": { id: 266, parent: "187. User's calendar event", child: "Users", type: "One to Many" },
     /** 191. One 187. user's calendar event can have many related 161. user's log events — 187. User's calendar event -> 161. user's log events (One to Many) */
     "191": { id: 191, parent: "187. User's calendar event", child: "161. user's log events", type: "One to Many" },
     /** 263. One care task can have many related user's calendar events — 204. Care Task -> 187. User's calendar event (One to Many) */
-    "263": { id: 263, parent: "204. Care Task", child: "187. User's calendar event", type: "One to Many" },
+    "267": { id: 267, parent: "204. Care Task", child: "187. User's calendar event", type: "One to Many" },
     /** 103. One user can have many related 6. FreshCoin Transaction — Users -> 6. FreshCoin Transaction (One to Many) */
     "103": { id: 103, parent: "Users", child: "6. FreshCoin Transaction", type: "One to Many" },
     /** 194. One user can have many related 192. User's subscription — Users -> 192. User's subscription (One to Many) */
@@ -1264,7 +1264,7 @@ export const WP = {
     /** 241. One check in schedule can have many related asigned check-in persons — 207. Checkin schedule -> Users (One to Many) */
     "241": { id: 241, parent: "207. Checkin schedule", child: "Users", type: "One to Many" },
     /** 260. One 207. check in schedule can have many related asigned check-in persons — 207. Checkin schedule -> Users (One to Many) */
-    "260": { id: 260, parent: "207. Checkin schedule", child: "Users", type: "One to Many" },
+    "268": { id: 268, parent: "207. Checkin schedule", child: "Users", type: "One to Many" },
     /** 242. One cared one can have many related 197. cared one's care notes — Users -> 197. Cared one's care note (One to Many) */
     "242": { id: 242, parent: "Users", child: "197. Cared one's care note", type: "One to Many" },
     /** 243. One cared one can have many related cared one's care tips — Users -> 209. Cared one's care tip (One to Many) */
@@ -1487,11 +1487,11 @@ export const R = {
   /** 190. One user can have many related 187. User's calendar event */
   userCalendarEvents: 190,
   /** 262. One 187. user's calendar event can have many related invited users */
-  calendarEventInvitees: 262,
+  calendarEventInvitees: 266,
   /** 191. One 187. user's calendar event can have many related 161. user's log events */
   calendarEventLogEvents: 191,
   /** 263. One care task can have many related user's calendar events */
-  careTaskCalendarEvents: 263,
+  careTaskCalendarEvents: 267,
   /** 103. One user can have many related 6. FreshCoin Transaction */
   userFreshcoinTransactions: 103,
   /** 194. One user can have many related 192. User's subscription */
@@ -1545,7 +1545,7 @@ export const R = {
   /** 241. One check in schedule can have many related asigned check-in persons */
   checkinScheduleAssignees: 241,
   /** 260. One 207. check in schedule can have many related asigned check-in persons */
-  checkinNotificationReceivers: 260,
+  checkinNotificationReceivers: 268,
   /** 242. One cared one can have many related 197. cared one's care notes */
   caredOneCareNotes: 242,
   /** 243. One cared one can have many related cared one's care tips */
