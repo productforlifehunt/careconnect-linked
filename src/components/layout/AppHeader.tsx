@@ -94,36 +94,7 @@ export function AppHeader() {
           <SheetContent side="left" className="w-72 p-0">
             <div className="p-4 border-b">
               <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-2">
-                {logoBrand === "challenged" && isChinese ? (
-                  <img src={yichangIcon} alt="忆畅" className="w-12 h-12 rounded-xl" />
-                ) : logoBrand === "challenged" ? (
-                  <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center leading-none shadow-sm px-2 overflow-hidden">
-                    <span className="text-primary-foreground font-bold text-[7px] tracking-normal whitespace-nowrap">ChallengeD</span>
-                  </div>
-                ) : logoBrand === "carecnc" && isChinese ? (
-                  <img src={huchangIcon} alt="护畅" className="w-12 h-12 rounded-xl" />
-                ) : logoBrand === "carecnc" ? (
-                  <div className="w-12 h-12 rounded-[22%] hero-gradient flex flex-col items-center justify-center leading-none shadow-sm">
-                    <span className="text-primary-foreground font-bold text-[13px] tracking-tight">Care</span>
-                    <span className="text-primary-foreground font-bold text-[13px] tracking-tight">cnc</span>
-                  </div>
-                ) : (
-                  <>
-                    <div className="w-9 h-9 rounded-lg hero-gradient flex items-center justify-center">
-                      <span className="text-primary-foreground font-bold text-sm">{logoBadgeText}</span>
-                    </div>
-                    <span className="font-bold text-lg">
-                      {isCareDuo ? (
-                        <span className="text-primary">{logoWordmarkText}</span>
-                      ) : (
-                        <>
-                          <span className="text-primary">{site.logoText}</span>
-                          {site.logoAccent && <span className="text-muted-foreground">{site.logoAccent}</span>}
-                        </>
-                      )}
-                    </span>
-                  </>
-                )}
+                <BrandMark size={44} showWordmark />
               </Link>
             </div>
             <nav className="p-4 space-y-1">
@@ -169,36 +140,7 @@ export function AppHeader() {
 
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 shrink-0">
-          {logoBrand === "challenged" && isChinese ? (
-            <img src={yichangIcon} alt="忆畅" className="w-12 h-12 rounded-xl" />
-          ) : logoBrand === "challenged" ? (
-            <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center leading-none shadow-sm px-2 overflow-hidden">
-              <span className="text-primary-foreground font-bold text-[7px] tracking-normal whitespace-nowrap">ChallengeD</span>
-            </div>
-          ) : logoBrand === "carecnc" && isChinese ? (
-            <img src={huchangIcon} alt="护畅" className="w-12 h-12 rounded-xl" />
-          ) : logoBrand === "carecnc" ? (
-            <div className="w-12 h-12 rounded-[22%] hero-gradient flex flex-col items-center justify-center leading-none shadow-sm">
-              <span className="text-primary-foreground font-bold text-[13px] tracking-tight">Care</span>
-              <span className="text-primary-foreground font-bold text-[13px] tracking-tight">cnc</span>
-            </div>
-          ) : (
-            <>
-              <div className="w-9 h-9 rounded-lg hero-gradient flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">{logoBadgeText}</span>
-              </div>
-              <span className="font-bold text-lg hidden sm:inline">
-                {isCareDuo ? (
-                  <span className="text-primary">{logoWordmarkText}</span>
-                ) : (
-                  <>
-                    <span className="text-primary">{site.logoText}</span>
-                    {site.logoAccent && <span className="text-muted-foreground">{site.logoAccent}</span>}
-                  </>
-                )}
-              </span>
-            </>
-          )}
+          <BrandMark size={40} showWordmark />
         </Link>
 
         {/* Desktop horizontal nav */}
