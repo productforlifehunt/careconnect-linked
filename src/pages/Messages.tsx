@@ -143,12 +143,12 @@ export default function Messages({ embedded = false }: { embedded?: boolean } = 
   };
 
   const handleSendQuote = async (quote: QuoteData) => {
-    if (!selectedConvoId || !selectedOtherUser?.id) return;
+    if (!selectedConvoId) return;
     const encoded = encodeQuote(quote);
     await sendMessage.mutateAsync({
       conversationId: selectedConvoId,
       content: encoded,
-      receiverUserId: selectedOtherUser.id,
+      receiverUserId: selectedOtherUser?.id || undefined,
     });
     qc.invalidateQueries({ queryKey: ["messages"] });
     qc.invalidateQueries({ queryKey: ["conversations"] });
