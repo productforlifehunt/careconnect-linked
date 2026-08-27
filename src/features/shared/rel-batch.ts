@@ -20,6 +20,12 @@ type CacheEntry = { at: number; promise: Promise<any> };
 const READ_TTL_MS = 8000;
 const cache = new Map<string, CacheEntry>();
 
+if (typeof window !== "undefined") {
+  // Writes go through wordpressFetchRaw, which emits "wp-write".
+  window.addEventListener("wp-write", () => cache.clear());
+}
+
+
 /**
  * Deduplicates identical reads happening within a short window (default 8s),
  * so sibling widgets mounting on the same screen share one network round-trip.
