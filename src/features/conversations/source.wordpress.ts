@@ -164,15 +164,42 @@ async function fetchConversationMemberIds(convoId: string | number): Promise<num
   } catch { return []; }
 }
 
+/**
+ * Single-request member map for REL 137 (conversation → users).
+ * Replaces the per-conversation N+1 lookup: one GET returns every relation row,
+ * grouped here by conversation id.
+ */
+async function fetchConversationMemberMap(): Promise<Map<string, number[]>> {
+  const map = new Map<string, number[]>();
+  try {
+    const rows = await wordpressFetch<any[]>(`jet-rel/${REL_CONV_MEMBER}`);
+    if (!Array.isArray(rows)) return map;
+    for (const r of rows) {
+      const parent = String(r?.parent_object_id ?? "");
+      const child = Number(r?.child_object_id);
+      if (!parent || !child) continue;
+      const list = map.get(parent) || [];
+      if (!list.includes(child)) list.push(child);
+      map.set(parent, list);
+    }
+  } catch { /* empty map → callers fall back to per-conversation lookup */ }
+  return map;
+}
+
 export async function fetchConversationsWordPress(currentUserId?: string): Promise<any[]> {
   try {
-    const convos = await wordpressCCTFetch<any[]>(CONV, { params: { _limit: 200, ...appScopeParams("chatConversation") } });
+    const [convos, memberMap] = await Promise.all([
+      wordpressCCTFetch<any[]>(CONV, { params: { _limit: 200, ...appScopeParams("chatConversation") } }),
+      fetchConversationMemberMap(),
+    ]);
     if (!Array.isArray(convos)) return [];
     const myId = numId(currentUserId);
 
     const enriched = await Promise.all(filterAppScope("chatConversation", convos).map(async (c: any) => {
       const id = String(c.id || c._ID);
-      const memberIds = await fetchConversationMemberIds(id);
+      const memberIds = memberMap.size > 0
+        ? (memberMap.get(id) || [])
+        : await fetchConversationMemberIds(id);
       if (myId && !memberIds.includes(myId)) return null;
       const otherId = myId ? memberIds.find((m) => m !== myId) : memberIds[0];
       return {
@@ -192,6 +219,7 @@ export async function fetchConversationsWordPress(currentUserId?: string): Promi
     return enriched.filter(Boolean) as any[];
   } catch { return []; }
 }
+
 
 export async function fetchDirectMessagesWordPress(conversationId: string): Promise<any[]> {
   try {
