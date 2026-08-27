@@ -109,6 +109,21 @@ export async function createNotificationWordPress(input: {
     url = `${base}?id=${input.related_id}`;
   }
 
+  // Primary path: the app's single notification edge function. It owns every
+  // channel (inbox row + push + email + SMS) and enforces user preferences, so
+  // nothing can be sent twice or sent against the user's settings.
+  const { sendNotification } = await import("./dispatch");
+  const dispatched = await sendNotification({
+    user_id: input.user_id,
+    type: input.type,
+    title: input.title,
+    message: input.message,
+    action_url: url,
+  });
+  if (dispatched) return;
+
+  // Fallback only if the dispatcher is unreachable: write the inbox row direct
+  // so an alert is never silently lost.
   const created: any = await wordpressCCTFetch(SLUG, {
     method: "POST",
     body: {

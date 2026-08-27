@@ -16,6 +16,7 @@ import { User, Bell, Shield, MapPin, Loader2, Upload, Camera, Download, Trash2 }
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSite } from "@/contexts/SiteContext";
 import { useTranslation } from "react-i18next";
+import { AppSettingsPanel } from "@/components/settings/AppSettingsPanel";
 
 export default function Profile() {
   const { t } = useTranslation();
@@ -205,14 +206,7 @@ export default function Profile() {
         </TabsContent>
 
         <TabsContent value="notifications" className="space-y-6">
-          <Card className="border-transparent card-elevated">
-            <CardHeader><CardTitle>{t("profile.notificationPrefs")}</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between"><Label>{t("profile.emailNotifications")}</Label><Switch checked={emailNotifs} onCheckedChange={setEmailNotifs} /></div>
-              <div className="flex items-center justify-between"><Label>{t("profile.pushNotifications")}</Label><Switch checked={pushNotifs} onCheckedChange={setPushNotifs} /></div>
-            </CardContent>
-          </Card>
-          <Button variant="coral" onClick={handleSave} disabled={updateProfile.isPending}>{t("profile.savePreferences")}</Button>
+          <AppSettingsPanel />
         </TabsContent>
 
         <TabsContent value="privacy" className="space-y-6">

@@ -2,7 +2,6 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 /** Default WP base URL - used when no wp_base param is provided */
 const DEFAULT_WP_BASE_URL = "https://app.challenged-dementia.com/afresh";
-const FALLBACK_WP_BASE_URL = "https://afresh-1202589.ingress-erytho.ewp.live";
 const UPSTREAM_TIMEOUT_MS = 15000;
 
 const corsHeaders = {
@@ -34,9 +33,6 @@ function shouldRetryUpstream(status: number, body: string): boolean {
 
 function getCandidateBases(requestedBase: string): string[] {
   const normalizedBase = requestedBase.endsWith("/") ? requestedBase.slice(0, -1) : requestedBase;
-  if (normalizedBase === DEFAULT_WP_BASE_URL) {
-    return [DEFAULT_WP_BASE_URL, FALLBACK_WP_BASE_URL];
-  }
   return [normalizedBase];
 }
 
