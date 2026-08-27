@@ -238,17 +238,24 @@ const CHK_STATUS_LABEL: Record<string, string> = { b55: "checked", b56: "skipped
 
 export async function fetchCheckinLogsWordPress(caredOneId: string): Promise<any[]> {
   try {
-    const checkins = await fetchCheckinsWordPress(caredOneId);
+    const [checkins, logMap] = await Promise.all([
+      fetchCheckinsWordPress(caredOneId),
+      fetchRelChildrenMap(REL_CHECKIN_LOG),
+    ]);
     const nestedLogs = await Promise.all(checkins.map(async (checkin: any) => {
       try {
-        const rels = await wordpressFetch<any[]>(`jet-rel/${REL_CHECKIN_LOG}/children/${normalizeWpObjectId(checkin.id)}`);
-        if (!Array.isArray(rels) || rels.length === 0) return [];
-        const logs = await Promise.all(rels.map(async (rel: any) => {
+        const pid = String(normalizeWpObjectId(checkin.id));
+        const childIds = logMap.size > 0
+          ? (logMap.get(pid) || []).map((c) => c.childId)
+          : ((await wordpressFetch<any[]>(`jet-rel/${REL_CHECKIN_LOG}/children/${pid}`)) || [])
+              .map((r: any) => String(r.child_object_id));
+        if (!childIds.length) return [];
+        const logs = await Promise.all(childIds.map(async (childId) => {
           try {
-            const item = await wordpressCCTFetch<any>(T.checkinLog.slug, { id: rel.child_object_id });
+            const item = await wordpressCCTFetch<any>(T.checkinLog.slug, { id: childId });
             const statusCode = String(item[F_CHKLOG.STATUS] || "b55");
             return {
-              id: String(item.id || item._ID || rel.child_object_id),
+              id: String(item.id || item._ID || childId),
               checkin_id: String(checkin.id),
               status: CHK_STATUS_LABEL[statusCode] || "checked",
               note: item[F_CHKLOG.NOTE] || null,
@@ -263,6 +270,7 @@ export async function fetchCheckinLogsWordPress(caredOneId: string): Promise<any
     return nestedLogs.flat().sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   } catch { return []; }
 }
+
 
 export async function fetchTodayCheckinLogsWordPress(caredOneId: string): Promise<any[]> {
   const today = new Date(); today.setHours(0, 0, 0, 0);
