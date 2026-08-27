@@ -188,17 +188,17 @@ export async function fetchProvidersWordPress(filters?: ProviderFilters): Promis
       );
     }
 
-    // Sorting
-    if (filters?.sortBy === "rating") results.sort((a, b) => (b.rating_average ?? 0) - (a.rating_average ?? 0));
+    // Sorting. Providers with no price / no reviews sort last instead of being
+    // treated as "0", which would rank unpriced listings above real ones.
+    const byRatingDesc = (a: Profile, b: Profile) =>
+      (b.rating_average ?? -1) - (a.rating_average ?? -1);
+    const priceOf = (p: Profile) => p.care_provider_starts_hourly_rate;
+    if (filters?.sortBy === "rating") results.sort(byRatingDesc);
     else if (filters?.sortBy === "price-low")
-      results.sort(
-        (a, b) => (a.care_provider_starts_hourly_rate ?? 0) - (b.care_provider_starts_hourly_rate ?? 0),
-      );
+      results.sort((a, b) => (priceOf(a) ?? Number.POSITIVE_INFINITY) - (priceOf(b) ?? Number.POSITIVE_INFINITY));
     else if (filters?.sortBy === "price-high")
-      results.sort(
-        (a, b) => (b.care_provider_starts_hourly_rate ?? 0) - (a.care_provider_starts_hourly_rate ?? 0),
-      );
-    else results.sort((a, b) => (b.rating_average ?? 0) - (a.rating_average ?? 0));
+      results.sort((a, b) => (priceOf(b) ?? -1) - (priceOf(a) ?? -1));
+    else results.sort(byRatingDesc);
 
     return results;
   } catch {
@@ -208,8 +208,14 @@ export async function fetchProvidersWordPress(filters?: ProviderFilters): Promis
 
 export async function fetchProviderByIdWordPress(id: string): Promise<Profile | null> {
   try {
-    return await getWordPressFeature<Profile>("provider", { endpointArgs: { id } });
+    const profile = await getWordPressFeature<Profile>("provider", { endpointArgs: { id } });
+    if (!profile) return null;
+    // Ratings always come from CCT 31 "Review" (relation 264), never from the
+    // Dokan/Woo store aggregate, so profile and search agree.
+    const rating = await fetchProviderRatingSummary(id).catch(() => ({ average: null, count: 0 }));
+    return { ...profile, rating_average: rating.average, rating_count: rating.count };
   } catch {
     return null;
   }
 }
+
