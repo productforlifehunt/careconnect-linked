@@ -139,15 +139,13 @@ export async function updateProfileWordPress(updates: Partial<Profile>): Promise
   if (Object.keys(body).length === 0) return;
 
   const storedUser = getStoredWPUser();
-  const wpUserId = storedUser?.user_id;
-  try {
-    const existing = await wordpressCCTFetch<any[]>(CCT_SLUG, { params: { cct_author_id: wpUserId, _limit: 1 } });
-    if (Array.isArray(existing) && existing.length > 0) {
-      await wordpressCCTFetch(CCT_SLUG, { id: existing[0]._ID || existing[0].id, method: "PUT", body });
-    } else {
-      await wordpressCCTFetch(CCT_SLUG, { method: "POST", body: { ...body, cct_author_id: wpUserId } });
-    }
-  } catch (err) {
-    console.warn("Failed to update CCT 258 extended profile:", err);
+  const wpUserId = storedUser?.user_id != null ? String(storedUser.user_id) : "";
+  const existing = await wordpressCCTFetch<any[]>(CCT_SLUG, { params: { cct_author_id: wpUserId, _limit: 1 } });
+  if (Array.isArray(existing) && existing.length > 0) {
+    await wordpressCCTFetch(CCT_SLUG, { id: existing[0]._ID || existing[0].id, method: "PUT", body });
+  } else {
+    // JetEngine CCT REST requires cct_author_id as a string.
+    await wordpressCCTFetch(CCT_SLUG, { method: "POST", body: { ...body, cct_author_id: wpUserId } });
   }
 }
+
