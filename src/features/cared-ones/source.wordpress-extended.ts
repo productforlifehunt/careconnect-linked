@@ -397,19 +397,42 @@ export async function fetchMedicineLogsWordPress(medicineId: string): Promise<an
 export async function fetchTodayMedicineLogsWordPress(caredOneId: string): Promise<any[]> {
   try {
     const userId = normalizeWpObjectId(caredOneId);
-    const medRels = await wordpressFetch<any[]>(`jet-rel/${REL_USER_MEDICINE}/children/${userId}`);
+    const [medRels, logMap] = await Promise.all([
+      wordpressFetch<any[]>(`jet-rel/${REL_USER_MEDICINE}/children/${userId}`),
+      fetchRelChildrenMap(REL_MEDICINE_LOG),
+    ]);
     if (!Array.isArray(medRels) || medRels.length === 0) return [];
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const allLogs: any[] = [];
     await Promise.all(medRels.map(async (rel: any) => {
       const mid = String(rel.child_object_id);
       try {
-        const logs = await fetchMedicineLogsWordPress(mid);
+        // Batched map avoids one relation request per medicine; each log item
+        // is still read from its CCT row so no field is inferred.
+        const logIds = logMap.size > 0 ? (logMap.get(mid) || []).map((c) => c.childId) : null;
+        const logs = logIds
+          ? (await Promise.all(logIds.map(async (lid) => {
+              try {
+                const l = await wordpressCCTFetch<any>(T.medicineLog.slug, { id: lid });
+                return {
+                  id: String(l.id || l._ID || lid),
+                  medicine_id: mid,
+                  taken_at: l.created_at,
+                  status: MED_STATUS_LABEL[String(l[F_MEDLOG.STATUS] || "b55")] || "taken",
+                  logged_by: l.author_id || null,
+                  note: l[F_MEDLOG.NOTE] || null,
+                  notes: l[F_MEDLOG.NOTE] || null,
+                  created_at: l.created_at,
+                };
+              } catch { return null; }
+            }))).filter(Boolean) as any[]
+          : await fetchMedicineLogsWordPress(mid);
         for (const l of logs) if (l.created_at && new Date(l.created_at) >= today) allLogs.push(l);
       } catch {}
     }));
     return allLogs;
   } catch { return []; }
+
 }
 
 export async function logMedicineWordPress(log: { medicine_id: string; status?: string; note?: string; user_id?: string }): Promise<void> {
