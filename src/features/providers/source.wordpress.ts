@@ -4,14 +4,11 @@ import { T } from "@/integrations/wp-schema";
 import { getWordPressFeature, listWordPressFeature } from "@/features/shared/wordpress-adapter";
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 import { fetchAllProviderProductSummaries } from "@/services/woocommerce-api";
+import { fetchProviderRatingSummary } from "@/features/reviews/source.wordpress";
 
 // Provider fields live on CCT 258 "User's extended profile 2".
 const P2 = T.userProfile2;
 const F_PROFILE = P2.f;
-
-function isActivePaidProvider(profile: Profile): boolean {
-  return profile.is_care_provider === true && profile.provider_is_active === true;
-}
 
 function parseWpBoolean(value: unknown): boolean {
   return value === true || value === 1 || (typeof value === "string" && ["yes", "true", "1", "active", "Active"].includes(value));
