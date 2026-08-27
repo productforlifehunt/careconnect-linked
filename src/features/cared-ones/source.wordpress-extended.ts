@@ -81,6 +81,25 @@ async function fetchRelatedCctChildren(relationId: number, parentId: string, cct
   });
 }
 
+/**
+ * Same as fetchRelatedCctChildren, but for relations with many children:
+ * pulls the CCT collection in ONE request and indexes it locally instead of
+ * issuing one GET per related row (which floods the proxy and thrashes React).
+ */
+async function fetchRelatedCctChildrenBulk(relationId: number, parentId: string, cctSlug: string): Promise<any[]> {
+  const pid = normalizeWpObjectId(parentId);
+  if (!pid) return [];
+  return dedupeRead(`rel-children-bulk:${relationId}:${pid}:${cctSlug}`, async () => {
+    const [rels, all] = await Promise.all([
+      wordpressFetch<any[]>(`jet-rel/${relationId}/children/${pid}`),
+      wordpressCCTFetch<any[]>(cctSlug),
+    ]);
+    if (!Array.isArray(rels) || rels.length === 0 || !Array.isArray(all)) return [];
+    const wanted = new Set(rels.map((r: any) => String(r.child_object_id)));
+    return all.filter((row: any) => wanted.has(String(row.id ?? row._ID)));
+  });
+}
+
 
 async function linkRel(relId: number, parentId: number, childId: number) {
   if (!parentId || !childId) return;
@@ -640,10 +659,86 @@ export async function deleteEmergencyContactWordPress(id: string): Promise<void>
   await wordpressCCTFetch(T.emergencyContact.slug, { id, method: "DELETE" });
 }
 
-// ─── Activity Log / Health Vital / Symptom Log ───────────────
+// ─── Health vitals → CCT 171 (Apple/Google Health log event) ──
+// The bible has no separate "vitals" table: health measurements live in
+// CCT 171, keyed by the *exact* Apple HealthKit identifier in a55, with the
+// Apple-shaped payload in a56 and the instant in a59. REL 172 ties the row to
+// the cared one.
+const F_HEALTH = T.userHealthLog.f;
+const HEALTH_SOURCE = T.userHealthLog.opt.SOURCE;
+
+/** UI vital type ⇄ Apple HealthKit identifier (case/spelling is load-bearing). */
+const VITAL_HK: Record<string, { hk: string; unit: string }> = {
+  blood_pressure: { hk: "HKCorrelationTypeIdentifierBloodPressure", unit: "mmHg" },
+  heart_rate: { hk: "HKQuantityTypeIdentifierHeartRate", unit: "count/min" },
+  blood_sugar: { hk: "HKQuantityTypeIdentifierBloodGlucose", unit: "mg/dL" },
+  weight: { hk: "HKQuantityTypeIdentifierBodyMass", unit: "lb" },
+  temperature: { hk: "HKQuantityTypeIdentifierBodyTemperature", unit: "degF" },
+  oxygen: { hk: "HKQuantityTypeIdentifierOxygenSaturation", unit: "%" },
+};
+const HK_VITAL: Record<string, string> = Object.fromEntries(
+  Object.entries(VITAL_HK).map(([k, v]) => [v.hk, k]),
+);
+
+function wpDateTime(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+
+export async function fetchHealthVitalsWordPress(caredOneId: string): Promise<any[]> {
+  try {
+    const rows = await fetchRelatedCctChildrenBulk(R.userHealthLogs, caredOneId, T.userHealthLog.slug);
+    return rows
+      .map((r: any) => {
+        const hk = String(r[F_HEALTH.APPLE_HEALTH_OR_GOOGLE_HEALTH_LOG_TYPE_SLUG] || "");
+        let payload: any = {};
+        try { payload = JSON.parse(String(r[F_HEALTH.APPLE_HEALTH_OR_GOOGLE_HEALTH_LOG_TYPE_VALUE] || "{}")); } catch {}
+        const recorded = r[F_HEALTH.TIME] || r[F_HEALTH.START_TIME] || r.cct_created || r.created_at || null;
+        return {
+          id: String(r.id || r._ID),
+          user_id: caredOneId,
+          vital_type: HK_VITAL[hk] || hk,
+          value: typeof payload.value === "number" ? payload.value : parseFloat(payload.value) || 0,
+          display_value: payload.display ?? payload.value ?? null,
+          unit: payload.unit || VITAL_HK[HK_VITAL[hk]]?.unit || null,
+          notes: payload.notes || null,
+          recorded_at: recorded,
+          created_at: recorded,
+        };
+      })
+      .sort((a, b) => String(b.recorded_at || "").localeCompare(String(a.recorded_at || "")));
+  } catch { return []; }
+}
+
+export async function createHealthVitalWordPress(vital: {
+  user_id: string; vital_type: string; value: number; unit?: string; notes?: string; display_value?: string;
+}): Promise<void> {
+  const map = VITAL_HK[vital.vital_type];
+  if (!map) throw new Error(`Unsupported vital type: ${vital.vital_type}`);
+  const now = wpDateTime(new Date());
+  const payload: Record<string, unknown> = {
+    value: vital.value,
+    unit: vital.unit || map.unit,
+  };
+  if (vital.display_value) payload.display = vital.display_value;
+  if (vital.notes) payload.notes = vital.notes;
+  const created = await wordpressCCTFetch<any>(T.userHealthLog.slug, {
+    method: "POST",
+    body: {
+      [F_HEALTH.APPLE_HEALTH_OR_GOOGLE_HEALTH_LOG_TYPE_SLUG]: map.hk,
+      [F_HEALTH.APPLE_HEALTH_OR_GOOGLE_HEALTH_LOG_TYPE_VALUE]: JSON.stringify(payload),
+      [F_HEALTH.START_TIME]: now,
+      [F_HEALTH.END_TIME]: now,
+      [F_HEALTH.TIME]: now,
+      [F_HEALTH.SOURCE]: HEALTH_SOURCE.APPLE_HEALTH,
+    },
+  });
+  const newId = normalizeWpObjectId(created?.item_id || created?._ID || created?.id);
+  await linkRel(R.userHealthLogs, normalizeWpObjectId(vital.user_id), newId);
+}
+
+// ─── Activity Log / Symptom Log ──────────────────────────────
 // Not defined in data bible — stubbed to maintain caller compatibility.
-export async function fetchHealthVitalsWordPress(_caredOneId: string): Promise<any[]> { return []; }
-export async function createHealthVitalWordPress(_vital: any): Promise<void> { /* not in bible */ }
 export async function fetchActivityLogWordPress(_caredOneId: string): Promise<any[]> { return []; }
 export async function createActivityLogWordPress(_log: any): Promise<void> { /* not in bible */ }
 export async function deleteActivityLogWordPress(_id: string): Promise<void> { /* not in bible */ }
