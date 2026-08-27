@@ -145,3 +145,8 @@ export async function wordpressCCTFetch<T = Record<string, any>[]>(
   }
   return raw as T;
 }
+
+/** True for requests dropped by the browser (route change / page unload). */
+export function isNetworkAbort(err: unknown): boolean {
+  return Boolean(err && typeof err === "object" && (err as any).isNetworkAbort);
+}
