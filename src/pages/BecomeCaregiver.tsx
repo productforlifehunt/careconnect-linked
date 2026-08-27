@@ -116,7 +116,15 @@ export default function BecomeCaregiver() {
           <CardContent className="space-y-6">
             <div>
               <Label className="mb-3 block">{t("becomeCaregiver.specialties")} * ({t("becomeCaregiver.selectAllApply")})</Label>
-              <div className="flex flex-wrap gap-2">{allSpecialties.map(s => (<Badge key={s} variant={selectedSpecialties.includes(s) ? "default" : "outline"} className="cursor-pointer text-sm py-1.5 px-3" onClick={() => toggleItem(selectedSpecialties, s, setSelectedSpecialties)}>{t(getSpecialtyKey(s))}</Badge>))}</div>
+              {serviceTypesLoading ? (
+                <div className="flex flex-wrap gap-2">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div key={i} className="h-8 w-24 rounded-full bg-muted animate-pulse" />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">{allSpecialties.map(s => (<Badge key={s} variant={selectedSpecialties.includes(s) ? "default" : "outline"} className="cursor-pointer text-sm py-1.5 px-3" onClick={() => toggleItem(selectedSpecialties, s, setSelectedSpecialties)}>{t(getSpecialtyKey(s))}</Badge>))}</div>
+              )}
             </div>
             <div>
               <Label className="mb-3 block">{t("becomeCaregiver.certifications")}</Label>
