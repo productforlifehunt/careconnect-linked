@@ -27,6 +27,18 @@ reference — a one-character divergence destroys his ability to maintain/upgrad
    chat 121, calendar 187, token 186, community post 149).
 7. Failed tests must be root-caused (backend not wired / frontend wrong id / design flaw) — never
    silenced.
+8. **Assume it already exists (99% rule).** If a Bible CCT / field / relation returns 404, empty, or
+   "not found", it almost certainly EXISTS in WordPress already. NEVER conclude "missing from
+   backend", and NEVER create a duplicate. Check, in the GUI, in this order:
+   - JetEngine relation edit screen: **Register REST API Endpoint**, **Register separate DB table**,
+     and the allow-create / allow-update / allow-delete toggles — these are often OFF.
+   - CCT settings: REST API enabled, and read/edit/delete **capability** set so subscribers can
+     access it (normalize to `read`).
+   - JWT / auth: the request may be unauthenticated or proxied without credentials.
+   Only after all toggles are verified ON may you report a genuine gap — and still ask before
+   creating anything.
+9. **Never create duplicate relations/CCTs.** Duplicates fork the data. If a duplicate was created
+   by mistake, delete it in the GUI and repoint code to the Bible ID.
 
 ### Workflow when the user sends a new dictionary copy
 - Diff against the stored copy, report every delta, replace the stored copy, regenerate
