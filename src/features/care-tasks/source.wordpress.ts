@@ -66,19 +66,22 @@ async function fetchAssignedUserIds(taskId: string): Promise<string[]> {
 }
 
 /** Returns array of { user_id: "wp-N", response: "pending"|"accepted"|"rejected" } */
+function mapAssigneeRows(rows: Array<{ childId: string; meta: Record<string, any> | null }>) {
+  return rows
+    .map((r) => {
+      const id = normalizeWpObjectId(r.childId);
+      if (!id) return null;
+      const response = ASSIGNEE_CODE_TO_STATUS[String(r.meta?.a55 || "b55")] || "pending";
+      return { user_id: `wp-${id}`, response };
+    })
+    .filter(Boolean) as Array<{ user_id: string; response: string }>;
+}
+
 async function fetchAssignees(taskId: string): Promise<Array<{ user_id: string; response: string }>> {
   try {
     const rels = await wordpressFetch<any[]>(`jet-rel/${REL_TASK_ASSIGNEE}/children/${normalizeWpObjectId(taskId)}`);
     if (!Array.isArray(rels) || rels.length === 0) return [];
-    return rels
-      .map((r: any) => {
-        const id = normalizeWpObjectId(r.child_object_id);
-        if (!id) return null;
-        const meta = r.meta || r.meta_fields || {};
-        const response = ASSIGNEE_CODE_TO_STATUS[String(meta.a55 || "b55")] || "pending";
-        return { user_id: `wp-${id}`, response };
-      })
-      .filter(Boolean) as Array<{ user_id: string; response: string }>;
+    return mapAssigneeRows(rels.map((r: any) => ({ childId: String(r.child_object_id), meta: r.meta || r.meta_fields || null })));
   } catch { return []; }
 }
 
@@ -90,6 +93,7 @@ async function fetchCaredOneId(taskId: string): Promise<string | null> {
     return id ? `wp-${id}` : null;
   } catch { return null; }
 }
+
 
 function mapTask(t: any, groupId?: string | null) {
   const id = String(t._ID || t.id || "");
