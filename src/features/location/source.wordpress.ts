@@ -10,7 +10,7 @@
  *   - No separate location_history or location_sharing table needed
  */
 
-import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
+import { wordpressFetch, wordpressCCTFetch, isNetworkAbort } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { T, R } from "@/integrations/wp-schema";
 

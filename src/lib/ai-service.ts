@@ -9,7 +9,7 @@
  * NO separate ai_conversations / ai_messages CCTs. Those were hallucinations.
  */
 
-import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
+import { wordpressCCTFetch, wordpressFetch, isNetworkAbort } from "@/features/shared/wordpress-client";
 import { T, R } from "@/integrations/wp-schema";
 import { appScopeBody } from "@/features/shared/app-scope";
 import { supabase } from "@/integrations/supabase/client";
