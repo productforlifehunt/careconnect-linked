@@ -85,16 +85,16 @@ export default function Inbox() {
 
         <TabsContent value="all" className="mt-0 focus-visible:outline-none">
           <div className="max-w-3xl mx-auto">
-            <Notifications />
+            <Notifications embedded />
             <div className="border-t border-border/60 mt-2" />
-            <Messages />
+            <Messages embedded />
           </div>
         </TabsContent>
         <TabsContent value="notifications" className="mt-0 focus-visible:outline-none">
-          <Notifications />
+          <Notifications embedded />
         </TabsContent>
         <TabsContent value="messages" className="mt-0 focus-visible:outline-none">
-          <Messages />
+          <Messages embedded />
         </TabsContent>
       </Tabs>
     </div>

@@ -324,12 +324,21 @@ export function useConversations() {
   });
 }
 
+/**
+ * react-query keeps `isLoading` true for *disabled* queries (status stays
+ * "pending" while fetchStatus is "idle"), which makes skeletons hang forever
+ * when the query has no id yet. Normalize that once, here.
+ */
+function withIdleAwareLoading<T extends { isLoading: boolean; fetchStatus: string }>(q: T): T {
+  return q.fetchStatus === "idle" && q.isLoading ? ({ ...q, isLoading: false } as T) : q;
+}
+
 export function useDirectMessages(otherUserId: string | null) {
-  return useQuery({
+  return withIdleAwareLoading(useQuery({
     queryKey: ["messages", otherUserId],
     queryFn: () => fetchDirectMessagesWordPress(otherUserId!),
     enabled: !!otherUserId,
-  });
+  }));
 }
 
 /**
@@ -411,11 +420,11 @@ export function useCareGroups() {
 }
 
 export function useCareGroupMembers(groupId: string | null) {
-  return useQuery({
+  return withIdleAwareLoading(useQuery({
     queryKey: ["careGroupMembers", groupId],
     queryFn: () => fetchCareGroupMembersWordPress(groupId!),
     enabled: !!groupId,
-  });
+  }));
 }
 
 export function useCreateCareGroup() {
@@ -623,7 +632,7 @@ export function useSubmitProviderApplication() {
 export function useCareGroupPosts(groupId: string | null, type?: string) {
   // One shared query per group (all types), filtered locally per caller.
   // Prevents the same relation + CCT round-trip firing once per post type.
-  return useQuery({
+  return withIdleAwareLoading(useQuery({
     queryKey: ["careGroupPosts", groupId],
     queryFn: async () => {
       const posts = await fetchCareGroupPostsWordPress(groupId!);
@@ -631,7 +640,7 @@ export function useCareGroupPosts(groupId: string | null, type?: string) {
     },
     enabled: !!groupId,
     select: (posts: any[]) => (type ? posts.filter((p) => p?.type === type) : posts),
-  });
+  }));
 }
 
 

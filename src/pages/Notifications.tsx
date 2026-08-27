@@ -10,7 +10,8 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
-export default function Notifications() {
+export default function Notifications({ embedded = false }: { embedded?: boolean } = {}) {
+  const Heading = (embedded ? "h2" : "h1") as "h1" | "h2";
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -66,7 +67,7 @@ export default function Notifications() {
     <div className="max-w-3xl mx-auto px-4 py-5">
       <div className="flex items-center justify-between gap-3 mb-5">
         <div className="min-w-0">
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">{t("notifs.notifications")}</h1>
+          <Heading className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">{t("notifs.notifications")}</Heading>
           <p className="text-sm text-muted-foreground mt-0.5">{t("notifs.unread", { count: unreadCount })}{invitationCount > 0 ? ` · ${t("notifs.pendingInvitations", { count: invitationCount, s: invitationCount > 1 ? "s" : "" })}` : ""}</p>
         </div>
         {unreadCount > 0 && (
