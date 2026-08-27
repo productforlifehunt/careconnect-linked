@@ -16,7 +16,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { NavLink } from "@/components/NavLink";
-import { Menu, User, LogOut, LayoutDashboard, Bell, Heart, Search, HelpCircle, CalendarDays, Users, MapPin, MessageSquare, Sun, Moon, Newspaper, Bot, Building2, Settings } from "lucide-react";
+import { Menu, User, LogOut, LayoutDashboard, Bell, Heart, Search, HelpCircle, CalendarDays, Users, MapPin, MessageSquare, Sun, Moon, Newspaper, Bot, Building2, Settings, ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { useTheme } from "next-themes";
@@ -78,6 +78,14 @@ export function AppHeader() {
         { title: t("nav.howItWorks"), url: "/how-it-works", icon: HelpCircle },
       ];
 
+  // Keep the header on one row: show the first links inline, rest under "More".
+  const PRIMARY_COUNT = 5;
+  const primaryNav = publicNav.slice(0, PRIMARY_COUNT);
+  const overflowNav = publicNav.slice(PRIMARY_COUNT);
+  const currentUrl = `${location.pathname}${location.search}`;
+  const isNavActive = (url: string) =>
+    url.includes("?") ? currentUrl === url : location.pathname === url;
+
   const displayName = user?.full_name || user?.first_name || user?.email || t("common.anonymous");
   const initials = displayName.charAt(0).toUpperCase();
 
@@ -91,6 +99,11 @@ export function AppHeader() {
       <div className="flex h-16 items-center pl-2 pr-3 lg:pl-3 lg:pr-6 gap-2">
         {/* Mobile menu */}
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon" className="lg:hidden shrink-0" aria-label={t("nav.browse")}>
+              <Menu className="h-5 w-5" />
+            </Button>
+          </SheetTrigger>
           <SheetContent side="left" className="w-72 p-0">
             <div className="p-4 border-b">
               <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-2">
