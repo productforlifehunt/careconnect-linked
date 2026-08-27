@@ -143,25 +143,47 @@ export function AppHeader() {
           <BrandMark size={40} showWordmark />
         </Link>
 
-        {/* Desktop horizontal nav */}
-        <nav className="hidden md:flex items-center gap-0.5 ml-3 min-w-0 flex-nowrap overflow-x-auto no-scrollbar">
-          {publicNav.map(item => (
-            <NavLink
+        {/* Desktop horizontal nav — primary links inline, the rest in a More menu
+            so items never wrap below the header border. */}
+        <nav className="hidden lg:flex items-center gap-0.5 ml-3 min-w-0 flex-nowrap">
+          {primaryNav.map(item => (
+            <Link
               key={item.url}
               to={item.url}
-              className="shrink-0 whitespace-nowrap px-2.5 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors flex items-center gap-1"
-              activeClassName="text-primary font-medium bg-accent/50"
+              className={`shrink-0 whitespace-nowrap px-2.5 py-2 rounded-lg text-sm transition-colors flex items-center gap-1 ${
+                isNavActive(item.url)
+                  ? "text-primary font-medium bg-accent/50"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+              }`}
             >
               <span className="relative">
                 {item.title}
                 {"badge" in item && item.badge && (
-                  <span className="absolute -top-2.5 -right-8 px-1 py-px text-[9px] font-bold text-coral bg-coral/10 border border-coral/30 rounded-full whitespace-nowrap leading-tight">
+                  <span className="absolute -top-2.5 -right-7 px-1 py-px text-[9px] font-bold text-coral bg-coral/10 border border-coral/30 rounded-full whitespace-nowrap leading-tight">
                     {item.badge}
                   </span>
                 )}
               </span>
-            </NavLink>
+            </Link>
           ))}
+          {overflowNav.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="shrink-0 text-sm text-muted-foreground hover:text-foreground gap-1">
+                  {t("nav.more", "More")}
+                  <ChevronDown className="h-3.5 w-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56 bg-card border shadow-lg z-[60]">
+                {overflowNav.map(item => (
+                  <DropdownMenuItem key={item.url} onClick={() => navigate(item.url)}>
+                    <item.icon className="mr-2 h-4 w-4" />
+                    <span className="truncate">{item.title}</span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </nav>
 
         <div className="flex-1" />
