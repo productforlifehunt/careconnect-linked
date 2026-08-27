@@ -76,8 +76,8 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const sidebarItems = useSidebarItems();
   return (
-    <div className="flex flex-1 overflow-hidden">
-      <aside className="hidden md:flex flex-col w-56 shrink-0 border-r bg-sidebar-background overflow-y-auto">
+    <div className="flex min-h-[calc(100vh-4rem)]">
+      <aside className="hidden md:flex flex-col w-56 shrink-0 border-r bg-sidebar-background md:sticky md:top-16 md:h-[calc(100vh-4rem)] md:overflow-y-auto">
         <nav className="flex flex-col gap-0.5 p-3 pt-4">
           {sidebarItems.map((item) => (
             <NavLink
@@ -93,7 +93,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           ))}
         </nav>
       </aside>
-      <div className="flex-1 overflow-y-auto">{children}</div>
+      <div className="flex-1 min-w-0">{children}</div>
     </div>
+
   );
 }
