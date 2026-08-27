@@ -1484,12 +1484,12 @@ export const R = {
   userNotificationTokens: 189,
   /** 190. One user can have many related 187. User's calendar event */
   userCalendarEvents: 190,
-  /** 262. One 187. user's calendar event can have many related invited users */
-  calendarEventInvitees: 262,
+  /** 266. One 187. user's calendar event can have many related invited users (live recreation of dead 262) */
+  calendarEventInvitees: 266,
   /** 191. One 187. user's calendar event can have many related 161. user's log events */
   calendarEventLogEvents: 191,
-  /** 263. One care task can have many related user's calendar events */
-  careTaskCalendarEvents: 263,
+  /** 267. One care task can have many related user's calendar events (live recreation of dead 263) */
+  careTaskCalendarEvents: 267,
   /** 103. One user can have many related 6. FreshCoin Transaction */
   userFreshcoinTransactions: 103,
   /** 194. One user can have many related 192. User's subscription */
