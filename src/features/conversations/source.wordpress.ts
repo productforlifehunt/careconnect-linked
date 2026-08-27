@@ -164,15 +164,45 @@ async function fetchConversationMemberIds(convoId: string | number): Promise<num
   } catch { return []; }
 }
 
+/**
+ * Single-request member map for REL 137 (conversation → users).
+ * Replaces the per-conversation N+1 lookup: one GET returns every relation row,
+ * grouped here by conversation id.
+ */
+async function fetchConversationMemberMap(): Promise<Map<string, number[]>> {
+  const map = new Map<string, number[]>();
+  try {
+    // JetEngine returns { "<parentId>": [{ child_object_id, meta? }, ...], ... }
+    const rows = await wordpressFetch<Record<string, any[]>>(`jet-rel/${REL_CONV_MEMBER}`);
+    if (!rows || typeof rows !== "object" || Array.isArray(rows)) return map;
+    for (const [parent, children] of Object.entries(rows)) {
+      if (!Array.isArray(children)) continue;
+      const list: number[] = [];
+      for (const c of children) {
+        const child = Number(c?.child_object_id);
+        if (child && !list.includes(child)) list.push(child);
+      }
+      if (list.length) map.set(String(parent), list);
+    }
+  } catch { /* empty map → callers fall back to per-conversation lookup */ }
+  return map;
+}
+
+
 export async function fetchConversationsWordPress(currentUserId?: string): Promise<any[]> {
   try {
-    const convos = await wordpressCCTFetch<any[]>(CONV, { params: { _limit: 200, ...appScopeParams("chatConversation") } });
+    const [convos, memberMap] = await Promise.all([
+      wordpressCCTFetch<any[]>(CONV, { params: { _limit: 200, ...appScopeParams("chatConversation") } }),
+      fetchConversationMemberMap(),
+    ]);
     if (!Array.isArray(convos)) return [];
     const myId = numId(currentUserId);
 
     const enriched = await Promise.all(filterAppScope("chatConversation", convos).map(async (c: any) => {
       const id = String(c.id || c._ID);
-      const memberIds = await fetchConversationMemberIds(id);
+      const memberIds = memberMap.size > 0
+        ? (memberMap.get(id) || [])
+        : await fetchConversationMemberIds(id);
       if (myId && !memberIds.includes(myId)) return null;
       const otherId = myId ? memberIds.find((m) => m !== myId) : memberIds[0];
       return {
@@ -192,6 +222,7 @@ export async function fetchConversationsWordPress(currentUserId?: string): Promi
     return enriched.filter(Boolean) as any[];
   } catch { return []; }
 }
+
 
 export async function fetchDirectMessagesWordPress(conversationId: string): Promise<any[]> {
   try {
@@ -276,17 +307,22 @@ export async function startConversationWordPress(
 
   // Find existing direct conversation containing both members
   try {
-    const convos = await wordpressCCTFetch<any[]>(CONV, { params: { _limit: 500, ...appScopeParams("chatConversation") } });
+    const [convos, memberMap] = await Promise.all([
+      wordpressCCTFetch<any[]>(CONV, { params: { _limit: 500, ...appScopeParams("chatConversation") } }),
+      fetchConversationMemberMap(),
+    ]);
     if (Array.isArray(convos)) {
       for (const c of convos) {
         if (c[CF.CHAT_TYPE] && c[CF.CHAT_TYPE] !== CT.ONE_TO_ONE) continue;
-        const memberIds = await fetchConversationMemberIds(String(c.id || c._ID));
+        const cid = String(c.id || c._ID);
+        const memberIds = memberMap.size > 0 ? (memberMap.get(cid) || []) : await fetchConversationMemberIds(cid);
         if (memberIds.length === 2 && memberIds.includes(me) && memberIds.includes(other)) {
-          return String(c.id || c._ID);
+          return cid;
         }
       }
     }
   } catch { /* fall through */ }
+
 
   const result = await wordpressCCTFetch<any>(CONV, {
     method: "POST",

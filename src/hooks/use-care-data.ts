@@ -621,15 +621,19 @@ export function useSubmitProviderApplication() {
 
 // ─── Care Group Posts ───────────────────────────────────────
 export function useCareGroupPosts(groupId: string | null, type?: string) {
+  // One shared query per group (all types), filtered locally per caller.
+  // Prevents the same relation + CCT round-trip firing once per post type.
   return useQuery({
-    queryKey: ["careGroupPosts", groupId, type],
+    queryKey: ["careGroupPosts", groupId],
     queryFn: async () => {
-      const posts = await fetchCareGroupPostsWordPress(groupId!, type);
+      const posts = await fetchCareGroupPostsWordPress(groupId!);
       return await filterVisiblePosts(posts);
     },
     enabled: !!groupId,
+    select: (posts: any[]) => (type ? posts.filter((p) => p?.type === type) : posts),
   });
 }
+
 
 export function useCreateGroupPost() {
   const qc = useQueryClient();
