@@ -252,7 +252,7 @@ export async function fetchCheckinLogsWordPress(caredOneId: string): Promise<any
     const nestedLogs = await Promise.all(checkins.map(async (checkin: any) => {
       try {
         const pid = String(normalizeWpObjectId(checkin.id));
-        const childIds = logMap.size > 0
+        const childIds = logMap.loaded
           ? (logMap.get(pid) || []).map((c) => c.childId)
           : ((await wordpressFetch<any[]>(`jet-rel/${REL_CHECKIN_LOG}/children/${pid}`)) || [])
               .map((r: any) => String(r.child_object_id));
@@ -398,9 +398,11 @@ export async function fetchTodayMedicineLogsWordPress(caredOneId: string): Promi
   try {
     const userId = normalizeWpObjectId(caredOneId);
     const [medRels, logMap] = await Promise.all([
-      wordpressFetch<any[]>(`jet-rel/${REL_USER_MEDICINE}/children/${userId}`),
+      dedupeRead(`rel-children-raw:${REL_USER_MEDICINE}:${userId}`, () =>
+        wordpressFetch<any[]>(`jet-rel/${REL_USER_MEDICINE}/children/${userId}`)),
       fetchRelChildrenMap(REL_MEDICINE_LOG),
     ]);
+
     if (!Array.isArray(medRels) || medRels.length === 0) return [];
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const allLogs: any[] = [];
@@ -409,7 +411,7 @@ export async function fetchTodayMedicineLogsWordPress(caredOneId: string): Promi
       try {
         // Batched map avoids one relation request per medicine; each log item
         // is still read from its CCT row so no field is inferred.
-        const logIds = logMap.size > 0 ? (logMap.get(mid) || []).map((c) => c.childId) : null;
+        const logIds = logMap.loaded ? (logMap.get(mid) || []).map((c) => c.childId) : null;
         const logs = logIds
           ? (await Promise.all(logIds.map(async (lid) => {
               try {

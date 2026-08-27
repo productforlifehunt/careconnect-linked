@@ -2,6 +2,7 @@ import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-c
 import { decodeRel72Meta } from "@/features/care-groups/rel-meta";
 import { T, R } from "@/integrations/wp-schema";
 import { appScopeBody, appScopeParams, filterAppScope } from "@/features/shared/app-scope";
+import { fetchRelChildrenMap } from "@/features/shared/rel-batch";
 
 /**
  * Chat lives in CCTs shared by every app on the backend, so reads filter and
@@ -166,27 +167,24 @@ async function fetchConversationMemberIds(convoId: string | number): Promise<num
 
 /**
  * Single-request member map for REL 137 (conversation → users).
- * Replaces the per-conversation N+1 lookup: one GET returns every relation row,
- * grouped here by conversation id.
+ * Replaces the per-conversation N+1 lookup: one GET returns every relation row.
+ * `loaded` distinguishes "relation has no rows" from "request failed".
  */
-async function fetchConversationMemberMap(): Promise<Map<string, number[]>> {
-  const map = new Map<string, number[]>();
-  try {
-    // JetEngine returns { "<parentId>": [{ child_object_id, meta? }, ...], ... }
-    const rows = await wordpressFetch<Record<string, any[]>>(`jet-rel/${REL_CONV_MEMBER}`);
-    if (!rows || typeof rows !== "object" || Array.isArray(rows)) return map;
-    for (const [parent, children] of Object.entries(rows)) {
-      if (!Array.isArray(children)) continue;
+async function fetchConversationMemberMap(): Promise<{ loaded: boolean; get: (id: string) => number[] }> {
+  const relMap = await fetchRelChildrenMap(REL_CONV_MEMBER);
+  return {
+    loaded: relMap.loaded,
+    get: (id: string) => {
       const list: number[] = [];
-      for (const c of children) {
-        const child = Number(c?.child_object_id);
+      for (const c of relMap.get(id) || []) {
+        const child = Number(c.childId);
         if (child && !list.includes(child)) list.push(child);
       }
-      if (list.length) map.set(String(parent), list);
-    }
-  } catch { /* empty map → callers fall back to per-conversation lookup */ }
-  return map;
+      return list;
+    },
+  };
 }
+
 
 
 export async function fetchConversationsWordPress(currentUserId?: string): Promise<any[]> {
@@ -200,7 +198,7 @@ export async function fetchConversationsWordPress(currentUserId?: string): Promi
 
     const enriched = await Promise.all(filterAppScope("chatConversation", convos).map(async (c: any) => {
       const id = String(c.id || c._ID);
-      const memberIds = memberMap.size > 0
+      const memberIds = memberMap.loaded
         ? (memberMap.get(id) || [])
         : await fetchConversationMemberIds(id);
       if (myId && !memberIds.includes(myId)) return null;
@@ -315,7 +313,7 @@ export async function startConversationWordPress(
       for (const c of convos) {
         if (c[CF.CHAT_TYPE] && c[CF.CHAT_TYPE] !== CT.ONE_TO_ONE) continue;
         const cid = String(c.id || c._ID);
-        const memberIds = memberMap.size > 0 ? (memberMap.get(cid) || []) : await fetchConversationMemberIds(cid);
+        const memberIds = memberMap.loaded ? (memberMap.get(cid) || []) : await fetchConversationMemberIds(cid);
         if (memberIds.length === 2 && memberIds.includes(me) && memberIds.includes(other)) {
           return cid;
         }
