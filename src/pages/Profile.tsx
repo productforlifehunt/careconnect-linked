@@ -16,6 +16,7 @@ import { User, Bell, Shield, MapPin, Loader2, Upload, Camera, Download, Trash2 }
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSite } from "@/contexts/SiteContext";
 import { useTranslation } from "react-i18next";
+import { AppSettingsPanel } from "@/components/settings/AppSettingsPanel";
 
 export default function Profile() {
   const { t } = useTranslation();
