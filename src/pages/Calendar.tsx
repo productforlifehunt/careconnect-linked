@@ -239,7 +239,7 @@ export default function CalendarPage() {
                     <Clock className="h-4 w-4 text-muted-foreground" />
                     <span>
                       {selectedEvent.all_day
-                        ? "All day"
+                        ? (isZh ? `${formatDate(selectedEvent.start_at)} · 全天` : `${formatDate(selectedEvent.start_at)} · All day`)
                         : `${formatDateTime(selectedEvent.start_at)} → ${formatTime(selectedEvent.end_at)}`}
                     </span>
                   </div>
