@@ -737,7 +737,7 @@ export async function getProviderProducts(providerId: string) {
   try {
     // NOTE: WC REST `type` enum only accepts simple|grouped|external|variable.
     // Custom `booking` type is rejected (400). Fetch all and filter client-side.
-    const products = await wpAdminFetch(`wc/v3/products?per_page=100&status=publish`);
+    const products = await wcFetch(`products?per_page=100&status=publish`);
     if (!Array.isArray(products)) return [];
 
     return products
@@ -778,7 +778,7 @@ export async function getProviderProduct(providerId: string) {
     }
 
     try {
-      const allProducts = await wpAdminFetch(`wc/v3/products?per_page=100&status=any`);
+      const allProducts = await wcFetch(`products?per_page=100&status=any`);
       if (Array.isArray(allProducts)) {
         const matchedProduct = allProducts.find(matchesProvider);
         if (matchedProduct) return matchedProduct;
@@ -864,7 +864,7 @@ export async function fetchProductBookingResources(productId: number): Promise<B
   // Service packages are stored on the product's `_service_packages` meta — we
   // no longer query WooCommerce Bookings' `bookable_resource` endpoint.
   try {
-    const product = await wpAdminFetch(`wc/v3/products/${productId}`);
+    const product = await wcFetch(`products/${productId}`);
     return extractBookingResourcesFromProductMeta(product);
   } catch (e) {
     console.warn('fetchProductBookingResources failed:', e);
@@ -1111,7 +1111,7 @@ export async function createServiceOrder(
 ) {
   try {
     const product = bookingData.productId
-      ? await wpAdminFetch(`wc/v3/products/${bookingData.productId}`)
+      ? await wcFetch(`products/${bookingData.productId}`)
       : await getProviderProduct(providerId);
     
     if (!product) {
