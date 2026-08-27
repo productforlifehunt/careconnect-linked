@@ -264,18 +264,50 @@ export default function CalendarPage() {
                   {selectedEvent.meeting_url && (
                     <Button asChild variant="outline" size="sm" className="w-full">
                       <a href={selectedEvent.meeting_url} target="_blank" rel="noreferrer">
-                        Join meeting
+                        {isZh ? "加入会议" : "Join meeting"}
                       </a>
                     </Button>
+                  )}
+                  {selectedEvent.source_cct_slug ? (
+                    <p className="text-[12px] text-muted-foreground">
+                      {isZh
+                        ? "此事件由其他功能自动同步，请到对应页面修改。"
+                        : "This event is synced from another feature — edit it there."}
+                    </p>
+                  ) : (
+                    <div className="flex gap-2 pt-1">
+                      <Button variant="outline" size="sm" className="flex-1" onClick={() => openEdit(selectedEvent)}>
+                        <Pencil className="h-4 w-4 mr-1.5" />
+                        {isZh ? "编辑" : "Edit"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 text-destructive hover:text-destructive"
+                        disabled={deleting}
+                        onClick={() => removeEvent(selectedEvent)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-1.5" />
+                        {deleting ? (isZh ? "删除中…" : "Deleting…") : isZh ? "删除" : "Delete"}
+                      </Button>
+                    </div>
                   )}
                 </div>
               </>
             )}
           </DialogContent>
       </Dialog>
+
+      <EventFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        event={editing}
+        onSaved={refresh}
+      />
     </div>
   );
 }
+
 
 function msToDuration(ms: number): string {
   const totalMin = Math.max(1, Math.round(ms / 60000));
