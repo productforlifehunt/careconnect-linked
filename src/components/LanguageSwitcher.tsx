@@ -32,7 +32,6 @@ export function LanguageSwitcher() {
   const { t, i18n } = useTranslation();
   const currentLang = i18n.language;
 
-  const currentFlag = LANGUAGES.find(l => l.code === currentLang)?.flag || "🌐";
 
   const selectLanguage = (code: string) => {
     try { localStorage.setItem("i18nextLng", code); } catch {}
