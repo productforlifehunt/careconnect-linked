@@ -84,8 +84,10 @@ export async function fetchMyProfileWordPress(): Promise<Profile | null> {
         wpProfile.care_provider_starts_hourly_rate =
           rate != null && rate !== "" ? parseFloat(rate) : wpProfile.care_provider_starts_hourly_rate;
       }
-      // Phone / location / years / certifications / specialty are not on this CCT;
+      wpProfile.location = cct[F.CARE_PROVIDER_S_LOCATION] || wpProfile.location;
+      // Phone / years / certifications / specialty have no column in CCT 258;
       // keep WP-user-derived values where present.
+
     }
 
     return wpProfile;
