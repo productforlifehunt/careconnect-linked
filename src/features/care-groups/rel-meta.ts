@@ -1,45 +1,124 @@
 /**
- * Opaque-code meta encoders / decoders for JetEngine relations 72 and 75
- * (care_group ↔ users and care_group_private_member_group ↔ users).
+ * Opaque-code meta encoders / decoders for the two care-group membership
+ * relations. Every code below is read from the generated schema, which is built
+ * from the data dictionary — the ONLY source of truth. Nothing is hardcoded.
  *
- * Per data dictionary (the only source of truth):
+ *  REL 223 — 199. Care Group → Users (Many to Many)
+ *    a55 care group's member display name          Text
+ *    a56 care group's member types                 Checkbox { nothing special | owner | admin }
+ *    a57 care group's member roles                 Checkbox { nothing special | cared one }
+ *    a58 care group's member invitation status     Radio    { accepted | pending | declined }
  *
- *  REL 72 — care_group → users
- *    a55 display_name             text
- *    a56 member_types             checkbox  { b55 nothing special, b56 owner, b57 admin }
- *    a57 member_roles             checkbox  { b55 nothing special, b56 cared one }
- *    a58 invitation_status        radio     { b55 accepted, b56 pending }
- *
- *  REL 75 — sub-group → users
- *    a55 member_types             checkbox  { b55 nothing special, b56 owner, b57 admin }
- *    a56 invitation_status        radio     { b55 accepted, b56 pending }
- *
- * The dictionary has NO "declined" code; decline = delete the relation row.
+ *  REL 225 — 201. Care group's private member group → Users (Many to Many)
+ *    a55 private member group member types             Checkbox { nothing special | owner | admin }
+ *    a56 private member group member invitation status Radio    { accepted | pending | declined }
  */
+import { WP } from "@/integrations/wp-schema";
 
-// ─── REL 72 ───────────────────────────────────────────────────
-export const REL72_TYPE_CODE: Record<string, string> = {
-  "nothing special": "b55", nothing: "b55", member: "b55",
-  owner: "b56",
-  admin: "b57",
+type RelDef = {
+  f: Readonly<Record<string, string>>;
+  opt: Readonly<Record<string, Readonly<Record<string, string>>>>;
 };
-export const REL72_TYPE_LABEL: Record<string, string> = {
-  b55: "nothing special", b56: "owner", b57: "admin",
+
+const R223 = WP.rel["223"] as unknown as RelDef;
+const R225 = WP.rel["225"] as unknown as RelDef;
+
+// ─── REL 223 field codes ──────────────────────────────────────
+const F223 = {
+  displayName: R223.f.CARE_GROUP_S_MEMBER_DISPLAY_NAME,
+  types: R223.f.CARE_GROUP_S_MEMBER_TYPES,
+  roles: R223.f.CARE_GROUP_S_MEMBER_ROLES,
+  status: R223.f.CARE_GROUP_S_MEMBER_INVITATION_STATUS,
+} as const;
+
+// ─── REL 225 field codes ──────────────────────────────────────
+const F225 = {
+  types: R225.f.CARE_GROUP_S_PRIVATE_MEMBER_GROUP_MEMBER_TYPES,
+  status: R225.f.CARE_GROUP_S_PRIVATE_MEMBER_GROUP_MEMBER_INVITATION_STATUS,
+} as const;
+
+// ─── Option codes (dictionary-driven) ─────────────────────────
+const TYPE_OPT = R223.opt.CARE_GROUP_S_MEMBER_TYPES;
+const ROLE_OPT = R223.opt.CARE_GROUP_S_MEMBER_ROLES;
+const STATUS_OPT = R223.opt.CARE_GROUP_S_MEMBER_INVITATION_STATUS;
+const SUB_TYPE_OPT = R225.opt.CARE_GROUP_S_PRIVATE_MEMBER_GROUP_MEMBER_TYPES;
+const SUB_STATUS_OPT = R225.opt.CARE_GROUP_S_PRIVATE_MEMBER_GROUP_MEMBER_INVITATION_STATUS;
+
+export type MemberType = "nothing special" | "owner" | "admin";
+export type MemberRole = "nothing special" | "cared one";
+export type InvitationStatus = "accepted" | "pending" | "declined";
+
+/** label → code, accepting a few friendly synonyms used across the UI. */
+export const MEMBER_TYPE_CODE: Record<string, string> = {
+  "nothing special": TYPE_OPT.NOTHING_SPECIAL,
+  nothing: TYPE_OPT.NOTHING_SPECIAL,
+  member: TYPE_OPT.NOTHING_SPECIAL,
+  owner: TYPE_OPT.OWNER,
+  admin: TYPE_OPT.ADMIN,
 };
-export const REL72_ROLE_CODE: Record<string, string> = {
-  "nothing special": "b55", nothing: "b55",
-  "cared one": "b56", cared_one: "b56", "cared-one": "b56",
+export const MEMBER_TYPE_LABEL: Record<string, string> = {
+  [TYPE_OPT.NOTHING_SPECIAL]: "nothing special",
+  [TYPE_OPT.OWNER]: "owner",
+  [TYPE_OPT.ADMIN]: "admin",
 };
-export const REL72_ROLE_LABEL: Record<string, string> = {
-  b55: "nothing special", b56: "cared one",
+export const MEMBER_ROLE_CODE: Record<string, string> = {
+  "nothing special": ROLE_OPT.NOTHING_SPECIAL,
+  nothing: ROLE_OPT.NOTHING_SPECIAL,
+  "cared one": ROLE_OPT.CARED_ONE,
+  cared_one: ROLE_OPT.CARED_ONE,
+  "cared-one": ROLE_OPT.CARED_ONE,
 };
-export const REL72_STATUS_CODE: Record<string, string> = {
-  accepted: "b55", active: "b55",
-  pending: "b56", invited: "b56", declined: "b56",
+export const MEMBER_ROLE_LABEL: Record<string, string> = {
+  [ROLE_OPT.NOTHING_SPECIAL]: "nothing special",
+  [ROLE_OPT.CARED_ONE]: "cared one",
 };
-export const REL72_STATUS_LABEL: Record<string, string> = {
-  b55: "accepted", b56: "pending",
+export const INVITATION_STATUS_CODE: Record<string, string> = {
+  accepted: STATUS_OPT.ACCEPTED,
+  active: STATUS_OPT.ACCEPTED,
+  pending: STATUS_OPT.PENDING,
+  invited: STATUS_OPT.PENDING,
+  declined: STATUS_OPT.DECLINED,
+  rejected: STATUS_OPT.DECLINED,
 };
+export const INVITATION_STATUS_LABEL: Record<string, string> = {
+  [STATUS_OPT.ACCEPTED]: "accepted",
+  [STATUS_OPT.PENDING]: "pending",
+  [STATUS_OPT.DECLINED]: "declined",
+};
+
+const SUB_TYPE_CODE: Record<string, string> = {
+  "nothing special": SUB_TYPE_OPT.NOTHING_SPECIAL,
+  nothing: SUB_TYPE_OPT.NOTHING_SPECIAL,
+  member: SUB_TYPE_OPT.NOTHING_SPECIAL,
+  owner: SUB_TYPE_OPT.OWNER,
+  admin: SUB_TYPE_OPT.ADMIN,
+};
+const SUB_TYPE_LABEL: Record<string, string> = {
+  [SUB_TYPE_OPT.NOTHING_SPECIAL]: "nothing special",
+  [SUB_TYPE_OPT.OWNER]: "owner",
+  [SUB_TYPE_OPT.ADMIN]: "admin",
+};
+const SUB_STATUS_CODE: Record<string, string> = {
+  accepted: SUB_STATUS_OPT.ACCEPTED,
+  active: SUB_STATUS_OPT.ACCEPTED,
+  pending: SUB_STATUS_OPT.PENDING,
+  invited: SUB_STATUS_OPT.PENDING,
+  declined: SUB_STATUS_OPT.DECLINED,
+  rejected: SUB_STATUS_OPT.DECLINED,
+};
+const SUB_STATUS_LABEL: Record<string, string> = {
+  [SUB_STATUS_OPT.ACCEPTED]: "accepted",
+  [SUB_STATUS_OPT.PENDING]: "pending",
+  [SUB_STATUS_OPT.DECLINED]: "declined",
+};
+
+// ─── Back-compat aliases (older imports) ──────────────────────
+export const REL72_TYPE_CODE = MEMBER_TYPE_CODE;
+export const REL72_TYPE_LABEL = MEMBER_TYPE_LABEL;
+export const REL72_ROLE_CODE = MEMBER_ROLE_CODE;
+export const REL72_ROLE_LABEL = MEMBER_ROLE_LABEL;
+export const REL72_STATUS_CODE = INVITATION_STATUS_CODE;
+export const REL72_STATUS_LABEL = INVITATION_STATUS_LABEL;
 
 function toCodeList(value: unknown, map: Record<string, string>): string[] {
   const list = Array.isArray(value)
@@ -59,16 +138,7 @@ function fromCodeList(value: unknown, labelMap: Record<string, string>): string[
     : typeof value === "string"
       ? value.split(",").map((s) => s.trim())
       : [];
-  return list
-    .filter(Boolean)
-    .map((v) => labelMap[v] || v);
-}
-
-function pickCode(value: unknown, map: Record<string, string>, fallback: string): string {
-  if (value == null || value === "") return fallback;
-  const s = String(Array.isArray(value) ? value[0] : value);
-  if (/^b\d+$/.test(s)) return s;
-  return map[s.toLowerCase()] || map[s] || fallback;
+  return list.filter(Boolean).map((v) => labelMap[v] || v);
 }
 
 function pickLabel(value: unknown, labelMap: Record<string, string>, fallback: string): string {
@@ -77,22 +147,22 @@ function pickLabel(value: unknown, labelMap: Record<string, string>, fallback: s
   return labelMap[s] || s;
 }
 
-// ─── REL 72 encode / decode ──────────────────────────────────
+// ─── REL 223 encode / decode ──────────────────────────────────
 export interface Rel72MetaInput {
   displayName?: string;
   memberTypes?: string[];
   memberRoles?: string[];
-  invitationStatus?: "accepted" | "pending" | "declined";
+  invitationStatus?: InvitationStatus;
 }
 
 export function encodeRel72Meta(input: Rel72MetaInput = {}): Record<string, any> {
-  const types = toCodeList(input.memberTypes?.length ? input.memberTypes : ["nothing special"], REL72_TYPE_CODE);
-  const roles = toCodeList(input.memberRoles?.length ? input.memberRoles : ["nothing special"], REL72_ROLE_CODE);
+  const types = toCodeList(input.memberTypes?.length ? input.memberTypes : ["nothing special"], MEMBER_TYPE_CODE);
+  const roles = toCodeList(input.memberRoles?.length ? input.memberRoles : ["nothing special"], MEMBER_ROLE_CODE);
   return {
-    a55: input.displayName || "Member",
-    a56: types.length ? types : ["b55"],
-    a57: roles.length ? roles : ["b55"],
-    a58: REL72_STATUS_CODE[input.invitationStatus || "accepted"] || "b55",
+    [F223.displayName]: input.displayName || "Member",
+    [F223.types]: types.length ? types : [TYPE_OPT.NOTHING_SPECIAL],
+    [F223.roles]: roles.length ? roles : [ROLE_OPT.NOTHING_SPECIAL],
+    [F223.status]: INVITATION_STATUS_CODE[input.invitationStatus || "accepted"] || STATUS_OPT.ACCEPTED,
   };
 }
 
@@ -100,53 +170,53 @@ export interface Rel72MetaDecoded {
   displayName: string;
   memberTypes: string[];     // readable labels
   memberRoles: string[];     // readable labels
-  invitationStatus: "accepted" | "pending";
+  invitationStatus: InvitationStatus;
 }
 
 export function decodeRel72Meta(meta: any): Rel72MetaDecoded {
   const m = meta || {};
   return {
-    displayName: m.a55 || m.care_groups_member_display_name_ || "",
-    memberTypes: fromCodeList(m.a56 ?? m.care_groups_member_types, REL72_TYPE_LABEL),
-    memberRoles: fromCodeList(m.a57 ?? m.care_groups_member_roles, REL72_ROLE_LABEL),
+    displayName: m[F223.displayName] || m.care_groups_member_display_name_ || "",
+    memberTypes: fromCodeList(m[F223.types] ?? m.care_groups_member_types, MEMBER_TYPE_LABEL),
+    memberRoles: fromCodeList(m[F223.roles] ?? m.care_groups_member_roles, MEMBER_ROLE_LABEL),
     invitationStatus: pickLabel(
-      m.a58 ?? m.care_groups_member_invitation_status,
-      REL72_STATUS_LABEL,
+      m[F223.status] ?? m.care_groups_member_invitation_status,
+      INVITATION_STATUS_LABEL,
       "accepted",
-    ) as "accepted" | "pending",
+    ) as InvitationStatus,
   };
 }
 
-// ─── REL 75 encode / decode ──────────────────────────────────
+// ─── REL 225 encode / decode ──────────────────────────────────
 export interface Rel75MetaInput {
   types?: string[];
-  status?: "accepted" | "pending" | "declined";
+  status?: InvitationStatus;
 }
 
 export function encodeRel75Meta(input: Rel75MetaInput = {}): Record<string, any> {
-  const types = toCodeList(input.types?.length ? input.types : ["nothing special"], REL72_TYPE_CODE);
+  const types = toCodeList(input.types?.length ? input.types : ["nothing special"], SUB_TYPE_CODE);
   return {
-    a55: types.length ? types : ["b55"],
-    a56: REL72_STATUS_CODE[input.status || "accepted"] || "b55",
+    [F225.types]: types.length ? types : [SUB_TYPE_OPT.NOTHING_SPECIAL],
+    [F225.status]: SUB_STATUS_CODE[input.status || "accepted"] || SUB_STATUS_OPT.ACCEPTED,
   };
 }
 
 export interface Rel75MetaDecoded {
   types: string[];                     // readable labels
-  status: "accepted" | "pending";
+  status: InvitationStatus;
 }
 
 export function decodeRel75Meta(meta: any): Rel75MetaDecoded {
   const m = meta || {};
   return {
     types: fromCodeList(
-      m.a55 ?? m.care_group_s_private_member_group_member_types,
-      REL72_TYPE_LABEL,
+      m[F225.types] ?? m.care_group_s_private_member_group_member_types,
+      SUB_TYPE_LABEL,
     ),
     status: pickLabel(
-      m.a56 ?? m.care_group_s_private_member_group_member_invitation_status,
-      REL72_STATUS_LABEL,
+      m[F225.status] ?? m.care_group_s_private_member_group_member_invitation_status,
+      SUB_STATUS_LABEL,
       "accepted",
-    ) as "accepted" | "pending",
+    ) as InvitationStatus,
   };
 }
