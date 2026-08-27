@@ -2,6 +2,8 @@ import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-c
 import { getStoredWPUser } from "@/services/wp-auth";
 import { T, R } from "@/integrations/wp-schema";
 import { decodeRel72Meta } from "@/features/care-groups/rel-meta";
+import { dedupeRead, fetchRelChildrenMap } from "@/features/shared/rel-batch";
+
 
 // ─── Relations (per data bible / live WP) ────────────────────
 const REL_USER_CARED_ONE_LEGACY = R.userCaredOnes;   // user → user (legacy)
@@ -66,14 +68,19 @@ function serializeTimeSlot(value: unknown): string {
 async function fetchRelatedCctChildren(relationId: number, parentId: string, cctSlug: string): Promise<any[]> {
   const pid = normalizeWpObjectId(parentId);
   if (!pid) return [];
-  const rels = await wordpressFetch<any[]>(`jet-rel/${relationId}/children/${pid}`);
-  if (!Array.isArray(rels) || rels.length === 0) return [];
-  const items = await Promise.all(rels.map(async (r: any) => {
-    try { return await wordpressCCTFetch<any>(cctSlug, { id: r.child_object_id }); }
-    catch { return null; }
-  }));
-  return items.filter(Boolean);
+  // Short-lived dedupe: sibling dashboard widgets asking for the same relation
+  // within the same render pass share one round-trip instead of repeating it.
+  return dedupeRead(`rel-children:${relationId}:${pid}:${cctSlug}`, async () => {
+    const rels = await wordpressFetch<any[]>(`jet-rel/${relationId}/children/${pid}`);
+    if (!Array.isArray(rels) || rels.length === 0) return [];
+    const items = await Promise.all(rels.map(async (r: any) => {
+      try { return await wordpressCCTFetch<any>(cctSlug, { id: r.child_object_id }); }
+      catch { return null; }
+    }));
+    return items.filter(Boolean);
+  });
 }
+
 
 async function linkRel(relId: number, parentId: number, childId: number) {
   if (!parentId || !childId) return;
@@ -238,17 +245,24 @@ const CHK_STATUS_LABEL: Record<string, string> = { b55: "checked", b56: "skipped
 
 export async function fetchCheckinLogsWordPress(caredOneId: string): Promise<any[]> {
   try {
-    const checkins = await fetchCheckinsWordPress(caredOneId);
+    const [checkins, logMap] = await Promise.all([
+      fetchCheckinsWordPress(caredOneId),
+      fetchRelChildrenMap(REL_CHECKIN_LOG),
+    ]);
     const nestedLogs = await Promise.all(checkins.map(async (checkin: any) => {
       try {
-        const rels = await wordpressFetch<any[]>(`jet-rel/${REL_CHECKIN_LOG}/children/${normalizeWpObjectId(checkin.id)}`);
-        if (!Array.isArray(rels) || rels.length === 0) return [];
-        const logs = await Promise.all(rels.map(async (rel: any) => {
+        const pid = String(normalizeWpObjectId(checkin.id));
+        const childIds = logMap.size > 0
+          ? (logMap.get(pid) || []).map((c) => c.childId)
+          : ((await wordpressFetch<any[]>(`jet-rel/${REL_CHECKIN_LOG}/children/${pid}`)) || [])
+              .map((r: any) => String(r.child_object_id));
+        if (!childIds.length) return [];
+        const logs = await Promise.all(childIds.map(async (childId) => {
           try {
-            const item = await wordpressCCTFetch<any>(T.checkinLog.slug, { id: rel.child_object_id });
+            const item = await wordpressCCTFetch<any>(T.checkinLog.slug, { id: childId });
             const statusCode = String(item[F_CHKLOG.STATUS] || "b55");
             return {
-              id: String(item.id || item._ID || rel.child_object_id),
+              id: String(item.id || item._ID || childId),
               checkin_id: String(checkin.id),
               status: CHK_STATUS_LABEL[statusCode] || "checked",
               note: item[F_CHKLOG.NOTE] || null,
@@ -263,6 +277,7 @@ export async function fetchCheckinLogsWordPress(caredOneId: string): Promise<any
     return nestedLogs.flat().sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   } catch { return []; }
 }
+
 
 export async function fetchTodayCheckinLogsWordPress(caredOneId: string): Promise<any[]> {
   const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -382,19 +397,42 @@ export async function fetchMedicineLogsWordPress(medicineId: string): Promise<an
 export async function fetchTodayMedicineLogsWordPress(caredOneId: string): Promise<any[]> {
   try {
     const userId = normalizeWpObjectId(caredOneId);
-    const medRels = await wordpressFetch<any[]>(`jet-rel/${REL_USER_MEDICINE}/children/${userId}`);
+    const [medRels, logMap] = await Promise.all([
+      wordpressFetch<any[]>(`jet-rel/${REL_USER_MEDICINE}/children/${userId}`),
+      fetchRelChildrenMap(REL_MEDICINE_LOG),
+    ]);
     if (!Array.isArray(medRels) || medRels.length === 0) return [];
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const allLogs: any[] = [];
     await Promise.all(medRels.map(async (rel: any) => {
       const mid = String(rel.child_object_id);
       try {
-        const logs = await fetchMedicineLogsWordPress(mid);
+        // Batched map avoids one relation request per medicine; each log item
+        // is still read from its CCT row so no field is inferred.
+        const logIds = logMap.size > 0 ? (logMap.get(mid) || []).map((c) => c.childId) : null;
+        const logs = logIds
+          ? (await Promise.all(logIds.map(async (lid) => {
+              try {
+                const l = await wordpressCCTFetch<any>(T.medicineLog.slug, { id: lid });
+                return {
+                  id: String(l.id || l._ID || lid),
+                  medicine_id: mid,
+                  taken_at: l.created_at,
+                  status: MED_STATUS_LABEL[String(l[F_MEDLOG.STATUS] || "b55")] || "taken",
+                  logged_by: l.author_id || null,
+                  note: l[F_MEDLOG.NOTE] || null,
+                  notes: l[F_MEDLOG.NOTE] || null,
+                  created_at: l.created_at,
+                };
+              } catch { return null; }
+            }))).filter(Boolean) as any[]
+          : await fetchMedicineLogsWordPress(mid);
         for (const l of logs) if (l.created_at && new Date(l.created_at) >= today) allLogs.push(l);
       } catch {}
     }));
     return allLogs;
   } catch { return []; }
+
 }
 
 export async function logMedicineWordPress(log: { medicine_id: string; status?: string; note?: string; user_id?: string }): Promise<void> {
