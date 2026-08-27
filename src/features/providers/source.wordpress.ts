@@ -108,10 +108,12 @@ export async function fetchProvidersWordPress(filters?: ProviderFilters): Promis
       fetchAllProviderProductSummaries().catch(() => new Map()),
     ]);
 
+    // Single source of truth for "is this a listed care provider": CCT 258
+    // (a59 = is care provider, a60 = provider is active). Dokan stores only
+    // enrich these rows — a store is never promoted into a provider listing.
     const activeProfileIds = new Set(dictionaryProfiles.map((p) => String(p.id).replace(/^wp-/, "")));
-    const sourceProfiles = dictionaryProfiles.length > 0
-      ? dictionaryProfiles
-      : (storeResults || []).filter(isActivePaidProvider);
+    const sourceProfiles = dictionaryProfiles;
+
 
     let results: Profile[] = sourceProfiles.map((p) => {
       const numericId = String(p.id).replace(/^wp-/, "");
