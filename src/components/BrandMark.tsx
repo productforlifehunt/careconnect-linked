@@ -79,7 +79,7 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
   return (
     <span className={`flex items-center gap-2 ${className}`}>
       {icon}
-      {showWordmark && (
+      {showWordmark && brand !== "challenged" && brand !== "carecnc" && (
         <span className="font-bold text-lg">
           {wordmark ? (
             <span className="text-primary">{wordmark}</span>
