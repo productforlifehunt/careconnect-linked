@@ -27,6 +27,12 @@ export async function wordpressFetchRaw(endpoint: string, options: WordPressFetc
   const url = buildWPUrl(endpoint, cleanParams, { forceEdge });
   const headers = buildWPHeaders(token, "application/json", { forceEdge });
 
+  // Any write invalidates the short-lived read dedupe cache (rel-batch listens),
+  // so a mutation is never followed by stale cached reads.
+  if (method !== "GET" && typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("wp-write"));
+  }
+
   let response: Response;
   try {
     response = await fetch(url, {
@@ -34,6 +40,7 @@ export async function wordpressFetchRaw(endpoint: string, options: WordPressFetc
       headers,
       body: body ? JSON.stringify(body) : undefined,
     });
+
   } catch (err) {
     // Route changes abort in-flight requests (net::ERR_ABORTED → "Failed to
     // fetch"). That is not a backend failure, so tag it and let callers keep
