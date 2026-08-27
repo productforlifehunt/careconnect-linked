@@ -59,6 +59,19 @@ async function fetchRelatedCctItems(relationId: number, parentId: string, cctSlu
   const rels = await wordpressFetch<any[]>(`jet-rel/${relationId}/children/${normalizedParentId}`);
   if (!Array.isArray(rels) || rels.length === 0) return [];
   const childIds = rels.map((r: any) => String(r.child_object_id || "")).filter(Boolean);
+  // Beyond a few children, one list request beats N per-id requests (the old
+  // N+1 made the care-circle feed take ~20s to appear).
+  if (childIds.length > 3) {
+    try {
+      const all = await wordpressCCTFetch<any[]>(cctSlug);
+      if (Array.isArray(all)) {
+        const wanted = new Set(childIds);
+        const byId = new Map(all.map((it: any) => [String(it.id), it]));
+        const hits = childIds.map((cid) => byId.get(cid)).filter(Boolean);
+        if (hits.length === wanted.size) return hits;
+      }
+    } catch { /* fall through to per-id fetch */ }
+  }
   const items = await Promise.all(childIds.map(async (childId) => {
     try {
       return await wordpressCCTFetch(cctSlug, { id: childId });
@@ -78,6 +91,13 @@ export async function fetchCareGroupPostsWordPress(groupId: string, type?: strin
     };
     return posts
       .filter((p: any) => !type || normalizeType(p[F_POST.TYPE]) === type)
+      // Newest first, deterministic: relation order is not guaranteed.
+      .sort((a: any, b: any) => {
+        const ta = Date.parse(a.created_at || "") || 0;
+        const tb = Date.parse(b.created_at || "") || 0;
+        if (tb !== ta) return tb - ta;
+        return Number(b.id || b._ID || 0) - Number(a.id || a._ID || 0);
+      })
       .map((p: any) => ({
         id: p.id,
         group_id: groupId,

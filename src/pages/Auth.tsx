@@ -107,8 +107,8 @@ export default function Auth() {
             </TabsList>
             <TabsContent value="login" className="space-y-4 mt-4">
               <div>
-                <Label>{t("common.email")}</Label>
-                <Input type="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} placeholder={t("auth.emailPlaceholder")} onKeyDown={e => e.key === "Enter" && handleLogin()} />
+                <Label>{t("auth.emailOrUsername", { defaultValue: "Email or username" })}</Label>
+                <Input type="text" autoComplete="username" inputMode="email" autoCapitalize="none" spellCheck={false} value={loginEmail} onChange={e => setLoginEmail(e.target.value)} placeholder={t("auth.emailOrUsernamePlaceholder", { defaultValue: "you@example.com" })} onKeyDown={e => e.key === "Enter" && handleLogin()} />
               </div>
               <div>
                 <Label>{t("common.password")}</Label>

@@ -347,18 +347,18 @@ export default function GPSTracking() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-5">
       {/* Header */}
-      <div className="flex items-center justify-between gap-3 mb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
         <div className="min-w-0">
           <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">{t("gps.gpsTracking")}</h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
             {t("gps.realtimeLocation")}
-            <span className="ml-2 text-xs text-muted-foreground/70">
+            <span className="ml-2 inline-block whitespace-nowrap text-xs text-muted-foreground/70">
               <Radio className="inline h-3 w-3 mr-1 text-success" />
               {t("gps.autoRefresh", "Auto-refresh")} 15s
             </span>
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 shrink-0">
           <Button variant="outline" size="sm" onClick={handleRefresh}>
             <RefreshCw className="h-4 w-4 mr-1" /> {t("common.refresh")}
           </Button>
