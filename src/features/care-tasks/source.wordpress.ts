@@ -145,12 +145,21 @@ export async function fetchCareTasksWordPress(groupId?: string | null): Promise<
         }))
       : await wordpressCCTFetch<any[]>(CCT_SLUG, { params: { _limit: 100 } });
     const taskList = Array.isArray(tasks) ? tasks.filter(Boolean) : [];
+    // Two batched relation reads replace two requests per task (N+1).
+    const [assigneeMap, caredOneMap] = await Promise.all([
+      fetchRelChildrenMap(REL_TASK_ASSIGNEE),
+      fetchRelChildrenMap(REL_TASK_CARED_ONE),
+    ]);
     const mapped = await Promise.all(taskList.map(async (t: any) => {
       const base = mapTask(t, groupId);
-      const [assignees, caredOne] = await Promise.all([
-        fetchAssignees(base.id),
-        fetchCaredOneId(base.id),
-      ]);
+      const pid = String(normalizeWpObjectId(base.id));
+      const assignees = assigneeMap.size > 0
+        ? mapAssigneeRows(assigneeMap.get(pid) || [])
+        : await fetchAssignees(base.id);
+      const caredOneChild = caredOneMap.get(pid)?.map((c) => normalizeWpObjectId(c.childId)).find(Boolean);
+      const caredOne = caredOneMap.size > 0
+        ? (caredOneChild ? `wp-${caredOneChild}` : null)
+        : await fetchCaredOneId(base.id);
       const assignedIds = assignees.map((a) => a.user_id);
       return {
         ...base,
@@ -160,6 +169,7 @@ export async function fetchCareTasksWordPress(groupId?: string | null): Promise<
         cared_one_id: caredOne,
       };
     }));
+
     return mapped;
   } catch { return []; }
 }
