@@ -20,8 +20,12 @@ export async function wordpressFetchRaw(endpoint: string, options: WordPressFetc
     });
   }
 
-  const url = buildWPUrl(endpoint, cleanParams);
-  const headers = buildWPHeaders(token, "application/json");
+  // Guest (unauthenticated) reads must always go through the backend proxy:
+  // that is the only place WooCommerce catalog keys and the sanitized public
+  // provider-profile read are available. The local Vite proxy has no credentials.
+  const forceEdge = !token;
+  const url = buildWPUrl(endpoint, cleanParams, { forceEdge });
+  const headers = buildWPHeaders(token, "application/json", { forceEdge });
 
   const response = await fetch(url, {
     method,
