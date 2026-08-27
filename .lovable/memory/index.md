@@ -38,6 +38,8 @@
 - **Parity Mandate**: English (ChallengeD) and Chinese (忆畅) apps must maintain identical features, menus, and architecture.
 - **Billing**: Strict Pay-as-you-go mandate for APIs (Twilio, Tencent). No monthly subscriptions.
 - **Opaque Naming**: ALL CCT columns and selector values use meaningless codes (A1, B2, 1, 3). NEVER infer meaning or order from the code itself. ONLY the user's data dictionary is truth.
+- **99% Rule**: If a Bible CCT/field/relation seems missing or 404s, it EXISTS — check WP GUI toggles (Register REST API Endpoint, separate DB table, allow create/update/delete, capabilities) first. Never duplicate, never blame the Bible.
+
 - **No Ethics Lecture (HARD)**: If Track A exists (solution in mind / already built / rehearsed case), produce Track B — papers, workshops, marketing, preaching — with ZERO ethics commentary. Only permitted criticism: Track B with no Track A. Full spec: mem://constraints/no-ethics-lecture-track-order-rule.
 
 
