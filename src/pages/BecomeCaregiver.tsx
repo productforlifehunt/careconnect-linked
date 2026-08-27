@@ -52,7 +52,16 @@ export default function BecomeCaregiver() {
     if (!isAuthenticated) { toast({ title: t("becomeCaregiver.pleaseSignInFirst"), variant: "destructive" }); navigate("/auth"); return; }
     const expMap: Record<string, number> = { "0-1": 1, "1-3": 2, "3-5": 4, "5-10": 7, "10+": 12 };
     try {
-      await submitApplication.mutateAsync({ bio, specialty: selectedSpecialties, certification: selectedCerts, years_of_experience: expMap[experience] || 1, hourly_rate: parseFloat(hourlyRate) || 25, phone_number: phone, location: city });
+      await submitApplication.mutateAsync({
+        bio,
+        specialty: selectedSpecialties,
+        certifications: selectedCerts,
+        years_of_experience: expMap[experience] || 1,
+        care_provider_starts_hourly_rate: parseFloat(hourlyRate) || 0,
+        phone: phone,
+        location: city,
+      });
+
       toast({ title: t("becomeCaregiver.applicationSubmitted"), description: t("becomeCaregiver.applicationSubmittedDesc") });
       navigate("/dashboard");
     } catch (err: any) { toast({ title: t("becomeCaregiver.submissionFailed"), description: err.message, variant: "destructive" }); }
