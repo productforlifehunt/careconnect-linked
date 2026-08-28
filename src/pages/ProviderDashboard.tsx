@@ -10,10 +10,12 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
-  CalendarDays, DollarSign, Clock, Check, X, Loader2, User, Briefcase, TrendingUp, Plus, Trash2, Settings,
+  CalendarDays, DollarSign, Clock, Check, X, Loader2, User, Briefcase, TrendingUp, Plus, Trash2, Settings, MessageSquare,
 } from "lucide-react";
 import ProviderSettingsTab from "@/components/provider/ProviderSettingsTab";
 import MyBookingServicesTab from "@/components/provider/MyBookingServicesTab";
+import BookingThreadDialog from "@/components/booking/BookingThreadDialog";
+
 
 import {
   useProviderBookings, useUpdateBookingStatus, useMyProfile,
