@@ -69,8 +69,22 @@ export default function OrderConfirmation() {
           )}
           <div className="flex items-center justify-between py-2 border-b border-border">
             <span className="text-muted-foreground">{t("checkout.status", "Status")}</span>
-            <Badge className="bg-success text-success-foreground">{status === "processing" ? t("checkout.confirmed", "Confirmed") : status}</Badge>
+            <Badge className={status === "processing" || status === "completed" ? "bg-success text-success-foreground" : "bg-muted text-muted-foreground"}>
+              {status === "processing"
+                ? t("checkout.confirmed", "Confirmed")
+                : status === "on-hold" || status === "pending"
+                  ? (i18n.language?.startsWith("zh") ? "待付款" : "Awaiting payment")
+                  : status}
+            </Badge>
           </div>
+          {(status === "on-hold" || status === "pending") && (
+            <p className="text-sm text-muted-foreground pb-2">
+              {i18n.language?.startsWith("zh")
+                ? "订单已创建，但款项尚未收取。护理者确认后，你会收到付款链接直接向对方支付。"
+                : "The order is created but payment has not been collected yet. Once the caregiver confirms, you'll get a payment link to pay them directly."}
+            </p>
+          )}
+
           {orderTotal && (
             <div className="flex items-center justify-between py-3">
               <span className="text-lg font-semibold flex items-center gap-2">

@@ -26,6 +26,8 @@ type Action =
   | "create_service_product"
   | "list_my_orders"
   | "get_user_names"
+  | "get_countries"
+
   | "list_my_vendor_orders"
   | "set_order_status"
   | "get_my_payout"
@@ -95,14 +97,27 @@ async function enrichOrdersWithServiceMeta(wpBase: string, orders: any[]): Promi
     const add = (key: string, value: string) => {
       if (value && !has(key)) merged.push({ key, value });
     };
+    const pickAny = (...keys: string[]) => {
+      for (const key of keys) {
+        const value = pick(key);
+        if (value) return value;
+      }
+      return "";
+    };
     add("_appointment_date", pick("_care_service_start_date"));
     add("_appointment_time", pick("_care_service_start_time"));
-    add("_duration_hours", pick("_care_service_quantity"));
-    add("_hourly_rate", pick("_care_service_rate"));
-    add("_service_type", pick("_care_service_label"));
+    add("_duration_hours", pickAny("_care_service_quantity", "_quote_hours"));
+    add("_hourly_rate", pickAny("_care_service_rate", "_quote_rate"));
+    add("_service_type", pickAny("_care_service_label", "_quote_service_type"));
     add("_special_instructions", pick("_care_service_notes"));
     add("_provider_id", pick("_dokan_vendor_id"));
-    out.push({ ...order, meta_data: merged });
+    // One WooCommerce store is shared by every app on this backend, so a
+    // caregiver who also sells Notch pouches would otherwise see those orders
+    // inside the care schedule. Flag care-marketplace orders explicitly.
+    const isCare = pick("_is_care_service_product") === "1" || pick("_is_quote_product") === "1";
+    add("_is_care_service", isCare ? "1" : "");
+    out.push({ ...order, meta_data: merged, _is_care_service: isCare });
+
   }
   return out;
 }
@@ -361,6 +376,33 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Valid WooCommerce country + state codes, read from the store itself so
+      // checkout never fails on a hand-typed state ("BJ" is not a CN code).
+      case "get_countries": {
+        if (!WC_CONSUMER_KEY || !WC_CONSUMER_SECRET) {
+          return json({ error: "Server is missing WooCommerce store keys" }, 500);
+        }
+        const res = await fetch(`${wpBase}/wp-json/wc/v3/data/countries`, {
+          headers: { Authorization: `Basic ${btoa(`${WC_CONSUMER_KEY}:${WC_CONSUMER_SECRET}`)}` },
+        });
+        const body = await res.text();
+        if (!res.ok) {
+          console.error(`get_countries failed [${res.status}]: ${body.slice(0, 300)}`);
+          return json({ error: "Could not read store countries", status: res.status, details: body.slice(0, 300) }, res.status);
+        }
+        const list = JSON.parse(body || "[]");
+        return json({
+          ok: true,
+          data: (Array.isArray(list) ? list : []).map((c: any) => ({
+            code: String(c?.code ?? ""),
+            name: String(c?.name ?? ""),
+            states: Array.isArray(c?.states)
+              ? c.states.map((s: any) => ({ code: String(s?.code ?? ""), name: String(s?.name ?? "") }))
+              : [],
+          })),
+        });
+      }
+
 
       // Orders the caller placed as a client. Buyers have no wc/v3 read
       // capability, so the store keys read them here and the query is always
@@ -384,7 +426,13 @@ Deno.serve(async (req) => {
           return json({ error: "WooCommerce order list failed", status: res.status, details: data }, 502);
         }
         const list = Array.isArray(data) ? data : [];
-        return json({ ok: true, data: await enrichOrdersWithServiceMeta(wpBase, list) });
+        const enrichedMine = await enrichOrdersWithServiceMeta(wpBase, list);
+        const careOnly = payload?.care_only !== false;
+        return json({
+          ok: true,
+          data: careOnly ? enrichedMine.filter((o: any) => o?._is_care_service) : enrichedMine,
+        });
+
       }
 
       // Orders that contain the caller's own vendor products (incoming work).
@@ -407,7 +455,9 @@ Deno.serve(async (req) => {
         // order or its line items, so enrich first (that copies
         // _dokan_vendor_id onto the order as _provider_id) and filter after.
         const enriched = await enrichOrdersWithServiceMeta(wpBase, Array.isArray(data) ? data : []);
+        const vendorCareOnly = payload?.care_only !== false;
         const mine = enriched.filter((order: any) => {
+          if (vendorCareOnly && !order?._is_care_service) return false;
           const metaHit = (Array.isArray(order?.meta_data) ? order.meta_data : []).some(
             (m: any) =>
               (m?.key === "_dokan_vendor_id" || m?.key === "_provider_id") && Number(m?.value) === userId,
@@ -419,6 +469,7 @@ Deno.serve(async (req) => {
           );
           return metaHit || itemHit;
         });
+
         return json({ ok: true, data: mine });
 
       }

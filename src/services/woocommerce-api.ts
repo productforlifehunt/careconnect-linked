@@ -552,11 +552,14 @@ export async function getDokanVendorOrders(perPage = 50) {
     // keys AND copies the service schedule meta (date / time / duration) from
     // the just-in-time product onto the order. Dokan's own vendor-orders
     // endpoint omits that meta, which left the caregiver's request list showing
-    // the order date instead of the appointment.
-    const orders = await adminOp<any[]>('list_my_vendor_orders', { per_page: perPage });
-    if (Array.isArray(orders) && orders.length > 0) return orders;
+    // the order date instead of the appointment. It also scopes the list to
+    // care-marketplace orders — the WooCommerce store is shared with the other
+    // apps on this backend, so an unscoped list leaks unrelated purchases into
+    // the care schedule. An empty result is therefore a valid answer, not a
+    // reason to fall back to Dokan's unscoped list.
+    return await adminOp<any[]>('list_my_vendor_orders', { per_page: perPage }) ?? [];
   } catch {
-    // Fall through to Dokan's endpoint below.
+    // Fall through to Dokan's endpoint below only when the scoped read failed.
   }
   try {
     const viaDokan = await dokanFetch(`orders?per_page=${perPage}`);
@@ -565,6 +568,7 @@ export async function getDokanVendorOrders(perPage = 50) {
     return [];
   }
 }
+
 
 
 /** Orders the signed-in user placed as a client (read server-side, scoped). */
@@ -729,4 +733,22 @@ export async function createServiceProduct(input: {
   }
 
   return { id, price: Number(result.price || input.amount) };
+}
+
+// ─── Store country / state codes ───────────────────────────
+// WooCommerce validates billing state against its own per-country code list
+// ("BJ" is rejected for CN, it wants "CN2"), so the cart reads the real list.
+export interface WcCountry {
+  code: string;
+  name: string;
+  states: Array<{ code: string; name: string }>;
+}
+
+export async function getStoreCountries(): Promise<WcCountry[]> {
+  try {
+    const list = await adminOp<WcCountry[]>('get_countries', {});
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
 }

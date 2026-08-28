@@ -19,6 +19,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
+import { cleanBookingNote } from "@/lib/utils";
 
 export default function Bookings() {
   const { t, i18n } = useTranslation();
@@ -174,7 +175,7 @@ export default function Bookings() {
           <div className="flex items-center gap-2 text-muted-foreground"><Clock className="h-4 w-4 text-primary" /><span>{booking.appointment_time || ""} · {booking.duration_hour || ""}{t("common.hours")}</span></div>
           <div className="text-right"><span className="font-bold text-foreground text-lg">{i18n.language?.startsWith("zh") ? "¥" : "$"}{booking.total_cost || 0}</span></div>
         </div>
-        {booking.special_instruction && <p className="text-sm text-muted-foreground mt-3 p-2 rounded bg-muted/50">{booking.special_instruction}</p>}
+        {cleanBookingNote(booking.special_instruction) && <p className="text-sm text-muted-foreground mt-3 p-2 rounded bg-muted/50">{cleanBookingNote(booking.special_instruction)}</p>}
         {booking.status === "completed" && (
           <div className="flex gap-2 mt-3 pt-3 border-t border-border">
             <Button variant="outline" size="sm" onClick={() => openReview(booking)}><Star className="h-3.5 w-3.5 mr-1.5" /> {t("bookings.leaveReview")}</Button>

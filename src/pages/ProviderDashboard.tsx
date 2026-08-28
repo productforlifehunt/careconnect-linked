@@ -22,6 +22,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
+import { cleanBookingNote } from "@/lib/utils";
 
 const DAYS_EN = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const DAYS_ZH = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
@@ -191,7 +192,7 @@ export default function ProviderDashboard() {
                       <h3 className="font-semibold text-foreground">{b.client?.full_name || (isZh ? "客户" : "Client")}</h3>
                       <p className="text-sm text-muted-foreground">{b.service_type} · {b.duration_hour}{isZh ? "小时" : "hrs"}</p>
                       <p className="text-sm text-muted-foreground">{b.appointment_date ? formatDate(b.appointment_date, isZh ? "zh-CN" : "en", { weekday: "short", month: "short", day: "numeric" }) : ""} {isZh ? "于" : "at"} {b.appointment_time || ""}</p>
-                      {b.special_instruction && <p className="text-xs text-muted-foreground mt-1 italic">"{b.special_instruction}"</p>}
+                      {cleanBookingNote(b.special_instruction) && <p className="text-xs text-muted-foreground mt-1 italic">"{cleanBookingNote(b.special_instruction)}"</p>}
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2">

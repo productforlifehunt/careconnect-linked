@@ -471,7 +471,7 @@ export default function CaregiverProfile() {
               {(reviews || []).length > 0 ? (reviews || []).map((review: any) => (
                 <div key={review.id} className="border-b last:border-0 pb-4 last:pb-0">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="font-medium text-sm text-foreground">{review.reviewer?.full_name || "Anonymous"}</span>
+                    <span className="font-medium text-sm text-foreground">{review.reviewer?.full_name || review.author_name || (isZh ? "匿名" : "Anonymous")}</span>
                     <span className="text-xs text-muted-foreground">{formatDate(review.created_at, i18n.language, { month: "short", day: "numeric", year: "numeric" })}</span>
                   </div>
                   <div className="flex gap-0.5 mb-2">
@@ -661,15 +661,23 @@ export default function CaregiverProfile() {
                           <SelectItem value="monthly">{isZh ? "每月" : "Monthly"}</SelectItem>
                         </SelectContent>
                       </Select>
+                      {recurringPattern !== "none" && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {isZh
+                            ? "周期只是给护理者的请求备注：本次只为这一次服务付款，后续每次单独预约付款。"
+                            : "Recurring is a note to the caregiver — you pay for this session only; each later session is booked and paid separately."}
+                        </p>
+                      )}
                     </div>
                     <div>
                       <Label>{isZh ? "备注" : "Notes"}</Label>
                       <Textarea value={bookingNotes} onChange={e => setBookingNotes(e.target.value)} placeholder={isZh ? "任何特殊需求…" : "Any special requirements..."} />
                     </div>
                     <div className="flex justify-between items-center pt-2 border-t">
-                      <span className="text-sm text-muted-foreground">{isZh ? "预估总价" : "Estimated Total"}</span>
-                      <span className="text-xl font-bold text-foreground">{isZh ? "¥" : "$"}{total}{recurringPattern !== "none" ? `/${recurringPattern === "weekly" ? (isZh ? "周" : "wk") : recurringPattern === "biweekly" ? (isZh ? "2周" : "2wk") : (isZh ? "月" : "mo")}` : ""}</span>
+                      <span className="text-sm text-muted-foreground">{isZh ? "本次预估总价" : "Estimated Total (this session)"}</span>
+                      <span className="text-xl font-bold text-foreground">{isZh ? "¥" : "$"}{total}</span>
                     </div>
+
                     <Button variant="coral" className="w-full" onClick={handleBooking} disabled={addToCart.isPending || hasAvailabilityConflict || !selectedResource}>
                       {addToCart.isPending ? (isZh ? "加入中…" : "Adding...") : (isZh ? "加入购物车并结算" : "Add to Cart & Checkout")}
                     </Button>
