@@ -263,6 +263,8 @@ export default function ProviderDashboard() {
                     <span className="text-lg font-bold text-foreground">{isZh ? "¥" : "$"}{b.total_cost || 0}</span>
                     <div className="flex gap-2">
                       <Button size="sm" variant="default" onClick={() => handleBookingAction(b.id, "confirmed")} disabled={updateBookingStatus.isPending}><Check className="h-3 w-3 mr-1" /> {isZh ? "接受" : "Accept"}</Button>
+                      <Button size="sm" variant="ghost" onClick={() => { setThreadBooking(b); setThreadOpen(true); }}><MessageSquare className="h-3 w-3 mr-1" /> {isZh ? "沟通" : "Thread"}</Button>
+
                       <Button size="sm" variant="outline" className="text-destructive" onClick={() => handleBookingAction(b.id, "cancelled_by_provider")} disabled={updateBookingStatus.isPending}><X className="h-3 w-3 mr-1" /> {isZh ? "拒绝" : "Decline"}</Button>
                     </div>
                   </div>
