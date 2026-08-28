@@ -277,6 +277,10 @@ export interface CartItem {
   price: number;
   quantity: number;
   image?: string;
+  /** Store API line description — carries the rate math and the schedule. */
+  description?: string;
+  /** Store API line meta (e.g. Dokan vendor name). */
+  item_data?: Array<{ name?: string; value?: string; type?: string }>;
   provider_id?: string;
   booking?: {
     resourceId?: number;
