@@ -27,7 +27,9 @@ export default function Favorites() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-5">
       <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">{t("favorites.favorites")}</h1>
-      <p className="text-sm text-muted-foreground mt-0.5 mb-5">{t("favorites.caregiversSaved")}</p>
+      <p className="text-sm text-muted-foreground mt-0.5 mb-1">{t("favorites.caregiversSaved")}</p>
+      <p className="text-xs text-muted-foreground mb-5">{isZh ? "这份名单只存在你现在用的这台设备上，换手机看不到。" : "This list is kept on the device you are using now, so it will not show up on another phone."}</p>
+
 
       {favorites.length > 0 ? (
         <div className="space-y-4">

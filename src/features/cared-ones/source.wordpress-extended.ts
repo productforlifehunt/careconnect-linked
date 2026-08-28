@@ -715,99 +715,64 @@ export async function updateDementiaStageWordPress(caredOneId: string, stage: st
   });
 }
 
-// ─── Visit Log → CCT 204 (care_task), task type b59 "Visits" ──
-// The bible has no separate visit table: a logged visit is a completed care
-// task of type "Visits" (a57 = b59), tied to the cared one through REL 231.
-const F_TASK = T.careTask.f;
-const TASK_TYPE_VISITS = T.careTask.opt.TASK_TYPE.VISITS;   // b59
-const TASK_FINISHED = T.careTask.opt.TASK_FINISH_STATUS.FINISHED;   // b56
-const TASK_NO_HELP = T.careTask.opt.TASK_HELP_STATUS.TASK_DOESN_T_NEED_HELP; // b55
+// ─── Visit Log → the check-in system, CCT 208 (checkin_log) ───
+// A visit is a check-in entry: status a55 = b55 "Checked", details in the
+// note field a56. Entries hang off the cared one's check-in schedule
+// (CCT 207) through REL 240; the schedule itself hangs off the cared one
+// through REL 239. No extra table, no extra fields.
+const VISIT_SCHEDULE_NAME = "Visit log";
 
-function wpDateTime(d: Date): string {
-  const p = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+async function findVisitSchedule(caredOneId: string): Promise<any | null> {
+  const list = await fetchCheckinsWordPress(caredOneId);
+  return list.find((c: any) => String(c.name) === VISIT_SCHEDULE_NAME) || null;
 }
 
-function hasVisitType(value: unknown): boolean {
-  if (Array.isArray(value)) return value.map(String).includes(TASK_TYPE_VISITS);
-  const raw = String(value ?? "");
-  if (!raw) return false;
-  try {
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) return parsed.map(String).includes(TASK_TYPE_VISITS);
-  } catch {}
-  return raw.split(",").map((s) => s.trim()).includes(TASK_TYPE_VISITS);
-}
-
-function minutesBetween(start: unknown, end: unknown): number | null {
-  const a = start ? new Date(String(start).replace(" ", "T")).getTime() : NaN;
-  const b = end ? new Date(String(end).replace(" ", "T")).getTime() : NaN;
-  if (!Number.isFinite(a) || !Number.isFinite(b) || b <= a) return null;
-  return Math.round((b - a) / 60000);
-}
-
-/** REL 231 runs care_task → users, so a cared one's visits are its *parents*. */
-async function fetchVisitTaskRows(caredOneId: string): Promise<any[]> {
-  const uid = normalizeWpObjectId(caredOneId);
-  if (!uid) return [];
-  return dedupeRead(`rel-parents-bulk:${R.careTaskCaredOnes}:${uid}:${T.careTask.slug}`, async () => {
-    const [rels, all] = await Promise.all([
-      wordpressFetch<any[]>(`jet-rel/${R.careTaskCaredOnes}/parents/${uid}`),
-      wordpressCCTFetch<any[]>(T.careTask.slug),
-    ]);
-    if (!Array.isArray(rels) || rels.length === 0 || !Array.isArray(all)) return [];
-    const wanted = new Set(rels.map((r: any) => String(r.parent_object_id)));
-    return all.filter((row: any) => wanted.has(String(row.id ?? row._ID)));
+async function getOrCreateVisitSchedule(caredOneId: string): Promise<any> {
+  const existing = await findVisitSchedule(caredOneId);
+  if (existing) return existing;
+  await createCheckinWordPress({
+    user_id: caredOneId,
+    name: VISIT_SCHEDULE_NAME,
+    detail: "Visits logged by the care circle",
+    frequency: "As it happens",
+    time_slot: [],
   });
+  const created = await findVisitSchedule(caredOneId);
+  if (!created) throw new Error("Could not open the visit log");
+  return created;
 }
 
 export async function fetchVisitLogWordPress(caredOneId: string): Promise<any[]> {
   try {
-    const rows = await fetchVisitTaskRows(caredOneId);
-    return rows
-      .filter((r: any) => hasVisitType(r[F_TASK.TASK_TYPE]))
-      .map((r: any) => {
-        const start = r[F_TASK.TASK_START_TIME] || null;
-        const visited = r[F_TASK.TASK_COMPLETED_AT] || start || r[F_TASK.DATE_OF_THE_TASK] || r.cct_created || null;
-        return {
-          id: String(r.id || r._ID),
-          user_id: caredOneId,
-          title: r[F_TASK.TITLE] || null,
-          description: r[F_TASK.DESCRIPTION] || null,
-          location: r[F_TASK.LOCATION] || null,
-          duration_minutes: minutesBetween(start, r[F_TASK.TASK_END_TIME]),
-          visited_at: visited,
-          created_at: visited,
-        };
-      })
-      .sort((a, b) => String(b.visited_at || "").localeCompare(String(a.visited_at || "")));
+    const schedule = await findVisitSchedule(caredOneId);
+    if (!schedule) return [];
+    const logs = await fetchCheckinLogsWordPress(caredOneId);
+    return logs
+      .filter((l: any) => String(l.checkin_id) === String(schedule.id))
+      .map((l: any) => ({
+        id: String(l.id),
+        user_id: caredOneId,
+        description: l.note || null,
+        visited_at: l.created_at || null,
+        created_at: l.created_at || null,
+      }))
+      .sort((a: any, b: any) => String(b.visited_at || "").localeCompare(String(a.visited_at || "")));
   } catch { return []; }
 }
 
 export async function createVisitLogWordPress(visit: {
-  user_id: string; title?: string; description?: string; location?: string; duration_minutes?: number;
+  user_id: string; description?: string;
 }): Promise<void> {
-  const now = new Date();
-  const nowStr = wpDateTime(now);
-  const minutes = Number(visit.duration_minutes) > 0 ? Number(visit.duration_minutes) : null;
-  const start = minutes ? new Date(now.getTime() - minutes * 60000) : now;
-  const body: Record<string, unknown> = {
-    [F_TASK.TITLE]: visit.title || "Visit",
-    [F_TASK.TASK_TYPE]: [TASK_TYPE_VISITS],
-    [F_TASK.DATE_OF_THE_TASK]: nowStr.slice(0, 10),
-    [F_TASK.TASK_START_TIME]: wpDateTime(start),
-    [F_TASK.TASK_END_TIME]: nowStr,
-    [F_TASK.TASK_COMPLETED_AT]: nowStr,
-    [F_TASK.TASK_HELP_STATUS]: TASK_NO_HELP,
-    [F_TASK.TASK_FINISH_STATUS]: TASK_FINISHED,
-  };
-  if (visit.description) body[F_TASK.DESCRIPTION] = visit.description;
-  if (visit.location) body[F_TASK.LOCATION] = visit.location;
-  const created = await wordpressCCTFetch<any>(T.careTask.slug, { method: "POST", body });
-  const newId = normalizeWpObjectId(created?.item_id || created?._ID || created?.id);
-  await linkRel(R.careTaskCaredOnes, newId, normalizeWpObjectId(visit.user_id));
+  const schedule = await getOrCreateVisitSchedule(visit.user_id);
+  await logCheckinWordPress({
+    checkin_id: String(schedule.id),
+    status: "checked",
+    note: visit.description || "",
+    checked_by_ai: false,
+  });
 }
 
 export async function deleteVisitLogWordPress(id: string): Promise<void> {
-  await wordpressCCTFetch(T.careTask.slug, { id, method: "DELETE" });
+  await wordpressCCTFetch(T.checkinLog.slug, { id, method: "DELETE" });
 }
+

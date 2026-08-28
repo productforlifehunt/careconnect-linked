@@ -1,17 +1,12 @@
 /**
  * Saved providers (favorites).
  *
- * NOTE: the `saved_provider` JetEngine CCT does NOT exist on the live
- * WordPress backend (verified against /wp-json/jet-cct route discovery).
- * Until the CCT is created in the JetEngine GUI (90-year-old mode), we
- * persist favorites client-side in localStorage so the UI still works.
- *
- * When the CCT is added with fields:
- *   a55 = provider_id (text)
- *   a56 = provider_name (text)
- *   a57 = provider_avatar (text)
- * — swap the localStorage layer for opaque-code CCT writes.
+ * The data dictionary has no favorites table, so we deliberately do NOT
+ * invent one — favorites are kept on this device only, and the UI says so.
+ * The provider details shown in the list are read live from WordPress.
  */
+
+import { fetchProviderByIdWordPress } from "@/features/providers/source.wordpress";
 
 const STORAGE_KEY = "cc.saved_providers.v1";
 
@@ -35,13 +30,22 @@ function writeStore(items: Array<{ id: string; provider_id: string; created_at: 
 }
 
 export async function fetchSavedProvidersWordPress(): Promise<any[]> {
-  return readStore().map((s) => ({
-    id: s.id,
-    provider_id: s.provider_id,
-    provider_name: null,
-    provider_avatar: null,
-    created_at: s.created_at,
-  }));
+  const saved = readStore();
+  const enriched = await Promise.all(
+    saved.map(async (s) => {
+      let provider: any = null;
+      try { provider = await fetchProviderByIdWordPress(s.provider_id); } catch { provider = null; }
+      return {
+        id: s.id,
+        provider_id: s.provider_id,
+        provider,
+        provider_name: provider?.full_name ?? null,
+        provider_avatar: provider?.avatar_url ?? null,
+        created_at: s.created_at,
+      };
+    }),
+  );
+  return enriched.filter((e) => e.provider);
 }
 
 export async function toggleSavedProviderWordPress(providerId: string): Promise<void> {

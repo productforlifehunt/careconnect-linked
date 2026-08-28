@@ -441,7 +441,6 @@ const en = {
     searchDesc: "Search for someone to add as a person you care for",
     medicineTracker: "Medicine Tracker",
     dailyCheckIns: "Daily Check-Ins",
-    healthTracking: "Health Tracking",
     careTips: "Care Tips",
     carePlan: "Care Plan",
     careNotes: "Care Notes",
@@ -450,8 +449,7 @@ const en = {
     documents: "Documents",
     visitLog: "Visit Log",
     trackMedications: "Track medications & doses",
-    dailyWellness: "Daily wellness monitoring",
-    vitalsHealth: "Vitals & health records",
+    dailyWellness: "A daily hello to check they are alright",
     helpfulReminders: "Helpful care reminders",
     structuredGoals: "Structured care goals",
     freeFormNotes: "Free-form care notes",
@@ -907,7 +905,6 @@ const en = {
 
   // ═══ HEALTH TRACKING ═══
   health: {
-    healthTracking: "Health Tracking",
     record: "Record",
     recordVital: "Record Vital",
     logMeasurement: "Log a health measurement",
@@ -1106,22 +1103,6 @@ const en = {
     aiBehaviorAnalysis: "AI Behavior Analysis",
     aiWellnessSupport: "AI Wellness Support",
     aiSupport: "AI Support",
-  },
-
-  // ═══ CAREGIVER WELLNESS ═══
-  wellness: {
-    yourWellness: "Your Wellness",
-    checkInBtn: "Check-in",
-    howAreYou: "How are you feeling?",
-    stressLevel: "Stress Level",
-    sleepLastNight: "Sleep Last Night",
-    anyThoughts: "Any thoughts or notes...",
-    logWellness: "Log Wellness",
-    wellnessLogged: "Wellness logged",
-    wellnessLoggedDesc: "Take care of yourself too! 💛",
-    howDoingToday: "How are you doing today? Check in to track your wellness.",
-    stress: "Stress",
-    moods: { great: "Great", good: "Good", okay: "Okay", stressed: "Stressed", overwhelmed: "Overwhelmed" },
   },
 
   // ═══ DEMENTIA ASSISTANT ═══

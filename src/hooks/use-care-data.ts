@@ -1807,7 +1807,7 @@ export function useVisitLog(caredOneId: string | null) {
 export function useCreateVisitLog() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (visit: { user_id: string; title?: string; description?: string; location?: string; duration_minutes?: number }) => createVisitLogWordPress(visit),
+    mutationFn: (visit: { user_id: string; description?: string }) => createVisitLogWordPress(visit),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["visitLog"] }); qc.invalidateQueries({ queryKey: ["careTasks"] }); },
   });
 }
