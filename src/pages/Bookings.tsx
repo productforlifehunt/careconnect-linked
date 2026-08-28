@@ -11,7 +11,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { CalendarDays, Clock, MoreHorizontal, X, Check, MessageSquare, Loader2, Star, AlertTriangle, RefreshCw, DollarSign } from "lucide-react";
 import { useBookings, useCreateReview, useUpdateBookingStatus, useStartConversation } from "@/hooks/use-care-data";
 import { useRequestRefund } from "@/hooks/use-cart";
+import BookingThreadDialog from "@/components/booking/BookingThreadDialog";
 import { updateOrderBookingDetails } from "@/services/woocommerce-api";
+
 import { getProviderCalendarBookingConflictMessage as getProviderBookingConflictMessage } from "@/features/calendar/booking-availability";
 import { useToast } from "@/hooks/use-toast";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -52,8 +54,7 @@ export default function Bookings() {
   const [refundReason, setRefundReason] = useState("");
   const [issueOpen, setIssueOpen] = useState(false);
   const [issueBooking, setIssueBooking] = useState<any>(null);
-  const [issueText, setIssueText] = useState("");
-  const [issueSubmitting, setIssueSubmitting] = useState(false);
+
 
   const statusColors: Record<string, string> = {
     confirmed: "bg-success text-success-foreground", pending: "bg-warning text-warning-foreground", completed: "bg-muted text-muted-foreground",
@@ -161,10 +162,10 @@ export default function Bookings() {
                 {["pending", "confirmed"].includes(booking.status) && <DropdownMenuItem onClick={() => { setCancelTargetId(booking.id); setCancelTargetName(booking.provider?.full_name || t("common.provider")); setCancelConfirmOpen(true); }} className="text-destructive"><X className="mr-2 h-4 w-4" /> {t("bookings.cancelBooking")}</DropdownMenuItem>}
                 {["pending", "confirmed"].includes(booking.status) && <DropdownMenuItem onClick={() => openReschedule(booking)}><RefreshCw className="mr-2 h-4 w-4" /> {t("bookings.reschedule")}</DropdownMenuItem>}
                 {booking.status === "completed" && <DropdownMenuItem onClick={() => openReview(booking)}><Star className="mr-2 h-4 w-4" /> {t("bookings.leaveReview")}</DropdownMenuItem>}
-                {["completed", "confirmed", "processing"].includes(booking.status) && Number(booking.total_cost || 0) > 0 && (
+                {["completed", "confirmed", "processing"].includes(booking.status) && Number(booking.total_cost || 0) > 0 && !booking.refund_status && (
                   <DropdownMenuItem onClick={() => { setRefundBooking(booking); setRefundReason(""); setRefundOpen(true); }}><DollarSign className="mr-2 h-4 w-4" /> {t("bookings.requestRefund", "Request Refund")}</DropdownMenuItem>
                 )}
-                <DropdownMenuItem onClick={() => { setIssueBooking(booking); setIssueText(""); setIssueOpen(true); }}><AlertTriangle className="mr-2 h-4 w-4" /> {t("bookings.reportIssue", "Report Issue")}</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { setIssueBooking(booking); setIssueOpen(true); }}><AlertTriangle className="mr-2 h-4 w-4" /> {t("bookings.reportIssue", "Report Issue")}</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleMessage(booking)} disabled={messagingId === booking.provider_id}><MessageSquare className="mr-2 h-4 w-4" /> {t("common.message")}</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -176,12 +177,35 @@ export default function Bookings() {
           <div className="text-right"><span className="font-bold text-foreground text-lg">{i18n.language?.startsWith("zh") ? "¥" : "$"}{booking.total_cost || 0}</span></div>
         </div>
         {cleanBookingNote(booking.special_instruction) && <p className="text-sm text-muted-foreground mt-3 p-2 rounded bg-muted/50">{cleanBookingNote(booking.special_instruction)}</p>}
-        {booking.status === "completed" && (
-          <div className="flex gap-2 mt-3 pt-3 border-t border-border">
-            <Button variant="outline" size="sm" onClick={() => openReview(booking)}><Star className="h-3.5 w-3.5 mr-1.5" /> {t("bookings.leaveReview")}</Button>
-            <Button variant="ghost" size="sm" onClick={() => handleMessage(booking)} disabled={messagingId === booking.provider_id}><MessageSquare className="h-3.5 w-3.5 mr-1.5" /> {t("common.message")}</Button>
-          </div>
+        {!!booking.refund_status && (
+          <button
+            type="button"
+            onClick={() => { setIssueBooking(booking); setIssueOpen(true); }}
+            className="mt-3 w-full flex items-center justify-between gap-2 rounded-lg border border-border/60 bg-muted/40 px-3 py-2 text-left hover:bg-muted/70 transition-colors"
+          >
+            <span className="text-sm text-muted-foreground">
+              {i18n.language?.startsWith("zh") ? "退款申请" : "Refund request"}
+              {!!Number(booking.refund_amount) && ` · ${i18n.language?.startsWith("zh") ? "¥" : "$"}${Number(booking.refund_amount).toFixed(2)}`}
+            </span>
+            <Badge variant={booking.refund_status === "approved" ? "default" : booking.refund_status === "declined" ? "destructive" : "secondary"}>
+              {booking.refund_status === "approved"
+                ? (i18n.language?.startsWith("zh") ? "已退款" : "Refunded")
+                : booking.refund_status === "declined"
+                  ? (i18n.language?.startsWith("zh") ? "已拒绝" : "Declined")
+                  : (i18n.language?.startsWith("zh") ? "待护理者处理" : "Awaiting caregiver")}
+            </Badge>
+          </button>
         )}
+        <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-border">
+          {booking.status === "completed" && (
+            <Button variant="outline" size="sm" onClick={() => openReview(booking)}><Star className="h-3.5 w-3.5 mr-1.5" /> {t("bookings.leaveReview")}</Button>
+          )}
+          <Button variant="ghost" size="sm" onClick={() => { setIssueBooking(booking); setIssueOpen(true); }}>
+            <AlertTriangle className="h-3.5 w-3.5 mr-1.5" /> {i18n.language?.startsWith("zh") ? "沟通记录" : "Booking thread"}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => handleMessage(booking)} disabled={messagingId === booking.provider_id}><MessageSquare className="h-3.5 w-3.5 mr-1.5" /> {t("common.message")}</Button>
+        </div>
+
       </CardContent>
     </Card>
   );
@@ -326,64 +350,19 @@ export default function Bookings() {
         </DialogContent>
       </Dialog>
 
-      {/* Report Issue dialog — files a customer-visible note on the WC order,
-          which admins and Dokan vendor see in their dashboards. */}
-      <Dialog open={issueOpen} onOpenChange={setIssueOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("bookings.reportIssue", "Report Issue")}</DialogTitle>
-            <DialogDescription>
-              {t(
-                "bookings.reportIssueDesc",
-                "Describe what went wrong with this booking. Our team and the provider will be notified and respond as soon as possible."
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Textarea
-              value={issueText}
-              onChange={(e) => setIssueText(e.target.value)}
-              placeholder={t("bookings.reportIssuePlaceholder", "Tell us what happened...")}
-              rows={5}
-            />
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIssueOpen(false)}>{t("common.cancel")}</Button>
-              <Button
-                disabled={issueSubmitting || !issueText.trim()}
-                onClick={async () => {
-                  if (!issueBooking) return;
-                  setIssueSubmitting(true);
-                  try {
-                    const { addOrderCustomerNote } = await import("@/services/woocommerce-api");
-                    await addOrderCustomerNote(Number(issueBooking.id), issueText.trim());
-                    toast({
-                      title: t("bookings.issueReported", "Issue reported"),
-                      description: t(
-                        "bookings.issueReportedDesc",
-                        "Our team has been notified and will follow up."
-                      ),
-                    });
-                    setIssueOpen(false);
-                    setIssueBooking(null);
-                    setIssueText("");
-                  } catch (err: any) {
-                    toast({
-                      title: t("bookings.issueFailed", "Failed to report"),
-                      description: err.message,
-                      variant: "destructive",
-                    });
-                  } finally {
-                    setIssueSubmitting(false);
-                  }
-                }}
-              >
-                {issueSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <AlertTriangle className="h-4 w-4 mr-2" />}
-                {t("bookings.submitIssue", "Submit")}
-              </Button>
-            </DialogFooter>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Booking thread — issue reports, caregiver replies and the refund
+          decision all live here, so no client ever needs a back office. */}
+      <BookingThreadDialog
+        open={issueOpen}
+        onOpenChange={setIssueOpen}
+        orderId={issueBooking?.id}
+        role="client"
+        counterpartName={issueBooking?.provider?.full_name}
+        refundStatus={issueBooking?.refund_status}
+        refundReason={issueBooking?.refund_reason}
+        refundAmount={issueBooking?.refund_amount}
+      />
+
     </div>
   );
 }

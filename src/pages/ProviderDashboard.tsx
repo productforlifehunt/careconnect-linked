@@ -10,10 +10,12 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
-  CalendarDays, DollarSign, Clock, Check, X, Loader2, User, Briefcase, TrendingUp, Plus, Trash2, Settings,
+  CalendarDays, DollarSign, Clock, Check, X, Loader2, User, Briefcase, TrendingUp, Plus, Trash2, Settings, MessageSquare,
 } from "lucide-react";
 import ProviderSettingsTab from "@/components/provider/ProviderSettingsTab";
 import MyBookingServicesTab from "@/components/provider/MyBookingServicesTab";
+import BookingThreadDialog from "@/components/booking/BookingThreadDialog";
+
 
 import {
   useProviderBookings, useUpdateBookingStatus, useMyProfile,
@@ -51,6 +53,9 @@ export default function ProviderDashboard() {
   const [addOverrideOpen, setAddOverrideOpen] = useState(false);
   const [newOverride, setNewOverride] = useState({ date: "", start: "09:00", end: "17:00", available: true });
   const [savingOverrides, setSavingOverrides] = useState(false);
+  const [threadOpen, setThreadOpen] = useState(false);
+  const [threadBooking, setThreadBooking] = useState<any>(null);
+
 
   useEffect(() => {
     if (availability && availability.length > 0 && !scheduleLoaded) {
@@ -132,8 +137,12 @@ export default function ProviderDashboard() {
   const pendingBookings = (bookings || []).filter((b: any) => b.status === "pending");
   const confirmedBookings = (bookings || []).filter((b: any) => b.status === "confirmed");
   const completedBookings = (bookings || []).filter((b: any) => b.status === "completed");
+  // Open refund requests the caregiver has to answer, newest first.
+  const refundRequests = (bookings || []).filter((b: any) => b.refund_status === "requested");
+  const settledRefunds = (bookings || []).filter((b: any) => ["approved", "declined"].includes(String(b.refund_status || "")));
   const totalEarnings = completedBookings.reduce((sum: number, b: any) => sum + (b.total_cost || 0), 0);
   const pendingEarnings = confirmedBookings.reduce((sum: number, b: any) => sum + (b.total_cost || 0), 0);
+
 
   const handleBookingAction = (id: string, status: string) => {
     updateBookingStatus.mutate({ id, status }, { onSuccess: () => toast({ title: `Booking ${status}` }) });
@@ -170,14 +179,69 @@ export default function ProviderDashboard() {
       </div>
 
       <Tabs defaultValue="requests">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="requests" className="text-xs sm:text-sm">{isZh ? "预约请求" : "Requests"} ({pendingBookings.length})</TabsTrigger>
           <TabsTrigger value="schedule" className="text-xs sm:text-sm">{isZh ? "排班" : "Schedule"}</TabsTrigger>
+          <TabsTrigger value="refunds" className="text-xs sm:text-sm">
+            {isZh ? "退款与问题" : "Refunds & issues"}{refundRequests.length > 0 ? ` (${refundRequests.length})` : ""}
+          </TabsTrigger>
           <TabsTrigger value="availability" className="text-xs sm:text-sm">{isZh ? "可约时间" : "Availability"}</TabsTrigger>
           <TabsTrigger value="earnings" className="text-xs sm:text-sm">{isZh ? "收入" : "Earnings"}</TabsTrigger>
           <TabsTrigger value="services" className="text-xs sm:text-sm">{isZh ? "我的服务" : "My Services & Rates"}</TabsTrigger>
           <TabsTrigger value="settings" className="text-xs sm:text-sm"><Settings className="h-3.5 w-3.5 mr-1" />{isZh ? "我的" : "Profile"}</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="refunds" className="mt-4 space-y-4">
+          {refundRequests.length === 0 && settledRefunds.length === 0 ? (
+            <p className="text-center py-12 text-muted-foreground">
+              {isZh ? "暂无退款申请或问题反馈" : "No refund requests or reported issues"}
+            </p>
+          ) : (
+            [...refundRequests, ...settledRefunds].map((b: any) => (
+              <Card key={b.id} className="border-transparent card-elevated">
+                <CardContent className="p-5 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="font-semibold text-foreground">{b.client?.full_name || (isZh ? "客户" : "Client")}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        #{b.id} · {b.service_type} · {b.appointment_date ? formatDate(b.appointment_date, isZh ? "zh-CN" : "en", { month: "short", day: "numeric" }) : ""} {b.appointment_time || ""}
+                      </p>
+                      {!!b.refund_reason && (
+                        <p className="text-sm text-muted-foreground mt-1.5 italic">"{b.refund_reason}"</p>
+                      )}
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-lg font-bold text-foreground">
+                        {isZh ? "¥" : "$"}{Number(b.refund_amount || b.total_cost || 0).toFixed(2)}
+                      </p>
+                      <Badge
+                        className="mt-1"
+                        variant={b.refund_status === "approved" ? "default" : b.refund_status === "declined" ? "destructive" : "secondary"}
+                      >
+                        {b.refund_status === "approved"
+                          ? (isZh ? "已退款" : "Refunded")
+                          : b.refund_status === "declined"
+                            ? (isZh ? "已拒绝" : "Declined")
+                            : (isZh ? "待处理" : "Awaiting you")}
+                      </Badge>
+                    </div>
+                  </div>
+                  <Button
+                    variant={b.refund_status === "requested" ? "coral" : "outline"}
+                    size="sm"
+                    onClick={() => { setThreadBooking(b); setThreadOpen(true); }}
+                  >
+                    <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
+                    {b.refund_status === "requested"
+                      ? (isZh ? "查看并处理" : "Review & decide")
+                      : (isZh ? "查看沟通记录" : "View thread")}
+                  </Button>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </TabsContent>
+
 
         <TabsContent value="requests" className="mt-4 space-y-4">
           {bookingsLoading ? (
@@ -199,6 +263,8 @@ export default function ProviderDashboard() {
                     <span className="text-lg font-bold text-foreground">{isZh ? "¥" : "$"}{b.total_cost || 0}</span>
                     <div className="flex gap-2">
                       <Button size="sm" variant="default" onClick={() => handleBookingAction(b.id, "confirmed")} disabled={updateBookingStatus.isPending}><Check className="h-3 w-3 mr-1" /> {isZh ? "接受" : "Accept"}</Button>
+                      <Button size="sm" variant="ghost" onClick={() => { setThreadBooking(b); setThreadOpen(true); }}><MessageSquare className="h-3 w-3 mr-1" /> {isZh ? "沟通" : "Thread"}</Button>
+
                       <Button size="sm" variant="outline" className="text-destructive" onClick={() => handleBookingAction(b.id, "cancelled_by_provider")} disabled={updateBookingStatus.isPending}><X className="h-3 w-3 mr-1" /> {isZh ? "拒绝" : "Decline"}</Button>
                     </div>
                   </div>
@@ -227,7 +293,9 @@ export default function ProviderDashboard() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge className={statusColors[b.status]}>{b.status}</Badge>
+                    <Button size="sm" variant="ghost" onClick={() => { setThreadBooking(b); setThreadOpen(true); }}><MessageSquare className="h-3 w-3 mr-1" /> {isZh ? "沟通" : "Thread"}</Button>
                     <Button size="sm" variant="outline" onClick={() => handleBookingAction(b.id, "completed")}>{isZh ? "完成" : "Complete"}</Button>
+
                   </div>
                 </div>
               </CardContent>
@@ -328,6 +396,18 @@ export default function ProviderDashboard() {
           <MyBookingServicesTab />
         </TabsContent>
       </Tabs>
+
+      <BookingThreadDialog
+        open={threadOpen}
+        onOpenChange={setThreadOpen}
+        orderId={threadBooking?.id}
+        role="provider"
+        counterpartName={threadBooking?.client?.full_name}
+        refundStatus={threadBooking?.refund_status}
+        refundReason={threadBooking?.refund_reason}
+        refundAmount={threadBooking?.refund_amount}
+      />
     </div>
+
   );
 }

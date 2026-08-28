@@ -32,7 +32,12 @@ type Action =
   | "set_order_status"
   | "get_my_payout"
   | "save_my_payout"
-  | "request_withdrawal";
+  | "request_withdrawal"
+  | "list_order_notes"
+  | "add_order_note"
+  | "request_refund"
+  | "resolve_refund";
+
 
 
 
@@ -121,8 +126,59 @@ async function enrichOrdersWithServiceMeta(wpBase: string, orders: any[]): Promi
   }
   return out;
 }
+function storeAuth(): string {
+  return `Basic ${btoa(`${WC_CONSUMER_KEY}:${WC_CONSUMER_SECRET}`)}`;
+}
+
+function metaValue(order: any, key: string): string {
+  const hit = (Array.isArray(order?.meta_data) ? order.meta_data : []).find((m: any) => m?.key === key);
+  return hit?.value !== undefined && hit?.value !== null ? String(hit.value) : "";
+}
+
+async function postOrderNote(wpBase: string, orderId: number, note: string) {
+  const res = await fetch(`${wpBase}/wp-json/wc/v3/orders/${orderId}/notes`, {
+    method: "POST",
+    headers: { Authorization: storeAuth(), "Content-Type": "application/json" },
+    body: JSON.stringify({ note, customer_note: true }),
+  });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) console.error(`postOrderNote failed [${res.status}]`, JSON.stringify(data));
+  return { ok: res.ok, data, details: data };
+}
+
+/**
+ * Load an order and prove the caller is either its buyer or the caregiver whose
+ * service was sold. Everything refund/dispute related goes through this so a
+ * signed-in stranger can never touch someone else's booking.
+ */
+async function loadOrderForCaller(
+  wpBase: string,
+  orderId: number,
+  userId: number,
+): Promise<{ order: any; isCustomer: boolean; isVendor: boolean } | { error: string; status: number }> {
+  if (!WC_CONSUMER_KEY || !WC_CONSUMER_SECRET) {
+    return { error: "Server is missing WooCommerce store keys", status: 500 };
+  }
+  if (!Number.isFinite(orderId) || orderId <= 0) {
+    return { error: "order_id must be a positive number", status: 400 };
+  }
+  const res = await fetch(`${wpBase}/wp-json/wc/v3/orders/${orderId}`, {
+    headers: { Authorization: storeAuth() },
+  });
+  const order = await res.json().catch(() => null);
+  if (!res.ok || !order?.id) return { error: "Order not found", status: 404 };
+  const isCustomer = Number(order?.customer_id) === userId;
+  const [enriched] = await enrichOrdersWithServiceMeta(wpBase, [order]);
+  const isVendor = (Array.isArray(enriched?.meta_data) ? enriched.meta_data : []).some(
+    (m: any) =>
+      (m?.key === "_dokan_vendor_id" || m?.key === "_provider_id") && Number(m?.value) === userId,
+  );
+  if (!isCustomer && !isVendor) return { error: "This booking does not belong to you", status: 403 };
+  return { order: enriched ?? order, isCustomer, isVendor };
+}
 
 Deno.serve(async (req) => {
+
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   if (!WP_ADMIN_USER || !WP_ADMIN_APP_PASSWORD) {
@@ -595,9 +651,171 @@ Deno.serve(async (req) => {
         return json({ ok: true, data });
       }
 
+      // ── Order conversation (dispute / issue thread) ───────────────────
+      // Neither the buyer nor the caregiver can read or write wc/v3 order
+      // notes, so the store keys do it here after proving the caller owns the
+      // order. Notes are the audit trail both sides read in the app, so the
+      // customer never needs the WordPress admin.
+      case "list_order_notes": {
+        const ctx = await loadOrderForCaller(wpBase, Number(payload?.order_id), userId);
+        if ("error" in ctx) return json({ error: ctx.error }, ctx.status);
+        const res = await fetch(
+          `${wpBase}/wp-json/wc/v3/orders/${ctx.order.id}/notes?per_page=50`,
+          { headers: { Authorization: storeAuth() } },
+        );
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+          console.error(`list_order_notes failed [${res.status}]`, JSON.stringify(data));
+          return json({ error: "Order notes read failed", status: res.status, details: data }, 502);
+        }
+        const notes = (Array.isArray(data) ? data : [])
+          .filter((n: any) => n?.customer_note === true)
+          .map((n: any) => ({
+            id: n.id,
+            note: String(n.note ?? ""),
+            date_created: n.date_created,
+          }));
+        return json({ ok: true, data: notes });
+      }
 
+      case "add_order_note": {
+        const note = String(payload?.note ?? "").trim();
+        if (!note) return json({ error: "note is required" }, 400);
+        if (note.length > 2000) return json({ error: "note is too long" }, 400);
+        const ctx = await loadOrderForCaller(wpBase, Number(payload?.order_id), userId);
+        if ("error" in ctx) return json({ error: ctx.error }, ctx.status);
+        const role = ctx.isVendor ? "Caregiver" : "Client";
+        const posted = await postOrderNote(wpBase, ctx.order.id, `[${role}] ${note}`);
+        if (!posted.ok) return json({ error: "Order note failed", details: posted.details }, 502);
+        return json({ ok: true, data: posted.data });
+      }
+
+      // ── Refunds ──────────────────────────────────────────────────────
+      // A client asks; the caregiver decides. The client can never move money
+      // on their own, and the caregiver never needs the WordPress admin.
+      case "request_refund": {
+        const reason = String(payload?.reason ?? "").trim();
+        if (!reason) return json({ error: "reason is required" }, 400);
+        const ctx = await loadOrderForCaller(wpBase, Number(payload?.order_id), userId);
+        if ("error" in ctx) return json({ error: ctx.error }, ctx.status);
+        if (!ctx.isCustomer) {
+          return json({ error: "Only the client who booked can request a refund" }, 403);
+        }
+        const existing = metaValue(ctx.order, "_refund_status");
+        if (existing === "requested") {
+          return json({ error: "A refund request is already open for this booking" }, 409);
+        }
+        if (Number(ctx.order?.total) - Number(ctx.order?.total_tax ?? 0) <= 0) {
+          return json({ error: "This booking has nothing left to refund" }, 400);
+        }
+        const requested = Number(payload?.amount);
+        const amount = Number.isFinite(requested) && requested > 0
+          ? Math.min(requested, Number(ctx.order?.total))
+          : Number(ctx.order?.total);
+        const putRes = await fetch(`${wpBase}/wp-json/wc/v3/orders/${ctx.order.id}`, {
+          method: "PUT",
+          headers: { Authorization: storeAuth(), "Content-Type": "application/json" },
+          body: JSON.stringify({
+            meta_data: [
+              { key: "_refund_status", value: "requested" },
+              { key: "_refund_reason", value: reason },
+              { key: "_refund_amount", value: String(amount) },
+            ],
+          }),
+        });
+        const putBody = await putRes.json().catch(() => null);
+        if (!putRes.ok) {
+          console.error(`request_refund failed [${putRes.status}]`, JSON.stringify(putBody));
+          return json({ error: "Refund request failed", status: putRes.status, details: putBody }, 502);
+        }
+        await postOrderNote(
+          wpBase,
+          ctx.order.id,
+          `[Client] Refund requested (${amount}): ${reason}`,
+        );
+        return json({ ok: true, data: { status: "requested", amount } });
+      }
+
+      case "resolve_refund": {
+        const decision = String(payload?.decision ?? "");
+        if (!["approve", "decline"].includes(decision)) {
+          return json({ error: "decision must be approve or decline" }, 400);
+        }
+        const ctx = await loadOrderForCaller(wpBase, Number(payload?.order_id), userId);
+        if ("error" in ctx) return json({ error: ctx.error }, ctx.status);
+        if (!ctx.isVendor) {
+          return json({ error: "Only the caregiver can settle a refund request" }, 403);
+        }
+        if (metaValue(ctx.order, "_refund_status") !== "requested") {
+          return json({ error: "There is no open refund request on this booking" }, 409);
+        }
+        const message = String(payload?.note ?? "").trim();
+
+        if (decision === "decline") {
+          const putRes = await fetch(`${wpBase}/wp-json/wc/v3/orders/${ctx.order.id}`, {
+            method: "PUT",
+            headers: { Authorization: storeAuth(), "Content-Type": "application/json" },
+            body: JSON.stringify({ meta_data: [{ key: "_refund_status", value: "declined" }] }),
+          });
+          if (!putRes.ok) {
+            const details = await putRes.text();
+            console.error(`resolve_refund(decline) failed [${putRes.status}]`, details);
+            return json({ error: "Refund update failed", status: putRes.status, details }, 502);
+          }
+          await postOrderNote(
+            wpBase,
+            ctx.order.id,
+            `[Caregiver] Refund declined${message ? `: ${message}` : "."}`,
+          );
+          return json({ ok: true, data: { status: "declined" } });
+        }
+
+        const amountMeta = Number(metaValue(ctx.order, "_refund_amount"));
+        const amount = Number.isFinite(amountMeta) && amountMeta > 0
+          ? Math.min(amountMeta, Number(ctx.order?.total))
+          : Number(ctx.order?.total);
+        // api_refund asks the gateway to send the money back. Manual-payment
+        // orders have no gateway to call, so fall back to recording the refund.
+        let refundRes = await fetch(`${wpBase}/wp-json/wc/v3/orders/${ctx.order.id}/refunds`, {
+          method: "POST",
+          headers: { Authorization: storeAuth(), "Content-Type": "application/json" },
+          body: JSON.stringify({
+            amount: String(amount),
+            reason: metaValue(ctx.order, "_refund_reason") || message || "Refund approved by caregiver",
+            api_refund: true,
+          }),
+        });
+        if (!refundRes.ok) {
+          refundRes = await fetch(`${wpBase}/wp-json/wc/v3/orders/${ctx.order.id}/refunds`, {
+            method: "POST",
+            headers: { Authorization: storeAuth(), "Content-Type": "application/json" },
+            body: JSON.stringify({
+              amount: String(amount),
+              reason: metaValue(ctx.order, "_refund_reason") || message || "Refund approved by caregiver",
+              api_refund: false,
+            }),
+          });
+        }
+        const refund = await refundRes.json().catch(() => null);
+        if (!refundRes.ok) {
+          console.error(`resolve_refund(approve) failed [${refundRes.status}]`, JSON.stringify(refund));
+          return json({ error: "Refund failed", status: refundRes.status, details: refund }, 502);
+        }
+        await fetch(`${wpBase}/wp-json/wc/v3/orders/${ctx.order.id}`, {
+          method: "PUT",
+          headers: { Authorization: storeAuth(), "Content-Type": "application/json" },
+          body: JSON.stringify({ meta_data: [{ key: "_refund_status", value: "approved" }] }),
+        });
+        await postOrderNote(
+          wpBase,
+          ctx.order.id,
+          `[Caregiver] Refund approved (${amount})${message ? `: ${message}` : "."}`,
+        );
+        return json({ ok: true, data: { status: "approved", amount, refund } });
+      }
 
       default:
+
         return json({ error: `Unknown action: ${action}` }, 400);
     }
   } catch (error) {
