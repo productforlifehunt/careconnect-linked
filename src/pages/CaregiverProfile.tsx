@@ -14,6 +14,7 @@ import { useProvider, useProviderReviews, useCreateReview, useToggleSavedProvide
 import { useAddToCart } from "@/hooks/use-cart";
 import { getProviderCalendarBookingConflictMessage as getProviderBookingConflictMessage, getAvailabilityConflictMessage } from "@/features/calendar/booking-availability";
 import { createCareBookingProduct } from "@/services/care-booking-product";
+import { clearCart } from "@/services/woocommerce-api";
 import { CARE_SERVICE_TYPES } from "@/lib/care-service-types";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
