@@ -96,7 +96,13 @@ export function useCheckout() {
       last_name?: string;
       email?: string;
       phone?: string;
+      address_1?: string;
+      city?: string;
+      state?: string;
+      postcode?: string;
+      country?: string;
     }) => checkout(billingData),
+
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['wc-cart'] });
       qc.invalidateQueries({ queryKey: ['bookings'] });

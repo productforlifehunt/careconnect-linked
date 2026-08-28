@@ -10,7 +10,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useTranslation } from "react-i18next";
 
+/** Service names come back from the store HTML-escaped (e.g. "&amp;"). */
+function decodeEntities(value: string) {
+  if (!value) return "";
+  const el = document.createElement("textarea");
+  el.innerHTML = value;
+  return el.value;
+}
+
 export default function Cart() {
+
   const navigate = useNavigate();
   const { i18n } = useTranslation();
   const cn = i18n.language?.startsWith("zh");
@@ -20,6 +29,12 @@ export default function Cart() {
   const clearAll = useClearCart();
   const doCheckout = useCheckout();
   const [email, setEmail] = useState("");
+  const [address1, setAddress1] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [postcode, setPostcode] = useState("");
+  const [country, setCountry] = useState("US");
+
 
   useEffect(() => {
     const u = user as any;
@@ -58,13 +73,14 @@ export default function Cart() {
               {items.map((item: any) => (
                 <div key={item.key} className="flex items-center justify-between border-b last:border-0 pb-3 last:pb-0">
                   <div>
-                    <p className="font-semibold">{item.name}</p>
-                    <p className="text-sm text-muted-foreground">{cn ? "数量" : "Qty"}: {item.quantity} × {sym}{(parseInt(item.prices?.price || "0") / 100).toFixed(2)}</p>
+                    <p className="font-semibold">{decodeEntities(item.name)}</p>
+                    <p className="text-sm text-muted-foreground">{cn ? "数量" : "Qty"}: {item.quantity} × {sym}{Number(item.price || 0).toFixed(2)}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant="secondary">{sym}{(parseInt(item.totals?.line_total || "0") / 100).toFixed(2)}</Badge>
+                    <Badge variant="secondary">{sym}{(Number(item.price || 0) * Number(item.quantity || 1)).toFixed(2)}</Badge>
                     <Button variant="ghost" size="icon" onClick={() => removeItem.mutate(item.key)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                   </div>
+
                 </div>
               ))}
             </CardContent>
@@ -74,21 +90,44 @@ export default function Cart() {
             <CardContent className="p-5 space-y-4">
               <div className="flex justify-between text-lg font-bold"><span>{cn ? "合计" : "Total"}</span><span>{sym}{total}</span></div>
               <div><Label>{cn ? "账单邮箱" : "Billing Email"}</Label><Input value={email} onChange={e => setEmail(e.target.value)} placeholder={(user as any)?.email || "email@example.com"} /></div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <Label>{cn ? "街道地址" : "Street address"}</Label>
+                  <Input value={address1} onChange={e => setAddress1(e.target.value)} placeholder={cn ? "例如：建国路 12 号" : "e.g. 12 Main Street"} />
+                </div>
+                <div><Label>{cn ? "城市" : "City"}</Label><Input value={city} onChange={e => setCity(e.target.value)} /></div>
+                <div><Label>{cn ? "省 / 州" : "State / Province"}</Label><Input value={state} onChange={e => setState(e.target.value)} /></div>
+                <div><Label>{cn ? "邮政编码" : "ZIP / Postcode"}</Label><Input value={postcode} onChange={e => setPostcode(e.target.value)} /></div>
+                <div><Label>{cn ? "国家代码" : "Country code"}</Label><Input value={country} onChange={e => setCountry(e.target.value.toUpperCase().slice(0, 2))} placeholder="US" /></div>
+              </div>
+
               <div className="rounded-lg bg-muted/40 p-3 text-sm text-muted-foreground">
                 {cn
                   ? "下一步：将转到安全支付页面，由 Stripe / PayPal / 支付宝等已配置的支付方式直接完成付款。平台仅提供便利的收款入口，不代为托管款项，也不介入纠纷或退款仲裁。"
                   : "Next: you'll be sent to the secure payment page where Stripe / PayPal / Alipay (whichever the platform has enabled) processes the payment directly. The platform only provides the payment convenience — it does not hold funds in escrow and does not arbitrate disputes or refunds."}
               </div>
 
-              <Button variant="coral" className="w-full" size="lg" disabled={doCheckout.isPending || !email.trim()} onClick={async () => {
+              <Button variant="coral" className="w-full" size="lg" disabled={doCheckout.isPending || !email.trim() || !address1.trim() || !city.trim() || !state.trim() || !postcode.trim() || !country.trim()} onClick={async () => {
                 const u = user as any;
                 const displayName = u?.full_name || u?.user_display_name || "";
                 const parts = displayName.split(" ").filter(Boolean);
-                const result = await doCheckout.mutateAsync({ first_name: parts[0] || "", last_name: parts.slice(1).join(" "), email: email.trim(), phone: u?.phone_number || "" });
+                const result = await doCheckout.mutateAsync({
+                  first_name: parts[0] || "",
+                  last_name: parts.slice(1).join(" ") || (parts[0] || ""),
+                  email: email.trim(),
+                  phone: u?.phone_number || "",
+                  address_1: address1.trim(),
+                  city: city.trim(),
+                  state: state.trim(),
+                  postcode: postcode.trim(),
+                  country: country.trim() || "US",
+                });
+
                 const orderId = (result as any)?.order_id || (result as any)?.id || "";
                 const orderKey = (result as any)?.order_key || "";
                 const orderTotal = (result as any)?.totals?.total_price ? (parseInt((result as any).totals.total_price) / 100).toFixed(2) : total;
                 const paymentUrl = (result as any)?.payment_url || "";
+                const orderStatus = (result as any)?.status || "pending";
 
                 // Stash the order metadata so the confirmation page can show
                 // it after the user comes back from the gateway.
@@ -97,7 +136,7 @@ export default function Cart() {
                   if (orderId) params.set("order_id", String(orderId));
                   if (orderKey) params.set("order_key", orderKey);
                   if (orderTotal) params.set("total", orderTotal);
-                  params.set("status", "pending");
+                  params.set("status", orderStatus);
                   sessionStorage.setItem("cc:last_order", params.toString());
                 } catch { /* ignore */ }
 
@@ -116,7 +155,7 @@ export default function Cart() {
                 if (orderId) params.set("order_id", String(orderId));
                 if (orderKey) params.set("order_key", orderKey);
                 if (orderTotal) params.set("total", orderTotal);
-                params.set("status", "pending");
+                params.set("status", orderStatus);
                 navigate(`/order-confirmation?${params.toString()}`);
               }}>
                 {doCheckout.isPending ? (cn ? "处理中…" : "Processing...") : (cn ? "前往安全支付" : "Continue to Secure Payment")}

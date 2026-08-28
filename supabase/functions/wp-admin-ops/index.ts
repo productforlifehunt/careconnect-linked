@@ -22,7 +22,11 @@ type Action =
   | "ensure_seller_role"
   | "get_my_store"
   | "upsert_my_store"
-  | "get_bookings_product";
+  | "get_bookings_product"
+  | "create_service_product"
+  | "list_my_orders"
+  | "list_my_vendor_orders";
+
 
 function adminHeaders(contentType = "application/json"): Record<string, string> {
   return {
@@ -46,6 +50,55 @@ async function resolveCaller(wpBase: string, token: string): Promise<number | nu
   const user = await res.json().catch(() => null);
   const id = Number(user?.id);
   return Number.isFinite(id) && id > 0 ? id : null;
+}
+
+/**
+ * The agreed schedule lives on the just-in-time care product's meta. wc/v3
+ * orders do not expand product meta, so pull it once per product and merge the
+ * booking keys onto the order the UI reads.
+ */
+async function enrichOrdersWithServiceMeta(wpBase: string, orders: any[]): Promise<any[]> {
+  const auth = `Basic ${btoa(`${WC_CONSUMER_KEY}:${WC_CONSUMER_SECRET}`)}`;
+  const cache = new Map<number, any[]>();
+  const out: any[] = [];
+  for (const order of orders) {
+    const productId = Number(order?.line_items?.[0]?.product_id);
+    let productMeta: any[] = [];
+    if (Number.isFinite(productId) && productId > 0) {
+      if (cache.has(productId)) {
+        productMeta = cache.get(productId)!;
+      } else {
+        try {
+          const res = await fetch(`${wpBase}/wp-json/wc/v3/products/${productId}`, {
+            headers: { Authorization: auth },
+          });
+          const product = res.ok ? await res.json().catch(() => null) : null;
+          productMeta = Array.isArray(product?.meta_data) ? product.meta_data : [];
+        } catch {
+          productMeta = [];
+        }
+        cache.set(productId, productMeta);
+      }
+    }
+    const pick = (key: string) => {
+      const hit = productMeta.find((m: any) => m?.key === key);
+      return hit?.value !== undefined && hit?.value !== null ? String(hit.value) : "";
+    };
+    const merged = Array.isArray(order?.meta_data) ? [...order.meta_data] : [];
+    const has = (key: string) => merged.some((m: any) => m?.key === key && String(m?.value ?? "") !== "");
+    const add = (key: string, value: string) => {
+      if (value && !has(key)) merged.push({ key, value });
+    };
+    add("_appointment_date", pick("_care_service_start_date"));
+    add("_appointment_time", pick("_care_service_start_time"));
+    add("_duration_hours", pick("_care_service_quantity"));
+    add("_hourly_rate", pick("_care_service_rate"));
+    add("_service_type", pick("_care_service_label"));
+    add("_special_instructions", pick("_care_service_notes"));
+    add("_provider_id", pick("_dokan_vendor_id"));
+    out.push({ ...order, meta_data: merged });
+  }
+  return out;
 }
 
 Deno.serve(async (req) => {
@@ -190,10 +243,66 @@ Deno.serve(async (req) => {
         return json({ ok: true, id: Number(data?.id), price: Number(data?.price || amount) });
       }
 
+      // Orders the caller placed as a client. Buyers have no wc/v3 read
+      // capability, so the store keys read them here and the query is always
+      // pinned to the caller's own customer id.
+      case "list_my_orders": {
+        if (!WC_CONSUMER_KEY || !WC_CONSUMER_SECRET) {
+          return json({ error: "Server is missing WooCommerce store keys" }, 500);
+        }
+        const perPage = Math.min(Math.max(Number(payload?.per_page) || 50, 1), 100);
+        const res = await fetch(
+          `${wpBase}/wp-json/wc/v3/orders?per_page=${perPage}&customer=${userId}`,
+          {
+            headers: {
+              Authorization: `Basic ${btoa(`${WC_CONSUMER_KEY}:${WC_CONSUMER_SECRET}`)}`,
+            },
+          },
+        );
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+          console.error(`list_my_orders failed [${res.status}]`, JSON.stringify(data));
+          return json({ error: "WooCommerce order list failed", status: res.status, details: data }, 502);
+        }
+        const list = Array.isArray(data) ? data : [];
+        return json({ ok: true, data: await enrichOrdersWithServiceMeta(wpBase, list) });
+      }
+
+      // Orders that contain the caller's own vendor products (incoming work).
+      case "list_my_vendor_orders": {
+        if (!WC_CONSUMER_KEY || !WC_CONSUMER_SECRET) {
+          return json({ error: "Server is missing WooCommerce store keys" }, 500);
+        }
+        const perPage = Math.min(Math.max(Number(payload?.per_page) || 100, 1), 100);
+        const res = await fetch(`${wpBase}/wp-json/wc/v3/orders?per_page=${perPage}`, {
+          headers: {
+            Authorization: `Basic ${btoa(`${WC_CONSUMER_KEY}:${WC_CONSUMER_SECRET}`)}`,
+          },
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+          console.error(`list_my_vendor_orders failed [${res.status}]`, JSON.stringify(data));
+          return json({ error: "WooCommerce order list failed", status: res.status, details: data }, 502);
+        }
+        const mine = (Array.isArray(data) ? data : []).filter((order: any) => {
+          const inMeta = (Array.isArray(order?.meta_data) ? order.meta_data : []).some(
+            (m: any) => m?.key === "_dokan_vendor_id" && Number(m?.value) === userId,
+          );
+          const inItems = (Array.isArray(order?.line_items) ? order.line_items : []).some((li: any) =>
+            (Array.isArray(li?.meta_data) ? li.meta_data : []).some(
+              (m: any) => (m?.key === "_dokan_vendor_id" || m?.key === "_provider_id") && Number(m?.value) === userId,
+            ),
+          );
+          return inMeta || inItems;
+        });
+        return json({ ok: true, data: await enrichOrdersWithServiceMeta(wpBase, mine) });
+      }
+
       default:
         return json({ error: `Unknown action: ${action}` }, 400);
     }
   } catch (error) {
     return json({ error: String(error) }, 500);
+
   }
 });

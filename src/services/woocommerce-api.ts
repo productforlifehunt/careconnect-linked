@@ -400,22 +400,45 @@ export async function checkout(billingData?: {
     country: billingData?.country || 'US',
   };
 
+  // The store requires a payment method on the order. Read the gateways the
+  // store currently offers and prefer one that leaves the order awaiting
+  // payment, so the customer still settles it on the secure payment page.
+  let method = 'bacs';
+  try {
+    const cart = await storeApiFetch('cart', { method: 'GET' });
+    const available: string[] = Array.isArray(cart?.payment_methods) ? cart.payment_methods : [];
+    if (available.length) {
+      method = available.find((m) => m === 'bacs') || available.find((m) => m === 'cheque') || available[0];
+    }
+  } catch {
+    // fall back to the default below
+  }
+
   const result = await storeApiFetch('checkout', {
     method: 'POST',
     body: JSON.stringify({
       billing_address: billing,
       shipping_address: billing,
-      payment_method: '',
+      payment_method: method,
       payment_data: [],
       extensions: {},
     }),
   });
 
+
   const orderId = result?.order_id;
   const orderKey = result?.order_key || '';
   const server = getActiveServer();
-  const payment_url = result?.payment_result?.redirect_url
-    || `${server.baseUrl.replace(/\/$/, '')}/checkout/order-pay/${orderId}/?pay_for_order=true&key=${encodeURIComponent(orderKey)}`;
+  // When the gateway already accepted the order (offline / bank transfer), the
+  // redirect_url is just WordPress's own "order received" page — we stay
+  // headless and show our own confirmation screen instead. Only hand the
+  // customer off when payment still has to be collected by a gateway.
+  const paymentStatus = result?.payment_result?.payment_status || '';
+  const needsPayment = paymentStatus !== 'success';
+  const payment_url = needsPayment
+    ? `${server.baseUrl.replace(/\/$/, '')}/checkout/order-pay/${orderId}/?pay_for_order=true&key=${encodeURIComponent(orderKey)}`
+    : '';
+
 
   // Cart is empty after a successful checkout — drop the stale token so the
   // next add-to-cart starts a fresh session.
@@ -521,14 +544,31 @@ function rangesOverlap(startA: string, endA: string, startB: string, endB: strin
 // Get bookings/orders for the current vendor (via Dokan)
 export async function getDokanVendorOrders(perPage = 50) {
   try {
-    return await dokanFetch(`orders?per_page=${perPage}`);
-  } catch (error: any) {
-    // Non-vendor users (or expired JWT) will fail signature verification, and
-    // sites without the Dokan vendor-orders endpoint return 404 HTML. Both are
-    // expected; swallow silently so the UI doesn't surface a runtime error.
+    const viaDokan = await dokanFetch(`orders?per_page=${perPage}`);
+    if (Array.isArray(viaDokan) && viaDokan.length > 0) return viaDokan;
+  } catch {
+    // Dokan's vendor-orders endpoint is unavailable on some setups; fall through.
+  }
+  try {
+    // Server-side fallback: the edge function reads orders with store keys and
+    // returns only the ones belonging to the caller's own vendor account.
+    const orders = await adminOp<any[]>('list_my_vendor_orders', { per_page: perPage });
+    return Array.isArray(orders) ? orders : [];
+  } catch {
     return [];
   }
 }
+
+/** Orders the signed-in user placed as a client (read server-side, scoped). */
+export async function getMyCustomerOrders(perPage = 50) {
+  try {
+    const orders = await adminOp<any[]>('list_my_orders', { per_page: perPage });
+    return Array.isArray(orders) ? orders : [];
+  } catch {
+    return [];
+  }
+}
+
 
 // Note: Dokan withdrawal/payout APIs intentionally removed.
 // Platform does not handle funds (UrbanSitter-style); clients pay caregivers directly.
