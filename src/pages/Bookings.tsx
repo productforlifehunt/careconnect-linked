@@ -11,7 +11,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { CalendarDays, Clock, MoreHorizontal, X, Check, MessageSquare, Loader2, Star, AlertTriangle, RefreshCw, DollarSign } from "lucide-react";
 import { useBookings, useCreateReview, useUpdateBookingStatus, useStartConversation } from "@/hooks/use-care-data";
 import { useRequestRefund } from "@/hooks/use-cart";
+import BookingThreadDialog from "@/components/booking/BookingThreadDialog";
 import { updateOrderBookingDetails } from "@/services/woocommerce-api";
+
 import { getProviderCalendarBookingConflictMessage as getProviderBookingConflictMessage } from "@/features/calendar/booking-availability";
 import { useToast } from "@/hooks/use-toast";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
