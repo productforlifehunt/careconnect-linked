@@ -52,6 +52,55 @@ async function resolveCaller(wpBase: string, token: string): Promise<number | nu
   return Number.isFinite(id) && id > 0 ? id : null;
 }
 
+/**
+ * The agreed schedule lives on the just-in-time care product's meta. wc/v3
+ * orders do not expand product meta, so pull it once per product and merge the
+ * booking keys onto the order the UI reads.
+ */
+async function enrichOrdersWithServiceMeta(wpBase: string, orders: any[]): Promise<any[]> {
+  const auth = `Basic ${btoa(`${WC_CONSUMER_KEY}:${WC_CONSUMER_SECRET}`)}`;
+  const cache = new Map<number, any[]>();
+  const out: any[] = [];
+  for (const order of orders) {
+    const productId = Number(order?.line_items?.[0]?.product_id);
+    let productMeta: any[] = [];
+    if (Number.isFinite(productId) && productId > 0) {
+      if (cache.has(productId)) {
+        productMeta = cache.get(productId)!;
+      } else {
+        try {
+          const res = await fetch(`${wpBase}/wp-json/wc/v3/products/${productId}`, {
+            headers: { Authorization: auth },
+          });
+          const product = res.ok ? await res.json().catch(() => null) : null;
+          productMeta = Array.isArray(product?.meta_data) ? product.meta_data : [];
+        } catch {
+          productMeta = [];
+        }
+        cache.set(productId, productMeta);
+      }
+    }
+    const pick = (key: string) => {
+      const hit = productMeta.find((m: any) => m?.key === key);
+      return hit?.value !== undefined && hit?.value !== null ? String(hit.value) : "";
+    };
+    const merged = Array.isArray(order?.meta_data) ? [...order.meta_data] : [];
+    const has = (key: string) => merged.some((m: any) => m?.key === key && String(m?.value ?? "") !== "");
+    const add = (key: string, value: string) => {
+      if (value && !has(key)) merged.push({ key, value });
+    };
+    add("_appointment_date", pick("_care_service_start_date"));
+    add("_appointment_time", pick("_care_service_start_time"));
+    add("_duration_hours", pick("_care_service_quantity"));
+    add("_hourly_rate", pick("_care_service_rate"));
+    add("_service_type", pick("_care_service_label"));
+    add("_special_instructions", pick("_care_service_notes"));
+    add("_provider_id", pick("_dokan_vendor_id"));
+    out.push({ ...order, meta_data: merged });
+  }
+  return out;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -215,7 +264,8 @@ Deno.serve(async (req) => {
           console.error(`list_my_orders failed [${res.status}]`, JSON.stringify(data));
           return json({ error: "WooCommerce order list failed", status: res.status, details: data }, 502);
         }
-        return json({ ok: true, data: Array.isArray(data) ? data : [] });
+        const list = Array.isArray(data) ? data : [];
+        return json({ ok: true, data: await enrichOrdersWithServiceMeta(wpBase, list) });
       }
 
       // Orders that contain the caller's own vendor products (incoming work).
@@ -245,7 +295,7 @@ Deno.serve(async (req) => {
           );
           return inMeta || inItems;
         });
-        return json({ ok: true, data: mine });
+        return json({ ok: true, data: await enrichOrdersWithServiceMeta(wpBase, mine) });
       }
 
       default:
