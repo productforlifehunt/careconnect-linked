@@ -15,7 +15,6 @@ import { useAddToCart } from "@/hooks/use-cart";
 import { getAvailabilityConflictMessage, getProviderBookingConflictMessage } from "@/services/woocommerce-api";
 import { createCareBookingProduct } from "@/services/care-booking-product";
 import { CARE_SERVICE_TYPES } from "@/lib/care-service-types";
-import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
