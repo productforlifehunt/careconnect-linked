@@ -205,7 +205,7 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{Z("创建签到日程", "Create Check-In Schedule")}</DialogTitle>
-            <DialogDescription>{Z("为这位被护理者设置定期的健康签到。", "Set a recurring wellness check-in for this cared one.")}</DialogDescription>
+            <DialogDescription>{Z("定个时间，每天问一声他今天怎么样。", "Pick a time to ask how they are doing each day.")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 mt-2">
             <div>
