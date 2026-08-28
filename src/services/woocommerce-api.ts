@@ -323,12 +323,25 @@ export async function addToCart({
   /** @deprecated price overrides are not supported by the native Store API */
   priceOverride?: number;
 }) {
-  const cart = await storeApiFetch('cart/add-item', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id: productId, quantity }),
-  });
-  return normalizeStoreCart(cart);
+  // A just-in-time service product can still be warming up in the store's
+  // caches, in which case the Store API answers "not available for purchase".
+  // Retry briefly instead of failing the booking.
+  let lastError: unknown = null;
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    try {
+      const cart = await storeApiFetch('cart/add-item', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: productId, quantity }),
+      });
+      return normalizeStoreCart(cart);
+    } catch (error) {
+      lastError = error;
+      if (!String(error).includes('not_purchasable')) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 2500));
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error('Could not add the service to the cart');
 }
 
 /** POST /wc/store/v1/cart/remove-item */
