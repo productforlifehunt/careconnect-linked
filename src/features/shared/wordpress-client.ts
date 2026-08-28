@@ -71,8 +71,11 @@ export async function wordpressFetchRaw(endpoint: string, options: WordPressFetc
         const text = await cloned.text();
         const looksLikeAuthFailure =
           /signature verification failed/i.test(text) ||
-          /jwt/i.test(text) && /(invalid|expired|verification)/i.test(text) ||
-          /errorCode"\s*:\s*1[0-3]/i.test(text); // simple-jwt-login auth error codes
+          /expired token/i.test(text) ||
+          /token.*(expired|invalid|revoked)/i.test(text) ||
+          (/jwt/i.test(text) && /(invalid|expired|verification)/i.test(text)) ||
+          /simple-jwt-login-middleware/i.test(text) ||
+          /errorCode"\s*:\s*\d{1,2}/i.test(text); // simple-jwt-login auth error codes (incl. 14 = expired)
         if (looksLikeAuthFailure && token) {
           localStorage.removeItem("cc_wp_token");
           localStorage.removeItem("cc_wp_user");
