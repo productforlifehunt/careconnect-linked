@@ -160,8 +160,12 @@ export interface WPBooking {
   provider?: { full_name: string };
   client?: { full_name: string; email?: string };
   payment_status: string;
+  refund_status?: string;
+  refund_reason?: string;
+  refund_amount?: string;
   created_at: string;
 }
+
 
 /** Store data comes back HTML-escaped (e.g. "&amp;"); show real characters. */
 function decodeEntities(value: string): string {
