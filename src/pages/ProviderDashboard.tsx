@@ -396,6 +396,18 @@ export default function ProviderDashboard() {
           <MyBookingServicesTab />
         </TabsContent>
       </Tabs>
+
+      <BookingThreadDialog
+        open={threadOpen}
+        onOpenChange={setThreadOpen}
+        orderId={threadBooking?.id}
+        role="provider"
+        counterpartName={threadBooking?.client?.full_name}
+        refundStatus={threadBooking?.refund_status}
+        refundReason={threadBooking?.refund_reason}
+        refundAmount={threadBooking?.refund_amount}
+      />
     </div>
+
   );
 }
