@@ -18,7 +18,6 @@ import MyBookingServicesTab from "@/components/provider/MyBookingServicesTab";
 import {
   useProviderBookings, useUpdateBookingStatus, useMyProfile,
   useProviderAvailability, useUpsertProviderAvailability,
-  useProviderAvailabilitySetting, useUpdateProviderAvailabilitySetting,
 } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -38,8 +37,6 @@ export default function ProviderDashboard() {
   const updateBookingStatus = useUpdateBookingStatus();
   const { data: availability } = useProviderAvailability(providerId);
   const upsertAvailability = useUpsertProviderAvailability();
-  const { data: availabilitySetting } = useProviderAvailabilitySetting(providerId);
-  const updateAvailabilitySetting = useUpdateProviderAvailabilitySetting();
   
 
   const [schedule, setSchedule] = useState<Record<number, { enabled: boolean; start: string; end: string }>>(() => {
@@ -53,15 +50,6 @@ export default function ProviderDashboard() {
   const [addOverrideOpen, setAddOverrideOpen] = useState(false);
   const [newOverride, setNewOverride] = useState({ date: "", start: "09:00", end: "17:00", available: true });
   const [savingOverrides, setSavingOverrides] = useState(false);
-  const [availabilityRules, setAvailabilityRules] = useState({
-    min_notice_hours: 24,
-    booking_window_days: 60,
-    allow_same_day: false,
-    requires_confirmation: true,
-    buffer_period: 0,
-    default_date_availability: "available",
-  });
-  const [rulesLoaded, setRulesLoaded] = useState(false);
 
   useEffect(() => {
     if (availability && availability.length > 0 && !scheduleLoaded) {
@@ -85,33 +73,7 @@ export default function ProviderDashboard() {
     }
   }, [availability, overridesLoaded]);
 
-  useEffect(() => {
-    if (availabilitySetting && !rulesLoaded) {
-      setAvailabilityRules({
-        min_notice_hours: Number(availabilitySetting.min_notice_hours ?? 24),
-        booking_window_days: Number(availabilitySetting.booking_window_days ?? 60),
-        allow_same_day: Boolean(availabilitySetting.allow_same_day ?? false),
-        requires_confirmation: Boolean(availabilitySetting.requires_confirmation ?? true),
-        buffer_period: Number(availabilitySetting.buffer_period ?? 0),
-        default_date_availability: availabilitySetting.default_date_availability ?? "available",
-      });
-      setRulesLoaded(true);
-    }
-    if (!availabilitySetting && !rulesLoaded) {
-      setRulesLoaded(true);
-    }
-  }, [availabilitySetting, rulesLoaded]);
 
-  const handleSaveAvailabilityRules = async () => {
-    if (!providerId) return;
-    try {
-      await updateAvailabilitySetting.mutateAsync({ providerId, setting: availabilityRules });
-      qc.invalidateQueries({ queryKey: ["providerAvailabilitySetting", providerId] });
-      toast({ title: isZh ? "可预约规则已保存" : "Availability rules saved" });
-    } catch (e: any) {
-      toast({ title: isZh ? "操作失败" : "Failed", description: e.message, variant: "destructive" });
-    }
-  };
 
   const handleSaveSchedule = () => {
     if (!providerId) return;
@@ -299,77 +261,6 @@ export default function ProviderDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="border-transparent card-elevated">
-            <CardHeader><CardTitle>{isZh ? "预约规则" : "Booking Rules"}</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <Label>{isZh ? "最少提前预约（小时）" : "Minimum notice (hours)"}</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    value={availabilityRules.min_notice_hours}
-                    onChange={e => setAvailabilityRules(prev => ({ ...prev, min_notice_hours: Number(e.target.value || 0) }))}
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label>{isZh ? "可预约时间范围（天）" : "Booking window (days)"}</Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    value={availabilityRules.booking_window_days}
-                    onChange={e => setAvailabilityRules(prev => ({ ...prev, booking_window_days: Number(e.target.value || 1) }))}
-                    className="mt-1"
-                  />
-                </div>
-              </div>
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <Label>{isZh ? "预约间隔缓冲（分钟）" : "Buffer between bookings (minutes)"}</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    value={availabilityRules.buffer_period}
-                    onChange={e => setAvailabilityRules(prev => ({ ...prev, buffer_period: Number(e.target.value || 0) }))}
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label>{isZh ? "日历默认可约状态" : "Default calendar availability"}</Label>
-                  <Select
-                    value={availabilityRules.default_date_availability}
-                    onValueChange={value => setAvailabilityRules(prev => ({ ...prev, default_date_availability: value === "non-available" ? "non-available" : "available" }))}
-                  >
-                    <SelectTrigger className="mt-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="available">{isZh ? "默认可约" : "Available by default"}</SelectItem>
-                      <SelectItem value="non-available">{isZh ? "默认不可约" : "Not available by default"}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="flex items-center justify-between rounded-lg bg-muted/30 p-3">
-                <div>
-                  <p className="text-sm font-medium text-foreground">{isZh ? "允许当天预约" : "Allow same-day bookings"}</p>
-                  <p className="text-xs text-muted-foreground">{isZh ? "允许客户在当天有空档时直接预约。" : "Enable customers to book for the current day when a slot is available."}</p>
-                </div>
-                <Switch checked={availabilityRules.allow_same_day} onCheckedChange={c => setAvailabilityRules(prev => ({ ...prev, allow_same_day: c }))} />
-              </div>
-              <div className="flex items-center justify-between rounded-lg bg-muted/30 p-3">
-                <div>
-                  <p className="text-sm font-medium text-foreground">{isZh ? "需要服务者确认" : "Require provider confirmation"}</p>
-                  <p className="text-xs text-muted-foreground">{isZh ? "新预约请求需要您手动确认后才生效。" : "Match Woo Bookings confirmation behavior for new booking requests."}</p>
-                </div>
-                <Switch checked={availabilityRules.requires_confirmation} onCheckedChange={c => setAvailabilityRules(prev => ({ ...prev, requires_confirmation: c }))} />
-              </div>
-              <Button variant="outline" className="w-full" onClick={handleSaveAvailabilityRules} disabled={updateAvailabilitySetting.isPending}>
-                {updateAvailabilitySetting.isPending ? (isZh ? "保存中…" : "Saving...") : (isZh ? "保存预约规则" : "Save Booking Rules")}
-              </Button>
-            </CardContent>
-          </Card>
 
           <Card className="border-transparent card-elevated">
             <CardHeader className="flex-row items-center justify-between">
