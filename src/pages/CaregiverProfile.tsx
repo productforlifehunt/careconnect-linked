@@ -62,7 +62,7 @@ export default function CaregiverProfile() {
   const { toast } = useToast();
   const { t, i18n } = useTranslation();
   const isZh = i18n.language?.startsWith("zh");
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { data: caregiver, isLoading } = useProvider(id);
   const { data: reviews } = useProviderReviews(id);
   const { data: savedProviders } = useSavedProviders();
