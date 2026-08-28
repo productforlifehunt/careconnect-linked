@@ -292,6 +292,17 @@ export default function CaregiverProfile() {
       navigate("/auth");
       return;
     }
+    if (user && caregiver && String(user.id) === String(caregiver.id)) {
+      toast({
+        title: isZh ? "这是您自己的服务" : "This is your own service",
+        description: isZh
+          ? "您不能预约自己提供的服务，请使用其他账号体验预约流程。"
+          : "You can't book your own service. Use another account to try the booking flow.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const recurringNote = recurringPattern !== "none" ? `[Recurring: ${recurringPattern}] ` : "";
       const packageNote = `[Service: ${selectedResource.label}] `;
