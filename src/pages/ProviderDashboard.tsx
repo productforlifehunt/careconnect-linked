@@ -132,8 +132,12 @@ export default function ProviderDashboard() {
   const pendingBookings = (bookings || []).filter((b: any) => b.status === "pending");
   const confirmedBookings = (bookings || []).filter((b: any) => b.status === "confirmed");
   const completedBookings = (bookings || []).filter((b: any) => b.status === "completed");
+  // Open refund requests the caregiver has to answer, newest first.
+  const refundRequests = (bookings || []).filter((b: any) => b.refund_status === "requested");
+  const settledRefunds = (bookings || []).filter((b: any) => ["approved", "declined"].includes(String(b.refund_status || "")));
   const totalEarnings = completedBookings.reduce((sum: number, b: any) => sum + (b.total_cost || 0), 0);
   const pendingEarnings = confirmedBookings.reduce((sum: number, b: any) => sum + (b.total_cost || 0), 0);
+
 
   const handleBookingAction = (id: string, status: string) => {
     updateBookingStatus.mutate({ id, status }, { onSuccess: () => toast({ title: `Booking ${status}` }) });
