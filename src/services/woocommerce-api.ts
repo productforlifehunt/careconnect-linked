@@ -167,11 +167,15 @@ async function dokanFetch(endpoint: string, options: RequestInit = {}) {
 // ─── Order helpers ─────────────────────────────────────────
 
 export async function updateOrderStatus(orderId: number, status: string) {
-  return wcFetch(`orders/${orderId}`, {
-    method: 'PUT',
-    body: JSON.stringify({ status }),
+  // Neither clients nor caregivers can write to wc/v3 directly (WooCommerce
+  // returns 403), so the change goes through the server-side helper, which
+  // checks the caller owns the booking before applying it.
+  return adminOp<{ id: number; status: string }>('set_order_status', {
+    order_id: orderId,
+    status,
   });
 }
+
 
 export async function updateOrderBookingDetails(
   orderId: number,
@@ -570,8 +574,39 @@ export async function getMyCustomerOrders(perPage = 50) {
 }
 
 
-// Note: Dokan withdrawal/payout APIs intentionally removed.
-// Platform does not handle funds (UrbanSitter-style); clients pay caregivers directly.
+// ─── Dokan payout account, balance and withdrawals ─────────
+// Dokan's own REST endpoints reject a caregiver's bearer token, so these read
+// and write through the server-side helper, always scoped to the caller.
+
+export interface MyPayoutData {
+  balance: {
+    current_balance: number;
+    withdraw_limit: number | string;
+    withdraw_threshold: number | string;
+    withdraw_methods: string[];
+  } | null;
+  withdrawals: Array<{ id: number; amount: string; status: string; method: string; created: string }>;
+  payment: {
+    paypal?: { email?: string };
+    bank?: Record<string, string>;
+  };
+}
+
+export async function getMyPayout(): Promise<MyPayoutData | null> {
+  return adminOp<MyPayoutData>('get_my_payout');
+}
+
+export async function saveMyPayout(payment: {
+  paypal?: { email: string };
+  bank?: Record<string, string>;
+}) {
+  return adminOp('save_my_payout', { payment });
+}
+
+export async function requestWithdrawal(amount: number, method: string) {
+  return adminOp('request_withdrawal', { amount, method });
+}
+
 
 
 // ─── Vendor payout-account settings ────────────────────────
