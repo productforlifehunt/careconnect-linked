@@ -12,7 +12,7 @@ import { Star, MapPin, Shield, Clock, CheckCircle, Calendar, MessageSquare, Hear
 import { CommentsSection } from "@/components/comments/CommentsSection";
 import { useProvider, useProviderReviews, useCreateReview, useToggleSavedProvider, useSavedProviders, useStartConversation, useProviderAvailability, useProviderAvailabilitySetting } from "@/hooks/use-care-data";
 import { useAddToCart } from "@/hooks/use-cart";
-import { getAvailabilityConflictMessage, getProviderBookingConflictMessage } from "@/services/woocommerce-api";
+import { getProviderCalendarBookingConflictMessage as getProviderBookingConflictMessage } from "@/features/calendar/booking-availability";
 import { createCareBookingProduct } from "@/services/care-booking-product";
 import { CARE_SERVICE_TYPES } from "@/lib/care-service-types";
 import { useAuth } from "@/contexts/AuthContext";

@@ -182,25 +182,8 @@ export async function updateOrderBookingDetails(
     specialInstructions?: string;
   }
 ) {
-  // Source of truth = native WooCommerce Bookings entity. Find the booking
-  // linked to this order and PUT new start/end via /wc-bookings/v1/bookings/{id}.
-  if (details.appointmentDate && details.appointmentTime && details.durationHours) {
-    try {
-      const bookings = await fetchWCBookingsByOrder(orderId);
-      const target = bookings[0];
-      if (target?.id) {
-        await updateWCBookingSchedule(target.id, {
-          startDate: details.appointmentDate,
-          startTime: details.appointmentTime,
-          durationHours: details.durationHours,
-        });
-      }
-    } catch (error) {
-      console.warn('Failed to update native WC Booking, falling back to order meta:', error);
-    }
-  }
-
-  // Mirror to order meta + special instructions (kept for legacy readers).
+  // Schedule lives in our JetEngine calendar CCT; the Woo order only
+  // carries the agreed schedule as meta for invoice/receipt readability.
   const metaData: { key: string; value: string }[] = [];
   if (details.appointmentDate) metaData.push({ key: '_appointment_date', value: details.appointmentDate });
   if (details.appointmentTime) metaData.push({ key: '_appointment_time', value: details.appointmentTime });
