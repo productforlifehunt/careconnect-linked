@@ -548,20 +548,24 @@ function rangesOverlap(startA: string, endA: string, startB: string, endB: strin
 // Get bookings/orders for the current vendor (via Dokan)
 export async function getDokanVendorOrders(perPage = 50) {
   try {
-    const viaDokan = await dokanFetch(`orders?per_page=${perPage}`);
-    if (Array.isArray(viaDokan) && viaDokan.length > 0) return viaDokan;
+    // Preferred: the edge function reads the caller's vendor orders with store
+    // keys AND copies the service schedule meta (date / time / duration) from
+    // the just-in-time product onto the order. Dokan's own vendor-orders
+    // endpoint omits that meta, which left the caregiver's request list showing
+    // the order date instead of the appointment.
+    const orders = await adminOp<any[]>('list_my_vendor_orders', { per_page: perPage });
+    if (Array.isArray(orders) && orders.length > 0) return orders;
   } catch {
-    // Dokan's vendor-orders endpoint is unavailable on some setups; fall through.
+    // Fall through to Dokan's endpoint below.
   }
   try {
-    // Server-side fallback: the edge function reads orders with store keys and
-    // returns only the ones belonging to the caller's own vendor account.
-    const orders = await adminOp<any[]>('list_my_vendor_orders', { per_page: perPage });
-    return Array.isArray(orders) ? orders : [];
+    const viaDokan = await dokanFetch(`orders?per_page=${perPage}`);
+    return Array.isArray(viaDokan) ? viaDokan : [];
   } catch {
     return [];
   }
 }
+
 
 /** Orders the signed-in user placed as a client (read server-side, scoped). */
 export async function getMyCustomerOrders(perPage = 50) {
@@ -606,6 +610,28 @@ export async function saveMyPayout(payment: {
 export async function requestWithdrawal(amount: number, method: string) {
   return adminOp('request_withdrawal', { amount, method });
 }
+
+/**
+ * Display names for arbitrary WP user ids. WordPress hides users who never
+ * authored content from non-admin callers, so chat counterparts (clients)
+ * are invisible to caregivers through wp/v2/users. Resolved server-side.
+ */
+export async function lookupUserNames(
+  ids: number[],
+): Promise<Array<{ id: number; name: string; avatar: string | null }>> {
+  const clean = Array.from(new Set(ids.filter((n) => Number.isFinite(n) && n > 0)));
+  if (clean.length === 0) return [];
+  try {
+    const rows = await adminOp<Array<{ id: number; name: string; avatar: string | null }>>(
+      'get_user_names',
+      { ids: clean },
+    );
+    return Array.isArray(rows) ? rows : [];
+  } catch {
+    return [];
+  }
+}
+
 
 
 

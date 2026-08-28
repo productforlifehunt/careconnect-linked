@@ -3,6 +3,7 @@ import { decodeRel72Meta } from "@/features/care-groups/rel-meta";
 import { T, R } from "@/integrations/wp-schema";
 import { appScopeBody, appScopeParams, filterAppScope } from "@/features/shared/app-scope";
 import { fetchRelChildrenMap } from "@/features/shared/rel-batch";
+import { lookupUserNames } from "@/services/woocommerce-api";
 
 /**
  * Chat lives in CCTs shared by every app on the backend, so reads filter and
@@ -205,9 +206,21 @@ async function fetchUserDirectory(ids: number[]): Promise<Map<number, { name: st
     for (const u of Array.isArray(users) ? users : []) {
       out.set(Number(u.id), { name: u.name || u.slug || "", avatar: u.avatar_urls?.["96"] || null });
     }
-  } catch { /* names fall back to the member id below */ }
+  } catch { /* fall through to the server-side lookup below */ }
+
+  // WordPress only exposes content authors to non-admin callers, so a client
+  // who never published anything is missing above — caregivers would see
+  // "User 51". Resolve the remainder through the scoped edge function.
+  const missing = unique.filter((id) => !out.get(Number(id))?.name);
+  if (missing.length > 0) {
+    const rows = await lookupUserNames(missing.map(Number));
+    for (const r of rows) {
+      if (r?.name) out.set(Number(r.id), { name: r.name, avatar: r.avatar ?? null });
+    }
+  }
   return out;
 }
+
 
 /**
  * Batched last-message lookup: one relation map (conversation → messages) plus

@@ -82,6 +82,14 @@ export default function PayoutAccountsCard() {
       const value = Number(amount);
       if (!(value > 0)) throw new Error(isZh ? "请输入提现金额" : "Enter an amount");
       if (value > balance) throw new Error(isZh ? "超出可提现余额" : "Amount exceeds your balance");
+      if (minimum > 0 && value < minimum) {
+        throw new Error(
+          isZh
+            ? `最低提现金额为 ${currency}${minimum.toFixed(2)}，请等余额积累后再申请。`
+            : `The minimum payout is ${currency}${minimum.toFixed(2)} — let your balance build up before requesting.`,
+        );
+      }
+
       const method = paypalEmail.trim() ? "paypal" : "bank";
       return requestWithdrawal(value, method);
     },
