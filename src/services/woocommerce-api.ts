@@ -12,9 +12,6 @@ import {
   upsertProviderCalendarAvailability,
 } from '@/features/calendar/booking-availability';
 
-// Parent category slug for all care service products
-export const CARE_SERVICES_CATEGORY = 'care-services';
-
 /**
  * Build auth headers using JWT Bearer token
  */
@@ -31,34 +28,16 @@ function getAuthHeaders(forceEdge = false): Record<string, string> {
  * public browsing (services, attributes, categories) working without login while
  * never exposing credentials to the browser.
  */
-/** Read-only catalog endpoints that any visitor (logged in or not) may read. */
-const PUBLIC_CATALOG_PREFIXES = [
-  'products',
-  'products/categories',
-  'products/attributes',
-  'products/tags',
-  'products/reviews',
-];
-
-function isPublicCatalogEndpoint(endpoint: string): boolean {
-  const path = endpoint.split('?')[0].replace(/^\/+|\/+$/g, '');
-  return PUBLIC_CATALOG_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`));
-}
-
 async function wcFetch(endpoint: string, options: RequestInit = {}) {
-  const isGet = !options.method || options.method.toUpperCase() === 'GET';
-  // Store keys live server-side in the proxy. Subscriber-level JWTs are not
-  // allowed to read wc/v3, so ALL catalog GETs go through the proxy — whether
-  // the visitor is anonymous or signed in.
-  const useProxyKeys = isGet && isPublicCatalogEndpoint(endpoint);
-  const url = buildWPUrl(`wc/v3/${endpoint}`, undefined, { forceEdge: useProxyKeys });
+  // WooCommerce is only ever touched for order-level operations (status,
+  // booking meta, refunds, notes). Catalog, pricing, availability and
+  // discovery all live in the JetEngine CCTs, so nothing here reads products.
+  const url = buildWPUrl(`wc/v3/${endpoint}`);
 
   const headers: Record<string, string> = {
-    ...getAuthHeaders(useProxyKeys),
+    ...getAuthHeaders(),
     ...(options.headers as Record<string, string> | undefined),
   };
-  // Never send a user JWT on proxy-key calls — WP would prefer it and 401.
-  if (useProxyKeys) delete headers.Authorization;
 
   const response = await fetch(url, { ...options, headers });
 
@@ -71,10 +50,6 @@ async function wcFetch(endpoint: string, options: RequestInit = {}) {
   return response.json();
 }
 
-
-// ─── Service attribute ID resolution (avoid hard-coding 3/4) ────────────
-// We cache the result for the session — the IDs rarely change.
-let _serviceAttrIdCache: { type?: number; location?: number } | null = null;
 
 
 // ─── Privileged WP/Dokan operations (admin creds live server-side) ───────
@@ -372,15 +347,6 @@ export async function clearCart() {
   return normalizeStoreCart(cart);
 }
 
-/** POST /wc/store/v1/cart/apply-coupon */
-export async function applyCoupon(code: string) {
-  const cart = await storeApiFetch('cart/apply-coupon', {
-    method: 'POST',
-    body: JSON.stringify({ code }),
-  });
-  return normalizeStoreCart(cart);
-}
-
 /**
  * POST /wc/store/v1/checkout
  * Native WooCommerce headless checkout. Returns the created order plus the
@@ -496,46 +462,6 @@ export async function addOrderCustomerNote(orderId: number, note: string) {
   });
 }
 
-export async function getOrderRefunds(orderId: number) {
-  try {
-    return await wcFetch(`orders/${orderId}/refunds`);
-  } catch {
-    return [];
-  }
-}
-
-// ─── Product Reviews (WooCommerce native) ──────────────────
-// Uses /wc/v3/products/reviews — zero custom CCT, fully Woo.
-export async function fetchProductReviews(productId: number) {
-  try {
-    return await wcFetch(`products/reviews?product=${productId}&per_page=50&status=approved`);
-  } catch {
-    return [];
-  }
-}
-
-export async function createProductReview(args: {
-  productId: number;
-  rating: number;
-  review: string;
-  reviewer?: string;
-  reviewerEmail?: string;
-}) {
-  const user = getStoredWPUser();
-  const body = {
-    product_id: args.productId,
-    review: args.review || '',
-    reviewer: args.reviewer || (user as any)?.display_name || user?.user_login || 'Customer',
-    reviewer_email: args.reviewerEmail || (user as any)?.user_email || 'noreply@careconnected.local',
-    rating: Math.max(1, Math.min(5, Math.round(args.rating))),
-    status: 'approved',
-  };
-  return wcFetch('products/reviews', {
-    method: 'POST',
-    body: JSON.stringify(body),
-  });
-}
-
 
 function toTimeMinutes(value: string) {
   const [hours, minutes] = value.split(':').map(Number);
@@ -646,57 +572,6 @@ export async function lookupUserNames(
 }
 
 
-
-
-// ─── Vendor payout-account settings ────────────────────────
-// Stored on the Dokan store record (PayPal native; Stripe/Alipay as custom keys).
-export async function getVendorPayoutSettings(storeId: number) {
-  try {
-    const store = await dokanFetch(`stores/${storeId}`);
-    const payment = (store as any)?.payment || {};
-    return {
-      paypalEmail: payment?.paypal?.email || '',
-      stripeAccountId: payment?.custom?.stripe_account_id || '',
-      alipayId: payment?.custom?.alipay_id || '',
-      bank: payment?.bank || null,
-    };
-  } catch {
-    return { paypalEmail: '', stripeAccountId: '', alipayId: '', bank: null };
-  }
-}
-
-export async function saveVendorPayoutSettings(
-  storeId: number,
-  data: { paypalEmail?: string; stripeAccountId?: string; alipayId?: string }
-) {
-  const payment: any = {};
-  if (data.paypalEmail !== undefined) payment.paypal = { email: data.paypalEmail };
-  if (data.stripeAccountId !== undefined || data.alipayId !== undefined) {
-    payment.custom = {
-      ...(data.stripeAccountId !== undefined ? { stripe_account_id: data.stripeAccountId } : {}),
-      ...(data.alipayId !== undefined ? { alipay_id: data.alipayId } : {}),
-    };
-  }
-  return dokanFetch(`stores/${storeId}`, {
-    method: 'PUT',
-    body: JSON.stringify({ payment }),
-  });
-}
-
-// Returns the Dokan store id for the currently logged-in vendor.
-export async function getMyDokanStoreId(): Promise<number | null> {
-  try {
-    // This Dokan version doesn't ship the v3 `stores/current` endpoint, so
-    // skip it (it would return 404 and surface as an edge-function error) and
-    // go straight to the `stores?author=` lookup which works on Dokan v2+.
-    const wpUser = getStoredWPUser();
-    if (!wpUser?.user_id) return null;
-    const stores = await dokanFetch(`stores?author=${wpUser.user_id}`) as any[];
-    return Array.isArray(stores) && stores[0]?.id ? stores[0].id : null;
-  } catch {
-    return null;
-  }
-}
 
 
 /**
