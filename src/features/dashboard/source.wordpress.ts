@@ -1,7 +1,8 @@
-import { listWordPressFeature } from "@/features/shared/wordpress-adapter";
 import { T } from "@/integrations/wp-schema";
 import { appScopeParams, filterAppScope } from "@/features/shared/app-scope";
 import { wordpressCCTFetch } from "@/features/shared/wordpress-client";
+import { getMyCustomerOrders } from "@/services/woocommerce-api";
+
 
 export interface DashboardStats {
   upcomingBookings: number;
@@ -17,11 +18,15 @@ export async function fetchDashboardStatsWordPress(): Promise<DashboardStats> {
   let unreadMessages = 0;
 
   try {
-    const orders = await listWordPressFeature<any[]>("bookings", {
-      params: { per_page: 100, status: "processing,on-hold,pending" },
-    });
-    upcomingBookings = Array.isArray(orders) ? orders.length : 0;
+    // WooCommerce's /orders collection rejects a customer's bearer token (403),
+    // so read the caller's own orders through the scoped server-side helper.
+    const orders = await getMyCustomerOrders(100);
+    const OPEN = ["processing", "on-hold", "pending"];
+    upcomingBookings = Array.isArray(orders)
+      ? orders.filter((o: any) => OPEN.includes(String(o?.status))).length
+      : 0;
   } catch { /* */ }
+
 
   try {
     const groups = await wordpressCCTFetch(T.careGroup.slug, { params: { _limit: 100 } });
