@@ -53,6 +53,9 @@ export default function ProviderDashboard() {
   const [addOverrideOpen, setAddOverrideOpen] = useState(false);
   const [newOverride, setNewOverride] = useState({ date: "", start: "09:00", end: "17:00", available: true });
   const [savingOverrides, setSavingOverrides] = useState(false);
+  const [threadOpen, setThreadOpen] = useState(false);
+  const [threadBooking, setThreadBooking] = useState<any>(null);
+
 
   useEffect(() => {
     if (availability && availability.length > 0 && !scheduleLoaded) {
