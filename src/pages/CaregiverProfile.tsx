@@ -471,7 +471,7 @@ export default function CaregiverProfile() {
               {(reviews || []).length > 0 ? (reviews || []).map((review: any) => (
                 <div key={review.id} className="border-b last:border-0 pb-4 last:pb-0">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="font-medium text-sm text-foreground">{review.reviewer?.full_name || "Anonymous"}</span>
+                    <span className="font-medium text-sm text-foreground">{review.reviewer?.full_name || review.author_name || (isZh ? "匿名" : "Anonymous")}</span>
                     <span className="text-xs text-muted-foreground">{formatDate(review.created_at, i18n.language, { month: "short", day: "numeric", year: "numeric" })}</span>
                   </div>
                   <div className="flex gap-0.5 mb-2">
