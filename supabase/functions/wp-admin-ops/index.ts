@@ -32,7 +32,12 @@ type Action =
   | "set_order_status"
   | "get_my_payout"
   | "save_my_payout"
-  | "request_withdrawal";
+  | "request_withdrawal"
+  | "list_order_notes"
+  | "add_order_note"
+  | "request_refund"
+  | "resolve_refund";
+
 
 
 
