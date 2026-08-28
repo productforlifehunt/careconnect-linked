@@ -54,8 +54,7 @@ export default function Bookings() {
   const [refundReason, setRefundReason] = useState("");
   const [issueOpen, setIssueOpen] = useState(false);
   const [issueBooking, setIssueBooking] = useState<any>(null);
-  const [issueText, setIssueText] = useState("");
-  const [issueSubmitting, setIssueSubmitting] = useState(false);
+
 
   const statusColors: Record<string, string> = {
     confirmed: "bg-success text-success-foreground", pending: "bg-warning text-warning-foreground", completed: "bg-muted text-muted-foreground",
