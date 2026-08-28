@@ -227,7 +227,12 @@ function mapWcOrderToBooking(o: any, nativeBookingMap?: Map<number, any>): WPBoo
     provider: { full_name: providerName },
     client: { full_name: billingName, email: o.billing?.email || '' },
     payment_status: o.date_paid ? 'paid' : 'pending',
+    // Refund state lives on the order meta so both sides see the same answer.
+    refund_status: getOrderMeta(o, '_refund_status'),
+    refund_reason: getOrderMeta(o, '_refund_reason'),
+    refund_amount: getOrderMeta(o, '_refund_amount'),
     created_at: o.date_created,
+
   };
 }
 
