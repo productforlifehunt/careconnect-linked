@@ -10,7 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Textarea } from "@/components/ui/textarea";
 import {
   Loader2, Plus, Pill, ClipboardCheck, HeartPulse, Lightbulb, Target, FileText,
-  Phone, MapPin, FolderOpen, Trash2, Check, X, ArrowLeft, Clock, SkipForward,
+  Phone, MapPin, FolderOpen, Activity, Trash2, Check, X, ArrowLeft, Clock, SkipForward,
   Search, UserPlus, IdCard,
 } from "lucide-react";
 import {
@@ -37,6 +37,7 @@ import { NotesCard } from "@/components/cared-ones/NotesCard";
 import { EmergencyCard } from "@/components/cared-ones/EmergencyCard";
 import { DocumentsCard } from "@/components/cared-ones/DocumentsCard";
 import { InformationCardCard } from "@/components/cared-ones/InformationCardCard";
+import { VisitLogCard } from "@/components/cared-ones/VisitLogCard";
 
 function FeatureDetail({ cardKey, caredOneId, caredOneName }: { cardKey: string; caredOneId: string; caredOneName: string }) {
   switch (cardKey) {
@@ -48,6 +49,7 @@ function FeatureDetail({ cardKey, caredOneId, caredOneName }: { cardKey: string;
     case "emergency": return <EmergencyCard caredOneId={caredOneId} />;
     case "location": return <LocationCard caredOneId={caredOneId} caredOneName={caredOneName} />;
     case "documents": return <DocumentsCard caredOneId={caredOneId} />;
+    case "visits": return <VisitLogCard caredOneId={caredOneId} />;
     case "info-card": return <InformationCardCard caredOneId={caredOneId} />;
     default: return null;
   }
@@ -83,6 +85,7 @@ export default function CaredOnes() {
     { key: "emergency", title: t("caredOnes.emergencyContacts"), icon: Phone, subtitle: t("caredOnes.emergencyList") },
     { key: "location", title: t("caredOnes.locationSafeZones"), icon: MapPin, subtitle: t("caredOnes.gpsSafeZones") },
     { key: "documents", title: t("caredOnes.documents"), icon: FolderOpen, subtitle: t("caredOnes.medicalDocs") },
+    { key: "visits", title: t("caredOnes.visitLog"), icon: Activity, subtitle: t("caredOnes.visitHistory") },
     { key: "info-card", title: t("caredOnes.informationCards"), icon: IdCard, subtitle: t("caredOnes.informationCardsSubtitle") },
   ];
 

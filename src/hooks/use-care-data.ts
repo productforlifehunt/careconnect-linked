@@ -77,6 +77,7 @@ import {
   fetchCarePlansWordPress, createCarePlanWordPress, updateCarePlanWordPress, deleteCarePlanWordPress,
   fetchCarePlanGoalsWordPress, createCarePlanGoalWordPress, updateCarePlanGoalWordPress,
   fetchCareNotesWordPress, createCareNoteWordPress, updateCareNoteWordPress, deleteCareNoteWordPress,
+  fetchVisitLogWordPress, createVisitLogWordPress, deleteVisitLogWordPress,
   fetchEmergencyContactsWordPress, createEmergencyContactWordPress, updateEmergencyContactWordPress, deleteEmergencyContactWordPress,
   fetchCaredOneDocumentsWordPress, createCaredOneDocumentWordPress, updateCaredOneDocumentWordPress, deleteCaredOneDocumentWordPress,
   updateDementiaStageWordPress,
@@ -1791,5 +1792,30 @@ export function useInformationCardByToken(token: string | null) {
     queryKey: ["informationCardByToken", token],
     queryFn: () => fetchInformationCardByShareTokenWordPress(token!),
     enabled: !!token,
+  });
+}
+
+// ─── Visit Log (completed care tasks of type "Visits", CCT 204) ───
+export function useVisitLog(caredOneId: string | null) {
+  return useQuery({
+    queryKey: ["visitLog", caredOneId],
+    queryFn: () => fetchVisitLogWordPress(caredOneId!),
+    enabled: !!caredOneId,
+  });
+}
+
+export function useCreateVisitLog() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (visit: { user_id: string; title?: string; description?: string; location?: string; duration_minutes?: number }) => createVisitLogWordPress(visit),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["visitLog"] }); qc.invalidateQueries({ queryKey: ["careTasks"] }); },
+  });
+}
+
+export function useDeleteVisitLog() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteVisitLogWordPress(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["visitLog"] }); qc.invalidateQueries({ queryKey: ["careTasks"] }); },
   });
 }
