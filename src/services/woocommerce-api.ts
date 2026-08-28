@@ -299,6 +299,11 @@ function normalizeStoreCart(cart: any) {
     price: parseFloat(it.prices?.price || '0') / Math.pow(10, it.prices?.currency_minor_unit ?? 2),
     quantity: it.quantity,
     image: it.images?.[0]?.thumbnail,
+    // The just-in-time product bakes the agreed rate, hours and schedule into
+    // its description; the cart line shows it so identical services booked at
+    // different times stay distinguishable.
+    description: it.description,
+    item_data: it.item_data,
   }));
   return { items, totals: cart.totals, raw: cart };
 }
