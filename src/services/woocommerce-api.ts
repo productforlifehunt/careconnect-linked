@@ -436,31 +436,45 @@ export async function checkout(billingData?: {
   };
 }
 
-// ─── Refund helpers ────────────────────────────────────────
+// ─── Refunds & order conversation (dispute thread) ─────────
+// Buyers and caregivers have no wc/v3 capability, so every one of these runs in
+// the edge function with the store keys after it proves the caller owns the
+// order. A client can only *ask*; the caregiver approves or declines. Nobody
+// ever has to open the WordPress admin.
 
-export async function createOrderRefund(
+export type OrderNote = { id: number; note: string; date_created: string };
+
+/** Client asks for a refund. Records the request + posts it to the thread. */
+export async function requestOrderRefund(
   orderId: number,
-  options?: { amount?: string; reason?: string }
+  options: { amount?: string | number; reason: string },
 ) {
-  // api_refund:true → WC asks the payment gateway (Stripe, PayPal) to
-  // actually return money to the customer's card. If no gateway supports
-  // refunds for that order, WC still records the refund as bookkeeping.
-  const body: any = { api_refund: true };
-  if (options?.amount) body.amount = options.amount;
-  if (options?.reason) body.reason = options.reason;
-  return wcFetch(`orders/${orderId}/refunds`, {
-    method: 'POST',
-    body: JSON.stringify(body),
+  return adminOp('request_refund', {
+    order_id: orderId,
+    reason: options.reason,
+    ...(options.amount ? { amount: Number(options.amount) } : {}),
   });
 }
 
-// Post a customer-facing note on an order (used for dispute / issue reports).
-export async function addOrderCustomerNote(orderId: number, note: string) {
-  return wcFetch(`orders/${orderId}/notes`, {
-    method: 'POST',
-    body: JSON.stringify({ note, customer_note: true }),
-  });
+/** Caregiver settles an open refund request. */
+export async function resolveOrderRefund(
+  orderId: number,
+  decision: 'approve' | 'decline',
+  note?: string,
+) {
+  return adminOp('resolve_refund', { order_id: orderId, decision, note: note ?? '' });
 }
+
+/** Shared message thread on a booking — used for disputes and issue reports. */
+export async function getOrderNotes(orderId: number): Promise<OrderNote[]> {
+  const notes = await adminOp<OrderNote[]>('list_order_notes', { order_id: orderId });
+  return Array.isArray(notes) ? notes : [];
+}
+
+export async function addOrderCustomerNote(orderId: number, note: string) {
+  return adminOp('add_order_note', { order_id: orderId, note });
+}
+
 
 
 function toTimeMinutes(value: string) {
