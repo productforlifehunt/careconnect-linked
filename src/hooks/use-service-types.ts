@@ -1,110 +1,57 @@
 /**
- * Unified Service Type hook — single source of truth from WooCommerce Product Attribute "Service Type"
- * Taxonomy: pa_service-type
- * All service type dropdowns, filters, badges, and selectors MUST use this hook.
+ * Unified Service Type hook — single source of truth is the data dictionary
+ * (CCT 258 a68 "Care provider offers care service type").
+ *
+ * Browsing / filtering / badges MUST NOT touch WooCommerce: per the dictionary,
+ * WooCommerce only enters the picture at "add to cart". This hook therefore
+ * serves the fixed Bible catalogue synchronously — no network call, no
+ * pa_service-type taxonomy, no duplicate-term cleanup needed.
  */
 
-import { useQuery } from '@tanstack/react-query';
-import { buildWPUrl, buildWPHeaders } from '@/lib/wp-url';
-import { getWPToken } from '@/services/wp-auth';
+import { useMemo } from 'react';
+import i18next from 'i18next';
+import { CARE_SERVICE_TYPES } from '@/lib/care-service-types';
 
 export interface ServiceTypeTerm {
-  id: number;
+  /** Dictionary option id (b55…b68). */
+  id: string;
   name: string;
   slug: string;
-  description: string;
-  count: number;
-}
-
-interface WCAttribute {
-  id: number;
-  name: string;
-  slug: string;
-}
-
-async function fetchWithAuth(endpoint: string) {
-  const token = getWPToken();
-  // Guests must go through the backend proxy, which injects the read-only
-  // WooCommerce catalog keys. The local dev proxy has no credentials.
-  const forceEdge = !token;
-  const url = buildWPUrl(`wc/v3/${endpoint}`, undefined, { forceEdge });
-  const res = await fetch(url, { headers: buildWPHeaders(token, 'application/json', { forceEdge }) });
-  if (!res.ok) throw new Error(`WC API ${res.status}`);
-  return res.json();
-}
-
-/** Discover the WooCommerce attribute ID for "service-type" by listing all attributes */
-async function getServiceTypeAttributeId(): Promise<number> {
-  const attrs: WCAttribute[] = await fetchWithAuth('products/attributes');
-  const match = attrs.find(a => a.slug === 'service-type' || a.slug === 'pa_service-type');
-  if (!match) throw new Error('Service Type attribute not found in WooCommerce');
-  return match.id;
-}
-
-/** Fetch all service type terms from WooCommerce */
-async function fetchServiceTypeTerms(): Promise<ServiceTypeTerm[]> {
-  const attrId = await getServiceTypeAttributeId();
-  const terms: ServiceTypeTerm[] = await fetchWithAuth(`products/attributes/${attrId}/terms?per_page=100`);
-  return dedupeServiceTypeTerms(terms).sort((a, b) => a.name.localeCompare(b.name));
+  /** Delivery mode implied by the option, when the dictionary label states it. */
+  delivery?: 'in-person' | 'remote';
 }
 
 /**
- * The WP backend sometimes contains duplicate `pa_service-type` terms — e.g.
- * "Child Care" and "child-care" registered as separate terms. The dropdown
- * was rendering both, which is confusing for caregivers. Collapse duplicates
- * by normalized key (lowercase slug-form), preferring the human-readable
- * name (one whose `name` is not just the slug spelled out).
- */
-function dedupeServiceTypeTerms(terms: ServiceTypeTerm[]): ServiceTypeTerm[] {
-  const norm = (s: string) =>
-    (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  const looksLikeSlug = (t: ServiceTypeTerm) => {
-    const n = (t.name || '').trim();
-    return n === t.slug || n === t.slug.replace(/-/g, ' ') || /^[a-z0-9-]+$/.test(n);
-  };
-  const byKey = new Map<string, ServiceTypeTerm>();
-  for (const t of terms) {
-    const key = norm(t.slug) || norm(t.name);
-    const existing = byKey.get(key);
-    if (!existing) {
-      byKey.set(key, t);
-      continue;
-    }
-    // Prefer the term whose name is NOT just the raw slug.
-    if (looksLikeSlug(existing) && !looksLikeSlug(t)) byKey.set(key, t);
-  }
-  return Array.from(byKey.values());
-}
-
-/**
- * Hook: returns all service type terms from WooCommerce Product Attribute.
+ * Hook: returns all care service types from the dictionary.
  * Use `serviceTypes` for dropdowns, `serviceTypeMap` for slug→name lookups.
  */
 export function useServiceTypes() {
-  const query = useQuery({
-    queryKey: ['wc-service-types'],
-    queryFn: fetchServiceTypeTerms,
-    staleTime: 1000 * 60 * 30, // cache 30 min — these rarely change
-    gcTime: 1000 * 60 * 60,
-  });
+  const zh = i18next.language?.startsWith('zh');
 
-  const serviceTypeMap = new Map<string, string>();
-  const serviceTypeBySlug = new Map<string, ServiceTypeTerm>();
-  (query.data || []).forEach(t => {
-    serviceTypeMap.set(t.slug, t.name);
-    serviceTypeMap.set(t.name, t.name); // also map name→name for direct lookups
-    serviceTypeBySlug.set(t.slug, t);
-  });
+  return useMemo(() => {
+    const serviceTypes: ServiceTypeTerm[] = CARE_SERVICE_TYPES.map((s) => ({
+      id: s.id,
+      name: zh ? s.zh : s.en,
+      slug: s.slug,
+      delivery: s.delivery,
+    }));
 
-  return {
-    serviceTypes: query.data || [],
-    serviceTypeNames: (query.data || []).map(t => t.name),
-    serviceTypeMap,
-    serviceTypeBySlug,
-    isLoading: query.isLoading,
-    error: query.error,
-  };
+    const serviceTypeMap = new Map<string, string>();
+    const serviceTypeBySlug = new Map<string, ServiceTypeTerm>();
+    serviceTypes.forEach((t) => {
+      serviceTypeMap.set(t.slug, t.name);
+      serviceTypeMap.set(t.name, t.name);
+      serviceTypeMap.set(t.id, t.name);
+      serviceTypeBySlug.set(t.slug, t);
+    });
+
+    return {
+      serviceTypes,
+      serviceTypeNames: serviceTypes.map((t) => t.name),
+      serviceTypeMap,
+      serviceTypeBySlug,
+      isLoading: false,
+      error: null as unknown,
+    };
+  }, [zh]);
 }
-
-/** Export the raw fetcher for use outside React (e.g., in woocommerce-api.ts) */
-export { fetchServiceTypeTerms, getServiceTypeAttributeId };

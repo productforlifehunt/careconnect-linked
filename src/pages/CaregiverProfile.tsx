@@ -12,8 +12,9 @@ import { Star, MapPin, Shield, Clock, CheckCircle, Calendar, MessageSquare, Hear
 import { CommentsSection } from "@/components/comments/CommentsSection";
 import { useProvider, useProviderReviews, useCreateReview, useToggleSavedProvider, useSavedProviders, useStartConversation, useProviderAvailability, useProviderAvailabilitySetting } from "@/hooks/use-care-data";
 import { useAddToCart } from "@/hooks/use-cart";
-import { getAvailabilityConflictMessage, getProviderBookingConflictMessage, getProviderProduct, fetchProviderBookingOptions, type BookingResourceOption } from "@/services/woocommerce-api";
-import { useQuery } from "@tanstack/react-query";
+import { getAvailabilityConflictMessage, getProviderBookingConflictMessage } from "@/services/woocommerce-api";
+import { createCareBookingProduct } from "@/services/care-booking-product";
+import { CARE_SERVICE_TYPES } from "@/lib/care-service-types";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
@@ -44,6 +45,15 @@ function getDurationHours(start: string, end: string) {
   if (!start || !end) return 0;
   const diffMinutes = timeToMinutes(end) - timeToMinutes(start);
   return diffMinutes > 0 ? diffMinutes / 60 : 0;
+}
+
+interface CareBookingOption {
+  key: string;
+  serviceSlug: string;
+  label: string;
+  delivery: "in-person" | "remote";
+  rate: number;
+  unit: "hour" | "visit";
 }
 
 export default function CaregiverProfile() {
@@ -77,31 +87,64 @@ export default function CaregiverProfile() {
   const { data: availabilitySetting } = useProviderAvailabilitySetting(id || null);
   const isFavorited = savedProviders?.some((sp: any) => sp.provider_id === id) || false;
 
-  // Fetch the provider's WC product to derive their actual offered services + per-service rates
-  const { data: providerProduct } = useQuery({
-    queryKey: ["provider-product", id],
-    queryFn: () => getProviderProduct(id!),
-    enabled: !!id,
-    staleTime: 1000 * 60 * 5,
-  });
+  /**
+   * Bookable services come from the caregiver's dictionary record (CCT 258):
+   * a68 service types, a65 delivery modes, and the four published rates
+   * (a66 in-person/hr, a67 remote/hr, a69 remote check-in, a70 remote
+   * medication reminder). WooCommerce is not queried here — a product is
+   * created only when this client adds a service to the cart.
+   */
+  const bookingOptions = useMemo(() => {
+    if (!caregiver) return [] as CareBookingOption[];
+    const offered = new Set(caregiver.service_type_slugs || []);
+    const modes = new Set(caregiver.service_location_slugs || []);
+    const rateInPerson = Number(caregiver.care_provider_hourly_rate_in_person) || 0;
+    const rateRemote = Number(caregiver.care_provider_hourly_rate_remote) || 0;
+    const rateCheckin = Number(caregiver.care_provider_rate_remote_checkin) || 0;
+    const rateMedicine = Number(caregiver.care_provider_rate_remote_medicine) || 0;
 
-  // Fetch delivery resources (Local / Virtual) attached to this product so the
-  // booking dialog can show price-impacting choices and total live-updates.
-  const { data: bookingResources = [] } = useQuery({
-    queryKey: ["provider-booking-options", id],
-    queryFn: () => fetchProviderBookingOptions(id!),
-    enabled: !!id,
-    staleTime: 1000 * 60 * 5,
-  });
+    const options: CareBookingOption[] = [];
+    for (const service of CARE_SERVICE_TYPES) {
+      if (!offered.has(service.slug)) continue;
+      const label = isZh ? service.zh : service.en;
+
+      if (service.slug === "remote-checkin") {
+        if (rateCheckin > 0) options.push({ key: service.slug, serviceSlug: service.slug, label, delivery: "remote", rate: rateCheckin, unit: "visit" });
+        continue;
+      }
+      if (service.slug === "remote-medicine-supervision") {
+        if (rateMedicine > 0) options.push({ key: service.slug, serviceSlug: service.slug, label, delivery: "remote", rate: rateMedicine, unit: "visit" });
+        continue;
+      }
+
+      const deliveries: ("in-person" | "remote")[] = service.delivery
+        ? [service.delivery]
+        : (["in-person", "remote"] as const).filter((m) => modes.has(m));
+
+      for (const delivery of deliveries) {
+        const rate = delivery === "remote" ? rateRemote : rateInPerson;
+        if (rate <= 0) continue;
+        options.push({
+          key: `${service.slug}:${delivery}`,
+          serviceSlug: service.slug,
+          label: service.delivery ? label : `${label} · ${delivery === "remote" ? (isZh ? "远程" : "Remote") : (isZh ? "上门" : "In-person")}`,
+          delivery,
+          rate,
+          unit: "hour",
+        });
+      }
+    }
+    return options;
+  }, [caregiver, isZh]);
 
   // Auto-select first delivery option when dialog opens
   useEffect(() => {
-    if (bookingDialogOpen && !deliveryResourceId && bookingResources.length > 0) {
-      setDeliveryResourceId(String(bookingResources[0].id));
+    if (bookingDialogOpen && !deliveryResourceId && bookingOptions.length > 0) {
+      setDeliveryResourceId(bookingOptions[0].key);
     }
-  }, [bookingDialogOpen, deliveryResourceId, bookingResources]);
+  }, [bookingDialogOpen, deliveryResourceId, bookingOptions]);
 
-  const selectedResource = bookingResources.find((r: BookingResourceOption) => String(r.id) === deliveryResourceId);
+  const selectedResource = bookingOptions.find((o) => o.key === deliveryResourceId);
   const availabilityPreview = useMemo(() => {
     const weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const weeklySlots = (availability || [])
@@ -112,11 +155,9 @@ export default function CaregiverProfile() {
       label: `${weekdayLabels[slot.day_of_week]} ${slot.start_time}–${slot.end_time}`,
     }));
   }, [availability]);
-  // In the flat-resource model, the resource IS the service package and its
-  // blockCost IS the full per-hour rate (no separate base + surcharge).
-  const effectiveRate = Number(selectedResource?.blockCost || 0);
-  // Derive the service-type label from the chosen resource for display + order meta.
-  const bookingTypeLabel = selectedResource?.name || "";
+  // The chosen dictionary option carries its own published rate.
+  const effectiveRate = Number(selectedResource?.rate || 0);
+  const bookingTypeLabel = selectedResource?.label || "";
 
   const availableTimeRanges = useMemo(() => {
     if (!bookingDate) return [];
@@ -222,7 +263,7 @@ export default function CaregiverProfile() {
 
   const handleBooking = async () => {
     if (!bookingDate || !bookingTime || !bookingEndTime || !selectedResource) {
-      toast({ title: isZh ? "请选择服务套餐、日期、开始时间和结束时间" : "Please pick a service package, date, start time, and end time", variant: "destructive" });
+      toast({ title: isZh ? "请选择服务、日期、开始时间和结束时间" : "Please pick a service, date, start time, and end time", variant: "destructive" });
       return;
     }
     const selectedDate = new Date(bookingDate + "T" + bookingTime);
@@ -262,11 +303,24 @@ export default function CaregiverProfile() {
     }
     try {
       const recurringNote = recurringPattern !== "none" ? `[Recurring: ${recurringPattern}] ` : "";
-      const packageNote = `[Package: ${selectedResource.name}] `;
+      const packageNote = `[Service: ${selectedResource.label}] `;
+      // Just-in-time: create the WooCommerce product for this exact service and
+      // agreed price only now, at the moment of adding it to the cart.
+      const product = await createCareBookingProduct({
+        vendorUserId: caregiver.id,
+        vendorName: caregiver.full_name,
+        serviceLabel: selectedResource.label,
+        delivery: selectedResource.delivery,
+        rate: selectedResource.rate,
+        hours: selectedResource.unit === "hour" ? durationHours : 1,
+        unit: selectedResource.unit,
+        startDate: bookingDate,
+        startTime: bookingTime,
+        notes: recurringNote + packageNote + (bookingNotes || ""),
+      });
       await addToCart.mutateAsync({
-        productId: selectedResource.productId || providerProduct?.id,
+        productId: product.id,
         booking: {
-          resourceId: selectedResource?.id,
           startDate: bookingDate,
           startTime: bookingTime,
           durationHours,
@@ -274,7 +328,7 @@ export default function CaregiverProfile() {
           notes: recurringNote + packageNote + (bookingNotes || "") || undefined,
         },
       });
-      toast({ title: isZh ? "已加入购物车" : "Added to cart", description: isZh ? `已加入 ${caregiver.full_name} 的 ${selectedResource?.name} 预约。` : `${caregiver.full_name}'s ${selectedResource?.name} booking added.` });
+      toast({ title: isZh ? "已加入购物车" : "Added to cart", description: isZh ? `已加入 ${caregiver.full_name} 的 ${selectedResource?.label} 预约。` : `${caregiver.full_name}'s ${selectedResource?.label} booking added.` });
       setBookingDialogOpen(false);
       navigate('/cart');
     } catch (err: any) {
@@ -288,7 +342,7 @@ export default function CaregiverProfile() {
   };
 
   const durationHrs = getDurationHours(bookingTime, bookingEndTime);
-  const total = effectiveRate * durationHrs;
+  const total = selectedResource?.unit === "visit" ? effectiveRate : effectiveRate * durationHrs;
   const hasAvailabilityConflict = Boolean(availabilityWarning);
 
   return (
@@ -443,19 +497,23 @@ export default function CaregiverProfile() {
           <Card className="border-transparent card-elevated sticky top-24">
             <CardContent className="p-6">
               <div className="text-center mb-6">
-                <span className="text-3xl font-bold text-foreground">{isZh ? "¥" : "$"}{bookingResources[0]?.blockCost || caregiver.care_provider_starts_hourly_rate || 0}</span>
+                <span className="text-3xl font-bold text-foreground">{isZh ? "¥" : "$"}{bookingOptions[0]?.rate || caregiver.care_provider_starts_hourly_rate || 0}</span>
                 <span className="text-muted-foreground">{isZh ? "/小时" : "/hour"}</span>
               </div>
 
-              {bookingResources.length > 0 && (
+              {bookingOptions.length > 0 && (
                 <div className="mb-5 space-y-2">
-                  <p className="text-sm font-medium text-foreground">{isZh ? "服务套餐" : "Service packages"}</p>
+                  <p className="text-sm font-medium text-foreground">{isZh ? "提供的服务" : "Services offered"}</p>
                   <div className="space-y-2">
-                    {bookingResources.map((resource: BookingResourceOption) => (
-                      <div key={resource.id} className="rounded-lg border border-border bg-muted/30 px-3 py-2">
+                    {bookingOptions.map((option) => (
+                      <div key={option.key} className="rounded-lg border border-border bg-muted/30 px-3 py-2">
                         <div className="flex items-start justify-between gap-3">
-                          <span className="text-sm text-foreground">{resource.name}</span>
-                          <span className="text-sm font-semibold text-foreground">{isZh ? `¥${resource.blockCost}/小时` : `$${resource.blockCost}/hr`}</span>
+                          <span className="text-sm text-foreground">{option.label}</span>
+                          <span className="text-sm font-semibold text-foreground">
+                            {isZh
+                              ? `¥${option.rate}${option.unit === "hour" ? "/小时" : "/次"}`
+                              : `$${option.rate}${option.unit === "hour" ? "/hr" : " each"}`}
+                          </span>
                         </div>
                       </div>
                     ))}
@@ -486,18 +544,20 @@ export default function CaregiverProfile() {
                   </DialogHeader>
                   <div className="space-y-4 mt-4">
                     <div>
-                      <Label>{isZh ? "服务套餐 *" : "Service Package *"}</Label>
-                      {bookingResources.length === 0 ? (
+                      <Label>{isZh ? "服务 *" : "Service *"}</Label>
+                      {bookingOptions.length === 0 ? (
                         <div className="text-sm text-muted-foreground bg-muted/50 rounded-md p-3 border border-dashed">
-                          {isZh ? "该护理者尚未发布服务套餐。请发消息协商定价。" : "This caregiver hasn't published any service packages yet. Send them a message to negotiate a custom price."}
+                          {isZh ? "该护理者还没有公开服务与价格。请发消息与他们商定价格。" : "This caregiver hasn't published services and rates yet. Send them a message to agree a price."}
                         </div>
                       ) : (
                         <Select value={deliveryResourceId} onValueChange={setDeliveryResourceId}>
-                          <SelectTrigger><SelectValue placeholder={isZh ? "选择套餐" : "Select a package"} /></SelectTrigger>
+                          <SelectTrigger><SelectValue placeholder={isZh ? "选择服务" : "Select a service"} /></SelectTrigger>
                           <SelectContent>
-                            {bookingResources.map((r: BookingResourceOption) => (
-                              <SelectItem key={r.id} value={String(r.id)}>
-                                {r.name} — {isZh ? `¥${r.blockCost}/小时` : `$${r.blockCost}/hr`}
+                            {bookingOptions.map((o) => (
+                              <SelectItem key={o.key} value={o.key}>
+                                {o.label} — {isZh
+                                  ? `¥${o.rate}${o.unit === "hour" ? "/小时" : "/次"}`
+                                  : `$${o.rate}${o.unit === "hour" ? "/hr" : " each"}`}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -505,7 +565,12 @@ export default function CaregiverProfile() {
                       )}
                       {selectedResource && (
                         <p className="text-xs text-muted-foreground mt-1.5">
-                          {isZh ? "费率：" : "Rate: "}<span className="font-semibold text-foreground">{isZh ? `¥${effectiveRate}/小时` : `$${effectiveRate}/hr`}</span>
+                          {isZh ? "价格：" : "Rate: "}
+                          <span className="font-semibold text-foreground">
+                            {isZh
+                              ? `¥${effectiveRate}${selectedResource.unit === "hour" ? "/小时" : "/次"}`
+                              : `$${effectiveRate}${selectedResource.unit === "hour" ? "/hr" : " each"}`}
+                          </span>
                         </p>
                       )}
                     </div>

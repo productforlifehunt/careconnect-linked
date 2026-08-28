@@ -212,7 +212,7 @@ export default function ProviderDashboard() {
           <TabsTrigger value="schedule" className="text-xs sm:text-sm">{isZh ? "排班" : "Schedule"}</TabsTrigger>
           <TabsTrigger value="availability" className="text-xs sm:text-sm">{isZh ? "可约时间" : "Availability"}</TabsTrigger>
           <TabsTrigger value="earnings" className="text-xs sm:text-sm">{isZh ? "收入" : "Earnings"}</TabsTrigger>
-          <TabsTrigger value="services" className="text-xs sm:text-sm">{isZh ? "我的服务" : "My Booking Services"}</TabsTrigger>
+          <TabsTrigger value="services" className="text-xs sm:text-sm">{isZh ? "我的服务" : "My Services & Rates"}</TabsTrigger>
           <TabsTrigger value="settings" className="text-xs sm:text-sm"><Settings className="h-3.5 w-3.5 mr-1" />{isZh ? "我的" : "Profile"}</TabsTrigger>
         </TabsList>
 
