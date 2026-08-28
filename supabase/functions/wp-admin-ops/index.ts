@@ -126,8 +126,59 @@ async function enrichOrdersWithServiceMeta(wpBase: string, orders: any[]): Promi
   }
   return out;
 }
+function storeAuth(): string {
+  return `Basic ${btoa(`${WC_CONSUMER_KEY}:${WC_CONSUMER_SECRET}`)}`;
+}
+
+function metaValue(order: any, key: string): string {
+  const hit = (Array.isArray(order?.meta_data) ? order.meta_data : []).find((m: any) => m?.key === key);
+  return hit?.value !== undefined && hit?.value !== null ? String(hit.value) : "";
+}
+
+async function postOrderNote(wpBase: string, orderId: number, note: string) {
+  const res = await fetch(`${wpBase}/wp-json/wc/v3/orders/${orderId}/notes`, {
+    method: "POST",
+    headers: { Authorization: storeAuth(), "Content-Type": "application/json" },
+    body: JSON.stringify({ note, customer_note: true }),
+  });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) console.error(`postOrderNote failed [${res.status}]`, JSON.stringify(data));
+  return { ok: res.ok, data, details: data };
+}
+
+/**
+ * Load an order and prove the caller is either its buyer or the caregiver whose
+ * service was sold. Everything refund/dispute related goes through this so a
+ * signed-in stranger can never touch someone else's booking.
+ */
+async function loadOrderForCaller(
+  wpBase: string,
+  orderId: number,
+  userId: number,
+): Promise<{ order: any; isCustomer: boolean; isVendor: boolean } | { error: string; status: number }> {
+  if (!WC_CONSUMER_KEY || !WC_CONSUMER_SECRET) {
+    return { error: "Server is missing WooCommerce store keys", status: 500 };
+  }
+  if (!Number.isFinite(orderId) || orderId <= 0) {
+    return { error: "order_id must be a positive number", status: 400 };
+  }
+  const res = await fetch(`${wpBase}/wp-json/wc/v3/orders/${orderId}`, {
+    headers: { Authorization: storeAuth() },
+  });
+  const order = await res.json().catch(() => null);
+  if (!res.ok || !order?.id) return { error: "Order not found", status: 404 };
+  const isCustomer = Number(order?.customer_id) === userId;
+  const [enriched] = await enrichOrdersWithServiceMeta(wpBase, [order]);
+  const isVendor = (Array.isArray(enriched?.meta_data) ? enriched.meta_data : []).some(
+    (m: any) =>
+      (m?.key === "_dokan_vendor_id" || m?.key === "_provider_id") && Number(m?.value) === userId,
+  );
+  if (!isCustomer && !isVendor) return { error: "This booking does not belong to you", status: 403 };
+  return { order: enriched ?? order, isCustomer, isVendor };
+}
 
 Deno.serve(async (req) => {
+
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   if (!WP_ADMIN_USER || !WP_ADMIN_APP_PASSWORD) {
