@@ -46,9 +46,14 @@ export async function createCareBookingProduct(
   const name = vendorName
     ? `${serviceLabel} — ${vendorName}`
     : serviceLabel;
-  const description = unit === "hour"
+  // The schedule belongs in the description too: the cart line, the order line
+  // and the caregiver's order list all read it, so a client with several
+  // bookings of the same service can still tell them apart.
+  const when = [input.startDate, input.startTime].filter(Boolean).join(" ");
+  const priceLine = unit === "hour"
     ? `${serviceLabel}: $${rate}/hr × ${quantity}h = $${amount}`
     : `${serviceLabel}: $${rate} × ${quantity} = $${amount}`;
+  const description = when ? `${priceLine} — ${when}` : priceLine;
 
   const meta: Array<{ key: string; value: string }> = [
     { key: "_dokan_vendor_id", value: numericVendorId },

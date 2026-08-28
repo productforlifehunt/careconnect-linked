@@ -103,7 +103,16 @@ export function useCheckout() {
       country?: string;
     }) => checkout(billingData),
 
-    onSuccess: () => {
+    onSuccess: async () => {
+      // WooCommerce keeps a persistent cart for logged-in customers, and it can
+      // resurrect lines from an abandoned session right after the order is
+      // placed. Wipe it so the client never sees paid-for or stale bookings
+      // sitting in the cart again.
+      try {
+        await clearCart();
+      } catch {
+        /* non-fatal: the order is already created */
+      }
       qc.invalidateQueries({ queryKey: ['wc-cart'] });
       qc.invalidateQueries({ queryKey: ['bookings'] });
       qc.invalidateQueries({ queryKey: ['providerBookings'] });

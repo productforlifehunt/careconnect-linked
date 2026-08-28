@@ -94,19 +94,25 @@ export default function Cart() {
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              {items.map((item: any) => (
-                <div key={item.key} className="flex items-center justify-between border-b last:border-0 pb-3 last:pb-0">
-                  <div>
+              {items.map((item: any) => {
+                const detail = decodeEntities(String(item.description || "").replace(/<[^>]*>/g, "").trim());
+                const vendor = (item.item_data || []).find((d: any) => d?.type === "vendor")?.value;
+                return (
+                <div key={item.key} className="flex items-start justify-between border-b last:border-0 pb-3 last:pb-0 gap-3">
+                  <div className="min-w-0">
                     <p className="font-semibold">{decodeEntities(item.name)}</p>
-                    <p className="text-sm text-muted-foreground">{cn ? "数量" : "Qty"}: {item.quantity} × {sym}{Number(item.price || 0).toFixed(2)}</p>
+                    {detail && <p className="text-xs text-muted-foreground mt-0.5">{detail}</p>}
+                    {vendor && <p className="text-xs text-muted-foreground">{cn ? "服务方" : "Provider"}: {decodeEntities(String(vendor))}</p>}
+                    <p className="text-sm text-muted-foreground mt-0.5">{cn ? "数量" : "Qty"}: {item.quantity} × {sym}{Number(item.price || 0).toFixed(2)}</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <Badge variant="secondary">{sym}{(Number(item.price || 0) * Number(item.quantity || 1)).toFixed(2)}</Badge>
-                    <Button variant="ghost" size="icon" onClick={() => removeItem.mutate(item.key)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    <Button variant="ghost" size="icon" aria-label={cn ? "移除" : "Remove item"} onClick={() => removeItem.mutate(item.key)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                   </div>
 
                 </div>
-              ))}
+                );
+              })}
             </CardContent>
           </Card>
 
