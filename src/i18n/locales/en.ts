@@ -1108,22 +1108,6 @@ const en = {
     aiSupport: "AI Support",
   },
 
-  // ═══ CAREGIVER WELLNESS ═══
-  wellness: {
-    yourWellness: "Your Wellness",
-    checkInBtn: "Check-in",
-    howAreYou: "How are you feeling?",
-    stressLevel: "Stress Level",
-    sleepLastNight: "Sleep Last Night",
-    anyThoughts: "Any thoughts or notes...",
-    logWellness: "Log Wellness",
-    wellnessLogged: "Wellness logged",
-    wellnessLoggedDesc: "Take care of yourself too! 💛",
-    howDoingToday: "How are you doing today? Check in to track your wellness.",
-    stress: "Stress",
-    moods: { great: "Great", good: "Good", okay: "Okay", stressed: "Stressed", overwhelmed: "Overwhelmed" },
-  },
-
   // ═══ DEMENTIA ASSISTANT ═══
   dementiaAssistant: {
     title: "Dementia Care Assistant",

@@ -469,13 +469,6 @@ const zhCN = {
     aiDisclaimer: "⚠️ AI分析——请务必与药剂师或医生确认。",
     aiBehaviorAnalysis: "AI行为分析", aiWellnessSupport: "AI健康支持", aiSupport: "AI支持",
   },
-  wellness: {
-    yourWellness: "您的健康", checkInBtn: "签到", howAreYou: "您感觉如何？",
-    stressLevel: "压力水平", sleepLastNight: "昨晚睡眠", anyThoughts: "任何想法或笔记...",
-    logWellness: "记录健康", wellnessLogged: "健康已记录", wellnessLoggedDesc: "也要照顾好自己！💛",
-    howDoingToday: "今天感觉如何？签到追踪您的健康状况。", stress: "压力",
-    moods: { great: "很好", good: "好", okay: "一般", stressed: "有压力", overwhelmed: "不堪重负" },
-  },
   dementiaAssistant: {
     title: "失智症照护助手",
     greeting: "你好！我是您的失智症照护助手。您可以问我关于失智症照护、阶段、行为、沟通技巧或照护资源的任何问题。今天我能帮您什么？",
