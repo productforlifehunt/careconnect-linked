@@ -25,6 +25,7 @@ type Action =
   | "get_bookings_product"
   | "create_service_product"
   | "list_my_orders"
+  | "get_user_names"
   | "list_my_vendor_orders"
   | "set_order_status"
   | "get_my_payout"
