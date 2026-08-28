@@ -293,7 +293,9 @@ export default function ProviderDashboard() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge className={statusColors[b.status]}>{b.status}</Badge>
+                    <Button size="sm" variant="ghost" onClick={() => { setThreadBooking(b); setThreadOpen(true); }}><MessageSquare className="h-3 w-3 mr-1" /> {isZh ? "沟通" : "Thread"}</Button>
                     <Button size="sm" variant="outline" onClick={() => handleBookingAction(b.id, "completed")}>{isZh ? "完成" : "Complete"}</Button>
+
                   </div>
                 </div>
               </CardContent>
