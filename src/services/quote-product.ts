@@ -15,6 +15,7 @@
 import { buildWPUrl, buildWPHeaders } from "@/lib/wp-url";
 import { getWPToken } from "@/services/wp-auth";
 import type { QuoteData } from "@/lib/quote-protocol";
+import { createServiceProduct } from "@/services/woocommerce-api";
 
 function authHeaders(): Record<string, string> {
   return buildWPHeaders(getWPToken(), "application/json");
@@ -84,28 +85,13 @@ export async function createQuoteProduct(
   if (quote.jobId != null) meta.push({ key: "_quote_job_id", value: String(quote.jobId) });
   if (buyerName) meta.push({ key: "_quote_buyer", value: buyerName });
 
-  const payload = {
-    amount: quote.amount,
-    vendor_user_id: Number(numericVendorId),
+  // Buyers have no wc/v3 product-create capability — the wp-admin-ops edge
+  // function creates the hidden product with the store keys.
+  return createServiceProduct({
     name,
     description,
+    amount: quote.amount,
+    vendorUserId: numericVendorId,
     meta,
-  };
-
-  // Use elevated careconnect/v1/quote-product endpoint (deployed via
-  // Code Snippets plugin) — buyers don't have wc/v3 product-create caps,
-  // so the server creates the hidden product on the vendor's behalf.
-  const url = buildWPUrl(`careconnect/v1/quote-product`);
-  const res = await fetch(url, {
-    method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify(payload),
   });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Quote product API ${res.status}: ${text}`);
-  }
-  const product = await res.json();
-
-  return { id: Number(product.id), price: Number(product.price || quote.amount) };
 }
