@@ -92,7 +92,6 @@ export default function Bookings() {
         rescheduleDate,
         rescheduleTime,
         Number(rescheduleBooking.duration_hour || 1),
-        { excludeOrderId: Number(rescheduleBooking.id) },
       );
       if (conflictMessage) {
         toast({ title: t("bookings.rescheduleFailed"), description: conflictMessage, variant: "destructive" });
