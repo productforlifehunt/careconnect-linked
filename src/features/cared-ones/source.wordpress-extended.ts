@@ -746,9 +746,24 @@ function minutesBetween(start: unknown, end: unknown): number | null {
   return Math.round((b - a) / 60000);
 }
 
+/** REL 231 runs care_task → users, so a cared one's visits are its *parents*. */
+async function fetchVisitTaskRows(caredOneId: string): Promise<any[]> {
+  const uid = normalizeWpObjectId(caredOneId);
+  if (!uid) return [];
+  return dedupeRead(`rel-parents-bulk:${R.careTaskCaredOnes}:${uid}:${T.careTask.slug}`, async () => {
+    const [rels, all] = await Promise.all([
+      wordpressFetch<any[]>(`jet-rel/${R.careTaskCaredOnes}/parents/${uid}`),
+      wordpressCCTFetch<any[]>(T.careTask.slug),
+    ]);
+    if (!Array.isArray(rels) || rels.length === 0 || !Array.isArray(all)) return [];
+    const wanted = new Set(rels.map((r: any) => String(r.parent_object_id)));
+    return all.filter((row: any) => wanted.has(String(row.id ?? row._ID)));
+  });
+}
+
 export async function fetchVisitLogWordPress(caredOneId: string): Promise<any[]> {
   try {
-    const rows = await fetchRelatedCctChildrenBulk(R.careTaskCaredOnes, caredOneId, T.careTask.slug);
+    const rows = await fetchVisitTaskRows(caredOneId);
     return rows
       .filter((r: any) => hasVisitType(r[F_TASK.TASK_TYPE]))
       .map((r: any) => {
