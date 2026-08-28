@@ -307,6 +307,14 @@ export default function CaregiverProfile() {
     }
 
     try {
+      // One booking request = one checkout. WooCommerce resurrects the
+      // persistent cart of an abandoned session for logged-in customers, so
+      // without this the client can silently pay for old, stale bookings.
+      try {
+        await clearCart();
+      } catch {
+        /* non-fatal: worst case the client removes stale lines by hand */
+      }
       const recurringNote = recurringPattern !== "none" ? `[Recurring: ${recurringPattern}] ` : "";
       const packageNote = `[Service: ${selectedResource.label}] `;
       // Just-in-time: create the WooCommerce product for this exact service and
