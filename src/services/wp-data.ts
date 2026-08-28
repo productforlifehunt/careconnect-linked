@@ -163,6 +163,15 @@ export interface WPBooking {
   created_at: string;
 }
 
+/** Store data comes back HTML-escaped (e.g. "&amp;"); show real characters. */
+function decodeEntities(value: string): string {
+  if (!value) return '';
+  if (typeof document === 'undefined') return value;
+  const el = document.createElement('textarea');
+  el.innerHTML = value;
+  return el.value;
+}
+
 function getOrderMeta(order: any, key: string): string {
   return order.meta_data?.find((m: any) => m.key === key)?.value || '';
 }
@@ -195,10 +204,10 @@ function mapWcOrderToBooking(o: any, nativeBookingMap?: Map<number, any>): WPBoo
   if (!durationHour) durationHour = getOrderMeta(o, '_duration_hours') || String(o.line_items?.[0]?.quantity || '');
 
   const hourlyRate = parseFloat(getOrderMeta(o, '_hourly_rate') || '0');
-  const serviceType = getOrderMeta(o, '_service_type') || o.line_items?.[0]?.name || 'Care Service';
+  const serviceType = decodeEntities(getOrderMeta(o, '_service_type') || o.line_items?.[0]?.name || 'Care Service');
   const providerId = getOrderMeta(o, '_provider_id');
   const specialInstruction = getOrderMeta(o, '_special_instructions');
-  const providerName = o.line_items?.[0]?.name?.replace(/ – Care Service$/, '') || 'Provider';
+  const providerName = decodeEntities(o.line_items?.[0]?.name?.replace(/ – Care Service$/, '') || 'Provider');
   const billingFirst = o.billing?.first_name || '';
   const billingLast = o.billing?.last_name || '';
   const billingName = `${billingFirst} ${billingLast}`.trim() || o.billing?.email || 'Client';
