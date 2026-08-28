@@ -18,7 +18,19 @@ export interface Profile {
   provider_is_active: boolean;              // radio: yes/no
   care_provider_is_background_checked: boolean; // radio: yes/no
   care_provider_background_check_detail: string | null; // text
-  care_provider_starts_hourly_rate: number | null;      // number
+  care_provider_starts_hourly_rate: number | null;      // number (cheapest published rate)
+
+  // ─── CCT 258 published rates (a66 / a67 / a69 / a70) ────────
+  /** a66 — hourly rate for in-person service. */
+  care_provider_hourly_rate_in_person?: number | null;
+  /** a67 — hourly rate for remote service. */
+  care_provider_hourly_rate_remote?: number | null;
+  /** a69 — rate for remote check-ins. */
+  care_provider_rate_remote_checkin?: number | null;
+  /** a70 — rate for remote medicine supervision. */
+  care_provider_rate_remote_medicine?: number | null;
+  /** a63 — cancellation policy. */
+  care_provider_cancellation_policy?: string | null;
 
   // ─── CCT: Additional provider fields (added to CCT) ─────────
   phone: string | null;
@@ -27,15 +39,16 @@ export interface Profile {
   certifications: string[] | null;
   specialty: string[] | null;
 
-  // ─── Computed / external (Dokan/WooCommerce) ────────────────
+  // ─── Computed ───────────────────────────────────────────────
   rating_average: number | null;
   rating_count: number | null;
-  /** Lowest per-hour block_cost across the provider's WC Bookings resources. */
+  /** Lowest published rate (mirrors care_provider_starts_hourly_rate). */
   min_block_cost?: number | null;
-  /** pa_service-type slugs offered by this provider (from product attributes). */
+  /** Care service slugs offered by this provider (CCT 258 a68). */
   service_type_slugs?: string[];
-  /** pa_service-location slugs: in-person | remote | hybrid. */
+  /** Delivery-mode slugs (CCT 258 a65): in-person | remote. */
   service_location_slugs?: string[];
+
 
   // ─── Timestamps ─────────────────────────────────────────────
   created_at: string;

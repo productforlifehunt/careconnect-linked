@@ -32,7 +32,6 @@ interface ServiceResourceRow {
 const LOCATION_OPTIONS = [
   { slug: "in-person", label: "In-Person" },
   { slug: "remote",    label: "Remote" },
-  { slug: "hybrid",    label: "Both" },
 ];
 
 export default function MyBookingServicesTab() {

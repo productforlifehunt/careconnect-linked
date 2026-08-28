@@ -1,18 +1,18 @@
 import type { Profile } from "@/types/care-connector";
 
 import { T } from "@/integrations/wp-schema";
-import { getWordPressFeature, listWordPressFeature } from "@/features/shared/wordpress-adapter";
+
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
-import { fetchAllProviderProductSummaries } from "@/services/woocommerce-api";
 import { fetchProviderRatingSummary } from "@/features/reviews/source.wordpress";
+import { careServiceIdsToSlugs, deliveryIdsToSlugs } from "@/lib/care-service-types";
 
 // Provider fields live on CCT 258 "User's extended profile 2".
+// Discovery (browse / search / filter / price display) reads ONLY from this CCT
+// — WooCommerce is not involved until the buyer adds a service to the cart.
 const P2 = T.userProfile2;
 const F_PROFILE = P2.f;
 
-function parseWpBoolean(value: unknown): boolean {
-  return value === true || value === 1 || (typeof value === "string" && ["yes", "true", "1", "active", "Active"].includes(value));
-}
+
 
 function parseWpList(value: unknown): string[] | null {
   if (Array.isArray(value)) return value.map(String).filter(Boolean);
@@ -26,19 +26,30 @@ function parseWpList(value: unknown): string[] | null {
   return null;
 }
 
-async function fetchDictionaryProviderProfiles(): Promise<Profile[]> {
-  const rows = await wordpressCCTFetch<any[]>(P2.slug, { params: { _limit: 200 } });
-  const activeRows = (Array.isArray(rows) ? rows : []).filter(
-    (row) => String(row[F_PROFILE.IS_CARE_PROVIDER]) === P2.opt.IS_CARE_PROVIDER.YES
-      && String(row[F_PROFILE.CARE_PROVIDER_IS_ACTIVE]) === P2.opt.CARE_PROVIDER_IS_ACTIVE.YES,
-  );
+function isListedProviderRow(row: any): boolean {
+  return String(row?.[F_PROFILE.IS_CARE_PROVIDER]) === P2.opt.IS_CARE_PROVIDER.YES
+    && String(row?.[F_PROFILE.CARE_PROVIDER_IS_ACTIVE]) === P2.opt.CARE_PROVIDER_IS_ACTIVE.YES;
+}
 
-  const profiles = await Promise.all(activeRows.map(async (row) => {
+async function mapProviderRow(row: any): Promise<Profile | null> {
+  {
     const userId = Number(row.author_id || row.cct_author_id || row.user_id);
     if (!userId) return null;
+
     let user: any = null;
     try { user = await wordpressFetch<any>(`wp/v2/users/${userId}`); } catch {}
     const fullName = user?.name || row.full_name || row.name || row.user_name || "Provider";
+
+    // Rates: a66 in-person hourly, a67 remote hourly, a69 remote check-in,
+    // a70 remote medicine supervision. "Starts at" = cheapest published rate.
+    const rateNumbers = [
+      row[F_PROFILE.CARE_PROVIDER_S_HOURLY_RATE_FOR_IN_PERSON_SERVICE],
+      row[F_PROFILE.CARE_PROVIDER_S_HOURLY_RATE_FOR_REMOTE_SERVICE],
+      row[F_PROFILE.CARE_PROVIDER_S_RATE_FOR_REMOTE_CHECKINS],
+      row[F_PROFILE.CARE_PROVIDER_S_RATE_FOR_REMOTE_MEDICINE_SUPERVISION],
+    ].map((v) => parseFloat(v)).filter((n) => Number.isFinite(n) && n > 0);
+    const startsAt = rateNumbers.length ? Math.min(...rateNumbers) : null;
+
     return {
       id: `wp-${userId}`,
       user_id: `wp-${userId}`,
@@ -54,14 +65,18 @@ async function fetchDictionaryProviderProfiles(): Promise<Profile[]> {
       provider_is_active: true,
       care_provider_is_background_checked: String(row[F_PROFILE.CARE_PROVIDER_IS_BACKGROUND_CHECKED]) === P2.opt.CARE_PROVIDER_IS_BACKGROUND_CHECKED.YES,
       care_provider_background_check_detail: row[F_PROFILE.CARE_PROVIDER_S_BACKGROUND_CHECK_DETAIL] || null,
-      care_provider_starts_hourly_rate: (() => {
-        const inPerson = parseFloat(row[F_PROFILE.CARE_PROVIDER_S_HOURLY_RATE_FOR_IN_PERSON_SERVICE]);
-        const remote = parseFloat(row[F_PROFILE.CARE_PROVIDER_S_HOURLY_RATE_FOR_REMOTE_SERVICE]);
-        const rates = [inPerson, remote].filter((n) => Number.isFinite(n) && n > 0);
-        return rates.length ? Math.min(...rates) : null;
-      })(),
+      care_provider_starts_hourly_rate: startsAt,
+      min_block_cost: startsAt,
+      // Filter facets straight from the dictionary checkboxes (a65 / a68).
+      service_location_slugs: deliveryIdsToSlugs(row[F_PROFILE.CARE_PROVIDER_OFFERS_SERVICE_TYPE]),
+      service_type_slugs: careServiceIdsToSlugs(row[F_PROFILE.CARE_PROVIDER_OFFERS_CARE_SERVICE_TYPE]),
+      care_provider_hourly_rate_in_person: parseFloat(row[F_PROFILE.CARE_PROVIDER_S_HOURLY_RATE_FOR_IN_PERSON_SERVICE]) || null,
+      care_provider_hourly_rate_remote: parseFloat(row[F_PROFILE.CARE_PROVIDER_S_HOURLY_RATE_FOR_REMOTE_SERVICE]) || null,
+      care_provider_rate_remote_checkin: parseFloat(row[F_PROFILE.CARE_PROVIDER_S_RATE_FOR_REMOTE_CHECKINS]) || null,
+      care_provider_rate_remote_medicine: parseFloat(row[F_PROFILE.CARE_PROVIDER_S_RATE_FOR_REMOTE_MEDICINE_SUPERVISION]) || null,
+      care_provider_cancellation_policy: row[F_PROFILE.CARE_PROVIDER_S_CANCELLATION_POLICY] || null,
       phone: row.phone || null,
-      location: row.location || null,
+      location: row[F_PROFILE.CARE_PROVIDER_S_LOCATION] || row.location || null,
       years_of_experience: row.years_of_experience ? parseInt(row.years_of_experience, 10) : null,
       certifications: parseWpList(row.certifications),
       specialty: parseWpList(row.specialty),
@@ -70,10 +85,16 @@ async function fetchDictionaryProviderProfiles(): Promise<Profile[]> {
       created_at: row.created_at || new Date().toISOString(),
       updated_at: row.updated_at || row.created_at || new Date().toISOString(),
     } satisfies Profile;
-  }));
+  }
+}
 
+async function fetchDictionaryProviderProfiles(): Promise<Profile[]> {
+  const rows = await wordpressCCTFetch<any[]>(P2.slug, { params: { _limit: 200 } });
+  const activeRows = (Array.isArray(rows) ? rows : []).filter(isListedProviderRow);
+  const profiles = await Promise.all(activeRows.map((row) => mapProviderRow(row)));
   return profiles.filter(Boolean) as Profile[];
 }
+
 
 export interface ProviderFilters {
   query?: string;
@@ -84,37 +105,18 @@ export interface ProviderFilters {
   minRating?: number;
   sortBy?: string;
   location?: string;
-  /** pa_service-location slugs to require (any-of). e.g. ["in-person", "remote"]. */
+  /** Delivery-mode slugs to require (any-of), from CCT 258 a65. e.g. ["in-person", "remote"]. */
   serviceLocations?: string[];
-  /** pa_service-type slugs to require (any-of). */
+  /** Care service slugs to require (any-of), from CCT 258 a68. */
   serviceTypeSlugs?: string[];
 }
 
 export async function fetchProvidersWordPress(filters?: ProviderFilters): Promise<Profile[]> {
   try {
-    const params: Record<string, string | number> = {};
-    if (filters?.query) params.search = filters.query;
-
-    // Run the Dokan store list and the WC product summary scan in parallel —
-    // the product summaries hydrate each provider card with min_block_cost +
-    // pa_service-type / pa_service-location attribute slugs so we can filter
-    // against the real package catalogue (not the stale CCT hourly_rate).
-    const [dictionaryProfiles, storeResults, productSummaries] = await Promise.all([
-      fetchDictionaryProviderProfiles().catch(() => []),
-      listWordPressFeature<Profile[]>("providers", { params }).catch(() => []),
-      fetchAllProviderProductSummaries().catch(() => new Map()),
-    ]);
-
-    // Single source of truth for "is this a listed care provider": CCT 258
-    // (a59 = is care provider, a60 = provider is active). Dokan stores only
-    // enrich these rows — a store is never promoted into a provider listing.
-    const activeProfileIds = new Set(dictionaryProfiles.map((p) => String(p.id).replace(/^wp-/, "")));
-    const sourceProfiles = dictionaryProfiles;
-
-    const storeById = new Map<string, Profile>();
-    (storeResults || []).forEach((s: Profile) => {
-      storeById.set(String(s.id).replace(/^wp-/, ""), s);
-    });
+    // Discovery is 100% dictionary-driven: CCT 258 (a59 is care provider,
+    // a60 provider is active) plus CCT 31 review aggregates. No WooCommerce
+    // and no Dokan calls happen before the buyer adds a service to the cart.
+    const sourceProfiles = await fetchDictionaryProviderProfiles().catch(() => []);
 
     // Real rating aggregates from CCT 31 "Review" via relation 264.
     const ratingSummaries = new Map<string, { average: number | null; count: number }>();
@@ -127,40 +129,16 @@ export async function fetchProvidersWordPress(filters?: ProviderFilters): Promis
 
     let results: Profile[] = sourceProfiles.map((p) => {
       const numericId = String(p.id).replace(/^wp-/, "");
-      const store = storeById.get(numericId);
-      const summary = productSummaries.get(String(p.id)) || productSummaries.get(numericId) || productSummaries.get(String(p.user_id || "").replace(/^wp-/, ""));
       const rating = ratingSummaries.get(numericId) || { average: null, count: 0 };
-      const merged: Profile = {
-        ...p,
-        // Dokan store data only fills gaps the dictionary profile left empty.
-        avatar_url: p.avatar_url || store?.avatar_url || null,
-        bio: p.bio || store?.bio || null,
-        location: p.location || store?.location || null,
-        rating_average: rating.average,
-        rating_count: rating.count,
-      };
-      if (!summary) return merged;
-      return {
-        ...merged,
-        min_block_cost: summary.minBlockCost || null,
-        service_type_slugs: summary.serviceTypeSlugs,
-        service_location_slugs: summary.serviceLocationSlugs,
-        // Mirror min_block_cost into the legacy hourly_rate field so existing
-        // card UI ("$X / hour") shows the real package price.
-        care_provider_starts_hourly_rate:
-          summary.minBlockCost > 0 ? summary.minBlockCost : merged.care_provider_starts_hourly_rate,
-      };
+      return { ...p, rating_average: rating.average, rating_count: rating.count } as Profile;
     });
-
-    results = results.filter((p) => activeProfileIds.has(String(p.id).replace(/^wp-/, "")));
-
-
     if (filters?.query) {
       const q = filters.query.toLowerCase();
       results = results.filter((p) => [p.full_name, p.user_name, p.bio, p.location, ...(p.specialty || [])].some((v) => String(v || "").toLowerCase().includes(q)));
     }
 
-    // Client-side filtering for fields Dokan API doesn't natively filter
+    // Remaining filters run client-side over the dictionary rows.
+
     if (filters?.location) {
       const loc = filters.location.toLowerCase();
       results = results.filter((p) => p.location?.toLowerCase().includes(loc));
@@ -205,14 +183,23 @@ export async function fetchProvidersWordPress(filters?: ProviderFilters): Promis
 
 export async function fetchProviderByIdWordPress(id: string): Promise<Profile | null> {
   try {
-    const profile = await getWordPressFeature<Profile>("provider", { endpointArgs: { id } });
+    const numericId = String(id).replace(/^wp-/, "");
+    // Profile page reads the same dictionary row as search (CCT 258), so the
+    // card price and the profile price can never disagree, and no Dokan/Woo
+    // store call happens before checkout.
+    const rows = await wordpressCCTFetch<any[]>(P2.slug, { params: { _limit: 200 } });
+    const row = (Array.isArray(rows) ? rows : []).find(
+      (r: any) => String(r.author_id || r.cct_author_id || r.user_id) === numericId,
+    );
+    if (!row) return null;
+    const profile = await mapProviderRow(row);
     if (!profile) return null;
-    // Ratings always come from CCT 31 "Review" (relation 264), never from the
-    // Dokan/Woo store aggregate, so profile and search agree.
-    const rating = await fetchProviderRatingSummary(id).catch(() => ({ average: null, count: 0 }));
+    // Ratings always come from CCT 31 "Review" (relation 264).
+    const rating = await fetchProviderRatingSummary(numericId).catch(() => ({ average: null, count: 0 }));
     return { ...profile, rating_average: rating.average, rating_count: rating.count };
   } catch {
     return null;
   }
 }
+
 

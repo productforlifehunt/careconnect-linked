@@ -111,7 +111,6 @@ export default function SearchResults() {
   const LOCATION_OPTIONS: { slug: string; en: string; zh: string }[] = [
     { slug: "in-person", en: "In-Person", zh: "当面" },
     { slug: "remote", en: "Remote", zh: "远程" },
-    { slug: "hybrid", en: "Hybrid", zh: "混合" },
   ];
 
   const facilityTypeOptions = Array.from(new Set((facilityFacets || []).map((item) => item.type).filter(Boolean) as string[]));

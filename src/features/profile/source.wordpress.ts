@@ -28,6 +28,12 @@ import { getWordPressFeature, updateWordPressFeature } from "@/features/shared/w
 import { wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { T } from "@/integrations/wp-schema";
+import {
+  careServiceIdsToSlugs,
+  careServiceSlugsToIds,
+  deliveryIdsToSlugs,
+  deliverySlugsToIds,
+} from "@/lib/care-service-types";
 
 const P2 = T.userProfile2;
 const F = P2.f;
@@ -84,6 +90,16 @@ export async function fetchMyProfileWordPress(): Promise<Profile | null> {
         wpProfile.care_provider_starts_hourly_rate =
           rate != null && rate !== "" ? parseFloat(rate) : wpProfile.care_provider_starts_hourly_rate;
       }
+      // a65 / a68 — what the provider offers, and how it is delivered.
+      wpProfile.service_location_slugs = deliveryIdsToSlugs(cct[F.CARE_PROVIDER_OFFERS_SERVICE_TYPE]);
+      wpProfile.service_type_slugs = careServiceIdsToSlugs(cct[F.CARE_PROVIDER_OFFERS_CARE_SERVICE_TYPE]);
+      // a66 / a67 / a69 / a70 — the four published rates.
+      const num = (v: any) => (v != null && v !== "" && Number.isFinite(parseFloat(v)) ? parseFloat(v) : null);
+      wpProfile.care_provider_hourly_rate_in_person = num(cct[F.CARE_PROVIDER_S_HOURLY_RATE_FOR_IN_PERSON_SERVICE]);
+      wpProfile.care_provider_hourly_rate_remote = num(cct[F.CARE_PROVIDER_S_HOURLY_RATE_FOR_REMOTE_SERVICE]);
+      wpProfile.care_provider_rate_remote_checkin = num(cct[F.CARE_PROVIDER_S_RATE_FOR_REMOTE_CHECKINS]);
+      wpProfile.care_provider_rate_remote_medicine = num(cct[F.CARE_PROVIDER_S_RATE_FOR_REMOTE_MEDICINE_SUPERVISION]);
+      wpProfile.care_provider_cancellation_policy = cct[F.CARE_PROVIDER_S_CANCELLATION_POLICY] || null;
       wpProfile.location = cct[F.CARE_PROVIDER_S_LOCATION] || wpProfile.location;
       // Phone / years / certifications / specialty have no column in CCT 258;
       // keep WP-user-derived values where present.
@@ -134,6 +150,23 @@ export async function updateProfileWordPress(updates: Partial<Profile>): Promise
   if (updates.care_provider_starts_hourly_rate !== undefined) body[F.CARE_PROVIDER_S_HOURLY_RATE_FOR_IN_PERSON_SERVICE] = String(updates.care_provider_starts_hourly_rate ?? "");
   // Dictionary: a64 = care provider's location (the only location column in CCT 258).
   if (updates.location !== undefined) body[F.CARE_PROVIDER_S_LOCATION] = updates.location ?? "";
+  // a65 / a68 checkboxes — stored as option-id arrays.
+  if (updates.service_location_slugs !== undefined)
+    body[F.CARE_PROVIDER_OFFERS_SERVICE_TYPE] = deliverySlugsToIds(updates.service_location_slugs);
+  if (updates.service_type_slugs !== undefined)
+    body[F.CARE_PROVIDER_OFFERS_CARE_SERVICE_TYPE] = careServiceSlugsToIds(updates.service_type_slugs);
+  // a66 / a67 / a69 / a70 — published rates.
+  const rate = (v: number | null | undefined) => (v == null || Number.isNaN(v) ? "" : String(v));
+  if (updates.care_provider_hourly_rate_in_person !== undefined)
+    body[F.CARE_PROVIDER_S_HOURLY_RATE_FOR_IN_PERSON_SERVICE] = rate(updates.care_provider_hourly_rate_in_person);
+  if (updates.care_provider_hourly_rate_remote !== undefined)
+    body[F.CARE_PROVIDER_S_HOURLY_RATE_FOR_REMOTE_SERVICE] = rate(updates.care_provider_hourly_rate_remote);
+  if (updates.care_provider_rate_remote_checkin !== undefined)
+    body[F.CARE_PROVIDER_S_RATE_FOR_REMOTE_CHECKINS] = rate(updates.care_provider_rate_remote_checkin);
+  if (updates.care_provider_rate_remote_medicine !== undefined)
+    body[F.CARE_PROVIDER_S_RATE_FOR_REMOTE_MEDICINE_SUPERVISION] = rate(updates.care_provider_rate_remote_medicine);
+  if (updates.care_provider_cancellation_policy !== undefined)
+    body[F.CARE_PROVIDER_S_CANCELLATION_POLICY] = updates.care_provider_cancellation_policy ?? "";
 
 
   if (Object.keys(body).length === 0) return;

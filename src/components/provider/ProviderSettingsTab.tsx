@@ -7,9 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, DollarSign, Briefcase, Shield, Phone, Eye, EyeOff, X, Store, ShoppingBag } from "lucide-react";
+import { MapPin, DollarSign, Briefcase, Shield, Phone, Eye, EyeOff, X } from "lucide-react";
 import { useMyProfile, useUpdateProfile } from "@/hooks/use-care-data";
-import { useSyncProviderToWooCommerce, useProviderWooCommerceProduct } from "@/hooks/use-woocommerce";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { ALL_CERTIFICATIONS, getCertificationKey } from "@/lib/specialty-i18n";
@@ -17,9 +16,10 @@ import PayoutAccountsCard from "./PayoutAccountsCard";
 
 /**
  * Profile tab — Basic Info, Certifications, Active toggle, Payout accounts.
- * Service Packages (pa_service-type + location + hourly rate) now live in the
- * dedicated "My Booking Services" tab so the WC Bookings product setup is
- * decoupled from profile metadata.
+ *
+ * Writes to CCT 258 only. Nothing here touches WooCommerce/Dokan: a Woo
+ * product is created just-in-time when a buyer adds a service to the cart,
+ * per the data dictionary. Rates per service live in "My Booking Services".
  */
 
 export default function ProviderSettingsTab() {
@@ -27,8 +27,6 @@ export default function ProviderSettingsTab() {
   const { toast } = useToast();
   const { data: profile } = useMyProfile();
   const updateProfile = useUpdateProfile();
-  const syncToWooCommerce = useSyncProviderToWooCommerce();
-  const { data: wcProduct, isLoading: wcLoading } = useProviderWooCommerceProduct();
 
   const [location, setLocation] = useState("");
   const [hourlyRate, setHourlyRate] = useState("");
@@ -50,7 +48,7 @@ export default function ProviderSettingsTab() {
       setIsActive(profile.provider_is_active || false);
       setLoaded(true);
     }
-  }, [profile, wcProduct, loaded]);
+  }, [profile, loaded]);
 
   const toggleCert = (name: string) => {
     setCertifications(prev =>
@@ -71,19 +69,7 @@ export default function ProviderSettingsTab() {
         provider_is_active: isActive,
       });
 
-      // Sync Basic Info → Dokan store + WC product meta. Service packages
-      // are managed in the "My Booking Services" tab and intentionally not
-      // touched here, so leave `serviceResources` undefined.
-      await syncToWooCommerce.mutateAsync({
-        hourlyRate: parseFloat(hourlyRate) || 0,
-        bio,
-        certifications,
-        yearsOfExperience: parseInt(experience) || 0,
-        location,
-        providerIsActive: isActive,
-      });
-
-      toast({ title: t("profile.profileUpdated"), description: "Profile synced to marketplace" });
+      toast({ title: t("profile.profileUpdated") });
     } catch (e: any) {
       toast({ title: t("profile.updateFailed"), description: e.message, variant: "destructive" });
     }
@@ -105,35 +91,6 @@ export default function ProviderSettingsTab() {
               </div>
             </div>
             <Switch checked={isActive} onCheckedChange={setIsActive} />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* WooCommerce/Dokan Integration Status */}
-      <Card className="border-transparent card-elevated">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Store className="h-5 w-5" /> {t("providerDash.marketplaceIntegration") || "Marketplace Integration"}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <ShoppingBag className="h-5 w-5 text-primary" />
-              <div>
-                <p className="font-semibold text-foreground">
-                  {wcLoading ? "Checking..." : wcProduct ? t("providerDash.productListed") || "Service Product Listed" : t("providerDash.productNotListed") || "Service Product Not Listed"}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {wcProduct
-                    ? `${t("providerDash.productId") || "Product ID"}: ${wcProduct.id}`
-                    : t("providerDash.saveToList") || "Save profile to list your service on the marketplace"}
-                </p>
-              </div>
-            </div>
-            <Badge variant={wcProduct ? "default" : "secondary"}>
-              {wcProduct ? t("providerDash.listed") || "Listed" : t("providerDash.notListed") || "Not Listed"}
-            </Badge>
           </div>
         </CardContent>
       </Card>
@@ -209,9 +166,9 @@ export default function ProviderSettingsTab() {
         variant="coral"
         className="w-full"
         onClick={handleSave}
-        disabled={updateProfile.isPending || syncToWooCommerce.isPending}
+        disabled={updateProfile.isPending}
       >
-        {updateProfile.isPending || syncToWooCommerce.isPending
+        {updateProfile.isPending
           ? t("common.saving")
           : t("providerDash.saveProfileSettings")}
       </Button>
