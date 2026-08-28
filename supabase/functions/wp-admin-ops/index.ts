@@ -334,6 +334,34 @@ Deno.serve(async (req) => {
 
       }
 
+      // Display names for a list of user ids. WordPress only exposes users who
+      // authored content to non-admin callers, so chat counterparts would
+      // otherwise render as "User 51". Returns names and avatars only.
+      case "get_user_names": {
+        const ids = Array.isArray(payload?.ids)
+          ? payload.ids.map((v: unknown) => Number(v)).filter((n: number) => Number.isFinite(n) && n > 0).slice(0, 100)
+          : [];
+        if (ids.length === 0) return json({ ok: true, data: [] });
+        const res = await fetch(
+          `${wpBase}/wp-json/wp/v2/users?include=${ids.join(",")}&per_page=100&context=edit`,
+          { headers: adminHeaders() },
+        );
+        const list = await res.json().catch(() => []);
+        if (!res.ok || !Array.isArray(list)) {
+          console.error(`get_user_names failed [${res.status}]`, JSON.stringify(list).slice(0, 200));
+          return json({ ok: true, data: [] });
+        }
+        return json({
+          ok: true,
+          data: list.map((u: any) => ({
+            id: Number(u.id),
+            name: u.name || u.slug || "",
+            avatar: u.avatar_urls?.["96"] || null,
+          })),
+        });
+      }
+
+
       // Orders the caller placed as a client. Buyers have no wc/v3 read
       // capability, so the store keys read them here and the query is always
       // pinned to the caller's own customer id.
