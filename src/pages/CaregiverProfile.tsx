@@ -145,15 +145,18 @@ export default function CaregiverProfile() {
 
   const selectedResource = bookingOptions.find((o) => o.key === deliveryResourceId);
   const availabilityPreview = useMemo(() => {
-    const weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    const weeklySlots = (availability || [])
+    const weekdayLabels = isZh
+      ? ["周日", "周一", "周二", "周三", "周四", "周五", "周六"]
+      : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    // Show every published weekly window — truncating the list made days the
+    // booking form actually accepts (e.g. Fri/Sat) look unavailable.
+    return (availability || [])
       .filter((slot: any) => slot.is_available && typeof slot.day_of_week === "number" && slot.start_time && slot.end_time)
-      .sort((a: any, b: any) => a.day_of_week - b.day_of_week || String(a.start_time).localeCompare(String(b.start_time)));
-
-    return weeklySlots.slice(0, 5).map((slot: any) => ({
-      label: `${weekdayLabels[slot.day_of_week]} ${slot.start_time}–${slot.end_time}`,
-    }));
-  }, [availability]);
+      .sort((a: any, b: any) => a.day_of_week - b.day_of_week || String(a.start_time).localeCompare(String(b.start_time)))
+      .map((slot: any) => ({
+        label: `${weekdayLabels[slot.day_of_week]} ${slot.start_time}–${slot.end_time}`,
+      }));
+  }, [availability, isZh]);
   // The chosen dictionary option carries its own published rate.
   const effectiveRate = Number(selectedResource?.rate || 0);
   const bookingTypeLabel = selectedResource?.label || "";
