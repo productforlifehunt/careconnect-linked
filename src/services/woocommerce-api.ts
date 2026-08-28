@@ -611,6 +611,28 @@ export async function requestWithdrawal(amount: number, method: string) {
   return adminOp('request_withdrawal', { amount, method });
 }
 
+/**
+ * Display names for arbitrary WP user ids. WordPress hides users who never
+ * authored content from non-admin callers, so chat counterparts (clients)
+ * are invisible to caregivers through wp/v2/users. Resolved server-side.
+ */
+export async function lookupUserNames(
+  ids: number[],
+): Promise<Array<{ id: number; name: string; avatar: string | null }>> {
+  const clean = Array.from(new Set(ids.filter((n) => Number.isFinite(n) && n > 0)));
+  if (clean.length === 0) return [];
+  try {
+    const rows = await adminOp<Array<{ id: number; name: string; avatar: string | null }>>(
+      'get_user_names',
+      { ids: clean },
+    );
+    return Array.isArray(rows) ? rows : [];
+  } catch {
+    return [];
+  }
+}
+
+
 
 
 // ─── Vendor payout-account settings ────────────────────────
