@@ -326,64 +326,19 @@ export default function Bookings() {
         </DialogContent>
       </Dialog>
 
-      {/* Report Issue dialog — files a customer-visible note on the WC order,
-          which admins and Dokan vendor see in their dashboards. */}
-      <Dialog open={issueOpen} onOpenChange={setIssueOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("bookings.reportIssue", "Report Issue")}</DialogTitle>
-            <DialogDescription>
-              {t(
-                "bookings.reportIssueDesc",
-                "Describe what went wrong with this booking. Our team and the provider will be notified and respond as soon as possible."
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Textarea
-              value={issueText}
-              onChange={(e) => setIssueText(e.target.value)}
-              placeholder={t("bookings.reportIssuePlaceholder", "Tell us what happened...")}
-              rows={5}
-            />
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIssueOpen(false)}>{t("common.cancel")}</Button>
-              <Button
-                disabled={issueSubmitting || !issueText.trim()}
-                onClick={async () => {
-                  if (!issueBooking) return;
-                  setIssueSubmitting(true);
-                  try {
-                    const { addOrderCustomerNote } = await import("@/services/woocommerce-api");
-                    await addOrderCustomerNote(Number(issueBooking.id), issueText.trim());
-                    toast({
-                      title: t("bookings.issueReported", "Issue reported"),
-                      description: t(
-                        "bookings.issueReportedDesc",
-                        "Our team has been notified and will follow up."
-                      ),
-                    });
-                    setIssueOpen(false);
-                    setIssueBooking(null);
-                    setIssueText("");
-                  } catch (err: any) {
-                    toast({
-                      title: t("bookings.issueFailed", "Failed to report"),
-                      description: err.message,
-                      variant: "destructive",
-                    });
-                  } finally {
-                    setIssueSubmitting(false);
-                  }
-                }}
-              >
-                {issueSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <AlertTriangle className="h-4 w-4 mr-2" />}
-                {t("bookings.submitIssue", "Submit")}
-              </Button>
-            </DialogFooter>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Booking thread — issue reports, caregiver replies and the refund
+          decision all live here, so no client ever needs a back office. */}
+      <BookingThreadDialog
+        open={issueOpen}
+        onOpenChange={setIssueOpen}
+        orderId={issueBooking?.id}
+        role="client"
+        counterpartName={issueBooking?.provider?.full_name}
+        refundStatus={issueBooking?.refund_status}
+        refundReason={issueBooking?.refund_reason}
+        refundAmount={issueBooking?.refund_amount}
+      />
+
     </div>
   );
 }
