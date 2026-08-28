@@ -138,8 +138,35 @@ Deno.serve(async (req) => {
           headers: adminHeaders(),
           body: JSON.stringify({ roles: ["seller"] }),
         });
-        return json({ ok: res.ok, status: res.status }, res.ok ? 200 : 502);
+        // Promoting by role alone skips Dokan's registration hook, which leaves
+        // the vendor "pending" with selling disabled — orders then never reach
+        // their store. Approve and enable selling explicitly.
+        let sellingEnabled = false;
+        if (res.ok) {
+          const approve = await fetch(`${wpBase}/wp-json/dokan/v1/stores/${userId}/status`, {
+            method: "PUT",
+            headers: adminHeaders(),
+            body: JSON.stringify({ status: "approved" }),
+          }).catch(() => null);
+          if (!approve || !approve.ok) {
+            await fetch(`${wpBase}/wp-json/dokan/v1/stores/${userId}`, {
+              method: "PUT",
+              headers: adminHeaders(),
+              body: JSON.stringify({ enabled: true }),
+            }).catch(() => null);
+          }
+          const check = await fetch(`${wpBase}/wp-json/dokan/v1/stores/${userId}`, {
+            headers: adminHeaders(),
+          }).catch(() => null);
+          const store = check && check.ok ? await check.json().catch(() => null) : null;
+          sellingEnabled = Boolean(store?.enabled);
+          if (!sellingEnabled) {
+            console.error(`ensure_seller_role: vendor ${userId} still not enabled for selling`);
+          }
+        }
+        return json({ ok: res.ok, status: res.status, selling_enabled: sellingEnabled }, res.ok ? 200 : 502);
       }
+
 
       case "get_my_store": {
         // Dokan ignores `include` on some versions, so filter defensively:
