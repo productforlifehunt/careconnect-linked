@@ -233,6 +233,20 @@ export function clearStoreSession() {
 }
 
 async function storeApiFetch(path: string, init: RequestInit = {}) {
+  const method = (init.method || 'GET').toUpperCase();
+
+  // The Store API rejects writes without a nonce. On a fresh session we have
+  // none yet, so bootstrap it with a harmless GET /cart first — that response
+  // carries both the Nonce and the Cart-Token we then echo back.
+  if (method !== 'GET' && !getStoreToken().nonce) {
+    try {
+      const boot = await fetch(buildWPUrl('wc/store/v1/cart'), { headers: getAuthHeaders() });
+      persistStoreToken(boot);
+    } catch {
+      /* non-fatal: the request below will surface the real error */
+    }
+  }
+
   const url = buildWPUrl(`wc/store/v1/${path}`);
   const { cartToken, nonce } = getStoreToken();
   const headers: Record<string, string> = {
@@ -293,14 +307,15 @@ export async function getCart() {
 
 /**
  * POST /wc/store/v1/cart/add-item
- * WC Bookings reads booking selections from the `extensions.bookings` slot
- * on the line item — that is the native Store API extension point the
- * WooCommerce Bookings team registers.
+ *
+ * The line is a plain simple product: the agreed price, service type, date,
+ * time and notes are already baked into the just-in-time product created a
+ * moment earlier, so no cart-line extensions (and no Bookings plugin) are
+ * involved.
  */
 export async function addToCart({
   productId,
   quantity = 1,
-  booking,
 }: {
   productId: number;
   quantity?: number;
@@ -308,23 +323,10 @@ export async function addToCart({
   /** @deprecated price overrides are not supported by the native Store API */
   priceOverride?: number;
 }) {
-  const body: Record<string, unknown> = { id: productId, quantity };
-  if (booking) {
-    body.extensions = {
-      bookings: {
-        resource_id: booking.resourceId,
-        persons: booking.persons,
-        start_date: booking.startDate,
-        start_time: booking.startTime,
-        duration: booking.durationHours,
-        service_type: booking.serviceType,
-        notes: booking.notes,
-      },
-    };
-  }
   const cart = await storeApiFetch('cart/add-item', {
     method: 'POST',
-    body: JSON.stringify(body),
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: productId, quantity }),
   });
   return normalizeStoreCart(cart);
 }
@@ -569,3 +571,48 @@ export async function getMyDokanStoreId(): Promise<number | null> {
   }
 }
 
+
+/**
+ * Just-in-time care-service product.
+ *
+ * Discovery, rates and scheduling live entirely in JetEngine CCTs. This is the
+ * single moment WooCommerce is touched before checkout: the agreed price is
+ * written into a hidden simple product owned by the caregiver (Dokan vendor id
+ * in meta) so cart, checkout, payment, orders and payouts are 100% Woo/Dokan.
+ */
+export async function createServiceProduct(input: {
+  name: string;
+  description?: string;
+  amount: number;
+  vendorUserId: string | number;
+  meta?: Array<{ key: string; value: string }>;
+}): Promise<{ id: number; price: number }> {
+  const vendorId = Number(String(input.vendorUserId).replace(/^wp-/, ''));
+  const result = await adminOp<{ id: number; price: number }>('create_service_product', {
+    name: input.name,
+    description: input.description ?? '',
+    amount: input.amount,
+    vendor_user_id: vendorId,
+    meta: input.meta ?? [],
+  });
+  if (!result?.id) throw new Error('Could not create the service product');
+  const id = Number(result.id);
+
+  // The store's object cache can lag a second or two behind a freshly created
+  // product, and the Store API refuses to add a line it still sees as
+  // non-purchasable. Wait until it reports the product as ready.
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    try {
+      const res = await fetch(buildWPUrl(`wc/store/v1/products/${id}`), { headers: getAuthHeaders() });
+      if (res.ok) {
+        const product = await res.json();
+        if (product?.is_purchasable) break;
+      }
+    } catch {
+      /* keep waiting */
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+  }
+
+  return { id, price: Number(result.price || input.amount) };
+}

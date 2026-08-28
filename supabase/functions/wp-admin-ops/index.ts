@@ -12,6 +12,8 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
 const WP_ADMIN_USER = Deno.env.get("WP_ADMIN_USER") ?? "";
 const WP_ADMIN_APP_PASSWORD = Deno.env.get("WP_ADMIN_APP_PASSWORD") ?? "";
+const WC_CONSUMER_KEY = Deno.env.get("WC_CONSUMER_KEY") ?? "";
+const WC_CONSUMER_SECRET = Deno.env.get("WC_CONSUMER_SECRET") ?? "";
 
 const DEFAULT_WP_BASE = "https://app.challenged-dementia.com/afresh";
 const ALLOWED_BASES = [DEFAULT_WP_BASE];
@@ -135,6 +137,57 @@ Deno.serve(async (req) => {
         });
         const data = await res.json().catch(() => null);
         return json({ ok: res.ok, data }, res.ok ? 200 : 502);
+      }
+
+      // Just-in-time care-service product: created at the exact moment the
+      // client adds a booking (or accepts a quote) to the cart. Buyers have no
+      // wc/v3 product-create capability, so the store keys do it here and the
+      // product is tagged with the caregiver's Dokan vendor id for commission.
+      case "create_service_product": {
+        const name = String(payload?.name ?? "").trim().slice(0, 200);
+        const amount = Number(payload?.amount);
+        const vendorId = Number(payload?.vendor_user_id);
+        if (!name) return json({ error: "name is required" }, 400);
+        if (!Number.isFinite(amount) || amount <= 0) return json({ error: "amount must be > 0" }, 400);
+        if (!Number.isFinite(vendorId) || vendorId <= 0) return json({ error: "vendor_user_id must be a positive number" }, 400);
+        if (!WC_CONSUMER_KEY || !WC_CONSUMER_SECRET) {
+          return json({ error: "Server is missing WooCommerce store keys" }, 500);
+        }
+
+        const rawMeta = Array.isArray(payload?.meta) ? payload.meta : [];
+        const meta = rawMeta
+          .filter((m: any) => m && typeof m.key === "string")
+          .slice(0, 30)
+          .map((m: any) => ({ key: String(m.key).slice(0, 80), value: String(m.value ?? "").slice(0, 500) }));
+        if (!meta.some((m: { key: string }) => m.key === "_dokan_vendor_id")) {
+          meta.push({ key: "_dokan_vendor_id", value: String(vendorId) });
+        }
+        meta.push({ key: "_care_buyer_user_id", value: String(userId) });
+
+        const res = await fetch(`${wpBase}/wp-json/wc/v3/products`, {
+          method: "POST",
+          headers: {
+            Authorization: `Basic ${btoa(`${WC_CONSUMER_KEY}:${WC_CONSUMER_SECRET}`)}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name,
+            type: "simple",
+            status: "publish",
+            catalog_visibility: "hidden",
+            virtual: true,
+            sold_individually: true,
+            regular_price: String(amount),
+            description: String(payload?.description ?? "").slice(0, 2000),
+            meta_data: meta,
+          }),
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+          console.error(`create_service_product failed [${res.status}]`, JSON.stringify(data));
+          return json({ error: "WooCommerce product creation failed", status: res.status, details: data }, 502);
+        }
+        return json({ ok: true, id: Number(data?.id), price: Number(data?.price || amount) });
       }
 
       default:

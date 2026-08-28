@@ -7,12 +7,11 @@
  * the cart — this helper creates that one product, owned by the caregiver so
  * Dokan commission and payout apply, and returns its product id.
  *
- * It reuses the elevated `careconnect/v1/quote-product` endpoint because buyers
- * do not have wc/v3 product-create capabilities.
+ * Creation runs through the `wp-admin-ops` edge function because buyers do not
+ * have wc/v3 product-create capabilities.
  */
 
-import { buildWPUrl, buildWPHeaders } from "@/lib/wp-url";
-import { getWPToken } from "@/services/wp-auth";
+import { createServiceProduct } from "@/services/woocommerce-api";
 
 export interface CreateCareBookingProductInput {
   /** Caregiver (vendor / payee) WP user id — "wp-12" or 12 both accepted. */
@@ -64,21 +63,11 @@ export async function createCareBookingProduct(
   if (input.startTime) meta.push({ key: "_care_service_start_time", value: input.startTime });
   if (input.notes) meta.push({ key: "_care_service_notes", value: input.notes });
 
-  const res = await fetch(buildWPUrl("careconnect/v1/quote-product"), {
-    method: "POST",
-    headers: buildWPHeaders(getWPToken(), "application/json"),
-    body: JSON.stringify({
-      amount,
-      vendor_user_id: Number(numericVendorId),
-      name,
-      description,
-      meta,
-    }),
+  return createServiceProduct({
+    name,
+    description,
+    amount,
+    vendorUserId: numericVendorId,
+    meta,
   });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Care service product API ${res.status}: ${text}`);
-  }
-  const product = await res.json();
-  return { id: Number(product.id), price: Number(product.price || amount) };
 }
