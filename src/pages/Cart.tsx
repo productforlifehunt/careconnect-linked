@@ -8,7 +8,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useQuery } from "@tanstack/react-query";
+import { getStoreCountries } from "@/services/woocommerce-api";
 import { useTranslation } from "react-i18next";
+
 
 /** Service names come back from the store HTML-escaped (e.g. "&amp;"). */
 function decodeEntities(value: string) {
@@ -38,12 +42,32 @@ export default function Cart() {
 
   useEffect(() => {
     const u = user as any;
-    if (!email && u?.email) setEmail(u.email);
+    const mail = u?.email || u?.user_email || u?.user_login_email;
+    if (!email && mail) setEmail(mail);
   }, [user, email]);
+
+
+  const { data: countries = [] } = useQuery({
+    queryKey: ["wc-countries"],
+    queryFn: getStoreCountries,
+    staleTime: 24 * 60 * 60 * 1000,
+  });
+  const stateOptions = countries.find(c => c.code === country)?.states ?? [];
+  const stateRequired = stateOptions.length > 0;
 
   const items = cart?.items || [];
   const total = cart?.totals?.total_price ? (parseInt(cart.totals.total_price) / 100).toFixed(2) : "0.00";
   const sym = (cart?.totals as any)?.currency_symbol || "$";
+  const missingFields = [
+    [email, cn ? "账单邮箱" : "billing email"],
+    [address1, cn ? "街道地址" : "street address"],
+    [city, cn ? "城市" : "city"],
+    ...(stateRequired ? [[state, cn ? "省 / 州" : "state / province"]] : []),
+    [postcode, cn ? "邮政编码" : "ZIP / postcode"],
+    [country, cn ? "国家" : "country"],
+  ].filter(([v]) => !String(v || "").trim()).map(([, label]) => label as string);
+
+
 
   if (isLoading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
 
@@ -89,17 +113,43 @@ export default function Cart() {
           <Card className="border-transparent card-elevated">
             <CardContent className="p-5 space-y-4">
               <div className="flex justify-between text-lg font-bold"><span>{cn ? "合计" : "Total"}</span><span>{sym}{total}</span></div>
-              <div><Label>{cn ? "账单邮箱" : "Billing Email"}</Label><Input value={email} onChange={e => setEmail(e.target.value)} placeholder={(user as any)?.email || "email@example.com"} /></div>
+              <div><Label htmlFor="billing-email">{cn ? "账单邮箱" : "Billing Email"} *</Label><Input id="billing-email" value={email} onChange={e => setEmail(e.target.value)} placeholder={(user as any)?.email || "email@example.com"} /></div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="sm:col-span-2">
-                  <Label>{cn ? "街道地址" : "Street address"}</Label>
-                  <Input value={address1} onChange={e => setAddress1(e.target.value)} placeholder={cn ? "例如：建国路 12 号" : "e.g. 12 Main Street"} />
+                  <Label htmlFor="billing-address1">{cn ? "街道地址" : "Street address"} *</Label>
+                  <Input id="billing-address1" value={address1} onChange={e => setAddress1(e.target.value)} placeholder={cn ? "例如：建国路 12 号" : "e.g. 12 Main Street"} />
                 </div>
-                <div><Label>{cn ? "城市" : "City"}</Label><Input value={city} onChange={e => setCity(e.target.value)} /></div>
-                <div><Label>{cn ? "省 / 州" : "State / Province"}</Label><Input value={state} onChange={e => setState(e.target.value)} /></div>
-                <div><Label>{cn ? "邮政编码" : "ZIP / Postcode"}</Label><Input value={postcode} onChange={e => setPostcode(e.target.value)} /></div>
-                <div><Label>{cn ? "国家代码" : "Country code"}</Label><Input value={country} onChange={e => setCountry(e.target.value.toUpperCase().slice(0, 2))} placeholder="US" /></div>
+                <div><Label htmlFor="billing-city">{cn ? "城市" : "City"} *</Label><Input id="billing-city" value={city} onChange={e => setCity(e.target.value)} /></div>
+                <div><Label htmlFor="billing-postcode">{cn ? "邮政编码" : "ZIP / Postcode"} *</Label><Input id="billing-postcode" value={postcode} onChange={e => setPostcode(e.target.value)} /></div>
+                <div>
+                  <Label htmlFor="billing-country">{cn ? "国家 / 地区" : "Country"} *</Label>
+                  {countries.length > 0 ? (
+                    <Select value={country} onValueChange={v => { setCountry(v); setState(""); }}>
+                      <SelectTrigger id="billing-country"><SelectValue placeholder={cn ? "选择国家" : "Select country"} /></SelectTrigger>
+                      <SelectContent className="max-h-72">
+                        {countries.map(c => <SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input id="billing-country" value={country} onChange={e => setCountry(e.target.value.toUpperCase().slice(0, 2))} placeholder="US" />
+                  )}
+                </div>
+                <div>
+                  <Label htmlFor="billing-state">{cn ? "省 / 州" : "State / Province"} {stateRequired ? "*" : ""}</Label>
+                  {stateOptions.length > 0 ? (
+                    <Select value={state} onValueChange={setState}>
+                      <SelectTrigger id="billing-state"><SelectValue placeholder={cn ? "选择省 / 州" : "Select state / province"} /></SelectTrigger>
+                      <SelectContent className="max-h-72">
+                        {stateOptions.map(s => <SelectItem key={s.code} value={s.code}>{s.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input id="billing-state" value={state} onChange={e => setState(e.target.value)} placeholder={cn ? "可选" : "Optional"} />
+                  )}
+                </div>
               </div>
+
+
 
               <div className="rounded-lg bg-muted/40 p-3 text-sm text-muted-foreground">
                 {cn
@@ -107,8 +157,15 @@ export default function Cart() {
                   : "Next: you'll be sent to the secure payment page where Stripe / PayPal / Alipay (whichever the platform has enabled) processes the payment directly. The platform only provides the payment convenience — it does not hold funds in escrow and does not arbitrate disputes or refunds."}
               </div>
 
-              <Button variant="coral" className="w-full" size="lg" disabled={doCheckout.isPending || !email.trim() || !address1.trim() || !city.trim() || !state.trim() || !postcode.trim() || !country.trim()} onClick={async () => {
+              {missingFields.length > 0 && (
+                <p className="text-sm text-destructive">
+                  {(cn ? "继续付款前请填写：" : "Fill in before continuing: ") + missingFields.join(cn ? "、" : ", ")}
+                </p>
+              )}
+
+              <Button variant="coral" className="w-full" size="lg" disabled={doCheckout.isPending || missingFields.length > 0} onClick={async () => {
                 const u = user as any;
+
                 const displayName = u?.full_name || u?.user_display_name || "";
                 const parts = displayName.split(" ").filter(Boolean);
                 const result = await doCheckout.mutateAsync({
