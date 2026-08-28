@@ -162,10 +162,10 @@ export default function Bookings() {
                 {["pending", "confirmed"].includes(booking.status) && <DropdownMenuItem onClick={() => { setCancelTargetId(booking.id); setCancelTargetName(booking.provider?.full_name || t("common.provider")); setCancelConfirmOpen(true); }} className="text-destructive"><X className="mr-2 h-4 w-4" /> {t("bookings.cancelBooking")}</DropdownMenuItem>}
                 {["pending", "confirmed"].includes(booking.status) && <DropdownMenuItem onClick={() => openReschedule(booking)}><RefreshCw className="mr-2 h-4 w-4" /> {t("bookings.reschedule")}</DropdownMenuItem>}
                 {booking.status === "completed" && <DropdownMenuItem onClick={() => openReview(booking)}><Star className="mr-2 h-4 w-4" /> {t("bookings.leaveReview")}</DropdownMenuItem>}
-                {["completed", "confirmed", "processing"].includes(booking.status) && Number(booking.total_cost || 0) > 0 && (
+                {["completed", "confirmed", "processing"].includes(booking.status) && Number(booking.total_cost || 0) > 0 && !booking.refund_status && (
                   <DropdownMenuItem onClick={() => { setRefundBooking(booking); setRefundReason(""); setRefundOpen(true); }}><DollarSign className="mr-2 h-4 w-4" /> {t("bookings.requestRefund", "Request Refund")}</DropdownMenuItem>
                 )}
-                <DropdownMenuItem onClick={() => { setIssueBooking(booking); setIssueText(""); setIssueOpen(true); }}><AlertTriangle className="mr-2 h-4 w-4" /> {t("bookings.reportIssue", "Report Issue")}</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { setIssueBooking(booking); setIssueOpen(true); }}><AlertTriangle className="mr-2 h-4 w-4" /> {t("bookings.reportIssue", "Report Issue")}</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleMessage(booking)} disabled={messagingId === booking.provider_id}><MessageSquare className="mr-2 h-4 w-4" /> {t("common.message")}</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -177,12 +177,35 @@ export default function Bookings() {
           <div className="text-right"><span className="font-bold text-foreground text-lg">{i18n.language?.startsWith("zh") ? "¥" : "$"}{booking.total_cost || 0}</span></div>
         </div>
         {cleanBookingNote(booking.special_instruction) && <p className="text-sm text-muted-foreground mt-3 p-2 rounded bg-muted/50">{cleanBookingNote(booking.special_instruction)}</p>}
-        {booking.status === "completed" && (
-          <div className="flex gap-2 mt-3 pt-3 border-t border-border">
-            <Button variant="outline" size="sm" onClick={() => openReview(booking)}><Star className="h-3.5 w-3.5 mr-1.5" /> {t("bookings.leaveReview")}</Button>
-            <Button variant="ghost" size="sm" onClick={() => handleMessage(booking)} disabled={messagingId === booking.provider_id}><MessageSquare className="h-3.5 w-3.5 mr-1.5" /> {t("common.message")}</Button>
-          </div>
+        {!!booking.refund_status && (
+          <button
+            type="button"
+            onClick={() => { setIssueBooking(booking); setIssueOpen(true); }}
+            className="mt-3 w-full flex items-center justify-between gap-2 rounded-lg border border-border/60 bg-muted/40 px-3 py-2 text-left hover:bg-muted/70 transition-colors"
+          >
+            <span className="text-sm text-muted-foreground">
+              {i18n.language?.startsWith("zh") ? "退款申请" : "Refund request"}
+              {!!Number(booking.refund_amount) && ` · ${i18n.language?.startsWith("zh") ? "¥" : "$"}${Number(booking.refund_amount).toFixed(2)}`}
+            </span>
+            <Badge variant={booking.refund_status === "approved" ? "default" : booking.refund_status === "declined" ? "destructive" : "secondary"}>
+              {booking.refund_status === "approved"
+                ? (i18n.language?.startsWith("zh") ? "已退款" : "Refunded")
+                : booking.refund_status === "declined"
+                  ? (i18n.language?.startsWith("zh") ? "已拒绝" : "Declined")
+                  : (i18n.language?.startsWith("zh") ? "待护理者处理" : "Awaiting caregiver")}
+            </Badge>
+          </button>
         )}
+        <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-border">
+          {booking.status === "completed" && (
+            <Button variant="outline" size="sm" onClick={() => openReview(booking)}><Star className="h-3.5 w-3.5 mr-1.5" /> {t("bookings.leaveReview")}</Button>
+          )}
+          <Button variant="ghost" size="sm" onClick={() => { setIssueBooking(booking); setIssueOpen(true); }}>
+            <AlertTriangle className="h-3.5 w-3.5 mr-1.5" /> {i18n.language?.startsWith("zh") ? "沟通记录" : "Booking thread"}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => handleMessage(booking)} disabled={messagingId === booking.provider_id}><MessageSquare className="h-3.5 w-3.5 mr-1.5" /> {t("common.message")}</Button>
+        </div>
+
       </CardContent>
     </Card>
   );
