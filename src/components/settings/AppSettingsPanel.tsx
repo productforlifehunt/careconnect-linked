@@ -31,34 +31,40 @@ import {
 } from "@/features/settings/permissions";
 import { subscribeWebPushAndRegister } from "@/features/notifications/tokens.wordpress";
 
-const CATEGORIES: { key: string; label: string; hint: string }[] = [
-  { key: "chat", label: "Messages", hint: "New direct messages from your care circle" },
-  { key: "booking", label: "Bookings", hint: "Requests, confirmations and cancellations" },
-  { key: "check_in", label: "Check-ins", hint: "Visit and wellbeing check-in reminders" },
-  { key: "medicine", label: "Medication", hint: "Medication and routine reminders" },
-  { key: "location", label: "Safety alerts", hint: "Safe-zone and location alerts" },
-  { key: "system", label: "Account & system", hint: "Security and account notices" },
+type Z = (cn: string, en: string) => string;
+
+const categories = (Z: Z): { key: string; label: string; hint: string }[] => [
+  { key: "chat", label: Z("消息", "Messages"), hint: Z("家人或护理者给你发新消息时", "When family or a caregiver sends you a new message") },
+  { key: "booking", label: Z("预约", "Appointments"), hint: Z("预约被接受、确认或取消时", "When an appointment is accepted, confirmed or cancelled") },
+  { key: "check_in", label: Z("探望与签到", "Visits and check-ins"), hint: Z("到了该去看看老人、该签到的时候", "Reminders when it is time to visit or check in") },
+  { key: "medicine", label: Z("吃药提醒", "Medicine reminders"), hint: Z("到了吃药或日常安排的时间", "When it is time for medicine or a daily routine") },
+  { key: "location", label: Z("走失提醒", "Safety alerts"), hint: Z("老人走出安全范围时马上告诉你", "If your loved one leaves the area you marked as safe") },
+  { key: "system", label: Z("账号消息", "Account messages"), hint: Z("登录、密码和账号安全相关的通知", "Sign-in, password and account safety notices") },
 ];
 
-const PERMISSIONS: { kind: PermissionKind; label: string; why: string; icon: typeof Bell }[] = [
-  { kind: "push", label: "Notifications", why: "Needed to deliver alerts when the app is closed", icon: Bell },
-  { kind: "location", label: "Location", why: "Needed for safe zones and live location sharing", icon: MapPin },
-  { kind: "calendar", label: "Calendar", why: "Optional — adds care visits to your device calendar", icon: CalendarDays },
+const permissions = (Z: Z): { kind: PermissionKind; label: string; why: string; icon: typeof Bell }[] => [
+  { kind: "push", label: Z("手机提醒", "Phone alerts"), why: Z("允许后，即使没打开这个应用也能收到提醒", "Lets us reach you even when the app is closed"), icon: Bell },
+  { kind: "location", label: Z("位置", "Location"), why: Z("用来看老人在哪里，以及是否走出安全范围", "Used to show where your loved one is and whether they left the safe area"), icon: MapPin },
+  { kind: "calendar", label: Z("日历", "Calendar"), why: Z("可选：把探望安排一起写进你手机的日历", "Optional: also writes visits into your phone's own calendar"), icon: CalendarDays },
 ];
 
-function stateBadge(state: PermissionState) {
+function stateBadge(state: PermissionState, Z: Z) {
   const map: Record<PermissionState, { text: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-    granted: { text: "Allowed", variant: "default" },
-    denied: { text: "Blocked", variant: "destructive" },
-    prompt: { text: "Not set", variant: "secondary" },
-    unsupported: { text: "Not available here", variant: "outline" },
+    granted: { text: Z("已允许", "On"), variant: "default" },
+    denied: { text: Z("已在手机设置里关闭", "Turned off in your settings"), variant: "destructive" },
+    prompt: { text: Z("还没设置", "Not chosen yet"), variant: "secondary" },
+    unsupported: { text: Z("这台设备用不了", "Not available on this device"), variant: "outline" },
   };
   const m = map[state];
   return <Badge variant={m.variant}>{m.text}</Badge>;
 }
 
 export function AppSettingsPanel() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
+  const Z: Z = (cn, en) => (isCN ? cn : en);
+  const CATEGORIES = categories(Z);
+  const PERMISSIONS = permissions(Z);
   const { toast } = useToast();
   const qc = useQueryClient();
 
@@ -72,9 +78,9 @@ export function AppSettingsPanel() {
     mutationFn: (patch: Partial<AppSettings>) => saveAppSettings(patch),
     onSuccess: (next) => {
       qc.setQueryData(["appSettings"], next);
-      toast({ title: "Settings saved" });
+      toast({ title: Z("已保存", "Saved") });
     },
-    onError: () => toast({ title: "Could not save settings", variant: "destructive" }),
+    onError: () => toast({ title: Z("没能保存，请再试一次", "Could not save — please try again"), variant: "destructive" }),
   });
 
   const [perm, setPerm] = useState<Record<PermissionKind, PermissionState>>({
@@ -118,10 +124,10 @@ export function AppSettingsPanel() {
       }
       if (state === "denied") {
         toast({
-          title: "Permission blocked",
+          title: Z("这一项目前是关着的", "This is switched off right now"),
           description: isNative()
-            ? "Open system settings to allow it again."
-            : "Allow it from your browser's site settings, then refresh.",
+            ? Z("打开手机的设置，找到这个应用，把它打开就可以了。", "Open your phone settings, find this app, and switch it on.")
+            : Z("在浏览器的网站设置里把它打开，然后刷新页面。", "Switch it on in your browser's settings for this site, then refresh the page."),
         });
       }
     } finally {
@@ -142,16 +148,16 @@ export function AppSettingsPanel() {
     <div className="space-y-6">
       <Card className="border-transparent card-elevated">
         <CardHeader>
-          <CardTitle className="text-base sm:text-lg">{t("profile.notificationPrefs", "How we reach you")}</CardTitle>
+          <CardTitle className="text-base sm:text-lg">{t("profile.notificationPrefs", Z("我们怎么联系你", "How we reach you"))}</CardTitle>
           <CardDescription className="text-sm">
-            Turn a channel off and nothing is sent on it — the app checks these before every message.
+            {Z("关掉一项，我们就不会再用这个方式联系你。", "Switch one off and we will stop contacting you that way.")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {([
-            ["push", "Push notifications", "On this device and any device you allow"],
-            ["email", "Email", "Sent to your account email address"],
-            ["sms", "Text messages", "Only for urgent safety alerts"],
+            ["push", Z("手机提醒", "Phone alerts"), Z("直接弹在你手机或电脑上", "Pop up on your phone or computer")],
+            ["email", Z("邮件", "Email"), Z("发到你注册时用的邮箱", "Sent to the email address on your account")],
+            ["sms", Z("短信", "Text message"), Z("只在紧急情况下发，比如老人走失", "Only for urgent things, such as a loved one going missing")],
           ] as const).map(([key, label, hint]) => (
             <div key={key} className="flex items-start justify-between gap-4">
               <div className="min-w-0">
@@ -171,8 +177,8 @@ export function AppSettingsPanel() {
 
       <Card className="border-transparent card-elevated">
         <CardHeader>
-          <CardTitle className="text-base sm:text-lg">What to notify me about</CardTitle>
-          <CardDescription className="text-sm">Applies to every channel above.</CardDescription>
+          <CardTitle className="text-base sm:text-lg">{Z("你想收到哪些提醒", "What you want to hear about")}</CardTitle>
+          <CardDescription className="text-sm">{Z("这里的选择对上面每一种联系方式都有效。", "These choices apply to every way of contacting you above.")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {CATEGORIES.map((c) => (
@@ -194,9 +200,9 @@ export function AppSettingsPanel() {
 
       <Card className="border-transparent card-elevated">
         <CardHeader>
-          <CardTitle className="text-base sm:text-lg">Device permissions</CardTitle>
+          <CardTitle className="text-base sm:text-lg">{Z("这台设备上的权限", "What this device allows")}</CardTitle>
           <CardDescription className="text-sm">
-            We only ask when you tap. You can change these any time.
+            {Z("只有你自己点了才会去问，随时可以改。", "We only ask when you tap, and you can change it any time.")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -207,7 +213,7 @@ export function AppSettingsPanel() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-medium">{label}</span>
-                    {stateBadge(perm[kind])}
+                    {stateBadge(perm[kind], Z)}
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">{why}</p>
                 </div>
@@ -215,17 +221,17 @@ export function AppSettingsPanel() {
               <div className="shrink-0">
                 {perm[kind] === "prompt" && (
                   <Button size="sm" variant="outline" onClick={() => ask(kind)} disabled={busy === kind}>
-                    {busy === kind ? <Loader2 className="h-4 w-4 animate-spin" /> : "Allow"}
+                    {busy === kind ? <Loader2 className="h-4 w-4 animate-spin" /> : Z("允许", "Allow")}
                   </Button>
                 )}
                 {perm[kind] === "denied" && (
                   <Button size="sm" variant="outline" onClick={openAppSettings}>
-                    <Settings2 className="h-4 w-4 mr-1.5" /> Open settings
+                    <Settings2 className="h-4 w-4 mr-1.5" /> {Z("打开设置", "Open settings")}
                   </Button>
                 )}
                 {perm[kind] === "granted" && (
                   <Button size="sm" variant="ghost" onClick={() => ask(kind)} disabled={busy === kind}>
-                    Re-check
+                    {Z("重新检查", "Check again")}
                   </Button>
                 )}
               </div>
@@ -233,7 +239,7 @@ export function AppSettingsPanel() {
           ))}
           {!isNative() && (
             <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-              <ExternalLink className="h-3 w-3" /> On the installed app these use your phone's system prompts.
+              <ExternalLink className="h-3 w-3" /> {Z("如果你把这个应用装到手机上，这些会由手机自己弹窗来问你。", "If you install this app on your phone, your phone will ask you these instead.")}
             </p>
           )}
         </CardContent>
