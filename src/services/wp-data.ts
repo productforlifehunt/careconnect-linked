@@ -42,11 +42,16 @@ export async function wpFetchCurrentUser() {
 // ─── WooCommerce Orders (as bookings proxy) ─────────────────
 export async function wpFetchOrders(perPage = 20) {
   try {
-    return await wpFetch("wc/v3/orders", { params: { per_page: perPage } });
+    // Orders are read through the edge function, which pins the query to the
+    // signed-in customer id — the browser never lists the whole store.
+    const { getMyCustomerOrders } = await import("./woocommerce-api");
+    return await getMyCustomerOrders(perPage);
   } catch {
     return [];
   }
 }
+
+
 
 // ─── WooCommerce Products (services) ────────────────────────
 export async function wpFetchProducts(perPage = 50) {
