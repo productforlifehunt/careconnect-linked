@@ -67,7 +67,12 @@ export default function ProviderSettingsTab() {
         years_of_experience: parseInt(experience) || 0,
         certifications,
         provider_is_active: isActive,
+        // Turning marketplace visibility on also marks the account as a paid
+        // care provider (a59) — search only lists rows where a59 and a60 are
+        // both Yes, and this is the flag that provisions the payout account.
+        ...(isActive ? { is_care_provider: true } : {}),
       });
+
 
       toast({ title: t("profile.profileUpdated") });
     } catch (e: any) {

@@ -312,10 +312,11 @@ export default function ProviderDashboard() {
           <Card className="border-transparent card-elevated mb-4">
             <CardContent className="p-5 text-sm text-muted-foreground leading-relaxed">
               {isZh
-                ? "本平台不处理资金或代收代付，亦不收取任何中介费用。请您与客户就服务费用、付款时间及方式自行协商完成。"
-                : "This platform does not process payments or hold funds, and charges no service fees. Please arrange payment amount, timing, and method directly with your client."}
+                ? "客户在下单时通过平台的在线支付完成付款，款项按订单记入您的收款账户。完成服务后金额转为可提现余额，您可在“收款账户”中提交提现申请；退款与纠纷同样按订单处理。"
+                : "Clients pay online when they place the booking, and each amount is recorded to your payout account. Once you mark the service complete the amount becomes withdrawable — request a payout from your payout account. Refunds and disputes are handled per order."}
             </CardContent>
           </Card>
+
         </TabsContent>
 
         <TabsContent value="settings" className="mt-4">

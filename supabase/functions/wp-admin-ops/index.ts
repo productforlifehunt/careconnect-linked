@@ -25,7 +25,12 @@ type Action =
   | "get_bookings_product"
   | "create_service_product"
   | "list_my_orders"
-  | "list_my_vendor_orders";
+  | "list_my_vendor_orders"
+  | "set_order_status"
+  | "get_my_payout"
+  | "save_my_payout"
+  | "request_withdrawal";
+
 
 
 function adminHeaders(contentType = "application/json"): Record<string, string> {
@@ -240,7 +245,65 @@ Deno.serve(async (req) => {
           console.error(`create_service_product failed [${res.status}]`, JSON.stringify(data));
           return json({ error: "WooCommerce product creation failed", status: res.status, details: data }, 502);
         }
-        return json({ ok: true, id: Number(data?.id), price: Number(data?.price || amount) });
+        const newId = Number(data?.id);
+        // wc/v3 creates the product under the store-key owner (an admin), which
+        // makes Dokan treat the admin as the seller: commissions land in the
+        // wrong account and an admin buyer is blocked from purchasing their own
+        // product. Hand the product over to the caregiver through Dokan's own
+        // vendor-assignment endpoint, falling back to the core post author
+        // field on builds that expose it.
+        let authorAssigned = false;
+        if (Number.isFinite(newId) && newId > 0) {
+          const attempts: Array<[string, RequestInit]> = [
+            [
+              `${wpBase}/wp-json/dokan/v1/products/${newId}`,
+              { method: "PUT", headers: adminHeaders(), body: JSON.stringify({ post_author: vendorId }) },
+            ],
+            [
+              `${wpBase}/wp-json/wc/v3/products/${newId}`,
+              {
+                method: "PUT",
+                headers: {
+                  Authorization: `Basic ${btoa(`${WC_CONSUMER_KEY}:${WC_CONSUMER_SECRET}`)}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ post_author: vendorId }),
+              },
+            ],
+            [
+              `${wpBase}/wp-json/wp/v2/product/${newId}`,
+              { method: "POST", headers: adminHeaders(), body: JSON.stringify({ author: vendorId }) },
+            ],
+          ];
+          for (const [url, init] of attempts) {
+            const attemptRes = await fetch(url, init).catch(() => null);
+            if (!attemptRes) continue;
+            const body = await attemptRes.text().catch(() => "");
+            if (attemptRes.ok) {
+              // Confirm Dokan now lists the product under the caregiver's store.
+              const check = await fetch(`${wpBase}/wp-json/dokan/v1/stores/${vendorId}/products?per_page=20`, {
+                headers: adminHeaders(),
+              }).catch(() => null);
+              const list = check && check.ok ? await check.json().catch(() => []) : [];
+              authorAssigned = Array.isArray(list)
+                ? list.some((prod: any) => Number(prod?.id) === newId)
+                : false;
+              if (authorAssigned) break;
+            }
+            console.error(`author assign attempt failed [${attemptRes.status}] ${url}`, body.slice(0, 200));
+          }
+          if (!authorAssigned) {
+            console.error(`create_service_product could not assign vendor ${vendorId} to product ${newId}`);
+          }
+        }
+        return json({
+          ok: true,
+          id: newId,
+          price: Number(data?.price || amount),
+          vendor_assigned: authorAssigned,
+        });
+
+
       }
 
       // Orders the caller placed as a client. Buyers have no wc/v3 read
@@ -284,19 +347,148 @@ Deno.serve(async (req) => {
           console.error(`list_my_vendor_orders failed [${res.status}]`, JSON.stringify(data));
           return json({ error: "WooCommerce order list failed", status: res.status, details: data }, 502);
         }
-        const mine = (Array.isArray(data) ? data : []).filter((order: any) => {
-          const inMeta = (Array.isArray(order?.meta_data) ? order.meta_data : []).some(
-            (m: any) => m?.key === "_dokan_vendor_id" && Number(m?.value) === userId,
+        // The vendor id lives on the just-in-time product's meta, not on the
+        // order or its line items, so enrich first (that copies
+        // _dokan_vendor_id onto the order as _provider_id) and filter after.
+        const enriched = await enrichOrdersWithServiceMeta(wpBase, Array.isArray(data) ? data : []);
+        const mine = enriched.filter((order: any) => {
+          const metaHit = (Array.isArray(order?.meta_data) ? order.meta_data : []).some(
+            (m: any) =>
+              (m?.key === "_dokan_vendor_id" || m?.key === "_provider_id") && Number(m?.value) === userId,
           );
-          const inItems = (Array.isArray(order?.line_items) ? order.line_items : []).some((li: any) =>
+          const itemHit = (Array.isArray(order?.line_items) ? order.line_items : []).some((li: any) =>
             (Array.isArray(li?.meta_data) ? li.meta_data : []).some(
               (m: any) => (m?.key === "_dokan_vendor_id" || m?.key === "_provider_id") && Number(m?.value) === userId,
             ),
           );
-          return inMeta || inItems;
+          return metaHit || itemHit;
         });
-        return json({ ok: true, data: await enrichOrdersWithServiceMeta(wpBase, mine) });
+        return json({ ok: true, data: mine });
+
       }
+
+      // Confirm / complete / cancel a booking. Neither the buyer nor the
+      // caregiver has wc/v3 write capability, so the store keys apply the
+      // change here — but only after proving the caller is the order's own
+      // customer or the caregiver the service product belongs to.
+      case "set_order_status": {
+        if (!WC_CONSUMER_KEY || !WC_CONSUMER_SECRET) {
+          return json({ error: "Server is missing WooCommerce store keys" }, 500);
+        }
+        const orderId = Number(payload?.order_id);
+        const status = String(payload?.status ?? "");
+        const allowed = ["processing", "completed", "cancelled", "on-hold", "refunded"];
+        if (!Number.isFinite(orderId) || orderId <= 0) {
+          return json({ error: "order_id must be a positive number" }, 400);
+        }
+        if (!allowed.includes(status)) {
+          return json({ error: `status must be one of ${allowed.join(", ")}` }, 400);
+        }
+        const auth = `Basic ${btoa(`${WC_CONSUMER_KEY}:${WC_CONSUMER_SECRET}`)}`;
+        const orderRes = await fetch(`${wpBase}/wp-json/wc/v3/orders/${orderId}`, {
+          headers: { Authorization: auth },
+        });
+        const order = await orderRes.json().catch(() => null);
+        if (!orderRes.ok || !order?.id) {
+          return json({ error: "Order not found", status: orderRes.status }, 404);
+        }
+        const isCustomer = Number(order?.customer_id) === userId;
+        const [enriched] = await enrichOrdersWithServiceMeta(wpBase, [order]);
+        const isVendor = (Array.isArray(enriched?.meta_data) ? enriched.meta_data : []).some(
+          (m: any) =>
+            (m?.key === "_dokan_vendor_id" || m?.key === "_provider_id") && Number(m?.value) === userId,
+        );
+        if (!isCustomer && !isVendor) {
+          return json({ error: "This booking does not belong to you" }, 403);
+        }
+        // A client may only cancel; the caregiver drives the rest.
+        if (isCustomer && !isVendor && status !== "cancelled") {
+          return json({ error: "Clients can only cancel a booking" }, 403);
+        }
+        const putRes = await fetch(`${wpBase}/wp-json/wc/v3/orders/${orderId}`, {
+          method: "PUT",
+          headers: { Authorization: auth, "Content-Type": "application/json" },
+          body: JSON.stringify({ status }),
+        });
+        const putBody = await putRes.json().catch(() => null);
+        if (!putRes.ok) {
+          console.error(`set_order_status failed [${putRes.status}]`, JSON.stringify(putBody));
+          return json({ error: "Order update failed", status: putRes.status, details: putBody }, 502);
+        }
+        return json({ ok: true, id: orderId, status: putBody?.status ?? status });
+      }
+
+      // Payout account + withdrawals. Dokan derives the vendor from the logged
+      // in user and ignores a user_id parameter, so these run with the
+      // caller's own token — never admin credentials, which would read and
+      // write the admin's balance instead of the caregiver's.
+      case "get_my_payout": {
+        const callerHeaders = { Authorization: `Bearer ${token}` };
+        const [balanceRes, listRes, storeRes] = await Promise.all([
+          fetch(`${wpBase}/wp-json/dokan/v1/withdraw/balance`, { headers: callerHeaders }),
+          fetch(`${wpBase}/wp-json/dokan/v1/withdraw?per_page=20`, { headers: callerHeaders }),
+          fetch(`${wpBase}/wp-json/dokan/v1/stores/${userId}`, { headers: callerHeaders }),
+        ]);
+        const balance = balanceRes.ok ? await balanceRes.json().catch(() => null) : null;
+        const withdrawals = listRes.ok ? await listRes.json().catch(() => null) : null;
+        const store = storeRes.ok ? await storeRes.json().catch(() => null) : null;
+        return json({
+          ok: true,
+          data: {
+            balance,
+            withdrawals: Array.isArray(withdrawals) ? withdrawals : [],
+            payment: (store as any)?.payment ?? {},
+          },
+        });
+      }
+
+      case "save_my_payout": {
+        const payment = payload?.payment;
+        if (!payment || typeof payment !== "object") {
+          return json({ error: "payment object is required" }, 400);
+        }
+        // Dokan's vendor settings endpoint writes the caller's own store.
+        let res = await fetch(`${wpBase}/wp-json/dokan/v1/settings`, {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ payment }),
+        });
+        if (!res.ok) {
+          // Older Dokan builds only expose the store record for this write.
+          res = await fetch(`${wpBase}/wp-json/dokan/v1/stores/${userId}`, {
+            method: "PUT",
+            headers: adminHeaders(),
+            body: JSON.stringify({ payment }),
+          });
+        }
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+          console.error(`save_my_payout failed [${res.status}]`, JSON.stringify(data));
+          return json({ error: "Payout settings update failed", status: res.status, details: data }, 502);
+        }
+        return json({ ok: true, data: (data as any)?.payment ?? {} });
+      }
+
+      case "request_withdrawal": {
+        const amount = Number(payload?.amount);
+        const method = String(payload?.method ?? "bank");
+        if (!Number.isFinite(amount) || amount <= 0) {
+          return json({ error: "amount must be > 0" }, 400);
+        }
+        const res = await fetch(`${wpBase}/wp-json/dokan/v1/withdraw`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ amount, method }),
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+          console.error(`request_withdrawal failed [${res.status}]`, JSON.stringify(data));
+          return json({ error: "Withdrawal request failed", status: res.status, details: data }, 502);
+        }
+        return json({ ok: true, data });
+      }
+
+
 
       default:
         return json({ error: `Unknown action: ${action}` }, 400);
