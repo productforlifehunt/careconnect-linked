@@ -221,10 +221,7 @@ export async function wpFetchBookings(): Promise<WPBooking[]> {
   try {
     const orders = await wpFetchOrders(50);
     if (!Array.isArray(orders)) return [];
-    const orderIds = orders.map((o: any) => Number(o.id)).filter(Boolean);
-    const { getOrderBookingMap } = await import('./woocommerce-api');
-    const nativeMap = await getOrderBookingMap(orderIds);
-    return orders.map((o: any) => mapWcOrderToBooking(o, nativeMap));
+    return orders.map((o: any) => mapWcOrderToBooking(o));
   } catch {
     return [];
   }
@@ -368,12 +365,10 @@ export async function wpFetchReviews(entityId?: string): Promise<any[]> {
 // ─── Provider Bookings (orders for the current vendor via Dokan) ────
 export async function wpFetchProviderBookings(): Promise<WPBooking[]> {
   try {
-    const { getDokanVendorOrders, getOrderBookingMap } = await import('./woocommerce-api');
+    const { getDokanVendorOrders } = await import('./woocommerce-api');
     const orders = await getDokanVendorOrders();
     if (!Array.isArray(orders)) return [];
-    const orderIds = orders.map((o: any) => Number(o.id)).filter(Boolean);
-    const nativeMap = await getOrderBookingMap(orderIds);
-    return orders.map((o: any) => mapWcOrderToBooking(o, nativeMap));
+    return orders.map((o: any) => mapWcOrderToBooking(o));
   } catch {
     return [];
   }

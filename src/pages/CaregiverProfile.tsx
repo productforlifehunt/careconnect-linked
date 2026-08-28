@@ -10,9 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Star, MapPin, Shield, Clock, CheckCircle, Calendar, MessageSquare, Heart, ArrowLeft, Phone, Loader2 } from "lucide-react";
 import { CommentsSection } from "@/components/comments/CommentsSection";
-import { useProvider, useProviderReviews, useCreateReview, useToggleSavedProvider, useSavedProviders, useStartConversation, useProviderAvailability, useProviderAvailabilitySetting } from "@/hooks/use-care-data";
+import { useProvider, useProviderReviews, useCreateReview, useToggleSavedProvider, useSavedProviders, useStartConversation, useProviderAvailability } from "@/hooks/use-care-data";
 import { useAddToCart } from "@/hooks/use-cart";
-import { getAvailabilityConflictMessage, getProviderBookingConflictMessage } from "@/services/woocommerce-api";
+import { getProviderCalendarBookingConflictMessage as getProviderBookingConflictMessage, getAvailabilityConflictMessage } from "@/features/calendar/booking-availability";
 import { createCareBookingProduct } from "@/services/care-booking-product";
 import { CARE_SERVICE_TYPES } from "@/lib/care-service-types";
 import { useAuth } from "@/contexts/AuthContext";
@@ -84,7 +84,6 @@ export default function CaregiverProfile() {
   const [reviewComment, setReviewComment] = useState("");
 
   const { data: availability } = useProviderAvailability(id);
-  const { data: availabilitySetting } = useProviderAvailabilitySetting(id || null);
   const isFavorited = savedProviders?.some((sp: any) => sp.provider_id === id) || false;
 
   /**
@@ -270,14 +269,6 @@ export default function CaregiverProfile() {
     if (selectedDate < new Date()) {
       toast({ title: isZh ? "无法预约过去时间" : "Cannot book in the past", description: isZh ? "请选择未来的日期与时间。" : "Please select a future date and time.", variant: "destructive" });
       return;
-    }
-    const minNoticeHours = Number(availabilitySetting?.min_notice_hours ?? 0);
-    if (minNoticeHours > 0) {
-      const earliestBookable = new Date(Date.now() + minNoticeHours * 60 * 60 * 1000);
-      if (selectedDate < earliestBookable) {
-        toast({ title: isZh ? "需提前预约" : "Minimum notice required", description: isZh ? `此护理者要求至少提前 ${minNoticeHours} 小时预约。` : `This caregiver requires at least ${minNoticeHours} hours notice.`, variant: "destructive" });
-        return;
-      }
     }
     const durationHours = getDurationHours(bookingTime, bookingEndTime);
     if (!durationHours) {

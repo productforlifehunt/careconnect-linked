@@ -1495,13 +1495,13 @@ export function useLeaveGroup() {
   });
 }
 
-// ─── Provider Availability (WooCommerce product meta) ───────
+// ─── Provider Availability (JetEngine CCT 187 user's calendar event) ───────
 export function useProviderAvailability(providerId: string | null) {
   return useQuery({
     queryKey: ["providerAvailability", providerId],
     queryFn: async () => {
-      const { getProviderAvailability } = await import("@/services/woocommerce-api");
-      return getProviderAvailability(providerId!);
+      const { getProviderCalendarAvailability } = await import("@/features/calendar/booking-availability");
+      return getProviderCalendarAvailability(providerId!);
     },
     enabled: !!providerId,
   });
@@ -1511,32 +1511,10 @@ export function useUpsertProviderAvailability() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: { providerId: string; slots: any[] }) => {
-      const { upsertProviderAvailability } = await import("@/services/woocommerce-api");
-      return upsertProviderAvailability(data.providerId, data.slots);
+      const { upsertProviderCalendarAvailability } = await import("@/features/calendar/booking-availability");
+      return upsertProviderCalendarAvailability(data.providerId, data.slots as any);
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["providerAvailability"] }); },
-  });
-}
-
-export function useProviderAvailabilitySetting(providerId: string | null) {
-  return useQuery({
-    queryKey: ["providerAvailabilitySetting", providerId],
-    queryFn: async () => {
-      const { getProviderAvailabilitySetting } = await import("@/services/woocommerce-api");
-      return getProviderAvailabilitySetting(providerId!);
-    },
-    enabled: !!providerId,
-  });
-}
-
-export function useUpdateProviderAvailabilitySetting() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: { providerId: string; setting: any }) => {
-      const { updateProviderAvailabilitySetting } = await import("@/services/woocommerce-api");
-      return updateProviderAvailabilitySetting(data.providerId, data.setting);
-    },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["providerAvailabilitySetting"] }); },
   });
 }
 

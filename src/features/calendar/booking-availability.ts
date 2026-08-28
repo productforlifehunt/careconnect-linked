@@ -8,7 +8,7 @@ import {
 } from "./source.wordpress";
 import { EVENT_TYPE_COLORS, type CalendarEvent } from "./types";
 
-type AvailabilitySlot = {
+export type AvailabilitySlot = {
   kind: "weekly" | "date";
   type: string;
   day_of_week?: number;
@@ -223,4 +223,52 @@ export async function createBookingCalendarEvent(params: {
     await inviteUserToEventWordPress(created.id, clientId).catch(() => undefined);
   }
   return created;
+}
+/**
+ * Pure check of a requested slot against the caregiver's weekly / date-specific
+ * availability derived from CCT 187. No WooCommerce involved.
+ */
+export function getAvailabilityConflictMessage(
+  availability: AvailabilitySlot[] = [],
+  date: string,
+  time: string,
+  durationHours = 0,
+): string | null {
+  if (!date || !time || !availability || availability.length === 0) return null;
+
+  const toMinutes = (v: string) => {
+    const [h, m] = String(v).split(":").map(Number);
+    return (h || 0) * 60 + (m || 0);
+  };
+  const dayOfWeek = new Date(`${date}T12:00:00`).getDay();
+  const specificSlots = availability.filter((slot) => slot.specific_date === date);
+
+  const evaluateDuration = (slot: AvailabilitySlot) => {
+    if (!durationHours || !slot.end_time) return null;
+    const endMinutes = toMinutes(time) + durationHours * 60;
+    if (endMinutes > toMinutes(slot.end_time)) {
+      return `Session would end at ${Math.floor(endMinutes / 60)}:${String(endMinutes % 60).padStart(2, "0")} but the caregiver is available until ${slot.end_time}.`;
+    }
+    return null;
+  };
+
+  const evaluate = (slots: AvailabilitySlot[], emptyMessage: string) => {
+    const blocked = slots.some((slot) => !slot.is_available && !slot.start_time && !slot.end_time);
+    if (blocked) return "Caregiver is not available on this date.";
+    const match = slots.find(
+      (slot) => slot.is_available && slot.start_time && slot.end_time && time >= slot.start_time && time < slot.end_time,
+    );
+    if (match) return evaluateDuration(match);
+    const ranges = slots
+      .filter((slot) => slot.is_available && slot.start_time && slot.end_time)
+      .map((slot) => `${slot.start_time}–${slot.end_time}`)
+      .join(", ");
+    return ranges ? `Caregiver is available ${ranges}.` : emptyMessage;
+  };
+
+  if (specificSlots.length > 0) return evaluate(specificSlots, "Caregiver is not available on this date.");
+
+  const weeklySlots = availability.filter((slot) => slot.day_of_week === dayOfWeek);
+  if (weeklySlots.length === 0) return "Caregiver has no availability set for this day.";
+  return evaluate(weeklySlots, "Caregiver is not available on this day.");
 }
