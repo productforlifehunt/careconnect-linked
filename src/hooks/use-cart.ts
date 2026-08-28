@@ -5,10 +5,14 @@ import {
   removeCartItem,
   clearCart,
   checkout,
-  createOrderRefund,
+  requestOrderRefund,
+  resolveOrderRefund,
+  getOrderNotes,
+  addOrderCustomerNote,
 } from '@/services/woocommerce-api';
 import { useToast } from '@/hooks/use-toast';
 import i18next from 'i18next';
+
 
 const Z = (cn: string, en: string) => (i18next.language?.startsWith('zh') ? cn : en);
 
