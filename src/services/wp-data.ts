@@ -187,6 +187,7 @@ function mapWcOrderToBooking(o: any, nativeBookingMap?: Map<number, any>): WPBoo
   else if (wcStatus === 'on-hold') status = 'pending';
   else if (wcStatus === 'completed') status = 'completed';
   else if (wcStatus === 'cancelled') status = 'cancelled';
+  else if (wcStatus === 'refunded') status = 'refunded';
 
   // Prefer native WooCommerce Bookings (plugin) as source of truth for schedule.
   const nativeBooking = nativeBookingMap?.get(Number(o.id));
