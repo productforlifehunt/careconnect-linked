@@ -159,9 +159,10 @@ export default function Cart() {
 
               <div className="rounded-lg bg-muted/40 p-3 text-sm text-muted-foreground">
                 {cn
-                  ? "下一步：将转到安全支付页面，由 Stripe / PayPal / 支付宝等已配置的支付方式直接完成付款。平台仅提供便利的收款入口，不代为托管款项，也不介入纠纷或退款仲裁。"
-                  : "Next: you'll be sent to the secure payment page where Stripe / PayPal / Alipay (whichever the platform has enabled) processes the payment directly. The platform only provides the payment convenience — it does not hold funds in escrow and does not arbitrate disputes or refunds."}
+                  ? "下一步：在本应用内完成下单，付款方式按平台已启用的渠道处理，全程无需跳转到其他网站。平台仅提供收款便利，不代为托管款项，也不介入纠纷或退款仲裁。"
+                  : "Next: your order is placed inside this app and handled by whichever payment method the platform has enabled — no redirect to any other website. The platform only provides the payment convenience; it does not hold funds in escrow and does not arbitrate disputes or refunds."}
               </div>
+
 
               {missingFields.length > 0 && (
                 <p className="text-sm text-destructive">
