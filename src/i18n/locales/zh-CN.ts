@@ -225,7 +225,7 @@ const zhCN = {
     reviewDesc: "分享您与{{name}}的体验", rating: "评分", comment: "评论（可选）",
     reviewPlaceholder: "您的体验如何？", submitReview: "提交评价",
     specialInstructions: "特殊说明",
-    status: { pending: "待确认", confirmed: "已确认", in_progress: "进行中", completed: "已完成", cancelled: "已取消", cancelled_by_user: "已取消", cancelled_by_provider: "服务方取消", processing: "处理中" },
+    status: { pending: "待确认", confirmed: "已确认", in_progress: "进行中", completed: "已完成", refunded: "已退款", cancelled: "已取消", cancelled_by_user: "已取消", cancelled_by_provider: "服务方取消", processing: "处理中" },
   },
   favorites: {
     favorites: "收藏", caregiversSaved: "您保存的护理人员", noFavorites: "还没有收藏",
