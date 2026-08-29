@@ -391,7 +391,8 @@ export async function addToCart({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: productId, quantity }),
       });
-      return normalizeStoreCart(cart);
+      addCartIntent(productId);
+      return normalizeStoreCart(await purgeGhostLines(cart));
     } catch (error) {
       lastError = error;
       if (!String(error).includes('not_purchasable')) throw error;
@@ -403,18 +404,24 @@ export async function addToCart({
 
 /** POST /wc/store/v1/cart/remove-item */
 export async function removeCartItem(itemKey: string) {
+  const before = await storeApiFetch('cart', { method: 'GET' });
+  const line = (before?.items || []).find((it: any) => it.key === itemKey);
   const cart = await storeApiFetch('cart/remove-item', {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ key: itemKey }),
   });
+  dropCartIntent(line?.id);
   return normalizeStoreCart(cart);
 }
 
 /** DELETE /wc/store/v1/cart/items */
 export async function clearCart() {
   const cart = await storeApiFetch('cart/items', { method: 'DELETE' });
+  writeCartIntent([]);
   return normalizeStoreCart(cart);
 }
+
 
 /**
  * POST /wc/store/v1/checkout
