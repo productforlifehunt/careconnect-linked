@@ -41,14 +41,11 @@ export function AppHeader() {
   const isStandalone = useStandaloneMode();
   const dashboardLabel = isStandalone ? t("nav.dashboard") : t("nav.enterApp");
   const isChallenged = site.family === "challenged";
-  const isCareDuo = site.id === "duocare";
   const isCareCNC = site.id === "carecnc";
   const isV1 = site.id === "challenged-v1";
   const logoBrand = site.family === "challenged" || site.brandSlug.startsWith("challenged") ? "challenged" : site.id;
-  const logoBadgeText = isCareDuo ? (isChinese ? "多护" : "CD") : site.logoText;
-  const logoWordmarkText = isCareDuo
-    ? (isChinese ? "多护" : "CareDuo")
-    : isCareCNC
+  const logoBadgeText = site.logoText;
+  const logoWordmarkText = isCareCNC
     ? (isChinese ? "护畅" : "Care cnc")
     : `${site.logoText}${site.logoAccent}`;
 
