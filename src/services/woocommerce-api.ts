@@ -72,7 +72,10 @@ async function adminOp<T = any>(action: string, body: Record<string, unknown> = 
   });
   const payload = await response.json().catch(() => null);
   if (!response.ok) {
-    throw new Error(`wp-admin-ops ${action} failed: ${response.status} - ${payload?.error ?? ''}`);
+    // Show the store's own wording when it explains the failure in plain
+    // language — the user must be able to resolve it inside the app.
+    const reason = typeof payload?.error === 'string' ? payload.error : '';
+    throw new Error(reason || `wp-admin-ops ${action} failed: ${response.status}`);
   }
   return (payload?.data ?? payload) as T;
 }
