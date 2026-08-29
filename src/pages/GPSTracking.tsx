@@ -7,7 +7,8 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Navigation, Clock, Shield, AlertTriangle, RefreshCw, Loader2, Radio, Route, Bell, Hexagon } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { MapPin, Navigation, Clock, Shield, AlertTriangle, RefreshCw, Loader2, Radio, Route, Bell, Hexagon, Plus, Trash2, Pencil, Crosshair } from "lucide-react";
 import { useLocationShares } from "@/hooks/use-care-data";
 import {
   shareMyLocationWordPress, disableMyLocationSharingWordPress,
@@ -16,6 +17,9 @@ import {
   fetchSafeZonesWordPress,
   fetchSafeZoneAlertsWordPress,
   acknowledgeAlertWordPress,
+  createSafeZoneWordPress,
+  updateSafeZoneWordPress,
+  deleteSafeZoneWordPress,
 } from "@/features/location/source.wordpress-extended";
 import { writeLocationAndCheckZones } from "@/features/location/source.wordpress";
 import { checkBreaches, getDistanceMeters } from "@/lib/locationService";
@@ -47,6 +51,22 @@ export default function GPSTracking() {
   const [alerts, setAlerts] = useState<any[]>([]);
   const [zones, setZones] = useState<any[]>([]);
   const [trailData, setTrailData] = useState<Record<string, [number, number][]>>({});
+  // Safe-zone editor state — zones are created and edited entirely in-app.
+  const emptyZoneForm = {
+    id: "" as string,
+    name: "",
+    zone_type: "Safe" as "Safe" | "Danger",
+    latitude: "" as string,
+    longitude: "" as string,
+    radius_meters: "200" as string,
+    notify_on_enter: true,
+    notify_on_exit: true,
+    is_active: true,
+  };
+  const [zoneDialogOpen, setZoneDialogOpen] = useState(false);
+  const [zoneForm, setZoneForm] = useState({ ...emptyZoneForm });
+  const [zoneSaving, setZoneSaving] = useState(false);
+  const [zoneDeletingId, setZoneDeletingId] = useState<string | null>(null);
 
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<L.Map | null>(null);
@@ -151,15 +171,19 @@ export default function GPSTracking() {
     zoneLayers.current = [];
 
     zones.filter(z => z.is_active).forEach(zone => {
-      const color = zone.zone_type === "danger" ? "#ef4444" : "hsl(var(--primary))";
-      if (zone.shape_type === "polygon" && zone.polygon_points?.length >= 3) {
+      // The CCT mapper returns "Danger"/"Polygon" capitalised — compare lowercased.
+      const isDanger = String(zone.zone_type).toLowerCase() === "danger";
+      const isPolygon = String(zone.shape_type).toLowerCase() === "polygon";
+      const label = isDanger ? Z("⚠️ 危险区域", "⚠️ Danger Zone") : Z("✅ 安全区域", "✅ Safe Zone");
+      const color = isDanger ? "#ef4444" : "hsl(var(--primary))";
+      if (isPolygon && zone.polygon_points?.length >= 3) {
         const poly = L.polygon(zone.polygon_points, {
           color,
           weight: 2,
           fillOpacity: 0.15,
-          dashArray: zone.zone_type === "danger" ? "6 4" : undefined,
+          dashArray: isDanger ? "6 4" : undefined,
         }).addTo(map);
-        poly.bindPopup(`<b>${zone.name}</b><br/>${zone.zone_type === "danger" ? Z("⚠️ 危险区域", "⚠️ Danger Zone") : Z("✅ 安全区域", "✅ Safe Zone")}`);
+        poly.bindPopup(`<b>${zone.name}</b><br/>${label}`);
         zoneLayers.current.push(poly);
       } else if (zone.latitude && zone.longitude) {
         const circle = L.circle([zone.latitude, zone.longitude], {
@@ -167,12 +191,13 @@ export default function GPSTracking() {
           color,
           weight: 2,
           fillOpacity: 0.12,
-          dashArray: zone.zone_type === "danger" ? "6 4" : undefined,
+          dashArray: isDanger ? "6 4" : undefined,
         }).addTo(map);
-        circle.bindPopup(`<b>${zone.name}</b><br/>${zone.zone_type === "danger" ? Z("⚠️ 危险区域", "⚠️ Danger Zone") : Z("✅ 安全区域", "✅ Safe Zone")}<br/>${Z("半径", "Radius")}: ${zone.radius_meters || 200}m`);
+        circle.bindPopup(`<b>${zone.name}</b><br/>${label}<br/>${Z("半径", "Radius")}: ${zone.radius_meters || 200}m`);
         zoneLayers.current.push(circle);
       }
     });
+
   }, [zones]);
 
   // ─── Update markers + trails when data changes ──────────────
@@ -342,7 +367,118 @@ export default function GPSTracking() {
     } catch {}
   };
 
+  // ─── Safe zone CRUD (100% in-app, never the WP admin) ──────
+  const reloadZones = async () => {
+    if (!userId) return;
+    try { setZones(await fetchSafeZonesWordPress(String(userId))); } catch {}
+  };
+
+  const openNewZone = () => {
+    const center = leafletMap.current?.getCenter();
+    setZoneForm({
+      ...emptyZoneForm,
+      latitude: center ? center.lat.toFixed(6) : "",
+      longitude: center ? center.lng.toFixed(6) : "",
+    });
+    setZoneDialogOpen(true);
+  };
+
+  const openEditZone = (zone: any) => {
+    setZoneForm({
+      id: String(zone.id),
+      name: zone.name || "",
+      zone_type: String(zone.zone_type).toLowerCase() === "danger" ? "Danger" : "Safe",
+      latitude: zone.latitude != null ? String(zone.latitude) : "",
+      longitude: zone.longitude != null ? String(zone.longitude) : "",
+      radius_meters: String(zone.radius_meters ?? 200),
+      notify_on_enter: !!zone.notify_on_enter,
+      notify_on_exit: !!zone.notify_on_exit,
+      is_active: !!zone.is_active,
+    });
+    setZoneDialogOpen(true);
+  };
+
+  const useMyLocationForZone = async () => {
+    try {
+      const pos = await getCurrentPosition({ timeout: 10000 });
+      if (!pos) throw new Error("no position");
+      setZoneForm(f => ({ ...f, latitude: pos.latitude.toFixed(6), longitude: pos.longitude.toFixed(6) }));
+    } catch {
+      toast({ title: t("gps.couldNotGetLocation"), description: t("gps.enableLocationAccess"), variant: "destructive" });
+    }
+  };
+
+  const handleSaveZone = async () => {
+    const lat = Number(zoneForm.latitude);
+    const lng = Number(zoneForm.longitude);
+    const radius = Number(zoneForm.radius_meters);
+    if (!zoneForm.name.trim()) {
+      toast({ title: Z("请填写区域名称", "Zone name is required"), variant: "destructive" });
+      return;
+    }
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+      toast({ title: Z("坐标无效", "Invalid coordinates"), variant: "destructive" });
+      return;
+    }
+    if (!Number.isFinite(radius) || radius < 20) {
+      toast({ title: Z("半径至少 20 米", "Radius must be at least 20 m"), variant: "destructive" });
+      return;
+    }
+    setZoneSaving(true);
+    try {
+      const payload = {
+        name: zoneForm.name.trim(),
+        zone_type: zoneForm.zone_type,
+        shape_type: "Radius",
+        latitude: lat,
+        longitude: lng,
+        radius_meters: Math.round(radius),
+        notify_on_enter: zoneForm.notify_on_enter,
+        notify_on_exit: zoneForm.notify_on_exit,
+        is_active: zoneForm.is_active,
+      };
+      if (zoneForm.id) {
+        await updateSafeZoneWordPress(zoneForm.id, payload);
+      } else {
+        await createSafeZoneWordPress({ user_id: String(userId), ...payload });
+      }
+      await reloadZones();
+      setZoneDialogOpen(false);
+      toast({ title: zoneForm.id ? Z("区域已更新", "Zone updated") : Z("区域已创建", "Zone created") });
+    } catch (err: any) {
+      toast({ title: Z("保存失败", "Save failed"), description: err?.message, variant: "destructive" });
+    } finally {
+      setZoneSaving(false);
+    }
+  };
+
+  const handleDeleteZone = async (zone: any) => {
+    setZoneDeletingId(String(zone.id));
+    try {
+      await deleteSafeZoneWordPress(String(zone.id));
+      setZones(prev => prev.filter(z => String(z.id) !== String(zone.id)));
+      toast({ title: Z("区域已删除", "Zone deleted") });
+    } catch (err: any) {
+      toast({ title: Z("删除失败", "Delete failed"), description: err?.message, variant: "destructive" });
+    } finally {
+      setZoneDeletingId(null);
+    }
+  };
+
+  const handleToggleZoneActive = async (zone: any, next: boolean) => {
+    setZones(prev => prev.map(z => (String(z.id) === String(zone.id) ? { ...z, is_active: next } : z)));
+    try {
+      await updateSafeZoneWordPress(String(zone.id), { is_active: next });
+    } catch (err: any) {
+      setZones(prev => prev.map(z => (String(z.id) === String(zone.id) ? { ...z, is_active: !next } : z)));
+      toast({ title: Z("更新失败", "Update failed"), description: err?.message, variant: "destructive" });
+    }
+  };
+
+  const dangerZoneCount = zones.filter(z => String(z.zone_type).toLowerCase() === "danger").length;
+
   const unreadAlerts = alerts.filter(a => !a.is_read);
+
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-5">
@@ -389,6 +525,105 @@ export default function GPSTracking() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Safe / danger zone editor — full in-app management */}
+      <Dialog open={zoneDialogOpen} onOpenChange={setZoneDialogOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Hexagon className="h-5 w-5 text-primary" />
+              {zoneForm.id ? Z("编辑区域", "Edit zone") : Z("新建区域", "New zone")}
+            </DialogTitle>
+            <DialogDescription>
+              {Z("设置区域中心、半径和提醒方式。", "Set the zone centre, radius and alert rules.")}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="zone-name">{Z("区域名称", "Zone name")}</Label>
+              <Input
+                id="zone-name"
+                value={zoneForm.name}
+                onChange={(e) => setZoneForm(f => ({ ...f, name: e.target.value }))}
+                placeholder={Z("例如：家", "e.g. Home")}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>{Z("区域类型", "Zone type")}</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  variant={zoneForm.zone_type === "Safe" ? "default" : "outline"}
+                  onClick={() => setZoneForm(f => ({ ...f, zone_type: "Safe" }))}
+                >
+                  <Shield className="h-4 w-4 mr-1" /> {Z("安全区域", "Safe zone")}
+                </Button>
+                <Button
+                  type="button"
+                  variant={zoneForm.zone_type === "Danger" ? "destructive" : "outline"}
+                  onClick={() => setZoneForm(f => ({ ...f, zone_type: "Danger" }))}
+                >
+                  <AlertTriangle className="h-4 w-4 mr-1" /> {Z("危险区域", "Danger zone")}
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="zone-lat">{Z("纬度", "Latitude")}</Label>
+                <Input id="zone-lat" inputMode="decimal" value={zoneForm.latitude}
+                  onChange={(e) => setZoneForm(f => ({ ...f, latitude: e.target.value }))} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="zone-lng">{Z("经度", "Longitude")}</Label>
+                <Input id="zone-lng" inputMode="decimal" value={zoneForm.longitude}
+                  onChange={(e) => setZoneForm(f => ({ ...f, longitude: e.target.value }))} />
+              </div>
+            </div>
+
+            <Button type="button" variant="outline" size="sm" onClick={useMyLocationForZone} className="w-full">
+              <Crosshair className="h-4 w-4 mr-1" /> {Z("使用我的当前位置", "Use my current location")}
+            </Button>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="zone-radius">{Z("半径（米）", "Radius (metres)")}</Label>
+              <Input id="zone-radius" inputMode="numeric" value={zoneForm.radius_meters}
+                onChange={(e) => setZoneForm(f => ({ ...f, radius_meters: e.target.value }))} />
+            </div>
+
+            <div className="space-y-3 rounded-lg border border-border p-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm">{Z("进入时提醒", "Alert on entry")}</Label>
+                <Switch checked={zoneForm.notify_on_enter}
+                  onCheckedChange={(v) => setZoneForm(f => ({ ...f, notify_on_enter: v }))} />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label className="text-sm">{Z("离开时提醒", "Alert on exit")}</Label>
+                <Switch checked={zoneForm.notify_on_exit}
+                  onCheckedChange={(v) => setZoneForm(f => ({ ...f, notify_on_exit: v }))} />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label className="text-sm">{Z("启用此区域", "Zone active")}</Label>
+                <Switch checked={zoneForm.is_active}
+                  onCheckedChange={(v) => setZoneForm(f => ({ ...f, is_active: v }))} />
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setZoneDialogOpen(false)} disabled={zoneSaving}>
+              {t("common.cancel")}
+            </Button>
+            <Button onClick={handleSaveZone} disabled={zoneSaving}>
+              {zoneSaving ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> {t("common.saving", "Saving...")}</> : t("common.save", "Save")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Map + Tabs */}
@@ -456,30 +691,64 @@ export default function GPSTracking() {
             <TabsContent value="zones" className="mt-0">
               <Card className="border-transparent card-elevated">
                 <CardContent className="py-4 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs text-muted-foreground">
+                      {Z("在此创建和管理安全区域与危险区域。", "Create and manage safe and danger zones here.")}
+                    </p>
+                    <Button size="sm" onClick={openNewZone} className="shrink-0">
+                      <Plus className="h-4 w-4 mr-1" />
+                      {Z("新建区域", "New zone")}
+                    </Button>
+                  </div>
                   {zones.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-8">{t("gps.noZones", "No geofence zones configured")}</p>
                   ) : (
-                    zones.map((zone: any) => (
-                      <div key={zone.id} className="p-3 rounded-lg bg-muted/50 border border-border">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className={`w-3 h-3 rounded-full ${zone.zone_type === "danger" ? "bg-destructive" : "bg-success"}`} />
-                            <p className="text-sm font-medium text-foreground">{zone.name}</p>
+                    zones.map((zone: any) => {
+                      const isDanger = String(zone.zone_type).toLowerCase() === "danger";
+                      const isPolygon = String(zone.shape_type).toLowerCase() === "polygon";
+                      return (
+                        <div key={zone.id} className="p-3 rounded-lg bg-muted/50 border border-border">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className={`w-3 h-3 rounded-full shrink-0 ${isDanger ? "bg-destructive" : "bg-success"}`} />
+                              <p className="text-sm font-medium text-foreground truncate">{zone.name}</p>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <Switch
+                                checked={!!zone.is_active}
+                                onCheckedChange={(v) => handleToggleZoneActive(zone, v)}
+                                aria-label={Z("启用区域", "Zone active")}
+                              />
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditZone(zone)} aria-label={Z("编辑", "Edit")}>
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive"
+                                onClick={() => handleDeleteZone(zone)}
+                                disabled={zoneDeletingId === String(zone.id)}
+                                aria-label={Z("删除", "Delete")}
+                              >
+                                {zoneDeletingId === String(zone.id)
+                                  ? <Loader2 className="h-4 w-4 animate-spin" />
+                                  : <Trash2 className="h-4 w-4" />}
+                              </Button>
+                            </div>
                           </div>
-                          <Badge variant={zone.is_active ? "default" : "secondary"} className="text-[10px]">
-                            {zone.is_active ? t("common.active", "Active") : t("common.inactive", "Inactive")}
-                          </Badge>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {isPolygon ? `Polygon (${zone.polygon_points?.length || 0} points)` : `${Z("半径", "Radius")}: ${zone.radius_meters || 200}m`}
+                            {" · "}{isDanger ? Z("⚠️ 危险", "⚠️ Danger") : Z("✅ 安全", "✅ Safe")}
+                            {" · "}{zone.is_active ? t("common.active", "Active") : t("common.inactive", "Inactive")}
+                          </p>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {zone.shape_type === "polygon" ? `Polygon (${zone.polygon_points?.length || 0} points)` : `Radius: ${zone.radius_meters || 200}m`}
-                          {" · "}{zone.zone_type === "danger" ? Z("⚠️ 危险", "⚠️ Danger") : Z("✅ 安全", "✅ Safe")}
-                        </p>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </CardContent>
               </Card>
             </TabsContent>
+
           </Tabs>
         </div>
 
@@ -575,7 +844,7 @@ export default function GPSTracking() {
                 <div>
                   <Label className="text-sm">{t("gps.geofenceAlerts")}</Label>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {zones.length} {t("gps.zonesConfigured", "zones")} ({zones.filter(z => z.zone_type === "danger").length} {t("gps.danger", "danger")})
+                    {zones.length} {t("gps.zonesConfigured", "zones")} ({dangerZoneCount} {t("gps.danger", "danger")})
                   </p>
                 </div>
                 <Switch checked={geofenceAlerts} onCheckedChange={setGeofenceAlerts} />

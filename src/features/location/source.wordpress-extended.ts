@@ -10,7 +10,12 @@
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { T, R } from "@/integrations/wp-schema";
-import { createNotificationWordPress } from "@/features/notifications/source.wordpress";
+import {
+  createNotificationWordPress,
+  fetchNotificationsWordPress,
+  markNotificationReadWordPress,
+  markAllNotificationsReadWordPress,
+} from "@/features/notifications/source.wordpress";
 import { fetchCurrentLocation, fetchLocationHistory, writeLocationAndCheckZones } from "@/features/location/source.wordpress";
 
 // NOTE: There is no `safe_zone_alerts` or `location_requests` CCT in the live
@@ -269,21 +274,36 @@ export async function deleteSafeZoneWordPress(id: string): Promise<void> {
 
 // ─── Safe Zone Alerts ───────────────────────────────────────
 //
-// No `safe_zone_alerts` CCT exists. Alerts surface via the `notification` CCT
-// (type = "safe_zone_breach"). The list endpoint returns an empty array; the
-// notifications page is the canonical alert inbox.
+// No `safe_zone_alerts` CCT exists. Alerts live in the `notification` CCT with
+// the LOCATION_ALERT radio code, so the GPS "Alerts" tab reads that inbox and
+// filters it down to location events instead of showing an empty list.
 
 export async function fetchSafeZoneAlertsWordPress(_caredOneId: string): Promise<any[]> {
-  return [];
+  try {
+    const all = await fetchNotificationsWordPress();
+    return all
+      .filter((n: any) => n.type === "location")
+      .map((n: any) => ({
+        id: n.id,
+        alert_type: /danger|危险/i.test(`${n.title} ${n.message}`) ? "entered_danger_zone" : "safe_zone",
+        message: n.message || n.title,
+        is_read: n.is_read,
+        created_at: n.created_at,
+      }));
+  } catch {
+    return [];
+  }
 }
 
-export async function acknowledgeAlertWordPress(_alertId: string): Promise<void> {
-  // Acknowledge happens at the notification level (markNotificationReadWordPress).
+export async function acknowledgeAlertWordPress(alertId: string): Promise<void> {
+  // Alerts are notification rows — acknowledging one marks it read.
+  await markNotificationReadWordPress(alertId);
 }
 
 export async function acknowledgeAllAlertsWordPress(_caredOneId: string): Promise<void> {
-  // No-op — handled by markAllNotificationsReadWordPress.
+  await markAllNotificationsReadWordPress();
 }
+
 
 // ─── Cared One Location (delegates to source.wordpress.ts) ───
 
