@@ -553,7 +553,7 @@ const en = {
     reviewPlaceholder: "How was your experience?",
     submitReview: "Submit Review",
     specialInstructions: "Special Instructions",
-    status: { pending: "Pending", confirmed: "Confirmed", in_progress: "In Progress", completed: "Completed", cancelled: "Cancelled", cancelled_by_user: "Cancelled", cancelled_by_provider: "Cancelled by Provider", processing: "Processing" },
+    status: { pending: "Pending", confirmed: "Confirmed", in_progress: "In Progress", completed: "Completed", refunded: "Refunded", cancelled: "Cancelled", cancelled_by_user: "Cancelled", cancelled_by_provider: "Cancelled by Provider", processing: "Processing" },
   },
 
   // ═══ FAVORITES ═══
