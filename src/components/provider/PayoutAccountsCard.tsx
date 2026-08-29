@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Wallet, CheckCircle2, Info } from "lucide-react";
-import { getMyPayout, saveMyPayout, requestWithdrawal } from "@/services/woocommerce-api";
+import { getMyPayout, saveMyPayout, requestWithdrawal, cancelWithdrawal } from "@/services/woocommerce-api";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 
