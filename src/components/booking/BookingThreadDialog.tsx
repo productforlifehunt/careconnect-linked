@@ -98,7 +98,7 @@ export default function BookingThreadDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {refundStatus && (
+        {effectiveRefundStatus && (
           <div className="rounded-lg border border-border/60 bg-muted/40 p-3 space-y-1.5">
             <div className="flex items-center justify-between gap-2">
               <span className="text-sm font-semibold text-foreground">
@@ -106,12 +106,12 @@ export default function BookingThreadDialog({
               </span>
               <Badge
                 variant={
-                  refundStatus === "approved" ? "default" : refundStatus === "declined" ? "destructive" : "secondary"
+                  effectiveRefundStatus === "approved" ? "default" : effectiveRefundStatus === "declined" ? "destructive" : "secondary"
                 }
               >
-                {refundStatus === "approved"
+                {effectiveRefundStatus === "approved"
                   ? (isZh ? "已退款" : "Refunded")
-                  : refundStatus === "declined"
+                  : effectiveRefundStatus === "declined"
                     ? (isZh ? "已拒绝" : "Declined")
                     : (isZh ? "待处理" : "Awaiting decision")}
               </Badge>
