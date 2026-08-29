@@ -198,9 +198,14 @@ export function checkBreaches(lat: number, lng: number, zones: any[]): ZoneBreac
   const results: ZoneBreachResult[] = [];
   for (const zone of zones) {
     if (!isZoneActiveNow(zone)) continue;
+    // Zone rows arrive capitalised ("Danger" / "Polygon") from the CCT mapper,
+    // so every comparison has to be case-insensitive or danger zones silently
+    // behave like safe zones.
+    const isDanger = String(zone.zone_type).toLowerCase() === "danger";
+    const isPolygon = String(zone.shape_type).toLowerCase() === "polygon";
     let inside = false;
     let distance = 0;
-    if (zone.shape_type === "polygon" && zone.polygon_points?.length >= 3) {
+    if (isPolygon && zone.polygon_points?.length >= 3) {
       const pts: [number, number][] = zone.polygon_points;
       const smoothed = zone.corner_radius?.some((r: number) => r > 0) ? chaikinSmoothPerVertex(pts, zone.corner_radius) : pts;
       inside = isPointInPolygon(lat, lng, smoothed);
@@ -209,9 +214,9 @@ export function checkBreaches(lat: number, lng: number, zones: any[]): ZoneBreac
       distance = Math.round(getDistanceMeters(lat, lng, zone.latitude, zone.longitude));
       inside = distance <= (zone.radius_meters || 200);
     }
-    const breached = zone.zone_type === "danger" ? inside : !inside;
+    const breached = isDanger ? inside : !inside;
     if (breached) {
-      const alertType = zone.zone_type === "danger"
+      const alertType = isDanger
         ? (inside ? "entered_danger_zone" : "exited_danger_zone")
         : (inside ? "entered_safe_zone" : "exited_safe_zone");
       results.push({ zoneId: zone.id, zoneName: zone.name, zoneType: zone.zone_type, alertType, distance, breached });
@@ -219,6 +224,7 @@ export function checkBreaches(lat: number, lng: number, zones: any[]): ZoneBreac
   }
   return results;
 }
+
 
 // ─── Full pipeline: save location + check zones + create dedup'd alerts ───
 
