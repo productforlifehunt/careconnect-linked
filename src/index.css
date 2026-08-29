@@ -198,6 +198,29 @@
   }
 }
 
+/* ===== NotchSafety (family locator) site theme ===== */
+@layer base {
+  .site-notchsafety {
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 158 64% 42%;
+    --secondary-foreground: 0 0% 100%;
+    --accent: 221 70% 95%;
+    --accent-foreground: 221 83% 35%;
+    --ring: 221 83% 53%;
+    --hero-gradient: linear-gradient(135deg, hsl(221 83% 53%), hsl(199 89% 48%));
+    --radius: 1rem;
+  }
+
+  .site-notchsafety.dark {
+    --primary: 217 91% 62%;
+    --primary-foreground: 0 0% 100%;
+    --accent: 221 40% 22%;
+    --accent-foreground: 221 70% 82%;
+    --ring: 217 91% 62%;
+  }
+}
+
 /* ===== CareCNC (Airbnb-style) site theme ===== */
 @layer base {
   .site-carecnc {
