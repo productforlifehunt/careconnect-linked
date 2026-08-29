@@ -455,19 +455,27 @@ export async function checkout(billingData?: {
     country: billingData?.country || 'US',
   };
 
+  // Last line of defence against resurrected persistent-cart lines: re-read the
+  // cart (which purges anything this device did not add) and refuse to charge
+  // an empty or ghost-only cart.
+  const verified = await getCart();
+  if (!verified.items.length) {
+    throw new Error('Your cart is empty — please add a booking again before paying.');
+  }
+
   // The store requires a payment method on the order. Read the gateways the
   // store currently offers and prefer one that leaves the order awaiting
   // payment, so the customer still settles it on the secure payment page.
   let method = 'bacs';
   try {
-    const cart = await storeApiFetch('cart', { method: 'GET' });
-    const available: string[] = Array.isArray(cart?.payment_methods) ? cart.payment_methods : [];
+    const available: string[] = Array.isArray(verified.raw?.payment_methods) ? verified.raw.payment_methods : [];
     if (available.length) {
       method = available.find((m) => m === 'bacs') || available.find((m) => m === 'cheque') || available[0];
     }
   } catch {
     // fall back to the default below
   }
+
 
   const result = await storeApiFetch('checkout', {
     method: 'POST',
