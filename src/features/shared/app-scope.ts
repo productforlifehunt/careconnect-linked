@@ -50,14 +50,12 @@ export function currentAppScope(): AppScope {
     const params = new URLSearchParams(window.location.search);
     const p = params.get("__site");
     if (p === "carecnc" || p === "careconnected") return "carecnc";
-    if (p === "duocare") return "carecnc";
     if (p === "notchnote" || p === "notch") return "benotch";
     if (p === "challenged" || p === "challenged-v1" || p === "challenged-1.0" || p === "yichang-v1") return "challenged";
 
     const host = window.location.host;
     const hostname = window.location.hostname;
     if (/^(www\.)?carecnc\.com$/.test(host) || /^(www\.)?carecnc\.com$/.test(hostname)) return "carecnc";
-    if (/^(www\.)?duocare\.app$/.test(host) || /^(www\.)?duocare\.app$/.test(hostname)) return "carecnc";
     if (window.location.pathname.startsWith("/notch")) return "benotch";
   } catch {
     /* ignore */
