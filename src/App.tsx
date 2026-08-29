@@ -55,6 +55,7 @@ import Resources from "./pages/Resources";
 import JoinGroup from "./pages/JoinGroup";
 import XianyuListings from "./pages/XianyuListings";
 import NotchApp from "./notch/NotchApp";
+import SafetyApp from "./pages/safety/SafetyApp";
 
 // Static-first defaults: no auto refetch on focus/mount/reconnect.
 // Data only fetches on first mount or explicit invalidation (after a mutation).
@@ -155,6 +156,10 @@ function RootRouter() {
   // mount the entire app as Notch Note in standalone mode.
   if (site.id === "notchnote") {
     return <NotchApp base="" standalone />;
+  }
+  // NotchSafety — standalone family-locator front over the same data model.
+  if (site.id === "notchsafety") {
+    return <SafetyApp />;
   }
   return (
     <Routes>

@@ -2,13 +2,13 @@ import React, { createContext, useContext, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n/config";
 
-export type SiteId = "carecnc" | "challenged" | "challenged-v1" | "notchnote";
+export type SiteId = "carecnc" | "challenged" | "challenged-v1" | "notchnote" | "notchsafety";
 
 export interface SiteConfig {
   id: SiteId;
   /** Brand family — versioned variants (e.g. challenged-v1) share the
    *  same family as their parent so id-based UI checks keep working. */
-  family?: "challenged" | "carecnc" | "notchnote";
+  family?: "challenged" | "carecnc" | "notchnote" | "notchsafety";
   name: string;
   tagline: string;
   logoText: string;
@@ -174,6 +174,7 @@ function detectSite(): SiteId {
   if (siteParam === "challenged-v1" || siteParam === "challenged-1.0" || siteParam === "yichang-v1") return "challenged-v1";
   if (siteParam === "carecnc" || siteParam === "careconnected") return "carecnc";
   if (siteParam === "notchnote" || siteParam === "notch") return "notchnote";
+  if (siteParam === "notchsafety" || siteParam === "safety") return "notchsafety";
 
   if (DOMAIN_MAP[host]) return DOMAIN_MAP[host];
   if (DOMAIN_MAP[hostname]) return DOMAIN_MAP[hostname];
@@ -192,11 +193,24 @@ const notchNoteConfig: SiteConfig = {
   cssClass: "site-notchnote", brandSlug: "notchnote",
 };
 
+const notchSafetyConfig: SiteConfig = {
+  ...careCNCConfig,
+  id: "notchsafety", family: "notchsafety", name: "NotchSafety",
+  tagline: "Know everyone is safe.",
+  logoText: "Notch", logoAccent: "Safety",
+  footerBrand: "NotchSafety",
+  metaTitle: "NotchSafety — Family location & safe zones",
+  metaDescription: "See where your family is, get alerts when they leave or enter a safe zone, and send SOS in one tap.",
+  cssClass: "site-notchsafety", brandSlug: "notchsafety",
+  navLabels: { ...careCNCConfig.navLabels, gpsTracking: "Map" },
+};
+
 const SITE_CONFIGS: Record<SiteId, SiteConfig> = {
   challenged: challengedConfig,
   "challenged-v1": challengedV1Config,
   carecnc: careCNCConfig,
   notchnote: notchNoteConfig,
+  notchsafety: notchSafetyConfig,
 };
 
 const SiteContext = createContext<SiteConfig>(careCNCConfig);
@@ -211,7 +225,7 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const html = document.documentElement;
     // Remove any existing site class
-    html.classList.remove("site-carecnc", "site-challenged", "site-notchnote");
+    html.classList.remove("site-carecnc", "site-challenged", "site-notchnote", "site-notchsafety");
     html.classList.add(config.cssClass);
 
     // Update page title
