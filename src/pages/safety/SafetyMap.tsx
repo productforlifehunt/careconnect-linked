@@ -4,7 +4,7 @@ import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useTranslation } from "react-i18next";
 import {
-  BatteryCharging, Battery, Crosshair, Loader2, MapPin, Navigation,
+  Battery, Crosshair, Loader2, MapPin, Navigation,
   RefreshCw, ShieldAlert, Users, CheckCircle2, ChevronRight, Car,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -388,7 +388,6 @@ export default function SafetyMap() {
               {Z("发送 SOS", "Send SOS")}
             </Button>
           </DialogFooter>
-        </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
@@ -409,7 +408,6 @@ function MemberRow({
   const Z = (cn: string, en: string) => (isCN ? cn : en);
   const snap = member.snapshot;
   const battery = snap?.battery_level;
-  const charging = String(snap?.phone_is_charging || "").toLowerCase().includes("b") ? false : false;
   const moving = Number(snap?.speed || 0) > 2.5;
 
   return (
@@ -446,7 +444,7 @@ function MemberRow({
             <span>{timeAgo(snap?.captured_at, isCN)}</span>
             {battery != null && (
               <span className="flex items-center gap-1">
-                {charging ? <BatteryCharging className="h-3 w-3" /> : <Battery className="h-3 w-3" />}
+                <Battery className="h-3 w-3" />
                 {Math.round(battery)}%
               </span>
             )}
