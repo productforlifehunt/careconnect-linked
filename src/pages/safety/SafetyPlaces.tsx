@@ -158,10 +158,10 @@ export default function SafetyPlaces() {
         </div>
       ) : (
         <ul className="space-y-2">
-          {zones.map((z: any) => {
+          {zones.map((z: any, idx: number) => {
             const isDanger = String(z.zone_type).toLowerCase() === "danger";
             return (
-              <li key={z.id} className="flex items-start gap-3 rounded-xl border p-3">
+              <li key={`${z.id || "zone"}-${idx}`} className="flex items-start gap-3 rounded-xl border p-3">
                 <span
                   className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
                     isDanger ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"
@@ -171,7 +171,7 @@ export default function SafetyPlaces() {
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="truncate text-sm font-medium">{z.name}</span>
+                    <span className="truncate text-sm font-medium">{z.name || Z("未命名地点", "Unnamed place")}</span>
                     <Badge variant={isDanger ? "destructive" : "secondary"} className="h-4 px-1 text-[10px]">
                       {isDanger ? Z("危险", "Danger") : Z("安全", "Safe")}
                     </Badge>
@@ -182,7 +182,7 @@ export default function SafetyPlaces() {
                     )}
                   </div>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    {z.latitude?.toFixed?.(4)}, {z.longitude?.toFixed?.(4)} · {z.radius_meters || 200} m
+                    {z.latitude != null && z.longitude != null ? `${z.latitude.toFixed(4)}, ${z.longitude.toFixed(4)}` : Z("无坐标", "No coordinates")} · {z.radius_meters || 200} m
                   </p>
                   <p className="mt-0.5 text-[11px] text-muted-foreground">
                     {[z.notify_on_enter ? Z("到达提醒", "Arrival alerts") : null, z.notify_on_exit ? Z("离开提醒", "Departure alerts") : null]

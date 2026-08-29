@@ -113,7 +113,7 @@ export default function SafetyMap() {
       const icon = L.divIcon({
         className: "notch-safety-pin",
         html: `<div style="width:44px;height:44px;border-radius:50%;background:${person.isSelf ? "hsl(var(--primary))" : "hsl(var(--foreground))"};color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;border:3px solid #fff;box-shadow:0 3px 12px rgba(0,0,0,.35)">
-          ${person.avatar ? `<img src="${person.avatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover"/>` : initialsOf(person.name)}
+          ${initialsOf(person.name)}
           ${moving ? `<span style="position:absolute;bottom:-3px;right:-3px;width:14px;height:14px;border-radius:50%;background:#22c55e;border:2px solid #fff"></span>` : ""}
         </div>`,
         iconSize: [44, 44],
@@ -406,6 +406,7 @@ function MemberRow({
   onFocus: () => void;
 }) {
   const Z = (cn: string, en: string) => (isCN ? cn : en);
+  const [avatarBroken, setAvatarBroken] = useState(false);
   const snap = member.snapshot;
   const battery = snap?.battery_level;
   const moving = Number(snap?.speed || 0) > 2.5;
@@ -414,8 +415,13 @@ function MemberRow({
     <li>
       <div className="flex items-center gap-3 px-4 py-3">
         <button type="button" onClick={onFocus} className="shrink-0" aria-label={Z("在地图上定位", "Show on map")}>
-          {member.avatar ? (
-            <img src={member.avatar} alt={member.name} className="h-10 w-10 rounded-full object-cover" />
+          {member.avatar && !avatarBroken ? (
+            <img
+              src={member.avatar}
+              alt={member.name}
+              onError={() => setAvatarBroken(true)}
+              className="h-10 w-10 rounded-full object-cover"
+            />
           ) : (
             <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
               {initialsOf(member.name)}
