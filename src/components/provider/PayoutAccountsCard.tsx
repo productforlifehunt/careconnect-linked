@@ -48,6 +48,11 @@ export default function PayoutAccountsCard() {
   const balance = Number(data?.balance?.current_balance ?? 0);
   const minimum = Number(data?.balance?.withdraw_limit ?? 0) || 0;
   const hasPayoutDetails = !!(paypalEmail.trim() || (accountName.trim() && accountNumber.trim()));
+  // Only one payout request can be open at a time, so say so up front instead
+  // of letting the caregiver hit a rejection they can't explain.
+  const pendingPayout = (data?.withdrawals ?? []).find(
+    (w: any) => String(w.status).toLowerCase() === "pending",
+  );
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -206,7 +211,7 @@ export default function PayoutAccountsCard() {
             <Button
               variant="secondary"
               onClick={() => withdrawMutation.mutate()}
-              disabled={withdrawMutation.isPending || !hasPayoutDetails || balance <= 0}
+              disabled={withdrawMutation.isPending || !hasPayoutDetails || balance <= 0 || !!pendingPayout}
             >
               {withdrawMutation.isPending
                 ? (isZh ? "提交中..." : "Submitting...")
@@ -216,6 +221,13 @@ export default function PayoutAccountsCard() {
           {!hasPayoutDetails && (
             <p className="text-xs text-muted-foreground">
               {isZh ? "请先保存收款信息，然后即可申请提现。" : "Save your payout details first, then you can request a payout."}
+            </p>
+          )}
+          {!!pendingPayout && (
+            <p className="text-xs text-muted-foreground">
+              {isZh
+                ? `您有一笔 ${currency}${Number(pendingPayout.amount).toFixed(2)} 的提现申请正在处理中，处理完成后即可再次申请。`
+                : `A ${currency}${Number(pendingPayout.amount).toFixed(2)} payout request is still being processed — you can request another once it's settled.`}
             </p>
           )}
         </div>

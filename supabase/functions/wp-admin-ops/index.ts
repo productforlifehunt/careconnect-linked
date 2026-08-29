@@ -646,7 +646,13 @@ Deno.serve(async (req) => {
         const data = await res.json().catch(() => null);
         if (!res.ok) {
           console.error(`request_withdrawal failed [${res.status}]`, JSON.stringify(data));
-          return json({ error: "Withdrawal request failed", status: res.status, details: data }, 502);
+          // Relay the store's own wording (e.g. "You already have a pending
+          // withdraw request") so the caregiver can fix it inside the app and
+          // never has to open the WordPress dashboard to find out why.
+          const message = typeof (data as any)?.message === "string"
+            ? (data as any).message
+            : "Withdrawal request failed";
+          return json({ error: message, status: res.status, details: data }, 502);
         }
         return json({ ok: true, data });
       }

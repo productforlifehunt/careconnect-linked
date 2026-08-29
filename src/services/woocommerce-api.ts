@@ -72,7 +72,10 @@ async function adminOp<T = any>(action: string, body: Record<string, unknown> = 
   });
   const payload = await response.json().catch(() => null);
   if (!response.ok) {
-    throw new Error(`wp-admin-ops ${action} failed: ${response.status} - ${payload?.error ?? ''}`);
+    // Show the store's own wording when it explains the failure in plain
+    // language — the user must be able to resolve it inside the app.
+    const reason = typeof payload?.error === 'string' ? payload.error : '';
+    throw new Error(reason || `wp-admin-ops ${action} failed: ${response.status}`);
   }
   return (payload?.data ?? payload) as T;
 }
@@ -492,12 +495,14 @@ export async function checkout(billingData?: {
   const orderId = result?.order_id;
   const orderKey = result?.order_key || '';
   const server = getActiveServer();
-  // When the gateway already accepted the order (offline / bank transfer), the
-  // redirect_url is just WordPress's own "order received" page — we stay
-  // headless and show our own confirmation screen instead. Only hand the
-  // customer off when payment still has to be collected by a gateway.
+  // Full headless rule: the customer must never be dropped onto a WordPress
+  // page. Offline methods (bank transfer / cheque / cash) settle outside the
+  // store, so we always finish on our own confirmation screen. A hosted pay
+  // page is only ever used if a real online gateway is enabled *and* it still
+  // needs to collect money — otherwise the order would sit unpaid forever.
+  const OFFLINE_METHODS = ['bacs', 'cheque', 'cod'];
   const paymentStatus = result?.payment_result?.payment_status || '';
-  const needsPayment = paymentStatus !== 'success';
+  const needsPayment = paymentStatus !== 'success' && !OFFLINE_METHODS.includes(method);
   const payment_url = needsPayment
     ? `${server.baseUrl.replace(/\/$/, '')}/checkout/order-pay/${orderId}/?pay_for_order=true&key=${encodeURIComponent(orderKey)}`
     : '';
