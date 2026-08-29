@@ -391,9 +391,6 @@ export default function ProviderDashboard() {
 
         </TabsContent>
 
-
-        </TabsContent>
-
         <TabsContent value="settings" className="mt-4">
           <ProviderSettingsTab />
         </TabsContent>
