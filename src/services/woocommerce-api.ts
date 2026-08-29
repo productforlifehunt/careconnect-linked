@@ -492,12 +492,14 @@ export async function checkout(billingData?: {
   const orderId = result?.order_id;
   const orderKey = result?.order_key || '';
   const server = getActiveServer();
-  // When the gateway already accepted the order (offline / bank transfer), the
-  // redirect_url is just WordPress's own "order received" page — we stay
-  // headless and show our own confirmation screen instead. Only hand the
-  // customer off when payment still has to be collected by a gateway.
+  // Full headless rule: the customer must never be dropped onto a WordPress
+  // page. Offline methods (bank transfer / cheque / cash) settle outside the
+  // store, so we always finish on our own confirmation screen. A hosted pay
+  // page is only ever used if a real online gateway is enabled *and* it still
+  // needs to collect money — otherwise the order would sit unpaid forever.
+  const OFFLINE_METHODS = ['bacs', 'cheque', 'cod'];
   const paymentStatus = result?.payment_result?.payment_status || '';
-  const needsPayment = paymentStatus !== 'success';
+  const needsPayment = paymentStatus !== 'success' && !OFFLINE_METHODS.includes(method);
   const payment_url = needsPayment
     ? `${server.baseUrl.replace(/\/$/, '')}/checkout/order-pay/${orderId}/?pay_for_order=true&key=${encodeURIComponent(orderKey)}`
     : '';
