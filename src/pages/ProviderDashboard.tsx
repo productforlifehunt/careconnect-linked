@@ -15,6 +15,7 @@ import {
 import ProviderSettingsTab from "@/components/provider/ProviderSettingsTab";
 import MyBookingServicesTab from "@/components/provider/MyBookingServicesTab";
 import BookingThreadDialog from "@/components/booking/BookingThreadDialog";
+import PayoutAccountsCard from "@/components/provider/PayoutAccountsCard";
 
 
 import {
