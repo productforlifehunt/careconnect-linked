@@ -136,7 +136,7 @@ export default function Bookings() {
 
   const allBookings = bookings || [];
   const upcoming = allBookings.filter((b: any) => ["confirmed", "pending", "in_progress"].includes(b.status));
-  const past = allBookings.filter((b: any) => ["completed", "cancelled", "cancelled_by_user", "cancelled_by_provider"].includes(b.status));
+  const past = allBookings.filter((b: any) => ["completed", "refunded", "cancelled", "cancelled_by_user", "cancelled_by_provider"].includes(b.status));
 
   const BookingCard = ({ booking }: { booking: any }) => (
     <Card className="border-transparent card-elevated">
