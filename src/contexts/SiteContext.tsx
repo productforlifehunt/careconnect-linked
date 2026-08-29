@@ -2,13 +2,13 @@ import React, { createContext, useContext, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n/config";
 
-export type SiteId = "carecnc" | "challenged" | "challenged-v1" | "duocare" | "notchnote";
+export type SiteId = "carecnc" | "challenged" | "challenged-v1" | "notchnote";
 
 export interface SiteConfig {
   id: SiteId;
   /** Brand family — versioned variants (e.g. challenged-v1) share the
    *  same family as their parent so id-based UI checks keep working. */
-  family?: "challenged" | "carecnc" | "duocare" | "notchnote";
+  family?: "challenged" | "carecnc" | "notchnote";
   name: string;
   tagline: string;
   logoText: string;
@@ -135,45 +135,6 @@ const challengedConfig: SiteConfig = {
   trustBadges: ["badge1", "badge2", "badge3", "badge4", "badge5"],
 };
 
-const duoCareConfig: SiteConfig = {
-  id: "duocare",
-  family: "duocare",
-  name: "CareDuo",
-  tagline: "Simple care for everyday life.",
-  logoText: "Care",
-  logoAccent: "Duo",
-  heroTitle: "Trusted care,",
-  heroHighlight: "made simpler.",
-  heroSubtitle: "CareDuo helps families find trusted caregivers, manage schedules, and stay connected with the people they care about.",
-  ctaTitle: "Ready to arrange care with confidence?",
-  ctaSubtitle: "Use CareDuo to find reliable support, compare options, and keep care organized in one place.",
-  ctaButton: "Find Care",
-  searchPlaceholder: "What kind of care do you need?",
-  howItWorksTitle: "How CareDuo Works",
-  footerBrand: "CareDuo",
-  footerTagline: "Trusted care for families, seniors, children, pets, and everyday support.",
-  metaTitle: "CareDuo — Simple, trusted care",
-  metaDescription: "Find trusted caregivers, manage bookings, and keep care organized with CareDuo.",
-  cssClass: "site-duocare",
-  contactEmail: "hello@duocare.app",
-  brandSlug: "duocare",
-  caredOneSingular: "Loved One",
-  careGroupSingular: "Care Circle",
-  navLabels: {
-    careGroups: "Care Circles",
-    findCare: "Find Care",
-    caredOnes: "Loved Ones",
-    dashboard: "Dashboard",
-    gpsTracking: "GPS Tracking",
-  },
-  howItWorksSteps: [
-    { step: "1", titleKey: "step1Title", descKey: "step1Desc" },
-    { step: "2", titleKey: "step2Title", descKey: "step2Desc" },
-    { step: "3", titleKey: "step3Title", descKey: "step3Desc" },
-  ],
-  trustBadges: ["badge1", "badge2", "badge3"],
-};
-
 // 忆畅 early-launch variant.
 // Same Chinese brand as `challenged`, but trimmed feature set.
 // Use ?__site=challenged-v1 (or its dedicated domain) to load this build.
@@ -192,8 +153,6 @@ const challengedV1Config: SiteConfig = {
 const DOMAIN_MAP: Record<string, SiteId> = {
   "challenged.com": "challenged",
   "www.challenged.com": "challenged",
-  "duocare.app": "duocare",
-  "www.duocare.app": "duocare",
   "carecnc.com": "carecnc",
   "www.carecnc.com": "carecnc",
   "localhost:5174": "challenged",
@@ -214,7 +173,6 @@ function detectSite(): SiteId {
   if (siteParam === "challenged") return "challenged";
   if (siteParam === "challenged-v1" || siteParam === "challenged-1.0" || siteParam === "yichang-v1") return "challenged-v1";
   if (siteParam === "carecnc" || siteParam === "careconnected") return "carecnc";
-  if (siteParam === "duocare") return "duocare";
   if (siteParam === "notchnote" || siteParam === "notch") return "notchnote";
 
   if (DOMAIN_MAP[host]) return DOMAIN_MAP[host];
@@ -238,7 +196,6 @@ const SITE_CONFIGS: Record<SiteId, SiteConfig> = {
   challenged: challengedConfig,
   "challenged-v1": challengedV1Config,
   carecnc: careCNCConfig,
-  duocare: duoCareConfig,
   notchnote: notchNoteConfig,
 };
 
@@ -254,7 +211,7 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const html = document.documentElement;
     // Remove any existing site class
-    html.classList.remove("site-carecnc", "site-challenged", "site-duocare", "site-notchnote");
+    html.classList.remove("site-carecnc", "site-challenged", "site-notchnote");
     html.classList.add(config.cssClass);
 
     // Update page title

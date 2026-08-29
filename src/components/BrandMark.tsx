@@ -21,7 +21,6 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
   const { i18n } = useTranslation();
   const isChinese = i18n.language?.startsWith("zh");
 
-  const isCareDuo = site.id === "duocare";
   const isCareCNC = site.id === "carecnc";
   const brand =
     site.family === "challenged" || site.brandSlug.startsWith("challenged") ? "challenged" : site.id;
@@ -64,15 +63,13 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
           className="text-primary-foreground font-bold"
           style={{ fontSize: Math.round(size * 0.36) }}
         >
-          {isCareDuo ? (isChinese ? "多护" : "CD") : site.logoText}
+          {site.logoText}
         </span>
       </div>
     );
   }
 
-  const wordmark = isCareDuo
-    ? (isChinese ? "多护" : "CareDuo")
-    : isCareCNC
+  const wordmark = isCareCNC
     ? (isChinese ? "护畅" : "Care cnc")
     : null;
 
