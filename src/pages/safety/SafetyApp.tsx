@@ -1,4 +1,5 @@
-import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { MapPin, Users, Bell, User as UserIcon, ShieldCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { RequireAuth } from "@/components/auth/RequireAuth";
@@ -32,6 +33,15 @@ export default function SafetyApp() {
     { url: "/me", label: L("我的", "Me"), icon: UserIcon },
   ];
 
+  // Keep ?__site=notchsafety in the URL so reloads and deep links stay on this front.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("__site") !== "notchsafety") {
+      url.searchParams.set("__site", "notchsafety");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, [location.pathname]);
+
   const isAuthScreen = location.pathname.startsWith("/auth");
 
   return (
@@ -58,6 +68,12 @@ export default function SafetyApp() {
             <Route path="/alerts" element={<RequireAuth><Notifications /></RequireAuth>} />
             <Route path="/me" element={<RequireAuth><Profile /></RequireAuth>} />
             <Route path="/auth" element={<Auth />} />
+            {/* Aliases — shared pages navigate to the main app's paths. */}
+            <Route path="/dashboard" element={<Navigate to="/" replace />} />
+            <Route path="/gps-tracking" element={<Navigate to="/" replace />} />
+            <Route path="/care-circle" element={<Navigate to="/circle" replace />} />
+            <Route path="/notifications" element={<Navigate to="/alerts" replace />} />
+            <Route path="/profile" element={<Navigate to="/me" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </ErrorBoundary>
