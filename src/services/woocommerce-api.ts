@@ -287,11 +287,80 @@ function normalizeStoreCart(cart: any) {
   return { items, totals: cart.totals, raw: cart };
 }
 
+// ---------------------------------------------------------------------------
+// Cart intent guard
+//
+// WooCommerce keeps a *persistent* cart per logged-in customer and merges it
+// back into whatever session shows up next. That means bookings a client added
+// days ago in an abandoned session can silently reappear and get charged at
+// checkout (observed: a cart showing one $40 booking produced a $340 order with
+// seven resurrected lines). The app is therefore the single source of truth:
+// we record the products this device actually put in the cart and purge any
+// line the store hands back that we did not add.
+// ---------------------------------------------------------------------------
+const CART_INTENT_KEY = 'cc_cart_intent';
+
+function readCartIntent(): number[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(CART_INTENT_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.map(Number).filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeCartIntent(ids: number[]) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(CART_INTENT_KEY, JSON.stringify(ids));
+}
+
+function addCartIntent(productId: number) {
+  const ids = readCartIntent();
+  ids.push(Number(productId));
+  writeCartIntent(ids);
+}
+
+function dropCartIntent(productId?: number) {
+  if (!productId) return;
+  const ids = readCartIntent();
+  const at = ids.indexOf(Number(productId));
+  if (at >= 0) ids.splice(at, 1);
+  writeCartIntent(ids);
+}
+
+/**
+ * Remove every store line this device did not add, so the cart the client sees
+ * is exactly the cart WooCommerce will invoice.
+ */
+async function purgeGhostLines(cart: any) {
+  const intent = readCartIntent();
+  const ghosts = (cart?.items || []).filter((it: any) => !intent.includes(Number(it.id)));
+  if (!ghosts.length) return cart;
+
+  let current = cart;
+  for (const ghost of ghosts) {
+    try {
+      current = await storeApiFetch('cart/remove-item', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: ghost.key }),
+      });
+    } catch {
+      /* keep purging the rest; checkout re-verifies below */
+    }
+  }
+  return current;
+}
+
 /** GET /wc/store/v1/cart */
 export async function getCart() {
   const cart = await storeApiFetch('cart', { method: 'GET' });
-  return normalizeStoreCart(cart);
+  return normalizeStoreCart(await purgeGhostLines(cart));
 }
+
 
 /**
  * POST /wc/store/v1/cart/add-item
@@ -322,7 +391,8 @@ export async function addToCart({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: productId, quantity }),
       });
-      return normalizeStoreCart(cart);
+      addCartIntent(productId);
+      return normalizeStoreCart(await purgeGhostLines(cart));
     } catch (error) {
       lastError = error;
       if (!String(error).includes('not_purchasable')) throw error;
@@ -334,18 +404,24 @@ export async function addToCart({
 
 /** POST /wc/store/v1/cart/remove-item */
 export async function removeCartItem(itemKey: string) {
+  const before = await storeApiFetch('cart', { method: 'GET' });
+  const line = (before?.items || []).find((it: any) => it.key === itemKey);
   const cart = await storeApiFetch('cart/remove-item', {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ key: itemKey }),
   });
+  dropCartIntent(line?.id);
   return normalizeStoreCart(cart);
 }
 
 /** DELETE /wc/store/v1/cart/items */
 export async function clearCart() {
   const cart = await storeApiFetch('cart/items', { method: 'DELETE' });
+  writeCartIntent([]);
   return normalizeStoreCart(cart);
 }
+
 
 /**
  * POST /wc/store/v1/checkout
@@ -379,19 +455,27 @@ export async function checkout(billingData?: {
     country: billingData?.country || 'US',
   };
 
+  // Last line of defence against resurrected persistent-cart lines: re-read the
+  // cart (which purges anything this device did not add) and refuse to charge
+  // an empty or ghost-only cart.
+  const verified = await getCart();
+  if (!verified.items.length) {
+    throw new Error('Your cart is empty — please add a booking again before paying.');
+  }
+
   // The store requires a payment method on the order. Read the gateways the
   // store currently offers and prefer one that leaves the order awaiting
   // payment, so the customer still settles it on the secure payment page.
   let method = 'bacs';
   try {
-    const cart = await storeApiFetch('cart', { method: 'GET' });
-    const available: string[] = Array.isArray(cart?.payment_methods) ? cart.payment_methods : [];
+    const available: string[] = Array.isArray(verified.raw?.payment_methods) ? verified.raw.payment_methods : [];
     if (available.length) {
       method = available.find((m) => m === 'bacs') || available.find((m) => m === 'cheque') || available[0];
     }
   } catch {
     // fall back to the default below
   }
+
 
   const result = await storeApiFetch('checkout', {
     method: 'POST',

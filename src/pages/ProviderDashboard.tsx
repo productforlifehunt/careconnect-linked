@@ -15,6 +15,7 @@ import {
 import ProviderSettingsTab from "@/components/provider/ProviderSettingsTab";
 import MyBookingServicesTab from "@/components/provider/MyBookingServicesTab";
 import BookingThreadDialog from "@/components/booking/BookingThreadDialog";
+import PayoutAccountsCard from "@/components/provider/PayoutAccountsCard";
 
 
 import {
@@ -381,10 +382,13 @@ export default function ProviderDashboard() {
           <Card className="border-transparent card-elevated mb-4">
             <CardContent className="p-5 text-sm text-muted-foreground leading-relaxed">
               {isZh
-                ? "客户在下单时通过平台的在线支付完成付款，款项按订单记入您的收款账户。完成服务后金额转为可提现余额，您可在“收款账户”中提交提现申请；退款与纠纷同样按订单处理。"
-                : "Clients pay online when they place the booking, and each amount is recorded to your payout account. Once you mark the service complete the amount becomes withdrawable — request a payout from your payout account. Refunds and disputes are handled per order."}
+                ? "客户在下单时通过平台的在线支付完成付款，款项按订单记入您的收款账户。完成服务后金额转为可提现余额，可直接在下方提交提现申请；退款与纠纷同样按订单处理。平台不收取任何佣金。"
+                : "Clients pay online when they place the booking, and each amount is recorded to your payout account. Once you mark the service complete the amount becomes withdrawable — request a payout right below. Refunds and disputes are handled per order. The platform takes no commission."}
             </CardContent>
           </Card>
+
+          {/* Money lives in one place: balance, payout details and withdrawals. */}
+          <PayoutAccountsCard />
 
         </TabsContent>
 
