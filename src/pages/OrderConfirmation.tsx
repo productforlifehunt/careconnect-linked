@@ -80,10 +80,11 @@ export default function OrderConfirmation() {
           {(status === "on-hold" || status === "pending") && (
             <p className="text-sm text-muted-foreground pb-2">
               {i18n.language?.startsWith("zh")
-                ? "订单已创建，但款项尚未收取。护理者确认后，你会收到付款链接直接向对方支付。"
-                : "The order is created but payment has not been collected yet. Once the caregiver confirms, you'll get a payment link to pay them directly."}
+                ? "订单已创建，等待护理者确认。确认与付款状态都会在「我的预约」中更新，你无需离开本应用。"
+                : "The order is created and is waiting for the caregiver to confirm. Confirmation and payment status both update under My Bookings — you never need to leave this app."}
             </p>
           )}
+
 
           {orderTotal && (
             <div className="flex items-center justify-between py-3">
