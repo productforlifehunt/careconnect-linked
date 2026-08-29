@@ -658,6 +658,44 @@ Deno.serve(async (req) => {
         return json({ ok: true, data });
       }
 
+      // A pending payout request blocks every new one, so the caregiver must be
+      // able to withdraw the request itself from inside the app.
+      case "cancel_withdrawal": {
+        const id = Number(payload?.withdraw_id);
+        if (!Number.isFinite(id) || id <= 0) {
+          return json({ error: "withdraw_id is required" }, 400);
+        }
+        const callerHeaders = {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        };
+        // Vendors own their pending requests; Dokan exposes cancel either as a
+        // DELETE or as a status write depending on the build.
+        let res = await fetch(`${wpBase}/wp-json/dokan/v1/withdraw/${id}`, {
+          method: "DELETE",
+          headers: callerHeaders,
+        });
+        let data = await res.json().catch(() => null);
+        if (!res.ok) {
+          res = await fetch(`${wpBase}/wp-json/dokan/v1/withdraw/${id}`, {
+            method: "PUT",
+            headers: callerHeaders,
+            body: JSON.stringify({ status: "cancelled" }),
+          });
+          data = await res.json().catch(() => null);
+        }
+        if (!res.ok) {
+          console.error(`cancel_withdrawal failed [${res.status}]`, JSON.stringify(data));
+          const message = typeof (data as any)?.message === "string"
+            ? (data as any).message
+            : "Cancelling the payout request failed";
+          return json({ error: message, status: res.status, details: data }, 502);
+        }
+        return json({ ok: true, data });
+      }
+
+
+
       // ── Order conversation (dispute / issue thread) ───────────────────
       // Neither the buyer nor the caregiver can read or write wc/v3 order
       // notes, so the store keys do it here after proving the caller owns the
