@@ -1,23 +1,26 @@
 import { useEffect } from "react";
 import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
-import { MapPin, Users, Bell, User as UserIcon, ShieldCheck } from "lucide-react";
+import { MapPin, Users, Bell, User as UserIcon, ShieldCheck, Home } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import GPSTracking from "@/pages/GPSTracking";
 import CareCircle from "@/pages/CareCircle";
 import Notifications from "@/pages/Notifications";
 import Profile from "@/pages/Profile";
 import Auth from "@/pages/Auth";
+import JoinGroup from "@/pages/JoinGroup";
 import NotFound from "@/pages/NotFound";
+import SafetyMap from "./SafetyMap";
+import SafetyPlaces from "./SafetyPlaces";
+import SafetyMemberDetail from "./SafetyMemberDetail";
 
 /**
- * NotchSafety — standalone family-locator front-end (Life360 style).
+ * NotchSafety — standalone family-locator front (Life360 style).
  *
- * It is a *front* only: every screen reuses the existing pages and the exact
- * same JetEngine CCT data model as the main care app (current_location,
- * safe_zone, care group relations, notifications). No new backend, no new
- * tables, no duplicated business logic.
+ * Purpose-built screens (map, places, member detail) on top of the exact same
+ * JetEngine CCT data model as the care apps (current_location, safe_zone, care
+ * group relations, notification). Circle management and profile reuse the
+ * existing app pages. No new backend, no new tables.
  */
 export default function SafetyApp() {
   const { i18n } = useTranslation();
@@ -28,7 +31,8 @@ export default function SafetyApp() {
 
   const tabs = [
     { url: "/", label: L("地图", "Map"), icon: MapPin },
-    { url: "/circle", label: L("成员", "Circle"), icon: Users },
+    { url: "/places", label: L("地点", "Places"), icon: Home },
+    { url: "/circle", label: L("圈子", "Circle"), icon: Users },
     { url: "/alerts", label: L("提醒", "Alerts"), icon: Bell },
     { url: "/me", label: L("我的", "Me"), icon: UserIcon },
   ];
@@ -55,7 +59,7 @@ export default function SafetyApp() {
             Notch<span className="text-primary">Safety</span>
           </span>
           <span className="ml-auto text-xs text-muted-foreground">
-            {L("家人位置与安全区", "Family location & safe zones")}
+            {L("家人位置 · 地点提醒 · SOS", "Family location · Place alerts · SOS")}
           </span>
         </div>
       </header>
@@ -63,11 +67,14 @@ export default function SafetyApp() {
       <main className="mx-auto w-full max-w-3xl flex-1 pb-20">
         <ErrorBoundary>
           <Routes>
-            <Route path="/" element={<RequireAuth><GPSTracking /></RequireAuth>} />
+            <Route path="/" element={<RequireAuth><SafetyMap /></RequireAuth>} />
+            <Route path="/places" element={<RequireAuth><SafetyPlaces /></RequireAuth>} />
+            <Route path="/member/:userId" element={<RequireAuth><SafetyMemberDetail /></RequireAuth>} />
             <Route path="/circle" element={<RequireAuth><CareCircle /></RequireAuth>} />
             <Route path="/alerts" element={<RequireAuth><Notifications /></RequireAuth>} />
             <Route path="/me" element={<RequireAuth><Profile /></RequireAuth>} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/join/:code" element={<JoinGroup />} />
             {/* Aliases — shared pages navigate to the main app's paths. */}
             <Route path="/dashboard" element={<Navigate to="/" replace />} />
             <Route path="/gps-tracking" element={<Navigate to="/" replace />} />
