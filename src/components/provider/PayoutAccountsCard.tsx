@@ -48,6 +48,11 @@ export default function PayoutAccountsCard() {
   const balance = Number(data?.balance?.current_balance ?? 0);
   const minimum = Number(data?.balance?.withdraw_limit ?? 0) || 0;
   const hasPayoutDetails = !!(paypalEmail.trim() || (accountName.trim() && accountNumber.trim()));
+  // Only one payout request can be open at a time, so say so up front instead
+  // of letting the caregiver hit a rejection they can't explain.
+  const pendingPayout = (data?.withdrawals ?? []).find(
+    (w: any) => String(w.status).toLowerCase() === "pending",
+  );
 
   const saveMutation = useMutation({
     mutationFn: async () => {
