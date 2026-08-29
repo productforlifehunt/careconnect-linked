@@ -33,6 +33,7 @@ type Action =
   | "get_my_payout"
   | "save_my_payout"
   | "request_withdrawal"
+  | "cancel_withdrawal"
   | "list_order_notes"
   | "add_order_note"
   | "request_refund"
