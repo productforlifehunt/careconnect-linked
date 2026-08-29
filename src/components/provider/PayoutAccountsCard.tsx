@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Wallet, CheckCircle2, Info } from "lucide-react";
-import { getMyPayout, saveMyPayout, requestWithdrawal } from "@/services/woocommerce-api";
+import { getMyPayout, saveMyPayout, requestWithdrawal, cancelWithdrawal } from "@/services/woocommerce-api";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 
@@ -110,6 +110,23 @@ export default function PayoutAccountsCard() {
         variant: "destructive",
       }),
   });
+  const cancelMutation = useMutation({
+    mutationFn: async () => {
+      if (!pendingPayout) throw new Error(isZh ? "没有待处理的提现申请" : "No pending payout request");
+      return cancelWithdrawal(Number(pendingPayout.id));
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["my-payout"] });
+      toast({ title: isZh ? "提现申请已撤销" : "Payout request cancelled" });
+    },
+    onError: (err: any) =>
+      toast({
+        title: isZh ? "撤销失败" : "Cancel failed",
+        description: err.message,
+        variant: "destructive",
+      }),
+  });
+
 
   return (
     <Card className="border-transparent card-elevated">
@@ -224,12 +241,25 @@ export default function PayoutAccountsCard() {
             </p>
           )}
           {!!pendingPayout && (
-            <p className="text-xs text-muted-foreground">
-              {isZh
-                ? `您有一笔 ${currency}${Number(pendingPayout.amount).toFixed(2)} 的提现申请正在处理中，处理完成后即可再次申请。`
-                : `A ${currency}${Number(pendingPayout.amount).toFixed(2)} payout request is still being processed — you can request another once it's settled.`}
-            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-xs text-muted-foreground flex-1 min-w-[200px]">
+                {isZh
+                  ? `您有一笔 ${currency}${Number(pendingPayout.amount).toFixed(2)} 的提现申请正在处理中。可撤销后重新申请。`
+                  : `A ${currency}${Number(pendingPayout.amount).toFixed(2)} payout request is still being processed. Cancel it if you'd rather request a different amount.`}
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => cancelMutation.mutate()}
+                disabled={cancelMutation.isPending}
+              >
+                {cancelMutation.isPending
+                  ? (isZh ? "撤销中..." : "Cancelling...")
+                  : (isZh ? "撤销申请" : "Cancel request")}
+              </Button>
+            </div>
           )}
+
         </div>
 
         {!!data?.withdrawals?.length && (

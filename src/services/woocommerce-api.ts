@@ -653,6 +653,12 @@ export async function requestWithdrawal(amount: number, method: string) {
   return adminOp('request_withdrawal', { amount, method });
 }
 
+/** Cancel a still-pending payout request so a new one can be submitted. */
+export async function cancelWithdrawal(withdrawId: number) {
+  return adminOp('cancel_withdrawal', { withdraw_id: withdrawId });
+}
+
+
 /**
  * Display names for arbitrary WP user ids. WordPress hides users who never
  * authored content from non-admin callers, so chat counterparts (clients)
