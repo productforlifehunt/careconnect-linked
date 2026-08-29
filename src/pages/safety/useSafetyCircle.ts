@@ -4,7 +4,7 @@ import { fetchCareGroupsWordPress, fetchCareGroupMembersWordPress } from "@/feat
 import { fetchCurrentLocation, type LocationSnapshot } from "@/features/location/source.wordpress";
 import { fetchSafeZonesWordPress } from "@/features/location/source.wordpress-extended";
 import { getCurrentUserId } from "@/features/shared/current-user";
-import { hasWPSession } from "@/services/wp-auth";
+import { hasWPSession } from "@/hooks/use-care-data";
 
 export interface SafetyMember {
   userId: string;          // raw wp id, no prefix
