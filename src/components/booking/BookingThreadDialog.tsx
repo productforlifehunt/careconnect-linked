@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -44,9 +44,22 @@ export default function BookingThreadDialog({
   const addNote = useAddOrderNote();
   const resolveRefund = useResolveRefund();
   const [message, setMessage] = useState("");
+  // Local override so a just-made decision is reflected instantly — the
+  // refundStatus prop only refreshes after the parent list refetches.
+  const [settledAs, setSettledAs] = useState<"approved" | "declined" | null>(null);
+
+  // Reset the local override whenever the dialog is reopened or the parent
+  // catches up with the server state.
+  useEffect(() => {
+    if (!open) setSettledAs(null);
+  }, [open]);
+  useEffect(() => {
+    if (refundStatus && refundStatus !== "requested") setSettledAs(null);
+  }, [refundStatus]);
 
   const currency = isZh ? "¥" : "$";
-  const openRefund = refundStatus === "requested";
+  const effectiveRefundStatus = settledAs ?? refundStatus;
+  const openRefund = effectiveRefundStatus === "requested";
 
   const send = async () => {
     if (!message.trim() || !(id > 0)) return;
@@ -60,6 +73,7 @@ export default function BookingThreadDialog({
     if (!(id > 0)) return;
     try {
       await resolveRefund.mutateAsync({ orderId: id, decision, note: message.trim() || undefined });
+      setSettledAs(decision === "approve" ? "approved" : "declined");
       setMessage("");
     } catch { /* surfaced by the hook */ }
   };
