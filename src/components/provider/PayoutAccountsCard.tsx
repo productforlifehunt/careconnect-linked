@@ -110,6 +110,23 @@ export default function PayoutAccountsCard() {
         variant: "destructive",
       }),
   });
+  const cancelMutation = useMutation({
+    mutationFn: async () => {
+      if (!pendingPayout) throw new Error(isZh ? "没有待处理的提现申请" : "No pending payout request");
+      return cancelWithdrawal(Number(pendingPayout.id));
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["my-payout"] });
+      toast({ title: isZh ? "提现申请已撤销" : "Payout request cancelled" });
+    },
+    onError: (err: any) =>
+      toast({
+        title: isZh ? "撤销失败" : "Cancel failed",
+        description: err.message,
+        variant: "destructive",
+      }),
+  });
+
 
   return (
     <Card className="border-transparent card-elevated">
