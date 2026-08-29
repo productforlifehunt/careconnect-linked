@@ -60,6 +60,7 @@ export default function Bookings() {
     confirmed: "bg-success text-success-foreground", pending: "bg-warning text-warning-foreground", completed: "bg-muted text-muted-foreground",
     cancelled: "bg-destructive text-destructive-foreground", cancelled_by_user: "bg-destructive text-destructive-foreground",
     cancelled_by_provider: "bg-destructive text-destructive-foreground", in_progress: "bg-primary text-primary-foreground",
+    refunded: "bg-muted text-muted-foreground",
   };
 
   const handleStatusUpdate = (id: string, status: string) => {
