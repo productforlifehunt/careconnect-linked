@@ -5,6 +5,7 @@ import { T } from "@/integrations/wp-schema";
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 import { fetchProviderRatingSummary } from "@/features/reviews/source.wordpress";
 import { careServiceIdsToSlugs, deliveryIdsToSlugs } from "@/lib/care-service-types";
+import { fetchWPUser } from "@/features/shared/wp-users";
 
 // Provider fields live on CCT 258 "User's extended profile 2".
 // Discovery (browse / search / filter / price display) reads ONLY from this CCT
@@ -36,9 +37,9 @@ async function mapProviderRow(row: any): Promise<Profile | null> {
     const userId = Number(row.author_id || row.cct_author_id || row.user_id);
     if (!userId) return null;
 
-    let user: any = null;
-    try { user = await wordpressFetch<any>(`wp/v2/users/${userId}`); } catch {}
-    const fullName = user?.name || row.full_name || row.name || row.user_name || "Provider";
+    const user = await fetchWPUser(userId);
+    const fullName = user.name;
+    if (!fullName) throw new Error(`Provider user ${userId} has no name`);
 
     // Rates: a66 in-person hourly, a67 remote hourly, a69 remote check-in,
     // a70 remote medicine supervision. "Starts at" = cheapest published rate.
@@ -61,8 +62,8 @@ async function mapProviderRow(row: any): Promise<Profile | null> {
       avatar_url: user?.avatar_urls?.["96"] || user?.avatar_urls?.["48"] || row.avatar_url || null,
       bio: user?.description || row.bio || null,
       general_user_role: parseWpList(row[F_PROFILE.GENERAL_USER_ROLE]),
-      is_care_provider: true,
-      provider_is_active: true,
+      is_care_provider: String(row[F_PROFILE.IS_CARE_PROVIDER]) === P2.opt.IS_CARE_PROVIDER.YES,
+      provider_is_active: String(row[F_PROFILE.CARE_PROVIDER_IS_ACTIVE]) === P2.opt.CARE_PROVIDER_IS_ACTIVE.YES,
       care_provider_is_background_checked: String(row[F_PROFILE.CARE_PROVIDER_IS_BACKGROUND_CHECKED]) === P2.opt.CARE_PROVIDER_IS_BACKGROUND_CHECKED.YES,
       care_provider_background_check_detail: row[F_PROFILE.CARE_PROVIDER_S_BACKGROUND_CHECK_DETAIL] || null,
       care_provider_starts_hourly_rate: startsAt,
@@ -75,15 +76,15 @@ async function mapProviderRow(row: any): Promise<Profile | null> {
       care_provider_rate_remote_checkin: parseFloat(row[F_PROFILE.CARE_PROVIDER_S_RATE_FOR_REMOTE_CHECKINS]) || null,
       care_provider_rate_remote_medicine: parseFloat(row[F_PROFILE.CARE_PROVIDER_S_RATE_FOR_REMOTE_MEDICINE_SUPERVISION]) || null,
       care_provider_cancellation_policy: row[F_PROFILE.CARE_PROVIDER_S_CANCELLATION_POLICY] || null,
-      phone: row.phone || null,
-      location: row[F_PROFILE.CARE_PROVIDER_S_LOCATION] || row.location || null,
-      years_of_experience: row.years_of_experience ? parseInt(row.years_of_experience, 10) : null,
-      certifications: parseWpList(row.certifications),
-      specialty: parseWpList(row.specialty),
+      phone: null,
+      location: row[F_PROFILE.CARE_PROVIDER_S_LOCATION] || null,
+      years_of_experience: null,
+      certifications: null,
+      specialty: null,
       rating_average: null,
       rating_count: null,
-      created_at: row.created_at || new Date().toISOString(),
-      updated_at: row.updated_at || row.created_at || new Date().toISOString(),
+      created_at: row.created_at || null,
+      updated_at: row.updated_at || row.created_at || null,
     } satisfies Profile;
   }
 }
@@ -116,14 +117,14 @@ export async function fetchProvidersWordPress(filters?: ProviderFilters): Promis
     // Discovery is 100% dictionary-driven: CCT 258 (a59 is care provider,
     // a60 provider is active) plus CCT 31 review aggregates. No WooCommerce
     // and no Dokan calls happen before the buyer adds a service to the cart.
-    const sourceProfiles = await fetchDictionaryProviderProfiles().catch(() => []);
+    const sourceProfiles = await fetchDictionaryProviderProfiles();
 
     // Real rating aggregates from CCT 31 "Review" via relation 264.
     const ratingSummaries = new Map<string, { average: number | null; count: number }>();
     await Promise.all(
       sourceProfiles.map(async (p) => {
         const uid = String(p.id).replace(/^wp-/, "");
-        ratingSummaries.set(uid, await fetchProviderRatingSummary(uid).catch(() => ({ average: null, count: 0 })));
+         ratingSummaries.set(uid, await fetchProviderRatingSummary(uid));
       }),
     );
 
@@ -176,9 +177,7 @@ export async function fetchProvidersWordPress(filters?: ProviderFilters): Promis
     else results.sort(byRatingDesc);
 
     return results;
-  } catch {
-    return [];
-  }
+  } catch (error) { throw new Error("Failed to fetch providers", { cause: error }); }
 }
 
 export async function fetchProviderByIdWordPress(id: string): Promise<Profile | null> {
@@ -191,15 +190,13 @@ export async function fetchProviderByIdWordPress(id: string): Promise<Profile | 
     const row = (Array.isArray(rows) ? rows : []).find(
       (r: any) => String(r.author_id || r.cct_author_id || r.user_id) === numericId,
     );
-    if (!row) return null;
+    if (!row || !isListedProviderRow(row)) return null;
     const profile = await mapProviderRow(row);
     if (!profile) return null;
     // Ratings always come from CCT 31 "Review" (relation 264).
-    const rating = await fetchProviderRatingSummary(numericId).catch(() => ({ average: null, count: 0 }));
+    const rating = await fetchProviderRatingSummary(numericId);
     return { ...profile, rating_average: rating.average, rating_count: rating.count };
-  } catch {
-    return null;
-  }
+  } catch (error) { throw new Error(`Failed to fetch provider ${id}`, { cause: error }); }
 }
 
 

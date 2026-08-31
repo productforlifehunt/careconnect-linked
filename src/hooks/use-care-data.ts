@@ -11,9 +11,7 @@ import { fetchNotificationsWordPress, markNotificationReadWordPress, markAllNoti
 import { fetchCareFacilitiesWordPress, fetchCareFacilityByIdWordPress } from "@/features/facilities/source.wordpress";
 import {
   createCareFacilityWordPress, updateCareFacilityWordPress,
-  fetchFacilityMembersWordPress, fetchFacilityOwnershipClaimsWordPress,
-  claimFacilityOwnershipWordPress, fetchFacilityOwnershipDisputesWordPress,
-  createFacilityOwnershipDisputeWordPress, getMyFacilityPermissionWordPress,
+  fetchFacilityMembersWordPress, getMyFacilityPermissionWordPress,
   fetchFacilityReviewSummariesWordPress,
 } from "@/features/facilities/source.wordpress-extended";
 import {
@@ -75,7 +73,6 @@ import {
   fetchMedicineLogsWordPress, fetchTodayMedicineLogsWordPress, logMedicineWordPress,
   fetchCareTipsWordPress, createCareTipWordPress, updateCareTipWordPress, deleteCareTipWordPress,
   fetchCarePlansWordPress, createCarePlanWordPress, updateCarePlanWordPress, deleteCarePlanWordPress,
-  fetchCarePlanGoalsWordPress, createCarePlanGoalWordPress, updateCarePlanGoalWordPress,
   fetchCareNotesWordPress, createCareNoteWordPress, updateCareNoteWordPress, deleteCareNoteWordPress,
   fetchVisitLogWordPress, createVisitLogWordPress, deleteVisitLogWordPress,
   fetchEmergencyContactsWordPress, createEmergencyContactWordPress, updateEmergencyContactWordPress, deleteEmergencyContactWordPress,
@@ -207,14 +204,6 @@ export function useFacilityMembers(facilityId: string | undefined) {
   });
 }
 
-export function useFacilityOwnershipClaims(facilityId: string | undefined) {
-  return useQuery({
-    queryKey: ["facilityOwnershipClaims", facilityId],
-    queryFn: () => fetchFacilityOwnershipClaimsWordPress(facilityId!),
-    enabled: !!facilityId,
-  });
-}
-
 export function useMyFacilityPermission(facilityId: string | undefined) {
   return useQuery({
     queryKey: ["myFacilityPermission", facilityId],
@@ -228,30 +217,6 @@ export function useCreateCareFacility() {
   return useMutation({
     mutationFn: (input: { title: string; content?: string; address?: string; location?: string; phone?: string; email?: string; website?: string }) => createCareFacilityWordPress(input),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["facilities"] }); },
-  });
-}
-
-export function useClaimFacilityOwnership() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ facilityId, evidenceText }: { facilityId: string; evidenceText?: string }) => claimFacilityOwnershipWordPress(facilityId, evidenceText),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["facilityOwnershipClaims"] }); },
-  });
-}
-
-export function useCreateFacilityOwnershipDispute() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ facilityId, reason }: { facilityId: string; reason: string }) => createFacilityOwnershipDisputeWordPress(facilityId, reason),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["facilityOwnershipDisputes"] }); },
-  });
-}
-
-export function useFacilityOwnershipDisputes(facilityId: string | undefined) {
-  return useQuery({
-    queryKey: ["facilityOwnershipDisputes", facilityId],
-    queryFn: () => fetchFacilityOwnershipDisputesWordPress(facilityId!),
-    enabled: !!facilityId,
   });
 }
 
@@ -1210,30 +1175,6 @@ export function useDeleteCarePlan() {
   return useMutation({
     mutationFn: (id: string) => deleteCarePlanWordPress(id),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["carePlans"] }); },
-  });
-}
-
-export function useCarePlanGoals(planId: string | null) {
-  return useQuery({
-    queryKey: ["carePlanGoals", planId],
-    queryFn: () => fetchCarePlanGoalsWordPress(planId!),
-    enabled: !!planId,
-  });
-}
-
-export function useCreateCarePlanGoal() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (goal: { care_plan_id: string; title: string; description?: string }) => createCarePlanGoalWordPress(goal),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["carePlanGoals"] }); },
-  });
-}
-
-export function useUpdateCarePlanGoal() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, ...updates }: { id: string; [key: string]: any }) => updateCarePlanGoalWordPress(id, updates),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["carePlanGoals"] }); },
   });
 }
 

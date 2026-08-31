@@ -47,21 +47,7 @@ export async function fetchWPUsers(ids: Array<number | string>): Promise<Map<num
   if (clean.length === 0) return out;
 
   return dedupeRead(`wp-users:${clean.slice().sort((a, b) => a - b).join(",")}`, async () => {
-    // Admins/editors can read directly; everyone else goes through the proxy.
-    try {
-      const list = await wordpressFetch<any[]>(
-        `wp/v2/users?include=${clean.join(",")}&per_page=100&context=edit`,
-      );
-      if (Array.isArray(list) && list.length > 0) {
-        for (const u of list) out.set(Number(u.id), toRecord(u));
-        if (clean.every((id) => out.has(id))) return out;
-      }
-    } catch {
-      /* fall through to the privileged proxy */
-    }
-
-    const missing = clean.filter((id) => !out.has(id));
-    const proxied = await wpAdminOps<any[]>("get_user_names", { ids: missing });
+    const proxied = await wpAdminOps<any[]>("get_user_names", { ids: clean });
     if (!Array.isArray(proxied)) {
       throw new Error("Could not read WordPress users through wp-admin-ops");
     }
@@ -80,14 +66,11 @@ export async function fetchWPUser(id: number | string): Promise<WPUserRecord> {
 
 /** One-to-one child CCT row of a user (Relation 152 / 259). */
 async function fetchOneToOneChild(relationId: number, userId: number, cctSlug: string): Promise<any | null> {
-  try {
-    const rels = await wordpressFetch<any[]>(`jet-rel/${relationId}/children/${userId}`);
-    const childId = Array.isArray(rels) && rels.length > 0 ? rels[0]?.child_object_id : null;
-    if (!childId) return null;
-    return await wordpressCCTFetch<any>(cctSlug, { id: childId });
-  } catch {
-    return null;
-  }
+  const rels = await wordpressFetch<any[]>(`jet-rel/${relationId}/children/${userId}`);
+  if (!Array.isArray(rels)) throw new Error(`Relation ${relationId} returned an invalid response`);
+  const childId = rels[0]?.child_object_id;
+  if (!childId) return null;
+  return wordpressCCTFetch<any>(cctSlug, { id: childId });
 }
 
 export interface WPUserProfile extends WPUserRecord {

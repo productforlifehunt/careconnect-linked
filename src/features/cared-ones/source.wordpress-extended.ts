@@ -7,7 +7,7 @@ import { dedupeRead, fetchRelChildrenMap } from "@/features/shared/rel-batch";
 
 
 // ─── Relations (per data bible / live WP) ────────────────────
-const REL_USER_CARED_ONE_LEGACY = R.userCaredOnes;   // user → user (legacy)
+const REL_USER_CARED_ONE = R.userCaredOnes;
 const REL_USER_CARED_ONE_CARD = R.caredOneInfoCards;    // user → cared_ones_informat (CCT 125)
 const REL_CARED_CARD_EMERGENCY = R.infoCardEmergencyContacts;   // cared_ones_informat → emergency_contact
 const REL_GROUP_MEMBER = R.careGroupMembers;            // care_group → users
@@ -68,17 +68,13 @@ function serializeTimeSlot(value: unknown): string {
 
 async function fetchRelatedCctChildren(relationId: number, parentId: string, cctSlug: string): Promise<any[]> {
   const pid = normalizeWpObjectId(parentId);
-  if (!pid) return [];
+  if (!pid) throw new Error(`Invalid parent ID for relation ${relationId}`);
   // Short-lived dedupe: sibling dashboard widgets asking for the same relation
   // within the same render pass share one round-trip instead of repeating it.
   return dedupeRead(`rel-children:${relationId}:${pid}:${cctSlug}`, async () => {
     const rels = await wordpressFetch<any[]>(`jet-rel/${relationId}/children/${pid}`);
     if (!Array.isArray(rels) || rels.length === 0) return [];
-    const items = await Promise.all(rels.map(async (r: any) => {
-      try { return await wordpressCCTFetch<any>(cctSlug, { id: r.child_object_id }); }
-      catch { return null; }
-    }));
-    return items.filter(Boolean);
+    return Promise.all(rels.map((r: any) => wordpressCCTFetch<any>(cctSlug, { id: r.child_object_id })));
   });
 }
 
@@ -112,20 +108,20 @@ export async function fetchWPUserSafe(userId: number | string): Promise<any> {
 
 
 async function linkRel(relId: number, parentId: number, childId: number) {
-  if (!parentId || !childId) return;
+  if (!parentId || !childId) throw new Error(`Invalid object ID for relation ${relId}`);
   await wordpressFetch(`jet-rel/${relId}`, {
     method: "POST",
     body: { parent_id: parentId, child_id: childId, context: "child", store_items_type: "update" },
   });
 }
 
-// ─── Cared Ones (legacy user→user Rel 79) ───────────────────
+// ─── Cared Ones (Relation 219, Users → Users, many-to-many) ──
 export async function createUserCaredOneWordPress(caredOne: { caredOneId: string; relationship?: string; isPrimary?: boolean }): Promise<void> {
   const stored = getStoredWPUser();
   if (!stored?.user_id) throw new Error("Not authenticated");
   const childId = normalizeWpObjectId(caredOne.caredOneId);
   if (!childId) throw new Error("Invalid cared one user");
-  await linkRel(REL_USER_CARED_ONE_LEGACY, Number(stored.user_id), childId);
+  await linkRel(REL_USER_CARED_ONE, Number(stored.user_id), childId);
 }
 
 export async function deleteUserCaredOneWordPress(id: string): Promise<void> {
@@ -133,7 +129,7 @@ export async function deleteUserCaredOneWordPress(id: string): Promise<void> {
   if (!stored?.user_id) throw new Error("Not authenticated");
   const childId = normalizeWpObjectId(id);
   if (!childId) throw new Error("Invalid cared one user");
-  await wordpressFetch(`jet-rel/${REL_USER_CARED_ONE_LEGACY}`, {
+  await wordpressFetch(`jet-rel/${REL_USER_CARED_ONE}`, {
     method: "DELETE",
     body: { parent_id: Number(stored.user_id), child_id: childId },
   });
@@ -571,12 +567,6 @@ export async function updateCarePlanWordPress(id: string, updates: Record<string
 export async function deleteCarePlanWordPress(id: string): Promise<void> {
   await wordpressCCTFetch(T.carePlan.slug, { id, method: "DELETE" });
 }
-
-// ─── Care Plan Goals (CCT 21 — not in bible field map) ───────
-// No fields defined in data dictionary; stub returns [] to keep callers safe.
-export async function fetchCarePlanGoalsWordPress(_planId: string): Promise<any[]> { return []; }
-export async function createCarePlanGoalWordPress(_goal: { care_plan_id: string; title: string; description?: string; sort_order?: number }): Promise<void> { /* not in bible */ }
-export async function updateCarePlanGoalWordPress(_id: string, _updates: Record<string, any>): Promise<void> { /* not in bible */ }
 
 // ─── Care Note (CCT 22) ──────────────────────────────────────
 export async function fetchCareNotesWordPress(caredOneId: string): Promise<any[]> {

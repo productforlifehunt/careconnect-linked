@@ -34,24 +34,24 @@ interface TasksTabProps {
   createJob: any;
 }
 
-// Task type values per data model field `c` (1..9)
+// Exact option codes from CCT 204 a57.
 const TASK_TYPE_OPTIONS: { value: string; label: string; labelZh: string }[] = [
-  { value: "1", label: "Preparing Meals", labelZh: "准备餐食" },
-  { value: "2", label: "Shopping/Errands", labelZh: "购物 / 跑腿" },
-  { value: "3", label: "Transportation", labelZh: "交通接送" },
-  { value: "4", label: "Personal Care", labelZh: "个人护理" },
-  { value: "5", label: "Medication", labelZh: "用药" },
-  { value: "6", label: "Companionship", labelZh: "陪伴" },
-  { value: "7", label: "Housekeeping", labelZh: "家务清洁" },
-  { value: "8", label: "Medical Appointments", labelZh: "就医预约" },
-  { value: "9", label: "Occasions", labelZh: "重要日子" },
+  { value: "b55", label: "Preparing Meals", labelZh: "准备餐食" },
+  { value: "b56", label: "Giving Rides", labelZh: "交通接送" },
+  { value: "b57", label: "Shopping", labelZh: "购物" },
+  { value: "b58", label: "Childcare", labelZh: "儿童照护" },
+  { value: "b59", label: "Visits", labelZh: "探访" },
+  { value: "b60", label: "Coverage", labelZh: "替班照护" },
+  { value: "b61", label: "Medications / Medical Care", labelZh: "用药与医疗护理" },
+  { value: "b62", label: "Miscellaneous", labelZh: "其他" },
+  { value: "b63", label: "Occasions", labelZh: "重要日子" },
 ];
 
 const EMPTY_FORM = {
   title: "", description: "", assigneeIds: [] as string[],
   task_date: "", start_time: "", end_time: "",
   location: "", task_types: [] as string[],
-  people_needed: "" as string, help_status: "1",
+  people_needed: "" as string, help_status: "b55",
   photo_ids: [] as number[],
 };
 
@@ -84,18 +84,18 @@ export function TasksTab({
   const isEditing = editingTaskId !== null;
 
   // Per data model: task itself only has `k` (help status) and `l` (finish status).
-  const pendingTasks = (tasks || []).filter((t: any) => String(t.finish_status ?? "1") !== "2");
-  const completedTasks = (tasks || []).filter((t: any) => String(t.finish_status ?? "1") === "2");
+  const pendingTasks = (tasks || []).filter((t: any) => String(t.finish_status) === "b55");
+  const completedTasks = (tasks || []).filter((t: any) => String(t.finish_status) === "b56");
 
   const helpStatusColors: Record<string, string> = {
-    "1": "bg-muted text-muted-foreground",
-    "2": "bg-warning/10 text-warning",
-    "3": "bg-success/10 text-success",
+    b55: "bg-muted text-muted-foreground",
+    b56: "bg-warning/10 text-warning",
+    b57: "bg-success/10 text-success",
   };
   const helpStatusLabels: Record<string, string> = {
-    "1": Z("无需帮助", "No help needed"),
-    "2": Z("需要帮助", "Needs help"),
-    "3": Z("已找到帮助", "Help found"),
+    b55: Z("无需帮助", "No help needed"),
+    b56: Z("需要帮助", "Needs help"),
+    b57: Z("已找到帮助", "Help found"),
   };
   const responseColors: Record<string, string> = {
     pending: "bg-warning/10 text-warning",
@@ -104,8 +104,8 @@ export function TasksTab({
   };
 
   const toggleTask = (id: string, currentFinish: string) => {
-    const next = String(currentFinish) === "2" ? "1" : "2";
-    updateTaskStatus.mutate({ id, updates: { finish_status: next, completed_at: next === "2" ? new Date().toISOString() : "" } });
+    const next = String(currentFinish) === "b56" ? "b55" : "b56";
+    updateTaskStatus.mutate({ id, updates: { finish_status: next, completed_at: next === "b56" ? new Date().toISOString() : "" } });
   };
 
   const openEdit = (t: any) => {
@@ -120,7 +120,7 @@ export function TasksTab({
       location: t.location || "",
       task_types: Array.isArray(t.task_types) ? t.task_types.map(String) : [],
       people_needed: t.people_needed != null ? String(t.people_needed) : "",
-      help_status: String(t.help_status ?? "1"),
+      help_status: String(t.help_status),
       photo_ids: Array.isArray(t.photo_ids) ? t.photo_ids : [],
     });
     setVisibility(EMPTY_VISIBILITY);
@@ -266,9 +266,9 @@ export function TasksTab({
                   <Select value={form.help_status} onValueChange={(v) => setForm(p => ({ ...p, help_status: v }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1">{Z("无需帮助", "No help needed")}</SelectItem>
-                      <SelectItem value="2">{Z("需要帮助", "Needs help")}</SelectItem>
-                      <SelectItem value="3">{Z("已找到帮助", "Help found")}</SelectItem>
+                       <SelectItem value="b55">{Z("无需帮助", "No help needed")}</SelectItem>
+                       <SelectItem value="b56">{Z("需要帮助", "Needs help")}</SelectItem>
+                       <SelectItem value="b57">{Z("已找到帮助", "Help found")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -375,8 +375,8 @@ export function TasksTab({
                     </div>
                     {Array.isArray(t.photo_ids) && t.photo_ids.length > 0 && <MediaAttachmentList ids={t.photo_ids} />}
                   </div>
-                  <Badge variant="outline" className={`shrink-0 ${helpStatusColors[String(t.help_status ?? "1")] || ""}`}>
-                    {helpStatusLabels[String(t.help_status ?? "1")] || Z("无需帮助", "No help needed")}
+                   <Badge variant="outline" className={`shrink-0 ${helpStatusColors[String(t.help_status)]}`}>
+                     {helpStatusLabels[String(t.help_status)]}
                   </Badge>
                   <div className="flex gap-1 shrink-0">
                     {myAssignment && myAssignment.response !== "accepted" && (

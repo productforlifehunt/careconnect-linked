@@ -1,27 +1,25 @@
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
-import { R } from "@/integrations/wp-schema";
+import { R, T, WP } from "@/integrations/wp-schema";
 
 /**
  * Care Facility extended ops.
  *
- * CCT 64 `care_facility` — opaque field map (per 最新数据字典.md):
+ * CCT 215 `care_facility` — opaque field map:
  *   a55 name, a56 detail, a57 type, a58 dementia_stage, a59 room_type,
  *   a60 room_facility, a61 community_facility, a62 people_number,
  *   a63 location, a64 address.
  *
- * Facility membership has been migrated from a dedicated `facility_member`
- * CCT to **JetEngine Relation 163** (live ID; dictionary name "107. One
- * care facility can have many related facility members"). Relation meta:
+ * Facility membership uses JetEngine Relation 249. Relation meta:
  *   a55 = Facility member type   Checkbox: b55 nothing | b56 owner | b57 admin
  *   a56 = Facility member role   Text (self-described)
  *
- * `facility_claim` and `facility_dispute` CCTs have been REMOVED from the
- * current data dictionary. Those endpoints are stubbed to no-ops below
- * until/unless reintroduced.
  */
 
-const CCT_SLUG = "care_facility";
+const CCT_SLUG = T.careFacility.slug;
+const F = T.careFacility.f;
 const REL_FACILITY_MEMBER = R.careFacilityMembers;
+const REL249 = WP.rel["249"];
+const RF = REL249.f;
 
 const MEMBER_TYPE_TO_CODE: Record<string, string> = {
   member: "b55", nothing: "b55", "nothing special": "b55",
@@ -42,10 +40,12 @@ export async function createCareFacilityWordPress(input: {
   const result = await wordpressCCTFetch(CCT_SLUG, {
     method: "POST",
     body: {
-      a55: input.title,
-      a56: input.content || "",
-      a63: input.location || "",
-      a64: input.address || "",
+      [F.NAME]: input.title,
+      [F.DETAIL]: input.content || "",
+      [F.LOCATION]: input.location || "",
+      [F.ADDRESS]: input.address || "",
+      [F.PHONE]: input.phone || "",
+      [F.EMAIL]: input.email || "",
     },
   }) as any;
   return { id: result?.id || result?._ID };
@@ -53,17 +53,18 @@ export async function createCareFacilityWordPress(input: {
 
 export async function updateCareFacilityWordPress(id: string, updates: Record<string, any>): Promise<any> {
   const body: Record<string, any> = {};
-  if (updates.title !== undefined || updates.name !== undefined) body.a55 = updates.title ?? updates.name;
-  if (updates.content !== undefined || updates.description !== undefined) body.a56 = updates.content ?? updates.description;
-  if (updates.type !== undefined) body.a57 = updates.type;
-  if (updates.dementia_stage !== undefined) body.a58 = updates.dementia_stage;
-  if (updates.room_type !== undefined) body.a59 = updates.room_type;
-  if (updates.room_facility !== undefined) body.a60 = updates.room_facility;
-  if (updates.community_facility !== undefined) body.a61 = updates.community_facility;
-  if (updates.people_number !== undefined) body.a62 = updates.people_number;
-  if (updates.location !== undefined) body.a63 = updates.location;
-  if (updates.address !== undefined) body.a64 = updates.address;
-  for (const k of Object.keys(updates)) if (/^a\d+$/.test(k)) body[k] = updates[k];
+  if (updates.title !== undefined || updates.name !== undefined) body[F.NAME] = updates.title ?? updates.name;
+  if (updates.content !== undefined || updates.description !== undefined) body[F.DETAIL] = updates.content ?? updates.description;
+  if (updates.type !== undefined) body[F.CARE_FACILITY_TYPE] = updates.type;
+  if (updates.dementia_stage !== undefined) body[F.CARE_FACILITY_CAN_CARE_FOR_DEMENTIA_STAGE] = updates.dementia_stage;
+  if (updates.room_type !== undefined) body[F.CARE_FACILITY_ROOM_TYPE] = updates.room_type;
+  if (updates.room_facility !== undefined) body[F.CARE_FACILITY_PROVIDES_ROOM_FACILITY] = updates.room_facility;
+  if (updates.community_facility !== undefined) body[F.CARE_FACILITY_PROVIDES_COMMUNITY_FACILITY] = updates.community_facility;
+  if (updates.people_number !== undefined) body[F.CARE_FACILITY_PEOPLE_NUMBER] = updates.people_number;
+  if (updates.location !== undefined) body[F.LOCATION] = updates.location;
+  if (updates.address !== undefined) body[F.ADDRESS] = updates.address;
+  if (updates.phone !== undefined) body[F.PHONE] = updates.phone;
+  if (updates.email !== undefined) body[F.EMAIL] = updates.email;
   const result = await wordpressCCTFetch(CCT_SLUG, { id, method: "PUT", body }) as any;
   return { id: result?.id || id };
 }
@@ -78,19 +79,19 @@ export async function fetchFacilityMembersWordPress(facilityId: string): Promise
     return rels.map((r: any) => {
       const userId = normalizeWpObjectId(r.child_object_id);
       const meta = r.meta || r.meta_fields || {};
-      const typeCode = String(meta.a55 || "b55");
+       const typeCode = String(meta[RF.FACILITY_MEMBER_TYPE]);
+       if (!MEMBER_CODE_TO_TYPE[typeCode]) throw new Error(`Invalid facility-member type code: ${typeCode}`);
       return {
         id: String(r.id || `${fid}-${userId}`),
         post_id: facilityId,
         user_id: userId ? `wp-${userId}` : null,
-        role: MEMBER_CODE_TO_TYPE[typeCode] || "member",
-        role_label: meta.a56 || null,
-        status: "active",
+         role: MEMBER_CODE_TO_TYPE[typeCode],
+         role_label: meta[RF.FACILITY_MEMBER_ROLE] || null,
         created_at: r.created_at || null,
         profile: null,
       };
     });
-  } catch { return []; }
+  } catch (error) { throw new Error(`Failed to fetch facility ${facilityId} members`, { cause: error }); }
 }
 
 export async function addFacilityMemberWordPress(
@@ -100,24 +101,17 @@ export async function addFacilityMemberWordPress(
 ): Promise<void> {
   const fid = normalizeWpObjectId(facilityId);
   const uid = normalizeWpObjectId(userId);
-  if (!fid || !uid) return;
-  const typeCode = MEMBER_TYPE_TO_CODE[opts?.type || "member"] || "b55";
+  if (!fid || !uid) throw new Error("Invalid facility or user ID");
+  const typeCode = MEMBER_TYPE_TO_CODE[opts?.type || "member"];
+  if (!typeCode) throw new Error(`Invalid facility-member type: ${opts?.type}`);
   await wordpressFetch(`jet-rel/${REL_FACILITY_MEMBER}`, {
     method: "POST",
     body: {
       parent_id: fid, child_id: uid, context: "child", store_items_type: "update",
-      meta: { a55: typeCode, ...(opts?.roleLabel ? { a56: opts.roleLabel } : {}) },
+       meta: { [RF.FACILITY_MEMBER_TYPE]: typeCode, ...(opts?.roleLabel ? { [RF.FACILITY_MEMBER_ROLE]: opts.roleLabel } : {}) },
     },
   });
 }
-
-// ─── Facility Claims / Disputes — DEPRECATED ───────────────
-// `facility_claim` & `facility_dispute` CCTs are not in the current
-// data dictionary. Stubbed to keep callers compiling.
-export async function fetchFacilityOwnershipClaimsWordPress(_facilityId: string): Promise<any[]> { return []; }
-export async function claimFacilityOwnershipWordPress(_facilityId: string, _evidenceText?: string): Promise<void> { /* no-op */ }
-export async function fetchFacilityOwnershipDisputesWordPress(_facilityId: string): Promise<any[]> { return []; }
-export async function createFacilityOwnershipDisputeWordPress(_facilityId: string, _reason: string): Promise<void> { /* no-op */ }
 
 // ─── Facility Permissions (derived from REL 163 meta) ──────
 export async function getMyFacilityPermissionWordPress(facilityId: string): Promise<{ canEdit: boolean; membership: any | null }> {

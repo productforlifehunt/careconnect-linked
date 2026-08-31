@@ -1,5 +1,5 @@
 /**
- * ChallengeD knowledge hub — JetEngine CCT 100 `challenged_content`.
+ * ChallengeD knowledge hub — JetEngine CCT 217 `challenged_content`.
  * Bible (§19):
  *   a55=Title, a56=Content, a57=Language (b55 English | b56 Simplified Chinese)
  *   a58=app area (b55 Global English | b56 China)
@@ -9,7 +9,7 @@
  *   a63=Find tips category (b55 Wondering | b56 Getting lost | b57 Unwilling to return home)
  */
 import { wordpressCCTFetch } from "@/features/shared/wordpress-client";
-import { getStaticContent, getStaticContentById } from "@/data/challenged-content-data";
+import { T } from "@/integrations/wp-schema";
 
 export interface ChallengedContentItem {
   id: string;
@@ -32,7 +32,7 @@ export interface ChallengedContentItem {
   updated_at?: string;
 }
 
-const CCT_SLUG = "challenged_content";
+const CCT_SLUG = T.challengedContent.slug;
 
 const LANG_IN: Record<string, string> = { b55: "en", b56: "zh-CN" };
 const LANG_OUT: Record<string, string> = { en: "b55", "zh-CN": "b56", "zh-cn": "b56" };
@@ -75,38 +75,21 @@ export async function fetchChallengedContent(
   subcategory?: string,
   locale?: { area?: string; language?: string }
 ): Promise<ChallengedContentItem[]> {
-  const staticItems = getStaticContent(category, subcategory);
-  try {
-    const params: Record<string, string> = { _limit: "200" };
+  const params: Record<string, string> = { _limit: "200" };
     if (category && TYPE_OUT[category]) params.a59 = TYPE_OUT[category];
     if (locale?.area && AREA_OUT[locale.area]) params.a58 = AREA_OUT[locale.area];
     if (locale?.language && LANG_OUT[locale.language]) params.a57 = LANG_OUT[locale.language];
 
-    const wpItems = await wordpressCCTFetch<any[]>(CCT_SLUG, { params });
-    if (Array.isArray(wpItems) && wpItems.length > 0) {
-      let mapped = wpItems.map(mapWPItem);
-      if (subcategory) mapped = mapped.filter((i) => i.subcategory === subcategory);
-      const wpNormalized = mapped.map((item) => ({ ...item, id: `wp-${item.id}` }));
-      return [...wpNormalized, ...staticItems].sort((a, b) => (a.sort_order || 999) - (b.sort_order || 999));
-    }
-  } catch { /* static fallback */ }
-  return staticItems;
+  const wpItems = await wordpressCCTFetch<any[]>(CCT_SLUG, { params });
+  if (!Array.isArray(wpItems)) throw new Error("ChallengeD content returned an invalid response");
+  let mapped = wpItems.map(mapWPItem);
+  if (subcategory) mapped = mapped.filter((i) => i.subcategory === subcategory);
+  return mapped.map((item) => ({ ...item, id: `wp-${item.id}` }));
 }
 
 export async function fetchChallengedContentById(id: string | number): Promise<ChallengedContentItem | null> {
   const strId = String(id);
-  if (strId.startsWith("wp-")) {
-    try {
-      const wpId = strId.replace("wp-", "");
-      const item = await wordpressCCTFetch<any>(CCT_SLUG, { id: wpId });
-      if (item) return { ...mapWPItem(item), id: strId };
-    } catch { /* fall through */ }
-  }
-  const staticItem = getStaticContentById(strId);
-  if (staticItem) return staticItem;
-  try {
-    const item = await wordpressCCTFetch<any>(CCT_SLUG, { id });
-    if (item) return mapWPItem(item);
-  } catch { /* not found */ }
-  return null;
+  const wpId = strId.replace(/^wp-/, "");
+  const item = await wordpressCCTFetch<any>(CCT_SLUG, { id: wpId });
+  return item ? { ...mapWPItem(item), id: strId.startsWith("wp-") ? strId : String(item.id ?? item._ID) } : null;
 }

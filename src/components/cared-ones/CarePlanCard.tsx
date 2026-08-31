@@ -5,8 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Plus, ArrowLeft, Check, Pencil, Trash2, X, ClipboardList, Loader2 } from "lucide-react";
-import { useCarePlans, useCreateCarePlan, useUpdateCarePlan, useDeleteCarePlan, useCarePlanGoals, useCreateCarePlanGoal, useUpdateCarePlanGoal } from "@/hooks/use-care-data";
+import { Plus, Check, Pencil, Trash2, X, ClipboardList, Loader2 } from "lucide-react";
+import { useCarePlans, useCreateCarePlan, useUpdateCarePlan, useDeleteCarePlan } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 
@@ -14,40 +14,6 @@ function useZ() {
   const { i18n } = useTranslation();
   const isCN = i18n.language?.startsWith("zh");
   return { isCN, Z: (cn: string, en: string) => (isCN ? cn : en) };
-}
-
-function GoalsView({ planId }: { planId: string }) {
-  const { toast } = useToast();
-  const { Z } = useZ();
-  const { data: goals } = useCarePlanGoals(planId);
-  const createGoal = useCreateCarePlanGoal();
-  const updateGoal = useUpdateCarePlanGoal();
-  const [title, setTitle] = useState("");
-  const completed = (goals || []).filter((g: any) => g.status === "completed").length;
-  const total = (goals || []).length;
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold text-foreground">{Z("目标", "Goals")}</h3>
-        {total > 0 && <span className="text-xs text-muted-foreground">{Z(`已完成 ${completed}/${total}`, `${completed}/${total} completed`)}</span>}
-      </div>
-      {total > 0 && <div className="w-full bg-accent rounded-full h-2 mb-4"><div className="bg-primary h-2 rounded-full transition-all" style={{ width: `${total > 0 ? (completed / total) * 100 : 0}%` }} /></div>}
-      <div className="flex gap-2 mb-4">
-        <Input value={title} onChange={e => setTitle(e.target.value)} placeholder={Z("添加目标…", "Add a goal...")} onKeyDown={e => { if (e.key === "Enter" && title.trim()) { createGoal.mutate({ care_plan_id: planId, title: title.trim() }, { onSuccess: () => { setTitle(""); toast({ title: Z("目标已添加", "Goal added") }); } }); } }} />
-        <Button size="sm" onClick={() => { if (!title.trim()) return; createGoal.mutate({ care_plan_id: planId, title: title.trim() }, { onSuccess: () => { setTitle(""); toast({ title: Z("目标已添加", "Goal added") }); } }); }} disabled={createGoal.isPending}><Plus className="h-4 w-4" /></Button>
-      </div>
-      <div className="space-y-2">
-        {(goals || []).map((g: any) => (
-          <div key={g.id} className="flex items-center gap-3 p-3 rounded-lg bg-card border cursor-pointer hover:bg-accent/30 transition-colors" onClick={() => updateGoal.mutate({ id: g.id, status: g.status === "completed" ? "pending" : "completed" })}>
-            {g.status === "completed" ? <Check className="h-4 w-4 text-success" /> : <div className="h-4 w-4 rounded-full border-2 border-muted-foreground" />}
-            <span className={`text-sm ${g.status === "completed" ? "line-through text-muted-foreground" : "text-foreground"}`}>{g.title}</span>
-          </div>
-        ))}
-        {total === 0 && <p className="text-center py-6 text-muted-foreground text-sm">{Z("暂无目标。在上方添加一个。", "No goals yet. Add one above.")}</p>}
-      </div>
-    </div>
-  );
 }
 
 export function CarePlanCard({ caredOneId }: { caredOneId: string }) {
@@ -59,7 +25,6 @@ export function CarePlanCard({ caredOneId }: { caredOneId: string }) {
   const del = useDeleteCarePlan();
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState({ title: "", description: "" });
-  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ title: "", description: "" });
 
@@ -78,18 +43,6 @@ export function CarePlanCard({ caredOneId }: { caredOneId: string }) {
       onSuccess: () => { setForm({ title: "", description: "" }); setAddOpen(false); toast({ title: Z("方案已创建", "Plan created") }); }
     });
   };
-
-  if (selectedPlan) {
-    return (
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-foreground">{Z("护理方案", "Care Plans")}</h2>
-        </div>
-        <Button variant="ghost" size="sm" onClick={() => setSelectedPlan(null)} className="mb-2"><ArrowLeft className="h-4 w-4 mr-1" /> {Z("返回", "Back")}</Button>
-        <GoalsView planId={selectedPlan} />
-      </div>
-    );
-  }
 
   return (
     <div>
@@ -138,10 +91,9 @@ export function CarePlanCard({ caredOneId }: { caredOneId: string }) {
                   </div>
                 ) : (
                   <div className="flex justify-between items-start gap-2">
-                    <div className="min-w-0 cursor-pointer flex-1" onClick={() => setSelectedPlan(p.id)}>
+                    <div className="min-w-0 flex-1">
                       <h4 className="font-medium text-foreground">{p.title}</h4>
                       {p.description && <p className="text-xs text-muted-foreground mt-1">{p.description}</p>}
-                      <Badge variant="secondary" className="text-xs mt-2">{Z(p.status === "completed" ? "已完成" : p.status === "paused" ? "已暂停" : "进行中", p.status || "active")}</Badge>
                     </div>
                     <div className="flex gap-1 shrink-0">
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); startEdit(p); }}><Pencil className="h-3 w-3" /></Button>
