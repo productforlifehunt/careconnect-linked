@@ -136,60 +136,55 @@ export async function deleteUserCaredOneWordPress(id: string): Promise<void> {
 }
 
 export async function fetchGroupCaredOnesWordPress(groupId: string): Promise<any[]> {
-  try {
-    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${normalizeWpObjectId(groupId)}`);
-    if (!Array.isArray(rels) || rels.length === 0) return [];
-    const caredOneRels = rels.filter((r: any) => {
-      const { memberRoles } = decodeRel72Meta(r?.meta);
-      return memberRoles.includes("cared one");
-    });
-    const userIds = caredOneRels.map((r: any) => Number(r.child_object_id)).filter(Boolean);
-    const caredOnes = await Promise.all(userIds.map(async (userId) => {
-      try {
-        const user = await fetchWPUserSafe(userId);
-        const rel = caredOneRels.find((r: any) => Number(r.child_object_id) === userId);
-        const fullName = user.name || user.slug || decodeRel72Meta(rel?.meta).displayName || "Cared One";
-        return {
-          id: `wp-${userId}`,
-          user_id: `wp-${userId}`,
-          name: fullName,
-          full_name: fullName,
-          relationship: null,
-          avatar_url: user.avatar_urls?.["96"] || null,
-          profile: {
-            id: `wp-${userId}`,
-            user_id: `wp-${userId}`,
-            full_name: fullName,
-            email: user.email || null,
-            avatar_url: user.avatar_urls?.["96"] || null,
-          },
-          created_at: null,
-        };
-      } catch { return null; }
-    }));
-    return caredOnes.filter(Boolean);
-  } catch { return []; }
+  const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${normalizeWpObjectId(groupId)}`);
+  if (!Array.isArray(rels) || rels.length === 0) return [];
+  const caredOneRels = rels.filter((r: any) => {
+    const { memberRoles } = decodeRel72Meta(r?.meta);
+    return memberRoles.includes("cared one");
+  });
+  const userIds = caredOneRels.map((r: any) => Number(r.child_object_id)).filter(Boolean);
+  const caredOnes = await Promise.all(userIds.map(async (userId) => {
+    const user = await fetchWPUserSafe(userId);
+    const fullName = user.name || user.slug;
+    if (!fullName) throw new Error(`WP user ${userId} has no name — cannot render a cared one`);
+    return {
+      id: `wp-${userId}`,
+      user_id: `wp-${userId}`,
+      name: fullName,
+      full_name: fullName,
+      relationship: null,
+      avatar_url: user.avatar_urls?.["96"] || null,
+      profile: {
+        id: `wp-${userId}`,
+        user_id: `wp-${userId}`,
+        full_name: fullName,
+        email: user.email || null,
+        avatar_url: user.avatar_urls?.["96"] || null,
+      },
+      created_at: null,
+    };
+  }));
+  return caredOnes;
 }
 
 // ─── Cared One Information Card (CCT 125) ───────────────────
 // a55=name, a56=description, a57=card_name, a58=status(b55/b56/b57), a59=displays_location(b55/b56)
 export async function fetchCaredOnesCardsWordPress(): Promise<any[]> {
-  try {
-    const stored = getStoredWPUser();
-    if (!stored?.user_id) return [];
-    const cards = await fetchRelatedCctChildren(REL_USER_CARED_ONE_CARD, String(stored.user_id), T.infoCard.slug);
-    return cards.map((c: any) => ({
-      id: String(c.id || c._ID),
-      user_id: `wp-${stored.user_id}`,
-      name: c[F_CARD.CARED_ONE_S_NAME] || c[F_CARD.CARED_ONE_S_INFORMATION_CARD_NAME] || "Cared One",
-      description: c[F_CARD.CARED_ONE_S_DESCRIPTION] || null,
-      card_name: c[F_CARD.CARED_ONE_S_INFORMATION_CARD_NAME] || null,
-      status: c[F_CARD.STATUS] === "b57" ? "paused" : c[F_CARD.STATUS] === "b55" ? "draft" : "active",
-      displays_location: c[F_CARD.DISPLAYS_LOCATION] || null,
-      created_at: c.created_at,
-    }));
-  } catch { return []; }
+  const stored = getStoredWPUser();
+  if (!stored?.user_id) return [];
+  const cards = await fetchRelatedCctChildren(REL_USER_CARED_ONE_CARD, String(stored.user_id), T.infoCard.slug);
+  return cards.map((c: any) => ({
+    id: String(c.id || c._ID),
+    user_id: `wp-${stored.user_id}`,
+    name: c[F_CARD.CARED_ONE_S_NAME] || c[F_CARD.CARED_ONE_S_INFORMATION_CARD_NAME] || null,
+    description: c[F_CARD.CARED_ONE_S_DESCRIPTION] || null,
+    card_name: c[F_CARD.CARED_ONE_S_INFORMATION_CARD_NAME] || null,
+    status: c[F_CARD.STATUS] === "b57" ? "paused" : c[F_CARD.STATUS] === "b55" ? "draft" : "active",
+    displays_location: c[F_CARD.DISPLAYS_LOCATION] || null,
+    created_at: c.created_at,
+  }));
 }
+
 
 export async function createCaredOnesCardWordPress(card: { name: string; description?: string; card_name?: string; status?: string }): Promise<void> {
   const stored = getStoredWPUser();
