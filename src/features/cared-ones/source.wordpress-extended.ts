@@ -101,6 +101,16 @@ async function fetchRelatedCctChildrenBulk(relationId: number, parentId: string,
 }
 
 
+/** Reads a WP user, falling back to the public context when the caller lacks
+ *  `edit` capability on that user (subscribers get 403 on `context=edit`). */
+export async function fetchWPUserSafe(userId: number | string): Promise<any> {
+  try {
+    return await wordpressFetch<any>(`wp/v2/users/${userId}?context=edit`);
+  } catch {
+    return await wordpressFetch<any>(`wp/v2/users/${userId}`);
+  }
+}
+
 async function linkRel(relId: number, parentId: number, childId: number) {
   if (!parentId || !childId) return;
   await wordpressFetch(`jet-rel/${relId}`, {
