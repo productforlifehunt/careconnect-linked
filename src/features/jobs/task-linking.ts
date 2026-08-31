@@ -17,7 +17,7 @@ export async function fetchTaskIdsForJob(jobId: string | number): Promise<string
   try {
     const r = await wordpressFetch<any[]>(`jet-rel/${REL_JOB_TASK}/children/${jid}`);
     return (Array.isArray(r) ? r : []).map((x) => String(x.child_object_id)).filter(Boolean);
-  } catch { return []; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
 export async function fetchJobIdsForTask(taskId: string | number): Promise<string[]> {
@@ -26,7 +26,7 @@ export async function fetchJobIdsForTask(taskId: string | number): Promise<strin
   try {
     const r = await wordpressFetch<any[]>(`jet-rel/${REL_JOB_TASK}/parents/${tid}`);
     return (Array.isArray(r) ? r : []).map((x) => String(x.parent_object_id)).filter(Boolean);
-  } catch { return []; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
 export async function linkTaskToJob(jobId: string | number, taskId: string | number): Promise<void> {

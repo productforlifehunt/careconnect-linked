@@ -47,7 +47,7 @@ export async function fetchCommunityPostsWordPress(locale?: { area?: string; lan
       created_at: p.created_at,
       updated_at: p.updated_at,
     }));
-  } catch { return []; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
 
@@ -67,7 +67,7 @@ export async function fetchCommunityPostByIdWordPress(id: string): Promise<any |
       created_at: p.created_at,
       updated_at: p.updated_at,
     };
-  } catch { return null; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
 export async function createCommunityPostWordPress(post: {
@@ -127,7 +127,7 @@ async function fetchCommentById(id: string, parentId: string | null = null): Pro
       updated_at: c.updated_at || null,
       parent_id: parentId,
     };
-  } catch { return null; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
 export async function fetchPostCommentsWordPress(postId: string): Promise<any[]> {
@@ -137,7 +137,7 @@ export async function fetchPostCommentsWordPress(postId: string): Promise<any[]>
     const ids = rels.map((r: any) => String(r.child_object_id)).filter(Boolean);
     const comments = await Promise.all(ids.map((id) => fetchCommentById(id, null)));
     return comments.filter(Boolean);
-  } catch { return []; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
 export async function fetchCommentRepliesWordPress(commentId: string): Promise<any[]> {
@@ -147,7 +147,7 @@ export async function fetchCommentRepliesWordPress(commentId: string): Promise<a
     const ids = rels.map((r: any) => String(r.child_object_id)).filter(Boolean);
     const replies = await Promise.all(ids.map((id) => fetchCommentById(id, commentId)));
     return replies.filter(Boolean);
-  } catch { return []; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
 export async function createPostCommentWordPress(

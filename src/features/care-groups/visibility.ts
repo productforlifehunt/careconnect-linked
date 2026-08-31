@@ -50,7 +50,7 @@ async function relParents(rel: number, childId: number): Promise<number[]> {
   try {
     const r = await wordpressFetch<any[]>(`jet-rel/${rel}/parents/${childId}`);
     return (Array.isArray(r) ? r : []).map((x: any) => Number(x.parent_object_id)).filter(Boolean);
-  } catch { return []; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
 /** Sub-group ids the current user belongs to (status = accepted only). */
