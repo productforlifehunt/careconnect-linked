@@ -492,17 +492,23 @@ Deno.serve(async (req) => {
         const list = await res.json().catch(() => []);
         if (!res.ok || !Array.isArray(list)) {
           console.error(`get_user_names failed [${res.status}]`, JSON.stringify(list).slice(0, 200));
-          return json({ ok: true, data: [] });
+          return json({ error: "Could not read users", status: res.status, details: JSON.stringify(list).slice(0, 300) }, res.status || 500);
         }
         return json({
           ok: true,
           data: list.map((u: any) => ({
             id: Number(u.id),
             name: u.name || u.slug || "",
+            slug: u.slug || "",
+            email: u.email || null,
+            first_name: u.first_name || null,
+            last_name: u.last_name || null,
+            roles: Array.isArray(u.roles) ? u.roles : [],
             avatar: u.avatar_urls?.["96"] || null,
           })),
         });
       }
+
 
       // Valid WooCommerce country + state codes, read from the store itself so
       // checkout never fails on a hand-typed state ("BJ" is not a CN code).
