@@ -81,7 +81,7 @@ export async function fetchMyProfileWordPress(): Promise<Profile | null> {
 
     if (cct) {
       wpProfile.general_user_role = parseCheckboxList(cct[F.GENERAL_USER_ROLE]) || wpProfile.general_user_role;
-      wpProfile.is_care_provider = yesNoToBool(cct[F.IS_CARE_PROVIDER]);
+      wpProfile.is_care_provider = yesNoToBool(cct[F.IS_PAID_CARE_PROVIDER]);
       wpProfile.provider_is_active = yesNoToBool(cct[F.CARE_PROVIDER_IS_ACTIVE]);
       wpProfile.care_provider_is_background_checked = yesNoToBool(cct[F.CARE_PROVIDER_IS_BACKGROUND_CHECKED]);
       wpProfile.care_provider_background_check_detail = cct[F.CARE_PROVIDER_S_BACKGROUND_CHECK_DETAIL] || wpProfile.care_provider_background_check_detail;
@@ -147,7 +147,7 @@ export async function updateProfileWordPress(updates: Partial<Profile>): Promise
   // 2) Update CCT 258 extended profile 2 (opaque codes)
   const body: Record<string, any> = {};
   if (updates.general_user_role !== undefined) body[F.GENERAL_USER_ROLE] = serializeRoleList(updates.general_user_role as string[] | null);
-  if (updates.is_care_provider !== undefined) body[F.IS_CARE_PROVIDER] = boolToYesNo(updates.is_care_provider);
+  if (updates.is_care_provider !== undefined) body[F.IS_PAID_CARE_PROVIDER] = boolToYesNo(updates.is_care_provider);
   if (updates.provider_is_active !== undefined) body[F.CARE_PROVIDER_IS_ACTIVE] = boolToYesNo(updates.provider_is_active);
   if (updates.care_provider_is_background_checked !== undefined) body[F.CARE_PROVIDER_IS_BACKGROUND_CHECKED] = boolToYesNo(updates.care_provider_is_background_checked);
   if (updates.care_provider_background_check_detail !== undefined) body[F.CARE_PROVIDER_S_BACKGROUND_CHECK_DETAIL] = updates.care_provider_background_check_detail;

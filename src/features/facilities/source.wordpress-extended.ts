@@ -34,21 +34,41 @@ function normalizeWpObjectId(value: string | number | null | undefined): number 
 
 // ─── Facility CRUD ──────────────────────────────────────────
 export async function createCareFacilityWordPress(input: {
-  title: string; content?: string; address?: string; location?: string;
-  latitude?: number; longitude?: number; phone?: string; email?: string; website?: string;
+  title?: string; name?: string; content?: string; description?: string | null;
+  address?: string | null; location?: string | null;
+  latitude?: number; longitude?: number; phone?: string | null; email?: string | null; website?: string;
+  isOwner?: boolean; ownerRole?: string | null;
+  ownershipClaim?: string | null; ownershipAttachmentUrls?: string | string[] | null;
 }): Promise<any> {
   const result = await wordpressCCTFetch(CCT_SLUG, {
     method: "POST",
     body: {
-      [F.NAME]: input.title,
-      [F.DETAIL]: input.content || "",
+      [F.NAME]: input.title ?? input.name ?? "",
+      [F.DETAIL]: input.content ?? input.description ?? "",
       [F.LOCATION]: input.location || "",
       [F.ADDRESS]: input.address || "",
       [F.PHONE]: input.phone || "",
       [F.EMAIL]: input.email || "",
+      [F.FACILITY_IS_APPROVED]: T.careFacility.opt.FACILITY_IS_APPROVED.NO,
     },
   }) as any;
-  return { id: result?.id || result?._ID };
+  const facilityId = String(normalizeWpObjectId(result?.item_id || result?._ID || result?.id) || "");
+  if (!facilityId) throw new Error("Care facility was not created");
+  if (input.isOwner) {
+    const { getStoredWPUser } = await import("@/services/wp-auth");
+    const meId = normalizeWpObjectId(getStoredWPUser()?.user_id);
+    if (!meId) throw new Error("You must be signed in to claim ownership");
+    // Relation 249 records the owner membership; CCT 288 + Relation 291 record
+    // the reviewable ownership claim itself.
+    await addFacilityMemberWordPress(facilityId, String(meId), { type: "owner", roleLabel: input.ownerRole || undefined });
+    await createFacilityOwnershipClaimWordPress({
+      facility_id: facilityId,
+      claim: input.ownershipClaim || "",
+      attachment_urls: input.ownershipAttachmentUrls || [],
+      is_dispute: false,
+    });
+  }
+  return { id: facilityId };
 }
 
 export async function updateCareFacilityWordPress(id: string, updates: Record<string, any>): Promise<any> {
@@ -148,4 +168,136 @@ export async function fetchFacilityReviewSummariesWordPress(facilityIds: string[
     }
   } catch { /* adapter unavailable */ }
   return result;
+}
+
+// ─── Facility Ownership Claims (CCT 288 + Relation 291) ─────
+// Dictionary CCT 288 "Ownership claim": a55 claim (Text), a56 proof (Gallery),
+// a57 status (b55 pending | b56 approved | b57 rejected), a58 is dispute
+// (b55 yes | b56 no), a59 reply (Text). Linked to the facility ONLY through
+// JetEngine Relation 291 (215 -> 288).
+const CLAIM = T.ownershipClaim;
+const FC = CLAIM.f;
+const REL_FACILITY_CLAIM = R.careFacilityOwnershipClaims;
+
+const CLAIM_STATUS_LABEL: Record<string, "pending" | "approved" | "rejected"> = {
+  [CLAIM.opt.STATUS.PENDING]: "pending",
+  [CLAIM.opt.STATUS.APPROVED]: "approved",
+  [CLAIM.opt.STATUS.REJECTED]: "rejected",
+};
+const CLAIM_STATUS_CODE: Record<string, string> = {
+  pending: CLAIM.opt.STATUS.PENDING,
+  approved: CLAIM.opt.STATUS.APPROVED,
+  rejected: CLAIM.opt.STATUS.REJECTED,
+};
+
+function parseProof(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map((v) => String(v)).filter(Boolean);
+  if (typeof value === "string" && value.trim()) {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) return parsed.map((v) => String(v)).filter(Boolean);
+    } catch { /* not JSON — comma/newline separated */ }
+    return value.split(/[\n,]/).map((v) => v.trim()).filter(Boolean);
+  }
+  return [];
+}
+
+function mapClaim(row: any, facilityId: string) {
+  const statusCode = String(row[FC.STATUS] || "");
+  const status = CLAIM_STATUS_LABEL[statusCode];
+  if (!status) throw new Error(`Invalid ownership claim status code: ${statusCode}`);
+  return {
+    id: String(row.id || row._ID),
+    entity_id: facilityId,
+    facility_id: facilityId,
+    post_id: facilityId,
+    claim: row[FC.CLAIM] || null,
+    attachment_urls: parseProof(row[FC.PROOF]),
+    status,
+    is_dispute: String(row[FC.IS_DISPUTE]) === CLAIM.opt.IS_DISPUTE.YES,
+    reject_reason: row[FC.REPLY] || null,
+    reply: row[FC.REPLY] || null,
+    user_id: row.cct_author_id ? `wp-${row.cct_author_id}` : (row.author_id ? `wp-${row.author_id}` : ""),
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
+/** All ownership claims/disputes attached to a facility (Relation 291). */
+export async function fetchFacilityOwnershipClaimsWordPress(facilityId: string): Promise<any[]> {
+  const fid = normalizeWpObjectId(facilityId);
+  if (!fid) throw new Error("Invalid facility ID");
+  const rels = await wordpressFetch<any[]>(`jet-rel/${REL_FACILITY_CLAIM}/children/${fid}`);
+  if (!Array.isArray(rels)) throw new Error(`Relation ${REL_FACILITY_CLAIM} returned an invalid response`);
+  const rows = await Promise.all(
+    rels
+      .map((r: any) => String(r.child_object_id || ""))
+      .filter(Boolean)
+      .map((cid) => wordpressCCTFetch<any>(CLAIM.slug, { id: cid })),
+  );
+  return rows.filter(Boolean).map((row) => mapClaim(row, facilityId));
+}
+
+/** Claims only (is dispute = No). */
+export async function fetchFacilityClaimsOnlyWordPress(facilityId: string): Promise<any[]> {
+  return (await fetchFacilityOwnershipClaimsWordPress(facilityId)).filter((c) => !c.is_dispute);
+}
+
+/** Disputes only (is dispute = Yes). */
+export async function fetchFacilityDisputesWordPress(facilityId: string): Promise<any[]> {
+  return (await fetchFacilityOwnershipClaimsWordPress(facilityId)).filter((c) => c.is_dispute);
+}
+
+/**
+ * Submit an ownership claim (or dispute) for a facility.
+ * Status always starts pending — approval is an admin action.
+ */
+export async function createFacilityOwnershipClaimWordPress(input: {
+  facility_id: string;
+  claim?: string | null;
+  attachment_urls?: string[] | string | null;
+  is_dispute?: boolean;
+  status?: "pending" | "approved" | "rejected";
+}): Promise<{ id: string }> {
+  const fid = normalizeWpObjectId(input.facility_id);
+  if (!fid) throw new Error("Invalid facility ID");
+  const proof = parseProof(input.attachment_urls);
+  const result = await wordpressCCTFetch<any>(CLAIM.slug, {
+    method: "POST",
+    body: {
+      [FC.CLAIM]: input.claim || "",
+      [FC.PROOF]: JSON.stringify(proof),
+      [FC.STATUS]: CLAIM_STATUS_CODE[input.status || "pending"],
+      [FC.IS_DISPUTE]: input.is_dispute ? CLAIM.opt.IS_DISPUTE.YES : CLAIM.opt.IS_DISPUTE.NO,
+      [FC.REPLY]: "",
+    },
+  });
+  const claimId = normalizeWpObjectId(result?.item_id || result?._ID || result?.id);
+  if (!claimId) throw new Error("Ownership claim was not created");
+  await wordpressFetch(`jet-rel/${REL_FACILITY_CLAIM}`, {
+    method: "POST",
+    body: { parent_id: fid, child_id: claimId, context: "parent", store_items_type: "update" },
+  });
+  return { id: String(claimId) };
+}
+
+/** Admin decision on a claim/dispute: status + written reply. */
+export async function updateFacilityOwnershipClaimWordPress(
+  claimId: string,
+  updates: { status?: "pending" | "approved" | "rejected"; reply?: string | null; claim?: string | null; attachment_urls?: string[] | string | null },
+): Promise<void> {
+  const body: Record<string, any> = {};
+  if (updates.status !== undefined) {
+    const code = CLAIM_STATUS_CODE[updates.status];
+    if (!code) throw new Error(`Invalid ownership claim status: ${updates.status}`);
+    body[FC.STATUS] = code;
+  }
+  if (updates.reply !== undefined) body[FC.REPLY] = updates.reply || "";
+  if (updates.claim !== undefined) body[FC.CLAIM] = updates.claim || "";
+  if (updates.attachment_urls !== undefined) body[FC.PROOF] = JSON.stringify(parseProof(updates.attachment_urls));
+  await wordpressCCTFetch(CLAIM.slug, { id: claimId, method: "PUT", body });
+}
+
+export async function deleteFacilityOwnershipClaimWordPress(claimId: string): Promise<void> {
+  await wordpressCCTFetch(CLAIM.slug, { id: claimId, method: "DELETE" });
 }

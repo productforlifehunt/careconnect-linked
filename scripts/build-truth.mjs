@@ -127,6 +127,14 @@ function parseOptions(str) {
   return out;
 }
 
+// The dictionary repeats a shared CCT's field table once per host object
+// (product / shop / facility). Keep the first definition of each field code.
+function dedupeFields(list) {
+  const seen = new Set();
+  return list.filter((f) => (seen.has(f.code) ? false : (seen.add(f.code), true)));
+}
+for (const c of ccts) c.fields = dedupeFields(c.fields);
+for (const r of relations) r.fields = dedupeFields(r.fields);
 for (const c of ccts) for (const f of c.fields) f.optionMap = parseOptions(f.options);
 for (const r of relations) for (const f of r.fields) f.optionMap = parseOptions(f.options);
 

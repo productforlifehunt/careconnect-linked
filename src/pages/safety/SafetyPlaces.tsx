@@ -97,6 +97,7 @@ export default function SafetyPlaces() {
           notify_on_enter: form.notify_on_enter,
           notify_on_exit: form.notify_on_exit,
           is_active: form.is_active,
+          user_id: String(selfId),
           receiver_ids: form.receiver_ids,
         });
       } else {
@@ -287,7 +288,7 @@ export default function SafetyPlaces() {
                 onChange={(v) => setForm((f) => ({ ...f, notify_on_exit: v }))}
               />
               <div>
-                <Label className="text-sm">{Z("提醒接收人", "Alert receivers")}</Label>
+                <Label className="text-sm">{Z("提醒接收人（对所有地点生效）", "Alert receivers (apply to all places)")}</Label>
                 <div className="mt-2 max-h-32 space-y-2 overflow-auto rounded-md border p-2">
                   {members.length === 0 && (
                     <p className="text-xs text-muted-foreground">{Z("暂无可选成员", "No members available")}</p>

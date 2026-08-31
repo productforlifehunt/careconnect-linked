@@ -458,6 +458,8 @@ export default function GPSTracking() {
         notify_on_enter: zoneForm.notify_on_enter,
         notify_on_exit: zoneForm.notify_on_exit,
         is_active: zoneForm.is_active,
+        // Receivers live on the cared one (Relation 290), shared by all zones.
+        user_id: String(userId),
         receiver_ids: zoneForm.receiver_ids,
       };
       if (zoneForm.id) {
@@ -628,7 +630,7 @@ export default function GPSTracking() {
                   onCheckedChange={(v) => setZoneForm(f => ({ ...f, notify_on_exit: v }))} />
               </div>
               <div>
-                <Label className="text-sm">{Z("提醒接收人", "Alert receivers")}</Label>
+                <Label className="text-sm">{Z("提醒接收人（对该被护理人的所有区域生效）", "Alert receivers (apply to all zones of this person)")}</Label>
                 <div className="mt-2 max-h-32 overflow-auto rounded-md border p-2 space-y-2">
                   {receiverCandidates.length === 0 && (
                     <p className="text-xs text-muted-foreground">{Z("暂无可选成员", "No members available")}</p>

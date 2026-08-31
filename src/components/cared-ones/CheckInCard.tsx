@@ -63,6 +63,10 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
     instructions: "",
     start_date: "",
     note: "",
+    reminder_time_before: "0",
+    time_to_send_to_caregiver: "",
+    time_to_be_considered_missing: "",
+    check_in_type: ["human"] as string[],
   });
 
   // Today: status by checkin id
@@ -105,10 +109,14 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
         instructions: form.instructions || undefined,
         start_date: form.start_date || undefined,
         note: form.note || undefined,
+        reminder_time_before: form.reminder_time_before === "" ? 0 : Number(form.reminder_time_before),
+        time_to_send_to_caregiver: form.time_to_send_to_caregiver === "" ? undefined : Number(form.time_to_send_to_caregiver),
+        time_to_be_considered_missing: form.time_to_be_considered_missing === "" ? undefined : Number(form.time_to_be_considered_missing),
+        check_in_type: form.check_in_type,
       },
       {
         onSuccess: () => {
-          setForm({ name: Z("每日签到", "Daily Check-In"), detail: "", frequency: Z("每日一次", "Once daily"), time: "08:00", instructions: "", start_date: "", note: "" });
+          setForm({ name: Z("每日签到", "Daily Check-In"), detail: "", frequency: Z("每日一次", "Once daily"), time: "08:00", instructions: "", start_date: "", note: "", reminder_time_before: "0", time_to_send_to_caregiver: "", time_to_be_considered_missing: "", check_in_type: ["human"] });
           setAddOpen(false);
           toast({ title: Z("签到日程已创建 ✓", "Check-in schedule created ✓") });
         },
@@ -157,6 +165,10 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
       instructions: checkin.instructions || "",
       start_date: checkin.start_date || "",
       note: checkin.note || "",
+      reminder_time_before: checkin.reminder_time_before != null ? String(checkin.reminder_time_before) : "0",
+      time_to_send_to_caregiver: checkin.time_to_send_to_caregiver != null ? String(checkin.time_to_send_to_caregiver) : "",
+      time_to_be_considered_missing: checkin.time_to_be_considered_missing != null ? String(checkin.time_to_be_considered_missing) : "",
+      check_in_type: Array.isArray(checkin.check_in_type) && checkin.check_in_type.length ? checkin.check_in_type : ["human"],
     });
     setEditOpen({ open: true, checkin });
   };
@@ -172,6 +184,10 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
         instructions: form.instructions || "",
         start_date: form.start_date || "",
         note: form.note || "",
+        reminder_time_before: form.reminder_time_before === "" ? 0 : Number(form.reminder_time_before),
+        time_to_send_to_caregiver: form.time_to_send_to_caregiver === "" ? null : Number(form.time_to_send_to_caregiver),
+        time_to_be_considered_missing: form.time_to_be_considered_missing === "" ? null : Number(form.time_to_be_considered_missing),
+        check_in_type: form.check_in_type,
       },
       {
         onSuccess: () => {
@@ -237,6 +253,42 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
             <div>
               <Label className="text-sm">{Z("备注", "Notes")}</Label>
               <Textarea value={form.note} onChange={(e) => setForm((p) => ({ ...p, note: e.target.value }))} rows={2} />
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label className="text-sm">{Z("提前提醒(分钟)", "Remind before (min)")}</Label>
+                <Input type="number" min="0" value={form.reminder_time_before} onChange={(e) => setForm((p) => ({ ...p, reminder_time_before: e.target.value }))} />
+              </div>
+              <div>
+                <Label className="text-sm">{Z("多久通知护理者(分钟)", "Notify caregiver after (min)")}</Label>
+                <Input type="number" min="0" value={form.time_to_send_to_caregiver} onChange={(e) => setForm((p) => ({ ...p, time_to_send_to_caregiver: e.target.value }))} />
+              </div>
+              <div>
+                <Label className="text-sm">{Z("多久算错过(分钟)", "Count as missed after (min)")}</Label>
+                <Input type="number" min="0" value={form.time_to_be_considered_missing} onChange={(e) => setForm((p) => ({ ...p, time_to_be_considered_missing: e.target.value }))} />
+              </div>
+            </div>
+            <div>
+              <Label className="text-sm">{Z("签到方式", "Check-in type")}</Label>
+              <div className="flex gap-4 mt-1">
+                {(["ai", "human"] as const).map((type) => (
+                  <label key={type} className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={form.check_in_type.includes(type)}
+                      onChange={(e) =>
+                        setForm((p) => ({
+                          ...p,
+                          check_in_type: e.target.checked
+                            ? [...p.check_in_type, type]
+                            : p.check_in_type.filter((v) => v !== type),
+                        }))
+                      }
+                    />
+                    {type === "ai" ? Z("AI 签到", "AI check-in") : Z("人工签到", "Human check-in")}
+                  </label>
+                ))}
+              </div>
             </div>
           </div>
           <DialogFooter>
@@ -311,6 +363,22 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
             <div><Label className="text-sm">{Z("开始日期", "Start date")}</Label><Input type="date" value={form.start_date} onChange={(e) => setForm((p) => ({ ...p, start_date: e.target.value }))} /></div>
             <div><Label className="text-sm">{Z("询问说明", "Instructions")}</Label><Input value={form.instructions} onChange={(e) => setForm((p) => ({ ...p, instructions: e.target.value }))} /></div>
             <div><Label className="text-sm">{Z("备注", "Notes")}</Label><Textarea value={form.note} onChange={(e) => setForm((p) => ({ ...p, note: e.target.value }))} rows={2} /></div>
+            <div className="grid grid-cols-3 gap-3">
+              <div><Label className="text-sm">{Z("提前提醒(分钟)", "Remind before (min)")}</Label><Input type="number" min="0" value={form.reminder_time_before} onChange={(e) => setForm((p) => ({ ...p, reminder_time_before: e.target.value }))} /></div>
+              <div><Label className="text-sm">{Z("多久通知护理者(分钟)", "Notify caregiver after (min)")}</Label><Input type="number" min="0" value={form.time_to_send_to_caregiver} onChange={(e) => setForm((p) => ({ ...p, time_to_send_to_caregiver: e.target.value }))} /></div>
+              <div><Label className="text-sm">{Z("多久算错过(分钟)", "Count as missed after (min)")}</Label><Input type="number" min="0" value={form.time_to_be_considered_missing} onChange={(e) => setForm((p) => ({ ...p, time_to_be_considered_missing: e.target.value }))} /></div>
+            </div>
+            <div>
+              <Label className="text-sm">{Z("签到方式", "Check-in type")}</Label>
+              <div className="flex gap-4 mt-1">
+                {(["ai", "human"] as const).map((type) => (
+                  <label key={type} className="flex items-center gap-2 text-sm">
+                    <input type="checkbox" checked={form.check_in_type.includes(type)} onChange={(e) => setForm((p) => ({ ...p, check_in_type: e.target.checked ? [...p.check_in_type, type] : p.check_in_type.filter((v) => v !== type) }))} />
+                    {type === "ai" ? Z("AI 签到", "AI check-in") : Z("人工签到", "Human check-in")}
+                  </label>
+                ))}
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditOpen({ open: false, checkin: null })}>{Z("取消", "Cancel")}</Button>

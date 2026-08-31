@@ -23,7 +23,7 @@
           "label": "Product type",
           "code": "a57",
           "type": "Checkbox",
-          "options": "1. “Nicotine product” (Name/ID: b55) 2. “Alcohol product” (Name/ID: b56) 3. “Food” (Name/ID: b57) 4. “Supplement” (Name/ID: b58) 5. “Medicine” (Name/ID: b59) 6. “Gear” (Name/ID: b60) 7. “Giftcard” (Name/ID: b61)",
+          "options": "1. “Nicotine product” (Name/ID: b55) 2. “Alcohol product” (Name/ID: b56) 3. “Food” (Name/ID: b57) 4. “Supplement” (Name/ID: b58) 5. “Medicine” (Name/ID: b59) 6. “Gear” (Name/ID: b60) 7. “Giftcard” (Name/ID: b61) 8. “Digital product” (Name/ID: b62)",
           "optionMap": {
             "b55": "Nicotine product",
             "b56": "Alcohol product",
@@ -31,7 +31,8 @@
             "b58": "Supplement",
             "b59": "Medicine",
             "b60": "Gear",
-            "b61": "Giftcard"
+            "b61": "Giftcard",
+            "b62": "Digital product"
           }
         },
         {
@@ -105,10 +106,24 @@
           "optionMap": {}
         },
         {
+          "label": "Digital product platform",
+          "code": "a579",
+          "type": "",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Digital product category",
+          "code": "a580",
+          "type": "",
+          "options": "",
+          "optionMap": {}
+        },
+        {
           "label": "The product is a Nrt product",
           "code": "a58",
           "type": "Radio",
-          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)\t尼古丁产品的设计用途为戒烟产品",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)\t尼古丁产品的设计用途为戒烟产品，如果明确是NRT产品务必勾选，不是的可以选no也可以不勾选，我们在前端展示NRT产品时只展示明确为yes的产品，以免产生把zyn当作NRT推荐给用户的低级错误",
           "optionMap": {
             "b55": "Yes",
             "b56": "No"
@@ -235,16 +250,30 @@
           "optionMap": {}
         },
         {
-          "label": "Custom food detail",
+          "label": "Custom food, detail",
           "code": "a71",
           "type": "Textarea",
           "options": "对于用户自行添加的食品，严格按照OFF的字段和结构去记录成json",
           "optionMap": {}
         },
         {
-          "label": "Custom medicine detail",
+          "label": "Custom recipe detail",
+          "code": "a711",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Custom workout detail",
           "code": "a712",
-          "type": "",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Custom medicine detail",
+          "code": "a713",
+          "type": "Textarea",
           "options": "",
           "optionMap": {}
         },
@@ -396,6 +425,54 @@
       ]
     },
     {
+      "id": 288,
+      "name": "Ownership claim",
+      "fields": [
+        {
+          "label": "Claim",
+          "code": "a55",
+          "type": "Text",
+          "options": "文字性证明，比如我是这个产品的owner，用户只可以申请作为owner，被批准后可以添加其他产品团队成员",
+          "optionMap": {}
+        },
+        {
+          "label": "Proof",
+          "code": "a56",
+          "type": "Gallery",
+          "options": "图片性证明，用户可以上传多个图片作为自己身份的证明，可为空",
+          "optionMap": {}
+        },
+        {
+          "label": "Status",
+          "code": "a57",
+          "type": "Radio",
+          "options": "1. “Pending” (Name/ID: b55) 2. “Approved” (Name/ID: b56) 3. “Rejected” (Name/ID: b57)",
+          "optionMap": {
+            "b55": "Pending",
+            "b56": "Approved",
+            "b57": "Rejected"
+          }
+        },
+        {
+          "label": "Is dispute",
+          "code": "a58",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)\t如果产品已经有了被批准的owner，即一条approved的申请，那么新的申请只可以提交为dispute",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Reply",
+          "code": "a59",
+          "type": "Text",
+          "options": "回执，被批准则自动生成回执，被拒绝则由站点管理员手动写回执",
+          "optionMap": {}
+        }
+      ]
+    },
+    {
       "id": 168,
       "name": "Recipe",
       "fields": [
@@ -503,7 +580,7 @@
           }
         },
         {
-          "label": "Shop is local",
+          "label": "Shop is local/physical",
           "code": "a64",
           "type": "Radio",
           "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
@@ -513,7 +590,7 @@
           }
         },
         {
-          "label": "Local shop type",
+          "label": "Local/physical shop type",
           "code": "a65",
           "type": "Checkbox",
           "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
@@ -635,7 +712,7 @@
     },
     {
       "id": 149,
-      "name": "Afresh community post",
+      "name": "Community post",
       "fields": [
         {
           "label": "Title",
@@ -792,14 +869,63 @@
       "name": "User‘s extended profile",
       "fields": [
         {
-          "label": "User name",
+          "label": "User name for afresh",
           "code": "a55",
           "type": "Text",
-          "options": "",
+          "options": "这里是我们储存afresh app用户名字的地方，注意，我们不用wordpress用户名或前端储存，且每个子app的用户名使用此独立colomn储存",
           "optionMap": {}
         },
         {
-          "label": "User name in community",
+          "label": "User name for adry",
+          "code": "a551",
+          "type": "Text",
+          "options": "这里是我们储存adry app用户名字的地方，注意，我们不用wordpress用户名或前端储存，且每个子app的用户名使用此独立colomn储存",
+          "optionMap": {}
+        },
+        {
+          "label": "User name for ablocked",
+          "code": "a552",
+          "type": "Text",
+          "options": "这里是我们储存ablocked app用户名字的地方，注意，我们不用wordpress用户名或前端储存，且每个子app的用户名使用此独立colomn储存",
+          "optionMap": {}
+        },
+        {
+          "label": "User name for NRTlist",
+          "code": "a553",
+          "type": "Text",
+          "options": "这里是我们储存NRTlist app用户名字的地方，注意，我们不用wordpress用户名或前端储存，且每个子app的用户名使用此独立colomn储存",
+          "optionMap": {}
+        },
+        {
+          "label": "User name for Smokelesslist",
+          "code": "a554",
+          "type": "Text",
+          "options": "这里是我们储存Smokelesslist app用户名字的地方，注意，我们不用wordpress用户名或前端储存，且每个子app的用户名使用此独立colomn储存",
+          "optionMap": {}
+        },
+        {
+          "label": "User name for BeNotch",
+          "code": "a555",
+          "type": "Text",
+          "options": "这里是我们储存BeNotch app用户名字的地方，注意，我们不用wordpress用户名或前端储存，且每个子app的用户名使用此独立colomn储存",
+          "optionMap": {}
+        },
+        {
+          "label": "User name for Challenged",
+          "code": "a556",
+          "type": "Text",
+          "options": "这里是我们储存Challenged app用户名字的地方，注意，我们不用wordpress用户名或前端储存，且每个子app的用户名使用此独立colomn储存",
+          "optionMap": {}
+        },
+        {
+          "label": "User name for CareCNC",
+          "code": "a557",
+          "type": "Text",
+          "options": "这里是我们储存CareCNC app用户名字的地方，注意，我们不用wordpress用户名或前端储存，且每个子app的用户名使用此独立colomn储存",
+          "optionMap": {}
+        },
+        {
+          "label": "User name in afresh community",
           "code": "a56",
           "type": "Text",
           "options": "",
@@ -1247,7 +1373,7 @@
           }
         },
         {
-          "label": "Is care provider",
+          "label": "Is paid care provider",
           "code": "a59",
           "type": "Radio",
           "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
@@ -1956,7 +2082,7 @@
           "label": "Mood detail",
           "code": "a62",
           "type": "Textarea",
-          "options": "",
+          "options": "情绪类详情或自由文本描述唯一储存地址",
           "optionMap": {}
         },
         {
@@ -2071,10 +2197,10 @@
           "optionMap": {}
         },
         {
-          "label": "Note content or detail content",
+          "label": "Note content",
           "code": "a77",
           "type": "Textarea",
-          "options": "对于无特殊需求的Note或文字详情，全部使用Note content记录",
+          "options": "Note详情",
           "optionMap": {}
         },
         {
@@ -2088,6 +2214,52 @@
             "b57": "Dinner",
             "b58": "Snack"
           }
+        },
+        {
+          "label": "Custom food, meal or supplement detail",
+          "code": "a79",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Custom recipe detail",
+          "code": "a80",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Custom workout detail",
+          "code": "a81",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Custom medicine detail",
+          "code": "a82",
+          "type": "Textarea",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Log medicine log type",
+          "code": "a83",
+          "type": "Radio",
+          "options": "1. “Taken” (Name/ID: b55) 2. “Skipped” (Name/ID: b56) 3. “Missed” (Name/ID: b57)",
+          "optionMap": {
+            "b55": "Taken",
+            "b56": "Skipped",
+            "b57": "Missed"
+          }
+        },
+        {
+          "label": "Log medicine note",
+          "code": "a84",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
         }
       ]
     },
@@ -3423,6 +3595,16 @@
           "type": "Number",
           "options": "多长时间没吃就被记录为missing",
           "optionMap": {}
+        },
+        {
+          "label": "Check in type",
+          "code": "a72",
+          "type": "Checkbox",
+          "options": "1. “AI” (Name/ID: b55) 2. “Human” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "AI",
+            "b56": "Human"
+          }
         }
       ]
     },
@@ -3537,11 +3719,21 @@
         {
           "label": "Check in type",
           "code": "a66",
-          "type": "Radio",
+          "type": "Checkbox",
           "options": "1. “AI” (Name/ID: b55) 2. “Human” (Name/ID: b56)",
           "optionMap": {
             "b55": "AI",
             "b56": "Human"
+          }
+        },
+        {
+          "label": "Checked by AI",
+          "code": "a67",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
           }
         }
       ]
@@ -4149,6 +4341,23 @@
             "b56": "in progress",
             "b57": "completed"
           }
+        },
+        {
+          "label": "Needs payment",
+          "code": "a60",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56) No即免费，Yes是提供报酬",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "Price",
+          "code": "a61",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
         }
       ]
     },
@@ -4300,6 +4509,33 @@
       "fields": []
     },
     {
+      "id": 287,
+      "name": "One 140. product can have many related product members",
+      "parent": "140. Product",
+      "child": "Users",
+      "type": "Many to many",
+      "fields": [
+        {
+          "label": "Product member",
+          "code": "a55",
+          "type": "Checkbos",
+          "options": "1. “nothing special” (Name/ID: b55) 2. “owner” (Name/ID: b56) 3. “admin” (Name/ID: b57) 普通成员为nothing special 主人为owner，主人只能由一个，主人可以把多个成员添加为管理员，管理员有主人一样牛逼的权限",
+          "optionMap": {
+            "b55": "nothing special",
+            "b56": "owner",
+            "b57": "admin"
+          }
+        },
+        {
+          "label": "Product member role",
+          "code": "a56",
+          "type": "Text",
+          "options": "Self-described role, like I’m the fucking boss",
+          "optionMap": {}
+        }
+      ]
+    },
+    {
       "id": 169,
       "name": "One 168. recipe can have many related 140. products",
       "parent": "168. recipe",
@@ -4314,6 +4550,33 @@
       "child": "2. Shop",
       "type": "One to many",
       "fields": []
+    },
+    {
+      "id": 286,
+      "name": "One 2. Shop can have many related facility members",
+      "parent": "2. Shop",
+      "child": "Users",
+      "type": "Many to many",
+      "fields": [
+        {
+          "label": "Shop member",
+          "code": "a55",
+          "type": "Checkbos",
+          "options": "1. “nothing special” (Name/ID: b55) 2. “owner” (Name/ID: b56) 3. “admin” (Name/ID: b57) 普通成员为nothing special 主人为owner，主人只能由一个，主人可以把多个成员添加为管理员，管理员有主人一样牛逼的权限",
+          "optionMap": {
+            "b55": "nothing special",
+            "b56": "owner",
+            "b57": "admin"
+          }
+        },
+        {
+          "label": "Shop member role",
+          "code": "a56",
+          "type": "Text",
+          "options": "Self-described role, like I’m the fucking boss",
+          "optionMap": {}
+        }
+      ]
     },
     {
       "id": 116,
@@ -4413,8 +4676,30 @@
           "type": "Text",
           "options": "以ISO 4217写入币种",
           "optionMap": {}
+        },
+        {
+          "label": "MSRP region",
+          "code": "a67",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Price recorded time",
+          "code": "a68",
+          "type": "Datetime",
+          "options": "",
+          "optionMap": {}
         }
       ]
+    },
+    {
+      "id": 276,
+      "name": "One 275. product price history can have many related 2. shops",
+      "parent": "275. product price history",
+      "child": "2. shop",
+      "type": "many to many",
+      "fields": []
     },
     {
       "id": 118,
@@ -4446,6 +4731,14 @@
       "parent": "141. Comment",
       "child": "141. Comment",
       "type": "Many to Many",
+      "fields": []
+    },
+    {
+      "id": 166,
+      "name": "One 149. comment can have many related 30. Votes",
+      "parent": "141. Community post",
+      "child": "30. Votes",
+      "type": "One to Many",
       "fields": []
     },
     {
@@ -5290,6 +5583,14 @@
       "fields": []
     },
     {
+      "id": 290,
+      "name": "One cared one’s location notification can have many added related receivers",
+      "parent": "Users",
+      "child": "Users",
+      "type": "One to many",
+      "fields": []
+    },
+    {
       "id": 249,
       "name": "One care facility can have many related facility members",
       "parent": "215. Care Facility",
@@ -5315,6 +5616,14 @@
           "optionMap": {}
         }
       ]
+    },
+    {
+      "id": 291,
+      "name": "One 215. Care Facility can have many related ownership claims",
+      "parent": "215. Care Facility",
+      "child": "288. ownership claim",
+      "type": "Many to many（使用many to many以保证后续可拓展性)",
+      "fields": []
     },
     {
       "id": 250,

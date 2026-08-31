@@ -67,6 +67,7 @@ const CCT_ALIASES = {
   217: 'challengedContent',
   218: 'studyNote',
   258: 'userProfile2',
+  288: 'ownershipClaim',
 };
 
 /** Stable frontend alias per dictionary relation number. */
@@ -154,6 +155,12 @@ const REL_ALIASES = {
   263: 'careTaskCalendarEvents',
   264: 'providerReviews',
   265: 'careGroupChat',
+  166: 'communityPostVotes',
+  276: 'productPriceHistoryShops',
+  286: 'shopMembers',
+  287: 'productMembers',
+  290: 'caredOneLocationReceivers',
+  291: 'careFacilityOwnershipClaims',
 
 };
 

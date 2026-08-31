@@ -178,7 +178,7 @@ function MedHistoryDialog({ open, onClose, med }: { open: boolean; onClose: () =
 function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClose: () => void; med: any; onDelete: () => void }) {
   const updateMed = useUpdateMedicine();
   const { toast } = useToast();
-  const [form, setForm] = useState({ name: "", dosage: "", frequency: "once_daily", time_slots: ["08:00"] as string[], note: "", stock_count: "" as string | number, refill_threshold: "" as string | number });
+  const [form, setForm] = useState({ name: "", dosage: "", frequency: "once_daily", time_slots: ["08:00"] as string[], note: "", stock_count: "" as string | number, refill_threshold: "" as string | number, reminder_time_before: "0" as string | number, time_to_send_to_caregiver: "" as string | number, time_to_be_considered_missing: "" as string | number });
 
   // Populate form on open
   useState(() => {
@@ -192,6 +192,9 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
         note: med.note || "",
         stock_count: med.stock_count ?? "",
         refill_threshold: med.refill_threshold ?? "",
+        reminder_time_before: med.reminder_time_before ?? "0",
+        time_to_send_to_caregiver: med.time_to_send_to_caregiver ?? "",
+        time_to_be_considered_missing: med.time_to_be_considered_missing ?? "",
       });
     }
   });
@@ -208,6 +211,9 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
         note: med.note || "",
         stock_count: med.stock_count ?? "",
         refill_threshold: med.refill_threshold ?? "",
+        reminder_time_before: med.reminder_time_before ?? "0",
+        time_to_send_to_caregiver: med.time_to_send_to_caregiver ?? "",
+        time_to_be_considered_missing: med.time_to_be_considered_missing ?? "",
       });
     }
   }, [med]);
@@ -223,6 +229,9 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
       note: form.note || undefined,
       stock_count: form.stock_count === "" ? "" : Number(form.stock_count),
       refill_threshold: form.refill_threshold === "" ? "" : Number(form.refill_threshold),
+      reminder_time_before: form.reminder_time_before === "" ? 0 : Number(form.reminder_time_before),
+      time_to_send_to_caregiver: form.time_to_send_to_caregiver === "" ? null : Number(form.time_to_send_to_caregiver),
+      time_to_be_considered_missing: form.time_to_be_considered_missing === "" ? null : Number(form.time_to_be_considered_missing),
     }, {
       onSuccess: () => { toast({ title: Z("药品已更新","Medicine updated") }); onClose(); },
       onError: (err) => toast({ title: Z("操作失败","Failed"), description: String(err.message), variant: "destructive" }),
@@ -268,7 +277,13 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
           <div className="grid grid-cols-2 gap-3">
             <div><Label>{Z("库存数量","Stock count")} <span className="text-muted-foreground text-xs">{Z("(剩余药片)","(pills left)")}</span></Label><Input type="number" min="0" value={form.stock_count} onChange={e => setForm(p => ({ ...p, stock_count: e.target.value }))} placeholder="e.g. 30" className="mt-1" /></div>
             <div><Label>{Z("补药提醒","Refill alert")} <span className="text-muted-foreground text-xs">{Z("(阈值)","(threshold)")}</span></Label><Input type="number" min="0" value={form.refill_threshold} onChange={e => setForm(p => ({ ...p, refill_threshold: e.target.value }))} placeholder="e.g. 7" className="mt-1" /></div>
-          </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div><Label>{Z("提前提醒(分钟)","Remind before (min)")}</Label><Input type="number" min="0" value={form.reminder_time_before} onChange={e => setForm(p => ({ ...p, reminder_time_before: e.target.value }))} className="mt-1" /></div>
+              <div><Label>{Z("多久通知护理者(分钟)","Notify caregiver after (min)")}</Label><Input type="number" min="0" value={form.time_to_send_to_caregiver} onChange={e => setForm(p => ({ ...p, time_to_send_to_caregiver: e.target.value }))} className="mt-1" /></div>
+              <div><Label>{Z("多久算漏服(分钟)","Count as missed after (min)")}</Label><Input type="number" min="0" value={form.time_to_be_considered_missing} onChange={e => setForm(p => ({ ...p, time_to_be_considered_missing: e.target.value }))} className="mt-1" /></div>
+            </div>
+
           <div className="flex gap-2">
             <Button className="flex-1" onClick={handleSave} disabled={updateMed.isPending || !form.name.trim()}>
               {updateMed.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null} {Z("保存更改","Save Changes")}
@@ -474,7 +489,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
 
   const [addOpen, setAddOpen] = useState(false);
   const [view, setView] = useState<"timeline" | "list">("timeline");
-  const [form, setForm] = useState({ name: "", dosage: "", frequency: "once_daily", time_slots: ["08:00"] as string[], note: "", stock_count: "" as string | number, refill_threshold: "" as string | number });
+  const [form, setForm] = useState({ name: "", dosage: "", frequency: "once_daily", time_slots: ["08:00"] as string[], note: "", stock_count: "" as string | number, refill_threshold: "" as string | number, reminder_time_before: "0" as string | number, time_to_send_to_caregiver: "" as string | number, time_to_be_considered_missing: "" as string | number });
   const updateMed = useUpdateMedicine();
 
   // Dialogs
@@ -520,8 +535,11 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
         note: form.note || undefined,
         stock_count: form.stock_count === "" ? undefined : Number(form.stock_count),
         refill_threshold: form.refill_threshold === "" ? undefined : Number(form.refill_threshold),
+        reminder_time_before: form.reminder_time_before === "" ? 0 : Number(form.reminder_time_before),
+        time_to_send_to_caregiver: form.time_to_send_to_caregiver === "" ? undefined : Number(form.time_to_send_to_caregiver),
+        time_to_be_considered_missing: form.time_to_be_considered_missing === "" ? undefined : Number(form.time_to_be_considered_missing),
       },
-      { onSuccess: () => { setForm({ name: "", dosage: "", frequency: "once_daily", time_slots: ["08:00"], note: "", stock_count: "", refill_threshold: "" }); setAddOpen(false); toast({ title: Z("药品已添加","Medicine added") }); },
+      { onSuccess: () => { setForm({ name: "", dosage: "", frequency: "once_daily", time_slots: ["08:00"], note: "", stock_count: "", refill_threshold: "", reminder_time_before: "0", time_to_send_to_caregiver: "", time_to_be_considered_missing: "" }); setAddOpen(false); toast({ title: Z("药品已添加","Medicine added") }); },
         onError: (err) => toast({ title: Z("添加失败","Failed to add"), description: String(err.message), variant: "destructive" }) }
     );
   };
@@ -634,6 +652,11 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
             <div className="grid grid-cols-2 gap-3">
               <div><Label>{Z("库存数量","Stock count")} <span className="text-muted-foreground text-xs">{Z("(可选)","(optional)")}</span></Label><Input type="number" min="0" value={form.stock_count} onChange={e => setForm(p => ({ ...p, stock_count: e.target.value }))} placeholder="e.g. 30" className="mt-1" /></div>
               <div><Label>{Z("补药提醒阈值","Refill alert at")} <span className="text-muted-foreground text-xs">{Z("(可选)","(optional)")}</span></Label><Input type="number" min="0" value={form.refill_threshold} onChange={e => setForm(p => ({ ...p, refill_threshold: e.target.value }))} placeholder="e.g. 7" className="mt-1" /></div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div><Label>{Z("提前提醒(分钟)","Remind before (min)")}</Label><Input type="number" min="0" value={form.reminder_time_before} onChange={e => setForm(p => ({ ...p, reminder_time_before: e.target.value }))} className="mt-1" /></div>
+              <div><Label>{Z("多久通知护理者(分钟)","Notify caregiver after (min)")}</Label><Input type="number" min="0" value={form.time_to_send_to_caregiver} onChange={e => setForm(p => ({ ...p, time_to_send_to_caregiver: e.target.value }))} className="mt-1" /></div>
+              <div><Label>{Z("多久算漏服(分钟)","Count as missed after (min)")}</Label><Input type="number" min="0" value={form.time_to_be_considered_missing} onChange={e => setForm(p => ({ ...p, time_to_be_considered_missing: e.target.value }))} className="mt-1" /></div>
             </div>
             <Button className="w-full" variant="coral" onClick={handleAdd} disabled={createMed.isPending || !form.name.trim()}>
               {createMed.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />} {Z("添加药品","Add Medicine")}

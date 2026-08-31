@@ -18,6 +18,10 @@ import {
   useFacilityMembers,
   useFacilityReviews,
   useMyFacilityPermission,
+  useFacilityOwnershipClaims,
+  useFacilityOwnershipDisputes,
+  useCreateFacilityOwnershipClaim,
+  useUpdateFacilityOwnershipClaim,
 } from "@/hooks/use-care-data";
 
 function normalizeList(value: string[] | string | null | undefined) {
@@ -50,6 +54,47 @@ export default function CareFacilityProfile() {
   const { data: facilityPermission } = useMyFacilityPermission(id);
   const { data: facilityMembers } = useFacilityMembers(id);
   const createReview = useCreateReview();
+  const { data: ownershipClaims } = useFacilityOwnershipClaims(id);
+  const { data: ownershipDisputes } = useFacilityOwnershipDisputes(id);
+  const createClaim = useCreateFacilityOwnershipClaim();
+  const decideClaim = useUpdateFacilityOwnershipClaim();
+
+  const [claimDialogOpen, setClaimDialogOpen] = useState(false);
+  const [claimIsDispute, setClaimIsDispute] = useState(false);
+  const [claimText, setClaimText] = useState("");
+  const [claimProof, setClaimProof] = useState("");
+
+  const claimStatusLabel = (status: string) =>
+    isZh
+      ? status === "approved" ? "已通过" : status === "rejected" ? "已驳回" : "待审核"
+      : status === "approved" ? "Approved" : status === "rejected" ? "Rejected" : "Pending";
+
+  const submitClaim = async () => {
+    if (!id) return;
+    try {
+      await createClaim.mutateAsync({
+        facility_id: id,
+        claim: claimText.trim() || null,
+        attachment_urls: claimProof.trim() || null,
+        is_dispute: claimIsDispute,
+      });
+      setClaimDialogOpen(false);
+      setClaimText("");
+      setClaimProof("");
+      toast({ title: isZh ? "已提交，等待审核" : "Submitted for review" });
+    } catch (err: any) {
+      toast({ title: isZh ? "提交失败" : "Submit failed", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const decide = async (claimId: string, status: "approved" | "rejected") => {
+    try {
+      await decideClaim.mutateAsync({ id: claimId, status });
+      toast({ title: isZh ? "已更新" : "Updated" });
+    } catch (err: any) {
+      toast({ title: isZh ? "操作失败" : "Action failed", description: err.message, variant: "destructive" });
+    }
+  };
 
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [reviewRating, setReviewRating] = useState(5);
@@ -409,6 +454,91 @@ export default function CareFacilityProfile() {
                 </div>
               )}
 
+            </CardContent>
+          </Card>
+
+          <Card className="border-transparent card-elevated">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-primary" />
+                {isZh ? "所有权认领与异议" : "Ownership claims & disputes"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              {[...(ownershipClaims || []), ...(ownershipDisputes || [])].length > 0 ? (
+                [...(ownershipClaims || []), ...(ownershipDisputes || [])].map((claim: any) => (
+                  <div key={claim.id} className="rounded-xl border p-3 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <Badge variant={claim.status === "approved" ? "default" : "secondary"}>
+                        {claimStatusLabel(claim.status)}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {claim.is_dispute ? (isZh ? "异议" : "Dispute") : (isZh ? "认领" : "Claim")}
+                      </span>
+                    </div>
+                    {claim.claim && <p className="text-muted-foreground">{claim.claim}</p>}
+                    {(claim.attachment_urls || []).length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {claim.attachment_urls.map((url: string) => (
+                          <a key={url} href={url} target="_blank" rel="noreferrer" className="text-xs text-primary underline">
+                            {isZh ? "证明附件" : "Proof"}
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                    {claim.reply && <p className="text-xs text-muted-foreground">{isZh ? "审核回复：" : "Reply: "}{claim.reply}</p>}
+                    {facilityPermission?.canEdit && claim.status === "pending" && (
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={() => decide(claim.id, "approved")} disabled={decideClaim.isPending}>
+                          {isZh ? "通过" : "Approve"}
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => decide(claim.id, "rejected")} disabled={decideClaim.isPending}>
+                          {isZh ? "驳回" : "Reject"}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p className="text-muted-foreground">{isZh ? "还没有认领记录。" : "No ownership records yet."}</p>
+              )}
+
+              <Dialog open={claimDialogOpen} onOpenChange={setClaimDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="w-full" onClick={() => setClaimIsDispute(ownerMembers.length > 0)}>
+                    {ownerMembers.length > 0
+                      ? (isZh ? "对所有权提出异议" : "Dispute ownership")
+                      : (isZh ? "认领该机构" : "Claim this facility")}
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>
+                      {claimIsDispute ? (isZh ? "提出所有权异议" : "Dispute ownership") : (isZh ? "认领机构所有权" : "Claim facility ownership")}
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label>{isZh ? "说明" : "Statement"}</Label>
+                      <Textarea value={claimText} onChange={(e) => setClaimText(e.target.value)} rows={4} className="mt-1" />
+                    </div>
+                    <div>
+                      <Label>{isZh ? "证明附件链接" : "Proof attachment URLs"}</Label>
+                      <Textarea
+                        value={claimProof}
+                        onChange={(e) => setClaimProof(e.target.value)}
+                        rows={3}
+                        className="mt-1"
+                        placeholder={isZh ? "每行一个链接，或用逗号分隔" : "One URL per line, or comma-separated"}
+                      />
+                    </div>
+                    <Button className="w-full" onClick={submitClaim} disabled={createClaim.isPending}>
+                      {createClaim.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                      {isZh ? "提交" : "Submit"}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </CardContent>
           </Card>
         </div>
