@@ -3,13 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSite } from "@/contexts/SiteContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { MapPin, Navigation, Clock, Shield, AlertTriangle, RefreshCw, Loader2, Radio, Route, Bell, Hexagon, Plus, Trash2, Pencil, Crosshair } from "lucide-react";
-import { useLocationShares } from "@/hooks/use-care-data";
+import { useLocationShares, useCareGroups, useCareGroupMembers } from "@/hooks/use-care-data";
 import {
   shareMyLocationWordPress, disableMyLocationSharingWordPress,
   fetchCaredOneLocationSettingsWordPress,
@@ -62,6 +63,7 @@ export default function GPSTracking() {
     notify_on_enter: true,
     notify_on_exit: true,
     is_active: true,
+    receiver_ids: [] as string[],
   };
   const [zoneDialogOpen, setZoneDialogOpen] = useState(false);
   const [zoneForm, setZoneForm] = useState({ ...emptyZoneForm });
@@ -78,6 +80,9 @@ export default function GPSTracking() {
 
   const { user } = useAuth();
   const userId = user?.user_id ?? null;
+  const { data: careGroups } = useCareGroups();
+  const primaryGroupId = (careGroups || [])[0]?.id ? String((careGroups as any[])[0].id) : null;
+  const { data: groupMembers } = useCareGroupMembers(primaryGroupId);
 
   // ─── Initialize sharing state ───────────────────────────────
   useEffect(() => {
@@ -125,6 +130,22 @@ export default function GPSTracking() {
   });
 
   const sharingPeople = people.filter(p => p.isSharing && p.coordinates.lat && p.coordinates.lng);
+
+  // Alert receivers are care-team members, not only people who share a
+  // location — anyone in the team can be notified about a breach.
+  const receiverCandidates = (() => {
+    const seen = new Set<string>();
+    const out: { id: string; userId: string; name: string }[] = [];
+    const push = (uid: any, name: string) => {
+      const key = String(uid ?? "").replace(/^wp-/, "");
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      out.push({ id: key, userId: key, name: name || t("common.unknown") });
+    };
+    (groupMembers || []).forEach((m: any) => push(m.user_id ?? m.id, m.display_name || m.profile?.full_name || m.profile?.email));
+    people.forEach((p: any) => push(p.userId, p.name));
+    return out;
+  })();
 
   // ─── Load trail history for each person ─────────────────────
   useEffect(() => {
@@ -394,6 +415,7 @@ export default function GPSTracking() {
       notify_on_enter: !!zone.notify_on_enter,
       notify_on_exit: !!zone.notify_on_exit,
       is_active: !!zone.is_active,
+      receiver_ids: Array.isArray(zone.receiver_ids) ? zone.receiver_ids.map(String) : [],
     });
     setZoneDialogOpen(true);
   };
@@ -436,6 +458,7 @@ export default function GPSTracking() {
         notify_on_enter: zoneForm.notify_on_enter,
         notify_on_exit: zoneForm.notify_on_exit,
         is_active: zoneForm.is_active,
+        receiver_ids: zoneForm.receiver_ids,
       };
       if (zoneForm.id) {
         await updateSafeZoneWordPress(zoneForm.id, payload);
@@ -604,6 +627,33 @@ export default function GPSTracking() {
                 <Switch checked={zoneForm.notify_on_exit}
                   onCheckedChange={(v) => setZoneForm(f => ({ ...f, notify_on_exit: v }))} />
               </div>
+              <div>
+                <Label className="text-sm">{Z("提醒接收人", "Alert receivers")}</Label>
+                <div className="mt-2 max-h-32 overflow-auto rounded-md border p-2 space-y-2">
+                  {receiverCandidates.length === 0 && (
+                    <p className="text-xs text-muted-foreground">{Z("暂无可选成员", "No members available")}</p>
+                  )}
+                  {receiverCandidates.map((pp: any) => {
+                    const pid = String(pp.userId ?? "").replace(/^wp-/, "");
+                    const checked = zoneForm.receiver_ids.some((r) => String(r).replace(/^wp-/, "") === pid);
+                    return (
+                      <label key={pp.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={() => setZoneForm(f => ({
+                            ...f,
+                            receiver_ids: checked
+                              ? f.receiver_ids.filter((r) => String(r).replace(/^wp-/, "") !== pid)
+                              : [...f.receiver_ids, pid],
+                          }))}
+                        />
+                        <span>{pp.name}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
               <div className="flex items-center justify-between">
                 <Label className="text-sm">{Z("启用此区域", "Zone active")}</Label>
                 <Switch checked={zoneForm.is_active}

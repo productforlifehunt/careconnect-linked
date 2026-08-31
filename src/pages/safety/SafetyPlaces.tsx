@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -26,6 +27,7 @@ const emptyForm = {
   notify_on_enter: true,
   notify_on_exit: true,
   is_active: true,
+  receiver_ids: [] as string[],
 };
 
 /** Life360-style "Places" — arrival/departure geofences, fully managed in-app. */
@@ -34,7 +36,7 @@ export default function SafetyPlaces() {
   const isCN = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (isCN ? cn : en);
   const { toast } = useToast();
-  const { selfId, zones, loading, refreshZones } = useSafetyCircle();
+  const { selfId, members, zones, loading, refreshZones } = useSafetyCircle();
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ ...emptyForm });
@@ -57,6 +59,7 @@ export default function SafetyPlaces() {
       notify_on_enter: !!z.notify_on_enter,
       notify_on_exit: !!z.notify_on_exit,
       is_active: !!z.is_active,
+      receiver_ids: Array.isArray(z.receiver_ids) ? z.receiver_ids.map(String) : [],
     });
     setOpen(true);
   };
@@ -94,6 +97,7 @@ export default function SafetyPlaces() {
           notify_on_enter: form.notify_on_enter,
           notify_on_exit: form.notify_on_exit,
           is_active: form.is_active,
+          receiver_ids: form.receiver_ids,
         });
       } else {
         await createSafeZoneWordPress({
@@ -107,6 +111,7 @@ export default function SafetyPlaces() {
           notify_on_enter: form.notify_on_enter,
           notify_on_exit: form.notify_on_exit,
           is_active: form.is_active,
+          receiver_ids: form.receiver_ids,
         });
       }
       await refreshZones();
@@ -281,6 +286,32 @@ export default function SafetyPlaces() {
                 checked={form.notify_on_exit}
                 onChange={(v) => setForm((f) => ({ ...f, notify_on_exit: v }))}
               />
+              <div>
+                <Label className="text-sm">{Z("提醒接收人", "Alert receivers")}</Label>
+                <div className="mt-2 max-h-32 space-y-2 overflow-auto rounded-md border p-2">
+                  {members.length === 0 && (
+                    <p className="text-xs text-muted-foreground">{Z("暂无可选成员", "No members available")}</p>
+                  )}
+                  {members.map((m) => {
+                    const pid = String(m.userId).replace(/^wp-/, "");
+                    const checked = form.receiver_ids.some((r) => String(r).replace(/^wp-/, "") === pid);
+                    return (
+                      <label key={m.userId} className="flex cursor-pointer items-center gap-2 text-sm">
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={() => setForm((f) => ({
+                            ...f,
+                            receiver_ids: checked
+                              ? f.receiver_ids.filter((r) => String(r).replace(/^wp-/, "") !== pid)
+                              : [...f.receiver_ids, pid],
+                          }))}
+                        />
+                        <span>{m.name}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
               <ToggleRow
                 label={Z("启用此地点", "Place active")}
                 checked={form.is_active}

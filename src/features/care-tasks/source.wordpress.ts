@@ -108,7 +108,12 @@ function mapTask(t: any, groupId?: string | null) {
     task_types: taskTypes,
     people_needed: t.a58 ? Number(t.a58) : null,
     location: t.a59 || "",
+    // a60 is a JetEngine Gallery field: "173,174,175" (WP media IDs).
     photo: t.a60 || "",
+    photo_ids: String(t.a60 ?? "")
+      .split(",")
+      .map((s) => Number(s.trim()))
+      .filter((n) => Number.isFinite(n) && n > 0),
     task_date: t.a61 || null,
     start_time: t.a62 || null,
     end_time: t.a63 || null,
@@ -178,6 +183,7 @@ export async function createCareTaskWordPress(task: {
   people_needed?: number;
   location?: string;
   photo?: string;
+  photo_ids?: Array<number | string>;
   task_date?: string;
   start_time?: string;
   end_time?: string;
@@ -191,7 +197,9 @@ export async function createCareTaskWordPress(task: {
     a57: Array.isArray(task.task_types) ? task.task_types : [],
     a58: task.people_needed != null ? String(task.people_needed) : "",
     a59: task.location || "",
-    a60: task.photo || "",
+    a60: Array.isArray(task.photo_ids) && task.photo_ids.length
+      ? task.photo_ids.map((v) => Number(String(v).trim())).filter((n) => Number.isFinite(n) && n > 0).join(",")
+      : (task.photo || ""),
     a61: task.task_date || task.due_date || "",
     a62: task.start_time || "",
     a63: task.end_time || "",
@@ -241,7 +249,7 @@ export async function updateCareTaskWordPress(id: string, updates: Record<string
   const {
     care_group_id: _careGroupId, group_id: _groupId,
     assigned_to, cared_one_id,
-    title, description, task_types, people_needed, location, photo,
+    title, description, task_types, people_needed, location, photo, photo_ids,
     task_date, due_date, start_time, end_time, completed_at,
     help_status, finish_status, status,
     ...rest
@@ -253,7 +261,12 @@ export async function updateCareTaskWordPress(id: string, updates: Record<string
   if (task_types !== undefined) body.a57 = Array.isArray(task_types) ? task_types : [];
   if (people_needed !== undefined) body.a58 = people_needed != null ? String(people_needed) : "";
   if (location !== undefined) body.a59 = location;
-  if (photo !== undefined) body.a60 = photo;
+  if (photo_ids !== undefined) {
+    body.a60 = (Array.isArray(photo_ids) ? photo_ids : [])
+      .map((v: any) => Number(String(v).trim()))
+      .filter((n: number) => Number.isFinite(n) && n > 0)
+      .join(",");
+  } else if (photo !== undefined) body.a60 = photo;
   if (task_date !== undefined) body.a61 = task_date || "";
   else if (due_date !== undefined) body.a61 = due_date || "";
   if (start_time !== undefined) body.a62 = start_time || "";

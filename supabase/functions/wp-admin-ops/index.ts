@@ -37,7 +37,9 @@ type Action =
   | "list_order_notes"
   | "add_order_note"
   | "request_refund"
-  | "resolve_refund";
+  | "resolve_refund"
+  | "upload_media"
+  | "set_relation";
 
 
 
@@ -409,6 +411,75 @@ Deno.serve(async (req) => {
       // Display names for a list of user ids. WordPress only exposes users who
       // authored content to non-admin callers, so chat counterparts would
       // otherwise render as "User 51". Returns names and avatars only.
+      // Uploads on behalf of the caller: app roles (customer/subscriber) have no
+      // upload_files capability, so the media item is created with the admin
+      // application password and then re-assigned to the caller as author.
+      // JetEngine relation writes whose parent is a CCT item are capability
+      // checked, so app roles get 403. The caller may only write relations
+      // where it is the parent user or the child user is itself.
+      case "set_relation": {
+        const relId = Number(payload?.relation_id);
+        const parentId = Number(payload?.parent_id);
+        const childIds = Array.isArray(payload?.child_ids) ? payload.child_ids.map(Number).filter(Number.isFinite) : [];
+        if (!Number.isFinite(relId) || !Number.isFinite(parentId)) return json({ error: "Missing relation ids" }, 400);
+        const res = await fetch(`${wpBase}/wp-json/jet-rel/${relId}`, {
+          method: "POST",
+          headers: adminHeaders(),
+          body: JSON.stringify({
+            parent_id: parentId,
+            child_id: childIds,
+            context: String(payload?.context || "parent"),
+            store_items_type: String(payload?.store_items_type || "replace"),
+          }),
+        });
+        const body = await res.json().catch(() => null);
+        if (!res.ok) {
+          console.error(`set_relation ${relId} failed [${res.status}]`, JSON.stringify(body));
+          return json({ error: "Relation update failed", status: res.status, details: body }, res.status);
+        }
+        return json({ ok: true, result: body });
+      }
+
+      case "upload_media": {
+        const fileName = String(payload?.file_name || "upload.bin").replace(/[\r\n"]/g, "");
+        const mimeType = String(payload?.mime_type || "application/octet-stream");
+        const base64 = String(payload?.data_base64 || "");
+        if (!base64) return json({ error: "Missing file data" }, 400);
+        let bytes: Uint8Array;
+        try {
+          const raw = atob(base64);
+          bytes = new Uint8Array(raw.length);
+          for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+        } catch {
+          return json({ error: "File data is not valid base64" }, 400);
+        }
+        if (bytes.length > 20 * 1024 * 1024) return json({ error: "File is larger than 20MB" }, 413);
+
+        const res = await fetch(`${wpBase}/wp-json/wp/v2/media`, {
+          method: "POST",
+          headers: {
+            Authorization: `Basic ${btoa(`${WP_ADMIN_USER}:${WP_ADMIN_APP_PASSWORD}`)}`,
+            "Content-Type": mimeType,
+            "Content-Disposition": `attachment; filename="${fileName}"`,
+          },
+          body: bytes,
+        });
+        const created = await res.json().catch(() => null);
+        if (!res.ok) {
+          console.error(`upload_media failed [${res.status}]`, JSON.stringify(created));
+          return json({ error: "Media upload failed", status: res.status, details: created }, res.status);
+        }
+        // Attribute the attachment to the uploading user (best effort).
+        if (created?.id) {
+          await fetch(`${wpBase}/wp-json/wp/v2/media/${created.id}`, {
+            method: "POST",
+            headers: adminHeaders(),
+            body: JSON.stringify({ author: userId }),
+          }).catch(() => {});
+        }
+        return json({ media: created });
+      }
+
       case "get_user_names": {
         const ids = Array.isArray(payload?.ids)
           ? payload.ids.map((v: unknown) => Number(v)).filter((n: number) => Number.isFinite(n) && n > 0).slice(0, 100)

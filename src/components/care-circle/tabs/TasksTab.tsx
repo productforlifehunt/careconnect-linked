@@ -14,6 +14,7 @@ import {
 import { Plus, CheckCircle, Circle, Loader2, Trash2, Briefcase, Check, X, Pencil, Clock, MapPin, Users } from "lucide-react";
 import { VisibilityPicker, EMPTY_VISIBILITY, type VisibilityValue } from "../VisibilityPicker";
 import { CommentsSection } from "@/components/comments/CommentsSection";
+import { MediaAttachments, MediaAttachmentList } from "@/components/shared/MediaAttachments";
 import { useToast } from "@/hooks/use-toast";
 import { useUpdateAssigneeStatus } from "@/hooks/use-care-data";
 import { useTranslation } from "react-i18next";
@@ -51,6 +52,7 @@ const EMPTY_FORM = {
   task_date: "", start_time: "", end_time: "",
   location: "", task_types: [] as string[],
   people_needed: "" as string, help_status: "1",
+  photo_ids: [] as number[],
 };
 
 const fmtTime = (raw?: string | null): string => {
@@ -119,6 +121,7 @@ export function TasksTab({
       task_types: Array.isArray(t.task_types) ? t.task_types.map(String) : [],
       people_needed: t.people_needed != null ? String(t.people_needed) : "",
       help_status: String(t.help_status ?? "1"),
+      photo_ids: Array.isArray(t.photo_ids) ? t.photo_ids : [],
     });
     setVisibility(EMPTY_VISIBILITY);
     setAddOpen(true);
@@ -139,6 +142,7 @@ export function TasksTab({
           task_types: form.task_types,
           people_needed: form.people_needed ? Number(form.people_needed) : undefined,
           help_status: form.help_status,
+          photo_ids: form.photo_ids,
           assigned_to: form.assigneeIds.length ? form.assigneeIds : undefined,
         },
       }, {
@@ -162,6 +166,7 @@ export function TasksTab({
         task_types: form.task_types.length ? form.task_types : undefined,
         people_needed: form.people_needed ? Number(form.people_needed) : undefined,
         help_status: form.help_status,
+        photo_ids: form.photo_ids,
         subgroupIds: visibility.subgroupIds,
         visibilityUserIds: visibility.userIds,
       } as any, {
@@ -283,6 +288,18 @@ export function TasksTab({
                 </div>
               </div>
 
+              <div>
+                <Label>{Z("照片", "Photos")}</Label>
+                <div className="mt-2">
+                  <MediaAttachments
+                    value={form.photo_ids}
+                    onChange={(ids) => setForm(p => ({ ...p, photo_ids: ids }))}
+                    accept="image/*"
+                    label={Z("上传照片", "Upload photos")}
+                  />
+                </div>
+              </div>
+
               {!isEditing && (
                 <div><Label>{Z("可见范围", "Visibility")}</Label><VisibilityPicker value={visibility} onChange={setVisibility} memberCategories={memberCategories} members={members} /></div>
               )}
@@ -356,6 +373,7 @@ export function TasksTab({
                         );
                       })}
                     </div>
+                    {Array.isArray(t.photo_ids) && t.photo_ids.length > 0 && <MediaAttachmentList ids={t.photo_ids} />}
                   </div>
                   <Badge variant="outline" className={`shrink-0 ${helpStatusColors[String(t.help_status ?? "1")] || ""}`}>
                     {helpStatusLabels[String(t.help_status ?? "1")] || Z("无需帮助", "No help needed")}

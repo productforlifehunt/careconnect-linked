@@ -11,6 +11,7 @@ import { useCaredOneDocuments, useCreateCaredOneDocument, useUpdateCaredOneDocum
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
+import { MediaAttachments, MediaAttachmentList } from "@/components/shared/MediaAttachments";
 
 const DOC_VALUES = ["Medical Record", "Insurance", "Prescription", "Lab Result", "Legal", "ID", "Emergency Plan", "Other"];
 const DOC_ZH: Record<string,string> = { "Medical Record":"病历", Insurance:"保险", Prescription:"处方", "Lab Result":"化验结果", Legal:"法律文件", ID:"身份证件", "Emergency Plan":"应急预案", Other:"其他" };
@@ -27,23 +28,23 @@ export function DocumentsCard({ caredOneId }: { caredOneId: string }) {
   const update = useUpdateCaredOneDocument();
   const del = useDeleteCaredOneDocument();
   const [addOpen, setAddOpen] = useState(false);
-  const [form, setForm] = useState({ title: "", document_type: "Medical Record", file_url: "", notes: "" });
+  const [form, setForm] = useState({ title: "", document_type: "Medical Record", file_url: "", notes: "", attachment_ids: [] as number[] });
   const [editId, setEditId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ title: "", document_type: "", file_url: "", notes: "" });
+  const [editForm, setEditForm] = useState({ title: "", document_type: "", file_url: "", notes: "", attachment_ids: [] as number[] });
 
-  const startEdit = (d: any) => { setEditId(d.id); setEditForm({ title: d.title || "", document_type: d.document_type || "Other", file_url: d.file_url || "", notes: d.notes || "" }); };
+  const startEdit = (d: any) => { setEditId(d.id); setEditForm({ title: d.title || "", document_type: d.document_type || "Other", file_url: d.file_url || "", notes: d.notes || "", attachment_ids: Array.isArray(d.attachment_ids) ? d.attachment_ids : [] }); };
   const cancelEdit = () => setEditId(null);
   const saveEdit = () => {
     if (!editId || !editForm.title) return;
-    update.mutate({ id: editId, title: editForm.title, document_type: editForm.document_type, file_url: editForm.file_url || undefined, notes: editForm.notes || undefined }, {
+    update.mutate({ id: editId, title: editForm.title, document_type: editForm.document_type, file_url: editForm.file_url || undefined, notes: editForm.notes || undefined, attachment_ids: editForm.attachment_ids }, {
       onSuccess: () => { setEditId(null); toast({ title: Z("文件已更新", "Document updated") }); }
     });
   };
 
   const handleAdd = () => {
     if (!form.title) return;
-    create.mutate({ user_id: caredOneId, title: form.title, document_type: form.document_type, file_url: form.file_url || "", description: form.notes || undefined }, {
-      onSuccess: () => { setForm({ title: "", document_type: "Medical Record", file_url: "", notes: "" }); setAddOpen(false); toast({ title: Z("文件已添加", "Document added") }); }
+    create.mutate({ user_id: caredOneId, title: form.title, document_type: form.document_type, file_url: form.file_url || "", description: form.notes || undefined, attachment_ids: form.attachment_ids }, {
+      onSuccess: () => { setForm({ title: "", document_type: "Medical Record", file_url: "", notes: "", attachment_ids: [] }); setAddOpen(false); toast({ title: Z("文件已添加", "Document added") }); }
     });
   };
 
@@ -70,6 +71,17 @@ export function DocumentsCard({ caredOneId }: { caredOneId: string }) {
                 </Select>
               </div>
               <div><Label>{Z("链接地址", "Link URL")}</Label><Input value={form.file_url} onChange={e => setForm(p => ({ ...p, file_url: e.target.value }))} placeholder="https://..." className="mt-1" /></div>
+            </div>
+            <div>
+              <Label>{Z("附件（PDF / TXT / 图片）", "Attachments (PDF / TXT / images)")}</Label>
+              <div className="mt-1">
+                <MediaAttachments
+                  value={form.attachment_ids}
+                  onChange={(ids) => setForm(p => ({ ...p, attachment_ids: ids }))}
+                  accept=".pdf,.txt,.doc,.docx,.xls,.xlsx,image/*"
+                  label={Z("上传附件", "Upload files")}
+                />
+              </div>
             </div>
             <div><Label>{Z("备注", "Notes")}</Label><Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder={Z("可选备注", "Optional notes")} className="mt-1" /></div>
             <Button variant="coral" className="w-full" onClick={handleAdd} disabled={create.isPending || !form.title}>
@@ -103,6 +115,12 @@ export function DocumentsCard({ caredOneId }: { caredOneId: string }) {
                       <Input value={editForm.file_url} onChange={e => setEditForm(p => ({ ...p, file_url: e.target.value }))} placeholder={Z("链接地址", "Link URL")} />
                     </div>
                     <Input value={editForm.notes} onChange={e => setEditForm(p => ({ ...p, notes: e.target.value }))} placeholder={Z("备注", "Notes")} />
+                    <MediaAttachments
+                      value={editForm.attachment_ids}
+                      onChange={(ids) => setEditForm(p => ({ ...p, attachment_ids: ids }))}
+                      accept=".pdf,.txt,.doc,.docx,.xls,.xlsx,image/*"
+                      label={Z("上传附件", "Upload files")}
+                    />
                     <div className="flex gap-2 justify-end">
                       <Button variant="ghost" size="sm" onClick={cancelEdit}><X className="h-3.5 w-3.5 mr-1" /> {Z("取消", "Cancel")}</Button>
                       <Button variant="coral" size="sm" onClick={saveEdit} disabled={update.isPending}><Check className="h-3.5 w-3.5 mr-1" /> {Z("保存", "Save")}</Button>
@@ -117,6 +135,7 @@ export function DocumentsCard({ caredOneId }: { caredOneId: string }) {
                         <span className="text-[10px] text-muted-foreground">{formatDate(d.created_at, isCN ? "zh-CN" : undefined)}</span>
                       </div>
                       {d.notes && <p className="text-xs text-muted-foreground mt-0.5">{d.notes}</p>}
+                      {Array.isArray(d.attachment_ids) && d.attachment_ids.length > 0 && <MediaAttachmentList ids={d.attachment_ids} />}
                     </div>
                     <div className="flex gap-1 shrink-0">
                       {d.file_url && <Button variant="outline" size="sm" asChild><a href={d.file_url} target="_blank" rel="noopener">{Z("查看", "View")}</a></Button>}

@@ -1,6 +1,7 @@
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { T, R } from "@/integrations/wp-schema";
+import { fetchWPUserSafe } from "@/features/cared-ones/source.wordpress-extended";
 import {
   encodeRel72Meta,
   decodeRel72Meta,
@@ -836,7 +837,7 @@ export async function addCaredOneToGroupWordPress(groupId: string, caredOneId: s
   if (!normalizedGroupId || !normalizedCaredOneId) return;
   let displayName = "Cared One";
   try {
-    const user = await wordpressFetch<any>(`wp/v2/users/${normalizedCaredOneId}?context=edit`);
+    const user = await fetchWPUserSafe(normalizedCaredOneId);
     displayName = user?.name || user?.slug || displayName;
   } catch {}
   await wordpressFetch(`jet-rel/${REL_GROUP_MEMBER}`, {
