@@ -1,4 +1,5 @@
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
+import { fetchWPUser } from "@/features/shared/wp-users";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { T, R } from "@/integrations/wp-schema";
 import { decodeRel72Meta } from "@/features/care-groups/rel-meta";
