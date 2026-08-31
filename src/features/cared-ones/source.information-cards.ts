@@ -30,16 +30,20 @@ const VIS_FROM_CODE: Record<string, string> = {
 };
 
 function decodeCard(raw: any): InformationCard {
+  const status = STATUS_FROM_CODE[String(raw[F.STATUS])];
+  const displaysLocation = YESNO_FROM_CODE[String(raw[F.DISPLAYS_LOCATION])];
+  const visibility = VIS_FROM_CODE[String(raw[F.SHARE_VISIBILITY])];
+  if (!status || !displaysLocation || !visibility) throw new Error(`Information card ${raw._ID || raw.id} contains an invalid option code`);
   return {
     id: String(raw._ID || raw.id),
     cared_ones_name: raw[F.CARED_ONE_S_NAME] || "",
     cared_ones_description: raw[F.CARED_ONE_S_DESCRIPTION] || "",
     cared_ones_information_card_name: raw[F.CARED_ONE_S_INFORMATION_CARD_NAME] || "",
-    status: STATUS_FROM_CODE[String(raw[F.STATUS])] || "Active",
-    displays_location: YESNO_FROM_CODE[String(raw[F.DISPLAYS_LOCATION])] || "No",
+    status,
+    displays_location: displaysLocation,
     share_token: raw[F.SHARE_TOKEN] || "",
     share_expires_at: raw[F.SHARE_EXPIRES_AT] || "",
-    share_visibility: VIS_FROM_CODE[String(raw[F.SHARE_VISIBILITY])] || "Visible to author",
+    share_visibility: visibility,
     cct_author_id: raw.cct_author_id,
     cct_created: raw.cct_created,
   };
@@ -50,11 +54,23 @@ function encodeCardUpdates(u: Partial<InformationCard>): Record<string, string> 
   if (u.cared_ones_name !== undefined) b[F.CARED_ONE_S_NAME] = u.cared_ones_name || "";
   if (u.cared_ones_description !== undefined) b[F.CARED_ONE_S_DESCRIPTION] = u.cared_ones_description || "";
   if (u.cared_ones_information_card_name !== undefined) b[F.CARED_ONE_S_INFORMATION_CARD_NAME] = u.cared_ones_information_card_name || "";
-  if (u.status !== undefined) b[F.STATUS] = STATUS_TO_CODE[String(u.status)] || "b56";
-  if (u.displays_location !== undefined) b[F.DISPLAYS_LOCATION] = YESNO_TO_CODE[String(u.displays_location)] || "b56";
+  if (u.status !== undefined) {
+    const code = STATUS_TO_CODE[String(u.status)];
+    if (!code) throw new Error(`Invalid information-card status: ${u.status}`);
+    b[F.STATUS] = code;
+  }
+  if (u.displays_location !== undefined) {
+    const code = YESNO_TO_CODE[String(u.displays_location)];
+    if (!code) throw new Error(`Invalid displays-location value: ${u.displays_location}`);
+    b[F.DISPLAYS_LOCATION] = code;
+  }
   if (u.share_token !== undefined) b[F.SHARE_TOKEN] = u.share_token || "";
   if (u.share_expires_at !== undefined) b[F.SHARE_EXPIRES_AT] = u.share_expires_at || "";
-  if (u.share_visibility !== undefined) b[F.SHARE_VISIBILITY] = VIS_TO_CODE[String(u.share_visibility)] || "b58";
+  if (u.share_visibility !== undefined) {
+    const code = VIS_TO_CODE[String(u.share_visibility)];
+    if (!code) throw new Error(`Invalid information-card visibility: ${u.share_visibility}`);
+    b[F.SHARE_VISIBILITY] = code;
+  }
   return b;
 }
 
@@ -94,32 +110,14 @@ function generateShareToken(): string {
 export async function fetchInformationCardsWordPress(caredOneId: string): Promise<InformationCard[]> {
   const id = normalizeWpId(caredOneId);
   if (!id) return [];
-  try {
-    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_USER_INFO_CARD}/children/${id}`);
-    if (!Array.isArray(rels) || rels.length === 0) return [];
-    const items = await Promise.all(
-      rels.map(async (rel: any) => {
-        try {
-          const raw = await wordpressCCTFetch<any>(CCT_SLUG, { id: rel.child_object_id });
-          return raw ? decodeCard(raw) : null;
-        } catch {
-          return null;
-        }
-      })
-    );
-    return items.filter(Boolean) as InformationCard[];
-  } catch {
-    return [];
-  }
+  const rels = await wordpressFetch<any[]>(`jet-rel/${REL_USER_INFO_CARD}/children/${id}`);
+  if (!Array.isArray(rels)) throw new Error(`Relation ${REL_USER_INFO_CARD} returned an invalid response`);
+  return Promise.all(rels.map(async (rel: any) => decodeCard(await wordpressCCTFetch<any>(CCT_SLUG, { id: rel.child_object_id }))));
 }
 
 export async function fetchInformationCardWordPress(cardId: string): Promise<InformationCard | null> {
-  try {
-    const raw = await wordpressCCTFetch<any>(CCT_SLUG, { id: normalizeWpId(cardId) });
-    return raw ? decodeCard(raw) : null;
-  } catch {
-    return null;
-  }
+  const raw = await wordpressCCTFetch<any>(CCT_SLUG, { id: normalizeWpId(cardId) });
+  return raw ? decodeCard(raw) : null;
 }
 
 /** Public lookup by share token. Used by /share/card/:token public viewer. */
@@ -168,9 +166,9 @@ export async function createInformationCardWordPress(input: {
   });
   const created = await wordpressCCTFetch<any>(CCT_SLUG, { method: "POST", body });
 
-  const childId = created?._ID || created?.id;
-  if (childId) {
-    await wordpressFetch(`jet-rel/${REL_USER_INFO_CARD}`, {
+  const childId = created?.item_id || created?._ID || created?.id;
+  if (!childId) throw new Error("Information card was created without an item ID");
+  await wordpressFetch(`jet-rel/${REL_USER_INFO_CARD}`, {
       method: "POST",
       body: {
         parent_id: parentId,
@@ -178,9 +176,9 @@ export async function createInformationCardWordPress(input: {
         context: "child",
         store_items_type: "update",
       },
-    });
-  }
-  return decodeCard(created);
+  });
+  const storedCard = await wordpressCCTFetch<any>(CCT_SLUG, { id: Number(childId) });
+  return decodeCard(storedCard);
 }
 
 export async function updateInformationCardWordPress(id: string, updates: Partial<InformationCard>): Promise<void> {
@@ -255,10 +253,6 @@ export async function setInformationCardContactsWordPress(cardId: string, contac
 
   const toRemove = [...currentSet].filter((c) => !desiredSet.has(c));
   for (const childId of toRemove) {
-    try {
-      await wordpressFetch(`jet-rel/${REL_INFO_CARD_EMERGENCY}/${parentId}/${childId}`, { method: "DELETE" });
-    } catch {
-      // ignore
-    }
+    await wordpressFetch(`jet-rel/${REL_INFO_CARD_EMERGENCY}`, { method: "DELETE", body: { parent_id: parentId, child_id: Number(childId) } });
   }
 }

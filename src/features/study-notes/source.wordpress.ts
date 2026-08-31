@@ -38,16 +38,14 @@ function normalizeArticleId(id: string | number): number {
 export async function fetchStudyNotesForArticle(articleId: string | number): Promise<StudyNote[]> {
   const aid = normalizeArticleId(articleId);
   const userId = getCurrentUserIdNumber();
-  if (!aid) return [];
-  try {
-    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_ARTICLE_NOTES}/children/${aid}`).catch(() => []);
+  if (!aid) throw new Error("Invalid article ID");
+    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_ARTICLE_NOTES}/children/${aid}`);
     const noteIds = (Array.isArray(rels) ? rels : []).map((r: any) => Number(r.child_object_id)).filter(Boolean);
     if (noteIds.length === 0) return [];
     const fetched = await Promise.all(
-      noteIds.map((nid) => wordpressCCTFetch<any>(SLUG, { id: nid }).catch(() => null))
+      noteIds.map((nid) => wordpressCCTFetch<any>(SLUG, { id: nid }))
     );
     return fetched
-      .filter(Boolean)
       .filter((n: any) => !userId || Number(n.author_id) === userId)
       .map((n: any) => ({
         id: String(n.id ?? n._ID),
@@ -57,9 +55,6 @@ export async function fetchStudyNotesForArticle(articleId: string | number): Pro
         created_at: n.created_at ?? null,
         updated_at: n.updated_at ?? null,
       }));
-  } catch {
-    return [];
-  }
 }
 
 export async function createStudyNote(input: {
@@ -68,19 +63,17 @@ export async function createStudyNote(input: {
   content: string;
 }): Promise<StudyNote | null> {
   const aid = normalizeArticleId(input.article_id);
-  if (!aid) return null;
+  if (!aid) throw new Error("Invalid article ID");
   const created: any = await wordpressCCTFetch(SLUG, {
     method: "POST",
     body: { [F.title]: input.title, [F.content]: input.content },
   });
   const newId = Number(created?.item_id ?? created?._ID ?? created?.id ?? 0);
-  if (!newId) return null;
-  try {
-    await wordpressFetch(`jet-rel/${REL_ARTICLE_NOTES}`, {
+  if (!newId) throw new Error("Study note was created without an item ID");
+  await wordpressFetch(`jet-rel/${REL_ARTICLE_NOTES}`, {
       method: "POST",
       body: { parent_id: aid, child_id: newId, context: "child", store_items_type: "update" },
-    });
-  } catch { /* non-fatal */ }
+  });
   return { id: String(newId), title: input.title, content: input.content, article_id: String(input.article_id) };
 }
 
@@ -99,23 +92,19 @@ export async function isLessonFinished(articleId: string | number): Promise<bool
   const userId = getCurrentUserIdNumber();
   const aid = normalizeArticleId(articleId);
   if (!userId || !aid) return false;
-  try {
-    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_USER_FINISHED}/children/${userId}`).catch(() => []);
+    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_USER_FINISHED}/children/${userId}`);
     // Relation meta: FINISHED_FIELD === "Yes" means the lesson is done.
     return (Array.isArray(rels) ? rels : []).some((r: any) => {
       if (Number(r.child_object_id) !== aid) return false;
       const v = r?.meta?.[FINISHED_FIELD] ?? r?.[FINISHED_FIELD];
-      return v === undefined || String(v) === FINISHED_YES;
+      return String(v) === FINISHED_YES;
     });
-  } catch {
-    return false;
-  }
 }
 
 export async function markLessonFinished(articleId: string | number, finished = true): Promise<void> {
   const userId = getCurrentUserIdNumber();
   const aid = normalizeArticleId(articleId);
-  if (!userId || !aid) return;
+  if (!userId || !aid) throw new Error("Authentication and a valid article ID are required");
   if (finished) {
     await wordpressFetch(`jet-rel/${REL_USER_FINISHED}`, {
       method: "POST",
@@ -125,6 +114,6 @@ export async function markLessonFinished(articleId: string | number, finished = 
     await wordpressFetch(`jet-rel/${REL_USER_FINISHED}`, {
       method: "DELETE",
       body: { parent_id: userId, child_id: aid },
-    }).catch(() => undefined);
+    });
   }
 }

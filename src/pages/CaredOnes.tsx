@@ -18,7 +18,6 @@ import {
   useMedicines, useCreateMedicine, useDeleteMedicine, useLogMedicine,
   useCheckinLogs, useCreateCheckinLog,
   useCareTips, useCreateCareTip, useDeleteCareTip,
-  useCarePlans, useCreateCarePlan, useCarePlanGoals, useCreateCarePlanGoal, useUpdateCarePlanGoal,
   useCareNotes, useCreateCareNote, useDeleteCareNote,
   useEmergencyContacts, useCreateEmergencyContact, useDeleteEmergencyContact,
   useCaredOneDocuments, useCreateCaredOneDocument, useDeleteCaredOneDocument,

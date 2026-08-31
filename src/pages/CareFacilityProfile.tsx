@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Building2, Globe, Loader2, Mail, MapPin, Phone, Star, Layers3, MessageSquareText, ShieldCheck, Users } from "lucide-react";
+import { ArrowLeft, Building2, Globe, Loader2, Mail, MapPin, Phone, Star, Layers3, MessageSquareText, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,17 +10,12 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CommentsSection } from "@/components/comments/CommentsSection";
-import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 import {
   useCareFacility,
-  useClaimFacilityOwnership,
-  useCreateFacilityOwnershipDispute,
   useCreateReview,
   useFacilityMembers,
-  useFacilityOwnershipClaims,
-  useFacilityOwnershipDisputes,
   useFacilityReviews,
   useMyFacilityPermission,
 } from "@/hooks/use-care-data";
@@ -49,28 +44,16 @@ export default function CareFacilityProfile() {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const { toast } = useToast();
-  const { isAuthenticated } = useAuth();
   const isZh = i18n.language?.startsWith("zh");
   const { data: facility, isLoading } = useCareFacility(id);
   const { data: reviews } = useFacilityReviews(id);
   const { data: facilityPermission } = useMyFacilityPermission(id);
   const { data: facilityMembers } = useFacilityMembers(id);
-  const { data: ownershipClaims } = useFacilityOwnershipClaims(id);
-  const { data: ownershipDisputes } = useFacilityOwnershipDisputes(id);
   const createReview = useCreateReview();
-  const claimFacilityOwnership = useClaimFacilityOwnership();
-  const createOwnershipDispute = useCreateFacilityOwnershipDispute();
 
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
-  const [claimDialogOpen, setClaimDialogOpen] = useState(false);
-  const [disputeDialogOpen, setDisputeDialogOpen] = useState(false);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
-  const [claimRole, setClaimRole] = useState("");
-  const [claimProof, setClaimProof] = useState("");
-  const [claimAttachmentUrls, setClaimAttachmentUrls] = useState("");
-  const [disputeProof, setDisputeProof] = useState("");
-  const [disputeAttachmentUrls, setDisputeAttachmentUrls] = useState("");
 
   const services = useMemo(() => {
     if (!facility) return [];
@@ -100,10 +83,6 @@ export default function CareFacilityProfile() {
   const ownerMembers = useMemo(() => (facilityMembers || []).filter((member) => member.is_owner), [facilityMembers]);
   const adminMembers = useMemo(() => (facilityMembers || []).filter((member) => !member.is_owner && member.is_admin), [facilityMembers]);
   const regularMembers = useMemo(() => (facilityMembers || []).filter((member) => !member.is_owner && !member.is_admin), [facilityMembers]);
-  const hasOwner = ownerMembers.length > 0;
-  const myMembership = facilityPermission?.membership || null;
-  const approvedClaim = useMemo(() => (ownershipClaims || []).find((item) => item.status === "approved") || null, [ownershipClaims]);
-  const latestDispute = useMemo(() => (ownershipDisputes || [])[0] || null, [ownershipDisputes]);
 
   if (isLoading) {
     return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
@@ -372,110 +351,6 @@ export default function CareFacilityProfile() {
                   <Building2 className="mr-2 h-4 w-4" /> {isZh ? "编辑机构资料" : "Edit facility profile"}
                 </Button>
               )}
-              {!hasOwner && !myMembership && (
-                <Dialog open={claimDialogOpen} onOpenChange={setClaimDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="coral" className="w-full">
-                      <ShieldCheck className="mr-2 h-4 w-4" /> {isZh ? "认领为场所所有者" : "Claim ownership"}
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-lg">
-                    <DialogHeader>
-                      <DialogTitle>{isZh ? "认领该护理场所" : "Claim this facility"}</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 mt-4">
-                      <div>
-                        <Label>{isZh ? "你的角色" : "Your role"}</Label>
-                        <Input value={claimRole} onChange={(e) => setClaimRole(e.target.value)} placeholder={isZh ? "例如 CEO、院长、运营负责人" : "e.g. CEO, Director, Operations Lead"} className="mt-1" />
-                      </div>
-                      <div>
-                        <Label>{isZh ? "认领证明" : "Claim proof"}</Label>
-                        <Textarea value={claimProof} onChange={(e) => setClaimProof(e.target.value)} placeholder={isZh ? "可填写身份、公司邮箱、与该机构的关系等；可留空" : "Describe your identity, company email, or relationship to this facility; optional"} rows={4} className="mt-1" />
-                      </div>
-                      <div>
-                        <Label>{isZh ? "证明附件链接" : "Proof attachment URLs"}</Label>
-                        <Textarea value={claimAttachmentUrls} onChange={(e) => setClaimAttachmentUrls(e.target.value)} placeholder={isZh ? "每行一个图片 URL，或用逗号分隔" : "One image URL per line, or comma-separated"} rows={3} className="mt-1" />
-                      </div>
-                      <Button
-                        variant="coral"
-                        className="w-full"
-                        disabled={claimFacilityOwnership.isPending}
-                        onClick={async () => {
-                          if (!isAuthenticated) {
-                            toast({ title: isZh ? "请先登录" : "Please sign in first", variant: "destructive" });
-                            navigate("/auth");
-                            return;
-                          }
-                          try {
-                            await claimFacilityOwnership.mutateAsync({
-                              facilityId: facility.id,
-                              evidenceText: [claimRole.trim(), claimProof.trim(), claimAttachmentUrls.trim()].filter(Boolean).join('\n') || undefined,
-                            });
-                            toast({ title: isZh ? "已自动批准认领" : "Ownership claim approved" });
-                            setClaimDialogOpen(false);
-                            setClaimRole("");
-                            setClaimProof("");
-                            setClaimAttachmentUrls("");
-                          } catch (err: any) {
-                            toast({ title: isZh ? "认领失败" : "Claim failed", description: err.message, variant: "destructive" });
-                          }
-                        }}
-                      >
-                        {claimFacilityOwnership.isPending ? t("common.loading") : (isZh ? "提交认领" : "Submit claim")}
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              )}
-              {hasOwner && !facilityPermission?.canEdit && (
-                <Dialog open={disputeDialogOpen} onOpenChange={setDisputeDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" className="w-full">
-                      <ShieldCheck className="mr-2 h-4 w-4" /> {isZh ? "提交所有权争议" : "Submit ownership dispute"}
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-lg">
-                    <DialogHeader>
-                      <DialogTitle>{isZh ? "提交场所所有权争议" : "Submit facility ownership dispute"}</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 mt-4">
-                      <div>
-                        <Label>{isZh ? "争议说明" : "Dispute details"}</Label>
-                        <Textarea value={disputeProof} onChange={(e) => setDisputeProof(e.target.value)} placeholder={isZh ? "请说明你认为当前所有权存在问题的原因，并提供证明" : "Explain why you believe the current ownership is disputed and include your proof"} rows={5} className="mt-1" />
-                      </div>
-                      <div>
-                        <Label>{isZh ? "附件链接" : "Attachment URLs"}</Label>
-                        <Textarea value={disputeAttachmentUrls} onChange={(e) => setDisputeAttachmentUrls(e.target.value)} placeholder={isZh ? "每行一个图片 URL，或用逗号分隔" : "One image URL per line, or comma-separated"} rows={3} className="mt-1" />
-                      </div>
-                      <Button
-                        className="w-full"
-                        disabled={createOwnershipDispute.isPending}
-                        onClick={async () => {
-                          if (!isAuthenticated) {
-                            toast({ title: isZh ? "请先登录" : "Please sign in first", variant: "destructive" });
-                            navigate("/auth");
-                            return;
-                          }
-                          try {
-                            await createOwnershipDispute.mutateAsync({
-                              facilityId: facility.id,
-                              reason: [disputeProof.trim(), disputeAttachmentUrls.trim()].filter(Boolean).join('\n'),
-                            });
-                            toast({ title: isZh ? "争议已提交，等待站主处理" : "Dispute submitted for manual review" });
-                            setDisputeDialogOpen(false);
-                            setDisputeProof("");
-                            setDisputeAttachmentUrls("");
-                          } catch (err: any) {
-                            toast({ title: isZh ? "提交争议失败" : "Failed to submit dispute", description: err.message, variant: "destructive" });
-                          }
-                        }}
-                      >
-                        {createOwnershipDispute.isPending ? t("common.loading") : (isZh ? "提交争议" : "Submit dispute")}
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              )}
               {facility.website_url && (
                 <Button variant="outline" className="w-full" asChild>
                   <a href={facility.website_url} target="_blank" rel="noreferrer">
@@ -506,7 +381,7 @@ export default function CareFacilityProfile() {
                     <div className="text-muted-foreground">{member.role || (isZh ? "未填写角色" : "No role provided")}</div>
                   </div>
                 )) : (
-                  <div className="rounded-xl border p-3 text-muted-foreground">{isZh ? "当前还没有 owner，被认领时会自动批准并备案。" : "This facility does not have an owner yet. The first ownership claim is auto-approved and recorded."}</div>
+                  <div className="rounded-xl border p-3 text-muted-foreground">{isZh ? "当前没有所有者成员。" : "This facility has no owner member."}</div>
                 )}
               </div>
 
@@ -534,26 +409,6 @@ export default function CareFacilityProfile() {
                 </div>
               )}
 
-              <div className="rounded-xl border p-4 bg-muted/20 space-y-2">
-                <div className="font-medium text-foreground">{isZh ? "最近一次 owner 备案" : "Latest ownership record"}</div>
-                <div className="text-muted-foreground">{approvedClaim ? (approvedClaim.claim || (isZh ? "未填写认领说明" : "No claim text provided")) : (isZh ? "暂无备案记录" : "No ownership record yet")}</div>
-                {approvedClaim?.attachment_urls && approvedClaim.attachment_urls.length > 0 && (
-                  <div className="flex flex-col gap-1">
-                    {approvedClaim.attachment_urls.map((url) => (
-                      <a key={url} href={url} target="_blank" rel="noreferrer" className="text-primary underline break-all">{url}</a>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {latestDispute && (
-                <div className="rounded-xl border p-4 bg-muted/20 space-y-2">
-                  <div className="font-medium text-foreground">{isZh ? "最近一次争议提交" : "Latest dispute submission"}</div>
-                  <div className="text-muted-foreground">{latestDispute.claim || (isZh ? "未填写争议说明" : "No dispute details provided")}</div>
-                  <div className="text-xs text-muted-foreground">{isZh ? `状态：${latestDispute.status || "pending"}` : `Status: ${latestDispute.status || "pending"}`}</div>
-                  {latestDispute.reject_reason && <div className="text-xs text-destructive">{latestDispute.reject_reason}</div>}
-                </div>
-              )}
             </CardContent>
           </Card>
         </div>

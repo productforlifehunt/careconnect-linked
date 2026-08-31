@@ -13,14 +13,14 @@ export function CalendarTab({ tasks }: CalendarTabProps) {
   const Z = (cn: string, en: string) => (isCN ? cn : en);
 
   const helpStatusColors: Record<string, string> = {
-    "1": "bg-muted text-muted-foreground",
-    "2": "bg-warning/10 text-warning",
-    "3": "bg-success/10 text-success",
+    b55: "bg-muted text-muted-foreground",
+    b56: "bg-warning/10 text-warning",
+    b57: "bg-success/10 text-success",
   };
   const helpStatusLabels: Record<string, string> = {
-    "1": Z("无需帮助", "No help needed"),
-    "2": Z("需要帮助", "Needs help"),
-    "3": Z("已找到帮助", "Help found"),
+    b55: Z("无需帮助", "No help needed"),
+    b56: Z("需要帮助", "Needs help"),
+    b57: Z("已找到帮助", "Help found"),
   };
 
   const getDateKey = (t: any): string | null => {
@@ -56,7 +56,7 @@ export function CalendarTab({ tasks }: CalendarTabProps) {
             {tasksByDate[date]
               .sort((a, b) => fmtTime(a.start_time).localeCompare(fmtTime(b.start_time)))
               .map((t: any) => {
-              const isDone = String(t.finish_status ?? "1") === "2";
+               const isDone = String(t.finish_status) === "b56";
               const start = fmtTime(t.start_time);
               const end = fmtTime(t.end_time);
               return (
@@ -82,8 +82,8 @@ export function CalendarTab({ tasks }: CalendarTabProps) {
                       )}
                     </div>
                   </div>
-                  <Badge variant="outline" className={helpStatusColors[String(t.help_status ?? "1")] || ""}>
-                    {helpStatusLabels[String(t.help_status ?? "1")] || "—"}
+                   <Badge variant="outline" className={helpStatusColors[String(t.help_status)]}>
+                     {helpStatusLabels[String(t.help_status)]}
                   </Badge>
                 </div>
               );
