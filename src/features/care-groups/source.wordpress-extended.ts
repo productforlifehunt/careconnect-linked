@@ -836,7 +836,7 @@ export async function addCaredOneToGroupWordPress(groupId: string, caredOneId: s
   if (!normalizedGroupId || !normalizedCaredOneId) return;
   let displayName = "Cared One";
   try {
-    const user = await wordpressFetch<any>(`wp/v2/users/${normalizedCaredOneId}?context=edit`);
+    const user = await fetchWPUserSafe(normalizedCaredOneId);
     displayName = user?.name || user?.slug || displayName;
   } catch {}
   await wordpressFetch(`jet-rel/${REL_GROUP_MEMBER}`, {
