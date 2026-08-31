@@ -10,7 +10,7 @@
  *   - No separate location_history or location_sharing table needed
  */
 
-import { wordpressFetch, wordpressCCTFetch, isNetworkAbort } from "@/features/shared/wordpress-client";
+import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { T, R } from "@/integrations/wp-schema";
 
@@ -20,6 +20,8 @@ const REL_USER_CURRENT_LOCATION = R.userCurrentLocations;
 
 // ─── CCT slug ────────────────────────────────────────────────
 const CCT_SLUG = T.currentLocation.slug;
+const F = T.currentLocation.f;
+const O = T.currentLocation.opt;
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -44,29 +46,30 @@ export interface LocationSnapshot {
 
 // ─── Helpers ─────────────────────────────────────────────────
 
-function parseNum(v: any, fallback: number | null = null): number | null {
-  if (v === undefined || v === null || v === "") return fallback;
+function parseNum(v: any): number | null {
+  if (v === undefined || v === null || v === "") return null;
   const n = Number(v);
-  return Number.isFinite(n) ? n : fallback;
+  if (!Number.isFinite(n)) throw new Error(`Invalid numeric location value: ${v}`);
+  return n;
 }
 
 function mapSnapshot(raw: any): LocationSnapshot {
   return {
     id: String(raw._ID || raw.id || ""),
-    latitude: parseNum(raw.a55),
-    longitude: parseNum(raw.a56),
-    accuracy_meters: parseNum(raw.a57),
-    altitude_meters: parseNum(raw.a58),
-    heading_degrees: parseNum(raw.a59),
-    speed: parseNum(raw.a60),
-    is_moving: raw.a61 || null,
-    moving_type: raw.a62 || null,
-    platform: raw.a63 || null,
-    battery_level: parseNum(raw.a64),
-    phone_is_charging: raw.a65 || null,
-    address_text: raw.a66 || null,
-    captured_at: raw.a67 || raw.cct_created || null,
-    is_emergency: raw.a68 || "b56",
+    latitude: parseNum(raw[F.LATITUDE]),
+    longitude: parseNum(raw[F.LONGITUDE]),
+    accuracy_meters: parseNum(raw[F.ACCURACY_METERS]),
+    altitude_meters: parseNum(raw[F.ALTITUDE_METERS]),
+    heading_degrees: parseNum(raw[F.HEADING_DEGREES]),
+    speed: parseNum(raw[F.SPEED]),
+    is_moving: raw[F.IS_MOVING] || null,
+    moving_type: raw[F.MOVING_TYPE] || null,
+    platform: raw[F.PLATFORM] || null,
+    battery_level: parseNum(raw[F.BATTERY_LEVEL]),
+    phone_is_charging: raw[F.PHONE_IS_CHARING] || null,
+    address_text: raw[F.ADDRESS_TEXT] || null,
+    captured_at: raw[F.CAPTURED_AT] || null,
+    is_emergency: raw[F.IS_SO_MUCH_OF_AN_EMERGENCY_THAT_WE_DON_T_BOTHER_TO_ASK_FOR_THE_CARED_ONE_S_PERMISSION],
     cct_author_id: raw.cct_author_id ? Number(raw.cct_author_id) : undefined,
   };
 }
@@ -91,7 +94,7 @@ export async function writeLocationSnapshot(
   }
 ): Promise<LocationSnapshot | null> {
   const storedUser = getStoredWPUser();
-  if (!storedUser?.user_id) return null;
+  if (!storedUser?.user_id) throw new Error("Not authenticated");
 
   const userId = Number(storedUser.user_id);
 
@@ -99,29 +102,28 @@ export async function writeLocationSnapshot(
   const created = await wordpressCCTFetch<any>(CCT_SLUG, {
     method: "POST",
     body: {
-      a55: String(lat),
-      a56: String(lng),
-      a57: opts?.accuracy != null ? String(opts.accuracy) : "",
-      a58: opts?.altitude != null ? String(opts.altitude) : "",
-      a59: opts?.heading != null ? String(opts.heading) : "",
-      a60: opts?.speed != null ? String(opts.speed) : "",
-      a61: opts?.is_moving || "",
-      a62: opts?.moving_type || "",
-      a63: opts?.platform || detectPlatform(),
-      a64: opts?.battery_level != null ? String(opts.battery_level) : "",
-      a65: opts?.phone_is_charging || "",
-      a66: opts?.address_text || "",
-      a67: new Date().toISOString(),
-      a68: opts?.is_emergency ? "b55" : "b56",
+      [F.LATITUDE]: String(lat),
+      [F.LONGITUDE]: String(lng),
+      [F.ACCURACY_METERS]: opts?.accuracy != null ? String(opts.accuracy) : "",
+      [F.ALTITUDE_METERS]: opts?.altitude != null ? String(opts.altitude) : "",
+      [F.HEADING_DEGREES]: opts?.heading != null ? String(opts.heading) : "",
+      [F.SPEED]: opts?.speed != null ? String(opts.speed) : "",
+      [F.IS_MOVING]: opts?.is_moving || "",
+      [F.MOVING_TYPE]: opts?.moving_type || "",
+      [F.PLATFORM]: opts?.platform || detectPlatform(),
+      [F.BATTERY_LEVEL]: opts?.battery_level != null ? String(opts.battery_level) : "",
+      [F.PHONE_IS_CHARING]: opts?.phone_is_charging || "",
+      [F.ADDRESS_TEXT]: opts?.address_text || "",
+      [F.CAPTURED_AT]: new Date().toISOString(),
+      [F.IS_SO_MUCH_OF_AN_EMERGENCY_THAT_WE_DON_T_BOTHER_TO_ASK_FOR_THE_CARED_ONE_S_PERMISSION]: opts?.is_emergency ? O.IS_SO_MUCH_OF_AN_EMERGENCY_THAT_WE_DON_T_BOTHER_TO_ASK_FOR_THE_CARED_ONE_S_PERMISSION.YES : O.IS_SO_MUCH_OF_AN_EMERGENCY_THAT_WE_DON_T_BOTHER_TO_ASK_FOR_THE_CARED_ONE_S_PERMISSION.NO,
     },
   });
 
   const newId = String(created._ID || created.id || "");
-  if (!newId) return null;
+  if (!newId) throw new Error("Location snapshot was created without an item ID");
 
   // Attach to user via JetEngine relation
-  try {
-    await wordpressFetch(`jet-rel/${REL_USER_CURRENT_LOCATION}`, {
+  await wordpressFetch(`jet-rel/${REL_USER_CURRENT_LOCATION}`, {
       method: "POST",
       body: {
         parent_id: userId,
@@ -129,10 +131,8 @@ export async function writeLocationSnapshot(
         context: "child",
         store_items_type: "update",
       },
-    });
-  } catch (err) {
-    console.warn("[Location] Failed to attach relation:", err);
-  }
+      meta: { a55: "b56" },
+  });
 
   return mapSnapshot(created);
 }
@@ -140,27 +140,15 @@ export async function writeLocationSnapshot(
 // ─── READ: Current location (latest snapshot) ────────────────
 
 export async function fetchCurrentLocation(userId: string | number): Promise<LocationSnapshot | null> {
-  try {
     const wpUserId = Number(String(userId).replace(/^wp-/, ""));
-    if (!wpUserId) return null;
-
-    // Query CCT filtered by author (= tracked user), latest first, limit 1
-    const items = await wordpressCCTFetch<any[]>(CCT_SLUG, {
-      params: {
-        cct_author_id: String(wpUserId),
-        _limit: "1",
-        _orderby: "cct_created",
-        _order: "DESC",
-      },
-    });
-
-    if (!Array.isArray(items) || items.length === 0) return null;
-    return mapSnapshot(items[0]);
-  } catch (err) {
-    if (isNetworkAbort(err)) console.debug("[Location] current-location request aborted (route change)");
-    else console.warn("[Location] fetchCurrentLocation failed:", err);
-    return null;
-  }
+    if (!wpUserId) throw new Error("Invalid user ID");
+    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_USER_CURRENT_LOCATION}/children/${wpUserId}`);
+    if (!Array.isArray(rels)) throw new Error(`Relation ${REL_USER_CURRENT_LOCATION} returned an invalid response`);
+    const ids = rels.map((r) => Number(r.child_object_id)).filter(Boolean);
+    if (!ids.length) return null;
+    const items = await Promise.all(ids.map((id) => wordpressCCTFetch<any>(CCT_SLUG, { id })));
+    const mapped = items.map(mapSnapshot).sort((a, b) => new Date(b.captured_at || 0).getTime() - new Date(a.captured_at || 0).getTime());
+    return mapped[0] || null;
 }
 
 // ─── READ: Location history (all snapshots for trail) ────────
@@ -169,29 +157,18 @@ export async function fetchLocationHistory(
   userId: string | number,
   opts?: { limit?: number; since?: string }
 ): Promise<LocationSnapshot[]> {
-  try {
     const wpUserId = Number(String(userId).replace(/^wp-/, ""));
-    if (!wpUserId) return [];
-
-    const params: Record<string, string> = {
-      cct_author_id: String(wpUserId),
-      _limit: String(opts?.limit || 200),
-      _orderby: "cct_created",
-      _order: "DESC",
-    };
-
-    const items = await wordpressCCTFetch<any[]>(CCT_SLUG, { params });
-
-    if (!Array.isArray(items)) return [];
-
+    if (!wpUserId) throw new Error("Invalid user ID");
+    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_USER_CURRENT_LOCATION}/children/${wpUserId}`);
+    if (!Array.isArray(rels)) throw new Error(`Relation ${REL_USER_CURRENT_LOCATION} returned an invalid response`);
+    const ids = rels.map((r) => Number(r.child_object_id)).filter(Boolean);
+    const items = await Promise.all(ids.map((id) => wordpressCCTFetch<any>(CCT_SLUG, { id })));
     return items
       .map(mapSnapshot)
-      .filter(s => s.latitude != null && s.longitude != null);
-  } catch (err) {
-    if (isNetworkAbort(err)) console.debug("[Location] history request aborted (route change)");
-    else console.warn("[Location] fetchLocationHistory failed:", err);
-    return [];
-  }
+      .filter(s => s.latitude != null && s.longitude != null)
+      .filter(s => !opts?.since || new Date(s.captured_at || 0) >= new Date(opts.since))
+      .sort((a, b) => new Date(b.captured_at || 0).getTime() - new Date(a.captured_at || 0).getTime())
+      .slice(0, opts?.limit || 200);
 }
 
 // ─── READ: Location shares (for care circle map view) ────────
