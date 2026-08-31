@@ -140,7 +140,7 @@ export async function fetchGroupCaredOnesWordPress(groupId: string): Promise<any
     const userIds = caredOneRels.map((r: any) => Number(r.child_object_id)).filter(Boolean);
     const caredOnes = await Promise.all(userIds.map(async (userId) => {
       try {
-        const user = await wordpressFetch<any>(`wp/v2/users/${userId}?context=edit`);
+        const user = await fetchWPUserSafe(userId);
         const rel = caredOneRels.find((r: any) => Number(r.child_object_id) === userId);
         const fullName = user.name || user.slug || decodeRel72Meta(rel?.meta).displayName || "Cared One";
         return {
