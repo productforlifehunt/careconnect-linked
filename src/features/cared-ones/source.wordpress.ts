@@ -1,50 +1,43 @@
 import { wordpressFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
-import { T, R } from "@/integrations/wp-schema";
+import { R } from "@/integrations/wp-schema";
+import { fetchWPUserProfile } from "@/features/shared/wp-users";
 
 const REL_USER_CARED_ONE = R.userCaredOnes;
 
-// Cared ones via JetEngine relation 79: users -> users
+/**
+ * Cared ones via JetEngine Relation 219 (Users -> Users, Many to Many).
+ * Each cared one is a real WordPress user; its identity comes from the user
+ * record plus CCT 151 / 258 joined through Relations 152 / 259. No fallbacks,
+ * no placeholders — a failed read surfaces as a failed read.
+ */
 export async function fetchUserCaredOnesWordPress(): Promise<any[]> {
-  try {
-    const storedUser = getStoredWPUser();
-    if (!storedUser?.user_id) return [];
+  const storedUser = getStoredWPUser();
+  if (!storedUser?.user_id) return [];
 
-    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_USER_CARED_ONE}/children/${storedUser.user_id}`);
-    if (!Array.isArray(rels) || rels.length === 0) return [];
+  const rels = await wordpressFetch<any[]>(`jet-rel/${REL_USER_CARED_ONE}/children/${storedUser.user_id}`);
+  if (!Array.isArray(rels) || rels.length === 0) return [];
 
-    const caredOneIds = rels.map((r: any) => String(r.child_object_id)).filter(Boolean);
-    const caredOnes = await Promise.all(
-      caredOneIds.map(async (userId: string) => {
-        try {
-          // Subscribers cannot read `context=edit` on other users (403), so fall
-          // back to the public user representation.
-          let u: any = null;
-          try {
-            u = await wordpressFetch<any>(`wp/v2/users/${userId}?context=edit`);
-          } catch {
-            u = await wordpressFetch<any>(`wp/v2/users/${userId}`);
-          }
-          const fullName = u.name || u.slug || "Cared One";
-          return {
-            user_id: `wp-${userId}`,
-            relationship: null,
-            cared_one: {
-              id: `wp-${userId}`,
-              full_name: fullName,
-              first_name: fullName.split(" ")[0] || null,
-              avatar_url: u.avatar_urls?.["96"] || null,
-              dementia_stage: null,
-            },
-          };
-        } catch {
-          return null;
-        }
-      })
-    );
+  const caredOneIds = rels.map((r: any) => String(r.child_object_id)).filter(Boolean);
+  const caredOnes = await Promise.all(
+    caredOneIds.map(async (userId: string) => {
+      const u = await fetchWPUserProfile(userId);
+      return {
+        user_id: `wp-${u.id}`,
+        relationship: null,
+        cared_one: {
+          id: `wp-${u.id}`,
+          full_name: u.full_name,
+          first_name: u.first_name || u.full_name.split(" ")[0] || null,
+          email: u.email,
+          avatar_url: u.avatar_url,
+          condition_types: u.condition_types,
+          dementia_stage: null,
+        },
+      };
+    }),
+  );
 
-    return caredOnes.filter(Boolean);
-  } catch {
-    return [];
-  }
+  return caredOnes;
 }
+
