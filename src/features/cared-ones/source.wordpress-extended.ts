@@ -220,7 +220,7 @@ export async function fetchCheckinsWordPress(caredOneId: string): Promise<any[]>
       is_active: isYes(i[F_CHK.IS_ACTIVE]),
       created_at: i.created_at,
     }));
-  } catch { return []; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
 export async function createCheckinWordPress(checkin: { user_id: string; name: string; detail?: string; frequency?: string; time_slot?: string[]; instructions?: string; start_date?: string; note?: string }): Promise<void> {
@@ -289,13 +289,13 @@ export async function fetchCheckinLogsWordPress(caredOneId: string): Promise<any
               checked_by_ai: isYes(item[F_CHKLOG.CHECKED_BY_AI]),
               created_at: item.created_at,
             };
-          } catch { return null; }
+          } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
         }));
         return logs.filter(Boolean);
-      } catch { return []; }
+      } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
     }));
     return nestedLogs.flat().sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  } catch { return []; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
 
@@ -343,7 +343,7 @@ export async function fetchMedicinesWordPress(caredOneId: string): Promise<any[]
       refill_threshold: m[F_MED.REFILL_THRESHOLD] != null && m[F_MED.REFILL_THRESHOLD] !== "" ? Number(m[F_MED.REFILL_THRESHOLD]) : null,
       created_at: m.created_at,
     }));
-  } catch { return []; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
 export async function createMedicineWordPress(med: { user_id: string; name: string; dosage?: string; frequency?: string; time_slot?: string[]; instructions?: string; prescribing_doctor?: string; pharmacy?: string; side_effects?: string; start_date?: string; end_date?: string; note?: string; stock_count?: number; refill_threshold?: number }): Promise<void> {
@@ -411,7 +411,7 @@ export async function fetchMedicineLogsWordPress(medicineId: string): Promise<an
       notes: l[F_MEDLOG.NOTE] || null,
       created_at: l.created_at,
     }));
-  } catch { return []; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
 export async function fetchTodayMedicineLogsWordPress(caredOneId: string): Promise<any[]> {
@@ -446,14 +446,14 @@ export async function fetchTodayMedicineLogsWordPress(caredOneId: string): Promi
                   notes: l[F_MEDLOG.NOTE] || null,
                   created_at: l.created_at,
                 };
-              } catch { return null; }
+              } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
             }))).filter(Boolean) as any[]
           : await fetchMedicineLogsWordPress(mid);
         for (const l of logs) if (l.created_at && new Date(l.created_at) >= today) allLogs.push(l);
-      } catch {}
+      } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
     }));
     return allLogs;
-  } catch { return []; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 
 }
 
@@ -489,7 +489,7 @@ export async function fetchCareTipsWordPress(caredOneId: string): Promise<any[]>
       created_at: t.created_at,
       updated_at: t.updated_at || t.created_at,
     }));
-  } catch { return []; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
 export async function createCareTipWordPress(tip: { user_id: string; title?: string; content: string; category?: string; is_pinned?: boolean }): Promise<void> {
@@ -535,7 +535,7 @@ export async function fetchCarePlansWordPress(caredOneId: string): Promise<any[]
       created_at: p.created_at,
       updated_at: p.updated_at,
     }));
-  } catch { return []; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
 export async function createCarePlanWordPress(plan: { user_id: string; title: string; description?: string; content?: string; is_pinned?: boolean }): Promise<void> {
@@ -576,7 +576,7 @@ export async function fetchCareNotesWordPress(caredOneId: string): Promise<any[]
       created_at: n.created_at,
       updated_at: n.updated_at || n.created_at,
     }));
-  } catch { return []; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
 export async function createCareNoteWordPress(note: { user_id: string; title?: string; content: string; category?: string }): Promise<void> {
@@ -620,7 +620,7 @@ export async function fetchEmergencyContactsWordPress(caredOneId: string): Promi
       is_primary: false,
       created_at: c.created_at,
     }));
-  } catch { return []; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
 export async function createEmergencyContactWordPress(contact: { user_id: string; name: string; phone?: string; email?: string; address?: string; relationship?: string; note?: string; content?: string }): Promise<void> {
@@ -680,7 +680,7 @@ export async function fetchCaredOneDocumentsWordPress(caredOneId: string): Promi
         updated_at: d.updated_at || d.created_at,
       };
     }));
-  } catch { return []; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
 export async function createCaredOneDocumentWordPress(doc: { user_id: string; title: string; description?: string; file_url?: string; document_type?: string; attachment_ids?: Array<number | string> }): Promise<void> {
@@ -769,7 +769,7 @@ export async function fetchVisitLogWordPress(caredOneId: string): Promise<any[]>
         created_at: l.created_at || null,
       }))
       .sort((a: any, b: any) => String(b.visited_at || "").localeCompare(String(a.visited_at || "")));
-  } catch { return []; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
 export async function createVisitLogWordPress(visit: {
