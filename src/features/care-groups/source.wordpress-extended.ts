@@ -1,6 +1,7 @@
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { T, R } from "@/integrations/wp-schema";
+import { fetchWPUserSafe } from "@/features/cared-ones/source.wordpress-extended";
 import {
   encodeRel72Meta,
   decodeRel72Meta,
