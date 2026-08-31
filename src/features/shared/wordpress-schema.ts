@@ -161,7 +161,9 @@ function mapWPUserToProfile(user: WPUserEntity): Profile {
     email: user.email || null,
     first_name: user.first_name || null,
     last_name: user.last_name || null,
-    full_name: user.name || [user.first_name, user.last_name].filter(Boolean).join(" ") || "User",
+    // Never the shared WP user name — the per-app display name is read from
+    // CCT 151 by the caller (see features/profile/app-user-name.ts).
+    full_name: "",
     user_name: user.slug || null,
     avatar_url: user.avatar_urls?.["96"] || user.avatar_urls?.["48"] || null,
     bio: user.description || null,

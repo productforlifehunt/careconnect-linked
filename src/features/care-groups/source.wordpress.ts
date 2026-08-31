@@ -3,6 +3,8 @@ import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-c
 import { getStoredWPUser } from "@/services/wp-auth";
 import { encodeRel72Meta, decodeRel72Meta } from "./rel-meta";
 import { T, R } from "@/integrations/wp-schema";
+import { fetchWPUserProfile } from "@/features/shared/wp-users";
+import { fetchMyAppUserName } from "@/features/profile/app-user-name";
 
 // Live JetEngine relations (verified from prd-to-wp-mapping.md)
 const REL_GROUP_MEMBER = R.careGroupMembers; // M:M  care_group → users
@@ -45,12 +47,14 @@ export async function fetchCareGroupMembersWordPress(groupId: string): Promise<a
     const members = await Promise.all(
       userIds.map(async (uid) => {
         try {
-          const u = await wordpressFetch<any>(`wp/v2/users/${uid}`);
+          const u = await fetchWPUserProfile(uid);
           const rel = rels.find((r: any) => Number(r.child_object_id) === uid);
           const decoded = decodeRel72Meta(rel?.meta);
           const memberTypes = decoded.memberTypes;
           const memberRoles = decoded.memberRoles;
-          const displayName = decoded.displayName || u.name || u.slug || "Member";
+          // Names come from the relation meta or this app's own column on
+          // CCT 151 — never the shared WordPress user name.
+          const displayName = decoded.displayName || u.full_name;
           const invitationStatus = decoded.invitationStatus;
           const isOwner = memberTypes.includes("owner");
           const isAdmin = memberTypes.includes("admin") || isOwner;
@@ -66,7 +70,7 @@ export async function fetchCareGroupMembersWordPress(groupId: string): Promise<a
             is_owner: isOwner,
             is_cared_one: memberRoles.includes("cared one"),
             invitation_status: invitationStatus,
-            profile: { id: `wp-${uid}`, full_name: displayName, email: u.email || null, avatar_url: u.avatar_urls?.["96"] || null },
+            profile: { id: `wp-${uid}`, full_name: displayName, email: u.email || null, avatar_url: u.avatar_url || null },
           };
         } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
       })
@@ -102,7 +106,7 @@ export async function createCareGroupWordPress(group: { name: string; descriptio
           context: "child",
           store_items_type: "update",
           meta: encodeRel72Meta({
-            displayName: wpUser.user_display_name || wpUser.user_login || "Owner",
+            displayName: await fetchMyAppUserName(),
             memberTypes: ["owner", "admin"],
             memberRoles: ["nothing special"],
             invitationStatus: "accepted",

@@ -1,5 +1,5 @@
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
-import { fetchWPUser } from "@/features/shared/wp-users";
+import { fetchWPUser, fetchWPUserProfile } from "@/features/shared/wp-users";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { T, R } from "@/integrations/wp-schema";
 import { decodeRel72Meta } from "@/features/care-groups/rel-meta";
@@ -98,11 +98,12 @@ async function fetchRelatedCctChildrenBulk(relationId: number, parentId: string,
 }
 
 
-/** Reads a real WP user through the privileged `wp-admin-ops` proxy —
- *  subscribers cannot read other users over REST, and a degraded public read
- *  would produce placeholder people, which is forbidden. */
+/** Reads a real WP user (core fields) plus its extended-profile CCTs through
+ *  the privileged `wp-admin-ops` proxy. The display name comes from the
+ *  per-app column on CCT 151 (a556 ChallengeD / a557 CareCNC) — never from the
+ *  shared WordPress user name. */
 export async function fetchWPUserSafe(userId: number | string): Promise<any> {
-  const u = await fetchWPUser(userId);
+  const u = await fetchWPUserProfile(userId);
   return { ...u, avatar_urls: { "96": u.avatar_url } };
 }
 
@@ -145,8 +146,9 @@ export async function fetchGroupCaredOnesWordPress(groupId: string): Promise<any
   const userIds = caredOneRels.map((r: any) => Number(r.child_object_id)).filter(Boolean);
   const caredOnes = await Promise.all(userIds.map(async (userId) => {
     const user = await fetchWPUserSafe(userId);
-    const fullName = user.name || user.slug;
-    if (!fullName) throw new Error(`WP user ${userId} has no name — cannot render a cared one`);
+    // Name = this app's own column on CCT 151. Empty until the user sets it;
+    // the UI renders initials/placeholder-free empty state, never a fake name.
+    const fullName = user.full_name;
     return {
       id: `wp-${userId}`,
       user_id: `wp-${userId}`,

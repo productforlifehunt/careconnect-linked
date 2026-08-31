@@ -28,6 +28,7 @@ import { getWordPressFeature, updateWordPressFeature } from "@/features/shared/w
 import { wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { T } from "@/integrations/wp-schema";
+import { fetchMyAppUserName, saveMyAppUserName } from "@/features/profile/app-user-name";
 import {
   careServiceIdsToSlugs,
   careServiceSlugsToIds,
@@ -68,6 +69,10 @@ export async function fetchMyProfileWordPress(): Promise<Profile | null> {
   try {
     const wpProfile = await getWordPressFeature<Profile>("profile_me");
     if (!wpProfile) return null;
+
+    // Display name lives ONLY in this app's own column on CCT 151
+    // (a556 ChallengeD / a557 CareCNC) — never the shared WP user name.
+    wpProfile.full_name = await fetchMyAppUserName();
 
     const storedUser = getStoredWPUser();
     const wpUserId = storedUser?.user_id || wpProfile.id?.replace("wp-", "");
@@ -115,7 +120,7 @@ export async function fetchMyProfileWordPress(): Promise<Profile | null> {
       user_id: `wp-${stored.user_id}`,
       email: stored.user_email,
       first_name: null, last_name: null,
-      full_name: stored.user_display_name || stored.user_login,
+      full_name: "",
       user_name: stored.user_login,
       avatar_url: null, bio: null,
       general_user_role: null, is_care_provider: false,
@@ -134,10 +139,14 @@ export async function updateProfileWordPress(updates: Partial<Profile>): Promise
   const wpFields: Partial<Profile> = {};
   if (updates.first_name !== undefined) wpFields.first_name = updates.first_name;
   if (updates.last_name !== undefined) wpFields.last_name = updates.last_name;
-  if (updates.full_name !== undefined) wpFields.full_name = updates.full_name;
   if (updates.bio !== undefined) wpFields.bio = updates.bio;
   if (Object.keys(wpFields).length > 0) {
     await updateWordPressFeature("profile_me", wpFields);
+  }
+
+  // The app display name goes to CCT 151, this app's own column.
+  if (updates.full_name !== undefined) {
+    await saveMyAppUserName(updates.full_name ?? "");
   }
 
   // 2) Update CCT 258 extended profile 2 (opaque codes)
@@ -180,7 +189,7 @@ export async function updateProfileWordPress(updates: Partial<Profile>): Promise
         const { ensureDokanVendor } = await import("@/services/woocommerce-api");
         const stored = getStoredWPUser();
         await ensureDokanVendor({
-          fullName: updates.full_name || stored?.user_display_name || stored?.user_login || "",
+          fullName: updates.full_name || (await fetchMyAppUserName()),
           email: stored?.user_email || "",
           phone: updates.phone || undefined,
           location: updates.location || undefined,

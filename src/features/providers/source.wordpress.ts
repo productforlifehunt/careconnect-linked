@@ -5,7 +5,7 @@ import { T } from "@/integrations/wp-schema";
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 import { fetchProviderRatingSummary } from "@/features/reviews/source.wordpress";
 import { careServiceIdsToSlugs, deliveryIdsToSlugs } from "@/lib/care-service-types";
-import { fetchWPUser } from "@/features/shared/wp-users";
+import { fetchWPUserProfile } from "@/features/shared/wp-users";
 
 // Provider fields live on CCT 258 "User's extended profile 2".
 // Discovery (browse / search / filter / price display) reads ONLY from this CCT
@@ -37,9 +37,9 @@ async function mapProviderRow(row: any): Promise<Profile | null> {
     const userId = Number(row.author_id || row.cct_author_id || row.user_id);
     if (!userId) return null;
 
-    const user = await fetchWPUser(userId);
-    const fullName = user.name;
-    if (!fullName) throw new Error(`Provider user ${userId} has no name`);
+    const user = await fetchWPUserProfile(userId);
+    // Name = this app's own column on CCT 151 (a556 / a557).
+    const fullName = user.full_name;
 
     // Rates: a66 in-person hourly, a67 remote hourly, a69 remote check-in,
     // a70 remote medicine supervision. "Starts at" = cheapest published rate.
