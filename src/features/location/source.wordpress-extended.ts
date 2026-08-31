@@ -29,6 +29,8 @@ const ALERT_DEDUP_WINDOW_MS = 5 * 60 * 1000;
 
 // ─── Relation IDs ────────────────────────────────────────────
 const REL_USER_SAFE_ZONE = R.userSafeZones;
+// REL 261: one safe zone (location notification) -> many receiving users.
+const REL_SAFE_ZONE_RECEIVER = R.safeZoneReceivers;
 
 type SafeZoneAlertType = "exited_safe_zone" | "entered_safe_zone" | "entered_danger_zone" | "exited_danger_zone";
 
@@ -54,6 +56,43 @@ async function attachChildToUserRelation(relationId: number, parentUserId: numbe
       store_items_type: "update",
     },
   });
+}
+
+/** Users who should receive this zone's alerts (JetEngine REL 261). */
+async function fetchSafeZoneReceiverIds(zoneId: string): Promise<string[]> {
+  try {
+    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_SAFE_ZONE_RECEIVER}/children/${Number(zoneId)}`);
+    if (!Array.isArray(rels)) return [];
+    return rels.map((r: any) => String(r.child_object_id || "")).filter(Boolean);
+  } catch { return []; }
+}
+
+/** Replace the zone's receiver list (relation-only, no custom FK). */
+async function setSafeZoneReceivers(zoneId: string, receiverIds: Array<string | number>): Promise<void> {
+  const ids = (receiverIds || []).map((v) => normalizeWpUserId(v as any)).filter(Boolean);
+  if (ids.length === 0) return;
+  const body = {
+    parent_id: Number(zoneId),
+    child_id: ids.map(Number),
+    context: "parent",
+    store_items_type: "replace",
+  };
+  try {
+    await wordpressFetch(`jet-rel/${REL_SAFE_ZONE_RECEIVER}`, { method: "POST", body });
+  } catch (err: any) {
+    // App roles cannot write relations whose parent is a CCT item (403), so the
+    // privileged proxy performs the same relation write for the caller.
+    if (!/40[13]/.test(String(err?.message || ""))) throw err;
+    const { wpAdminOps } = await import("@/services/woocommerce-api");
+    const res: any = await wpAdminOps("set_relation", {
+      relation_id: Number(REL_SAFE_ZONE_RECEIVER),
+      parent_id: body.parent_id,
+      child_ids: body.child_id,
+      context: "parent",
+      store_items_type: "replace",
+    });
+    if (!res?.ok) throw new Error(res?.error || "Could not save alert receivers");
+  }
 }
 
 function parseBoolean(value: any, fallback = false): boolean {
@@ -198,8 +237,11 @@ export async function fetchSafeZonesWordPress(userId: string): Promise<any[]> {
     const zones = await Promise.all(
       zoneIds.map(async (zoneId) => {
         try {
-          const zone = await wordpressCCTFetch<any>(T.safeZone.slug, { id: zoneId });
-          return mapSafeZone(zone, userId);
+          const [zone, receiverIds] = await Promise.all([
+            wordpressCCTFetch<any>(T.safeZone.slug, { id: zoneId }),
+            fetchSafeZoneReceiverIds(zoneId),
+          ]);
+          return { ...mapSafeZone(zone, userId), receiver_ids: receiverIds };
         } catch { return null; }
       }),
     );
@@ -230,7 +272,11 @@ export async function createSafeZoneWordPress(zone: { user_id: string; name: str
       a69: zone.is_active === false ? "b56" : "b55",
     },
   });
-  await attachChildToUserRelation(REL_USER_SAFE_ZONE, userId, String(created._ID || created.id));
+  const zoneId = String(created._ID || created.id);
+  await attachChildToUserRelation(REL_USER_SAFE_ZONE, userId, zoneId);
+  if (Array.isArray(zone.receiver_ids) && zone.receiver_ids.length) {
+    try { await setSafeZoneReceivers(zoneId, zone.receiver_ids); } catch (e) { console.error("Safe zone receivers not saved:", e); }
+  }
 }
 
 export async function updateSafeZoneWordPress(id: string, updates: Record<string, any>): Promise<void> {
@@ -265,6 +311,9 @@ export async function updateSafeZoneWordPress(id: string, updates: Record<string
   if (updates.schedule_end_time !== undefined) body.a68 = updates.schedule_end_time;
   if (updates.is_active !== undefined) body.a69 = updates.is_active ? "b55" : "b56";
   await wordpressCCTFetch(T.safeZone.slug, { id, method: "PUT", body });
+  if (updates.receiver_ids !== undefined) {
+    try { await setSafeZoneReceivers(id, updates.receiver_ids || []); } catch (e) { console.error("Safe zone receivers not saved:", e); }
+  }
 }
 
 
@@ -373,6 +422,21 @@ export async function createSafeZoneAlertsForLocation(userId: string, lat: numbe
           message: msg,
           action_url: `/gps-tracking?zone=${zone.id}`,
         });
+        // Fan out to the zone's configured receivers (REL 261).
+        const receivers: string[] = Array.isArray(zone.receiver_ids)
+          ? zone.receiver_ids
+          : await fetchSafeZoneReceiverIds(String(zone.id));
+        await Promise.all(
+          receivers
+            .filter((rid) => normalizeWpUserId(rid) !== normalizeWpUserId(userId))
+            .map((rid) => createNotificationWordPress({
+              user_id: rid,
+              type: "safe_zone_breach",
+              title: result.alertType === "entered_danger_zone" ? "⚠️ Danger Zone Alert" : "📍 Safe Zone Alert",
+              message: msg,
+              action_url: `/gps-tracking?zone=${zone.id}`,
+            }).catch(() => {})),
+        );
       } catch {}
     }
   } catch {}

@@ -988,6 +988,7 @@ export const WP = {
       f: {
         "NAME": "a55",  // Text
         "CONTENT": "a56",  // Textarea
+        "ATTACHMENTS": "a57",  // Gallery (comma-separated WP media IDs)
       },
       opt: {
       },
@@ -1279,6 +1280,8 @@ export const WP = {
     "247": { id: 247, parent: "Users", child: "213. The current location of one user", type: "One to many", f: { "USER_TYPE": "a55" }, opt: { "USER_TYPE": { "NOT_SOMEONE_SPECIAL": "b55", "CARED_ONE": "b56" } } },
     /** 248. One user can have many related safe zones — Users -> 214. Safe Zone (One to many) */
     "248": { id: 248, parent: "Users", child: "214. Safe Zone", type: "One to many" },
+    /** 261. One location notification can have many related receivers — 214. Safe Zone -> Users (One to Many) */
+    "261": { id: 261, parent: "214. Safe Zone", child: "Users", type: "One to Many" },
     /** 249. One care facility can have many related facility members — 215. Care Facility -> Users (One to Many) */
     "249": { id: 249, parent: "215. Care Facility", child: "Users", type: "One to Many", f: { "FACILITY_MEMBER_TYPE": "a55", "FACILITY_MEMBER_ROLE": "a56" }, opt: { "FACILITY_MEMBER_TYPE": { "NOTHING_SPECIAL": "b55", "OWNER": "b56", "ADMIN": "b57" } } },
     /** 250. One care job can have many related cared ones — 216. Care Job -> Users (One to Many) */
@@ -1558,6 +1561,8 @@ export const R = {
   userCurrentLocations: 247,
   /** 248. One user can have many related safe zones */
   userSafeZones: 248,
+  /** 261. One location notification (safe zone) can have many related receivers */
+  safeZoneReceivers: 261,
   /** 249. One care facility can have many related facility members */
   careFacilityMembers: 249,
   /** 250. One care job can have many related cared ones */

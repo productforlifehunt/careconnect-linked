@@ -80,6 +80,9 @@ async function adminOp<T = any>(action: string, body: Record<string, unknown> = 
   return (payload?.data ?? payload) as T;
 }
 
+/** Shared entry point for other modules that need a privileged WP operation. */
+export const wpAdminOps = adminOp;
+
 export async function ensureDokanVendor(userData: {
   fullName: string;
   email: string;

@@ -659,34 +659,46 @@ export async function deleteEmergencyContactWordPress(id: string): Promise<void>
   await wordpressCCTFetch(T.emergencyContact.slug, { id, method: "DELETE" });
 }
 
-// ─── Cared One Documents (CCT 23) ────────────────────────────
+// ─── Cared One Documents (CCT 212) ───────────────────────────
+// Attachments live in the CCT's Gallery field (F_DOC.ATTACHMENTS): a
+// comma-separated list of WP media IDs, so one document record can carry
+// several files (PDF / TXT / images).
 export async function fetchCaredOneDocumentsWordPress(caredOneId: string): Promise<any[]> {
   try {
     const docs = await fetchRelatedCctChildren(REL_USER_CARE_DOCUMENT, caredOneId, T.careDocument.slug);
-    return docs.map((d: any) => ({
-      id: String(d.id || d._ID),
-      user_id: caredOneId,
-      title: d[F_DOC.NAME] || null,
-      name: d[F_DOC.NAME] || null,
-      description: d[F_DOC.CONTENT] || null,
-      content: d[F_DOC.CONTENT] || null,
-      file_url: null,
-      document_type: null,
-      created_at: d.created_at,
-      updated_at: d.updated_at || d.created_at,
+    const { resolveWPMedia, parseMediaIds } = await import("@/lib/wp-media");
+    return await Promise.all(docs.map(async (d: any) => {
+      const rawIds = d[(F_DOC as any).ATTACHMENTS];
+      const attachments = await resolveWPMedia(rawIds);
+      return {
+        id: String(d.id || d._ID),
+        user_id: caredOneId,
+        title: d[F_DOC.NAME] || null,
+        name: d[F_DOC.NAME] || null,
+        description: d[F_DOC.CONTENT] || null,
+        content: d[F_DOC.CONTENT] || null,
+        attachment_ids: parseMediaIds(rawIds),
+        attachments,
+        file_url: attachments[0]?.url || null,
+        document_type: null,
+        created_at: d.created_at,
+        updated_at: d.updated_at || d.created_at,
+      };
     }));
   } catch { return []; }
 }
 
-export async function createCaredOneDocumentWordPress(doc: { user_id: string; title: string; description?: string; file_url?: string; document_type?: string }): Promise<void> {
+export async function createCaredOneDocumentWordPress(doc: { user_id: string; title: string; description?: string; file_url?: string; document_type?: string; attachment_ids?: Array<number | string> }): Promise<void> {
   const contentParts = [doc.description || ""];
   if (doc.file_url) contentParts.push(`URL: ${doc.file_url}`);
   if (doc.document_type) contentParts.push(`Type: ${doc.document_type}`);
+  const { serializeMediaIds } = await import("@/lib/wp-media");
   const created = await wordpressCCTFetch<any>(T.careDocument.slug, {
     method: "POST",
     body: {
       [F_DOC.NAME]: doc.title,
       [F_DOC.CONTENT]: contentParts.filter(Boolean).join("\n"),
+      [(F_DOC as any).ATTACHMENTS]: serializeMediaIds(doc.attachment_ids || []),
     },
   });
   const newId = normalizeWpObjectId(created?.item_id || created?._ID || created?.id);
@@ -699,12 +711,17 @@ export async function updateCaredOneDocumentWordPress(id: string, updates: Recor
   if (updates.name !== undefined) body[F_DOC.NAME] = updates.name;
   if (updates.description !== undefined) body[F_DOC.CONTENT] = updates.description;
   if (updates.content !== undefined) body[F_DOC.CONTENT] = updates.content;
+  if (updates.attachment_ids !== undefined) {
+    const { serializeMediaIds } = await import("@/lib/wp-media");
+    body[(F_DOC as any).ATTACHMENTS] = serializeMediaIds(updates.attachment_ids || []);
+  }
   await wordpressCCTFetch(T.careDocument.slug, { id, method: "PUT", body });
 }
 
 export async function deleteCaredOneDocumentWordPress(id: string): Promise<void> {
   await wordpressCCTFetch(T.careDocument.slug, { id, method: "DELETE" });
 }
+
 
 // ─── Dementia Stage ─────────────────────────────────────────
 export async function updateDementiaStageWordPress(caredOneId: string, stage: string): Promise<void> {
