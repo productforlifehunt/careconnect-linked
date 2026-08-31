@@ -76,7 +76,7 @@ async function fetchRelatedCctItems(relationId: number, parentId: string, cctSlu
   const items = await Promise.all(childIds.map(async (childId) => {
     try {
       return await wordpressCCTFetch(cctSlug, { id: childId });
-    } catch { return null; }
+    } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
   }));
   return items.filter(Boolean);
 }
@@ -112,7 +112,7 @@ export async function fetchCareGroupPostsWordPress(groupId: string, type?: strin
         updated_at: p.updated_at || p.created_at,
         author: p.author_id ? { id: p.author_id, full_name: null, avatar_url: null } : null,
       }));
-  } catch { return []; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
 export async function createGroupPostWordPress(post: { group_id: string; content: string; type?: string; title?: string }): Promise<string | null> {
@@ -215,7 +215,7 @@ export async function fetchGroupInvitationsWordPress(groupId: string): Promise<a
         invited_email: null,
         created_at: null,
       }));
-  } catch { return []; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
 export async function cancelInvitationWordPress(invitationId: string): Promise<void> {
@@ -259,7 +259,7 @@ export async function fetchMyPendingInvitationsWordPress(): Promise<any[]> {
       };
     }));
     return enriched;
-  } catch { return []; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
 export async function acceptInvitationWordPress(invitationId: string): Promise<void> {
@@ -381,7 +381,7 @@ export async function fetchGroupInvitesWordPress(groupId: string): Promise<any[]
   try {
     const items = await fetchRelatedCctItems(REL_GROUP_INVITE, groupId, "care_group_invite");
     return items.map((i: any) => normalizeInvite(i, groupId));
-  } catch { return []; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
 export async function createGroupInviteWordPress(input: {
@@ -522,7 +522,7 @@ async function resolveMediaUrl(mediaId: number | string | null): Promise<string 
       m?.source_url ||
       null
     );
-  } catch { return null; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
 export async function fetchCareGroupGalleryWordPress(groupId: string): Promise<any[]> {
@@ -546,7 +546,7 @@ export async function fetchCareGroupGalleryWordPress(groupId: string): Promise<a
       })
     );
     return enriched;
-  } catch { return []; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
 /** Upload a File to WP Media Library and return the media ID. */
@@ -607,7 +607,7 @@ export async function fetchMemberCategoriesWordPress(groupId: string): Promise<a
       color: c[F_SUBGROUP.COLOR] || null,
       created_at: c.created_at,
     }));
-  } catch { return []; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
 export async function createMemberCategoryWordPress(groupId: string, name: string, color?: string, description?: string): Promise<void> {
@@ -667,7 +667,7 @@ async function fetchSubgroupMemberRecords(subgroupId: string): Promise<SubgroupM
         return { user_id: uid, status, types: types.length ? types : ["nothing special"], is_owner, is_admin };
       })
       .filter(Boolean) as SubgroupMemberRecord[];
-  } catch { return []; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
 /** Backwards-compatible: returns only ACCEPTED member user ids. */
@@ -804,7 +804,7 @@ export async function fetchMyPendingSubgroupRequestsWordPress(): Promise<Array<{
     return (Array.isArray(rels) ? rels : [])
       .filter((r: any) => decodeRel75Meta(r?.meta).status === "pending")
       .map((r: any) => ({ subgroup_id: Number(r.parent_object_id), status: "pending" }));
-  } catch { return []; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
 /** When a sub-group is created, auto-add creator as owner+accepted. */
@@ -826,7 +826,7 @@ export async function searchProfilesWordPress(query: string): Promise<any[]> {
       email: u.email || null,
       avatar_url: u.avatar_urls?.["96"] || null,
     }));
-  } catch { return []; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
 // ─── Add Cared One to Group ─────────────────────────────────

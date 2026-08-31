@@ -64,7 +64,7 @@ async function fetchSafeZoneReceiverIds(zoneId: string): Promise<string[]> {
     const rels = await wordpressFetch<any[]>(`jet-rel/${REL_SAFE_ZONE_RECEIVER}/children/${Number(zoneId)}`);
     if (!Array.isArray(rels)) return [];
     return rels.map((r: any) => String(r.child_object_id || "")).filter(Boolean);
-  } catch { return []; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
 /** Replace the zone's receiver list (relation-only, no custom FK). */
@@ -242,11 +242,11 @@ export async function fetchSafeZonesWordPress(userId: string): Promise<any[]> {
             fetchSafeZoneReceiverIds(zoneId),
           ]);
           return { ...mapSafeZone(zone, userId), receiver_ids: receiverIds };
-        } catch { return null; }
+        } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
       }),
     );
     return zones.filter(Boolean);
-  } catch { return []; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
 export async function createSafeZoneWordPress(zone: { user_id: string; name: string; latitude: number; longitude: number; radius_meters?: number; [key: string]: any }): Promise<void> {

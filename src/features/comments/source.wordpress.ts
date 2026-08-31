@@ -48,7 +48,7 @@ export async function fetchCommentsWordPress(entityType: string, entityId: strin
     const ids = rels.map((r: any) => String(r.child_object_id)).filter(Boolean);
     const items = await Promise.all(ids.map(async (id) => {
       try { return await wordpressCCTFetch<any>(T.comment.slug, { id }); }
-      catch { return null; }
+      catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
     }));
     return (items.filter(Boolean) as any[]).map((c: any) => ({
       id: String(c.id || c._ID),
@@ -62,7 +62,7 @@ export async function fetchCommentsWordPress(entityType: string, entityId: strin
       updated_at: c.updated_at,
       author: c.author_id ? { id: c.author_id, full_name: null, avatar_url: null } : null,
     }));
-  } catch { return []; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
 export async function createCommentWordPress(comment: { entity_type: string; entity_id: string; content: string; title?: string; parent_id?: string }): Promise<void> {

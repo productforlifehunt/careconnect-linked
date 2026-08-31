@@ -68,7 +68,7 @@ export async function fetchCareGroupMembersWordPress(groupId: string): Promise<a
             invitation_status: invitationStatus,
             profile: { id: `wp-${uid}`, full_name: displayName, email: u.email || null, avatar_url: u.avatar_urls?.["96"] || null },
           };
-        } catch { return null; }
+        } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
       })
     );
     // Declined invitations are not members — hide them from the roster.

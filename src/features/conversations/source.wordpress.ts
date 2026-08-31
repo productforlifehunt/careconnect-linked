@@ -168,7 +168,7 @@ async function fetchConversationMemberIds(convoId: string | number): Promise<num
     const rels = await wordpressFetch<any[]>(`jet-rel/${REL_CONV_MEMBER}/children/${numId(convoId)}`);
     if (!Array.isArray(rels)) return [];
     return rels.map((r: any) => Number(r.child_object_id)).filter(Boolean);
-  } catch { return []; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
 /**
@@ -314,7 +314,7 @@ export async function fetchConversationsWordPress(currentUserId?: string): Promi
     }
 
     return rows.sort((a, b) => String(b.last_message_at || "").localeCompare(String(a.last_message_at || "")));
-  } catch { return []; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
 
@@ -325,7 +325,7 @@ export async function fetchDirectMessagesWordPress(conversationId: string): Prom
     const messageIds = rels.map((r: any) => String(r.child_object_id)).filter(Boolean);
     const msgs = await Promise.all(messageIds.map(async (mid) => {
       try { return await wordpressCCTFetch<any>(MSG, { id: mid }); }
-      catch { return null; }
+      catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
     }));
     return (msgs.filter(Boolean) as any[])
       .map((m: any) => ({
@@ -344,7 +344,7 @@ export async function fetchDirectMessagesWordPress(conversationId: string): Prom
         created_at: m.created_at ?? m.cct_created ?? null,
       }))
       .sort((a, b) => (a.created_at || "").localeCompare(b.created_at || ""));
-  } catch { return []; }
+  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
 export async function sendMessageWordPress(
