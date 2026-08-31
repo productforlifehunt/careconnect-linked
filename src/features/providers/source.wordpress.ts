@@ -54,13 +54,13 @@ async function mapProviderRow(row: any): Promise<Profile | null> {
     return {
       id: `wp-${userId}`,
       user_id: `wp-${userId}`,
-      email: user?.email || row.email || null,
-      first_name: user?.first_name || null,
-      last_name: user?.last_name || null,
+      email: user.email || null,
+      first_name: user.first_name || null,
+      last_name: user.last_name || null,
       full_name: fullName,
-      user_name: user?.slug || row.user_name || null,
-      avatar_url: user?.avatar_urls?.["96"] || user?.avatar_urls?.["48"] || row.avatar_url || null,
-      bio: user?.description || row.bio || null,
+      user_name: user.slug || null,
+      avatar_url: user.avatar_url || null,
+      bio: null,
       general_user_role: parseWpList(row[F_PROFILE.GENERAL_USER_ROLE]),
       is_care_provider: String(row[F_PROFILE.IS_CARE_PROVIDER]) === P2.opt.IS_CARE_PROVIDER.YES,
       provider_is_active: String(row[F_PROFILE.CARE_PROVIDER_IS_ACTIVE]) === P2.opt.CARE_PROVIDER_IS_ACTIVE.YES,
@@ -177,7 +177,7 @@ export async function fetchProvidersWordPress(filters?: ProviderFilters): Promis
     else results.sort(byRatingDesc);
 
     return results;
-  } catch (error) { throw new Error("Failed to fetch providers", { cause: error }); }
+  } catch (error) { throw new Error(`Failed to fetch providers: ${error instanceof Error ? error.message : String(error)}`); }
 }
 
 export async function fetchProviderByIdWordPress(id: string): Promise<Profile | null> {
@@ -196,7 +196,7 @@ export async function fetchProviderByIdWordPress(id: string): Promise<Profile | 
     // Ratings always come from CCT 31 "Review" (relation 264).
     const rating = await fetchProviderRatingSummary(numericId);
     return { ...profile, rating_average: rating.average, rating_count: rating.count };
-  } catch (error) { throw new Error(`Failed to fetch provider ${id}`, { cause: error }); }
+  } catch (error) { throw new Error(`Failed to fetch provider ${id}: ${error instanceof Error ? error.message : String(error)}`); }
 }
 
 

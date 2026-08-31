@@ -130,8 +130,8 @@ export async function writeLocationSnapshot(
         child_id: Number(newId),
         context: "child",
         store_items_type: "update",
+        meta: { a55: "b56" },
       },
-      meta: { a55: "b56" },
   });
 
   return mapSnapshot(created);

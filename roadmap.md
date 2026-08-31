@@ -1,5 +1,6 @@
 # Zero-Fallback Alignment Roadmap
 
+- [ ] Fix every current preview typecheck/build error, including pre-existing errors
 - [ ] Align CCT 198–204 and Relations 219–236; remove defaults and swallowed failures
 - [ ] Align CCT 197/205–214 and Relations 237–248/260/261; enforce append-only location
 - [ ] Align CCT 215–218/258 and Relations 249–257; remove static/fake marketplace and learning paths

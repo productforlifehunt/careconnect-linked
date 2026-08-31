@@ -91,7 +91,7 @@ export async function fetchFacilityMembersWordPress(facilityId: string): Promise
         profile: null,
       };
     });
-  } catch (error) { throw new Error(`Failed to fetch facility ${facilityId} members`, { cause: error }); }
+  } catch (error) { throw new Error(`Failed to fetch facility ${facilityId} members: ${error instanceof Error ? error.message : String(error)}`); }
 }
 
 export async function addFacilityMemberWordPress(
