@@ -28,7 +28,7 @@ function parseWpList(value: unknown): string[] | null {
 }
 
 function isListedProviderRow(row: any): boolean {
-  return String(row?.[F_PROFILE.IS_CARE_PROVIDER]) === P2.opt.IS_CARE_PROVIDER.YES
+  return String(row?.[F_PROFILE.IS_PAID_CARE_PROVIDER]) === P2.opt.IS_PAID_CARE_PROVIDER.YES
     && String(row?.[F_PROFILE.CARE_PROVIDER_IS_ACTIVE]) === P2.opt.CARE_PROVIDER_IS_ACTIVE.YES;
 }
 
@@ -62,7 +62,7 @@ async function mapProviderRow(row: any): Promise<Profile | null> {
       avatar_url: user.avatar_url || null,
       bio: null,
       general_user_role: parseWpList(row[F_PROFILE.GENERAL_USER_ROLE]),
-      is_care_provider: String(row[F_PROFILE.IS_CARE_PROVIDER]) === P2.opt.IS_CARE_PROVIDER.YES,
+      is_care_provider: String(row[F_PROFILE.IS_PAID_CARE_PROVIDER]) === P2.opt.IS_PAID_CARE_PROVIDER.YES,
       provider_is_active: String(row[F_PROFILE.CARE_PROVIDER_IS_ACTIVE]) === P2.opt.CARE_PROVIDER_IS_ACTIVE.YES,
       care_provider_is_background_checked: String(row[F_PROFILE.CARE_PROVIDER_IS_BACKGROUND_CHECKED]) === P2.opt.CARE_PROVIDER_IS_BACKGROUND_CHECKED.YES,
       care_provider_background_check_detail: row[F_PROFILE.CARE_PROVIDER_S_BACKGROUND_CHECK_DETAIL] || null,

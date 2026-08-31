@@ -33,6 +33,8 @@ export const WP = {
         "THE_FOOD_SUPPLEMENT_CONTAINS_PROTEIN": "a576",  // Radio
         "GIFTCARD_TYPE": "a577",  // Radio
         "GIFTCARD_PRICE": "a578",  // Number
+        "DIGITAL_PRODUCT_PLATFORM": "a579",  // ?
+        "DIGITAL_PRODUCT_CATEGORY": "a580",  // ?
         "THE_PRODUCT_IS_A_NRT_PRODUCT": "a58",  // Radio
         "NRT_CERTIFICATION_INSTITUTE": "a59",  // Checkbox
         "THE_NICOTINE_PRODUCT_IS_A_SMOKELESS_NICOTINE_PRODUCT": "a60",  // Radio
@@ -47,14 +49,16 @@ export const WP = {
         "GOOGLE_PRODUCT_CATEGORY_ID": "a69",  // Text
         "COIN_ALLOWANCE": "a70",  // Number
         "CUSTOM_FOOD_DETAIL": "a71",  // Textarea
-        "CUSTOM_MEDICINE_DETAIL": "a712",  // ?
+        "CUSTOM_RECIPE_DETAIL": "a711",  // Textarea
+        "CUSTOM_WORKOUT_DETAIL": "a712",  // Textarea
+        "CUSTOM_MEDICINE_DETAIL": "a713",  // Textarea
         "ALCOHOL_PRODUCT_CATEGORY": "a72",  // Checkbox
         "ALCOHOL_PERCENTAGE": "a73",  // Number
         "ALCOHOL_VOLUME_PER_BOTTLE": "a74",  // Number
         "PRODUCT_LISTING_TYPE": "a75",  // Checkbox
       },
       opt: {
-        "PRODUCT_TYPE": { "NICOTINE_PRODUCT": "b55", "ALCOHOL_PRODUCT": "b56", "FOOD": "b57", "SUPPLEMENT": "b58", "MEDICINE": "b59", "GEAR": "b60", "GIFTCARD": "b61" },
+        "PRODUCT_TYPE": { "NICOTINE_PRODUCT": "b55", "ALCOHOL_PRODUCT": "b56", "FOOD": "b57", "SUPPLEMENT": "b58", "MEDICINE": "b59", "GEAR": "b60", "GIFTCARD": "b61", "DIGITAL_PRODUCT": "b62" },
         "THE_SUPPLEMENT_IS_GLP_1": { "YES": "b55", "NO": "b56" },
         "THE_SUPPLEMENT_IS_PEPTIDES": { "YES": "b55", "NO": "b56" },
         "THE_FOOD_SUPPLEMENT_CONTAINS_CAFFEINE": { "YES": "b55", "NO": "b56" },
@@ -115,6 +119,23 @@ export const WP = {
         "INGREDIENT_IS_STILL_ACTIVE": { "YES": "b55", "NO": "b56" },
       },
     },
+    /** 288. Ownership claim */
+    "288": {
+      id: 288,
+      slug: "ownership_claim",
+      name: "Ownership claim",
+      f: {
+        "CLAIM": "a55",  // Text
+        "PROOF": "a56",  // Gallery
+        "STATUS": "a57",  // Radio
+        "IS_DISPUTE": "a58",  // Radio
+        "REPLY": "a59",  // Text
+      },
+      opt: {
+        "STATUS": { "PENDING": "b55", "APPROVED": "b56", "REJECTED": "b57" },
+        "IS_DISPUTE": { "YES": "b55", "NO": "b56" },
+      },
+    },
     /** 168. Recipe */
     "168": {
       id: 168,
@@ -144,8 +165,8 @@ export const WP = {
         "SHOP_EMAIL": "a61",  // Text
         "SHOP_IS_ONLINE": "a62",  // Radio
         "ONLINE_SHOP_TYPE": "a63",  // Checkbox
-        "SHOP_IS_LOCAL": "a64",  // Radio
-        "LOCAL_SHOP_TYPE": "a65",  // Checkbox
+        "SHOP_IS_LOCAL_PHYSICAL": "a64",  // Radio
+        "LOCAL_PHYSICAL_SHOP_TYPE": "a65",  // Checkbox
         "SHOP_S_SHIPPING_REGIONS": "a66",  // Checkbox
         "SHOP_IS_APPROVED": "a67",  // Radio
         "SHOP_IS_STILL_ACTIVE": "a68",  // Radio
@@ -163,8 +184,8 @@ export const WP = {
       opt: {
         "SHOP_IS_ONLINE": { "YES": "b55", "NO": "b56" },
         "ONLINE_SHOP_TYPE": { "YES": "b55", "NO": "b56" },
-        "SHOP_IS_LOCAL": { "YES": "b55", "NO": "b56" },
-        "LOCAL_SHOP_TYPE": { "YES": "b55", "NO": "b56" },
+        "SHOP_IS_LOCAL_PHYSICAL": { "YES": "b55", "NO": "b56" },
+        "LOCAL_PHYSICAL_SHOP_TYPE": { "YES": "b55", "NO": "b56" },
         "SHOP_IS_APPROVED": { "YES": "b55", "NO": "b56" },
         "SHOP_IS_STILL_ACTIVE": { "YES": "b55", "NO": "b56" },
         "THIS_SHOP_IS_ONE_OF_OUR_OFFICIAL_SHOPS": { "YES": "b55", "NO": "b56" },
@@ -173,11 +194,11 @@ export const WP = {
         "THIS_SHOP_CHOOSES_TO_SELL_ON_OUR_MARKETPLACE_BUT_DOESN_T_DESERVE_TO_BE_LISTED_ON_OUR_DIRECTORY": { "YES": "b55", "NO": "b56" },
       },
     },
-    /** 149. Afresh community post */
+    /** 149. Community post */
     "149": {
       id: 149,
       slug: "afresh_community_pos",
-      name: "Afresh community post",
+      name: "Community post",
       f: {
         "TITLE": "a55",  // Text
         "CONTENT": "a56",  // Textarea
@@ -240,7 +261,7 @@ export const WP = {
       slug: "users_extended_prof",
       name: "User‘s extended profile",
       f: {
-        "USER_NAME": "a55",  // Text (User name for afresh)
+        "USER_NAME_FOR_AFRESH": "a55",  // Text
         "USER_NAME_FOR_ADRY": "a551",  // Text
         "USER_NAME_FOR_ABLOCKED": "a552",  // Text
         "USER_NAME_FOR_NRTLIST": "a553",  // Text
@@ -248,7 +269,7 @@ export const WP = {
         "USER_NAME_FOR_BENOTCH": "a555",  // Text
         "USER_NAME_FOR_CHALLENGED": "a556",  // Text
         "USER_NAME_FOR_CARECNC": "a557",  // Text
-        "USER_NAME_IN_COMMUNITY": "a56",  // Text
+        "USER_NAME_IN_AFRESH_COMMUNITY": "a56",  // Text
         "TIMEZONE": "a57",  // Text
         "LANGUAGE": "a58",  // Text
         "CURRENCY": "a59",  // Text
@@ -325,7 +346,7 @@ export const WP = {
         "LOCATION_SHARE_IS_ON": "a56",  // Radio
         "NOTIFICATION_PREFERENCE": "a57",  // ?
         "GENERAL_USER_ROLE": "a58",  // Checkbox
-        "IS_CARE_PROVIDER": "a59",  // Radio
+        "IS_PAID_CARE_PROVIDER": "a59",  // Radio
         "CARE_PROVIDER_IS_ACTIVE": "a60",  // Radio
         "CARE_PROVIDER_IS_BACKGROUND_CHECKED": "a61",  // Radio
         "CARE_PROVIDER_S_BACKGROUND_CHECK_DETAIL": "a62",  // Text
@@ -361,7 +382,7 @@ export const WP = {
         "ALLOW_EMERGENCY_LOCATION_REQUEST": { "YES": "b55", "NO": "b56" },
         "LOCATION_SHARE_IS_ON": { "YES": "b55", "NO": "b56" },
         "GENERAL_USER_ROLE": { "CARED_ONE": "b55", "CARING_ONE": "b56" },
-        "IS_CARE_PROVIDER": { "YES": "b55", "NO": "b56" },
+        "IS_PAID_CARE_PROVIDER": { "YES": "b55", "NO": "b56" },
         "CARE_PROVIDER_IS_ACTIVE": { "YES": "b55", "NO": "b56" },
         "CARE_PROVIDER_IS_BACKGROUND_CHECKED": { "YES": "b55", "NO": "b56" },
         "CARE_PROVIDER_OFFERS_SERVICE_TYPE": { "IN_PERSON": "b55", "VIRTURE": "b56" },
@@ -486,8 +507,14 @@ export const WP = {
         "CBT_THOUGHT_RECORD": "a73",  // Textarea
         "CBT_REFRAMED_THOUGHT": "a75",  // Textarea
         "CRAVING_INTENSITY_AFTER_CRAVING_SMOKING_OR_WHATEVER_SHIT": "a76",  // Number
-        "NOTE_CONTENT_OR_DETAIL_CONTENT": "a77",  // Textarea
+        "NOTE_CONTENT": "a77",  // Textarea
         "MEAL_TYPE": "a78",  // Radio
+        "CUSTOM_FOOD_MEAL_OR_SUPPLEMENT_DETAIL": "a79",  // Textarea
+        "CUSTOM_RECIPE_DETAIL": "a80",  // Textarea
+        "CUSTOM_WORKOUT_DETAIL": "a81",  // Textarea
+        "CUSTOM_MEDICINE_DETAIL": "a82",  // Textarea
+        "LOG_MEDICINE_LOG_TYPE": "a83",  // Radio
+        "LOG_MEDICINE_NOTE": "a84",  // Text
       },
       opt: {
         "LOG_EVENT_TYPE": { "SMOKING": "b55", "DRINKING_ALCOHOL": "b56", "PORN": "b57", "WATER": "b58", "FOOD": "b59", "BREATHING_EXERCISE": "b60", "WORKOUT": "b61", "MOTIVATION": "b62", "PLEDGE": "b63", "MEMORY": "b64", "SLEEP": "b65", "MOOD": "b66", "APPLE_HEALTH_SYMPTOMS": "b67", "CUSTOM_HEALTH_SYMPTOMS": "b68", "CUSTOM_MEDICINE": "b69" },
@@ -498,6 +525,7 @@ export const WP = {
         "CRAVING_SMOKINGTRIGGER_CATEGORY": { "STRESS": "b55", "SOCIAL": "b56", "BOREDOM": "b57", "ALCOHOL": "b58", "COFFEE": "b59", "MEAL": "b60", "EMOTION": "b61", "HABIT": "b62", "OTHER": "b63" },
         "LOCATION_CATEGORY": { "HOME": "b55", "WORK": "b56", "BAR": "b57", "RESTAURANT": "b58", "CAR": "b59", "OUTDOOR": "b60" },
         "MEAL_TYPE": { "BREAKFAST": "b55", "LUNCH": "b56", "DINNER": "b57", "SNACK": "b58" },
+        "LOG_MEDICINE_LOG_TYPE": { "TAKEN": "b55", "SKIPPED": "b56", "MISSED": "b57" },
       },
     },
     /** 177. User’s custom workout */
@@ -872,9 +900,11 @@ export const WP = {
         "REMINDER_TIME_BEFORE": "a69",  // Number
         "TIME_TO_SEND_TO_CAREGIVER": "a70",  // Number
         "TIME_TO_BE_CONSIDERED_AS_MISSING": "a71",  // Number
+        "CHECK_IN_TYPE": "a72",  // Checkbox
       },
       opt: {
         "IS_ACTIVE": { "YES": "b55", "NO": "b56" },
+        "CHECK_IN_TYPE": { "AI": "b55", "HUMAN": "b56" },
       },
     },
     /** 206. Medicine log */
@@ -907,11 +937,13 @@ export const WP = {
         "REMINDER_TIME_BEFORE": "a63",  // Number
         "TIME_TO_SEND_TO_CAREGIVER": "a64",  // Number
         "TIME_TO_BE_CONSIDERED_AS_MISSING": "a65",  // Number
-        "CHECK_IN_TYPE": "a66",  // Radio
+        "CHECK_IN_TYPE": "a66",  // Checkbox
+        "CHECKED_BY_AI": "a67",  // Radio
       },
       opt: {
         "IS_ACTIVE": { "YES": "b55", "NO": "b56" },
         "CHECK_IN_TYPE": { "AI": "b55", "HUMAN": "b56" },
+        "CHECKED_BY_AI": { "YES": "b55", "NO": "b56" },
       },
     },
     /** 208. Checkin log */
@@ -995,7 +1027,6 @@ export const WP = {
       f: {
         "NAME": "a55",  // Text
         "CONTENT": "a56",  // Textarea
-        "ATTACHMENTS": "a57",  // Gallery (comma-separated WP media IDs)
       },
       opt: {
       },
@@ -1096,9 +1127,12 @@ export const WP = {
         "DUE_DATE": "a57",  // Datetime
         "COMPLETED_AT": "a58",  // Datetime
         "STATUS": "a59",  // Radio
+        "NEEDS_PAYMENT": "a60",  // Radio
+        "PRICE": "a61",  // Text
       },
       opt: {
         "STATUS": { "PENDING": "b55", "IN_PROGRESS": "b56", "COMPLETED": "b57" },
+        "NEEDS_PAYMENT": { "YES": "b55", "NO": "b56" },
       },
     },
     /** 217. Challenged App Content */
@@ -1147,12 +1181,18 @@ export const WP = {
     "112": { id: 112, parent: "140. Product", child: "114. Product's flavor", type: "One to many" },
     /** 175. One 140. product can have many related 174. product’s ingredients — 140. Product -> 174. product’s ingredients (One to many) */
     "175": { id: 175, parent: "140. Product", child: "174. product’s ingredients", type: "One to many" },
+    /** 287. One 140. product can have many related product members — 140. Product -> Users (Many to many) */
+    "287": { id: 287, parent: "140. Product", child: "Users", type: "Many to many", f: { "PRODUCT_MEMBER": "a55", "PRODUCT_MEMBER_ROLE": "a56" }, opt: { "PRODUCT_MEMBER": { "NOTHING_SPECIAL": "b55", "OWNER": "b56", "ADMIN": "b57" } } },
     /** 169. One 168. recipe can have many related 140. products — 168. recipe -> 140. Product (One to many) */
     "169": { id: 169, parent: "168. recipe", child: "140. Product", type: "One to many" },
     /** 148. One directory marketplace shop like amazon can have many related vendors selling on it — 2. Shop -> 2. Shop (One to many) */
     "148": { id: 148, parent: "2. Shop", child: "2. Shop", type: "One to many" },
+    /** 286. One 2. Shop can have many related facility members — 2. Shop -> Users (Many to many) */
+    "286": { id: 286, parent: "2. Shop", child: "Users", type: "Many to many", f: { "SHOP_MEMBER": "a55", "SHOP_MEMBER_ROLE": "a56" }, opt: { "SHOP_MEMBER": { "NOTHING_SPECIAL": "b55", "OWNER": "b56", "ADMIN": "b57" } } },
     /** 116. One shop can have many related products to sell and here we also store the price of the product on this nicotine shop — 2. Shop -> 140. Product (Many to many) */
-    "116": { id: 116, parent: "2. Shop", child: "140. Product", type: "Many to many", f: { "PRICE_ONE_UNIT": "a55", "PRICE_FIVE_UNIT": "a56", "PRICE_TEN_UNIT": "a57", "PRICE_MAX_UNIT": "a58", "MAX_UNITS": "a59", "PRODUCT_URL": "a60", "IN_STOCK": "a61", "SHOP_TYPE": "a62", "COIN_ALLOWANCE": "a63", "REGIONS_SHIPS_TO": "a64", "REGIONS_DOESN_T_SHIP_TO": "a65", "CURRENCY": "a66" }, opt: { "IN_STOCK": { "YES": "b55", "NO": "b56" }, "SHOP_TYPE": { "MSRP": "b55", "DIRECTORY_DISPLAY_NOT_PURCHASABLE": "b56", "ONE_OF_OUR_OFFICIAL_SHOPS_PURCHASABLE": "b57", "ONE_OF_OUR_MARKETPLACE_SHOPS_PURCHASABLE": "b58" } } },
+    "116": { id: 116, parent: "2. Shop", child: "140. Product", type: "Many to many", f: { "PRICE_ONE_UNIT": "a55", "PRICE_FIVE_UNIT": "a56", "PRICE_TEN_UNIT": "a57", "PRICE_MAX_UNIT": "a58", "MAX_UNITS": "a59", "PRODUCT_URL": "a60", "IN_STOCK": "a61", "SHOP_TYPE": "a62", "COIN_ALLOWANCE": "a63", "REGIONS_SHIPS_TO": "a64", "REGIONS_DOESN_T_SHIP_TO": "a65", "CURRENCY": "a66", "MSRP_REGION": "a67", "PRICE_RECORDED_TIME": "a68" }, opt: { "IN_STOCK": { "YES": "b55", "NO": "b56" }, "SHOP_TYPE": { "MSRP": "b55", "DIRECTORY_DISPLAY_NOT_PURCHASABLE": "b56", "ONE_OF_OUR_OFFICIAL_SHOPS_PURCHASABLE": "b57", "ONE_OF_OUR_MARKETPLACE_SHOPS_PURCHASABLE": "b58" } } },
+    /** 276. One 275. product price history can have many related 2. shops — 275. product price history -> 2. shop (many to many) */
+    "276": { id: 276, parent: "275. product price history", child: "2. shop", type: "many to many" },
     /** 118. One user can have one dokan shop and here we relate it to its one and only related nicotine shop — Users -> 2. Shop (One to one) */
     "118": { id: 118, parent: "Users", child: "2. Shop", type: "One to one" },
     /** 119. One nicotine shop that is already listed on our directory can have one related hidden nicotine shop to store price if the shop also chooses to sell on our app — 2. Shop -> 2. Shop (One to one) */
@@ -1161,6 +1201,8 @@ export const WP = {
     "150": { id: 150, parent: "149. Community post", child: "141. Comment", type: "One to Many" },
     /** 142. One comment can have many related comments — 141. Comment -> 141. Comment (Many to Many) */
     "142": { id: 142, parent: "141. Comment", child: "141. Comment", type: "Many to Many" },
+    /** 166. One 149. comment can have many related 30. Votes — 141. Community post -> 30. Votes (One to Many) */
+    "166": { id: 166, parent: "141. Community post", child: "30. Votes", type: "One to Many" },
     /** 144. One product shop can have many related reviews — 2. Shop -> 31. Review (One to Many) */
     "144": { id: 144, parent: "2. Shop", child: "31. Review", type: "One to Many" },
     /** 264. One care provider can have many related 31. reviews — Users -> 31. Review (One to Many) */
@@ -1287,10 +1329,12 @@ export const WP = {
     "247": { id: 247, parent: "Users", child: "213. The current location of one user", type: "One to many", f: { "USER_TYPE": "a55" }, opt: { "USER_TYPE": { "NOT_SOMEONE_SPECIAL": "b55", "CARED_ONE": "b56" } } },
     /** 248. One user can have many related safe zones — Users -> 214. Safe Zone (One to many) */
     "248": { id: 248, parent: "Users", child: "214. Safe Zone", type: "One to many" },
-    /** 261. One location notification can have many related receivers — 214. Safe Zone -> Users (One to Many) */
-    "261": { id: 261, parent: "214. Safe Zone", child: "Users", type: "One to Many" },
+    /** 290. One cared one’s location notification can have many added related receivers — Users -> Users (One to many) */
+    "290": { id: 290, parent: "Users", child: "Users", type: "One to many" },
     /** 249. One care facility can have many related facility members — 215. Care Facility -> Users (One to Many) */
     "249": { id: 249, parent: "215. Care Facility", child: "Users", type: "One to Many", f: { "FACILITY_MEMBER_TYPE": "a55", "FACILITY_MEMBER_ROLE": "a56" }, opt: { "FACILITY_MEMBER_TYPE": { "NOTHING_SPECIAL": "b55", "OWNER": "b56", "ADMIN": "b57" } } },
+    /** 291. One 215. Care Facility can have many related ownership claims — 215. Care Facility -> 288. ownership claim (Many to many（使用many to many以保证后续可拓展性)) */
+    "291": { id: 291, parent: "215. Care Facility", child: "288. ownership claim", type: "Many to many（使用many to many以保证后续可拓展性)" },
     /** 250. One care job can have many related cared ones — 216. Care Job -> Users (One to Many) */
     "250": { id: 250, parent: "216. Care Job", child: "Users", type: "One to Many" },
     /** 251. One 216. care job can have many assigned caregivers — 216. Care Job -> Users (One to Many) */
@@ -1324,11 +1368,13 @@ export const T = {
   productFlavor: WP.cct["114"],
   /** 174. Product's ingredient */
   productIngredient: WP.cct["174"],
+  /** 288. Ownership claim */
+  ownershipClaim: WP.cct["288"],
   /** 168. Recipe */
   recipe: WP.cct["168"],
   /** 2. Shop */
   shop: WP.cct["2"],
-  /** 149. Afresh community post */
+  /** 149. Community post */
   afreshCommunityPost: WP.cct["149"],
   /** 141. Comment */
   comment: WP.cct["141"],
@@ -1428,12 +1474,18 @@ export const R = {
   productFlavors: 112,
   /** 175. One 140. product can have many related 174. product’s ingredients */
   productIngredients: 175,
+  /** 287. One 140. product can have many related product members */
+  productMembers: 287,
   /** 169. One 168. recipe can have many related 140. products */
   recipeProducts: 169,
   /** 148. One directory marketplace shop like amazon can have many related vendors selling on it */
   shopVendors: 148,
+  /** 286. One 2. Shop can have many related facility members */
+  shopMembers: 286,
   /** 116. One shop can have many related products to sell and here we also store the price of the product on this nicotine shop */
   shopProducts: 116,
+  /** 276. One 275. product price history can have many related 2. shops */
+  productPriceHistoryShops: 276,
   /** 118. One user can have one dokan shop and here we relate it to its one and only related nicotine shop */
   userShop: 118,
   /** 119. One nicotine shop that is already listed on our directory can have one related hidden nicotine shop to store price if the shop also chooses to sell on our app */
@@ -1442,6 +1494,8 @@ export const R = {
   communityPostComments: 150,
   /** 142. One comment can have many related comments */
   commentReplies: 142,
+  /** 166. One 149. comment can have many related 30. Votes */
+  communityPostVotes: 166,
   /** 144. One product shop can have many related reviews */
   shopReviews: 144,
   /** 264. One care provider can have many related 31. reviews */
@@ -1568,10 +1622,12 @@ export const R = {
   userCurrentLocations: 247,
   /** 248. One user can have many related safe zones */
   userSafeZones: 248,
-  /** 261. One location notification (safe zone) can have many related receivers */
-  safeZoneReceivers: 261,
+  /** 290. One cared one’s location notification can have many added related receivers */
+  caredOneLocationReceivers: 290,
   /** 249. One care facility can have many related facility members */
   careFacilityMembers: 249,
+  /** 291. One 215. Care Facility can have many related ownership claims */
+  careFacilityOwnershipClaims: 291,
   /** 250. One care job can have many related cared ones */
   careJobCaredOnes: 250,
   /** 251. One 216. care job can have many assigned caregivers */
@@ -1596,6 +1652,7 @@ export const CCT_SLUG: Readonly<Record<string, string>> = {
   "146": "nicotine_products_b",
   "114": "nicotine_products_fl",
   "174": "products_ingredient",
+  "288": "ownership_claim",
   "168": "recipe",
   "2": "shop",
   "149": "afresh_community_pos",

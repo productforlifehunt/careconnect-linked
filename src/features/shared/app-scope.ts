@@ -127,7 +127,7 @@ export function communityTypeCode(scope: AppScope = currentAppScope()): string {
  * a556 ChallengeD, a557 CareCNC.
  */
 const USER_NAME_FIELD: Record<AppScope, string> = {
-  afresh: T.userProfile.f.USER_NAME,
+  afresh: T.userProfile.f.USER_NAME_FOR_AFRESH,
   adry: T.userProfile.f.USER_NAME_FOR_ADRY,
   ablocked: T.userProfile.f.USER_NAME_FOR_ABLOCKED,
   benotch: T.userProfile.f.USER_NAME_FOR_BENOTCH,

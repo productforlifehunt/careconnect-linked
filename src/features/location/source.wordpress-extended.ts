@@ -29,8 +29,10 @@ const ALERT_DEDUP_WINDOW_MS = 5 * 60 * 1000;
 
 // ─── Relation IDs ────────────────────────────────────────────
 const REL_USER_SAFE_ZONE = R.userSafeZones;
-// REL 261: one safe zone (location notification) -> many receiving users.
-const REL_SAFE_ZONE_RECEIVER = R.safeZoneReceivers;
+// Dictionary Relation 290: "One cared one's location notification can have many
+// added related receivers" — Users -> Users. Receivers are configured per cared
+// one (not per zone), so every zone of that user alerts the same receivers.
+const REL_LOCATION_RECEIVER = R.caredOneLocationReceivers;
 
 type SafeZoneAlertType = "exited_safe_zone" | "entered_safe_zone" | "entered_danger_zone" | "exited_danger_zone";
 
@@ -58,34 +60,31 @@ async function attachChildToUserRelation(relationId: number, parentUserId: numbe
   });
 }
 
-/** Users who should receive this zone's alerts (JetEngine REL 261). */
-async function fetchSafeZoneReceiverIds(zoneId: string): Promise<string[]> {
-  try {
-    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_SAFE_ZONE_RECEIVER}/children/${Number(zoneId)}`);
-    if (!Array.isArray(rels)) return [];
-    return rels.map((r: any) => String(r.child_object_id || "")).filter(Boolean);
-  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
+/** Users who receive this cared one's location alerts (JetEngine Relation 290). */
+export async function fetchLocationReceiverIds(userId: string): Promise<string[]> {
+  return fetchRelationChildIds(REL_LOCATION_RECEIVER, normalizeWpUserId(userId));
 }
 
-/** Replace the zone's receiver list (relation-only, no custom FK). */
-async function setSafeZoneReceivers(zoneId: string, receiverIds: Array<string | number>): Promise<void> {
+/** Replace the cared one's location-alert receiver list (Relation 290 only). */
+export async function setLocationReceivers(userId: string, receiverIds: Array<string | number>): Promise<void> {
+  const parentId = normalizeWpUserId(userId);
+  if (!parentId) throw new Error("Invalid user for location alert receivers");
   const ids = (receiverIds || []).map((v) => normalizeWpUserId(v as any)).filter(Boolean);
-  if (ids.length === 0) return;
   const body = {
-    parent_id: Number(zoneId),
+    parent_id: parentId,
     child_id: ids.map(Number),
     context: "parent",
     store_items_type: "replace",
   };
   try {
-    await wordpressFetch(`jet-rel/${REL_SAFE_ZONE_RECEIVER}`, { method: "POST", body });
+    await wordpressFetch(`jet-rel/${REL_LOCATION_RECEIVER}`, { method: "POST", body });
   } catch (err: any) {
-    // App roles cannot write relations whose parent is a CCT item (403), so the
-    // privileged proxy performs the same relation write for the caller.
+    // Subscriber roles cannot always write user-to-user relations (401/403), so
+    // the privileged proxy performs the identical relation write.
     if (!/40[13]/.test(String(err?.message || ""))) throw err;
     const { wpAdminOps } = await import("@/services/woocommerce-api");
     const res: any = await wpAdminOps("set_relation", {
-      relation_id: Number(REL_SAFE_ZONE_RECEIVER),
+      relation_id: Number(REL_LOCATION_RECEIVER),
       parent_id: body.parent_id,
       child_ids: body.child_id,
       context: "parent",
@@ -94,6 +93,7 @@ async function setSafeZoneReceivers(zoneId: string, receiverIds: Array<string | 
     if (!res?.ok) throw new Error(res?.error || "Could not save alert receivers");
   }
 }
+
 
 function parseBoolean(value: any, fallback = false): boolean {
   if (value === undefined || value === null || value === "") return fallback;
@@ -232,21 +232,18 @@ function evaluateZoneAlert(zone: any, lat: number, lng: number): { distance: num
 // ─── Safe Zones CRUD ────────────────────────────────────────
 
 export async function fetchSafeZonesWordPress(userId: string): Promise<any[]> {
-  try {
-    const zoneIds = await fetchRelationChildIds(REL_USER_SAFE_ZONE, normalizeWpUserId(userId));
-    const zones = await Promise.all(
-      zoneIds.map(async (zoneId) => {
-        try {
-          const [zone, receiverIds] = await Promise.all([
-            wordpressCCTFetch<any>(T.safeZone.slug, { id: zoneId }),
-            fetchSafeZoneReceiverIds(zoneId),
-          ]);
-          return { ...mapSafeZone(zone, userId), receiver_ids: receiverIds };
-        } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
-      }),
-    );
-    return zones.filter(Boolean);
-  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
+  const [zoneIds, receiverIds] = await Promise.all([
+    fetchRelationChildIds(REL_USER_SAFE_ZONE, normalizeWpUserId(userId)),
+    fetchLocationReceiverIds(userId),
+  ]);
+  const zones = await Promise.all(
+    zoneIds.map(async (zoneId) => {
+      const zone = await wordpressCCTFetch<any>(T.safeZone.slug, { id: zoneId });
+      // Receivers live on the cared one (Relation 290), shared by all zones.
+      return { ...mapSafeZone(zone, userId), receiver_ids: receiverIds };
+    }),
+  );
+  return zones.filter(Boolean);
 }
 
 export async function createSafeZoneWordPress(zone: { user_id: string; name: string; latitude: number; longitude: number; radius_meters?: number; [key: string]: any }): Promise<void> {
@@ -274,8 +271,8 @@ export async function createSafeZoneWordPress(zone: { user_id: string; name: str
   });
   const zoneId = String(created._ID || created.id);
   await attachChildToUserRelation(REL_USER_SAFE_ZONE, userId, zoneId);
-  if (Array.isArray(zone.receiver_ids) && zone.receiver_ids.length) {
-    try { await setSafeZoneReceivers(zoneId, zone.receiver_ids); } catch (e) { console.error("Safe zone receivers not saved:", e); }
+  if (Array.isArray(zone.receiver_ids)) {
+    await setLocationReceivers(zone.user_id, zone.receiver_ids);
   }
 }
 
@@ -284,11 +281,8 @@ export async function updateSafeZoneWordPress(id: string, updates: Record<string
   // name + description share a58 — read the current row so a partial update
   // never wipes the other half.
   if (updates.name !== undefined || updates.description !== undefined) {
-    let current = { name: null as string | null, description: null as string | null };
-    try {
-      const row = await wordpressCCTFetch<any>(T.safeZone.slug, { id });
-      current = unpackNameDesc(row?.a58);
-    } catch { /* fall back to what the caller gave us */ }
+    const row = await wordpressCCTFetch<any>(T.safeZone.slug, { id });
+    const current = unpackNameDesc(row?.a58);
     body.a58 = packNameDesc(
       updates.name !== undefined ? updates.name : current.name,
       updates.description !== undefined ? updates.description : current.description,
@@ -312,7 +306,8 @@ export async function updateSafeZoneWordPress(id: string, updates: Record<string
   if (updates.is_active !== undefined) body.a69 = updates.is_active ? "b55" : "b56";
   await wordpressCCTFetch(T.safeZone.slug, { id, method: "PUT", body });
   if (updates.receiver_ids !== undefined) {
-    try { await setSafeZoneReceivers(id, updates.receiver_ids || []); } catch (e) { console.error("Safe zone receivers not saved:", e); }
+    if (!updates.user_id) throw new Error("Cannot save location alert receivers without the cared one's user id");
+    await setLocationReceivers(String(updates.user_id), updates.receiver_ids || []);
   }
 }
 
@@ -328,9 +323,8 @@ export async function deleteSafeZoneWordPress(id: string): Promise<void> {
 // filters it down to location events instead of showing an empty list.
 
 export async function fetchSafeZoneAlertsWordPress(_caredOneId: string): Promise<any[]> {
-  try {
-    const all = await fetchNotificationsWordPress();
-    return all
+  const all = await fetchNotificationsWordPress();
+  return all
       .filter((n: any) => n.type === "location")
       .map((n: any) => ({
         id: n.id,
@@ -338,10 +332,7 @@ export async function fetchSafeZoneAlertsWordPress(_caredOneId: string): Promise
         message: n.message || n.title,
         is_read: n.is_read,
         created_at: n.created_at,
-      }));
-  } catch {
-    return [];
-  }
+    }));
 }
 
 export async function acknowledgeAlertWordPress(alertId: string): Promise<void> {
@@ -395,9 +386,9 @@ export async function fetchCaredOneLocationHistoryWordPress(caredOneId: string):
 // Dedup uses sessionStorage instead of an alerts CCT (no such CCT live).
 
 export async function createSafeZoneAlertsForLocation(userId: string, lat: number, lng: number): Promise<void> {
-  try {
-    const zones = await fetchSafeZonesWordPress(userId);
-    if (!zones.length) return;
+  const zones = await fetchSafeZonesWordPress(userId);
+  if (!zones.length) return;
+  {
     const now = Date.now();
     for (const zone of zones) {
       const result = evaluateZoneAlert(zone, lat, lng);
@@ -414,7 +405,7 @@ export async function createSafeZoneAlertsForLocation(userId: string, lat: numbe
         result.alertType === "entered_danger_zone" ? `Entered danger zone: ${zone.name}` :
         result.alertType === "exited_safe_zone"   ? `Left safe zone: ${zone.name}` :
                                                     `Entered safe zone: ${zone.name}`;
-      try {
+      {
         await createNotificationWordPress({
           user_id: userId,
           type: "safe_zone_breach",
@@ -422,10 +413,10 @@ export async function createSafeZoneAlertsForLocation(userId: string, lat: numbe
           message: msg,
           action_url: `/gps-tracking?zone=${zone.id}`,
         });
-        // Fan out to the zone's configured receivers (REL 261).
+        // Fan out to the cared one's configured receivers (Relation 290).
         const receivers: string[] = Array.isArray(zone.receiver_ids)
           ? zone.receiver_ids
-          : await fetchSafeZoneReceiverIds(String(zone.id));
+          : await fetchLocationReceiverIds(userId);
         await Promise.all(
           receivers
             .filter((rid) => normalizeWpUserId(rid) !== normalizeWpUserId(userId))
@@ -435,11 +426,11 @@ export async function createSafeZoneAlertsForLocation(userId: string, lat: numbe
               title: result.alertType === "entered_danger_zone" ? "⚠️ Danger Zone Alert" : "📍 Safe Zone Alert",
               message: msg,
               action_url: `/gps-tracking?zone=${zone.id}`,
-            }).catch(() => {})),
+            })),
         );
-      } catch {}
+      }
     }
-  } catch {}
+  }
 }
 
 // ─── Share / Disable (now just write or stop writing) ────────
@@ -483,7 +474,7 @@ export async function sendLocationRequestWordPress(input: { caredOneId: string; 
   if (!caredOneUserId) throw new Error("Invalid cared one user");
   const storedUser = getStoredWPUser();
   if (!storedUser?.user_id) throw new Error("Not authenticated");
-  try {
+  {
     await createNotificationWordPress({
       user_id: caredOneUserId,
       type: input.isEmergency ? "emergency_location_request" : "location_request",
@@ -491,7 +482,7 @@ export async function sendLocationRequestWordPress(input: { caredOneId: string; 
       message: `${storedUser.user_display_name || "Someone"} ${input.isEmergency ? "urgently needs" : "is requesting"} your location.${input.message ? ` "${input.message}"` : ""}`,
       action_url: `/gps-tracking?request_from=${storedUser.user_id}`,
     });
-  } catch {}
+  }
 }
 
 export async function cancelLocationRequestWordPress(_requestId: string): Promise<void> {

@@ -13,6 +13,9 @@ import {
   createCareFacilityWordPress, updateCareFacilityWordPress,
   fetchFacilityMembersWordPress, getMyFacilityPermissionWordPress,
   fetchFacilityReviewSummariesWordPress,
+  fetchFacilityClaimsOnlyWordPress, fetchFacilityDisputesWordPress,
+  createFacilityOwnershipClaimWordPress, updateFacilityOwnershipClaimWordPress,
+  deleteFacilityOwnershipClaimWordPress,
 } from "@/features/facilities/source.wordpress-extended";
 import {
   fetchCareGroupPostsWordPress, createGroupPostWordPress, updateGroupPostWordPress, deleteGroupPostWordPress,
@@ -215,8 +218,60 @@ export function useMyFacilityPermission(facilityId: string | undefined) {
 export function useCreateCareFacility() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { title: string; content?: string; address?: string; location?: string; phone?: string; email?: string; website?: string }) => createCareFacilityWordPress(input),
+    mutationFn: (input: Parameters<typeof createCareFacilityWordPress>[0]) => createCareFacilityWordPress(input),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["facilities"] }); },
+  });
+}
+
+// ─── Facility ownership claims (CCT 288 + Relation 291) ─────
+export function useFacilityOwnershipClaims(facilityId: string | undefined) {
+  return useQuery<FacilityOwnershipClaim[]>({
+    queryKey: ["facilityOwnershipClaims", facilityId],
+    queryFn: () => fetchFacilityClaimsOnlyWordPress(facilityId!) as any,
+    enabled: !!facilityId,
+  });
+}
+
+export function useFacilityOwnershipDisputes(facilityId: string | undefined) {
+  return useQuery<FacilityOwnershipDispute[]>({
+    queryKey: ["facilityOwnershipDisputes", facilityId],
+    queryFn: () => fetchFacilityDisputesWordPress(facilityId!) as any,
+    enabled: !!facilityId,
+  });
+}
+
+export function useCreateFacilityOwnershipClaim() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { facility_id: string; claim?: string | null; attachment_urls?: string[] | string | null; is_dispute?: boolean }) =>
+      createFacilityOwnershipClaimWordPress(input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["facilityOwnershipClaims"] });
+      qc.invalidateQueries({ queryKey: ["facilityOwnershipDisputes"] });
+    },
+  });
+}
+
+export function useUpdateFacilityOwnershipClaim() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...updates }: { id: string; status?: "pending" | "approved" | "rejected"; reply?: string | null }) =>
+      updateFacilityOwnershipClaimWordPress(id, updates),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["facilityOwnershipClaims"] });
+      qc.invalidateQueries({ queryKey: ["facilityOwnershipDisputes"] });
+    },
+  });
+}
+
+export function useDeleteFacilityOwnershipClaim() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteFacilityOwnershipClaimWordPress(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["facilityOwnershipClaims"] });
+      qc.invalidateQueries({ queryKey: ["facilityOwnershipDisputes"] });
+    },
   });
 }
 
@@ -1013,7 +1068,7 @@ export function useTodayCheckinLogs(caredOneId: string | null) {
 export function useCreateCheckin() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (checkin: { user_id: string; name: string; detail?: string; frequency?: string; time_slot?: string[]; instructions?: string; start_date?: string; note?: string }) => createCheckinWordPress(checkin),
+    mutationFn: (checkin: Parameters<typeof createCheckinWordPress>[0]) => createCheckinWordPress(checkin),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["checkins"] });
       qc.invalidateQueries({ queryKey: ["checkinLogs"] });
@@ -1068,7 +1123,7 @@ export function useMedicines(caredOneId: string | null) {
 export function useCreateMedicine() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (med: { user_id: string; name: string; dosage?: string; frequency?: string; time_slot?: string[]; note?: string; stock_count?: number; refill_threshold?: number }) => createMedicineWordPress(med),
+    mutationFn: (med: Parameters<typeof createMedicineWordPress>[0]) => createMedicineWordPress(med),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["medicines"] }); },
   });
 }
