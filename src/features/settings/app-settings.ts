@@ -12,6 +12,7 @@ import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-c
 import { getCurrentUserIdNumber } from "@/features/shared/current-user";
 import { T, R } from "@/integrations/wp-schema";
 import { currentAppScope } from "@/features/shared/app-scope";
+import { findOwnRow, linkOwnRow } from "@/features/shared/own-profile-row";
 
 const SLUG = T.userProfile.slug;
 const F = T.userProfile.f;
@@ -60,17 +61,10 @@ function merge(raw: any): AppSettings {
   };
 }
 
-async function findRow(): Promise<any | null> {
-  const userId = getCurrentUserIdNumber();
-  if (!userId) return null;
-  try {
-    const list = await wordpressCCTFetch<any[]>(SLUG, {
-      params: { cct_author_id: userId, _limit: 1 },
-    });
-    return Array.isArray(list) && list.length > 0 ? list[0] : null;
-  } catch {
-    return null;
-  }
+function findRow(): Promise<any | null> {
+  // Resolved through Relation 152 — a cct_author_id query filter is ignored by
+  // JetEngine on this route and returns another user's row.
+  return findOwnRow(REL_USER_PROFILE, SLUG);
 }
 
 export async function fetchAppSettings(): Promise<AppSettings> {
@@ -99,18 +93,7 @@ export async function saveAppSettings(patch: Partial<AppSettings>): Promise<AppS
   // No extended profile row yet — create one and link via Relation 152.
   const created: any = await wordpressCCTFetch(SLUG, { method: "POST", body });
   const newId = created?.item_id ?? created?._ID ?? created?.id;
-  if (newId && userId) {
-    try {
-      await wordpressFetch(`jet-rel/${REL_USER_PROFILE}`, {
-        method: "POST",
-        body: {
-          parent_id: String(userId),
-          child_id: String(newId),
-          context: "child_object",
-          store_items_type: "replace",
-        },
-      });
-    } catch { /* row saved; relation retried on next save */ }
-  }
+  if (!newId || !userId) throw new Error("Could not create the extended profile row for app settings");
+  await linkOwnRow(REL_USER_PROFILE, newId);
   return next;
 }
