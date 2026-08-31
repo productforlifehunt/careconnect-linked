@@ -159,7 +159,9 @@ export function encodeRel72Meta(input: Rel72MetaInput = {}): Record<string, any>
   const types = toCodeList(input.memberTypes?.length ? input.memberTypes : ["nothing special"], MEMBER_TYPE_CODE);
   const roles = toCodeList(input.memberRoles?.length ? input.memberRoles : ["nothing special"], MEMBER_ROLE_CODE);
   return {
-    [F223.displayName]: input.displayName || "Member",
+    // Never invent a name: the display name is the member's own app name
+    // (CCT 151 a556 / a557). Empty means "not set yet", not "Member".
+    [F223.displayName]: input.displayName ?? "",
     [F223.types]: types.length ? types : [TYPE_OPT.NOTHING_SPECIAL],
     [F223.roles]: roles.length ? roles : [ROLE_OPT.NOTHING_SPECIAL],
     [F223.status]: INVITATION_STATUS_CODE[input.invitationStatus || "accepted"] || STATUS_OPT.ACCEPTED,
