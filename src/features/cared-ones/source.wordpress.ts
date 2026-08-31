@@ -17,7 +17,14 @@ export async function fetchUserCaredOnesWordPress(): Promise<any[]> {
     const caredOnes = await Promise.all(
       caredOneIds.map(async (userId: string) => {
         try {
-          const u = await wordpressFetch<any>(`wp/v2/users/${userId}?context=edit`);
+          // Subscribers cannot read `context=edit` on other users (403), so fall
+          // back to the public user representation.
+          let u: any = null;
+          try {
+            u = await wordpressFetch<any>(`wp/v2/users/${userId}?context=edit`);
+          } catch {
+            u = await wordpressFetch<any>(`wp/v2/users/${userId}`);
+          }
           const fullName = u.name || u.slug || "Cared One";
           return {
             user_id: `wp-${userId}`,
