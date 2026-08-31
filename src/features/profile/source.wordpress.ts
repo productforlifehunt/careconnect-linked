@@ -27,7 +27,9 @@ import type { Profile } from "@/types/care-connector";
 import { getWordPressFeature, updateWordPressFeature } from "@/features/shared/wordpress-adapter";
 import { wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
-import { T } from "@/integrations/wp-schema";
+import { T, R } from "@/integrations/wp-schema";
+import { findOwnRow, linkOwnRow } from "@/features/shared/own-profile-row";
+import { fetchMyAppUserName, saveMyAppUserName } from "@/features/profile/app-user-name";
 import {
   careServiceIdsToSlugs,
   careServiceSlugsToIds,
@@ -69,15 +71,13 @@ export async function fetchMyProfileWordPress(): Promise<Profile | null> {
     const wpProfile = await getWordPressFeature<Profile>("profile_me");
     if (!wpProfile) return null;
 
-    const storedUser = getStoredWPUser();
-    const wpUserId = storedUser?.user_id || wpProfile.id?.replace("wp-", "");
-    let cct: any = null;
-    try {
-      const list = await wordpressCCTFetch<any[]>(CCT_SLUG, {
-        params: { cct_author_id: wpUserId, _limit: 1 },
-      });
-      if (Array.isArray(list) && list.length > 0) cct = list[0];
-    } catch { /* no CCT record yet — fine */ }
+    // Display name lives ONLY in this app's own column on CCT 151
+    // (a556 ChallengeD / a557 CareCNC) — never the shared WP user name.
+    wpProfile.full_name = await fetchMyAppUserName();
+
+    // Resolved through Relation 259 (one-to-one). A cct_author_id query filter
+    // is ignored by JetEngine on this route and returns another user's row.
+    const cct: any = await findOwnRow(R.userProfile2Rel, CCT_SLUG);
 
     if (cct) {
       wpProfile.general_user_role = parseCheckboxList(cct[F.GENERAL_USER_ROLE]) || wpProfile.general_user_role;
@@ -115,7 +115,7 @@ export async function fetchMyProfileWordPress(): Promise<Profile | null> {
       user_id: `wp-${stored.user_id}`,
       email: stored.user_email,
       first_name: null, last_name: null,
-      full_name: stored.user_display_name || stored.user_login,
+      full_name: "",
       user_name: stored.user_login,
       avatar_url: null, bio: null,
       general_user_role: null, is_care_provider: false,
@@ -134,10 +134,14 @@ export async function updateProfileWordPress(updates: Partial<Profile>): Promise
   const wpFields: Partial<Profile> = {};
   if (updates.first_name !== undefined) wpFields.first_name = updates.first_name;
   if (updates.last_name !== undefined) wpFields.last_name = updates.last_name;
-  if (updates.full_name !== undefined) wpFields.full_name = updates.full_name;
   if (updates.bio !== undefined) wpFields.bio = updates.bio;
   if (Object.keys(wpFields).length > 0) {
     await updateWordPressFeature("profile_me", wpFields);
+  }
+
+  // The app display name goes to CCT 151, this app's own column.
+  if (updates.full_name !== undefined) {
+    await saveMyAppUserName(updates.full_name ?? "");
   }
 
   // 2) Update CCT 258 extended profile 2 (opaque codes)
@@ -180,7 +184,7 @@ export async function updateProfileWordPress(updates: Partial<Profile>): Promise
         const { ensureDokanVendor } = await import("@/services/woocommerce-api");
         const stored = getStoredWPUser();
         await ensureDokanVendor({
-          fullName: updates.full_name || stored?.user_display_name || stored?.user_login || "",
+          fullName: updates.full_name || (await fetchMyAppUserName()),
           email: stored?.user_email || "",
           phone: updates.phone || undefined,
           location: updates.location || undefined,
@@ -196,13 +200,16 @@ export async function updateProfileWordPress(updates: Partial<Profile>): Promise
 
   const storedUser = getStoredWPUser();
   const wpUserId = storedUser?.user_id != null ? String(storedUser.user_id) : "";
-  const existing = await wordpressCCTFetch<any[]>(CCT_SLUG, { params: { cct_author_id: wpUserId, _limit: 1 } });
-  if (Array.isArray(existing) && existing.length > 0) {
-    await wordpressCCTFetch(CCT_SLUG, { id: existing[0]._ID || existing[0].id, method: "PUT", body });
-  } else {
-    // JetEngine CCT REST requires cct_author_id as a string.
-    await wordpressCCTFetch(CCT_SLUG, { method: "POST", body: { ...body, cct_author_id: wpUserId } });
+  const existing = await findOwnRow(R.userProfile2Rel, CCT_SLUG);
+  if (existing) {
+    await wordpressCCTFetch(CCT_SLUG, { id: existing._ID || existing.id, method: "PUT", body });
+    return;
   }
+  // JetEngine CCT REST requires cct_author_id as a string.
+  const created: any = await wordpressCCTFetch(CCT_SLUG, { method: "POST", body: { ...body, cct_author_id: wpUserId } });
+  const newId = created?.item_id ?? created?._ID ?? created?.id;
+  if (!newId) throw new Error("Could not create the extended profile 2 row");
+  await linkOwnRow(R.userProfile2Rel, newId);
 }
 
 

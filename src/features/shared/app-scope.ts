@@ -118,3 +118,23 @@ export function communityTypeCode(scope: AppScope = currentAppScope()): string {
   if (scope === "challenged") return map.CHALLENGED;
   return map.AFRESH;
 }
+
+/**
+ * Per-app user name field on CCT 151 (User's extended profile).
+ * The WordPress user login/display name is SHARED across every app on the
+ * merged backend and must never be shown. Each app stores its own display
+ * name in its own column: a55 afresh, a551 adry, a552 ablocked, a555 benotch,
+ * a556 ChallengeD, a557 CareCNC.
+ */
+const USER_NAME_FIELD: Record<AppScope, string> = {
+  afresh: T.userProfile.f.USER_NAME,
+  adry: T.userProfile.f.USER_NAME_FOR_ADRY,
+  ablocked: T.userProfile.f.USER_NAME_FOR_ABLOCKED,
+  benotch: T.userProfile.f.USER_NAME_FOR_BENOTCH,
+  challenged: T.userProfile.f.USER_NAME_FOR_CHALLENGED,
+  carecnc: T.userProfile.f.USER_NAME_FOR_CARECNC,
+};
+
+export function appUserNameField(scope: AppScope = currentAppScope()): string {
+  return USER_NAME_FIELD[scope];
+}

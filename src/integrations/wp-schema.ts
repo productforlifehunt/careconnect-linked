@@ -240,7 +240,14 @@ export const WP = {
       slug: "users_extended_prof",
       name: "User‘s extended profile",
       f: {
-        "USER_NAME": "a55",  // Text
+        "USER_NAME": "a55",  // Text (User name for afresh)
+        "USER_NAME_FOR_ADRY": "a551",  // Text
+        "USER_NAME_FOR_ABLOCKED": "a552",  // Text
+        "USER_NAME_FOR_NRTLIST": "a553",  // Text
+        "USER_NAME_FOR_SMOKELESSLIST": "a554",  // Text
+        "USER_NAME_FOR_BENOTCH": "a555",  // Text
+        "USER_NAME_FOR_CHALLENGED": "a556",  // Text
+        "USER_NAME_FOR_CARECNC": "a557",  // Text
         "USER_NAME_IN_COMMUNITY": "a56",  // Text
         "TIMEZONE": "a57",  // Text
         "LANGUAGE": "a58",  // Text

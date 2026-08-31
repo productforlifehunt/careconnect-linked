@@ -1,5 +1,6 @@
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
+import { fetchMyAppUserName } from "@/features/profile/app-user-name";
 import { T, R } from "@/integrations/wp-schema";
 import { fetchWPUserSafe } from "@/features/cared-ones/source.wordpress-extended";
 import {
@@ -488,7 +489,7 @@ export async function joinGroupByCodeWordPress(token: string): Promise<any> {
         context: "child",
         store_items_type: "update",
         meta: memberMeta({
-          displayName: wpUser.user_display_name || wpUser.user_login || "Member",
+          displayName: await fetchMyAppUserName(),
           memberTypes: ["nothing special"],
           memberRoles: ["nothing special"],
           invitationStatus: "accepted",

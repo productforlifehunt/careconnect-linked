@@ -9,6 +9,7 @@ import {
   type WPUser,
   type WPAuthResult,
 } from "@/services/wp-auth";
+import { fetchMyAppUserName, saveMyAppUserName } from "@/features/profile/app-user-name";
 
 export type AuthSource = "wordpress" | null;
 
@@ -26,16 +27,21 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-/** Convert a WP user into a Profile-compatible object so the whole app works */
-function wpUserToProfile(wp: WPUser): Profile {
-  const nameParts = (wp.user_display_name || wp.user_login).split(" ");
+/**
+ * Convert a WP user into a Profile-compatible object.
+ * The display name is NOT taken from WordPress (that name is shared by every
+ * app on this backend) — it is hydrated from this app's own column on
+ * JetEngine CCT 151 (a556 ChallengeD / a557 CareCNC) right after login.
+ */
+function wpUserToProfile(wp: WPUser, appName = ""): Profile {
+  const nameParts = appName.split(" ");
   return {
     id: `wp-${wp.user_id}`,
     user_id: `wp-${wp.user_id}`,
     email: wp.user_email,
     first_name: nameParts[0] || null,
     last_name: nameParts.slice(1).join(" ") || null,
-    full_name: wp.user_display_name || wp.user_login,
+    full_name: appName,
     user_name: wp.user_login,
     avatar_url: null,
     bio: null,
@@ -103,6 +109,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setAuthSource("wordpress");
       setIsLoading(false);
 
+      // Hydrate the display name from CCT 151 (this app's own column).
+      fetchMyAppUserName()
+        .then((appName) => { if (!cancelled) setUser(wpUserToProfile(storedWP, appName)); })
+        .catch(() => { /* name stays empty until the profile row exists */ });
+
       wpValidateToken().then((validated) => {
         if (cancelled) return;
         if (!validated) {
@@ -128,7 +139,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       user_login: result.user_login,
       user_display_name: result.user_display_name,
     };
-    setUser(wpUserToProfile(wpUser));
+    setUser(wpUserToProfile(wpUser, await fetchMyAppUserName().catch(() => "")));
     setAuthSource("wordpress");
     setIsLoading(false);
   }, []);
@@ -141,7 +152,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       user_login: result.user_login,
       user_display_name: result.user_display_name,
     };
-    setUser(wpUserToProfile(wpUser));
+    setUser(wpUserToProfile(wpUser, await fetchMyAppUserName().catch(() => "")));
     setAuthSource("wordpress");
     setIsLoading(false);
   }, []);
@@ -154,7 +165,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       user_login: result.user_login,
       user_display_name: result.user_display_name,
     };
-    setUser(wpUserToProfile(wpUser));
+    // The name the user typed at signup belongs to this app's own column.
+    await saveMyAppUserName(name);
+    setUser(wpUserToProfile(wpUser, name));
     setAuthSource("wordpress");
     setIsLoading(false);
   }, []);

@@ -2,6 +2,7 @@ import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-c
 import { wpAdminOps } from "@/services/woocommerce-api";
 import { T, R } from "@/integrations/wp-schema";
 import { dedupeRead } from "@/features/shared/rel-batch";
+import { appUserNameField } from "@/features/shared/app-scope";
 
 export interface WPUserRecord {
   id: number;
@@ -93,7 +94,11 @@ export async function fetchWPUserProfile(id: number | string): Promise<WPUserPro
     fetchOneToOneChild(R.userProfileRel, user.id, T.userProfile.slug),
     fetchOneToOneChild(R.userProfile2Rel, user.id, T.userProfile2.slug),
   ]);
-  const profileName = profile?.[T.userProfile.f.USER_NAME];
+  // Display name comes ONLY from the per-app column on CCT 151
+  // (a556 ChallengeD / a557 CareCNC). The WordPress user name is shared across
+  // every app on this backend and is never shown.
+  const nameField = appUserNameField();
+  const profileName = profile?.[nameField];
   const raw = profile2?.[T.userProfile2.f.CARED_ONE_S_CONDITION_TYPE];
   const condition_types = Array.isArray(raw)
     ? raw.map(String)
@@ -111,7 +116,7 @@ export async function fetchWPUserProfile(id: number | string): Promise<WPUserPro
     ...user,
     profile,
     profile2,
-    full_name: (typeof profileName === "string" && profileName.trim()) || user.name || user.slug,
+    full_name: typeof profileName === "string" ? profileName.trim() : "",
     condition_types,
   };
 }
