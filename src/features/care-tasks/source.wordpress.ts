@@ -1,6 +1,6 @@
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 import { fetchRelChildrenMap } from "@/features/shared/rel-batch";
-import { R, T } from "@/integrations/wp-schema";
+import { R, T, WP } from "@/integrations/wp-schema";
 
 
 /**
@@ -20,7 +20,7 @@ import { R, T } from "@/integrations/wp-schema";
 const CCT_SLUG = T.careTask.slug;
 const F = T.careTask.f;
 const O = T.careTask.opt;
-const REL232 = (await import("@/integrations/wp-schema")).WP.rel["232"];
+const REL232 = WP.rel["232"];
 const ASSIGNEE_FIELD = REL232.f.ASSIGNED_CAREGIVER_STATUS;
 
 const REL_GROUP_TASK = R.careGroupTasks;          // M:M  care_group ↔ care_task

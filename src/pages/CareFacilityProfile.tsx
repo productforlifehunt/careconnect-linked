@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Building2, Globe, Loader2, Mail, MapPin, Phone, Star, Layers3, MessageSquareText, ShieldCheck, Users } from "lucide-react";
+import { ArrowLeft, Building2, Globe, Loader2, Mail, MapPin, Phone, Star, Layers3, MessageSquareText, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,12 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 import {
   useCareFacility,
-  useClaimFacilityOwnership,
-  useCreateFacilityOwnershipDispute,
   useCreateReview,
   useFacilityMembers,
-  useFacilityOwnershipClaims,
-  useFacilityOwnershipDisputes,
   useFacilityReviews,
   useMyFacilityPermission,
 } from "@/hooks/use-care-data";
@@ -55,22 +51,11 @@ export default function CareFacilityProfile() {
   const { data: reviews } = useFacilityReviews(id);
   const { data: facilityPermission } = useMyFacilityPermission(id);
   const { data: facilityMembers } = useFacilityMembers(id);
-  const { data: ownershipClaims } = useFacilityOwnershipClaims(id);
-  const { data: ownershipDisputes } = useFacilityOwnershipDisputes(id);
   const createReview = useCreateReview();
-  const claimFacilityOwnership = useClaimFacilityOwnership();
-  const createOwnershipDispute = useCreateFacilityOwnershipDispute();
 
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
-  const [claimDialogOpen, setClaimDialogOpen] = useState(false);
-  const [disputeDialogOpen, setDisputeDialogOpen] = useState(false);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
-  const [claimRole, setClaimRole] = useState("");
-  const [claimProof, setClaimProof] = useState("");
-  const [claimAttachmentUrls, setClaimAttachmentUrls] = useState("");
-  const [disputeProof, setDisputeProof] = useState("");
-  const [disputeAttachmentUrls, setDisputeAttachmentUrls] = useState("");
 
   const services = useMemo(() => {
     if (!facility) return [];
@@ -102,8 +87,6 @@ export default function CareFacilityProfile() {
   const regularMembers = useMemo(() => (facilityMembers || []).filter((member) => !member.is_owner && !member.is_admin), [facilityMembers]);
   const hasOwner = ownerMembers.length > 0;
   const myMembership = facilityPermission?.membership || null;
-  const approvedClaim = useMemo(() => (ownershipClaims || []).find((item) => item.status === "approved") || null, [ownershipClaims]);
-  const latestDispute = useMemo(() => (ownershipDisputes || [])[0] || null, [ownershipDisputes]);
 
   if (isLoading) {
     return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
