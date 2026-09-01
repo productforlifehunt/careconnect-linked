@@ -41,11 +41,32 @@ export async function fetchCareGroupsWordPress(): Promise<CareGroup[]> {
   ));
   if (myGroupIds.length === 0) return [];
 
-  const groups = await Promise.all(
-    myGroupIds.map((id) =>
-      dedupeRead(`cct-row:${T.careGroup.slug}:${id}`, () => wordpressCCTFetch<any>(T.careGroup.slug, { id })),
-    ),
-  );
+  // More than a handful of memberships: read the CCT list once and pick the
+  // rows out of it, instead of one HTTP request per group (N+1).
+  let groups: any[] = [];
+  if (myGroupIds.length > 3) {
+    const list = await dedupeRead(`cct-list:${T.careGroup.slug}`, () =>
+      wordpressCCTFetch<any[]>(T.careGroup.slug, { params: { per_page: 100 } }).catch(() => [] as any[]),
+    );
+    const byId = new Map<string, any>(
+      (Array.isArray(list) ? list : []).map((g: any) => [String(g.id || g._ID || ""), g]),
+    );
+    const missing = myGroupIds.filter((id) => !byId.has(id));
+    const fetched = await Promise.all(
+      missing.map((id) =>
+        dedupeRead(`cct-row:${T.careGroup.slug}:${id}`, () => wordpressCCTFetch<any>(T.careGroup.slug, { id })).catch(() => null),
+      ),
+    );
+    fetched.forEach((g: any) => { if (g) byId.set(String(g.id || g._ID || ""), g); });
+    groups = myGroupIds.map((id) => byId.get(id)).filter(Boolean);
+  } else {
+    groups = await Promise.all(
+      myGroupIds.map((id) =>
+        dedupeRead(`cct-row:${T.careGroup.slug}:${id}`, () => wordpressCCTFetch<any>(T.careGroup.slug, { id })),
+      ),
+    );
+  }
+
 
   return groups.filter(Boolean).map((g: any) => ({
     id: String(g.id || g._ID || ""),
