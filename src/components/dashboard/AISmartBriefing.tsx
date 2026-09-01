@@ -68,7 +68,7 @@ export function AISmartBriefing() {
     // Missed check-in (latest >24h ago)
     if (caredOnes && caredOnes.length > 0) {
       const latest = checkins?.[0];
-      const name = caredOnes[0].cared_one?.full_name || caredOnes[0].cared_one?.first_name || "";
+      const name = caredOnes[0].cared_one?.full_name || "";
       if (!latest) {
         out.push({
           level: "medium",
@@ -122,7 +122,7 @@ export function AISmartBriefing() {
         language: isChinese ? "zh-CN" : "en",
         date: today,
         caredOnes: (caredOnes || []).map((c: any) => ({
-          name: c.cared_one?.full_name || c.cared_one?.first_name,
+          name: c.cared_one?.full_name,
           relationship: c.relationship,
         })),
         upcomingBookings: (bookings || [])

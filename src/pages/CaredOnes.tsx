@@ -85,7 +85,7 @@ export default function CaredOnes() {
 
   const selectedId = activeTab || (caredOnes && caredOnes.length > 0 ? caredOnes[0].user_id : null);
   const selectedCaredOne = caredOnes?.find((c: any) => c.user_id === selectedId);
-  const caredOneName = selectedCaredOne?.cared_one?.full_name || selectedCaredOne?.cared_one?.first_name || site.caredOneSingular;
+  const caredOneName = selectedCaredOne?.cared_one?.full_name || site.caredOneSingular;
 
   const featureCards = [
     { key: "medicine", title: t("caredOnes.medicineTracker"), icon: Pill, subtitle: t("caredOnes.trackMedications") },
@@ -145,7 +145,7 @@ export default function CaredOnes() {
                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                       {p.avatar_url ? <img src={p.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" /> : <span className="text-primary text-xs font-medium">{(p.full_name || p.email || "?")[0]}</span>}
                     </div>
-                    <div className="min-w-0"><p className="text-sm font-medium text-foreground truncate">{p.full_name || p.first_name || t("common.noName")}</p><p className="text-xs text-muted-foreground truncate">{p.email || ""}</p></div>
+                    <div className="min-w-0"><p className="text-sm font-medium text-foreground truncate">{p.full_name || t("common.noName")}</p><p className="text-xs text-muted-foreground truncate">{p.email || ""}</p></div>
                   </button>
                 )) : <p className="p-3 text-sm text-muted-foreground text-center">{t("common.noResults")}</p>}
               </div>
@@ -183,7 +183,7 @@ export default function CaredOnes() {
         <>
           <div className="flex gap-2 mb-5 overflow-x-auto items-center -mx-4 px-4 pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {caredOnes.map((co: any) => {
-              const name = co.cared_one?.full_name || co.cared_one?.first_name || site.caredOneSingular;
+              const name = co.cared_one?.full_name || site.caredOneSingular;
               const isActive = selectedId === co.user_id;
               return (
                 <div key={co.user_id} className={`flex items-center rounded-lg border transition-colors ${isActive ? "bg-card border-primary shadow-sm" : "bg-transparent border-border hover:bg-accent/50"}`}>
@@ -207,7 +207,7 @@ export default function CaredOnes() {
             <DialogContent>
               {detailCaredOne && (() => {
                 const person = detailCaredOne.cared_one || {};
-                const name = person.full_name || person.first_name || site.caredOneSingular;
+                const name = person.full_name || site.caredOneSingular;
                 return (
                   <>
                     <DialogHeader>

@@ -3,6 +3,7 @@ import { getStoredWPUser } from "@/services/wp-auth";
 import { fetchMyAppUserName } from "@/features/profile/app-user-name";
 import { T, R } from "@/integrations/wp-schema";
 import { fetchWPUserSafe } from "@/features/cared-ones/source.wordpress-extended";
+import { fetchWPUserPublicProfile } from "@/features/shared/wp-users";
 import {
   encodeRel72Meta,
   decodeRel72Meta,
@@ -899,12 +900,24 @@ export async function searchProfilesWordPress(query: string): Promise<any[]> {
       params: { search: query, per_page: 20 },
     });
     if (!Array.isArray(users)) return [];
-    return users.map((u: any) => ({
+    // WordPress user search only finds accounts; the displayed name comes
+    // exclusively from this app's own column on CCT 151 (relation 152).
+    // All profile reads run in parallel — never one after another.
+    const profiles = await Promise.all(
+      users.map(async (u: any) => {
+        try {
+          return await fetchWPUserPublicProfile(u.id);
+        } catch {
+          return null;
+        }
+      }),
+    );
+    return users.map((u: any, i: number) => ({
       id: `wp-${u.id}`,
       user_id: `wp-${u.id}`,
-      full_name: u.name || u.slug,
+      full_name: profiles[i]?.full_name || "",
       email: u.email || null,
-      avatar_url: u.avatar_urls?.["96"] || null,
+      avatar_url: profiles[i]?.avatar_url || u.avatar_urls?.["96"] || null,
     }));
   } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }

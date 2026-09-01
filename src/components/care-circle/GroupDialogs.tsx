@@ -201,7 +201,7 @@ export function AddCaredOneDialog({
                 {(myCaredOnes || []).map((c: any) => {
                   const person = c.cared_one || {};
                   const id = String(person.id || c.user_id);
-                  const name = person.full_name || person.first_name || Z("被护理者", "Cared one");
+                  const name = person.full_name || Z("被护理者", "Cared one");
                   return (
                     <label key={id} className="flex items-center gap-3 p-3 cursor-pointer hover:bg-accent/50">
                       <Checkbox checked={picked.includes(id)} onCheckedChange={() => togglePicked(id)} />
@@ -235,7 +235,7 @@ export function AddCaredOneDialog({
                     {p.avatar_url ? <img src={p.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" /> : <span className="text-primary text-xs font-medium">{(p.full_name || p.email || "?")[0]}</span>}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{p.full_name || p.first_name || Z("未填姓名", "No name")}</p>
+                    <p className="text-sm font-medium text-foreground truncate">{p.full_name || Z("未填姓名", "No name")}</p>
                     <p className="text-xs text-muted-foreground truncate">{p.email || p.user_name || ""}</p>
                   </div>
                 </button>

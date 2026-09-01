@@ -3,7 +3,7 @@ import { decodeRel72Meta } from "@/features/care-groups/rel-meta";
 import { T, R } from "@/integrations/wp-schema";
 import { appScopeBody, appScopeParams, filterAppScope } from "@/features/shared/app-scope";
 import { fetchRelChildrenMap } from "@/features/shared/rel-batch";
-import { lookupUserNames } from "@/services/woocommerce-api";
+import { fetchWPUserPublicProfile } from "@/features/shared/wp-users";
 
 /**
  * Chat lives in CCTs shared by every app on the backend, so reads filter and
@@ -192,32 +192,26 @@ async function fetchConversationMemberMap(): Promise<{ loaded: boolean; get: (id
 }
 
 /**
- * Batched user lookup: one `wp/v2/users?include=…` request for every
- * participant across the whole conversation list (no N+1, no "User undefined").
+ * Batched identity lookup for every participant across the conversation list.
+ *
+ * Names come ONLY from this app's own column on CCT 151 (joined via relation
+ * 152). The shared WordPress account name / login is never read. All profile
+ * reads run in parallel and share the transport-level dedupe.
  */
 async function fetchUserDirectory(ids: number[]): Promise<Map<number, { name: string; avatar: string | null }>> {
   const out = new Map<number, { name: string; avatar: string | null }>();
   const unique = Array.from(new Set(ids.filter(Boolean)));
   if (unique.length === 0) return out;
-  try {
-    const users = await wordpressFetch<any[]>("wp/v2/users", {
-      params: { include: unique.join(","), per_page: 100 },
-    });
-    for (const u of Array.isArray(users) ? users : []) {
-      out.set(Number(u.id), { name: u.name || u.slug || "", avatar: u.avatar_urls?.["96"] || null });
-    }
-  } catch { /* fall through to the server-side lookup below */ }
-
-  // WordPress only exposes content authors to non-admin callers, so a client
-  // who never published anything is missing above — caregivers would see
-  // "User 51". Resolve the remainder through the scoped edge function.
-  const missing = unique.filter((id) => !out.get(Number(id))?.name);
-  if (missing.length > 0) {
-    const rows = await lookupUserNames(missing.map(Number));
-    for (const r of rows) {
-      if (r?.name) out.set(Number(r.id), { name: r.name, avatar: r.avatar ?? null });
-    }
-  }
+  await Promise.all(
+    unique.map(async (id) => {
+      try {
+        const p = await fetchWPUserPublicProfile(id);
+        out.set(Number(id), { name: p.full_name, avatar: p.avatar_url });
+      } catch {
+        out.set(Number(id), { name: "", avatar: null });
+      }
+    }),
+  );
   return out;
 }
 

@@ -211,7 +211,7 @@ export function MembersTab({
                   {(myCaredOnes || []).map((c: any) => {
                     const person = c.cared_one || {};
                     const id = String(person.id || c.user_id);
-                    const name = person.full_name || person.first_name || Z("被护理者", "Cared one");
+                    const name = person.full_name || Z("被护理者", "Cared one");
                     const already = (members || []).some((m: any) => String(m.user_id || m.id || "").replace(/^wp-/, "") === id.replace(/^wp-/, ""));
                     return (
                       <div key={id} className="flex items-center gap-3 px-3 py-2">
