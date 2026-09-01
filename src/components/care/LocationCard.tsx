@@ -136,13 +136,24 @@ function centroid(points: [number, number][]): [number, number] {
 }
 
 // ─── Zone helpers ────────────────────────────────────────────
-const CATEGORY_CONFIG: Record<string, { color: string; icon: any; label: string }> = {
-  home:    { color: "#10B981", icon: Home,          label: "Home" },
-  work:    { color: "#3B82F6", icon: Building2,     label: "Work" },
-  school:  { color: "#8B5CF6", icon: GraduationCap, label: "School" },
-  medical: { color: "#EF4444", icon: Heart,         label: "Medical" },
-  custom:  { color: "#F59E0B", icon: Target,        label: "Custom" },
-};
+// Zone colours are derived from the dictionary type (a55), not from a
+// non-dictionary "category". Safe = green, Danger = red, Custom 1..7 get
+// stable distinct hues so the map stays readable.
+const CUSTOM_ZONE_COLORS = ["#3B82F6", "#8B5CF6", "#F59E0B", "#0EA5E9", "#EC4899", "#14B8A6", "#A16207"];
+
+function zoneColor(code: string): string {
+  if (isDangerZone(code)) return "#EF4444";
+  if (isSafeZone(code)) return "#10B981";
+  const slot = customSlotOf(code);
+  return slot ? CUSTOM_ZONE_COLORS[(slot - 1) % CUSTOM_ZONE_COLORS.length] : "#6B7280";
+}
+
+function zoneIcon(code: string) {
+  if (isDangerZone(code)) return Ban;
+  if (isSafeZone(code)) return Shield;
+  return Target;
+}
+
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 function isZoneActive(zone: any): boolean {
