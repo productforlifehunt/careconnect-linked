@@ -93,7 +93,7 @@ export default function Dashboard() {
     );
   }
 
-  const displayName = user?.full_name || user?.first_name || "there";
+  const displayName = user?.full_name || user?.first_name || (isChinese ? "朋友" : "there");
   const upcomingBookings = (bookings || [])
     .filter((b: any) => ["confirmed", "pending"].includes(b.status))
     .slice(0, 4);
@@ -107,12 +107,6 @@ export default function Dashboard() {
     completed: "bg-muted text-muted-foreground",
     cancelled: "bg-destructive text-destructive-foreground",
     in_progress: "bg-primary text-primary-foreground",
-  };
-  const priorityColors: Record<string, string> = {
-    high: "bg-destructive/10 text-destructive",
-    urgent: "bg-destructive/10 text-destructive",
-    medium: "bg-warning/10 text-warning",
-    low: "bg-muted text-muted-foreground",
   };
 
   const quickTools = [
@@ -242,8 +236,8 @@ export default function Dashboard() {
                   <p className="text-base font-bold text-foreground leading-none">{new Date(b.appointment_date || b.start_time || b.created_at).getDate()}</p>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm text-foreground truncate">{b.provider?.full_name || "Provider"}</p>
-                  <p className="text-[11px] text-muted-foreground truncate">{b.appointment_time || ""} · {b.service_type || ""}</p>
+                  <p className="font-medium text-sm text-foreground truncate">{b.provider?.full_name || t("common.provider")}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">{[b.appointment_time, b.service_type].filter(Boolean).join(" · ")}</p>
                 </div>
                 <Badge className={`${statusColors[b.status] || "bg-muted text-muted-foreground"} text-[10px]`}>{t(`bookings.status.${b.status}`, { defaultValue: String(b.status ?? "") })}</Badge>
               </div>
@@ -280,11 +274,10 @@ export default function Dashboard() {
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm text-foreground truncate">{tk.title}</p>
                   <p className="text-[11px] text-muted-foreground truncate">
-                    {tk.assignee_profile?.full_name || "Unassigned"}
+                    {tk.assignee_profile?.full_name || t("common.unassigned")}
                     {tk.due_date && ` · ${formatDate(tk.due_date, i18n.language, { month: "short", day: "numeric" })}`}
                   </p>
                 </div>
-                <Badge variant="outline" className={`${priorityColors[tk.priority] || ""} text-[10px]`}>{tk.priority}</Badge>
               </div>
             )) : (
               <p className="text-sm text-muted-foreground text-center py-6">{t("dashboard.noPendingTasks")}</p>
