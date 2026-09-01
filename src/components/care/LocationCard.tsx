@@ -361,7 +361,8 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
     drawLayersRef.current = [];
     if (drawnPoints.length === 0) return;
 
-    const color = zoneForm.zone_type === "danger" ? "#EF4444" : (CATEGORY_CONFIG[zoneForm.category]?.color || "#10B981");
+    const color = zoneColor(zoneForm.zone_type);
+
 
     if (drawnPoints.length >= 2) {
       const smoothed = (drawMode === "editing" && cornerRadii.some(r => r > 0))
