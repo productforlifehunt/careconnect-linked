@@ -593,7 +593,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
     if (zone) {
       setEditingZone(zone);
       setZoneForm({
-        name: zone.name || "", zone_type: zone.zone_type || "safe", category: zone.category || "home",
+        zone_type: zone.zone_type || ZONE_TYPE.SAFE,
         shape_type: zone.shape_type || "radius",
         latitude: zone.latitude?.toString() || "", longitude: zone.longitude?.toString() || "",
         radius: zone.radius_meters || 200, description: zone.description || "",
