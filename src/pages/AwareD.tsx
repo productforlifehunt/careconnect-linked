@@ -19,8 +19,8 @@ export default function AwareD() {
       brandNameZh="认知篇"
       title="Understanding Dementia"
       titleZh="了解失智症"
-      subtitle="A comprehensive beginner's guide to dementia — what it is, how it progresses, and what you need to know."
-      subtitleZh="全面了解失智症——它是什么、如何发展、以及您需要知道的一切。"
+      subtitle="Basics of dementia — what it is, how it progresses, and how it is diagnosed."
+      subtitleZh="失智症基础知识——它是什么、如何发展、如何诊断。"
       icon={<Lightbulb className="h-6 w-6 text-white" />}
       accentColor="from-amber-500 to-orange-600"
       subcategories={SUBCATEGORIES}
