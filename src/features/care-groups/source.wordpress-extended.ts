@@ -3,6 +3,7 @@ import { getStoredWPUser } from "@/services/wp-auth";
 import { fetchMyAppUserName } from "@/features/profile/app-user-name";
 import { T, R } from "@/integrations/wp-schema";
 import { fetchWPUserSafe } from "@/features/cared-ones/source.wordpress-extended";
+import { fetchWPUserPublicProfile } from "@/features/shared/wp-users";
 import {
   encodeRel72Meta,
   decodeRel72Meta,
