@@ -1379,9 +1379,10 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                         )}
                         {currentLocation && active && (
                           <p className={`text-xs mt-1 font-medium ${breachInfo.breached ? "text-destructive" : "text-success"}`}>
-                            {zone.zone_type === "safe"
-                              ? (breachInfo.breached ? `⚠ Outside (${breachInfo.distance}m away)` : `✓ Inside (${breachInfo.distance}m from center)`)
-                              : (breachInfo.breached ? `⚠ INSIDE danger zone! (${breachInfo.distance}m)` : `✓ Away (${breachInfo.distance}m)`)}
+                            {isDangerZone(zone.zone_type)
+                              ? (breachInfo.breached ? `⚠ INSIDE danger zone! (${breachInfo.distance}m)` : `✓ Away (${breachInfo.distance}m)`)
+                              : (breachInfo.breached ? `⚠ Outside (${breachInfo.distance}m away)` : `✓ Inside (${breachInfo.distance}m from center)`)}
+
                           </p>
                         )}
                         <div className="flex gap-1 mt-1.5 flex-wrap">
