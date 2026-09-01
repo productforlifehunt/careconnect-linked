@@ -217,7 +217,6 @@ export default function CareCircle() {
                 <div className="space-y-4 mt-2">
                   <div><Label>{t("careCircle.joinCode")}</Label><Input value={joinCode} onChange={e => setJoinCode(e.target.value.trim())} placeholder={t("careCircle.joinCodePlaceholder")} /></div>
                   <div><Label>{isCN ? "我在此群组的显示名" : "My name in this group"}</Label><Input value={joinMyName} onChange={e => setJoinMyName(e.target.value)} placeholder={profile?.full_name || (isCN ? "例如：大女儿 小丽" : "e.g. Lily (daughter)")} /></div>
-                  <div><Label>{isCN ? "我在此群组的显示名" : "My name in this group"}</Label><Input value={joinMyName} onChange={e => setJoinMyName(e.target.value)} placeholder={profile?.full_name || (isCN ? "例如：大女儿 小丽" : "e.g. Lily (daughter)")} /></div>
                 <Button variant="coral" className="w-full" onClick={handleJoinByCode} disabled={joinGroupByCode.isPending || !joinCode.trim()}>{t("careCircle.joinGroup")}</Button>
                 </div>
               </DialogContent>
