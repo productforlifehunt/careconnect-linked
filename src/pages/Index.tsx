@@ -133,23 +133,8 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Categories */}
-      <section className="max-w-6xl mx-auto px-4 py-10 sm:py-16">
-        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground mb-1.5 tracking-tight">{t("home.browseByCategory")}</h2>
-        <p className="text-sm sm:text-base text-muted-foreground mb-6 sm:mb-8">{t("home.findRightCare")}</p>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {displayCategories.map((cat) => (
-            <Card key={cat.name} className="card-elevated cursor-pointer group border-transparent" onClick={() => navigate(`/search?q=${encodeURIComponent(cat.name)}`)}>
-              <CardContent className="p-6 text-center">
-                <div className="mx-auto w-12 h-12 rounded-xl bg-accent flex items-center justify-center mb-3 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                  {categoryIcons[cat.name] || <Heart className="h-6 w-6" />}
-                </div>
-                <h3 className="font-semibold text-sm text-foreground">{t(getSpecialtyKey(cat.name))}</h3>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
+
+
 
       {/* Featured Caregivers */}
       <section className="bg-muted/50 py-10 sm:py-16">
