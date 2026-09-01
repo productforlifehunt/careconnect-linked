@@ -53,10 +53,12 @@ export default function GPSTracking() {
   const [zones, setZones] = useState<any[]>([]);
   const [trailData, setTrailData] = useState<Record<string, [number, number][]>>({});
   // Safe-zone editor state — zones are created and edited entirely in-app.
+  // CCT 214 has NO name column: a zone is labelled by its TYPE (a55).
+  const [customNames, setCustomNames] = useState<CustomZoneNames>({});
+  const [customNameDraft, setCustomNameDraft] = useState("");
   const emptyZoneForm = {
     id: "" as string,
-    name: "",
-    zone_type: "Safe" as "Safe" | "Danger",
+    zone_type: ZONE_TYPE.SAFE as string,
     latitude: "" as string,
     longitude: "" as string,
     radius_meters: "200" as string,
@@ -65,6 +67,7 @@ export default function GPSTracking() {
     is_active: true,
     receiver_ids: [] as string[],
   };
+
   const [zoneDialogOpen, setZoneDialogOpen] = useState(false);
   const [zoneForm, setZoneForm] = useState({ ...emptyZoneForm });
   const [zoneSaving, setZoneSaving] = useState(false);
