@@ -362,7 +362,7 @@ export default function CaregiverProfile() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-5">
       <Button variant="ghost" size="sm" className="mb-3 gap-1.5 -ml-2" onClick={() => navigate(-1)}>
-        <ArrowLeft className="h-4 w-4" /> Back
+        <ArrowLeft className="h-4 w-4" /> {isZh ? "返回" : "Back"}
       </Button>
 
       <div className="grid lg:grid-cols-3 gap-5">
@@ -381,7 +381,7 @@ export default function CaregiverProfile() {
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-sm text-muted-foreground">
                         <span className="flex items-center gap-1"><Star className="h-4 w-4 text-warning fill-warning" /> {caregiver.rating_average?.toFixed(1) || "New"} ({caregiver.rating_count || 0} reviews)</span>
                         {caregiver.location && <span className="flex items-center gap-1"><MapPin className="h-4 w-4" /> {caregiver.location}</span>}
-                        {caregiver.years_of_experience && <span className="flex items-center gap-1"><Clock className="h-4 w-4" /> {caregiver.years_of_experience} years exp.</span>}
+                        {caregiver.years_of_experience && <span className="flex items-center gap-1"><Clock className="h-4 w-4" /> {caregiver.years_of_experience}{isZh ? " 年经验" : " years exp."}</span>}
                       </div>
                     </div>
                     <Button
@@ -732,13 +732,13 @@ export default function CaregiverProfile() {
                     {review.content && <p className="text-sm text-muted-foreground">{review.content}</p>}
                     {review.response_text && (
                       <div className="mt-2 ml-4 p-2 bg-muted/50 rounded text-sm text-muted-foreground">
-                        <span className="font-medium">Provider response:</span> {review.response_text}
+                        <span className="font-medium">{isZh ? "服务者回复：" : "Provider response:"}</span> {review.response_text}
                       </div>
                     )}
                     <CommentsSection entityType="review" entityId={review.id} compact />
                   </div>
                 )) : (
-                  <p className="text-sm text-muted-foreground text-center py-4">No reviews yet</p>
+                  <p className="text-sm text-muted-foreground text-center py-4">{isZh ? "暂无评价" : "No reviews yet"}</p>
                 )}
               </CardContent>
             </Card>
