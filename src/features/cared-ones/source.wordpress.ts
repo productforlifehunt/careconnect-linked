@@ -34,13 +34,17 @@ export async function fetchUserCaredOnesWordPress(): Promise<any[]> {
         relationship: null,
         cared_one: {
           id: `wp-${u.id}`,
-          full_name: u.full_name,
-          first_name: u.first_name || u.full_name.split(" ")[0] || null,
+          // Profile display name (CCT 151 app column) first; if the profile has
+          // no name yet, fall back to the real WordPress account name — never a
+          // generic "Cared One" placeholder.
+          full_name: u.full_name || u.name || u.email || "",
+          first_name: u.first_name || (u.full_name || u.name || "").split(" ")[0] || null,
           email: u.email,
           avatar_url: u.avatar_url,
           condition_types: u.condition_types,
           dementia_stage: null,
         },
+
       };
     }),
   );
