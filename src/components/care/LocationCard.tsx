@@ -624,8 +624,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
 
   };
 
-  const handleSaveZone = () => {
-    if (!zoneForm.name.trim()) { toast({ title: isZh ? "请填写区域名称" : "Zone name required", variant: "destructive" }); return; }
+  const handleSaveZone = async () => {
     let lat = parseFloat(zoneForm.latitude);
     let lng = parseFloat(zoneForm.longitude);
 
@@ -638,12 +637,23 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
       if (isNaN(lat) || isNaN(lng)) { toast({ title: isZh ? "请输入有效坐标，或使用「在地图上选点」。" : "Valid coordinates required. Use 'Pick on Map'.", variant: "destructive" }); return; }
     }
 
-    const color = zoneForm.zone_type === "danger" ? "#EF4444" : (CATEGORY_CONFIG[zoneForm.category]?.color || "#10B981");
+    // Custom zone-type names live on the cared one's extended profile (CCT 258),
+    // one name per custom slot — not on the zone row.
+    const slot = customSlotOf(zoneForm.zone_type);
+    if (slot && customNameDraft.trim() && customNameDraft.trim() !== (customNames[slot] || "")) {
+      try {
+        await setCustomZoneName(caredOneId, slot, customNameDraft.trim());
+        await reloadCustomNames();
+      } catch (e: any) {
+        toast({ title: isZh ? "自定义区域名称保存失败" : "Failed to save custom zone name", description: e.message, variant: "destructive" });
+        return;
+      }
+    }
+
     const payload = {
-      user_id: caredOneId, name: zoneForm.name.trim(), zone_type: zoneForm.zone_type,
+      user_id: caredOneId, zone_type: zoneForm.zone_type,
       shape_type: isPolygon ? "polygon" : "radius",
-      category: zoneForm.zone_type === "danger" ? "custom" : zoneForm.category,
-      color, latitude: lat, longitude: lng,
+      color: zoneColor(zoneForm.zone_type), latitude: lat, longitude: lng,
       radius_meters: isPolygon ? 0 : zoneForm.radius,
       polygon_points: isPolygon ? drawnPoints : null,
       corner_radius: isPolygon ? cornerRadii : null,
@@ -669,13 +679,14 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
     }
   };
 
-  const handleDeleteZone = (id: string, name: string) => {
-    if (!confirm(`Delete zone "${name}"?`)) return;
+  const handleDeleteZone = (id: string, label: string) => {
+    if (!confirm(isZh ? `删除区域「${label}」？` : `Delete zone "${label}"?`)) return;
     deleteZone.mutate(id, {
-      onSuccess: () => toast({ title: `Zone "${name}" deleted` }),
+      onSuccess: () => toast({ title: isZh ? `区域「${label}」已删除` : `Zone "${label}" deleted` }),
       onError: (e: any) => toast({ title: isZh ? "删除失败" : "Failed to delete", description: e.message, variant: "destructive" }),
     });
   };
+
 
   const handleSendRequest = async () => {
     if (isEmergency && !emergencyConfirm) { setEmergencyConfirm(true); return; }
