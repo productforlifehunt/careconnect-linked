@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
@@ -29,6 +30,7 @@ import {
   type PermissionKind,
   type PermissionState,
 } from "@/features/settings/permissions";
+import { applyDisplaySettings } from "@/features/settings/display";
 import { subscribeWebPushAndRegister } from "@/features/notifications/tokens.wordpress";
 
 type Z = (cn: string, en: string) => string;
@@ -78,6 +80,7 @@ export function AppSettingsPanel() {
     mutationFn: (patch: Partial<AppSettings>) => saveAppSettings(patch),
     onSuccess: (next) => {
       qc.setQueryData(["appSettings"], next);
+      applyDisplaySettings(next.display);
       toast({ title: Z("已保存", "Saved") });
     },
     onError: () => toast({ title: Z("没能保存，请再试一次", "Could not save — please try again"), variant: "destructive" }),
