@@ -47,15 +47,16 @@ export default function Favorites() {
                         {cg.care_provider_is_background_checked && <Shield className="h-4 w-4 text-primary" />}
                       </div>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground mt-1">
-                        <span className="flex items-center gap-1"><Star className="h-3 w-3 text-warning fill-warning" /> {cg.rating_average ? `${cg.rating_average.toFixed(1)} (${cg.rating_count || 0})` : t("common.new")}</span>
+                        {cg.rating_average != null && <span className="flex items-center gap-1"><Star className="h-3 w-3 text-warning fill-warning" /> {cg.rating_average.toFixed(1)} ({cg.rating_count || 0})</span>}
                         {cg.location && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {cg.location}</span>}
                         {cg.care_provider_starts_hourly_rate
                           ? <span>{isZh ? "¥" : "$"}{cg.care_provider_starts_hourly_rate}{t("common.perHour")}</span>
                           : <span>{isZh ? "价格待询" : "Rate on request"}</span>}
                       </div>
                       <div className="flex flex-wrap gap-1 mt-2">
-                        {(cg.service_type_slugs || cg.specialty || []).map((s: string) => <Badge key={s} variant="secondary" className="bg-accent text-accent-foreground text-xs">{s}</Badge>)}
+                        {(cg.service_type_slugs || []).map((s: string) => <Badge key={s} variant="secondary" className="bg-accent text-accent-foreground text-xs">{careServiceTypeLabel(s, !!isZh)}</Badge>)}
                       </div>
+
 
                     </div>
                     <div className="flex flex-col gap-2 shrink-0">
