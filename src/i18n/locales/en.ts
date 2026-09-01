@@ -155,6 +155,7 @@ const en = {
     providerDashboard: "Provider Dashboard",
     community: "Community",
     articles: "Articles",
+    more: "More",
     browse: "Browse",
     myCare: "My Care",
     toggleTheme: "Toggle theme",
