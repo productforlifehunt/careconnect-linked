@@ -58,8 +58,14 @@ export function CarePlanCard({ caredOneId }: { caredOneId: string }) {
             <DialogDescription>{Z("制定护理方案并设定目标来追踪进展", "Define a care plan with goals to track progress")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-2">
-            <Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder={Z("方案名称(例如:康复计划)", "Plan title (e.g. Recovery Plan)")} />
-            <Textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder={Z("描述方案目标…", "Describe the plan goals...")} rows={3} />
+            <div className="space-y-1.5">
+              <Label htmlFor="plan-title">{Z("方案名称", "Plan name")}</Label>
+              <Input id="plan-title" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder={Z("例如:每日活动安排", "e.g. Daily activity routine")} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="plan-detail">{Z("方案内容", "Plan details")}</Label>
+              <Textarea id="plan-detail" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder={Z("要做什么、什么时候做、由谁来做…", "What to do, when, and who helps...")} rows={3} />
+            </div>
             <Button variant="coral" className="w-full" onClick={handleAdd} disabled={create.isPending || !form.title}>
               {create.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />} {Z("创建方案", "Create Plan")}
             </Button>
