@@ -205,7 +205,7 @@ export default function CareCircle() {
           <p className="text-sm text-muted-foreground">{t("careCircle.coordinateCare")}</p>
         </div>
         <div className="flex gap-2">
-          {isAdmin && <Button variant="ghost" size="icon" className="min-h-11 min-w-11" onClick={() => setSettingsOpen(true)} title={t("careCircle.groupSettings")} aria-label={t("careCircle.groupSettings")}><Settings className="h-4 w-4" /></Button>}
+          {isAdmin && <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)} title={t("careCircle.groupSettings")}><Settings className="h-4 w-4 mr-1" /> {isCN ? "群组设置" : "Group Settings"}</Button>}
           {canShowJoin && (
             <Dialog open={joinCodeOpen} onOpenChange={setJoinCodeOpen}>
               <DialogTrigger asChild><Button variant="outline" size="sm"><KeyRound className="h-4 w-4 mr-1" /> {t("careCircle.join")}</Button></DialogTrigger>
@@ -236,16 +236,19 @@ export default function CareCircle() {
       <EditPostDialog post={editingPost} onClose={() => setEditingPost(null)} updatePost={updatePost} />
       <AddCaredOneDialog open={addCaredOneOpen} onOpenChange={setAddCaredOneOpen} activeGroupId={activeGroupId} />
 
-      {groups.length > 1 && (
-        <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
+      <div className="mb-4">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2">
+          {isCN ? `我加入的${site.navLabels.careGroups}` : `My Joined ${site.navLabels.careGroups}`}
+        </p>
+        <div className="flex gap-2 flex-wrap">
           {groups.map((g: any) => (<Badge key={g.id} variant={activeGroupId === g.id ? "default" : "outline"} className="cursor-pointer whitespace-nowrap" onClick={() => setSelectedGroupId(g.id)}>{g.name}</Badge>))}
         </div>
-      )}
+      </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="w-full overflow-x-auto scrollbar-thin pb-2">
-          <TabsList className="flex w-max lg:w-full lg:flex-wrap h-auto gap-1 mb-1 px-1 py-1">
-            <TabsTrigger value="home" className="gap-1.5 text-xs"><Home className="h-3.5 w-3.5" /> {t("careCircle.home")}</TabsTrigger>
+        <div className="w-full pb-2">
+          <TabsList className="flex w-full flex-wrap h-auto gap-1 mb-1 px-1 py-1">
+            <TabsTrigger value="home" className="gap-1.5 text-xs"><Home className="h-3.5 w-3.5" /> <span className="max-w-[10rem] truncate">{activeGroup?.name || t("careCircle.home")}</span></TabsTrigger>
             <TabsTrigger value="calendar" className="gap-1.5 text-xs"><CalendarDays className="h-3.5 w-3.5" /> {t("careCircle.calendar")}</TabsTrigger>
             <TabsTrigger value="announcements" className="gap-1.5 text-xs"><Megaphone className="h-3.5 w-3.5" /> {t("careCircle.announcements")}</TabsTrigger>
             <TabsTrigger value="tasks" className="gap-1.5 text-xs"><ListTodo className="h-3.5 w-3.5" /> {t("careCircle.tasks")}</TabsTrigger>
@@ -257,6 +260,7 @@ export default function CareCircle() {
             <TabsTrigger value="gallery" className="gap-1.5 text-xs"><Image className="h-3.5 w-3.5" /> {t("careCircle.gallery")}</TabsTrigger>
           </TabsList>
         </div>
+
 
         <TabsContent value="home" className="mt-4">
           <HomeTab statsLoading={membersLoading || tasksLoading} pendingTasksCount={pendingTasks.length} membersCount={(members || []).length} caredOnesCount={(groupCaredOnes || []).length} allPosts={allPostsWithAuthors} activeGroupId={activeGroupId} userId={profile?.id} isAdmin={!!isAdmin} memberCategories={memberCategories || []} members={members || []} createPost={createPost} onEditPost={setEditingPost} onTogglePin={handleTogglePin} onDeletePost={handleDeletePost} onNavigateTab={setActiveTab} />

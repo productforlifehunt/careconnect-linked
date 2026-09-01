@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { UserPlus, Mail, Clock, X, Tag, Plus, Shield, Heart, Crown, MoreVertical, Trash2, Link2, Copy, Ban, Pencil } from "lucide-react";
+import { UserPlus, Mail, Clock, X, Tag, Plus, Shield, Heart, MoreVertical, Trash2, Link2, Copy, Ban, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { SubgroupCard } from "../SubgroupCard";
@@ -365,8 +365,9 @@ export function MembersTab({
                       <p className="text-sm font-medium text-foreground">{m.display_name || m.profile?.full_name || Z("成员", "Member")}</p>
                       <p className="text-xs text-muted-foreground">{m.profile?.email || ""}</p>
                       <div className="flex gap-1 mt-1 flex-wrap">
-                        {m.is_owner && <Badge variant="default" className="text-[10px] h-4 gap-0.5"><Crown className="h-2.5 w-2.5" /> {Z("拥有者", "Owner")}</Badge>}
+                        {m.is_owner && <Badge variant="default" className="text-[10px] h-4">{Z("拥有者", "Owner")}</Badge>}
                         {m.is_admin && !m.is_owner && <Badge variant="secondary" className="text-[10px] h-4 gap-0.5"><Shield className="h-2.5 w-2.5" /> {Z("管理员", "Admin")}</Badge>}
+
                         {m.is_cared_one && <Badge className="text-[10px] h-4 bg-accent text-accent-foreground"><Heart className="h-2.5 w-2.5 mr-0.5" /> {Z("被护理者", "Cared One")}</Badge>}
                         {!m.is_owner && !m.is_admin && !m.is_cared_one && <Badge variant="outline" className="text-[10px] h-4">{Z("成员", "Member")}</Badge>}
                       </div>
@@ -396,7 +397,7 @@ export function MembersTab({
                               });
                             }
                           }}>
-                            <Crown className="h-3.5 w-3.5 mr-2" /> {Z("转移拥有权", "Transfer Ownership")}
+                            <Shield className="h-3.5 w-3.5 mr-2" /> {Z("转移拥有权", "Transfer Ownership")}
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuSeparator />
