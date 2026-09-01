@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Search, MapPin, Star, Shield, Clock, Heart,
-  Users, ArrowRight, CheckCircle, Loader2
+  Users, ArrowRight, Loader2
 } from "lucide-react";
 import { useProviders } from "@/hooks/use-care-data";
 import { useSite } from "@/contexts/SiteContext";
