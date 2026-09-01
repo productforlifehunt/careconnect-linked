@@ -891,7 +891,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                 {/* Quick zone status */}
                 {(zones || []).length > 0 && (
                   <div className="pt-2 border-t border-border mt-2 space-y-1">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Zone Status</p>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{isZh ? "区域状态" : "Zone Status"}</p>
                     {(zones || []).map((zone: any) => {
                       const breach = checkZoneBreach(zone, parseFloat(currentLocation.latitude), parseFloat(currentLocation.longitude));
                       return (
@@ -900,9 +900,14 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                           <span className="font-medium">{zoneLabel(zone.zone_type)}</span>
                           <span className={breach.breached ? "text-destructive font-semibold" : "text-success"}>
                             {isDangerZone(zone.zone_type)
-                              ? (breach.breached ? `⚠ INSIDE danger zone!` : `✓ Away (${breach.distance}m)`)
-                              : (breach.breached ? `⚠ Outside (${breach.distance}m)` : `✓ Inside (${breach.distance}m)`)}
+                              ? (breach.breached
+                                  ? (isZh ? "⚠ 已进入危险区域！" : "⚠ INSIDE danger zone!")
+                                  : (isZh ? `✓ 已远离（${breach.distance} 米）` : `✓ Away (${breach.distance}m)`))
+                              : (breach.breached
+                                  ? (isZh ? `⚠ 已离开（${breach.distance} 米）` : `⚠ Outside (${breach.distance}m)`)
+                                  : (isZh ? `✓ 在区域内（${breach.distance} 米）` : `✓ Inside (${breach.distance}m)`))}
                           </span>
+
                         </div>
 
                       );
