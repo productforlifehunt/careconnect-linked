@@ -1308,7 +1308,7 @@ export function useSafeZones(caredOneId: string | null) {
 export function useCreateSafeZone() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (zone: { user_id: string; name: string; latitude: number; longitude: number; radius_meters?: number }) => createSafeZoneWordPress(zone),
+    mutationFn: (zone: { user_id: string; zone_type: string; latitude: number; longitude: number; radius_meters?: number; [key: string]: any }) => createSafeZoneWordPress(zone),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["safeZones"] }); },
   });
 }
