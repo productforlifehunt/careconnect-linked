@@ -152,6 +152,7 @@ function AppRoutes() {
 
 function RootRouter() {
   const site = useSite();
+  useApplyDisplaySettings();
   // When Notch Note site is selected (via ?__site=notchnote or its own domain),
   // mount the entire app as Notch Note in standalone mode.
   if (site.id === "notchnote") {
