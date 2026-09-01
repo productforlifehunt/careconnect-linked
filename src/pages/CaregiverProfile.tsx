@@ -15,7 +15,7 @@ import { useAddToCart } from "@/hooks/use-cart";
 import { getProviderCalendarBookingConflictMessage as getProviderBookingConflictMessage, getAvailabilityConflictMessage } from "@/features/calendar/booking-availability";
 import { createCareBookingProduct } from "@/services/care-booking-product";
 import { clearCart } from "@/services/woocommerce-api";
-import { CARE_SERVICE_TYPES } from "@/lib/care-service-types";
+import { CARE_SERVICE_TYPES, careServiceTypeLabel, deliveryModeLabel } from "@/lib/care-service-types";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
@@ -387,7 +387,7 @@ export default function CaregiverProfile() {
                           <span className="flex items-center gap-1"><Star className="h-4 w-4 text-warning fill-warning" /> {reviewAverage?.toFixed(1)} ({isZh ? `${reviewCount} 条评价` : `${reviewCount} review${reviewCount === 1 ? "" : "s"}`})</span>
                         )}
                         {caregiver.location && <span className="flex items-center gap-1"><MapPin className="h-4 w-4" /> {caregiver.location}</span>}
-                        {caregiver.years_of_experience && <span className="flex items-center gap-1"><Clock className="h-4 w-4" /> {caregiver.years_of_experience}{isZh ? " 年经验" : " years exp."}</span>}
+                        
                       </div>
                     </div>
                     <Button
@@ -404,8 +404,11 @@ export default function CaregiverProfile() {
 
                   </div>
                   <div className="flex flex-wrap gap-2 mt-4">
-                    {(caregiver.specialty || []).map(s => (
-                      <Badge key={s} variant="secondary" className="bg-accent text-accent-foreground">{s}</Badge>
+                    {(caregiver.service_location_slugs || []).map((slug: string) => (
+                      <Badge key={`loc-${slug}`} variant="outline" className="border-primary/40 text-primary">{deliveryModeLabel(slug, isZh)}</Badge>
+                    ))}
+                    {(caregiver.service_type_slugs || []).map((slug: string) => (
+                      <Badge key={slug} variant="secondary" className="bg-accent text-accent-foreground">{careServiceTypeLabel(slug, isZh)}</Badge>
                     ))}
                   </div>
                 </div>
@@ -420,28 +423,20 @@ export default function CaregiverProfile() {
             </Card>
           )}
 
-          {((caregiver.certifications && caregiver.certifications.length > 0)) && (
+          {caregiver.care_provider_is_background_checked && (
             <Card className="border-transparent card-elevated">
               <CardHeader><CardTitle>{isZh ? "资质" : "Qualifications"}</CardTitle></CardHeader>
               <CardContent>
-                <div>
-                  <h4 className="font-medium text-sm mb-2">{isZh ? "证书" : "Certifications"}</h4>
-                  <div className="space-y-2">
-                    {(caregiver.certifications || []).map(c => (
-                      <div key={c} className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <CheckCircle className="h-4 w-4 text-success" /> {c}
-                      </div>
-                    ))}
-                  </div>
+                <div className="p-3 rounded-lg bg-success/10 flex items-center gap-2 text-sm text-success">
+                  <Shield className="h-4 w-4" /> {t("caregiverProfile.bgCheckPassed")}
                 </div>
-                {caregiver.care_provider_is_background_checked && (
-                  <div className="mt-4 p-3 rounded-lg bg-success/10 flex items-center gap-2 text-sm text-success">
-                    <Shield className="h-4 w-4" /> {t("caregiverProfile.bgCheckPassed")}
-                  </div>
+                {caregiver.care_provider_background_check_detail && (
+                  <p className="mt-3 text-sm text-muted-foreground">{caregiver.care_provider_background_check_detail}</p>
                 )}
               </CardContent>
             </Card>
           )}
+
 
         </div>
 
@@ -643,30 +638,25 @@ export default function CaregiverProfile() {
                   onError: () => navigate("/messages"),
                 });
               }} disabled={startConversation.isPending}>
-                <MessageSquare className="mr-2 h-4 w-4" /> {startConversation.isPending ? "Opening..." : "Message / Negotiate Price"}
+                <MessageSquare className="mr-2 h-4 w-4" /> {startConversation.isPending ? (isZh ? "正在打开…" : "Opening...") : (isZh ? "发消息 / 议价" : "Message / Negotiate Price")}
               </Button>
               {caregiver.phone && (
                 <Button variant="ghost" className="w-full" asChild>
                   <a href={`tel:${caregiver.phone}`}>
-                    <Phone className="mr-2 h-4 w-4" /> Call {caregiver.full_name?.split(" ")[0]}
+                    <Phone className="mr-2 h-4 w-4" /> {isZh ? `致电 ${caregiver.full_name || ""}` : `Call ${caregiver.full_name?.split(" ")[0] || ""}`}
                   </a>
                 </Button>
               )}
 
-              <div className="mt-6 pt-4 border-t space-y-3 text-sm">
-                {caregiver.care_provider_is_background_checked && (
+              {caregiver.care_provider_is_background_checked && (
+                <div className="mt-6 pt-4 border-t space-y-3 text-sm">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Shield className="h-4 w-4 text-primary" />
                     <span>{isZh ? "已通过背景核查" : "Background verified"}</span>
                   </div>
-                )}
-                {caregiver.years_of_experience && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <CheckCircle className="h-4 w-4 text-primary" />
-                    <span>{caregiver.years_of_experience}{isZh ? " 年从业经验" : " years experience"}</span>
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
+
             </CardContent>
           </Card>
         </div>
