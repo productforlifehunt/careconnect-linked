@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Home, Loader2, MapPin, Pencil, Plus, Trash2, Crosshair, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -15,12 +18,18 @@ import { getCurrentPosition } from "@/lib/locationService";
 import {
   createSafeZoneWordPress, updateSafeZoneWordPress, deleteSafeZoneWordPress,
 } from "@/features/location/source.wordpress-extended";
+import {
+  ZONE_TYPE, ZONE_TYPE_CODES, zoneTypeLabel, customSlotOf, isDangerZone,
+  fetchCustomZoneNames, setCustomZoneName, type CustomZoneNames,
+} from "@/features/location/zone-types";
 import { useSafetyCircle } from "./useSafetyCircle";
 
 const emptyForm = {
   id: "",
-  name: "",
-  zone_type: "Safe" as "Safe" | "Danger",
+  // CCT 214 a55 — the zone's type IS its label; there is no per-zone name.
+  zone_type: ZONE_TYPE.SAFE as string,
+  custom_name: "",
+  description: "",
   latitude: "",
   longitude: "",
   radius_meters: "200",
@@ -29,6 +38,7 @@ const emptyForm = {
   is_active: true,
   receiver_ids: [] as string[],
 };
+
 
 /** Life360-style "Places" — arrival/departure geofences, fully managed in-app. */
 export default function SafetyPlaces() {
