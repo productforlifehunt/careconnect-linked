@@ -1377,11 +1377,11 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-semibold text-sm">{label}</span>
-                          {isDangerZone(zone.zone_type) && <Badge variant="destructive" className="text-[10px]">DANGER</Badge>}
-                          {!active && <Badge variant="secondary" className="text-[10px]">⏰ Scheduled (inactive)</Badge>}
+                          {isDangerZone(zone.zone_type) && <Badge variant="destructive" className="text-[10px]">{isZh ? "危险" : "DANGER"}</Badge>}
+                          {!active && <Badge variant="secondary" className="text-[10px]">{isZh ? "⏰ 定时（当前未生效）" : "⏰ Scheduled (inactive)"}</Badge>}
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {zone.shape_type === "polygon" ? "Custom shape" : `${zone.radius_meters || 200}m radius`}
+                          {zone.shape_type === "polygon" ? (isZh ? "自定义形状" : "Custom shape") : (isZh ? `半径 ${zone.radius_meters || 200} 米` : `${zone.radius_meters || 200}m radius`)}
                         </p>
 
                         {zone.description && <p className="text-xs text-muted-foreground">{zone.description}</p>}
