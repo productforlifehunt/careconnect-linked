@@ -1054,7 +1054,10 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className={`text-sm font-semibold ${cfg.color}`}>{cfg.label}</span>
-                            {alert.safe_zone?.name && <Badge variant="secondary" className="text-[10px]">{alert.safe_zone.name}</Badge>}
+                            {alert.safe_zone?.zone_type && (
+                              <Badge variant="secondary" className="text-[10px]">{zoneLabel(alert.safe_zone.zone_type)}</Badge>
+                            )}
+
                           </div>
                           {alert.message && <p className="text-xs text-muted-foreground mt-0.5">{alert.message}</p>}
                           {alert.distance_from_center != null && (
