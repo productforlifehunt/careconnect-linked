@@ -130,7 +130,12 @@ export default function CareFacilityProfile() {
   const regularMembers = useMemo(() => (facilityMembers || []).filter((member) => !member.is_owner && !member.is_admin), [facilityMembers]);
 
   if (isLoading) {
-    return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
+    return (
+      <div className="flex justify-center py-20" role="status" aria-label={isZh ? "正在加载机构" : "Loading facility"}>
+        <h1 className="sr-only">{isZh ? "养老机构资料" : "Care facility profile"}</h1>
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
 
   if (!facility) {

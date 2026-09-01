@@ -256,7 +256,12 @@ export default function CaregiverProfile() {
   };
 
   if (isLoading) {
-    return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
+    return (
+      <div className="flex justify-center py-20" role="status" aria-label={isZh ? "正在加载护理者" : "Loading caregiver"}>
+        <h1 className="sr-only">{isZh ? "护理者资料" : "Caregiver profile"}</h1>
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
 
   if (!caregiver) {
