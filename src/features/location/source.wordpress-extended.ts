@@ -412,9 +412,10 @@ export async function createSafeZoneAlertsForLocation(userId: string, lat: numbe
       } catch { /* sessionStorage unavailable in SSR */ }
 
       const msg =
-        result.alertType === "entered_danger_zone" ? `Entered danger zone: ${zone.name}` :
-        result.alertType === "exited_safe_zone"   ? `Left safe zone: ${zone.name}` :
-                                                    `Entered safe zone: ${zone.name}`;
+        result.alertType === "entered_danger_zone" ? `Entered danger zone: ${zone.zone_type_label}` :
+        result.alertType === "exited_safe_zone"   ? `Left zone: ${zone.zone_type_label}` :
+                                                    `Entered zone: ${zone.zone_type_label}`;
+
       {
         await createNotificationWordPress({
           user_id: userId,
