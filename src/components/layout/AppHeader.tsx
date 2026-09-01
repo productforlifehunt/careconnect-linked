@@ -240,18 +240,26 @@ export function AppHeader() {
               {t("nav.dashboard")}
             </NavLink>
 
-            <Button variant="ghost" size="icon" className="relative" onClick={() => navigate("/notifications")}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative shrink-0"
+              onClick={() => navigate("/notifications")}
+              title={t("nav.notifications")}
+              aria-label={t("nav.notifications")}
+            >
               <Bell className="h-5 w-5" />
               {unreadCount > 0 && (
                 <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-coral text-coral-foreground text-xs border-2 border-card">
-                  {unreadCount}
+                  {unreadCount > 9 ? "9+" : unreadCount}
                 </Badge>
               )}
             </Button>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="gap-2">
+                <Button variant="ghost" className="gap-2 px-2 max-w-[12rem]" aria-label={displayName}>
+
                   {user?.avatar_url ? (
                     <img src={user.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover" />
                   ) : (
