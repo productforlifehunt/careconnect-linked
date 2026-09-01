@@ -109,7 +109,8 @@ export default function Dashboard() {
     const co = String(tk.cared_one_id ?? "").replace(/^wp-/, "");
     return !!co && myCaredOneIds.has(co);
   });
-  const pendingTasks = myTasks.filter((t: any) => t.status !== "completed").slice(0, 5);
+  const myPendingTasks = myTasks.filter((t: any) => t.status !== "completed");
+  const pendingTasks = myPendingTasks.slice(0, 5);
   const firstCaredOne = caredOnes?.[0];
   const recentPosts = (communityPosts || []).slice(0, 3);
 
@@ -189,7 +190,7 @@ export default function Dashboard() {
         {[
           { label: t("dashboard.upcomingBookings"), value: stats?.upcomingBookings ?? 0, icon: CalendarDays, color: "text-primary", to: "/bookings" },
           { label: careGroupsLabel, value: stats?.careGroups ?? 0, icon: Users, color: "text-success", to: "/care-circle" },
-          { label: t("dashboard.pendingTasks"), value: pendingTasks.length, icon: AlertCircle, color: "text-warning", to: "/care-circle" },
+          { label: t("dashboard.pendingTasks"), value: myPendingTasks.length, icon: AlertCircle, color: "text-warning", to: "/care-circle" },
           { label: t("dashboard.unreadMessages"), value: stats?.unreadMessages ?? 0, icon: MessageSquare, color: "text-coral", to: "/messages" },
         ].map((s) => (
           <button key={s.label} onClick={() => navigate(s.to)}
