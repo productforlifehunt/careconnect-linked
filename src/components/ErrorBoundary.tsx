@@ -1,6 +1,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
+import { friendlyMessage, friendlyErrorTitle, friendlyRetryLabel } from "@/lib/friendly-error";
 
 interface Props {
   children: React.ReactNode;
@@ -22,6 +23,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    // Full technical detail stays in the console for us, never on screen.
     console.error("ErrorBoundary caught:", error, errorInfo);
   }
 
@@ -30,9 +32,9 @@ export class ErrorBoundary extends React.Component<Props, State> {
       return (
         <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4 px-4 text-center">
           <AlertTriangle className="h-12 w-12 text-destructive/60" />
-          <h1 className="text-lg font-semibold text-foreground">Something went wrong</h1>
+          <h1 className="text-lg font-semibold text-foreground">{friendlyErrorTitle()}</h1>
           <p className="text-sm text-muted-foreground max-w-md">
-            {this.state.error?.message || "An unexpected error occurred. Please try again."}
+            {friendlyMessage(this.state.error)}
           </p>
           <Button
             variant="outline"
@@ -41,7 +43,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
               window.location.reload();
             }}
           >
-            Reload Page
+            {friendlyRetryLabel()}
           </Button>
         </div>
       );

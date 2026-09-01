@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { useSite } from "@/contexts/SiteContext";
-import yichangIcon from "@/assets/yichang-icon.png";
-import huchangIcon from "@/assets/huchang-icon.png";
+import yichangIcon from "@/assets/yichang-icon-128.webp";
+import huchangIcon from "@/assets/huchang-icon-128.webp";
 
 interface BrandMarkProps {
   /** Icon size in px. Wordmark scales with it. */
@@ -29,7 +29,7 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
 
   let icon: React.ReactNode;
   if (brand === "challenged" && isChinese) {
-    icon = <img src={yichangIcon} alt="忆畅" style={box} className="rounded-xl object-cover" />;
+    icon = <img src={yichangIcon} alt="忆畅" width={size} height={size} style={box} decoding="sync" loading="eager" fetchPriority="high" className="rounded-xl object-cover" />;
   } else if (brand === "challenged") {
     icon = (
       <div
@@ -45,7 +45,7 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
       </div>
     );
   } else if (brand === "carecnc" && isChinese) {
-    icon = <img src={huchangIcon} alt="护畅" style={box} className="rounded-xl object-cover" />;
+    icon = <img src={huchangIcon} alt="护畅" width={size} height={size} style={box} decoding="sync" loading="eager" fetchPriority="high" className="rounded-xl object-cover" />;
   } else if (brand === "carecnc") {
     icon = (
       <div

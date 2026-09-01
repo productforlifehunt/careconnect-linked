@@ -195,8 +195,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
+/**
+ * Signed-out fallback. A missing provider (only possible after a hot reload in
+ * development) must never blow up a whole page in a caregiver's face — the app
+ * simply renders as "not signed in".
+ */
+const SIGNED_OUT: AuthContextType = {
+  user: null,
+  session: null,
+  isAuthenticated: false,
+  isLoading: false,
+  authSource: null,
+  login: async () => {},
+  loginWithWP: async () => {},
+  signup: async () => {},
+  logout: async () => {},
+};
+
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  if (!ctx) {
+    console.error("useAuth used outside AuthProvider — falling back to signed-out state");
+    return SIGNED_OUT;
+  }
   return ctx;
 };
+
