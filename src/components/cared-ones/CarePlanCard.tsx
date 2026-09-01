@@ -88,8 +88,14 @@ export function CarePlanCard({ caredOneId }: { caredOneId: string }) {
               <CardContent className="p-4">
                 {editId === p.id ? (
                   <div className="space-y-2">
-                    <Input value={editForm.title} onChange={e => setEditForm(prev => ({ ...prev, title: e.target.value }))} placeholder={Z("方案名称", "Plan title")} />
-                    <Textarea value={editForm.description} onChange={e => setEditForm(prev => ({ ...prev, description: e.target.value }))} rows={2} />
+                    <div className="space-y-1.5">
+                      <Label htmlFor={`edit-title-${p.id}`}>{Z("方案名称", "Plan name")}</Label>
+                      <Input id={`edit-title-${p.id}`} value={editForm.title} onChange={e => setEditForm(prev => ({ ...prev, title: e.target.value }))} placeholder={Z("例如:每日活动安排", "e.g. Daily activity routine")} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor={`edit-detail-${p.id}`}>{Z("方案内容", "Plan details")}</Label>
+                      <Textarea id={`edit-detail-${p.id}`} value={editForm.description} onChange={e => setEditForm(prev => ({ ...prev, description: e.target.value }))} rows={2} placeholder={Z("要做什么、什么时候做、由谁来做…", "What to do, when, and who helps...")} />
+                    </div>
                     <div className="flex gap-2 justify-end">
                       <Button variant="ghost" size="sm" onClick={cancelEdit}><X className="h-3.5 w-3.5 mr-1" /> {Z("取消", "Cancel")}</Button>
                       <Button variant="coral" size="sm" onClick={saveEdit} disabled={update.isPending}><Check className="h-3.5 w-3.5 mr-1" /> {Z("保存", "Save")}</Button>
@@ -98,8 +104,10 @@ export function CarePlanCard({ caredOneId }: { caredOneId: string }) {
                 ) : (
                   <div className="flex justify-between items-start gap-2">
                     <div className="min-w-0 flex-1">
-                      <h4 className="font-medium text-foreground">{p.title}</h4>
-                      {p.description && <p className="text-xs text-muted-foreground mt-1">{p.description}</p>}
+                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{Z("方案名称", "Plan name")}</p>
+                      <h4 className="font-medium text-foreground">{p.title || Z("未命名方案", "Untitled plan")}</h4>
+                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground mt-2">{Z("方案内容", "Plan details")}</p>
+                      <p className="text-xs text-muted-foreground">{p.description || Z("暂无内容", "No details added yet")}</p>
                     </div>
                     <div className="flex gap-1 shrink-0">
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); startEdit(p); }}><Pencil className="h-3 w-3" /></Button>
