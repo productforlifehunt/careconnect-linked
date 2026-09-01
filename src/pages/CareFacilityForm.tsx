@@ -306,15 +306,15 @@ export default function CareFacilityForm() {
               <Input value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} className="mt-1" />
             </div>
             <div>
-              <Label>{isZh ? "官网链接" : "Website URL"}</Label>
+              <Label>{isZh ? "官网网址" : "Website address"}</Label>
               <Input value={form.website_url} onChange={(e) => setForm((p) => ({ ...p, website_url: e.target.value }))} className="mt-1" />
             </div>
             <div>
-              <Label>{isZh ? "封面图片链接" : "Hero image URL"}</Label>
+              <Label>{isZh ? "封面照片链接" : "Cover photo link"}</Label>
               <Input value={form.image_url} onChange={(e) => setForm((p) => ({ ...p, image_url: e.target.value }))} className="mt-1" />
             </div>
             <div className="md:col-span-2">
-              <Label>{isZh ? "头像/缩略图链接" : "Avatar / thumbnail URL"}</Label>
+              <Label>{isZh ? "小图片（头像）链接" : "Small photo link"}</Label>
               <Input value={form.avatar_url} onChange={(e) => setForm((p) => ({ ...p, avatar_url: e.target.value }))} className="mt-1" />
             </div>
           </div>
@@ -343,11 +343,11 @@ export default function CareFacilityForm() {
                       />
                     </div>
                     <div>
-                      <Label>{isZh ? "证明附件链接" : "Proof attachment URLs"}</Label>
+                      <Label>{isZh ? "证明照片链接" : "Links to photos of your proof"}</Label>
                       <Textarea
                         value={ownershipAttachmentUrls}
                         onChange={(e) => setOwnershipAttachmentUrls(e.target.value)}
-                        placeholder={isZh ? "每行一个图片 URL，或用逗号分隔" : "One image URL per line, or comma-separated"}
+                        placeholder={isZh ? "每行一个图片 URL，或用逗号分隔" : "One photo link per line"}
                         rows={3}
                         className="mt-1"
                       />

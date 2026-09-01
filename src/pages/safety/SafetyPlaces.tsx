@@ -92,7 +92,7 @@ export default function SafetyPlaces() {
     if (isCustom && !form.custom_name.trim())
       return toast({ title: Z("请填写自定义区域名称", "Custom zone name is required"), variant: "destructive" });
     if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180)
-      return toast({ title: Z("坐标无效", "Invalid coordinates"), variant: "destructive" });
+      return toast({ title: Z("这个位置填得不对，请重新选一次", "That location doesn't look right — please choose it again"), variant: "destructive" });
     if (!Number.isFinite(radius) || radius < 20)
       return toast({ title: Z("半径至少 20 米", "Radius must be at least 20 m"), variant: "destructive" });
 
@@ -198,7 +198,7 @@ export default function SafetyPlaces() {
                   </div>
 
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    {z.latitude != null && z.longitude != null ? `${z.latitude.toFixed(4)}, ${z.longitude.toFixed(4)}` : Z("无坐标", "No coordinates")} · {z.radius_meters || 200} m
+                    {z.latitude != null && z.longitude != null ? `${z.latitude.toFixed(4)}, ${z.longitude.toFixed(4)}` : Z("暂无位置", "No location yet")} · {z.radius_meters || 200} m
                   </p>
                   <p className="mt-0.5 text-[11px] text-muted-foreground">
                     {[z.notify_on_enter ? Z("到达提醒", "Arrival alerts") : null, z.notify_on_exit ? Z("离开提醒", "Departure alerts") : null]
@@ -280,11 +280,11 @@ export default function SafetyPlaces() {
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <Label htmlFor="place-lat">{Z("纬度", "Latitude")}</Label>
+                <Label htmlFor="place-lat">{Z("位置（南北）", "Position (north–south)")}</Label>
                 <Input id="place-lat" value={form.latitude} onChange={(e) => setForm((f) => ({ ...f, latitude: e.target.value }))} />
               </div>
               <div>
-                <Label htmlFor="place-lng">{Z("经度", "Longitude")}</Label>
+                <Label htmlFor="place-lng">{Z("位置（东西）", "Position (east–west)")}</Label>
                 <Input id="place-lng" value={form.longitude} onChange={(e) => setForm((f) => ({ ...f, longitude: e.target.value }))} />
               </div>
             </div>

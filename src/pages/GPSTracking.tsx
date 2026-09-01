@@ -459,11 +459,11 @@ export default function GPSTracking() {
       return;
     }
     if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
-      toast({ title: Z("坐标无效", "Invalid coordinates"), variant: "destructive" });
+      toast({ title: Z("这个位置填得不对，请在地图上重新选一次", "That location doesn't look right — please pick the spot on the map again"), variant: "destructive" });
       return;
     }
     if (!Number.isFinite(radius) || radius < 20) {
-      toast({ title: Z("半径至少 20 米", "Radius must be at least 20 m"), variant: "destructive" });
+      toast({ title: Z("范围至少要 20 米", "Please make the area at least 20 metres wide"), variant: "destructive" });
       return;
     }
     setZoneSaving(true);
@@ -784,7 +784,7 @@ export default function GPSTracking() {
                     </Button>
                   </div>
                   {zones.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-8">{t("gps.noZones", "No geofence zones configured")}</p>
+                    <p className="text-sm text-muted-foreground text-center py-8">{t("gps.noZones", "No areas set up yet")}</p>
                   ) : (
                     zones.map((zone: any) => {
                       const isDanger = isDangerZone(String(zone.zone_type));
