@@ -726,25 +726,30 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
   const handleUseCaredOneLocation = () => {
     if (currentLocation?.latitude && currentLocation?.longitude) {
       setZoneForm(p => ({ ...p, latitude: parseFloat(currentLocation.latitude).toFixed(6), longitude: parseFloat(currentLocation.longitude).toFixed(6) }));
-      toast({ title: `Using ${caredOneName}'s last known location` });
+      toast({ title: isZh ? `已使用${caredOneName}最后一次已知位置` : `Using ${caredOneName}'s last known location` });
     } else {
-      toast({ title: `No location data for ${caredOneName}`, variant: "destructive" });
+      toast({ title: isZh ? `暂无${caredOneName}的位置数据` : `No location data for ${caredOneName}`, variant: "destructive" });
     }
   };
 
   const tabs: { key: Tab; label: string; icon: any; badge?: number }[] = [
-    { key: "location", label: "Live Location", icon: MapPin },
-    { key: "requests", label: "Requests", icon: Send, badge: pendingRequests || undefined },
-    { key: "alerts", label: "Alerts", icon: Bell, badge: unreadAlerts || undefined },
-    { key: "safezones", label: "Safe Zones", icon: Shield, badge: (zones || []).length || undefined },
-    { key: "history", label: "History", icon: Clock },
+    { key: "location", label: isZh ? "实时位置" : "Live Location", icon: MapPin },
+    { key: "requests", label: isZh ? "共享请求" : "Requests", icon: Send, badge: pendingRequests || undefined },
+    { key: "alerts", label: isZh ? "提醒" : "Alerts", icon: Bell, badge: unreadAlerts || undefined },
+    { key: "safezones", label: isZh ? "安全区域" : "Safe Zones", icon: Shield, badge: (zones || []).length || undefined },
+    { key: "history", label: isZh ? "历史记录" : "History", icon: Clock },
   ];
 
   const drawStatusText = useMemo(() => {
-    if (drawMode === "drawing") return `Click to place · Drag to freehand · ⌘Z undo · Esc cancel · ${drawnPoints.length} pts`;
-    if (drawMode === "editing") return "Drag vertices · Click edge to insert · Dbl-click to delete · Esc deselect";
+    if (drawMode === "drawing") return isZh
+      ? `点击落点 · 拖动自由绘制 · ⌘Z 撤销 · Esc 取消 · 已画 ${drawnPoints.length} 点`
+      : `Click to place · Drag to freehand · ⌘Z undo · Esc cancel · ${drawnPoints.length} pts`;
+    if (drawMode === "editing") return isZh
+      ? "拖动顶点 · 点击边线插入 · 双击删除 · Esc 取消选择"
+      : "Drag vertices · Click edge to insert · Dbl-click to delete · Esc deselect";
     return "";
-  }, [drawMode, drawnPoints.length]);
+  }, [drawMode, drawnPoints.length, isZh]);
+
 
   const lastSeen = currentLocation ? formatDateTime(currentLocation.created_at) : null;
 
