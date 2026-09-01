@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { UserPlus, Mail, Clock, X, Tag, Plus, Shield, Heart, Crown, MoreVertical, Trash2, Link2, Copy, Ban, Pencil } from "lucide-react";
+import { UserPlus, Mail, Clock, X, Tag, Plus, Shield, Heart, MoreVertical, Trash2, Link2, Copy, Ban, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { SubgroupCard } from "../SubgroupCard";

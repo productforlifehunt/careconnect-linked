@@ -59,7 +59,7 @@ function GalleryUploadForm({ groupId }: { groupId: string }) {
         />
       </div>
       <div className="flex gap-2">
-        <Input value={caption} onChange={e => setCaption(e.target.value)} placeholder={Z("说明（可选）", "Caption (optional)")} className="flex-1" />
+        <Input value={caption} onChange={e => setCaption(e.target.value)} placeholder={Z("说明（可选）", "Description (optional)")} className="flex-1" />
         <Button size="sm" variant="coral" onClick={handleAdd} disabled={saving || !file}>
           {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : Z("添加", "Add")}
         </Button>
