@@ -369,24 +369,33 @@ export default function CaregiverProfile() {
         <div className="lg:col-span-2 space-y-5">
           <Card className="border-transparent card-elevated">
             <CardContent className="p-5">
-              <div className="flex flex-col sm:flex-row gap-5">
-                <img src={caregiver.avatar_url || "/placeholder.svg"} alt={caregiver.full_name || ""} className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover shrink-0" />
+              <div className="flex flex-row items-start gap-4 sm:gap-5">
+                <img src={caregiver.avatar_url || "/placeholder.svg"} alt={caregiver.full_name || ""} className="w-20 h-20 sm:w-28 sm:h-28 rounded-2xl object-cover bg-muted shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground truncate">{caregiver.full_name}</h1>
-                        {caregiver.care_provider_is_background_checked && <Shield className="h-5 w-5 text-primary" />}
+                        {caregiver.care_provider_is_background_checked && <Shield className="h-5 w-5 text-primary shrink-0" />}
                       </div>
-                      <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-muted-foreground">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-sm text-muted-foreground">
                         <span className="flex items-center gap-1"><Star className="h-4 w-4 text-warning fill-warning" /> {caregiver.rating_average?.toFixed(1) || "New"} ({caregiver.rating_count || 0} reviews)</span>
                         {caregiver.location && <span className="flex items-center gap-1"><MapPin className="h-4 w-4" /> {caregiver.location}</span>}
                         {caregiver.years_of_experience && <span className="flex items-center gap-1"><Clock className="h-4 w-4" /> {caregiver.years_of_experience} years exp.</span>}
                       </div>
                     </div>
-                    <Button variant="ghost" size="icon" onClick={handleToggleFavorite}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="shrink-0"
+                      onClick={handleToggleFavorite}
+                      title={isZh ? "收藏" : "Save"}
+                      aria-label={isZh ? "收藏" : "Save"}
+                      aria-pressed={isFavorited}
+                    >
                       <Heart className={`h-5 w-5 ${isFavorited ? "fill-coral text-coral" : "text-muted-foreground"}`} />
                     </Button>
+
                   </div>
                   <div className="flex flex-wrap gap-2 mt-4">
                     {(caregiver.specialty || []).map(s => (
