@@ -286,6 +286,25 @@ export async function updateCareTaskWordPress(id: string, updates: Record<string
   }
 
   const taskId = normalizeWpObjectId(id);
+
+  // Status change → tell the task's creator and its other assignees.
+  if (finish_status !== undefined || status !== undefined) {
+    try {
+      const code = String(body[F.TASK_FINISH_STATUS] ?? "");
+      const label = FINISH_STATUS_TO_LABEL[code] || String(status ?? code);
+      const [{ notifyTaskStatusChanged }, task, rels] = await Promise.all([
+        import("@/features/notifications/notify-events"),
+        wordpressCCTFetch<any>(CCT_SLUG, { id }).catch(() => null),
+        wordpressFetch<any[]>(`jet-rel/${REL_TASK_ASSIGNEE}/children/${taskId}`).catch(() => []),
+      ]);
+      const recipients = [
+        task?.cct_author_id ?? task?.author_id ?? null,
+        ...(Array.isArray(rels) ? rels.map((r: any) => r.child_object_id) : []),
+      ];
+      await notifyTaskStatusChanged(recipients, String(taskId), label);
+    } catch { /* best-effort */ }
+  }
+
   if (assigned_to !== undefined) {
     const assignedUserIds = (Array.isArray(assigned_to) ? assigned_to : assigned_to ? [assigned_to] : [])
       .map(normalizeWpObjectId).filter(Boolean);
@@ -295,7 +314,14 @@ export async function updateCareTaskWordPress(id: string, updates: Record<string
         body: { parent_id: taskId, child_id: assignedUserId, context: "child", store_items_type: "update", meta: { [ASSIGNEE_FIELD]: ASSIGNEE_STATUS_TO_CODE.pending } },
       });
     }
+    // Newly assigned people must be told, same as on task creation.
+    try {
+      const { notifyTaskAssigned } = await import("@/features/notifications/notify-events");
+      const t = await wordpressCCTFetch<any>(CCT_SLUG, { id }).catch(() => null);
+      await notifyTaskAssigned(assignedUserIds, t?.[F.TITLE] || title || "Care task", String(taskId));
+    } catch { /* best-effort */ }
   }
+
   if (cared_one_id !== undefined) {
     const caredOneNum = normalizeWpObjectId(cared_one_id);
     if (taskId && caredOneNum) {
