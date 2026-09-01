@@ -59,7 +59,7 @@ export default function SearchResults() {
   const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
   const [locationFilter, setLocationFilter] = useState(initialLocation);
   const [debouncedLocation, setDebouncedLocation] = useState(initialLocation);
-  const [sortBy, setSortBy] = useState("rating");
+  const [sortBy, setSortBy] = useState(isFacilityMode ? "rating" : "price-low");
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
