@@ -309,12 +309,34 @@ export default function Dashboard() {
         <h2 className="text-sm font-semibold text-foreground mb-2">
           {t("dashboard.timeline", { defaultValue: "Daily Timeline" })}
         </h2>
-        <DailyTimeline
-          caredOneId={firstCaredOne.user_id}
-          caredOneName={firstCaredOne.cared_one?.full_name || firstCaredOne.cared_one?.first_name || site.caredOneSingular}
-        />
+        {(caredOnes?.length ?? 0) > 1 ? (
+          <Tabs defaultValue={firstCaredOne.user_id}>
+            <TabsList className="w-full h-auto flex-wrap justify-start gap-1 bg-muted/40 p-1 rounded-xl mb-2">
+              {caredOnes!.map((co: any) => (
+                <TabsTrigger key={co.user_id} value={co.user_id}
+                  className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm text-xs px-3 py-1.5 max-w-[12rem] truncate">
+                  {co.cared_one?.full_name || co.cared_one?.first_name || co.cared_one?.email}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            {caredOnes!.map((co: any) => (
+              <TabsContent key={co.user_id} value={co.user_id} className="focus-visible:outline-none">
+                <DailyTimeline
+                  caredOneId={co.user_id}
+                  caredOneName={co.cared_one?.full_name || co.cared_one?.first_name || co.cared_one?.email || ""}
+                />
+              </TabsContent>
+            ))}
+          </Tabs>
+        ) : (
+          <DailyTimeline
+            caredOneId={firstCaredOne.user_id}
+            caredOneName={firstCaredOne.cared_one?.full_name || firstCaredOne.cared_one?.first_name || firstCaredOne.cared_one?.email || ""}
+          />
+        )}
       </section>
     ) : null,
+
 
     "community-feed": recentPosts.length > 0 ? (
       <section>
