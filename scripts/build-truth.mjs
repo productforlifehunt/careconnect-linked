@@ -124,7 +124,13 @@ function parseOptions(str) {
   while ((m = re.exec(str))) out[m[2]] = m[1].trim();
   const re2 = /\d+\.\s*([^“"'()]+?)\s*[（(]\s*Name\/ID:\s*([ab]\d+)\s*[）)]/g;
   while ((m = re2.exec(str))) { if (!out[m[2]]) out[m[2]] = m[1].trim(); }
+  // Tolerate unbalanced quotes in the dictionary, e.g.
+  //   14. “Remote medicine supervision (Name/ID: b68)
+  // Without this the option silently vanishes from the generated truth.
+  const re3 = /\d+\.\s*[“"']?([^()]+?)\s*[（(]\s*Name\/ID:\s*([ab]\d+)\s*[）)]/g;
+  while ((m = re3.exec(str))) { if (!out[m[2]]) out[m[2]] = m[1].replace(/[“”"']/g, '').trim(); }
   return out;
+
 }
 
 // The dictionary repeats a shared CCT's field table once per host object
