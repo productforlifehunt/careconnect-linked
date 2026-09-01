@@ -696,7 +696,21 @@ export function useUpdateCareGroup() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, ...updates }: { id: string; name?: string; description?: string; is_private?: boolean }) => updateCareGroupWordPress(id, updates),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["careGroups"] }); },
+    // Patch the cached list first so a rename shows instantly, then refetch.
+    onSuccess: (_d, vars: any) => {
+      qc.setQueryData(["careGroups"], (prev: any) =>
+        Array.isArray(prev)
+          ? prev.map((g: any) => (String(g.id) === String(vars.id)
+              ? {
+                  ...g,
+                  ...(vars.name !== undefined ? { name: vars.name } : {}),
+                  ...(vars.description !== undefined ? { description: vars.description } : {}),
+                  ...(vars.is_private !== undefined ? { is_private: vars.is_private, group_type: vars.is_private ? "private" : "public" } : {}),
+                }
+              : g))
+          : prev);
+      qc.invalidateQueries({ queryKey: ["careGroups"] });
+    },
   });
 }
 
