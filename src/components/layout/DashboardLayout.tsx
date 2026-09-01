@@ -48,11 +48,11 @@ function useSidebarItems() {
 
   if (isChallenged && !isV1) {
     base.push(
-      { title: L("认知助手", site.navLabels.awareD || "AwareD"), url: "/aware", icon: Lightbulb },
-      { title: L("护理助手", site.navLabels.careD || "CareD"), url: "/care-guides", icon: HeartPulse },
-      { title: L("情绪助手", site.navLabels.copeD || "CopeD"), url: "/coping", icon: Wand2 },
-      { title: L("安全助手", site.navLabels.safeD || "SafeD"), url: "/safety-guides", icon: ShieldCheck },
-      { title: L("陪伴助手", site.navLabels.accompanieD || "AccompanieD"), url: "/accompanied", icon: HandHeart },
+      { title: L("认知篇", site.navLabels.awareD || "AwareD"), url: "/aware", icon: Lightbulb },
+      { title: L("护理篇", site.navLabels.careD || "CareD"), url: "/care-guides", icon: HeartPulse },
+      { title: L("应对篇", site.navLabels.copeD || "CopeD"), url: "/coping", icon: Wand2 },
+      { title: L("安全篇", site.navLabels.safeD || "SafeD"), url: "/safety-guides", icon: ShieldCheck },
+      { title: L("陪伴篇", site.navLabels.accompanieD || "AccompanieD"), url: "/accompanied", icon: HandHeart },
     );
   }
 

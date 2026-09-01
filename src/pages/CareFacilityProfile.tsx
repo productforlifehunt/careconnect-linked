@@ -130,13 +130,18 @@ export default function CareFacilityProfile() {
   const regularMembers = useMemo(() => (facilityMembers || []).filter((member) => !member.is_owner && !member.is_admin), [facilityMembers]);
 
   if (isLoading) {
-    return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
+    return (
+      <div className="flex justify-center py-20" role="status" aria-label={isZh ? "正在加载机构" : "Loading facility"}>
+        <h1 className="sr-only">{isZh ? "养老机构资料" : "Care facility profile"}</h1>
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
 
   if (!facility) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
-        <p className="text-lg text-muted-foreground">{isZh ? "未找到机构" : "Facility not found"}</p>
+        <h1 className="text-lg font-semibold text-foreground">{isZh ? "未找到机构" : "Facility not found"}</h1>
         <Button variant="outline" onClick={() => navigate("/search?service_category=facility")}>
           {isZh ? "返回机构搜索" : "Back to facility search"}
         </Button>

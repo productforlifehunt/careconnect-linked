@@ -112,7 +112,7 @@ export default function ArticlePost() {
               </div>
               {profile?.user_id === post.author_id ? (
                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 shrink-0"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                  <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="min-h-11 min-w-11 shrink-0" aria-label={isZh ? "文章操作" : "Article actions"}><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => { setEditTitle(post.title || ""); setEditContent(post.content || ""); setEditing(true); }}><Pencil className="h-4 w-4 mr-2" />{isZh ? "编辑" : "Edit"}</DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setConfirmDeleteOpen(true)} className="text-destructive focus:text-destructive"><Trash2 className="h-4 w-4 mr-2" />{isZh ? "删除" : "Delete"}</DropdownMenuItem>

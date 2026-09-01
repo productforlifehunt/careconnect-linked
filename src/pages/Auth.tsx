@@ -96,7 +96,7 @@ export default function Auth() {
           <div className="flex justify-center mb-3">
             <BrandMark size={56} />
           </div>
-          <CardTitle className="text-2xl">{site.name}</CardTitle>
+          <h1 className="text-2xl font-semibold leading-none tracking-tight">{site.name}</h1>
           <CardDescription>{t(`site.${site.id}.authSubtitle`)}</CardDescription>
         </CardHeader>
         <CardContent>

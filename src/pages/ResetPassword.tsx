@@ -52,7 +52,7 @@ export default function ResetPassword() {
         <Card className="w-full max-w-md border-transparent card-elevated">
           <CardContent className="p-6 text-center">
             <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-muted-foreground" />
-            <p className="text-muted-foreground">{t("resetPw.verifyingLink")}</p>
+            <h1 className="text-lg font-semibold text-foreground">{t("resetPw.verifyingLink")}</h1>
             <p className="text-xs text-muted-foreground mt-2">{t("resetPw.linkExpired")}</p>
             <Button variant="outline" className="mt-4" onClick={() => navigate("/auth")}>{t("resetPw.backToSignIn")}</Button>
           </CardContent>
@@ -68,7 +68,7 @@ export default function ResetPassword() {
           <div className="mx-auto w-12 h-12 rounded-xl hero-gradient flex items-center justify-center mb-3">
             <Heart className="h-6 w-6 text-primary-foreground" />
           </div>
-          <CardTitle className="text-2xl">{t("resetPw.title")}</CardTitle>
+          <h1 className="text-2xl font-semibold leading-none tracking-tight">{t("resetPw.title")}</h1>
           <CardDescription>{t("resetPw.subtitle")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

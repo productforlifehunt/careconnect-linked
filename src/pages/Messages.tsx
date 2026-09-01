@@ -195,7 +195,7 @@ export default function Messages({ embedded = false }: { embedded?: boolean } = 
         <div className="p-4 border-b">
           <div className="flex items-center justify-between mb-3">
             <Heading className="text-lg font-bold text-foreground">{t("messages.messages")}</Heading>
-            <Button variant="ghost" size="icon" onClick={() => setNewConvoOpen(true)} title={t("messages.newConversation")} aria-label={t("messages.newConversation")}>
+            <Button variant="ghost" size="icon" className="min-h-11 min-w-11" onClick={() => setNewConvoOpen(true)} title={t("messages.newConversation")} aria-label={t("messages.newConversation")}>
               <Plus className="h-4 w-4" />
             </Button>
           </div>
@@ -276,9 +276,9 @@ export default function Messages({ embedded = false }: { embedded?: boolean } = 
               </div>
             </div>
             <div className="flex gap-1">
-              <Button variant="ghost" size="icon"><Phone className="h-4 w-4" /></Button>
-              <Button variant="ghost" size="icon"><Video className="h-4 w-4" /></Button>
-              <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="icon" className="min-h-11 min-w-11" aria-label={Z("语音通话", "Voice call")}><Phone className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="icon" className="min-h-11 min-w-11" aria-label={Z("视频通话", "Video call")}><Video className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="icon" className="min-h-11 min-w-11" aria-label={Z("更多对话操作", "More conversation actions")}><MoreVertical className="h-4 w-4" /></Button>
             </div>
           </div>
 
@@ -314,7 +314,7 @@ export default function Messages({ embedded = false }: { embedded?: boolean } = 
                 <span className="text-muted-foreground truncate flex-1">
                   {pendingAttachment.type === "image" ? "📷" : "📎"} {pendingAttachment.url.split("/").pop()}
                 </span>
-                <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => setPendingAttachment(null)}>
+                <Button variant="ghost" size="icon" className="min-h-11 min-w-11 shrink-0" aria-label={Z("移除附件", "Remove attachment")} onClick={() => setPendingAttachment(null)}>
                   <X className="h-3 w-3" />
                 </Button>
               </div>
@@ -324,7 +324,9 @@ export default function Messages({ embedded = false }: { embedded?: boolean } = 
               <Button
                 variant="ghost"
                 size="icon"
+                className="min-h-11 min-w-11"
                 title={Z("发送报价", "Send a price quote")}
+                aria-label={Z("发送报价", "Send a price quote")}
                 onClick={() => setQuoteDialogOpen(true)}
                 disabled={!selectedConvoId}
               >
@@ -337,7 +339,7 @@ export default function Messages({ embedded = false }: { embedded?: boolean } = 
                 onKeyDown={e => e.key === "Enter" && handleSend()}
                 className="flex-1"
               />
-              <Button variant="coral" size="icon" onClick={handleSend} disabled={(!newMessage.trim() && !pendingAttachment) || sendMessage.isPending}>
+              <Button variant="coral" size="icon" className="min-h-11 min-w-11" aria-label={Z("发送消息", "Send message")} onClick={handleSend} disabled={(!newMessage.trim() && !pendingAttachment) || sendMessage.isPending}>
                 <Send className="h-4 w-4" />
               </Button>
             </div>

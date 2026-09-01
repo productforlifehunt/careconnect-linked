@@ -181,7 +181,12 @@ export default function CareFacilityForm() {
   };
 
   if (isEditMode && isLoading) {
-    return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
+    return (
+      <div className="flex justify-center py-20" role="status" aria-label={isZh ? "正在加载机构" : "Loading facility"}>
+        <h1 className="sr-only">{isZh ? "编辑养老机构" : "Edit care facility"}</h1>
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
 
   return (
@@ -192,10 +197,10 @@ export default function CareFacilityForm() {
 
       <Card className="border-transparent card-elevated">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <h1 className="flex items-center gap-2 text-2xl font-semibold leading-none tracking-tight">
             <Building2 className="h-5 w-5 text-primary" />
             {isEditMode ? (isZh ? "编辑养老机构" : "Edit care facility") : (isZh ? "提交养老机构" : "Submit care facility")}
-          </CardTitle>
+          </h1>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid md:grid-cols-2 gap-4">
@@ -227,7 +232,7 @@ export default function CareFacilityForm() {
               <div className="grid grid-cols-2 gap-2">
                 {SERVICE_OPTIONS.map((item) => (
                   <label key={`category-${item}`} className="flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer">
-                    <Checkbox checked={form.service_category.includes(item)} onCheckedChange={() => toggleMulti("service_category", item)} />
+                    <Checkbox aria-label={`${isZh ? "服务分类" : "Service category"}: ${formatToken(item)}`} checked={form.service_category.includes(item)} onCheckedChange={() => toggleMulti("service_category", item)} />
                     <span className="text-sm">{formatToken(item)}</span>
                   </label>
                 ))}
@@ -238,7 +243,7 @@ export default function CareFacilityForm() {
               <div className="grid grid-cols-2 gap-2">
                 {SERVICE_OPTIONS.map((item) => (
                   <label key={`type-${item}`} className="flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer">
-                    <Checkbox checked={form.service_type.includes(item)} onCheckedChange={() => toggleMulti("service_type", item)} />
+                    <Checkbox aria-label={`${isZh ? "服务项目" : "Service type"}: ${formatToken(item)}`} checked={form.service_type.includes(item)} onCheckedChange={() => toggleMulti("service_type", item)} />
                     <span className="text-sm">{formatToken(item)}</span>
                   </label>
                 ))}
@@ -318,7 +323,7 @@ export default function CareFacilityForm() {
             <Card className="bg-muted/20">
               <CardContent className="p-4 space-y-4">
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <Checkbox checked={isOwner} onCheckedChange={(checked) => setIsOwner(!!checked)} />
+                  <Checkbox aria-label={isZh ? "我是该场所的所有者" : "I am the owner of this facility"} checked={isOwner} onCheckedChange={(checked) => setIsOwner(!!checked)} />
                   <span className="text-sm font-medium">{isZh ? "我是该场所的所有者" : "I am the owner of this facility"}</span>
                 </label>
                 {isOwner && (

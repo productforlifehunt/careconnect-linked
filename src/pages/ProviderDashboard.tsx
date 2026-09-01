@@ -364,7 +364,7 @@ export default function ProviderDashboard() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge variant={o.available ? "default" : "secondary"}>{o.available ? (isZh ? "可约" : "Available") : (isZh ? "休息" : "Off")}</Badge>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteOverride(o.date)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                        <Button variant="ghost" size="icon" className="min-h-11 min-w-11 text-destructive" aria-label={isZh ? "删除特殊日期" : "Delete date override"} onClick={() => handleDeleteOverride(o.date)}><Trash2 className="h-3.5 w-3.5" /></Button>
                       </div>
                     </div>
                   ))}

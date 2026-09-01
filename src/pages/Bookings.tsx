@@ -158,7 +158,7 @@ export default function Bookings() {
           <div className="flex items-center gap-2">
             <Badge className={statusColors[booking.status] || "bg-muted text-muted-foreground"}>{String(t(`bookings.status.${booking.status}`, { defaultValue: booking.status.replace(/_/g, " ") }))}</Badge>
             <DropdownMenu>
-              <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+              <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="min-h-11 min-w-11" aria-label={t("common.actions")}><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {["pending", "confirmed"].includes(booking.status) && <DropdownMenuItem onClick={() => { setCancelTargetId(booking.id); setCancelTargetName(booking.provider?.full_name || t("common.provider")); setCancelConfirmOpen(true); }} className="text-destructive"><X className="mr-2 h-4 w-4" /> {t("bookings.cancelBooking")}</DropdownMenuItem>}
                 {["pending", "confirmed"].includes(booking.status) && <DropdownMenuItem onClick={() => openReschedule(booking)}><RefreshCw className="mr-2 h-4 w-4" /> {t("bookings.reschedule")}</DropdownMenuItem>}
@@ -211,7 +211,14 @@ export default function Bookings() {
     </Card>
   );
 
-  if (isLoading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
+  if (isLoading) return (
+    <div className="max-w-4xl mx-auto px-4 py-5">
+      <h1 className="sr-only">{t("bookings.myBookings")}</h1>
+      <div className="flex justify-center py-20" role="status" aria-label={t("common.loading", "Loading")}>
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    </div>
+  );
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-5">
@@ -293,7 +300,7 @@ export default function Bookings() {
               <Label>{t("bookings.rating")}</Label>
               <div className="flex gap-1 mt-1">
                 {[1, 2, 3, 4, 5].map((s) => (
-                  <button key={s} type="button" onClick={() => setReviewRating(s)} className="p-1 transition-colors">
+                  <button key={s} type="button" aria-label={`${s} ${t("bookings.rating")}`} aria-pressed={s === reviewRating} onClick={() => setReviewRating(s)} className="min-h-11 min-w-11 flex items-center justify-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                     <Star className={`h-6 w-6 ${s <= reviewRating ? "text-warning fill-warning" : "text-muted-foreground"}`} />
                   </button>
                 ))}

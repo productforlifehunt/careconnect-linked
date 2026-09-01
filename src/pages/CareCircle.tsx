@@ -202,7 +202,7 @@ export default function CareCircle() {
           <p className="text-sm text-muted-foreground">{t("careCircle.coordinateCare")}</p>
         </div>
         <div className="flex gap-2">
-          {isAdmin && <Button variant="ghost" size="icon" onClick={() => setSettingsOpen(true)} title={t("careCircle.groupSettings")}><Settings className="h-4 w-4" /></Button>}
+          {isAdmin && <Button variant="ghost" size="icon" className="min-h-11 min-w-11" onClick={() => setSettingsOpen(true)} title={t("careCircle.groupSettings")} aria-label={t("careCircle.groupSettings")}><Settings className="h-4 w-4" /></Button>}
           {canShowJoin && (
             <Dialog open={joinCodeOpen} onOpenChange={setJoinCodeOpen}>
               <DialogTrigger asChild><Button variant="outline" size="sm"><KeyRound className="h-4 w-4 mr-1" /> {t("careCircle.join")}</Button></DialogTrigger>
