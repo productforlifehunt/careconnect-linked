@@ -314,6 +314,7 @@ export async function acceptInvitationWordPress(invitationId: string): Promise<v
         meta: memberMeta({ invitationStatus: "accepted" }),
       },
     });
+    await notifyInviteOutcome(groupId, true);
   }
 }
 
@@ -326,7 +327,21 @@ export async function declineInvitationWordPress(invitationId: string): Promise<
     method: "POST",
     body: { parent_id: groupId, child_id: userId, context: "child", store_items_type: "update", meta: memberMeta({ invitationStatus: "declined" }) },
   });
+  await notifyInviteOutcome(groupId, false);
 }
+
+/** Tell the group's owners/admins how an invitation was answered. Never throws. */
+async function notifyInviteOutcome(groupId: number, accepted: boolean): Promise<void> {
+  try {
+    const [{ notifyInviteResponse }, admins, name] = await Promise.all([
+      import("@/features/notifications/notify-events"),
+      groupAdminIds(groupId),
+      groupNameOf(groupId),
+    ]);
+    await notifyInviteResponse(admins, String(groupId), name, accepted);
+  } catch { /* best-effort */ }
+}
+
 
 // ─── Member Roles & Removal ─────────────────────────────────
 // JetEngine relation 72 (care_group → users) dictionary meta fields.
