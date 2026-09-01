@@ -17,6 +17,16 @@ import {
   markAllNotificationsReadWordPress,
 } from "@/features/notifications/source.wordpress";
 import { fetchCurrentLocation, fetchLocationHistory, writeLocationAndCheckZones } from "@/features/location/source.wordpress";
+import {
+  ZONE_TYPE,
+  ZONE_TYPE_CODES,
+  zoneTypeLabel,
+  customSlotOf,
+  isDangerZone,
+  isSafeZone,
+  fetchCustomZoneNames,
+  type CustomZoneNames,
+} from "@/features/location/zone-types";
 
 // NOTE: There is no `safe_zone_alerts` or `location_requests` CCT in the live
 // WordPress backend. Alerts are delivered exclusively via the `notification`
@@ -129,51 +139,42 @@ function normalizePolygonPoints(points: any): [number, number][] {
   }).filter(Boolean) as [number, number][];
 }
 
-// ─── Safe Zone mapping (matches new CCT fields) ─────────────
+// ─── Safe Zone mapping (dictionary CCT 214) ─────────────────
 //
-// CCT 214 Safe Zone has NO dedicated name column — the live table only exposes
-// a55, a56, a58..a69 (verified against the backend; a57 does not exist). a58 is
-// "Custom description", so the zone name and its description share it, joined by
-// NAME_DESC_SEP. Never write a57: JetEngine silently drops unknown columns.
-const NAME_DESC_SEP = " — ";
-
-function packNameDesc(name?: string | null, description?: string | null): string {
-  return [name || "", description || ""].filter(Boolean).join(NAME_DESC_SEP);
-}
-
-function unpackNameDesc(raw: any): { name: string | null; description: string | null } {
-  const value = typeof raw === "string" ? raw : "";
-  if (!value) return { name: null, description: null };
-  const idx = value.indexOf(NAME_DESC_SEP);
-  if (idx === -1) return { name: value, description: null };
-  return { name: value.slice(0, idx) || null, description: value.slice(idx + NAME_DESC_SEP.length) || null };
-}
-
-function mapSafeZone(z: any, userId: string): any {
+// CCT 214 has NO name column and no a57. A zone is labelled by its TYPE (a55):
+// b55 Safe, b56 Danger, b57..b63 Custom 1..7, whose names live on the cared
+// one's extended profile (CCT 258 a95..a101). a58 "Custom description" carries
+// the zone's own description only.
+function mapSafeZone(z: any, userId: string, customNames: CustomZoneNames): any {
   const polygonPoints = normalizePolygonPoints(z.a63);
-  const { name, description } = unpackNameDesc(z.a58);
+  const typeCode = String(z.a55 || ZONE_TYPE.SAFE);
   return {
     id: String(z._ID || z.id),
     user_id: userId,
-    name,
-    zone_type: z.a55 === "b56" ? "Danger" : "Safe",
-    shape_type: z.a56 === "b56" ? "Polygon" : (polygonPoints.length >= 3 ? "Polygon" : "Radius"),
+    zone_type: typeCode,
+    zone_type_label: zoneTypeLabel(typeCode, customNames, false),
+    zone_type_label_zh: zoneTypeLabel(typeCode, customNames, true),
+    custom_slot: customSlotOf(typeCode),
+    is_danger: isDangerZone(typeCode),
+    is_safe: isSafeZone(typeCode),
+    shape_type: z.a56 === T.safeZone.opt.SHAPE_TYPE.POLYGON ? "Polygon" : (polygonPoints.length >= 3 ? "Polygon" : "Radius"),
     color: z.a59 || null,
     latitude: parseNumber(z.a60),
     longitude: parseNumber(z.a61),
     radius_meters: parseNumber(z.a62, 100) ?? 100,
     polygon_points: polygonPoints,
-    description,
-    notify_on_enter: z.a64 === "b56",
-    notify_on_exit: z.a65 === "b56",
-    schedule_enabled: z.a66 === "b56",
+    description: typeof z.a58 === "string" && z.a58 ? z.a58 : null,
+    notify_on_enter: z.a64 === T.safeZone.opt.NOTIFY_ON_ENTER.ON,
+    notify_on_exit: z.a65 === T.safeZone.opt.NOTIFY_ON_EXIT.ON,
+    schedule_enabled: z.a66 === T.safeZone.opt.SCHEDULE_ENABLED.ON,
     schedule_start_time: z.a67 || null,
     schedule_end_time: z.a68 || null,
-    is_active: z.a69 !== "b56",
+    is_active: z.a69 !== T.safeZone.opt.IS_ACTIVE.NO,
     created_at: z.cct_created || z.created_at,
     updated_at: z.cct_modified || z.updated_at || z.created_at,
   };
 }
+
 
 
 // ─── Geo math ────────────────────────────────────────────────
@@ -208,7 +209,6 @@ function isZoneActiveNow(zone: any): boolean {
 function evaluateZoneAlert(zone: any, lat: number, lng: number): { distance: number; alertType: SafeZoneAlertType } | null {
   if (!zone.is_active || !isZoneActiveNow(zone)) return null;
   let inside = false; let distance = 0;
-  const zoneType = String(zone.zone_type).toLowerCase();
 
   if (String(zone.shape_type).toLowerCase() === "polygon" && zone.polygon_points?.length >= 3) {
     inside = isPointInPolygon(lat, lng, zone.polygon_points);
@@ -219,12 +219,21 @@ function evaluateZoneAlert(zone: any, lat: number, lng: number): { distance: num
     inside = distance <= (zone.radius_meters || 200);
   }
 
-  if (zoneType === "danger") {
+  if (zone.is_danger) {
     if (!inside || !zone.notify_on_enter) return null;
     return { distance, alertType: "entered_danger_zone" };
   }
-  // Safe zone
-  if (inside) return null;
+  if (zone.is_safe) {
+    if (inside) return null;
+    if (!zone.notify_on_exit) return null;
+    return { distance, alertType: "exited_safe_zone" };
+  }
+  // Custom zone types (b57..b63) have no safe/danger semantics — they alert on
+  // whichever transition the zone itself enabled.
+  if (inside) {
+    if (!zone.notify_on_enter) return null;
+    return { distance, alertType: "entered_safe_zone" };
+  }
   if (!zone.notify_on_exit) return null;
   return { distance, alertType: "exited_safe_zone" };
 }
@@ -232,41 +241,50 @@ function evaluateZoneAlert(zone: any, lat: number, lng: number): { distance: num
 // ─── Safe Zones CRUD ────────────────────────────────────────
 
 export async function fetchSafeZonesWordPress(userId: string): Promise<any[]> {
-  const [zoneIds, receiverIds] = await Promise.all([
+  const [zoneIds, receiverIds, customNames] = await Promise.all([
     fetchRelationChildIds(REL_USER_SAFE_ZONE, normalizeWpUserId(userId)),
     fetchLocationReceiverIds(userId),
+    fetchCustomZoneNames(userId),
   ]);
   const zones = await Promise.all(
     zoneIds.map(async (zoneId) => {
       const zone = await wordpressCCTFetch<any>(T.safeZone.slug, { id: zoneId });
       // Receivers live on the cared one (Relation 290), shared by all zones.
-      return { ...mapSafeZone(zone, userId), receiver_ids: receiverIds };
+      return { ...mapSafeZone(zone, userId, customNames), receiver_ids: receiverIds };
     }),
   );
   return zones.filter(Boolean);
 }
 
-export async function createSafeZoneWordPress(zone: { user_id: string; name: string; latitude: number; longitude: number; radius_meters?: number; [key: string]: any }): Promise<void> {
+/** Zone-type code (a55). Accepts only the nine dictionary codes. */
+function requireZoneTypeCode(value: any): string {
+  const code = String(value || ZONE_TYPE.SAFE);
+  if (!(ZONE_TYPE_CODES as readonly string[]).includes(code)) {
+    throw new Error(`Unknown zone type "${code}" — CCT 214 a55 accepts b55..b63 only`);
+  }
+  return code;
+}
+
+export async function createSafeZoneWordPress(zone: { user_id: string; latitude: number; longitude: number; radius_meters?: number; [key: string]: any }): Promise<void> {
   const userId = normalizeWpUserId(zone.user_id);
   if (!userId) throw new Error("Invalid user");
   const created = await wordpressCCTFetch<any>(T.safeZone.slug, {
     method: "POST",
     body: {
-      a55: String(zone.zone_type || "Safe").toLowerCase() === "danger" ? "b56" : "b55",
-      a56: String(zone.shape_type || "Radius").toLowerCase() === "polygon" ? "b56" : "b55",
-      a58: packNameDesc(zone.name, zone.description),
-
+      a55: requireZoneTypeCode(zone.zone_type),
+      a56: String(zone.shape_type || "Radius").toLowerCase() === "polygon" ? T.safeZone.opt.SHAPE_TYPE.POLYGON : T.safeZone.opt.SHAPE_TYPE.RADIUS,
+      a58: zone.description || "",
       a59: zone.color || "",
       a60: String(zone.latitude),
       a61: String(zone.longitude),
       a62: String(zone.radius_meters ?? 100),
       a63: zone.polygon_points ? JSON.stringify(zone.polygon_points) : "",
-      a64: zone.notify_on_enter !== false ? "b56" : "b55",
-      a65: zone.notify_on_exit !== false ? "b56" : "b55",
-      a66: zone.schedule_enabled ? "b56" : "b55",
+      a64: zone.notify_on_enter !== false ? T.safeZone.opt.NOTIFY_ON_ENTER.ON : T.safeZone.opt.NOTIFY_ON_ENTER.OFF,
+      a65: zone.notify_on_exit !== false ? T.safeZone.opt.NOTIFY_ON_EXIT.ON : T.safeZone.opt.NOTIFY_ON_EXIT.OFF,
+      a66: zone.schedule_enabled ? T.safeZone.opt.SCHEDULE_ENABLED.ON : T.safeZone.opt.SCHEDULE_ENABLED.OFF,
       a67: zone.schedule_start_time || "",
       a68: zone.schedule_end_time || "",
-      a69: zone.is_active === false ? "b56" : "b55",
+      a69: zone.is_active === false ? T.safeZone.opt.IS_ACTIVE.NO : T.safeZone.opt.IS_ACTIVE.YES,
     },
   });
   const zoneId = String(created._ID || created.id);
@@ -278,18 +296,9 @@ export async function createSafeZoneWordPress(zone: { user_id: string; name: str
 
 export async function updateSafeZoneWordPress(id: string, updates: Record<string, any>): Promise<void> {
   const body: Record<string, any> = {};
-  // name + description share a58 — read the current row so a partial update
-  // never wipes the other half.
-  if (updates.name !== undefined || updates.description !== undefined) {
-    const row = await wordpressCCTFetch<any>(T.safeZone.slug, { id });
-    const current = unpackNameDesc(row?.a58);
-    body.a58 = packNameDesc(
-      updates.name !== undefined ? updates.name : current.name,
-      updates.description !== undefined ? updates.description : current.description,
-    );
-  }
-  if (updates.zone_type !== undefined) body.a55 = String(updates.zone_type).toLowerCase() === "danger" ? "b56" : "b55";
-  if (updates.shape_type !== undefined) body.a56 = String(updates.shape_type).toLowerCase() === "polygon" ? "b56" : "b55";
+  if (updates.description !== undefined) body.a58 = updates.description || "";
+  if (updates.zone_type !== undefined) body.a55 = requireZoneTypeCode(updates.zone_type);
+  if (updates.shape_type !== undefined) body.a56 = String(updates.shape_type).toLowerCase() === "polygon" ? T.safeZone.opt.SHAPE_TYPE.POLYGON : T.safeZone.opt.SHAPE_TYPE.RADIUS;
   if (updates.color !== undefined) body.a59 = updates.color;
   if (updates.latitude !== undefined) body.a60 = String(updates.latitude);
   if (updates.longitude !== undefined) body.a61 = String(updates.longitude);
@@ -298,18 +307,19 @@ export async function updateSafeZoneWordPress(id: string, updates: Record<string
   if (updates.radius_meters !== undefined) body.a62 = String(updates.radius_meters);
 
   if (updates.polygon_points !== undefined) body.a63 = updates.polygon_points ? JSON.stringify(updates.polygon_points) : "";
-  if (updates.notify_on_enter !== undefined) body.a64 = updates.notify_on_enter ? "b56" : "b55";
-  if (updates.notify_on_exit !== undefined) body.a65 = updates.notify_on_exit ? "b56" : "b55";
-  if (updates.schedule_enabled !== undefined) body.a66 = updates.schedule_enabled ? "b56" : "b55";
+  if (updates.notify_on_enter !== undefined) body.a64 = updates.notify_on_enter ? T.safeZone.opt.NOTIFY_ON_ENTER.ON : T.safeZone.opt.NOTIFY_ON_ENTER.OFF;
+  if (updates.notify_on_exit !== undefined) body.a65 = updates.notify_on_exit ? T.safeZone.opt.NOTIFY_ON_EXIT.ON : T.safeZone.opt.NOTIFY_ON_EXIT.OFF;
+  if (updates.schedule_enabled !== undefined) body.a66 = updates.schedule_enabled ? T.safeZone.opt.SCHEDULE_ENABLED.ON : T.safeZone.opt.SCHEDULE_ENABLED.OFF;
   if (updates.schedule_start_time !== undefined) body.a67 = updates.schedule_start_time;
   if (updates.schedule_end_time !== undefined) body.a68 = updates.schedule_end_time;
-  if (updates.is_active !== undefined) body.a69 = updates.is_active ? "b55" : "b56";
+  if (updates.is_active !== undefined) body.a69 = updates.is_active ? T.safeZone.opt.IS_ACTIVE.YES : T.safeZone.opt.IS_ACTIVE.NO;
   await wordpressCCTFetch(T.safeZone.slug, { id, method: "PUT", body });
   if (updates.receiver_ids !== undefined) {
     if (!updates.user_id) throw new Error("Cannot save location alert receivers without the cared one's user id");
     await setLocationReceivers(String(updates.user_id), updates.receiver_ids || []);
   }
 }
+
 
 
 export async function deleteSafeZoneWordPress(id: string): Promise<void> {
@@ -402,9 +412,10 @@ export async function createSafeZoneAlertsForLocation(userId: string, lat: numbe
       } catch { /* sessionStorage unavailable in SSR */ }
 
       const msg =
-        result.alertType === "entered_danger_zone" ? `Entered danger zone: ${zone.name}` :
-        result.alertType === "exited_safe_zone"   ? `Left safe zone: ${zone.name}` :
-                                                    `Entered safe zone: ${zone.name}`;
+        result.alertType === "entered_danger_zone" ? `Entered danger zone: ${zone.zone_type_label}` :
+        result.alertType === "exited_safe_zone"   ? `Left zone: ${zone.zone_type_label}` :
+                                                    `Entered zone: ${zone.zone_type_label}`;
+
       {
         await createNotificationWordPress({
           user_id: userId,

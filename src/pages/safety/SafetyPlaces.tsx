@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Home, Loader2, MapPin, Pencil, Plus, Trash2, Crosshair, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -15,12 +18,18 @@ import { getCurrentPosition } from "@/lib/locationService";
 import {
   createSafeZoneWordPress, updateSafeZoneWordPress, deleteSafeZoneWordPress,
 } from "@/features/location/source.wordpress-extended";
+import {
+  ZONE_TYPE, ZONE_TYPE_CODES, zoneTypeLabel, customSlotOf, isDangerZone,
+  fetchCustomZoneNames, setCustomZoneName, type CustomZoneNames,
+} from "@/features/location/zone-types";
 import { useSafetyCircle } from "./useSafetyCircle";
 
 const emptyForm = {
   id: "",
-  name: "",
-  zone_type: "Safe" as "Safe" | "Danger",
+  // CCT 214 a55 — the zone's type IS its label; there is no per-zone name.
+  zone_type: ZONE_TYPE.SAFE as string,
+  custom_name: "",
+  description: "",
   latitude: "",
   longitude: "",
   radius_meters: "200",
@@ -29,6 +38,7 @@ const emptyForm = {
   is_active: true,
   receiver_ids: [] as string[],
 };
+
 
 /** Life360-style "Places" — arrival/departure geofences, fully managed in-app. */
 export default function SafetyPlaces() {
@@ -42,6 +52,21 @@ export default function SafetyPlaces() {
   const [form, setForm] = useState({ ...emptyForm });
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  // CCT 258 a95..a101 — the seven custom zone-type names of this cared one.
+  const [customNames, setCustomNames] = useState<CustomZoneNames>({});
+
+  useEffect(() => {
+    if (!selfId) return;
+    let cancelled = false;
+    fetchCustomZoneNames(selfId)
+      .then((names) => { if (!cancelled) setCustomNames(names); })
+      .catch((err: any) => toast({
+        title: Z("无法读取自定义区域名称", "Could not load custom zone names"),
+        description: err?.message,
+        variant: "destructive",
+      }));
+    return () => { cancelled = true; };
+  }, [selfId]);
 
   const openNew = () => {
     setForm({ ...emptyForm });
@@ -49,10 +74,13 @@ export default function SafetyPlaces() {
   };
 
   const openEdit = (z: any) => {
+    const code = String(z.zone_type || ZONE_TYPE.SAFE);
+    const slot = customSlotOf(code);
     setForm({
       id: String(z.id),
-      name: z.name || "",
-      zone_type: String(z.zone_type).toLowerCase() === "danger" ? "Danger" : "Safe",
+      zone_type: code,
+      custom_name: slot ? (customNames[slot] || "") : "",
+      description: z.description || "",
       latitude: z.latitude != null ? String(z.latitude) : "",
       longitude: z.longitude != null ? String(z.longitude) : "",
       radius_meters: String(z.radius_meters ?? 200),
@@ -78,7 +106,9 @@ export default function SafetyPlaces() {
     const lat = Number(form.latitude);
     const lng = Number(form.longitude);
     const radius = Number(form.radius_meters);
-    if (!form.name.trim()) return toast({ title: Z("请填写地点名称", "Place name is required"), variant: "destructive" });
+    const slot = customSlotOf(form.zone_type);
+    if (slot && !form.custom_name.trim())
+      return toast({ title: Z("请填写自定义区域名称", "Custom zone name is required"), variant: "destructive" });
     if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180)
       return toast({ title: Z("坐标无效", "Invalid coordinates"), variant: "destructive" });
     if (!Number.isFinite(radius) || radius < 20)
@@ -86,34 +116,28 @@ export default function SafetyPlaces() {
 
     setSaving(true);
     try {
+      // A custom type's name belongs to the cared one's extended profile
+      // (CCT 258), not to the zone row — one name per slot, shared by zones.
+      if (slot && form.custom_name.trim() !== (customNames[slot] || "")) {
+        await setCustomZoneName(selfId, slot, form.custom_name.trim());
+        setCustomNames((prev) => ({ ...prev, [slot]: form.custom_name.trim() }));
+      }
+      const payload = {
+        zone_type: form.zone_type,
+        description: form.description.trim(),
+        shape_type: "Radius",
+        latitude: lat,
+        longitude: lng,
+        radius_meters: radius,
+        notify_on_enter: form.notify_on_enter,
+        notify_on_exit: form.notify_on_exit,
+        is_active: form.is_active,
+        receiver_ids: form.receiver_ids,
+      };
       if (form.id) {
-        await updateSafeZoneWordPress(form.id, {
-          name: form.name.trim(),
-          zone_type: form.zone_type,
-          shape_type: "Radius",
-          latitude: lat,
-          longitude: lng,
-          radius_meters: radius,
-          notify_on_enter: form.notify_on_enter,
-          notify_on_exit: form.notify_on_exit,
-          is_active: form.is_active,
-          user_id: String(selfId),
-          receiver_ids: form.receiver_ids,
-        });
+        await updateSafeZoneWordPress(form.id, { ...payload, user_id: String(selfId) });
       } else {
-        await createSafeZoneWordPress({
-          user_id: String(selfId),
-          name: form.name.trim(),
-          zone_type: form.zone_type,
-          shape_type: "Radius",
-          latitude: lat,
-          longitude: lng,
-          radius_meters: radius,
-          notify_on_enter: form.notify_on_enter,
-          notify_on_exit: form.notify_on_exit,
-          is_active: form.is_active,
-          receiver_ids: form.receiver_ids,
-        });
+        await createSafeZoneWordPress({ ...payload, user_id: String(selfId) });
       }
       await refreshZones();
       setOpen(false);
@@ -123,6 +147,7 @@ export default function SafetyPlaces() {
     } finally {
       setSaving(false);
     }
+
   };
 
   const remove = async (id: string) => {
@@ -165,7 +190,8 @@ export default function SafetyPlaces() {
       ) : (
         <ul className="space-y-2">
           {zones.map((z: any, idx: number) => {
-            const isDanger = String(z.zone_type).toLowerCase() === "danger";
+            const isDanger = isDangerZone(String(z.zone_type));
+            const label = zoneTypeLabel(String(z.zone_type), customNames, isCN);
             return (
               <li key={`${z.id || "zone"}-${idx}`} className="flex items-start gap-3 rounded-xl border p-3">
                 <span
@@ -177,16 +203,22 @@ export default function SafetyPlaces() {
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="truncate text-sm font-medium">{z.name || Z("未命名地点", "Unnamed place")}</span>
-                    <Badge variant={isDanger ? "destructive" : "secondary"} className="h-4 px-1 text-[10px]">
-                      {isDanger ? Z("危险", "Danger") : Z("安全", "Safe")}
-                    </Badge>
+                    <span className="truncate text-sm font-medium">{label}</span>
+                    {z.description && (
+                      <span className="truncate text-xs text-muted-foreground">{z.description}</span>
+                    )}
+                    {isDanger && (
+                      <Badge variant="destructive" className="h-4 px-1 text-[10px]">
+                        {Z("危险", "Danger")}
+                      </Badge>
+                    )}
                     {!z.is_active && (
                       <Badge variant="outline" className="h-4 px-1 text-[10px]">
                         {Z("已停用", "Paused")}
                       </Badge>
                     )}
                   </div>
+
                   <p className="mt-0.5 text-xs text-muted-foreground">
                     {z.latitude != null && z.longitude != null ? `${z.latitude.toFixed(4)}, ${z.longitude.toFixed(4)}` : Z("无坐标", "No coordinates")} · {z.radius_meters || 200} m
                   </p>
@@ -224,34 +256,53 @@ export default function SafetyPlaces() {
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <Label htmlFor="place-name">{Z("名称", "Name")}</Label>
+              <Label htmlFor="place-type">{Z("区域类型", "Zone type")}</Label>
+              <Select
+                value={form.zone_type}
+                onValueChange={(v) => setForm((f) => ({
+                  ...f,
+                  zone_type: v,
+                  custom_name: customSlotOf(v) ? (customNames[customSlotOf(v)] || "") : "",
+                }))}
+              >
+                <SelectTrigger id="place-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ZONE_TYPE_CODES.map((code) => (
+                    <SelectItem key={code} value={code}>
+                      {zoneTypeLabel(code, customNames, isCN)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {customSlotOf(form.zone_type) > 0 && (
+              <div>
+                <Label htmlFor="place-custom-name">
+                  {Z(`自定义区域 ${customSlotOf(form.zone_type)} 名称`, `Custom zone ${customSlotOf(form.zone_type)} name`)}
+                </Label>
+                <Input
+                  id="place-custom-name"
+                  value={form.custom_name}
+                  onChange={(e) => setForm((f) => ({ ...f, custom_name: e.target.value }))}
+                  placeholder={Z("学校 / 公园", "School / Park")}
+                />
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  {Z("此名称对该被照护人的所有同类型区域生效。", "This name applies to every zone of this type for this person.")}
+                </p>
+              </div>
+            )}
+            <div>
+              <Label htmlFor="place-desc">{Z("描述", "Description")}</Label>
               <Input
-                id="place-name"
-                value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                placeholder={Z("家 / 学校 / 工作", "Home / School / Work")}
+                id="place-desc"
+                value={form.description}
+                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                placeholder={Z("可选说明", "Optional detail")}
               />
             </div>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant={form.zone_type === "Safe" ? "default" : "outline"}
-                size="sm"
-                className="flex-1"
-                onClick={() => setForm((f) => ({ ...f, zone_type: "Safe" }))}
-              >
-                {Z("安全地点", "Safe place")}
-              </Button>
-              <Button
-                type="button"
-                variant={form.zone_type === "Danger" ? "destructive" : "outline"}
-                size="sm"
-                className="flex-1"
-                onClick={() => setForm((f) => ({ ...f, zone_type: "Danger" }))}
-              >
-                {Z("危险地点", "Danger place")}
-              </Button>
-            </div>
+
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <Label htmlFor="place-lat">{Z("纬度", "Latitude")}</Label>

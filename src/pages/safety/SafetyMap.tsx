@@ -84,8 +84,8 @@ export default function SafetyMap() {
     zoneLayers.current.forEach((l) => m.removeLayer(l));
     zoneLayers.current = [];
     zones.filter((z) => z.is_active).forEach((z) => {
-      const isDanger = String(z.zone_type).toLowerCase() === "danger";
-      const color = isDanger ? "#ef4444" : "hsl(var(--primary))";
+      const isDanger = !!z.is_danger;
+      const color = isDanger ? "#ef4444" : (z.color || "hsl(var(--primary))");
       if (z.latitude == null || z.longitude == null) return;
       const c = L.circle([z.latitude, z.longitude], {
         radius: z.radius_meters || 200,
@@ -94,9 +94,11 @@ export default function SafetyMap() {
         fillOpacity: 0.12,
         dashArray: isDanger ? "6 4" : undefined,
       }).addTo(m);
-      c.bindPopup(`<b>${z.name}</b><br/>${isDanger ? Z("危险地点", "Danger place") : Z("安全地点", "Safe place")} · ${z.radius_meters || 200}m`);
+      const label = isCN ? z.zone_type_label_zh : z.zone_type_label;
+      c.bindPopup(`<b>${label}</b><br/>${z.description ? `${z.description} · ` : ""}${z.radius_meters || 200}m`);
       zoneLayers.current.push(c);
     });
+
   }, [zones]);
 
   // ── Member pins ─────────────────────────────────────────────
