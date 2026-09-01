@@ -69,7 +69,7 @@ const Index = () => {
           <div className="max-w-3xl">
             <h1 className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 leading-[1.1] tracking-tight animate-fade-in max-w-[14ch] ${site.id === "carecnc" ? "text-foreground" : "text-primary-foreground"}`}>
               {t(`site.${site.id}.heroTitle`)}{" "}
-              <span className="text-coral">{t(`site.${site.id}.heroHighlight`)}</span>
+              <span className="text-coral inline-block whitespace-nowrap">{t(`site.${site.id}.heroHighlight`)}</span>
             </h1>
             <p className={`text-base sm:text-lg md:text-xl mb-6 sm:mb-8 animate-fade-in max-w-[38rem] ${site.id === "carecnc" ? "text-foreground/80" : "text-primary-foreground/90"}`} style={{ animationDelay: "0.1s" }}>
               {t(`site.${site.id}.heroSubtitle`)}
