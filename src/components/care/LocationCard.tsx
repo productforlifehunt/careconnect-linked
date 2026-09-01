@@ -616,9 +616,12 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
       setZoneForm(defaultForm());
       setDrawnPoints([]); setCornerRadii([]); setDrawMode("idle");
     }
+    const slot = customSlotOf(zone?.zone_type || ZONE_TYPE.SAFE);
+    setCustomNameDraft(slot ? (customNames[slot] || "") : "");
     setSelectedVertex(null);
     setShowZoneForm(true);
     setActiveTab("safezones");
+
   };
 
   const handleSaveZone = () => {
