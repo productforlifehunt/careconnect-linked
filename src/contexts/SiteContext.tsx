@@ -48,6 +48,7 @@ export interface SiteConfig {
     manageD?: string;
   };
   howItWorksSteps: { step: string; titleKey: string; descKey: string }[];
+  trustBadges: string[];
 }
 
 const careCNCConfig: SiteConfig = {
@@ -86,6 +87,7 @@ const careCNCConfig: SiteConfig = {
     { step: "2", titleKey: "step2Title", descKey: "step2Desc" },
     { step: "3", titleKey: "step3Title", descKey: "step3Desc" },
   ],
+  trustBadges: ["badge1", "badge2", "badge3"],
 };
 
 const challengedConfig: SiteConfig = {
@@ -130,6 +132,7 @@ const challengedConfig: SiteConfig = {
     { step: "2", titleKey: "step2Title", descKey: "step2Desc" },
     { step: "3", titleKey: "step3Title", descKey: "step3Desc" },
   ],
+  trustBadges: ["badge1", "badge2", "badge3", "badge4"],
 };
 
 // 忆畅 early-launch variant.

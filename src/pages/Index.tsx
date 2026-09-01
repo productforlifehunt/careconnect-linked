@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Search, MapPin, Star, Shield, Clock, Heart,
-  Users, ArrowRight, Loader2
+  Users, ArrowRight, CheckCircle, Loader2
 } from "lucide-react";
 import { useProviders } from "@/hooks/use-care-data";
 import { useSite } from "@/contexts/SiteContext";
@@ -112,6 +112,14 @@ const Index = () => {
               </div>
             </div>
 
+            <div className="flex flex-wrap gap-x-4 gap-y-2 mt-6 animate-fade-in" style={{ animationDelay: "0.3s" }}>
+              {site.trustBadges.map((badgeKey) => (
+                <div key={badgeKey} className="flex items-center gap-2 text-primary-foreground/85 text-sm">
+                  <CheckCircle className="h-4 w-4 shrink-0" />
+                  <span>{t(`site.${site.id}.${badgeKey}`)}</span>
+                </div>
+              ))}
+            </div>
 
           </div>
         </div>

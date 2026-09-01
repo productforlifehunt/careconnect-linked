@@ -134,19 +134,13 @@ export default function Resources() {
       {/* Hero */}
       <section className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground py-8 sm:py-10 md:py-14">
         <div className="max-w-5xl mx-auto px-4">
-          <Badge
-            variant="secondary"
-            className="bg-white/20 text-white border-0 mb-3 backdrop-blur-sm"
-          >
-            {isZh ? "改编自 WHO iSupport" : "Adapted from WHO iSupport"}
-          </Badge>
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 tracking-tight">
             {isZh ? "资源中心" : "Resources"}
           </h1>
           <p className="text-sm sm:text-base text-primary-foreground/90 max-w-2xl mb-6">
             {isZh
-              ? "改编自世界卫生组织 iSupport 框架的 5 个模块、23 节课，从认识失智症到照顾好自己。"
-              : "5 modules, 23 lessons adapted from the WHO iSupport framework — from understanding dementia to looking after yourself."}
+              ? "5 个模块、23 节课，从认识失智症到照顾好自己。"
+              : "5 modules and 23 lessons — from understanding dementia to looking after yourself."}
           </p>
 
           {/* Overall progress */}
@@ -321,8 +315,8 @@ export default function Resources() {
           {/* Footer note */}
           <p className="text-xs text-muted-foreground text-center mt-8 max-w-2xl mx-auto">
             {isZh
-              ? "本指南改编自世界卫生组织（WHO）iSupport for Dementia 计划，仅供教育用途，不能替代专业医疗建议。"
-              : "Adapted from the World Health Organization's iSupport for Dementia programme. Educational only — not a substitute for professional medical advice."}
+              ? "本指南仅供教育用途，不能替代专业医疗建议。"
+              : "Educational only — not a substitute for professional medical advice."}
           </p>
         </div>
       )}

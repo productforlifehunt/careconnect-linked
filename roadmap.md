@@ -7,3 +7,4 @@
 - [ ] Verify live JetEngine schema on `/afresh` through GUI and correct GUI-only mismatches
 - [ ] Test all available frontend CRUD/relation operations with mandated test account
 - [ ] Confirm build/runtime/network diagnostics and publish exact pass/fail matrix
+- [x] Restore all cleanup removals while keeping visible WHO/iSupport attribution removed
