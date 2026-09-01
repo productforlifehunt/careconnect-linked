@@ -146,12 +146,9 @@ export function DementiaAssistant() {
           : ttsEngine === "cosyvoice-v35-plus" ? "Cosy 3.5 Plus"
           : ttsEngine === "cosyvoice-v35-flash" ? "Cosy 3.5 Flash"
           : "CosyVoice2";
-        toast.success(
-          isChinese
-            ? `${engineLabel} 首字 ${elapsed}ms`
-            : `${engineLabel} TTFB ${elapsed}ms`,
-          { duration: 2500 },
-        );
+        if (import.meta.env.DEV) {
+          console.info(`[voice] ${engineLabel} first audio in ${elapsed}ms`);
+        }
       },
       onPlayStateChange: (s) => {
         if (s === "playing") setPlayState("playing");

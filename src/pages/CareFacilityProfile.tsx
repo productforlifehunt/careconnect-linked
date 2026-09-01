@@ -428,7 +428,7 @@ export default function CareFacilityProfile() {
                 {ownerMembers.length > 0 ? ownerMembers.map((member) => (
                   <div key={member.id} className="rounded-xl border p-3">
                     <div className="font-medium text-foreground">{member.profile?.full_name || member.profile?.email || member.user_id}</div>
-                    <div className="text-muted-foreground">{member.role || (isZh ? "未填写角色" : "No role provided")}</div>
+                    <div className="text-muted-foreground">{member.role || (isZh ? "未填写角色" : "Role not listed")}</div>
                   </div>
                 )) : (
                   <div className="rounded-xl border p-3 text-muted-foreground">{isZh ? "当前没有所有者成员。" : "This facility has no owner member."}</div>
@@ -441,7 +441,7 @@ export default function CareFacilityProfile() {
                   {adminMembers.map((member) => (
                     <div key={member.id} className="rounded-xl border p-3">
                       <div className="font-medium text-foreground">{member.profile?.full_name || member.profile?.email || member.user_id}</div>
-                      <div className="text-muted-foreground">{member.role || (isZh ? "未填写角色" : "No role provided")}</div>
+                      <div className="text-muted-foreground">{member.role || (isZh ? "未填写角色" : "Role not listed")}</div>
                     </div>
                   ))}
                 </div>
@@ -453,7 +453,7 @@ export default function CareFacilityProfile() {
                   {regularMembers.map((member) => (
                     <div key={member.id} className="rounded-xl border p-3">
                       <div className="font-medium text-foreground">{member.profile?.full_name || member.profile?.email || member.user_id}</div>
-                      <div className="text-muted-foreground">{member.role || (isZh ? "未填写角色" : "No role provided")}</div>
+                      <div className="text-muted-foreground">{member.role || (isZh ? "未填写角色" : "Role not listed")}</div>
                     </div>
                   ))}
                 </div>
@@ -528,7 +528,7 @@ export default function CareFacilityProfile() {
                       <Textarea value={claimText} onChange={(e) => setClaimText(e.target.value)} rows={4} className="mt-1" />
                     </div>
                     <div>
-                      <Label>{isZh ? "证明附件链接" : "Proof attachment URLs"}</Label>
+                      <Label>{isZh ? "证明附件链接" : "Links to photos of your proof"}</Label>
                       <Textarea
                         value={claimProof}
                         onChange={(e) => setClaimProof(e.target.value)}

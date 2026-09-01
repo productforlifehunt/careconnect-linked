@@ -1,7 +1,7 @@
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { wpAdminOps } from "@/services/woocommerce-api";
 import { T, R } from "@/integrations/wp-schema";
-import { dedupeRead } from "@/features/shared/rel-batch";
+import { dedupeRead, fetchRelChildrenMap } from "@/features/shared/rel-batch";
 import { appUserNameField } from "@/features/shared/app-scope";
 
 export interface WPUserRecord {
@@ -65,14 +65,30 @@ export async function fetchWPUser(id: number | string): Promise<WPUserRecord> {
   return rec;
 }
 
-/** One-to-one child CCT row of a user (Relation 152 / 259). */
+/**
+ * One-to-one child CCT row of a user (Relation 152 / 259).
+ *
+ * Reads the relation through the batched whole-relation map (one request for
+ * every user on the screen instead of one per user), and dedupes the CCT row
+ * read so a roster of N members costs ~2 relation requests + N cached row
+ * reads instead of 4N sequential round-trips.
+ */
 async function fetchOneToOneChild(relationId: number, userId: number, cctSlug: string): Promise<any | null> {
-  const rels = await wordpressFetch<any[]>(`jet-rel/${relationId}/children/${userId}`);
-  if (!Array.isArray(rels)) throw new Error(`Relation ${relationId} returned an invalid response`);
-  const childId = rels[0]?.child_object_id;
+  let childId: string | number | null = null;
+  const map = await fetchRelChildrenMap(relationId);
+  if (map.loaded) {
+    childId = map.get(String(userId))?.[0]?.childId ?? null;
+  } else {
+    const rels = await dedupeRead(`rel-children:${relationId}:${userId}`, () =>
+      wordpressFetch<any[]>(`jet-rel/${relationId}/children/${userId}`),
+    );
+    if (!Array.isArray(rels)) throw new Error(`Relation ${relationId} returned an invalid response`);
+    childId = rels[0]?.child_object_id ?? null;
+  }
   if (!childId) return null;
-  return wordpressCCTFetch<any>(cctSlug, { id: childId });
+  return dedupeRead(`cct-row:${cctSlug}:${childId}`, () => wordpressCCTFetch<any>(cctSlug, { id: childId as any }));
 }
+
 
 export interface WPUserProfile extends WPUserRecord {
   /** 151. User's extended profile (Relation 152) */

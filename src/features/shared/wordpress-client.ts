@@ -7,7 +7,23 @@ export interface WordPressFetchOptions {
   params?: Record<string, string | number | boolean | undefined | null>;
 }
 
+/**
+ * Transport-level read dedupe.
+ *
+ * Sibling widgets on one screen repeatedly ask for the same relation/CCT rows.
+ * Instead of one HTTP round-trip per caller, identical GETs issued within a
+ * short window share a single response (cloned per caller). Any write clears
+ * the cache, so nothing stale is served after a mutation.
+ */
+const GET_TTL_MS = 4000;
+const getCache = new Map<string, { at: number; promise: Promise<Response> }>();
+
+if (typeof window !== "undefined") {
+  window.addEventListener("wp-write", () => getCache.clear());
+}
+
 export async function wordpressFetchRaw(endpoint: string, options: WordPressFetchOptions = {}): Promise<Response> {
+
   const token = getWPToken();
   const { method = "GET", body, params } = options;
 
@@ -35,12 +51,28 @@ export async function wordpressFetchRaw(endpoint: string, options: WordPressFetc
 
   let response: Response;
   try {
-    response = await fetch(url, {
-      method,
-      headers,
-      body: body ? JSON.stringify(body) : undefined,
-    });
-
+    if (method === "GET") {
+      const key = `${url}|${token ? "auth" : "guest"}`;
+      const hit = getCache.get(key);
+      const now = Date.now();
+      let inflight: Promise<Response>;
+      if (hit && now - hit.at < GET_TTL_MS) {
+        inflight = hit.promise;
+      } else {
+        inflight = fetch(url, { method, headers }).catch((err) => {
+          getCache.delete(key);
+          throw err;
+        });
+        getCache.set(key, { at: now, promise: inflight });
+      }
+      response = (await inflight).clone();
+    } else {
+      response = await fetch(url, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+      });
+    }
   } catch (err) {
     // Route changes abort in-flight requests (net::ERR_ABORTED → "Failed to
     // fetch"). That is not a backend failure, so tag it and let callers keep
@@ -51,6 +83,7 @@ export async function wordpressFetchRaw(endpoint: string, options: WordPressFetc
     e.isNetworkAbort = true;
     throw e;
   }
+
 
 
   if (!response.ok) {
