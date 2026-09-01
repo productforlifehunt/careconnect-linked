@@ -50,6 +50,8 @@ export default function CareCircle() {
   const { data: groups, isLoading: groupsLoading } = useCareGroups();
   const createGroup = useCreateCareGroup();
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("home");
+
   const [createGroupOpen, setCreateGroupOpen] = useState(false);
   const [joinCodeOpen, setJoinCodeOpen] = useState(false);
   const [joinCode, setJoinCode] = useState("");
