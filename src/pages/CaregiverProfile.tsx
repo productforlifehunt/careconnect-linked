@@ -404,8 +404,11 @@ export default function CaregiverProfile() {
 
                   </div>
                   <div className="flex flex-wrap gap-2 mt-4">
-                    {(caregiver.specialty || []).map(s => (
-                      <Badge key={s} variant="secondary" className="bg-accent text-accent-foreground">{s}</Badge>
+                    {(caregiver.service_location_slugs || []).map((slug: string) => (
+                      <Badge key={`loc-${slug}`} variant="outline" className="border-primary/40 text-primary">{deliveryModeLabel(slug, isZh)}</Badge>
+                    ))}
+                    {(caregiver.service_type_slugs || []).map((slug: string) => (
+                      <Badge key={slug} variant="secondary" className="bg-accent text-accent-foreground">{careServiceTypeLabel(slug, isZh)}</Badge>
                     ))}
                   </div>
                 </div>
@@ -420,28 +423,20 @@ export default function CaregiverProfile() {
             </Card>
           )}
 
-          {((caregiver.certifications && caregiver.certifications.length > 0)) && (
+          {caregiver.care_provider_is_background_checked && (
             <Card className="border-transparent card-elevated">
               <CardHeader><CardTitle>{isZh ? "资质" : "Qualifications"}</CardTitle></CardHeader>
               <CardContent>
-                <div>
-                  <h4 className="font-medium text-sm mb-2">{isZh ? "证书" : "Certifications"}</h4>
-                  <div className="space-y-2">
-                    {(caregiver.certifications || []).map(c => (
-                      <div key={c} className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <CheckCircle className="h-4 w-4 text-success" /> {c}
-                      </div>
-                    ))}
-                  </div>
+                <div className="p-3 rounded-lg bg-success/10 flex items-center gap-2 text-sm text-success">
+                  <Shield className="h-4 w-4" /> {t("caregiverProfile.bgCheckPassed")}
                 </div>
-                {caregiver.care_provider_is_background_checked && (
-                  <div className="mt-4 p-3 rounded-lg bg-success/10 flex items-center gap-2 text-sm text-success">
-                    <Shield className="h-4 w-4" /> {t("caregiverProfile.bgCheckPassed")}
-                  </div>
+                {caregiver.care_provider_background_check_detail && (
+                  <p className="mt-3 text-sm text-muted-foreground">{caregiver.care_provider_background_check_detail}</p>
                 )}
               </CardContent>
             </Card>
           )}
+
 
         </div>
 
