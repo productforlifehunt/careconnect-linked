@@ -106,8 +106,39 @@ export async function filterVisibleTasks<T extends { id: string | number }>(task
   return filterVisibleEntities(tasks, REL_TASK_SUBGROUPS, REL_TASK_USERS);
 }
 
-/** Set the sub-group visibility links for a post (replaces existing). */
+/** Replace the visibility links of one entity (adds new, removes dropped ones). */
+async function replaceLinks(rel: number, parentId: number, wantedIds: number[]): Promise<void> {
+  const current = await wordpressFetch<any[]>(`jet-rel/${rel}/children/${parentId}`).catch(() => []);
+  const existing = (Array.isArray(current) ? current : []).map((r: any) => Number(r.child_object_id)).filter(Boolean);
+  const toAdd = wantedIds.filter((id) => !existing.includes(id));
+  const toRemove = existing.filter((id) => !wantedIds.includes(id));
+  await Promise.all([
+    ...toAdd.map((id) =>
+      wordpressFetch(`jet-rel/${rel}`, {
+        method: "POST",
+        body: { parent_id: parentId, child_id: id, context: "child", store_items_type: "update" },
+      }).catch(() => undefined),
+    ),
+    ...toRemove.map((id) =>
+      wordpressFetch(`jet-rel/${rel}`, {
+        method: "DELETE",
+        body: { parent_id: parentId, child_id: id },
+      }).catch(() => undefined),
+    ),
+  ]);
+}
+
+/** Set the sub-group / user visibility links for a post (replaces existing). */
 export async function setPostVisibility(postId: string | number, subgroupIds: number[], userIds: number[] = []): Promise<void> {
+  const pid = Number(String(postId).replace(/^wp-/, ""));
+  if (!pid) return;
+  await Promise.all([
+    replaceLinks(REL_POST_SUBGROUPS, pid, subgroupIds),
+    replaceLinks(REL_POST_USERS, pid, userIds),
+  ]);
+}
+
+async function legacySetPostVisibility(postId: string | number, subgroupIds: number[], userIds: number[] = []): Promise<void> {
   const pid = Number(String(postId).replace(/^wp-/, ""));
   if (!pid) return;
   await Promise.all([
@@ -126,8 +157,17 @@ export async function setPostVisibility(postId: string | number, subgroupIds: nu
   ]);
 }
 
-/** Set the sub-group visibility links for a task (replaces existing). */
+/** Set the sub-group / user visibility links for a task (replaces existing). */
 export async function setTaskVisibility(taskId: string | number, subgroupIds: number[], userIds: number[] = []): Promise<void> {
+  const tid = Number(String(taskId).replace(/^wp-/, ""));
+  if (!tid) return;
+  await Promise.all([
+    replaceLinks(REL_TASK_SUBGROUPS, tid, subgroupIds),
+    replaceLinks(REL_TASK_USERS, tid, userIds),
+  ]);
+}
+
+async function legacySetTaskVisibility(taskId: string | number, subgroupIds: number[], userIds: number[] = []): Promise<void> {
   const tid = Number(String(taskId).replace(/^wp-/, ""));
   if (!tid) return;
   await Promise.all([
