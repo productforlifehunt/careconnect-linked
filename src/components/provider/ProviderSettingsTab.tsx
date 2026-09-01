@@ -5,17 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, DollarSign, Briefcase, Shield, Phone, Eye, EyeOff, X } from "lucide-react";
+import { MapPin, DollarSign, Briefcase, Phone, Eye, EyeOff } from "lucide-react";
 import { useMyProfile, useUpdateProfile } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
-import { ALL_CERTIFICATIONS, getCertificationKey } from "@/lib/specialty-i18n";
 import PayoutAccountsCard from "./PayoutAccountsCard";
 
 /**
- * Profile tab — Basic Info, Certifications, Active toggle, Payout accounts.
+ * Profile tab — Basic Info, Active toggle, Payout accounts.
  *
  * Writes to CCT 258 only. Nothing here touches WooCommerce/Dokan: a Woo
  * product is created just-in-time when a buyer adds a service to the cart,
@@ -23,7 +20,7 @@ import PayoutAccountsCard from "./PayoutAccountsCard";
  */
 
 export default function ProviderSettingsTab() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { toast } = useToast();
   const { data: profile } = useMyProfile();
   const updateProfile = useUpdateProfile();
@@ -32,8 +29,6 @@ export default function ProviderSettingsTab() {
   const [hourlyRate, setHourlyRate] = useState("");
   const [bio, setBio] = useState("");
   const [phone, setPhone] = useState("");
-  const [experience, setExperience] = useState("");
-  const [certifications, setCertifications] = useState<string[]>([]);
   const [isActive, setIsActive] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
@@ -43,18 +38,10 @@ export default function ProviderSettingsTab() {
       setHourlyRate(profile.care_provider_starts_hourly_rate?.toString() || "");
       setBio(profile.bio || "");
       setPhone(profile.phone || "");
-      setExperience(profile.years_of_experience?.toString() || "");
-      setCertifications(profile.certifications || []);
       setIsActive(profile.provider_is_active || false);
       setLoaded(true);
     }
   }, [profile, loaded]);
-
-  const toggleCert = (name: string) => {
-    setCertifications(prev =>
-      prev.includes(name) ? prev.filter(x => x !== name) : [...prev, name]
-    );
-  };
 
   const handleSave = async () => {
     try {
@@ -64,8 +51,6 @@ export default function ProviderSettingsTab() {
         care_provider_starts_hourly_rate: parseFloat(hourlyRate) || 0,
         bio,
         phone,
-        years_of_experience: parseInt(experience) || 0,
-        certifications,
         provider_is_active: isActive,
         // Turning marketplace visibility on also marks the account as a paid
         // care provider (a59) — search only lists rows where a59 and a60 are
@@ -123,17 +108,7 @@ export default function ProviderSettingsTab() {
             <div>
               <Label className="flex items-center gap-1.5 mb-1.5"><Phone className="h-3.5 w-3.5" /> {t("providerDash.phoneNumber")}</Label>
               <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder={t("providerDash.phonePlaceholder")} />
-            </div>
-            <div>
-              <Label className="mb-1.5">{t("becomeCaregiver.yearsOfExperience")}</Label>
-              <Select value={experience} onValueChange={setExperience}>
-                <SelectTrigger><SelectValue placeholder={t("common.selectOption")} /></SelectTrigger>
-                <SelectContent>
-                  {["1", "2", "3", "4", "5", "7", "10", "15", "20+"].map(y => (
-                    <SelectItem key={y} value={y}>{y} {y === "20+" ? "" : t("common.yearsExp")}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <p className="text-xs text-muted-foreground mt-1">{i18n.language?.startsWith("zh") ? "仅用于收款账户，不会公开显示。" : "Used for your payout account only — never shown publicly."}</p>
             </div>
           </div>
           <div>
@@ -145,26 +120,6 @@ export default function ProviderSettingsTab() {
 
       {/* Service Packages — structured (service-type + location + rate) */}
       {/* Service Packages moved to the "My Booking Services" tab. */}
-
-      {/* Certifications */}
-      <Card className="border-transparent card-elevated">
-        <CardHeader><CardTitle className="flex items-center gap-2"><Shield className="h-5 w-5" /> {t("becomeCaregiver.certifications")}</CardTitle></CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            {ALL_CERTIFICATIONS.map(c => (
-              <Badge
-                key={c}
-                variant={certifications.includes(c) ? "default" : "outline"}
-                className="cursor-pointer text-xs py-1 px-2.5"
-                onClick={() => toggleCert(c)}
-              >
-                {t(getCertificationKey(c))}
-                {certifications.includes(c) && <X className="h-3 w-3 ml-1" />}
-              </Badge>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Save */}
       <Button

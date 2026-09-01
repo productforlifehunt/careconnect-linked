@@ -15,28 +15,25 @@ import { useSite } from "@/contexts/SiteContext";
 import { useSubmitProviderApplication } from "@/hooks/use-care-data";
 import { ArrowLeft, ArrowRight, CheckCircle, Upload, Shield, DollarSign, Heart } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { ALL_CERTIFICATIONS, getSpecialtyKey, getCertificationKey } from "@/lib/specialty-i18n";
 import { useServiceTypes } from "@/hooks/use-service-types";
 
-const allCertifications = ALL_CERTIFICATIONS;
 
 export default function BecomeCaregiver() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isZhLang = i18n.language?.startsWith("zh");
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isAuthenticated } = useAuth();
   const site = useSite();
   const submitApplication = useSubmitProviderApplication();
-  const { serviceTypeNames: allSpecialties, isLoading: serviceTypesLoading } = useServiceTypes();
+  const { serviceTypes, isLoading: serviceTypesLoading } = useServiceTypes();
   const [step, setStep] = useState(1);
   const totalSteps = 4;
 
   const [phone, setPhone] = useState("");
   const [city, setCity] = useState("");
   const [bio, setBio] = useState("");
-  const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>([]);
-  const [selectedCerts, setSelectedCerts] = useState<string[]>([]);
-  const [experience, setExperience] = useState("");
+  const [selectedServiceSlugs, setSelectedServiceSlugs] = useState<string[]>([]);
   const [hourlyRate, setHourlyRate] = useState("");
   const [agreeBackground, setAgreeBackground] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
@@ -50,13 +47,10 @@ export default function BecomeCaregiver() {
 
   const handleSubmit = async () => {
     if (!isAuthenticated) { toast({ title: t("becomeCaregiver.pleaseSignInFirst"), variant: "destructive" }); navigate("/auth"); return; }
-    const expMap: Record<string, number> = { "0-1": 1, "1-3": 2, "3-5": 4, "5-10": 7, "10+": 12 };
     try {
       await submitApplication.mutateAsync({
         bio,
-        specialty: selectedSpecialties,
-        certifications: selectedCerts,
-        years_of_experience: expMap[experience] || 1,
+        service_type_slugs: selectedServiceSlugs,
         care_provider_starts_hourly_rate: parseFloat(hourlyRate) || 0,
         phone: phone,
         location: city,
@@ -69,7 +63,7 @@ export default function BecomeCaregiver() {
 
   const canProceed = () => {
     if (step === 1) return phone && city;
-    if (step === 2) return selectedSpecialties.length > 0 && experience;
+    if (step === 2) return selectedServiceSlugs.length > 0;
     if (step === 3) return hourlyRate;
     if (step === 4) return agreeBackground && agreeTerms;
     return false;
@@ -115,7 +109,7 @@ export default function BecomeCaregiver() {
           <CardHeader><CardTitle>{t("becomeCaregiver.qualifications")}</CardTitle><CardDescription>{t("becomeCaregiver.yourSkills")}</CardDescription></CardHeader>
           <CardContent className="space-y-6">
             <div>
-              <Label className="mb-3 block">{t("becomeCaregiver.specialties")} * ({t("becomeCaregiver.selectAllApply")})</Label>
+              <Label className="mb-3 block">{isZhLang ? "你提供的服务" : "Services you offer"} * ({t("becomeCaregiver.selectAllApply")})</Label>
               {serviceTypesLoading ? (
                 <div className="flex flex-wrap gap-2">
                   {Array.from({ length: 8 }).map((_, i) => (
@@ -123,25 +117,8 @@ export default function BecomeCaregiver() {
                   ))}
                 </div>
               ) : (
-                <div className="flex flex-wrap gap-2">{allSpecialties.map(s => (<Badge key={s} variant={selectedSpecialties.includes(s) ? "default" : "outline"} className="cursor-pointer text-sm py-1.5 px-3" onClick={() => toggleItem(selectedSpecialties, s, setSelectedSpecialties)}>{t(getSpecialtyKey(s))}</Badge>))}</div>
+                <div className="flex flex-wrap gap-2">{serviceTypes.map(st => (<Badge key={st.slug} variant={selectedServiceSlugs.includes(st.slug) ? "default" : "outline"} className="cursor-pointer text-sm py-1.5 px-3" onClick={() => toggleItem(selectedServiceSlugs, st.slug, setSelectedServiceSlugs)}>{st.name}</Badge>))}</div>
               )}
-            </div>
-            <div>
-              <Label className="mb-3 block">{t("becomeCaregiver.certifications")}</Label>
-              <div className="flex flex-wrap gap-2">{allCertifications.map(c => (<Badge key={c} variant={selectedCerts.includes(c) ? "default" : "outline"} className="cursor-pointer text-sm py-1.5 px-3" onClick={() => toggleItem(selectedCerts, c, setSelectedCerts)}>{t(getCertificationKey(c))}</Badge>))}</div>
-            </div>
-            <div>
-              <Label>{t("becomeCaregiver.yearsOfExperience")} *</Label>
-              <Select value={experience} onValueChange={setExperience}>
-                <SelectTrigger><SelectValue placeholder={t("common.selectOption")} /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0-1">{t("becomeCaregiver.lessThan1")}</SelectItem>
-                  <SelectItem value="1-3">{t("becomeCaregiver.years1to3")}</SelectItem>
-                  <SelectItem value="3-5">{t("becomeCaregiver.years3to5")}</SelectItem>
-                  <SelectItem value="5-10">{t("becomeCaregiver.years5to10")}</SelectItem>
-                  <SelectItem value="10+">{t("becomeCaregiver.years10plus")}</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </CardContent>
         </Card>
