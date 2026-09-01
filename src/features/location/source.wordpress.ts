@@ -33,7 +33,6 @@ export interface LocationSnapshot {
   altitude_meters: number | null;
   heading_degrees: number | null;
   speed: number | null;
-  is_moving: string | null;
   moving_type: string | null;
   platform: string | null;
   battery_level: number | null;
@@ -62,7 +61,6 @@ function mapSnapshot(raw: any): LocationSnapshot {
     altitude_meters: parseNum(raw[F.ALTITUDE_METERS]),
     heading_degrees: parseNum(raw[F.HEADING_DEGREES]),
     speed: parseNum(raw[F.SPEED]),
-    is_moving: raw[F.IS_MOVING] || null,
     moving_type: raw[F.MOVING_TYPE] || null,
     platform: raw[F.PLATFORM] || null,
     battery_level: parseNum(raw[F.BATTERY_LEVEL]),
@@ -84,7 +82,6 @@ export async function writeLocationSnapshot(
     altitude?: number | null;
     heading?: number | null;
     speed?: number | null;
-    is_moving?: string;
     moving_type?: string;
     platform?: string;
     battery_level?: number | null;
@@ -108,7 +105,6 @@ export async function writeLocationSnapshot(
       [F.ALTITUDE_METERS]: opts?.altitude != null ? String(opts.altitude) : "",
       [F.HEADING_DEGREES]: opts?.heading != null ? String(opts.heading) : "",
       [F.SPEED]: opts?.speed != null ? String(opts.speed) : "",
-      [F.IS_MOVING]: opts?.is_moving || "",
       [F.MOVING_TYPE]: opts?.moving_type || "",
       [F.PLATFORM]: opts?.platform || detectPlatform(),
       [F.BATTERY_LEVEL]: opts?.battery_level != null ? String(opts.battery_level) : "",
@@ -238,7 +234,6 @@ export async function writeLocationAndCheckZones(
     heading?: number | null;
     speed?: number | null;
     battery_level?: number | null;
-    is_moving?: string;
     moving_type?: string;
     address_text?: string | null;
     isEmergency?: boolean;
@@ -253,7 +248,6 @@ export async function writeLocationAndCheckZones(
     heading: opts?.heading,
     speed: opts?.speed,
     battery_level: opts?.battery_level,
-    is_moving: opts?.is_moving,
     moving_type: opts?.moving_type,
     address_text: opts?.address_text,
     is_emergency: opts?.isEmergency,
