@@ -437,82 +437,6 @@ export default function CaregiverProfile() {
             </Card>
           )}
 
-          {/* Reviews */}
-          <Card className="border-transparent card-elevated">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>{isZh ? "评价" : "Reviews"} ({reviews?.length || 0})</CardTitle>
-                <Dialog open={reviewDialogOpen} onOpenChange={(open) => {
-                    if (open && !isAuthenticated) {
-                      toast({ title: isZh ? "请先登录后撰写评价" : "Please sign in to write a review", variant: "destructive" });
-                      navigate("/auth");
-                      return;
-                    }
-                    setReviewDialogOpen(open);
-                  }}>
-                    <DialogTrigger asChild>
-                      <Button variant="coral" size="sm"><Star className="h-3.5 w-3.5 mr-1" /> {isZh ? "撰写评价" : "Write Review"}</Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-md">
-                      <DialogHeader><DialogTitle>{isZh ? "评价 " : "Review "}{caregiver.full_name}</DialogTitle></DialogHeader>
-                      <div className="space-y-4 mt-4">
-                        <div>
-                          <Label className="mb-2 block">{isZh ? "评分" : "Rating"}</Label>
-                          <div className="flex gap-1">
-                            {[1, 2, 3, 4, 5].map(s => (
-                              <button key={s} type="button" onClick={() => setReviewRating(s)} className="focus:outline-none">
-                                <Star className={`h-7 w-7 cursor-pointer transition-colors ${s <= reviewRating ? "text-warning fill-warning" : "text-muted-foreground/30"}`} />
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                        <div>
-                          <Label>{isZh ? "评论" : "Comment"}</Label>
-                          <Textarea value={reviewComment} onChange={e => setReviewComment(e.target.value)} placeholder={isZh ? "分享您的体验…" : "Share your experience..."} rows={4} />
-                        </div>
-                        <Button variant="coral" className="w-full" disabled={createReview.isPending} onClick={async () => {
-                          try {
-                            await createReview.mutateAsync({ entity_id: caregiver.id, entity_type: "provider", rating: reviewRating, comment: reviewComment });
-                            toast({ title: isZh ? "评价已提交！" : "Review submitted!", description: isZh ? "感谢您的反馈。" : "Thank you for your feedback." });
-                            setReviewDialogOpen(false);
-                            setReviewRating(5);
-                            setReviewComment("");
-                          } catch (err: any) {
-                            toast({ title: isZh ? "提交评价失败" : "Failed to submit review", description: err.message, variant: "destructive" });
-                          }
-                        }}>
-                          {createReview.isPending ? (isZh ? "提交中…" : "Submitting...") : (isZh ? "提交评价" : "Submit Review")}
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {(reviews || []).length > 0 ? (reviews || []).map((review: any) => (
-                <div key={review.id} className="border-b last:border-0 pb-4 last:pb-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-medium text-sm text-foreground">{review.reviewer?.full_name || review.author_name || (isZh ? "匿名" : "Anonymous")}</span>
-                    <span className="text-xs text-muted-foreground">{formatDate(review.created_at, i18n.language, { month: "short", day: "numeric", year: "numeric" })}</span>
-                  </div>
-                  <div className="flex gap-0.5 mb-2">
-                    {Array.from({ length: review.rating }).map((_, j) => (
-                      <Star key={j} className="h-3 w-3 text-warning fill-warning" />
-                    ))}
-                  </div>
-                  {review.content && <p className="text-sm text-muted-foreground">{review.content}</p>}
-                  {review.response_text && (
-                    <div className="mt-2 ml-4 p-2 bg-muted/50 rounded text-sm text-muted-foreground">
-                      <span className="font-medium">Provider response:</span> {review.response_text}
-                    </div>
-                  )}
-                  <CommentsSection entityType="review" entityId={review.id} compact />
-                </div>
-              )) : (
-                <p className="text-sm text-muted-foreground text-center py-4">No reviews yet</p>
-              )}
-            </CardContent>
-          </Card>
         </div>
 
         {/* Sidebar - Booking + Contact */}
@@ -739,6 +663,85 @@ export default function CaregiverProfile() {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Reviews */}
+        <div className="lg:col-span-2 lg:col-start-1">
+            <Card className="border-transparent card-elevated">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>{isZh ? "评价" : "Reviews"} ({reviews?.length || 0})</CardTitle>
+                  <Dialog open={reviewDialogOpen} onOpenChange={(open) => {
+                      if (open && !isAuthenticated) {
+                        toast({ title: isZh ? "请先登录后撰写评价" : "Please sign in to write a review", variant: "destructive" });
+                        navigate("/auth");
+                        return;
+                      }
+                      setReviewDialogOpen(open);
+                    }}>
+                      <DialogTrigger asChild>
+                        <Button variant="coral" size="sm"><Star className="h-3.5 w-3.5 mr-1" /> {isZh ? "撰写评价" : "Write Review"}</Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-md">
+                        <DialogHeader><DialogTitle>{isZh ? "评价 " : "Review "}{caregiver.full_name}</DialogTitle></DialogHeader>
+                        <div className="space-y-4 mt-4">
+                          <div>
+                            <Label className="mb-2 block">{isZh ? "评分" : "Rating"}</Label>
+                            <div className="flex gap-1">
+                              {[1, 2, 3, 4, 5].map(s => (
+                                <button key={s} type="button" onClick={() => setReviewRating(s)} className="focus:outline-none">
+                                  <Star className={`h-7 w-7 cursor-pointer transition-colors ${s <= reviewRating ? "text-warning fill-warning" : "text-muted-foreground/30"}`} />
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          <div>
+                            <Label>{isZh ? "评论" : "Comment"}</Label>
+                            <Textarea value={reviewComment} onChange={e => setReviewComment(e.target.value)} placeholder={isZh ? "分享您的体验…" : "Share your experience..."} rows={4} />
+                          </div>
+                          <Button variant="coral" className="w-full" disabled={createReview.isPending} onClick={async () => {
+                            try {
+                              await createReview.mutateAsync({ entity_id: caregiver.id, entity_type: "provider", rating: reviewRating, comment: reviewComment });
+                              toast({ title: isZh ? "评价已提交！" : "Review submitted!", description: isZh ? "感谢您的反馈。" : "Thank you for your feedback." });
+                              setReviewDialogOpen(false);
+                              setReviewRating(5);
+                              setReviewComment("");
+                            } catch (err: any) {
+                              toast({ title: isZh ? "提交评价失败" : "Failed to submit review", description: err.message, variant: "destructive" });
+                            }
+                          }}>
+                            {createReview.isPending ? (isZh ? "提交中…" : "Submitting...") : (isZh ? "提交评价" : "Submit Review")}
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {(reviews || []).length > 0 ? (reviews || []).map((review: any) => (
+                  <div key={review.id} className="border-b last:border-0 pb-4 last:pb-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium text-sm text-foreground">{review.reviewer?.full_name || review.author_name || (isZh ? "匿名" : "Anonymous")}</span>
+                      <span className="text-xs text-muted-foreground">{formatDate(review.created_at, i18n.language, { month: "short", day: "numeric", year: "numeric" })}</span>
+                    </div>
+                    <div className="flex gap-0.5 mb-2">
+                      {Array.from({ length: review.rating }).map((_, j) => (
+                        <Star key={j} className="h-3 w-3 text-warning fill-warning" />
+                      ))}
+                    </div>
+                    {review.content && <p className="text-sm text-muted-foreground">{review.content}</p>}
+                    {review.response_text && (
+                      <div className="mt-2 ml-4 p-2 bg-muted/50 rounded text-sm text-muted-foreground">
+                        <span className="font-medium">Provider response:</span> {review.response_text}
+                      </div>
+                    )}
+                    <CommentsSection entityType="review" entityId={review.id} compact />
+                  </div>
+                )) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">No reviews yet</p>
+                )}
+              </CardContent>
+            </Card>
         </div>
       </div>
     </div>
