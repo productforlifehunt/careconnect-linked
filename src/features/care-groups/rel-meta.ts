@@ -120,25 +120,36 @@ export const REL72_ROLE_LABEL = MEMBER_ROLE_LABEL;
 export const REL72_STATUS_CODE = INVITATION_STATUS_CODE;
 export const REL72_STATUS_LABEL = INVITATION_STATUS_LABEL;
 
-function toCodeList(value: unknown, map: Record<string, string>): string[] {
-  const list = Array.isArray(value)
+/**
+ * Bible field types: REL 223 a56/a57/a58 and REL 225 a55/a56 are **Radio**
+ * (single value). We therefore always write ONE code, and decode into a
+ * one-element array so existing `.includes("owner")` call sites keep working.
+ */
+const TYPE_PRIORITY = ["owner", "admin", "nothing special"];
+const ROLE_PRIORITY = ["cared one", "nothing special"];
+
+function pickCode(value: unknown, map: Record<string, string>, priority: string[], fallback: string): string {
+  const list = (Array.isArray(value)
     ? value.map(String)
     : typeof value === "string"
-      ? value.split(",").map((s) => s.trim())
-      : [];
-  return list
-    .filter(Boolean)
-    .map((v) => (/^b\d+$/.test(v) ? v : (map[v.toLowerCase()] || map[v] || v)))
+      ? value.split(",")
+      : []
+  ).map((s) => s.trim()).filter(Boolean);
+  const codes = list.map((v) => (/^b\d+$/.test(v) ? v : (map[v.toLowerCase()] || map[v] || "")))
     .filter((v) => /^b\d+$/.test(v));
+  if (codes.length === 0) return fallback;
+  for (const label of priority) {
+    const wanted = map[label];
+    if (wanted && codes.includes(wanted)) return wanted;
+  }
+  return codes[0];
 }
 
-function fromCodeList(value: unknown, labelMap: Record<string, string>): string[] {
-  const list = Array.isArray(value)
-    ? value.map(String)
-    : typeof value === "string"
-      ? value.split(",").map((s) => s.trim())
-      : [];
-  return list.filter(Boolean).map((v) => labelMap[v] || v);
+function decodeSingle(value: unknown, labelMap: Record<string, string>): string[] {
+  const raw = Array.isArray(value) ? value[0] : value;
+  const s = raw == null ? "" : String(raw).trim();
+  if (!s) return [];
+  return [labelMap[s] || s];
 }
 
 function pickLabel(value: unknown, labelMap: Record<string, string>, fallback: string): string {
@@ -156,14 +167,14 @@ export interface Rel72MetaInput {
 }
 
 export function encodeRel72Meta(input: Rel72MetaInput = {}): Record<string, any> {
-  const types = toCodeList(input.memberTypes?.length ? input.memberTypes : ["nothing special"], MEMBER_TYPE_CODE);
-  const roles = toCodeList(input.memberRoles?.length ? input.memberRoles : ["nothing special"], MEMBER_ROLE_CODE);
+  const type = pickCode(input.memberTypes, MEMBER_TYPE_CODE, TYPE_PRIORITY, TYPE_OPT.NOTHING_SPECIAL);
+  const role = pickCode(input.memberRoles, MEMBER_ROLE_CODE, ROLE_PRIORITY, ROLE_OPT.NOTHING_SPECIAL);
   return {
     // Never invent a name: the display name is the member's own app name
     // (CCT 151 a556 / a557). Empty means "not set yet", not "Member".
     [F223.displayName]: input.displayName ?? "",
-    [F223.types]: types.length ? types : [TYPE_OPT.NOTHING_SPECIAL],
-    [F223.roles]: roles.length ? roles : [ROLE_OPT.NOTHING_SPECIAL],
+    [F223.types]: type,
+    [F223.roles]: role,
     [F223.status]: INVITATION_STATUS_CODE[input.invitationStatus || "accepted"] || STATUS_OPT.ACCEPTED,
   };
 }
@@ -179,8 +190,8 @@ export function decodeRel72Meta(meta: any): Rel72MetaDecoded {
   const m = meta || {};
   return {
     displayName: m[F223.displayName] || m.care_groups_member_display_name_ || "",
-    memberTypes: fromCodeList(m[F223.types] ?? m.care_groups_member_types, MEMBER_TYPE_LABEL),
-    memberRoles: fromCodeList(m[F223.roles] ?? m.care_groups_member_roles, MEMBER_ROLE_LABEL),
+    memberTypes: decodeSingle(m[F223.types] ?? m.care_groups_member_types, MEMBER_TYPE_LABEL),
+    memberRoles: decodeSingle(m[F223.roles] ?? m.care_groups_member_roles, MEMBER_ROLE_LABEL),
     invitationStatus: pickLabel(
       m[F223.status] ?? m.care_groups_member_invitation_status,
       INVITATION_STATUS_LABEL,
@@ -196,9 +207,9 @@ export interface Rel75MetaInput {
 }
 
 export function encodeRel75Meta(input: Rel75MetaInput = {}): Record<string, any> {
-  const types = toCodeList(input.types?.length ? input.types : ["nothing special"], SUB_TYPE_CODE);
+  const type = pickCode(input.types, SUB_TYPE_CODE, TYPE_PRIORITY, SUB_TYPE_OPT.NOTHING_SPECIAL);
   return {
-    [F225.types]: types.length ? types : [SUB_TYPE_OPT.NOTHING_SPECIAL],
+    [F225.types]: type,
     [F225.status]: SUB_STATUS_CODE[input.status || "accepted"] || SUB_STATUS_OPT.ACCEPTED,
   };
 }
@@ -211,7 +222,7 @@ export interface Rel75MetaDecoded {
 export function decodeRel75Meta(meta: any): Rel75MetaDecoded {
   const m = meta || {};
   return {
-    types: fromCodeList(
+    types: decodeSingle(
       m[F225.types] ?? m.care_group_s_private_member_group_member_types,
       SUB_TYPE_LABEL,
     ),
