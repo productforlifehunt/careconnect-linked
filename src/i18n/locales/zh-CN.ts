@@ -50,7 +50,7 @@ const zhCN = {
       heroTitle: "失智症日常照护，", heroHighlight: "一站畅达",
       heroSubtitle: "用药记录、亲友协作、位置分享、走失提醒、AI陪伴、健康日志、智能记录、找寻护理、找寻陪伴——从居家到出行，从陪伴到护理，让失智症照顾的每一步更顺畅。",
       ctaTitle: "让照护之路更轻松",
-      ctaSubtitle: "加入使用忆畅的家庭，让失智症照护更轻松、更有条理。",
+      ctaSubtitle: "注册账户，即可协作分配照护任务、集中保存记录。",
       ctaButton: "立即开始", searchPlaceholder: "您需要什么失智症护理？",
       howItWorksTitle: "忆畅如何运作", footerBrand: "忆畅",
       footerTagline: "失智症照护知识、协作与位置安全。",
@@ -120,7 +120,7 @@ const zhCN = {
   },
   home: {
     cityOrZip: "城市或邮编", browseByCategory: "按分类浏览",
-    findRightCare: "为您的需求找到合适的护理类型", topRatedCaregivers: "最高评分护理人员",
+    findRightCare: "为您的需求找到合适的护理类型", topRatedCaregivers: "护理人员",
     trustedProfessionals: "您附近的可信赖专业人员", viewAllCaregivers: "查看所有护理人员",
     createFreeAccount: "创建免费账户", forFamilies: "为家庭", forCaregivers: "为护理人员",
     company: "公司", findCaregivers: "寻找护理人员", joinAsCaregiver: "加入成为护理人员",
