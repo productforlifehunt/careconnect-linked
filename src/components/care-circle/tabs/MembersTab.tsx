@@ -172,10 +172,34 @@ export function MembersTab({
         <Card className="border-transparent card-elevated mb-4">
           <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><UserPlus className="h-4 w-4" /> {Z("邀请成员", "Invite Members")}</CardTitle></CardHeader>
           <CardContent className="pt-2 space-y-4">
-            <div className="flex gap-2">
-              <Input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder={Z("输入邮箱进行邀请……", "Enter email address to invite...")} className="flex-1" />
-              <Button variant="coral" onClick={handleInvite} disabled={!inviteEmail.trim() || inviteToGroup.isPending}><Mail className="h-4 w-4 mr-1" /> {Z("邀请", "Invite")}</Button>
+            <div className="space-y-2">
+              <Input
+                value={invitePerson ? (invitePerson.full_name || invitePerson.email || "") : inviteSearch}
+                onChange={e => { setInviteSearch(e.target.value); setInvitePerson(null); }}
+                placeholder={Z("搜索已注册用户（至少2个字符）……", "Search registered users (at least 2 characters)...")}
+                className="flex-1"
+              />
+              {inviteSearch.length >= 2 && !invitePerson && (
+                <div className="border rounded-lg divide-y max-h-56 overflow-auto">
+                  {(inviteSearchResults || []).length > 0 ? (inviteSearchResults || []).map((p: any) => (
+                    <button
+                      key={p.id}
+                      className="w-full text-left px-3 py-2 hover:bg-muted/60"
+                      onClick={() => { setInvitePerson(p); }}
+                    >
+                      <span className="text-sm font-medium text-foreground">{p.full_name || Z("未填姓名", "No name")}</span>
+                      {p.email && <span className="block text-xs text-muted-foreground">{p.email}</span>}
+                    </button>
+                  )) : (
+                    <p className="px-3 py-2 text-xs text-muted-foreground">{Z("未找到用户", "No users found")}</p>
+                  )}
+                </div>
+              )}
+              <Button variant="coral" onClick={handleInvite} disabled={!invitePerson || inviteToGroup.isPending} className="w-full">
+                <Mail className="h-4 w-4 mr-1" /> {Z("邀请", "Invite")}
+              </Button>
             </div>
+
 
             <div className="border-t pt-3">
               <div className="flex items-center justify-between mb-2">
