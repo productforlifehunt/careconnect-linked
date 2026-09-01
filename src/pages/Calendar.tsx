@@ -29,6 +29,13 @@ const ALL_TYPES: CalendarEventType[] = [
   "availability", "birthday", "holiday", "booking", "check_in",
 ];
 
+const PRIORITY_LABEL: Record<string, { en: string; zh: string }> = {
+  low: { en: "Low", zh: "低" },
+  normal: { en: "Normal", zh: "普通" },
+  high: { en: "High", zh: "高" },
+  urgent: { en: "Urgent", zh: "紧急" },
+};
+
 export default function CalendarPage() {
   const { i18n } = useTranslation();
   const isZh = i18n.language?.startsWith("zh");
@@ -228,7 +235,7 @@ export default function CalendarPage() {
                     <Badge variant="secondary" className="mr-2">
                       {getEventTypeLabel(selectedEvent.event_type, i18n.language)}
                     </Badge>
-                    <Badge variant="outline">{selectedEvent.priority}</Badge>
+                    <Badge variant="outline">{PRIORITY_LABEL[selectedEvent.priority]?.[isZh ? "zh" : "en"] ?? selectedEvent.priority}</Badge>
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-3 text-sm">
