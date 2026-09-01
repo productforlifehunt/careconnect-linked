@@ -18,7 +18,14 @@ export async function fetchUserCaredOnesWordPress(): Promise<any[]> {
   const rels = await wordpressFetch<any[]>(`jet-rel/${REL_USER_CARED_ONE}/children/${storedUser.user_id}`);
   if (!Array.isArray(rels) || rels.length === 0) return [];
 
-  const caredOneIds = rels.map((r: any) => String(r.child_object_id)).filter(Boolean);
+  const selfId = String(storedUser.user_id).replace(/^wp-/, "");
+  // A user is never their own cared one — Relation 219 rows pointing back at the
+  // caller are ignored so the dashboard never lists the signed-in user.
+  const caredOneIds = rels
+    .map((r: any) => String(r.child_object_id))
+    .filter(Boolean)
+    .filter((id: string) => id.replace(/^wp-/, "") !== selfId);
+
   const caredOnes = await Promise.all(
     caredOneIds.map(async (userId: string) => {
       const u = await fetchWPUserProfile(userId);
@@ -27,13 +34,17 @@ export async function fetchUserCaredOnesWordPress(): Promise<any[]> {
         relationship: null,
         cared_one: {
           id: `wp-${u.id}`,
-          full_name: u.full_name,
-          first_name: u.first_name || u.full_name.split(" ")[0] || null,
+          // Profile display name (CCT 151 app column) first; if the profile has
+          // no name yet, fall back to the real WordPress account name — never a
+          // generic "Cared One" placeholder.
+          full_name: u.full_name || u.name || u.email || "",
+          first_name: u.first_name || (u.full_name || u.name || "").split(" ")[0] || null,
           email: u.email,
           avatar_url: u.avatar_url,
           condition_types: u.condition_types,
           dementia_stage: null,
         },
+
       };
     }),
   );

@@ -97,9 +97,23 @@ export default function Dashboard() {
   const upcomingBookings = (bookings || [])
     .filter((b: any) => ["confirmed", "pending"].includes(b.status))
     .slice(0, 4);
-  const pendingTasks = (tasks || []).filter((t: any) => t.status !== "completed").slice(0, 5);
+  // Only the signed-in user's own work: tasks they created, tasks assigned to
+  // them, or tasks attached to one of their cared ones. Never every task in the app.
+  const myUserId = String(user?.user_id ?? user?.id ?? "").replace(/^wp-/, "");
+  const myCaredOneIds = new Set((caredOnes || []).map((c: any) => String(c.user_id).replace(/^wp-/, "")));
+  const myTasks = (tasks || []).filter((tk: any) => {
+    const creator = String(tk.created_by ?? "").replace(/^wp-/, "");
+    if (myUserId && creator === myUserId) return true;
+    const assignees: string[] = (tk.assigned_to_ids || []).map((a: any) => String(a).replace(/^wp-/, ""));
+    if (myUserId && assignees.includes(myUserId)) return true;
+    const co = String(tk.cared_one_id ?? "").replace(/^wp-/, "");
+    return !!co && myCaredOneIds.has(co);
+  });
+  const myPendingTasks = myTasks.filter((t: any) => t.status !== "completed");
+  const pendingTasks = myPendingTasks.slice(0, 5);
   const firstCaredOne = caredOnes?.[0];
   const recentPosts = (communityPosts || []).slice(0, 3);
+
 
   const statusColors: Record<string, string> = {
     confirmed: "bg-success text-success-foreground",
@@ -133,7 +147,7 @@ export default function Dashboard() {
         {caredOnes.length === 1 ? (
           <PatientSummaryCard
             caredOneId={caredOnes[0].user_id}
-            name={caredOnes[0].cared_one?.full_name || caredOnes[0].cared_one?.first_name || site.caredOneSingular}
+            name={caredOnes[0].cared_one?.full_name || caredOnes[0].cared_one?.first_name || caredOnes[0].cared_one?.email || ""}
             avatarUrl={caredOnes[0].cared_one?.avatar_url}
             relationship={caredOnes[0].relationship}
             onClick={() => navigate("/cared-ones")}
@@ -142,15 +156,16 @@ export default function Dashboard() {
           <Tabs defaultValue={caredOnes[0].user_id}>
             <TabsList className="w-full h-auto flex-wrap justify-start gap-1 bg-muted/40 p-1 rounded-xl">
               {caredOnes.map((co: any) => {
-                const name = co.cared_one?.full_name || co.cared_one?.first_name || site.caredOneSingular;
+                const name = co.cared_one?.full_name || co.cared_one?.first_name || co.cared_one?.email || "";
                 return (
                   <TabsTrigger
                     key={co.user_id}
                     value={co.user_id}
-                    className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm text-xs px-3 py-1.5"
+                    className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm text-xs px-3 py-1.5 max-w-[12rem] truncate"
                   >
-                    {String(name).split(" ")[0]}
+                    {name}
                   </TabsTrigger>
+
                 );
               })}
             </TabsList>
@@ -158,7 +173,7 @@ export default function Dashboard() {
               <TabsContent key={co.user_id} value={co.user_id} className="mt-3 focus-visible:outline-none">
                 <PatientSummaryCard
                   caredOneId={co.user_id}
-                  name={co.cared_one?.full_name || co.cared_one?.first_name || site.caredOneSingular}
+                  name={co.cared_one?.full_name || co.cared_one?.first_name || co.cared_one?.email || ""}
                   avatarUrl={co.cared_one?.avatar_url}
                   relationship={co.relationship}
                   onClick={() => navigate("/cared-ones")}
@@ -175,7 +190,7 @@ export default function Dashboard() {
         {[
           { label: t("dashboard.upcomingBookings"), value: stats?.upcomingBookings ?? 0, icon: CalendarDays, color: "text-primary", to: "/bookings" },
           { label: careGroupsLabel, value: stats?.careGroups ?? 0, icon: Users, color: "text-success", to: "/care-circle" },
-          { label: t("dashboard.pendingTasks"), value: stats?.pendingTasks ?? 0, icon: AlertCircle, color: "text-warning", to: "/care-circle" },
+          { label: t("dashboard.pendingTasks"), value: myPendingTasks.length, icon: AlertCircle, color: "text-warning", to: "/care-circle" },
           { label: t("dashboard.unreadMessages"), value: stats?.unreadMessages ?? 0, icon: MessageSquare, color: "text-coral", to: "/messages" },
         ].map((s) => (
           <button key={s.label} onClick={() => navigate(s.to)}
@@ -295,12 +310,34 @@ export default function Dashboard() {
         <h2 className="text-sm font-semibold text-foreground mb-2">
           {t("dashboard.timeline", { defaultValue: "Daily Timeline" })}
         </h2>
-        <DailyTimeline
-          caredOneId={firstCaredOne.user_id}
-          caredOneName={firstCaredOne.cared_one?.full_name || firstCaredOne.cared_one?.first_name || site.caredOneSingular}
-        />
+        {(caredOnes?.length ?? 0) > 1 ? (
+          <Tabs defaultValue={firstCaredOne.user_id}>
+            <TabsList className="w-full h-auto flex-wrap justify-start gap-1 bg-muted/40 p-1 rounded-xl mb-2">
+              {caredOnes!.map((co: any) => (
+                <TabsTrigger key={co.user_id} value={co.user_id}
+                  className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm text-xs px-3 py-1.5 max-w-[12rem] truncate">
+                  {co.cared_one?.full_name || co.cared_one?.first_name || co.cared_one?.email}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            {caredOnes!.map((co: any) => (
+              <TabsContent key={co.user_id} value={co.user_id} className="focus-visible:outline-none">
+                <DailyTimeline
+                  caredOneId={co.user_id}
+                  caredOneName={co.cared_one?.full_name || co.cared_one?.first_name || co.cared_one?.email || ""}
+                />
+              </TabsContent>
+            ))}
+          </Tabs>
+        ) : (
+          <DailyTimeline
+            caredOneId={firstCaredOne.user_id}
+            caredOneName={firstCaredOne.cared_one?.full_name || firstCaredOne.cared_one?.first_name || firstCaredOne.cared_one?.email || ""}
+          />
+        )}
       </section>
     ) : null,
+
 
     "community-feed": recentPosts.length > 0 ? (
       <section>
@@ -337,7 +374,7 @@ export default function Dashboard() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-foreground">
-            {t("dashboard.welcomeBack", { name: displayName.split(" ")[0] })}
+            {t("dashboard.welcomeBack", { name: displayName })}
           </h1>
           <p className="text-sm text-muted-foreground">
             {t(`site.${site.id}.dashboardSubtitle`, { defaultValue: site.tagline })}
