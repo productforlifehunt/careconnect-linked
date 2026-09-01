@@ -18,6 +18,7 @@ import yichangIcon from "@/assets/yichang-icon.png";
 import huchangIcon from "@/assets/huchang-icon.png";
 import type { Profile } from "@/types/care-connector";
 import { searchCnCities } from "@/data/china-cities";
+import { careServiceTypeLabel } from "@/lib/care-service-types";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -154,11 +155,13 @@ const Index = () => {
                             <h3 className="font-semibold text-foreground truncate">{cg.full_name}</h3>
                             {cg.care_provider_is_background_checked && <Shield className="h-4 w-4 text-primary shrink-0" />}
                           </div>
-                          <div className="flex items-center gap-1 mt-1">
-                            <Star className="h-4 w-4 text-warning fill-warning" />
-                            <span className="text-sm font-medium">{cg.rating_average?.toFixed(1) || t("common.new")}</span>
-                            <span className="text-xs text-muted-foreground">({cg.rating_count || 0})</span>
-                          </div>
+                          {cg.rating_average != null && (
+                            <div className="flex items-center gap-1 mt-1">
+                              <Star className="h-4 w-4 text-warning fill-warning" />
+                              <span className="text-sm font-medium">{cg.rating_average.toFixed(1)}</span>
+                              <span className="text-xs text-muted-foreground">({cg.rating_count || 0})</span>
+                            </div>
+                          )}
                           {cg.location && (
                             <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
                               <MapPin className="h-3 w-3" />
@@ -168,16 +171,23 @@ const Index = () => {
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-1.5 mt-4">
-                        {(cg.specialty || []).slice(0, 3).map((s) => (
-                          <Badge key={s} variant="secondary" className="bg-accent text-accent-foreground text-xs">{s}</Badge>
+                        {(cg.service_type_slugs || []).slice(0, 3).map((s) => (
+                          <Badge key={s} variant="secondary" className="bg-accent text-accent-foreground text-xs">{careServiceTypeLabel(s, !!isChinese)}</Badge>
                         ))}
                       </div>
                       <div className="flex items-center justify-end mt-4 pt-4 border-t">
                         <div className="text-right">
-                          <span className="text-lg font-bold text-foreground">{isChinese ? "¥" : "$"}{cg.care_provider_starts_hourly_rate || 0}</span>
-                          <span className="text-sm text-muted-foreground">{t("common.perHour")}</span>
+                          {cg.care_provider_starts_hourly_rate ? (
+                            <>
+                              <span className="text-lg font-bold text-foreground">{isChinese ? "¥" : "$"}{cg.care_provider_starts_hourly_rate}</span>
+                              <span className="text-sm text-muted-foreground">{t("common.perHour")}</span>
+                            </>
+                          ) : (
+                            <span className="text-sm font-medium text-muted-foreground">{isChinese ? "价格待询" : "Rate on request"}</span>
+                          )}
                         </div>
                       </div>
+
                     </div>
                   </CardContent>
                 </Card>

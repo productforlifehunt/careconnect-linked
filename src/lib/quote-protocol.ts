@@ -30,12 +30,17 @@ export interface QuoteData {
 const OPEN = "[QUOTE]";
 const CLOSE = "[/QUOTE]";
 
-export function encodeQuote(q: QuoteData): string {
+export function encodeQuote(q: QuoteData, locale?: string): string {
   const json = JSON.stringify(q);
-  const summary =
-    q.mode === "hourly"
-      ? `💬 Quote: $${q.ratePerHour}/hr × ${q.hours}h = $${q.amount}${q.serviceType ? ` for ${q.serviceType}` : ""}`
-      : `💬 Quote: $${q.amount} flat${q.serviceType ? ` for ${q.serviceType}` : ""}${q.note ? ` — ${q.note}` : ""}`;
+  const zh = (locale || (typeof navigator !== "undefined" ? navigator.language : "")).startsWith("zh");
+  const c = zh ? "¥" : "$";
+  const summary = zh
+    ? q.mode === "hourly"
+      ? `💬 报价：${c}${q.ratePerHour}/小时 × ${q.hours}小时 = ${c}${q.amount}${q.serviceType ? `（${q.serviceType}）` : ""}`
+      : `💬 报价：${c}${q.amount} 一次性${q.serviceType ? `（${q.serviceType}）` : ""}${q.note ? ` — ${q.note}` : ""}`
+    : q.mode === "hourly"
+      ? `💬 Quote: ${c}${q.ratePerHour}/hr × ${q.hours}h = ${c}${q.amount}${q.serviceType ? ` for ${q.serviceType}` : ""}`
+      : `💬 Quote: ${c}${q.amount} flat${q.serviceType ? ` for ${q.serviceType}` : ""}${q.note ? ` — ${q.note}` : ""}`;
   return `${OPEN}${json}${CLOSE}\n${summary}`;
 }
 

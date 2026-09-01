@@ -59,7 +59,7 @@ export default function SearchResults() {
   const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
   const [locationFilter, setLocationFilter] = useState(initialLocation);
   const [debouncedLocation, setDebouncedLocation] = useState(initialLocation);
-  const [sortBy, setSortBy] = useState("rating");
+  const [sortBy, setSortBy] = useState(isFacilityMode ? "rating" : "price-low");
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
@@ -181,16 +181,18 @@ export default function SearchResults() {
           </div>
         </>
       )}
-      <div>
-        <Label className="text-sm font-semibold mb-3 block">{t("search.minimumRating")}</Label>
-        <div className="flex gap-2">
-          {[0, 4, 4.5, 4.8].map(r => (
-            <Button key={r} variant={minRating === r ? "default" : "outline"} size="sm" onClick={() => setMinRating(r)}>
-              {r === 0 ? t("search.any") : `${r}+`}
-            </Button>
-          ))}
+      {isFacilityMode && (
+        <div>
+          <Label className="text-sm font-semibold mb-3 block">{t("search.minimumRating")}</Label>
+          <div className="flex gap-2">
+            {[0, 4, 4.5, 4.8].map(r => (
+              <Button key={r} variant={minRating === r ? "default" : "outline"} size="sm" onClick={() => setMinRating(r)}>
+                {r === 0 ? t("search.any") : `${r}+`}
+              </Button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
       {!isFacilityMode && (
         <label className="flex items-center gap-2 cursor-pointer">
           <Checkbox checked={verifiedOnly} onCheckedChange={(c) => setVerifiedOnly(!!c)} />
@@ -233,11 +235,10 @@ export default function SearchResults() {
         <Select value={sortBy} onValueChange={setSortBy}>
           <SelectTrigger className="w-[180px] h-11"><SelectValue placeholder={t("search.sortBy")} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="rating">{t("search.highestRated")}</SelectItem>
+            {isFacilityMode && <SelectItem value="rating">{t("search.highestRated")}</SelectItem>}
             {!isFacilityMode && <SelectItem value="price-low">{t("search.priceLowHigh")}</SelectItem>}
             {!isFacilityMode && <SelectItem value="price-high">{t("search.priceHighLow")}</SelectItem>}
-            {!isFacilityMode && <SelectItem value="experience">{t("search.mostExperienced")}</SelectItem>}
-            <SelectItem value="reviews">{t("search.mostReviews")}</SelectItem>
+            {isFacilityMode && <SelectItem value="reviews">{t("search.mostReviews")}</SelectItem>}
             {isFacilityMode && <SelectItem value="name">{isZh ? "名称" : "Name"}</SelectItem>}
           </SelectContent>
         </Select>
@@ -376,7 +377,7 @@ export default function SearchResults() {
                               {cg.care_provider_is_background_checked && <Shield className="h-4 w-4 text-primary" />}
                             </div>
                             <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-2">
-                              <span className="flex items-center gap-1"><Star className="h-4 w-4 text-warning fill-warning" /> {cg.rating_average?.toFixed(1) || t("common.new")} ({cg.rating_count || 0})</span>
+                              {cg.rating_average != null && <span className="flex items-center gap-1"><Star className="h-4 w-4 text-warning fill-warning" /> {cg.rating_average.toFixed(1)} ({cg.rating_count || 0})</span>}
                               {cg.location && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {cg.location}</span>}
                               {cg.years_of_experience && <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {cg.years_of_experience} {t("common.yearsExp")}</span>}
                             </div>

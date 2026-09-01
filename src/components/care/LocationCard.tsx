@@ -726,25 +726,30 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
   const handleUseCaredOneLocation = () => {
     if (currentLocation?.latitude && currentLocation?.longitude) {
       setZoneForm(p => ({ ...p, latitude: parseFloat(currentLocation.latitude).toFixed(6), longitude: parseFloat(currentLocation.longitude).toFixed(6) }));
-      toast({ title: `Using ${caredOneName}'s last known location` });
+      toast({ title: isZh ? `已使用${caredOneName}最后一次已知位置` : `Using ${caredOneName}'s last known location` });
     } else {
-      toast({ title: `No location data for ${caredOneName}`, variant: "destructive" });
+      toast({ title: isZh ? `暂无${caredOneName}的位置数据` : `No location data for ${caredOneName}`, variant: "destructive" });
     }
   };
 
   const tabs: { key: Tab; label: string; icon: any; badge?: number }[] = [
-    { key: "location", label: "Live Location", icon: MapPin },
-    { key: "requests", label: "Requests", icon: Send, badge: pendingRequests || undefined },
-    { key: "alerts", label: "Alerts", icon: Bell, badge: unreadAlerts || undefined },
-    { key: "safezones", label: "Safe Zones", icon: Shield, badge: (zones || []).length || undefined },
-    { key: "history", label: "History", icon: Clock },
+    { key: "location", label: isZh ? "实时位置" : "Live Location", icon: MapPin },
+    { key: "requests", label: isZh ? "共享请求" : "Requests", icon: Send, badge: pendingRequests || undefined },
+    { key: "alerts", label: isZh ? "提醒" : "Alerts", icon: Bell, badge: unreadAlerts || undefined },
+    { key: "safezones", label: isZh ? "安全区域" : "Safe Zones", icon: Shield, badge: (zones || []).length || undefined },
+    { key: "history", label: isZh ? "历史记录" : "History", icon: Clock },
   ];
 
   const drawStatusText = useMemo(() => {
-    if (drawMode === "drawing") return `Click to place · Drag to freehand · ⌘Z undo · Esc cancel · ${drawnPoints.length} pts`;
-    if (drawMode === "editing") return "Drag vertices · Click edge to insert · Dbl-click to delete · Esc deselect";
+    if (drawMode === "drawing") return isZh
+      ? `点击落点 · 拖动自由绘制 · ⌘Z 撤销 · Esc 取消 · 已画 ${drawnPoints.length} 点`
+      : `Click to place · Drag to freehand · ⌘Z undo · Esc cancel · ${drawnPoints.length} pts`;
+    if (drawMode === "editing") return isZh
+      ? "拖动顶点 · 点击边线插入 · 双击删除 · Esc 取消选择"
+      : "Drag vertices · Click edge to insert · Dbl-click to delete · Esc deselect";
     return "";
-  }, [drawMode, drawnPoints.length]);
+  }, [drawMode, drawnPoints.length, isZh]);
+
 
   const lastSeen = currentLocation ? formatDateTime(currentLocation.created_at) : null;
 
@@ -755,11 +760,11 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
         <div>
           <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
             <MapPin className="h-5 w-5 text-primary" />
-            {caredOneName}'s Location
+            {isZh ? `${caredOneName}的位置` : `${caredOneName}'s Location`}
           </h2>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
             <Badge variant={locationSettings?.is_sharing_enabled ? "default" : "secondary"} className="text-xs">
-              {locationSettings?.is_sharing_enabled ? "📍 Sharing On" : "Sharing Off"}
+              {locationSettings?.is_sharing_enabled ? (isZh ? "📍 已开启共享" : "📍 Sharing On") : (isZh ? "未开启共享" : "Sharing Off")}
             </Badge>
             {lastSeen && (
               <span className="text-xs text-muted-foreground flex items-center gap-1">
@@ -886,7 +891,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                 {/* Quick zone status */}
                 {(zones || []).length > 0 && (
                   <div className="pt-2 border-t border-border mt-2 space-y-1">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Zone Status</p>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{isZh ? "区域状态" : "Zone Status"}</p>
                     {(zones || []).map((zone: any) => {
                       const breach = checkZoneBreach(zone, parseFloat(currentLocation.latitude), parseFloat(currentLocation.longitude));
                       return (
@@ -895,9 +900,14 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                           <span className="font-medium">{zoneLabel(zone.zone_type)}</span>
                           <span className={breach.breached ? "text-destructive font-semibold" : "text-success"}>
                             {isDangerZone(zone.zone_type)
-                              ? (breach.breached ? `⚠ INSIDE danger zone!` : `✓ Away (${breach.distance}m)`)
-                              : (breach.breached ? `⚠ Outside (${breach.distance}m)` : `✓ Inside (${breach.distance}m)`)}
+                              ? (breach.breached
+                                  ? (isZh ? "⚠ 已进入危险区域！" : "⚠ INSIDE danger zone!")
+                                  : (isZh ? `✓ 已远离（${breach.distance} 米）` : `✓ Away (${breach.distance}m)`))
+                              : (breach.breached
+                                  ? (isZh ? `⚠ 已离开（${breach.distance} 米）` : `⚠ Outside (${breach.distance}m)`)
+                                  : (isZh ? `✓ 在区域内（${breach.distance} 米）` : `✓ Inside (${breach.distance}m)`))}
                           </span>
+
                         </div>
 
                       );
@@ -1367,11 +1377,11 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-semibold text-sm">{label}</span>
-                          {isDangerZone(zone.zone_type) && <Badge variant="destructive" className="text-[10px]">DANGER</Badge>}
-                          {!active && <Badge variant="secondary" className="text-[10px]">⏰ Scheduled (inactive)</Badge>}
+                          {isDangerZone(zone.zone_type) && <Badge variant="destructive" className="text-[10px]">{isZh ? "危险" : "DANGER"}</Badge>}
+                          {!active && <Badge variant="secondary" className="text-[10px]">{isZh ? "⏰ 定时（当前未生效）" : "⏰ Scheduled (inactive)"}</Badge>}
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {zone.shape_type === "polygon" ? "Custom shape" : `${zone.radius_meters || 200}m radius`}
+                          {zone.shape_type === "polygon" ? (isZh ? "自定义形状" : "Custom shape") : (isZh ? `半径 ${zone.radius_meters || 200} 米` : `${zone.radius_meters || 200}m radius`)}
                         </p>
 
                         {zone.description && <p className="text-xs text-muted-foreground">{zone.description}</p>}
