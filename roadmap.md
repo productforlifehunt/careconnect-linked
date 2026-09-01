@@ -1,10 +1,7 @@
-# Zero-Fallback Alignment Roadmap
+# UI/UX verification roadmap
 
-- [x] Fix every current preview typecheck/build error, including pre-existing errors
-- [ ] Align CCT 198–204 and Relations 219–236; remove defaults and swallowed failures
-- [ ] Align CCT 197/205–214 and Relations 237–248/260/261; enforce append-only location
-- [ ] Align CCT 215–218/258 and Relations 249–257; remove static/fake marketplace and learning paths
-- [ ] Verify live JetEngine schema on `/afresh` through GUI and correct GUI-only mismatches
-- [ ] Test all available frontend CRUD/relation operations with mandated test account
-- [ ] Confirm build/runtime/network diagnostics and publish exact pass/fail matrix
-- [x] Restore all cleanup removals while keeping visible WHO/iSupport attribution removed
+- [ ] Eliminate brand/logo and homepage configuration flicker across reload, language, and site variants.
+- [ ] Verify public routes for both ChallengeD/忆畅 and CareCNC/护畅 at desktop and mobile widths.
+- [ ] Verify protected routes with the approved test account at desktop and mobile widths.
+- [ ] Fix every reproducible UI/UX display or business-label mismatch found.
+- [ ] Re-run route matrix and confirm build/runtime/console/network health.
