@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Pill, ClipboardCheck, CheckSquare, Clock } from "lucide-react";
-import { useMedicines, useCareTasks, useCheckins, useTodayCheckinLogs, useTodayMedicineLogs } from "@/hooks/use-care-data";
+import { Pill, ClipboardCheck, CheckSquare, Clock, CalendarDays } from "lucide-react";
+import { useMedicines, useCareTasks, useCheckins, useTodayCheckinLogs, useTodayMedicineLogs, useBookings } from "@/hooks/use-care-data";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -14,7 +14,7 @@ interface TimelineItem {
   time: string;
   sortTime: number;
   label: string;
-  type: "medicine" | "task" | "checkin";
+  type: "medicine" | "task" | "checkin" | "booking";
   status: "done" | "pending" | "missed";
   icon: typeof Pill;
 }
@@ -27,8 +27,10 @@ export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) 
   const { data: tasks } = useCareTasks();
   const { data: checkins } = useCheckins(caredOneId);
   const { data: todayCheckinLogs } = useTodayCheckinLogs(caredOneId);
+  const { data: bookings } = useBookings();
 
   const today = new Date().toDateString();
+
 
   const timelineItems = useMemo(() => {
     const items: TimelineItem[] = [];
