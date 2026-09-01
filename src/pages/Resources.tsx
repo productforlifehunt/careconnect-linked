@@ -138,15 +138,15 @@ export default function Resources() {
             variant="secondary"
             className="bg-white/20 text-white border-0 mb-3 backdrop-blur-sm"
           >
-            {isZh ? "WHO iSupport · 失智症照护指南" : "WHO iSupport · Dementia Care Guide"}
+            {isZh ? "改编自 WHO iSupport" : "Adapted from WHO iSupport"}
           </Badge>
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 tracking-tight">
             {isZh ? "资源中心" : "Resources"}
           </h1>
           <p className="text-sm sm:text-base text-primary-foreground/90 max-w-2xl mb-6">
             {isZh
-              ? "由世界卫生组织 iSupport 框架精心编排的 5 个模块、23 节课，帮助您从认识失智症到照顾好自己。"
-              : "5 modules, 23 lessons — curated from the WHO iSupport framework. From understanding dementia to looking after yourself."}
+              ? "改编自世界卫生组织 iSupport 框架的 5 个模块、23 节课，从认识失智症到照顾好自己。"
+              : "5 modules, 23 lessons adapted from the WHO iSupport framework — from understanding dementia to looking after yourself."}
           </p>
 
           {/* Overall progress */}
