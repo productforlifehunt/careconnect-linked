@@ -437,11 +437,12 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
     const lat = parseFloat(zoneForm.latitude);
     const lng = parseFloat(zoneForm.longitude);
     if (isNaN(lat) || isNaN(lng)) return;
-    const color = zoneForm.zone_type === "danger" ? "#EF4444" : (CATEGORY_CONFIG[zoneForm.category]?.color || "#10B981");
+    const color = zoneColor(zoneForm.zone_type);
     const c = Lx.circle([lat, lng], { radius: zoneForm.radius, color, fillColor: color, fillOpacity: 0.2, weight: 2, dashArray: "4,4" }).addTo(map);
     drawLayersRef.current.push(c);
     try { map.panTo([lat, lng]); } catch (_) {}
-  }, [zoneForm.latitude, zoneForm.longitude, zoneForm.radius, zoneForm.zone_type, zoneForm.category]);
+  }, [zoneForm.latitude, zoneForm.longitude, zoneForm.radius, zoneForm.zone_type]);
+
 
   const isMapTab = activeTab === "location" || activeTab === "safezones";
 
