@@ -1099,13 +1099,6 @@
           }
         },
         {
-          "label": "Notification enabled",
-          "code": "a73",
-          "type": "",
-          "options": "",
-          "optionMap": {}
-        },
-        {
           "label": "User’s baseline porn watch time per day",
           "code": "a74",
           "type": "Number",
@@ -1193,7 +1186,7 @@
           "label": "User’s biologicalSex",
           "code": "a82",
           "type": "Radio",
-          "options": "1. “notSet=0” (Name/ID: b55) 2. “female=1” (Name/ID: b56) 3. “male=2” (Name/ID: b57) 4. “other=3” (Name/ID: b58)\t对应苹果健康的四个枚举值，前端显示female，male和other，苹果没有other的自定义输入，咱们也就对应这几个，暂不考虑变性的写法，爱写男女都行；注意：苹果健康性别是只读不可写，而且我们读到的信息大概率是0，1，2，3这些数值，我们只通过苹果健康读出的数值在前端提示用户在我们请将性别设置保持与苹果健康一致，但是如果用户就是懒得改咱们也不要多事，就按咱们这里储存的信息去做ai分析",
+          "options": "1. “notSet=0” (Name/ID: b55) 2. “female=1” (Name/ID: b56) 3. “male=2” (Name/ID: b57) 4. “other=3” (Name/ID: b58)\t对应苹果健康只读基础档案 Characteristics",
           "optionMap": {
             "b55": "notSet=0",
             "b56": "female=1",
@@ -1219,14 +1212,14 @@
           "label": "User’s DateOfBirth",
           "code": "a83",
           "type": "Datetime",
-          "options": "",
+          "options": "对应苹果健康只读基础档案 Characteristics",
           "optionMap": {}
         },
         {
           "label": "User’s BloodType",
           "code": "a84",
           "type": "Radio",
-          "options": "1. “notSet=0” (Name/ID: b55) 2. “aPositive=1” (Name/ID: b56) 3. “aNegative=2” (Name/ID: b57) 4. “bPositive=3” (Name/ID: b58) 5. “bNegative=4” (Name/ID: b59) 6. “abPositive=5” (Name/ID: b57) 7. “abNegative=6” (Name/ID: b58) 8. “oPositive=7” (Name/ID: b59) 9. “oNegative=8” (Name/ID: b59)",
+          "options": "1. “notSet=0” (Name/ID: b55) 2. “aPositive=1” (Name/ID: b56) 3. “aNegative=2” (Name/ID: b57) 4. “bPositive=3” (Name/ID: b58) 5. “bNegative=4” (Name/ID: b59) 6. “abPositive=5” (Name/ID: b57) 7. “abNegative=6” (Name/ID: b58) 8. “oPositive=7” (Name/ID: b59) 9. “oNegative=8” (Name/ID: b59)\t对应苹果健康只读基础档案 Characteristics",
           "optionMap": {
             "b55": "notSet=0",
             "b56": "aPositive=1",
@@ -1239,7 +1232,7 @@
           "label": "FitzpatrickSkinType",
           "code": "a85",
           "type": "Radio",
-          "options": "1. “notSet=0” (Name/ID: b55) 2. “I=1” (Name/ID: b56) 3. “II=2” (Name/ID: b57) 4. “III=3” (Name/ID: b58) 5. “IV=4” (Name/ID: b59) 6. “V=5” (Name/ID: b57) 7. “VI=6” (Name/ID: b58)\t这里使用苹果健康的标准写法，大致来说，1=总是晒伤，从不晒黑（极白），2=容易晒伤，很少晒黑，3=有时轻微晒伤，逐渐晒黑，4=很少晒伤，容易晒黑，5=极少晒伤，很容易晒黑（深色），6=从不晒伤（最深色）  咱们只要直接对应就行",
+          "options": "1. “notSet=0” (Name/ID: b55) 2. “I=1” (Name/ID: b56) 3. “II=2” (Name/ID: b57) 4. “III=3” (Name/ID: b58) 5. “IV=4” (Name/ID: b59) 6. “V=5” (Name/ID: b57) 7. “VI=6” (Name/ID: b58)\t对应苹果健康只读基础档案 Characteristics",
           "optionMap": {
             "b55": "notSet=0",
             "b56": "I=1",
@@ -1252,7 +1245,7 @@
           "label": "WheelchairUse",
           "code": "a86",
           "type": "Radio",
-          "options": "1. “notSet=0” (Name/ID: b55) 2. “no=1” (Name/ID: b56) 3. “yes=2” (Name/ID: b57)",
+          "options": "1. “notSet=0” (Name/ID: b55) 2. “no=1” (Name/ID: b56) 3. “yes=2” (Name/ID: b57)\t对应苹果健康只读基础档案 Characteristics",
           "optionMap": {
             "b55": "notSet=0",
             "b56": "no=1",
@@ -1531,85 +1524,6 @@
         {
           "label": "Cared one’s AI system prompt",
           "code": "a90",
-          "type": "Text",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "User enabled push notification",
-          "code": "a91",
-          "type": "Radio",
-          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
-          "optionMap": {
-            "b55": "Yes",
-            "b56": "No"
-          }
-        },
-        {
-          "label": "User enabled email notification",
-          "code": "a92",
-          "type": "Radio",
-          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
-          "optionMap": {
-            "b55": "Yes",
-            "b56": "No"
-          }
-        },
-        {
-          "label": "User enabled sms notification",
-          "code": "a93",
-          "type": "Radio",
-          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
-          "optionMap": {
-            "b55": "Yes",
-            "b56": "No"
-          }
-        },
-        {
-          "label": "Cared one’s custom zone 1 name",
-          "code": "a95",
-          "type": "Text",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Cared one’s custom zone 2 name",
-          "code": "a96",
-          "type": "Text",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Cared one’s custom zone 3 name",
-          "code": "a97",
-          "type": "Text",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Cared one’s custom zone 4 name",
-          "code": "a98",
-          "type": "Text",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Cared one’s custom zone 5 name",
-          "code": "a99",
-          "type": "Text",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Cared one’s custom zone 6 name",
-          "code": "a100",
-          "type": "Text",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Cared one’s custom zone 7 name",
-          "code": "a101",
           "type": "Text",
           "options": "",
           "optionMap": {}
@@ -1951,6 +1865,13 @@
           "optionMap": {}
         },
         {
+          "label": "Log event type",
+          "code": "a561",
+          "type": "Radio",
+          "options": "",
+          "optionMap": {}
+        },
+        {
           "label": "Apple health or google health log type value",
           "code": "a56",
           "type": "Textarea",
@@ -1999,8 +1920,47 @@
           "label": "Recording device",
           "code": "a62",
           "type": "Text",
-          "options": "",
-          "optionMap": {}
+          "options": " 2.\"lowCardioFitnessEvent\" (Name/ID: b56) 2.\"headphoneAudioExposureEvent\" (Name/ID: b56) 3.\"audioExposureEvent\" (Name/ID: b57) 2.\"sleepAnalysis\" (Name/ID: b56)\t苹果健康 HKCategoryTypeIdentifier · Mindfulness and Sleep 正念与睡眠 组，目前共2项； 2.\"intermenstrualBleeding\" (Name/ID: b56) 3.\"infrequentMenstrualCycles\" (Name/ID: b57) 4.\"irregularMenstrualCycles\" (Name/ID: b58) 5.\"persistentIntermenstrualBleeding\" (Name/ID: b59) 6.\"prolongedMenstrualPeriods\" (Name/ID: b60) 7.\"cervicalMucusQuality\" (Name/ID: b61) 8.\"ovulationTestResult\" (Name/ID: b62) 9.\"progesteroneTestResult\" (Name/ID: b63) 10.\"sexualActivity\" (Name/ID: b64) 11.\"contraceptive\" (Name/ID: b65) 12.\"pregnancy\" (Name/ID: b66) 13.\"pregnancyTestResult\" (Name/ID: b67) 14.\"lactation\" (Name/ID: b68) 15.\"menopausalState\" (Name/ID: b69) 16.\"bleedingAfterMenopause\" (Name/ID: b70)\t苹果健康 HKCategoryTypeIdentifier · Reproductive Health 生殖健康 组，目前共16项； 2.\"handwashingEvent\" (Name/ID: b56)\t苹果健康 HKCategoryTypeIdentifier · Self Care 自我照护 组，目前共2项； 2.\"bleedingDuringPregnancy\" (Name/ID: b56) 3.\"bleedingAfterPregnancy\" (Name/ID: b57)\t苹果健康 HKCategoryTypeIdentifier · 未归组 Ungrouped（苹果文档未放入任何 topic section） 组，目前共3项； 2.\"highHeartRateEvent\" (Name/ID: b56) 3.\"irregularHeartRhythmEvent\" (Name/ID: b57) 2.\"distanceWalkingRunning\" (Name/ID: b56) 3.\"runningGroundContactTime\" (Name/ID: b57) 4.\"runningPower\" (Name/ID: b58) 5.\"runningSpeed\" (Name/ID: b59) 6.\"runningStrideLength\" (Name/ID: b60) 7.\"runningVerticalOscillation\" (Name/ID: b61) 8.\"distanceCycling\" (Name/ID: b62) 9.\"pushCount\" (Name/ID: b63) 10.\"distanceWheelchair\" (Name/ID: b64) 11.\"swimmingStrokeCount\" (Name/ID: b65) 12.\"distanceSwimming\" (Name/ID: b66) 13.\"distanceDownhillSnowSports\" (Name/ID: b67) 14.\"basalEnergyBurned\" (Name/ID: b68) 15.\"activeEnergyBurned\" (Name/ID: b69) 16.\"flightsClimbed\" (Name/ID: b70) 17.\"nikeFuel\" (Name/ID: b71) 18.\"appleExerciseTime\" (Name/ID: b72) 19.\"appleMoveTime\" (Name/ID: b73) 20.\"appleStandTime\" (Name/ID: b74) 21.\"vo2Max\" (Name/ID: b75) 22.\"crossCountrySkiingSpeed\" (Name/ID: b76) 23.\"cyclingCadence\" (Name/ID: b77) 24.\"cyclingFunctionalThresholdPower\" (Name/ID: b78) 25.\"cyclingPower\" (Name/ID: b79) 26.\"cyclingSpeed\" (Name/ID: b80) 27.\"distanceCrossCountrySkiing\" (Name/ID: b81) 28.\"distancePaddleSports\" (Name/ID: b82) 29.\"distanceRowing\" (Name/ID: b83) 30.\"distanceSkatingSports\" (Name/ID: b84) 31.\"estimatedWorkoutEffortScore\" (Name/ID: b85) 32.\"paddleSportsSpeed\" (Name/ID: b86) 33.\"physicalEffort\" (Name/ID: b87) 34.\"rowingSpeed\" (Name/ID: b88) 35.\"workoutEffortScore\" (Name/ID: b89)\t苹果健康 HKQuantityTypeIdentifier · Activity 活动 组，目前共35项； 2.\"numberOfAlcoholicBeverages\" (Name/ID: b56)\t苹果健康 HKQuantityTypeIdentifier · Alcohol consumption 饮酒 组，目前共2项； 2.\"bodyMass\" (Name/ID: b56) 3.\"bodyMassIndex\" (Name/ID: b57) 4.\"leanBodyMass\" (Name/ID: b58) 5.\"bodyFatPercentage\" (Name/ID: b59) 6.\"waistCircumference\" (Name/ID: b60) 7.\"appleSleepingWristTemperature\" (Name/ID: b61)\t苹果健康 HKQuantityTypeIdentifier · Body measurements 身体测量 组，目前共7项； 2.\"waterTemperature\" (Name/ID: b56)\t苹果健康 HKQuantityTypeIdentifier · Diving 潜水 组，目前共2项； 2.\"environmentalSoundReduction\" (Name/ID: b56) 3.\"headphoneAudioExposure\" (Name/ID: b57)\t苹果健康 HKQuantityTypeIdentifier · Hearing 听力 组，目前共3项； 2.\"electrodermalActivity\" (Name/ID: b56) 3.\"forcedExpiratoryVolume1\" (Name/ID: b57) 4.\"forcedVitalCapacity\" (Name/ID: b58) 5.\"inhalerUsage\" (Name/ID: b59) 6.\"insulinDelivery\" (Name/ID: b60) 7.\"numberOfTimesFallen\" (Name/ID: b61) 8.\"peakExpiratoryFlowRate\" (Name/ID: b62) 9.\"peripheralPerfusionIndex\" (Name/ID: b63)\t苹果健康 HKQuantityTypeIdentifier · Lab and test results 检验与检测 组，目前共9项； 2.\"appleSleepingBreathingDisturbances\" (Name/ID: b56)\t苹果健康 HKQuantityTypeIdentifier · Mindfulness and Sleep 正念与睡眠 组，目前共2项； 2.\"sixMinuteWalkTestDistance\" (Name/ID: b56) 3.\"walkingSpeed\" (Name/ID: b57) 4.\"walkingStepLength\" (Name/ID: b58) 5.\"walkingAsymmetryPercentage\" (Name/ID: b59) 6.\"walkingDoubleSupportPercentage\" (Name/ID: b60) 7.\"stairAscentSpeed\" (Name/ID: b61) 8.\"stairDescentSpeed\" (Name/ID: b62)\t苹果健康 HKQuantityTypeIdentifier · Mobility 行动能力 组，目前共8项； 2.\"dietaryCaffeine\" (Name/ID: b56) 3.\"dietaryCalcium\" (Name/ID: b57) 4.\"dietaryCarbohydrates\" (Name/ID: b58) 5.\"dietaryChloride\" (Name/ID: b59) 6.\"dietaryCholesterol\" (Name/ID: b60) 7.\"dietaryChromium\" (Name/ID: b61) 8.\"dietaryCopper\" (Name/ID: b62) 9.\"dietaryEnergyConsumed\" (Name/ID: b63) 10.\"dietaryFatMonounsaturated\" (Name/ID: b64) 11.\"dietaryFatPolyunsaturated\" (Name/ID: b65) 12.\"dietaryFatSaturated\" (Name/ID: b66) 13.\"dietaryFatTotal\" (Name/ID: b67) 14.\"dietaryFiber\" (Name/ID: b68) 15.\"dietaryFolate\" (Name/ID: b69) 16.\"dietaryIodine\" (Name/ID: b70) 17.\"dietaryIron\" (Name/ID: b71) 18.\"dietaryMagnesium\" (Name/ID: b72) 19.\"dietaryManganese\" (Name/ID: b73) 20.\"dietaryMolybdenum\" (Name/ID: b74) 21.\"dietaryNiacin\" (Name/ID: b75) 22.\"dietaryPantothenicAcid\" (Name/ID: b76) 23.\"dietaryPhosphorus\" (Name/ID: b77) 24.\"dietaryPotassium\" (Name/ID: b78) 25.\"dietaryProtein\" (Name/ID: b79) 26.\"dietaryRiboflavin\" (Name/ID: b80) 27.\"dietarySelenium\" (Name/ID: b81) 28.\"dietarySodium\" (Name/ID: b82) 29.\"dietarySugar\" (Name/ID: b83) 30.\"dietaryThiamin\" (Name/ID: b84) 31.\"dietaryVitaminA\" (Name/ID: b85) 32.\"dietaryVitaminB12\" (Name/ID: b86) 33.\"dietaryVitaminB6\" (Name/ID: b87) 34.\"dietaryVitaminC\" (Name/ID: b88) 35.\"dietaryVitaminD\" (Name/ID: b89) 36.\"dietaryVitaminE\" (Name/ID: b90) 37.\"dietaryVitaminK\" (Name/ID: b91) 38.\"dietaryWater\" (Name/ID: b92) 39.\"dietaryZinc\" (Name/ID: b93) 2.\"uvExposure\" (Name/ID: b56) 2.\"restingHeartRate\" (Name/ID: b56) 3.\"walkingHeartRateAverage\" (Name/ID: b57) 4.\"heartRateVariabilitySDNN\" (Name/ID: b58) 5.\"heartRateRecoveryOneMinute\" (Name/ID: b59) 6.\"atrialFibrillationBurden\" (Name/ID: b60) 7.\"oxygenSaturation\" (Name/ID: b61) 8.\"bodyTemperature\" (Name/ID: b62) 9.\"bloodPressureDiastolic\" (Name/ID: b63) 10.\"bloodPressureSystolic\" (Name/ID: b64) 11.\"respiratoryRate\" (Name/ID: b65)\t苹果健康 HKQuantityTypeIdentifier · Vital signs 生命体征 组，目前共11项； 2.\"phq9\" (Name/ID: b56)\t苹果健康 HKScoredAssessmentTypeIdentifier组（苹果自带的两项mood自检表），目前共2项； 2.\"flexibility\" (Name/ID: b56) 3.\"cooldown\" (Name/ID: b57) 4.\"walking\" (Name/ID: b58) 5.\"running\" (Name/ID: b59) 6.\"wheelchairWalkPace\" (Name/ID: b60) 7.\"wheelchairRunPace\" (Name/ID: b61) 8.\"cycling\" (Name/ID: b62) 9.\"handCycling\" (Name/ID: b63) 10.\"coreTraining\" (Name/ID: b64) 11.\"elliptical\" (Name/ID: b65) 12.\"functionalStrengthTraining\" (Name/ID: b66) 13.\"traditionalStrengthTraining\" (Name/ID: b67) 14.\"crossTraining\" (Name/ID: b68) 15.\"mixedCardio\" (Name/ID: b69) 16.\"highIntensityIntervalTraining\" (Name/ID: b70) 17.\"jumpRope\" (Name/ID: b71) 18.\"stairClimbing\" (Name/ID: b72) 19.\"stairs\" (Name/ID: b73) 20.\"stepTraining\" (Name/ID: b74) 21.\"fitnessGaming\" (Name/ID: b75)\t苹果健康 HKWorkoutActivityType · Exercise and fitness 组，目前共21项；",
+          "optionMap": {
+            "b56": "flexibility",
+            "b57": "cooldown",
+            "b58": "walking",
+            "b59": "running",
+            "b60": "wheelchairWalkPace",
+            "b61": "wheelchairRunPace",
+            "b62": "cycling",
+            "b63": "handCycling",
+            "b64": "coreTraining",
+            "b65": "elliptical",
+            "b66": "functionalStrengthTraining",
+            "b67": "traditionalStrengthTraining",
+            "b68": "crossTraining",
+            "b69": "mixedCardio",
+            "b70": "highIntensityIntervalTraining",
+            "b71": "jumpRope",
+            "b72": "stairClimbing",
+            "b73": "stairs",
+            "b74": "stepTraining",
+            "b75": "fitnessGaming",
+            "b76": "dietaryPantothenicAcid",
+            "b77": "dietaryPhosphorus",
+            "b78": "dietaryPotassium",
+            "b79": "dietaryProtein",
+            "b80": "dietaryRiboflavin",
+            "b81": "dietarySelenium",
+            "b82": "dietarySodium",
+            "b83": "dietarySugar",
+            "b84": "dietaryThiamin",
+            "b85": "dietaryVitaminA",
+            "b86": "dietaryVitaminB12",
+            "b87": "dietaryVitaminB6",
+            "b88": "dietaryVitaminC",
+            "b89": "dietaryVitaminD",
+            "b90": "dietaryVitaminE",
+            "b91": "dietaryVitaminK",
+            "b92": "dietaryWater",
+            "b93": "dietaryZinc"
+          }
         }
       ]
     },
@@ -2371,7 +2331,7 @@
           "label": "App",
           "code": "a58",
           "type": "Radio",
-          "options": "1. “Afresh” (Name/ID: b55) 2. “Adry” (Name/ID: b56) 3. “Ablocked” (Name/ID: b57) 4. “BeNotch” (Name/ID: b58) 5. “ChallengeD” (Name/ID: b59) 6. “CareCNC” (Name/ID: b60)",
+          "options": "1. “Afresh” (Name/ID: b55) 2. “Adry” (Name/ID: b56) 3. “Ablocked” (Name/ID: b57) 4. “BeNotch” (Name/ID: b58) 5. “ChallengeD” (Name/ID: b59) 6. “CareCNC” (Name/ID: b60)\t记录是哪个app的对话，以防不同app显示其他app的对话",
           "optionMap": {
             "b55": "Afresh",
             "b56": "Adry",
@@ -2567,63 +2527,71 @@
           "label": "Title",
           "code": "a55",
           "type": "Text",
-          "options": "",
+          "options": "对应苹果EKEvent.title",
           "optionMap": {}
         },
         {
           "label": "Description",
           "code": "a56",
           "type": "Textarea",
-          "options": "",
+          "options": "对应苹果EKEvent.notes",
           "optionMap": {}
         },
         {
           "label": "Start at",
           "code": "a57",
           "type": "Datetime",
-          "options": "",
+          "options": "对应苹果startDate",
           "optionMap": {}
         },
         {
           "label": "End at",
           "code": "a58",
           "type": "Datetime",
-          "options": "",
+          "options": "对应苹果endDate",
           "optionMap": {}
         },
         {
           "label": "All day",
           "code": "a59",
-          "type": "Checkbox",
-          "options": "",
-          "optionMap": {}
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56) 对应苹果isAllDay",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
         },
         {
-          "label": "Event type",
+          "label": "Custom Event type",
           "code": "a60",
-          "type": "Text",
-          "options": "",
-          "optionMap": {}
+          "type": "Radio",
+          "options": "1. “Medicine schedule ” (Name/ID: b55) 2. “Health checkin” (Name/ID: b56) 3. “Habit” (Name/ID: b57) 4. “todo” (Name/ID: b58) 自由定义事件类型，对应苹果iCalendar CATEGORIES，通常为单选，我们这里用Checkbox以防后续需要改为多选，保留拓展性",
+          "optionMap": {
+            "b55": "Medicine schedule",
+            "b56": "Health checkin",
+            "b57": "Habit",
+            "b58": "todo"
+          }
         },
         {
           "label": "Location",
           "code": "a61",
           "type": "Text",
-          "options": "",
+          "options": "对应苹果structuredLocation.title",
           "optionMap": {}
         },
         {
           "label": "Timezone",
           "code": "a62",
           "type": "Text",
-          "options": "",
+          "options": "对应苹果EKEvent.timeZone",
           "optionMap": {}
         },
         {
           "label": "Status",
           "code": "a63",
-          "type": "Select",
-          "options": "1. “confirmed” (Name/ID: b55) 2. “tentative” (Name/ID: b56) 3. “cancelled” (Name/ID: b57)",
+          "type": "Radio",
+          "options": "1. “confirmed” (Name/ID: b55) 2. “tentative” (Name/ID: b56) 3. “cancelled” (Name/ID: b57) 对应苹果EKEventStatus，三个枚举值对应RFC 5545 VEVENT 的三态",
           "optionMap": {
             "b55": "confirmed",
             "b56": "tentative",
@@ -2633,14 +2601,9 @@
         {
           "label": "Priority",
           "code": "a64",
-          "type": "Select",
-          "options": "1. “normal” (Name/ID: b55) 2. “low” (Name/ID: b56) 3. “high” (Name/ID: b57) 4. “urgent” (Name/ID: b58)",
-          "optionMap": {
-            "b55": "normal",
-            "b56": "low",
-            "b57": "high",
-            "b58": "urgent"
-          }
+          "type": "Number",
+          "options": "对应iCal PRIORITY，0–9 整数，前端可分类为高、中、低方便选取，但储存值为整数",
+          "optionMap": {}
         },
         {
           "label": "Color",
@@ -2652,29 +2615,22 @@
         {
           "label": "RRULE",
           "code": "a66",
-          "type": "Text",
-          "options": "iCal RRULE",
-          "optionMap": {}
-        },
-        {
-          "label": "RRULE Until",
-          "code": "a67",
-          "type": "Datetime",
-          "options": "",
+          "type": "Textarea",
+          "options": "iCal RRULE，使用RFC 5545标准写入",
           "optionMap": {}
         },
         {
           "label": "EXDATES",
           "code": "a68",
           "type": "Textarea",
-          "options": "",
+          "options": "不包含日期，完全按照RFC 5545规则去写",
           "optionMap": {}
         },
         {
           "label": "RDATES",
           "code": "a69",
           "type": "Textarea",
-          "options": "",
+          "options": "额外日期，完全按照RFC 5545规则去写",
           "optionMap": {}
         },
         {
@@ -2687,20 +2643,20 @@
         {
           "label": "Show as",
           "code": "a71",
-          "type": "Select",
-          "options": "1. “busy” (Name/ID: b55) 2. “free” (Name/ID: b56) 3. “tentative” (Name/ID: b57) 4. “oof” (Name/ID: b58)",
+          "type": "Radio",
+          "options": "1. “busy” (Name/ID: b55) 2. “free” (Name/ID: b56) 3. “tentative” (Name/ID: b57) 4. “unavailable” (Name/ID: b58) 对应EKEventAvailability",
           "optionMap": {
             "b55": "busy",
             "b56": "free",
             "b57": "tentative",
-            "b58": "oof"
+            "b58": "unavailable"
           }
         },
         {
           "label": "Visibility",
           "code": "a72",
-          "type": "Select",
-          "options": "1. “default” (Name/ID: b55) 2. “public” (Name/ID: b56) 3. “private” (Name/ID: b57) 4. “confidential” (Name/ID: b58)",
+          "type": "Radio",
+          "options": "1. “default” (Name/ID: b55) 2. “public” (Name/ID: b56) 3. “private” (Name/ID: b57) 4. “confidential” (Name/ID: b58) 对应iCal/Google VALARMvisibility",
           "optionMap": {
             "b55": "default",
             "b56": "public",
@@ -2712,14 +2668,14 @@
           "label": "Reminders",
           "code": "a73",
           "type": "Textarea",
-          "options": "",
+          "options": "对应VALARM， 按照RFC 5545 写入",
           "optionMap": {}
         },
         {
           "label": "Is availability",
           "code": "a74",
           "type": "Radio",
-          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56) 我们的自定义字段",
           "optionMap": {
             "b55": "Yes",
             "b56": "No"
@@ -2729,14 +2685,14 @@
           "label": "Availability note",
           "code": "a75",
           "type": "Text",
-          "options": "",
+          "options": "我们的自定义字段",
           "optionMap": {}
         },
         {
           "label": "RSVP required",
           "code": "a76",
           "type": "Radio",
-          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56) 对应ATTENDEE",
           "optionMap": {
             "b55": "Yes",
             "b56": "No"
@@ -2755,7 +2711,7 @@
         {
           "label": "External source",
           "code": "a78",
-          "type": "Select",
+          "type": "Radio",
           "options": "1. “internal” (Name/ID: b55) 2. “google” (Name/ID: b56) 3. “outlook” (Name/ID: b57) 4. “apple” (Name/ID: b58)",
           "optionMap": {
             "b55": "internal",
@@ -2774,7 +2730,7 @@
         {
           "label": "Sequence",
           "code": "a80",
-          "type": "Text",
+          "type": "Number",
           "options": "",
           "optionMap": {}
         },
@@ -3106,7 +3062,7 @@
           "label": "Cared one’s name",
           "code": "a55",
           "type": "Text",
-          "options": "",
+          "options": "这里默认写入被关联的被照顾者的用户名，但允许修改，因为用户在展示时有可能并不希望使用真名",
           "optionMap": {}
         },
         {
@@ -3301,7 +3257,7 @@
         {
           "label": "type",
           "code": "a55",
-          "type": "Checkbox",
+          "type": "Radio",
           "options": "护理小组讨论类型。 1. “discussion” (Name/ID: b55) `→ General group conversation / 一般组讨论，普通讨论默认为discussion 2. “announcement” (Name/ID: b56) → Important group notice 重要组通知 3”wish”(Name/ID: b57) → Wish post (birthday, get-well, encouragement) / 祝福帖（生日、康复、鼓励",
           "optionMap": {
             "b55": "discussion",
@@ -3336,7 +3292,7 @@
           "label": "scheduled at",
           "code": "a59",
           "type": "Datetime",
-          "options": "",
+          "options": "自动发布日期",
           "optionMap": {}
         }
       ]
@@ -3956,65 +3912,72 @@
         {
           "label": "Accuracy meters",
           "code": "a57",
-          "type": "Text",
-          "options": "",
+          "type": "Number",
+          "options": "对应horizontalAccuracy",
           "optionMap": {}
         },
         {
           "label": "Altitude meters",
           "code": "a58",
-          "type": "Text",
-          "options": "",
+          "type": "Number",
+          "options": "对应altitude",
           "optionMap": {}
         },
         {
           "label": "Heading degrees",
           "code": "a59",
-          "type": "Text",
-          "options": "",
+          "type": "Number",
+          "options": "对应course",
           "optionMap": {}
         },
         {
           "label": "Speed",
           "code": "a60",
-          "type": "Text",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Is moving",
-          "code": "a61",
-          "type": "Text",
-          "options": "",
+          "type": "Number",
+          "options": "对应speed",
           "optionMap": {}
         },
         {
           "label": "Moving type",
           "code": "a62",
-          "type": "Text",
-          "options": "",
-          "optionMap": {}
+          "type": "Radio",
+          "options": "1. “stationary” (Name/ID: b55) 2. “walking” (Name/ID: b56) 3. “running” (Name/ID: b57) 4. “cycling” (Name/ID: b58) 5. “automotive” (Name/ID: b59) 6. “unknown” (Name/ID: b60)  对应CMMotionActivity",
+          "optionMap": {
+            "b55": "stationary",
+            "b56": "walking",
+            "b57": "running",
+            "b58": "cycling",
+            "b59": "automotive",
+            "b60": "unknown"
+          }
         },
         {
           "label": "Platform",
           "code": "a63",
-          "type": "Text",
-          "options": "",
-          "optionMap": {}
+          "type": "Radio",
+          "options": "1. “iOS” (Name/ID: b55) 2. “Android ” (Name/ID: b56) 3. “Web” (Name/ID: b57)",
+          "optionMap": {
+            "b55": "iOS",
+            "b56": "Android",
+            "b57": "Web"
+          }
         },
         {
           "label": "Battery level",
           "code": "a64",
-          "type": "Text",
-          "options": "",
+          "type": "Number",
+          "options": "对应Web Battery API level（0–100）",
           "optionMap": {}
         },
         {
           "label": "Phone is charing",
           "code": "a65",
-          "type": "Text",
-          "options": "",
-          "optionMap": {}
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56) 对应charging",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
         },
         {
           "label": "Address text",
@@ -4050,17 +4013,11 @@
           "label": "Zone type",
           "code": "a55",
           "type": "Radio",
-          "options": "1. “Safe” (Name/ID: b55) 2. “Danger” (Name/ID: b56) 3. “Custom 1” (Name/ID: b57) 4. “Custom 2” (Name/ID: b58) 5. “Custom 3” (Name/ID: b59) 6. “Custom 4” (Name/ID: b60) 7. Custom 5” (Name/ID: b61) 8. Custom 6” (Name/ID: b62) 9. Custom 7” (Name/ID: b63) 用户也可以自定义7个区域类型，自定义区域名称储存在cared one的extended profile",
+          "options": "1. “Safe” (Name/ID: b55) 2. “Danger” (Name/ID: b56) 3. “Custom” (Name/ID: b57)  用户也可以自定义无限区域类型，自定义区域名称储存在a57",
           "optionMap": {
             "b55": "Safe",
             "b56": "Danger",
-            "b57": "Custom 1",
-            "b58": "Custom 2",
-            "b59": "Custom 3",
-            "b60": "Custom 4",
-            "b61": "Custom 5”",
-            "b62": "Custom 6”",
-            "b63": "Custom 7”"
+            "b57": "Custom"
           }
         },
         {
@@ -4072,6 +4029,13 @@
             "b55": "Radius",
             "b56": "Polygon"
           }
+        },
+        {
+          "label": "Zone name",
+          "code": "a57",
+          "type": "Text",
+          "options": "如果是safe/danger则写入Safe或Danger，备注在a58里写，如果是custom则在这里储存自定义名称",
+          "optionMap": {}
         },
         {
           "label": "Custom description",
@@ -4148,15 +4112,15 @@
         {
           "label": "Schedule start time",
           "code": "a67",
-          "type": "Datetime",
-          "options": "预设启用时间开始时间",
+          "type": "Textarea",
+          "options": "预设启用时间开始时间，使用RFC 5545写入",
           "optionMap": {}
         },
         {
           "label": "Schedule end time",
           "code": "a68",
-          "type": "Datetime",
-          "options": "预设启用时间结束时间",
+          "type": "Textarea",
+          "options": "预设启用时间结束时间，使用RFC 5545写入",
           "optionMap": {}
         },
         {
@@ -5302,7 +5266,7 @@
         {
           "label": "care group's member types",
           "code": "a56",
-          "type": "Checkbox",
+          "type": "Radio",
           "options": "1. “nothing special” (Name/ID: b55) 2. “owner” (Name/ID: b56) 3. “admin” (Name/ID: b57)",
           "optionMap": {
             "b55": "nothing special",
@@ -5313,7 +5277,7 @@
         {
           "label": "care group's member roles",
           "code": "a57",
-          "type": "Checkbox",
+          "type": "Radio",
           "options": "1. “nothing special” (Name/ID: b55) 2. “cared one” (Name/ID: b56)",
           "optionMap": {
             "b55": "nothing special",
@@ -5351,7 +5315,7 @@
         {
           "label": "care group's private member group member types",
           "code": "a55",
-          "type": "Checkbox",
+          "type": "Radio",
           "options": "1. “nothing special” (Name/ID: b55) 2. “owner” (Name/ID: b56) 3. “admin” (Name/ID: b57)",
           "optionMap": {
             "b55": "nothing special",
