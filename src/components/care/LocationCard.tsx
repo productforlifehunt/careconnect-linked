@@ -1345,9 +1345,10 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
               </div>
             )}
             {(zones || []).map((zone: any) => {
-              const catCfg = CATEGORY_CONFIG[zone.category] || CATEGORY_CONFIG.custom;
-              const color = zone.zone_type === "danger" ? "#EF4444" : catCfg.color;
-              const Icon = zone.zone_type === "danger" ? Ban : catCfg.icon;
+              const color = zoneColor(zone.zone_type);
+              const Icon = zoneIcon(zone.zone_type);
+              const label = zoneLabel(zone.zone_type);
+
               const active = isZoneActive(zone);
               const breachInfo = currentLocation
                 ? checkZoneBreach(zone, parseFloat(currentLocation.latitude), parseFloat(currentLocation.longitude))
