@@ -243,18 +243,18 @@ function evaluateZoneAlert(zone: any, lat: number, lng: number): { distance: num
 // ─── Safe Zones CRUD ────────────────────────────────────────
 
 export async function fetchSafeZonesWordPress(userId: string): Promise<any[]> {
-  const [zoneIds, receiverIds, customNames] = await Promise.all([
+  const [zoneIds, receiverIds] = await Promise.all([
     fetchRelationChildIds(REL_USER_SAFE_ZONE, normalizeWpUserId(userId)),
     fetchLocationReceiverIds(userId),
-    fetchCustomZoneNames(userId),
   ]);
   const zones = await Promise.all(
     zoneIds.map(async (zoneId) => {
       const zone = await wordpressCCTFetch<any>(T.safeZone.slug, { id: zoneId });
       // Receivers live on the cared one (Relation 290), shared by all zones.
-      return { ...mapSafeZone(zone, userId, customNames), receiver_ids: receiverIds };
+      return { ...mapSafeZone(zone, userId), receiver_ids: receiverIds };
     }),
   );
+
   return zones.filter(Boolean);
 }
 
