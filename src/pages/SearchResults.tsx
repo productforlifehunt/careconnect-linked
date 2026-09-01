@@ -59,7 +59,7 @@ export default function SearchResults() {
   const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
   const [locationFilter, setLocationFilter] = useState(initialLocation);
   const [debouncedLocation, setDebouncedLocation] = useState(initialLocation);
-  const [sortBy, setSortBy] = useState(isFacilityMode ? "rating" : "price-low");
+  const [sortBy, setSortBy] = useState("rating");
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
@@ -233,7 +233,7 @@ export default function SearchResults() {
         <Select value={sortBy} onValueChange={setSortBy}>
           <SelectTrigger className="w-[180px] h-11"><SelectValue placeholder={t("search.sortBy")} /></SelectTrigger>
           <SelectContent>
-            {isFacilityMode && <SelectItem value="rating">{t("search.highestRated")}</SelectItem>}
+            <SelectItem value="rating">{t("search.highestRated")}</SelectItem>
             {!isFacilityMode && <SelectItem value="price-low">{t("search.priceLowHigh")}</SelectItem>}
             {!isFacilityMode && <SelectItem value="price-high">{t("search.priceHighLow")}</SelectItem>}
             {isFacilityMode && <SelectItem value="reviews">{t("search.mostReviews")}</SelectItem>}
