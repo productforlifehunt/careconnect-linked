@@ -249,34 +249,53 @@ export default function SafetyPlaces() {
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <Label htmlFor="place-name">{Z("名称", "Name")}</Label>
+              <Label htmlFor="place-type">{Z("区域类型", "Zone type")}</Label>
+              <Select
+                value={form.zone_type}
+                onValueChange={(v) => setForm((f) => ({
+                  ...f,
+                  zone_type: v,
+                  custom_name: customSlotOf(v) ? (customNames[customSlotOf(v)] || "") : "",
+                }))}
+              >
+                <SelectTrigger id="place-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ZONE_TYPE_CODES.map((code) => (
+                    <SelectItem key={code} value={code}>
+                      {zoneTypeLabel(code, customNames, isCN)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {customSlotOf(form.zone_type) > 0 && (
+              <div>
+                <Label htmlFor="place-custom-name">
+                  {Z(`自定义区域 ${customSlotOf(form.zone_type)} 名称`, `Custom zone ${customSlotOf(form.zone_type)} name`)}
+                </Label>
+                <Input
+                  id="place-custom-name"
+                  value={form.custom_name}
+                  onChange={(e) => setForm((f) => ({ ...f, custom_name: e.target.value }))}
+                  placeholder={Z("学校 / 公园", "School / Park")}
+                />
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  {Z("此名称对该被照护人的所有同类型区域生效。", "This name applies to every zone of this type for this person.")}
+                </p>
+              </div>
+            )}
+            <div>
+              <Label htmlFor="place-desc">{Z("描述", "Description")}</Label>
               <Input
-                id="place-name"
-                value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                placeholder={Z("家 / 学校 / 工作", "Home / School / Work")}
+                id="place-desc"
+                value={form.description}
+                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                placeholder={Z("可选说明", "Optional detail")}
               />
             </div>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant={form.zone_type === "Safe" ? "default" : "outline"}
-                size="sm"
-                className="flex-1"
-                onClick={() => setForm((f) => ({ ...f, zone_type: "Safe" }))}
-              >
-                {Z("安全地点", "Safe place")}
-              </Button>
-              <Button
-                type="button"
-                variant={form.zone_type === "Danger" ? "destructive" : "outline"}
-                size="sm"
-                className="flex-1"
-                onClick={() => setForm((f) => ({ ...f, zone_type: "Danger" }))}
-              >
-                {Z("危险地点", "Danger place")}
-              </Button>
-            </div>
+
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <Label htmlFor="place-lat">{Z("纬度", "Latitude")}</Label>
