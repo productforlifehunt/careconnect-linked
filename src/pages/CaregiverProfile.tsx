@@ -387,7 +387,7 @@ export default function CaregiverProfile() {
                           <span className="flex items-center gap-1"><Star className="h-4 w-4 text-warning fill-warning" /> {reviewAverage?.toFixed(1)} ({isZh ? `${reviewCount} 条评价` : `${reviewCount} review${reviewCount === 1 ? "" : "s"}`})</span>
                         )}
                         {caregiver.location && <span className="flex items-center gap-1"><MapPin className="h-4 w-4" /> {caregiver.location}</span>}
-                        {caregiver.years_of_experience && <span className="flex items-center gap-1"><Clock className="h-4 w-4" /> {caregiver.years_of_experience}{isZh ? " 年经验" : " years exp."}</span>}
+                        
                       </div>
                     </div>
                     <Button
