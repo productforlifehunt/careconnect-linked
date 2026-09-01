@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next";
 export default function JoinGroup() {
   const { code = "" } = useParams<{ code: string }>();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const joinGroupByCode = useJoinGroupByCode();
   const { i18n } = useTranslation();
   const zh = i18n.language?.startsWith("zh");
@@ -20,10 +20,14 @@ export default function JoinGroup() {
   const [message, setMessage] = useState<string>("");
 
   useEffect(() => {
+    // Wait for the session to hydrate — redirecting while auth is still loading
+    // bounced already signed-in users to the sign-in screen.
+    if (isLoading) return;
     if (!isAuthenticated || !user) {
       navigate(`/auth?next=${encodeURIComponent(`/join/${code}`)}`, { replace: true });
       return;
     }
+
     if (!code) {
       setStatus("error");
       setMessage(Z("邀请链接无效。", "Invalid invite link."));
@@ -50,7 +54,7 @@ export default function JoinGroup() {
       },
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, user, code]);
+  }, [isLoading, isAuthenticated, user, code]);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
