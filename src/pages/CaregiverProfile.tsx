@@ -262,7 +262,7 @@ export default function CaregiverProfile() {
   if (!caregiver) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
-        <p className="text-lg text-muted-foreground">{isZh ? "未找到该护理者" : "Caregiver not found"}</p>
+        <h1 className="text-lg font-semibold text-foreground">{isZh ? "未找到该护理者" : "Caregiver not found"}</h1>
         <Button variant="outline" onClick={() => navigate("/search")}>{isZh ? "返回搜索" : "Back to Search"}</Button>
       </div>
     );
@@ -393,7 +393,7 @@ export default function CaregiverProfile() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="shrink-0"
+                       className="min-h-11 min-w-11 shrink-0"
                       onClick={handleToggleFavorite}
                       title={isZh ? "收藏" : "Save"}
                       aria-label={isZh ? "收藏" : "Save"}
@@ -685,7 +685,7 @@ export default function CaregiverProfile() {
                             <Label className="mb-2 block">{isZh ? "评分" : "Rating"}</Label>
                             <div className="flex gap-1">
                               {[1, 2, 3, 4, 5].map(s => (
-                                <button key={s} type="button" onClick={() => setReviewRating(s)} className="focus:outline-none">
+                                 <button key={s} type="button" aria-label={isZh ? `${s} 星` : `${s} stars`} aria-pressed={s === reviewRating} onClick={() => setReviewRating(s)} className="min-h-11 min-w-11 flex items-center justify-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                                   <Star className={`h-7 w-7 cursor-pointer transition-colors ${s <= reviewRating ? "text-warning fill-warning" : "text-muted-foreground/30"}`} />
                                 </button>
                               ))}

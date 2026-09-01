@@ -22,8 +22,6 @@ import { useState } from "react";
 import { useTheme } from "next-themes";
 import { useNotifications } from "@/hooks/use-care-data";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import yichangIcon from "@/assets/yichang-icon.png";
-import huchangIcon from "@/assets/huchang-icon.png";
 import { useStandaloneMode } from "@/hooks/useStandaloneMode";
 import { BrandMark } from "@/components/BrandMark";
 
@@ -43,11 +41,9 @@ export function AppHeader() {
   const isChallenged = site.family === "challenged";
   const isCareCNC = site.id === "carecnc";
   const isV1 = site.id === "challenged-v1";
-  const logoBrand = site.family === "challenged" || site.brandSlug.startsWith("challenged") ? "challenged" : site.id;
-  const logoBadgeText = site.logoText;
   const logoWordmarkText = isCareCNC
     ? (isChinese ? "护畅" : "Care cnc")
-    : `${site.logoText}${site.logoAccent}`;
+    : (isChinese ? "忆畅" : "ChallengeD");
 
   const publicNav = isChallenged
     ? [
@@ -94,7 +90,7 @@ export function AppHeader() {
   const mobileMenu = (
     <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="lg:hidden shrink-0" aria-label={t("nav.browse")}>
+        <Button variant="ghost" size="icon" className="min-h-11 min-w-11 lg:hidden shrink-0" aria-label={t("nav.browse")}>
           <Menu className="h-5 w-5" />
         </Button>
       </SheetTrigger>
@@ -218,7 +214,7 @@ export function AppHeader() {
         <Button
           variant="ghost"
           size="icon"
-          className="relative shrink-0"
+          className="relative min-h-11 min-w-11 shrink-0"
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           title={t("nav.toggleTheme")}
           aria-label={t("nav.toggleTheme")}
@@ -243,7 +239,7 @@ export function AppHeader() {
             <Button
               variant="ghost"
               size="icon"
-              className="relative shrink-0"
+              className="relative min-h-11 min-w-11 shrink-0"
               onClick={() => navigate("/notifications")}
               title={t("nav.notifications")}
               aria-label={t("nav.notifications")}

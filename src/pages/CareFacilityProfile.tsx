@@ -136,7 +136,7 @@ export default function CareFacilityProfile() {
   if (!facility) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
-        <p className="text-lg text-muted-foreground">{isZh ? "未找到机构" : "Facility not found"}</p>
+        <h1 className="text-lg font-semibold text-foreground">{isZh ? "未找到机构" : "Facility not found"}</h1>
         <Button variant="outline" onClick={() => navigate("/search?service_category=facility")}>
           {isZh ? "返回机构搜索" : "Back to facility search"}
         </Button>

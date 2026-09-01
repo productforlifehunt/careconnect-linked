@@ -151,7 +151,7 @@ export default function Profile() {
                       <span className="text-primary-foreground text-xl sm:text-2xl font-bold">{displayName.charAt(0).toUpperCase()}</span>
                     </div>
                   )}
-                  <button type="button" className="absolute inset-0 rounded-2xl bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer" onClick={() => fileInputRef.current?.click()} disabled={avatarUploading}>
+                   <button type="button" aria-label={t("profile.changeAvatar", "Change profile photo")} className="absolute inset-0 rounded-2xl bg-black/40 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity flex items-center justify-center cursor-pointer" onClick={() => fileInputRef.current?.click()} disabled={avatarUploading}>
                     {avatarUploading ? <Loader2 className="h-5 w-5 text-white animate-spin" /> : <Camera className="h-5 w-5 text-white" />}
                   </button>
                   <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={async (e) => {

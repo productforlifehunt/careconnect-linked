@@ -129,7 +129,7 @@ export default function CaredOnes() {
             {searchQuery.length >= 2 && !selectedPerson && (
               <div className="border rounded-lg max-h-48 overflow-y-auto">
                 {(searchResults || []).length > 0 ? (searchResults || []).map((p: any) => (
-                  <button key={p.id} className="w-full flex items-center gap-3 p-3 hover:bg-accent text-left border-b last:border-b-0 transition-colors" onClick={() => setSelectedPerson(p)}>
+                  <button key={p.id} type="button" className="w-full min-h-11 flex items-center gap-3 p-3 hover:bg-accent text-left border-b last:border-b-0 transition-colors" onClick={() => setSelectedPerson(p)}>
                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                       {p.avatar_url ? <img src={p.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" /> : <span className="text-primary text-xs font-medium">{(p.full_name || p.email || "?")[0]}</span>}
                     </div>
@@ -144,7 +144,7 @@ export default function CaredOnes() {
                   {selectedPerson.avatar_url ? <img src={selectedPerson.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" /> : <span className="text-primary font-medium">{(selectedPerson.full_name || "?")[0]}</span>}
                 </div>
                 <div className="flex-1 min-w-0"><p className="font-medium text-foreground">{selectedPerson.full_name || t("common.noName")}</p><p className="text-xs text-muted-foreground">{selectedPerson.email || ""}</p></div>
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelectedPerson(null)}><X className="h-3.5 w-3.5" /></Button>
+                <Button variant="ghost" size="icon" className="min-h-11 min-w-11" aria-label={t("common.remove")} onClick={() => setSelectedPerson(null)}><X className="h-3.5 w-3.5" /></Button>
               </div>
             )}
             <div>
@@ -174,11 +174,11 @@ export default function CaredOnes() {
               const name = co.cared_one?.full_name || co.cared_one?.first_name || site.caredOneSingular;
               return (
                 <div key={co.user_id} className={`group relative flex items-center gap-1 rounded-lg border transition-colors ${selectedId === co.user_id ? "bg-card border-primary shadow-sm" : "bg-transparent border-border hover:bg-accent/50"}`}>
-                  <button onClick={() => { setActiveTab(co.user_id); setOpenCard(null); }} className="px-4 py-2 text-sm font-medium">
+                   <button type="button" onClick={() => { setActiveTab(co.user_id); setOpenCard(null); }} className="min-h-11 px-4 py-2 text-sm font-medium">
                     {name}{co.relationship && <span className="text-xs text-muted-foreground ml-1">({co.relationship})</span>}
                   </button>
                   <AlertDialog>
-                    <AlertDialogTrigger asChild><button className="pr-2 pl-0 py-2 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"><X className="h-3.5 w-3.5" /></button></AlertDialogTrigger>
+                     <AlertDialogTrigger asChild><button type="button" aria-label={`${t("common.remove")} ${name}`} className="min-h-11 min-w-11 px-2 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"><X className="h-3.5 w-3.5" /></button></AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader><AlertDialogTitle>{t("common.remove")} {name}?</AlertDialogTitle><AlertDialogDescription>{t("caredOnes.removed", { name, caredOnes: site.navLabels.caredOnes.toLowerCase() })}</AlertDialogDescription></AlertDialogHeader>
                       <AlertDialogFooter>

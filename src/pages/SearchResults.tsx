@@ -130,7 +130,7 @@ export default function SearchResults() {
             <div className="space-y-2 max-h-44 overflow-auto pr-1">
               {facilityTypeOptions.map(s => (
                 <label key={s} className="flex items-center gap-2 cursor-pointer">
-                  <Checkbox checked={selectedFacilityTypes.includes(s)} onCheckedChange={() => toggleFacilityType(s)} />
+                  <Checkbox aria-label={`${isZh ? "机构类型" : "Facility type"}: ${formatFacilityToken(s)}`} checked={selectedFacilityTypes.includes(s)} onCheckedChange={() => toggleFacilityType(s)} />
                   <span className="text-sm">{formatFacilityToken(s)}</span>
                 </label>
               ))}
@@ -141,7 +141,7 @@ export default function SearchResults() {
             <div className="space-y-2 max-h-52 overflow-auto pr-1">
               {facilityServiceOptions.map(s => (
                 <label key={s} className="flex items-center gap-2 cursor-pointer">
-                  <Checkbox checked={selectedServiceTypes.includes(s)} onCheckedChange={() => toggleServiceType(s)} />
+                  <Checkbox aria-label={`${isZh ? "服务分类" : "Service"}: ${formatFacilityToken(s)}`} checked={selectedServiceTypes.includes(s)} onCheckedChange={() => toggleServiceType(s)} />
                   <span className="text-sm">{formatFacilityToken(s)}</span>
                 </label>
               ))}
@@ -155,7 +155,7 @@ export default function SearchResults() {
             <div className="space-y-2">
               {LOCATION_OPTIONS.map(opt => (
                 <label key={opt.slug} className="flex items-center gap-2 cursor-pointer">
-                  <Checkbox checked={selectedLocations.includes(opt.slug)} onCheckedChange={() => { toggleLocation(opt.slug); setCurrentPage(1); }} />
+                  <Checkbox aria-label={`${isZh ? "服务方式" : "Delivery"}: ${isZh ? opt.zh : opt.en}`} checked={selectedLocations.includes(opt.slug)} onCheckedChange={() => { toggleLocation(opt.slug); setCurrentPage(1); }} />
                   <span className="text-sm">{isZh ? opt.zh : opt.en}</span>
                 </label>
               ))}
@@ -167,6 +167,7 @@ export default function SearchResults() {
               {serviceTypes.map(st => (
                 <label key={st.slug} className="flex items-center gap-2 cursor-pointer">
                   <Checkbox
+                    aria-label={`${isZh ? "服务类型" : "Service type"}: ${st.name}`}
                     checked={selectedServiceTypeSlugs.includes(st.slug)}
                     onCheckedChange={() => { toggleServiceTypeSlug(st.slug); setCurrentPage(1); }}
                   />
@@ -193,7 +194,7 @@ export default function SearchResults() {
       </div>
       {!isFacilityMode && (
         <label className="flex items-center gap-2 cursor-pointer">
-          <Checkbox checked={verifiedOnly} onCheckedChange={(c) => setVerifiedOnly(!!c)} />
+          <Checkbox aria-label={t("search.verifiedOnly")} checked={verifiedOnly} onCheckedChange={(c) => setVerifiedOnly(!!c)} />
           <span className="text-sm font-medium">{t("search.verifiedOnly")}</span>
         </label>
       )}
@@ -231,7 +232,7 @@ export default function SearchResults() {
           <Input placeholder={isFacilityMode ? (isZh ? "搜索养老机构、记忆照护、护理院..." : "Search care facilities, memory care, nursing homes...") : t("search.searchCaregivers")} value={query} onChange={e => setQuery(e.target.value)} className="pl-9 h-11" />
         </div>
         <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="w-[180px] h-11"><SelectValue placeholder={t("search.sortBy")} /></SelectTrigger>
+          <SelectTrigger className="w-[180px] h-11" aria-label={t("search.sortBy")}><SelectValue placeholder={t("search.sortBy")} /></SelectTrigger>
           <SelectContent>
             <SelectItem value="rating">{t("search.highestRated")}</SelectItem>
             {!isFacilityMode && <SelectItem value="price-low">{t("search.priceLowHigh")}</SelectItem>}

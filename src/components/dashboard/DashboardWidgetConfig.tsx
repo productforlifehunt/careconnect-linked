@@ -99,7 +99,11 @@ function SortableRow({ widget, checked, onToggle }: SortableRowProps) {
         </button>
         <span className="text-sm font-medium truncate">{widget.label}</span>
       </div>
-      <Switch checked={checked} onCheckedChange={onToggle} />
+      <Switch
+        aria-label={`${isZh ? "显示" : "Show"} ${localizeWidgetLabel(widget.id, widget.label, isZh)}`}
+        checked={checked}
+        onCheckedChange={onToggle}
+      />
     </div>
   );
 }
@@ -137,7 +141,7 @@ export function DashboardWidgetConfig({ widgets, visibility, order, onChange, on
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
+        <Button variant="outline" size="sm" className="gap-2" aria-label={isZh ? "自定义面板" : "Customize dashboard"}>
           <Settings2 className="h-4 w-4" />
           <span className="hidden sm:inline">{isZh ? "自定义" : "Customize"}</span>
         </Button>

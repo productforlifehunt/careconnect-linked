@@ -62,7 +62,7 @@ export default function Favorites() {
                     </div>
                     <div className="flex flex-col gap-2 shrink-0">
                       <Button variant="coral" size="sm" onClick={() => navigate(`/caregiver/${cg.id}`)}>{t("common.book")}</Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeFavorite(sp.provider_id)}>
+                      <Button variant="ghost" size="icon" className="min-h-11 min-w-11" aria-label={isZh ? "取消收藏" : "Remove from favorites"} onClick={() => removeFavorite(sp.provider_id)}>
                         <Heart className="h-4 w-4 fill-coral text-coral" />
                       </Button>
                     </div>

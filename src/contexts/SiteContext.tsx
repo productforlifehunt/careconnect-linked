@@ -161,23 +161,38 @@ const DOMAIN_MAP: Record<string, SiteId> = {
 function detectSite(): SiteId {
   if (typeof window === "undefined") return "challenged";
 
-  // Purge any legacy sessionStorage value — site is now resolved purely from
-  // hostname + ?__site param. No cross-app cache bleed.
-  try { sessionStorage.removeItem("__lovable_site_id"); } catch {}
-
   const host = window.location.host;
   const hostname = window.location.hostname;
+  const storageKey = `__site_id:${host}`;
 
   const params = new URLSearchParams(window.location.search);
   const siteParam = params.get("__site");
-  if (siteParam === "challenged") return "challenged";
-  if (siteParam === "challenged-v1" || siteParam === "challenged-1.0" || siteParam === "yichang-v1") return "challenged-v1";
-  if (siteParam === "carecnc" || siteParam === "careconnected") return "carecnc";
-  if (siteParam === "notchnote" || siteParam === "notch") return "notchnote";
-  if (siteParam === "notchsafety" || siteParam === "safety") return "notchsafety";
+  const paramSite: SiteId | null =
+    siteParam === "challenged" ? "challenged" :
+    siteParam === "challenged-v1" || siteParam === "challenged-1.0" || siteParam === "yichang-v1" ? "challenged-v1" :
+    siteParam === "carecnc" || siteParam === "careconnected" ? "carecnc" :
+    siteParam === "notchnote" || siteParam === "notch" ? "notchnote" :
+    siteParam === "notchsafety" || siteParam === "safety" ? "notchsafety" : null;
 
-  if (DOMAIN_MAP[host]) return DOMAIN_MAP[host];
-  if (DOMAIN_MAP[hostname]) return DOMAIN_MAP[hostname];
+  // The query override is used to preview separate sub-apps on one host. Keep
+  // that explicit choice for this tab so an internal Link followed by refresh
+  // cannot silently fall back to another brand. The key is host-scoped to
+  // prevent identity leaking between real domains.
+  if (paramSite) {
+    try { sessionStorage.setItem(storageKey, paramSite); } catch {}
+    return paramSite;
+  }
+
+  const mappedSite = DOMAIN_MAP[host] || DOMAIN_MAP[hostname];
+  if (mappedSite) {
+    try { sessionStorage.removeItem(storageKey); } catch {}
+    return mappedSite;
+  }
+
+  try {
+    const storedSite = sessionStorage.getItem(storageKey);
+    if (storedSite && storedSite in SITE_CONFIGS) return storedSite as SiteId;
+  } catch {}
 
   // Default to challenged (忆畅) when nothing else matches.
   return "challenged";
@@ -213,7 +228,7 @@ const SITE_CONFIGS: Record<SiteId, SiteConfig> = {
   notchsafety: notchSafetyConfig,
 };
 
-const SiteContext = createContext<SiteConfig>(careCNCConfig);
+const SiteContext = createContext<SiteConfig>(challengedConfig);
 
 export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const config = useMemo(() => {
@@ -232,6 +247,10 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
     document.title = config.metaTitle;
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) metaDesc.setAttribute("content", config.metaDescription);
+    const favicon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+    if (favicon) {
+      favicon.href = config.family === "carecnc" ? "/favicon-carecnc.png" : "/favicon-challenged.png";
+    }
 
   }, [config]);
 

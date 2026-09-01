@@ -186,6 +186,10 @@ export default function GPSTracking() {
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     }).addTo(map);
+    const mapContainer = map.getContainer();
+    mapContainer.setAttribute("aria-label", Z("位置地图", "Location map"));
+    mapContainer.querySelector<HTMLAnchorElement>(".leaflet-control-zoom-in")?.setAttribute("aria-label", Z("放大地图", "Zoom in"));
+    mapContainer.querySelector<HTMLAnchorElement>(".leaflet-control-zoom-out")?.setAttribute("aria-label", Z("缩小地图", "Zoom out"));
     leafletMap.current = map;
     return () => {
       map.remove();
@@ -926,7 +930,7 @@ export default function GPSTracking() {
                       : t("gps.sharingInactive", "Not sharing")}
                   </p>
                 </div>
-                <Switch checked={shareMyLocation} onCheckedChange={handleToggleShare} disabled={updatingShare} />
+                 <Switch aria-label={t("gps.shareMyLocation")} checked={shareMyLocation} onCheckedChange={handleToggleShare} disabled={updatingShare} />
               </div>
               <div className="flex items-center justify-between">
                 <div>
@@ -935,7 +939,7 @@ export default function GPSTracking() {
                     {zones.length} {t("gps.zonesConfigured", "zones")} ({dangerZoneCount} {t("gps.danger", "danger")})
                   </p>
                 </div>
-                <Switch checked={geofenceAlerts} onCheckedChange={setGeofenceAlerts} />
+                 <Switch aria-label={t("gps.geofenceAlerts")} checked={geofenceAlerts} onCheckedChange={setGeofenceAlerts} />
               </div>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <Shield className="h-3 w-3" /> {t("gps.locationEncrypted", { groups: site.navLabels.careGroups.toLowerCase() })}

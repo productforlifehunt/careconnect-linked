@@ -36,6 +36,7 @@ export default function SharedInformationCard() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
+        <h1 className="sr-only">{Z("正在加载信息卡", "Loading information card")}</h1>
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
