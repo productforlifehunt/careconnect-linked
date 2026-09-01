@@ -1465,7 +1465,8 @@
             "b64": "Transportation",
             "b65": "Medical Escort",
             "b66": "In-person checkin",
-            "b67": "Remote checkin"
+            "b67": "Remote checkin",
+            "b68": "Remote medicine supervision"
           }
         },
         {
@@ -1701,7 +1702,10 @@
             "b123": "Organ Transplant",
             "b124": "Other Surgery/Transplantation",
             "b125": "Surgery",
-            "b126": "Surgery/Transplantation"
+            "b126": "Surgery/Transplantation",
+            "b88": "Crohns/Colitis/IBS",
+            "b109": "Alzheimers",
+            "b119": "Parkinsons"
           }
         },
         {
@@ -2099,7 +2103,8 @@
           "options": "1. “I'm drinking a glass of alcohol” (Name/ID: b55) 2. “I’m taking a break” (Name/ID: b56) 3. “Other” (Name/ID: b57)",
           "optionMap": {
             "b56": "I’m taking a break",
-            "b57": "Other"
+            "b57": "Other",
+            "b55": "Im drinking a glass of alcohol"
           }
         },
         {
