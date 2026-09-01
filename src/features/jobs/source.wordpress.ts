@@ -94,10 +94,23 @@ export async function fetchJobApplicationsWordPress(jobId: string): Promise<any[
     const normalizedJobId = stripWp(jobId);
     const rels = await wordpressFetch<any[]>(`jet-rel/${REL_JOB_CAREGIVERS}/children/${normalizedJobId}`);
     if (!Array.isArray(rels)) throw new Error(`Relation ${REL_JOB_CAREGIVERS} returned an invalid response`);
-    return rels.map((r: any) => ({
+    const applicants = await Promise.all(
+      rels.map(async (r: any) => {
+        if (!r.child_object_id) return null;
+        try {
+          return await fetchWPUserPublicProfile(r.child_object_id);
+        } catch {
+          return null;
+        }
+      })
+    );
+    return rels.map((r: any, i: number) => ({
       id: String(r._ID || r.id || `${normalizedJobId}-${r.child_object_id}`),
       job_id: normalizedJobId,
       applicant_id: r.child_object_id ? `wp-${r.child_object_id}` : null,
+      applicant: applicants[i]
+        ? { full_name: applicants[i]!.full_name, avatar_url: applicants[i]!.avatar_url }
+        : null,
       cover_letter: null,
       cover_message: null,
       created_at: r.created_at || null,
