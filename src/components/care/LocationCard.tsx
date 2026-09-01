@@ -318,24 +318,26 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
       if (!zone.latitude || !zone.longitude) return;
       const zLat = parseFloat(zone.latitude), zLng = parseFloat(zone.longitude);
       if (isNaN(zLat) || isNaN(zLng)) return;
-      const color = zone.zone_type === "danger" ? "#EF4444" : (CATEGORY_CONFIG[zone.category]?.color || "#10B981");
+      const color = zoneColor(zone.zone_type);
+      const isDanger = isDangerZone(zone.zone_type);
       if (zone.shape_type === "polygon" && zone.polygon_points?.length >= 3) {
         const pts: [number, number][] = zone.polygon_points;
         const smoothed = zone.corner_radius?.some((r: number) => r > 0)
           ? chaikinPerVertex(pts, zone.corner_radius) : pts;
-        const poly = Lx.polygon(smoothed, { color, fillColor: color, fillOpacity: 0.15, weight: 2, dashArray: zone.zone_type === "danger" ? "6,4" : undefined })
-          .addTo(map).bindPopup(`<b>${zone.name}</b><br>${zone.zone_type} zone`);
+        const poly = Lx.polygon(smoothed, { color, fillColor: color, fillOpacity: 0.15, weight: 2, dashArray: isDanger ? "6,4" : undefined })
+          .addTo(map).bindPopup(`<b>${zoneLabel(zone.zone_type)}</b>${zone.description ? `<br>${zone.description}` : ""}`);
         mapLayersRef.current.push(poly);
         pts.forEach((pt: [number, number]) => bounds.push(pt));
       } else {
-        const c = Lx.circle([zLat, zLng], { radius: zone.radius_meters || 200, color, fillColor: color, fillOpacity: 0.15, weight: 2, dashArray: zone.zone_type === "danger" ? "6,4" : undefined })
-          .addTo(map).bindPopup(`<b>${zone.name}</b><br>${zone.radius_meters || 200}m`);
+        const c = Lx.circle([zLat, zLng], { radius: zone.radius_meters || 200, color, fillColor: color, fillOpacity: 0.15, weight: 2, dashArray: isDanger ? "6,4" : undefined })
+          .addTo(map).bindPopup(`<b>${zoneLabel(zone.zone_type)}</b><br>${zone.radius_meters || 200}m`);
         mapLayersRef.current.push(c);
         bounds.push([zLat, zLng]);
       }
       const zIcon = Lx.divIcon({
         className: "",
-        html: zone.zone_type === "danger"
+        html: isDanger
+
           ? `<div style="width:28px;height:28px;border-radius:50%;background:#EF4444;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;color:white;font-size:13px;font-weight:bold;line-height:1">✕</div>`
           : `<div style="width:28px;height:28px;border-radius:50%;background:${color};border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;"><svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z'/><circle cx='12' cy='10' r='3'/></svg></div>`,
         iconSize: [28, 28], iconAnchor: [14, 14],
