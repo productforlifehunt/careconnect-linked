@@ -792,6 +792,17 @@ export async function requestJoinSubgroupWordPress(subgroupId: string): Promise<
       meta: subgroupMeta({ status: "pending" }),
     },
   });
+  // Whoever can approve must be told there is a pending request — non-blocking.
+  try {
+    const [{ notifySubgroupJoinRequest }, recs] = await Promise.all([
+      import("@/features/notifications/notify-events"),
+      fetchSubgroupMemberRecords(subgroupId).catch(() => [] as SubgroupMemberRecord[]),
+    ]);
+    const approvers = recs
+      .filter((r) => (r.types || []).some((t) => t === "owner" || t === "admin"))
+      .map((r) => r.user_id);
+    await notifySubgroupJoinRequest(approvers, String(sid));
+  } catch { /* best-effort */ }
 }
 
 /** Admin approves a pending request by flipping status → accepted. */
@@ -812,7 +823,12 @@ export async function approveSubgroupMemberWordPress(subgroupId: string, userId:
       meta: subgroupMeta({ status: "accepted", types: existing?.types }),
     },
   });
+  try {
+    const { notifySubgroupApproved } = await import("@/features/notifications/notify-events");
+    await notifySubgroupApproved(uid, String(sid));
+  } catch { /* best-effort */ }
 }
+
 
 /** Admin (or self) declines / removes a pending request. */
 export async function declineSubgroupMemberWordPress(subgroupId: string, userId: string | number): Promise<void> {
