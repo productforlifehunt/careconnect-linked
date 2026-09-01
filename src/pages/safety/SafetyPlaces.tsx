@@ -266,9 +266,6 @@ export default function SafetyPlaces() {
                   onChange={(e) => setForm((f) => ({ ...f, custom_name: e.target.value }))}
                   placeholder={Z("学校 / 公园", "School / Park")}
                 />
-                <p className="mt-1 text-[11px] text-muted-foreground">
-                  {Z("此名称对该被照护人的所有同类型区域生效。", "This name applies to every zone of this type for this person.")}
-                </p>
               </div>
             )}
             <div>
