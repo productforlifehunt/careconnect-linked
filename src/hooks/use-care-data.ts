@@ -674,7 +674,7 @@ export function useCareGroupPosts(groupId: string | null, type?: string) {
 export function useCreateGroupPost() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (post: { group_id: string; content: string; type?: string; title?: string; subgroupIds?: number[]; visibilityUserIds?: number[] }) => {
+    mutationFn: async (post: { group_id: string; content: string; type?: string; title?: string; scheduled_at?: string | null; subgroupIds?: number[]; visibilityUserIds?: number[] }) => {
       const { subgroupIds, visibilityUserIds, ...payload } = post;
       const newId = await createGroupPostWordPress(payload);
       if (newId && ((subgroupIds?.length ?? 0) > 0 || (visibilityUserIds?.length ?? 0) > 0)) {
@@ -689,7 +689,12 @@ export function useCreateGroupPost() {
 export function useUpdateGroupPost() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...updates }: { id: string; content?: string; title?: string; is_pinned?: boolean }) => updateGroupPostWordPress(id, updates),
+    mutationFn: async ({ id, subgroupIds, visibilityUserIds, ...updates }: { id: string; content?: string; title?: string; is_pinned?: boolean; scheduled_at?: string | null; subgroupIds?: number[]; visibilityUserIds?: number[] }) => {
+      await updateGroupPostWordPress(id, updates);
+      if (subgroupIds || visibilityUserIds) {
+        await setPostVisibility(id, subgroupIds || [], visibilityUserIds || []);
+      }
+    },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["careGroupPosts"] }); },
   });
 }
