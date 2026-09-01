@@ -24,6 +24,12 @@ import {
 } from "@/features/location/source.wordpress-extended";
 import { writeLocationAndCheckZones } from "@/features/location/source.wordpress";
 import { checkBreaches, getDistanceMeters } from "@/lib/locationService";
+import {
+  ZONE_TYPE, ZONE_TYPE_CODES, customSlotOf, isDangerZone,
+  zoneTypeLabel, fetchCustomZoneNames, setCustomZoneName,
+  type CustomZoneNames,
+} from "@/features/location/zone-types";
+
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import * as L from "leaflet";
@@ -53,10 +59,12 @@ export default function GPSTracking() {
   const [zones, setZones] = useState<any[]>([]);
   const [trailData, setTrailData] = useState<Record<string, [number, number][]>>({});
   // Safe-zone editor state — zones are created and edited entirely in-app.
+  // CCT 214 has NO name column: a zone is labelled by its TYPE (a55).
+  const [customNames, setCustomNames] = useState<CustomZoneNames>({});
+  const [customNameDraft, setCustomNameDraft] = useState("");
   const emptyZoneForm = {
     id: "" as string,
-    name: "",
-    zone_type: "Safe" as "Safe" | "Danger",
+    zone_type: ZONE_TYPE.SAFE as string,
     latitude: "" as string,
     longitude: "" as string,
     radius_meters: "200" as string,
@@ -65,6 +73,7 @@ export default function GPSTracking() {
     is_active: true,
     receiver_ids: [] as string[],
   };
+
   const [zoneDialogOpen, setZoneDialogOpen] = useState(false);
   const [zoneForm, setZoneForm] = useState({ ...emptyZoneForm });
   const [zoneSaving, setZoneSaving] = useState(false);
@@ -193,9 +202,9 @@ export default function GPSTracking() {
 
     zones.filter(z => z.is_active).forEach(zone => {
       // The CCT mapper returns "Danger"/"Polygon" capitalised — compare lowercased.
-      const isDanger = String(zone.zone_type).toLowerCase() === "danger";
+      const isDanger = isDangerZone(String(zone.zone_type));
       const isPolygon = String(zone.shape_type).toLowerCase() === "polygon";
-      const label = isDanger ? Z("⚠️ 危险区域", "⚠️ Danger Zone") : Z("✅ 安全区域", "✅ Safe Zone");
+      const label = zoneLabel(String(zone.zone_type));
       const color = isDanger ? "#ef4444" : "hsl(var(--primary))";
       if (isPolygon && zone.polygon_points?.length >= 3) {
         const poly = L.polygon(zone.polygon_points, {
@@ -204,7 +213,7 @@ export default function GPSTracking() {
           fillOpacity: 0.15,
           dashArray: isDanger ? "6 4" : undefined,
         }).addTo(map);
-        poly.bindPopup(`<b>${zone.name}</b><br/>${label}`);
+        poly.bindPopup(`<b>${label}</b>`);
         zoneLayers.current.push(poly);
       } else if (zone.latitude && zone.longitude) {
         const circle = L.circle([zone.latitude, zone.longitude], {
@@ -214,7 +223,7 @@ export default function GPSTracking() {
           fillOpacity: 0.12,
           dashArray: isDanger ? "6 4" : undefined,
         }).addTo(map);
-        circle.bindPopup(`<b>${zone.name}</b><br/>${label}<br/>${Z("半径", "Radius")}: ${zone.radius_meters || 200}m`);
+        circle.bindPopup(`<b>${label}</b><br/>${Z("半径", "Radius")}: ${zone.radius_meters || 200}m`);
         zoneLayers.current.push(circle);
       }
     });
@@ -391,8 +400,17 @@ export default function GPSTracking() {
   // ─── Safe zone CRUD (100% in-app, never the WP admin) ──────
   const reloadZones = async () => {
     if (!userId) return;
-    try { setZones(await fetchSafeZonesWordPress(String(userId))); } catch {}
+    try {
+      const [rows, names] = await Promise.all([
+        fetchSafeZonesWordPress(String(userId)),
+        fetchCustomZoneNames(String(userId)),
+      ]);
+      setZones(rows);
+      setCustomNames(names);
+    } catch {}
   };
+
+  const zoneLabel = (code: string) => zoneTypeLabel(code, customNames, isCN);
 
   const openNewZone = () => {
     const center = leafletMap.current?.getCenter();
@@ -401,14 +419,17 @@ export default function GPSTracking() {
       latitude: center ? center.lat.toFixed(6) : "",
       longitude: center ? center.lng.toFixed(6) : "",
     });
+    setCustomNameDraft("");
     setZoneDialogOpen(true);
   };
 
   const openEditZone = (zone: any) => {
+    const slot = customSlotOf(String(zone.zone_type));
+    setCustomNameDraft(slot ? (customNames[slot] || "") : "");
     setZoneForm({
       id: String(zone.id),
-      name: zone.name || "",
-      zone_type: String(zone.zone_type).toLowerCase() === "danger" ? "Danger" : "Safe",
+      zone_type: String(zone.zone_type),
+
       latitude: zone.latitude != null ? String(zone.latitude) : "",
       longitude: zone.longitude != null ? String(zone.longitude) : "",
       radius_meters: String(zone.radius_meters ?? 200),
@@ -434,10 +455,7 @@ export default function GPSTracking() {
     const lat = Number(zoneForm.latitude);
     const lng = Number(zoneForm.longitude);
     const radius = Number(zoneForm.radius_meters);
-    if (!zoneForm.name.trim()) {
-      toast({ title: Z("请填写区域名称", "Zone name is required"), variant: "destructive" });
-      return;
-    }
+    const slot = customSlotOf(zoneForm.zone_type);
     if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
       toast({ title: Z("坐标无效", "Invalid coordinates"), variant: "destructive" });
       return;
@@ -449,7 +467,6 @@ export default function GPSTracking() {
     setZoneSaving(true);
     try {
       const payload = {
-        name: zoneForm.name.trim(),
         zone_type: zoneForm.zone_type,
         shape_type: "Radius",
         latitude: lat,
@@ -467,6 +484,11 @@ export default function GPSTracking() {
       } else {
         await createSafeZoneWordPress({ user_id: String(userId), ...payload });
       }
+      // Custom type names live on the cared one's CCT 258 row (a95..a101).
+      if (slot && customNameDraft.trim() && customNameDraft.trim() !== (customNames[slot] || "")) {
+        await setCustomZoneName(String(userId), slot, customNameDraft.trim());
+      }
+
       await reloadZones();
       setZoneDialogOpen(false);
       toast({ title: zoneForm.id ? Z("区域已更新", "Zone updated") : Z("区域已创建", "Zone created") });
@@ -500,7 +522,7 @@ export default function GPSTracking() {
     }
   };
 
-  const dangerZoneCount = zones.filter(z => String(z.zone_type).toLowerCase() === "danger").length;
+  const dangerZoneCount = zones.filter(z => isDangerZone(String(z.zone_type))).length;
 
   const unreadAlerts = alerts.filter(a => !a.is_read);
 
@@ -566,34 +588,48 @@ export default function GPSTracking() {
 
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="zone-name">{Z("区域名称", "Zone name")}</Label>
-              <Input
-                id="zone-name"
-                value={zoneForm.name}
-                onChange={(e) => setZoneForm(f => ({ ...f, name: e.target.value }))}
-                placeholder={Z("例如：家", "e.g. Home")}
-              />
-            </div>
-
-            <div className="space-y-1.5">
               <Label>{Z("区域类型", "Zone type")}</Label>
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  type="button"
-                  variant={zoneForm.zone_type === "Safe" ? "default" : "outline"}
-                  onClick={() => setZoneForm(f => ({ ...f, zone_type: "Safe" }))}
-                >
-                  <Shield className="h-4 w-4 mr-1" /> {Z("安全区域", "Safe zone")}
-                </Button>
-                <Button
-                  type="button"
-                  variant={zoneForm.zone_type === "Danger" ? "destructive" : "outline"}
-                  onClick={() => setZoneForm(f => ({ ...f, zone_type: "Danger" }))}
-                >
-                  <AlertTriangle className="h-4 w-4 mr-1" /> {Z("危险区域", "Danger zone")}
-                </Button>
+              <div className="grid grid-cols-3 gap-2">
+                {ZONE_TYPE_CODES.map((code) => {
+                  const active = zoneForm.zone_type === code;
+                  return (
+                    <Button
+                      key={code}
+                      type="button"
+                      size="sm"
+                      className="truncate"
+                      variant={active ? (isDangerZone(code) ? "destructive" : "default") : "outline"}
+                      onClick={() => {
+                        const slot = customSlotOf(code);
+                        setZoneForm(f => ({ ...f, zone_type: code }));
+                        setCustomNameDraft(slot ? (customNames[slot] || "") : "");
+                      }}
+                    >
+                      {isDangerZone(code) ? <AlertTriangle className="h-4 w-4 mr-1" /> : <Shield className="h-4 w-4 mr-1" />}
+                      {zoneLabel(code)}
+                    </Button>
+                  );
+                })}
               </div>
             </div>
+
+            {customSlotOf(zoneForm.zone_type) > 0 && (
+              <div className="space-y-1.5">
+                <Label htmlFor="zone-custom-name">
+                  {Z(`自定义区域 ${customSlotOf(zoneForm.zone_type)} 名称`, `Custom zone ${customSlotOf(zoneForm.zone_type)} name`)}
+                </Label>
+                <Input
+                  id="zone-custom-name"
+                  value={customNameDraft}
+                  onChange={(e) => setCustomNameDraft(e.target.value)}
+                  placeholder={Z("例如：日托中心", 'e.g. "Day centre"')}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {Z("该名称对此被照护者所有同类型区域生效。", "This name applies to every zone of this type for this person.")}
+                </p>
+              </div>
+            )}
+
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
@@ -756,14 +792,14 @@ export default function GPSTracking() {
                     <p className="text-sm text-muted-foreground text-center py-8">{t("gps.noZones", "No geofence zones configured")}</p>
                   ) : (
                     zones.map((zone: any) => {
-                      const isDanger = String(zone.zone_type).toLowerCase() === "danger";
+                      const isDanger = isDangerZone(String(zone.zone_type));
                       const isPolygon = String(zone.shape_type).toLowerCase() === "polygon";
                       return (
                         <div key={zone.id} className="p-3 rounded-lg bg-muted/50 border border-border">
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2 min-w-0">
                               <div className={`w-3 h-3 rounded-full shrink-0 ${isDanger ? "bg-destructive" : "bg-success"}`} />
-                              <p className="text-sm font-medium text-foreground truncate">{zone.name}</p>
+                              <p className="text-sm font-medium text-foreground truncate">{zoneLabel(String(zone.zone_type))}</p>
                             </div>
                             <div className="flex items-center gap-1 shrink-0">
                               <Switch
@@ -790,7 +826,7 @@ export default function GPSTracking() {
                           </div>
                           <p className="text-xs text-muted-foreground mt-1">
                             {isPolygon ? `Polygon (${zone.polygon_points?.length || 0} points)` : `${Z("半径", "Radius")}: ${zone.radius_meters || 200}m`}
-                            {" · "}{isDanger ? Z("⚠️ 危险", "⚠️ Danger") : Z("✅ 安全", "✅ Safe")}
+                            {" · "}{isDanger ? Z("⚠️ 危险", "⚠️ Danger") : zoneLabel(String(zone.zone_type))}
                             {" · "}{zone.is_active ? t("common.active", "Active") : t("common.inactive", "Inactive")}
                           </p>
                         </div>

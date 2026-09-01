@@ -1054,7 +1054,10 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className={`text-sm font-semibold ${cfg.color}`}>{cfg.label}</span>
-                            {alert.safe_zone?.name && <Badge variant="secondary" className="text-[10px]">{alert.safe_zone.name}</Badge>}
+                            {alert.safe_zone?.zone_type && (
+                              <Badge variant="secondary" className="text-[10px]">{zoneLabel(alert.safe_zone.zone_type)}</Badge>
+                            )}
+
                           </div>
                           {alert.message && <p className="text-xs text-muted-foreground mt-0.5">{alert.message}</p>}
                           {alert.distance_from_center != null && (
@@ -1093,47 +1096,58 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                   </Button>
                 </div>
 
-                {/* Zone type toggle */}
-                <div className="flex rounded-lg border overflow-hidden">
-                  {(["safe", "danger"] as const).map(t => (
-                    <button key={t} onClick={() => setZoneForm(p => ({ ...p, zone_type: t }))}
-                      className={`flex-1 py-2 text-sm font-medium transition-colors
-                        ${zoneForm.zone_type === t
-                          ? t === "danger" ? "bg-destructive text-destructive-foreground" : "bg-success text-white"
-                          : "bg-transparent text-muted-foreground hover:bg-accent"}`}>
-                      {t === "safe" ? "✅ Safe Zone" : "⚠️ Danger Zone"}
-                    </button>
-                  ))}
+                {/* Zone type — the nine dictionary types (a55). A zone has no
+                    name of its own; its type IS its label. */}
+                <div>
+                  <Label className="text-xs">{isZh ? "区域类型 *" : "Zone Type *"}</Label>
+                  <div className="grid grid-cols-3 gap-1.5 mt-1">
+                    {ZONE_TYPE_CODES.map(code => {
+                      const active = zoneForm.zone_type === code;
+                      const c = zoneColor(code);
+                      return (
+                        <button key={code}
+                          onClick={() => {
+                            const slot = customSlotOf(code);
+                            setZoneForm(p => ({ ...p, zone_type: code }));
+                            setCustomNameDraft(slot ? (customNames[slot] || "") : "");
+                          }}
+                          className="px-2 py-1.5 rounded-lg border text-xs font-medium truncate transition-colors"
+                          style={{
+                            borderColor: active ? c : undefined,
+                            color: active ? c : undefined,
+                            backgroundColor: active ? `${c}20` : undefined,
+                          }}>
+                          {zoneLabel(code)}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-                {zoneForm.zone_type === "danger" && (
+                {isDangerZone(zoneForm.zone_type) && (
                   <p className="text-xs text-destructive bg-destructive/10 rounded p-2">
-                    Alert when {caredOneName} enters this area (e.g. casino, restricted area)
+                    {isZh
+                      ? `当 ${caredOneName} 进入该区域时提醒`
+                      : `Alert when ${caredOneName} enters this area`}
                   </p>
                 )}
 
-                <div>
-                  <Label className="text-xs">Zone Name *</Label>
-                  <Input value={zoneForm.name} onChange={e => setZoneForm(p => ({ ...p, name: e.target.value }))}
-                    placeholder='e.g. "Home", "Casino"' className="mt-1" />
-                </div>
-
-                {zoneForm.zone_type === "safe" && (
+                {customSlotOf(zoneForm.zone_type) > 0 && (
                   <div>
-                    <Label className="text-xs">Category</Label>
-                    <div className="flex gap-2 mt-1 flex-wrap">
-                      {Object.entries(CATEGORY_CONFIG).map(([key, cfg]) => {
-                        const Icon = cfg.icon; const active = zoneForm.category === key;
-                        return (
-                          <button key={key} onClick={() => setZoneForm(p => ({ ...p, category: key }))}
-                            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-colors"
-                            style={{ borderColor: active ? cfg.color : undefined, color: active ? cfg.color : undefined, backgroundColor: active ? `${cfg.color}20` : undefined }}>
-                            <Icon className="h-3 w-3" /> {cfg.label}
-                          </button>
-                        );
-                      })}
-                    </div>
+                    <Label className="text-xs">
+                      {isZh
+                        ? `自定义区域 ${customSlotOf(zoneForm.zone_type)} 名称`
+                        : `Custom zone ${customSlotOf(zoneForm.zone_type)} name`}
+                    </Label>
+                    <Input value={customNameDraft} onChange={e => setCustomNameDraft(e.target.value)}
+                      placeholder={isZh ? "例如：日托中心" : 'e.g. "Day centre"'} className="mt-1" />
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      {isZh
+                        ? "该名称对此被照护者的所有同类型区域生效。"
+                        : "This name applies to every zone of this type for this person."}
+                    </p>
                   </div>
                 )}
+
 
                 <div>
                   <Label className="text-xs">Shape Type</Label>
@@ -1309,9 +1323,10 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                     Cancel
                   </Button>
                   <Button className="flex-1 text-white"
-                    style={{ background: zoneForm.zone_type === "danger" ? "#EF4444" : "#10B981" }}
+                    style={{ background: zoneColor(zoneForm.zone_type) }}
                     onClick={handleSaveZone}
-                    disabled={createZone.isPending || updateZone.isPending || !zoneForm.name.trim()}>
+                    disabled={createZone.isPending || updateZone.isPending}>
+
                     {(createZone.isPending || updateZone.isPending) && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
                     {editingZone ? "Save Changes" : "Create Zone"}
                   </Button>
@@ -1333,9 +1348,10 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
               </div>
             )}
             {(zones || []).map((zone: any) => {
-              const catCfg = CATEGORY_CONFIG[zone.category] || CATEGORY_CONFIG.custom;
-              const color = zone.zone_type === "danger" ? "#EF4444" : catCfg.color;
-              const Icon = zone.zone_type === "danger" ? Ban : catCfg.icon;
+              const color = zoneColor(zone.zone_type);
+              const Icon = zoneIcon(zone.zone_type);
+              const label = zoneLabel(zone.zone_type);
+
               const active = isZoneActive(zone);
               const breachInfo = currentLocation
                 ? checkZoneBreach(zone, parseFloat(currentLocation.latitude), parseFloat(currentLocation.longitude))
@@ -1350,13 +1366,14 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-semibold text-sm">{zone.name}</span>
-                          {zone.zone_type === "danger" && <Badge variant="destructive" className="text-[10px]">DANGER</Badge>}
+                          <span className="font-semibold text-sm">{label}</span>
+                          {isDangerZone(zone.zone_type) && <Badge variant="destructive" className="text-[10px]">DANGER</Badge>}
                           {!active && <Badge variant="secondary" className="text-[10px]">⏰ Scheduled (inactive)</Badge>}
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {zone.shape_type === "polygon" ? "Custom shape" : `${zone.radius_meters || 200}m radius`} · {catCfg.label}
+                          {zone.shape_type === "polygon" ? "Custom shape" : `${zone.radius_meters || 200}m radius`}
                         </p>
+
                         {zone.description && <p className="text-xs text-muted-foreground">{zone.description}</p>}
                         {zone.schedule_enabled && zone.schedule_start_time && (
                           <p className="text-xs text-muted-foreground flex items-center gap-1">
@@ -1365,9 +1382,10 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                         )}
                         {currentLocation && active && (
                           <p className={`text-xs mt-1 font-medium ${breachInfo.breached ? "text-destructive" : "text-success"}`}>
-                            {zone.zone_type === "safe"
-                              ? (breachInfo.breached ? `⚠ Outside (${breachInfo.distance}m away)` : `✓ Inside (${breachInfo.distance}m from center)`)
-                              : (breachInfo.breached ? `⚠ INSIDE danger zone! (${breachInfo.distance}m)` : `✓ Away (${breachInfo.distance}m)`)}
+                            {isDangerZone(zone.zone_type)
+                              ? (breachInfo.breached ? `⚠ INSIDE danger zone! (${breachInfo.distance}m)` : `✓ Away (${breachInfo.distance}m)`)
+                              : (breachInfo.breached ? `⚠ Outside (${breachInfo.distance}m away)` : `✓ Inside (${breachInfo.distance}m from center)`)}
+
                           </p>
                         )}
                         <div className="flex gap-1 mt-1.5 flex-wrap">
@@ -1381,7 +1399,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openZoneForm(zone)}>
                           <Edit2 className="h-3 w-3" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteZone(zone.id, zone.name)}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteZone(zone.id, label)}>
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
