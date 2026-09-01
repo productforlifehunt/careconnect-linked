@@ -141,22 +141,24 @@ function normalizePolygonPoints(points: any): [number, number][] {
 
 // ─── Safe Zone mapping (dictionary CCT 214) ─────────────────
 //
-// CCT 214 has NO name column and no a57. A zone is labelled by its TYPE (a55):
-// b55 Safe, b56 Danger, b57..b63 Custom 1..7, whose names live on the cared
-// one's extended profile (CCT 258 a95..a101). a58 "Custom description" carries
-// the zone's own description only.
-function mapSafeZone(z: any, userId: string, customNames: CustomZoneNames): any {
+// a55 zone type: b55 Safe, b56 Danger, b57 Custom.
+// a57 zone name: "Safe" / "Danger" for the fixed types, the user's own name for
+// a custom zone. a58 "Custom description" carries the zone's note only.
+function mapSafeZone(z: any, userId: string): any {
   const polygonPoints = normalizePolygonPoints(z.a63);
   const typeCode = String(z.a55 || ZONE_TYPE.SAFE);
+  const zoneName = typeof z.a57 === "string" ? z.a57 : "";
   return {
     id: String(z._ID || z.id),
     user_id: userId,
     zone_type: typeCode,
-    zone_type_label: zoneTypeLabel(typeCode, customNames, false),
-    zone_type_label_zh: zoneTypeLabel(typeCode, customNames, true),
-    custom_slot: customSlotOf(typeCode),
+    zone_name: zoneName,
+    zone_type_label: zoneTypeLabel(typeCode, zoneName, false),
+    zone_type_label_zh: zoneTypeLabel(typeCode, zoneName, true),
+    is_custom: isCustomZone(typeCode),
     is_danger: isDangerZone(typeCode),
     is_safe: isSafeZone(typeCode),
+
     shape_type: z.a56 === T.safeZone.opt.SHAPE_TYPE.POLYGON ? "Polygon" : (polygonPoints.length >= 3 ? "Polygon" : "Radius"),
     color: z.a59 || null,
     latitude: parseNumber(z.a60),
