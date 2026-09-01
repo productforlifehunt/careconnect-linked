@@ -397,13 +397,9 @@ function PostedJobCard({ job, sourceLabels }: { job: any; sourceLabels: Record<s
                         </Avatar>
                         <div className="min-w-0">
                           <p className="text-sm font-medium text-foreground">{app.applicant?.full_name || Z("申请人", "Applicant")}</p>
-                          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                            {app.applicant?.years_of_experience && <span>{app.applicant.years_of_experience} {Z("年经验", "yrs exp")}</span>}
-                            {app.applicant?.rating_average && (
-                              <span className="flex items-center gap-0.5"><Star className="h-3 w-3 text-warning fill-warning" />{app.applicant.rating_average.toFixed(1)}</span>
-                            )}
-                            {app.applicant?.hourly_rate && <span>{zh ? `¥${app.applicant.hourly_rate}/小时` : `$${app.applicant.hourly_rate}/hr`}</span>}
-                          </div>
+                          {app.created_at && (
+                            <p className="text-xs text-muted-foreground">{Z("申请于 ", "Applied ")}{formatDate(app.created_at, zh ? "zh-CN" : "en", { month: "short", day: "numeric" })}</p>
+                          )}
                         </div>
                       </div>
                       <Badge variant={
