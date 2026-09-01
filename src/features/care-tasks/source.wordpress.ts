@@ -320,11 +320,25 @@ export async function linkTaskToCalendarEventWordPress(taskId: string, eventId: 
   const tid = normalizeWpObjectId(taskId);
   const eid = normalizeWpObjectId(eventId);
   if (!tid || !eid) throw new Error("Invalid task or calendar-event ID");
-  await wordpressFetch(`jet-rel/${REL_TASK_CALENDAR}`, {
-      method: "POST",
-      body: { parent_id: tid, child_id: eid, context: "child", store_items_type: "update" },
-  });
+  const body = { parent_id: tid, child_id: eid, context: "child", store_items_type: "update" };
+  try {
+    await wordpressFetch(`jet-rel/${REL_TASK_CALENDAR}`, { method: "POST", body });
+  } catch (err: any) {
+    // Subscribers cannot write relations whose child is a user-owned post type
+    // (401/403), so the privileged proxy performs the identical relation write.
+    if (!/40[13]/.test(String(err?.message || ""))) throw err;
+    const { wpAdminOps } = await import("@/services/woocommerce-api");
+    const res: any = await wpAdminOps("set_relation", {
+      relation_id: Number(REL_TASK_CALENDAR),
+      parent_id: tid,
+      child_ids: [eid],
+      context: "child",
+      store_items_type: "update",
+    });
+    if (!res?.ok) throw new Error(res?.error || "Could not link task to calendar event");
+  }
 }
+
 
 
 /** Update an assignee's response status (pending/accepted/rejected) on REL 108 meta field `a55`. */

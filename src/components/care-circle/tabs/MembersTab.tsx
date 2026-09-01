@@ -184,6 +184,7 @@ export function MembersTab({
                   {(inviteSearchResults || []).length > 0 ? (inviteSearchResults || []).map((p: any) => (
                     <button
                       key={p.id}
+                      data-testid="invite-search-result"
                       className="w-full text-left px-3 py-2 hover:bg-muted/60"
                       onClick={() => { setInvitePerson(p); }}
                     >
