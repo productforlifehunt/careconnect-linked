@@ -588,34 +588,48 @@ export default function GPSTracking() {
 
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="zone-name">{Z("区域名称", "Zone name")}</Label>
-              <Input
-                id="zone-name"
-                value={zoneForm.name}
-                onChange={(e) => setZoneForm(f => ({ ...f, name: e.target.value }))}
-                placeholder={Z("例如：家", "e.g. Home")}
-              />
-            </div>
-
-            <div className="space-y-1.5">
               <Label>{Z("区域类型", "Zone type")}</Label>
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  type="button"
-                  variant={zoneForm.zone_type === "Safe" ? "default" : "outline"}
-                  onClick={() => setZoneForm(f => ({ ...f, zone_type: "Safe" }))}
-                >
-                  <Shield className="h-4 w-4 mr-1" /> {Z("安全区域", "Safe zone")}
-                </Button>
-                <Button
-                  type="button"
-                  variant={zoneForm.zone_type === "Danger" ? "destructive" : "outline"}
-                  onClick={() => setZoneForm(f => ({ ...f, zone_type: "Danger" }))}
-                >
-                  <AlertTriangle className="h-4 w-4 mr-1" /> {Z("危险区域", "Danger zone")}
-                </Button>
+              <div className="grid grid-cols-3 gap-2">
+                {ZONE_TYPE_CODES.map((code) => {
+                  const active = zoneForm.zone_type === code;
+                  return (
+                    <Button
+                      key={code}
+                      type="button"
+                      size="sm"
+                      className="truncate"
+                      variant={active ? (isDangerZone(code) ? "destructive" : "default") : "outline"}
+                      onClick={() => {
+                        const slot = customSlotOf(code);
+                        setZoneForm(f => ({ ...f, zone_type: code }));
+                        setCustomNameDraft(slot ? (customNames[slot] || "") : "");
+                      }}
+                    >
+                      {isDangerZone(code) ? <AlertTriangle className="h-4 w-4 mr-1" /> : <Shield className="h-4 w-4 mr-1" />}
+                      {zoneLabel(code)}
+                    </Button>
+                  );
+                })}
               </div>
             </div>
+
+            {customSlotOf(zoneForm.zone_type) > 0 && (
+              <div className="space-y-1.5">
+                <Label htmlFor="zone-custom-name">
+                  {Z(`自定义区域 ${customSlotOf(zoneForm.zone_type)} 名称`, `Custom zone ${customSlotOf(zoneForm.zone_type)} name`)}
+                </Label>
+                <Input
+                  id="zone-custom-name"
+                  value={customNameDraft}
+                  onChange={(e) => setCustomNameDraft(e.target.value)}
+                  placeholder={Z("例如：日托中心", 'e.g. "Day centre"')}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {Z("该名称对此被照护者所有同类型区域生效。", "This name applies to every zone of this type for this person.")}
+                </p>
+              </div>
+            )}
+
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
