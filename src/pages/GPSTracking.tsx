@@ -455,10 +455,7 @@ export default function GPSTracking() {
     const lat = Number(zoneForm.latitude);
     const lng = Number(zoneForm.longitude);
     const radius = Number(zoneForm.radius_meters);
-    if (!zoneForm.name.trim()) {
-      toast({ title: Z("请填写区域名称", "Zone name is required"), variant: "destructive" });
-      return;
-    }
+    const slot = customSlotOf(zoneForm.zone_type);
     if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
       toast({ title: Z("坐标无效", "Invalid coordinates"), variant: "destructive" });
       return;
@@ -470,7 +467,6 @@ export default function GPSTracking() {
     setZoneSaving(true);
     try {
       const payload = {
-        name: zoneForm.name.trim(),
         zone_type: zoneForm.zone_type,
         shape_type: "Radius",
         latitude: lat,
@@ -488,6 +484,11 @@ export default function GPSTracking() {
       } else {
         await createSafeZoneWordPress({ user_id: String(userId), ...payload });
       }
+      // Custom type names live on the cared one's CCT 258 row (a95..a101).
+      if (slot && customNameDraft.trim() && customNameDraft.trim() !== (customNames[slot] || "")) {
+        await setCustomZoneName(String(userId), slot, customNameDraft.trim());
+      }
+
       await reloadZones();
       setZoneDialogOpen(false);
       toast({ title: zoneForm.id ? Z("区域已更新", "Zone updated") : Z("区域已创建", "Zone created") });
