@@ -350,7 +350,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
     } else {
       map.setView([37.0902, -95.7129], 4);
     }
-  }, [currentLocation, zones, caredOneName]);
+  }, [currentLocation, zones, caredOneName, zoneLabel]);
 
   // ─── Draw layers refresh
   const renderDrawLayers = useCallback(async () => {
