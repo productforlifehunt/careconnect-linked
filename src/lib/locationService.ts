@@ -198,10 +198,11 @@ export function checkBreaches(lat: number, lng: number, zones: any[]): ZoneBreac
   const results: ZoneBreachResult[] = [];
   for (const zone of zones) {
     if (!isZoneActiveNow(zone)) continue;
-    // Zone rows arrive capitalised ("Danger" / "Polygon") from the CCT mapper,
-    // so every comparison has to be case-insensitive or danger zones silently
-    // behave like safe zones.
-    const isDanger = String(zone.zone_type).toLowerCase() === "danger";
+    // Zone rows carry the dictionary a55 semantics resolved by the CCT mapper:
+    // is_danger / is_safe booleans plus zone_type_label. Custom types (b57..b63)
+    // are neither safe nor danger — they breach on whichever transition the zone
+    // enabled.
+    const isDanger = !!zone.is_danger;
     const isPolygon = String(zone.shape_type).toLowerCase() === "polygon";
     let inside = false;
     let distance = 0;
@@ -214,13 +215,18 @@ export function checkBreaches(lat: number, lng: number, zones: any[]): ZoneBreac
       distance = Math.round(getDistanceMeters(lat, lng, zone.latitude, zone.longitude));
       inside = distance <= (zone.radius_meters || 200);
     }
-    const breached = isDanger ? inside : !inside;
+    const breached = isDanger
+      ? inside
+      : zone.is_safe
+        ? !inside
+        : (inside ? !!zone.notify_on_enter : !!zone.notify_on_exit);
     if (breached) {
       const alertType = isDanger
         ? (inside ? "entered_danger_zone" : "exited_danger_zone")
         : (inside ? "entered_safe_zone" : "exited_safe_zone");
-      results.push({ zoneId: zone.id, zoneName: zone.name, zoneType: zone.zone_type, alertType, distance, breached });
+      results.push({ zoneId: zone.id, zoneName: zone.zone_type_label, zoneType: zone.zone_type, alertType, distance, breached });
     }
+
   }
   return results;
 }
