@@ -425,7 +425,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
       }
       drawLayersRef.current.push(vm);
     });
-  }, [drawnPoints, cornerRadii, selectedVertex, flashRed, drawMode, zoneForm.zone_type, zoneForm.category]);
+  }, [drawnPoints, cornerRadii, selectedVertex, flashRed, drawMode, zoneForm.zone_type]);
 
   // ─── Radius preview layer
   const renderRadiusPreview = useCallback(async () => {
