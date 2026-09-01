@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -34,20 +34,22 @@ export function GroupSettingsDialog({
   const [desc, setDesc] = useState(activeGroup?.description || "");
   const [isPrivate, setIsPrivate] = useState(activeGroup?.is_private || false);
 
-  // Sync when dialog opens
-  const handleOpenChange = (o: boolean) => {
-    if (o && activeGroup) {
-      setName(activeGroup.name);
+  // Always mirror the currently selected group — the dialog can be opened from
+  // the header button (which does not go through onOpenChange), so syncing has
+  // to react to both `open` and the active group itself.
+  useEffect(() => {
+    if (open && activeGroup) {
+      setName(activeGroup.name || "");
       setDesc(activeGroup.description || "");
-      setIsPrivate(activeGroup.is_private || false);
+      setIsPrivate(!!activeGroup.is_private);
     }
-    onOpenChange(o);
-  };
+  }, [open, activeGroup?.id, activeGroup?.name, activeGroup?.description, activeGroup?.is_private]);
 
   const handleSave = () => {
     if (!activeGroupId || !name.trim()) return;
-    updateGroup.mutate({ id: activeGroupId, updates: { name, description: desc || null, is_private: isPrivate } }, {
+    updateGroup.mutate({ id: activeGroupId, name: name.trim(), description: desc || "", is_private: isPrivate }, {
       onSuccess: () => { onOpenChange(false); toast({ title: Z("小组已更新！", "Group updated!") }); },
+      onError: (err: any) => toast({ title: Z("保存失败", "Could not save"), description: err?.message, variant: "destructive" }),
     });
   };
 
@@ -59,9 +61,10 @@ export function GroupSettingsDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <DialogHeader><DialogTitle>{Z("小组设置", "Group Settings")}</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{Z("小组设置", "Group Settings")}{activeGroup?.name ? ` — ${activeGroup.name}` : ""}</DialogTitle></DialogHeader>
+
         <div className="space-y-4 mt-2">
           <div><Label>{Z("小组名称", "Group Name")}</Label><Input value={name} onChange={e => setName(e.target.value)} /></div>
           <div><Label>{Z("描述", "Description")}</Label><Textarea value={desc} onChange={e => setDesc(e.target.value)} rows={3} /></div>
