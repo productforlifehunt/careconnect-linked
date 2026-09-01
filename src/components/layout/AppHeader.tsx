@@ -91,71 +91,84 @@ export function AppHeader() {
     navigate("/");
   };
 
-  return (
-    <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-      <div className="flex h-16 items-center pl-2 pr-3 lg:pl-3 lg:pr-6 gap-2">
-        {/* Mobile menu */}
-        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="lg:hidden shrink-0" aria-label={t("nav.browse")}>
-              <Menu className="h-5 w-5" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-72 p-0">
-            <div className="p-4 border-b">
-              <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-2">
-                <BrandMark size={44} showWordmark />
-              </Link>
+  const mobileMenu = (
+    <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="icon" className="lg:hidden shrink-0" aria-label={t("nav.browse")}>
+          <Menu className="h-5 w-5" />
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="right" className="w-72 p-0">
+        <div className="p-4 border-b">
+          <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-2">
+            <BrandMark size={44} showWordmark />
+          </Link>
+        </div>
+        <nav className="p-4 space-y-1 overflow-y-auto max-h-[calc(100vh-6rem)]">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-3">{t("nav.browse")}</p>
+          {publicNav.map(item => (
+            <Link
+              key={item.url}
+              to={item.url}
+              onClick={() => setMobileOpen(false)}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${isNavActive(item.url) ? "bg-accent text-accent-foreground font-medium" : "text-foreground hover:bg-accent/50"}`}
+            >
+              <item.icon className="h-4 w-4 shrink-0" />
+              <span className="truncate">{item.title}</span>
+            </Link>
+          ))}
+          {!isAuthenticated && (
+            <div className="pt-4 mt-4 border-t space-y-2">
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => { setMobileOpen(false); navigate("/auth"); }}
+              >
+                {t("common.signIn")}
+              </Button>
             </div>
-            <nav className="p-4 space-y-1">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-3">{t("nav.browse")}</p>
-              {publicNav.map(item => (
+          )}
+          {isAuthenticated && (
+            <>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 mt-6 px-3">{t("nav.myCare")}</p>
+              {[
+                { title: dashboardLabel, url: "/dashboard", icon: LayoutDashboard },
+                { title: t(site.family === "challenged" ? "nav.myLovedOnes" : "nav.caredOnes"), url: "/cared-ones", icon: Heart },
+                { title: t("nav.myBookings"), url: "/bookings", icon: CalendarDays },
+                { title: t(isChallenged ? "nav.united" : (site.family === "challenged" ? "nav.careTeams" : "nav.careGroups")), url: "/care-circle", icon: Users },
+                { title: t("nav.messages"), url: "/messages", icon: MessageSquare },
+                { title: t("nav.favorites"), url: "/favorites", icon: Heart },
+                { title: isChallenged ? t("nav.find") : t("nav.gpsTracking"), url: "/gps-tracking", icon: MapPin },
+              ].map(item => (
                 <Link
                   key={item.url}
                   to={item.url}
                   onClick={() => setMobileOpen(false)}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${location.pathname === item.url ? "bg-accent text-accent-foreground font-medium" : "text-foreground hover:bg-accent/50"}`}
                 >
-                  <item.icon className="h-4 w-4" />
-                  {item.title}
+                  <item.icon className="h-4 w-4 shrink-0" />
+                  <span className="truncate">{item.title}</span>
                 </Link>
               ))}
-              {isAuthenticated && (
-                <>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 mt-6 px-3">{t("nav.myCare")}</p>
-                  {[
-                    { title: dashboardLabel, url: "/dashboard", icon: LayoutDashboard },
-                    { title: t(site.family === "challenged" ? "nav.myLovedOnes" : "nav.caredOnes"), url: "/cared-ones", icon: Heart },
-                    { title: t("nav.myBookings"), url: "/bookings", icon: CalendarDays },
-                    { title: t(isChallenged ? "nav.united" : (site.family === "challenged" ? "nav.careTeams" : "nav.careGroups")), url: "/care-circle", icon: Users },
-                    { title: t("nav.messages"), url: "/messages", icon: MessageSquare },
-                    { title: t("nav.favorites"), url: "/favorites", icon: Heart },
-                    { title: isChallenged ? t("nav.find") : t("nav.gpsTracking"), url: "/gps-tracking", icon: MapPin },
-                  ].map(item => (
-                    <Link
-                      key={item.url}
-                      to={item.url}
-                      onClick={() => setMobileOpen(false)}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${location.pathname === item.url ? "bg-accent text-accent-foreground font-medium" : "text-foreground hover:bg-accent/50"}`}
-                    >
-                      <item.icon className="h-4 w-4" />
-                      {item.title}
-                    </Link>
-                  ))}
-                </>
-              )}
-            </nav>
-          </SheetContent>
-        </Sheet>
+            </>
+          )}
+        </nav>
+      </SheetContent>
+    </Sheet>
+  );
 
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 shrink-0">
+  return (
+    <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+      <div className="flex h-16 items-center pl-3 pr-2 lg:pl-3 lg:pr-6 gap-2">
+        {/* Logo — always the first element on the left (standard convention) */}
+        <Link to="/" className="flex items-center gap-2 shrink-0" aria-label={logoWordmarkText}>
           <BrandMark size={40} showWordmark />
         </Link>
 
         {/* Desktop horizontal nav — primary links inline, the rest in a More menu
             so items never wrap below the header border. */}
         <nav className="hidden lg:flex items-center gap-0.5 ml-3 min-w-0 flex-nowrap">
+
           {primaryNav.map(item => (
             <Link
               key={item.url}
@@ -205,13 +218,16 @@ export function AppHeader() {
         <Button
           variant="ghost"
           size="icon"
+          className="relative shrink-0"
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           title={t("nav.toggleTheme")}
+          aria-label={t("nav.toggleTheme")}
         >
           <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
           <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
           <span className="sr-only">{t("nav.toggleTheme")}</span>
         </Button>
+
 
         {/* Auth section */}
         {isAuthenticated ? (
@@ -224,33 +240,42 @@ export function AppHeader() {
               {t("nav.dashboard")}
             </NavLink>
 
-            <Button variant="ghost" size="icon" className="relative" onClick={() => navigate("/notifications")}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative shrink-0"
+              onClick={() => navigate("/notifications")}
+              title={t("nav.notifications")}
+              aria-label={t("nav.notifications")}
+            >
               <Bell className="h-5 w-5" />
               {unreadCount > 0 && (
                 <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-coral text-coral-foreground text-xs border-2 border-card">
-                  {unreadCount}
+                  {unreadCount > 9 ? "9+" : unreadCount}
                 </Badge>
               )}
             </Button>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="gap-2">
+                <Button variant="ghost" className="gap-2 px-2 max-w-[12rem]" aria-label={displayName}>
+
                   {user?.avatar_url ? (
-                    <img src={user.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover" />
+                    <img src={user.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover shrink-0" />
                   ) : (
-                    <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+                    <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center shrink-0">
                       <span className="text-primary-foreground text-sm font-medium">{initials}</span>
                     </div>
                   )}
-                  <span className="hidden md:inline text-sm font-medium">{displayName}</span>
+                  <span className="hidden md:inline text-sm font-medium truncate">{displayName}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52 bg-card border shadow-lg z-[60]">
                 <div className="px-3 py-2 border-b">
-                  <p className="text-sm font-medium text-foreground">{displayName}</p>
-                  <p className="text-xs text-muted-foreground">{user?.email}</p>
+                  <p className="text-sm font-medium text-foreground truncate">{displayName}</p>
+                  <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                 </div>
+
                 <DropdownMenuItem onClick={() => navigate("/dashboard")}>
                   <LayoutDashboard className="mr-2 h-4 w-4" /> {dashboardLabel}
                 </DropdownMenuItem>
@@ -297,12 +322,16 @@ export function AppHeader() {
             <Button variant="ghost" onClick={() => navigate("/auth")} className="hidden sm:inline-flex">
               {t("common.signIn")}
             </Button>
-            <Button variant="coral" onClick={() => navigate("/auth?mode=signup")}>
+            <Button variant="coral" className="shrink-0" onClick={() => navigate("/auth?mode=signup")}>
               {t("common.getStarted")}
             </Button>
           </div>
         )}
+
+        {/* Mobile menu — last item on the right, standard mobile convention */}
+        {mobileMenu}
       </div>
+
     </header>
   );
 }
