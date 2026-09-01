@@ -137,17 +137,23 @@ type Toast = Omit<ToasterToast, "id">;
 function toast({ ...props }: Toast) {
   const id = genId();
 
+  const humanize = (t: Toast) => ({
+    ...t,
+    title: friendlyNode(t.title),
+    description: friendlyNode(t.description),
+  });
+
   const update = (props: ToasterToast) =>
     dispatch({
       type: "UPDATE_TOAST",
-      toast: { ...props, id },
+      toast: { ...humanize(props), id },
     });
   const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id });
 
   dispatch({
     type: "ADD_TOAST",
     toast: {
-      ...props,
+      ...humanize(props),
       id,
       open: true,
       onOpenChange: (open) => {
@@ -155,6 +161,7 @@ function toast({ ...props }: Toast) {
       },
     },
   });
+
 
   return {
     id: id,
