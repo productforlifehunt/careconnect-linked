@@ -24,6 +24,12 @@ import {
 } from "@/features/location/source.wordpress-extended";
 import { writeLocationAndCheckZones } from "@/features/location/source.wordpress";
 import { checkBreaches, getDistanceMeters } from "@/lib/locationService";
+import {
+  ZONE_TYPE, ZONE_TYPE_CODES, customSlotOf, isDangerZone,
+  zoneTypeLabel, fetchCustomZoneNames, setCustomZoneName,
+  type CustomZoneNames,
+} from "@/features/location/zone-types";
+
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import * as L from "leaflet";
