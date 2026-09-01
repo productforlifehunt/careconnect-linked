@@ -121,7 +121,7 @@ const zhCN = {
   home: {
     cityOrZip: "城市或邮编", browseByCategory: "按分类浏览",
     findRightCare: "为您的需求找到合适的护理类型", topRatedCaregivers: "护理人员",
-    trustedProfessionals: "您附近的可信赖专业人员", viewAllCaregivers: "查看所有护理人员",
+    trustedProfessionals: "平台已注册的护理人员", viewAllCaregivers: "查看所有护理人员",
     createFreeAccount: "创建免费账户", forFamilies: "为家庭", forCaregivers: "为护理人员",
     company: "公司", findCaregivers: "寻找护理人员", joinAsCaregiver: "加入成为护理人员",
   },
