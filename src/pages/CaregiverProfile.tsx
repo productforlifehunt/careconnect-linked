@@ -638,30 +638,25 @@ export default function CaregiverProfile() {
                   onError: () => navigate("/messages"),
                 });
               }} disabled={startConversation.isPending}>
-                <MessageSquare className="mr-2 h-4 w-4" /> {startConversation.isPending ? "Opening..." : "Message / Negotiate Price"}
+                <MessageSquare className="mr-2 h-4 w-4" /> {startConversation.isPending ? (isZh ? "正在打开…" : "Opening...") : (isZh ? "发消息 / 议价" : "Message / Negotiate Price")}
               </Button>
               {caregiver.phone && (
                 <Button variant="ghost" className="w-full" asChild>
                   <a href={`tel:${caregiver.phone}`}>
-                    <Phone className="mr-2 h-4 w-4" /> Call {caregiver.full_name?.split(" ")[0]}
+                    <Phone className="mr-2 h-4 w-4" /> {isZh ? `致电 ${caregiver.full_name || ""}` : `Call ${caregiver.full_name?.split(" ")[0] || ""}`}
                   </a>
                 </Button>
               )}
 
-              <div className="mt-6 pt-4 border-t space-y-3 text-sm">
-                {caregiver.care_provider_is_background_checked && (
+              {caregiver.care_provider_is_background_checked && (
+                <div className="mt-6 pt-4 border-t space-y-3 text-sm">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Shield className="h-4 w-4 text-primary" />
                     <span>{isZh ? "已通过背景核查" : "Background verified"}</span>
                   </div>
-                )}
-                {caregiver.years_of_experience && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <CheckCircle className="h-4 w-4 text-primary" />
-                    <span>{caregiver.years_of_experience}{isZh ? " 年从业经验" : " years experience"}</span>
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
+
             </CardContent>
           </Card>
         </div>
