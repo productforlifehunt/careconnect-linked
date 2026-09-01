@@ -25,7 +25,6 @@ const REL_POST_USERS = R.careGroupPostMentionedUsers;
 const REL_TASK_USERS = R.careTaskVisibleUsers;
 const REL_TASK_SUBGROUPS = R.careTaskPrivateMemberGroups;
 
-
 /**
  * Whole-relation map: `{ parentId: [childId, ...] }`.
  * One request replaces the per-item `children/{id}` calls, which turned every
@@ -66,7 +65,6 @@ export async function fetchMySubgroupIds(): Promise<Set<number>> {
   } catch { return new Set(); }
 }
 
-
 /**
  * Resolve visibility for a list of entities while PRESERVING input order.
  * (An earlier version pushed into an array from inside `Promise.all`, which made
@@ -106,42 +104,45 @@ export async function filterVisibleTasks<T extends { id: string | number }>(task
   return filterVisibleEntities(tasks, REL_TASK_SUBGROUPS, REL_TASK_USERS);
 }
 
-/** Set the sub-group visibility links for a post (replaces existing). */
-export async function setPostVisibility(postId: string | number, subgroupIds: number[], userIds: number[] = []): Promise<void> {
-  const pid = Number(String(postId).replace(/^wp-/, ""));
-  if (!pid) return;
+/** Replace the visibility links of one entity (adds new, removes dropped ones). */
+async function replaceLinks(rel: number, parentId: number, wantedIds: number[]): Promise<void> {
+  const current = await wordpressFetch<any[]>(`jet-rel/${rel}/children/${parentId}`).catch(() => []);
+  const existing = (Array.isArray(current) ? current : []).map((r: any) => Number(r.child_object_id)).filter(Boolean);
+  const toAdd = wantedIds.filter((id) => !existing.includes(id));
+  const toRemove = existing.filter((id) => !wantedIds.includes(id));
   await Promise.all([
-    ...subgroupIds.map((sg) =>
-      wordpressFetch(`jet-rel/${REL_POST_SUBGROUPS}`, {
+    ...toAdd.map((id) =>
+      wordpressFetch(`jet-rel/${rel}`, {
         method: "POST",
-        body: { parent_id: pid, child_id: sg, context: "child", store_items_type: "update" },
-      }).catch(() => undefined)
+        body: { parent_id: parentId, child_id: id, context: "child", store_items_type: "update" },
+      }).catch(() => undefined),
     ),
-    ...userIds.map((uid) =>
-      wordpressFetch(`jet-rel/${REL_POST_USERS}`, {
-        method: "POST",
-        body: { parent_id: pid, child_id: uid, context: "child", store_items_type: "update" },
-      }).catch(() => undefined)
+    ...toRemove.map((id) =>
+      wordpressFetch(`jet-rel/${rel}`, {
+        method: "DELETE",
+        body: { parent_id: parentId, child_id: id },
+      }).catch(() => undefined),
     ),
   ]);
 }
 
-/** Set the sub-group visibility links for a task (replaces existing). */
+/** Set the sub-group / user visibility links for a post (replaces existing). */
+export async function setPostVisibility(postId: string | number, subgroupIds: number[], userIds: number[] = []): Promise<void> {
+  const pid = Number(String(postId).replace(/^wp-/, ""));
+  if (!pid) return;
+  await Promise.all([
+    replaceLinks(REL_POST_SUBGROUPS, pid, subgroupIds),
+    replaceLinks(REL_POST_USERS, pid, userIds),
+  ]);
+}
+
+/** Set the sub-group / user visibility links for a task (replaces existing). */
 export async function setTaskVisibility(taskId: string | number, subgroupIds: number[], userIds: number[] = []): Promise<void> {
   const tid = Number(String(taskId).replace(/^wp-/, ""));
   if (!tid) return;
   await Promise.all([
-    ...subgroupIds.map((sg) =>
-      wordpressFetch(`jet-rel/${REL_TASK_SUBGROUPS}`, {
-        method: "POST",
-        body: { parent_id: tid, child_id: sg, context: "child", store_items_type: "update" },
-      }).catch(() => undefined)
-    ),
-    ...userIds.map((uid) =>
-      wordpressFetch(`jet-rel/${REL_TASK_USERS}`, {
-        method: "POST",
-        body: { parent_id: tid, child_id: uid, context: "child", store_items_type: "update" },
-      }).catch(() => undefined)
-    ),
+    replaceLinks(REL_TASK_SUBGROUPS, tid, subgroupIds),
+    replaceLinks(REL_TASK_USERS, tid, userIds),
   ]);
 }
+

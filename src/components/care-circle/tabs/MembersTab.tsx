@@ -396,7 +396,7 @@ export function MembersTab({
                       {m.profile?.avatar_url ? <img src={m.profile.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" /> : <span className="text-primary font-medium">{(m.profile?.full_name || "?")[0]}</span>}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-foreground">{m.display_name || m.profile?.full_name || Z("成员", "Member")}</p>
+                      <p className="text-sm font-medium text-foreground">{m.display_name || Z("未填姓名", "No name")}</p>
                       <p className="text-xs text-muted-foreground">{m.profile?.email || ""}</p>
                       <div className="flex gap-1 mt-1 flex-wrap">
                         {m.is_owner && <Badge variant="default" className="text-[10px] h-4">{Z("拥有者", "Owner")}</Badge>}

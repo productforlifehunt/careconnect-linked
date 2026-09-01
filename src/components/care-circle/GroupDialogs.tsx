@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Loader2, Search, X, Heart, Trash2, KeyRound } from "lucide-react";
-import { useSearchProfiles, useAddCaredOneToGroup, useUpdateCareGroup, useDeleteCareGroup, useUserCaredOnes } from "@/hooks/use-care-data";
+import { useUpdateMyGroupDisplayName, useSearchProfiles, useAddCaredOneToGroup, useUpdateCareGroup, useDeleteCareGroup, useUserCaredOnes } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 
@@ -21,18 +21,21 @@ function useZ() {
 // ─── Settings Dialog ────────────────────────────────────────
 export function GroupSettingsDialog({
   open, onOpenChange, activeGroup, activeGroupId, isOwner,
-  updateGroup, deleteGroup, onDeleteSuccess, onLeaveGroup,
+  updateGroup, deleteGroup, onDeleteSuccess, onLeaveGroup, myDisplayName = "",
 }: {
   open: boolean; onOpenChange: (o: boolean) => void;
   activeGroup: any; activeGroupId: string | null;
   isOwner: boolean; updateGroup: any; deleteGroup: any;
   onDeleteSuccess: () => void; onLeaveGroup: () => void;
+  myDisplayName?: string;
 }) {
   const { toast } = useToast();
   const Z = useZ();
   const [name, setName] = useState(activeGroup?.name || "");
   const [desc, setDesc] = useState(activeGroup?.description || "");
   const [isPrivate, setIsPrivate] = useState(activeGroup?.is_private || false);
+  const [myName, setMyName] = useState(myDisplayName);
+  const updateMyName = useUpdateMyGroupDisplayName();
 
   // Always mirror the currently selected group — the dialog can be opened from
   // the header button (which does not go through onOpenChange), so syncing has
@@ -44,6 +47,8 @@ export function GroupSettingsDialog({
       setIsPrivate(!!activeGroup.is_private);
     }
   }, [open, activeGroup?.id, activeGroup?.name, activeGroup?.description, activeGroup?.is_private]);
+
+  useEffect(() => { if (open) setMyName(myDisplayName); }, [open, myDisplayName]);
 
   const handleSave = () => {
     if (!activeGroupId || !name.trim()) return;
@@ -74,6 +79,20 @@ export function GroupSettingsDialog({
               <p className="text-xs text-muted-foreground">{Z("私密小组将被隐藏，仅限受邀加入", "Private groups are hidden and invite-only")}</p>
             </div>
             <Switch checked={isPrivate} onCheckedChange={setIsPrivate} />
+          </div>
+          <div className="border-t pt-4">
+            <Label>{Z("我在此群组的显示名", "My name in this group")}</Label>
+            <p className="text-xs text-muted-foreground mb-2">{Z("群组内的所有内容都会显示这个名字。", "This is the name shown on everything you post in this group.")}</p>
+            <div className="flex gap-2">
+              <Input value={myName} onChange={e => setMyName(e.target.value)} />
+              <Button variant="outline" disabled={!activeGroupId || !myName.trim() || updateMyName.isPending} onClick={() => {
+                if (!activeGroupId || !myName.trim()) return;
+                updateMyName.mutate({ groupId: activeGroupId, displayName: myName.trim() }, {
+                  onSuccess: () => toast({ title: Z("名字已更新", "Name updated") }),
+                  onError: (err: any) => toast({ title: Z("保存失败", "Could not save"), description: err?.message, variant: "destructive" }),
+                });
+              }}>{Z("保存", "Save")}</Button>
+            </div>
           </div>
           {/* Invite links are managed in the Members tab (CCT 160 + Rel 161). */}
           <Button variant="coral" className="w-full" onClick={handleSave} disabled={updateGroup.isPending || !name.trim()}>{Z("保存修改", "Save Changes")}</Button>

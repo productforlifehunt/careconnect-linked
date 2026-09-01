@@ -92,8 +92,18 @@ export async function fetchCareGroupPostsWordPress(groupId: string, type?: strin
       const v = Array.isArray(raw) ? (raw[0] || "") : (raw || "");
       return POST_TYPE_LABEL[String(v)] || String(v) || "discussion";
     };
+    const myId = getStoredWPUser()?.user_id ? Number(getStoredWPUser()!.user_id) : 0;
+    const notYetDue = (p: any): boolean => {
+      const raw = p[F_POST.SCHEDULED_AT];
+      if (!raw) return false;
+      const due = Date.parse(String(raw).replace(" ", "T"));
+      if (!Number.isFinite(due)) return false;
+      return due > Date.now();
+    };
     return posts
       .filter((p: any) => !type || normalizeType(p[F_POST.TYPE]) === type)
+      // a59 scheduled_at in the future = not published yet; only its author sees it.
+      .filter((p: any) => !notYetDue(p) || Number(p.cct_author_id || p.author_id) === myId)
       // Newest first, deterministic: relation order is not guaranteed.
       .sort((a: any, b: any) => {
         const ta = Date.parse(a.created_at || "") || 0;
@@ -110,6 +120,7 @@ export async function fetchCareGroupPostsWordPress(groupId: string, type?: strin
         content: p[F_POST.CONTENT] || null,
         is_pinned: isYesCode(p[F_POST.IS_PINNED]),
         scheduled_at: p[F_POST.SCHEDULED_AT] || null,
+        is_scheduled: notYetDue(p),
         created_at: p.created_at,
         updated_at: p.updated_at || p.created_at,
         author: p.author_id ? { id: p.author_id, full_name: null, avatar_url: null } : null,
@@ -117,7 +128,7 @@ export async function fetchCareGroupPostsWordPress(groupId: string, type?: strin
   } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
-export async function createGroupPostWordPress(post: { group_id: string; content: string; type?: string; title?: string }): Promise<string | null> {
+export async function createGroupPostWordPress(post: { group_id: string; content: string; type?: string; title?: string; scheduled_at?: string | null }): Promise<string | null> {
   const created = await wordpressCCTFetch<any>(T.careGroupPost.slug, {
     method: "POST",
     body: {
@@ -125,6 +136,7 @@ export async function createGroupPostWordPress(post: { group_id: string; content
       [F_POST.CONTENT]: post.content,
       [F_POST.TYPE]: POST_TYPE_CODE[post.type || "discussion"] || "b55",
       [F_POST.IS_PINNED]: NO,
+      [F_POST.SCHEDULED_AT]: post.scheduled_at || "",
     },
   });
   const groupId = normalizeWpObjectId(post.group_id);
@@ -154,12 +166,13 @@ export async function createGroupPostWordPress(post: { group_id: string; content
   return postId ? String(postId) : null;
 }
 
-export async function updateGroupPostWordPress(id: string, updates: { content?: string; title?: string; is_pinned?: boolean; type?: string }): Promise<void> {
+export async function updateGroupPostWordPress(id: string, updates: { content?: string; title?: string; is_pinned?: boolean; type?: string; scheduled_at?: string | null }): Promise<void> {
   const body: Record<string, any> = {};
   if (updates.content !== undefined) body[F_POST.CONTENT] = updates.content;
   if (updates.title !== undefined) body[F_POST.TITLE] = updates.title;
   if (updates.is_pinned !== undefined) body[F_POST.IS_PINNED] = updates.is_pinned ? YES : NO;
   if (updates.type !== undefined) body[F_POST.TYPE] = POST_TYPE_CODE[updates.type] || updates.type;
+  if (updates.scheduled_at !== undefined) body[F_POST.SCHEDULED_AT] = updates.scheduled_at || "";
   await wordpressCCTFetch(T.careGroupPost.slug, { id, method: "PUT", body });
 }
 
@@ -504,7 +517,7 @@ export async function deleteGroupInviteWordPress(id: string): Promise<void> {
 // ─── Join by Token ──────────────────────────────────────────
 // Looks up the care_group_invite CCT by token, validates, increments use_count,
 // then adds the user to the group via JetEngine relation 72.
-export async function joinGroupByCodeWordPress(token: string): Promise<any> {
+export async function joinGroupByCodeWordPress(token: string, displayName?: string): Promise<any> {
   try {
     const trimmed = (token || "").trim();
     if (!trimmed) throw new Error("Invalid invite link");
@@ -555,7 +568,7 @@ export async function joinGroupByCodeWordPress(token: string): Promise<any> {
         context: "child",
         store_items_type: "update",
         meta: memberMeta({
-          displayName: await fetchMyAppUserName(),
+          displayName: displayName?.trim() || (await fetchMyAppUserName()),
           memberTypes: ["nothing special"],
           memberRoles: ["nothing special"],
           invitationStatus: "accepted",

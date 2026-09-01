@@ -58,6 +58,8 @@ export default function CareCircle() {
   const [joinCode, setJoinCode] = useState("");
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupDesc, setNewGroupDesc] = useState("");
+  const [newGroupMyName, setNewGroupMyName] = useState("");
+  const [joinMyName, setJoinMyName] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<any>(null);
   const [addCaredOneOpen, setAddCaredOneOpen] = useState(false);
@@ -92,7 +94,7 @@ export default function CareCircle() {
     return (list || []).map((p: any) => {
       const m = p.author_id ? byId.get(String(p.author_id).replace(/^wp-/, "")) : null;
       return m
-        ? { ...p, author: { id: p.author_id, full_name: m.display_name || m.profile?.full_name || null, avatar_url: m.profile?.avatar_url || null } }
+        ? { ...p, author: { id: p.author_id, full_name: m.display_name || null, avatar_url: m.profile?.avatar_url || null } }
         : p;
     });
   }, [members]);
@@ -131,15 +133,15 @@ export default function CareCircle() {
 
   const handleCreateGroup = () => {
     if (!newGroupName.trim()) return;
-    createGroup.mutate({ name: newGroupName, description: newGroupDesc || undefined }, {
-      onSuccess: () => { setNewGroupName(""); setNewGroupDesc(""); setCreateGroupOpen(false); toast({ title: t("careCircle.groupCreated", { group: site.careGroupSingular }) }); },
+    createGroup.mutate({ name: newGroupName, description: newGroupDesc || undefined, displayName: newGroupMyName || undefined }, {
+      onSuccess: () => { setNewGroupName(""); setNewGroupDesc(""); setNewGroupMyName(""); setCreateGroupOpen(false); toast({ title: t("careCircle.groupCreated", { group: site.careGroupSingular }) }); },
     });
   };
 
   const handleJoinByCode = () => {
     if (!joinCode.trim()) return;
-    joinGroupByCode.mutate(joinCode, {
-      onSuccess: () => { setJoinCode(""); setJoinCodeOpen(false); toast({ title: t("careCircle.joinedSuccess") }); },
+    joinGroupByCode.mutate({ token: joinCode, displayName: joinMyName || undefined }, {
+      onSuccess: () => { setJoinCode(""); setJoinMyName(""); setJoinCodeOpen(false); toast({ title: t("careCircle.joinedSuccess") }); },
       onError: (err: any) => toast({ title: t("careCircle.failedToJoin"), description: err.message, variant: "destructive" }),
     });
   };
@@ -178,6 +180,7 @@ export default function CareCircle() {
               <div className="space-y-4 mt-2">
                 <div><Label>{t("careCircle.groupName")} *</Label><Input value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder={site.family === "challenged" ? "e.g. Dad's Dementia Team" : "e.g. Mom's Care Team"} /></div>
                 <div><Label>{t("common.description")}</Label><Textarea value={newGroupDesc} onChange={e => setNewGroupDesc(e.target.value)} placeholder={t("careCircle.groupDesc")} /></div>
+                <div><Label>{isCN ? "我在此群组的显示名" : "My name in this group"}</Label><Input value={newGroupMyName} onChange={e => setNewGroupMyName(e.target.value)} placeholder={profile?.full_name || (isCN ? "例如：大女儿 小丽" : "e.g. Lily (daughter)")} /></div>
                 <Button variant="coral" className="w-full" onClick={handleCreateGroup} disabled={createGroup.isPending || !newGroupName.trim()}>{t("common.create")} {site.careGroupSingular}</Button>
               </div>
             </DialogContent>
@@ -188,6 +191,7 @@ export default function CareCircle() {
               <DialogHeader><DialogTitle>{t("careCircle.joinGroup")} {site.careGroupSingular}</DialogTitle></DialogHeader>
               <div className="space-y-4 mt-2">
                 <div><Label>{t("careCircle.joinCode")}</Label><Input value={joinCode} onChange={e => setJoinCode(e.target.value.trim())} placeholder={t("careCircle.joinCodePlaceholder")} /></div>
+                <div><Label>{isCN ? "我在此群组的显示名" : "My name in this group"}</Label><Input value={joinMyName} onChange={e => setJoinMyName(e.target.value)} placeholder={profile?.full_name || (isCN ? "例如：大女儿 小丽" : "e.g. Lily (daughter)")} /></div>
                 <Button variant="coral" className="w-full" onClick={handleJoinByCode} disabled={joinGroupByCode.isPending || !joinCode.trim()}>{t("careCircle.joinGroup")}</Button>
               </div>
             </DialogContent>
@@ -212,7 +216,8 @@ export default function CareCircle() {
                 <DialogHeader><DialogTitle>{t("careCircle.joinGroup")} {site.careGroupSingular}</DialogTitle></DialogHeader>
                 <div className="space-y-4 mt-2">
                   <div><Label>{t("careCircle.joinCode")}</Label><Input value={joinCode} onChange={e => setJoinCode(e.target.value.trim())} placeholder={t("careCircle.joinCodePlaceholder")} /></div>
-                  <Button variant="coral" className="w-full" onClick={handleJoinByCode} disabled={joinGroupByCode.isPending || !joinCode.trim()}>{t("careCircle.joinGroup")}</Button>
+                  <div><Label>{isCN ? "我在此群组的显示名" : "My name in this group"}</Label><Input value={joinMyName} onChange={e => setJoinMyName(e.target.value)} placeholder={profile?.full_name || (isCN ? "例如：大女儿 小丽" : "e.g. Lily (daughter)")} /></div>
+                <Button variant="coral" className="w-full" onClick={handleJoinByCode} disabled={joinGroupByCode.isPending || !joinCode.trim()}>{t("careCircle.joinGroup")}</Button>
                 </div>
               </DialogContent>
             </Dialog>
@@ -224,6 +229,7 @@ export default function CareCircle() {
               <div className="space-y-4 mt-2">
                 <div><Label>{t("careCircle.groupName")} *</Label><Input value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder={site.family === "challenged" ? "e.g. Dad's Dementia Team" : "e.g. Mom's Care Team"} /></div>
                 <div><Label>{t("common.description")}</Label><Textarea value={newGroupDesc} onChange={e => setNewGroupDesc(e.target.value)} placeholder={t("careCircle.groupDesc")} /></div>
+                <div><Label>{isCN ? "我在此群组的显示名" : "My name in this group"}</Label><Input value={newGroupMyName} onChange={e => setNewGroupMyName(e.target.value)} placeholder={profile?.full_name || (isCN ? "例如：大女儿 小丽" : "e.g. Lily (daughter)")} /></div>
                 <Button variant="coral" className="w-full" onClick={handleCreateGroup} disabled={createGroup.isPending || !newGroupName.trim()}>{t("common.create")} {site.careGroupSingular}</Button>
               </div>
             </DialogContent>
@@ -231,7 +237,7 @@ export default function CareCircle() {
         </div>
       </div>
 
-      <GroupSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} activeGroup={activeGroup} activeGroupId={activeGroupId} isOwner={!!isOwner} updateGroup={updateGroup} deleteGroup={deleteGroup} onDeleteSuccess={() => setSelectedGroupId(null)} onLeaveGroup={handleLeaveGroup} />
+      <GroupSettingsDialog myDisplayName={currentMember?.display_name || ""} open={settingsOpen} onOpenChange={setSettingsOpen} activeGroup={activeGroup} activeGroupId={activeGroupId} isOwner={!!isOwner} updateGroup={updateGroup} deleteGroup={deleteGroup} onDeleteSuccess={() => setSelectedGroupId(null)} onLeaveGroup={handleLeaveGroup} />
       <EditPostDialog post={editingPost} onClose={() => setEditingPost(null)} updatePost={updatePost} />
       <AddCaredOneDialog open={addCaredOneOpen} onOpenChange={setAddCaredOneOpen} activeGroupId={activeGroupId} />
 
@@ -287,7 +293,7 @@ export default function CareCircle() {
         <TabsContent value="cared-ones" className="mt-4"><CaredOnesTab groupCaredOnes={groupCaredOnes || []} isAdmin={!!(isAdmin || currentMember)} onAddCaredOne={() => setAddCaredOneOpen(true)} /></TabsContent>
         <TabsContent value="checkins" className="mt-4"><CheckInsTab groupCaredOnes={groupCaredOnes || []} activeGroupId={activeGroupId} /></TabsContent>
         <TabsContent value="messages" className="mt-4"><MessagesTab groupMessages={groupMessages || []} userId={profile?.id} activeGroupId={activeGroupId} sendMessage={sendMessage} /></TabsContent>
-        <TabsContent value="wishes" className="mt-4"><WishesTab wishes={wishesWithAuthors} wishesLoading={wishesLoading} activeGroupId={activeGroupId} userId={profile?.id} isAdmin={!!isAdmin} createPost={createPost} onEditPost={setEditingPost} onTogglePin={handleTogglePin} onDeletePost={handleDeletePost} /></TabsContent>
+        <TabsContent value="wishes" className="mt-4"><WishesTab wishes={wishesWithAuthors} wishesLoading={wishesLoading} activeGroupId={activeGroupId} userId={profile?.id} isAdmin={!!isAdmin} memberCategories={memberCategories || []} members={members || []} createPost={createPost} onEditPost={setEditingPost} onTogglePin={handleTogglePin} onDeletePost={handleDeletePost} /></TabsContent>
         <TabsContent value="members" className="mt-4"><MembersTab members={members || []} activeGroup={activeGroup} activeGroupId={activeGroupId} userId={profile?.id} isAdmin={!!isAdmin} isOwner={!!isOwner} currentMember={currentMember} pendingInvitations={pendingInvitations || []} memberCategories={memberCategories || []} inviteToGroup={inviteToGroup} updateRole={updateRole} removeMember={removeMember} cancelInvitation={cancelInvitation} createCategory={createCategory} deleteCategory={deleteCategory} /></TabsContent>
         <TabsContent value="gallery" className="mt-4"><GalleryTab gallery={gallery || []} activeGroupId={activeGroupId} /></TabsContent>
       </Tabs>

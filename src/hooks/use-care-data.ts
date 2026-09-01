@@ -62,6 +62,7 @@ import { createCalendarEventForUserWordPress } from "@/features/calendar/source.
 import { fetchCategoriesWordPress } from "@/features/categories/source.wordpress";
 import { fetchArticlesWordPress } from "@/features/articles/source.wordpress";
 import { fetchEntityReviewsWordPress, createReviewWordPress } from "@/features/reviews/source.wordpress";
+import { setMyGroupDisplayNameWordPress } from "@/features/care-groups/source.wordpress";
 import { fetchConversationsWordPress, fetchDirectMessagesWordPress, sendMessageWordPress, markMessagesReadWordPress, startConversationWordPress, getOrCreateGroupConversationWordPress } from "@/features/conversations/source.wordpress";
 import { fetchSavedProvidersWordPress, toggleSavedProviderWordPress } from "@/features/saved-providers/source.wordpress";
 import { fetchCommentsWordPress, createCommentWordPress, updateCommentWordPress, deleteCommentWordPress } from "@/features/comments/source.wordpress";
@@ -448,8 +449,18 @@ export function useCareGroupMembers(groupId: string | null) {
 export function useCreateCareGroup() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (group: { name: string; description?: string; is_private?: boolean }) => createCareGroupWordPress(group),
+    mutationFn: (group: { name: string; description?: string; is_private?: boolean; displayName?: string }) => createCareGroupWordPress(group),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["careGroups"] }); },
+  });
+}
+
+/** Rel 223 a55 — my display name inside one care group. */
+export function useUpdateMyGroupDisplayName() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ groupId, displayName }: { groupId: string; displayName: string }) =>
+      setMyGroupDisplayNameWordPress(groupId, displayName),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["careGroupMembers"] }); },
   });
 }
 
@@ -663,7 +674,7 @@ export function useCareGroupPosts(groupId: string | null, type?: string) {
 export function useCreateGroupPost() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (post: { group_id: string; content: string; type?: string; title?: string; subgroupIds?: number[]; visibilityUserIds?: number[] }) => {
+    mutationFn: async (post: { group_id: string; content: string; type?: string; title?: string; scheduled_at?: string | null; subgroupIds?: number[]; visibilityUserIds?: number[] }) => {
       const { subgroupIds, visibilityUserIds, ...payload } = post;
       const newId = await createGroupPostWordPress(payload);
       if (newId && ((subgroupIds?.length ?? 0) > 0 || (visibilityUserIds?.length ?? 0) > 0)) {
@@ -678,7 +689,12 @@ export function useCreateGroupPost() {
 export function useUpdateGroupPost() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...updates }: { id: string; content?: string; title?: string; is_pinned?: boolean }) => updateGroupPostWordPress(id, updates),
+    mutationFn: async ({ id, subgroupIds, visibilityUserIds, ...updates }: { id: string; content?: string; title?: string; is_pinned?: boolean; scheduled_at?: string | null; subgroupIds?: number[]; visibilityUserIds?: number[] }) => {
+      await updateGroupPostWordPress(id, updates);
+      if (subgroupIds || visibilityUserIds) {
+        await setPostVisibility(id, subgroupIds || [], visibilityUserIds || []);
+      }
+    },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["careGroupPosts"] }); },
   });
 }
@@ -726,7 +742,10 @@ export function useDeleteCareGroup() {
 export function useJoinGroupByCode() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (token: string) => joinGroupByCodeWordPress(token),
+    mutationFn: (input: string | { token: string; displayName?: string }) =>
+      typeof input === "string"
+        ? joinGroupByCodeWordPress(input)
+        : joinGroupByCodeWordPress(input.token, input.displayName),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["careGroups"] }); },
   });
 }

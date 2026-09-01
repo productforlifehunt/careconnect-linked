@@ -38,7 +38,7 @@ export function MessagesTab({ groupMessages, userId, activeGroupId, sendMessage 
                 return (
                   <div key={msg.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
                     <div className={`max-w-[75%] rounded-xl px-3 py-2 ${isMine ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
-                      {!isMine && <p className="text-xs font-medium mb-0.5">{msg.sender?.full_name || Z("成员", "Member")}</p>}
+                      {!isMine && <p className="text-xs font-medium mb-0.5">{msg.sender?.full_name || Z("未填姓名", "No name")}</p>}
                       <p className="text-sm">{msg.content || msg.message_content}</p>
                       <p className={`text-[10px] mt-0.5 ${isMine ? "text-primary-foreground/60" : "text-muted-foreground"}`}>{formatTime(msg.created_at, isCN ? "zh-CN" : "en", { hour: "numeric", minute: "2-digit" })}</p>
                     </div>

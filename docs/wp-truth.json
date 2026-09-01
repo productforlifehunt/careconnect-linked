@@ -3261,7 +3261,8 @@
           "options": "护理小组讨论类型。 1. “discussion” (Name/ID: b55) `→ General group conversation / 一般组讨论，普通讨论默认为discussion 2. “announcement” (Name/ID: b56) → Important group notice 重要组通知 3”wish”(Name/ID: b57) → Wish post (birthday, get-well, encouragement) / 祝福帖（生日、康复、鼓励",
           "optionMap": {
             "b55": "discussion",
-            "b56": "announcement"
+            "b56": "announcement",
+            "b57": "”wish”"
           }
         },
         {

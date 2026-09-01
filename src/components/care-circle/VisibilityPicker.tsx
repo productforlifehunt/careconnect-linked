@@ -109,7 +109,7 @@ export function VisibilityPicker({ value, onChange, memberCategories = [], membe
                   const uid = toNum(m.user_id || m.id);
                   if (!uid) return null;
                   const checked = value.userIds.includes(uid);
-                  const name = m.profile?.full_name || Z(`成员 ${uid}`, `Member ${uid}`);
+                  const name = (m as any).display_name || m.profile?.full_name || Z("未填姓名", "No name");
                   return (
                     <label key={uid} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded px-1.5 py-1 -mx-1.5">
                       <Checkbox checked={checked} onCheckedChange={() => toggleUser(uid)} />
