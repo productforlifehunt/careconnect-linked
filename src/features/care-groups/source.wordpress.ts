@@ -16,26 +16,45 @@ function normalizeWpObjectId(value: string | number | null | undefined): number 
 // CCT slug: care_group | fields: a55=name, a56=description, a57=group type, a58=join code, a59=status
 // Invite codes/links live on a separate CCT (care_group_invite, Rel 161) — not on the group itself.
 
+/**
+ * Only the care groups the signed-in user actually belongs to.
+ * Membership is JetEngine Relation 72 (care_group → users); we read the
+ * relation from the user's side and then load each group record.
+ */
 export async function fetchCareGroupsWordPress(): Promise<CareGroup[]> {
-  try {
-    const groups = await wordpressCCTFetch<any[]>(T.careGroup.slug, { params: { _limit: 50 } });
-    if (!Array.isArray(groups)) return [];
-    return groups.map((g: any) => ({
-      id: String(g.id || g._ID || ""),
-      name: g.a55 || "",
-      description: g.a56 || null,
-      is_private: String(g.a57) === "b56",
-      group_type: String(g.a57) === "b56" ? "private" : "public",
-      invite_code: null,
-      join_code: g.a58 || null,
-      is_active: String(g.a59 || "b55") === "b55",
-      created_by: g.cct_author_id ? `wp-${g.cct_author_id}` : (g.author_id ? `wp-${g.author_id}` : null),
-      created_at: g.created_at,
-    })) as unknown as CareGroup[];
-  } catch {
-    return [];
-  }
+  const stored = getStoredWPUser();
+  const userId = stored?.user_id ? Number(stored.user_id) : null;
+  if (!userId) return [];
+
+  const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/parents/${userId}`);
+  if (!Array.isArray(rels) || rels.length === 0) return [];
+
+  const myGroupIds = Array.from(new Set(
+    rels
+      .filter((r: any) => decodeRel72Meta(r?.meta).invitationStatus !== "declined")
+      .map((r: any) => String(r.parent_object_id || ""))
+      .filter(Boolean)
+  ));
+  if (myGroupIds.length === 0) return [];
+
+  const groups = await Promise.all(
+    myGroupIds.map((id) => wordpressCCTFetch<any>(T.careGroup.slug, { id }))
+  );
+
+  return groups.filter(Boolean).map((g: any) => ({
+    id: String(g.id || g._ID || ""),
+    name: g.a55 || "",
+    description: g.a56 || null,
+    is_private: String(g.a57) === "b56",
+    group_type: String(g.a57) === "b56" ? "private" : "public",
+    invite_code: null,
+    join_code: g.a58 || null,
+    is_active: String(g.a59 || "b55") === "b55",
+    created_by: g.cct_author_id ? `wp-${g.cct_author_id}` : (g.author_id ? `wp-${g.author_id}` : null),
+    created_at: g.created_at,
+  })) as unknown as CareGroup[];
 }
+
 
 export async function fetchCareGroupMembersWordPress(groupId: string): Promise<any[]> {
   try {
