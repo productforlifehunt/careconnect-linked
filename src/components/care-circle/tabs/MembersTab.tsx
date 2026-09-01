@@ -11,7 +11,7 @@ import { UserPlus, Mail, Clock, X, Tag, Plus, Shield, Heart, Crown, MoreVertical
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { SubgroupCard } from "../SubgroupCard";
-import { useGroupInvites, useCreateGroupInvite, useUpdateGroupInvite, useDeleteGroupInvite } from "@/hooks/use-care-data";
+import { useGroupInvites, useCreateGroupInvite, useUpdateGroupInvite, useDeleteGroupInvite, useSearchProfiles } from "@/hooks/use-care-data";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 interface MembersTabProps {
