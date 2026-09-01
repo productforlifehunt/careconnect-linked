@@ -66,6 +66,10 @@ export default function CaregiverProfile() {
   const { isAuthenticated, user } = useAuth();
   const { data: caregiver, isLoading } = useProvider(id);
   const { data: reviews } = useProviderReviews(id);
+  const reviewCount = (reviews || []).length;
+  const reviewAverage = reviewCount
+    ? (reviews || []).reduce((sum: number, r: any) => sum + (Number(r.rating) || 0), 0) / reviewCount
+    : null;
   const { data: savedProviders } = useSavedProviders();
   const toggleSaved = useToggleSavedProvider();
   const createReview = useCreateReview();
