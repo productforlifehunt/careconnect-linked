@@ -397,7 +397,7 @@ export function MembersTab({
                               });
                             }
                           }}>
-                            <Crown className="h-3.5 w-3.5 mr-2" /> {Z("转移拥有权", "Transfer Ownership")}
+                            <Shield className="h-3.5 w-3.5 mr-2" /> {Z("转移拥有权", "Transfer Ownership")}
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuSeparator />
