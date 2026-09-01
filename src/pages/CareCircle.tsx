@@ -205,7 +205,6 @@ export default function CareCircle() {
           <p className="text-sm text-muted-foreground">{t("careCircle.coordinateCare")}</p>
         </div>
         <div className="flex gap-2">
-          {isAdmin && <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)} title={t("careCircle.groupSettings")}><Settings className="h-4 w-4 mr-1" /> {isCN ? "群组设置" : "Group Settings"}</Button>}
           {canShowJoin && (
             <Dialog open={joinCodeOpen} onOpenChange={setJoinCodeOpen}>
               <DialogTrigger asChild><Button variant="outline" size="sm"><KeyRound className="h-4 w-4 mr-1" /> {t("careCircle.join")}</Button></DialogTrigger>
@@ -244,6 +243,22 @@ export default function CareCircle() {
           {groups.map((g: any) => (<Badge key={g.id} variant={activeGroupId === g.id ? "default" : "outline"} className="cursor-pointer whitespace-nowrap" onClick={() => setSelectedGroupId(g.id)}>{g.name}</Badge>))}
         </div>
       </div>
+
+      {/* Makes it unmistakable which group the tabs and settings below apply to. */}
+      {activeGroup && (
+        <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3">
+          <div className="min-w-0">
+            <p className="text-xs text-muted-foreground">{isCN ? "当前查看" : "Currently viewing"}</p>
+            <h2 className="truncate text-lg font-semibold text-foreground">{activeGroup.name}</h2>
+          </div>
+          {isAdmin && (
+            <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)}>
+              <Settings className="h-4 w-4 mr-1" /> {isCN ? `设置“${activeGroup.name}”` : `Settings for “${activeGroup.name}”`}
+            </Button>
+          )}
+        </div>
+      )}
+
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="w-full pb-2">
