@@ -254,7 +254,7 @@ export function AppHeader() {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="gap-2 px-2 max-w-[12rem]" aria-label={displayName}>
+                <Button variant="ghost" className="gap-2 px-2 max-w-[18rem]" aria-label={displayName}>
 
                   {user?.avatar_url ? (
                     <img src={user.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover shrink-0" />

@@ -146,7 +146,7 @@ export default function Dashboard() {
         {caredOnes.length === 1 ? (
           <PatientSummaryCard
             caredOneId={caredOnes[0].user_id}
-            name={caredOnes[0].cared_one?.full_name || caredOnes[0].cared_one?.first_name || site.caredOneSingular}
+            name={caredOnes[0].cared_one?.full_name || caredOnes[0].cared_one?.first_name || caredOnes[0].cared_one?.email || ""}
             avatarUrl={caredOnes[0].cared_one?.avatar_url}
             relationship={caredOnes[0].relationship}
             onClick={() => navigate("/cared-ones")}
@@ -155,7 +155,7 @@ export default function Dashboard() {
           <Tabs defaultValue={caredOnes[0].user_id}>
             <TabsList className="w-full h-auto flex-wrap justify-start gap-1 bg-muted/40 p-1 rounded-xl">
               {caredOnes.map((co: any) => {
-                const name = co.cared_one?.full_name || co.cared_one?.first_name || site.caredOneSingular;
+                const name = co.cared_one?.full_name || co.cared_one?.first_name || co.cared_one?.email || "";
                 return (
                   <TabsTrigger
                     key={co.user_id}
@@ -172,7 +172,7 @@ export default function Dashboard() {
               <TabsContent key={co.user_id} value={co.user_id} className="mt-3 focus-visible:outline-none">
                 <PatientSummaryCard
                   caredOneId={co.user_id}
-                  name={co.cared_one?.full_name || co.cared_one?.first_name || site.caredOneSingular}
+                  name={co.cared_one?.full_name || co.cared_one?.first_name || co.cared_one?.email || ""}
                   avatarUrl={co.cared_one?.avatar_url}
                   relationship={co.relationship}
                   onClick={() => navigate("/cared-ones")}
@@ -189,7 +189,7 @@ export default function Dashboard() {
         {[
           { label: t("dashboard.upcomingBookings"), value: stats?.upcomingBookings ?? 0, icon: CalendarDays, color: "text-primary", to: "/bookings" },
           { label: careGroupsLabel, value: stats?.careGroups ?? 0, icon: Users, color: "text-success", to: "/care-circle" },
-          { label: t("dashboard.pendingTasks"), value: stats?.pendingTasks ?? 0, icon: AlertCircle, color: "text-warning", to: "/care-circle" },
+          { label: t("dashboard.pendingTasks"), value: pendingTasks.length, icon: AlertCircle, color: "text-warning", to: "/care-circle" },
           { label: t("dashboard.unreadMessages"), value: stats?.unreadMessages ?? 0, icon: MessageSquare, color: "text-coral", to: "/messages" },
         ].map((s) => (
           <button key={s.label} onClick={() => navigate(s.to)}
