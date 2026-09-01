@@ -7,7 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Loader2, Users as UsersIcon, X, ChevronDown, Check, Clock, Crown, Shield, MoreVertical, UserPlus } from "lucide-react";
+import { Loader2, Users as UsersIcon, X, ChevronDown, Check, Clock, Shield, MoreVertical, UserPlus } from "lucide-react";
 import {
   useSubgroupMemberRecords, useAddMemberToSubgroup, useRemoveMemberFromSubgroup,
   useApproveSubgroupMember, useDeclineSubgroupMember, useRequestJoinSubgroup,
@@ -96,7 +96,7 @@ export function SubgroupCard({ subgroup, members, isAdmin, onDelete, currentUser
 
 
   const renderRoleIcon = (rec: { is_owner: boolean; is_admin: boolean }) => {
-    if (rec.is_owner) return <Crown className="h-2.5 w-2.5 text-warning" />;
+    if (rec.is_owner) return <Shield className="h-2.5 w-2.5 text-warning" />;
     if (rec.is_admin) return <Shield className="h-2.5 w-2.5 text-primary" />;
     return <UsersIcon className="h-2.5 w-2.5" />;
   };
@@ -146,7 +146,7 @@ export function SubgroupCard({ subgroup, members, isAdmin, onDelete, currentUser
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-40">
                       <DropdownMenuItem onClick={() => changeRole(rec.user_id, "owner")}>
-                        <Crown className="h-3 w-3 mr-2 text-warning" /> {Z("设为群主", "Make owner")}
+                        <Shield className="h-3 w-3 mr-2 text-warning" /> {Z("设为群主", "Make owner")}
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => changeRole(rec.user_id, "admin")}>
                         <Shield className="h-3 w-3 mr-2 text-primary" /> {Z("设为管理员", "Make admin")}
