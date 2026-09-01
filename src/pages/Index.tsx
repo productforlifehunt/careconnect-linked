@@ -6,9 +6,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Search, MapPin, Star, Shield, Clock, Heart,
-  Users, Stethoscope, Baby, Moon, ArrowRight, CheckCircle, Loader2
+  Users, ArrowRight, CheckCircle, Loader2
 } from "lucide-react";
-import { useProviders, useServiceCategories } from "@/hooks/use-care-data";
+import { useProviders } from "@/hooks/use-care-data";
 import { useSite } from "@/contexts/SiteContext";
 import { useTranslation } from "react-i18next";
 import heroImage from "@/assets/hero-image.jpg";
@@ -17,7 +17,6 @@ import heroImageCarecnc from "@/assets/hero-image-carecnc.jpg";
 import yichangIcon from "@/assets/yichang-icon.png";
 import huchangIcon from "@/assets/huchang-icon.png";
 import type { Profile } from "@/types/care-connector";
-import { getSpecialtyKey } from "@/lib/specialty-i18n";
 import { searchCnCities } from "@/data/china-cities";
 
 const Index = () => {
@@ -29,7 +28,6 @@ const Index = () => {
   const [locationQuery, setLocationQuery] = useState("");
 
   const { data: topProviders, isLoading } = useProviders({ sortBy: "rating" });
-  const { data: categories } = useServiceCategories();
   const featuredProviders = (topProviders || []).slice(0, 3);
 
   const handleSearch = () => {
