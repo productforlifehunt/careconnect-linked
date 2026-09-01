@@ -172,25 +172,82 @@ export default function CaredOnes() {
           <div className="flex gap-2 mb-5 overflow-x-auto items-center -mx-4 px-4 pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {caredOnes.map((co: any) => {
               const name = co.cared_one?.full_name || co.cared_one?.first_name || site.caredOneSingular;
+              const isActive = selectedId === co.user_id;
               return (
-                <div key={co.user_id} className={`group relative flex items-center gap-1 rounded-lg border transition-colors ${selectedId === co.user_id ? "bg-card border-primary shadow-sm" : "bg-transparent border-border hover:bg-accent/50"}`}>
-                   <button type="button" onClick={() => { setActiveTab(co.user_id); setOpenCard(null); }} className="min-h-11 px-4 py-2 text-sm font-medium">
+                <div key={co.user_id} className={`flex items-center rounded-lg border transition-colors ${isActive ? "bg-card border-primary shadow-sm" : "bg-transparent border-border hover:bg-accent/50"}`}>
+                  <button type="button" onClick={() => { setActiveTab(co.user_id); setOpenCard(null); }} className="min-h-11 px-4 py-2 text-sm font-medium">
                     {name}{co.relationship && <span className="text-xs text-muted-foreground ml-1">({co.relationship})</span>}
                   </button>
-                  <AlertDialog>
-                     <AlertDialogTrigger asChild><button type="button" aria-label={`${t("common.remove")} ${name}`} className="min-h-11 min-w-11 px-2 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"><X className="h-3.5 w-3.5" /></button></AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader><AlertDialogTitle>{t("common.remove")} {name}?</AlertDialogTitle><AlertDialogDescription>{t("caredOnes.removed", { name, caredOnes: site.navLabels.caredOnes.toLowerCase() })}</AlertDialogDescription></AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleRemoveCaredOne(co.id, name)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t("common.remove")}</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  <button
+                    type="button"
+                    aria-label={`${name} — ${t("common.details", { defaultValue: "Details" })}`}
+                    onClick={() => setDetailCaredOne(co)}
+                    className="min-h-11 min-w-11 px-2 text-muted-foreground hover:text-foreground"
+                  >
+                    <Info className="h-4 w-4" />
+                  </button>
                 </div>
               );
             })}
           </div>
+
+          <Dialog open={!!detailCaredOne} onOpenChange={(open) => { if (!open) setDetailCaredOne(null); }}>
+            <DialogContent>
+              {detailCaredOne && (() => {
+                const person = detailCaredOne.cared_one || {};
+                const name = person.full_name || person.first_name || site.caredOneSingular;
+                return (
+                  <>
+                    <DialogHeader>
+                      <DialogTitle>{name}</DialogTitle>
+                      <DialogDescription>{t("caredOnes.manageAndTrack")}</DialogDescription>
+                    </DialogHeader>
+                    <div className="mt-2 space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                          {person.avatar_url
+                            ? <img src={person.avatar_url} alt="" className="w-12 h-12 rounded-full object-cover" />
+                            : <span className="text-primary font-medium">{String(name)[0]}</span>}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium text-foreground truncate">{name}</p>
+                          {person.email && <p className="text-xs text-muted-foreground truncate">{person.email}</p>}
+                        </div>
+                      </div>
+                      {detailCaredOne.relationship && (
+                        <p className="text-sm text-muted-foreground">
+                          {t("caredOnes.relationship")}: {detailCaredOne.relationship}
+                        </p>
+                      )}
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" className="w-full text-destructive hover:text-destructive">
+                            <Trash2 className="h-4 w-4 mr-1" /> {t("common.remove")}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>{t("common.remove")} {name}?</AlertDialogTitle>
+                            <AlertDialogDescription>{t("caredOnes.removed", { name, caredOnes: site.navLabels.caredOnes.toLowerCase() })}</AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => { handleRemoveCaredOne(detailCaredOne.id, name); setDetailCaredOne(null); }}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              {t("common.remove")}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </>
+                );
+              })()}
+            </DialogContent>
+          </Dialog>
+
           {openCard ? (
             <div>
               <Button variant="ghost" size="sm" className="mb-4" onClick={() => setOpenCard(null)}><ArrowLeft className="h-4 w-4 mr-1" /> {t("caredOnes.backToCards")}</Button>
