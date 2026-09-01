@@ -181,18 +181,16 @@ export default function SearchResults() {
           </div>
         </>
       )}
-      {isFacilityMode && (
-        <div>
-          <Label className="text-sm font-semibold mb-3 block">{t("search.minimumRating")}</Label>
-          <div className="flex gap-2">
-            {[0, 4, 4.5, 4.8].map(r => (
-              <Button key={r} variant={minRating === r ? "default" : "outline"} size="sm" onClick={() => setMinRating(r)}>
-                {r === 0 ? t("search.any") : `${r}+`}
-              </Button>
-            ))}
-          </div>
+      <div>
+        <Label className="text-sm font-semibold mb-3 block">{t("search.minimumRating")}</Label>
+        <div className="flex gap-2">
+          {[0, 4, 4.5, 4.8].map(r => (
+            <Button key={r} variant={minRating === r ? "default" : "outline"} size="sm" onClick={() => setMinRating(r)}>
+              {r === 0 ? t("search.any") : `${r}+`}
+            </Button>
+          ))}
         </div>
-      )}
+      </div>
       {!isFacilityMode && (
         <label className="flex items-center gap-2 cursor-pointer">
           <Checkbox checked={verifiedOnly} onCheckedChange={(c) => setVerifiedOnly(!!c)} />
