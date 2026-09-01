@@ -1,7 +1,9 @@
+import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Circle, MapPin, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CheckCircle, Circle, MapPin, Clock, ChevronLeft, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
+import { formatDate } from "@/lib/locale";
 
 interface CalendarTabProps {
   tasks: any[];
@@ -23,6 +25,9 @@ export function CalendarTab({ tasks }: CalendarTabProps) {
     b57: Z("已找到帮助", "Help found"),
   };
 
+  const toKey = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
   const getDateKey = (t: any): string | null => {
     const raw = t.task_date || t.start_time || t.due_date;
     if (!raw) return null;
@@ -31,32 +36,118 @@ export function CalendarTab({ tasks }: CalendarTabProps) {
 
   const fmtTime = (raw?: string | null) => {
     if (!raw) return "";
-    const s = String(raw);
-    const m = s.match(/(\d{2}):(\d{2})/);
+    const m = String(raw).match(/(\d{2}):(\d{2})/);
     return m ? `${m[1]}:${m[2]}` : "";
   };
 
-  const tasksByDate: Record<string, any[]> = {};
-  (tasks || []).forEach((t: any) => {
-    const d = getDateKey(t);
-    if (!d) return;
-    if (!tasksByDate[d]) tasksByDate[d] = [];
-    tasksByDate[d].push(t);
-  });
-  const sortedDates = Object.keys(tasksByDate).sort();
+  const tasksByDate = useMemo(() => {
+    const map: Record<string, any[]> = {};
+    (tasks || []).forEach((t: any) => {
+      const d = getDateKey(t);
+      if (!d) return;
+      (map[d] ||= []).push(t);
+    });
+    Object.values(map).forEach((list) =>
+      list.sort((a, b) => fmtTime(a.start_time).localeCompare(fmtTime(b.start_time)))
+    );
+    return map;
+  }, [tasks]);
 
-  return sortedDates.length > 0 ? (
-    <div>
-      {sortedDates.map(date => (
-        <div key={date} className="mb-6">
-          <h3 className="text-sm font-semibold text-foreground mb-2">
-            {formatDate(date + "T00:00", isCN ? "zh-CN" : "en", { weekday: "long", month: "long", day: "numeric" })}
-          </h3>
+  const today = new Date();
+  const [cursor, setCursor] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
+  const [selected, setSelected] = useState<string>(toKey(today));
+
+  const weekLabels = isCN
+    ? ["日", "一", "二", "三", "四", "五", "六"]
+    : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  // Grid always renders 6 weeks so the layout never jumps between months.
+  const gridDays = useMemo(() => {
+    const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+    const start = new Date(first);
+    start.setDate(first.getDate() - first.getDay());
+    return Array.from({ length: 42 }, (_, i) => {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      return d;
+    });
+  }, [cursor]);
+
+  const selectedTasks = tasksByDate[selected] || [];
+  const monthLabel = formatDate(
+    `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}-01T00:00`,
+    isCN ? "zh-CN" : "en",
+    { year: "numeric", month: "long" }
+  );
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-xl border border-transparent card-elevated p-3 sm:p-4">
+        <div className="flex items-center justify-between mb-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={Z("上一月", "Previous month")}
+            onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <p className="text-sm font-semibold text-foreground">{monthLabel}</p>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={Z("下一月", "Next month")}
+            onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-7 gap-1 mb-1">
+          {weekLabels.map((w) => (
+            <div key={w} className="text-center text-[11px] text-muted-foreground py-1">{w}</div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-7 gap-1">
+          {gridDays.map((d) => {
+            const key = toKey(d);
+            const inMonth = d.getMonth() === cursor.getMonth();
+            const count = (tasksByDate[key] || []).length;
+            const isToday = key === toKey(today);
+            const isSelected = key === selected;
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setSelected(key)}
+                className={`aspect-square rounded-lg flex flex-col items-center justify-center text-xs transition-colors
+                  ${isSelected ? "bg-primary text-primary-foreground" : "hover:bg-muted"}
+                  ${inMonth ? "text-foreground" : "text-muted-foreground/50"}
+                  ${isToday && !isSelected ? "ring-1 ring-primary" : ""}`}
+              >
+                <span className={isSelected ? "" : inMonth ? "" : "opacity-60"}>{d.getDate()}</span>
+                {count > 0 && (
+                  <span className={`mt-0.5 h-1.5 w-1.5 rounded-full ${isSelected ? "bg-primary-foreground" : "bg-primary"}`} />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-2">
+          {formatDate(selected + "T00:00", isCN ? "zh-CN" : "en", { weekday: "long", month: "long", day: "numeric" })}
+        </h3>
+        {selectedTasks.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4">
+            {Z("这一天没有安排的任务。", "No tasks scheduled for this day.")}
+          </p>
+        ) : (
           <div className="space-y-2">
-            {tasksByDate[date]
-              .sort((a, b) => fmtTime(a.start_time).localeCompare(fmtTime(b.start_time)))
-              .map((t: any) => {
-               const isDone = String(t.finish_status) === "b56";
+            {selectedTasks.map((t: any) => {
+              const isDone = String(t.finish_status) === "b56";
               const start = fmtTime(t.start_time);
               const end = fmtTime(t.end_time);
               return (
@@ -82,17 +173,15 @@ export function CalendarTab({ tasks }: CalendarTabProps) {
                       )}
                     </div>
                   </div>
-                   <Badge variant="outline" className={helpStatusColors[String(t.help_status)]}>
-                     {helpStatusLabels[String(t.help_status)]}
+                  <Badge variant="outline" className={helpStatusColors[String(t.help_status)]}>
+                    {helpStatusLabels[String(t.help_status)]}
                   </Badge>
                 </div>
               );
             })}
           </div>
-        </div>
-      ))}
+        )}
+      </div>
     </div>
-  ) : (
-    <p className="text-center py-12 text-muted-foreground">{Z("暂无安排的任务。为任务添加日期后会显示在这里。", "No scheduled tasks. Add a date to a task to see it here.")}</p>
   );
 }

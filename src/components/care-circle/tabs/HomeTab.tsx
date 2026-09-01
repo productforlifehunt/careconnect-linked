@@ -28,13 +28,15 @@ interface HomeTabProps {
   onEditPost: (post: any) => void;
   onTogglePin: (post: any) => void;
   onDeletePost: (id: string) => void;
+  onNavigateTab?: (tab: string) => void;
 }
 
 export function HomeTab({
   pendingTasksCount, membersCount, caredOnesCount, statsLoading,
   allPosts, activeGroupId, userId, isAdmin, memberCategories, members,
-  createPost, onEditPost, onTogglePin, onDeletePost,
+  createPost, onEditPost, onTogglePin, onDeletePost, onNavigateTab,
 }: HomeTabProps) {
+
   const { toast } = useToast();
   const { t, i18n } = useTranslation();
   const isCN = i18n.language?.startsWith("zh");
@@ -68,23 +70,27 @@ export function HomeTab({
     <div>
       <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
         {[
-          { label: isCN ? "待办任务" : "Pending Tasks", value: pendingTasksCount, icon: ListTodo },
-          { label: isCN ? "成员" : "Members", value: membersCount, icon: Users },
-          { label: isCN ? "被护理者" : site.navLabels.caredOnes, value: caredOnesCount, icon: Heart },
+          { label: isCN ? "待办任务" : "Pending Tasks", value: pendingTasksCount, icon: ListTodo, tab: "tasks" },
+          { label: isCN ? "成员" : "Members", value: membersCount, icon: Users, tab: "members" },
+          { label: isCN ? "被护理者" : site.navLabels.caredOnes, value: caredOnesCount, icon: Heart, tab: "cared-ones" },
         ].map(s => (
-          <Card key={s.label} className="border-transparent card-elevated">
-            <CardContent className="p-3 sm:p-4 flex items-center gap-2">
-              <s.icon className="h-4 w-4 sm:h-5 sm:w-5 text-primary shrink-0" />
-              <div className="min-w-0">
-                {statsLoading
-                  ? <div className="h-5 sm:h-7 w-8 rounded bg-muted animate-pulse" aria-label="loading" />
-                  : <p className="text-base sm:text-xl font-bold text-foreground leading-tight">{s.value}</p>}
-                <p className="text-[11px] sm:text-xs text-muted-foreground leading-tight break-words">{s.label}</p>
-              </div>
-            </CardContent>
-          </Card>
+          <button
+            key={s.label}
+            type="button"
+            onClick={() => onNavigateTab?.(s.tab)}
+            className="text-left rounded-xl border border-transparent card-elevated p-3 sm:p-4 flex items-center gap-2 hover:border-primary/30 transition-colors"
+          >
+            <s.icon className="h-4 w-4 sm:h-5 sm:w-5 text-primary shrink-0" />
+            <div className="min-w-0">
+              {statsLoading
+                ? <div className="h-5 sm:h-7 w-8 rounded bg-muted animate-pulse" aria-label="loading" />
+                : <p className="text-base sm:text-xl font-bold text-foreground leading-tight">{s.value}</p>}
+              <p className="text-[11px] sm:text-xs text-muted-foreground leading-tight break-words">{s.label}</p>
+            </div>
+          </button>
         ))}
       </div>
+
       <Card className="border-transparent card-elevated mb-6">
         <CardContent className="p-4">
           <Textarea value={content} onChange={e => setContent(e.target.value)} placeholder={isCN ? "与团队分享一条更新…" : "Share an update with your care team..."} className="mb-3" rows={2} />
