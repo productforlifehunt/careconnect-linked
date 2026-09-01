@@ -823,7 +823,7 @@ export const WP = {
         "SCHEDULED_AT": "a59",  // Datetime
       },
       opt: {
-        "TYPE": { "DISCUSSION": "b55", "ANNOUNCEMENT": "b56" },
+        "TYPE": { "DISCUSSION": "b55", "ANNOUNCEMENT": "b56", "WISH": "b57" },
         "IS_PINNED": { "YES": "b55", "NO": "b56" },
       },
     },
