@@ -1093,47 +1093,58 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                   </Button>
                 </div>
 
-                {/* Zone type toggle */}
-                <div className="flex rounded-lg border overflow-hidden">
-                  {(["safe", "danger"] as const).map(t => (
-                    <button key={t} onClick={() => setZoneForm(p => ({ ...p, zone_type: t }))}
-                      className={`flex-1 py-2 text-sm font-medium transition-colors
-                        ${zoneForm.zone_type === t
-                          ? t === "danger" ? "bg-destructive text-destructive-foreground" : "bg-success text-white"
-                          : "bg-transparent text-muted-foreground hover:bg-accent"}`}>
-                      {t === "safe" ? "✅ Safe Zone" : "⚠️ Danger Zone"}
-                    </button>
-                  ))}
+                {/* Zone type — the nine dictionary types (a55). A zone has no
+                    name of its own; its type IS its label. */}
+                <div>
+                  <Label className="text-xs">{isZh ? "区域类型 *" : "Zone Type *"}</Label>
+                  <div className="grid grid-cols-3 gap-1.5 mt-1">
+                    {ZONE_TYPE_CODES.map(code => {
+                      const active = zoneForm.zone_type === code;
+                      const c = zoneColor(code);
+                      return (
+                        <button key={code}
+                          onClick={() => {
+                            const slot = customSlotOf(code);
+                            setZoneForm(p => ({ ...p, zone_type: code }));
+                            setCustomNameDraft(slot ? (customNames[slot] || "") : "");
+                          }}
+                          className="px-2 py-1.5 rounded-lg border text-xs font-medium truncate transition-colors"
+                          style={{
+                            borderColor: active ? c : undefined,
+                            color: active ? c : undefined,
+                            backgroundColor: active ? `${c}20` : undefined,
+                          }}>
+                          {zoneLabel(code)}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-                {zoneForm.zone_type === "danger" && (
+                {isDangerZone(zoneForm.zone_type) && (
                   <p className="text-xs text-destructive bg-destructive/10 rounded p-2">
-                    Alert when {caredOneName} enters this area (e.g. casino, restricted area)
+                    {isZh
+                      ? `当 ${caredOneName} 进入该区域时提醒`
+                      : `Alert when ${caredOneName} enters this area`}
                   </p>
                 )}
 
-                <div>
-                  <Label className="text-xs">Zone Name *</Label>
-                  <Input value={zoneForm.name} onChange={e => setZoneForm(p => ({ ...p, name: e.target.value }))}
-                    placeholder='e.g. "Home", "Casino"' className="mt-1" />
-                </div>
-
-                {zoneForm.zone_type === "safe" && (
+                {customSlotOf(zoneForm.zone_type) > 0 && (
                   <div>
-                    <Label className="text-xs">Category</Label>
-                    <div className="flex gap-2 mt-1 flex-wrap">
-                      {Object.entries(CATEGORY_CONFIG).map(([key, cfg]) => {
-                        const Icon = cfg.icon; const active = zoneForm.category === key;
-                        return (
-                          <button key={key} onClick={() => setZoneForm(p => ({ ...p, category: key }))}
-                            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-colors"
-                            style={{ borderColor: active ? cfg.color : undefined, color: active ? cfg.color : undefined, backgroundColor: active ? `${cfg.color}20` : undefined }}>
-                            <Icon className="h-3 w-3" /> {cfg.label}
-                          </button>
-                        );
-                      })}
-                    </div>
+                    <Label className="text-xs">
+                      {isZh
+                        ? `自定义区域 ${customSlotOf(zoneForm.zone_type)} 名称`
+                        : `Custom zone ${customSlotOf(zoneForm.zone_type)} name`}
+                    </Label>
+                    <Input value={customNameDraft} onChange={e => setCustomNameDraft(e.target.value)}
+                      placeholder={isZh ? "例如：日托中心" : 'e.g. "Day centre"'} className="mt-1" />
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      {isZh
+                        ? "该名称对此被照护者的所有同类型区域生效。"
+                        : "This name applies to every zone of this type for this person."}
+                    </p>
                   </div>
                 )}
+
 
                 <div>
                   <Label className="text-xs">Shape Type</Label>
