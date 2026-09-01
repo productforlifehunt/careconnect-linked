@@ -39,16 +39,8 @@ const Index = () => {
     navigate(`/search?${params.toString()}`);
   };
 
-  const categoryIcons: Record<string, React.ReactNode> = {
-    "Elder Care": <Heart className="h-6 w-6" />,
-    "Child Care": <Baby className="h-6 w-6" />,
-    "Special Needs": <Users className="h-6 w-6" />,
-    "Nursing Care": <Stethoscope className="h-6 w-6" />,
-    "Companionship": <Users className="h-6 w-6" />,
-    "Respite Care": <Moon className="h-6 w-6" />,
-  };
 
-  const displayCategories = (categories || []).slice(0, 6).map(c => ({ name: c.name, count: 0 }));
+
 
   return (
     <div className="min-h-full">
