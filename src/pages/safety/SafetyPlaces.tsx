@@ -190,7 +190,8 @@ export default function SafetyPlaces() {
       ) : (
         <ul className="space-y-2">
           {zones.map((z: any, idx: number) => {
-            const isDanger = String(z.zone_type).toLowerCase() === "danger";
+            const isDanger = isDangerZone(String(z.zone_type));
+            const label = zoneTypeLabel(String(z.zone_type), customNames, isCN);
             return (
               <li key={`${z.id || "zone"}-${idx}`} className="flex items-start gap-3 rounded-xl border p-3">
                 <span
@@ -202,16 +203,22 @@ export default function SafetyPlaces() {
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="truncate text-sm font-medium">{z.name || Z("未命名地点", "Unnamed place")}</span>
-                    <Badge variant={isDanger ? "destructive" : "secondary"} className="h-4 px-1 text-[10px]">
-                      {isDanger ? Z("危险", "Danger") : Z("安全", "Safe")}
-                    </Badge>
+                    <span className="truncate text-sm font-medium">{label}</span>
+                    {z.description && (
+                      <span className="truncate text-xs text-muted-foreground">{z.description}</span>
+                    )}
+                    {isDanger && (
+                      <Badge variant="destructive" className="h-4 px-1 text-[10px]">
+                        {Z("危险", "Danger")}
+                      </Badge>
+                    )}
                     {!z.is_active && (
                       <Badge variant="outline" className="h-4 px-1 text-[10px]">
                         {Z("已停用", "Paused")}
                       </Badge>
                     )}
                   </div>
+
                   <p className="mt-0.5 text-xs text-muted-foreground">
                     {z.latitude != null && z.longitude != null ? `${z.latitude.toFixed(4)}, ${z.longitude.toFixed(4)}` : Z("无坐标", "No coordinates")} · {z.radius_meters || 200} m
                   </p>
