@@ -133,7 +133,7 @@ export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) 
     });
 
     return items.sort((a, b) => a.sortTime - b.sortTime);
-  }, [medicines, todayLogs, tasks, checkins, todayCheckinLogs, caredOneId, today]);
+  }, [medicines, todayLogs, tasks, checkins, todayCheckinLogs, bookings, caredOneId, today, isZh]);
 
   const statusColor = {
     done: "bg-success/10 text-success border-success/30",
@@ -145,7 +145,9 @@ export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) 
     medicine: "text-primary",
     task: "text-secondary",
     checkin: "text-success",
+    booking: "text-coral",
   };
+
 
   if (timelineItems.length === 0) {
     return null;
