@@ -49,7 +49,10 @@ export function MembersTab({
   const { i18n } = useTranslation();
   const isCN = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (isCN ? cn : en);
-  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteSearch, setInviteSearch] = useState("");
+  const [invitePerson, setInvitePerson] = useState<any>(null);
+  const { data: inviteSearchResults } = useSearchProfiles(inviteSearch);
+
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryDesc, setNewCategoryDesc] = useState("");
