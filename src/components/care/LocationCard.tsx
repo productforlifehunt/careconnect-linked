@@ -10,7 +10,7 @@ import { Slider } from "@/components/ui/slider";
 import {
   MapPin, Navigation, RefreshCw, X, Plus, Trash2, Edit2,
   Bell, Clock, Shield, AlertTriangle, CheckCircle2,
-  Home, Building2, GraduationCap, Heart, Target, Ban,
+  Target, Ban,
   Loader2, Send, Radio, Pencil, RotateCcw, Layers,
   ExternalLink,
 } from "lucide-react";
@@ -22,9 +22,15 @@ import {
   useLocationRequests, useSendLocationRequest, useCancelLocationRequest,
   useCaredOneLocationSettings, useShareMyLocation,
 } from "@/hooks/use-care-data";
+import {
+  ZONE_TYPE, ZONE_TYPE_CODES, customSlotOf, isDangerZone, isSafeZone,
+  zoneTypeLabel, fetchCustomZoneNames, setCustomZoneName,
+  type CustomZoneNames,
+} from "@/features/location/zone-types";
 
 import { useToast } from "@/hooks/use-toast";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
+
 
 // ─── Inject Leaflet CSS once ────────────────────────────────
 if (typeof document !== "undefined" && !document.getElementById("leaflet-css")) {
