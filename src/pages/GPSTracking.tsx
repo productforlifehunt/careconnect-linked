@@ -202,9 +202,9 @@ export default function GPSTracking() {
 
     zones.filter(z => z.is_active).forEach(zone => {
       // The CCT mapper returns "Danger"/"Polygon" capitalised — compare lowercased.
-      const isDanger = String(zone.zone_type).toLowerCase() === "danger";
+      const isDanger = isDangerZone(String(zone.zone_type));
       const isPolygon = String(zone.shape_type).toLowerCase() === "polygon";
-      const label = isDanger ? Z("⚠️ 危险区域", "⚠️ Danger Zone") : Z("✅ 安全区域", "✅ Safe Zone");
+      const label = zoneLabel(String(zone.zone_type));
       const color = isDanger ? "#ef4444" : "hsl(var(--primary))";
       if (isPolygon && zone.polygon_points?.length >= 3) {
         const poly = L.polygon(zone.polygon_points, {
@@ -213,7 +213,7 @@ export default function GPSTracking() {
           fillOpacity: 0.15,
           dashArray: isDanger ? "6 4" : undefined,
         }).addTo(map);
-        poly.bindPopup(`<b>${zone.name}</b><br/>${label}`);
+        poly.bindPopup(`<b>${label}</b>`);
         zoneLayers.current.push(poly);
       } else if (zone.latitude && zone.longitude) {
         const circle = L.circle([zone.latitude, zone.longitude], {
@@ -223,7 +223,7 @@ export default function GPSTracking() {
           fillOpacity: 0.12,
           dashArray: isDanger ? "6 4" : undefined,
         }).addTo(map);
-        circle.bindPopup(`<b>${zone.name}</b><br/>${label}<br/>${Z("半径", "Radius")}: ${zone.radius_meters || 200}m`);
+        circle.bindPopup(`<b>${label}</b><br/>${Z("半径", "Radius")}: ${zone.radius_meters || 200}m`);
         zoneLayers.current.push(circle);
       }
     });
@@ -522,7 +522,7 @@ export default function GPSTracking() {
     }
   };
 
-  const dangerZoneCount = zones.filter(z => String(z.zone_type).toLowerCase() === "danger").length;
+  const dangerZoneCount = zones.filter(z => isDangerZone(String(z.zone_type))).length;
 
   const unreadAlerts = alerts.filter(a => !a.is_read);
 
@@ -792,14 +792,14 @@ export default function GPSTracking() {
                     <p className="text-sm text-muted-foreground text-center py-8">{t("gps.noZones", "No geofence zones configured")}</p>
                   ) : (
                     zones.map((zone: any) => {
-                      const isDanger = String(zone.zone_type).toLowerCase() === "danger";
+                      const isDanger = isDangerZone(String(zone.zone_type));
                       const isPolygon = String(zone.shape_type).toLowerCase() === "polygon";
                       return (
                         <div key={zone.id} className="p-3 rounded-lg bg-muted/50 border border-border">
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2 min-w-0">
                               <div className={`w-3 h-3 rounded-full shrink-0 ${isDanger ? "bg-destructive" : "bg-success"}`} />
-                              <p className="text-sm font-medium text-foreground truncate">{zone.name}</p>
+                              <p className="text-sm font-medium text-foreground truncate">{zoneLabel(String(zone.zone_type))}</p>
                             </div>
                             <div className="flex items-center gap-1 shrink-0">
                               <Switch
@@ -826,7 +826,7 @@ export default function GPSTracking() {
                           </div>
                           <p className="text-xs text-muted-foreground mt-1">
                             {isPolygon ? `Polygon (${zone.polygon_points?.length || 0} points)` : `${Z("半径", "Radius")}: ${zone.radius_meters || 200}m`}
-                            {" · "}{isDanger ? Z("⚠️ 危险", "⚠️ Danger") : Z("✅ 安全", "✅ Safe")}
+                            {" · "}{isDanger ? Z("⚠️ 危险", "⚠️ Danger") : zoneLabel(String(zone.zone_type))}
                             {" · "}{zone.is_active ? t("common.active", "Active") : t("common.inactive", "Inactive")}
                           </p>
                         </div>
