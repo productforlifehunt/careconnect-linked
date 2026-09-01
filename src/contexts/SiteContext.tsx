@@ -48,7 +48,6 @@ export interface SiteConfig {
     manageD?: string;
   };
   howItWorksSteps: { step: string; titleKey: string; descKey: string }[];
-  trustBadges: string[];
 }
 
 const careCNCConfig: SiteConfig = {
@@ -62,12 +61,12 @@ const careCNCConfig: SiteConfig = {
   heroHighlight: "Stay Connected",
   heroSubtitle: "Search caregivers, book appointments, coordinate with your care team, and track care in real-time — all in one place.",
   ctaTitle: "Ready to find the perfect caregiver?",
-  ctaSubtitle: "Join thousands of families who trust CareCNC for their caregiving needs.",
+  ctaSubtitle: "Search caregivers, compare rates, and book in a few steps.",
   ctaButton: "Find Caregivers",
   searchPlaceholder: "What type of care do you need?",
   howItWorksTitle: "How CareCNC Works",
   footerBrand: "CareCNC",
-  footerTagline: "Connect. Care. Continue. — Connecting families with trusted caregivers since 2024.",
+  footerTagline: "Connect. Care. Continue. — Find caregivers and coordinate care.",
   metaTitle: "CareCNC — Connect. Care. Continue.",
   metaDescription: "Search caregivers, book appointments, and coordinate care in one place.",
   cssClass: "site-carecnc",
@@ -87,7 +86,6 @@ const careCNCConfig: SiteConfig = {
     { step: "2", titleKey: "step2Title", descKey: "step2Desc" },
     { step: "3", titleKey: "step3Title", descKey: "step3Desc" },
   ],
-  trustBadges: ["badge1", "badge2", "badge3"],
 };
 
 const challengedConfig: SiteConfig = {
@@ -106,7 +104,7 @@ const challengedConfig: SiteConfig = {
   searchPlaceholder: "What dementia care do you need?",
   howItWorksTitle: "How ChallengeD Works",
   footerBrand: "ChallengeD",
-  footerTagline: "Supporting dementia caregivers and families since 2024.",
+  footerTagline: "Dementia care knowledge, coordination and location safety.",
   metaTitle: "ChallengeD — Dementia Care Together",
   metaDescription: "Coordinate dementia care, find specialized caregivers, and keep your cared one safe.",
   cssClass: "site-challenged",
@@ -132,7 +130,6 @@ const challengedConfig: SiteConfig = {
     { step: "2", titleKey: "step2Title", descKey: "step2Desc" },
     { step: "3", titleKey: "step3Title", descKey: "step3Desc" },
   ],
-  trustBadges: ["badge1", "badge2", "badge3", "badge4", "badge5"],
 };
 
 // 忆畅 early-launch variant.
