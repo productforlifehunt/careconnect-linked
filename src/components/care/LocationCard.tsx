@@ -249,6 +249,20 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
   const [zoneForm, setZoneForm] = useState(defaultForm());
   const [pickingOnMap, setPickingOnMap] = useState(false);
 
+  // ─── Custom zone-type names (CCT 258 a95..a101, per cared one)
+  const [customNames, setCustomNames] = useState<CustomZoneNames>({});
+  const [customNameDraft, setCustomNameDraft] = useState("");
+  const reloadCustomNames = useCallback(async () => {
+    if (!caredOneId) return;
+    setCustomNames(await fetchCustomZoneNames(caredOneId));
+  }, [caredOneId]);
+  useEffect(() => { void reloadCustomNames(); }, [reloadCustomNames]);
+  const zoneLabel = useCallback(
+    (code: string) => zoneTypeLabel(code, customNames, !!isZh),
+    [customNames, isZh],
+  );
+
+
   // ─── Polygon drawing state
   const [drawMode, setDrawMode] = useState<"idle" | "drawing" | "editing">("idle");
   const [drawnPoints, setDrawnPoints] = useState<[number, number][]>([]);
