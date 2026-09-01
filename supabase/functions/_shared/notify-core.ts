@@ -14,7 +14,6 @@
  *   CCT 186 users_notif_token    push tokens   (a55 endpoint, a56 provider,
  *                                              a58 auth, a59 p256dh, a60 active, a61 app)
  *   Rel 189  user -> token
- *   CCT 258 user_ext_profile_2   a91 push / a92 email / a93 sms  (b55 yes | b56 no)
  *   CCT 151 users_extended_prof  a95 challenged / a96 carecnc general settings JSON
  */
 
@@ -36,6 +35,23 @@ const REL_USER_TOKEN = 189;
 const YES = "b55";
 
 /** Notification categories = CCT 185 a55 radio codes. */
+/** Semantic event type → the mute category the user sees in Settings. */
+export const MUTE_CATEGORY: Record<string, string> = {
+  chat: "chat",
+  message: "chat",
+  booking: "booking",
+  location: "location",
+  safe_zone: "location",
+  location_alert: "location",
+  check_in: "check_in",
+  checkin: "check_in",
+  medicine: "medicine",
+  task: "system",
+  job: "system",
+  community: "system",
+  system: "system",
+};
+
 export const TYPE_CODE: Record<string, string> = {
   chat: "b55",
   message: "b55",
@@ -315,7 +331,8 @@ export async function dispatch(app: AppKey, req: NotifyRequest, token: string | 
   }
 
   const prefs = await loadPrefs(app, req.user_id, token);
-  if (prefs.muted.includes(req.type)) {
+  const category = MUTE_CATEGORY[req.type] ?? "system";
+  if (prefs.muted.includes(req.type) || prefs.muted.includes(category)) {
     result.reason = "category_muted";
     return result;
   }
