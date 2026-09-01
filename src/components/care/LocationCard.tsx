@@ -889,17 +889,17 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Zone Status</p>
                     {(zones || []).map((zone: any) => {
                       const breach = checkZoneBreach(zone, parseFloat(currentLocation.latitude), parseFloat(currentLocation.longitude));
-                      const catCfg = CATEGORY_CONFIG[zone.category] || CATEGORY_CONFIG.custom;
                       return (
                         <div key={zone.id} className="flex items-center gap-2 text-xs">
-                          <div className="w-2 h-2 rounded-full" style={{ background: catCfg.color }} />
-                          <span className="font-medium">{zone.name}</span>
+                          <div className="w-2 h-2 rounded-full" style={{ background: zoneColor(zone.zone_type) }} />
+                          <span className="font-medium">{zoneLabel(zone.zone_type)}</span>
                           <span className={breach.breached ? "text-destructive font-semibold" : "text-success"}>
-                            {zone.zone_type === "safe"
-                              ? (breach.breached ? `⚠ Outside (${breach.distance}m)` : `✓ Inside (${breach.distance}m)`)
-                              : (breach.breached ? `⚠ INSIDE danger zone!` : `✓ Away (${breach.distance}m)`)}
+                            {isDangerZone(zone.zone_type)
+                              ? (breach.breached ? `⚠ INSIDE danger zone!` : `✓ Away (${breach.distance}m)`)
+                              : (breach.breached ? `⚠ Outside (${breach.distance}m)` : `✓ Inside (${breach.distance}m)`)}
                           </span>
                         </div>
+
                       );
                     })}
                   </div>
