@@ -365,7 +365,7 @@ export default function CaregiverProfile() {
         <ArrowLeft className="h-4 w-4" /> {isZh ? "返回" : "Back"}
       </Button>
 
-      <div className="grid lg:grid-cols-3 gap-5">
+      <div className="grid lg:grid-cols-3 lg:grid-rows-[auto_auto] items-start gap-5">
         <div className="lg:col-span-2 space-y-5">
           <Card className="border-transparent card-elevated">
             <CardContent className="p-5">
@@ -440,7 +440,7 @@ export default function CaregiverProfile() {
         </div>
 
         {/* Sidebar - Booking + Contact */}
-        <div className="space-y-4">
+        <div className="space-y-4 lg:row-span-2 lg:self-start">
           <Card className="border-transparent card-elevated sticky top-24">
             <CardContent className="p-6">
               <div className="text-center mb-6">
