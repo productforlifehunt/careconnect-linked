@@ -44,16 +44,19 @@ export default function Favorites() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <h3 className="font-semibold text-foreground">{cg.full_name}</h3>
-                        {cg.background_check_status === "passed" && <Shield className="h-4 w-4 text-primary" />}
+                        {cg.care_provider_is_background_checked && <Shield className="h-4 w-4 text-primary" />}
                       </div>
-                      <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
-                        <span className="flex items-center gap-1"><Star className="h-3 w-3 text-warning fill-warning" /> {cg.rating_average?.toFixed(1) || t("common.new")}</span>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground mt-1">
+                        <span className="flex items-center gap-1"><Star className="h-3 w-3 text-warning fill-warning" /> {cg.rating_average ? `${cg.rating_average.toFixed(1)} (${cg.rating_count || 0})` : t("common.new")}</span>
                         {cg.location && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {cg.location}</span>}
-                        <span>{isZh ? "¥" : "$"}{cg.hourly_rate || 0}{t("common.perHour")}</span>
+                        {cg.care_provider_starts_hourly_rate
+                          ? <span>{isZh ? "¥" : "$"}{cg.care_provider_starts_hourly_rate}{t("common.perHour")}</span>
+                          : <span>{isZh ? "价格待询" : "Rate on request"}</span>}
                       </div>
                       <div className="flex flex-wrap gap-1 mt-2">
-                        {(cg.specialty || []).map((s: string) => <Badge key={s} variant="secondary" className="bg-accent text-accent-foreground text-xs">{s}</Badge>)}
+                        {(cg.service_type_slugs || cg.specialty || []).map((s: string) => <Badge key={s} variant="secondary" className="bg-accent text-accent-foreground text-xs">{s}</Badge>)}
                       </div>
+
                     </div>
                     <div className="flex flex-col gap-2 shrink-0">
                       <Button variant="coral" size="sm" onClick={() => navigate(`/caregiver/${cg.id}`)}>{t("common.book")}</Button>
