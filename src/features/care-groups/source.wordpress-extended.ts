@@ -380,18 +380,30 @@ export async function updateMemberRoleWordPress(memberId: string, updates: any, 
       }),
     },
   });
+  // The affected member must know their own role changed — non-blocking.
+  try {
+    const { notifyMemberRoleChanged } = await import("@/features/notifications/notify-events");
+    const label = [...nextTypes].filter((v) => v !== "nothing special").join(", ") || "member";
+    await notifyMemberRoleChanged(normalizedMemberId, String(normalizedGroupId), label);
+  } catch { /* best-effort */ }
 }
 
 export async function removeGroupMemberWordPress(memberId: string, groupId?: string): Promise<void> {
   const normalizedGroupId = normalizeWpObjectId(groupId);
   const normalizedMemberId = normalizeWpObjectId(memberId);
   if (normalizedGroupId && normalizedMemberId) {
+    const name = await groupNameOf(normalizedGroupId);
     await wordpressFetch(`jet-rel/${REL_GROUP_MEMBER}`, {
       method: "DELETE",
       body: { parent_id: normalizedGroupId, child_id: normalizedMemberId },
     });
+    try {
+      const { notifyMemberRemoved } = await import("@/features/notifications/notify-events");
+      await notifyMemberRemoved(normalizedMemberId, name);
+    } catch { /* best-effort */ }
   }
 }
+
 
 // ─── Group Invites (CCT 160 + Rel 161) ──────────────────────
 // CCT slug: care_group_invite | fields: token, name, expires_at, max_uses, use_count, is_revoked
