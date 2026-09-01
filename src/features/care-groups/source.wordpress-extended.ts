@@ -399,8 +399,10 @@ export async function createGroupInviteWordPress(input: {
       [F_INVITE.TOKEN]: token,
       [F_INVITE.NAME]: input.name || "Invite link",
       [F_INVITE.EXPIRES_AT]: input.expiresAt || "",
-      [F_INVITE.MAX_USES]: Number(input.maxUses || 0),
-      [F_INVITE.USE_COUNT]: 0,
+      // JetEngine REST validates CCT number columns as strings — send them as strings.
+      [F_INVITE.MAX_USES]: String(Number(input.maxUses || 0)),
+      [F_INVITE.USE_COUNT]: "0",
+
       [F_INVITE.IS_REVOKED]: "0",
     },
   });
@@ -426,7 +428,7 @@ export async function updateGroupInviteWordPress(id: string, updates: {
   if (updates.name !== undefined) body[F_INVITE.NAME] = updates.name;
   if (updates.token !== undefined) body[F_INVITE.TOKEN] = updates.token;
   if (updates.expiresAt !== undefined) body[F_INVITE.EXPIRES_AT] = updates.expiresAt || "";
-  if (updates.maxUses !== undefined) body[F_INVITE.MAX_USES] = Number(updates.maxUses || 0);
+  if (updates.maxUses !== undefined) body[F_INVITE.MAX_USES] = String(Number(updates.maxUses || 0));
   if (updates.isRevoked !== undefined) body[F_INVITE.IS_REVOKED] = updates.isRevoked ? "1" : "0";
   await wordpressCCTFetch(T.careGroupInvite.slug, { id, method: "PUT", body });
 }
@@ -501,7 +503,7 @@ export async function joinGroupByCodeWordPress(token: string): Promise<any> {
     wordpressCCTFetch(T.careGroupInvite.slug, {
       id: String(inviteIdNum),
       method: "PUT",
-      body: { [F_INVITE.USE_COUNT]: invite.use_count + 1 },
+      body: { [F_INVITE.USE_COUNT]: String(Number(invite.use_count || 0) + 1) },
     }).catch(() => {});
 
     return { group_id: String(parentGroupId), group_name: groupName, already_member: false };
@@ -550,21 +552,19 @@ export async function fetchCareGroupGalleryWordPress(groupId: string): Promise<a
   } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
-/** Upload a File to WP Media Library and return the media ID. */
+/**
+ * Upload a File to WP Media Library and return the media ID.
+ * Delegates to the shared uploader, which falls back to the privileged
+ * wp-admin-ops path when WordPress refuses direct uploads for the role
+ * (subscribers get 403 rest_cannot_create on wp/v2/media).
+ */
 export async function uploadToWPMedia(file: File): Promise<number> {
-  const { buildWPUrl, buildWPHeaders } = await import("@/lib/wp-url");
-  const { getWPToken } = await import("@/services/wp-auth");
-  const url = buildWPUrl("/wp-json/wp/v2/media");
-  const headers = buildWPHeaders(getWPToken());
-  delete (headers as any)["Content-Type"];
-  headers["Content-Disposition"] = `attachment; filename="${file.name.replace(/"/g, "")}"`;
-  const fd = new FormData();
-  fd.append("file", file);
-  const res = await fetch(url, { method: "POST", headers, body: fd });
-  if (!res.ok) throw new Error(`Media upload failed: ${res.status} ${await res.text()}`);
-  const json = await res.json();
-  return Number(json.id);
+  const { uploadWPMedia } = await import("@/lib/wp-media");
+  const media = await uploadWPMedia(file);
+  if (!media?.id) throw new Error("Media upload failed");
+  return Number(media.id);
 }
+
 
 export async function createCareGroupGalleryItemWordPress(
   groupId: string,

@@ -87,6 +87,13 @@ export function SubgroupCard({ subgroup, members, isAdmin, onDelete, currentUser
       onError: () => toast({ title: Z("发送失败", "Failed to send request"), variant: "destructive" }),
     });
   };
+  const changeRole = (uid: number, role: "owner" | "admin" | "nothing special") => {
+    updateRole.mutate({ subgroupId: subgroup.id, userId: uid, role }, {
+      onSuccess: () => toast({ title: Z("角色已更新", "Role updated") }),
+      onError: (err: any) => toast({ title: Z("更新失败", "Failed to update role"), description: err?.message, variant: "destructive" }),
+    });
+  };
+
 
   const renderRoleIcon = (rec: { is_owner: boolean; is_admin: boolean }) => {
     if (rec.is_owner) return <Crown className="h-2.5 w-2.5 text-warning" />;
@@ -138,13 +145,14 @@ export function SubgroupCard({ subgroup, members, isAdmin, onDelete, currentUser
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-40">
-                      <DropdownMenuItem onClick={() => updateRole.mutate({ subgroupId: subgroup.id, userId: rec.user_id, role: "owner" })}>
+                      <DropdownMenuItem onClick={() => changeRole(rec.user_id, "owner")}>
                         <Crown className="h-3 w-3 mr-2 text-warning" /> {Z("设为群主", "Make owner")}
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => updateRole.mutate({ subgroupId: subgroup.id, userId: rec.user_id, role: "admin" })}>
+                      <DropdownMenuItem onClick={() => changeRole(rec.user_id, "admin")}>
                         <Shield className="h-3 w-3 mr-2 text-primary" /> {Z("设为管理员", "Make admin")}
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => updateRole.mutate({ subgroupId: subgroup.id, userId: rec.user_id, role: "nothing special" })}>
+                      <DropdownMenuItem onClick={() => changeRole(rec.user_id, "nothing special")}>
+
                         <UsersIcon className="h-3 w-3 mr-2" /> {Z("设为成员", "Set as member")}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
