@@ -87,6 +87,13 @@ export function SubgroupCard({ subgroup, members, isAdmin, onDelete, currentUser
       onError: () => toast({ title: Z("发送失败", "Failed to send request"), variant: "destructive" }),
     });
   };
+  const changeRole = (uid: number, role: "owner" | "admin" | "nothing special") => {
+    updateRole.mutate({ subgroupId: subgroup.id, userId: uid, role }, {
+      onSuccess: () => toast({ title: Z("角色已更新", "Role updated") }),
+      onError: (err: any) => toast({ title: Z("更新失败", "Failed to update role"), description: err?.message, variant: "destructive" }),
+    });
+  };
+
 
   const renderRoleIcon = (rec: { is_owner: boolean; is_admin: boolean }) => {
     if (rec.is_owner) return <Crown className="h-2.5 w-2.5 text-warning" />;
