@@ -51,12 +51,28 @@ export async function wordpressFetchRaw(endpoint: string, options: WordPressFetc
 
   let response: Response;
   try {
-    response = await fetch(url, {
-      method,
-      headers,
-      body: body ? JSON.stringify(body) : undefined,
-    });
-
+    if (method === "GET") {
+      const key = `${url}|${token ? "auth" : "guest"}`;
+      const hit = getCache.get(key);
+      const now = Date.now();
+      let inflight: Promise<Response>;
+      if (hit && now - hit.at < GET_TTL_MS) {
+        inflight = hit.promise;
+      } else {
+        inflight = fetch(url, { method, headers }).catch((err) => {
+          getCache.delete(key);
+          throw err;
+        });
+        getCache.set(key, { at: now, promise: inflight });
+      }
+      response = (await inflight).clone();
+    } else {
+      response = await fetch(url, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+      });
+    }
   } catch (err) {
     // Route changes abort in-flight requests (net::ERR_ABORTED → "Failed to
     // fetch"). That is not a backend failure, so tag it and let callers keep
@@ -67,6 +83,7 @@ export async function wordpressFetchRaw(endpoint: string, options: WordPressFetc
     e.isNetworkAbort = true;
     throw e;
   }
+
 
 
   if (!response.ok) {
