@@ -659,7 +659,7 @@ export default function CaregiverProfile() {
                 {caregiver.years_of_experience && (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <CheckCircle className="h-4 w-4 text-primary" />
-                    <span>{caregiver.years_of_experience} years experience</span>
+                    <span>{caregiver.years_of_experience}{isZh ? " 年从业经验" : " years experience"}</span>
                   </div>
                 )}
               </div>
