@@ -377,7 +377,7 @@ export default function SearchResults() {
                               {cg.care_provider_is_background_checked && <Shield className="h-4 w-4 text-primary" />}
                             </div>
                             <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-2">
-                              <span className="flex items-center gap-1"><Star className="h-4 w-4 text-warning fill-warning" /> {cg.rating_average?.toFixed(1) || t("common.new")} ({cg.rating_count || 0})</span>
+                              {cg.rating_average != null && <span className="flex items-center gap-1"><Star className="h-4 w-4 text-warning fill-warning" /> {cg.rating_average.toFixed(1)} ({cg.rating_count || 0})</span>}
                               {cg.location && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {cg.location}</span>}
                               {cg.years_of_experience && <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {cg.years_of_experience} {t("common.yearsExp")}</span>}
                             </div>
