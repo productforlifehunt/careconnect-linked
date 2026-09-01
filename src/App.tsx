@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
+import { useApplyDisplaySettings } from "@/features/settings/display";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { SiteProvider, useSite } from "@/contexts/SiteContext";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -152,6 +153,7 @@ function AppRoutes() {
 
 function RootRouter() {
   const site = useSite();
+  useApplyDisplaySettings();
   // When Notch Note site is selected (via ?__site=notchnote or its own domain),
   // mount the entire app as Notch Note in standalone mode.
   if (site.id === "notchnote") {

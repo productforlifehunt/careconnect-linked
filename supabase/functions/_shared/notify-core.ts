@@ -14,7 +14,6 @@
  *   CCT 186 users_notif_token    push tokens   (a55 endpoint, a56 provider,
  *                                              a58 auth, a59 p256dh, a60 active, a61 app)
  *   Rel 189  user -> token
- *   CCT 258 user_ext_profile_2   a91 push / a92 email / a93 sms  (b55 yes | b56 no)
  *   CCT 151 users_extended_prof  a95 challenged / a96 carecnc general settings JSON
  */
 
@@ -29,7 +28,6 @@ const SETTINGS_FIELD: Record<AppKey, string> = { challenged: "a95", carecnc: "a9
 
 const NOTIFICATION_SLUG = "users_notification";
 const TOKEN_SLUG = "users_notif_token";
-const PROFILE2_SLUG = "user_ext_profile_2";
 const PROFILE1_SLUG = "users_extended_prof";
 const REL_USER_NOTIFICATION = 188;
 const REL_USER_TOKEN = 189;
@@ -37,6 +35,23 @@ const REL_USER_TOKEN = 189;
 const YES = "b55";
 
 /** Notification categories = CCT 185 a55 radio codes. */
+/** Semantic event type → the mute category the user sees in Settings. */
+export const MUTE_CATEGORY: Record<string, string> = {
+  chat: "chat",
+  message: "chat",
+  booking: "booking",
+  location: "location",
+  safe_zone: "location",
+  location_alert: "location",
+  check_in: "check_in",
+  checkin: "check_in",
+  medicine: "medicine",
+  task: "system",
+  job: "system",
+  community: "system",
+  system: "system",
+};
+
 export const TYPE_CODE: Record<string, string> = {
   chat: "b55",
   message: "b55",
@@ -121,22 +136,12 @@ export interface Prefs {
   sms: boolean;
   /** per-category mutes from the general settings blob */
   muted: string[];
+  /** local "do not disturb" window; inbox is never suppressed by it */
+  quiet?: { enabled: boolean; from: string; to: string };
 }
 
 export async function loadPrefs(app: AppKey, userId: string | number, token: string | null): Promise<Prefs> {
   const prefs: Prefs = { push: true, email: true, sms: false, muted: [] };
-  try {
-    const rows = await wp(`jet-cct/${PROFILE2_SLUG}`, token, {
-      params: { cct_author_id: String(userId), _limit: 1 },
-    });
-    const row = Array.isArray(rows) ? rows[0] : null;
-    if (row) {
-      if (row.a91 != null && row.a91 !== "") prefs.push = String(row.a91) === YES;
-      if (row.a92 != null && row.a92 !== "") prefs.email = String(row.a92) === YES;
-      if (row.a93 != null && row.a93 !== "") prefs.sms = String(row.a93) === YES;
-    }
-  } catch { /* missing profile → defaults */ }
-
   try {
     const rows = await wp(`jet-cct/${PROFILE1_SLUG}`, token, {
       params: { cct_author_id: String(userId), _limit: 1 },
@@ -150,6 +155,13 @@ export async function loadPrefs(app: AppKey, userId: string | number, token: str
       if (typeof n.email === "boolean") prefs.email = n.email;
       if (typeof n.sms === "boolean") prefs.sms = n.sms;
       if (Array.isArray(n.muted_types)) prefs.muted = n.muted_types.map(String);
+      if (n.quiet_hours && typeof n.quiet_hours === "object") {
+        prefs.quiet = {
+          enabled: !!n.quiet_hours.enabled,
+          from: String(n.quiet_hours.from ?? "22:00"),
+          to: String(n.quiet_hours.to ?? "07:00"),
+        };
+      }
     }
   } catch { /* malformed blob → defaults */ }
 
@@ -293,6 +305,21 @@ function escapeHtml(s: string): string {
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
 }
 
+const minutes = (hhmm: string) => {
+  const [h, m] = hhmm.split(":").map((n) => Number(n) || 0);
+  return h * 60 + m;
+};
+
+/** True when "now" falls inside the user's quiet window (wraps past midnight). */
+function inQuietHours(quiet: Prefs["quiet"]): boolean {
+  if (!quiet?.enabled) return false;
+  const now = new Date();
+  const cur = now.getUTCHours() * 60 + now.getUTCMinutes();
+  const from = minutes(quiet.from);
+  const to = minutes(quiet.to);
+  return from <= to ? cur >= from && cur < to : cur >= from || cur < to;
+}
+
 /** Dispatch one notification across every channel the recipient allows. */
 export async function dispatch(app: AppKey, req: NotifyRequest, token: string | null): Promise<ChannelResult> {
   const result: ChannelResult = { inbox: "skipped", push: "skipped", email: "skipped", sms: "skipped" };
@@ -304,12 +331,21 @@ export async function dispatch(app: AppKey, req: NotifyRequest, token: string | 
   }
 
   const prefs = await loadPrefs(app, req.user_id, token);
-  if (prefs.muted.includes(req.type)) {
+  const category = MUTE_CATEGORY[req.type] ?? "system";
+  if (prefs.muted.includes(req.type) || prefs.muted.includes(category)) {
     result.reason = "category_muted";
     return result;
   }
 
   const want = { inbox: true, push: true, email: false, sms: false, ...(req.channels ?? {}) };
+
+  // Quiet hours silence the noisy channels only; a wandering alert always rings.
+  const urgent = req.type === "location" || req.type === "safe_zone" || req.type === "location_alert";
+  if (!urgent && inQuietHours(prefs.quiet)) {
+    want.push = false;
+    want.sms = false;
+    result.reason = "quiet_hours";
+  }
 
   if (want.inbox) {
     try {

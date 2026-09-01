@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
@@ -29,6 +30,7 @@ import {
   type PermissionKind,
   type PermissionState,
 } from "@/features/settings/permissions";
+import { applyDisplaySettings } from "@/features/settings/display";
 import { subscribeWebPushAndRegister } from "@/features/notifications/tokens.wordpress";
 
 type Z = (cn: string, en: string) => string;
@@ -78,6 +80,7 @@ export function AppSettingsPanel() {
     mutationFn: (patch: Partial<AppSettings>) => saveAppSettings(patch),
     onSuccess: (next) => {
       qc.setQueryData(["appSettings"], next);
+      applyDisplaySettings(next.display);
       toast({ title: Z("已保存", "Saved") });
     },
     onError: () => toast({ title: Z("没能保存，请再试一次", "Could not save — please try again"), variant: "destructive" }),
@@ -108,6 +111,11 @@ export function AppSettingsPanel() {
     const muted = new Set(local.notifications.muted_types);
     enabled ? muted.delete(key) : muted.add(key);
     save.mutate({ notifications: { ...local.notifications, muted_types: [...muted] } });
+  };
+
+  const setQuiet = (patch: Partial<{ enabled: boolean; from: string; to: string }>) => {
+    const q = { enabled: false, from: "22:00", to: "07:00", ...(local.notifications.quiet_hours ?? {}) };
+    save.mutate({ notifications: { ...local.notifications, quiet_hours: { ...q, ...patch } } });
   };
 
   const ask = async (kind: PermissionKind) => {
@@ -195,6 +203,117 @@ export function AppSettingsPanel() {
               />
             </div>
           ))}
+        </CardContent>
+      </Card>
+
+      <Card className="border-transparent card-elevated">
+        <CardHeader>
+          <CardTitle className="text-base sm:text-lg">{Z("免打扰时间", "Quiet hours")}</CardTitle>
+          <CardDescription className="text-sm">
+            {Z("这段时间里不再响铃、不发短信；消息仍会留在应用里，回来就能看到。紧急走失提醒不受影响。", "During these hours we stop ringing your phone and stop texting. Messages still wait for you inside the app. Urgent safety alerts always come through.")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <Label htmlFor="quiet-on" className="text-sm font-medium">{Z("开启免打扰", "Turn on quiet hours")}</Label>
+            <Switch
+              id="quiet-on"
+              checked={!!local.notifications.quiet_hours?.enabled}
+              onCheckedChange={(v) => setQuiet({ enabled: v })}
+              disabled={save.isPending}
+            />
+          </div>
+          {local.notifications.quiet_hours?.enabled && (
+            <div className="flex items-center gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="quiet-from" className="text-xs text-muted-foreground">{Z("从", "From")}</Label>
+                <Input
+                  id="quiet-from"
+                  type="time"
+                  value={local.notifications.quiet_hours?.from ?? "22:00"}
+                  onChange={(e) => setQuiet({ from: e.target.value })}
+                  className="w-28"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="quiet-to" className="text-xs text-muted-foreground">{Z("到", "Until")}</Label>
+                <Input
+                  id="quiet-to"
+                  type="time"
+                  value={local.notifications.quiet_hours?.to ?? "07:00"}
+                  onChange={(e) => setQuiet({ to: e.target.value })}
+                  className="w-28"
+                />
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="border-transparent card-elevated">
+        <CardHeader>
+          <CardTitle className="text-base sm:text-lg">{Z("看得清楚一点", "Making it easier to read")}</CardTitle>
+          <CardDescription className="text-sm">
+            {Z("这些改动马上生效，只影响你自己的界面。", "These take effect right away and only change what you see.")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">{Z("字的大小", "Text size")}</Label>
+            <div className="flex flex-wrap gap-2">
+              {([
+                ["default", Z("标准", "Standard")],
+                ["large", Z("大", "Large")],
+                ["xlarge", Z("特大", "Extra large")],
+              ] as const).map(([value, label]) => (
+                <Button
+                  key={value}
+                  size="sm"
+                  variant={local.display.text_size === value ? "default" : "outline"}
+                  onClick={() => save.mutate({ display: { ...local.display, text_size: value } })}
+                  disabled={save.isPending}
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">{Z("亮色或暗色", "Light or dark")}</Label>
+            <div className="flex flex-wrap gap-2">
+              {([
+                ["system", Z("跟手机一样", "Match my device")],
+                ["light", Z("亮色", "Light")],
+                ["dark", Z("暗色", "Dark")],
+              ] as const).map(([value, label]) => (
+                <Button
+                  key={value}
+                  size="sm"
+                  variant={local.display.theme === value ? "default" : "outline"}
+                  onClick={() => save.mutate({ display: { ...local.display, theme: value } })}
+                  disabled={save.isPending}
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <Label htmlFor="reduce-motion" className="text-sm font-medium">{Z("减少晃动效果", "Reduce movement")}</Label>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {Z("关掉画面的滑动和淡入淡出，看着更稳。", "Turns off sliding and fading, which can feel steadier.")}
+              </p>
+            </div>
+            <Switch
+              id="reduce-motion"
+              checked={local.display.reduce_motion}
+              onCheckedChange={(v) => save.mutate({ display: { ...local.display, reduce_motion: v } })}
+              disabled={save.isPending}
+            />
+          </div>
         </CardContent>
       </Card>
 

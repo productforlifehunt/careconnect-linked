@@ -311,3 +311,21 @@
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 }
+
+/* Display settings (CCT 151 a95/a96 → display.text_size / display.reduce_motion) */
+@layer base {
+  html.text-size-large {
+    font-size: 112.5%;
+  }
+  html.text-size-xlarge {
+    font-size: 125%;
+  }
+  html.reduce-motion *,
+  html.reduce-motion *::before,
+  html.reduce-motion *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
