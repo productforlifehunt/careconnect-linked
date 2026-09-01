@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Loader2, Plus, Pill, ClipboardCheck, HeartPulse, Lightbulb, Target, FileText,
   Phone, MapPin, FolderOpen, Activity, Trash2, Check, X, ArrowLeft, Clock, SkipForward,
-  Search, UserPlus, IdCard,
+  Search, UserPlus, IdCard, Info,
 } from "lucide-react";
 import {
   useUserCaredOnes, useCreateUserCaredOne, useSearchProfiles,
@@ -27,6 +27,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useSite } from "@/contexts/SiteContext";
 import LocationCard from "@/components/care/LocationCard";
 import { useTranslation } from "react-i18next";
+import { getStoredWPUser } from "@/services/wp-auth";
 
 import { MedicineCard } from "@/components/cared-ones/MedicineCard";
 import { CheckInCard } from "@/components/cared-ones/CheckInCard";
@@ -69,7 +70,18 @@ export default function CaredOnes() {
   const [selectedPerson, setSelectedPerson] = useState<any>(null);
   const [relationship, setRelationship] = useState("");
   const [isPrimary, setIsPrimary] = useState(false);
-  const { data: searchResults } = useSearchProfiles(searchQuery);
+  const { data: searchResultsRaw } = useSearchProfiles(searchQuery);
+  const [detailCaredOne, setDetailCaredOne] = useState<any>(null);
+
+  // A user is never their own cared one — exclude self and anyone already added.
+  const myWpId = String(getStoredWPUser()?.user_id || "");
+  const searchResults = useMemo(() => {
+    const existing = new Set((caredOnes || []).map((c: any) => String(c.user_id || "").replace(/^wp-/, "")));
+    return (searchResultsRaw || []).filter((p: any) => {
+      const pid = String(p.id || "").replace(/^wp-/, "");
+      return pid !== myWpId && !existing.has(pid);
+    });
+  }, [searchResultsRaw, caredOnes, myWpId]);
 
   const selectedId = activeTab || (caredOnes && caredOnes.length > 0 ? caredOnes[0].user_id : null);
   const selectedCaredOne = caredOnes?.find((c: any) => c.user_id === selectedId);
