@@ -283,7 +283,7 @@ export function TasksTab({
                       return (
                         <label key={memberId} className="flex items-center gap-2 text-sm cursor-pointer">
                           <Checkbox checked={form.assigneeIds.includes(memberId)} onCheckedChange={() => toggleAssignee(memberId)} />
-                          <span>{m.display_name || m.profile?.full_name || Z("成员", "Member")}</span>
+                          <span>{m.display_name || Z("未填姓名", "No name")}</span>
                         </label>
                       );
                     })}
@@ -419,7 +419,7 @@ export function TasksTab({
                       })}
                       {Array.isArray(t.assignees) && t.assignees.map((a: any) => {
                         const m = (members || []).find((mm: any) => mm.user_id === a.user_id || `wp-${mm.id}` === a.user_id);
-                        const name = m?.display_name || m?.profile?.full_name || Z("成员", "Member");
+                        const name = m?.display_name || Z("未填姓名", "No name");
                         const respLabel = isCN
                           ? (a.response === "accepted" ? "已接受" : a.response === "rejected" ? "已拒绝" : "待回应")
                           : a.response;
