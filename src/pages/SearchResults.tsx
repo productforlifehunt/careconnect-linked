@@ -14,8 +14,8 @@ import { Label } from "@/components/ui/label";
 import { useCareFacilities, useFacilityReviewSummaries, useProviders } from "@/hooks/use-care-data";
 import type { CareFacility, Profile } from "@/types/care-connector";
 import { useTranslation } from "react-i18next";
-import { getSpecialtyKey } from "@/lib/specialty-i18n";
 import { useServiceTypes } from "@/hooks/use-service-types";
+import { SERVICE_DELIVERY_MODES, careServiceTypeLabel } from "@/lib/care-service-types";
 import { useAuth } from "@/contexts/AuthContext";
 function normalizeList(value: string[] | string | null | undefined) {
   if (Array.isArray(value)) return value.filter(Boolean);
@@ -39,12 +39,8 @@ function getFacilityAddress(facility: CareFacility, isZh: boolean) {
 export default function SearchResults() {
   const { t, i18n } = useTranslation();
   const { isAuthenticated } = useAuth();
-  const { serviceTypeNames: allServiceTypeNames } = useServiceTypes();
-  // Filter out raw kebab-case slug duplicates leaking from the WC taxonomy
-  // (e.g. when both "儿童护理" and "child-care" exist as separate terms).
-  const specialties = allServiceTypeNames
-    .filter(n => !/^[a-z][a-z0-9-]*$/.test(n))
-    .slice(0, 8);
+  // Care service catalogue = CCT 258 a68 (14 dictionary options). No WooCommerce.
+  const { serviceTypes } = useServiceTypes();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
@@ -72,7 +68,6 @@ export default function SearchResults() {
   }, [query, locationFilter]);
 
   const [priceRange, setPriceRange] = useState([0, 100]);
-  const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>(initialQuery ? [initialQuery].filter(q => allServiceTypeNames.includes(q)) : []);
   const [selectedFacilityTypes, setSelectedFacilityTypes] = useState<string[]>([]);
   const [selectedServiceTypes, setSelectedServiceTypes] = useState<string[]>([]);
   const [selectedLocations, setSelectedLocations] = useState<string[]>(initialServiceLocations);
@@ -84,7 +79,6 @@ export default function SearchResults() {
 
   const { data: providers, isLoading: providersLoading } = useProviders({
     query: debouncedQuery || undefined, location: debouncedLocation || undefined,
-    specialties: selectedSpecialties.length > 0 ? selectedSpecialties : undefined,
     minRate: priceRange[0] > 0 ? priceRange[0] : undefined, maxRate: priceRange[1] < 100 ? priceRange[1] : undefined,
     verifiedOnly, minRating: minRating > 0 ? minRating : undefined, sortBy,
     serviceLocations: selectedLocations.length > 0 ? selectedLocations : undefined,
@@ -102,16 +96,13 @@ export default function SearchResults() {
 
   const { data: facilityFacets } = useCareFacilities({ area: facilityArea });
 
-  const toggleSpecialty = (s: string) => setSelectedSpecialties(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
   const toggleFacilityType = (s: string) => setSelectedFacilityTypes(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
   const toggleServiceType = (s: string) => setSelectedServiceTypes(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
   const toggleLocation = (s: string) => setSelectedLocations(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
+  const toggleServiceTypeSlug = (s: string) => setSelectedServiceTypeSlugs(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
 
-  // Caregiver delivery-mode options come from the WC pa_service-location attribute terms.
-  const LOCATION_OPTIONS: { slug: string; en: string; zh: string }[] = [
-    { slug: "in-person", en: "In-Person", zh: "当面" },
-    { slug: "remote", en: "Remote", zh: "远程" },
-  ];
+  // Delivery-mode options = CCT 258 a65 (b55 In person / b56 Remote).
+  const LOCATION_OPTIONS = SERVICE_DELIVERY_MODES;
 
   const facilityTypeOptions = Array.from(new Set((facilityFacets || []).map((item) => item.type).filter(Boolean) as string[]));
   const facilityServiceOptions = Array.from(
@@ -172,11 +163,14 @@ export default function SearchResults() {
           </div>
           <div>
             <Label className="text-sm font-semibold mb-3 block">{t("search.specialty")}</Label>
-            <div className="space-y-2">
-              {specialties.map(s => (
-                <label key={s} className="flex items-center gap-2 cursor-pointer">
-                  <Checkbox checked={selectedSpecialties.includes(s)} onCheckedChange={() => toggleSpecialty(s)} />
-                  <span className="text-sm">{t(getSpecialtyKey(s))}</span>
+            <div className="space-y-2 max-h-72 overflow-auto pr-1">
+              {serviceTypes.map(st => (
+                <label key={st.slug} className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox
+                    checked={selectedServiceTypeSlugs.includes(st.slug)}
+                    onCheckedChange={() => { toggleServiceTypeSlug(st.slug); setCurrentPage(1); }}
+                  />
+                  <span className="text-sm">{st.name}</span>
                 </label>
               ))}
             </div>
@@ -263,7 +257,7 @@ export default function SearchResults() {
         </Sheet>
       </div>
 
-      {!isFacilityMode && (selectedSpecialties.length > 0 || selectedLocations.length > 0) && (
+      {!isFacilityMode && (selectedServiceTypeSlugs.length > 0 || selectedLocations.length > 0) && (
         <div className="flex flex-wrap gap-2 mb-4">
           {selectedLocations.map(slug => {
             const opt = LOCATION_OPTIONS.find(o => o.slug === slug);
@@ -273,10 +267,10 @@ export default function SearchResults() {
               </Badge>
             );
           })}
-          {selectedSpecialties.map(s => (
-            <Badge key={s} variant="secondary" className="gap-1 cursor-pointer" onClick={() => toggleSpecialty(s)}>{t(getSpecialtyKey(s))} <X className="h-3 w-3" /></Badge>
+          {selectedServiceTypeSlugs.map(slug => (
+            <Badge key={slug} variant="secondary" className="gap-1 cursor-pointer" onClick={() => toggleServiceTypeSlug(slug)}>{careServiceTypeLabel(slug, isZh)} <X className="h-3 w-3" /></Badge>
           ))}
-          <Button variant="ghost" size="sm" onClick={() => { setSelectedSpecialties([]); setSelectedLocations([]); }}>{t("common.clearAll")}</Button>
+          <Button variant="ghost" size="sm" onClick={() => { setSelectedServiceTypeSlugs([]); setSelectedLocations([]); }}>{t("common.clearAll")}</Button>
         </div>
       )}
 
@@ -392,7 +386,7 @@ export default function SearchResults() {
                                 const opt = LOCATION_OPTIONS.find(o => o.slug === slug);
                                 return <Badge key={`loc-${slug}`} variant="outline" className="text-xs border-primary/40 text-primary">{opt ? (isZh ? opt.zh : opt.en) : slug}</Badge>;
                               })}
-                              {(cg.specialty || []).map(s => (<Badge key={s} variant="secondary" className="bg-accent text-accent-foreground text-xs">{t(getSpecialtyKey(s))}</Badge>))}
+                              {(cg.service_type_slugs || []).map(slug => (<Badge key={slug} variant="secondary" className="bg-accent text-accent-foreground text-xs">{careServiceTypeLabel(slug, isZh)}</Badge>))}
                             </div>
                           </div>
                           <div className="sm:text-right shrink-0 flex sm:flex-col items-center sm:items-end gap-3">
@@ -416,7 +410,7 @@ export default function SearchResults() {
                 {allResults.length === 0 && (
                   <div className="text-center py-16">
                     <p className="text-lg text-muted-foreground">{isFacilityMode ? (isZh ? "没有符合条件的养老机构。" : "No facilities matched your filters.") : t("search.noMatch")}</p>
-                    <Button variant="outline" className="mt-4" onClick={() => { setQuery(""); setLocationFilter(""); setSelectedSpecialties([]); setSelectedFacilityTypes([]); setSelectedServiceTypes([]); setSelectedLocations([]); setMinRating(0); setPriceRange([0, 100]); setCurrentPage(1); }}>{t("common.clearFilters")}</Button>
+                    <Button variant="outline" className="mt-4" onClick={() => { setQuery(""); setLocationFilter(""); setSelectedServiceTypeSlugs([]); setSelectedFacilityTypes([]); setSelectedServiceTypes([]); setSelectedLocations([]); setMinRating(0); setPriceRange([0, 100]); setCurrentPage(1); }}>{t("common.clearFilters")}</Button>
                   </div>
                 )}
               </div>

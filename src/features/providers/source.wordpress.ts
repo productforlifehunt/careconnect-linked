@@ -5,7 +5,7 @@ import { T } from "@/integrations/wp-schema";
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 import { fetchProviderRatingSummary } from "@/features/reviews/source.wordpress";
 import { careServiceIdsToSlugs, deliveryIdsToSlugs } from "@/lib/care-service-types";
-import { fetchWPUserProfile } from "@/features/shared/wp-users";
+import { fetchWPUserPublicProfile } from "@/features/shared/wp-users";
 
 // Provider fields live on CCT 258 "User's extended profile 2".
 // Discovery (browse / search / filter / price display) reads ONLY from this CCT
@@ -37,7 +37,9 @@ async function mapProviderRow(row: any): Promise<Profile | null> {
     const userId = Number(row.author_id || row.cct_author_id || row.user_id);
     if (!userId) return null;
 
-    const user = await fetchWPUserProfile(userId);
+    // Public browsing must work signed-out, so identity is read through the
+    // guest-safe path (CCT 151 app name column + public WP user record).
+    const user = await fetchWPUserPublicProfile(userId);
     // Name = this app's own column on CCT 151 (a556 / a557).
     const fullName = user.full_name;
 
@@ -54,9 +56,9 @@ async function mapProviderRow(row: any): Promise<Profile | null> {
     return {
       id: `wp-${userId}`,
       user_id: `wp-${userId}`,
-      email: user.email || null,
-      first_name: user.first_name || null,
-      last_name: user.last_name || null,
+      email: null,
+      first_name: null,
+      last_name: null,
       full_name: fullName,
       user_name: user.slug || null,
       avatar_url: user.avatar_url || null,

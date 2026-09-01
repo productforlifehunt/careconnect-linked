@@ -125,3 +125,31 @@ export async function fetchWPUserProfiles(ids: Array<number | string>): Promise<
   const users = await fetchWPUsers(ids);
   return Promise.all(Array.from(users.keys()).map((id) => fetchWPUserProfile(id)));
 }
+
+/**
+ * Guest-safe identity read for public marketplace browsing.
+ *
+ * The admin-ops route needs a logged-in WP session, so anonymous visitors
+ * cannot use it. Public discovery only needs the display name (CCT 151 app
+ * column, joined via relation 152) plus the public user record (slug/avatar).
+ */
+export async function fetchWPUserPublicProfile(id: number | string): Promise<{
+  id: number;
+  slug: string;
+  avatar_url: string | null;
+  full_name: string;
+}> {
+  const numeric = Number(String(id ?? "").replace(/^wp-/, ""));
+  if (!Number.isFinite(numeric) || numeric <= 0) throw new Error(`Invalid WordPress user id: ${id}`);
+  const [user, profile] = await Promise.all([
+    wordpressFetch<any>(`wp/v2/users/${numeric}`),
+    fetchOneToOneChild(R.userProfileRel, numeric, T.userProfile.slug),
+  ]);
+  const profileName = profile?.[appUserNameField()];
+  return {
+    id: numeric,
+    slug: user?.slug || "",
+    avatar_url: user?.avatar_urls?.["96"] || user?.avatar_urls?.["48"] || null,
+    full_name: typeof profileName === "string" ? profileName.trim() : "",
+  };
+}
