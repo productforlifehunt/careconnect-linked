@@ -760,11 +760,11 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
         <div>
           <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
             <MapPin className="h-5 w-5 text-primary" />
-            {caredOneName}'s Location
+            {isZh ? `${caredOneName}的位置` : `${caredOneName}'s Location`}
           </h2>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
             <Badge variant={locationSettings?.is_sharing_enabled ? "default" : "secondary"} className="text-xs">
-              {locationSettings?.is_sharing_enabled ? "📍 Sharing On" : "Sharing Off"}
+              {locationSettings?.is_sharing_enabled ? (isZh ? "📍 已开启共享" : "📍 Sharing On") : (isZh ? "未开启共享" : "Sharing Off")}
             </Badge>
             {lastSeen && (
               <span className="text-xs text-muted-foreground flex items-center gap-1">
