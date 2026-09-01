@@ -11,7 +11,7 @@ import { UserPlus, Mail, Clock, X, Tag, Plus, Shield, Heart, MoreVertical, Trash
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { SubgroupCard } from "../SubgroupCard";
-import { useGroupInvites, useCreateGroupInvite, useUpdateGroupInvite, useDeleteGroupInvite, useSearchProfiles } from "@/hooks/use-care-data";
+import { useGroupInvites, useCreateGroupInvite, useUpdateGroupInvite, useDeleteGroupInvite, useSearchProfiles, useUserCaredOnes } from "@/hooks/use-care-data";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 interface MembersTabProps {
@@ -52,6 +52,7 @@ export function MembersTab({
   const [inviteSearch, setInviteSearch] = useState("");
   const [invitePerson, setInvitePerson] = useState<any>(null);
   const { data: inviteSearchResults } = useSearchProfiles(inviteSearch);
+  const { data: myCaredOnes } = useUserCaredOnes();
 
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
@@ -200,6 +201,39 @@ export function MembersTab({
                 <Mail className="h-4 w-4 mr-1" /> {Z("邀请", "Invite")}
               </Button>
             </div>
+
+            <div className="border-t pt-3">
+              <h4 className="text-sm font-medium text-foreground flex items-center gap-2 mb-2"><Heart className="h-4 w-4" /> {Z("从我的被护理者中邀请", "Invite from my cared ones")}</h4>
+              {(myCaredOnes || []).length === 0 ? (
+                <p className="text-xs text-muted-foreground">{Z("你还没有添加被护理者。", "You have no cared ones yet.")}</p>
+              ) : (
+                <div className="border rounded-lg divide-y max-h-56 overflow-auto">
+                  {(myCaredOnes || []).map((c: any) => {
+                    const person = c.cared_one || {};
+                    const id = String(person.id || c.user_id);
+                    const name = person.full_name || person.first_name || Z("被护理者", "Cared one");
+                    const already = (members || []).some((m: any) => String(m.user_id || m.id || "").replace(/^wp-/, "") === id.replace(/^wp-/, ""));
+                    return (
+                      <div key={id} className="flex items-center gap-3 px-3 py-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-foreground truncate">{name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{person.email || ""}</p>
+                        </div>
+                        <Button size="sm" variant="outline" disabled={already || inviteToGroup.isPending}
+                          onClick={() => inviteToGroup.mutate({ groupId: activeGroupId, userId: id }, {
+                            onSuccess: () => toast({ title: Z("邀请已发送！", "Invitation sent!") }),
+                            onError: (err: any) => toast({ title: Z("邀请失败", "Failed to invite"), description: err.message, variant: "destructive" }),
+                          })}>
+                          {already ? Z("已在群组", "In group") : Z("邀请", "Invite")}
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+
 
 
             <div className="border-t pt-3">

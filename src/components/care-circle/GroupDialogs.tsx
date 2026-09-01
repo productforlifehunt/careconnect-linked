@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Loader2, Search, X, Heart, Trash2, KeyRound } from "lucide-react";
-import { useSearchProfiles, useAddCaredOneToGroup, useUpdateCareGroup, useDeleteCareGroup } from "@/hooks/use-care-data";
+import { useSearchProfiles, useAddCaredOneToGroup, useUpdateCareGroup, useDeleteCareGroup, useUserCaredOnes } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 
@@ -160,26 +160,63 @@ export function AddCaredOneDialog({
   const Z = useZ();
   const [search, setSearch] = useState("");
   const [selectedPerson, setSelectedPerson] = useState<any>(null);
-  const [skipInvitation, setSkipInvitation] = useState(false);
+  const [picked, setPicked] = useState<string[]>([]);
   const { data: searchResults } = useSearchProfiles(search);
+  const { data: myCaredOnes } = useUserCaredOnes();
   const addCaredOne = useAddCaredOneToGroup();
 
-  const handleAdd = () => {
-    if (!selectedPerson || !activeGroupId) return;
-    addCaredOne.mutate({ groupId: activeGroupId, caredOneId: selectedPerson.id }, {
-      onSuccess: () => {
-        onOpenChange(false); setSelectedPerson(null); setSearch(""); setSkipInvitation(false);
-        toast({ title: Z("已将被照护者加入小组！", "Cared one added to group!") });
-      },
-      onError: (err: any) => toast({ title: Z("添加失败", "Failed to add"), description: err.message, variant: "destructive" }),
-    });
+  const reset = () => { setSelectedPerson(null); setSearch(""); setPicked([]); };
+
+  const togglePicked = (id: string) =>
+    setPicked((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
+  const handleAdd = async () => {
+    if (!activeGroupId) return;
+    const ids = [...picked];
+    if (selectedPerson?.id && !ids.includes(selectedPerson.id)) ids.push(selectedPerson.id);
+    if (ids.length === 0) return;
+    try {
+      for (const caredOneId of ids) {
+        await addCaredOne.mutateAsync({ groupId: activeGroupId, caredOneId });
+      }
+      onOpenChange(false); reset();
+      toast({ title: Z("已加入护理群组！", "Added to the care group!") });
+    } catch (err: any) {
+      toast({ title: Z("添加失败", "Failed to add"), description: err?.message, variant: "destructive" });
+    }
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) { setSelectedPerson(null); setSearch(""); setSkipInvitation(false); } }}>
+    <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) reset(); }}>
       <DialogContent>
-        <DialogHeader><DialogTitle>{Z("添加被照护者到小组", "Add Cared One to Group")}</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{Z("添加被护理者到护理群组", "Add Cared Ones to Group")}</DialogTitle></DialogHeader>
         <div className="space-y-4 mt-2">
+          <div>
+            <Label>{Z("我的被护理者", "My cared ones")}</Label>
+            {(myCaredOnes || []).length > 0 ? (
+              <div className="mt-1 border rounded-lg divide-y max-h-48 overflow-y-auto">
+                {(myCaredOnes || []).map((c: any) => {
+                  const person = c.cared_one || {};
+                  const id = String(person.id || c.user_id);
+                  const name = person.full_name || person.first_name || Z("被护理者", "Cared one");
+                  return (
+                    <label key={id} className="flex items-center gap-3 p-3 cursor-pointer hover:bg-accent/50">
+                      <Checkbox checked={picked.includes(id)} onCheckedChange={() => togglePicked(id)} />
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        {person.avatar_url ? <img src={person.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" /> : <span className="text-primary text-xs font-medium">{String(name)[0]}</span>}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{person.email || ""}</p>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground mt-1">{Z("你还没有添加被护理者，可以在下方搜索。", "You have no cared ones yet — search below instead.")}</p>
+            )}
+          </div>
           <div>
             <Label>{Z("按姓名或邮箱搜索", "Search by name or email")}</Label>
             <div className="relative mt-1">
@@ -214,16 +251,9 @@ export function AddCaredOneDialog({
               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelectedPerson(null)}><X className="h-3.5 w-3.5" /></Button>
             </div>
           )}
-          <div className="flex items-start gap-3 p-3 rounded-lg border bg-muted/30">
-            <Checkbox id="skip-inv" checked={skipInvitation} onCheckedChange={(checked) => setSkipInvitation(checked === true)} className="mt-0.5" />
-            <div>
-              <Label htmlFor="skip-inv" className="text-sm font-medium cursor-pointer">{Z("跳过邀请", "Skip invitation")}</Label>
-              <p className="text-xs text-muted-foreground mt-0.5">{Z("适用于无法使用手机的长辈或儿童；勾选后将直接加入为活跃成员。", "Check this for elderly or children who can't operate a phone. They'll be added as active members immediately.")}</p>
-            </div>
-          </div>
-          <Button variant="coral" className="w-full" onClick={handleAdd} disabled={!selectedPerson || addCaredOne.isPending}>
+          <Button variant="coral" className="w-full" onClick={handleAdd} disabled={(picked.length === 0 && !selectedPerson) || addCaredOne.isPending}>
             {addCaredOne.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Heart className="h-4 w-4 mr-2" />}
-            {Z("添加为被照护者", "Add as Cared One")}
+            {Z("添加为被护理者", "Add as Cared One")}
           </Button>
         </div>
       </DialogContent>
