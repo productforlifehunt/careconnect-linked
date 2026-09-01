@@ -235,11 +235,10 @@ export default function SearchResults() {
         <Select value={sortBy} onValueChange={setSortBy}>
           <SelectTrigger className="w-[180px] h-11"><SelectValue placeholder={t("search.sortBy")} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="rating">{t("search.highestRated")}</SelectItem>
+            {isFacilityMode && <SelectItem value="rating">{t("search.highestRated")}</SelectItem>}
             {!isFacilityMode && <SelectItem value="price-low">{t("search.priceLowHigh")}</SelectItem>}
             {!isFacilityMode && <SelectItem value="price-high">{t("search.priceHighLow")}</SelectItem>}
-            {!isFacilityMode && <SelectItem value="experience">{t("search.mostExperienced")}</SelectItem>}
-            <SelectItem value="reviews">{t("search.mostReviews")}</SelectItem>
+            {isFacilityMode && <SelectItem value="reviews">{t("search.mostReviews")}</SelectItem>}
             {isFacilityMode && <SelectItem value="name">{isZh ? "名称" : "Name"}</SelectItem>}
           </SelectContent>
         </Select>
