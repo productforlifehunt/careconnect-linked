@@ -129,51 +129,42 @@ function normalizePolygonPoints(points: any): [number, number][] {
   }).filter(Boolean) as [number, number][];
 }
 
-// ─── Safe Zone mapping (matches new CCT fields) ─────────────
+// ─── Safe Zone mapping (dictionary CCT 214) ─────────────────
 //
-// CCT 214 Safe Zone has NO dedicated name column — the live table only exposes
-// a55, a56, a58..a69 (verified against the backend; a57 does not exist). a58 is
-// "Custom description", so the zone name and its description share it, joined by
-// NAME_DESC_SEP. Never write a57: JetEngine silently drops unknown columns.
-const NAME_DESC_SEP = " — ";
-
-function packNameDesc(name?: string | null, description?: string | null): string {
-  return [name || "", description || ""].filter(Boolean).join(NAME_DESC_SEP);
-}
-
-function unpackNameDesc(raw: any): { name: string | null; description: string | null } {
-  const value = typeof raw === "string" ? raw : "";
-  if (!value) return { name: null, description: null };
-  const idx = value.indexOf(NAME_DESC_SEP);
-  if (idx === -1) return { name: value, description: null };
-  return { name: value.slice(0, idx) || null, description: value.slice(idx + NAME_DESC_SEP.length) || null };
-}
-
-function mapSafeZone(z: any, userId: string): any {
+// CCT 214 has NO name column and no a57. A zone is labelled by its TYPE (a55):
+// b55 Safe, b56 Danger, b57..b63 Custom 1..7, whose names live on the cared
+// one's extended profile (CCT 258 a95..a101). a58 "Custom description" carries
+// the zone's own description only.
+function mapSafeZone(z: any, userId: string, customNames: CustomZoneNames): any {
   const polygonPoints = normalizePolygonPoints(z.a63);
-  const { name, description } = unpackNameDesc(z.a58);
+  const typeCode = String(z.a55 || ZONE_TYPE.SAFE);
   return {
     id: String(z._ID || z.id),
     user_id: userId,
-    name,
-    zone_type: z.a55 === "b56" ? "Danger" : "Safe",
-    shape_type: z.a56 === "b56" ? "Polygon" : (polygonPoints.length >= 3 ? "Polygon" : "Radius"),
+    zone_type: typeCode,
+    zone_type_label: zoneTypeLabel(typeCode, customNames, false),
+    zone_type_label_zh: zoneTypeLabel(typeCode, customNames, true),
+    custom_slot: customSlotOf(typeCode),
+    is_danger: isDangerZone(typeCode),
+    is_safe: isSafeZone(typeCode),
+    shape_type: z.a56 === T.safeZone.opt.SHAPE_TYPE.POLYGON ? "Polygon" : (polygonPoints.length >= 3 ? "Polygon" : "Radius"),
     color: z.a59 || null,
     latitude: parseNumber(z.a60),
     longitude: parseNumber(z.a61),
     radius_meters: parseNumber(z.a62, 100) ?? 100,
     polygon_points: polygonPoints,
-    description,
-    notify_on_enter: z.a64 === "b56",
-    notify_on_exit: z.a65 === "b56",
-    schedule_enabled: z.a66 === "b56",
+    description: typeof z.a58 === "string" && z.a58 ? z.a58 : null,
+    notify_on_enter: z.a64 === T.safeZone.opt.NOTIFY_ON_ENTER.ON,
+    notify_on_exit: z.a65 === T.safeZone.opt.NOTIFY_ON_EXIT.ON,
+    schedule_enabled: z.a66 === T.safeZone.opt.SCHEDULE_ENABLED.ON,
     schedule_start_time: z.a67 || null,
     schedule_end_time: z.a68 || null,
-    is_active: z.a69 !== "b56",
+    is_active: z.a69 !== T.safeZone.opt.IS_ACTIVE.NO,
     created_at: z.cct_created || z.created_at,
     updated_at: z.cct_modified || z.updated_at || z.created_at,
   };
 }
+
 
 
 // ─── Geo math ────────────────────────────────────────────────
