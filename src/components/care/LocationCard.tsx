@@ -182,7 +182,13 @@ function checkZoneBreach(zone: any, lat: number, lng: number): { breached: boole
     distance = haversine(lat, lng, zone.latitude, zone.longitude);
     inside = distance <= (zone.radius_meters || 200);
   }
-  return { breached: zone.zone_type === "danger" ? inside : !inside, distance: Math.round(distance) };
+  const isDanger = isDangerZone(zone.zone_type);
+  const breached = isDanger
+    ? inside
+    : isSafeZone(zone.zone_type)
+      ? !inside
+      : (inside ? !!zone.notify_on_enter : !!zone.notify_on_exit);
+  return { breached, distance: Math.round(distance) };
 }
 
 type Tab = "location" | "requests" | "alerts" | "safezones" | "history";
@@ -190,7 +196,7 @@ type Tab = "location" | "requests" | "alerts" | "safezones" | "history";
 interface Props { caredOneId: string; caredOneName: string; }
 
 const defaultForm = () => ({
-  name: "", zone_type: "safe", category: "home", shape_type: "radius",
+  zone_type: ZONE_TYPE.SAFE as string, shape_type: "radius",
   latitude: "", longitude: "", radius: 200,
   polygon_points: [] as [number, number][],
   corner_radius: [] as number[],
@@ -198,6 +204,7 @@ const defaultForm = () => ({
   schedule_enabled: false, schedule_start_time: "08:00", schedule_end_time: "20:00",
   schedule_days: [] as string[],
 });
+
 
 export default function LocationCard({ caredOneId, caredOneName }: Props) {
   const { toast } = useToast();
