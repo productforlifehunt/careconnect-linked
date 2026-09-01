@@ -54,7 +54,7 @@ export default function JoinGroup() {
       },
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, user, code]);
+  }, [isLoading, isAuthenticated, user, code]);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
