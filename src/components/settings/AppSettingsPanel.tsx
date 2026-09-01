@@ -110,6 +110,11 @@ export function AppSettingsPanel() {
     save.mutate({ notifications: { ...local.notifications, muted_types: [...muted] } });
   };
 
+  const setQuiet = (patch: Partial<{ enabled: boolean; from: string; to: string }>) => {
+    const q = { enabled: false, from: "22:00", to: "07:00", ...(local.notifications.quiet_hours ?? {}) };
+    save.mutate({ notifications: { ...local.notifications, quiet_hours: { ...q, ...patch } } });
+  };
+
   const ask = async (kind: PermissionKind) => {
     setBusy(kind);
     try {
