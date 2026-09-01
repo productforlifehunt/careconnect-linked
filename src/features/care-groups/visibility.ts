@@ -25,7 +25,6 @@ const REL_POST_USERS = R.careGroupPostMentionedUsers;
 const REL_TASK_USERS = R.careTaskVisibleUsers;
 const REL_TASK_SUBGROUPS = R.careTaskPrivateMemberGroups;
 
-
 /**
  * Whole-relation map: `{ parentId: [childId, ...] }`.
  * One request replaces the per-item `children/{id}` calls, which turned every
@@ -65,7 +64,6 @@ export async function fetchMySubgroupIds(): Promise<Set<number>> {
     return new Set(accepted.map((r: any) => Number(r.parent_object_id)).filter(Boolean));
   } catch { return new Set(); }
 }
-
 
 /**
  * Resolve visibility for a list of entities while PRESERVING input order.
@@ -138,25 +136,6 @@ export async function setPostVisibility(postId: string | number, subgroupIds: nu
   ]);
 }
 
-async function legacySetPostVisibility(postId: string | number, subgroupIds: number[], userIds: number[] = []): Promise<void> {
-  const pid = Number(String(postId).replace(/^wp-/, ""));
-  if (!pid) return;
-  await Promise.all([
-    ...subgroupIds.map((sg) =>
-      wordpressFetch(`jet-rel/${REL_POST_SUBGROUPS}`, {
-        method: "POST",
-        body: { parent_id: pid, child_id: sg, context: "child", store_items_type: "update" },
-      }).catch(() => undefined)
-    ),
-    ...userIds.map((uid) =>
-      wordpressFetch(`jet-rel/${REL_POST_USERS}`, {
-        method: "POST",
-        body: { parent_id: pid, child_id: uid, context: "child", store_items_type: "update" },
-      }).catch(() => undefined)
-    ),
-  ]);
-}
-
 /** Set the sub-group / user visibility links for a task (replaces existing). */
 export async function setTaskVisibility(taskId: string | number, subgroupIds: number[], userIds: number[] = []): Promise<void> {
   const tid = Number(String(taskId).replace(/^wp-/, ""));
@@ -167,21 +146,3 @@ export async function setTaskVisibility(taskId: string | number, subgroupIds: nu
   ]);
 }
 
-async function legacySetTaskVisibility(taskId: string | number, subgroupIds: number[], userIds: number[] = []): Promise<void> {
-  const tid = Number(String(taskId).replace(/^wp-/, ""));
-  if (!tid) return;
-  await Promise.all([
-    ...subgroupIds.map((sg) =>
-      wordpressFetch(`jet-rel/${REL_TASK_SUBGROUPS}`, {
-        method: "POST",
-        body: { parent_id: tid, child_id: sg, context: "child", store_items_type: "update" },
-      }).catch(() => undefined)
-    ),
-    ...userIds.map((uid) =>
-      wordpressFetch(`jet-rel/${REL_TASK_USERS}`, {
-        method: "POST",
-        body: { parent_id: tid, child_id: uid, context: "child", store_items_type: "update" },
-      }).catch(() => undefined)
-    ),
-  ]);
-}
