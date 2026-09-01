@@ -7,7 +7,23 @@ export interface WordPressFetchOptions {
   params?: Record<string, string | number | boolean | undefined | null>;
 }
 
+/**
+ * Transport-level read dedupe.
+ *
+ * Sibling widgets on one screen repeatedly ask for the same relation/CCT rows.
+ * Instead of one HTTP round-trip per caller, identical GETs issued within a
+ * short window share a single response (cloned per caller). Any write clears
+ * the cache, so nothing stale is served after a mutation.
+ */
+const GET_TTL_MS = 4000;
+const getCache = new Map<string, { at: number; promise: Promise<Response> }>();
+
+if (typeof window !== "undefined") {
+  window.addEventListener("wp-write", () => getCache.clear());
+}
+
 export async function wordpressFetchRaw(endpoint: string, options: WordPressFetchOptions = {}): Promise<Response> {
+
   const token = getWPToken();
   const { method = "GET", body, params } = options;
 
