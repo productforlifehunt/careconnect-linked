@@ -21,12 +21,12 @@ import {
   ZONE_TYPE,
   ZONE_TYPE_CODES,
   zoneTypeLabel,
-  customSlotOf,
+  isCustomZone,
   isDangerZone,
   isSafeZone,
-  fetchCustomZoneNames,
-  type CustomZoneNames,
+  zoneNameFor,
 } from "@/features/location/zone-types";
+
 
 // NOTE: There is no `safe_zone_alerts` or `location_requests` CCT in the live
 // WordPress backend. Alerts are delivered exclusively via the `notification`
