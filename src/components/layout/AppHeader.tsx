@@ -322,12 +322,16 @@ export function AppHeader() {
             <Button variant="ghost" onClick={() => navigate("/auth")} className="hidden sm:inline-flex">
               {t("common.signIn")}
             </Button>
-            <Button variant="coral" onClick={() => navigate("/auth?mode=signup")}>
+            <Button variant="coral" className="shrink-0" onClick={() => navigate("/auth?mode=signup")}>
               {t("common.getStarted")}
             </Button>
           </div>
         )}
+
+        {/* Mobile menu — last item on the right, standard mobile convention */}
+        {mobileMenu}
       </div>
+
     </header>
   );
 }
