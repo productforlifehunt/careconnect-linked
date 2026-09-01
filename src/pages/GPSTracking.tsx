@@ -125,7 +125,7 @@ export default function GPSTracking() {
     return {
       id: ls.id,
       userId: ls.user_id,
-      name: ls.profile?.full_name || ls.user_name || t("common.unknown"),
+      name: ls.profile?.full_name || t("common.unknown"),
       avatar_url: ls.profile?.avatar_url || ls.user_avatar,
       lastLocation: ls.address_text || `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
       coordinates: { lat, lng },

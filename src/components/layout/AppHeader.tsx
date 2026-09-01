@@ -79,7 +79,7 @@ export function AppHeader() {
   const isNavActive = (url: string) =>
     url.includes("?") ? currentUrl === url : location.pathname === url;
 
-  const displayName = user?.full_name || user?.first_name || user?.email || t("common.anonymous");
+  const displayName = user?.full_name || user?.email || t("common.anonymous");
   const initials = displayName.charAt(0).toUpperCase();
 
   const handleLogout = async () => {

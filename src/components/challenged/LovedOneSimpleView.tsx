@@ -26,7 +26,7 @@ export function LovedOneSimpleView() {
   const caredOneId = profile?.id || "";
   const { data: medicines } = useMedicines(caredOneId);
   const { data: emergencyContacts } = useEmergencyContacts(caredOneId);
-  const displayName = user?.full_name || user?.first_name || "there";
+  const displayName = user?.full_name || "there";
 
   const primaryContact = emergencyContacts?.find((c: any) => c.is_primary) || emergencyContacts?.[0];
 

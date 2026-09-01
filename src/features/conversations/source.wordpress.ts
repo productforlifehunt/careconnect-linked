@@ -3,7 +3,7 @@ import { decodeRel72Meta } from "@/features/care-groups/rel-meta";
 import { T, R } from "@/integrations/wp-schema";
 import { appScopeBody, appScopeParams, filterAppScope } from "@/features/shared/app-scope";
 import { fetchRelChildrenMap } from "@/features/shared/rel-batch";
-import { lookupUserNames } from "@/services/woocommerce-api";
+import { fetchWPUserPublicProfile } from "@/features/shared/wp-users";
 
 /**
  * Chat lives in CCTs shared by every app on the backend, so reads filter and
