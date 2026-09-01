@@ -11,7 +11,7 @@ import { UserPlus, Mail, Clock, X, Tag, Plus, Shield, Heart, Crown, MoreVertical
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { SubgroupCard } from "../SubgroupCard";
-import { useGroupInvites, useCreateGroupInvite, useUpdateGroupInvite, useDeleteGroupInvite } from "@/hooks/use-care-data";
+import { useGroupInvites, useCreateGroupInvite, useUpdateGroupInvite, useDeleteGroupInvite, useSearchProfiles } from "@/hooks/use-care-data";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 interface MembersTabProps {
@@ -49,7 +49,10 @@ export function MembersTab({
   const { i18n } = useTranslation();
   const isCN = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (isCN ? cn : en);
-  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteSearch, setInviteSearch] = useState("");
+  const [invitePerson, setInvitePerson] = useState<any>(null);
+  const { data: inviteSearchResults } = useSearchProfiles(inviteSearch);
+
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryDesc, setNewCategoryDesc] = useState("");
@@ -67,13 +70,16 @@ export function MembersTab({
   const [linkExpires, setLinkExpires] = useState("");
   const [linkMaxUses, setLinkMaxUses] = useState("0");
 
+  // Dictionary: membership is Relation 72 (care_group → users), so an invite must
+  // point at an existing user record. Email-only invites are not representable.
   const handleInvite = () => {
-    if (!inviteEmail.trim() || !activeGroupId) return;
-    inviteToGroup.mutate({ groupId: activeGroupId, userId: inviteEmail }, {
-      onSuccess: () => { setInviteEmail(""); toast({ title: Z("邀请已发送！", "Invitation sent!") }); },
+    if (!invitePerson || !activeGroupId) return;
+    inviteToGroup.mutate({ groupId: activeGroupId, userId: invitePerson.id }, {
+      onSuccess: () => { setInvitePerson(null); setInviteSearch(""); toast({ title: Z("邀请已发送！", "Invitation sent!") }); },
       onError: (err: any) => toast({ title: Z("邀请失败", "Failed to invite"), description: err.message, variant: "destructive" }),
     });
   };
+
 
   const handleAddCategory = () => {
     if (!newCategoryName.trim() || !activeGroupId) return;
@@ -166,10 +172,34 @@ export function MembersTab({
         <Card className="border-transparent card-elevated mb-4">
           <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><UserPlus className="h-4 w-4" /> {Z("邀请成员", "Invite Members")}</CardTitle></CardHeader>
           <CardContent className="pt-2 space-y-4">
-            <div className="flex gap-2">
-              <Input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder={Z("输入邮箱进行邀请……", "Enter email address to invite...")} className="flex-1" />
-              <Button variant="coral" onClick={handleInvite} disabled={!inviteEmail.trim() || inviteToGroup.isPending}><Mail className="h-4 w-4 mr-1" /> {Z("邀请", "Invite")}</Button>
+            <div className="space-y-2">
+              <Input
+                value={invitePerson ? (invitePerson.full_name || invitePerson.email || "") : inviteSearch}
+                onChange={e => { setInviteSearch(e.target.value); setInvitePerson(null); }}
+                placeholder={Z("搜索已注册用户（至少2个字符）……", "Search registered users (at least 2 characters)...")}
+                className="flex-1"
+              />
+              {inviteSearch.length >= 2 && !invitePerson && (
+                <div className="border rounded-lg divide-y max-h-56 overflow-auto">
+                  {(inviteSearchResults || []).length > 0 ? (inviteSearchResults || []).map((p: any) => (
+                    <button
+                      key={p.id}
+                      className="w-full text-left px-3 py-2 hover:bg-muted/60"
+                      onClick={() => { setInvitePerson(p); }}
+                    >
+                      <span className="text-sm font-medium text-foreground">{p.full_name || Z("未填姓名", "No name")}</span>
+                      {p.email && <span className="block text-xs text-muted-foreground">{p.email}</span>}
+                    </button>
+                  )) : (
+                    <p className="px-3 py-2 text-xs text-muted-foreground">{Z("未找到用户", "No users found")}</p>
+                  )}
+                </div>
+              )}
+              <Button variant="coral" onClick={handleInvite} disabled={!invitePerson || inviteToGroup.isPending} className="w-full">
+                <Mail className="h-4 w-4 mr-1" /> {Z("邀请", "Invite")}
+              </Button>
             </div>
+
 
             <div className="border-t pt-3">
               <div className="flex items-center justify-between mb-2">
