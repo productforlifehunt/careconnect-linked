@@ -400,8 +400,17 @@ export default function GPSTracking() {
   // ─── Safe zone CRUD (100% in-app, never the WP admin) ──────
   const reloadZones = async () => {
     if (!userId) return;
-    try { setZones(await fetchSafeZonesWordPress(String(userId))); } catch {}
+    try {
+      const [rows, names] = await Promise.all([
+        fetchSafeZonesWordPress(String(userId)),
+        fetchCustomZoneNames(String(userId)),
+      ]);
+      setZones(rows);
+      setCustomNames(names);
+    } catch {}
   };
+
+  const zoneLabel = (code: string) => zoneTypeLabel(code, customNames, isCN);
 
   const openNewZone = () => {
     const center = leafletMap.current?.getCenter();
@@ -410,14 +419,17 @@ export default function GPSTracking() {
       latitude: center ? center.lat.toFixed(6) : "",
       longitude: center ? center.lng.toFixed(6) : "",
     });
+    setCustomNameDraft("");
     setZoneDialogOpen(true);
   };
 
   const openEditZone = (zone: any) => {
+    const slot = customSlotOf(String(zone.zone_type));
+    setCustomNameDraft(slot ? (customNames[slot] || "") : "");
     setZoneForm({
       id: String(zone.id),
-      name: zone.name || "",
-      zone_type: String(zone.zone_type).toLowerCase() === "danger" ? "Danger" : "Safe",
+      zone_type: String(zone.zone_type),
+
       latitude: zone.latitude != null ? String(zone.latitude) : "",
       longitude: zone.longitude != null ? String(zone.longitude) : "",
       radius_meters: String(zone.radius_meters ?? 200),
