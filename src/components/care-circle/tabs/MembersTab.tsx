@@ -365,8 +365,9 @@ export function MembersTab({
                       <p className="text-sm font-medium text-foreground">{m.display_name || m.profile?.full_name || Z("成员", "Member")}</p>
                       <p className="text-xs text-muted-foreground">{m.profile?.email || ""}</p>
                       <div className="flex gap-1 mt-1 flex-wrap">
-                        {m.is_owner && <Badge variant="default" className="text-[10px] h-4 gap-0.5"><Crown className="h-2.5 w-2.5" /> {Z("拥有者", "Owner")}</Badge>}
+                        {m.is_owner && <Badge variant="default" className="text-[10px] h-4">{Z("拥有者", "Owner")}</Badge>}
                         {m.is_admin && !m.is_owner && <Badge variant="secondary" className="text-[10px] h-4 gap-0.5"><Shield className="h-2.5 w-2.5" /> {Z("管理员", "Admin")}</Badge>}
+
                         {m.is_cared_one && <Badge className="text-[10px] h-4 bg-accent text-accent-foreground"><Heart className="h-2.5 w-2.5 mr-0.5" /> {Z("被护理者", "Cared One")}</Badge>}
                         {!m.is_owner && !m.is_admin && !m.is_cared_one && <Badge variant="outline" className="text-[10px] h-4">{Z("成员", "Member")}</Badge>}
                       </div>
