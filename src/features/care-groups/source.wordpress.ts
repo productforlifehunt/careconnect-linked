@@ -4,6 +4,7 @@ import { getStoredWPUser } from "@/services/wp-auth";
 import { encodeRel72Meta, decodeRel72Meta } from "./rel-meta";
 import { T, R } from "@/integrations/wp-schema";
 import { fetchWPUserProfile } from "@/features/shared/wp-users";
+import { dedupeRead } from "@/features/shared/rel-batch";
 import { fetchMyAppUserName } from "@/features/profile/app-user-name";
 
 // Live JetEngine relations (verified from prd-to-wp-mapping.md)
@@ -26,7 +27,10 @@ export async function fetchCareGroupsWordPress(): Promise<CareGroup[]> {
   const userId = stored?.user_id ? Number(stored.user_id) : null;
   if (!userId) return [];
 
-  const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/parents/${userId}`);
+  const rels = await dedupeRead(
+    `rel-parents:${REL_GROUP_MEMBER}:${userId}`,
+    () => wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/parents/${userId}`),
+  );
   if (!Array.isArray(rels) || rels.length === 0) return [];
 
   const myGroupIds = Array.from(new Set(
@@ -38,7 +42,9 @@ export async function fetchCareGroupsWordPress(): Promise<CareGroup[]> {
   if (myGroupIds.length === 0) return [];
 
   const groups = await Promise.all(
-    myGroupIds.map((id) => wordpressCCTFetch<any>(T.careGroup.slug, { id }))
+    myGroupIds.map((id) =>
+      dedupeRead(`cct-row:${T.careGroup.slug}:${id}`, () => wordpressCCTFetch<any>(T.careGroup.slug, { id })),
+    ),
   );
 
   return groups.filter(Boolean).map((g: any) => ({
@@ -60,7 +66,10 @@ export async function fetchCareGroupMembersWordPress(groupId: string): Promise<a
   try {
     const normalizedGroupId = normalizeWpObjectId(groupId);
     if (!normalizedGroupId) return [];
-    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${normalizedGroupId}`);
+    const rels = await dedupeRead(
+      `rel-children:${REL_GROUP_MEMBER}:${normalizedGroupId}`,
+      () => wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${normalizedGroupId}`),
+    );
     if (!Array.isArray(rels) || rels.length === 0) return [];
     const userIds = rels.map((r: any) => Number(r.child_object_id)).filter(Boolean);
     const members = await Promise.all(
