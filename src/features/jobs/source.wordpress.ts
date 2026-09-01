@@ -15,6 +15,7 @@
  */
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
+import { fetchWPUserPublicProfile } from "@/features/shared/wp-users";
 import { R, T } from "@/integrations/wp-schema";
 
 const JOB = T.careJob;
