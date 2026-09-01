@@ -377,7 +377,6 @@ export default function SearchResults() {
                             <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-2">
                               {cg.rating_average != null && <span className="flex items-center gap-1"><Star className="h-4 w-4 text-warning fill-warning" /> {cg.rating_average.toFixed(1)} ({cg.rating_count || 0})</span>}
                               {cg.location && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {cg.location}</span>}
-                              {cg.years_of_experience && <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {cg.years_of_experience} {t("common.yearsExp")}</span>}
                             </div>
                             {cg.bio && <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{cg.bio}</p>}
                             <div className="flex flex-wrap gap-1.5">

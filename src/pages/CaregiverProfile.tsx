@@ -15,7 +15,7 @@ import { useAddToCart } from "@/hooks/use-cart";
 import { getProviderCalendarBookingConflictMessage as getProviderBookingConflictMessage, getAvailabilityConflictMessage } from "@/features/calendar/booking-availability";
 import { createCareBookingProduct } from "@/services/care-booking-product";
 import { clearCart } from "@/services/woocommerce-api";
-import { CARE_SERVICE_TYPES } from "@/lib/care-service-types";
+import { CARE_SERVICE_TYPES, careServiceTypeLabel, deliveryModeLabel } from "@/lib/care-service-types";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
