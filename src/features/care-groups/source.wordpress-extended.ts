@@ -181,6 +181,33 @@ export async function deleteCareGroupWordPress(id: string): Promise<void> {
 
 // ─── Invitations ────────────────────────────────────────────
 // Dictionary source of truth: invitation state lives on Rel 72 meta, not a separate CCT.
+
+/** Group display name (best-effort, only used for notification copy). */
+async function groupNameOf(groupId: string | number): Promise<string> {
+  try {
+    const g = await wordpressCCTFetch<any>(T.careGroup.slug, { id: String(groupId) });
+    return g?.[T.careGroup.f.NAME] || g?.name || "your care group";
+  } catch {
+    return "your care group";
+  }
+}
+
+/** Owner/admin user ids of a group, from Rel 72 meta (notification routing). */
+async function groupAdminIds(groupId: number): Promise<number[]> {
+  try {
+    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${groupId}`);
+    return (Array.isArray(rels) ? rels : [])
+      .filter((r: any) => {
+        const m = decodeRel72Meta(r?.meta);
+        return m.memberTypes.includes("owner") || m.memberTypes.includes("admin");
+      })
+      .map((r: any) => Number(r.child_object_id))
+      .filter((n) => Number.isFinite(n) && n > 0);
+  } catch {
+    return [];
+  }
+}
+
 export async function inviteToGroupWordPress(groupId: string, userIdOrEmail: string, _role?: string): Promise<void> {
   const isEmail = userIdOrEmail.includes("@");
   const normalizedGroupId = normalizeWpObjectId(groupId);
@@ -196,10 +223,19 @@ export async function inviteToGroupWordPress(groupId: string, userIdOrEmail: str
         meta: memberMeta({ invitationStatus: "pending" }),
       },
     });
+    // The invited user must learn about it — non-blocking.
+    try {
+      const [{ notifyGroupInvite }, name] = await Promise.all([
+        import("@/features/notifications/notify-events"),
+        groupNameOf(normalizedGroupId),
+      ]);
+      await notifyGroupInvite(childId, name);
+    } catch { /* best-effort */ }
     return;
   }
   throw new Error(isEmail ? "Dictionary requires group invitations through Users relation. Select an existing user, not email-only invite." : "Invalid user");
 }
+
 
 export async function fetchGroupInvitationsWordPress(groupId: string): Promise<any[]> {
   try {
