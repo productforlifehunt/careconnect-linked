@@ -52,6 +52,21 @@ export default function SafetyPlaces() {
   const [form, setForm] = useState({ ...emptyForm });
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  // CCT 258 a95..a101 — the seven custom zone-type names of this cared one.
+  const [customNames, setCustomNames] = useState<CustomZoneNames>({});
+
+  useEffect(() => {
+    if (!selfId) return;
+    let cancelled = false;
+    fetchCustomZoneNames(selfId)
+      .then((names) => { if (!cancelled) setCustomNames(names); })
+      .catch((err: any) => toast({
+        title: Z("无法读取自定义区域名称", "Could not load custom zone names"),
+        description: err?.message,
+        variant: "destructive",
+      }));
+    return () => { cancelled = true; };
+  }, [selfId]);
 
   const openNew = () => {
     setForm({ ...emptyForm });
@@ -59,10 +74,13 @@ export default function SafetyPlaces() {
   };
 
   const openEdit = (z: any) => {
+    const code = String(z.zone_type || ZONE_TYPE.SAFE);
+    const slot = customSlotOf(code);
     setForm({
       id: String(z.id),
-      name: z.name || "",
-      zone_type: String(z.zone_type).toLowerCase() === "danger" ? "Danger" : "Safe",
+      zone_type: code,
+      custom_name: slot ? (customNames[slot] || "") : "",
+      description: z.description || "",
       latitude: z.latitude != null ? String(z.latitude) : "",
       longitude: z.longitude != null ? String(z.longitude) : "",
       radius_meters: String(z.radius_meters ?? 200),
@@ -88,7 +106,9 @@ export default function SafetyPlaces() {
     const lat = Number(form.latitude);
     const lng = Number(form.longitude);
     const radius = Number(form.radius_meters);
-    if (!form.name.trim()) return toast({ title: Z("请填写地点名称", "Place name is required"), variant: "destructive" });
+    const slot = customSlotOf(form.zone_type);
+    if (slot && !form.custom_name.trim())
+      return toast({ title: Z("请填写自定义区域名称", "Custom zone name is required"), variant: "destructive" });
     if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180)
       return toast({ title: Z("坐标无效", "Invalid coordinates"), variant: "destructive" });
     if (!Number.isFinite(radius) || radius < 20)
@@ -96,34 +116,28 @@ export default function SafetyPlaces() {
 
     setSaving(true);
     try {
+      // A custom type's name belongs to the cared one's extended profile
+      // (CCT 258), not to the zone row — one name per slot, shared by zones.
+      if (slot && form.custom_name.trim() !== (customNames[slot] || "")) {
+        await setCustomZoneName(selfId, slot, form.custom_name.trim());
+        setCustomNames((prev) => ({ ...prev, [slot]: form.custom_name.trim() }));
+      }
+      const payload = {
+        zone_type: form.zone_type,
+        description: form.description.trim(),
+        shape_type: "Radius",
+        latitude: lat,
+        longitude: lng,
+        radius_meters: radius,
+        notify_on_enter: form.notify_on_enter,
+        notify_on_exit: form.notify_on_exit,
+        is_active: form.is_active,
+        receiver_ids: form.receiver_ids,
+      };
       if (form.id) {
-        await updateSafeZoneWordPress(form.id, {
-          name: form.name.trim(),
-          zone_type: form.zone_type,
-          shape_type: "Radius",
-          latitude: lat,
-          longitude: lng,
-          radius_meters: radius,
-          notify_on_enter: form.notify_on_enter,
-          notify_on_exit: form.notify_on_exit,
-          is_active: form.is_active,
-          user_id: String(selfId),
-          receiver_ids: form.receiver_ids,
-        });
+        await updateSafeZoneWordPress(form.id, { ...payload, user_id: String(selfId) });
       } else {
-        await createSafeZoneWordPress({
-          user_id: String(selfId),
-          name: form.name.trim(),
-          zone_type: form.zone_type,
-          shape_type: "Radius",
-          latitude: lat,
-          longitude: lng,
-          radius_meters: radius,
-          notify_on_enter: form.notify_on_enter,
-          notify_on_exit: form.notify_on_exit,
-          is_active: form.is_active,
-          receiver_ids: form.receiver_ids,
-        });
+        await createSafeZoneWordPress({ ...payload, user_id: String(selfId) });
       }
       await refreshZones();
       setOpen(false);
@@ -133,6 +147,7 @@ export default function SafetyPlaces() {
     } finally {
       setSaving(false);
     }
+
   };
 
   const remove = async (id: string) => {
