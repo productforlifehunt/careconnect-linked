@@ -67,13 +67,16 @@ export function MembersTab({
   const [linkExpires, setLinkExpires] = useState("");
   const [linkMaxUses, setLinkMaxUses] = useState("0");
 
+  // Dictionary: membership is Relation 72 (care_group → users), so an invite must
+  // point at an existing user record. Email-only invites are not representable.
   const handleInvite = () => {
-    if (!inviteEmail.trim() || !activeGroupId) return;
-    inviteToGroup.mutate({ groupId: activeGroupId, userId: inviteEmail }, {
-      onSuccess: () => { setInviteEmail(""); toast({ title: Z("邀请已发送！", "Invitation sent!") }); },
+    if (!invitePerson || !activeGroupId) return;
+    inviteToGroup.mutate({ groupId: activeGroupId, userId: invitePerson.id }, {
+      onSuccess: () => { setInvitePerson(null); setInviteSearch(""); toast({ title: Z("邀请已发送！", "Invitation sent!") }); },
       onError: (err: any) => toast({ title: Z("邀请失败", "Failed to invite"), description: err.message, variant: "destructive" }),
     });
   };
+
 
   const handleAddCategory = () => {
     if (!newCategoryName.trim() || !activeGroupId) return;
