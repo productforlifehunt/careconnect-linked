@@ -6,9 +6,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Search, MapPin, Star, Shield, Clock, Heart,
-  Users, Stethoscope, Baby, Moon, ArrowRight, CheckCircle, Loader2
+  Users, ArrowRight, CheckCircle, Loader2
 } from "lucide-react";
-import { useProviders, useServiceCategories } from "@/hooks/use-care-data";
+import { useProviders } from "@/hooks/use-care-data";
 import { useSite } from "@/contexts/SiteContext";
 import { useTranslation } from "react-i18next";
 import heroImage from "@/assets/hero-image.jpg";
@@ -17,7 +17,6 @@ import heroImageCarecnc from "@/assets/hero-image-carecnc.jpg";
 import yichangIcon from "@/assets/yichang-icon.png";
 import huchangIcon from "@/assets/huchang-icon.png";
 import type { Profile } from "@/types/care-connector";
-import { getSpecialtyKey } from "@/lib/specialty-i18n";
 import { searchCnCities } from "@/data/china-cities";
 
 const Index = () => {
@@ -29,7 +28,6 @@ const Index = () => {
   const [locationQuery, setLocationQuery] = useState("");
 
   const { data: topProviders, isLoading } = useProviders({ sortBy: "rating" });
-  const { data: categories } = useServiceCategories();
   const featuredProviders = (topProviders || []).slice(0, 3);
 
   const handleSearch = () => {
@@ -39,16 +37,8 @@ const Index = () => {
     navigate(`/search?${params.toString()}`);
   };
 
-  const categoryIcons: Record<string, React.ReactNode> = {
-    "Elder Care": <Heart className="h-6 w-6" />,
-    "Child Care": <Baby className="h-6 w-6" />,
-    "Special Needs": <Users className="h-6 w-6" />,
-    "Nursing Care": <Stethoscope className="h-6 w-6" />,
-    "Companionship": <Users className="h-6 w-6" />,
-    "Respite Care": <Moon className="h-6 w-6" />,
-  };
 
-  const displayCategories = (categories || []).slice(0, 6).map(c => ({ name: c.name, count: 0 }));
+
 
   return (
     <div className="min-h-full">
@@ -133,23 +123,8 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Categories */}
-      <section className="max-w-6xl mx-auto px-4 py-10 sm:py-16">
-        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground mb-1.5 tracking-tight">{t("home.browseByCategory")}</h2>
-        <p className="text-sm sm:text-base text-muted-foreground mb-6 sm:mb-8">{t("home.findRightCare")}</p>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {displayCategories.map((cat) => (
-            <Card key={cat.name} className="card-elevated cursor-pointer group border-transparent" onClick={() => navigate(`/search?q=${encodeURIComponent(cat.name)}`)}>
-              <CardContent className="p-6 text-center">
-                <div className="mx-auto w-12 h-12 rounded-xl bg-accent flex items-center justify-center mb-3 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                  {categoryIcons[cat.name] || <Heart className="h-6 w-6" />}
-                </div>
-                <h3 className="font-semibold text-sm text-foreground">{t(getSpecialtyKey(cat.name))}</h3>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
+
+
 
       {/* Featured Caregivers */}
       <section className="bg-muted/50 py-10 sm:py-16">
