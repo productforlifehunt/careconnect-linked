@@ -97,9 +97,22 @@ export default function Dashboard() {
   const upcomingBookings = (bookings || [])
     .filter((b: any) => ["confirmed", "pending"].includes(b.status))
     .slice(0, 4);
-  const pendingTasks = (tasks || []).filter((t: any) => t.status !== "completed").slice(0, 5);
+  // Only the signed-in user's own work: tasks they created, tasks assigned to
+  // them, or tasks attached to one of their cared ones. Never every task in the app.
+  const myUserId = String(user?.user_id ?? user?.id ?? "").replace(/^wp-/, "");
+  const myCaredOneIds = new Set((caredOnes || []).map((c: any) => String(c.user_id).replace(/^wp-/, "")));
+  const myTasks = (tasks || []).filter((tk: any) => {
+    const creator = String(tk.created_by ?? "").replace(/^wp-/, "");
+    if (myUserId && creator === myUserId) return true;
+    const assignees: string[] = (tk.assigned_to_ids || []).map((a: any) => String(a).replace(/^wp-/, ""));
+    if (myUserId && assignees.includes(myUserId)) return true;
+    const co = String(tk.cared_one_id ?? "").replace(/^wp-/, "");
+    return !!co && myCaredOneIds.has(co);
+  });
+  const pendingTasks = myTasks.filter((t: any) => t.status !== "completed").slice(0, 5);
   const firstCaredOne = caredOnes?.[0];
   const recentPosts = (communityPosts || []).slice(0, 3);
+
 
   const statusColors: Record<string, string> = {
     confirmed: "bg-success text-success-foreground",
