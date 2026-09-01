@@ -138,13 +138,14 @@ export function SubgroupCard({ subgroup, members, isAdmin, onDelete, currentUser
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-40">
-                      <DropdownMenuItem onClick={() => updateRole.mutate({ subgroupId: subgroup.id, userId: rec.user_id, role: "owner" })}>
+                      <DropdownMenuItem onClick={() => changeRole(rec.user_id, "owner")}>
                         <Crown className="h-3 w-3 mr-2 text-warning" /> {Z("设为群主", "Make owner")}
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => updateRole.mutate({ subgroupId: subgroup.id, userId: rec.user_id, role: "admin" })}>
+                      <DropdownMenuItem onClick={() => changeRole(rec.user_id, "admin")}>
                         <Shield className="h-3 w-3 mr-2 text-primary" /> {Z("设为管理员", "Make admin")}
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => updateRole.mutate({ subgroupId: subgroup.id, userId: rec.user_id, role: "nothing special" })}>
+                      <DropdownMenuItem onClick={() => changeRole(rec.user_id, "nothing special")}>
+
                         <UsersIcon className="h-3 w-3 mr-2" /> {Z("设为成员", "Set as member")}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
