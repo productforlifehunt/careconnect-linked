@@ -162,7 +162,7 @@ export default function SearchResults() {
             </div>
           </div>
           <div>
-            <Label className="text-sm font-semibold mb-3 block">{t("search.specialty")}</Label>
+            <Label className="text-sm font-semibold mb-3 block">{isZh ? "服务类型" : "Service type"}</Label>
             <div className="space-y-2 max-h-72 overflow-auto pr-1">
               {serviceTypes.map(st => (
                 <label key={st.slug} className="flex items-center gap-2 cursor-pointer">
