@@ -788,7 +788,10 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
           </div>
           {breaches.map((z: any) => (
             <p key={z.id} className="text-xs text-destructive/80">
-              {z.zone_type === "danger" ? `⚠ ${caredOneName} is inside danger zone "${z.name}"` : `⚠ ${caredOneName} is outside safe zone "${z.name}"`}
+              {isDangerZone(z.zone_type)
+                ? (isZh ? `⚠ ${caredOneName} 位于危险区域「${zoneLabel(z.zone_type)}」内` : `⚠ ${caredOneName} is inside danger zone "${zoneLabel(z.zone_type)}"`)
+                : (isZh ? `⚠ ${caredOneName} 已离开区域「${zoneLabel(z.zone_type)}」` : `⚠ ${caredOneName} is outside zone "${zoneLabel(z.zone_type)}"`)}
+
             </p>
           ))}
         </div>
