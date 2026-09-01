@@ -332,7 +332,7 @@ export default function Dashboard() {
         ) : (
           <DailyTimeline
             caredOneId={firstCaredOne.user_id}
-            caredOneName={firstCaredOne.cared_one?.full_name || firstCaredOne.cared_one?.first_name || firstCaredOne.cared_one?.email || ""}
+            caredOneName={firstCaredOne.cared_one?.full_name  || ""}
           />
         )}
       </section>
