@@ -19,14 +19,13 @@ import {
   createSafeZoneWordPress, updateSafeZoneWordPress, deleteSafeZoneWordPress,
 } from "@/features/location/source.wordpress-extended";
 import {
-  ZONE_TYPE, ZONE_TYPE_CODES, zoneTypeLabel, customSlotOf, isDangerZone,
-  fetchCustomZoneNames, setCustomZoneName, type CustomZoneNames,
+  ZONE_TYPE, ZONE_TYPE_CODES, zoneTypeLabel, isCustomZone, isDangerZone,
 } from "@/features/location/zone-types";
 import { useSafetyCircle } from "./useSafetyCircle";
 
 const emptyForm = {
   id: "",
-  // CCT 214 a55 — the zone's type IS its label; there is no per-zone name.
+  // CCT 214 a55 zone type + a57 zone name (custom zones carry their own name).
   zone_type: ZONE_TYPE.SAFE as string,
   custom_name: "",
   description: "",
@@ -52,22 +51,6 @@ export default function SafetyPlaces() {
   const [form, setForm] = useState({ ...emptyForm });
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  // CCT 258 a95..a101 — the seven custom zone-type names of this cared one.
-  const [customNames, setCustomNames] = useState<CustomZoneNames>({});
-
-  useEffect(() => {
-    if (!selfId) return;
-    let cancelled = false;
-    fetchCustomZoneNames(selfId)
-      .then((names) => { if (!cancelled) setCustomNames(names); })
-      .catch((err: any) => toast({
-        title: Z("无法读取自定义区域名称", "Could not load custom zone names"),
-        description: err?.message,
-        variant: "destructive",
-      }));
-    return () => { cancelled = true; };
-  }, [selfId]);
-
   const openNew = () => {
     setForm({ ...emptyForm });
     setOpen(true);
@@ -75,11 +58,10 @@ export default function SafetyPlaces() {
 
   const openEdit = (z: any) => {
     const code = String(z.zone_type || ZONE_TYPE.SAFE);
-    const slot = customSlotOf(code);
     setForm({
       id: String(z.id),
       zone_type: code,
-      custom_name: slot ? (customNames[slot] || "") : "",
+      custom_name: isCustomZone(code) ? String(z.zone_name || "") : "",
       description: z.description || "",
       latitude: z.latitude != null ? String(z.latitude) : "",
       longitude: z.longitude != null ? String(z.longitude) : "",
@@ -106,8 +88,8 @@ export default function SafetyPlaces() {
     const lat = Number(form.latitude);
     const lng = Number(form.longitude);
     const radius = Number(form.radius_meters);
-    const slot = customSlotOf(form.zone_type);
-    if (slot && !form.custom_name.trim())
+    const isCustom = isCustomZone(form.zone_type);
+    if (isCustom && !form.custom_name.trim())
       return toast({ title: Z("请填写自定义区域名称", "Custom zone name is required"), variant: "destructive" });
     if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180)
       return toast({ title: Z("坐标无效", "Invalid coordinates"), variant: "destructive" });
@@ -116,14 +98,10 @@ export default function SafetyPlaces() {
 
     setSaving(true);
     try {
-      // A custom type's name belongs to the cared one's extended profile
-      // (CCT 258), not to the zone row — one name per slot, shared by zones.
-      if (slot && form.custom_name.trim() !== (customNames[slot] || "")) {
-        await setCustomZoneName(selfId, slot, form.custom_name.trim());
-        setCustomNames((prev) => ({ ...prev, [slot]: form.custom_name.trim() }));
-      }
       const payload = {
         zone_type: form.zone_type,
+        // a57 — the zone's own name; Safe/Danger get their fixed label.
+        zone_name: isCustom ? form.custom_name.trim() : "",
         description: form.description.trim(),
         shape_type: "Radius",
         latitude: lat,
@@ -191,7 +169,7 @@ export default function SafetyPlaces() {
         <ul className="space-y-2">
           {zones.map((z: any, idx: number) => {
             const isDanger = isDangerZone(String(z.zone_type));
-            const label = zoneTypeLabel(String(z.zone_type), customNames, isCN);
+            const label = zoneTypeLabel(String(z.zone_type), z.zone_name, isCN);
             return (
               <li key={`${z.id || "zone"}-${idx}`} className="flex items-start gap-3 rounded-xl border p-3">
                 <span
@@ -262,7 +240,7 @@ export default function SafetyPlaces() {
                 onValueChange={(v) => setForm((f) => ({
                   ...f,
                   zone_type: v,
-                  custom_name: customSlotOf(v) ? (customNames[customSlotOf(v)] || "") : "",
+                  custom_name: isCustomZone(v) ? f.custom_name : "",
                 }))}
               >
                 <SelectTrigger id="place-type">
@@ -271,16 +249,16 @@ export default function SafetyPlaces() {
                 <SelectContent>
                   {ZONE_TYPE_CODES.map((code) => (
                     <SelectItem key={code} value={code}>
-                      {zoneTypeLabel(code, customNames, isCN)}
+                      {zoneTypeLabel(code, null, isCN)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            {customSlotOf(form.zone_type) > 0 && (
+            {isCustomZone(form.zone_type) && (
               <div>
                 <Label htmlFor="place-custom-name">
-                  {Z(`自定义区域 ${customSlotOf(form.zone_type)} 名称`, `Custom zone ${customSlotOf(form.zone_type)} name`)}
+                  {Z("自定义区域名称", "Custom zone name")}
                 </Label>
                 <Input
                   id="place-custom-name"
