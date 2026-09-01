@@ -23,9 +23,8 @@ import {
   useCaredOneLocationSettings, useShareMyLocation,
 } from "@/hooks/use-care-data";
 import {
-  ZONE_TYPE, ZONE_TYPE_CODES, customSlotOf, isDangerZone, isSafeZone,
-  zoneTypeLabel, fetchCustomZoneNames, setCustomZoneName,
-  type CustomZoneNames,
+  ZONE_TYPE, ZONE_TYPE_CODES, isCustomZone, isDangerZone, isSafeZone,
+  zoneTypeLabel,
 } from "@/features/location/zone-types";
 
 import { useToast } from "@/hooks/use-toast";
@@ -142,16 +141,13 @@ function centroid(points: [number, number][]): [number, number] {
 }
 
 // ─── Zone helpers ────────────────────────────────────────────
-// Zone colours are derived from the dictionary type (a55), not from a
-// non-dictionary "category". Safe = green, Danger = red, Custom 1..7 get
-// stable distinct hues so the map stays readable.
-const CUSTOM_ZONE_COLORS = ["#3B82F6", "#8B5CF6", "#F59E0B", "#0EA5E9", "#EC4899", "#14B8A6", "#A16207"];
-
+// Zone colours follow the dictionary type (a55): Safe = green, Danger = red,
+// Custom = blue unless the zone stores its own colour in a59.
 function zoneColor(code: string): string {
   if (isDangerZone(code)) return "#EF4444";
   if (isSafeZone(code)) return "#10B981";
-  const slot = customSlotOf(code);
-  return slot ? CUSTOM_ZONE_COLORS[(slot - 1) % CUSTOM_ZONE_COLORS.length] : "#6B7280";
+  if (isCustomZone(code)) return "#3B82F6";
+  return "#6B7280";
 }
 
 function zoneIcon(code: string) {
@@ -249,17 +245,11 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
   const [zoneForm, setZoneForm] = useState(defaultForm());
   const [pickingOnMap, setPickingOnMap] = useState(false);
 
-  // ─── Custom zone-type names (CCT 258 a95..a101, per cared one)
-  const [customNames, setCustomNames] = useState<CustomZoneNames>({});
+  // ─── Custom zone name lives on the zone row itself (CCT 214 a57)
   const [customNameDraft, setCustomNameDraft] = useState("");
-  const reloadCustomNames = useCallback(async () => {
-    if (!caredOneId) return;
-    setCustomNames(await fetchCustomZoneNames(caredOneId));
-  }, [caredOneId]);
-  useEffect(() => { void reloadCustomNames(); }, [reloadCustomNames]);
   const zoneLabel = useCallback(
-    (code: string) => zoneTypeLabel(code, customNames, !!isZh),
-    [customNames, isZh],
+    (code: string, zoneName?: string | null) => zoneTypeLabel(code, zoneName ?? null, !!isZh),
+    [isZh],
   );
 
 
@@ -325,12 +315,12 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
         const smoothed = zone.corner_radius?.some((r: number) => r > 0)
           ? chaikinPerVertex(pts, zone.corner_radius) : pts;
         const poly = Lx.polygon(smoothed, { color, fillColor: color, fillOpacity: 0.15, weight: 2, dashArray: isDanger ? "6,4" : undefined })
-          .addTo(map).bindPopup(`<b>${zoneLabel(zone.zone_type)}</b>${zone.description ? `<br>${zone.description}` : ""}`);
+          .addTo(map).bindPopup(`<b>${zoneLabel(zone.zone_type, zone.zone_name)}</b>${zone.description ? `<br>${zone.description}` : ""}`);
         mapLayersRef.current.push(poly);
         pts.forEach((pt: [number, number]) => bounds.push(pt));
       } else {
         const c = Lx.circle([zLat, zLng], { radius: zone.radius_meters || 200, color, fillColor: color, fillOpacity: 0.15, weight: 2, dashArray: isDanger ? "6,4" : undefined })
-          .addTo(map).bindPopup(`<b>${zoneLabel(zone.zone_type)}</b><br>${zone.radius_meters || 200}m`);
+          .addTo(map).bindPopup(`<b>${zoneLabel(zone.zone_type, zone.zone_name)}</b><br>${zone.radius_meters || 200}m`);
         mapLayersRef.current.push(c);
         bounds.push([zLat, zLng]);
       }
@@ -616,8 +606,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
       setZoneForm(defaultForm());
       setDrawnPoints([]); setCornerRadii([]); setDrawMode("idle");
     }
-    const slot = customSlotOf(zone?.zone_type || ZONE_TYPE.SAFE);
-    setCustomNameDraft(slot ? (customNames[slot] || "") : "");
+    setCustomNameDraft(isCustomZone(zone?.zone_type || ZONE_TYPE.SAFE) ? String(zone?.zone_name || "") : "");
     setSelectedVertex(null);
     setShowZoneForm(true);
     setActiveTab("safezones");
@@ -637,21 +626,16 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
       if (isNaN(lat) || isNaN(lng)) { toast({ title: isZh ? "请输入有效坐标，或使用「在地图上选点」。" : "Valid coordinates required. Use 'Pick on Map'.", variant: "destructive" }); return; }
     }
 
-    // Custom zone-type names live on the cared one's extended profile (CCT 258),
-    // one name per custom slot — not on the zone row.
-    const slot = customSlotOf(zoneForm.zone_type);
-    if (slot && customNameDraft.trim() && customNameDraft.trim() !== (customNames[slot] || "")) {
-      try {
-        await setCustomZoneName(caredOneId, slot, customNameDraft.trim());
-        await reloadCustomNames();
-      } catch (e: any) {
-        toast({ title: isZh ? "自定义区域名称保存失败" : "Failed to save custom zone name", description: e.message, variant: "destructive" });
-        return;
-      }
+    // A custom zone carries its own name in a57; Safe/Danger use the fixed label.
+    const isCustom = isCustomZone(zoneForm.zone_type);
+    if (isCustom && !customNameDraft.trim()) {
+      toast({ title: isZh ? "请填写自定义区域名称" : "Custom zone name is required", variant: "destructive" });
+      return;
     }
 
     const payload = {
       user_id: caredOneId, zone_type: zoneForm.zone_type,
+      zone_name: isCustom ? customNameDraft.trim() : "",
       shape_type: isPolygon ? "polygon" : "radius",
       color: zoneColor(zoneForm.zone_type), latitude: lat, longitude: lng,
       radius_meters: isPolygon ? 0 : zoneForm.radius,
@@ -794,8 +778,8 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
           {breaches.map((z: any) => (
             <p key={z.id} className="text-xs text-destructive/80">
               {isDangerZone(z.zone_type)
-                ? (isZh ? `⚠ ${caredOneName} 位于危险区域「${zoneLabel(z.zone_type)}」内` : `⚠ ${caredOneName} is inside danger zone "${zoneLabel(z.zone_type)}"`)
-                : (isZh ? `⚠ ${caredOneName} 已离开区域「${zoneLabel(z.zone_type)}」` : `⚠ ${caredOneName} is outside zone "${zoneLabel(z.zone_type)}"`)}
+                ? (isZh ? `⚠ ${caredOneName} 位于危险区域「${zoneLabel(z.zone_type, z.zone_name)}」内` : `⚠ ${caredOneName} is inside danger zone "${zoneLabel(z.zone_type, z.zone_name)}"`)
+                : (isZh ? `⚠ ${caredOneName} 已离开区域「${zoneLabel(z.zone_type, z.zone_name)}」` : `⚠ ${caredOneName} is outside zone "${zoneLabel(z.zone_type, z.zone_name)}"`)}
 
             </p>
           ))}
@@ -897,7 +881,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                       return (
                         <div key={zone.id} className="flex items-center gap-2 text-xs">
                           <div className="w-2 h-2 rounded-full" style={{ background: zoneColor(zone.zone_type) }} />
-                          <span className="font-medium">{zoneLabel(zone.zone_type)}</span>
+                          <span className="font-medium">{zoneLabel(zone.zone_type, zone.zone_name)}</span>
                           <span className={breach.breached ? "text-destructive font-semibold" : "text-success"}>
                             {isDangerZone(zone.zone_type)
                               ? (breach.breached
@@ -1065,7 +1049,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className={`text-sm font-semibold ${cfg.color}`}>{cfg.label}</span>
                             {alert.safe_zone?.zone_type && (
-                              <Badge variant="secondary" className="text-[10px]">{zoneLabel(alert.safe_zone.zone_type)}</Badge>
+                              <Badge variant="secondary" className="text-[10px]">{zoneLabel(alert.safe_zone.zone_type, alert.safe_zone.zone_name)}</Badge>
                             )}
 
                           </div>
@@ -1117,9 +1101,8 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                       return (
                         <button key={code}
                           onClick={() => {
-                            const slot = customSlotOf(code);
                             setZoneForm(p => ({ ...p, zone_type: code }));
-                            setCustomNameDraft(slot ? (customNames[slot] || "") : "");
+                            if (!isCustomZone(code)) setCustomNameDraft("");
                           }}
                           className="px-2 py-1.5 rounded-lg border text-xs font-medium truncate transition-colors"
                           style={{
@@ -1141,20 +1124,13 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                   </p>
                 )}
 
-                {customSlotOf(zoneForm.zone_type) > 0 && (
+                {isCustomZone(zoneForm.zone_type) && (
                   <div>
                     <Label className="text-xs">
-                      {isZh
-                        ? `自定义区域 ${customSlotOf(zoneForm.zone_type)} 名称`
-                        : `Custom zone ${customSlotOf(zoneForm.zone_type)} name`}
+                      {isZh ? "自定义区域名称" : "Custom zone name"}
                     </Label>
                     <Input value={customNameDraft} onChange={e => setCustomNameDraft(e.target.value)}
                       placeholder={isZh ? "例如：日托中心" : 'e.g. "Day centre"'} className="mt-1" />
-                    <p className="text-[11px] text-muted-foreground mt-1">
-                      {isZh
-                        ? "该名称对此被照护者的所有同类型区域生效。"
-                        : "This name applies to every zone of this type for this person."}
-                    </p>
                   </div>
                 )}
 
@@ -1360,7 +1336,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
             {(zones || []).map((zone: any) => {
               const color = zoneColor(zone.zone_type);
               const Icon = zoneIcon(zone.zone_type);
-              const label = zoneLabel(zone.zone_type);
+              const label = zoneLabel(zone.zone_type, zone.zone_name);
 
               const active = isZoneActive(zone);
               const breachInfo = currentLocation

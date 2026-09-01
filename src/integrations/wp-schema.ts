@@ -289,7 +289,6 @@ export const WP = {
         "USER_FINISHED_OR_SKIPPED_ONBOARDING_FOR_AFRESH": "a70",  // Radio
         "USER_FINISHED_OR_SKIPPED_ONBOARDING_FOR_ADRY": "a71",  // Radio
         "USER_FINISHED_OR_SKIPPED_ONBOARDING_FOR_BENOTCH": "a72",  // Radio
-        "NOTIFICATION_ENABLED": "a73",  // ?
         "USER_S_BASELINE_PORN_WATCH_TIME_PER_DAY": "a74",  // Number
         "USER_S_BASELINE_PORN_WATCHING_CATEGORY": "a75",  // Text
         "USER_S_BASELINE_PORN_WATCHING_DETAIL": "a76",  // Text
@@ -363,16 +362,6 @@ export const WP = {
         "CARE_PROVIDER_IS_A_NON_SMOKER": "a88",  // Radio
         "CARE_PROVIDER_IS_EXPERIENCED_WITH": "a89",  // Checkbox
         "CARED_ONE_S_AI_SYSTEM_PROMPT": "a90",  // Text
-        "USER_ENABLED_PUSH_NOTIFICATION": "a91",  // Radio
-        "USER_ENABLED_EMAIL_NOTIFICATION": "a92",  // Radio
-        "USER_ENABLED_SMS_NOTIFICATION": "a93",  // Radio
-        "CARED_ONE_S_CUSTOM_ZONE_1_NAME": "a95",  // Text
-        "CARED_ONE_S_CUSTOM_ZONE_2_NAME": "a96",  // Text
-        "CARED_ONE_S_CUSTOM_ZONE_3_NAME": "a97",  // Text
-        "CARED_ONE_S_CUSTOM_ZONE_4_NAME": "a98",  // Text
-        "CARED_ONE_S_CUSTOM_ZONE_5_NAME": "a99",  // Text
-        "CARED_ONE_S_CUSTOM_ZONE_6_NAME": "a100",  // Text
-        "CARED_ONE_S_CUSTOM_ZONE_7_NAME": "a101",  // Text
         "CARED_ONE_S_LOW_BATTERY_LEVEL_TO_NOTIFY": "a102",  // Number
         "CARED_ONE_S_TIME_NOT_REPORTING_TO_NOTIFY": "a103",  // Number
         "CARED_ONE_S_CONDITION_TYPE": "a104",  // Checkbox
@@ -391,9 +380,6 @@ export const WP = {
         "CARE_PROVIDES_HAS_OWN_TRANSPORTATION": { "YES": "b55", "NO": "b56" },
         "CARE_PROVIDER_IS_A_NON_SMOKER": { "YES": "b55", "NO": "b56" },
         "CARE_PROVIDER_IS_EXPERIENCED_WITH": { "NEWBORN_UP_TO_12_MONTHS": "b55", "TODDLER_1_3_YEARS": "b56", "EARLY_SCHOOL_AGE_4_6_YEARS": "b57", "PRIMARY_SCHOOL_AGE_7_12_YEARS": "b58", "TEENAGER_12_YEARS": "b59", "TWINS_MULTIPLES": "b60", "SPECIAL_NEEDS_CHILDREN": "b61" },
-        "USER_ENABLED_PUSH_NOTIFICATION": { "YES": "b55", "NO": "b56" },
-        "USER_ENABLED_EMAIL_NOTIFICATION": { "YES": "b55", "NO": "b56" },
-        "USER_ENABLED_SMS_NOTIFICATION": { "YES": "b55", "NO": "b56" },
         "CARED_ONE_S_CONDITION_TYPE": { "SUBSTANCE_USE": "b55", "SUBSTANCE_USE_DISORDER": "b56", "BRAIN_CANCER": "b57", "BREAST_CANCER": "b58", "COLORECTAL_CANCER": "b59", "ENDOMETRIAL_UTERINE": "b60", "KIDNEY_BLADDER_CANCER": "b61", "LEUKEMIA": "b62", "LIVER_CANCER": "b63", "LUNG_CANCER": "b64", "LYMPHOMA": "b65", "MYELOMA_CANCER": "b66", "NEUROBLASTOMA": "b67", "ORAL_CANCER": "b68", "OSTEOSARCOMA": "b69", "OTHER_CANCER": "b70", "OVARIAN_CANCER": "b71", "PANCREATIC_CANCER": "b72", "PROSTATE_CANCER": "b73", "SKIN_MELANOMA_CANCER": "b74", "STOMACH_ESOPHAGEAL_CANCER": "b75", "THYROID_CANCER": "b76", "ANEURYSM": "b77", "ARTERY_DISEASE": "b78", "CARDIOVASCULAR_STROKE": "b79", "CONGENITAL_HEART_DISEASE": "b80", "HEART_ATTACK": "b81", "HEART_FAILURE": "b82", "HEART_SURGERY": "b83", "OTHER_CARDIOVASCULAR_STROKE": "b84", "STROKE": "b85", "CONGENITAL_IMMUNE_DISORDER": "b86", "COVID_19": "b87", "CYSTIC_FIBROSIS": "b89", "HEART_DEFECT": "b90", "HIV_AIDS": "b91", "LUPUS": "b92", "OTHER_CONGENITAL_IMMUNE_DISORDER": "b93", "ADOPTION": "b94", "COMPLICATIONS": "b95", "HIGH_RISK_PREGNANCY": "b96", "INFANT_CHILDBIRTH": "b97", "OTHER_INFANT_CHILDBIRTH": "b98", "PREMATURE_BIRTH": "b99", "BRAIN_INJURY": "b100", "BROKEN_BONES_INTERNAL_INJURY": "b101", "BURN": "b102", "INJURY": "b103", "MOTOR_VEHICLE_INJURY": "b104", "OTHER_INJURY": "b105", "SPINAL_CORD_INJURY": "b106", "WAR_INJURY": "b107", "ALS_AMYOTROPHIC_LATERAL_SCLEROSIS": "b108", "BRAIN_DAMAGE": "b110", "BRAIN_TUMOR_NON_CANCER": "b111", "CEREBRAL_PALSY": "b112", "DEMENTIA": "b113", "EPILEPSY_SEIZURE_DISORDERS": "b114", "MENTAL_ILLNESS": "b115", "MULTIPLE_SCLEROSIS": "b116", "NEUROLOGICAL_CONDITION": "b117", "OTHER_NEUROLOGICAL_CONDITION": "b118", "OTHER_CONDITION": "b120", "PREFER_NOT_TO_SAY": "b121", "BONE_MARROW_TRANSPLANT": "b122", "ORGAN_TRANSPLANT": "b123", "OTHER_SURGERY_TRANSPLANTATION": "b124", "SURGERY": "b125", "SURGERY_TRANSPLANTATION": "b126", "CROHNS_COLITIS_IBS": "b88", "ALZHEIMERS": "b109", "PARKINSONS": "b119" },
       },
     },
@@ -468,6 +454,7 @@ export const WP = {
       name: "User's apple health or google health log event",
       f: {
         "APPLE_HEALTH_OR_GOOGLE_HEALTH_LOG_TYPE_SLUG": "a55",  // Text
+        "LOG_EVENT_TYPE": "a561",  // Radio
         "APPLE_HEALTH_OR_GOOGLE_HEALTH_LOG_TYPE_VALUE": "a56",  // Textarea
         "START_TIME": "a57",  // Datetime
         "END_TIME": "a58",  // Datetime
@@ -478,6 +465,7 @@ export const WP = {
       },
       opt: {
         "SOURCE": { "APPLE_HEALTH": "b55", "GOOGLE_HEALTH": "b56" },
+        "RECORDING_DEVICE": { "FLEXIBILITY": "b56", "COOLDOWN": "b57", "WALKING": "b58", "RUNNING": "b59", "WHEELCHAIRWALKPACE": "b60", "WHEELCHAIRRUNPACE": "b61", "CYCLING": "b62", "HANDCYCLING": "b63", "CORETRAINING": "b64", "ELLIPTICAL": "b65", "FUNCTIONALSTRENGTHTRAINING": "b66", "TRADITIONALSTRENGTHTRAINING": "b67", "CROSSTRAINING": "b68", "MIXEDCARDIO": "b69", "HIGHINTENSITYINTERVALTRAINING": "b70", "JUMPROPE": "b71", "STAIRCLIMBING": "b72", "STAIRS": "b73", "STEPTRAINING": "b74", "FITNESSGAMING": "b75", "DIETARYPANTOTHENICACID": "b76", "DIETARYPHOSPHORUS": "b77", "DIETARYPOTASSIUM": "b78", "DIETARYPROTEIN": "b79", "DIETARYRIBOFLAVIN": "b80", "DIETARYSELENIUM": "b81", "DIETARYSODIUM": "b82", "DIETARYSUGAR": "b83", "DIETARYTHIAMIN": "b84", "DIETARYVITAMINA": "b85", "DIETARYVITAMINB12": "b86", "DIETARYVITAMINB6": "b87", "DIETARYVITAMINC": "b88", "DIETARYVITAMIND": "b89", "DIETARYVITAMINE": "b90", "DIETARYVITAMINK": "b91", "DIETARYWATER": "b92", "DIETARYZINC": "b93" },
       },
     },
     /** 161. User’s other log event */
@@ -646,28 +634,27 @@ export const WP = {
         "DESCRIPTION": "a56",  // Textarea
         "START_AT": "a57",  // Datetime
         "END_AT": "a58",  // Datetime
-        "ALL_DAY": "a59",  // Checkbox
-        "EVENT_TYPE": "a60",  // Text
+        "ALL_DAY": "a59",  // Radio
+        "CUSTOM_EVENT_TYPE": "a60",  // Radio
         "LOCATION": "a61",  // Text
         "TIMEZONE": "a62",  // Text
-        "STATUS": "a63",  // Select
-        "PRIORITY": "a64",  // Select
+        "STATUS": "a63",  // Radio
+        "PRIORITY": "a64",  // Number
         "COLOR": "a65",  // Colorpicker
-        "RRULE": "a66",  // Text
-        "RRULE_UNTIL": "a67",  // Datetime
+        "RRULE": "a66",  // Textarea
         "EXDATES": "a68",  // Textarea
         "RDATES": "a69",  // Textarea
         "RECURRENCE_ID": "a70",  // Text
-        "SHOW_AS": "a71",  // Select
-        "VISIBILITY": "a72",  // Select
+        "SHOW_AS": "a71",  // Radio
+        "VISIBILITY": "a72",  // Radio
         "REMINDERS": "a73",  // Textarea
         "IS_AVAILABILITY": "a74",  // Radio
         "AVAILABILITY_NOTE": "a75",  // Text
         "RSVP_REQUIRED": "a76",  // Radio
         "ALLOW_COMMENTS": "a77",  // Radio
-        "EXTERNAL_SOURCE": "a78",  // Select
+        "EXTERNAL_SOURCE": "a78",  // Radio
         "ICAL_UID": "a79",  // Text
-        "SEQUENCE": "a80",  // Text
+        "SEQUENCE": "a80",  // Number
         "ETAG": "a81",  // Text
         "GOOGLE_EVENT_ID": "a82",  // Text
         "MEETING_URL": "a83",  // Text
@@ -681,9 +668,10 @@ export const WP = {
         "APP": "a91",  // Radio
       },
       opt: {
+        "ALL_DAY": { "YES": "b55", "NO": "b56" },
+        "CUSTOM_EVENT_TYPE": { "MEDICINE_SCHEDULE": "b55", "HEALTH_CHECKIN": "b56", "HABIT": "b57", "TODO": "b58" },
         "STATUS": { "CONFIRMED": "b55", "TENTATIVE": "b56", "CANCELLED": "b57" },
-        "PRIORITY": { "NORMAL": "b55", "LOW": "b56", "HIGH": "b57", "URGENT": "b58" },
-        "SHOW_AS": { "BUSY": "b55", "FREE": "b56", "TENTATIVE": "b57", "OOF": "b58" },
+        "SHOW_AS": { "BUSY": "b55", "FREE": "b56", "TENTATIVE": "b57", "UNAVAILABLE": "b58" },
         "VISIBILITY": { "DEFAULT": "b55", "PUBLIC": "b56", "PRIVATE": "b57", "CONFIDENTIAL": "b58" },
         "IS_AVAILABILITY": { "YES": "b55", "NO": "b56" },
         "RSVP_REQUIRED": { "YES": "b55", "NO": "b56" },
@@ -828,7 +816,7 @@ export const WP = {
       slug: "care_group_post",
       name: "The related not too special posts of one care group",
       f: {
-        "TYPE": "a55",  // Checkbox
+        "TYPE": "a55",  // Radio
         "TITLE": "a56",  // Text
         "CONTENT": "a57",  // Text
         "IS_PINNED": "a58",  // Radio
@@ -1039,20 +1027,22 @@ export const WP = {
       f: {
         "LATITUDE": "a55",  // Text
         "LONGITUDE": "a56",  // Text
-        "ACCURACY_METERS": "a57",  // Text
-        "ALTITUDE_METERS": "a58",  // Text
-        "HEADING_DEGREES": "a59",  // Text
-        "SPEED": "a60",  // Text
-        "IS_MOVING": "a61",  // Text
-        "MOVING_TYPE": "a62",  // Text
-        "PLATFORM": "a63",  // Text
-        "BATTERY_LEVEL": "a64",  // Text
-        "PHONE_IS_CHARING": "a65",  // Text
+        "ACCURACY_METERS": "a57",  // Number
+        "ALTITUDE_METERS": "a58",  // Number
+        "HEADING_DEGREES": "a59",  // Number
+        "SPEED": "a60",  // Number
+        "MOVING_TYPE": "a62",  // Radio
+        "PLATFORM": "a63",  // Radio
+        "BATTERY_LEVEL": "a64",  // Number
+        "PHONE_IS_CHARING": "a65",  // Radio
         "ADDRESS_TEXT": "a66",  // Text
         "CAPTURED_AT": "a67",  // Datetime
         "IS_SO_MUCH_OF_AN_EMERGENCY_THAT_WE_DON_T_BOTHER_TO_ASK_FOR_THE_CARED_ONE_S_PERMISSION": "a68",  // Radio
       },
       opt: {
+        "MOVING_TYPE": { "STATIONARY": "b55", "WALKING": "b56", "RUNNING": "b57", "CYCLING": "b58", "AUTOMOTIVE": "b59", "UNKNOWN": "b60" },
+        "PLATFORM": { "IOS": "b55", "ANDROID": "b56", "WEB": "b57" },
+        "PHONE_IS_CHARING": { "YES": "b55", "NO": "b56" },
         "IS_SO_MUCH_OF_AN_EMERGENCY_THAT_WE_DON_T_BOTHER_TO_ASK_FOR_THE_CARED_ONE_S_PERMISSION": { "YES": "b55", "NO": "b56" },
       },
     },
@@ -1064,6 +1054,7 @@ export const WP = {
       f: {
         "ZONE_TYPE": "a55",  // Radio
         "SHAPE_TYPE": "a56",  // Radio
+        "ZONE_NAME": "a57",  // Text
         "CUSTOM_DESCRIPTION": "a58",  // Text
         "CUSTOM_COLOR": "a59",  // Colorpicker
         "LATITUDE": "a60",  // Text
@@ -1073,12 +1064,12 @@ export const WP = {
         "NOTIFY_ON_ENTER": "a64",  // Radio
         "NOTIFY_ON_EXIT": "a65",  // Radio
         "SCHEDULE_ENABLED": "a66",  // Radio
-        "SCHEDULE_START_TIME": "a67",  // Datetime
-        "SCHEDULE_END_TIME": "a68",  // Datetime
+        "SCHEDULE_START_TIME": "a67",  // Textarea
+        "SCHEDULE_END_TIME": "a68",  // Textarea
         "IS_ACTIVE": "a69",  // Radio
       },
       opt: {
-        "ZONE_TYPE": { "SAFE": "b55", "DANGER": "b56", "CUSTOM_1": "b57", "CUSTOM_2": "b58", "CUSTOM_3": "b59", "CUSTOM_4": "b60", "CUSTOM_5": "b61", "CUSTOM_6": "b62", "CUSTOM_7": "b63" },
+        "ZONE_TYPE": { "SAFE": "b55", "DANGER": "b56", "CUSTOM": "b57" },
         "SHAPE_TYPE": { "RADIUS": "b55", "POLYGON": "b56" },
         "NOTIFY_ON_ENTER": { "OFF": "b55", "ON": "b56" },
         "NOTIFY_ON_EXIT": { "OFF": "b55", "ON": "b56" },

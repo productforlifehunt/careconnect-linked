@@ -64,6 +64,7 @@
 - [WordPress Multisite](mem://infrastructure/wordpress-multisite-config) — careconnected subsite only
 - [WordPress Credentials](mem://testing/wordpress-credentials)
 - [Honesty Protocol](mem://constraints/honesty-completion-protocol)
+- [Safe Zone Model 214](mem://data/safe-zone-model-214) — a55 three types (Safe/Danger/Custom), name in a57; app settings JSON in CCT 151 a95/a96
 - [Opaque Naming Convention](mem://constraints/opaque-data-naming)
 - [Unreadable Artifact / Shame Doctrine](mem://constraints/unreadable-artifact-shame-doctrine) — Miro Post-it walls and productivity-guru templates as deliberately unfollowable demos; illegibility = unauditable rigour; our Track B artifacts stay legible-and-sufficient
 - [Paper Ridicule Register](mem://constraints/paper-ridicule-tone) — mandatory ridiculing tone for all paper/method explanations, bezel-polisher hierarchy, HCI reality check

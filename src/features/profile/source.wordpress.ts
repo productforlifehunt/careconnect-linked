@@ -17,9 +17,11 @@
  *   a67=Hourly rate for remote service    (number)
  *   a68=Offers care service type          [checkbox]
  *   a90=Cared one's AI system prompt
- *   a91=Push notification enabled       (b55 Yes | b56 No)
- *   a92=Email notification enabled      (b55 Yes | b56 No)
- *   a93=SMS notification enabled        (b55 Yes | b56 No)
+ *
+ * Notification / display / permission settings are NOT stored here — they live
+ * as one JSON blob on CCT 151 (a95 ChallengeD, a96 CareCNC); see
+ * src/features/settings/app-settings.ts.
+
  *
  * Linked to user via Rel 259 (one-to-one).
  */

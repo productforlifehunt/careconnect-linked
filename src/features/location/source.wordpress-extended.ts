@@ -21,12 +21,12 @@ import {
   ZONE_TYPE,
   ZONE_TYPE_CODES,
   zoneTypeLabel,
-  customSlotOf,
+  isCustomZone,
   isDangerZone,
   isSafeZone,
-  fetchCustomZoneNames,
-  type CustomZoneNames,
+  zoneNameFor,
 } from "@/features/location/zone-types";
+
 
 // NOTE: There is no `safe_zone_alerts` or `location_requests` CCT in the live
 // WordPress backend. Alerts are delivered exclusively via the `notification`
@@ -141,22 +141,24 @@ function normalizePolygonPoints(points: any): [number, number][] {
 
 // ─── Safe Zone mapping (dictionary CCT 214) ─────────────────
 //
-// CCT 214 has NO name column and no a57. A zone is labelled by its TYPE (a55):
-// b55 Safe, b56 Danger, b57..b63 Custom 1..7, whose names live on the cared
-// one's extended profile (CCT 258 a95..a101). a58 "Custom description" carries
-// the zone's own description only.
-function mapSafeZone(z: any, userId: string, customNames: CustomZoneNames): any {
+// a55 zone type: b55 Safe, b56 Danger, b57 Custom.
+// a57 zone name: "Safe" / "Danger" for the fixed types, the user's own name for
+// a custom zone. a58 "Custom description" carries the zone's note only.
+function mapSafeZone(z: any, userId: string): any {
   const polygonPoints = normalizePolygonPoints(z.a63);
   const typeCode = String(z.a55 || ZONE_TYPE.SAFE);
+  const zoneName = typeof z.a57 === "string" ? z.a57 : "";
   return {
     id: String(z._ID || z.id),
     user_id: userId,
     zone_type: typeCode,
-    zone_type_label: zoneTypeLabel(typeCode, customNames, false),
-    zone_type_label_zh: zoneTypeLabel(typeCode, customNames, true),
-    custom_slot: customSlotOf(typeCode),
+    zone_name: zoneName,
+    zone_type_label: zoneTypeLabel(typeCode, zoneName, false),
+    zone_type_label_zh: zoneTypeLabel(typeCode, zoneName, true),
+    is_custom: isCustomZone(typeCode),
     is_danger: isDangerZone(typeCode),
     is_safe: isSafeZone(typeCode),
+
     shape_type: z.a56 === T.safeZone.opt.SHAPE_TYPE.POLYGON ? "Polygon" : (polygonPoints.length >= 3 ? "Polygon" : "Radius"),
     color: z.a59 || null,
     latitude: parseNumber(z.a60),
@@ -241,26 +243,26 @@ function evaluateZoneAlert(zone: any, lat: number, lng: number): { distance: num
 // ─── Safe Zones CRUD ────────────────────────────────────────
 
 export async function fetchSafeZonesWordPress(userId: string): Promise<any[]> {
-  const [zoneIds, receiverIds, customNames] = await Promise.all([
+  const [zoneIds, receiverIds] = await Promise.all([
     fetchRelationChildIds(REL_USER_SAFE_ZONE, normalizeWpUserId(userId)),
     fetchLocationReceiverIds(userId),
-    fetchCustomZoneNames(userId),
   ]);
   const zones = await Promise.all(
     zoneIds.map(async (zoneId) => {
       const zone = await wordpressCCTFetch<any>(T.safeZone.slug, { id: zoneId });
       // Receivers live on the cared one (Relation 290), shared by all zones.
-      return { ...mapSafeZone(zone, userId, customNames), receiver_ids: receiverIds };
+      return { ...mapSafeZone(zone, userId), receiver_ids: receiverIds };
     }),
   );
+
   return zones.filter(Boolean);
 }
 
-/** Zone-type code (a55). Accepts only the nine dictionary codes. */
+/** Zone-type code (a55). Accepts only the three dictionary codes. */
 function requireZoneTypeCode(value: any): string {
   const code = String(value || ZONE_TYPE.SAFE);
   if (!(ZONE_TYPE_CODES as readonly string[]).includes(code)) {
-    throw new Error(`Unknown zone type "${code}" — CCT 214 a55 accepts b55..b63 only`);
+    throw new Error(`Unknown zone type "${code}" — CCT 214 a55 accepts b55/b56/b57 only`);
   }
   return code;
 }
@@ -268,12 +270,15 @@ function requireZoneTypeCode(value: any): string {
 export async function createSafeZoneWordPress(zone: { user_id: string; latitude: number; longitude: number; radius_meters?: number; [key: string]: any }): Promise<void> {
   const userId = normalizeWpUserId(zone.user_id);
   if (!userId) throw new Error("Invalid user");
+  const typeCode = requireZoneTypeCode(zone.zone_type);
   const created = await wordpressCCTFetch<any>(T.safeZone.slug, {
     method: "POST",
     body: {
-      a55: requireZoneTypeCode(zone.zone_type),
+      a55: typeCode,
       a56: String(zone.shape_type || "Radius").toLowerCase() === "polygon" ? T.safeZone.opt.SHAPE_TYPE.POLYGON : T.safeZone.opt.SHAPE_TYPE.RADIUS,
+      a57: zoneNameFor(typeCode, zone.zone_name),
       a58: zone.description || "",
+
       a59: zone.color || "",
       a60: String(zone.latitude),
       a61: String(zone.longitude),
@@ -297,7 +302,16 @@ export async function createSafeZoneWordPress(zone: { user_id: string; latitude:
 export async function updateSafeZoneWordPress(id: string, updates: Record<string, any>): Promise<void> {
   const body: Record<string, any> = {};
   if (updates.description !== undefined) body.a58 = updates.description || "";
-  if (updates.zone_type !== undefined) body.a55 = requireZoneTypeCode(updates.zone_type);
+  if (updates.zone_type !== undefined) {
+    const typeCode = requireZoneTypeCode(updates.zone_type);
+    body.a55 = typeCode;
+    // a57 always follows the type: fixed label for Safe/Danger, user name for Custom.
+    body.a57 = zoneNameFor(typeCode, updates.zone_name);
+  } else if (updates.zone_name !== undefined) {
+    body.a57 = String(updates.zone_name || "").trim();
+    if (!body.a57) throw new Error("A custom zone requires a name");
+  }
+
   if (updates.shape_type !== undefined) body.a56 = String(updates.shape_type).toLowerCase() === "polygon" ? T.safeZone.opt.SHAPE_TYPE.POLYGON : T.safeZone.opt.SHAPE_TYPE.RADIUS;
   if (updates.color !== undefined) body.a59 = updates.color;
   if (updates.latitude !== undefined) body.a60 = String(updates.latitude);
