@@ -91,71 +91,84 @@ export function AppHeader() {
     navigate("/");
   };
 
-  return (
-    <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-      <div className="flex h-16 items-center pl-2 pr-3 lg:pl-3 lg:pr-6 gap-2">
-        {/* Mobile menu */}
-        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="lg:hidden shrink-0" aria-label={t("nav.browse")}>
-              <Menu className="h-5 w-5" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-72 p-0">
-            <div className="p-4 border-b">
-              <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-2">
-                <BrandMark size={44} showWordmark />
-              </Link>
+  const mobileMenu = (
+    <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="icon" className="lg:hidden shrink-0" aria-label={t("nav.browse")}>
+          <Menu className="h-5 w-5" />
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="right" className="w-72 p-0">
+        <div className="p-4 border-b">
+          <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-2">
+            <BrandMark size={44} showWordmark />
+          </Link>
+        </div>
+        <nav className="p-4 space-y-1 overflow-y-auto max-h-[calc(100vh-6rem)]">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-3">{t("nav.browse")}</p>
+          {publicNav.map(item => (
+            <Link
+              key={item.url}
+              to={item.url}
+              onClick={() => setMobileOpen(false)}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${isNavActive(item.url) ? "bg-accent text-accent-foreground font-medium" : "text-foreground hover:bg-accent/50"}`}
+            >
+              <item.icon className="h-4 w-4 shrink-0" />
+              <span className="truncate">{item.title}</span>
+            </Link>
+          ))}
+          {!isAuthenticated && (
+            <div className="pt-4 mt-4 border-t space-y-2">
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => { setMobileOpen(false); navigate("/auth"); }}
+              >
+                {t("common.signIn")}
+              </Button>
             </div>
-            <nav className="p-4 space-y-1">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-3">{t("nav.browse")}</p>
-              {publicNav.map(item => (
+          )}
+          {isAuthenticated && (
+            <>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 mt-6 px-3">{t("nav.myCare")}</p>
+              {[
+                { title: dashboardLabel, url: "/dashboard", icon: LayoutDashboard },
+                { title: t(site.family === "challenged" ? "nav.myLovedOnes" : "nav.caredOnes"), url: "/cared-ones", icon: Heart },
+                { title: t("nav.myBookings"), url: "/bookings", icon: CalendarDays },
+                { title: t(isChallenged ? "nav.united" : (site.family === "challenged" ? "nav.careTeams" : "nav.careGroups")), url: "/care-circle", icon: Users },
+                { title: t("nav.messages"), url: "/messages", icon: MessageSquare },
+                { title: t("nav.favorites"), url: "/favorites", icon: Heart },
+                { title: isChallenged ? t("nav.find") : t("nav.gpsTracking"), url: "/gps-tracking", icon: MapPin },
+              ].map(item => (
                 <Link
                   key={item.url}
                   to={item.url}
                   onClick={() => setMobileOpen(false)}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${location.pathname === item.url ? "bg-accent text-accent-foreground font-medium" : "text-foreground hover:bg-accent/50"}`}
                 >
-                  <item.icon className="h-4 w-4" />
-                  {item.title}
+                  <item.icon className="h-4 w-4 shrink-0" />
+                  <span className="truncate">{item.title}</span>
                 </Link>
               ))}
-              {isAuthenticated && (
-                <>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 mt-6 px-3">{t("nav.myCare")}</p>
-                  {[
-                    { title: dashboardLabel, url: "/dashboard", icon: LayoutDashboard },
-                    { title: t(site.family === "challenged" ? "nav.myLovedOnes" : "nav.caredOnes"), url: "/cared-ones", icon: Heart },
-                    { title: t("nav.myBookings"), url: "/bookings", icon: CalendarDays },
-                    { title: t(isChallenged ? "nav.united" : (site.family === "challenged" ? "nav.careTeams" : "nav.careGroups")), url: "/care-circle", icon: Users },
-                    { title: t("nav.messages"), url: "/messages", icon: MessageSquare },
-                    { title: t("nav.favorites"), url: "/favorites", icon: Heart },
-                    { title: isChallenged ? t("nav.find") : t("nav.gpsTracking"), url: "/gps-tracking", icon: MapPin },
-                  ].map(item => (
-                    <Link
-                      key={item.url}
-                      to={item.url}
-                      onClick={() => setMobileOpen(false)}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${location.pathname === item.url ? "bg-accent text-accent-foreground font-medium" : "text-foreground hover:bg-accent/50"}`}
-                    >
-                      <item.icon className="h-4 w-4" />
-                      {item.title}
-                    </Link>
-                  ))}
-                </>
-              )}
-            </nav>
-          </SheetContent>
-        </Sheet>
+            </>
+          )}
+        </nav>
+      </SheetContent>
+    </Sheet>
+  );
 
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 shrink-0">
+  return (
+    <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+      <div className="flex h-16 items-center pl-3 pr-2 lg:pl-3 lg:pr-6 gap-2">
+        {/* Logo — always the first element on the left (standard convention) */}
+        <Link to="/" className="flex items-center gap-2 shrink-0" aria-label={logoWordmarkText}>
           <BrandMark size={40} showWordmark />
         </Link>
 
         {/* Desktop horizontal nav — primary links inline, the rest in a More menu
             so items never wrap below the header border. */}
         <nav className="hidden lg:flex items-center gap-0.5 ml-3 min-w-0 flex-nowrap">
+
           {primaryNav.map(item => (
             <Link
               key={item.url}
