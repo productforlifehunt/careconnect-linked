@@ -504,7 +504,7 @@ export async function deleteGroupInviteWordPress(id: string): Promise<void> {
 // ─── Join by Token ──────────────────────────────────────────
 // Looks up the care_group_invite CCT by token, validates, increments use_count,
 // then adds the user to the group via JetEngine relation 72.
-export async function joinGroupByCodeWordPress(token: string): Promise<any> {
+export async function joinGroupByCodeWordPress(token: string, displayName?: string): Promise<any> {
   try {
     const trimmed = (token || "").trim();
     if (!trimmed) throw new Error("Invalid invite link");
@@ -555,7 +555,7 @@ export async function joinGroupByCodeWordPress(token: string): Promise<any> {
         context: "child",
         store_items_type: "update",
         meta: memberMeta({
-          displayName: await fetchMyAppUserName(),
+          displayName: displayName?.trim() || (await fetchMyAppUserName()),
           memberTypes: ["nothing special"],
           memberRoles: ["nothing special"],
           invitationStatus: "accepted",

@@ -103,7 +103,7 @@ export async function fetchCareGroupMembersWordPress(groupId: string): Promise<a
           const memberRoles = decoded.memberRoles;
           // Names come from the relation meta or this app's own column on
           // CCT 151 — never the shared WordPress user name.
-          const displayName = decoded.displayName || u.full_name;
+          const displayName = decoded.displayName || u.full_name || "";
           const invitationStatus = decoded.invitationStatus;
           const isOwner = memberTypes.includes("owner");
           const isAdmin = memberTypes.includes("admin") || isOwner;
@@ -131,7 +131,7 @@ export async function fetchCareGroupMembersWordPress(groupId: string): Promise<a
   }
 }
 
-export async function createCareGroupWordPress(group: { name: string; description?: string; is_private?: boolean }): Promise<CareGroup> {
+export async function createCareGroupWordPress(group: { name: string; description?: string; is_private?: boolean; displayName?: string }): Promise<CareGroup> {
   const result = await wordpressCCTFetch<any>(T.careGroup.slug, {
     method: "POST",
     body: {
@@ -155,8 +155,8 @@ export async function createCareGroupWordPress(group: { name: string; descriptio
           context: "child",
           store_items_type: "update",
           meta: encodeRel72Meta({
-            displayName: await fetchMyAppUserName(),
-            memberTypes: ["owner", "admin"],
+            displayName: group.displayName?.trim() || (await fetchMyAppUserName()),
+            memberTypes: ["owner"],
             memberRoles: ["nothing special"],
             invitationStatus: "accepted",
           }),
@@ -167,4 +167,35 @@ export async function createCareGroupWordPress(group: { name: string; descriptio
     }
   }
   return result as unknown as CareGroup;
+}
+
+
+/**
+ * Rel 223 a55 — the member's display name INSIDE this care group.
+ * Every group-internal surface shows this name (dictionary requirement),
+ * so members must be able to set it for themselves.
+ */
+export async function setMyGroupDisplayNameWordPress(groupId: string, displayName: string): Promise<void> {
+  const gid = normalizeWpObjectId(groupId);
+  const stored = getStoredWPUser();
+  const uid = stored?.user_id ? Number(stored.user_id) : 0;
+  if (!gid || !uid) return;
+  const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${gid}`).catch(() => []);
+  const existing = (Array.isArray(rels) ? rels : []).find((r: any) => Number(r.child_object_id) === uid);
+  const decoded = decodeRel72Meta(existing?.meta);
+  await wordpressFetch(`jet-rel/${REL_GROUP_MEMBER}`, {
+    method: "POST",
+    body: {
+      parent_id: gid,
+      child_id: uid,
+      context: "child",
+      store_items_type: "update",
+      meta: encodeRel72Meta({
+        displayName: displayName.trim(),
+        memberTypes: decoded.memberTypes,
+        memberRoles: decoded.memberRoles,
+        invitationStatus: decoded.invitationStatus,
+      }),
+    },
+  });
 }
