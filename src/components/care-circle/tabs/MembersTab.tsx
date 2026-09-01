@@ -52,6 +52,7 @@ export function MembersTab({
   const [inviteSearch, setInviteSearch] = useState("");
   const [invitePerson, setInvitePerson] = useState<any>(null);
   const { data: inviteSearchResults } = useSearchProfiles(inviteSearch);
+  const { data: myCaredOnes } = useUserCaredOnes();
 
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
