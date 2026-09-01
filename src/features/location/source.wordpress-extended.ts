@@ -258,11 +258,11 @@ export async function fetchSafeZonesWordPress(userId: string): Promise<any[]> {
   return zones.filter(Boolean);
 }
 
-/** Zone-type code (a55). Accepts only the nine dictionary codes. */
+/** Zone-type code (a55). Accepts only the three dictionary codes. */
 function requireZoneTypeCode(value: any): string {
   const code = String(value || ZONE_TYPE.SAFE);
   if (!(ZONE_TYPE_CODES as readonly string[]).includes(code)) {
-    throw new Error(`Unknown zone type "${code}" — CCT 214 a55 accepts b55..b63 only`);
+    throw new Error(`Unknown zone type "${code}" — CCT 214 a55 accepts b55/b56/b57 only`);
   }
   return code;
 }
@@ -270,12 +270,15 @@ function requireZoneTypeCode(value: any): string {
 export async function createSafeZoneWordPress(zone: { user_id: string; latitude: number; longitude: number; radius_meters?: number; [key: string]: any }): Promise<void> {
   const userId = normalizeWpUserId(zone.user_id);
   if (!userId) throw new Error("Invalid user");
+  const typeCode = requireZoneTypeCode(zone.zone_type);
   const created = await wordpressCCTFetch<any>(T.safeZone.slug, {
     method: "POST",
     body: {
-      a55: requireZoneTypeCode(zone.zone_type),
+      a55: typeCode,
       a56: String(zone.shape_type || "Radius").toLowerCase() === "polygon" ? T.safeZone.opt.SHAPE_TYPE.POLYGON : T.safeZone.opt.SHAPE_TYPE.RADIUS,
+      a57: zoneNameFor(typeCode, zone.zone_name),
       a58: zone.description || "",
+
       a59: zone.color || "",
       a60: String(zone.latitude),
       a61: String(zone.longitude),
