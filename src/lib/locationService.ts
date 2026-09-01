@@ -199,7 +199,7 @@ export function checkBreaches(lat: number, lng: number, zones: any[]): ZoneBreac
   for (const zone of zones) {
     if (!isZoneActiveNow(zone)) continue;
     // Zone rows carry the dictionary a55 semantics resolved by the CCT mapper:
-    // is_danger / is_safe booleans plus zone_type_label. Custom types (b57..b63)
+    // is_danger / is_safe booleans plus zone_type_label. Custom zones (b57)
     // are neither safe nor danger — they breach on whichever transition the zone
     // enabled.
     const isDanger = !!zone.is_danger;
