@@ -261,20 +261,21 @@ export function AppHeader() {
                 <Button variant="ghost" className="gap-2 px-2 max-w-[12rem]" aria-label={displayName}>
 
                   {user?.avatar_url ? (
-                    <img src={user.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover" />
+                    <img src={user.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover shrink-0" />
                   ) : (
-                    <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+                    <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center shrink-0">
                       <span className="text-primary-foreground text-sm font-medium">{initials}</span>
                     </div>
                   )}
-                  <span className="hidden md:inline text-sm font-medium">{displayName}</span>
+                  <span className="hidden md:inline text-sm font-medium truncate">{displayName}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52 bg-card border shadow-lg z-[60]">
                 <div className="px-3 py-2 border-b">
-                  <p className="text-sm font-medium text-foreground">{displayName}</p>
-                  <p className="text-xs text-muted-foreground">{user?.email}</p>
+                  <p className="text-sm font-medium text-foreground truncate">{displayName}</p>
+                  <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                 </div>
+
                 <DropdownMenuItem onClick={() => navigate("/dashboard")}>
                   <LayoutDashboard className="mr-2 h-4 w-4" /> {dashboardLabel}
                 </DropdownMenuItem>
