@@ -67,22 +67,50 @@ export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) 
       }
     });
 
-    // Add today's tasks
+    // Today's tasks for this cared one (Relation task → cared one)
+    const coId = String(caredOneId).replace(/^wp-/, "");
     const todaysTasks = (tasks || []).filter((t: any) => {
-      if (t.care_recipient_id !== caredOneId) return false;
-      if (!t.due_date) return false;
-      return new Date(t.due_date).toDateString() === today;
+      if (String(t.cared_one_id ?? "").replace(/^wp-/, "") !== coId) return false;
+      const when = t.task_date || t.due_date;
+      if (!when) return false;
+      return new Date(when).toDateString() === today;
     });
     todaysTasks.forEach((t: any) => {
+      const start = String(t.start_time || "");
+      const hour = start.includes(":") ? parseInt(start.split(":")[0] || "9") : 9;
+      const minute = start.includes(":") ? parseInt(start.split(":")[1] || "0") : 0;
+      const isPM = hour >= 12;
       items.push({
-        time: isZh ? "今天" : "Today",
-        sortTime: 900,
+        time: start.includes(":")
+          ? `${hour > 12 ? hour - 12 : hour || 12}:${String(minute).padStart(2, "0")} ${isPM ? "PM" : "AM"}`
+          : (isZh ? "今天" : "Today"),
+        sortTime: hour * 100 + minute,
         label: t.title,
         type: "task",
         status: t.status === "completed" ? "done" : "pending",
         icon: CheckSquare,
       });
     });
+
+    // Today's appointments (the caregiver's own bookings)
+    (bookings || []).forEach((b: any) => {
+      const when = b.appointment_date || b.start_time;
+      if (!when || new Date(when).toDateString() !== today) return;
+      if (["cancelled", "refunded"].includes(String(b.status))) return;
+      const at = String(b.appointment_time || "");
+      const hour = at.includes(":") ? parseInt(at.split(":")[0] || "10") : 10;
+      const minute = at.includes(":") ? parseInt(at.split(":")[1] || "0") : 0;
+      const isPM = hour >= 12;
+      items.push({
+        time: `${hour > 12 ? hour - 12 : hour || 12}:${String(minute).padStart(2, "0")} ${isPM ? "PM" : "AM"}`,
+        sortTime: hour * 100 + minute,
+        label: [b.provider?.full_name, b.service_type].filter(Boolean).join(" · ") || (isZh ? "预约" : "Appointment"),
+        type: "booking",
+        status: b.status === "completed" ? "done" : "pending",
+        icon: CalendarDays,
+      });
+    });
+
 
     (checkins || []).forEach((checkin: any) => {
       const checkinLog = (todayCheckinLogs || []).find((l: any) => l.medicine_id === checkin.id);
