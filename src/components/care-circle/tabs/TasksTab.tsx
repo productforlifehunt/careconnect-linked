@@ -11,12 +11,12 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, CheckCircle, Circle, Loader2, Trash2, Briefcase, Check, X, Pencil, Clock, MapPin, Users } from "lucide-react";
+import { Plus, CheckCircle, Circle, Loader2, Trash2, Briefcase, Check, X, Pencil, Clock, MapPin, Users, Search } from "lucide-react";
 import { VisibilityPicker, EMPTY_VISIBILITY, type VisibilityValue } from "../VisibilityPicker";
 import { CommentsSection } from "@/components/comments/CommentsSection";
 import { MediaAttachments, MediaAttachmentList } from "@/components/shared/MediaAttachments";
 import { useToast } from "@/hooks/use-toast";
-import { useUpdateAssigneeStatus } from "@/hooks/use-care-data";
+import { useUpdateAssigneeStatus, useSearchProfiles } from "@/hooks/use-care-data";
 import { useTranslation } from "react-i18next";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
@@ -75,6 +75,10 @@ export function TasksTab({
   const isCN = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (isCN ? cn : en);
   const updateAssignee = useUpdateAssigneeStatus();
+  // Assignees can also be people outside this group — searched from all app users.
+  const [assigneeSearch, setAssigneeSearch] = useState("");
+  const { data: assigneeResults, isFetching: assigneeSearching } = useSearchProfiles(assigneeSearch.trim());
+  const [extraAssignees, setExtraAssignees] = useState<Record<string, string>>({});
   const [addOpen, setAddOpen] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [jobConfirmTask, setJobConfirmTask] = useState<any | null>(null);
@@ -284,6 +288,59 @@ export function TasksTab({
                       );
                     })}
                     {(members || []).length === 0 && <p className="text-xs text-muted-foreground">{Z("暂无可选成员", "No members available")}</p>}
+                  </div>
+
+                  {/* Anyone with an account can be asked to help, not only group members. */}
+                  <div className="mt-3">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">{Z("搜索其他用户", "Search other people")}</p>
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        className="pl-8"
+                        value={assigneeSearch}
+                        onChange={(e) => setAssigneeSearch(e.target.value)}
+                        placeholder={Z("输入姓名或邮箱（至少 2 个字符）", "Type a name or email (2+ characters)")}
+                      />
+                    </div>
+                    {assigneeSearch.trim().length >= 2 && (
+                      <div className="mt-2 max-h-32 overflow-auto rounded-md border p-2 space-y-2">
+                        {assigneeSearching && <p className="text-xs text-muted-foreground">{Z("正在搜索…", "Searching…")}</p>}
+                        {!assigneeSearching && (assigneeResults || []).length === 0 && (
+                          <p className="text-xs text-muted-foreground">{Z("没有找到匹配的人", "No matching people found")}</p>
+                        )}
+                        {(assigneeResults || []).map((p: any) => {
+                          const pid = String(p.id || "").startsWith("wp-") ? String(p.id) : `wp-${p.id}`;
+                          const label = p.full_name || p.email || Z("用户", "Person");
+                          const already = (members || []).some((m: any) => (m.user_id || `wp-${m.id}`) === pid);
+                          return (
+                            <label key={pid} className="flex items-center gap-2 text-sm cursor-pointer">
+                              <Checkbox
+                                checked={form.assigneeIds.includes(pid)}
+                                onCheckedChange={() => {
+                                  setExtraAssignees((prev) => ({ ...prev, [pid]: label }));
+                                  toggleAssignee(pid);
+                                }}
+                              />
+                              <span>{label}{already ? ` · ${Z("已是成员", "already a member")}` : ""}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {form.assigneeIds.filter((id) => extraAssignees[id] && !(members || []).some((m: any) => (m.user_id || `wp-${m.id}`) === id)).length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {form.assigneeIds
+                          .filter((id) => extraAssignees[id] && !(members || []).some((m: any) => (m.user_id || `wp-${m.id}`) === id))
+                          .map((id) => (
+                            <Badge key={id} variant="secondary" className="gap-1">
+                              {extraAssignees[id]}
+                              <button type="button" onClick={() => toggleAssignee(id)} aria-label={Z("移除", "Remove")}>
+                                <X className="h-3 w-3" />
+                              </button>
+                            </Badge>
+                          ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
