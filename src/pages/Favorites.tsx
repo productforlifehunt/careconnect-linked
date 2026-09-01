@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Star, MapPin, Shield, Heart, Loader2 } from "lucide-react";
 import { useSavedProviders, useToggleSavedProvider } from "@/hooks/use-care-data";
 import { useTranslation } from "react-i18next";
+import { careServiceTypeLabel } from "@/lib/care-service-types";
 
 export default function Favorites() {
   const navigate = useNavigate();
