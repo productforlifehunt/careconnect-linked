@@ -302,7 +302,16 @@ export async function createSafeZoneWordPress(zone: { user_id: string; latitude:
 export async function updateSafeZoneWordPress(id: string, updates: Record<string, any>): Promise<void> {
   const body: Record<string, any> = {};
   if (updates.description !== undefined) body.a58 = updates.description || "";
-  if (updates.zone_type !== undefined) body.a55 = requireZoneTypeCode(updates.zone_type);
+  if (updates.zone_type !== undefined) {
+    const typeCode = requireZoneTypeCode(updates.zone_type);
+    body.a55 = typeCode;
+    // a57 always follows the type: fixed label for Safe/Danger, user name for Custom.
+    body.a57 = zoneNameFor(typeCode, updates.zone_name);
+  } else if (updates.zone_name !== undefined) {
+    body.a57 = String(updates.zone_name || "").trim();
+    if (!body.a57) throw new Error("A custom zone requires a name");
+  }
+
   if (updates.shape_type !== undefined) body.a56 = String(updates.shape_type).toLowerCase() === "polygon" ? T.safeZone.opt.SHAPE_TYPE.POLYGON : T.safeZone.opt.SHAPE_TYPE.RADIUS;
   if (updates.color !== undefined) body.a59 = updates.color;
   if (updates.latitude !== undefined) body.a60 = String(updates.latitude);
