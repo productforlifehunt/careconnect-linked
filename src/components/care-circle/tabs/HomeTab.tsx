@@ -28,13 +28,15 @@ interface HomeTabProps {
   onEditPost: (post: any) => void;
   onTogglePin: (post: any) => void;
   onDeletePost: (id: string) => void;
+  onNavigateTab?: (tab: string) => void;
 }
 
 export function HomeTab({
   pendingTasksCount, membersCount, caredOnesCount, statsLoading,
   allPosts, activeGroupId, userId, isAdmin, memberCategories, members,
-  createPost, onEditPost, onTogglePin, onDeletePost,
+  createPost, onEditPost, onTogglePin, onDeletePost, onNavigateTab,
 }: HomeTabProps) {
+
   const { toast } = useToast();
   const { t, i18n } = useTranslation();
   const isCN = i18n.language?.startsWith("zh");
