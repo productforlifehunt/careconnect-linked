@@ -18,6 +18,7 @@ import yichangIcon from "@/assets/yichang-icon.png";
 import huchangIcon from "@/assets/huchang-icon.png";
 import type { Profile } from "@/types/care-connector";
 import { searchCnCities } from "@/data/china-cities";
+import { careServiceTypeLabel } from "@/lib/care-service-types";
 
 const Index = () => {
   const navigate = useNavigate();
