@@ -160,10 +160,11 @@ export default function Dashboard() {
                   <TabsTrigger
                     key={co.user_id}
                     value={co.user_id}
-                    className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm text-xs px-3 py-1.5"
+                    className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm text-xs px-3 py-1.5 max-w-[12rem] truncate"
                   >
-                    {String(name).split(" ")[0]}
+                    {name}
                   </TabsTrigger>
+
                 );
               })}
             </TabsList>
