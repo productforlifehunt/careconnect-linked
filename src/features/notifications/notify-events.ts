@@ -139,3 +139,104 @@ export function notifyBookingStatus(
     action_url: `/bookings?id=${bookingId}`,
   });
 }
+
+const actorName = () => {
+  const stored = getStoredWPUser();
+  return stored?.user_display_name || stored?.user_login || "Someone";
+};
+
+/** Group invitation created → notify the invited user. */
+export function notifyGroupInvite(
+  inviteeId: string | number | null | undefined,
+  groupName: string,
+) {
+  return notifyUsers([inviteeId], {
+    type: "system",
+    title: "You were invited to a care group",
+    message: `${actorName()} invited you to join ${clip(groupName, 80)}.`,
+    action_url: `/care-circle?tab=invitations`,
+  });
+}
+
+/** Invitation accepted / declined → notify the group's owners and admins. */
+export function notifyInviteResponse(
+  adminIds: Array<string | number | null | undefined>,
+  groupId: string,
+  groupName: string,
+  accepted: boolean,
+) {
+  return notifyUsers(adminIds, {
+    type: "system",
+    title: accepted ? "Care group invitation accepted" : "Care group invitation declined",
+    message: `${actorName()} ${accepted ? "joined" : "declined to join"} ${clip(groupName, 80)}.`,
+    action_url: `/care-circle?group=${groupId}&tab=members`,
+  });
+}
+
+/** Member role changed → notify that member. */
+export function notifyMemberRoleChanged(
+  memberId: string | number | null | undefined,
+  groupId: string,
+  roleLabel: string,
+) {
+  return notifyUsers([memberId], {
+    type: "system",
+    title: "Your care group role changed",
+    message: `${actorName()} set your role to ${clip(roleLabel, 60)}.`,
+    action_url: `/care-circle?group=${groupId}&tab=members`,
+  });
+}
+
+/** Member removed from a group → notify that member. */
+export function notifyMemberRemoved(
+  memberId: string | number | null | undefined,
+  groupName: string,
+) {
+  return notifyUsers([memberId], {
+    type: "system",
+    title: "You were removed from a care group",
+    message: `${actorName()} removed you from ${clip(groupName, 80)}.`,
+    action_url: `/care-circle`,
+  });
+}
+
+/** Someone asked to join a sub-group → notify its owners/admins. */
+export function notifySubgroupJoinRequest(
+  approverIds: Array<string | number | null | undefined>,
+  subgroupId: string,
+) {
+  return notifyUsers(approverIds, {
+    type: "system",
+    title: "New sub-group join request",
+    message: `${actorName()} asked to join your sub-group.`,
+    action_url: `/care-circle?subgroup=${subgroupId}&tab=members`,
+  });
+}
+
+/** Sub-group request approved → notify the requester. */
+export function notifySubgroupApproved(
+  userId: string | number | null | undefined,
+  subgroupId: string,
+) {
+  return notifyUsers([userId], {
+    type: "system",
+    title: "Sub-group request approved",
+    message: `${actorName()} approved your request to join the sub-group.`,
+    action_url: `/care-circle?subgroup=${subgroupId}`,
+  });
+}
+
+/** Task status changed → notify creator and the other assignees. */
+export function notifyTaskStatusChanged(
+  recipientIds: Array<string | number | null | undefined>,
+  taskId: string,
+  statusLabel: string,
+) {
+  return notifyUsers(recipientIds, {
+    type: "task",
+    title: "A care task was updated",
+    message: `${actorName()} marked a task as ${clip(statusLabel, 60)}.`,
+    action_url: `/care-circle?tab=tasks&id=${taskId}`,
+  });
+}
+

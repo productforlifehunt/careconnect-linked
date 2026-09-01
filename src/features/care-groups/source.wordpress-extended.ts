@@ -181,6 +181,33 @@ export async function deleteCareGroupWordPress(id: string): Promise<void> {
 
 // ─── Invitations ────────────────────────────────────────────
 // Dictionary source of truth: invitation state lives on Rel 72 meta, not a separate CCT.
+
+/** Group display name (best-effort, only used for notification copy). */
+async function groupNameOf(groupId: string | number): Promise<string> {
+  try {
+    const g = await wordpressCCTFetch<any>(T.careGroup.slug, { id: String(groupId) });
+    return g?.[T.careGroup.f.NAME] || g?.name || "your care group";
+  } catch {
+    return "your care group";
+  }
+}
+
+/** Owner/admin user ids of a group, from Rel 72 meta (notification routing). */
+async function groupAdminIds(groupId: number): Promise<number[]> {
+  try {
+    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${groupId}`);
+    return (Array.isArray(rels) ? rels : [])
+      .filter((r: any) => {
+        const m = decodeRel72Meta(r?.meta);
+        return m.memberTypes.includes("owner") || m.memberTypes.includes("admin");
+      })
+      .map((r: any) => Number(r.child_object_id))
+      .filter((n) => Number.isFinite(n) && n > 0);
+  } catch {
+    return [];
+  }
+}
+
 export async function inviteToGroupWordPress(groupId: string, userIdOrEmail: string, _role?: string): Promise<void> {
   const isEmail = userIdOrEmail.includes("@");
   const normalizedGroupId = normalizeWpObjectId(groupId);
@@ -196,10 +223,19 @@ export async function inviteToGroupWordPress(groupId: string, userIdOrEmail: str
         meta: memberMeta({ invitationStatus: "pending" }),
       },
     });
+    // The invited user must learn about it — non-blocking.
+    try {
+      const [{ notifyGroupInvite }, name] = await Promise.all([
+        import("@/features/notifications/notify-events"),
+        groupNameOf(normalizedGroupId),
+      ]);
+      await notifyGroupInvite(childId, name);
+    } catch { /* best-effort */ }
     return;
   }
   throw new Error(isEmail ? "Dictionary requires group invitations through Users relation. Select an existing user, not email-only invite." : "Invalid user");
 }
+
 
 export async function fetchGroupInvitationsWordPress(groupId: string): Promise<any[]> {
   try {
@@ -278,6 +314,7 @@ export async function acceptInvitationWordPress(invitationId: string): Promise<v
         meta: memberMeta({ invitationStatus: "accepted" }),
       },
     });
+    await notifyInviteOutcome(groupId, true);
   }
 }
 
@@ -290,7 +327,21 @@ export async function declineInvitationWordPress(invitationId: string): Promise<
     method: "POST",
     body: { parent_id: groupId, child_id: userId, context: "child", store_items_type: "update", meta: memberMeta({ invitationStatus: "declined" }) },
   });
+  await notifyInviteOutcome(groupId, false);
 }
+
+/** Tell the group's owners/admins how an invitation was answered. Never throws. */
+async function notifyInviteOutcome(groupId: number, accepted: boolean): Promise<void> {
+  try {
+    const [{ notifyInviteResponse }, admins, name] = await Promise.all([
+      import("@/features/notifications/notify-events"),
+      groupAdminIds(groupId),
+      groupNameOf(groupId),
+    ]);
+    await notifyInviteResponse(admins, String(groupId), name, accepted);
+  } catch { /* best-effort */ }
+}
+
 
 // ─── Member Roles & Removal ─────────────────────────────────
 // JetEngine relation 72 (care_group → users) dictionary meta fields.
@@ -329,18 +380,30 @@ export async function updateMemberRoleWordPress(memberId: string, updates: any, 
       }),
     },
   });
+  // The affected member must know their own role changed — non-blocking.
+  try {
+    const { notifyMemberRoleChanged } = await import("@/features/notifications/notify-events");
+    const label = [...nextTypes].filter((v) => v !== "nothing special").join(", ") || "member";
+    await notifyMemberRoleChanged(normalizedMemberId, String(normalizedGroupId), label);
+  } catch { /* best-effort */ }
 }
 
 export async function removeGroupMemberWordPress(memberId: string, groupId?: string): Promise<void> {
   const normalizedGroupId = normalizeWpObjectId(groupId);
   const normalizedMemberId = normalizeWpObjectId(memberId);
   if (normalizedGroupId && normalizedMemberId) {
+    const name = await groupNameOf(normalizedGroupId);
     await wordpressFetch(`jet-rel/${REL_GROUP_MEMBER}`, {
       method: "DELETE",
       body: { parent_id: normalizedGroupId, child_id: normalizedMemberId },
     });
+    try {
+      const { notifyMemberRemoved } = await import("@/features/notifications/notify-events");
+      await notifyMemberRemoved(normalizedMemberId, name);
+    } catch { /* best-effort */ }
   }
 }
+
 
 // ─── Group Invites (CCT 160 + Rel 161) ──────────────────────
 // CCT slug: care_group_invite | fields: token, name, expires_at, max_uses, use_count, is_revoked
@@ -729,6 +792,17 @@ export async function requestJoinSubgroupWordPress(subgroupId: string): Promise<
       meta: subgroupMeta({ status: "pending" }),
     },
   });
+  // Whoever can approve must be told there is a pending request — non-blocking.
+  try {
+    const [{ notifySubgroupJoinRequest }, recs] = await Promise.all([
+      import("@/features/notifications/notify-events"),
+      fetchSubgroupMemberRecords(subgroupId).catch(() => [] as SubgroupMemberRecord[]),
+    ]);
+    const approvers = recs
+      .filter((r) => (r.types || []).some((t) => t === "owner" || t === "admin"))
+      .map((r) => r.user_id);
+    await notifySubgroupJoinRequest(approvers, String(sid));
+  } catch { /* best-effort */ }
 }
 
 /** Admin approves a pending request by flipping status → accepted. */
@@ -749,7 +823,12 @@ export async function approveSubgroupMemberWordPress(subgroupId: string, userId:
       meta: subgroupMeta({ status: "accepted", types: existing?.types }),
     },
   });
+  try {
+    const { notifySubgroupApproved } = await import("@/features/notifications/notify-events");
+    await notifySubgroupApproved(uid, String(sid));
+  } catch { /* best-effort */ }
 }
+
 
 /** Admin (or self) declines / removes a pending request. */
 export async function declineSubgroupMemberWordPress(subgroupId: string, userId: string | number): Promise<void> {
