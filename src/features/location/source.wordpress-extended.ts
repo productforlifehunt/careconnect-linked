@@ -17,6 +17,16 @@ import {
   markAllNotificationsReadWordPress,
 } from "@/features/notifications/source.wordpress";
 import { fetchCurrentLocation, fetchLocationHistory, writeLocationAndCheckZones } from "@/features/location/source.wordpress";
+import {
+  ZONE_TYPE,
+  ZONE_TYPE_CODES,
+  zoneTypeLabel,
+  customSlotOf,
+  isDangerZone,
+  isSafeZone,
+  fetchCustomZoneNames,
+  type CustomZoneNames,
+} from "@/features/location/zone-types";
 
 // NOTE: There is no `safe_zone_alerts` or `location_requests` CCT in the live
 // WordPress backend. Alerts are delivered exclusively via the `notification`
