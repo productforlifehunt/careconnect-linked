@@ -351,7 +351,7 @@ export default function Dashboard() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-foreground">
-            {t("dashboard.welcomeBack", { name: displayName.split(" ")[0] })}
+            {t("dashboard.welcomeBack", { name: displayName })}
           </h1>
           <p className="text-sm text-muted-foreground">
             {t(`site.${site.id}.dashboardSubtitle`, { defaultValue: site.tagline })}
