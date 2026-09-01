@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Plus, Check, Pencil, Trash2, X, ClipboardList, Loader2 } from "lucide-react";
 import { useCarePlans, useCreateCarePlan, useUpdateCarePlan, useDeleteCarePlan } from "@/hooks/use-care-data";
