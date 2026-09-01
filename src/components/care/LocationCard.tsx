@@ -1320,9 +1320,10 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                     Cancel
                   </Button>
                   <Button className="flex-1 text-white"
-                    style={{ background: zoneForm.zone_type === "danger" ? "#EF4444" : "#10B981" }}
+                    style={{ background: zoneColor(zoneForm.zone_type) }}
                     onClick={handleSaveZone}
-                    disabled={createZone.isPending || updateZone.isPending || !zoneForm.name.trim()}>
+                    disabled={createZone.isPending || updateZone.isPending}>
+
                     {(createZone.isPending || updateZone.isPending) && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
                     {editingZone ? "Save Changes" : "Create Zone"}
                   </Button>
