@@ -36,6 +36,7 @@ export function AnnouncementsTab({
   const [content, setContent] = useState("");
   const [title, setTitle] = useState("");
   const [visibility, setVisibility] = useState<VisibilityValue>(EMPTY_VISIBILITY);
+  const [scheduledAt, setScheduledAt] = useState("");
 
   return (
     <div>
@@ -44,6 +45,10 @@ export function AnnouncementsTab({
           <CardContent className="p-4">
             <Input value={title} onChange={e => setTitle(e.target.value)} placeholder={Z("公告标题……", "Announcement title...")} className="mb-2" />
             <Textarea value={content} onChange={e => setContent(e.target.value)} placeholder={Z("撰写一条公告……", "Write an announcement...")} className="mb-3" rows={2} />
+            <div className="mb-3">
+              <label className="text-xs text-muted-foreground">{Z("定时发布（可选，留空立即发布）", "Publish later (optional — leave empty to post now)")}</label>
+              <Input type="datetime-local" value={scheduledAt} onChange={e => setScheduledAt(e.target.value)} />
+            </div>
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <VisibilityPicker value={visibility} onChange={setVisibility} memberCategories={memberCategories} members={members} />
               <Button variant="coral" size="sm" onClick={() => {
@@ -54,13 +59,14 @@ export function AnnouncementsTab({
                     content,
                     type: "announcement",
                     title: title || undefined,
+                    scheduled_at: scheduledAt ? scheduledAt.replace("T", " ") + ":00" : null,
                     subgroupIds: visibility.subgroupIds,
                     visibilityUserIds: visibility.userIds,
                   },
                   {
                     onSuccess: () => {
-                      setContent(""); setTitle(""); setVisibility(EMPTY_VISIBILITY);
-                      toast({ title: Z("公告已发布！", "Announcement posted!") });
+                      setContent(""); setTitle(""); setVisibility(EMPTY_VISIBILITY); setScheduledAt("");
+                      toast({ title: scheduledAt ? Z("公告已排期发布", "Announcement scheduled") : Z("公告已发布！", "Announcement posted!") });
                     },
                   }
                 );
@@ -77,10 +83,13 @@ export function AnnouncementsTab({
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-2">
                 {a.is_pinned && <Pin className="h-3.5 w-3.5 text-primary" />}
-                <span className="text-sm font-medium text-foreground">{a.author?.full_name || Z("管理员", "Admin")}</span>
+                <span className="text-sm font-medium text-foreground">{a.author?.full_name || ""}</span>
                 <span className="text-xs text-muted-foreground ml-auto">{formatDate(a.created_at, isCN ? "zh-CN" : "en", { month: "short", day: "numeric" })}</span>
                 <PostActions post={a} userId={userId} isAdmin={isAdmin} onEdit={onEditPost} onTogglePin={onTogglePin} onDelete={onDeletePost} />
               </div>
+              {a.is_scheduled && (
+                <p className="text-xs text-primary mb-1">{Z("已排期，将于 ", "Scheduled for ")}{formatDateTime(a.scheduled_at, isCN ? "zh-CN" : "en")}{Z(" 发布（仅你可见）", " (only you can see it now)")}</p>
+              )}
               {a.title && <h4 className="font-semibold text-foreground mb-1">{a.title}</h4>}
               <p className="text-sm text-muted-foreground">{a.content}</p>
               <CommentsSection entityType="post" entityId={a.id} compact />

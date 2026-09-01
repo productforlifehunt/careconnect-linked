@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Star, Loader2 } from "lucide-react";
 import { PostActions } from "../PostActions";
+import { VisibilityPicker, EMPTY_VISIBILITY, type VisibilityValue } from "../VisibilityPicker";
 import { CommentsSection } from "@/components/comments/CommentsSection";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
@@ -15,30 +16,36 @@ interface WishesTabProps {
   activeGroupId: string | null;
   userId: string | undefined;
   isAdmin: boolean;
+  memberCategories?: any[];
+  members?: any[];
   createPost: any;
   onEditPost: (post: any) => void;
   onTogglePin: (post: any) => void;
   onDeletePost: (id: string) => void;
 }
 
-export function WishesTab({ wishes, wishesLoading, activeGroupId, userId, isAdmin, createPost, onEditPost, onTogglePin, onDeletePost }: WishesTabProps) {
+export function WishesTab({ wishes, wishesLoading, activeGroupId, userId, isAdmin, memberCategories = [], members = [], createPost, onEditPost, onTogglePin, onDeletePost }: WishesTabProps) {
   const { toast } = useToast();
   const { i18n } = useTranslation();
   const isCN = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (isCN ? cn : en);
   const [content, setContent] = useState("");
+  const [visibility, setVisibility] = useState<VisibilityValue>(EMPTY_VISIBILITY);
 
   return (
     <div>
       <Card className="border-transparent card-elevated mb-4">
         <CardContent className="p-4">
           <Textarea value={content} onChange={e => setContent(e.target.value)} placeholder={Z("发送鼓励与祝福……", "Send words of encouragement...")} rows={2} className="mb-3" />
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+          <VisibilityPicker value={visibility} onChange={setVisibility} memberCategories={memberCategories} members={members} />
           <Button variant="coral" size="sm" onClick={() => {
             if (!content.trim() || !activeGroupId) return;
-            createPost.mutate({ group_id: activeGroupId, content, type: "wish" }, {
-              onSuccess: () => { setContent(""); toast({ title: Z("祝福已送达！💛", "Wish sent! 💛") }); },
+            createPost.mutate({ group_id: activeGroupId, content, type: "wish", subgroupIds: visibility.subgroupIds, visibilityUserIds: visibility.userIds }, {
+              onSuccess: () => { setContent(""); setVisibility(EMPTY_VISIBILITY); toast({ title: Z("祝福已送达！💛", "Wish sent! 💛") }); },
             });
           }} disabled={!content.trim() || createPost.isPending}><Star className="h-3.5 w-3.5 mr-1" /> {Z("送出祝福", "Send Wish")}</Button>
+          </div>
         </CardContent>
       </Card>
       <div className="space-y-3">
@@ -47,7 +54,7 @@ export function WishesTab({ wishes, wishesLoading, activeGroupId, userId, isAdmi
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-2">
                 <Star className="h-4 w-4 text-warning" />
-                <span className="font-medium text-sm text-foreground">{w.author?.full_name || Z("某成员", "Someone")}</span>
+                <span className="font-medium text-sm text-foreground">{w.author?.full_name || ""}</span>
                 <span className="text-xs text-muted-foreground ml-auto">{formatDate(w.created_at, isCN ? "zh-CN" : "en", { month: "short", day: "numeric" })}</span>
                 <PostActions post={w} userId={userId} isAdmin={isAdmin} onEdit={onEditPost} onTogglePin={onTogglePin} onDelete={onDeletePost} />
               </div>

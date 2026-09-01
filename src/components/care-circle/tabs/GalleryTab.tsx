@@ -22,6 +22,7 @@ function GalleryUploadForm({ groupId }: { groupId: string }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [caption, setCaption] = useState("");
+  const [takenAt, setTakenAt] = useState("");
   const [saving, setSaving] = useState(false);
 
   const handleAdd = async () => {
@@ -29,8 +30,13 @@ function GalleryUploadForm({ groupId }: { groupId: string }) {
     setSaving(true);
     try {
       const mediaId = await uploadToWPMedia(file);
-      await createCareGroupGalleryItemWordPress(groupId, mediaId, caption.trim());
-      setFile(null); setCaption("");
+      await createCareGroupGalleryItemWordPress(
+        groupId,
+        mediaId,
+        caption.trim(),
+        takenAt ? takenAt.replace("T", " ") + ":00" : undefined,
+      );
+      setFile(null); setCaption(""); setTakenAt("");
       if (fileRef.current) fileRef.current.value = "";
       toast({ title: Z("照片已添加！", "Photo added!") });
       qc.invalidateQueries({ queryKey: ["careGroupGallery"] });
@@ -57,6 +63,10 @@ function GalleryUploadForm({ groupId }: { groupId: string }) {
           className="hidden"
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
         />
+      </div>
+      <div>
+        <label className="text-xs text-muted-foreground">{Z("拍摄时间（可选）", "When it was taken (optional)")}</label>
+        <Input type="datetime-local" value={takenAt} onChange={e => setTakenAt(e.target.value)} />
       </div>
       <div className="flex gap-2">
         <Input value={caption} onChange={e => setCaption(e.target.value)} placeholder={Z("说明（可选）", "Description (optional)")} className="flex-1" />
