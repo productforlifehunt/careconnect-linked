@@ -632,12 +632,10 @@ export function useSubmitProviderApplication() {
       return updateProfileWordPress({
         is_care_provider: true,
         provider_is_active: true,
-        specialty: input.specialties || input.specialty || [],
-        certifications: input.certifications || [],
+        service_type_slugs: input.service_type_slugs || [],
         care_provider_starts_hourly_rate: input.hourlyRate || input.care_provider_starts_hourly_rate || 0,
         bio: input.bio || '',
         location: input.location || '',
-        years_of_experience: input.yearsOfExperience || input.years_of_experience || 0,
         phone: input.phone || input.phone_number || undefined,
 
       });

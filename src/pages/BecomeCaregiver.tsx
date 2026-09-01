@@ -19,7 +19,8 @@ import { useServiceTypes } from "@/hooks/use-service-types";
 
 
 export default function BecomeCaregiver() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isZhLang = i18n.language?.startsWith("zh");
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isAuthenticated } = useAuth();
