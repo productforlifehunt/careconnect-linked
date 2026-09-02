@@ -171,11 +171,14 @@ export function encodeRel72Meta(input: Rel72MetaInput = {}): Record<string, any>
     // Never invent a name: the display name is the member's own app name
     // (CCT 151 a556 / a557). Empty means "not set yet", not "Member".
     [F223.displayName]: input.displayName ?? "",
-    // a56 / a57 / a58 are Radio fields — exactly one code each.
-    [F223.types]: type,
-    [F223.roles]: role,
+    // a56 (member type) and a57 (member role) are multi-choice columns in
+    // JetEngine: they only accept an array of codes — a bare string makes the
+    // relation endpoint fail with a 500. One code each is still written.
+    [F223.types]: [type],
+    [F223.roles]: [role],
     [F223.status]: INVITATION_STATUS_CODE[input.invitationStatus || "accepted"] || STATUS_OPT.ACCEPTED,
   };
+
 }
 
 export interface Rel72MetaDecoded {
