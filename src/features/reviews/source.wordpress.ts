@@ -37,7 +37,7 @@ function numericId(value: string | number | undefined | null): number {
 async function fetchProviderReviewRows(providerUserId: number): Promise<any[]> {
   const rels = await wordpressFetch<any[]>(
     `jet-rel/${REL_PROVIDER_REVIEWS}/children/${providerUserId}`,
-  ).catch(() => []);
+  );
   const ids = (Array.isArray(rels) ? rels : [])
     .map((r: any) => Number(r.child_object_id))
     .filter(Boolean);

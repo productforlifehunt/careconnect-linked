@@ -181,7 +181,7 @@ export async function setMyGroupDisplayNameWordPress(groupId: string, displayNam
   const stored = getStoredWPUser();
   const uid = stored?.user_id ? Number(stored.user_id) : 0;
   if (!gid || !uid) return;
-  const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${gid}`).catch(() => []);
+  const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${gid}`);
   const existing = (Array.isArray(rels) ? rels : []).find((r: any) => Number(r.child_object_id) === uid);
   const decoded = decodeRel72Meta(existing?.meta);
   await wordpressFetch(`jet-rel/${REL_GROUP_MEMBER}`, {

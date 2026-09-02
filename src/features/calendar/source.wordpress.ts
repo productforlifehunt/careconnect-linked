@@ -106,8 +106,8 @@ export async function fetchCalendarEventsForUserWordPress(userIdInput: string | 
   const userId = normalizeWPUserId(userIdInput);
   if (!userId) return [];
   try {
-    const ownedRels: any[] = await wordpressFetch<any[]>(`jet-rel/${REL_USER_EVENT}/children/${userId}`).catch(() => []);
-    const invitedRels: any[] = await wordpressFetch<any[]>(`jet-rel/${REL_EVENT_INVITEES}/parents/${userId}`).catch(() => []);
+    const ownedRels: any[] = await wordpressFetch<any[]>(`jet-rel/${REL_USER_EVENT}/children/${userId}`);
+    const invitedRels: any[] = await wordpressFetch<any[]>(`jet-rel/${REL_EVENT_INVITEES}/parents/${userId}`);
     const ownedIds: string[] = (Array.isArray(ownedRels) ? ownedRels : [])
       .map((r: any) => String(r?.child_object_id ?? r?._ID ?? r?.id ?? "").replace(/^wp-/, ""))
       .filter(Boolean);

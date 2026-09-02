@@ -117,7 +117,7 @@ export async function filterVisibleTasks<T extends { id: string | number }>(task
 
 /** Replace the visibility links of one entity (adds new, removes dropped ones). */
 async function replaceLinks(rel: number, parentId: number, wantedIds: number[]): Promise<void> {
-  const current = await wordpressFetch<any[]>(`jet-rel/${rel}/children/${parentId}`).catch(() => []);
+  const current = await wordpressFetch<any[]>(`jet-rel/${rel}/children/${parentId}`);
   const existing = (Array.isArray(current) ? current : []).map((r: any) => Number(r.child_object_id)).filter(Boolean);
   const toAdd = wantedIds.filter((id) => !existing.includes(id));
   const toRemove = existing.filter((id) => !wantedIds.includes(id));
