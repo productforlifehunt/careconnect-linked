@@ -36,12 +36,15 @@ export async function wordpressFetchRaw(endpoint: string, options: WordPressFetc
     });
   }
 
-  // Guest (unauthenticated) reads must always go through the backend proxy:
-  // that is the only place WooCommerce catalog keys and the sanitized public
-  // provider-profile read are available. The local Vite proxy has no credentials.
-  const forceEdge = !token;
+  // WordPress is HTTPS with permissive CORS and every authenticated call carries
+  // a JWT, so requests go straight to WordPress. The backend proxy is used ONLY
+  // where the browser genuinely cannot hold the credential:
+  //   - guest WooCommerce catalog reads (need the read-only consumer keys)
+  //   - the guest provider-profile read (needs admin creds + server-side sanitizing)
+  const forceEdge = !token && needsCredentialedProxy(endpoint);
   const url = buildWPUrl(endpoint, cleanParams, { forceEdge });
   const headers = buildWPHeaders(token, "application/json", { forceEdge });
+
 
   // Any write invalidates the short-lived read dedupe cache (rel-batch listens),
   // so a mutation is never followed by stale cached reads.
