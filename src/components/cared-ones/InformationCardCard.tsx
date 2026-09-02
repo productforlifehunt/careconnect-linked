@@ -43,7 +43,7 @@ function statusVariant(status?: string): "default" | "secondary" | "outline" {
   return "outline";
 }
 
-export function InformationCardCard({ caredOneId }: { caredOneId: string }) {
+export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: string; caredOneName?: string }) {
   const { toast } = useToast();
   const { i18n } = useTranslation();
   const isCN = i18n.language?.startsWith("zh");
@@ -65,6 +65,8 @@ export function InformationCardCard({ caredOneId }: { caredOneId: string }) {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [contactsCardId, setContactsCardId] = useState<string | null>(null);
   const [shareCard, setShareCard] = useState<any | null>(null);
+  const [viewCard, setViewCard] = useState<any | null>(null);
+
 
   const openCreate = () => {
     setEditId(null);
