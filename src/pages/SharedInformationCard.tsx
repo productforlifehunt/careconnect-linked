@@ -100,6 +100,37 @@ export default function SharedInformationCard() {
               </div>
             )}
 
+            {card.displays_location === "Yes" && (
+              <div className="border-t pt-4">
+                <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                  {Z("最近位置", "Last known location")}
+                </h2>
+                {location?.latitude != null && location?.longitude != null ? (
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-3 rounded-md border p-3 hover:bg-accent transition"
+                  >
+                    <Navigation className="h-4 w-4 text-primary shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium truncate">
+                        {location.address_text || `${Number(location.latitude).toFixed(5)}, ${Number(location.longitude).toFixed(5)}`}
+                      </div>
+                      {location.captured_at && (
+                        <div className="text-xs text-muted-foreground truncate">
+                          {new Date(String(location.captured_at).replace(" ", "T")).toLocaleString()}
+                        </div>
+                      )}
+                    </div>
+                  </a>
+                ) : (
+                  <p className="text-sm text-muted-foreground">{Z("暂无位置记录。", "No location record yet.")}</p>
+                )}
+              </div>
+            )}
+
+
             {!!contacts?.length && (
               <div className="border-t pt-4">
                 <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
