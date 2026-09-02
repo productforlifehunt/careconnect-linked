@@ -556,7 +556,23 @@ export async function createGroupInviteWordPress(input: {
       body: { parent_id: groupIdNum, child_id: inviteId, context: "child", store_items_type: "update" },
     });
   }
-  return normalizeInvite({ ...created, id: inviteId, [F_INVITE.TOKEN]: token }, input.groupId);
+  // The CCT POST reply only echoes the new row id, not the stored columns, so
+  // the returned link is rebuilt from what was just written. Without this the
+  // UI would show an empty note / wrong join role until the next refetch.
+  return normalizeInvite({
+    ...created,
+    id: inviteId,
+    [F_INVITE.TOKEN]: token,
+    [F_INVITE.NAME]: input.name || "",
+    [F_INVITE.NOTE]: input.note || "",
+    [F_INVITE.EXPIRES_AT]: source === "app native generated" ? "" : (input.expiresAt || ""),
+    [F_INVITE.MAX_USES]: source === "app native generated" ? "0" : String(Number(input.maxUses || 0)),
+    [F_INVITE.USE_COUNT]: "0",
+    [F_INVITE.IS_REVOKED]: O_INVITE.IS_REVOKED.NO,
+    [F_INVITE.THE_USER_IS_INVITED_AS]: INVITED_AS_CODE[input.invitedAs || "normal group member"],
+    [F_INVITE.CUSTOM_OR_APP_NATIVE_GENERATED]: SOURCE_CODE[source],
+  }, input.groupId);
+
 }
 
 export async function updateGroupInviteWordPress(id: string, updates: {
