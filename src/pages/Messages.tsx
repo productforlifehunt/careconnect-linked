@@ -112,14 +112,19 @@ export default function Messages({ embedded = false }: { embedded?: boolean } = 
     }
   }, [location.state]);
 
+  // On phones the list IS the screen: never auto-open a chat, otherwise the
+  // user lands inside a conversation they never picked and back feels broken.
   useEffect(() => {
     const navState = location.state as any;
+    const isWide = typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches;
+    if (!isWide || closedByUserRef.current) return;
     if (conversations && conversations.length > 0 && !selectedConvoId && !navState?.targetUserId) {
       const first = conversations[0];
       setSelectedConvoId(first.id);
       setSelectedOtherUser(getOtherUser(first));
     }
   }, [conversations, selectedConvoId, profile?.id]);
+
 
   const otherUserId = selectedOtherUser?.id || null;
   // Messages are fetched by conversationId, not by otherUserId.
