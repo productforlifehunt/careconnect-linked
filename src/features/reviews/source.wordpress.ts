@@ -1,15 +1,12 @@
 /**
- * Reviews — JetEngine CCT 31 "Review" + Relation 264 (Users -> 31. Review).
- *
- * Per the data dictionary, provider reviews are stored in the Review CCT
- * (a55 title, a56 content, a57 rating) and attached to the reviewed care
- * provider through JetEngine relation 264. No WooCommerce product reviews,
- * no custom foreign keys.
- *
- * Facilities: the dictionary defines no facility -> review relation
- * (144 = Shop, 264 = care provider user, 145 = nicotine product), so facility
- * reviews are not available and the write path says so explicitly instead of
- * silently writing to the wrong parent.
+ * Reviews — JetEngine CCT 31 "Review" (a55 title, a56 content, a57 rating)
+ * attached to its parent through JetEngine relations only:
+ *   144 → 2. Shop
+ *   264 → Users (care provider)
+ *   294 → 215. care facility
+ *   145 → 140. nicotine product
+ * Replies live in CCT 141 Comment via relation 143 (and 142 for nested).
+ * No WooCommerce/Dokan reviews, no custom foreign keys.
  */
 import { R, T } from "@/integrations/wp-schema";
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
@@ -18,6 +15,23 @@ import { lookupUserNames } from "@/services/woocommerce-api";
 const REVIEW = T.review;
 const F = REVIEW.f;
 const REL_PROVIDER_REVIEWS = R.providerReviews; // 264: Users -> 31. Review
+
+/** entity_type → JetEngine relation id whose parent owns the reviews. */
+const ENTITY_REVIEW_REL: Record<string, number> = {
+  provider: R.providerReviews,
+  caregiver: R.providerReviews,
+  user: R.providerReviews,
+  facility: R.facilityReviews,
+  care_facility: R.facilityReviews,
+  shop: R.shopReviews,
+  store: R.shopReviews,
+  product: R.productReviews,
+  nicotine_product: R.productReviews,
+};
+
+function relForEntity(entityType?: string): number {
+  return ENTITY_REVIEW_REL[entityType ?? "provider"] ?? R.providerReviews;
+}
 
 export interface EntityReview {
   id: string;
@@ -34,18 +48,20 @@ function numericId(value: string | number | undefined | null): number {
   return Number(String(value ?? "").replace(/^wp-/, "")) || 0;
 }
 
-async function fetchProviderReviewRows(providerUserId: number): Promise<any[]> {
-  const rels = await wordpressFetch<any[]>(
-    `jet-rel/${REL_PROVIDER_REVIEWS}/children/${providerUserId}`,
-  );
+async function fetchReviewRows(parentId: number, relId: number): Promise<any[]> {
+  const rels = await wordpressFetch<any[]>(`jet-rel/${relId}/children/${parentId}`);
   const ids = (Array.isArray(rels) ? rels : [])
     .map((r: any) => Number(r.child_object_id))
     .filter(Boolean);
   if (ids.length === 0) return [];
   const rows = await Promise.all(
-    ids.map((id) => wordpressCCTFetch<any>(REVIEW.slug, { id }).catch(() => null)),
+    ids.map((id) => wordpressCCTFetch<any>(REVIEW.slug, { id })),
   );
   return rows.filter(Boolean);
+}
+
+async function fetchProviderReviewRows(providerUserId: number): Promise<any[]> {
+  return fetchReviewRows(providerUserId, REL_PROVIDER_REVIEWS);
 }
 
 async function resolveAuthorName(authorId: number): Promise<string> {
