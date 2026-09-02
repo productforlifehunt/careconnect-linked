@@ -173,8 +173,11 @@ export function encodeRel72Meta(input: Rel72MetaInput = {}): Record<string, any>
     // Never invent a name: the display name is the member's own app name
     // (CCT 151 a556 / a557). Empty means "not set yet", not "Member".
     [F223.displayName]: input.displayName ?? "",
-    [F223.types]: type,
-    [F223.roles]: role,
+    // a56 / a57 are Checkbox fields in JetEngine — they must be written as
+    // arrays. Sending a bare string makes the relation save fatal (HTTP 500)
+    // after the text field is stored, which silently dropped role + status.
+    [F223.types]: [type],
+    [F223.roles]: [role],
     [F223.status]: INVITATION_STATUS_CODE[input.invitationStatus || "accepted"] || STATUS_OPT.ACCEPTED,
   };
 }
@@ -209,7 +212,8 @@ export interface Rel75MetaInput {
 export function encodeRel75Meta(input: Rel75MetaInput = {}): Record<string, any> {
   const type = pickCode(input.types, SUB_TYPE_CODE, TYPE_PRIORITY, SUB_TYPE_OPT.NOTHING_SPECIAL);
   return {
-    [F225.types]: type,
+    // a55 is a Checkbox field — always an array (see encodeRel72Meta).
+    [F225.types]: [type],
     [F225.status]: SUB_STATUS_CODE[input.status || "accepted"] || SUB_STATUS_OPT.ACCEPTED,
   };
 }
