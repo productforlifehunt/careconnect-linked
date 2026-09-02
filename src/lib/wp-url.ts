@@ -47,10 +47,19 @@ export function buildWPUrl(
     return `${devBase}${path}${query ? `?${query}` : ''}`;
   }
 
-  // All other cases → edge function proxy
+  // Direct HTTPS to WordPress — the site serves permissive CORS headers, so an
+  // authenticated read/write needs no proxy hop at all. Skipping the edge
+  // function removes one full round-trip (and its cold start) per request.
+  if (!options?.forceEdge) {
+    const query = qs.toString();
+    return `${server.baseUrl}${path}${query ? `?${query}` : ''}`;
+  }
+
+  // Guest / credentialed catalog reads → edge function proxy
   qs.set('path', path);
   qs.set('wp_base', server.baseUrl);
   return `${PROD_WP_PROXY}?${qs.toString()}`;
+
 }
 
 /**
@@ -61,17 +70,19 @@ export function buildWPHeaders(
   contentType?: string,
   options?: { forceEdge?: boolean },
 ): Record<string, string> {
-  const server = getActiveServer();
   const headers: Record<string, string> = {};
+
   if (contentType) headers['Content-Type'] = contentType;
   if (token) headers['Authorization'] = `Bearer ${token}`;
   
-  // Need anon key when going through edge function (prod, or dev with non-primary server)
-  const useEdgeFunction = options?.forceEdge === true || !canUseLocalViteProxy() || !server.isPrimary;
+  // The anon key is only needed when the request actually goes through the
+  // Supabase edge function (guest / credentialed catalog reads).
+  const useEdgeFunction = options?.forceEdge === true;
   if (useEdgeFunction) {
     const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
     if (anonKey) headers['apikey'] = anonKey;
   }
+
   
   return headers;
 }

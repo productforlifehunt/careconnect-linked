@@ -29,6 +29,54 @@ function toRecord(u: any): WPUserRecord {
 }
 
 /**
+ * Process-level record cache.
+ *
+ * A screen that renders N people used to cost N separate admin-ops calls,
+ * because each single-id read had its own dedupe key. Records resolved by any
+ * batch are reused, so one batched request covers the whole screen.
+ */
+const userRecordCache = new Map<number, WPUserRecord>();
+
+/**
+ * Micro-batching queue.
+ *
+ * Widgets ask for people independently (one dashboard render asks for the
+ * signed-in user, every cared one, every task assignee…). Every id requested
+ * inside the same ~25ms window is collapsed into ONE `wp-admin-ops` call, so
+ * the screen pays a single round-trip instead of one per person — and nothing
+ * has to be pre-fetched in a blocking step before the rest can start.
+ */
+let pendingIds = new Set<number>();
+let pendingBatch: Promise<void> | null = null;
+
+function enqueueUserIds(ids: number[]): Promise<void> {
+  ids.forEach((id) => pendingIds.add(id));
+  if (!pendingBatch) {
+    pendingBatch = new Promise<void>((resolve, reject) => {
+      setTimeout(async () => {
+        const batch = Array.from(pendingIds);
+        pendingIds = new Set();
+        pendingBatch = null;
+        try {
+          const proxied = await wpAdminOps<any[]>("get_user_names", { ids: batch });
+          if (!Array.isArray(proxied)) {
+            throw new Error("Could not read WordPress users through wp-admin-ops");
+          }
+          for (const u of proxied) {
+            const rec = toRecord(u);
+            userRecordCache.set(rec.id, rec);
+          }
+          resolve();
+        } catch (err) {
+          reject(err);
+        }
+      }, 25);
+    });
+  }
+  return pendingBatch;
+}
+
+/**
  * Reads real WordPress users by ID.
  *
  * App users are WP subscribers and cannot read other users over the REST API,
@@ -47,15 +95,23 @@ export async function fetchWPUsers(ids: Array<number | string>): Promise<Map<num
   const out = new Map<number, WPUserRecord>();
   if (clean.length === 0) return out;
 
-  return dedupeRead(`wp-users:${clean.slice().sort((a, b) => a - b).join(",")}`, async () => {
-    const proxied = await wpAdminOps<any[]>("get_user_names", { ids: clean });
-    if (!Array.isArray(proxied)) {
-      throw new Error("Could not read WordPress users through wp-admin-ops");
-    }
-    for (const u of proxied) out.set(Number(u.id), toRecord(u));
-    return out;
-  });
+  const missing: number[] = [];
+  for (const id of clean) {
+    const cached = userRecordCache.get(id);
+    if (cached) out.set(id, cached);
+    else missing.push(id);
+  }
+  if (missing.length === 0) return out;
+
+  await enqueueUserIds(missing);
+
+  for (const id of missing) {
+    const rec = userRecordCache.get(id);
+    if (rec) out.set(id, rec);
+  }
+  return out;
 }
+
 
 export async function fetchWPUser(id: number | string): Promise<WPUserRecord> {
   const numeric = Number(String(id ?? "").replace(/^wp-/, ""));
@@ -64,6 +120,7 @@ export async function fetchWPUser(id: number | string): Promise<WPUserRecord> {
   if (!rec) throw new Error(`WordPress user ${numeric} not found`);
   return rec;
 }
+
 
 /**
  * One-to-one child CCT row of a user (Relation 152 / 259).
@@ -105,11 +162,15 @@ export interface WPUserProfile extends WPUserRecord {
  * extended-profile CCT rows, joined through JetEngine relations 152 and 259.
  */
 export async function fetchWPUserProfile(id: number | string): Promise<WPUserProfile> {
-  const user = await fetchWPUser(id);
-  const [profile, profile2] = await Promise.all([
-    fetchOneToOneChild(R.userProfileRel, user.id, T.userProfile.slug),
-    fetchOneToOneChild(R.userProfile2Rel, user.id, T.userProfile2.slug),
+  const numeric = Number(String(id ?? "").replace(/^wp-/, ""));
+  // The relation joins only need the numeric user id, so nothing has to wait on
+  // the user record read — all three go out at once instead of in a waterfall.
+  const [user, profile, profile2] = await Promise.all([
+    fetchWPUser(numeric),
+    fetchOneToOneChild(R.userProfileRel, numeric, T.userProfile.slug),
+    fetchOneToOneChild(R.userProfile2Rel, numeric, T.userProfile2.slug),
   ]);
+
   // Display name comes ONLY from the per-app column on CCT 151
   // (a556 ChallengeD / a557 CareCNC). The WordPress user name is shared across
   // every app on this backend and is never shown.

@@ -26,8 +26,14 @@ export async function fetchUserCaredOnesWordPress(): Promise<any[]> {
     .filter(Boolean)
     .filter((id: string) => id.replace(/^wp-/, "") !== selfId);
 
+  // No blocking pre-fetch: every person read below joins the same 25ms
+  // micro-batch inside fetchWPUsers, so the user records and the profile
+  // relation joins all leave together instead of in two stages.
+
+
   const caredOnes = await Promise.all(
     caredOneIds.map(async (userId: string) => {
+
       const u = await fetchWPUserProfile(userId);
       return {
         user_id: `wp-${u.id}`,
