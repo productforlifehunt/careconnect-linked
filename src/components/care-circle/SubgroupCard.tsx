@@ -99,12 +99,7 @@ export function SubgroupCard({ subgroup, members, isAdmin, onDelete, currentUser
               style={{ backgroundColor: subgroup.color || "hsl(var(--primary))" }}
             />
             <p className="text-sm font-semibold text-foreground truncate">{subgroup.name}</p>
-            <Badge variant="secondary" className="text-[10px] h-4">{accepted.length}</Badge>
-            {canManage && pending.length > 0 && (
-              <Badge variant="outline" className="text-[10px] h-4 gap-0.5 border-warning/40 text-warning">
-                <Clock className="h-2.5 w-2.5" /> {pending.length}
-              </Badge>
-            )}
+            <Badge variant="secondary" className="text-[10px] h-4">{records.length}</Badge>
           </div>
           {canManage && (
             <div className="flex items-center gap-0.5 shrink-0">
