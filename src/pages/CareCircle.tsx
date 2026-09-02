@@ -261,6 +261,7 @@ export default function CareCircle() {
           activeTab={activeTab}
           onSelect={setActiveTab}
           allLabel={isCN ? "全部标签" : "All tabs"}
+          isCN={isCN}
           tabs={[
             { value: "home", label: t("careCircle.home"), icon: Home },
             { value: "calendar", label: t("careCircle.calendar"), icon: CalendarDays },
