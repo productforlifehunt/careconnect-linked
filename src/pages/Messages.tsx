@@ -342,8 +342,11 @@ export default function Messages({ embedded = false }: { embedded?: boolean } = 
           <div className="p-4 border-t bg-card">
             {pendingAttachment && (
               <div className="flex items-center gap-2 mb-2 p-2 rounded-lg bg-muted/50 text-sm">
+                {pendingAttachment.type === "image" ? (
+                  <img src={pendingAttachment.url} alt="" className="h-10 w-10 rounded object-cover shrink-0" />
+                ) : null}
                 <span className="text-muted-foreground truncate flex-1">
-                  {pendingAttachment.type === "image" ? "📷" : "📎"} {pendingAttachment.url.split("/").pop()}
+                  {pendingAttachment.name || Z("已选择文件", "File selected")}
                 </span>
                 <Button variant="ghost" size="icon" className="min-h-11 min-w-11 shrink-0" aria-label={Z("移除附件", "Remove attachment")} onClick={() => setPendingAttachment(null)}>
                   <X className="h-3 w-3" />
@@ -351,7 +354,8 @@ export default function Messages({ embedded = false }: { embedded?: boolean } = 
               </div>
             )}
             <div className="flex gap-2">
-              <MessageAttachment onAttach={(url, type) => setPendingAttachment({ url, type })} disabled={sendMessage.isPending} />
+              <MessageAttachment onAttach={(url, type, name) => setPendingAttachment({ url, type, name })} disabled={sendMessage.isPending} />
+
               <Button
                 variant="ghost"
                 size="icon"
