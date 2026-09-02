@@ -205,9 +205,10 @@ export interface Rel75MetaInput {
 
 export function encodeRel75Meta(input: Rel75MetaInput = {}): Record<string, any> {
   const type = pickCode(input.types, SUB_TYPE_CODE, TYPE_PRIORITY, SUB_TYPE_OPT.NOTHING_SPECIAL);
-  // a55 is a Radio field — one code. Invitation status is deprecated.
-  return { [F225.types]: type };
+  // Same as REL 223: the multi-choice column only accepts an array of codes.
+  return { [F225.types]: [type] };
 }
+
 
 export interface Rel75MetaDecoded {
   types: string[];                     // readable labels
