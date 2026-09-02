@@ -198,7 +198,13 @@ export default function Messages({ embedded = false }: { embedded?: boolean } = 
   );
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex">
+    <div
+      className={`flex ${
+        embedded
+          ? "h-[calc(100dvh-16rem)] min-h-[26rem] md:h-[calc(100dvh-13rem)]"
+          : "h-[calc(100dvh-8rem)] md:h-[calc(100dvh-4rem)]"
+      }`}
+    >
       {/* Conversation List */}
       <div className={`w-full md:w-80 border-r flex flex-col bg-card ${selectedConvoId ? "hidden md:flex" : "flex"}`}>
         <div className="p-4 border-b">
