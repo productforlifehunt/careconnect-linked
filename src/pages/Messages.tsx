@@ -40,6 +40,7 @@ export default function Messages({ embedded = false }: { embedded?: boolean } = 
   const [newConvoSearch, setNewConvoSearch] = useState("");
   const [quoteDialogOpen, setQuoteDialogOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesBoxRef = useRef<HTMLDivElement>(null);
   const navHandledRef = useRef(false);
   // Once the reader taps back to the list we must never yank them into a chat
   // again — the auto-open is a first-load convenience for wide screens only.
@@ -135,7 +136,10 @@ export default function Messages({ embedded = false }: { embedded?: boolean } = 
   void otherUserId;
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    // Scroll only the message list — scrollIntoView would scroll the whole page
+    // and push the app header off screen.
+    const box = messagesBoxRef.current;
+    if (box) box.scrollTo({ top: box.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
   // Drag a photo straight onto the conversation — same upload path as the clip.
@@ -225,7 +229,7 @@ export default function Messages({ embedded = false }: { embedded?: boolean } = 
     <div
       className={`flex ${
         embedded
-          ? "h-[calc(100dvh-16rem)] min-h-[26rem] md:h-[calc(100dvh-13rem)]"
+          ? "h-[calc(100dvh-19rem)] min-h-[24rem] md:h-[calc(100dvh-13rem)]"
           : "h-[calc(100dvh-8rem)] md:h-[calc(100dvh-4rem)]"
       }`}
     >
@@ -334,6 +338,7 @@ export default function Messages({ embedded = false }: { embedded?: boolean } = 
           </div>
 
           <div
+            ref={messagesBoxRef}
             className={`flex-1 overflow-auto p-4 space-y-3 bg-muted/20 ${dragOver ? "ring-2 ring-primary/50 ring-inset" : ""}`}
             onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
