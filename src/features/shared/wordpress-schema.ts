@@ -330,39 +330,5 @@ export const wordpressSchema: Record<WordPressFeatureKey, WordPressSchemaEntry<a
       parent_id: c.parent ? String(c.parent) : null,
     })) : []),
   },
-  reviews: {
-    status: "confirmed",
-    endpoint: "dokan/v1/store-reviews",
-    defaultParams: { per_page: 20 },
-    mapList: (reviews: any[]) => (Array.isArray(reviews) ? reviews.map((r) => ({
-      id: String(r.id),
-      entity_id: r.store_id ? String(r.store_id) : null,
-      entity_type: "provider",
-      reviewer_id: r.reviewer_id ? String(r.reviewer_id) : null,
-      rating: r.rating ?? 5,
-      comment: r.content || r.review || null,
-      created_at: r.date || r.created_at || new Date().toISOString(),
-      reviewer: {
-        id: r.reviewer_id ? String(r.reviewer_id) : null,
-        // Name comes only from the profile; no invented "Anonymous".
-        full_name: r.reviewer?.name || "",
-        avatar_url: r.reviewer?.avatar || r.author_avatar_urls?.["96"] || null,
-      },
-    })) : []),
-    buildCreateBody: (review: { entity_id: string; rating: number; comment?: string }) => ({
-      store_id: parseInt(review.entity_id.replace("wp-", ""), 10),
-      rating: review.rating,
-      content: review.comment || "",
-    }),
-  },
-  review_create: {
-    status: "confirmed",
-    endpoint: (args?: { id?: number }) => `dokan/v1/stores/${args?.id || 0}/reviews`,
-    buildCreateBody: (review: { entity_id: string; rating: number; comment?: string }) => ({
-      title: "Caregiver Review",
-      rating: review.rating,
-      content: review.comment || "",
-    }),
-  },
 };
 

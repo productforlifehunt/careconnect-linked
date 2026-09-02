@@ -94,26 +94,6 @@ export async function wpFetchPages(perPage = 50) {
   return wpFetch("wp/v2/pages", { params: { per_page: perPage } });
 }
 
-// ─── WordPress Comments (as reviews or post comments) ───────
-export async function wpFetchComments(postId?: number, perPage = 50) {
-  try {
-    const params: Record<string, string | number> = { per_page: perPage };
-    if (postId) params.post = postId;
-    const comments = await wpFetch("wp/v2/comments", { params });
-    if (!Array.isArray(comments)) return [];
-    return comments.map((c: any) => ({
-      id: String(c.id),
-      content: c.content?.rendered || "",
-      author_name: c.author_name || "Anonymous",
-      author_avatar: c.author_avatar_urls?.["48"] || null,
-      created_at: c.date,
-      rating: null,
-    }));
-  } catch {
-    return [];
-  }
-}
-
 // ─── Custom Post Types (if registered in WP) ───────────────
 export async function wpFetchCPT(cptSlug: string, perPage = 50) {
   return wpFetch(`wp/v2/${cptSlug}`, { params: { per_page: perPage } });
@@ -370,17 +350,6 @@ export async function wpFetchNotifications(): Promise<any[]> {
       is_read: String(n[F.NOTIFICATION_IS_READ]) === T.notification.opt.NOTIFICATION_IS_READ.YES,
       created_at: n.created_at,
     }));
-  } catch {
-    return [];
-  }
-}
-
-// ─── Reviews (WP comments as reviews) ───────────────────────
-export async function wpFetchReviews(entityId?: string): Promise<any[]> {
-  try {
-    const postId = entityId ? parseInt(entityId.replace("wp-", ""), 10) : undefined;
-    if (postId && isNaN(postId)) return [];
-    return wpFetchComments(postId);
   } catch {
     return [];
   }
