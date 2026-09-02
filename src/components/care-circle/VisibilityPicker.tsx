@@ -7,53 +7,67 @@ import { Eye, Users, User, Tag } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 export interface VisibilityValue {
-  /** Sub-group (private member group) numeric ids selected for visibility. */
+  /** Sub-group (private member group) numeric ids the item is visible to. */
   subgroupIds: number[];
-  /** Specific user numeric ids selected for visibility. */
+  /** Specific user numeric ids the item is visible to. */
   userIds: number[];
+  /** Sub-group ids the item is explicitly hidden from. */
+  hiddenSubgroupIds: number[];
+  /** User ids the item is explicitly hidden from. */
+  hiddenUserIds: number[];
 }
 
 interface VisibilityPickerProps {
   value: VisibilityValue;
   onChange: (next: VisibilityValue) => void;
   memberCategories?: Array<{ id: string; name: string; color?: string | null }>;
-  members?: Array<{ user_id?: string; id?: string; profile?: { full_name?: string | null; avatar_url?: string | null } }>;
+  members?: Array<{ user_id?: string; id?: string; display_name?: string | null; profile?: { full_name?: string | null; avatar_url?: string | null } }>;
+  /** Show the "hide from" mode (only supported where exclusion links exist). */
+  allowExclude?: boolean;
 }
 
 function toNum(id: string | number | undefined | null): number {
   return Number(String(id ?? "").replace(/^wp-/, ""));
 }
 
+function toggle(list: number[], id: number): number[] {
+  return list.includes(id) ? list.filter((x) => x !== id) : [...list, id];
+}
+
 /**
- * VisibilityPicker — pick sub-groups and/or specific users a post/task is visible to.
- * Empty selection = visible to everyone in the group (per PRD spec).
+ * VisibilityPicker — choose who a post/task is visible to, or who it is hidden from.
+ * Empty selection = visible to everyone in the group.
  */
-export function VisibilityPicker({ value, onChange, memberCategories = [], members = [] }: VisibilityPickerProps) {
+export function VisibilityPicker({ value, onChange, memberCategories = [], members = [], allowExclude = true }: VisibilityPickerProps) {
   const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<"include" | "exclude">("include");
   const { i18n } = useTranslation();
   const isCN = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (isCN ? cn : en);
 
-  const totalSelected = value.subgroupIds.length + value.userIds.length;
+  const includeCount = value.subgroupIds.length + value.userIds.length;
+  const excludeCount = value.hiddenSubgroupIds.length + value.hiddenUserIds.length;
+  const totalSelected = includeCount + excludeCount;
   const label = totalSelected === 0
     ? Z("所有人", "Everyone")
-    : Z(`已选 ${totalSelected} 项`, `${totalSelected} selected`);
+    : includeCount > 0
+      ? Z(`仅 ${includeCount} 项可见`, `Only ${includeCount} selected`)
+      : Z(`对 ${excludeCount} 项隐藏`, `Hidden from ${excludeCount}`);
+
+  const selectedSub = mode === "include" ? value.subgroupIds : value.hiddenSubgroupIds;
+  const selectedUsers = mode === "include" ? value.userIds : value.hiddenUserIds;
 
   const toggleSubgroup = (id: number) => {
-    const exists = value.subgroupIds.includes(id);
-    onChange({
-      ...value,
-      subgroupIds: exists ? value.subgroupIds.filter((x) => x !== id) : [...value.subgroupIds, id],
-    });
+    onChange(mode === "include"
+      ? { ...value, subgroupIds: toggle(value.subgroupIds, id) }
+      : { ...value, hiddenSubgroupIds: toggle(value.hiddenSubgroupIds, id) });
   };
   const toggleUser = (id: number) => {
-    const exists = value.userIds.includes(id);
-    onChange({
-      ...value,
-      userIds: exists ? value.userIds.filter((x) => x !== id) : [...value.userIds, id],
-    });
+    onChange(mode === "include"
+      ? { ...value, userIds: toggle(value.userIds, id) }
+      : { ...value, hiddenUserIds: toggle(value.hiddenUserIds, id) });
   };
-  const reset = () => onChange({ subgroupIds: [], userIds: [] });
+  const reset = () => onChange(EMPTY_VISIBILITY);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -76,6 +90,24 @@ export function VisibilityPicker({ value, onChange, memberCategories = [], membe
           <p className="text-[11px] text-muted-foreground mt-0.5">
             {Z("留空则对整个群组可见。", "Leave empty to share with the whole group.")}
           </p>
+          {allowExclude && (<div className="mt-2 grid grid-cols-2 gap-1 rounded-md bg-muted p-0.5">
+            <button
+              type="button"
+              onClick={() => setMode("include")}
+              className={`text-[11px] rounded px-2 py-1 ${mode === "include" ? "bg-background font-medium text-foreground shadow-sm" : "text-muted-foreground"}`}
+            >
+              {Z("仅这些人可见", "Only these")}
+              {includeCount > 0 ? ` (${includeCount})` : ""}
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("exclude")}
+              className={`text-[11px] rounded px-2 py-1 ${mode === "exclude" ? "bg-background font-medium text-foreground shadow-sm" : "text-muted-foreground"}`}
+            >
+              {Z("对这些人隐藏", "Hide from")}
+              {excludeCount > 0 ? ` (${excludeCount})` : ""}
+            </button>
+          </div>)}
         </div>
 
         <div className="max-h-80 overflow-y-auto">
@@ -87,7 +119,7 @@ export function VisibilityPicker({ value, onChange, memberCategories = [], membe
               <div className="space-y-1.5">
                 {memberCategories.map((cat) => {
                   const num = toNum(cat.id);
-                  const checked = value.subgroupIds.includes(num);
+                  const checked = selectedSub.includes(num);
                   return (
                     <label key={cat.id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded px-1.5 py-1 -mx-1.5">
                       <Checkbox checked={checked} onCheckedChange={() => toggleSubgroup(num)} />
@@ -108,8 +140,8 @@ export function VisibilityPicker({ value, onChange, memberCategories = [], membe
                 {members.map((m) => {
                   const uid = toNum(m.user_id || m.id);
                   if (!uid) return null;
-                  const checked = value.userIds.includes(uid);
-                  const name = (m as any).display_name || m.profile?.full_name || Z("未填姓名", "No name");
+                  const checked = selectedUsers.includes(uid);
+                  const name = m.display_name || m.profile?.full_name || Z("未填姓名", "No name");
                   return (
                     <label key={uid} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded px-1.5 py-1 -mx-1.5">
                       <Checkbox checked={checked} onCheckedChange={() => toggleUser(uid)} />
@@ -153,4 +185,4 @@ export function VisibilityPicker({ value, onChange, memberCategories = [], membe
   );
 }
 
-export const EMPTY_VISIBILITY: VisibilityValue = { subgroupIds: [], userIds: [] };
+export const EMPTY_VISIBILITY: VisibilityValue = { subgroupIds: [], userIds: [], hiddenSubgroupIds: [], hiddenUserIds: [] };

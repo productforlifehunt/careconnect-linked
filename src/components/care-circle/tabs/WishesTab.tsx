@@ -41,7 +41,7 @@ export function WishesTab({ wishes, wishesLoading, activeGroupId, userId, isAdmi
           <VisibilityPicker value={visibility} onChange={setVisibility} memberCategories={memberCategories} members={members} />
           <Button variant="coral" size="sm" onClick={() => {
             if (!content.trim() || !activeGroupId) return;
-            createPost.mutate({ group_id: activeGroupId, content, type: "wish", subgroupIds: visibility.subgroupIds, visibilityUserIds: visibility.userIds }, {
+            createPost.mutate({ group_id: activeGroupId, content, type: "wish", subgroupIds: visibility.subgroupIds, visibilityUserIds: visibility.userIds, hiddenSubgroupIds: visibility.hiddenSubgroupIds, hiddenUserIds: visibility.hiddenUserIds }, {
               onSuccess: () => { setContent(""); setVisibility(EMPTY_VISIBILITY); toast({ title: Z("祝福已送达！💛", "Wish sent! 💛") }); },
             });
           }} disabled={!content.trim() || createPost.isPending}><Star className="h-3.5 w-3.5 mr-1" /> {Z("送出祝福", "Send Wish")}</Button>

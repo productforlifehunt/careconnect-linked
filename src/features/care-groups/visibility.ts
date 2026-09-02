@@ -24,6 +24,10 @@ const REL_POST_SUBGROUPS = R.careGroupPostPrivateGroups;
 const REL_POST_USERS = R.careGroupPostMentionedUsers;
 const REL_TASK_USERS = R.careTaskVisibleUsers;
 const REL_TASK_SUBGROUPS = R.careTaskPrivateMemberGroups;
+/** REL 293 — sub-groups a post is explicitly NOT visible to. */
+const REL_POST_HIDDEN_SUBGROUPS = R.careGroupPostHiddenPrivateGroups;
+/** REL 292 — members a post is explicitly NOT visible to. */
+const REL_POST_HIDDEN_USERS = R.careGroupPostHiddenUsers;
 
 /**
  * Whole-relation map: `{ parentId: [childId, ...] }`.
@@ -75,18 +79,25 @@ async function filterVisibleEntities<T extends { id: string | number }>(
   items: T[],
   relSubgroups: number,
   relUsers: number,
+  relHiddenSubgroups?: number,
+  relHiddenUsers?: number,
 ): Promise<T[]> {
   if (items.length === 0) return items;
   const uid = getCurrentUserIdNumber();
   if (!uid) return [];
-  const [mySubgroups, subMap, userMap] = await Promise.all([
+  const [mySubgroups, subMap, userMap, hiddenSubMap, hiddenUserMap] = await Promise.all([
     fetchMySubgroupIds(),
     relMap(relSubgroups),
     relMap(relUsers),
+    relHiddenSubgroups ? relMap(relHiddenSubgroups) : Promise.resolve(new Map<number, number[]>()),
+    relHiddenUsers ? relMap(relHiddenUsers) : Promise.resolve(new Map<number, number[]>()),
   ]);
   return items.filter((item) => {
     const id = Number(String(item.id).replace(/^wp-/, ""));
     if (!id) return true; // no id to scope by → treat as unrestricted
+    // Exclusions win over inclusions.
+    if ((hiddenUserMap.get(id) || []).includes(uid)) return false;
+    if ((hiddenSubMap.get(id) || []).some((sg) => mySubgroups.has(sg))) return false;
     const allowedSub = subMap.get(id) || [];
     const allowedUsers = userMap.get(id) || [];
     if (allowedSub.length === 0 && allowedUsers.length === 0) return true;
@@ -96,7 +107,7 @@ async function filterVisibleEntities<T extends { id: string | number }>(
 }
 
 export async function filterVisiblePosts<T extends { id: string | number }>(posts: T[]): Promise<T[]> {
-  return filterVisibleEntities(posts, REL_POST_SUBGROUPS, REL_POST_USERS);
+  return filterVisibleEntities(posts, REL_POST_SUBGROUPS, REL_POST_USERS, REL_POST_HIDDEN_SUBGROUPS, REL_POST_HIDDEN_USERS);
 }
 
 /** Filter a list of tasks to those visible to the current user. */
@@ -127,12 +138,20 @@ async function replaceLinks(rel: number, parentId: number, wantedIds: number[]):
 }
 
 /** Set the sub-group / user visibility links for a post (replaces existing). */
-export async function setPostVisibility(postId: string | number, subgroupIds: number[], userIds: number[] = []): Promise<void> {
+export async function setPostVisibility(
+  postId: string | number,
+  subgroupIds: number[],
+  userIds: number[] = [],
+  hiddenSubgroupIds: number[] = [],
+  hiddenUserIds: number[] = [],
+): Promise<void> {
   const pid = Number(String(postId).replace(/^wp-/, ""));
   if (!pid) return;
   await Promise.all([
     replaceLinks(REL_POST_SUBGROUPS, pid, subgroupIds),
     replaceLinks(REL_POST_USERS, pid, userIds),
+    replaceLinks(REL_POST_HIDDEN_SUBGROUPS, pid, hiddenSubgroupIds),
+    replaceLinks(REL_POST_HIDDEN_USERS, pid, hiddenUserIds),
   ]);
 }
 
