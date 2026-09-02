@@ -38,6 +38,45 @@ function toRecord(u: any): WPUserRecord {
 const userRecordCache = new Map<number, WPUserRecord>();
 
 /**
+ * Micro-batching queue.
+ *
+ * Widgets ask for people independently (one dashboard render asks for the
+ * signed-in user, every cared one, every task assignee…). Every id requested
+ * inside the same ~25ms window is collapsed into ONE `wp-admin-ops` call, so
+ * the screen pays a single round-trip instead of one per person — and nothing
+ * has to be pre-fetched in a blocking step before the rest can start.
+ */
+let pendingIds = new Set<number>();
+let pendingBatch: Promise<void> | null = null;
+
+function enqueueUserIds(ids: number[]): Promise<void> {
+  ids.forEach((id) => pendingIds.add(id));
+  if (!pendingBatch) {
+    pendingBatch = new Promise<void>((resolve, reject) => {
+      setTimeout(async () => {
+        const batch = Array.from(pendingIds);
+        pendingIds = new Set();
+        pendingBatch = null;
+        try {
+          const proxied = await wpAdminOps<any[]>("get_user_names", { ids: batch });
+          if (!Array.isArray(proxied)) {
+            throw new Error("Could not read WordPress users through wp-admin-ops");
+          }
+          for (const u of proxied) {
+            const rec = toRecord(u);
+            userRecordCache.set(rec.id, rec);
+          }
+          resolve();
+        } catch (err) {
+          reject(err);
+        }
+      }, 25);
+    });
+  }
+  return pendingBatch;
+}
+
+/**
  * Reads real WordPress users by ID.
  *
  * App users are WP subscribers and cannot read other users over the REST API,
@@ -64,17 +103,7 @@ export async function fetchWPUsers(ids: Array<number | string>): Promise<Map<num
   }
   if (missing.length === 0) return out;
 
-  await dedupeRead(`wp-users:${missing.slice().sort((a, b) => a - b).join(",")}`, async () => {
-    const proxied = await wpAdminOps<any[]>("get_user_names", { ids: missing });
-    if (!Array.isArray(proxied)) {
-      throw new Error("Could not read WordPress users through wp-admin-ops");
-    }
-    for (const u of proxied) {
-      const rec = toRecord(u);
-      userRecordCache.set(rec.id, rec);
-    }
-    return true;
-  });
+  await enqueueUserIds(missing);
 
   for (const id of missing) {
     const rec = userRecordCache.get(id);
@@ -82,6 +111,7 @@ export async function fetchWPUsers(ids: Array<number | string>): Promise<Map<num
   }
   return out;
 }
+
 
 export async function fetchWPUser(id: number | string): Promise<WPUserRecord> {
   const numeric = Number(String(id ?? "").replace(/^wp-/, ""));
