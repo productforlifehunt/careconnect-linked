@@ -135,9 +135,14 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
             <Card key={c.id} className="border-transparent card-elevated">
               <CardContent className="p-4">
                 <div className="flex justify-between items-start gap-2">
-                  <div className="min-w-0 flex-1">
+                  <button
+                    type="button"
+                    className="min-w-0 flex-1 text-left group"
+                    onClick={() => setViewCard(c)}
+                    aria-label={Z("查看信息卡", "View information card")}
+                  >
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="font-medium text-foreground text-sm truncate">{c.cared_ones_information_card_name || Z("（未命名卡片）", "(Untitled card)")}</h4>
+                      <h4 className="font-medium text-foreground text-sm truncate group-hover:underline">{c.cared_ones_information_card_name || Z("（未命名卡片）", "(Untitled card)")}</h4>
                       <Badge variant={statusVariant(c.status)} className="text-[10px]">{statusLabel(c.status)}</Badge>
                       {c.displays_location === "Yes" && (
                         <Badge variant="outline" className="text-[10px]"><MapPin className="h-2.5 w-2.5 mr-1" />{Z("位置", "Location")}</Badge>
@@ -147,10 +152,11 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
                     {c.cared_ones_description && (
                       <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{c.cared_ones_description}</p>
                     )}
-                  </div>
+                  </button>
                   <div className="flex gap-1 shrink-0">
                     <Button variant="outline" size="sm" onClick={() => setShareCard(c)}><Share2 className="h-3 w-3 mr-1" /> {Z("分享", "Share")}</Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setContactsCardId(String(c.id))} title={Z("管理联系人", "Manage contacts")}><Eye className="h-3 w-3" /></Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setViewCard(c)} title={Z("查看卡片", "View card")}><Eye className="h-3 w-3" /></Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setContactsCardId(String(c.id))} title={Z("选择卡片上显示的紧急联系人", "Choose emergency contacts on this card")}><Users className="h-3 w-3" /></Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(c)}><Pencil className="h-3 w-3" /></Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => del.mutate(String(c.id))}><Trash2 className="h-3 w-3" /></Button>
                   </div>
@@ -160,6 +166,7 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
           ))}
         </div>
       )}
+
 
       {/* Create / Edit dialog */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
