@@ -24,7 +24,7 @@ import {
   fetchMyPendingInvitationsWordPress, acceptInvitationWordPress, declineInvitationWordPress,
   updateMemberRoleWordPress, removeGroupMemberWordPress,
   joinGroupByCodeWordPress, fetchCareGroupGalleryWordPress,
-  fetchMemberCategoriesWordPress, createMemberCategoryWordPress, deleteMemberCategoryWordPress,
+  fetchMemberCategoriesWordPress, createMemberCategoryWordPress, updateMemberCategoryWordPress, deleteMemberCategoryWordPress,
   fetchSubgroupMembersWordPress, fetchSubgroupMemberRecordsWordPress,
   addMemberToSubgroupWordPress, removeMemberFromSubgroupWordPress,
   requestJoinSubgroupWordPress, approveSubgroupMemberWordPress, declineSubgroupMemberWordPress,
@@ -872,6 +872,15 @@ export function useCreateMemberCategory() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ groupId, name, color, description }: { groupId: string; name: string; color?: string; description?: string }) => createMemberCategoryWordPress(groupId, name, color, description),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["memberCategories"] }); },
+  });
+}
+
+export function useUpdateMemberCategory() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ categoryId, ...updates }: { categoryId: string; name?: string; description?: string; color?: string }) =>
+      updateMemberCategoryWordPress(categoryId, updates),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["memberCategories"] }); },
   });
 }

@@ -712,6 +712,21 @@ export async function createMemberCategoryWordPress(groupId: string, name: strin
   }
 }
 
+export async function updateMemberCategoryWordPress(
+  categoryId: string,
+  updates: { name?: string; description?: string; color?: string }
+): Promise<void> {
+  const body: Record<string, string> = {};
+  if (updates.name !== undefined) body[F_SUBGROUP.NAME] = updates.name;
+  if (updates.description !== undefined) body[F_SUBGROUP.DESCRIPTION] = updates.description;
+  if (updates.color !== undefined) body[F_SUBGROUP.COLOR] = updates.color;
+  await wordpressCCTFetch(T.careGroupPrivateMemberGroup.slug, {
+    id: categoryId,
+    method: "POST",
+    body,
+  });
+}
+
 export async function deleteMemberCategoryWordPress(categoryId: string): Promise<void> {
   await wordpressCCTFetch(T.careGroupPrivateMemberGroup.slug, { id: categoryId, method: "DELETE" });
 }
