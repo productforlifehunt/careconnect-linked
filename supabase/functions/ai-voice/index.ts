@@ -414,7 +414,7 @@ serve(async (req) => {
       text: string;
       voice?: string;
       format?: string;
-      engine?: "siliconflow" | "openai" | "openai-full" | "qwen-tts" | "cosyvoice-v35-plus" | "cosyvoice-v35-flash";
+      engine?: "lovable" | "siliconflow" | "openai" | "openai-full" | "qwen-tts" | "cosyvoice-v35-plus" | "cosyvoice-v35-flash";
     };
 
     if (!text || typeof text !== "string" || text.trim().length === 0) {
