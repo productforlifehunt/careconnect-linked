@@ -109,27 +109,14 @@ export async function fetchMyProfileWordPress(): Promise<Profile | null> {
     }
 
     return wpProfile;
-  } catch {
-    const stored = getStoredWPUser();
-    if (!stored) return null;
-    return {
-      id: `wp-${stored.user_id}`,
-      user_id: `wp-${stored.user_id}`,
-      email: stored.user_email,
-      first_name: null, last_name: null,
-      full_name: "",
-      user_name: stored.user_login,
-      avatar_url: null, bio: null,
-      general_user_role: null, is_care_provider: false,
-      provider_is_active: false, care_provider_is_background_checked: false,
-      care_provider_background_check_detail: null, care_provider_starts_hourly_rate: null,
-      phone: null, location: null, years_of_experience: null,
-      certifications: null, specialty: null,
-      rating_average: null, rating_count: null,
-      created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
-    };
+  } catch (error) {
+    // No fabricated profile: the WordPress account name is never a fallback for
+    // the app name, and an empty shell profile would hide a real backend
+    // failure. Surface the error so the UI can show a retry state.
+    throw error;
   }
 }
+
 
 export async function updateProfileWordPress(updates: Partial<Profile>): Promise<void> {
   // 1) Update WP user core fields
