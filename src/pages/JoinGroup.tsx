@@ -74,7 +74,27 @@ export default function JoinGroup() {
           <CardTitle>{Z("加入护理小组", "Join Care Group")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 text-center">
+          {status === "naming" && (
+            <div className="space-y-4 text-left">
+              <div className="space-y-2">
+                <Label htmlFor="group-display-name">{Z("您在这个小组里显示的名字", "Your name inside this group")}</Label>
+                <Input
+                  id="group-display-name"
+                  value={displayName}
+                  placeholder={appName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {Z("不修改就用您的名字：", "Leave it as is to use your name: ")}{appName}
+                </p>
+              </div>
+              <Button variant="coral" className="w-full" onClick={handleJoin}>
+                {Z("加入护理小组", "Join care group")}
+              </Button>
+            </div>
+          )}
           {status === "joining" && (
+
             <div className="flex flex-col items-center gap-3 py-6">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
               <p className="text-muted-foreground">{Z("正在将您加入小组…", "Adding you to the group…")}</p>
