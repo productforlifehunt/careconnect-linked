@@ -51,6 +51,8 @@ export function MembersTab({
   const Z = (cn: string, en: string) => (isCN ? cn : en);
   const [inviteSearch, setInviteSearch] = useState("");
   const [invitePerson, setInvitePerson] = useState<any>(null);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteAs, setInviteAs] = useState<InvitedAs>("normal group member");
   const { data: inviteSearchResults } = useSearchProfiles(inviteSearch);
   const { data: myCaredOnes } = useUserCaredOnes();
 
@@ -67,18 +69,42 @@ export function MembersTab({
   const [createInviteOpen, setCreateInviteOpen] = useState(false);
   const [editInvite, setEditInvite] = useState<any>(null);
   const [linkName, setLinkName] = useState("");
+  const [linkNote, setLinkNote] = useState("");
   const [linkToken, setLinkToken] = useState("");
   const [linkExpires, setLinkExpires] = useState("");
   const [linkMaxUses, setLinkMaxUses] = useState("0");
+  const [linkInvitedAs, setLinkInvitedAs] = useState<InvitedAs>("normal group member");
 
-  // Dictionary: membership is Relation 72 (care_group → users), so an invite must
-  // point at an existing user record. Email-only invites are not representable.
-  const handleInvite = () => {
-    if (!invitePerson || !activeGroupId) return;
-    inviteToGroup.mutate({ groupId: activeGroupId, userId: invitePerson.id }, {
-      onSuccess: () => { setInvitePerson(null); setInviteSearch(""); toast({ title: Z("邀请已发送！", "Invitation sent!") }); },
-      onError: (err: any) => toast({ title: Z("邀请失败", "Failed to invite"), description: err.message, variant: "destructive" }),
+  const invitedAsLabel = (v: InvitedAs) =>
+    v === "owner" ? Z("拥有者", "Owner") : v === "admin" ? Z("管理员", "Admin") : Z("普通成员", "Member");
+
+  /**
+   * Every invitation is an invite link. Inviting an app user sends them the link
+   * in their notifications; inviting an email address emails the link. Nobody is
+   * added to the group until they open the link and fill in their in-group name.
+   */
+  const invite = (target: { userId?: string; email?: string }) => {
+    if (!activeGroupId) return;
+    inviteToGroup.mutate({ groupId: activeGroupId, ...target, invitedAs: inviteAs }, {
+      onSuccess: (res: any) => {
+        setInvitePerson(null); setInviteSearch(""); setInviteEmail("");
+        navigator.clipboard?.writeText(res?.url || "").catch(() => {});
+        toast({
+          title: Z("邀请已发出", "Invitation sent"),
+          description: target.email
+            ? (res?.email === "sent"
+                ? Z("邀请链接已发送到该邮箱，链接也已复制到剪贴板。", "The invite link was emailed to them, and copied to your clipboard.")
+                : Z("邮件没能发出。邀请链接已复制到剪贴板，请手动发送给对方。", "The email could not be sent. The invite link is copied to your clipboard — please send it to them yourself."))
+            : Z("对方会在通知里收到邀请链接，链接也已复制到剪贴板。", "They will find the invite link in their notifications, and it is copied to your clipboard."),
+        });
+      },
+      onError: (err: any) => toast({ title: Z("邀请失败", "Could not invite"), description: err.message, variant: "destructive" }),
     });
+  };
+
+  const handleInvite = () => {
+    if (invitePerson) return invite({ userId: invitePerson.id });
+    if (inviteEmail.includes("@")) return invite({ email: inviteEmail.trim() });
   };
 
 
