@@ -32,6 +32,7 @@ import { useTranslation } from "react-i18next";
 
 // Sub-components
 import { EditPostDialog, AddCaredOneDialog } from "@/components/care-circle/GroupDialogs";
+import { GroupTabsBar } from "@/components/care-circle/GroupTabsBar";
 import { HomeTab } from "@/components/care-circle/tabs/HomeTab";
 import { CalendarTab } from "@/components/care-circle/tabs/CalendarTab";
 import { AnnouncementsTab } from "@/components/care-circle/tabs/AnnouncementsTab";
