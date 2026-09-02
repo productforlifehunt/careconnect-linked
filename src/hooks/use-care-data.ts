@@ -315,7 +315,10 @@ export function useCreateReview() {
 export function useBookings() {
   return useQuery({
     queryKey: ["bookings"],
-    queryFn: () => fetchBookingsWordPress(),
+    queryFn: withLastGood("bookings", fetchBookingsWordPress),
+    // Show the last known list instantly, refresh it in the background.
+    initialData: () => readLastGood<any[]>("bookings"),
+    initialDataUpdatedAt: 0,
   });
 }
 
@@ -323,9 +326,12 @@ export function useBookings() {
 export function useProviderBookings() {
   return useQuery({
     queryKey: ["providerBookings"],
-    queryFn: () => fetchProviderBookingsWordPress(),
+    queryFn: withLastGood("providerBookings", fetchProviderBookingsWordPress),
+    initialData: () => readLastGood<any[]>("providerBookings"),
+    initialDataUpdatedAt: 0,
   });
 }
+
 
 export function useCreateBooking() {
   const qc = useQueryClient();
