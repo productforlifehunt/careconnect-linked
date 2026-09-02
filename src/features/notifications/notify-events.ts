@@ -11,6 +11,26 @@
  */
 import i18n from "i18next";
 import { getStoredWPUser } from "@/services/wp-auth";
+import { fetchMyAppUserName } from "@/features/profile/app-user-name";
+
+/**
+ * The actor's name comes ONLY from this app's own column on CCT 151.
+ * The shared WordPress login / display name is never a fallback: when the
+ * profile name is empty the message simply omits the name.
+ */
+let actorNameCache: string | null = null;
+async function actorAppName(): Promise<string> {
+  if (actorNameCache !== null) return actorNameCache;
+  try {
+    actorNameCache = await fetchMyAppUserName();
+  } catch {
+    actorNameCache = "";
+  }
+  return actorNameCache;
+}
+export function clearActorNameCache() {
+  actorNameCache = null;
+}
 
 /** Recipients read notifications in the language of the app they are using. */
 const Z = (zh: string, en: string) => ((i18n.language || "").startsWith("zh") ? zh : en);
@@ -67,14 +87,12 @@ export function notifyNewMessage(
   conversationId: string,
   content: string,
 ) {
-  const stored = getStoredWPUser();
-  const who = stored?.user_display_name || stored?.user_login || Z("有人", "Someone");
-  return notifyUsers(recipientIds, {
+  return actorAppName().then((who) => notifyUsers(recipientIds, {
     type: "chat",
-    title: Z(`${who} 给你发来新消息`, `New message from ${who}`),
+    title: who ? Z(`${who} 给你发来新消息`, `New message from ${who}`) : Z("你有一条新消息", "You have a new message"),
     message: clip(content),
     action_url: `/messages?conversation=${conversationId}`,
-  });
+  }));
 }
 
 /** Care task assigned → notify each assignee. */
@@ -97,14 +115,14 @@ export function notifyJobApplication(
   jobTitle: string,
   jobId: string,
 ) {
-  const stored = getStoredWPUser();
-  const who = stored?.user_display_name || stored?.user_login || Z("一位护理者", "A caregiver");
-  return notifyUsers([posterId], {
+  return actorAppName().then((who) => notifyUsers([posterId], {
     type: "job",
     title: Z("有人应聘你的招聘", "New application for your job"),
-    message: Z(`${who} 应聘了「${clip(jobTitle, 80)}」`, `${who} applied to ${clip(jobTitle, 80)}`),
+    message: who
+      ? Z(`${who} 应聘了「${clip(jobTitle, 80)}」`, `${who} applied to ${clip(jobTitle, 80)}`)
+      : Z(`有人应聘了「${clip(jobTitle, 80)}」`, `Someone applied to ${clip(jobTitle, 80)}`),
     action_url: `/jobs?id=${jobId}`,
-  });
+  }));
 }
 
 /** Group announcement/post → notify group members. */
@@ -144,10 +162,8 @@ export function notifyBookingStatus(
   });
 }
 
-const actorName = () => {
-  const stored = getStoredWPUser();
-  return stored?.user_display_name || stored?.user_login || "Someone";
-};
+/** Actor name for message bodies — CCT 151 only, "" when unset. */
+const actorName = () => actorAppName();
 
 /** Group invitation created → notify the invited user. */
 export function notifyGroupInvite(
