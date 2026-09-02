@@ -372,7 +372,7 @@ export default function Dashboard() {
           ))}
         </div>
       </section>
-    ) : null,
+    ) : postsLoading ? slotSkeleton(t("nav.community", { defaultValue: "Community" }), "h-24") : null,
 
 
     "ai-smart-briefing": <AISmartBriefing />,
