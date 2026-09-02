@@ -120,6 +120,20 @@ export async function fetchInformationCardWordPress(cardId: string): Promise<Inf
   return raw ? decodeCard(raw) : null;
 }
 
+/** REL 220 parent = the cared one (WP user) this card belongs to. */
+export async function fetchInformationCardCaredOneIdWordPress(cardId: string): Promise<string | null> {
+  const id = normalizeWpId(cardId);
+  if (!id) return null;
+  try {
+    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_USER_INFO_CARD}/parents/${id}`);
+    if (!Array.isArray(rels) || rels.length === 0) return null;
+    return String(rels[0].parent_object_id);
+  } catch {
+    return null;
+  }
+}
+
+
 /** Public lookup by share token. Used by /share/card/:token public viewer. */
 export async function fetchInformationCardByShareTokenWordPress(token: string): Promise<InformationCard | null> {
   if (!token) return null;
