@@ -56,9 +56,15 @@ export async function fetchMyNotificationTokens(): Promise<NotificationToken[]> 
   const userId = getCurrentUserIdNumber();
   if (!userId) return [];
   try {
-    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_USER_TOKEN}/parent/${userId}`);
-    if (!Array.isArray(rels) || rels.length === 0) return [];
-    return filterAppScope("notificationToken", rels).map(decode);
+    const links = await wordpressFetch<any[]>(`jet-rel/${REL_USER_TOKEN}/children/${userId}`);
+    if (!Array.isArray(links) || links.length === 0) return [];
+    const ids = links.map((l: any) => String(l.child_object_id || "")).filter(Boolean);
+    if (ids.length === 0) return [];
+    const all = await wordpressCCTFetch<any[]>(SLUG, { params: { _limit: 500 } });
+    const byId = new Map((Array.isArray(all) ? all : []).map((r: any) => [String(r.id ?? r._ID), r]));
+    const rows = ids.map((id) => byId.get(id)).filter(Boolean) as any[];
+    return filterAppScope("notificationToken", rows).map(decode);
+
   } catch {
     return [];
   }
