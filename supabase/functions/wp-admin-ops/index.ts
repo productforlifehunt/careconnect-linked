@@ -76,26 +76,40 @@ async function resolveCaller(wpBase: string, token: string): Promise<number | nu
 async function enrichOrdersWithServiceMeta(wpBase: string, orders: any[]): Promise<any[]> {
   const auth = `Basic ${btoa(`${WC_CONSUMER_KEY}:${WC_CONSUMER_SECRET}`)}`;
   const cache = new Map<number, any[]>();
+
+  // One batched product read instead of one request per order. The old serial
+  // loop made the booking list as slow as the number of orders; WooCommerce can
+  // return every referenced product in a single `include=` query.
+  const ids = Array.from(
+    new Set(
+      orders
+        .map((o) => Number(o?.line_items?.[0]?.product_id))
+        .filter((id) => Number.isFinite(id) && id > 0),
+    ),
+  );
+  for (let i = 0; i < ids.length; i += 100) {
+    const chunk = ids.slice(i, i + 100);
+    try {
+      const res = await fetch(
+        `${wpBase}/wp-json/wc/v3/products?include=${chunk.join(",")}&per_page=${chunk.length}`,
+        { headers: { Authorization: auth } },
+      );
+      const list = res.ok ? await res.json().catch(() => null) : null;
+      if (Array.isArray(list)) {
+        for (const product of list) {
+          cache.set(Number(product?.id), Array.isArray(product?.meta_data) ? product.meta_data : []);
+        }
+      }
+    } catch {
+      /* leave the chunk uncached — orders still render without schedule meta */
+    }
+  }
+
   const out: any[] = [];
   for (const order of orders) {
     const productId = Number(order?.line_items?.[0]?.product_id);
-    let productMeta: any[] = [];
-    if (Number.isFinite(productId) && productId > 0) {
-      if (cache.has(productId)) {
-        productMeta = cache.get(productId)!;
-      } else {
-        try {
-          const res = await fetch(`${wpBase}/wp-json/wc/v3/products/${productId}`, {
-            headers: { Authorization: auth },
-          });
-          const product = res.ok ? await res.json().catch(() => null) : null;
-          productMeta = Array.isArray(product?.meta_data) ? product.meta_data : [];
-        } catch {
-          productMeta = [];
-        }
-        cache.set(productId, productMeta);
-      }
-    }
+    const productMeta: any[] = cache.get(productId) ?? [];
+
     const pick = (key: string) => {
       const hit = productMeta.find((m: any) => m?.key === key);
       return hit?.value !== undefined && hit?.value !== null ? String(hit.value) : "";
