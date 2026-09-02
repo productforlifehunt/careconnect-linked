@@ -35,6 +35,7 @@ export default function Messages({ embedded = false }: { embedded?: boolean } = 
   const [newMessage, setNewMessage] = useState("");
   const [pendingAttachment, setPendingAttachment] = useState<{ url: string; type: "image" | "file"; name?: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [dragOver, setDragOver] = useState(false);
   const [newConvoOpen, setNewConvoOpen] = useState(false);
   const [newConvoSearch, setNewConvoSearch] = useState("");
   const [quoteDialogOpen, setQuoteDialogOpen] = useState(false);
