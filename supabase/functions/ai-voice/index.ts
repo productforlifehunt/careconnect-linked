@@ -450,7 +450,10 @@ serve(async (req) => {
       : engine === "qwen-tts" ? "qwen-tts"
       : engine === "cosyvoice-v35-plus" ? "cosyvoice-v35-plus"
       : engine === "cosyvoice-v35-flash" ? "cosyvoice-v35-flash"
-      : "siliconflow";
+      : engine === "siliconflow" && Deno.env.get("SILICONFLOW_API_KEY") ? "siliconflow"
+      // No engine requested (or SiliconFlow key absent) → built-in Lovable AI voice
+      : Deno.env.get("SILICONFLOW_API_KEY") ? "siliconflow"
+      : "lovable";
 
     let response: Response;
     let providerLabel: string;
