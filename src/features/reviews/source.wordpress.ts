@@ -10,7 +10,7 @@
  */
 import { R, T } from "@/integrations/wp-schema";
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
-import { lookupUserNames } from "@/services/woocommerce-api";
+import { fetchWPUserPublicProfile } from "@/features/shared/wp-users";
 
 const REVIEW = T.review;
 const F = REVIEW.f;
