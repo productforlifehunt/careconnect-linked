@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
-import { useJoinGroupByCode } from "@/hooks/use-care-data";
+import { useJoinGroupByCode, useGroupInvitePreview } from "@/hooks/use-care-data";
 import { toast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 
@@ -21,6 +21,12 @@ export default function JoinGroup() {
   const [status, setStatus] = useState<"idle" | "naming" | "joining" | "success" | "error">("idle");
   const [message, setMessage] = useState<string>("");
   const [displayName, setDisplayName] = useState("");
+  const { data: preview, isLoading: previewLoading } = useGroupInvitePreview(code || null);
+  const roleWord = preview?.invited_as === "owner"
+    ? Z("拥有者", "owner")
+    : preview?.invited_as === "admin"
+      ? Z("管理员", "admin")
+      : Z("普通成员", "member");
 
   // Bible: the join form must let the user pick an in-group display name
   // (Rel 223 a55). Placeholder = their app name; blank submit stores that name.
@@ -76,6 +82,19 @@ export default function JoinGroup() {
         <CardContent className="space-y-4 text-center">
           {status === "naming" && (
             <div className="space-y-4 text-left">
+              <div className="rounded-lg border bg-muted/30 p-3">
+                {previewLoading ? (
+                  <p className="text-sm text-muted-foreground">{Z("正在查看这个邀请…", "Checking this invitation…")}</p>
+                ) : preview ? (
+                  <>
+                    <p className="text-sm font-medium text-foreground">{preview.group_name || Z("护理小组", "Care group")}</p>
+                    <p className="text-xs text-muted-foreground">{Z(`您将以${roleWord}的身份加入。`, `You'll join as a ${roleWord}.`)}</p>
+                    {preview.note && <p className="text-xs text-muted-foreground mt-1">{preview.note}</p>}
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">{Z("填好名字后我们再确认这个邀请。", "We'll check this invitation once you've entered your name.")}</p>
+                )}
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="group-display-name">{Z("您在这个小组里显示的名字", "Your name inside this group")}</Label>
                 <Input
