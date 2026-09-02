@@ -14,6 +14,8 @@ Object.assign(zhTW.common, {
   active: "活躍", inactive: "不活躍", weak: "弱", fair: "一般", good: "好", strong: "強",
   copyright: "© 2026 {{brand}}. 保留所有權利。", errorOccurred: "發生錯誤", tryAgain: "請重試",
   unavailable: "不可用", minCharsToSearch: "請輸入至少2個字元進行搜尋",
+  unknown: "未知", noName: "無姓名", anonymous: "匿名",
+
 });
 Object.assign(zhTW.nav, {
   dashboard: "控制面板", messages: "訊息", favorites: "收藏", gpsTracking: "GPS追蹤",
