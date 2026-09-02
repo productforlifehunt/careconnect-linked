@@ -108,17 +108,14 @@ export async function fetchEntityReviewsWordPress(
     .sort((a, b) => String(b.created_at ?? "").localeCompare(String(a.created_at ?? "")));
 }
 
-/**
- * Real rating aggregate for a care provider, computed from the Review CCT.
- * Returns null averages when the provider has no reviews — callers must render
- * "New" rather than a fabricated score.
- */
-export async function fetchProviderRatingSummary(
-  providerUserId: string | number,
+/** Rating aggregate for any review parent, computed from the Review CCT. */
+export async function fetchRatingSummary(
+  parentId: string | number,
+  entityType?: string,
 ): Promise<{ average: number | null; count: number }> {
-  const uid = numericId(providerUserId);
-  if (!uid) return { average: null, count: 0 };
-  const rows = await fetchProviderReviewRows(uid).catch(() => []);
+  const pid = numericId(parentId);
+  if (!pid) return { average: null, count: 0 };
+  const rows = await fetchReviewRows(pid, relForEntity(entityType));
   const ratings = rows
     .map((r: any) => Number(r[F.RATING]))
     .filter((n) => Number.isFinite(n) && n > 0);
@@ -129,6 +126,17 @@ export async function fetchProviderRatingSummary(
   };
 }
 
+/**
+ * Real rating aggregate for a care provider, computed from the Review CCT.
+ * Returns null averages when the provider has no reviews — callers must render
+ * "New" rather than a fabricated score.
+ */
+export async function fetchProviderRatingSummary(
+  providerUserId: string | number,
+): Promise<{ average: number | null; count: number }> {
+  return fetchRatingSummary(providerUserId, "provider");
+}
+
 export async function createReviewWordPress(review: {
   entity_id: string;
   entity_type?: string;
@@ -136,11 +144,8 @@ export async function createReviewWordPress(review: {
   comment?: string;
   title?: string;
 }): Promise<void> {
-  if (review.entity_type === "facility") {
-    throw new Error("Facility reviews are not part of the data model yet.");
-  }
-  const providerUserId = numericId(review.entity_id);
-  if (!providerUserId) throw new Error("Missing provider id — review cannot be posted.");
+  const parentId = numericId(review.entity_id);
+  if (!parentId) throw new Error("Missing id — review cannot be posted.");
   const rating = Math.round(Number(review.rating));
   if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
     throw new Error("Rating must be between 1 and 5.");
@@ -157,10 +162,10 @@ export async function createReviewWordPress(review: {
   const newId = Number(created?.item_id ?? created?._ID ?? created?.id ?? 0);
   if (!newId) throw new Error("Review could not be saved.");
 
-  await wordpressFetch(`jet-rel/${REL_PROVIDER_REVIEWS}`, {
+  await wordpressFetch(`jet-rel/${relForEntity(review.entity_type)}`, {
     method: "POST",
     body: {
-      parent_id: providerUserId,
+      parent_id: parentId,
       child_id: newId,
       context: "child",
       store_items_type: "update",
