@@ -7,11 +7,14 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Loader2, Users as UsersIcon, X, ChevronDown, Check, Clock, Shield, MoreVertical, UserPlus } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Loader2, Users as UsersIcon, X, ChevronDown, Check, Clock, Shield, MoreVertical, UserPlus, Settings, Trash2 } from "lucide-react";
 import {
   useSubgroupMemberRecords, useAddMemberToSubgroup, useRemoveMemberFromSubgroup,
   useApproveSubgroupMember, useDeclineSubgroupMember, useRequestJoinSubgroup,
-  useUpdateSubgroupMemberRole,
+  useUpdateSubgroupMemberRole, useUpdateMemberCategory,
 } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
@@ -21,7 +24,7 @@ function toNum(id: string | number | undefined | null): number {
 }
 
 interface SubgroupCardProps {
-  subgroup: { id: string; name: string; color?: string | null };
+  subgroup: { id: string; name: string; color?: string | null; description?: string | null };
   members: Array<{ user_id?: string; id?: string; profile?: { full_name?: string | null; avatar_url?: string | null } }>;
   isAdmin: boolean;
   onDelete: () => void;
@@ -41,6 +44,11 @@ export function SubgroupCard({ subgroup, members, isAdmin, onDelete, currentUser
   const requestJoin = useRequestJoinSubgroup();
   const updateRole = useUpdateSubgroupMemberRole();
   const [pickerOpen, setPickerOpen] = useState(false);
+  const updateSubgroup = useUpdateMemberCategory();
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [editName, setEditName] = useState(subgroup.name);
+  const [editDesc, setEditDesc] = useState(subgroup.description || "");
+  const [editColor, setEditColor] = useState(subgroup.color || "#7c6cf0");
 
   const meUid = toNum(currentUserId);
   const accepted = records.filter((r) => r.status === "accepted");
@@ -119,10 +127,24 @@ export function SubgroupCard({ subgroup, members, isAdmin, onDelete, currentUser
               </Badge>
             )}
           </div>
-          {isAdmin && (
-            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:bg-destructive/10" onClick={onDelete} aria-label={Z("删除子分组", "Delete sub-group")}>
-              <X className="h-3 w-3" />
-            </Button>
+          {canManage && (
+            <div className="flex items-center gap-0.5 shrink-0">
+              <Button
+                variant="ghost" size="icon" className="h-6 w-6"
+                onClick={() => {
+                  setEditName(subgroup.name);
+                  setEditDesc(subgroup.description || "");
+                  setEditColor(subgroup.color || "#7c6cf0");
+                  setSettingsOpen(true);
+                }}
+                aria-label={Z("小组设置", "Sub-group settings")}
+              >
+                <Settings className="h-3.5 w-3.5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:bg-destructive/10" onClick={onDelete} aria-label={Z("删除小组", "Delete sub-group")}>
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </div>
           )}
         </div>
 
@@ -211,12 +233,12 @@ export function SubgroupCard({ subgroup, members, isAdmin, onDelete, currentUser
           <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="h-7 text-xs w-full">
-                <UserPlus className="h-3 w-3 mr-1" /> Manage members <ChevronDown className="h-3 w-3 ml-1" />
+                <UserPlus className="h-3 w-3 mr-1" /> {Z("管理成员", "Manage members")} <ChevronDown className="h-3 w-3 ml-1" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-64 p-2 max-h-72 overflow-y-auto" align="start">
               {members.length === 0 ? (
-                <p className="text-xs text-muted-foreground p-2">No group members.</p>
+                <p className="text-xs text-muted-foreground p-2">{Z("小组还没有成员。", "No group members.")}</p>
               ) : members.map((m) => {
                 const uid = toNum(m.user_id || m.id);
                 if (!uid) return null;
@@ -228,7 +250,7 @@ export function SubgroupCard({ subgroup, members, isAdmin, onDelete, currentUser
                     <span className="text-sm text-foreground flex-1 truncate">
                       {m.profile?.full_name || (isCN ? `成员 ${uid}` : `Member ${uid}`)}
                     </span>
-                    {isPending && <Badge variant="outline" className="text-[9px] h-4 border-warning/40 text-warning">pending</Badge>}
+                    {isPending && <Badge variant="outline" className="text-[9px] h-4 border-warning/40 text-warning">{Z("待审核", "pending")}</Badge>}
                   </label>
                 );
               })}
@@ -236,7 +258,7 @@ export function SubgroupCard({ subgroup, members, isAdmin, onDelete, currentUser
           </Popover>
         ) : myRecord?.status === "pending" ? (
           <Button variant="outline" size="sm" className="h-7 text-xs w-full" disabled>
-            <Clock className="h-3 w-3 mr-1" /> Request pending
+            <Clock className="h-3 w-3 mr-1" /> {Z("申请待审核", "Request pending")}
           </Button>
         ) : !myRecord && meUid ? (
           <Button
@@ -244,9 +266,47 @@ export function SubgroupCard({ subgroup, members, isAdmin, onDelete, currentUser
             onClick={handleRequestJoin} disabled={requestJoin.isPending}
           >
             {requestJoin.isPending ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <UserPlus className="h-3 w-3 mr-1" />}
-            Request to join
+            {Z("申请加入", "Request to join")}
           </Button>
         ) : null}
+        {/* Sub-group settings */}
+        <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{Z("小组设置", "Sub-group settings")}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 mt-2">
+              <div>
+                <Label>{Z("小组名称 *", "Sub-group name *")}</Label>
+                <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder={Z("例如：夜间照护班", "e.g. Night shift")} />
+              </div>
+              <div>
+                <Label>{Z("这个小组负责什么？", "What is this sub-group for?")}</Label>
+                <Input value={editDesc} onChange={(e) => setEditDesc(e.target.value)} placeholder={Z("例如：晚上 8 点后陪伴与用药提醒", "e.g. Evening company and medicine reminders")} />
+              </div>
+              <div>
+                <Label>{Z("标记颜色", "Label colour")}</Label>
+                <Input type="color" value={editColor} onChange={(e) => setEditColor(e.target.value)} className="h-10 w-20 p-1" />
+              </div>
+              <Button
+                variant="coral" className="w-full"
+                disabled={!editName.trim() || updateSubgroup.isPending}
+                onClick={() =>
+                  updateSubgroup.mutate(
+                    { categoryId: subgroup.id, name: editName.trim(), description: editDesc, color: editColor },
+                    {
+                      onSuccess: () => { setSettingsOpen(false); toast({ title: Z("小组已更新", "Sub-group updated") }); },
+                      onError: (err: any) => toast({ title: Z("保存失败", "Could not save"), description: err?.message, variant: "destructive" }),
+                    }
+                  )
+                }
+              >
+                {updateSubgroup.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
+                {Z("保存更改", "Save changes")}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );

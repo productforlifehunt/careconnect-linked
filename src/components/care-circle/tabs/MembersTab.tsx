@@ -151,6 +151,11 @@ export function MembersTab({
     }
   };
 
+  const copyCode = (token: string) => {
+    navigator.clipboard?.writeText(token);
+    toast({ title: Z("邀请码已复制！", "Invite code copied!") });
+  };
+
   const copyLink = (token: string) => {
     const link = `${window.location.origin}/join/${token}`;
     navigator.clipboard?.writeText(link);
@@ -272,11 +277,24 @@ export function MembersTab({
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Input readOnly value={link} className="flex-1 font-mono text-xs h-8" onFocus={(e) => e.currentTarget.select()} />
-                          <Button type="button" size="sm" variant="outline" onClick={() => copyLink(inv.token)}>
-                            <Copy className="h-3.5 w-3.5 mr-1" /> {Z("复制", "Copy")}
-                          </Button>
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[11px] text-muted-foreground w-16 shrink-0">{Z("邀请码", "Code")}</span>
+                            <Input readOnly value={inv.token} className="flex-1 font-mono text-xs h-8" onFocus={(e) => e.currentTarget.select()} />
+                            <Button type="button" size="sm" variant="outline" onClick={() => copyCode(inv.token)}>
+                              <Copy className="h-3.5 w-3.5 mr-1" /> {Z("复制", "Copy")}
+                            </Button>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[11px] text-muted-foreground w-16 shrink-0">{Z("链接", "Link")}</span>
+                            <Input readOnly value={link} className="flex-1 font-mono text-xs h-8" onFocus={(e) => e.currentTarget.select()} />
+                            <Button type="button" size="sm" variant="outline" onClick={() => copyLink(inv.token)}>
+                              <Copy className="h-3.5 w-3.5 mr-1" /> {Z("复制", "Copy")}
+                            </Button>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground">
+                            {Z("两种方式都可以：把链接发出去，或者让对方在「加入护理小组」里输入邀请码。", "Either works: send the link, or have them type the code in \u201cJoin a care group\u201d.")}
+                          </p>
                         </div>
                       </div>
                     );
@@ -339,12 +357,12 @@ export function MembersTab({
         </div>
       )}
 
-      {isAdmin && (
+      {(
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Tag className="h-4 w-4" /> {Z("成员分组", "Member Categories")}</h3>
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Tag className="h-4 w-4" /> {Z("小组分组", "Sub-groups")}</h3>
             <Dialog open={addCategoryOpen} onOpenChange={setAddCategoryOpen}>
-              <DialogTrigger asChild><Button variant="outline" size="sm"><Plus className="h-3.5 w-3.5 mr-1" /> {Z("添加", "Add")}</Button></DialogTrigger>
+              {isAdmin && <DialogTrigger asChild><Button variant="outline" size="sm"><Plus className="h-3.5 w-3.5 mr-1" /> {Z("添加", "Add")}</Button></DialogTrigger>}
               <DialogContent>
                 <DialogHeader><DialogTitle>{Z("创建成员分组", "Create Member Category")}</DialogTitle></DialogHeader>
                 <div className="space-y-4 mt-2">
