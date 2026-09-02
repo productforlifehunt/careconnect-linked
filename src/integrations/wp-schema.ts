@@ -454,7 +454,6 @@ export const WP = {
       name: "User's apple health or google health log event",
       f: {
         "APPLE_HEALTH_OR_GOOGLE_HEALTH_LOG_TYPE_SLUG": "a55",  // Text
-        "LOG_EVENT_TYPE": "a561",  // Radio
         "APPLE_HEALTH_OR_GOOGLE_HEALTH_LOG_TYPE_VALUE": "a56",  // Textarea
         "START_TIME": "a57",  // Datetime
         "END_TIME": "a58",  // Datetime
@@ -465,7 +464,7 @@ export const WP = {
       },
       opt: {
         "SOURCE": { "APPLE_HEALTH": "b55", "GOOGLE_HEALTH": "b56" },
-        "RECORDING_DEVICE": { "FLEXIBILITY": "b56", "COOLDOWN": "b57", "WALKING": "b58", "RUNNING": "b59", "WHEELCHAIRWALKPACE": "b60", "WHEELCHAIRRUNPACE": "b61", "CYCLING": "b62", "HANDCYCLING": "b63", "CORETRAINING": "b64", "ELLIPTICAL": "b65", "FUNCTIONALSTRENGTHTRAINING": "b66", "TRADITIONALSTRENGTHTRAINING": "b67", "CROSSTRAINING": "b68", "MIXEDCARDIO": "b69", "HIGHINTENSITYINTERVALTRAINING": "b70", "JUMPROPE": "b71", "STAIRCLIMBING": "b72", "STAIRS": "b73", "STEPTRAINING": "b74", "FITNESSGAMING": "b75", "DIETARYPANTOTHENICACID": "b76", "DIETARYPHOSPHORUS": "b77", "DIETARYPOTASSIUM": "b78", "DIETARYPROTEIN": "b79", "DIETARYRIBOFLAVIN": "b80", "DIETARYSELENIUM": "b81", "DIETARYSODIUM": "b82", "DIETARYSUGAR": "b83", "DIETARYTHIAMIN": "b84", "DIETARYVITAMINA": "b85", "DIETARYVITAMINB12": "b86", "DIETARYVITAMINB6": "b87", "DIETARYVITAMINC": "b88", "DIETARYVITAMIND": "b89", "DIETARYVITAMINE": "b90", "DIETARYVITAMINK": "b91", "DIETARYWATER": "b92", "DIETARYZINC": "b93" },
+        "RECORDING_DEVICE": { "SLEEPCHANGES": "b56", "HAIRLOSS": "b57", "SORETHROAT": "b58", "SINUSCONGESTION": "b59", "WHEEZING": "b60", "GENERALIZEDBODYACHE": "b61", "HOTFLASHES": "b62", "WATERSPORTS": "b63", "RUGBY": "b64", "SOCCER": "b65", "SOFTBALL": "b66", "VOLLEYBALL": "b67", "CROSSTRAINING": "b68", "MIXEDCARDIO": "b69", "HIGHINTENSITYINTERVALTRAINING": "b70", "JUMPROPE": "b71", "STAIRCLIMBING": "b72", "STAIRS": "b73", "STEPTRAINING": "b74", "FITNESSGAMING": "b75", "DIETARYPANTOTHENICACID": "b76", "DIETARYPHOSPHORUS": "b77", "DIETARYPOTASSIUM": "b78", "DIETARYPROTEIN": "b79", "DIETARYRIBOFLAVIN": "b80", "DIETARYSELENIUM": "b81", "DIETARYSODIUM": "b82", "DIETARYSUGAR": "b83", "DIETARYTHIAMIN": "b84", "DIETARYVITAMINA": "b85", "DIETARYVITAMINB12": "b86", "DIETARYVITAMINB6": "b87", "DIETARYVITAMINC": "b88", "DIETARYVITAMIND": "b89", "DIETARYVITAMINE": "b90", "DIETARYVITAMINK": "b91", "DIETARYWATER": "b92", "DIETARYZINC": "b93" },
       },
     },
     /** 161. User’s other log event */
@@ -1266,7 +1265,7 @@ export const WP = {
     "221": { id: 221, parent: "198. Cared one's information card", child: "Users", type: "One to Many" },
     /** 222. One 199. care group can many related 200. care group invites — 199. Care Group -> 200. Care group invite (One to Many) */
     "222": { id: 222, parent: "199. Care Group", child: "200. Care group invite", type: "One to Many" },
-    /** 223. One care group can have many related 199. care group members — 199. Care Group -> Users (Many to Many) */
+    /** 223. One care group can have many related care group members — 199. Care Group -> Users (Many to Many) */
     "223": { id: 223, parent: "199. Care Group", child: "Users", type: "Many to Many", f: { "CARE_GROUP_S_MEMBER_DISPLAY_NAME": "a55", "CARE_GROUP_S_MEMBER_TYPES": "a56", "CARE_GROUP_S_MEMBER_ROLES": "a57", "CARE_GROUP_S_MEMBER_INVITATION_STATUS": "a58" }, opt: { "CARE_GROUP_S_MEMBER_TYPES": { "NOTHING_SPECIAL": "b55", "OWNER": "b56", "ADMIN": "b57" }, "CARE_GROUP_S_MEMBER_ROLES": { "NOTHING_SPECIAL": "b55", "CARED_ONE": "b56" }, "CARE_GROUP_S_MEMBER_INVITATION_STATUS": { "ACCEPTED": "b55", "PENDING": "b56", "DECLINED": "b57" } } },
     /** 224. One care group can have many related private member groups — 199. Care Group -> 201. The related private member groups of one care group (One to Many) */
     "224": { id: 224, parent: "199. Care Group", child: "201. The related private member groups of one care group", type: "One to Many" },
@@ -1276,8 +1275,12 @@ export const WP = {
     "226": { id: 226, parent: "199. Care Group", child: "202. The related not too special posts of one care group", type: "One to Many" },
     /** 227. One 202. related not too special posts of one care group can have many 201. related care group's private member groups that it's visible to — 202. The related not too special posts of one care group -> 201. The related private member groups of one care group (Many to Many) */
     "227": { id: 227, parent: "202. The related not too special posts of one care group", child: "201. The related private member groups of one care group", type: "Many to Many" },
+    /** 293. One 202 related not too special posts of one care group can have many related 201 care group's private member groups that it's not visible to — 202. The related not too special posts of one care group -> 201. The related private member groups of one care group (Many to Many) */
+    "293": { id: 293, parent: "202. The related not too special posts of one care group", child: "201. The related private member groups of one care group", type: "Many to Many" },
     /** 228. One related not too special posts of one care group can have many related users that it's visible to — 202. The related not too special posts of one care group -> Users (Many to Many) */
     "228": { id: 228, parent: "202. The related not too special posts of one care group", child: "Users", type: "Many to Many" },
+    /** 292. One related not too special posts of one care group can have many related users that it's visible to — 202. The related not too special posts of one care group -> Users (Many to Many) */
+    "292": { id: 292, parent: "202. The related not too special posts of one care group", child: "Users", type: "Many to Many" },
     /** 229. One 202 related not too special posts of one care group can have many related 141. comments — 202. The related not too special posts of one care group -> 141. Comment (One to Many) */
     "229": { id: 229, parent: "202. The related not too special posts of one care group", child: "141. Comment", type: "One to Many" },
     /** 230. One care group can many related 203. care group galleries — 199. Care Group -> 203. Care Group Gallery (One to Many) */
@@ -1559,7 +1562,7 @@ export const R = {
   infoCardEmergencyContacts: 221,
   /** 222. One 199. care group can many related 200. care group invites */
   careGroupInvites: 222,
-  /** 223. One care group can have many related 199. care group members */
+  /** 223. One care group can have many related care group members */
   careGroupMembers: 223,
   /** 224. One care group can have many related private member groups */
   careGroupPrivateMemberGroups: 224,
