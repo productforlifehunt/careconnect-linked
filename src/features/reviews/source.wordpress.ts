@@ -9,6 +9,7 @@
  * No WooCommerce/Dokan reviews, no custom foreign keys.
  */
 import { R, T } from "@/integrations/wp-schema";
+import { dedupeRead, fetchRelChildrenMap } from "@/features/shared/rel-batch";
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 import { fetchWPUserPublicProfile } from "@/features/shared/wp-users";
 
