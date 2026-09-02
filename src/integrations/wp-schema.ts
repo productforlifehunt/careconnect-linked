@@ -1496,6 +1496,8 @@ export const R = {
   providerReviews: 264,
   /** 143. One review can have many related comments */
   reviewComments: 143,
+  /** 294. One 215. care facility can have many related 31. reviews */
+  facilityReviews: 294,
   /** 145. One nicotine product can have many related reviews */
   productReviews: 145,
   /** 152. One user can have one related user's extended profile */

@@ -1,5 +1,6 @@
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 import { R, T, WP } from "@/integrations/wp-schema";
+import { fetchRatingSummary } from "@/features/reviews/source.wordpress";
 
 /**
  * Care Facility extended ops.
@@ -147,14 +148,15 @@ export async function getMyFacilityPermissionWordPress(facilityId: string): Prom
 }
 
 // ─── Facility Review Summaries ─────────────────────────────
-// The dictionary defines review parents for Shop (REL 144), care provider users
-// (REL 264) and nicotine products (REL 145) only — there is NO facility -> review
-// relation. So facilities have no ratings, and we must NOT invent them from
-// Dokan store reviews or WordPress native comments. Returns zero counts so the
-// UI renders "New" instead of a fabricated score.
+// Facility reviews live in CCT 31 Review, attached through JetEngine
+// Relation 294 (215. care facility -> 31. Review). No Dokan store reviews,
+// no WordPress native comments.
 export async function fetchFacilityReviewSummariesWordPress(facilityIds: string[]): Promise<Record<string, { average: number | null; count: number }>> {
   const result: Record<string, { average: number | null; count: number }> = {};
-  facilityIds.forEach((id) => { result[id] = { average: null, count: 0 }; });
+  const entries = await Promise.all(
+    facilityIds.map(async (id) => [id, await fetchRatingSummary(id, "facility")] as const),
+  );
+  entries.forEach(([id, summary]) => { result[id] = summary; });
   return result;
 }
 

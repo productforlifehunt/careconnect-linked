@@ -304,7 +304,11 @@ export function useCreateReview() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (review: { entity_id: string; entity_type: string; rating: number; comment?: string }) => createReviewWordPress(review),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["entityReviews"] }); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["entityReviews"] });
+      qc.invalidateQueries({ queryKey: ["facilityReviewSummaries"] });
+      qc.invalidateQueries({ queryKey: ["providerRatingSummary"] });
+    },
   });
 }
 
