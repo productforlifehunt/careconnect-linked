@@ -1,11 +1,12 @@
 import { useParams } from "react-router-dom";
 import { useInformationCardByToken } from "@/hooks/use-care-data";
 import { useQuery } from "@tanstack/react-query";
-import { fetchInformationCardContactIdsWordPress } from "@/features/cared-ones/source.information-cards";
+import { fetchInformationCardContactIdsWordPress, fetchInformationCardCaredOneIdWordPress } from "@/features/cared-ones/source.information-cards";
 import { fetchEmergencyContactsWordPress } from "@/features/cared-ones/source.wordpress-extended";
+import { fetchCurrentLocation } from "@/features/location/source.wordpress";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { IdCard, MapPin, Phone, Loader2, ShieldOff } from "lucide-react";
+import { IdCard, MapPin, Phone, Loader2, ShieldOff, Navigation } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 export default function SharedInformationCard() {
@@ -15,7 +16,14 @@ export default function SharedInformationCard() {
   const { token } = useParams<{ token: string }>();
   const { data: card, isLoading, isError } = useInformationCardByToken(token || null);
 
-  // Fetch linked contact IDs, then resolve to contact rows via the cared one's contact list
+  // REL 220 parent = the cared one this card belongs to
+  const { data: caredOneId } = useQuery({
+    queryKey: ["sharedCardCaredOne", card?.id],
+    queryFn: () => fetchInformationCardCaredOneIdWordPress(String(card!.id)),
+    enabled: !!card?.id,
+  });
+
+  // Fetch linked contact IDs (REL 221), then resolve to the cared one's contact rows
   const { data: contactIds } = useQuery({
     queryKey: ["sharedCardContactIds", card?.id],
     queryFn: () => fetchInformationCardContactIdsWordPress(String(card!.id)),
@@ -23,15 +31,23 @@ export default function SharedInformationCard() {
   });
 
   const { data: contacts } = useQuery({
-    queryKey: ["sharedCardContacts", card?.cct_author_id, contactIds?.join(",")],
+    queryKey: ["sharedCardContacts", caredOneId, contactIds?.join(",")],
     queryFn: async () => {
-      if (!card?.cct_author_id || !contactIds?.length) return [];
-      const all = await fetchEmergencyContactsWordPress(String(card.cct_author_id));
+      if (!caredOneId || !contactIds?.length) return [];
+      const all = await fetchEmergencyContactsWordPress(String(caredOneId));
       const set = new Set(contactIds.map(String));
       return (all || []).filter((c: any) => set.has(String(c.id)));
     },
-    enabled: !!card?.cct_author_id && !!contactIds,
+    enabled: !!caredOneId && !!contactIds,
   });
+
+  // Real last known location from CCT 213 — only when the card enables it
+  const { data: location } = useQuery({
+    queryKey: ["sharedCardLocation", caredOneId],
+    queryFn: () => fetchCurrentLocation(String(caredOneId)),
+    enabled: !!caredOneId && card?.displays_location === "Yes",
+  });
+
 
   if (isLoading) {
     return (
@@ -83,6 +99,37 @@ export default function SharedInformationCard() {
                 {card.cared_ones_description}
               </div>
             )}
+
+            {card.displays_location === "Yes" && (
+              <div className="border-t pt-4">
+                <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                  {Z("最近位置", "Last known location")}
+                </h2>
+                {location?.latitude != null && location?.longitude != null ? (
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-3 rounded-md border p-3 hover:bg-accent transition"
+                  >
+                    <Navigation className="h-4 w-4 text-primary shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium truncate">
+                        {location.address_text || `${Number(location.latitude).toFixed(5)}, ${Number(location.longitude).toFixed(5)}`}
+                      </div>
+                      {location.captured_at && (
+                        <div className="text-xs text-muted-foreground truncate">
+                          {new Date(String(location.captured_at).replace(" ", "T")).toLocaleString()}
+                        </div>
+                      )}
+                    </div>
+                  </a>
+                ) : (
+                  <p className="text-sm text-muted-foreground">{Z("暂无位置记录。", "No location record yet.")}</p>
+                )}
+              </div>
+            )}
+
 
             {!!contacts?.length && (
               <div className="border-t pt-4">

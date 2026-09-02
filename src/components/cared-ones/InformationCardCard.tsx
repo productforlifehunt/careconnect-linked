@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Loader2, Plus, Pencil, Trash2, Share2, IdCard, MapPin, Eye, Link2, QrCode, Copy, ShieldOff } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, Share2, IdCard, MapPin, Eye, Link2, QrCode, Copy, ShieldOff, Users } from "lucide-react";
 import {
   useInformationCards, useCreateInformationCard, useUpdateInformationCard, useDeleteInformationCard,
   useInformationCardContactIds, useSetInformationCardContacts, useEmergencyContacts,
@@ -43,7 +43,7 @@ function statusVariant(status?: string): "default" | "secondary" | "outline" {
   return "outline";
 }
 
-export function InformationCardCard({ caredOneId }: { caredOneId: string }) {
+export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: string; caredOneName?: string }) {
   const { toast } = useToast();
   const { i18n } = useTranslation();
   const isCN = i18n.language?.startsWith("zh");
@@ -65,12 +65,15 @@ export function InformationCardCard({ caredOneId }: { caredOneId: string }) {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [contactsCardId, setContactsCardId] = useState<string | null>(null);
   const [shareCard, setShareCard] = useState<any | null>(null);
+  const [viewCard, setViewCard] = useState<any | null>(null);
+
 
   const openCreate = () => {
     setEditId(null);
-    setForm(EMPTY_FORM);
+    setForm({ ...EMPTY_FORM, cared_ones_name: caredOneName || "" });
     setFormOpen(true);
   };
+
 
   const openEdit = (card: any) => {
     setEditId(String(card.id));
@@ -132,9 +135,14 @@ export function InformationCardCard({ caredOneId }: { caredOneId: string }) {
             <Card key={c.id} className="border-transparent card-elevated">
               <CardContent className="p-4">
                 <div className="flex justify-between items-start gap-2">
-                  <div className="min-w-0 flex-1">
+                  <button
+                    type="button"
+                    className="min-w-0 flex-1 text-left group"
+                    onClick={() => setViewCard(c)}
+                    aria-label={Z("查看信息卡", "View information card")}
+                  >
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="font-medium text-foreground text-sm truncate">{c.cared_ones_information_card_name || Z("（未命名卡片）", "(Untitled card)")}</h4>
+                      <h4 className="font-medium text-foreground text-sm truncate group-hover:underline">{c.cared_ones_information_card_name || Z("（未命名卡片）", "(Untitled card)")}</h4>
                       <Badge variant={statusVariant(c.status)} className="text-[10px]">{statusLabel(c.status)}</Badge>
                       {c.displays_location === "Yes" && (
                         <Badge variant="outline" className="text-[10px]"><MapPin className="h-2.5 w-2.5 mr-1" />{Z("位置", "Location")}</Badge>
@@ -144,10 +152,11 @@ export function InformationCardCard({ caredOneId }: { caredOneId: string }) {
                     {c.cared_ones_description && (
                       <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{c.cared_ones_description}</p>
                     )}
-                  </div>
+                  </button>
                   <div className="flex gap-1 shrink-0">
                     <Button variant="outline" size="sm" onClick={() => setShareCard(c)}><Share2 className="h-3 w-3 mr-1" /> {Z("分享", "Share")}</Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setContactsCardId(String(c.id))} title={Z("管理联系人", "Manage contacts")}><Eye className="h-3 w-3" /></Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setViewCard(c)} title={Z("查看卡片", "View card")}><Eye className="h-3 w-3" /></Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setContactsCardId(String(c.id))} title={Z("选择卡片上显示的紧急联系人", "Choose emergency contacts on this card")}><Users className="h-3 w-3" /></Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(c)}><Pencil className="h-3 w-3" /></Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => del.mutate(String(c.id))}><Trash2 className="h-3 w-3" /></Button>
                   </div>
@@ -157,6 +166,7 @@ export function InformationCardCard({ caredOneId }: { caredOneId: string }) {
           ))}
         </div>
       )}
+
 
       {/* Create / Edit dialog */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
@@ -173,10 +183,13 @@ export function InformationCardCard({ caredOneId }: { caredOneId: string }) {
                 placeholder={Z("例如：就诊、日间照料、学校", "e.g. Hospital visit, Day care, School")} />
             </div>
             <div>
-              <Label>{Z("被照护者姓名", "Cared one's name")}</Label>
+              <Label>{Z("卡片上显示的被照护者姓名", "Name shown on the card")}</Label>
               <Input className="mt-1" value={form.cared_ones_name}
-                onChange={(e) => setForm((p) => ({ ...p, cared_ones_name: e.target.value }))} />
+                onChange={(e) => setForm((p) => ({ ...p, cared_ones_name: e.target.value }))}
+                placeholder={caredOneName || Z("可填化名，不必是真名", "Can be a nickname, not necessarily the real name")} />
+              <p className="text-[11px] text-muted-foreground mt-1">{Z("默认使用被照护者的用户名，可改成化名以保护隐私。", "Defaults to the cared one's name; you can change it to a nickname for privacy.")}</p>
             </div>
+
             <div>
               <Label>{Z("说明", "Description")}</Label>
               <Textarea className="mt-1" rows={3} value={form.cared_ones_description}
@@ -228,6 +241,58 @@ export function InformationCardCard({ caredOneId }: { caredOneId: string }) {
       {shareCard && (
         <ShareCardDialog card={shareCard} onClose={() => setShareCard(null)} />
       )}
+
+      {viewCard && (
+        <Dialog open onOpenChange={(o) => { if (!o) setViewCard(null); }}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <IdCard className="h-4 w-4 text-primary" />
+                {viewCard.cared_ones_information_card_name || Z("信息卡", "Information card")}
+              </DialogTitle>
+              <DialogDescription>{Z("走失时可分享给 app 外人员查看的资料卡。", "The profile card you can share with people outside the app if the cared one goes missing.")}</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge variant={statusVariant(viewCard.status)}>{statusLabel(viewCard.status)}</Badge>
+                <Badge variant="outline" className="text-xs">
+                  <MapPin className="h-3 w-3 mr-1" />
+                  {viewCard.displays_location === "Yes" ? Z("显示最近位置", "Shows last known location") : Z("不显示位置", "Location hidden")}
+                </Badge>
+                {viewCard.share_token
+                  ? <Badge variant="outline" className="text-xs">{Z("分享中", "Sharing on")}</Badge>
+                  : <Badge variant="outline" className="text-xs">{Z("未分享", "Not shared")}</Badge>}
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">{Z("卡片上显示的姓名", "Name shown on the card")}</p>
+                <p className="text-sm text-foreground">{viewCard.cared_ones_name || ""}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">{Z("说明", "Description")}</p>
+                <p className="text-sm text-foreground whitespace-pre-wrap">{viewCard.cared_ones_description || ""}</p>
+              </div>
+              {viewCard.share_expires_at && (
+                <div>
+                  <p className="text-xs text-muted-foreground">{Z("分享链接过期时间", "Share link expires at")}</p>
+                  <p className="text-sm text-foreground">{String(viewCard.share_expires_at)}</p>
+                </div>
+              )}
+            </div>
+            <DialogFooter className="sm:justify-between">
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => { setViewCard(null); setShareCard(viewCard); }}>
+                  <Share2 className="h-3 w-3 mr-1" /> {Z("分享", "Share")}
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => { setViewCard(null); openEdit(viewCard); }}>
+                  <Pencil className="h-3 w-3 mr-1" /> {Z("编辑", "Edit")}
+                </Button>
+              </div>
+              <Button variant="ghost" onClick={() => setViewCard(null)}>{Z("关闭", "Close")}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
     </div>
   );
 }
@@ -313,10 +378,11 @@ function ShareCardDialog({ card, onClose }: { card: any; onClose: () => void }) 
             <Select value={visibility} onValueChange={setVisibility}>
               <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="Visible to public">{Z("任何持有链接的人", "Anyone with the link")}</SelectItem>
-                <SelectItem value="Visible to the care group of the cared one">{Z("仅护理小组", "Care group only")}</SelectItem>
-                <SelectItem value="Visible to caregivers of the cared one">{Z("仅护理者", "Caregivers only")}</SelectItem>
-                <SelectItem value="Visible to author">{Z("仅自己", "Only me")}</SelectItem>
+                <SelectItem value="Visible to public">{Z("任何拿到链接的人（包括 app 外的人）", "Anyone with the link, including people outside the app")}</SelectItem>
+                <SelectItem value="Visible to the care group of the cared one">{Z("仅此被照护者所在护理群组的成员（app 内）", "Only members of this cared one's care group in this app")}</SelectItem>
+                <SelectItem value="Visible to caregivers of the cared one">{Z("仅此被照护者的护理者（app 内）", "Only this cared one's caregivers in this app")}</SelectItem>
+                <SelectItem value="Visible to author">{Z("仅创建此卡片的我自己", "Only me, the person who created this card")}</SelectItem>
+
               </SelectContent>
             </Select>
           </div>
