@@ -10,10 +10,9 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Users as UsersIcon, X, ChevronDown, Check, Clock, Shield, MoreVertical, UserPlus, Settings, Trash2 } from "lucide-react";
+import { Loader2, Users as UsersIcon, X, ChevronDown, Shield, MoreVertical, UserPlus, Settings, Trash2 } from "lucide-react";
 import {
   useSubgroupMemberRecords, useAddMemberToSubgroup, useRemoveMemberFromSubgroup,
-  useApproveSubgroupMember, useDeclineSubgroupMember, useRequestJoinSubgroup,
   useUpdateSubgroupMemberRole, useUpdateMemberCategory,
 } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
