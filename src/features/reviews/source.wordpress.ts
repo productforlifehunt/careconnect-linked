@@ -48,16 +48,38 @@ function numericId(value: string | number | undefined | null): number {
   return Number(String(value ?? "").replace(/^wp-/, "")) || 0;
 }
 
+/** All Review rows, read once per screen and indexed by row id. */
+async function fetchReviewIndex(): Promise<Map<string, any>> {
+  return dedupeRead("cct-index:review", async () => {
+    const index = new Map<string, any>();
+    try {
+      const rows = await wordpressCCTFetch<any[]>(REVIEW.slug, { params: { _limit: 500 } });
+      if (Array.isArray(rows)) {
+        for (const row of rows) index.set(String(row?.id ?? row?._ID ?? ""), row);
+      }
+    } catch { /* falls back to per-id reads */ }
+    return index;
+  });
+}
+
 async function fetchReviewRows(parentId: number, relId: number): Promise<any[]> {
-  const rels = await wordpressFetch<any[]>(`jet-rel/${relId}/children/${parentId}`);
-  const ids = (Array.isArray(rels) ? rels : [])
-    .map((r: any) => Number(r.child_object_id))
-    .filter(Boolean);
+  // Whole-relation map + whole-CCT index: a marketplace page of N providers
+  // costs 2 requests instead of one relation call plus one row call per review.
+  const relMap = await fetchRelChildrenMap(relId);
+  let ids: number[];
+  if (relMap.loaded) {
+    ids = (relMap.get(String(parentId)) || []).map((c) => Number(c.childId)).filter(Boolean);
+  } else {
+    const rels = await wordpressFetch<any[]>(`jet-rel/${relId}/children/${parentId}`);
+    ids = (Array.isArray(rels) ? rels : []).map((r: any) => Number(r.child_object_id)).filter(Boolean);
+  }
   if (ids.length === 0) return [];
+  const index = await fetchReviewIndex();
   const rows = await Promise.all(
-    ids.map((id) => wordpressCCTFetch<any>(REVIEW.slug, { id })),
+    ids.map(async (id) => index.get(String(id)) ?? (await wordpressCCTFetch<any>(REVIEW.slug, { id }))),
   );
   return rows.filter(Boolean);
+
 }
 
 async function fetchProviderReviewRows(providerUserId: number): Promise<any[]> {
