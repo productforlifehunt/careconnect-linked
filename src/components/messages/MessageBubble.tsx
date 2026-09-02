@@ -32,9 +32,15 @@ export function MessageBubble({ message, isMe, conversationId, otherUserId }: Me
     );
   }
 
-  const hasAttachment = !!message.attachment_url;
+  // Attachments live either on a dedicated column (legacy) or as a bare URL on
+  // its own line in the body, which is how the chat CCT carries uploads today.
+  const bodyText = stripQuoteMarker(rawContent);
+  const urlLine = (bodyText.match(/https?:\/\/\S+$/m) || [])[0] || "";
+  const attachmentUrl: string = message.attachment_url || urlLine || "";
+  const hasAttachment = !!attachmentUrl;
   const isImage = message.message_type === "image" ||
-    (hasAttachment && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(message.attachment_url));
+    (hasAttachment && /\.(jpg|jpeg|png|gif|webp|svg|heic)(\?|$)/i.test(attachmentUrl));
+
   const textContent = stripQuoteMarker(rawContent);
 
   return (
