@@ -76,7 +76,8 @@ export async function fetchCareGroupsWordPress(): Promise<CareGroup[]> {
     group_type: String(g.a57) === "b56" ? "private" : "public",
     invite_code: null,
     join_code: g.a58 || null,
-    is_active: String(g.a59 || "b55") === "b55",
+    // No default: a missing a59 is unknown, never assumed active.
+    is_active: String(g.a59 ?? "") === "b55",
     created_by: g.cct_author_id ? `wp-${g.cct_author_id}` : (g.author_id ? `wp-${g.author_id}` : null),
     created_at: g.created_at,
   })) as unknown as CareGroup[];
