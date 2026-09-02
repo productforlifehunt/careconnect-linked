@@ -375,10 +375,11 @@ function ShareCardDialog({ card, onClose }: { card: any; onClose: () => void }) 
             <Select value={visibility} onValueChange={setVisibility}>
               <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="Visible to public">{Z("任何持有链接的人", "Anyone with the link")}</SelectItem>
-                <SelectItem value="Visible to the care group of the cared one">{Z("仅护理小组", "Care group only")}</SelectItem>
-                <SelectItem value="Visible to caregivers of the cared one">{Z("仅护理者", "Caregivers only")}</SelectItem>
-                <SelectItem value="Visible to author">{Z("仅自己", "Only me")}</SelectItem>
+                <SelectItem value="Visible to public">{Z("任何拿到链接的人（包括 app 外的人）", "Anyone with the link, including people outside the app")}</SelectItem>
+                <SelectItem value="Visible to the care group of the cared one">{Z("仅此被照护者所在护理群组的成员（app 内）", "Only members of this cared one's care group in this app")}</SelectItem>
+                <SelectItem value="Visible to caregivers of the cared one">{Z("仅此被照护者的护理者（app 内）", "Only this cared one's caregivers in this app")}</SelectItem>
+                <SelectItem value="Visible to author">{Z("仅创建此卡片的我自己", "Only me, the person who created this card")}</SelectItem>
+
               </SelectContent>
             </Select>
           </div>
