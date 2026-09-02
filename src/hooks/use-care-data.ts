@@ -469,8 +469,16 @@ export function useUpdateMyGroupDisplayName() {
 export function useInviteToGroup() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ groupId, userId, email, role }: { groupId: string; userId?: string; email?: string; role?: string }) => inviteToGroupWordPress(groupId, userId || email || "", role),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["careGroupMembers"] }); qc.invalidateQueries({ queryKey: ["groupInvitations"] }); },
+    mutationFn: ({ groupId, userId, email, invitedAs }: {
+      groupId: string;
+      userId?: string;
+      email?: string;
+      invitedAs?: InvitedAs;
+    }) => inviteToGroupWordPress(groupId, userId || email || "", invitedAs || "normal group member"),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["careGroupMembers"] });
+      qc.invalidateQueries({ queryKey: ["groupInvites"] });
+    },
   });
 }
 
