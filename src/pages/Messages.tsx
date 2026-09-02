@@ -372,7 +372,7 @@ export default function Messages({ embedded = false }: { embedded?: boolean } = 
                       {p.avatar_url ? <img src={p.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover" /> : <span className="text-primary text-xs font-medium">{(p.full_name || "?")[0]}</span>}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground">{p.full_name || t("common.noName")}</p>
+                      <p className="text-sm font-medium text-foreground">{p.full_name || ""}</p>
                       <p className="text-xs text-muted-foreground">{p.email || p.user_name || ""}</p>
                     </div>
                     {startConversation.isPending && <Loader2 className="h-4 w-4 animate-spin ml-auto" />}

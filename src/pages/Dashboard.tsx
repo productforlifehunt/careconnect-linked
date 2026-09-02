@@ -147,7 +147,7 @@ export default function Dashboard() {
         {caredOnes.length === 1 ? (
           <PatientSummaryCard
             caredOneId={caredOnes[0].user_id}
-            name={caredOnes[0].cared_one?.full_name || t("common.noName")}
+            name={caredOnes[0].cared_one?.full_name || ""}
             avatarUrl={caredOnes[0].cared_one?.avatar_url}
             relationship={caredOnes[0].relationship}
             onClick={() => navigate("/cared-ones")}
@@ -156,7 +156,7 @@ export default function Dashboard() {
           <Tabs defaultValue={caredOnes[0].user_id}>
             <TabsList className="w-full h-auto flex-wrap justify-start gap-1 bg-muted/40 p-1 rounded-xl">
               {caredOnes.map((co: any) => {
-                const name = co.cared_one?.full_name || t("common.noName");
+                const name = co.cared_one?.full_name || "";
                 return (
                   <TabsTrigger
                     key={co.user_id}
@@ -173,7 +173,7 @@ export default function Dashboard() {
               <TabsContent key={co.user_id} value={co.user_id} className="mt-3 focus-visible:outline-none">
                 <PatientSummaryCard
                   caredOneId={co.user_id}
-                  name={co.cared_one?.full_name || t("common.noName")}
+                  name={co.cared_one?.full_name || ""}
                   avatarUrl={co.cared_one?.avatar_url}
                   relationship={co.relationship}
                   onClick={() => navigate("/cared-ones")}
@@ -316,7 +316,7 @@ export default function Dashboard() {
               {caredOnes!.map((co: any) => (
                 <TabsTrigger key={co.user_id} value={co.user_id}
                   className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm text-xs px-3 py-1.5 max-w-[12rem] truncate">
-                  {co.cared_one?.full_name || t("common.noName")}
+                  {co.cared_one?.full_name || ""}
                 </TabsTrigger>
               ))}
             </TabsList>
@@ -324,7 +324,7 @@ export default function Dashboard() {
               <TabsContent key={co.user_id} value={co.user_id} className="focus-visible:outline-none">
                 <DailyTimeline
                   caredOneId={co.user_id}
-                  caredOneName={co.cared_one?.full_name || t("common.noName")}
+                  caredOneName={co.cared_one?.full_name || ""}
                 />
               </TabsContent>
             ))}
@@ -332,7 +332,7 @@ export default function Dashboard() {
         ) : (
           <DailyTimeline
             caredOneId={firstCaredOne.user_id}
-            caredOneName={firstCaredOne.cared_one?.full_name || t("common.noName")}
+            caredOneName={firstCaredOne.cared_one?.full_name || ""}
           />
         )}
       </section>
