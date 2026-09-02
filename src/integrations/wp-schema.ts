@@ -669,11 +669,15 @@ export const WP = {
         "MEDICATION_DOSE_QUANTITY": "a93",  // Number
         "MEDICATION_DOSE_UNIT": "a94",  // Text
         "MEDICATION_SCHEDULE_TYPE": "a95",  // Radio
+        "MEDICINE_LOG_TYPE": "a96",  // Radio
+        "CHECKIN_LOG_TYPE": "a97",  // Radio
       },
       opt: {
         "ALL_DAY": { "YES": "b55", "NO": "b56" },
         "CUSTOM_EVENT_TYPE": { "MEDICINE_SCHEDULE": "b55", "HEALTH_CHECKIN": "b56", "HABIT": "b57", "TODO": "b58" },
         "MEDICATION_SCHEDULE_TYPE": { "AS_NEEDED": "b55", "SCHEDULE": "b56" },
+        "MEDICINE_LOG_TYPE": { "AI": "b55", "HUMAN": "b56" },
+        "CHECKIN_LOG_TYPE": { "AI": "b55", "HUMAN": "b56" },
         "STATUS": { "CONFIRMED": "b55", "TENTATIVE": "b56", "CANCELLED": "b57" },
         "SHOW_AS": { "BUSY": "b55", "FREE": "b56", "TENTATIVE": "b57", "UNAVAILABLE": "b58" },
         "VISIBILITY": { "DEFAULT": "b55", "PUBLIC": "b56", "PRIVATE": "b57", "CONFIDENTIAL": "b58" },
