@@ -1,74 +1,68 @@
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Paperclip, Image as ImageIcon, FileText, X, Loader2 } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Paperclip, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { uploadWPMedia } from "@/lib/wp-media";
 
 interface MessageAttachmentProps {
-  onAttach: (url: string, type: "image" | "file") => void;
+  onAttach: (url: string, type: "image" | "file", name?: string) => void;
   disabled?: boolean;
 }
 
+/**
+ * Real attachment picker: opens the device's photo library / files chooser
+ * (camera on phones), uploads to the WordPress media library and hands back a
+ * usable URL. No URL typing — caregivers are not expected to know what a URL is.
+ */
 export function MessageAttachment({ onAttach, disabled }: MessageAttachmentProps) {
   const { toast } = useToast();
   const { i18n } = useTranslation();
   const isCN = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (isCN ? cn : en);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [urlInput, setUrlInput] = useState("");
-  const [mode, setMode] = useState<"image" | "file" | null>(null);
 
-  const handleSubmitUrl = () => {
-    if (!urlInput.trim()) return;
-    onAttach(urlInput.trim(), mode || "file");
-    setUrlInput("");
-    setMode(null);
-    setOpen(false);
+  const handleFiles = async (files: FileList | null) => {
+    const file = files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const media = await uploadWPMedia(file);
+      onAttach(media.url, media.isImage ? "image" : "file", media.name || file.name);
+    } catch {
+      toast({
+        title: Z("没能添加这个文件", "Couldn't add that file"),
+        description: Z("请再试一次，或选择小一点的照片。", "Please try again, or pick a smaller photo."),
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" disabled={disabled || uploading} className="shrink-0">
-          {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-72 p-3" align="start">
-        {!mode ? (
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-foreground mb-2">{Z("添加附件", "Attach")}</p>
-            <Button variant="outline" className="w-full justify-start gap-2" size="sm" onClick={() => setMode("image")}>
-              <ImageIcon className="h-4 w-4 text-primary" /> {Z("图片链接", "Image URL")}
-            </Button>
-            <Button variant="outline" className="w-full justify-start gap-2" size="sm" onClick={() => setMode("file")}>
-              <FileText className="h-4 w-4 text-primary" /> {Z("文件链接", "File URL")}
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-foreground">
-                {mode === "image" ? Z("图片链接", "Image URL") : Z("文件链接", "File URL")}
-              </p>
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setMode(null)}>
-                <X className="h-3 w-3" />
-              </Button>
-            </div>
-            <input
-              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              placeholder={mode === "image" ? "https://example.com/photo.jpg" : "https://example.com/doc.pdf"}
-              value={urlInput}
-              onChange={e => setUrlInput(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && handleSubmitUrl()}
-            />
-            <Button variant="coral" size="sm" className="w-full" onClick={handleSubmitUrl} disabled={!urlInput.trim()}>
-              {Z("添加", "Attach")}
-            </Button>
-          </div>
-        )}
-      </PopoverContent>
-    </Popover>
+    <>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="min-h-11 min-w-11 shrink-0"
+        disabled={disabled || uploading}
+        title={Z("添加照片或文件", "Add a photo or file")}
+        aria-label={Z("添加照片或文件", "Add a photo or file")}
+        onClick={() => inputRef.current?.click()}
+      >
+        {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+      </Button>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*,application/pdf,.doc,.docx,.txt"
+        className="hidden"
+        onChange={(e) => handleFiles(e.target.files)}
+      />
+    </>
   );
 }

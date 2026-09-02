@@ -32,19 +32,26 @@ export function MessageBubble({ message, isMe, conversationId, otherUserId }: Me
     );
   }
 
-  const hasAttachment = !!message.attachment_url;
+  // Attachments live either on a dedicated column (legacy) or as a bare URL on
+  // its own line in the body, which is how the chat CCT carries uploads today.
+  const bodyText = stripQuoteMarker(rawContent);
+  const urlLine = (bodyText.match(/https?:\/\/\S+$/m) || [])[0] || "";
+  const attachmentUrl: string = message.attachment_url || urlLine || "";
+  const hasAttachment = !!attachmentUrl;
   const isImage = message.message_type === "image" ||
-    (hasAttachment && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(message.attachment_url));
-  const textContent = stripQuoteMarker(rawContent);
+    (hasAttachment && /\.(jpg|jpeg|png|gif|webp|svg|heic)(\?|$)/i.test(attachmentUrl));
+
+  // The raw URL never shows as text — it is rendered as the card below.
+  const textContent = urlLine ? bodyText.replace(urlLine, "").trim() : bodyText;
 
   return (
     <div className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
       <div className={`max-w-[70%] rounded-2xl px-4 py-2 ${isMe ? "hero-gradient text-primary-foreground rounded-br-md" : "bg-card border rounded-bl-md text-foreground"}`}>
         {/* Attachment */}
         {hasAttachment && isImage && (
-          <a href={message.attachment_url} target="_blank" rel="noopener noreferrer" className="block mb-1">
+          <a href={attachmentUrl} target="_blank" rel="noopener noreferrer" className="block mb-1">
             <img 
-              src={message.attachment_url} 
+              src={attachmentUrl} 
               alt={isCN ? "分享的图片" : "Shared image"} 
               className="rounded-lg max-h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity" 
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
@@ -53,18 +60,19 @@ export function MessageBubble({ message, isMe, conversationId, otherUserId }: Me
         )}
         {hasAttachment && !isImage && (
           <a 
-            href={message.attachment_url} 
+            href={attachmentUrl} 
             target="_blank" 
             rel="noopener noreferrer"
             className={`flex items-center gap-2 p-2 rounded-lg mb-1 ${isMe ? "bg-primary-foreground/10" : "bg-muted"} hover:opacity-80 transition-opacity`}
           >
             <FileText className="h-4 w-4 shrink-0" />
             <span className="text-xs truncate flex-1">
-              {message.attachment_url.split("/").pop() || (isCN ? "文件" : "File")}
+              {decodeURIComponent(attachmentUrl.split("/").pop() || "") || (isCN ? "文件" : "File")}
             </span>
             <ExternalLink className="h-3 w-3 shrink-0" />
           </a>
         )}
+
         {/* Text */}
         {textContent && (
           <p className="text-sm whitespace-pre-wrap">{textContent}</p>

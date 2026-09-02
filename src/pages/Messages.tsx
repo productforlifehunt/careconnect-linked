@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Search, Phone, Video, MoreVertical, Loader2, Plus, X, Tag } from "lucide-react";
+import { Send, Search, Phone, Video, MoreVertical, Loader2, Plus, X, Tag, ArrowLeft } from "lucide-react";
 import { MessageAttachment } from "@/components/messages/MessageAttachment";
 import { MessageBubble } from "@/components/messages/MessageBubble";
 import { QuoteDialog } from "@/components/messages/QuoteDialog";
@@ -33,15 +33,21 @@ export default function Messages({ embedded = false }: { embedded?: boolean } = 
   const [selectedConvoId, setSelectedConvoId] = useState<string | null>(null);
   const [selectedOtherUser, setSelectedOtherUser] = useState<any>(null);
   const [newMessage, setNewMessage] = useState("");
-  const [pendingAttachment, setPendingAttachment] = useState<{ url: string; type: "image" | "file" } | null>(null);
+  const [pendingAttachment, setPendingAttachment] = useState<{ url: string; type: "image" | "file"; name?: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [dragOver, setDragOver] = useState(false);
   const [newConvoOpen, setNewConvoOpen] = useState(false);
   const [newConvoSearch, setNewConvoSearch] = useState("");
   const [quoteDialogOpen, setQuoteDialogOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesBoxRef = useRef<HTMLDivElement>(null);
   const navHandledRef = useRef(false);
+  // Once the reader taps back to the list we must never yank them into a chat
+  // again — the auto-open is a first-load convenience for wide screens only.
+  const closedByUserRef = useRef(false);
   const { data: newConvoResults } = useSearchProfiles(newConvoSearch);
   const [handledNavState, setHandledNavState] = useState(false);
+
 
   // Conversation rows from the WP adapter are flat: participant_1_id / participant_2_id / other_user_id (already prefixed wp-).
   // The adapter resolves other_user_name/avatar in one batched users request; the
@@ -108,14 +114,19 @@ export default function Messages({ embedded = false }: { embedded?: boolean } = 
     }
   }, [location.state]);
 
+  // On phones the list IS the screen: never auto-open a chat, otherwise the
+  // user lands inside a conversation they never picked and back feels broken.
   useEffect(() => {
     const navState = location.state as any;
+    const isWide = typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches;
+    if (!isWide || closedByUserRef.current) return;
     if (conversations && conversations.length > 0 && !selectedConvoId && !navState?.targetUserId) {
       const first = conversations[0];
       setSelectedConvoId(first.id);
       setSelectedOtherUser(getOtherUser(first));
     }
   }, [conversations, selectedConvoId, profile?.id]);
+
 
   const otherUserId = selectedOtherUser?.id || null;
   // Messages are fetched by conversationId, not by otherUserId.
@@ -125,21 +136,47 @@ export default function Messages({ embedded = false }: { embedded?: boolean } = 
   void otherUserId;
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    // Scroll only the message list — scrollIntoView would scroll the whole page
+    // and push the app header off screen.
+    const box = messagesBoxRef.current;
+    if (box) box.scrollTo({ top: box.scrollHeight, behavior: "smooth" });
   }, [messages]);
+
+  // Drag a photo straight onto the conversation — same upload path as the clip.
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer?.files?.[0];
+    if (!file) return;
+    try {
+      const { uploadWPMedia } = await import("@/lib/wp-media");
+      const media = await uploadWPMedia(file);
+      setPendingAttachment({ url: media.url, type: media.isImage ? "image" : "file", name: media.name || file.name });
+    } catch {
+      toast({
+        title: Z("没能添加这个文件", "Couldn't add that file"),
+        description: Z("请再试一次，或选择小一点的照片。", "Please try again, or pick a smaller photo."),
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleSend = () => {
     // Only the conversation is required: recipients are resolved from the
     // conversation's member relation, so group chats and conversations with an
     // unresolved counterpart can still be replied to.
     if ((!newMessage.trim() && !pendingAttachment) || !selectedConvoId) return;
+    // The chat message CCT has no attachment column, so the uploaded media URL
+    // travels in the message body; the bubble renders it as a photo/file card.
+    const body = [newMessage.trim(), pendingAttachment?.url].filter(Boolean).join("\n");
     sendMessage.mutate({
       conversationId: selectedConvoId,
-      content: newMessage || (pendingAttachment ? (pendingAttachment.type === "image" ? "📷 Image" : "📎 File") : ""),
+      content: body,
       receiverUserId: selectedOtherUser?.id || undefined,
     });
     setNewMessage("");
     setPendingAttachment(null);
+
   };
 
   const handleSendQuote = async (quote: QuoteData) => {
@@ -189,7 +226,13 @@ export default function Messages({ embedded = false }: { embedded?: boolean } = 
   );
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex">
+    <div
+      className={`flex ${
+        embedded
+          ? "h-[calc(100dvh-19rem)] min-h-[24rem] md:h-[calc(100dvh-13rem)]"
+          : "h-[calc(100dvh-8rem)] md:h-[calc(100dvh-4rem)]"
+      }`}
+    >
       {/* Conversation List */}
       <div className={`w-full md:w-80 border-r flex flex-col bg-card ${selectedConvoId ? "hidden md:flex" : "flex"}`}>
         <div className="p-4 border-b">
@@ -258,10 +301,22 @@ export default function Messages({ embedded = false }: { embedded?: boolean } = 
 
       {/* Chat Area */}
       {selectedOtherUser ? (
-        <div className={`flex-1 flex flex-col ${selectedConvoId ? "flex" : "hidden md:flex"}`}>
-          <div className="p-4 border-b flex items-center justify-between bg-card">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="sm" className="md:hidden" onClick={() => { setSelectedConvoId(null); setSelectedOtherUser(null); }}>←</Button>
+        <div className={`flex-1 min-w-0 flex flex-col ${selectedConvoId ? "flex" : "hidden md:flex"}`}>
+          <div className="p-3 sm:p-4 border-b flex items-center justify-between bg-card">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden min-h-11 min-w-11 shrink-0"
+                aria-label={Z("返回消息列表", "Back to messages")}
+                onClick={() => {
+                  closedByUserRef.current = true;
+                  setSelectedConvoId(null);
+                  setSelectedOtherUser(null);
+                }}
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
               <div className="relative">
                 {selectedOtherUser.avatar_url ? (
                   <img src={selectedOtherUser.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
@@ -282,7 +337,13 @@ export default function Messages({ embedded = false }: { embedded?: boolean } = 
             </div>
           </div>
 
-          <div className="flex-1 overflow-auto p-4 space-y-3 bg-muted/20">
+          <div
+            ref={messagesBoxRef}
+            className={`flex-1 overflow-auto p-4 space-y-3 bg-muted/20 ${dragOver ? "ring-2 ring-primary/50 ring-inset" : ""}`}
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={handleDrop}
+          >
             {msgsLoading ? (
               <div className="space-y-3">
                 {[1, 2, 3].map(i => (
@@ -311,8 +372,11 @@ export default function Messages({ embedded = false }: { embedded?: boolean } = 
           <div className="p-4 border-t bg-card">
             {pendingAttachment && (
               <div className="flex items-center gap-2 mb-2 p-2 rounded-lg bg-muted/50 text-sm">
+                {pendingAttachment.type === "image" ? (
+                  <img src={pendingAttachment.url} alt="" className="h-10 w-10 rounded object-cover shrink-0" />
+                ) : null}
                 <span className="text-muted-foreground truncate flex-1">
-                  {pendingAttachment.type === "image" ? "📷" : "📎"} {pendingAttachment.url.split("/").pop()}
+                  {pendingAttachment.name || Z("已选择文件", "File selected")}
                 </span>
                 <Button variant="ghost" size="icon" className="min-h-11 min-w-11 shrink-0" aria-label={Z("移除附件", "Remove attachment")} onClick={() => setPendingAttachment(null)}>
                   <X className="h-3 w-3" />
@@ -320,7 +384,8 @@ export default function Messages({ embedded = false }: { embedded?: boolean } = 
               </div>
             )}
             <div className="flex gap-2">
-              <MessageAttachment onAttach={(url, type) => setPendingAttachment({ url, type })} disabled={sendMessage.isPending} />
+              <MessageAttachment onAttach={(url, type, name) => setPendingAttachment({ url, type, name })} disabled={sendMessage.isPending} />
+
               <Button
                 variant="ghost"
                 size="icon"
