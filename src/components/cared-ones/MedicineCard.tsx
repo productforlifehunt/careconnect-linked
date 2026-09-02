@@ -284,10 +284,11 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
               <div><Label>{Z("多久算漏服(分钟)","Count as missed after (min)")}</Label><Input type="number" min="0" value={form.time_to_be_considered_missing} onChange={e => setForm(p => ({ ...p, time_to_be_considered_missing: e.target.value }))} className="mt-1" /></div>
             </div>
 
-          <div className="flex gap-2">
+          <div className="sticky bottom-0 -mx-6 flex gap-2 border-t bg-background px-6 py-3">
             <Button className="flex-1" onClick={handleSave} disabled={updateMed.isPending || !form.name.trim()}>
               {updateMed.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null} {Z("保存更改","Save Changes")}
             </Button>
+            <Button variant="outline" onClick={onClose}>{Z("取消","Cancel")}</Button>
             <Button variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={onDelete}>
               <Trash2 className="h-4 w-4 mr-1" /> {Z("删除","Delete")}
             </Button>
