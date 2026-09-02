@@ -10,10 +10,9 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Users as UsersIcon, X, ChevronDown, Check, Clock, Shield, MoreVertical, UserPlus, Settings, Trash2 } from "lucide-react";
+import { Loader2, Users as UsersIcon, X, ChevronDown, Shield, MoreVertical, UserPlus, Settings, Trash2 } from "lucide-react";
 import {
   useSubgroupMemberRecords, useAddMemberToSubgroup, useRemoveMemberFromSubgroup,
-  useApproveSubgroupMember, useDeclineSubgroupMember, useRequestJoinSubgroup,
   useUpdateSubgroupMemberRole, useUpdateMemberCategory,
 } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
@@ -39,9 +38,6 @@ export function SubgroupCard({ subgroup, members, isAdmin, onDelete, currentUser
   const { data: records = [], isLoading } = useSubgroupMemberRecords(subgroup.id);
   const addMember = useAddMemberToSubgroup();
   const removeMember = useRemoveMemberFromSubgroup();
-  const approveMember = useApproveSubgroupMember();
-  const declineMember = useDeclineSubgroupMember();
-  const requestJoin = useRequestJoinSubgroup();
   const updateRole = useUpdateSubgroupMemberRole();
   const [pickerOpen, setPickerOpen] = useState(false);
   const updateSubgroup = useUpdateMemberCategory();
@@ -51,54 +47,37 @@ export function SubgroupCard({ subgroup, members, isAdmin, onDelete, currentUser
   const [editColor, setEditColor] = useState(subgroup.color || "#7c6cf0");
 
   const meUid = toNum(currentUserId);
-  const accepted = records.filter((r) => r.status === "accepted");
-  const pending = records.filter((r) => r.status === "pending");
-  const acceptedSet = new Set(accepted.map((r) => r.user_id));
-  const allKnownSet = new Set(records.map((r) => r.user_id));
+  // Sub-group membership has no invitation or approval step: being linked is
+  // being a member. Owners and admins add and remove people directly.
+  const memberSet = new Set(records.map((r) => r.user_id));
 
   const myRecord = meUid ? records.find((r) => r.user_id === meUid) : undefined;
   const iAmSubgroupAdmin = !!myRecord && (myRecord.is_owner || myRecord.is_admin);
   const canManage = isAdmin || iAmSubgroupAdmin;
 
-  // Show accepted members as chips
-  const memberChips = accepted.map((rec) => {
+  // Chips show each member's in-group display name.
+  const memberChips = records.map((rec) => {
     const m = members.find((mm) => toNum(mm.user_id || mm.id) === rec.user_id);
-    return { rec, name: m?.profile?.full_name || (isCN ? `成员 ${rec.user_id}` : `Member ${rec.user_id}`) };
+    return { rec, name: m?.profile?.full_name || "" };
   });
 
   const togglePicker = (uid: number, checked: boolean) => {
     if (checked) {
-      addMember.mutate({ subgroupId: subgroup.id, userId: uid, status: "accepted" }, {
-        onSuccess: () => toast({ title: Z("已加入子分组", "Added to sub-group") }),
-        onError: () => toast({ title: Z("加入失败", "Failed to add"), variant: "destructive" }),
+      addMember.mutate({ subgroupId: subgroup.id, userId: uid }, {
+        onSuccess: () => toast({ title: Z("已加入小组", "Added to sub-group") }),
+        onError: () => toast({ title: Z("加入失败", "Could not add"), variant: "destructive" }),
       });
     } else {
       removeMember.mutate({ subgroupId: subgroup.id, userId: uid }, {
-        onSuccess: () => toast({ title: Z("已移出子分组", "Removed from sub-group") }),
+        onSuccess: () => toast({ title: Z("已移出小组", "Removed from sub-group") }),
       });
     }
   };
 
-  const handleApprove = (uid: number) => {
-    approveMember.mutate({ subgroupId: subgroup.id, userId: uid }, {
-      onSuccess: () => toast({ title: Z("请求已批准", "Request approved") }),
-    });
-  };
-  const handleDecline = (uid: number) => {
-    declineMember.mutate({ subgroupId: subgroup.id, userId: uid }, {
-      onSuccess: () => toast({ title: Z("请求已拒绝", "Request declined") }),
-    });
-  };
-  const handleRequestJoin = () => {
-    requestJoin.mutate({ subgroupId: subgroup.id }, {
-      onSuccess: () => toast({ title: Z("加入申请已发送", "Join request sent") }),
-      onError: () => toast({ title: Z("发送失败", "Failed to send request"), variant: "destructive" }),
-    });
-  };
   const changeRole = (uid: number, role: "owner" | "admin" | "nothing special") => {
     updateRole.mutate({ subgroupId: subgroup.id, userId: uid, role }, {
       onSuccess: () => toast({ title: Z("角色已更新", "Role updated") }),
-      onError: (err: any) => toast({ title: Z("更新失败", "Failed to update role"), description: err?.message, variant: "destructive" }),
+      onError: (err: any) => toast({ title: Z("更新失败", "Could not update role"), description: err?.message, variant: "destructive" }),
     });
   };
 
@@ -120,12 +99,7 @@ export function SubgroupCard({ subgroup, members, isAdmin, onDelete, currentUser
               style={{ backgroundColor: subgroup.color || "hsl(var(--primary))" }}
             />
             <p className="text-sm font-semibold text-foreground truncate">{subgroup.name}</p>
-            <Badge variant="secondary" className="text-[10px] h-4">{accepted.length}</Badge>
-            {canManage && pending.length > 0 && (
-              <Badge variant="outline" className="text-[10px] h-4 gap-0.5 border-warning/40 text-warning">
-                <Clock className="h-2.5 w-2.5" /> {pending.length}
-              </Badge>
-            )}
+            <Badge variant="secondary" className="text-[10px] h-4">{records.length}</Badge>
           </div>
           {canManage && (
             <div className="flex items-center gap-0.5 shrink-0">
@@ -192,44 +166,8 @@ export function SubgroupCard({ subgroup, members, isAdmin, onDelete, currentUser
           </div>
         )}
 
-        {/* Pending requests (admins only) */}
-        {canManage && pending.length > 0 && (
-          <div className="mb-2 rounded-md border border-warning/30 bg-warning/5 p-2">
-            <p className="text-[11px] font-semibold text-warning mb-1.5 flex items-center gap-1">
-              <Clock className="h-3 w-3" /> {Z("待审核请求", "Pending requests")}
-            </p>
-            <div className="space-y-1">
-              {pending.map((rec) => {
-                const m = members.find((mm) => toNum(mm.user_id || mm.id) === rec.user_id);
-                const name = m?.profile?.full_name || (isCN ? `用户 ${rec.user_id}` : `User ${rec.user_id}`);
-                return (
-                  <div key={rec.user_id} className="flex items-center justify-between gap-2">
-                    <span className="text-xs text-foreground truncate flex-1">{name}</span>
-                    <Button
-                      size="sm" variant="success"
-                      className="h-6 px-2 text-[11px]"
-                      onClick={() => handleApprove(rec.user_id)}
-                      disabled={approveMember.isPending}
-                    >
-                      <Check className="h-3 w-3 mr-0.5" /> {Z("批准", "Approve")}
-                    </Button>
-                    <Button
-                      size="sm" variant="ghost"
-                      className="h-6 px-2 text-[11px] text-destructive hover:bg-destructive/10"
-                      onClick={() => handleDecline(rec.user_id)}
-                      disabled={declineMember.isPending}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Footer actions */}
-        {canManage ? (
+        {/* Owners and admins add or remove members directly */}
+        {canManage && (
           <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="h-7 text-xs w-full">
@@ -238,37 +176,20 @@ export function SubgroupCard({ subgroup, members, isAdmin, onDelete, currentUser
             </PopoverTrigger>
             <PopoverContent className="w-64 p-2 max-h-72 overflow-y-auto" align="start">
               {members.length === 0 ? (
-                <p className="text-xs text-muted-foreground p-2">{Z("小组还没有成员。", "No group members.")}</p>
+                <p className="text-xs text-muted-foreground p-2">{Z("护理群组还没有成员。", "This care group has no members yet.")}</p>
               ) : members.map((m) => {
                 const uid = toNum(m.user_id || m.id);
                 if (!uid) return null;
-                const checked = acceptedSet.has(uid);
-                const isPending = !checked && allKnownSet.has(uid);
                 return (
                   <label key={uid} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded px-1.5 py-1">
-                    <Checkbox checked={checked} onCheckedChange={(c) => togglePicker(uid, !!c)} />
-                    <span className="text-sm text-foreground flex-1 truncate">
-                      {m.profile?.full_name || (isCN ? `成员 ${uid}` : `Member ${uid}`)}
-                    </span>
-                    {isPending && <Badge variant="outline" className="text-[9px] h-4 border-warning/40 text-warning">{Z("待审核", "pending")}</Badge>}
+                    <Checkbox checked={memberSet.has(uid)} onCheckedChange={(c) => togglePicker(uid, !!c)} />
+                    <span className="text-sm text-foreground flex-1 truncate">{m.profile?.full_name || ""}</span>
                   </label>
                 );
               })}
             </PopoverContent>
           </Popover>
-        ) : myRecord?.status === "pending" ? (
-          <Button variant="outline" size="sm" className="h-7 text-xs w-full" disabled>
-            <Clock className="h-3 w-3 mr-1" /> {Z("申请待审核", "Request pending")}
-          </Button>
-        ) : !myRecord && meUid ? (
-          <Button
-            variant="outline" size="sm" className="h-7 text-xs w-full"
-            onClick={handleRequestJoin} disabled={requestJoin.isPending}
-          >
-            {requestJoin.isPending ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <UserPlus className="h-3 w-3 mr-1" />}
-            {Z("申请加入", "Request to join")}
-          </Button>
-        ) : null}
+        )}
         {/* Sub-group settings */}
         <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
           <DialogContent>

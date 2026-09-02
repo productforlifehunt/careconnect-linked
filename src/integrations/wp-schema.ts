@@ -780,20 +780,26 @@ export const WP = {
         "STATUS": { "ACTIVE": "b55", "NO": "b56" },
       },
     },
-    /** 200. Care group invite */
+    /** 200. Care group invite link */
     "200": {
       id: 200,
       slug: "care_group_invite",
-      name: "Care group invite",
+      name: "Care group invite link",
       f: {
         "TOKEN": "a55",  // Text
         "NAME": "a56",  // Text
         "EXPIRES_AT": "a57",  // Datetime
         "MAX_USES": "a58",  // Number
         "USE_COUNT": "a59",  // Number
-        "IS_REVOKED": "a60",  // Switcher
+        "IS_REVOKED": "a60",  // Radio
+        "NOTE": "a61",  // Text
+        "THE_USER_IS_INVITED_AS": "a62",  // Radio
+        "CUSTOM_OR_APP_NATIVE_GENERATED": "a63",  // Radio
       },
       opt: {
+        "IS_REVOKED": { "YES": "b55", "NO": "b56" },
+        "THE_USER_IS_INVITED_AS": { "NORMAL_GROUP_MEMBER": "b55", "OWNER": "b56", "ADMIN": "b57" },
+        "CUSTOM_OR_APP_NATIVE_GENERATED": { "CUSTOM": "b55", "APP_NATIVE_GENERATED": "b56" },
       },
     },
     /** 201. The related private member groups of one 199. care group */

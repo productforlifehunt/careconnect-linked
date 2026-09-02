@@ -56,16 +56,16 @@ async function relParents(rel: number, childId: number): Promise<number[]> {
   } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
-/** Sub-group ids the current user belongs to (status = accepted only). */
+/**
+ * Sub-group ids the current user belongs to. Sub-group membership has no
+ * invitation step — being linked through REL 225 IS membership.
+ */
 export async function fetchMySubgroupIds(): Promise<Set<number>> {
   const uid = getCurrentUserIdNumber();
   if (!uid) return new Set();
   try {
     const rels = await wordpressFetch<any[]>(`jet-rel/${REL_SUBGROUP_MEMBERS}/parents/${uid}`);
-    const accepted = (Array.isArray(rels) ? rels : []).filter((r: any) => {
-      return decodeRel75Meta(r?.meta).status === "accepted";
-    });
-    return new Set(accepted.map((r: any) => Number(r.parent_object_id)).filter(Boolean));
+    return new Set((Array.isArray(rels) ? rels : []).map((r: any) => Number(r.parent_object_id)).filter(Boolean));
   } catch { return new Set(); }
 }
 

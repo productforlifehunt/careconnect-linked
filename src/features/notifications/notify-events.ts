@@ -171,18 +171,27 @@ function withActor<T>(build: (who: string) => T): Promise<T> {
   return actorAppName().then((who) => build(who));
 }
 
-/** Group invitation created → notify the invited user. */
+/**
+ * Group invitation created → notify the invited user. The notification carries
+ * the invite link itself: accepting means opening the link and finishing the
+ * group onboarding popup.
+ */
 export function notifyGroupInvite(
   inviteeId: string | number | null | undefined,
   groupName: string,
+  inviteUrl?: string,
 ) {
+  let path = "/care-circle";
+  if (inviteUrl) {
+    try { path = new URL(inviteUrl).pathname; } catch { path = inviteUrl; }
+  }
   return withActor((who) => notifyUsers([inviteeId], {
     type: "system",
     title: Z("有人邀请你加入护理小组", "You were invited to a care group"),
     message: who
       ? Z(`${who} 邀请你加入「${clip(groupName, 80)}」。`, `${who} invited you to join ${clip(groupName, 80)}.`)
       : Z(`你被邀请加入「${clip(groupName, 80)}」。`, `You were invited to join ${clip(groupName, 80)}.`),
-    action_url: `/care-circle?tab=invitations`,
+    action_url: path,
   }));
 }
 

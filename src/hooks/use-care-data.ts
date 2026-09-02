@@ -27,9 +27,8 @@ import {
   fetchMemberCategoriesWordPress, createMemberCategoryWordPress, updateMemberCategoryWordPress, deleteMemberCategoryWordPress,
   fetchSubgroupMembersWordPress, fetchSubgroupMemberRecordsWordPress,
   addMemberToSubgroupWordPress, removeMemberFromSubgroupWordPress,
-  requestJoinSubgroupWordPress, approveSubgroupMemberWordPress, declineSubgroupMemberWordPress,
-  updateSubgroupMemberRoleWordPress,
-  fetchSubgroupPendingRequestsWordPress, fetchMyPendingSubgroupRequestsWordPress,
+  updateSubgroupMemberRoleWordPress, joinGroupByJoinCodeWordPress, previewGroupInviteWordPress,
+  type InvitedAs,
   searchProfilesWordPress, addCaredOneToGroupWordPress, leaveGroupWordPress,
   fetchGroupInvitesWordPress, createGroupInviteWordPress, updateGroupInviteWordPress, deleteGroupInviteWordPress,
 } from "@/features/care-groups/source.wordpress-extended";
@@ -471,8 +470,16 @@ export function useUpdateMyGroupDisplayName() {
 export function useInviteToGroup() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ groupId, userId, email, role }: { groupId: string; userId?: string; email?: string; role?: string }) => inviteToGroupWordPress(groupId, userId || email || "", role),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["careGroupMembers"] }); qc.invalidateQueries({ queryKey: ["groupInvitations"] }); },
+    mutationFn: ({ groupId, userId, email, invitedAs }: {
+      groupId: string;
+      userId?: string;
+      email?: string;
+      invitedAs?: InvitedAs;
+    }) => inviteToGroupWordPress(groupId, userId || email || "", invitedAs || "normal group member"),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["careGroupMembers"] });
+      qc.invalidateQueries({ queryKey: ["groupInvites"] });
+    },
   });
 }
 
@@ -769,7 +776,7 @@ export function useGroupInvites(groupId: string | null) {
 export function useCreateGroupInvite() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { groupId: string; name: string; expiresAt?: string | null; maxUses?: number; token?: string }) =>
+    mutationFn: (input: { groupId: string; name: string; note?: string; expiresAt?: string | null; maxUses?: number; token?: string; invitedAs?: InvitedAs; source?: "custom" | "app native generated" }) =>
       createGroupInviteWordPress(input),
     onSuccess: (_d, vars) => { qc.invalidateQueries({ queryKey: ["groupInvites", vars.groupId] }); },
   });
@@ -778,7 +785,7 @@ export function useCreateGroupInvite() {
 export function useUpdateGroupInvite() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...updates }: { id: string; groupId?: string; name?: string; token?: string; expiresAt?: string | null; maxUses?: number; isRevoked?: boolean }) =>
+    mutationFn: ({ id, ...updates }: { id: string; groupId?: string; name?: string; note?: string; token?: string; expiresAt?: string | null; maxUses?: number; isRevoked?: boolean; invitedAs?: InvitedAs }) =>
       updateGroupInviteWordPress(id, updates),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["groupInvites"] }); },
   });
@@ -909,8 +916,8 @@ export function useSubgroupMembers(subgroupId: string | null) {
 export function useAddMemberToSubgroup() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ subgroupId, userId, status, types }: { subgroupId: string; userId: string | number; status?: "accepted" | "pending"; types?: string[] }) =>
-      addMemberToSubgroupWordPress(subgroupId, userId, { status, types }),
+    mutationFn: ({ subgroupId, userId, types }: { subgroupId: string; userId: string | number; types?: string[] }) =>
+      addMemberToSubgroupWordPress(subgroupId, userId, { types }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["subgroupMembers"] });
       qc.invalidateQueries({ queryKey: ["subgroupMemberRecords"] });
@@ -946,54 +953,25 @@ export function useSubgroupMemberRecords(subgroupId: string | null) {
   });
 }
 
-export function useSubgroupPendingRequests(subgroupId: string | null) {
+/** Preview an invite link before joining: which group, invited as what. */
+export function useGroupInvitePreview(token: string | null) {
   return useQuery({
-    queryKey: ["subgroupPending", subgroupId],
-    queryFn: () => fetchSubgroupPendingRequestsWordPress(subgroupId!),
-    enabled: !!subgroupId,
+    queryKey: ["groupInvitePreview", token],
+    queryFn: () => previewGroupInviteWordPress(token!),
+    enabled: !!token,
+    retry: false,
   });
 }
 
-export function useMyPendingSubgroupRequests() {
-  return useQuery({
-    queryKey: ["mySubgroupPending"],
-    queryFn: () => fetchMyPendingSubgroupRequestsWordPress(),
-  });
-}
-
-export function useRequestJoinSubgroup() {
+/** Join a care group with its join code (CCT 199 a58). */
+export function useJoinGroupByJoinCode() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ subgroupId }: { subgroupId: string }) => requestJoinSubgroupWordPress(subgroupId),
+    mutationFn: ({ groupId, code, displayName }: { groupId: string; code: string; displayName?: string }) =>
+      joinGroupByJoinCodeWordPress(groupId, code, displayName),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["subgroupPending"] });
-      qc.invalidateQueries({ queryKey: ["mySubgroupPending"] });
-      qc.invalidateQueries({ queryKey: ["subgroupMemberRecords"] });
-    },
-  });
-}
-
-export function useApproveSubgroupMember() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ subgroupId, userId }: { subgroupId: string; userId: string | number }) => approveSubgroupMemberWordPress(subgroupId, userId),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["subgroupMembers"] });
-      qc.invalidateQueries({ queryKey: ["subgroupMemberRecords"] });
-      qc.invalidateQueries({ queryKey: ["subgroupPending"] });
-      qc.invalidateQueries({ queryKey: ["mySubgroupPending"] });
-    },
-  });
-}
-
-export function useDeclineSubgroupMember() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ subgroupId, userId }: { subgroupId: string; userId: string | number }) => declineSubgroupMemberWordPress(subgroupId, userId),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["subgroupMemberRecords"] });
-      qc.invalidateQueries({ queryKey: ["subgroupPending"] });
-      qc.invalidateQueries({ queryKey: ["mySubgroupPending"] });
+      qc.invalidateQueries({ queryKey: ["careGroups"] });
+      qc.invalidateQueries({ queryKey: ["careGroupMembers"] });
     },
   });
 }
