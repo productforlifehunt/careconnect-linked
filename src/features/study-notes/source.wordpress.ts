@@ -112,8 +112,8 @@ export async function markLessonFinished(articleId: string | number, finished = 
     });
   } else {
     await wordpressFetch(`jet-rel/${REL_USER_FINISHED}`, {
-      method: "DELETE",
-      body: { parent_id: userId, child_id: aid },
+      method: "POST",
+      body: { parent_id: userId, child_id: aid, context: "child", store_items_type: "disconnect" },
     });
   }
 }

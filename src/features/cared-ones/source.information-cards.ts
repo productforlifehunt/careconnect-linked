@@ -253,6 +253,6 @@ export async function setInformationCardContactsWordPress(cardId: string, contac
 
   const toRemove = [...currentSet].filter((c) => !desiredSet.has(c));
   for (const childId of toRemove) {
-    await wordpressFetch(`jet-rel/${REL_INFO_CARD_EMERGENCY}`, { method: "DELETE", body: { parent_id: parentId, child_id: Number(childId) } });
+    await wordpressFetch(`jet-rel/${REL_INFO_CARD_EMERGENCY}`, { method: "POST", body: { parent_id: parentId, child_id: Number(childId), context: "child", store_items_type: "disconnect" } });
   }
 }

@@ -158,8 +158,8 @@ export async function deleteUserCaredOneWordPress(id: string): Promise<void> {
   const childId = normalizeWpObjectId(id);
   if (!childId) throw new Error("Invalid cared one user");
   await wordpressFetch(`jet-rel/${REL_USER_CARED_ONE}`, {
-    method: "DELETE",
-    body: { parent_id: Number(stored.user_id), child_id: childId },
+    method: "POST",
+    body: { parent_id: Number(stored.user_id), child_id: childId, context: "child", store_items_type: "disconnect" },
   });
 }
 
