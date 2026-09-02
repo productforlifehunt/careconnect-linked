@@ -177,7 +177,9 @@ Data: ${context}`;
     }
   };
 
-  // Auto-load once per day
+  // Auto-load once per day. The rule-based alerts above render immediately;
+  // the AI call is deferred to browser idle time so it never queues ahead of
+  // the dashboard's own data requests (that was the "staircase" effect).
   useEffect(() => {
     if (!caredOnes) return;
     const cached = loadCache();
@@ -185,12 +187,22 @@ Data: ${context}`;
       setBriefing(cached.data);
       return;
     }
-    // Auto-generate when we have at least some context
-    if ((caredOnes?.length || 0) > 0 || (tasks?.length || 0) > 0) {
-      generate();
-    }
+    if ((caredOnes?.length || 0) === 0 && (tasks?.length || 0) === 0) return;
+
+    const idle = (window as any).requestIdleCallback as
+      | ((cb: () => void, opts?: { timeout: number }) => number)
+      | undefined;
+    let handle: any;
+    if (idle) handle = idle(() => generate(), { timeout: 2500 });
+    else handle = window.setTimeout(() => generate(), 800);
+    return () => {
+      const cancel = (window as any).cancelIdleCallback;
+      if (idle && cancel) cancel(handle);
+      else window.clearTimeout(handle);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [caredOnes?.length, tasks?.length]);
+
 
   const levelColor: Record<string, string> = {
     high: "bg-destructive/10 text-destructive border-destructive/20",

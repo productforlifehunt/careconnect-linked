@@ -131,22 +131,32 @@ function mapTask(t: any, groupId?: string | null) {
 }
 
 export async function fetchCareTasksWordPress(groupId?: string | null): Promise<any[]> {
-    const taskIds = groupId
-      ? (await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_TASK}/children/${normalizeWpObjectId(groupId)}`))
-          .map((r: any) => String(r.child_object_id || ""))
-          .filter(Boolean)
-      : null;
-    if (groupId && (!Array.isArray(taskIds) || taskIds.length === 0)) return [];
-    const tasks = groupId
-      ? await Promise.all(taskIds!.map((taskId) => wordpressCCTFetch(CCT_SLUG, { id: taskId })))
-      : await wordpressCCTFetch<any[]>(CCT_SLUG, { params: { _limit: 100 } });
-    if (!Array.isArray(tasks)) throw new Error("Care tasks returned an invalid response");
-    const taskList = tasks;
-    // Two batched relation reads replace two requests per task (N+1).
-    const [assigneeMap, caredOneMap] = await Promise.all([
+    // Everything the task list needs leaves in ONE parallel wave: the group's
+    // task relation rows, the bulk task read, and both batched relation maps.
+    const [groupRels, bulkTasks, assigneeMap, caredOneMap] = await Promise.all([
+      groupId
+        ? wordpressFetch<any[]>(`jet-rel/${REL_GROUP_TASK}/children/${normalizeWpObjectId(groupId)}`)
+        : Promise.resolve(null),
+      wordpressCCTFetch<any[]>(CCT_SLUG, { params: { _limit: 100 } }),
       fetchRelChildrenMap(REL_TASK_ASSIGNEE),
       fetchRelChildrenMap(REL_TASK_CARED_ONE),
     ]);
+    if (!Array.isArray(bulkTasks)) throw new Error("Care tasks returned an invalid response");
+    let taskList: any[] = bulkTasks;
+    if (groupId) {
+      const taskIds = (Array.isArray(groupRels) ? groupRels : [])
+        .map((r: any) => String(r.child_object_id || ""))
+        .filter(Boolean);
+      if (taskIds.length === 0) return [];
+      const byId = new Map<string, any>(bulkTasks.map((t: any) => [String(t.id ?? t._ID), t]));
+      const missing = taskIds.filter((id) => !byId.has(id));
+      const fetched = await Promise.all(
+        missing.map((id) => wordpressCCTFetch<any>(CCT_SLUG, { id })),
+      );
+      for (const t of fetched) if (t) byId.set(String((t as any).id ?? (t as any)._ID), t);
+      taskList = taskIds.map((id) => byId.get(id)).filter(Boolean);
+    }
+
     const mapped = await Promise.all(taskList.map(async (t: any) => {
       const base = mapTask(t, groupId);
       const pid = String(normalizeWpObjectId(base.id));
