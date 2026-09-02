@@ -281,10 +281,7 @@ export function MembersTab({
                           <p className="text-xs text-muted-foreground truncate">{person.email || ""}</p>
                         </div>
                         <Button size="sm" variant="outline" disabled={already || inviteToGroup.isPending}
-                          onClick={() => inviteToGroup.mutate({ groupId: activeGroupId, userId: id }, {
-                            onSuccess: () => toast({ title: Z("邀请已发送！", "Invitation sent!") }),
-                            onError: (err: any) => toast({ title: Z("邀请失败", "Failed to invite"), description: err.message, variant: "destructive" }),
-                          })}>
+                          onClick={() => invite({ userId: id })}>
                           {already ? Z("已在群组", "In group") : Z("邀请", "Invite")}
                         </Button>
                       </div>
@@ -321,7 +318,10 @@ export function MembersTab({
                               {inv.expires_at ? Z(`过期时间：${formatDateTime(inv.expires_at, "zh-CN")}`, `Expires ${formatDateTime(inv.expires_at)}`) : Z("永不过期", "Never expires")}
                               {" · "}
                               {inv.max_uses > 0 ? Z(`已使用 ${inv.use_count}/${inv.max_uses}`, `${inv.use_count}/${inv.max_uses} uses`) : Z(`已使用 ${inv.use_count} 次（无限）`, `${inv.use_count} uses (unlimited)`)}
+                              {" · "}
+                              {Z(`加入身份：${invitedAsLabel(inv.invited_as)}`, `Joins as ${invitedAsLabel(inv.invited_as)}`)}
                             </p>
+                            {inv.note && <p className="text-xs text-muted-foreground truncate">{inv.note}</p>}
                           </div>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 shrink-0"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
@@ -372,6 +372,21 @@ export function MembersTab({
                     <Label>{Z("自定义代码", "Custom code")}</Label>
                     <Input value={linkToken} onChange={e => setLinkToken(e.target.value.replace(/\s+/g, ""))} placeholder={Z("留空则自动生成", "Leave blank to auto-generate")} />
                     <p className="text-xs text-muted-foreground mt-1">{Z("可选 — 让它好记，例如 ", "Optional — make it memorable, e.g. ")}<code>moms-team-2026</code>{Z("。", ".")}</p>
+                  </div>
+                  <div>
+                    <Label>{Z("备注", "Note")}</Label>
+                    <Input value={linkNote} onChange={e => setLinkNote(e.target.value)} placeholder={Z("给自己看的备注，例如：给二姨一家", "A note for yourself, e.g. for my aunt's family")} />
+                  </div>
+                  <div>
+                    <Label>{Z("用这个链接加入的身份", "People joining with this link become")}</Label>
+                    <Select value={linkInvitedAs} onValueChange={(v) => setLinkInvitedAs(v as InvitedAs)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="normal group member">{Z("普通成员", "Member")}</SelectItem>
+                        <SelectItem value="admin">{Z("管理员", "Admin")}</SelectItem>
+                        <SelectItem value="owner">{Z("拥有者", "Owner")}</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
                     <Label>{Z("过期时间", "Expires at")}</Label>
