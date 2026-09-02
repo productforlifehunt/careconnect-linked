@@ -11,8 +11,6 @@ const REL_USER_CARED_ONE = R.userCaredOnes;
 const REL_USER_CARED_ONE_CARD = R.caredOneInfoCards;    // user → cared_ones_informat (CCT 125)
 const REL_CARED_CARD_EMERGENCY = R.infoCardEmergencyContacts;   // cared_ones_informat → emergency_contact
 const REL_GROUP_MEMBER = R.careGroupMembers;            // care_group → users
-const REL_USER_MEDICINE = R.caredOneMedicineSchedules;
-const REL_MEDICINE_LOG = R.medicineScheduleLogs;
 const REL_USER_CHECKIN = R.caredOneCheckinSchedules;           // both 145 and 150 exist on live; existing data is on 150
 const REL_CHECKIN_LOG = R.checkinScheduleLogs;
 const REL_USER_CARE_TIP = R.caredOneCareTips;
@@ -22,8 +20,6 @@ const REL_USER_CARE_DOCUMENT = R.caredOneCareDocuments;
 const REL_USER_CARE_PLAN = R.caredOneCarePlans;
 
 // ─── Opaque field aliases (bible) ────────────────────────────
-const F_MED = T.medicineSchedule.f;          // medicine
-const F_MEDLOG = T.medicineLog.f;       // medicine_log
 const F_CHK = T.checkinSchedule.f;         // checkin_schedule
 const F_CHKLOG = T.checkinLog.f;       // checkin_log
 const F_NOTE = T.careNote.f;         // care_note
@@ -404,167 +400,14 @@ export async function logCheckinWordPress(log: { medicine_id?: string; checkin_i
   await linkRel(REL_CHECKIN_LOG, parentId, newLogId);
 }
 
-// ─── Medicine (CCT 15) ───────────────────────────────────────
-export async function fetchMedicinesWordPress(caredOneId: string): Promise<any[]> {
-  try {
-    const meds = await fetchRelatedCctChildren(REL_USER_MEDICINE, caredOneId, T.medicineSchedule.slug);
-    return meds.map((m: any) => ({
-      id: String(m.id || m._ID),
-      user_id: caredOneId,
-      name: m[F_MED.NAME] || "Medicine",
-      dosage: m[F_MED.DOSAGE] || null,
-      frequency: m[F_MED.FREQUENCY] || null,
-      time_slot: normalizeTimeSlot(m[F_MED.TIME_SLOT]),
-      instructions: m[F_MED.INSTRUCTIONS] || null,
-      prescribing_doctor: m[F_MED.PRESCRIBING_DOCTOR] || null,
-      pharmacy: m[F_MED.PHARMACY] || null,
-      side_effects: m[F_MED.SIDE_EFFECTS] || null,
-      start_date: m[F_MED.START_DATE] || null,
-      end_date: m[F_MED.END_DATE] || null,
-      note: m[F_MED.NOTE] || null,
-      is_active: isYes(m[F_MED.IS_ACTIVE]),
-      stock_count: m[F_MED.STOCK_COUNT] != null && m[F_MED.STOCK_COUNT] !== "" ? Number(m[F_MED.STOCK_COUNT]) : null,
-      refill_threshold: m[F_MED.REFILL_THRESHOLD] != null && m[F_MED.REFILL_THRESHOLD] !== "" ? Number(m[F_MED.REFILL_THRESHOLD]) : null,
-      reminder_time_before: numOrNull(m[F_MED.REMINDER_TIME_BEFORE]),
-      time_to_send_to_caregiver: numOrNull(m[F_MED.TIME_TO_SEND_TO_CAREGIVER]),
-      time_to_be_considered_missing: numOrNull(m[F_MED.TIME_TO_BE_CONSIDERED_AS_MISSING]),
-      check_in_type: decodeCheckInType(m[F_MED.CHECK_IN_TYPE]),
-      created_at: m.created_at,
-    }));
-  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
-}
-
-export async function createMedicineWordPress(med: { user_id: string; name: string; dosage?: string; frequency?: string; time_slot?: string[]; instructions?: string; prescribing_doctor?: string; pharmacy?: string; side_effects?: string; start_date?: string; end_date?: string; note?: string; stock_count?: number; refill_threshold?: number; reminder_time_before?: number; time_to_send_to_caregiver?: number; time_to_be_considered_missing?: number; check_in_type?: string[] }): Promise<void> {
-  const result = await wordpressCCTFetch<any>(T.medicineSchedule.slug, {
-    method: "POST",
-    body: {
-      [F_MED.NAME]: med.name,
-      [F_MED.DOSAGE]: med.dosage || "",
-      [F_MED.FREQUENCY]: med.frequency || "",
-      [F_MED.TIME_SLOT]: serializeTimeSlot(med.time_slot || []),
-      [F_MED.INSTRUCTIONS]: med.instructions || "",
-      [F_MED.PRESCRIBING_DOCTOR]: med.prescribing_doctor || "",
-      [F_MED.PHARMACY]: med.pharmacy || "",
-      [F_MED.SIDE_EFFECTS]: med.side_effects || "",
-      [F_MED.START_DATE]: med.start_date || "",
-      [F_MED.END_DATE]: med.end_date || "",
-      [F_MED.NOTE]: med.note || "",
-      [F_MED.IS_ACTIVE]: YES,
-      [F_MED.STOCK_COUNT]: med.stock_count ?? "",
-      [F_MED.REFILL_THRESHOLD]: med.refill_threshold ?? "",
-      [F_MED.REMINDER_TIME_BEFORE]: String(med.reminder_time_before ?? 0),
-      [F_MED.TIME_TO_SEND_TO_CAREGIVER]: med.time_to_send_to_caregiver != null ? String(med.time_to_send_to_caregiver) : "",
-      [F_MED.TIME_TO_BE_CONSIDERED_AS_MISSING]: med.time_to_be_considered_missing != null ? String(med.time_to_be_considered_missing) : "",
-      [F_MED.CHECK_IN_TYPE]: encodeCheckInType(med.check_in_type),
-    },
-  });
-  const newId = normalizeWpObjectId(result?.item_id || result?._ID || result?.id);
-  await linkRel(REL_USER_MEDICINE, normalizeWpObjectId(med.user_id), newId);
-}
-
-export async function updateMedicineWordPress(id: string, updates: Record<string, any>): Promise<void> {
-  const body: Record<string, any> = {};
-  if (updates.name !== undefined) body[F_MED.NAME] = updates.name;
-  if (updates.dosage !== undefined) body[F_MED.DOSAGE] = updates.dosage;
-  if (updates.frequency !== undefined) body[F_MED.FREQUENCY] = updates.frequency;
-  if (updates.time_slot !== undefined) body[F_MED.TIME_SLOT] = serializeTimeSlot(updates.time_slot);
-  if (updates.instructions !== undefined) body[F_MED.INSTRUCTIONS] = updates.instructions;
-  if (updates.prescribing_doctor !== undefined) body[F_MED.PRESCRIBING_DOCTOR] = updates.prescribing_doctor;
-  if (updates.pharmacy !== undefined) body[F_MED.PHARMACY] = updates.pharmacy;
-  if (updates.side_effects !== undefined) body[F_MED.SIDE_EFFECTS] = updates.side_effects;
-  if (updates.start_date !== undefined) body[F_MED.START_DATE] = updates.start_date;
-  if (updates.end_date !== undefined) body[F_MED.END_DATE] = updates.end_date;
-  if (updates.note !== undefined || updates.notes !== undefined) body[F_MED.NOTE] = updates.note ?? updates.notes;
-  if (updates.is_active !== undefined) body[F_MED.IS_ACTIVE] = updates.is_active ? YES : NO;
-  if (updates.stock_count !== undefined) body[F_MED.STOCK_COUNT] = updates.stock_count;
-  if (updates.refill_threshold !== undefined) body[F_MED.REFILL_THRESHOLD] = updates.refill_threshold;
-  if (updates.reminder_time_before !== undefined) body[F_MED.REMINDER_TIME_BEFORE] = String(updates.reminder_time_before ?? 0);
-  if (updates.time_to_send_to_caregiver !== undefined) body[F_MED.TIME_TO_SEND_TO_CAREGIVER] = updates.time_to_send_to_caregiver != null ? String(updates.time_to_send_to_caregiver) : "";
-  if (updates.time_to_be_considered_missing !== undefined) body[F_MED.TIME_TO_BE_CONSIDERED_AS_MISSING] = updates.time_to_be_considered_missing != null ? String(updates.time_to_be_considered_missing) : "";
-  if (updates.check_in_type !== undefined) body[F_MED.CHECK_IN_TYPE] = encodeCheckInType(updates.check_in_type);
-  await wordpressCCTFetch(T.medicineSchedule.slug, { id, method: "PUT", body });
-}
-
-export async function deleteMedicineWordPress(id: string): Promise<void> {
-  await wordpressCCTFetch(T.medicineSchedule.slug, { id, method: "DELETE" });
-}
-
-// ─── Medicine Log (CCT 16) ───────────────────────────────────
-// a55=status (b55=Taken, b56=Skipped, b57=Missed), a56=note
-const MED_STATUS_CODE: Record<string, string> = { taken: "b55", skipped: "b56", missed: "b57" };
-const MED_STATUS_LABEL: Record<string, string> = { b55: "taken", b56: "skipped", b57: "missed" };
-
-export async function fetchMedicineLogsWordPress(medicineId: string): Promise<any[]> {
-  try {
-    const logs = await fetchRelatedCctChildren(REL_MEDICINE_LOG, medicineId, T.medicineLog.slug);
-    return logs.map((l: any) => ({
-      id: String(l.id || l._ID),
-      medicine_id: medicineId,
-      taken_at: l.created_at,
-      status: MED_STATUS_LABEL[String(l[F_MEDLOG.STATUS] || "b55")] || "taken",
-      logged_by: l.author_id || null,
-      note: l[F_MEDLOG.NOTE] || null,
-      notes: l[F_MEDLOG.NOTE] || null,
-      created_at: l.created_at,
-    }));
-  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
-}
-
-export async function fetchTodayMedicineLogsWordPress(caredOneId: string): Promise<any[]> {
-  try {
-    const userId = normalizeWpObjectId(caredOneId);
-    const [medRels, logMap] = await Promise.all([
-      dedupeRead(`rel-children-raw:${REL_USER_MEDICINE}:${userId}`, () =>
-        wordpressFetch<any[]>(`jet-rel/${REL_USER_MEDICINE}/children/${userId}`)),
-      fetchRelChildrenMap(REL_MEDICINE_LOG),
-    ]);
-
-    if (!Array.isArray(medRels) || medRels.length === 0) return [];
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const allLogs: any[] = [];
-    await Promise.all(medRels.map(async (rel: any) => {
-      const mid = String(rel.child_object_id);
-      try {
-        // Batched map avoids one relation request per medicine; each log item
-        // is still read from its CCT row so no field is inferred.
-        const logIds = logMap.loaded ? (logMap.get(mid) || []).map((c) => c.childId) : null;
-        const logs = logIds
-          ? (await Promise.all(logIds.map(async (lid) => {
-              try {
-                const l = await wordpressCCTFetch<any>(T.medicineLog.slug, { id: lid });
-                return {
-                  id: String(l.id || l._ID || lid),
-                  medicine_id: mid,
-                  taken_at: l.created_at,
-                  status: MED_STATUS_LABEL[String(l[F_MEDLOG.STATUS] || "b55")] || "taken",
-                  logged_by: l.author_id || null,
-                  note: l[F_MEDLOG.NOTE] || null,
-                  notes: l[F_MEDLOG.NOTE] || null,
-                  created_at: l.created_at,
-                };
-              } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
-            }))).filter(Boolean) as any[]
-          : await fetchMedicineLogsWordPress(mid);
-        for (const l of logs) if (l.created_at && new Date(l.created_at) >= today) allLogs.push(l);
-      } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
-    }));
-    return allLogs;
-  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
-
-}
-
-export async function logMedicineWordPress(log: { medicine_id: string; status?: string; note?: string; user_id?: string }): Promise<void> {
-  const statusCode = MED_STATUS_CODE[(log.status || "taken").toLowerCase()] || "b55";
-  const result = await wordpressCCTFetch<any>(T.medicineLog.slug, {
-    method: "POST",
-    body: {
-      [F_MEDLOG.STATUS]: statusCode,
-      [F_MEDLOG.NOTE]: log.note || "",
-    },
-  });
-  const newLogId = normalizeWpObjectId(result?.item_id || result?._ID || result?.id);
-  await linkRel(REL_MEDICINE_LOG, normalizeWpObjectId(log.medicine_id), newLogId);
-}
+// ─── Medicine schedules & logs ───────────────────────────────
+// Moved to CCT 187 (calendar event, a60=b55) + CCT 206 (Apple-shaped log).
+// Relation 190 links the cared one to the schedule; relation 238 links logs.
+export {
+  fetchMedicinesWordPress, createMedicineWordPress, updateMedicineWordPress,
+  deleteMedicineWordPress, fetchMedicineLogsWordPress, fetchTodayMedicineLogsWordPress,
+  logMedicineWordPress,
+} from "@/features/medicine/source.187";
 
 // ─── Care Tip (CCT 19) ───────────────────────────────────────
 // a55=title, a56=content, a57=category (b55=tip, b56=avoid), a58=is_pinned (b55/b56)

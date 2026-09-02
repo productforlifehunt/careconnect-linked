@@ -51,6 +51,12 @@ const FREQUENCIES = [
   { value: "as_needed", label: Z("按需服用","As needed") },
 ];
 
+/** Localized frequency label from the stored code (CCT 187 a66 RRULE + a95). */
+function freqLabel(med: any): string {
+  const code = med?.frequency_code || med?.frequency;
+  return FREQUENCIES.find(f => f.value === code)?.label || med?.frequency || "";
+}
+
 function formatHour(h: string): string {
   return hourLabel(parseInt(h.split(":")[0]));
 }
@@ -121,7 +127,7 @@ function MedHistoryDialog({ open, onClose, med }: { open: boolean; onClose: () =
             <History className="h-5 w-5 text-primary" />
             {med?.name} — {Z("历史记录","History")}
           </DialogTitle>
-          <DialogDescription>{[med?.dosage, med?.frequency].filter(Boolean).join(" · ")}</DialogDescription>
+          <DialogDescription>{[med?.dosage, freqLabel(med)].filter(Boolean).join(" · ")}</DialogDescription>
         </DialogHeader>
 
         {/* Adherence Stats */}
@@ -178,15 +184,16 @@ function MedHistoryDialog({ open, onClose, med }: { open: boolean; onClose: () =
 function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClose: () => void; med: any; onDelete: () => void }) {
   const updateMed = useUpdateMedicine();
   const { toast } = useToast();
-  const [form, setForm] = useState({ name: "", dosage: "", frequency: "once_daily", time_slots: ["08:00"] as string[], note: "", stock_count: "" as string | number, refill_threshold: "" as string | number, reminder_time_before: "0" as string | number, time_to_send_to_caregiver: "" as string | number, time_to_be_considered_missing: "" as string | number });
+  const [form, setForm] = useState({ name: "", dosage: "", rxcui: "", frequency: "once_daily", time_slots: ["08:00"] as string[], note: "", stock_count: "" as string | number, refill_threshold: "" as string | number, reminder_time_before: "0" as string | number, time_to_send_to_caregiver: "" as string | number, time_to_be_considered_missing: "" as string | number });
 
   // Populate form on open
   useState(() => {
     if (med && open) {
-      const freqEntry = FREQUENCIES.find(f => f.label === med.frequency);
+      const freqEntry = FREQUENCIES.find(f => f.value === (med.frequency_code || med.frequency)) || FREQUENCIES.find(f => f.label === med.frequency);
       setForm({
         name: med.name || "",
         dosage: med.dosage || "",
+        rxcui: med.medication_concept_identifier || "",
         frequency: freqEntry?.value || "once_daily",
         time_slots: med.time_slot?.length > 0 ? [...med.time_slot] : ["08:00"],
         note: med.note || "",
@@ -202,10 +209,11 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
   // Re-populate when med/open changes
   const populateForm = useCallback(() => {
     if (med) {
-      const freqEntry = FREQUENCIES.find(f => f.label === med.frequency);
+      const freqEntry = FREQUENCIES.find(f => f.value === (med.frequency_code || med.frequency)) || FREQUENCIES.find(f => f.label === med.frequency);
       setForm({
         name: med.name || "",
         dosage: med.dosage || "",
+        rxcui: med.medication_concept_identifier || "",
         frequency: freqEntry?.value || "once_daily",
         time_slots: med.time_slot?.length > 0 ? [...med.time_slot] : ["08:00"],
         note: med.note || "",
@@ -224,6 +232,7 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
       id: med.id,
       name: form.name.trim(),
       dosage: form.dosage || undefined,
+      medication_concept_identifier: form.rxcui || undefined,
       frequency: FREQUENCIES.find(f => f.value === form.frequency)?.label || form.frequency,
       time_slot: form.time_slots,
       note: form.note || undefined,
@@ -309,7 +318,7 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onHistory, compact, slot }
   compact?: boolean;
   slot?: string;
 }) {
-  const isPRN = med.frequency === "As needed" || med.frequency === "as_needed";
+  const isPRN = med.frequency_code === "as_needed" || med.frequency === "As needed" || med.frequency === "as_needed";
   const logForThisDose = todayLogs.find((l: any) => l.medicine_id === med.id);
   const isTaken = logForThisDose?.status === "taken";
   const isSkipped = logForThisDose?.status === "skipped";
@@ -356,7 +365,7 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onHistory, compact, slot }
               </Badge>
             )}
           </p>
-          <p className="text-xs text-muted-foreground">{[med.dosage, med.frequency].filter(Boolean).join(" · ")}</p>
+          <p className="text-xs text-muted-foreground">{[med.dosage, freqLabel(med)].filter(Boolean).join(" · ")}</p>
           {logForThisDose?.note && (
             <p className="text-xs text-muted-foreground/80 mt-0.5 italic flex items-center gap-1">
               <StickyNote className="h-2.5 w-2.5" />{logForThisDose.note}
@@ -406,7 +415,7 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onHistory, compact, slot }
 function RxNormNameInput({ value, onChange, onPick }: {
   value: string;
   onChange: (v: string) => void;
-  onPick: (s: { name: string; strength?: string | null; doseForm?: string | null }) => void;
+  onPick: (s: { name: string; strength?: string | null; doseForm?: string | null; rxcui?: string | null }) => void;
 }) {
   const [suggestions, setSuggestions] = useState<RxSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
@@ -440,7 +449,7 @@ function RxNormNameInput({ value, onChange, onPick }: {
     onChange(name);
     setOpen(false);
     const info = await rxnormLookup(name);
-    onPick({ name, strength: info.strength, doseForm: info.doseForm });
+    onPick({ name, strength: info.strength, doseForm: info.doseForm, rxcui: info.rxcui });
   };
 
   return (
@@ -490,7 +499,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
 
   const [addOpen, setAddOpen] = useState(false);
   const [view, setView] = useState<"timeline" | "list">("timeline");
-  const [form, setForm] = useState({ name: "", dosage: "", frequency: "once_daily", time_slots: ["08:00"] as string[], note: "", stock_count: "" as string | number, refill_threshold: "" as string | number, reminder_time_before: "0" as string | number, time_to_send_to_caregiver: "" as string | number, time_to_be_considered_missing: "" as string | number });
+  const [form, setForm] = useState({ name: "", dosage: "", rxcui: "", frequency: "once_daily", time_slots: ["08:00"] as string[], note: "", stock_count: "" as string | number, refill_threshold: "" as string | number, reminder_time_before: "0" as string | number, time_to_send_to_caregiver: "" as string | number, time_to_be_considered_missing: "" as string | number });
   const updateMed = useUpdateMedicine();
 
   // Dialogs
@@ -505,7 +514,20 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
   const confirmLog = (note: string) => {
     const { med, action } = logDialog;
     logMed.mutate(
-      { medicine_id: med.id, status: action, note: note || undefined, user_id: caredOneId },
+      {
+        medicine_id: med.id,
+        status: action,
+        note: note || undefined,
+        user_id: caredOneId,
+        // Apple HKMedicationDoseEvent context, copied from the schedule row
+        dose_quantity: med.dose_quantity ?? null,
+        scheduled_dose_quantity: med.dose_quantity ?? null,
+        dose_unit: med.dose_unit || null,
+        schedule_type: med.schedule_type || null,
+        concept_identifier: med.medication_concept_identifier || null,
+        concept_display_text: med.name || null,
+        rxcui: med.medication_concept_identifier || null,
+      },
       {
         onSuccess: () => {
           // Decrement stock on "taken"
@@ -531,6 +553,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
         user_id: caredOneId,
         name: form.name.trim(),
         dosage: form.dosage || undefined,
+        medication_concept_identifier: form.rxcui || undefined,
         frequency: FREQUENCIES.find(f => f.value === form.frequency)?.label || form.frequency,
         time_slot: form.time_slots.length > 0 ? form.time_slots : ["08:00"],
         note: form.note || undefined,
@@ -540,7 +563,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
         time_to_send_to_caregiver: form.time_to_send_to_caregiver === "" ? undefined : Number(form.time_to_send_to_caregiver),
         time_to_be_considered_missing: form.time_to_be_considered_missing === "" ? undefined : Number(form.time_to_be_considered_missing),
       },
-      { onSuccess: () => { setForm({ name: "", dosage: "", frequency: "once_daily", time_slots: ["08:00"], note: "", stock_count: "", refill_threshold: "", reminder_time_before: "0", time_to_send_to_caregiver: "", time_to_be_considered_missing: "" }); setAddOpen(false); toast({ title: Z("药品已添加","Medicine added") }); },
+      { onSuccess: () => { setForm({ name: "", dosage: "", rxcui: "", frequency: "once_daily", time_slots: ["08:00"], note: "", stock_count: "", refill_threshold: "", reminder_time_before: "0", time_to_send_to_caregiver: "", time_to_be_considered_missing: "" }); setAddOpen(false); toast({ title: Z("药品已添加","Medicine added") }); },
         onError: (err) => toast({ title: Z("添加失败","Failed to add"), description: String(err.message), variant: "destructive" }) }
     );
   };
@@ -620,8 +643,9 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
               <RxNormNameInput
                 value={form.name}
                 onChange={(v) => setForm(p => ({ ...p, name: v }))}
-                onPick={({ name, strength }) => {
-                  setForm(p => ({ ...p, name, dosage: p.dosage || strength || "" }));
+                onPick={({ name, strength, rxcui }) => {
+                  // rxcui → CCT 187 a92 (Apple HKMedicationConcept.identifier)
+                  setForm(p => ({ ...p, name, dosage: p.dosage || strength || "", rxcui: rxcui || "" }));
                 }}
               />
               <p className="text-[10px] text-muted-foreground mt-1">{Z("由 RxNorm(NIH/NLM)提供 — 免费美国药品数据库","Powered by RxNorm (NIH/NLM) — free US drug database") as any}</p>

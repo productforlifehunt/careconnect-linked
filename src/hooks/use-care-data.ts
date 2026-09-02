@@ -1202,7 +1202,7 @@ export function useTodayMedicineLogs(caredOneId: string | null) {
 export function useLogMedicine() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (log: { medicine_id: string; status?: string; note?: string; user_id?: string }) => logMedicineWordPress(log),
+    mutationFn: (log: Parameters<typeof logMedicineWordPress>[0]) => logMedicineWordPress(log),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["medicineLogs"] }); qc.invalidateQueries({ queryKey: ["todayMedicineLogs"] }); },
   });
 }
