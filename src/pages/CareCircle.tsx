@@ -268,17 +268,21 @@ export default function CareCircle() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="w-full pb-2">
-          <TabsList className="flex w-full flex-wrap h-auto gap-1 mb-1 px-1 py-1">
+          <TabsList className="flex w-full flex-wrap justify-start h-auto gap-1 mb-1 px-1 py-1">
             <TabsTrigger value="home" className="gap-1.5 text-xs"><Home className="h-3.5 w-3.5" /> {t("careCircle.home")}</TabsTrigger>
             <TabsTrigger value="calendar" className="gap-1.5 text-xs"><CalendarDays className="h-3.5 w-3.5" /> {t("careCircle.calendar")}</TabsTrigger>
-            <TabsTrigger value="announcements" className="gap-1.5 text-xs"><Megaphone className="h-3.5 w-3.5" /> {t("careCircle.announcements")}</TabsTrigger>
             <TabsTrigger value="tasks" className="gap-1.5 text-xs"><ListTodo className="h-3.5 w-3.5" /> {t("careCircle.tasks")}</TabsTrigger>
-            <TabsTrigger value="cared-ones" className="gap-1.5 text-xs"><Heart className="h-3.5 w-3.5" /> {isCN ? "群组被护理者" : `Group ${site.navLabels.caredOnes}`}</TabsTrigger>
-            <TabsTrigger value="checkins" className="gap-1.5 text-xs"><ClipboardCheck className="h-3.5 w-3.5" /> {t("careCircle.checkIns")}</TabsTrigger>
+            <TabsTrigger value="location" className="gap-1.5 text-xs"><MapPin className="h-3.5 w-3.5" /> {isCN ? "被护理者位置" : "Cared One's Location"}</TabsTrigger>
             <TabsTrigger value="messages" className="gap-1.5 text-xs"><MessageSquare className="h-3.5 w-3.5" /> {t("messages.messages")}</TabsTrigger>
+            <TabsTrigger value="announcements" className="gap-1.5 text-xs"><Megaphone className="h-3.5 w-3.5" /> {t("careCircle.announcements")}</TabsTrigger>
             <TabsTrigger value="wishes" className="gap-1.5 text-xs"><Star className="h-3.5 w-3.5" /> {t("careCircle.wellWishes")}</TabsTrigger>
-            <TabsTrigger value="members" className="gap-1.5 text-xs"><Users className="h-3.5 w-3.5" /> {t("careCircle.members")}</TabsTrigger>
             <TabsTrigger value="gallery" className="gap-1.5 text-xs"><Image className="h-3.5 w-3.5" /> {t("careCircle.gallery")}</TabsTrigger>
+            <TabsTrigger value="cared-ones" className="gap-1.5 text-xs"><Heart className="h-3.5 w-3.5" /> {isCN ? "群组被护理者" : `Group ${site.navLabels.caredOnes}`}</TabsTrigger>
+            <TabsTrigger value="members" className="gap-1.5 text-xs"><Users className="h-3.5 w-3.5" /> {t("careCircle.members")}</TabsTrigger>
+            <TabsTrigger value="invite" className="gap-1.5 text-xs"><UserPlus className="h-3.5 w-3.5" /> {isCN ? "邀请成员" : "Invite Members"}</TabsTrigger>
+            <TabsTrigger value="member-groups" className="gap-1.5 text-xs"><Tag className="h-3.5 w-3.5" /> {isCN ? "子群组" : "Member Groups"}</TabsTrigger>
+            {isAdmin && <TabsTrigger value="settings" className="gap-1.5 text-xs"><Settings className="h-3.5 w-3.5" /> {isCN ? "群组设置" : "Group Setting"}</TabsTrigger>}
+            <TabsTrigger value="help" className="gap-1.5 text-xs"><HelpCircle className="h-3.5 w-3.5" /> {isCN ? "使用指南与帮助" : "How to & Help"}</TabsTrigger>
           </TabsList>
         </div>
 
@@ -288,15 +292,20 @@ export default function CareCircle() {
         </TabsContent>
 
         <TabsContent value="calendar" className="mt-4"><CalendarTab tasks={tasks || []} /></TabsContent>
-        <TabsContent value="announcements" className="mt-4"><AnnouncementsTab announcements={announcementsWithAuthors} announcementsLoading={announcementsLoading} activeGroupId={activeGroupId} userId={profile?.id} isAdmin={!!isAdmin} memberCategories={memberCategories || []} members={members || []} createPost={createPost} onEditPost={setEditingPost} onTogglePin={handleTogglePin} onDeletePost={handleDeletePost} /></TabsContent>
         <TabsContent value="tasks" className="mt-4"><TasksTab tasks={tasks || []} tasksLoading={tasksLoading} members={members || []} activeGroupId={activeGroupId} userId={profile?.id} isAdmin={!!isAdmin} memberCategories={memberCategories || []} createTask={createTask} updateTaskStatus={updateTaskStatus} deleteTask={deleteTask} createJob={createJob} /></TabsContent>
-        <TabsContent value="cared-ones" className="mt-4"><CaredOnesTab groupCaredOnes={groupCaredOnes || []} isAdmin={!!(isAdmin || currentMember)} onAddCaredOne={() => setAddCaredOneOpen(true)} /></TabsContent>
-        <TabsContent value="checkins" className="mt-4"><CheckInsTab groupCaredOnes={groupCaredOnes || []} activeGroupId={activeGroupId} /></TabsContent>
+        <TabsContent value="location" className="mt-4"><GroupLocationTab groupCaredOnes={groupCaredOnes || []} /></TabsContent>
         <TabsContent value="messages" className="mt-4"><MessagesTab groupMessages={groupMessages || []} userId={profile?.id} activeGroupId={activeGroupId} sendMessage={sendMessage} /></TabsContent>
+        <TabsContent value="announcements" className="mt-4"><AnnouncementsTab announcements={announcementsWithAuthors} announcementsLoading={announcementsLoading} activeGroupId={activeGroupId} userId={profile?.id} isAdmin={!!isAdmin} memberCategories={memberCategories || []} members={members || []} createPost={createPost} onEditPost={setEditingPost} onTogglePin={handleTogglePin} onDeletePost={handleDeletePost} /></TabsContent>
         <TabsContent value="wishes" className="mt-4"><WishesTab wishes={wishesWithAuthors} wishesLoading={wishesLoading} activeGroupId={activeGroupId} userId={profile?.id} isAdmin={!!isAdmin} memberCategories={memberCategories || []} members={members || []} createPost={createPost} onEditPost={setEditingPost} onTogglePin={handleTogglePin} onDeletePost={handleDeletePost} /></TabsContent>
-        <TabsContent value="members" className="mt-4"><MembersTab members={members || []} activeGroup={activeGroup} activeGroupId={activeGroupId} userId={profile?.id} isAdmin={!!isAdmin} isOwner={!!isOwner} currentMember={currentMember} pendingInvitations={pendingInvitations || []} memberCategories={memberCategories || []} inviteToGroup={inviteToGroup} updateRole={updateRole} removeMember={removeMember} cancelInvitation={cancelInvitation} createCategory={createCategory} deleteCategory={deleteCategory} /></TabsContent>
         <TabsContent value="gallery" className="mt-4"><GalleryTab gallery={gallery || []} activeGroupId={activeGroupId} /></TabsContent>
+        <TabsContent value="cared-ones" className="mt-4"><CaredOnesTab groupCaredOnes={groupCaredOnes || []} isAdmin={!!(isAdmin || currentMember)} onAddCaredOne={() => setAddCaredOneOpen(true)} /></TabsContent>
+        <TabsContent value="members" className="mt-4"><MembersTab members={members || []} activeGroupId={activeGroupId} userId={profile?.id} isAdmin={!!isAdmin} isOwner={!!isOwner} currentMember={currentMember} updateRole={updateRole} removeMember={removeMember} /></TabsContent>
+        <TabsContent value="invite" className="mt-4"><InviteMembersTab members={members || []} activeGroupId={activeGroupId} isAdmin={!!isAdmin} pendingInvitations={pendingInvitations || []} inviteToGroup={inviteToGroup} cancelInvitation={cancelInvitation} /></TabsContent>
+        <TabsContent value="member-groups" className="mt-4"><MemberGroupsTab members={members || []} memberCategories={memberCategories || []} activeGroupId={activeGroupId} userId={profile?.id} isAdmin={!!isAdmin} createCategory={createCategory} deleteCategory={deleteCategory} /></TabsContent>
+        <TabsContent value="settings" className="mt-4"><GroupSettingsTab activeGroup={activeGroup} activeGroupId={activeGroupId} isAdmin={!!isAdmin} isOwner={!!isOwner} myDisplayName={currentMember?.display_name || ""} updateGroup={updateGroup} deleteGroup={deleteGroup} onDeleteSuccess={() => { setSelectedGroupId(null); setActiveTab("home"); }} onLeaveGroup={handleLeaveGroup} /></TabsContent>
+        <TabsContent value="help" className="mt-4"><GroupHelpTab groupName={activeGroup?.name} /></TabsContent>
       </Tabs>
+
     </div>
   );
 }
