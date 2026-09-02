@@ -916,8 +916,8 @@ export function useSubgroupMembers(subgroupId: string | null) {
 export function useAddMemberToSubgroup() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ subgroupId, userId, status, types }: { subgroupId: string; userId: string | number; status?: "accepted" | "pending"; types?: string[] }) =>
-      addMemberToSubgroupWordPress(subgroupId, userId, { status, types }),
+    mutationFn: ({ subgroupId, userId, types }: { subgroupId: string; userId: string | number; types?: string[] }) =>
+      addMemberToSubgroupWordPress(subgroupId, userId, { types }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["subgroupMembers"] });
       qc.invalidateQueries({ queryKey: ["subgroupMemberRecords"] });
