@@ -1,5 +1,4 @@
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
-import { wpAdminOps } from "@/services/woocommerce-api";
 import { T, R } from "@/integrations/wp-schema";
 import { dedupeRead, fetchRelChildrenMap } from "@/features/shared/rel-batch";
 import { appUserNameField } from "@/features/shared/app-scope";
