@@ -345,7 +345,7 @@ export default function Dashboard() {
           />
         )}
       </section>
-    ) : null,
+    ) : caredOnesLoading ? slotSkeleton(t("dashboard.timeline", { defaultValue: "Daily Timeline" }), "h-32") : null,
 
 
     "community-feed": recentPosts.length > 0 ? (
