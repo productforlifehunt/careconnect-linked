@@ -313,7 +313,12 @@ export default function Messages({ embedded = false }: { embedded?: boolean } = 
             </div>
           </div>
 
-          <div className="flex-1 overflow-auto p-4 space-y-3 bg-muted/20">
+          <div
+            className={`flex-1 overflow-auto p-4 space-y-3 bg-muted/20 ${dragOver ? "ring-2 ring-primary/50 ring-inset" : ""}`}
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={handleDrop}
+          >
             {msgsLoading ? (
               <div className="space-y-3">
                 {[1, 2, 3].map(i => (
