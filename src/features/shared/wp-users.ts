@@ -255,7 +255,7 @@ export async function fetchWPUserPublicProfile(id: number | string): Promise<{
   return {
     id: numeric,
     slug: user?.slug || "",
-    avatar_url: user?.avatar_urls?.["96"] || user?.avatar_urls?.["48"] || null,
+    avatar_url: user?.avatar_url || null,
     full_name: typeof profileName === "string" ? profileName.trim() : "",
   };
 }
