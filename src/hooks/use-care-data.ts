@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getStoredWPUser, getWPToken } from "@/services/wp-auth";
+import { readLastGood, withLastGood } from "@/lib/last-good";
+
 // ─── Feature source modules (backend-specific) ─────────────
 import { fetchProvidersWordPress, fetchProviderByIdWordPress } from "@/features/providers/source.wordpress";
 import { fetchBookingsWordPress, fetchProviderBookingsWordPress, createBookingWordPress, updateBookingStatusWordPress } from "@/features/bookings/source.wordpress";
@@ -315,7 +317,10 @@ export function useCreateReview() {
 export function useBookings() {
   return useQuery({
     queryKey: ["bookings"],
-    queryFn: () => fetchBookingsWordPress(),
+    queryFn: withLastGood("bookings", fetchBookingsWordPress),
+    // Show the last known list instantly, refresh it in the background.
+    initialData: () => readLastGood<any[]>("bookings"),
+    initialDataUpdatedAt: 0,
   });
 }
 
@@ -323,9 +328,12 @@ export function useBookings() {
 export function useProviderBookings() {
   return useQuery({
     queryKey: ["providerBookings"],
-    queryFn: () => fetchProviderBookingsWordPress(),
+    queryFn: withLastGood("providerBookings", fetchProviderBookingsWordPress),
+    initialData: () => readLastGood<any[]>("providerBookings"),
+    initialDataUpdatedAt: 0,
   });
 }
+
 
 export function useCreateBooking() {
   const qc = useQueryClient();
