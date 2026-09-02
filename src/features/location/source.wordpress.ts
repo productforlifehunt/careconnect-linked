@@ -11,6 +11,7 @@
  */
 
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
+import { fetchMyAppUserName } from "@/features/profile/app-user-name";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { T, R } from "@/integrations/wp-schema";
 
@@ -279,7 +280,7 @@ export async function writeLocationAndCheckZones(
               user_id: memberId,
               type: "sos_emergency",
               title: "🚨 SOS Emergency Alert",
-              message: `${storedUser.user_display_name || "A care circle member"} triggered an SOS emergency alert.`,
+              message: `${(await fetchMyAppUserName().catch(() => "")) || "A care circle member"} triggered an SOS emergency alert.`,
               action_url: `/gps-tracking?sos=${storedUser.user_id}`,
             });
           }
