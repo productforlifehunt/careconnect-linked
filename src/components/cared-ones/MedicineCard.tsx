@@ -278,16 +278,17 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
             <div><Label>{Z("库存数量","Stock count")} <span className="text-muted-foreground text-xs">{Z("(剩余药片)","(pills left)")}</span></Label><Input type="number" min="0" value={form.stock_count} onChange={e => setForm(p => ({ ...p, stock_count: e.target.value }))} placeholder="e.g. 30" className="mt-1" /></div>
             <div><Label>{Z("补药提醒","Refill alert")} <span className="text-muted-foreground text-xs">{Z("(阈值)","(threshold)")}</span></Label><Input type="number" min="0" value={form.refill_threshold} onChange={e => setForm(p => ({ ...p, refill_threshold: e.target.value }))} placeholder="e.g. 7" className="mt-1" /></div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div><Label>{Z("提前提醒(分钟)","Remind before (min)")}</Label><Input type="number" min="0" value={form.reminder_time_before} onChange={e => setForm(p => ({ ...p, reminder_time_before: e.target.value }))} className="mt-1" /></div>
               <div><Label>{Z("多久通知护理者(分钟)","Notify caregiver after (min)")}</Label><Input type="number" min="0" value={form.time_to_send_to_caregiver} onChange={e => setForm(p => ({ ...p, time_to_send_to_caregiver: e.target.value }))} className="mt-1" /></div>
               <div><Label>{Z("多久算漏服(分钟)","Count as missed after (min)")}</Label><Input type="number" min="0" value={form.time_to_be_considered_missing} onChange={e => setForm(p => ({ ...p, time_to_be_considered_missing: e.target.value }))} className="mt-1" /></div>
             </div>
 
-          <div className="flex gap-2">
+          <div className="sticky bottom-0 -mx-6 flex gap-2 border-t bg-background px-6 py-3">
             <Button className="flex-1" onClick={handleSave} disabled={updateMed.isPending || !form.name.trim()}>
               {updateMed.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null} {Z("保存更改","Save Changes")}
             </Button>
+            <Button variant="outline" onClick={onClose}>{Z("取消","Cancel")}</Button>
             <Button variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={onDelete}>
               <Trash2 className="h-4 w-4 mr-1" /> {Z("删除","Delete")}
             </Button>
@@ -653,14 +654,17 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
               <div><Label>{Z("库存数量","Stock count")} <span className="text-muted-foreground text-xs">{Z("(可选)","(optional)")}</span></Label><Input type="number" min="0" value={form.stock_count} onChange={e => setForm(p => ({ ...p, stock_count: e.target.value }))} placeholder="e.g. 30" className="mt-1" /></div>
               <div><Label>{Z("补药提醒阈值","Refill alert at")} <span className="text-muted-foreground text-xs">{Z("(可选)","(optional)")}</span></Label><Input type="number" min="0" value={form.refill_threshold} onChange={e => setForm(p => ({ ...p, refill_threshold: e.target.value }))} placeholder="e.g. 7" className="mt-1" /></div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div><Label>{Z("提前提醒(分钟)","Remind before (min)")}</Label><Input type="number" min="0" value={form.reminder_time_before} onChange={e => setForm(p => ({ ...p, reminder_time_before: e.target.value }))} className="mt-1" /></div>
               <div><Label>{Z("多久通知护理者(分钟)","Notify caregiver after (min)")}</Label><Input type="number" min="0" value={form.time_to_send_to_caregiver} onChange={e => setForm(p => ({ ...p, time_to_send_to_caregiver: e.target.value }))} className="mt-1" /></div>
               <div><Label>{Z("多久算漏服(分钟)","Count as missed after (min)")}</Label><Input type="number" min="0" value={form.time_to_be_considered_missing} onChange={e => setForm(p => ({ ...p, time_to_be_considered_missing: e.target.value }))} className="mt-1" /></div>
             </div>
-            <Button className="w-full" variant="coral" onClick={handleAdd} disabled={createMed.isPending || !form.name.trim()}>
-              {createMed.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />} {Z("添加药品","Add Medicine")}
-            </Button>
+            <div className="sticky bottom-0 -mx-6 flex gap-2 border-t bg-background px-6 py-3">
+              <Button variant="outline" onClick={() => setAddOpen(false)}>{Z("取消","Cancel")}</Button>
+              <Button className="flex-1" variant="coral" onClick={handleAdd} disabled={createMed.isPending || !form.name.trim()}>
+                {createMed.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />} {Z("添加药品","Add Medicine")}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
