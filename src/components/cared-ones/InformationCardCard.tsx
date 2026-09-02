@@ -238,6 +238,58 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
       {shareCard && (
         <ShareCardDialog card={shareCard} onClose={() => setShareCard(null)} />
       )}
+
+      {viewCard && (
+        <Dialog open onOpenChange={(o) => { if (!o) setViewCard(null); }}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <IdCard className="h-4 w-4 text-primary" />
+                {viewCard.cared_ones_information_card_name || Z("信息卡", "Information card")}
+              </DialogTitle>
+              <DialogDescription>{Z("走失时可分享给 app 外人员查看的资料卡。", "The profile card you can share with people outside the app if the cared one goes missing.")}</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge variant={statusVariant(viewCard.status)}>{statusLabel(viewCard.status)}</Badge>
+                <Badge variant="outline" className="text-xs">
+                  <MapPin className="h-3 w-3 mr-1" />
+                  {viewCard.displays_location === "Yes" ? Z("显示最近位置", "Shows last known location") : Z("不显示位置", "Location hidden")}
+                </Badge>
+                {viewCard.share_token
+                  ? <Badge variant="outline" className="text-xs">{Z("分享中", "Sharing on")}</Badge>
+                  : <Badge variant="outline" className="text-xs">{Z("未分享", "Not shared")}</Badge>}
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">{Z("卡片上显示的姓名", "Name shown on the card")}</p>
+                <p className="text-sm text-foreground">{viewCard.cared_ones_name || ""}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">{Z("说明", "Description")}</p>
+                <p className="text-sm text-foreground whitespace-pre-wrap">{viewCard.cared_ones_description || ""}</p>
+              </div>
+              {viewCard.share_expires_at && (
+                <div>
+                  <p className="text-xs text-muted-foreground">{Z("分享链接过期时间", "Share link expires at")}</p>
+                  <p className="text-sm text-foreground">{String(viewCard.share_expires_at)}</p>
+                </div>
+              )}
+            </div>
+            <DialogFooter className="sm:justify-between">
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => { setViewCard(null); setShareCard(viewCard); }}>
+                  <Share2 className="h-3 w-3 mr-1" /> {Z("分享", "Share")}
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => { setViewCard(null); openEdit(viewCard); }}>
+                  <Pencil className="h-3 w-3 mr-1" /> {Z("编辑", "Edit")}
+                </Button>
+              </div>
+              <Button variant="ghost" onClick={() => setViewCard(null)}>{Z("关闭", "Close")}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
     </div>
   );
 }
