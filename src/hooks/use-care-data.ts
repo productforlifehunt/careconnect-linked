@@ -963,6 +963,19 @@ export function useGroupInvitePreview(token: string | null) {
   });
 }
 
+/** One code box: accepts an invite-link code or a group's own join code. */
+export function useJoinGroupByAnyCode() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ code, displayName }: { code: string; displayName?: string }) =>
+      joinGroupByAnyCodeWordPress(code, displayName),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["careGroups"] });
+      qc.invalidateQueries({ queryKey: ["careGroupMembers"] });
+    },
+  });
+}
+
 /** Join a care group with its join code (CCT 199 a58). */
 export function useJoinGroupByJoinCode() {
   const qc = useQueryClient();

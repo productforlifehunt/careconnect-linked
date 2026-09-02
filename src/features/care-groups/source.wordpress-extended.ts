@@ -725,6 +725,27 @@ export async function joinGroupByJoinCodeWordPress(groupId: string, code: string
   return { group_id: String(gid), group_name: group?.[F_GROUP.NAME] || "", already_member: false };
 }
 
+/**
+ * One code box for the user: they paste whatever an admin gave them. It can be
+ * an invite link code (CCT 200 a55) or the group's own join code (CCT 199 a58).
+ */
+export async function joinGroupByAnyCodeWordPress(code: string, displayName?: string): Promise<any> {
+  const trimmed = String(code || "").trim();
+  if (!trimmed) throw new Error("Please enter the code you were given.");
+  try {
+    return await joinGroupByCodeWordPress(trimmed, displayName);
+  } catch (inviteError) {
+    // Not an invite link — look for a care group whose own join code matches.
+    const groups = await wordpressCCTFetch<any[]>(T.careGroup.slug, { params: { _limit: 500 } });
+    const match = (Array.isArray(groups) ? groups : []).find(
+      (g: any) => String(g?.[F_GROUP.JOIN_CODE] || "").trim().toLowerCase() === trimmed.toLowerCase(),
+    );
+    if (!match) throw inviteError instanceof Error ? inviteError : new Error(String(inviteError));
+    const gid = normalizeWpObjectId(match?._ID || match?.item_id || match?.id);
+    return joinGroupByJoinCodeWordPress(String(gid), trimmed, displayName);
+  }
+}
+
 // ─── Gallery ────────────────────────────────────────────────
 // CCT slug: care_group_gallery | fields: image (Media ID), image_description (textarea), taken_at (datetime)
 // Linked to care_group via JetEngine Relation 46 (1:M)
