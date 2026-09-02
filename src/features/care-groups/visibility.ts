@@ -138,12 +138,20 @@ async function replaceLinks(rel: number, parentId: number, wantedIds: number[]):
 }
 
 /** Set the sub-group / user visibility links for a post (replaces existing). */
-export async function setPostVisibility(postId: string | number, subgroupIds: number[], userIds: number[] = []): Promise<void> {
+export async function setPostVisibility(
+  postId: string | number,
+  subgroupIds: number[],
+  userIds: number[] = [],
+  hiddenSubgroupIds: number[] = [],
+  hiddenUserIds: number[] = [],
+): Promise<void> {
   const pid = Number(String(postId).replace(/^wp-/, ""));
   if (!pid) return;
   await Promise.all([
     replaceLinks(REL_POST_SUBGROUPS, pid, subgroupIds),
     replaceLinks(REL_POST_USERS, pid, userIds),
+    replaceLinks(REL_POST_HIDDEN_SUBGROUPS, pid, hiddenSubgroupIds),
+    replaceLinks(REL_POST_HIDDEN_USERS, pid, hiddenUserIds),
   ]);
 }
 
