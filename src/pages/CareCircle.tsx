@@ -31,17 +31,22 @@ import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 
 // Sub-components
-import { GroupSettingsDialog, EditPostDialog, AddCaredOneDialog } from "@/components/care-circle/GroupDialogs";
+import { EditPostDialog, AddCaredOneDialog } from "@/components/care-circle/GroupDialogs";
 import { HomeTab } from "@/components/care-circle/tabs/HomeTab";
 import { CalendarTab } from "@/components/care-circle/tabs/CalendarTab";
 import { AnnouncementsTab } from "@/components/care-circle/tabs/AnnouncementsTab";
 import { TasksTab } from "@/components/care-circle/tabs/TasksTab";
 import { CaredOnesTab } from "@/components/care-circle/tabs/CaredOnesTab";
-import { CheckInsTab } from "@/components/care-circle/tabs/CheckInsTab";
 import { MessagesTab } from "@/components/care-circle/tabs/MessagesTab";
 import { WishesTab } from "@/components/care-circle/tabs/WishesTab";
 import { MembersTab } from "@/components/care-circle/tabs/MembersTab";
 import { GalleryTab } from "@/components/care-circle/tabs/GalleryTab";
+import { InviteMembersTab } from "@/components/care-circle/tabs/InviteMembersTab";
+import { MemberGroupsTab } from "@/components/care-circle/tabs/MemberGroupsTab";
+import { GroupLocationTab } from "@/components/care-circle/tabs/GroupLocationTab";
+import { GroupSettingsTab } from "@/components/care-circle/tabs/GroupSettingsTab";
+import { GroupHelpTab } from "@/components/care-circle/tabs/GroupHelpTab";
+
 
 export default function CareCircle() {
   const { t, i18n } = useTranslation();
