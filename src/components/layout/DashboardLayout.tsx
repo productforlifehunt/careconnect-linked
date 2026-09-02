@@ -77,8 +77,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const sidebarItems = useSidebarItems();
   return (
     <div className="flex min-h-[calc(100vh-4rem)]">
-      <aside className="hidden md:flex flex-col w-56 shrink-0 border-r bg-sidebar-background md:sticky md:top-16 md:h-[calc(100vh-4rem)] md:overflow-y-auto">
-        <nav className="flex flex-col gap-0.5 p-3 pt-4">
+      <aside className="hidden md:flex flex-col w-56 shrink-0 border-r bg-sidebar-background md:sticky md:top-0 md:h-[calc(100dvh-4rem)] md:overflow-y-auto">
+        <nav className="flex flex-col gap-0.5 p-3 pt-5">
+
           {sidebarItems.map((item) => (
             <NavLink
               key={item.url + item.title}
