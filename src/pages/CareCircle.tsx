@@ -67,7 +67,6 @@ export default function CareCircle() {
   const [newGroupDesc, setNewGroupDesc] = useState("");
   const [newGroupMyName, setNewGroupMyName] = useState("");
   const [joinMyName, setJoinMyName] = useState("");
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<any>(null);
   const [addCaredOneOpen, setAddCaredOneOpen] = useState(false);
 
