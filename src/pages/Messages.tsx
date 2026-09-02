@@ -273,10 +273,22 @@ export default function Messages({ embedded = false }: { embedded?: boolean } = 
 
       {/* Chat Area */}
       {selectedOtherUser ? (
-        <div className={`flex-1 flex flex-col ${selectedConvoId ? "flex" : "hidden md:flex"}`}>
-          <div className="p-4 border-b flex items-center justify-between bg-card">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="sm" className="md:hidden" onClick={() => { setSelectedConvoId(null); setSelectedOtherUser(null); }}>←</Button>
+        <div className={`flex-1 min-w-0 flex flex-col ${selectedConvoId ? "flex" : "hidden md:flex"}`}>
+          <div className="p-3 sm:p-4 border-b flex items-center justify-between bg-card">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden min-h-11 min-w-11 shrink-0"
+                aria-label={Z("返回消息列表", "Back to messages")}
+                onClick={() => {
+                  closedByUserRef.current = true;
+                  setSelectedConvoId(null);
+                  setSelectedOtherUser(null);
+                }}
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
               <div className="relative">
                 {selectedOtherUser.avatar_url ? (
                   <img src={selectedOtherUser.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
