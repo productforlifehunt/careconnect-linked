@@ -11,8 +11,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Users, Plus, Loader2, Home, CalendarDays, Megaphone, Heart,
-  ClipboardCheck, MessageSquare, Star, Image, Settings, ListTodo, KeyRound,
+  MessageSquare, Star, Image, Settings, ListTodo, KeyRound,
+  MapPin, UserPlus, Tag, HelpCircle,
 } from "lucide-react";
+
 import {
   useCareGroups, useCreateCareGroup, useCareGroupMembers, useCareTasks, useCreateTask, useUpdateTaskStatus,
   useCareGroupPosts, useCreateGroupPost, useUpdateGroupPost, useDeleteGroupPost,
