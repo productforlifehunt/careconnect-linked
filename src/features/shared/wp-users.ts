@@ -124,12 +124,32 @@ export async function fetchWPUser(id: number | string): Promise<WPUserRecord> {
 
 
 /**
+ * Whole-table read of a CCT, cached for the screen.
+ *
+ * Reading N rows by id costs N round-trips; the browser only runs 6 at a time,
+ * so a marketplace page with 20 people used to queue 20+ serialized requests.
+ * One list read answers for everybody on the screen.
+ */
+async function fetchCCTRowIndex(cctSlug: string): Promise<Map<string, any> | null> {
+  return dedupeRead(`cct-index:${cctSlug}`, async () => {
+    try {
+      const rows = await wordpressCCTFetch<any[]>(cctSlug, { params: { _limit: 500 } });
+      if (!Array.isArray(rows)) return null;
+      const index = new Map<string, any>();
+      for (const row of rows) index.set(String(row?.id ?? row?._ID ?? ""), row);
+      return index;
+    } catch {
+      return null;
+    }
+  });
+}
+
+/**
  * One-to-one child CCT row of a user (Relation 152 / 259).
  *
- * Reads the relation through the batched whole-relation map (one request for
- * every user on the screen instead of one per user), and dedupes the CCT row
- * read so a roster of N members costs ~2 relation requests + N cached row
- * reads instead of 4N sequential round-trips.
+ * Reads the relation through the batched whole-relation map and resolves the
+ * row from a single whole-CCT read, so a screen with N people costs ~2
+ * requests total instead of 2N+ sequential round-trips.
  */
 async function fetchOneToOneChild(relationId: number, userId: number, cctSlug: string): Promise<any | null> {
   let childId: string | number | null = null;
@@ -144,8 +164,12 @@ async function fetchOneToOneChild(relationId: number, userId: number, cctSlug: s
     childId = rels[0]?.child_object_id ?? null;
   }
   if (!childId) return null;
+  const index = await fetchCCTRowIndex(cctSlug);
+  const hit = index?.get(String(childId));
+  if (hit) return hit;
   return dedupeRead(`cct-row:${cctSlug}:${childId}`, () => wordpressCCTFetch<any>(cctSlug, { id: childId as any }));
 }
+
 
 
 export interface WPUserProfile extends WPUserRecord {
