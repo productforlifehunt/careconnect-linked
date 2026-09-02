@@ -132,11 +132,15 @@ export interface WPUserProfile extends WPUserRecord {
  * extended-profile CCT rows, joined through JetEngine relations 152 and 259.
  */
 export async function fetchWPUserProfile(id: number | string): Promise<WPUserProfile> {
-  const user = await fetchWPUser(id);
-  const [profile, profile2] = await Promise.all([
-    fetchOneToOneChild(R.userProfileRel, user.id, T.userProfile.slug),
-    fetchOneToOneChild(R.userProfile2Rel, user.id, T.userProfile2.slug),
+  const numeric = Number(String(id ?? "").replace(/^wp-/, ""));
+  // The relation joins only need the numeric user id, so nothing has to wait on
+  // the user record read — all three go out at once instead of in a waterfall.
+  const [user, profile, profile2] = await Promise.all([
+    fetchWPUser(numeric),
+    fetchOneToOneChild(R.userProfileRel, numeric, T.userProfile.slug),
+    fetchOneToOneChild(R.userProfile2Rel, numeric, T.userProfile2.slug),
   ]);
+
   // Display name comes ONLY from the per-app column on CCT 151
   // (a556 ChallengeD / a557 CareCNC). The WordPress user name is shared across
   // every app on this backend and is never shown.

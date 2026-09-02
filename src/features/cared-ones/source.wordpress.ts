@@ -1,7 +1,7 @@
 import { wordpressFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { R } from "@/integrations/wp-schema";
-import { fetchWPUserProfile } from "@/features/shared/wp-users";
+import { fetchWPUserProfile, fetchWPUsers } from "@/features/shared/wp-users";
 
 const REL_USER_CARED_ONE = R.userCaredOnes;
 
@@ -26,8 +26,13 @@ export async function fetchUserCaredOnesWordPress(): Promise<any[]> {
     .filter(Boolean)
     .filter((id: string) => id.replace(/^wp-/, "") !== selfId);
 
+  // One batched user read for every cared one, then the per-user profile joins
+  // resolve from that batch instead of issuing a request each.
+  await fetchWPUsers(caredOneIds);
+
   const caredOnes = await Promise.all(
     caredOneIds.map(async (userId: string) => {
+
       const u = await fetchWPUserProfile(userId);
       return {
         user_id: `wp-${u.id}`,
