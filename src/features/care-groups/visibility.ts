@@ -24,6 +24,10 @@ const REL_POST_SUBGROUPS = R.careGroupPostPrivateGroups;
 const REL_POST_USERS = R.careGroupPostMentionedUsers;
 const REL_TASK_USERS = R.careTaskVisibleUsers;
 const REL_TASK_SUBGROUPS = R.careTaskPrivateMemberGroups;
+/** REL 293 — sub-groups a post is explicitly NOT visible to. */
+const REL_POST_HIDDEN_SUBGROUPS = R.careGroupPostHiddenPrivateGroups;
+/** REL 292 — members a post is explicitly NOT visible to. */
+const REL_POST_HIDDEN_USERS = R.careGroupPostHiddenUsers;
 
 /**
  * Whole-relation map: `{ parentId: [childId, ...] }`.
