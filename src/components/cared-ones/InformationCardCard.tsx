@@ -70,9 +70,10 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
 
   const openCreate = () => {
     setEditId(null);
-    setForm(EMPTY_FORM);
+    setForm({ ...EMPTY_FORM, cared_ones_name: caredOneName || "" });
     setFormOpen(true);
   };
+
 
   const openEdit = (card: any) => {
     setEditId(String(card.id));
