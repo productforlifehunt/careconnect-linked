@@ -307,6 +307,7 @@ export async function createMedicineWordPress(med: MedicineInput): Promise<void>
     [F.MEDICATION_SCHEDULE_TYPE]: freq === "as_needed"
       ? O.MEDICATION_SCHEDULE_TYPE.AS_NEEDED
       : O.MEDICATION_SCHEDULE_TYPE.SCHEDULE,
+    [F.MEDICINE_LOG_TYPE]: O.MEDICINE_LOG_TYPE.HUMAN,
     [F.CUSTOM_DATA]: encodeExtras(med as any),
     ...appScopeBody("calendarEvent"),
   };
