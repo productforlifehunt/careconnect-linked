@@ -85,7 +85,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r">
-      <SidebarContent className="pt-2">
+      <SidebarContent className="pt-0">
         <SidebarGroup>
           <SidebarGroupLabel>{t("nav.browse")}</SidebarGroupLabel>
           <SidebarGroupContent>
