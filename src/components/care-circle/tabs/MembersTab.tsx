@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 import { SubgroupCard } from "../SubgroupCard";
 import { useGroupInvites, useCreateGroupInvite, useUpdateGroupInvite, useDeleteGroupInvite, useSearchProfiles, useUserCaredOnes } from "@/hooks/use-care-data";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
+import type { InvitedAs } from "@/features/care-groups/source.wordpress-extended";
 
 interface MembersTabProps {
   members: any[];
