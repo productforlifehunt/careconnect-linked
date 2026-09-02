@@ -33,15 +33,19 @@ export default function Messages({ embedded = false }: { embedded?: boolean } = 
   const [selectedConvoId, setSelectedConvoId] = useState<string | null>(null);
   const [selectedOtherUser, setSelectedOtherUser] = useState<any>(null);
   const [newMessage, setNewMessage] = useState("");
-  const [pendingAttachment, setPendingAttachment] = useState<{ url: string; type: "image" | "file" } | null>(null);
+  const [pendingAttachment, setPendingAttachment] = useState<{ url: string; type: "image" | "file"; name?: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [newConvoOpen, setNewConvoOpen] = useState(false);
   const [newConvoSearch, setNewConvoSearch] = useState("");
   const [quoteDialogOpen, setQuoteDialogOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navHandledRef = useRef(false);
+  // Once the reader taps back to the list we must never yank them into a chat
+  // again — the auto-open is a first-load convenience for wide screens only.
+  const closedByUserRef = useRef(false);
   const { data: newConvoResults } = useSearchProfiles(newConvoSearch);
   const [handledNavState, setHandledNavState] = useState(false);
+
 
   // Conversation rows from the WP adapter are flat: participant_1_id / participant_2_id / other_user_id (already prefixed wp-).
   // The adapter resolves other_user_name/avatar in one batched users request; the
