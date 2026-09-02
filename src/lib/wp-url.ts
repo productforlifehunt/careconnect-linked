@@ -40,20 +40,14 @@ export function buildWPUrl(
 
   const path = wpJsonPath.startsWith('/') ? wpJsonPath : `/wp-json/${wpJsonPath}`;
 
-  // Local dev with primary server → use Vite proxy. Remote previews must use the backend proxy.
-  if (!options?.forceEdge && canUseLocalViteProxy() && server.isPrimary) {
-    const devBase = `/wp-proxy/${server.sitePath}`;
-    const query = qs.toString();
-    return `${devBase}${path}${query ? `?${query}` : ''}`;
-  }
-
-  // Direct HTTPS to WordPress — the site serves permissive CORS headers, so an
-  // authenticated read/write needs no proxy hop at all. Skipping the edge
-  // function removes one full round-trip (and its cold start) per request.
+  // WordPress is HTTPS and sends permissive CORS headers, so both dev and
+  // production talk to it directly — no proxy hop, no cold start, identical
+  // behaviour in every environment.
   if (!options?.forceEdge) {
     const query = qs.toString();
     return `${server.baseUrl}${path}${query ? `?${query}` : ''}`;
   }
+
 
   // Guest / credentialed catalog reads → edge function proxy
   qs.set('path', path);
