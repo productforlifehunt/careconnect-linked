@@ -173,8 +173,6 @@ export function TasksTab({
         photo_ids: form.photo_ids,
         subgroupIds: visibility.subgroupIds,
         visibilityUserIds: visibility.userIds,
-                    hiddenSubgroupIds: visibility.hiddenSubgroupIds,
-                    hiddenUserIds: visibility.hiddenUserIds,
       } as any, {
         onSuccess: () => {
           setForm({ ...EMPTY_FORM });
