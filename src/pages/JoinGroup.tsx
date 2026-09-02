@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { useJoinGroupByCode } from "@/hooks/use-care-data";
@@ -16,8 +18,13 @@ export default function JoinGroup() {
   const { i18n } = useTranslation();
   const zh = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (zh ? cn : en);
-  const [status, setStatus] = useState<"idle" | "joining" | "success" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "naming" | "joining" | "success" | "error">("idle");
   const [message, setMessage] = useState<string>("");
+  const [displayName, setDisplayName] = useState("");
+
+  // Bible: the join form must let the user pick an in-group display name
+  // (Rel 223 a55). Placeholder = their app name; blank submit stores that name.
+  const appName = user?.full_name || "";
 
   useEffect(() => {
     // Wait for the session to hydrate — redirecting while auth is still loading
@@ -33,9 +40,13 @@ export default function JoinGroup() {
       setMessage(Z("邀请链接无效。", "Invalid invite link."));
       return;
     }
-    if (status !== "idle") return;
+    if (status === "idle") setStatus("naming");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, isAuthenticated, user, code]);
+
+  const handleJoin = () => {
     setStatus("joining");
-    joinGroupByCode.mutate(code, {
+    joinGroupByCode.mutate({ token: code, displayName: displayName.trim() || appName }, {
       onSuccess: (res: any) => {
         setStatus("success");
         const groupName = res?.group_name || Z("该护理小组", "the care group");
@@ -53,8 +64,8 @@ export default function JoinGroup() {
         setMessage(err?.message || Z("此邀请链接无效或已过期。", "This invite link is invalid or expired."));
       },
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, isAuthenticated, user, code]);
+  };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
@@ -63,7 +74,27 @@ export default function JoinGroup() {
           <CardTitle>{Z("加入护理小组", "Join Care Group")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 text-center">
+          {status === "naming" && (
+            <div className="space-y-4 text-left">
+              <div className="space-y-2">
+                <Label htmlFor="group-display-name">{Z("您在这个小组里显示的名字", "Your name inside this group")}</Label>
+                <Input
+                  id="group-display-name"
+                  value={displayName}
+                  placeholder={appName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {Z("不修改就用您的名字：", "Leave it as is to use your name: ")}{appName}
+                </p>
+              </div>
+              <Button variant="coral" className="w-full" onClick={handleJoin}>
+                {Z("加入护理小组", "Join care group")}
+              </Button>
+            </div>
+          )}
           {status === "joining" && (
+
             <div className="flex flex-col items-center gap-3 py-6">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
               <p className="text-muted-foreground">{Z("正在将您加入小组…", "Adding you to the group…")}</p>
