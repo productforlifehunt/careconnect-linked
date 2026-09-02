@@ -130,8 +130,8 @@ async function replaceLinks(rel: number, parentId: number, wantedIds: number[]):
     ),
     ...toRemove.map((id) =>
       wordpressFetch(`jet-rel/${rel}`, {
-        method: "DELETE",
-        body: { parent_id: parentId, child_id: id },
+        method: "POST",
+        body: { parent_id: parentId, child_id: id, context: "child", store_items_type: "disconnect" },
       }).catch(() => undefined),
     ),
   ]);

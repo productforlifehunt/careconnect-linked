@@ -176,7 +176,7 @@ export async function updateJobApplicationWordPress(id: string, status: string):
   if (status !== "rejected") throw new Error("Relation 251 has no application-status field; only rejection by unlinking is supported");
   const [jobId, userId] = id.split(":").map(numId);
   if (!jobId || !userId) throw new Error("A relation-backed application ID must be jobId:userId");
-  await wordpressFetch(`jet-rel/${REL_JOB_CAREGIVERS}`, { method: "DELETE", body: { parent_id: jobId, child_id: userId } });
+  await wordpressFetch(`jet-rel/${REL_JOB_CAREGIVERS}`, { method: "POST", body: { parent_id: jobId, child_id: userId, context: "child", store_items_type: "disconnect" } });
 }
 
 // Convenience link helpers exposed for higher-level UI flows.

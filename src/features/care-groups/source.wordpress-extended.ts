@@ -275,8 +275,8 @@ export async function cancelInvitationWordPress(invitationId: string): Promise<v
   const userId = normalizeWpObjectId(userPart);
   if (!groupId || !userId) return;
   await wordpressFetch(`jet-rel/${REL_GROUP_MEMBER}`, {
-    method: "DELETE",
-    body: { parent_id: groupId, child_id: userId },
+    method: "POST",
+    body: { parent_id: groupId, child_id: userId, context: "child", store_items_type: "disconnect" },
   });
 }
 
@@ -408,8 +408,8 @@ export async function removeGroupMemberWordPress(memberId: string, groupId?: str
   if (normalizedGroupId && normalizedMemberId) {
     const name = await groupNameOf(normalizedGroupId);
     await wordpressFetch(`jet-rel/${REL_GROUP_MEMBER}`, {
-      method: "DELETE",
-      body: { parent_id: normalizedGroupId, child_id: normalizedMemberId },
+      method: "POST",
+      body: { parent_id: normalizedGroupId, child_id: normalizedMemberId, context: "child", store_items_type: "disconnect" },
     });
     try {
       const { notifyMemberRemoved } = await import("@/features/notifications/notify-events");
@@ -800,8 +800,8 @@ export async function removeMemberFromSubgroupWordPress(subgroupId: string, user
   const uid = normalizeWpObjectId(userId);
   if (!sid || !uid) return;
   await wordpressFetch(`jet-rel/${REL_SUBGROUP_MEMBERS}`, {
-    method: "DELETE",
-    body: { parent_id: sid, child_id: uid },
+    method: "POST",
+    body: { parent_id: sid, child_id: uid, context: "child", store_items_type: "disconnect" },
   });
 }
 
@@ -981,8 +981,8 @@ export async function leaveGroupWordPress(groupId: string, userId?: string): Pro
     const normalizedUserId = normalizeWpObjectId(userId);
     if (!normalizedGroupId || !normalizedUserId) return;
     await wordpressFetch(`jet-rel/${REL_GROUP_MEMBER}`, {
-      method: "DELETE",
-      body: { parent_id: normalizedGroupId, child_id: normalizedUserId },
+      method: "POST",
+      body: { parent_id: normalizedGroupId, child_id: normalizedUserId, context: "child", store_items_type: "disconnect" },
     });
   } catch {}
 }

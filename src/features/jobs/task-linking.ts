@@ -42,7 +42,7 @@ export async function unlinkTaskFromJob(jobId: string | number, taskId: string |
   const jid = n(jobId), tid = n(taskId);
   if (!jid || !tid) return;
   await wordpressFetch(`jet-rel/${REL_JOB_TASK}`, {
-    method: "DELETE",
-    body: { parent_id: jid, child_id: tid },
+    method: "POST",
+    body: { parent_id: jid, child_id: tid, context: "child", store_items_type: "disconnect" },
   }).catch(() => undefined);
 }
