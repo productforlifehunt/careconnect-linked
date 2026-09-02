@@ -183,10 +183,13 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
                 placeholder={Z("例如：就诊、日间照料、学校", "e.g. Hospital visit, Day care, School")} />
             </div>
             <div>
-              <Label>{Z("被照护者姓名", "Cared one's name")}</Label>
+              <Label>{Z("卡片上显示的被照护者姓名", "Name shown on the card")}</Label>
               <Input className="mt-1" value={form.cared_ones_name}
-                onChange={(e) => setForm((p) => ({ ...p, cared_ones_name: e.target.value }))} />
+                onChange={(e) => setForm((p) => ({ ...p, cared_ones_name: e.target.value }))}
+                placeholder={caredOneName || Z("可填化名，不必是真名", "Can be a nickname, not necessarily the real name")} />
+              <p className="text-[11px] text-muted-foreground mt-1">{Z("默认使用被照护者的用户名，可改成化名以保护隐私。", "Defaults to the cared one's name; you can change it to a nickname for privacy.")}</p>
             </div>
+
             <div>
               <Label>{Z("说明", "Description")}</Label>
               <Textarea className="mt-1" rows={3} value={form.cared_ones_description}
