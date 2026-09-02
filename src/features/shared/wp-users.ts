@@ -243,10 +243,14 @@ export async function fetchWPUserPublicProfile(id: number | string): Promise<{
 }> {
   const numeric = Number(String(id ?? "").replace(/^wp-/, ""));
   if (!Number.isFinite(numeric) || numeric <= 0) throw new Error(`Invalid WordPress user id: ${id}`);
-  const [user, profile] = await Promise.all([
-    wordpressFetch<any>(`wp/v2/users/${numeric}`),
+  // The user record goes through the ~25ms micro-batch queue, so N cards on one
+  // screen share ONE `wp/v2/users?include=` request instead of N single reads.
+  const [users, profile] = await Promise.all([
+    fetchWPUsers([numeric]).catch(() => new Map<number, WPUserRecord>()),
     fetchOneToOneChild(R.userProfileRel, numeric, T.userProfile.slug),
   ]);
+  const user = users.get(numeric);
+
   const profileName = profile?.[appUserNameField()];
   return {
     id: numeric,
