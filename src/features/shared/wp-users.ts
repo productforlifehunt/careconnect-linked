@@ -29,6 +29,15 @@ function toRecord(u: any): WPUserRecord {
 }
 
 /**
+ * Process-level record cache.
+ *
+ * A screen that renders N people used to cost N separate admin-ops calls,
+ * because each single-id read had its own dedupe key. Records resolved by any
+ * batch are reused, so one batched request covers the whole screen.
+ */
+const userRecordCache = new Map<number, WPUserRecord>();
+
+/**
  * Reads real WordPress users by ID.
  *
  * App users are WP subscribers and cannot read other users over the REST API,
@@ -47,14 +56,31 @@ export async function fetchWPUsers(ids: Array<number | string>): Promise<Map<num
   const out = new Map<number, WPUserRecord>();
   if (clean.length === 0) return out;
 
-  return dedupeRead(`wp-users:${clean.slice().sort((a, b) => a - b).join(",")}`, async () => {
-    const proxied = await wpAdminOps<any[]>("get_user_names", { ids: clean });
+  const missing: number[] = [];
+  for (const id of clean) {
+    const cached = userRecordCache.get(id);
+    if (cached) out.set(id, cached);
+    else missing.push(id);
+  }
+  if (missing.length === 0) return out;
+
+  await dedupeRead(`wp-users:${missing.slice().sort((a, b) => a - b).join(",")}`, async () => {
+    const proxied = await wpAdminOps<any[]>("get_user_names", { ids: missing });
     if (!Array.isArray(proxied)) {
       throw new Error("Could not read WordPress users through wp-admin-ops");
     }
-    for (const u of proxied) out.set(Number(u.id), toRecord(u));
-    return out;
+    for (const u of proxied) {
+      const rec = toRecord(u);
+      userRecordCache.set(rec.id, rec);
+    }
+    return true;
   });
+
+  for (const id of missing) {
+    const rec = userRecordCache.get(id);
+    if (rec) out.set(id, rec);
+  }
+  return out;
 }
 
 export async function fetchWPUser(id: number | string): Promise<WPUserRecord> {
@@ -64,6 +90,7 @@ export async function fetchWPUser(id: number | string): Promise<WPUserRecord> {
   if (!rec) throw new Error(`WordPress user ${numeric} not found`);
   return rec;
 }
+
 
 /**
  * One-to-one child CCT row of a user (Relation 152 / 259).
