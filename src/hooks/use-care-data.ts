@@ -952,54 +952,25 @@ export function useSubgroupMemberRecords(subgroupId: string | null) {
   });
 }
 
-export function useSubgroupPendingRequests(subgroupId: string | null) {
+/** Preview an invite link before joining: which group, invited as what. */
+export function useGroupInvitePreview(token: string | null) {
   return useQuery({
-    queryKey: ["subgroupPending", subgroupId],
-    queryFn: () => fetchSubgroupPendingRequestsWordPress(subgroupId!),
-    enabled: !!subgroupId,
+    queryKey: ["groupInvitePreview", token],
+    queryFn: () => previewGroupInviteWordPress(token!),
+    enabled: !!token,
+    retry: false,
   });
 }
 
-export function useMyPendingSubgroupRequests() {
-  return useQuery({
-    queryKey: ["mySubgroupPending"],
-    queryFn: () => fetchMyPendingSubgroupRequestsWordPress(),
-  });
-}
-
-export function useRequestJoinSubgroup() {
+/** Join a care group with its join code (CCT 199 a58). */
+export function useJoinGroupByJoinCode() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ subgroupId }: { subgroupId: string }) => requestJoinSubgroupWordPress(subgroupId),
+    mutationFn: ({ groupId, code, displayName }: { groupId: string; code: string; displayName?: string }) =>
+      joinGroupByJoinCodeWordPress(groupId, code, displayName),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["subgroupPending"] });
-      qc.invalidateQueries({ queryKey: ["mySubgroupPending"] });
-      qc.invalidateQueries({ queryKey: ["subgroupMemberRecords"] });
-    },
-  });
-}
-
-export function useApproveSubgroupMember() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ subgroupId, userId }: { subgroupId: string; userId: string | number }) => approveSubgroupMemberWordPress(subgroupId, userId),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["subgroupMembers"] });
-      qc.invalidateQueries({ queryKey: ["subgroupMemberRecords"] });
-      qc.invalidateQueries({ queryKey: ["subgroupPending"] });
-      qc.invalidateQueries({ queryKey: ["mySubgroupPending"] });
-    },
-  });
-}
-
-export function useDeclineSubgroupMember() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ subgroupId, userId }: { subgroupId: string; userId: string | number }) => declineSubgroupMemberWordPress(subgroupId, userId),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["subgroupMemberRecords"] });
-      qc.invalidateQueries({ queryKey: ["subgroupPending"] });
-      qc.invalidateQueries({ queryKey: ["mySubgroupPending"] });
+      qc.invalidateQueries({ queryKey: ["careGroups"] });
+      qc.invalidateQueries({ queryKey: ["careGroupMembers"] });
     },
   });
 }
