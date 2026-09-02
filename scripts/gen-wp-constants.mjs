@@ -122,6 +122,8 @@ const REL_ALIASES = {
   228: 'careGroupPostMentionedUsers',
   229: 'careGroupPostComments',
   230: 'careGroupGalleries',
+  292: 'careGroupPostHiddenUsers',
+  293: 'careGroupPostHiddenPrivateGroups',
   231: 'careTaskCaredOnes',
   232: 'careTaskAssignees',
   233: 'careGroupTasks',
