@@ -37,8 +37,8 @@ export default function Dashboard() {
   const { data: bookings, isLoading: bookingsLoading } = useBookings();
   const { data: tasks, isLoading: tasksLoading } = useCareTasks();
   const { data: stats } = useDashboardStats();
-  const { data: caredOnes } = useUserCaredOnes();
-  const { data: communityPosts } = usePosts("care_community_post");
+  const { data: caredOnes, isLoading: caredOnesLoading } = useUserCaredOnes();
+  const { data: communityPosts, isLoading: postsLoading } = usePosts("care_community_post");
 
   const isChallenged = site.family === "challenged";
   const isLovedOne = user?.general_user_role?.includes("cared one") === true;
@@ -137,6 +137,15 @@ export default function Dashboard() {
     { icon: Wand2,    label: isChallenged ? t("nav.aiCompanion", { defaultValue: "AI Companion" }) : (isChinese ? "AI助手" : "AI Assistant"), to: "/ai-companion", color: "text-primary" },
   ];
 
+  // Placeholder that holds a widget's slot while its data loads, so the
+  // dashboard never re-shuffles blocks as requests finish at different times.
+  const slotSkeleton = (title: string, height: string) => (
+    <section>
+      <h2 className="text-sm font-semibold text-foreground mb-2">{title}</h2>
+      <Skeleton className={`w-full ${height} rounded-xl`} />
+    </section>
+  );
+
   // ── Each widget id maps to its own block; rendered in user-defined order ──
   const blocks: Record<string, ReactNode> = {
     "patient-summaries": caredOnes && caredOnes.length > 0 ? (
@@ -183,7 +192,7 @@ export default function Dashboard() {
           </Tabs>
         )}
       </section>
-    ) : null,
+    ) : caredOnesLoading ? slotSkeleton(t("nav.myLovedOnes") || site.navLabels.caredOnes, "h-40") : null,
 
     "stats": (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
@@ -336,7 +345,7 @@ export default function Dashboard() {
           />
         )}
       </section>
-    ) : null,
+    ) : caredOnesLoading ? slotSkeleton(t("dashboard.timeline", { defaultValue: "Daily Timeline" }), "h-32") : null,
 
 
     "community-feed": recentPosts.length > 0 ? (
@@ -363,7 +372,7 @@ export default function Dashboard() {
           ))}
         </div>
       </section>
-    ) : null,
+    ) : postsLoading ? slotSkeleton(t("nav.community", { defaultValue: "Community" }), "h-24") : null,
 
 
     "ai-smart-briefing": <AISmartBriefing />,
