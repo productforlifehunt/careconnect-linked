@@ -79,18 +79,25 @@ async function filterVisibleEntities<T extends { id: string | number }>(
   items: T[],
   relSubgroups: number,
   relUsers: number,
+  relHiddenSubgroups?: number,
+  relHiddenUsers?: number,
 ): Promise<T[]> {
   if (items.length === 0) return items;
   const uid = getCurrentUserIdNumber();
   if (!uid) return [];
-  const [mySubgroups, subMap, userMap] = await Promise.all([
+  const [mySubgroups, subMap, userMap, hiddenSubMap, hiddenUserMap] = await Promise.all([
     fetchMySubgroupIds(),
     relMap(relSubgroups),
     relMap(relUsers),
+    relHiddenSubgroups ? relMap(relHiddenSubgroups) : Promise.resolve(new Map<number, number[]>()),
+    relHiddenUsers ? relMap(relHiddenUsers) : Promise.resolve(new Map<number, number[]>()),
   ]);
   return items.filter((item) => {
     const id = Number(String(item.id).replace(/^wp-/, ""));
     if (!id) return true; // no id to scope by → treat as unrestricted
+    // Exclusions win over inclusions.
+    if ((hiddenUserMap.get(id) || []).includes(uid)) return false;
+    if ((hiddenSubMap.get(id) || []).some((sg) => mySubgroups.has(sg))) return false;
     const allowedSub = subMap.get(id) || [];
     const allowedUsers = userMap.get(id) || [];
     if (allowedSub.length === 0 && allowedUsers.length === 0) return true;
@@ -100,7 +107,7 @@ async function filterVisibleEntities<T extends { id: string | number }>(
 }
 
 export async function filterVisiblePosts<T extends { id: string | number }>(posts: T[]): Promise<T[]> {
-  return filterVisibleEntities(posts, REL_POST_SUBGROUPS, REL_POST_USERS);
+  return filterVisibleEntities(posts, REL_POST_SUBGROUPS, REL_POST_USERS, REL_POST_HIDDEN_SUBGROUPS, REL_POST_HIDDEN_USERS);
 }
 
 /** Filter a list of tasks to those visible to the current user. */
