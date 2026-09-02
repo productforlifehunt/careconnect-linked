@@ -298,15 +298,65 @@ export default function CareFacilityProfile() {
             <CardHeader>
               <div className="flex items-center justify-between gap-3">
                 <CardTitle>{isZh ? `评价（${reviews?.length || 0}）` : `Reviews (${reviews?.length || 0})`}</CardTitle>
-                {/*
-                  Facility reviews have no relation in the data model (144 = shop,
-                  264 = care provider user, 145 = product). Until a
-                  "care facility -> 31. Review" relation exists we do not offer a
-                  write path that would silently fail or attach to the wrong parent.
-                */}
-                <span className="text-xs text-muted-foreground">
-                  {isZh ? "机构评价暂未开放" : "Facility reviews not open yet"}
-                </span>
+                {/* Facility reviews: CCT 31 Review via JetEngine Relation 294. */}
+                <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      {isZh ? "写评价" : "Write a review"}
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>{isZh ? "评价这家护理机构" : "Review this care facility"}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label className="mb-2 block">{isZh ? "评分" : "Rating"}</Label>
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <button
+                              key={s}
+                              type="button"
+                              aria-label={isZh ? `${s} 星` : `${s} stars`}
+                              aria-pressed={s === reviewRating}
+                              onClick={() => setReviewRating(s)}
+                              className="min-h-11 min-w-11 flex items-center justify-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            >
+                              <Star className={`h-7 w-7 transition-colors ${s <= reviewRating ? "text-warning fill-warning" : "text-muted-foreground/30"}`} />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <Label>{isZh ? "评论" : "Comment"}</Label>
+                        <Textarea
+                          value={reviewComment}
+                          onChange={(e) => setReviewComment(e.target.value)}
+                          placeholder={isZh ? "分享您的体验…" : "Share your experience..."}
+                          rows={4}
+                        />
+                      </div>
+                      <Button
+                        className="w-full"
+                        disabled={createReview.isPending || !id}
+                        onClick={async () => {
+                          try {
+                            await createReview.mutateAsync({ entity_id: id!, entity_type: "facility", rating: reviewRating, comment: reviewComment });
+                            toast({ title: isZh ? "评价已提交！" : "Review submitted!" });
+                            setReviewDialogOpen(false);
+                            setReviewRating(5);
+                            setReviewComment("");
+                          } catch (err: any) {
+                            toast({ title: isZh ? "提交评价失败" : "Failed to submit review", description: err.message, variant: "destructive" });
+                          }
+                        }}
+                      >
+                        {createReview.isPending ? (isZh ? "提交中…" : "Submitting...") : (isZh ? "提交评价" : "Submit Review")}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+
 
               </div>
             </CardHeader>
