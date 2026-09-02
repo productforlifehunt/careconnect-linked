@@ -233,9 +233,34 @@ export function MembersTab({
                   )}
                 </div>
               )}
-              <Button variant="coral" onClick={handleInvite} disabled={!invitePerson || inviteToGroup.isPending} className="w-full">
-                <Mail className="h-4 w-4 mr-1" /> {Z("邀请", "Invite")}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground shrink-0">{Z("邀请身份", "Invite as")}</span>
+                <Select value={inviteAs} onValueChange={(v) => setInviteAs(v as InvitedAs)}>
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="normal group member">{Z("普通成员", "Member")}</SelectItem>
+                    <SelectItem value="admin">{Z("管理员", "Admin")}</SelectItem>
+                    <SelectItem value="owner">{Z("拥有者", "Owner")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Input
+                type="email"
+                value={inviteEmail}
+                onChange={e => { setInviteEmail(e.target.value); if (e.target.value) setInvitePerson(null); }}
+                placeholder={Z("或者填写邮箱地址，把邀请发给还没注册的人", "Or type an email address to invite someone not signed up yet")}
+              />
+              <Button
+                variant="coral"
+                onClick={handleInvite}
+                disabled={(!invitePerson && !inviteEmail.includes("@")) || inviteToGroup.isPending}
+                className="w-full"
+              >
+                <Mail className="h-4 w-4 mr-1" /> {Z("发出邀请", "Send invitation")}
               </Button>
+              <p className="text-[11px] text-muted-foreground">
+                {Z("邀请会生成一个专属链接：注册用户在通知里收到，邮箱地址会收到邮件。对方打开链接、填写群内显示名后才正式入组。", "Each invitation creates its own link: app users get it in their notifications, email addresses get it by email. They join once they open the link and enter their in-group name.")}
+              </p>
             </div>
 
             <div className="border-t pt-3">
