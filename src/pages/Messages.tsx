@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Search, Phone, Video, MoreVertical, Loader2, Plus, X, Tag } from "lucide-react";
+import { Send, Search, Phone, Video, MoreVertical, Loader2, Plus, X, Tag, ArrowLeft } from "lucide-react";
 import { MessageAttachment } from "@/components/messages/MessageAttachment";
 import { MessageBubble } from "@/components/messages/MessageBubble";
 import { QuoteDialog } from "@/components/messages/QuoteDialog";
