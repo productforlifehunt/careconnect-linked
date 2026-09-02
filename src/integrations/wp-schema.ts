@@ -665,10 +665,15 @@ export const WP = {
         "TAGS": "a89",  // Text
         "CUSTOM_DATA": "a90",  // Textarea
         "APP": "a91",  // Radio
+        "MEDICATION_CONCEPT_IDENTIFIER": "a92",  // Text
+        "MEDICATION_DOSE_QUANTITY": "a93",  // Number
+        "MEDICATION_DOSE_UNIT": "a94",  // Text
+        "MEDICATION_SCHEDULE_TYPE": "a95",  // Radio
       },
       opt: {
         "ALL_DAY": { "YES": "b55", "NO": "b56" },
         "CUSTOM_EVENT_TYPE": { "MEDICINE_SCHEDULE": "b55", "HEALTH_CHECKIN": "b56", "HABIT": "b57", "TODO": "b58" },
+        "MEDICATION_SCHEDULE_TYPE": { "AS_NEEDED": "b55", "SCHEDULE": "b56" },
         "STATUS": { "CONFIRMED": "b55", "TENTATIVE": "b56", "CANCELLED": "b57" },
         "SHOW_AS": { "BUSY": "b55", "FREE": "b56", "TENTATIVE": "b57", "UNAVAILABLE": "b58" },
         "VISIBILITY": { "DEFAULT": "b55", "PUBLIC": "b56", "PRIVATE": "b57", "CONFIDENTIAL": "b58" },
@@ -900,17 +905,30 @@ export const WP = {
         "CHECK_IN_TYPE": { "AI": "b55", "HUMAN": "b56" },
       },
     },
-    /** 206. Medicine log */
+    /** 206. Medicine log — mirrors Apple HKMedicationDoseEvent 1:1 */
     "206": {
       id: 206,
       slug: "medicine_log",
       name: "Medicine log",
       f: {
-        "STATUS": "a55",  // Radio
-        "NOTE": "a56",  // Textarea
+        "DOSE_EVENT_LOG_STATUS": "a55",  // Radio
+        "DOSE_EVENT_NOTE": "a56",  // Textarea
+        "DOSE_QUANTITY": "a57",  // Number
+        "SCHEDULED_DOSE_QUANTITY": "a58",  // Number
+        "DOSE_UNIT": "a59",  // Text
+        "SCHEDULED_DATE": "a60",  // Datetime
+        "SCHEDULE_TYPE": "a61",  // Radio
+        "CONCEPT_IDENTIFIER": "a62",  // Text
+        "CONCEPT_DISPLAY_TEXT": "a63",  // Text
+        "CONCEPT_GENERAL_FORM": "a64",  // Text
+        "CLINICAL_CODING_SYSTEM": "a65",  // Text
+        "CLINICAL_CODING_CODE": "a66",  // Text
+        "CLINICAL_CODING_VERSION": "a67",  // Text
+        "DOSE_LOGGED_TIME": "a68",  // Datetime
       },
       opt: {
-        "STATUS": { "TAKEN": "b55", "SKIPPED": "b56", "MISSED": "b57" },
+        "DOSE_EVENT_LOG_STATUS": { "NOT_INTERACTED": "b55", "NOT_LOGGED": "b56", "NOTIFICATION_NOT_SENT": "b57", "SKIPPED": "b58", "SNOOZED": "b59", "TAKEN": "b60" },
+        "SCHEDULE_TYPE": { "AS_NEEDED": "b55", "SCHEDULE": "b56" },
       },
     },
     /** 207. Checkin schedule */
@@ -1305,8 +1323,8 @@ export const WP = {
     "236": { id: 236, parent: "204. Care Task", child: "141. Comment", type: "One to Many" },
     /** 237. One cared one can have many related 205. cared one's medicine schedules — Users -> 205. Cared one’s medicine schedule (One to Many) */
     "237": { id: 237, parent: "Users", child: "205. Cared one’s medicine schedule", type: "One to Many" },
-    /** 238. One 205. cared one's medicine schedule can have many related 206. care one's medicine logs — 205. Cared one’s medicine schedule -> 206. Care one's medicine log (One to Many) */
-    "238": { id: 238, parent: "205. Cared one’s medicine schedule", child: "206. Care one's medicine log", type: "One to Many" },
+    /** 238. One 187 cared one's medicine schedule can have many related 206. care one's medicine logs — 187. User's calendar event (medicine schedule) -> 206. Care one's medicine log (One to Many) */
+    "238": { id: 238, parent: "187. User's calendar event", child: "206. Care one's medicine log", type: "One to Many" },
     /** 239. One cared one can have many related cared one's 207. checkin schedules — Users -> 207. Checkin schedule (One to Many) */
     "239": { id: 239, parent: "Users", child: "207. Checkin schedule", type: "One to Many" },
     /** 240. One 207. cared one's checkin schedule can have many related 208. care one's checkin logs — 207. Checkin schedule -> 208. Care one's checkin log (One to Many) */
@@ -1604,7 +1622,7 @@ export const R = {
   careTaskComments: 236,
   /** 237. One cared one can have many related 205. cared one's medicine schedules */
   caredOneMedicineSchedules: 237,
-  /** 238. One 205. cared one's medicine schedule can have many related 206. care one's medicine logs */
+  /** 238. One 187 medicine-schedule calendar event can have many related 206. medicine logs */
   medicineScheduleLogs: 238,
   /** 239. One cared one can have many related cared one's 207. checkin schedules */
   caredOneCheckinSchedules: 239,

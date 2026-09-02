@@ -32,12 +32,44 @@ const REL_EVENT_INVITEES = R.calendarEventInvitees;
 // Option dictionaries (label → opaque code)
 const STATUS_OUT: Record<string, string> = { confirmed: "b55", tentative: "b56", cancelled: "b57" };
 const STATUS_IN: Record<string, string>  = { b55: "confirmed", b56: "tentative", b57: "cancelled" };
-const PRIO_OUT:  Record<string, string> = { normal: "b55", low: "b56", high: "b57", urgent: "b58" };
-const PRIO_IN:   Record<string, string> = { b55: "normal", b56: "low", b57: "high", b58: "urgent" };
+// a64 Priority is a Number field holding the iCal PRIORITY integer (0-9).
+const PRIO_OUT:  Record<string, string> = { urgent: "1", high: "3", normal: "5", low: "9" };
+function prioIn(v: any): string {
+  const n = Number(v);
+  if (!Number.isFinite(n) || n === 0) return "normal";
+  if (n <= 2) return "urgent";
+  if (n <= 4) return "high";
+  if (n <= 6) return "normal";
+  return "low";
+}
 const SHOWAS_OUT: Record<string, string> = { busy: "b55", free: "b56", tentative: "b57", oof: "b58" };
 const SHOWAS_IN:  Record<string, string> = { b55: "busy", b56: "free", b57: "tentative", b58: "oof" };
 const VIS_OUT: Record<string, string> = { default: "b55", public: "b56", private: "b57", confidential: "b58" };
 const VIS_IN:  Record<string, string> = { b55: "default", b56: "public", b57: "private", b58: "confidential" };
+// a60 "Custom event type" is a Radio with FOUR opaque codes only
+// (b55 Medicine schedule | b56 Health checkin | b57 Habit | b58 todo).
+// The UI has a richer type list, so the precise UI type is kept in a89 Tags
+// as `type:<uiType>` and the radio holds the closest Bible code.
+const EVTYPE_OUT: Record<string, string> = {
+  medicine: "b55", check_in: "b56", habit: "b57",
+};
+const EVTYPE_IN: Record<string, CalendarEventType> = {
+  b55: "medicine", b56: "check_in", b57: "personal", b58: "task",
+};
+function encodeEventType(t?: string): string {
+  return EVTYPE_OUT[String(t || "")] || "b58";
+}
+function typeTag(t?: string): string {
+  return t ? `type:${t}` : "";
+}
+function decodeEventType(raw: any, tags: any): CalendarEventType {
+  const tag = String(tags || "").split(",").map((x) => x.trim()).find((x) => x.startsWith("type:"));
+  if (tag) return tag.slice(5) as CalendarEventType;
+  const code = String(raw || "");
+  if (EVTYPE_IN[code]) return EVTYPE_IN[code];
+  return (code as CalendarEventType) || "personal";
+}
+
 const YESNO_OUT = (v: boolean | undefined): string => (v ? "b55" : "b56");
 const YESNO_IN  = (v: any): boolean => v === "b55" || v === true || v === 1 || v === "1" || v === "yes";
 
@@ -53,14 +85,13 @@ function mapEventFromWP(raw: any): CalendarEvent {
     start_at: raw.a57 ?? raw.cct_created ?? "",
     end_at: raw.a58 ?? "",
     all_day: YESNO_IN(raw.a59),
-    event_type: ((raw.a60 as CalendarEventType) || "personal"),
+    event_type: decodeEventType(raw.a60, raw.a89),
     location: raw.a61 ?? "",
     timezone: raw.a62 ?? undefined,
     status: ((STATUS_IN[raw.a63] || raw.a63 || "confirmed") as any),
-    priority: ((PRIO_IN[raw.a64] || raw.a64 || "normal") as any),
+    priority: (prioIn(raw.a64) as any),
     color: raw.a65 ?? "",
     rrule: raw.a66 ?? undefined,
-    rrule_until: raw.a67 ?? undefined,
     exdates: raw.a68 ?? undefined,
     show_as: ((SHOWAS_IN[raw.a71] || raw.a71 || "busy") as any),
     visibility: ((VIS_IN[raw.a72] || raw.a72 || "default") as any),
@@ -71,21 +102,29 @@ function mapEventFromWP(raw: any): CalendarEvent {
   };
 }
 
+/** JetEngine Datetime columns store `YYYY-MM-DD HH:mm:ss` local time. */
+function wpDateTime(v?: string): string {
+  if (!v) return "";
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return String(v).replace("T", " ").replace(/\..*$/, "");
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
 function mapEventToWP(e: Partial<CalendarEvent>): Record<string, any> {
   const b: Record<string, any> = {};
   if (e.title !== undefined) b.a55 = e.title;
   if (e.description !== undefined) b.a56 = e.description;
-  if (e.start_at !== undefined) b.a57 = e.start_at;
-  if (e.end_at !== undefined) b.a58 = e.end_at;
+  if (e.start_at !== undefined) b.a57 = wpDateTime(e.start_at);
+  if (e.end_at !== undefined) b.a58 = wpDateTime(e.end_at);
   if (e.all_day !== undefined) b.a59 = YESNO_OUT(e.all_day);
-  if (e.event_type !== undefined) b.a60 = e.event_type;
+  if (e.event_type !== undefined) { b.a60 = encodeEventType(e.event_type); b.a89 = typeTag(e.event_type); }
   if (e.location !== undefined) b.a61 = e.location;
   if (e.timezone !== undefined) b.a62 = e.timezone;
   if (e.status !== undefined) b.a63 = STATUS_OUT[e.status as string] ?? e.status;
-  if (e.priority !== undefined) b.a64 = PRIO_OUT[e.priority as string] ?? e.priority;
+  if (e.priority !== undefined) b.a64 = String(PRIO_OUT[e.priority as string] ?? e.priority);
   if (e.color !== undefined) b.a65 = e.color;
   if (e.rrule !== undefined) b.a66 = e.rrule;
-  if (e.rrule_until !== undefined) b.a67 = e.rrule_until;
   if (e.exdates !== undefined) b.a68 = e.exdates;
   if (e.show_as !== undefined) b.a71 = SHOWAS_OUT[e.show_as as string] ?? e.show_as;
   if (e.visibility !== undefined) b.a72 = VIS_OUT[e.visibility as string] ?? e.visibility;
