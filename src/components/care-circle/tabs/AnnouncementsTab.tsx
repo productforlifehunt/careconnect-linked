@@ -62,6 +62,8 @@ export function AnnouncementsTab({
                     scheduled_at: scheduledAt ? scheduledAt.replace("T", " ") + ":00" : null,
                     subgroupIds: visibility.subgroupIds,
                     visibilityUserIds: visibility.userIds,
+                    hiddenSubgroupIds: visibility.hiddenSubgroupIds,
+                    hiddenUserIds: visibility.hiddenUserIds,
                   },
                   {
                     onSuccess: () => {

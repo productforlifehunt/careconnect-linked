@@ -56,6 +56,8 @@ export function HomeTab({
         title: title || undefined,
         subgroupIds: visibility.subgroupIds,
         visibilityUserIds: visibility.userIds,
+                    hiddenSubgroupIds: visibility.hiddenSubgroupIds,
+                    hiddenUserIds: visibility.hiddenUserIds,
       },
       {
         onSuccess: () => {
