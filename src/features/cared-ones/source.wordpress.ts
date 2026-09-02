@@ -1,7 +1,7 @@
 import { wordpressFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { R } from "@/integrations/wp-schema";
-import { fetchWPUserProfile, fetchWPUsers } from "@/features/shared/wp-users";
+import { fetchWPUserProfile } from "@/features/shared/wp-users";
 
 const REL_USER_CARED_ONE = R.userCaredOnes;
 
