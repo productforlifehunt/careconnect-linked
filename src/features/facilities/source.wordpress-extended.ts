@@ -146,29 +146,18 @@ export async function getMyFacilityPermissionWordPress(facilityId: string): Prom
   } catch { return { canEdit: false, membership: null }; }
 }
 
-// ─── Facility Review Summaries (CCT 65 review via REL 66) ──
+// ─── Facility Review Summaries ─────────────────────────────
+// The dictionary defines review parents for Shop (REL 144), care provider users
+// (REL 264) and nicotine products (REL 145) only — there is NO facility -> review
+// relation. So facilities have no ratings, and we must NOT invent them from
+// Dokan store reviews or WordPress native comments. Returns zero counts so the
+// UI renders "New" instead of a fabricated score.
 export async function fetchFacilityReviewSummariesWordPress(facilityIds: string[]): Promise<Record<string, { average: number | null; count: number }>> {
   const result: Record<string, { average: number | null; count: number }> = {};
   facilityIds.forEach((id) => { result[id] = { average: null, count: 0 }; });
-  try {
-    const { listWordPressFeature } = await import("@/features/shared/wordpress-adapter");
-    for (const fid of facilityIds) {
-      try {
-        const numericId = parseInt(String(fid).replace("wp-", ""), 10);
-        if (isNaN(numericId)) continue;
-        const reviews = await listWordPressFeature<any[]>("reviews", { params: { post: numericId, per_page: 100 } });
-        if (Array.isArray(reviews) && reviews.length > 0) {
-          const ratings = reviews.map((r: any) => Number(r.rating || r.acf?.rating || 0)).filter(n => n > 0);
-          result[fid] = {
-            average: ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : null,
-            count: ratings.length,
-          };
-        }
-      } catch { /* skip individual */ }
-    }
-  } catch { /* adapter unavailable */ }
   return result;
 }
+
 
 // ─── Facility Ownership Claims (CCT 288 + Relation 291) ─────
 // Dictionary CCT 288 "Ownership claim": a55 claim (Text), a56 proof (Gallery),
