@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -32,6 +32,7 @@ import { useTranslation } from "react-i18next";
 
 // Sub-components
 import { EditPostDialog, AddCaredOneDialog } from "@/components/care-circle/GroupDialogs";
+import { GroupTabsBar } from "@/components/care-circle/GroupTabsBar";
 import { HomeTab } from "@/components/care-circle/tabs/HomeTab";
 import { CalendarTab } from "@/components/care-circle/tabs/CalendarTab";
 import { AnnouncementsTab } from "@/components/care-circle/tabs/AnnouncementsTab";
@@ -255,35 +256,29 @@ export default function CareCircle() {
         </div>
       </div>
 
-      {/* Makes it unmistakable which group the tabs below apply to. */}
-      {activeGroup && (
-        <div className="mb-4 rounded-xl border border-border bg-card px-4 py-3">
-          <p className="text-xs text-muted-foreground">{isCN ? "当前查看" : "Currently viewing"}</p>
-          <h2 className="truncate text-lg font-semibold text-foreground">{activeGroup.name}</h2>
-        </div>
-      )}
-
-
-
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="w-full pb-2">
-          <TabsList className="flex w-full flex-wrap justify-start h-auto gap-1 mb-1 px-1 py-1">
-            <TabsTrigger value="home" className="gap-1.5 text-xs"><Home className="h-3.5 w-3.5" /> {t("careCircle.home")}</TabsTrigger>
-            <TabsTrigger value="calendar" className="gap-1.5 text-xs"><CalendarDays className="h-3.5 w-3.5" /> {t("careCircle.calendar")}</TabsTrigger>
-            <TabsTrigger value="tasks" className="gap-1.5 text-xs"><ListTodo className="h-3.5 w-3.5" /> {t("careCircle.tasks")}</TabsTrigger>
-            <TabsTrigger value="location" className="gap-1.5 text-xs"><MapPin className="h-3.5 w-3.5" /> {isCN ? "被护理者位置" : "Cared One's Location"}</TabsTrigger>
-            <TabsTrigger value="messages" className="gap-1.5 text-xs"><MessageSquare className="h-3.5 w-3.5" /> {t("messages.messages")}</TabsTrigger>
-            <TabsTrigger value="announcements" className="gap-1.5 text-xs"><Megaphone className="h-3.5 w-3.5" /> {t("careCircle.announcements")}</TabsTrigger>
-            <TabsTrigger value="wishes" className="gap-1.5 text-xs"><Star className="h-3.5 w-3.5" /> {t("careCircle.wellWishes")}</TabsTrigger>
-            <TabsTrigger value="gallery" className="gap-1.5 text-xs"><Image className="h-3.5 w-3.5" /> {t("careCircle.gallery")}</TabsTrigger>
-            <TabsTrigger value="cared-ones" className="gap-1.5 text-xs"><Heart className="h-3.5 w-3.5" /> {isCN ? "群组被护理者" : `Group ${site.navLabels.caredOnes}`}</TabsTrigger>
-            <TabsTrigger value="members" className="gap-1.5 text-xs"><Users className="h-3.5 w-3.5" /> {t("careCircle.members")}</TabsTrigger>
-            <TabsTrigger value="invite" className="gap-1.5 text-xs"><UserPlus className="h-3.5 w-3.5" /> {isCN ? "邀请成员" : "Invite Members"}</TabsTrigger>
-            <TabsTrigger value="member-groups" className="gap-1.5 text-xs"><Tag className="h-3.5 w-3.5" /> {isCN ? "子群组" : "Member Groups"}</TabsTrigger>
-            {isAdmin && <TabsTrigger value="settings" className="gap-1.5 text-xs"><Settings className="h-3.5 w-3.5" /> {isCN ? "群组设置" : "Group Setting"}</TabsTrigger>}
-            <TabsTrigger value="help" className="gap-1.5 text-xs"><HelpCircle className="h-3.5 w-3.5" /> {isCN ? "使用指南与帮助" : "How to & Help"}</TabsTrigger>
-          </TabsList>
-        </div>
+        <GroupTabsBar
+          activeTab={activeTab}
+          onSelect={setActiveTab}
+          allLabel={isCN ? "全部标签" : "All tabs"}
+          tabs={[
+            { value: "home", label: t("careCircle.home"), icon: Home },
+            { value: "calendar", label: t("careCircle.calendar"), icon: CalendarDays },
+            { value: "tasks", label: t("careCircle.tasks"), icon: ListTodo },
+            { value: "location", label: isCN ? "被护理者位置" : "Cared One's Location", icon: MapPin },
+            { value: "messages", label: t("messages.messages"), icon: MessageSquare },
+            { value: "announcements", label: t("careCircle.announcements"), icon: Megaphone },
+            { value: "wishes", label: t("careCircle.wellWishes"), icon: Star },
+            { value: "gallery", label: t("careCircle.gallery"), icon: Image },
+            { value: "cared-ones", label: isCN ? "群组被护理者" : `Group ${site.navLabels.caredOnes}`, icon: Heart },
+            { value: "members", label: t("careCircle.members"), icon: Users },
+            { value: "invite", label: isCN ? "邀请成员" : "Invite Members", icon: UserPlus },
+            { value: "member-groups", label: isCN ? "子群组" : "Member Groups", icon: Tag },
+            ...(isAdmin ? [{ value: "settings", label: isCN ? "群组设置" : "Group Setting", icon: Settings }] : []),
+            { value: "help", label: isCN ? "使用指南与帮助" : "How to & Help", icon: HelpCircle },
+          ]}
+        />
+
 
 
         <TabsContent value="home" className="mt-4">
