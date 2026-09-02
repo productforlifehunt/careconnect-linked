@@ -5,13 +5,14 @@
  *
  *  REL 223 — 199. Care Group → Users (Many to Many)
  *    a55 care group's member display name          Text
- *    a56 care group's member types                 Checkbox { nothing special | owner | admin }
- *    a57 care group's member roles                 Checkbox { nothing special | cared one }
- *    a58 care group's member invitation status     Radio    { accepted | pending | declined }
+ *    a56 care group's member types                 Radio { nothing special | owner | admin }
+ *    a57 care group's member roles                 Radio { nothing special | cared one }
+ *    a58 care group's member invitation status      Radio { accepted | pending | declined }
  *
  *  REL 225 — 201. Care group's private member group → Users (Many to Many)
- *    a55 private member group member types             Checkbox { nothing special | owner | admin }
- *    a56 private member group member invitation status Radio    { accepted | pending | declined }
+ *    a55 private member group member types          Radio { nothing special | owner | admin }
+ *    (invitation status is deprecated by the dictionary — subgroup members are
+ *     always accepted, so nothing else is written here.)
  */
 import { WP } from "@/integrations/wp-schema";
 
@@ -34,7 +35,6 @@ const F223 = {
 // ─── REL 225 field codes ──────────────────────────────────────
 const F225 = {
   types: R225.f.CARE_GROUP_S_PRIVATE_MEMBER_GROUP_MEMBER_TYPES,
-  status: R225.f.CARE_GROUP_S_PRIVATE_MEMBER_GROUP_MEMBER_INVITATION_STATUS,
 } as const;
 
 // ─── Option codes (dictionary-driven) ─────────────────────────
@@ -42,7 +42,6 @@ const TYPE_OPT = R223.opt.CARE_GROUP_S_MEMBER_TYPES;
 const ROLE_OPT = R223.opt.CARE_GROUP_S_MEMBER_ROLES;
 const STATUS_OPT = R223.opt.CARE_GROUP_S_MEMBER_INVITATION_STATUS;
 const SUB_TYPE_OPT = R225.opt.CARE_GROUP_S_PRIVATE_MEMBER_GROUP_MEMBER_TYPES;
-const SUB_STATUS_OPT = R225.opt.CARE_GROUP_S_PRIVATE_MEMBER_GROUP_MEMBER_INVITATION_STATUS;
 
 export type MemberType = "nothing special" | "owner" | "admin";
 export type MemberRole = "nothing special" | "cared one";
@@ -98,19 +97,6 @@ const SUB_TYPE_LABEL: Record<string, string> = {
   [SUB_TYPE_OPT.OWNER]: "owner",
   [SUB_TYPE_OPT.ADMIN]: "admin",
 };
-const SUB_STATUS_CODE: Record<string, string> = {
-  accepted: SUB_STATUS_OPT.ACCEPTED,
-  active: SUB_STATUS_OPT.ACCEPTED,
-  pending: SUB_STATUS_OPT.PENDING,
-  invited: SUB_STATUS_OPT.PENDING,
-  declined: SUB_STATUS_OPT.DECLINED,
-  rejected: SUB_STATUS_OPT.DECLINED,
-};
-const SUB_STATUS_LABEL: Record<string, string> = {
-  [SUB_STATUS_OPT.ACCEPTED]: "accepted",
-  [SUB_STATUS_OPT.PENDING]: "pending",
-  [SUB_STATUS_OPT.DECLINED]: "declined",
-};
 
 // ─── Back-compat aliases (older imports) ──────────────────────
 export const REL72_TYPE_CODE = MEMBER_TYPE_CODE;
@@ -120,22 +106,26 @@ export const REL72_ROLE_LABEL = MEMBER_ROLE_LABEL;
 export const REL72_STATUS_CODE = INVITATION_STATUS_CODE;
 export const REL72_STATUS_LABEL = INVITATION_STATUS_LABEL;
 
-/**
- * Bible field types: REL 223 a56/a57/a58 and REL 225 a55/a56 are **Radio**
- * (single value). We therefore always write ONE code, and decode into a
- * one-element array so existing `.includes("owner")` call sites keep working.
- */
 const TYPE_PRIORITY = ["owner", "admin", "nothing special"];
 const ROLE_PRIORITY = ["cared one", "nothing special"];
 
+/**
+ * Meta values can come back as an array, a plain code, a comma list, or a
+ * PHP-serialized array (rows written before these fields became Radio).
+ * All shapes reduce to the list of `bNN` codes they contain.
+ */
+function parseCodes(value: unknown): string[] {
+  if (value == null) return [];
+  if (Array.isArray(value)) return value.map(String).map((s) => s.trim()).filter(Boolean);
+  const s = String(value).trim();
+  if (!s) return [];
+  if (/^a:\d+:\{/.test(s)) return Array.from(s.matchAll(/"(b\d+)"/g)).map((m) => m[1]);
+  return s.split(",").map((x) => x.trim()).filter(Boolean);
+}
+
 function pickCode(value: unknown, map: Record<string, string>, priority: string[], fallback: string): string {
-  const list = (Array.isArray(value)
-    ? value.map(String)
-    : typeof value === "string"
-      ? value.split(",")
-      : []
-  ).map((s) => s.trim()).filter(Boolean);
-  const codes = list.map((v) => (/^b\d+$/.test(v) ? v : (map[v.toLowerCase()] || map[v] || "")))
+  const codes = parseCodes(value)
+    .map((v) => (/^b\d+$/.test(v) ? v : (map[v.toLowerCase()] || map[v] || "")))
     .filter((v) => /^b\d+$/.test(v));
   if (codes.length === 0) return fallback;
   for (const label of priority) {
@@ -145,17 +135,25 @@ function pickCode(value: unknown, map: Record<string, string>, priority: string[
   return codes[0];
 }
 
-function decodeSingle(value: unknown, labelMap: Record<string, string>): string[] {
-  const raw = Array.isArray(value) ? value[0] : value;
-  const s = raw == null ? "" : String(raw).trim();
-  if (!s) return [];
-  return [labelMap[s] || s];
+/**
+ * Radio fields hold one value; decoding returns a one-element array so
+ * existing `.includes("owner")` call sites keep working. Legacy serialized
+ * rows may hold several codes — the highest-privilege one wins.
+ */
+function decodeSingle(value: unknown, labelMap: Record<string, string>, priority: string[]): string[] {
+  const codes = parseCodes(value);
+  if (codes.length === 0) return [];
+  for (const label of priority) {
+    const code = Object.keys(labelMap).find((c) => labelMap[c] === label);
+    if (code && codes.includes(code)) return [label];
+  }
+  return [labelMap[codes[0]] || codes[0]];
 }
 
 function pickLabel(value: unknown, labelMap: Record<string, string>, fallback: string): string {
-  if (value == null || value === "") return fallback;
-  const s = String(Array.isArray(value) ? value[0] : value);
-  return labelMap[s] || s;
+  const codes = parseCodes(value);
+  if (codes.length === 0) return fallback;
+  return labelMap[codes[0]] || codes[0];
 }
 
 // ─── REL 223 encode / decode ──────────────────────────────────
@@ -173,11 +171,9 @@ export function encodeRel72Meta(input: Rel72MetaInput = {}): Record<string, any>
     // Never invent a name: the display name is the member's own app name
     // (CCT 151 a556 / a557). Empty means "not set yet", not "Member".
     [F223.displayName]: input.displayName ?? "",
-    // a56 / a57 are Checkbox fields in JetEngine — they must be written as
-    // arrays. Sending a bare string makes the relation save fatal (HTTP 500)
-    // after the text field is stored, which silently dropped role + status.
-    [F223.types]: [type],
-    [F223.roles]: [role],
+    // a56 / a57 / a58 are Radio fields — exactly one code each.
+    [F223.types]: type,
+    [F223.roles]: role,
     [F223.status]: INVITATION_STATUS_CODE[input.invitationStatus || "accepted"] || STATUS_OPT.ACCEPTED,
   };
 }
@@ -192,48 +188,29 @@ export interface Rel72MetaDecoded {
 export function decodeRel72Meta(meta: any): Rel72MetaDecoded {
   const m = meta || {};
   return {
-    displayName: m[F223.displayName] || m.care_groups_member_display_name_ || "",
-    memberTypes: decodeSingle(m[F223.types] ?? m.care_groups_member_types, MEMBER_TYPE_LABEL),
-    memberRoles: decodeSingle(m[F223.roles] ?? m.care_groups_member_roles, MEMBER_ROLE_LABEL),
-    invitationStatus: pickLabel(
-      m[F223.status] ?? m.care_groups_member_invitation_status,
-      INVITATION_STATUS_LABEL,
-      "accepted",
-    ) as InvitationStatus,
+    displayName: m[F223.displayName] || "",
+    memberTypes: decodeSingle(m[F223.types], MEMBER_TYPE_LABEL, TYPE_PRIORITY),
+    memberRoles: decodeSingle(m[F223.roles], MEMBER_ROLE_LABEL, ROLE_PRIORITY),
+    invitationStatus: pickLabel(m[F223.status], INVITATION_STATUS_LABEL, "accepted") as InvitationStatus,
   };
 }
 
 // ─── REL 225 encode / decode ──────────────────────────────────
 export interface Rel75MetaInput {
   types?: string[];
-  status?: InvitationStatus;
 }
 
 export function encodeRel75Meta(input: Rel75MetaInput = {}): Record<string, any> {
   const type = pickCode(input.types, SUB_TYPE_CODE, TYPE_PRIORITY, SUB_TYPE_OPT.NOTHING_SPECIAL);
-  return {
-    // a55 is a Checkbox field — always an array (see encodeRel72Meta).
-    [F225.types]: [type],
-    [F225.status]: SUB_STATUS_CODE[input.status || "accepted"] || SUB_STATUS_OPT.ACCEPTED,
-  };
+  // a55 is a Radio field — one code. Invitation status is deprecated.
+  return { [F225.types]: type };
 }
 
 export interface Rel75MetaDecoded {
   types: string[];                     // readable labels
-  status: InvitationStatus;
 }
 
 export function decodeRel75Meta(meta: any): Rel75MetaDecoded {
   const m = meta || {};
-  return {
-    types: decodeSingle(
-      m[F225.types] ?? m.care_group_s_private_member_group_member_types,
-      SUB_TYPE_LABEL,
-    ),
-    status: pickLabel(
-      m[F225.status] ?? m.care_group_s_private_member_group_member_invitation_status,
-      SUB_STATUS_LABEL,
-      "accepted",
-    ) as InvitationStatus,
-  };
+  return { types: decodeSingle(m[F225.types], SUB_TYPE_LABEL, TYPE_PRIORITY) };
 }
