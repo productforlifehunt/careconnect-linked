@@ -314,13 +314,24 @@ export async function fetchConversationsWordPress(currentUserId?: string): Promi
 
 export async function fetchDirectMessagesWordPress(conversationId: string): Promise<any[]> {
   try {
-    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_CONV_MESSAGE}/children/${numId(conversationId)}`);
+    // Both halves leave at once: the relation rows (which messages belong to
+    // this conversation) and one bulk message read. No stage-two waterfall and
+    // no request-per-message N+1.
+    const [rels, bulk] = await Promise.all([
+      wordpressFetch<any[]>(`jet-rel/${REL_CONV_MESSAGE}/children/${numId(conversationId)}`),
+      wordpressCCTFetch<any[]>(MSG, { params: { _limit: 500, _orderby: "cct_created", _order: "desc" } }),
+    ]);
     if (!Array.isArray(rels) || rels.length === 0) return [];
     const messageIds = rels.map((r: any) => String(r.child_object_id)).filter(Boolean);
-    const msgs = await Promise.all(messageIds.map(async (mid) => {
-      try { return await wordpressCCTFetch<any>(MSG, { id: mid }); }
-      catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
-    }));
+    const byId = new Map<string, any>();
+    for (const m of Array.isArray(bulk) ? bulk : []) byId.set(String(m.id ?? m._ID), m);
+    const missing = messageIds.filter((id) => !byId.has(id));
+    const fetched = await Promise.all(
+      missing.map((mid) => wordpressCCTFetch<any>(MSG, { id: mid })),
+    );
+    for (const m of fetched) if (m) byId.set(String(m.id ?? m._ID), m);
+    const msgs = messageIds.map((id) => byId.get(id)).filter(Boolean);
+
     return (msgs.filter(Boolean) as any[])
       .map((m: any) => ({
         id: String(m.id || m._ID),
