@@ -663,6 +663,55 @@ serve(async (req) => {
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
+    } else if (selectedEngine === "lovable") {
+      // ─── Built-in Lovable AI voice (no third-party key required) ───
+      const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+      if (!LOVABLE_API_KEY) {
+        throw new Error("LOVABLE_API_KEY is not configured");
+      }
+      resolvedVoice = voice && /^[A-Z][a-z]+$/.test(voice) ? voice : "Kore";
+      providerLabel = "lovable-gemini-tts";
+
+      const ttsResp = await fetch("https://ai.gateway.lovable.dev/v1/audio/speech", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash-tts",
+          contents: [{ role: "user", parts: [{ text: cleanText }] }],
+          generationConfig: {
+            responseModalities: ["AUDIO"],
+            speechConfig: {
+              voiceConfig: { prebuiltVoiceConfig: { voiceName: resolvedVoice } },
+            },
+          },
+        }),
+      });
+
+      if (!ttsResp.ok) {
+        const errText = await ttsResp.text();
+        console.error("lovable tts error:", ttsResp.status, errText);
+        return new Response(
+          JSON.stringify({ error: "Voice is temporarily unavailable. Please try again." }),
+          { status: ttsResp.status === 429 ? 429 : 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
+      const wavBuf = await ttsResp.arrayBuffer();
+      const audioBase64 = await arrayBufferToBase64(wavBuf);
+      return new Response(
+        JSON.stringify({
+          audio: audioBase64,
+          transcript: cleanText,
+          format: "wav",
+          voice: resolvedVoice,
+          provider: providerLabel,
+          engine: selectedEngine,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     } else {
       // ─── SiliconFlow / CosyVoice2 ───
       const SILICONFLOW_API_KEY = Deno.env.get("SILICONFLOW_API_KEY");
