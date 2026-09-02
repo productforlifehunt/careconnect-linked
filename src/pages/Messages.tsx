@@ -137,6 +137,25 @@ export default function Messages({ embedded = false }: { embedded?: boolean } = 
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Drag a photo straight onto the conversation — same upload path as the clip.
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer?.files?.[0];
+    if (!file) return;
+    try {
+      const { uploadWPMedia } = await import("@/lib/wp-media");
+      const media = await uploadWPMedia(file);
+      setPendingAttachment({ url: media.url, type: media.isImage ? "image" : "file", name: media.name || file.name });
+    } catch {
+      toast({
+        title: Z("没能添加这个文件", "Couldn't add that file"),
+        description: Z("请再试一次，或选择小一点的照片。", "Please try again, or pick a smaller photo."),
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleSend = () => {
     // Only the conversation is required: recipients are resolved from the
     // conversation's member relation, so group chats and conversations with an
