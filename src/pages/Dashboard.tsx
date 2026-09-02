@@ -192,7 +192,7 @@ export default function Dashboard() {
           </Tabs>
         )}
       </section>
-    ) : null,
+    ) : caredOnesLoading ? slotSkeleton(t("nav.myLovedOnes") || site.navLabels.caredOnes, "h-40") : null,
 
     "stats": (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
