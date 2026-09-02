@@ -66,13 +66,12 @@ async function fetchProviderReviewRows(providerUserId: number): Promise<any[]> {
 
 async function resolveAuthorName(authorId: number): Promise<string> {
   if (!authorId) return "";
-  const user = await wordpressFetch<any>(`wp/v2/users/${authorId}`).catch(() => null);
-  if (user?.name) return String(user.name);
-  // wp/v2/users is closed to non-admin callers, so fall back to the
-  // server-side name lookup used elsewhere for chat counterparts.
-  const rows = await lookupUserNames([authorId]).catch(() => []);
-  return String(rows.find((r) => Number(r.id) === authorId)?.name || "");
+  // Display name comes from the app profile CCT (joined by relation 152) —
+  // read directly from WordPress, no edge function in the path.
+  const profile = await fetchWPUserPublicProfile(authorId);
+  return profile.full_name;
 }
+
 
 export async function fetchEntityReviewsWordPress(
   entityId?: string,
