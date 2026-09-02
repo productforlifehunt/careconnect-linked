@@ -78,12 +78,10 @@ export async function fetchEntityReviewsWordPress(
   entityId?: string,
   entityType?: string,
 ): Promise<EntityReview[]> {
-  const providerUserId = numericId(entityId);
-  if (!providerUserId) return [];
-  // Facilities have no review relation in the data model.
-  if (entityType === "facility") return [];
+  const parentId = numericId(entityId);
+  if (!parentId) return [];
 
-  const rows = await fetchProviderReviewRows(providerUserId);
+  const rows = await fetchReviewRows(parentId, relForEntity(entityType));
   if (rows.length === 0) return [];
 
   const authorNames = new Map<number, string>();
