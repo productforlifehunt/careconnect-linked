@@ -674,11 +674,14 @@ export function useCareGroupPosts(groupId: string | null, type?: string) {
 export function useCreateGroupPost() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (post: { group_id: string; content: string; type?: string; title?: string; scheduled_at?: string | null; subgroupIds?: number[]; visibilityUserIds?: number[] }) => {
-      const { subgroupIds, visibilityUserIds, ...payload } = post;
+    mutationFn: async (post: { group_id: string; content: string; type?: string; title?: string; scheduled_at?: string | null; subgroupIds?: number[]; visibilityUserIds?: number[]; hiddenSubgroupIds?: number[]; hiddenUserIds?: number[] }) => {
+      const { subgroupIds, visibilityUserIds, hiddenSubgroupIds, hiddenUserIds, ...payload } = post;
       const newId = await createGroupPostWordPress(payload);
-      if (newId && ((subgroupIds?.length ?? 0) > 0 || (visibilityUserIds?.length ?? 0) > 0)) {
-        await setPostVisibility(newId, subgroupIds || [], visibilityUserIds || []);
+      const hasVisibility =
+        (subgroupIds?.length ?? 0) > 0 || (visibilityUserIds?.length ?? 0) > 0 ||
+        (hiddenSubgroupIds?.length ?? 0) > 0 || (hiddenUserIds?.length ?? 0) > 0;
+      if (newId && hasVisibility) {
+        await setPostVisibility(newId, subgroupIds || [], visibilityUserIds || [], hiddenSubgroupIds || [], hiddenUserIds || []);
       }
       return newId;
     },
@@ -689,10 +692,10 @@ export function useCreateGroupPost() {
 export function useUpdateGroupPost() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, subgroupIds, visibilityUserIds, ...updates }: { id: string; content?: string; title?: string; is_pinned?: boolean; scheduled_at?: string | null; subgroupIds?: number[]; visibilityUserIds?: number[] }) => {
+    mutationFn: async ({ id, subgroupIds, visibilityUserIds, hiddenSubgroupIds, hiddenUserIds, ...updates }: { id: string; content?: string; title?: string; is_pinned?: boolean; scheduled_at?: string | null; subgroupIds?: number[]; visibilityUserIds?: number[]; hiddenSubgroupIds?: number[]; hiddenUserIds?: number[] }) => {
       await updateGroupPostWordPress(id, updates);
-      if (subgroupIds || visibilityUserIds) {
-        await setPostVisibility(id, subgroupIds || [], visibilityUserIds || []);
+      if (subgroupIds || visibilityUserIds || hiddenSubgroupIds || hiddenUserIds) {
+        await setPostVisibility(id, subgroupIds || [], visibilityUserIds || [], hiddenSubgroupIds || [], hiddenUserIds || []);
       }
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["careGroupPosts"] }); },
