@@ -27,9 +27,7 @@ import {
   fetchMemberCategoriesWordPress, createMemberCategoryWordPress, updateMemberCategoryWordPress, deleteMemberCategoryWordPress,
   fetchSubgroupMembersWordPress, fetchSubgroupMemberRecordsWordPress,
   addMemberToSubgroupWordPress, removeMemberFromSubgroupWordPress,
-  requestJoinSubgroupWordPress, approveSubgroupMemberWordPress, declineSubgroupMemberWordPress,
-  updateSubgroupMemberRoleWordPress,
-  fetchSubgroupPendingRequestsWordPress, fetchMyPendingSubgroupRequestsWordPress,
+  updateSubgroupMemberRoleWordPress, joinGroupByJoinCodeWordPress, previewGroupInviteWordPress,
   searchProfilesWordPress, addCaredOneToGroupWordPress, leaveGroupWordPress,
   fetchGroupInvitesWordPress, createGroupInviteWordPress, updateGroupInviteWordPress, deleteGroupInviteWordPress,
 } from "@/features/care-groups/source.wordpress-extended";
