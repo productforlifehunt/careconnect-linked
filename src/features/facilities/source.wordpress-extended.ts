@@ -1,5 +1,6 @@
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 import { R, T, WP } from "@/integrations/wp-schema";
+import { fetchRatingSummary } from "@/features/reviews/source.wordpress";
 
 /**
  * Care Facility extended ops.
