@@ -142,13 +142,17 @@ export default function Messages({ embedded = false }: { embedded?: boolean } = 
     // conversation's member relation, so group chats and conversations with an
     // unresolved counterpart can still be replied to.
     if ((!newMessage.trim() && !pendingAttachment) || !selectedConvoId) return;
+    // The chat message CCT has no attachment column, so the uploaded media URL
+    // travels in the message body; the bubble renders it as a photo/file card.
+    const body = [newMessage.trim(), pendingAttachment?.url].filter(Boolean).join("\n");
     sendMessage.mutate({
       conversationId: selectedConvoId,
-      content: newMessage || (pendingAttachment ? (pendingAttachment.type === "image" ? "📷 Image" : "📎 File") : ""),
+      content: body,
       receiverUserId: selectedOtherUser?.id || undefined,
     });
     setNewMessage("");
     setPendingAttachment(null);
+
   };
 
   const handleSendQuote = async (quote: QuoteData) => {
