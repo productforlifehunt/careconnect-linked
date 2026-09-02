@@ -358,7 +358,7 @@ export function TasksTab({
               </div>
 
               {!isEditing && (
-                <div><Label>{Z("可见范围", "Visibility")}</Label><VisibilityPicker value={visibility} onChange={setVisibility} memberCategories={memberCategories} members={members} /></div>
+                <div><Label>{Z("可见范围", "Visibility")}</Label><VisibilityPicker value={visibility} onChange={setVisibility} memberCategories={memberCategories} members={members} allowExclude={false} /></div>
               )}
               <Button variant="coral" className="w-full" onClick={submitForm} disabled={createTask.isPending || updateTaskStatus.isPending || !form.title.trim()}>
                 {(createTask.isPending || updateTaskStatus.isPending) ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}

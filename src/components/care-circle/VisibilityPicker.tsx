@@ -22,6 +22,8 @@ interface VisibilityPickerProps {
   onChange: (next: VisibilityValue) => void;
   memberCategories?: Array<{ id: string; name: string; color?: string | null }>;
   members?: Array<{ user_id?: string; id?: string; display_name?: string | null; profile?: { full_name?: string | null; avatar_url?: string | null } }>;
+  /** Show the "hide from" mode (only supported where exclusion links exist). */
+  allowExclude?: boolean;
 }
 
 function toNum(id: string | number | undefined | null): number {
@@ -36,7 +38,7 @@ function toggle(list: number[], id: number): number[] {
  * VisibilityPicker — choose who a post/task is visible to, or who it is hidden from.
  * Empty selection = visible to everyone in the group.
  */
-export function VisibilityPicker({ value, onChange, memberCategories = [], members = [] }: VisibilityPickerProps) {
+export function VisibilityPicker({ value, onChange, memberCategories = [], members = [], allowExclude = true }: VisibilityPickerProps) {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"include" | "exclude">("include");
   const { i18n } = useTranslation();
@@ -88,7 +90,7 @@ export function VisibilityPicker({ value, onChange, memberCategories = [], membe
           <p className="text-[11px] text-muted-foreground mt-0.5">
             {Z("留空则对整个群组可见。", "Leave empty to share with the whole group.")}
           </p>
-          <div className="mt-2 grid grid-cols-2 gap-1 rounded-md bg-muted p-0.5">
+          {allowExclude && (<div className="mt-2 grid grid-cols-2 gap-1 rounded-md bg-muted p-0.5">
             <button
               type="button"
               onClick={() => setMode("include")}
@@ -105,7 +107,7 @@ export function VisibilityPicker({ value, onChange, memberCategories = [], membe
               {Z("对这些人隐藏", "Hide from")}
               {excludeCount > 0 ? ` (${excludeCount})` : ""}
             </button>
-          </div>
+          </div>)}
         </div>
 
         <div className="max-h-80 overflow-y-auto">
