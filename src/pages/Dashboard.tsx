@@ -37,8 +37,8 @@ export default function Dashboard() {
   const { data: bookings, isLoading: bookingsLoading } = useBookings();
   const { data: tasks, isLoading: tasksLoading } = useCareTasks();
   const { data: stats } = useDashboardStats();
-  const { data: caredOnes } = useUserCaredOnes();
-  const { data: communityPosts } = usePosts("care_community_post");
+  const { data: caredOnes, isLoading: caredOnesLoading } = useUserCaredOnes();
+  const { data: communityPosts, isLoading: postsLoading } = usePosts("care_community_post");
 
   const isChallenged = site.family === "challenged";
   const isLovedOne = user?.general_user_role?.includes("cared one") === true;
