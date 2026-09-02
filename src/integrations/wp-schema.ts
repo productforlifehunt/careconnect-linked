@@ -1572,8 +1572,12 @@ export const R = {
   careGroupPosts: 226,
   /** 227. One 202. related not too special posts of one care group can have many 201. related care group's private member groups that it's visible to */
   careGroupPostPrivateGroups: 227,
+  /** 293. One 202 related not too special posts of one care group can have many related 201 care group's private member groups that it's not visible to */
+  careGroupPostHiddenPrivateGroups: 293,
   /** 228. One related not too special posts of one care group can have many related users that it's visible to */
   careGroupPostMentionedUsers: 228,
+  /** 292. One related not too special posts of one care group can have many related users that it's visible to */
+  careGroupPostHiddenUsers: 292,
   /** 229. One 202 related not too special posts of one care group can have many related 141. comments */
   careGroupPostComments: 229,
   /** 230. One care group can many related 203. care group galleries */
