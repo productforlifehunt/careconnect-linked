@@ -23,8 +23,7 @@ export type WordPressFeatureKey =
   | "generic_posts"
   | "generic_post"
   | "categories"
-  | "reviews"
-  | "review_create";
+;
 
 export interface WordPressSchemaEntry<TResponse = unknown, TApp = unknown, TInput = unknown> {
   status: WordPressSchemaStatus;
