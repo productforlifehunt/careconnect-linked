@@ -70,8 +70,8 @@ export function buildWPHeaders(
   contentType?: string,
   options?: { forceEdge?: boolean },
 ): Record<string, string> {
-  const server = getActiveServer();
   const headers: Record<string, string> = {};
+
   if (contentType) headers['Content-Type'] = contentType;
   if (token) headers['Authorization'] = `Bearer ${token}`;
   
