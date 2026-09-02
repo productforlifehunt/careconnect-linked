@@ -11,6 +11,26 @@
  */
 import i18n from "i18next";
 import { getStoredWPUser } from "@/services/wp-auth";
+import { fetchMyAppUserName } from "@/features/profile/app-user-name";
+
+/**
+ * The actor's name comes ONLY from this app's own column on CCT 151.
+ * The shared WordPress login / display name is never a fallback: when the
+ * profile name is empty the message simply omits the name.
+ */
+let actorNameCache: string | null = null;
+async function actorAppName(): Promise<string> {
+  if (actorNameCache !== null) return actorNameCache;
+  try {
+    actorNameCache = await fetchMyAppUserName();
+  } catch {
+    actorNameCache = "";
+  }
+  return actorNameCache;
+}
+export function clearActorNameCache() {
+  actorNameCache = null;
+}
 
 /** Recipients read notifications in the language of the app they are using. */
 const Z = (zh: string, en: string) => ((i18n.language || "").startsWith("zh") ? zh : en);
@@ -67,14 +87,12 @@ export function notifyNewMessage(
   conversationId: string,
   content: string,
 ) {
-  const stored = getStoredWPUser();
-  const who = stored?.user_display_name || stored?.user_login || Z("有人", "Someone");
-  return notifyUsers(recipientIds, {
+  return actorAppName().then((who) => notifyUsers(recipientIds, {
     type: "chat",
-    title: Z(`${who} 给你发来新消息`, `New message from ${who}`),
+    title: who ? Z(`${who} 给你发来新消息`, `New message from ${who}`) : Z("你有一条新消息", "You have a new message"),
     message: clip(content),
     action_url: `/messages?conversation=${conversationId}`,
-  });
+  }));
 }
 
 /** Care task assigned → notify each assignee. */
@@ -97,14 +115,14 @@ export function notifyJobApplication(
   jobTitle: string,
   jobId: string,
 ) {
-  const stored = getStoredWPUser();
-  const who = stored?.user_display_name || stored?.user_login || Z("一位护理者", "A caregiver");
-  return notifyUsers([posterId], {
+  return actorAppName().then((who) => notifyUsers([posterId], {
     type: "job",
     title: Z("有人应聘你的招聘", "New application for your job"),
-    message: Z(`${who} 应聘了「${clip(jobTitle, 80)}」`, `${who} applied to ${clip(jobTitle, 80)}`),
+    message: who
+      ? Z(`${who} 应聘了「${clip(jobTitle, 80)}」`, `${who} applied to ${clip(jobTitle, 80)}`)
+      : Z(`有人应聘了「${clip(jobTitle, 80)}」`, `Someone applied to ${clip(jobTitle, 80)}`),
     action_url: `/jobs?id=${jobId}`,
-  });
+  }));
 }
 
 /** Group announcement/post → notify group members. */
@@ -144,22 +162,28 @@ export function notifyBookingStatus(
   });
 }
 
-const actorName = () => {
-  const stored = getStoredWPUser();
-  return stored?.user_display_name || stored?.user_login || "Someone";
-};
+/**
+ * Actor sentence builder. `who` is the CCT 151 app name, or "" when the user
+ * has not set it — in that case the sentence drops the name instead of
+ * inventing one from the shared WordPress account.
+ */
+function withActor<T>(build: (who: string) => T): Promise<T> {
+  return actorAppName().then((who) => build(who));
+}
 
 /** Group invitation created → notify the invited user. */
 export function notifyGroupInvite(
   inviteeId: string | number | null | undefined,
   groupName: string,
 ) {
-  return notifyUsers([inviteeId], {
+  return withActor((who) => notifyUsers([inviteeId], {
     type: "system",
     title: Z("有人邀请你加入护理小组", "You were invited to a care group"),
-    message: Z(`${actorName()} 邀请你加入「${clip(groupName, 80)}」。`, `${actorName()} invited you to join ${clip(groupName, 80)}.`),
+    message: who
+      ? Z(`${who} 邀请你加入「${clip(groupName, 80)}」。`, `${who} invited you to join ${clip(groupName, 80)}.`)
+      : Z(`你被邀请加入「${clip(groupName, 80)}」。`, `You were invited to join ${clip(groupName, 80)}.`),
     action_url: `/care-circle?tab=invitations`,
-  });
+  }));
 }
 
 /** Invitation accepted / declined → notify the group's owners and admins. */
@@ -169,12 +193,14 @@ export function notifyInviteResponse(
   groupName: string,
   accepted: boolean,
 ) {
-  return notifyUsers(adminIds, {
+  return withActor((who) => notifyUsers(adminIds, {
     type: "system",
     title: accepted ? Z("护理小组邀请已被接受", "Care group invitation accepted") : Z("护理小组邀请被拒绝", "Care group invitation declined"),
-    message: Z(`${actorName()} ${accepted ? "加入了" : "拒绝加入"}「${clip(groupName, 80)}」。`, `${actorName()} ${accepted ? "joined" : "declined to join"} ${clip(groupName, 80)}.`),
+    message: who
+      ? Z(`${who} ${accepted ? "加入了" : "拒绝加入"}「${clip(groupName, 80)}」。`, `${who} ${accepted ? "joined" : "declined to join"} ${clip(groupName, 80)}.`)
+      : Z(`有人${accepted ? "加入了" : "拒绝加入"}「${clip(groupName, 80)}」。`, `Someone ${accepted ? "joined" : "declined to join"} ${clip(groupName, 80)}.`),
     action_url: `/care-circle?group=${groupId}&tab=members`,
-  });
+  }));
 }
 
 /** Member role changed → notify that member. */
@@ -183,12 +209,14 @@ export function notifyMemberRoleChanged(
   groupId: string,
   roleLabel: string,
 ) {
-  return notifyUsers([memberId], {
+  return withActor((who) => notifyUsers([memberId], {
     type: "system",
     title: Z("你在护理小组里的身份变了", "Your care group role changed"),
-    message: Z(`${actorName()} 把你的身份设为「${clip(roleLabel, 60)}」。`, `${actorName()} set your role to ${clip(roleLabel, 60)}.`),
+    message: who
+      ? Z(`${who} 把你的身份设为「${clip(roleLabel, 60)}」。`, `${who} set your role to ${clip(roleLabel, 60)}.`)
+      : Z(`你的身份被设为「${clip(roleLabel, 60)}」。`, `Your role was set to ${clip(roleLabel, 60)}.`),
     action_url: `/care-circle?group=${groupId}&tab=members`,
-  });
+  }));
 }
 
 /** Member removed from a group → notify that member. */
@@ -196,12 +224,14 @@ export function notifyMemberRemoved(
   memberId: string | number | null | undefined,
   groupName: string,
 ) {
-  return notifyUsers([memberId], {
+  return withActor((who) => notifyUsers([memberId], {
     type: "system",
     title: Z("你已被移出护理小组", "You were removed from a care group"),
-    message: Z(`${actorName()} 把你从「${clip(groupName, 80)}」中移出。`, `${actorName()} removed you from ${clip(groupName, 80)}.`),
+    message: who
+      ? Z(`${who} 把你从「${clip(groupName, 80)}」中移出。`, `${who} removed you from ${clip(groupName, 80)}.`)
+      : Z(`你已被移出「${clip(groupName, 80)}」。`, `You were removed from ${clip(groupName, 80)}.`),
     action_url: `/care-circle`,
-  });
+  }));
 }
 
 /** Someone asked to join a sub-group → notify its owners/admins. */
@@ -209,12 +239,14 @@ export function notifySubgroupJoinRequest(
   approverIds: Array<string | number | null | undefined>,
   subgroupId: string,
 ) {
-  return notifyUsers(approverIds, {
+  return withActor((who) => notifyUsers(approverIds, {
     type: "system",
     title: Z("有人申请加入子小组", "New sub-group join request"),
-    message: Z(`${actorName()} 申请加入你的子小组。`, `${actorName()} asked to join your sub-group.`),
+    message: who
+      ? Z(`${who} 申请加入你的子小组。`, `${who} asked to join your sub-group.`)
+      : Z("有人申请加入你的子小组。", "Someone asked to join your sub-group."),
     action_url: `/care-circle?subgroup=${subgroupId}&tab=members`,
-  });
+  }));
 }
 
 /** Sub-group request approved → notify the requester. */
@@ -222,12 +254,14 @@ export function notifySubgroupApproved(
   userId: string | number | null | undefined,
   subgroupId: string,
 ) {
-  return notifyUsers([userId], {
+  return withActor((who) => notifyUsers([userId], {
     type: "system",
     title: Z("子小组申请已通过", "Sub-group request approved"),
-    message: Z(`${actorName()} 通过了你加入子小组的申请。`, `${actorName()} approved your request to join the sub-group.`),
+    message: who
+      ? Z(`${who} 通过了你加入子小组的申请。`, `${who} approved your request to join the sub-group.`)
+      : Z("你加入子小组的申请已通过。", "Your request to join the sub-group was approved."),
     action_url: `/care-circle?subgroup=${subgroupId}`,
-  });
+  }));
 }
 
 /** Task status changed → notify creator and the other assignees. */
@@ -236,11 +270,14 @@ export function notifyTaskStatusChanged(
   taskId: string,
   statusLabel: string,
 ) {
-  return notifyUsers(recipientIds, {
+  return withActor((who) => notifyUsers(recipientIds, {
     type: "task",
     title: Z("一项照护任务有更新", "A care task was updated"),
-    message: Z(`${actorName()} 把一项任务标记为「${clip(statusLabel, 60)}」。`, `${actorName()} marked a task as ${clip(statusLabel, 60)}.`),
+    message: who
+      ? Z(`${who} 把一项任务标记为「${clip(statusLabel, 60)}」。`, `${who} marked a task as ${clip(statusLabel, 60)}.`)
+      : Z(`一项任务被标记为「${clip(statusLabel, 60)}」。`, `A task was marked as ${clip(statusLabel, 60)}.`),
     action_url: `/care-circle?tab=tasks&id=${taskId}`,
-  });
+  }));
 }
+
 

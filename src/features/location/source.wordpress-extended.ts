@@ -8,6 +8,7 @@
  */
 
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
+import { fetchMyAppUserName } from "@/features/profile/app-user-name";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { T, R } from "@/integrations/wp-schema";
 import {
@@ -500,11 +501,13 @@ export async function sendLocationRequestWordPress(input: { caredOneId: string; 
   const storedUser = getStoredWPUser();
   if (!storedUser?.user_id) throw new Error("Not authenticated");
   {
+    // Name comes ONLY from CCT 151; no WordPress account name fallback.
+    const askerName = await fetchMyAppUserName().catch(() => "");
     await createNotificationWordPress({
       user_id: caredOneUserId,
       type: input.isEmergency ? "emergency_location_request" : "location_request",
       title: input.isEmergency ? "🚨 Emergency Location Request" : "📍 Location Request",
-      message: `${storedUser.user_display_name || "Someone"} ${input.isEmergency ? "urgently needs" : "is requesting"} your location.${input.message ? ` "${input.message}"` : ""}`,
+      message: `${askerName || "A care circle member"} ${input.isEmergency ? "urgently needs" : "is requesting"} your location.${input.message ? ` "${input.message}"` : ""}`,
       action_url: `/gps-tracking?request_from=${storedUser.user_id}`,
     });
   }

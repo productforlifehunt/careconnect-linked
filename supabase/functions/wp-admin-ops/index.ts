@@ -429,7 +429,16 @@ Deno.serve(async (req) => {
             parent_id: parentId,
             child_id: childIds,
             context: String(payload?.context || "parent"),
-            store_items_type: String(payload?.store_items_type || "replace"),
+            // JetEngine only understands these three. "delete"/"remove" are
+            // accepted by the endpoint but silently no-op, so they are rejected
+            // here instead of being forwarded as a fake success.
+            store_items_type: (() => {
+              const t = String(payload?.store_items_type || "replace");
+              if (!["update", "replace", "disconnect"].includes(t)) {
+                throw new Error(`Unsupported store_items_type "${t}" — use update, replace or disconnect`);
+              }
+              return t;
+            })(),
           }),
         });
         const body = await res.json().catch(() => null);

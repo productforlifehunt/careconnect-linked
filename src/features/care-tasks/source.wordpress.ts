@@ -295,7 +295,7 @@ export async function updateCareTaskWordPress(id: string, updates: Record<string
       const [{ notifyTaskStatusChanged }, task, rels] = await Promise.all([
         import("@/features/notifications/notify-events"),
         wordpressCCTFetch<any>(CCT_SLUG, { id }).catch(() => null),
-        wordpressFetch<any[]>(`jet-rel/${REL_TASK_ASSIGNEE}/children/${taskId}`).catch(() => []),
+        wordpressFetch<any[]>(`jet-rel/${REL_TASK_ASSIGNEE}/children/${taskId}`),
       ]);
       const recipients = [
         task?.cct_author_id ?? task?.author_id ?? null,

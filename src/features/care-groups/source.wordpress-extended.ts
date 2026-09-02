@@ -151,7 +151,7 @@ export async function createGroupPostWordPress(post: { group_id: string; content
   // Notify group members — non-blocking, never fails the post.
   if (groupId && postId) {
     try {
-      const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${groupId}`).catch(() => []);
+      const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${groupId}`);
       const memberIds = Array.isArray(rels) ? rels.map((r: any) => r.child_object_id).filter(Boolean) : [];
       const { notifyGroupPost } = await import("@/features/notifications/notify-events");
       await notifyGroupPost(
@@ -363,7 +363,7 @@ export async function updateMemberRoleWordPress(memberId: string, updates: any, 
   const normalizedGroupId = normalizeWpObjectId(groupId);
   const normalizedMemberId = normalizeWpObjectId(memberId);
   if (!normalizedGroupId || !normalizedMemberId) return;
-  const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${normalizedGroupId}`).catch(() => []);
+  const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${normalizedGroupId}`);
   const existing = (Array.isArray(rels) ? rels : []).find((r: any) => Number(r.child_object_id) === normalizedMemberId);
   const decoded = decodeRel72Meta(existing?.meta);
   const nextTypes = new Set(decoded.memberTypes.length ? decoded.memberTypes : ["nothing special"]);
@@ -533,7 +533,7 @@ export async function joinGroupByCodeWordPress(token: string, displayName?: stri
 
     // Resolve parent group via Rel 161
     const inviteIdNum = normalizeWpObjectId(match.id || match._ID);
-    const parents = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_INVITE}/parents/${inviteIdNum}`).catch(() => []);
+    const parents = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_INVITE}/parents/${inviteIdNum}`);
     const parentGroupId = Array.isArray(parents) && parents.length ? Number(parents[0].parent_object_id) : 0;
     if (!parentGroupId) throw new Error("This invite link is not connected to a group.");
 
@@ -551,7 +551,7 @@ export async function joinGroupByCodeWordPress(token: string, displayName?: stri
 
     const existingMembers = await wordpressFetch<any[]>(
       `jet-rel/${REL_GROUP_MEMBER}/children/${parentGroupId}`
-    ).catch(() => []);
+    );
     const alreadyMember = (Array.isArray(existingMembers) ? existingMembers : [])
       .some((r: any) => Number(r.child_object_id) === userId
         && decodeRel72Meta(r?.meta).invitationStatus === "accepted");
