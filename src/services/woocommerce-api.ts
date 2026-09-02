@@ -613,14 +613,26 @@ export async function getDokanVendorOrders(perPage = 50) {
 
 
 /** Orders the signed-in user placed as a client (read server-side, scoped). */
+// WooCommerce's /orders collection rejects a customer bearer token, so the
+// caller's own orders are read through the server-side helper (Woo keys stay
+// there). Sibling widgets asking within the same few seconds share one call.
+let myOrdersCache: { at: number; perPage: number; promise: Promise<any[]> } | null = null;
+
 export async function getMyCustomerOrders(perPage = 50) {
-  try {
-    const orders = await adminOp<any[]>('list_my_orders', { per_page: perPage });
-    return Array.isArray(orders) ? orders : [];
-  } catch {
-    return [];
+  const now = Date.now();
+  if (myOrdersCache && now - myOrdersCache.at < 5000 && myOrdersCache.perPage >= perPage) {
+    return myOrdersCache.promise;
   }
+  const promise = adminOp<any[]>('list_my_orders', { per_page: perPage }).then((orders) =>
+    Array.isArray(orders) ? orders : [],
+  );
+  myOrdersCache = { at: now, perPage, promise };
+  promise.catch(() => {
+    myOrdersCache = null;
+  });
+  return promise;
 }
+
 
 
 // ─── Dokan payout account, balance and withdrawals ─────────
