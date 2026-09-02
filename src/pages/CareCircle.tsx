@@ -244,7 +244,6 @@ export default function CareCircle() {
         </div>
       </div>
 
-      <GroupSettingsDialog myDisplayName={currentMember?.display_name || ""} open={settingsOpen} onOpenChange={setSettingsOpen} activeGroup={activeGroup} activeGroupId={activeGroupId} isOwner={!!isOwner} updateGroup={updateGroup} deleteGroup={deleteGroup} onDeleteSuccess={() => setSelectedGroupId(null)} onLeaveGroup={handleLeaveGroup} />
       <EditPostDialog post={editingPost} onClose={() => setEditingPost(null)} updatePost={updatePost} />
       <AddCaredOneDialog open={addCaredOneOpen} onOpenChange={setAddCaredOneOpen} activeGroupId={activeGroupId} />
 
@@ -257,20 +256,14 @@ export default function CareCircle() {
         </div>
       </div>
 
-      {/* Makes it unmistakable which group the tabs and settings below apply to. */}
+      {/* Makes it unmistakable which group the tabs below apply to. */}
       {activeGroup && (
-        <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3">
-          <div className="min-w-0">
-            <p className="text-xs text-muted-foreground">{isCN ? "当前查看" : "Currently viewing"}</p>
-            <h2 className="truncate text-lg font-semibold text-foreground">{activeGroup.name}</h2>
-          </div>
-          {isAdmin && (
-            <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)}>
-              <Settings className="h-4 w-4 mr-1" /> {isCN ? `设置“${activeGroup.name}”` : `Settings for “${activeGroup.name}”`}
-            </Button>
-          )}
+        <div className="mb-4 rounded-xl border border-border bg-card px-4 py-3">
+          <p className="text-xs text-muted-foreground">{isCN ? "当前查看" : "Currently viewing"}</p>
+          <h2 className="truncate text-lg font-semibold text-foreground">{activeGroup.name}</h2>
         </div>
       )}
+
 
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
