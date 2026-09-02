@@ -38,9 +38,6 @@ export function SubgroupCard({ subgroup, members, isAdmin, onDelete, currentUser
   const { data: records = [], isLoading } = useSubgroupMemberRecords(subgroup.id);
   const addMember = useAddMemberToSubgroup();
   const removeMember = useRemoveMemberFromSubgroup();
-  const approveMember = useApproveSubgroupMember();
-  const declineMember = useDeclineSubgroupMember();
-  const requestJoin = useRequestJoinSubgroup();
   const updateRole = useUpdateSubgroupMemberRole();
   const [pickerOpen, setPickerOpen] = useState(false);
   const updateSubgroup = useUpdateMemberCategory();
