@@ -22,6 +22,17 @@ if (typeof window !== "undefined") {
   window.addEventListener("wp-write", () => getCache.clear());
 }
 
+/** Endpoints that only work through the backend proxy for anonymous visitors. */
+const CREDENTIALED_GUEST_ENDPOINTS = [
+  /(^|\/)wc\/v3\//i,                       // catalog reads need the consumer keys
+  /(^|\/)jet-cct\/user_ext_profile_2/i,    // public provider search (sanitized server-side)
+];
+
+function needsCredentialedProxy(endpoint: string): boolean {
+  return CREDENTIALED_GUEST_ENDPOINTS.some((re) => re.test(endpoint));
+}
+
+
 export async function wordpressFetchRaw(endpoint: string, options: WordPressFetchOptions = {}): Promise<Response> {
 
   const token = getWPToken();
