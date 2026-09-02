@@ -137,6 +137,15 @@ export default function Dashboard() {
     { icon: Wand2,    label: isChallenged ? t("nav.aiCompanion", { defaultValue: "AI Companion" }) : (isChinese ? "AI助手" : "AI Assistant"), to: "/ai-companion", color: "text-primary" },
   ];
 
+  // Placeholder that holds a widget's slot while its data loads, so the
+  // dashboard never re-shuffles blocks as requests finish at different times.
+  const slotSkeleton = (title: string, height: string) => (
+    <section>
+      <h2 className="text-sm font-semibold text-foreground mb-2">{title}</h2>
+      <Skeleton className={`w-full ${height} rounded-xl`} />
+    </section>
+  );
+
   // ── Each widget id maps to its own block; rendered in user-defined order ──
   const blocks: Record<string, ReactNode> = {
     "patient-summaries": caredOnes && caredOnes.length > 0 ? (
