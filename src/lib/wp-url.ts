@@ -1,23 +1,20 @@
 /**
  * Centralized WordPress base URL helper.
  * Reads the active server from wp-servers registry.
- * - In dev with main server: uses Vite proxy (/wp-proxy)
- * - Otherwise: uses Supabase edge function proxy
+ * - Default: direct HTTPS to WordPress (JWT auth, permissive CORS) — no proxy.
+ * - Only credentialed guest reads (Woo catalog keys, sanitized provider search)
+ *   go through the backend proxy.
  */
 
 import { getActiveServer } from "@/lib/wp-servers";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
 
-/** Production: edge function proxy URL */
+/** Backend proxy URL — used only for credentialed guest reads. */
 const PROD_WP_PROXY = `${SUPABASE_URL}/functions/v1/wp-proxy`;
 
 export const IS_DEV = import.meta.env.DEV;
 
-function canUseLocalViteProxy(): boolean {
-  if (!IS_DEV || typeof window === 'undefined') return false;
-  return ['localhost', '127.0.0.1', '0.0.0.0'].includes(window.location.hostname);
-}
 
 /**
  * Returns the WP API URL for the given path.
