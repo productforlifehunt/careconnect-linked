@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getStoredWPUser, getWPToken } from "@/services/wp-auth";
+import { readLastGood, withLastGood } from "@/lib/last-good";
+
 // ─── Feature source modules (backend-specific) ─────────────
 import { fetchProvidersWordPress, fetchProviderByIdWordPress } from "@/features/providers/source.wordpress";
 import { fetchBookingsWordPress, fetchProviderBookingsWordPress, createBookingWordPress, updateBookingStatusWordPress } from "@/features/bookings/source.wordpress";
