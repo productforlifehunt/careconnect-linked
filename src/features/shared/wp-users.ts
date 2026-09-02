@@ -1,5 +1,4 @@
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
-import { wpAdminOps } from "@/services/woocommerce-api";
 import { T, R } from "@/integrations/wp-schema";
 import { dedupeRead, fetchRelChildrenMap } from "@/features/shared/rel-batch";
 import { appUserNameField } from "@/features/shared/app-scope";
@@ -38,13 +37,12 @@ function toRecord(u: any): WPUserRecord {
 const userRecordCache = new Map<number, WPUserRecord>();
 
 /**
- * Micro-batching queue.
+ * Micro-batching queue — reads people straight from WordPress.
  *
- * Widgets ask for people independently (one dashboard render asks for the
- * signed-in user, every cared one, every task assignee…). Every id requested
- * inside the same ~25ms window is collapsed into ONE `wp-admin-ops` call, so
- * the screen pays a single round-trip instead of one per person — and nothing
- * has to be pre-fetched in a blocking step before the rest can start.
+ * `wp/v2/users?include=` answers for ANY user id (subscribers included) over a
+ * plain authenticated HTTPS request, so there is no edge function in this path
+ * at all. Every id requested inside the same ~25ms window is collapsed into ONE
+ * request, so a screen with N people costs one round-trip, not N.
  */
 let pendingIds = new Set<number>();
 let pendingBatch: Promise<void> | null = null;
@@ -58,11 +56,13 @@ function enqueueUserIds(ids: number[]): Promise<void> {
         pendingIds = new Set();
         pendingBatch = null;
         try {
-          const proxied = await wpAdminOps<any[]>("get_user_names", { ids: batch });
-          if (!Array.isArray(proxied)) {
-            throw new Error("Could not read WordPress users through wp-admin-ops");
+          const rows = await wordpressFetch<any[]>("wp/v2/users", {
+            params: { include: batch.join(","), per_page: Math.max(batch.length, 10) },
+          });
+          if (!Array.isArray(rows)) {
+            throw new Error("Could not read WordPress users");
           }
-          for (const u of proxied) {
+          for (const u of rows) {
             const rec = toRecord(u);
             userRecordCache.set(rec.id, rec);
           }
@@ -75,6 +75,7 @@ function enqueueUserIds(ids: number[]): Promise<void> {
   }
   return pendingBatch;
 }
+
 
 /**
  * Reads real WordPress users by ID.

@@ -613,14 +613,26 @@ export async function getDokanVendorOrders(perPage = 50) {
 
 
 /** Orders the signed-in user placed as a client (read server-side, scoped). */
+// WooCommerce's /orders collection rejects a customer bearer token, so the
+// caller's own orders are read through the server-side helper (Woo keys stay
+// there). Sibling widgets asking within the same few seconds share one call.
+let myOrdersCache: { at: number; perPage: number; promise: Promise<any[]> } | null = null;
+
 export async function getMyCustomerOrders(perPage = 50) {
-  try {
-    const orders = await adminOp<any[]>('list_my_orders', { per_page: perPage });
-    return Array.isArray(orders) ? orders : [];
-  } catch {
-    return [];
+  const now = Date.now();
+  if (myOrdersCache && now - myOrdersCache.at < 5000 && myOrdersCache.perPage >= perPage) {
+    return myOrdersCache.promise;
   }
+  const promise = adminOp<any[]>('list_my_orders', { per_page: perPage }).then((orders) =>
+    Array.isArray(orders) ? orders : [],
+  );
+  myOrdersCache = { at: now, perPage, promise };
+  promise.catch(() => {
+    myOrdersCache = null;
+  });
+  return promise;
 }
+
 
 
 // ─── Dokan payout account, balance and withdrawals ─────────
@@ -660,30 +672,6 @@ export async function requestWithdrawal(amount: number, method: string) {
 export async function cancelWithdrawal(withdrawId: number) {
   return adminOp('cancel_withdrawal', { withdraw_id: withdrawId });
 }
-
-
-/**
- * Display names for arbitrary WP user ids. WordPress hides users who never
- * authored content from non-admin callers, so chat counterparts (clients)
- * are invisible to caregivers through wp/v2/users. Resolved server-side.
- */
-export async function lookupUserNames(
-  ids: number[],
-): Promise<Array<{ id: number; name: string; avatar: string | null }>> {
-  const clean = Array.from(new Set(ids.filter((n) => Number.isFinite(n) && n > 0)));
-  if (clean.length === 0) return [];
-  try {
-    const rows = await adminOp<Array<{ id: number; name: string; avatar: string | null }>>(
-      'get_user_names',
-      { ids: clean },
-    );
-    return Array.isArray(rows) ? rows : [];
-  } catch {
-    return [];
-  }
-}
-
-
 
 
 /**
