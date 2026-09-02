@@ -173,7 +173,7 @@ export default function Cart() {
               <Button variant="coral" className="w-full" size="lg" disabled={doCheckout.isPending || missingFields.length > 0} onClick={async () => {
                 const u = user as any;
 
-                const displayName = u?.full_name || u?.user_display_name || "";
+                const displayName = u?.full_name || "";
                 const parts = displayName.split(" ").filter(Boolean);
                 const result = await doCheckout.mutateAsync({
                   first_name: parts[0] || "",

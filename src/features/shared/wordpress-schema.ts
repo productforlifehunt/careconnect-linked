@@ -345,7 +345,8 @@ export const wordpressSchema: Record<WordPressFeatureKey, WordPressSchemaEntry<a
       created_at: r.date || r.created_at || new Date().toISOString(),
       reviewer: {
         id: r.reviewer_id ? String(r.reviewer_id) : null,
-        full_name: r.reviewer?.name || r.author_name || "Anonymous",
+        // Name comes only from the profile; no invented "Anonymous".
+        full_name: r.reviewer?.name || "",
         avatar_url: r.reviewer?.avatar || r.author_avatar_urls?.["96"] || null,
       },
     })) : []),

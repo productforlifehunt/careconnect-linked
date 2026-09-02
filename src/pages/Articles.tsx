@@ -176,7 +176,7 @@ export default function Articles() {
                   <div className="flex items-start gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium text-sm text-foreground">{post.author?.full_name || (isZh ? "匿名" : "Anonymous")}</span>
+                        <span className="font-medium text-sm text-foreground">{post.author?.full_name || (isZh ? "未填姓名" : "No name")}</span>
                         <span className="text-[11px] text-muted-foreground ml-auto shrink-0">{formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: dateLocale })}</span>
                       </div>
                       <Link to={`/articles/${post.id}`} className="block hover:opacity-90 transition-opacity"><h3 className="text-lg font-semibold mt-1 text-foreground">{post.title}</h3></Link>
