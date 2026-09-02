@@ -68,9 +68,17 @@ export async function fetchNotificationsWordPress(): Promise<any[]> {
     if (!userId || !REL_USER_NOTIFICATION) return [];
 
     // Strictly relation-scoped: notifications belong to the user through the
-    // JetEngine relation. There is NO unscoped "read everything" fallback.
-    const raw = await wordpressFetch<any[]>(`jet-rel/${REL_USER_NOTIFICATION}/parent/${userId}`);
-    if (!Array.isArray(raw) || raw.length === 0) return [];
+    // JetEngine relation (user = parent, notification = child). There is NO
+    // unscoped "read everything" fallback.
+    const links = await wordpressFetch<any[]>(`jet-rel/${REL_USER_NOTIFICATION}/children/${userId}`);
+    if (!Array.isArray(links) || links.length === 0) return [];
+    const ids = links.map((l: any) => String(l.child_object_id || "")).filter(Boolean);
+    if (ids.length === 0) return [];
+    const all = await wordpressCCTFetch<any[]>(SLUG, { params: { _limit: 1000 } });
+    const byId = new Map((Array.isArray(all) ? all : []).map((r: any) => [String(r.id ?? r._ID), r]));
+    const raw = ids.map((id) => byId.get(id)).filter(Boolean) as any[];
+    if (raw.length === 0) return [];
+
 
 
     // The notification CCT is shared by every app on the backend — drop rows
