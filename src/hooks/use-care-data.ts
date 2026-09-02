@@ -776,7 +776,7 @@ export function useGroupInvites(groupId: string | null) {
 export function useCreateGroupInvite() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { groupId: string; name: string; expiresAt?: string | null; maxUses?: number; token?: string }) =>
+    mutationFn: (input: { groupId: string; name: string; note?: string; expiresAt?: string | null; maxUses?: number; token?: string; invitedAs?: InvitedAs; source?: "custom" | "app native generated" }) =>
       createGroupInviteWordPress(input),
     onSuccess: (_d, vars) => { qc.invalidateQueries({ queryKey: ["groupInvites", vars.groupId] }); },
   });
@@ -785,7 +785,7 @@ export function useCreateGroupInvite() {
 export function useUpdateGroupInvite() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...updates }: { id: string; groupId?: string; name?: string; token?: string; expiresAt?: string | null; maxUses?: number; isRevoked?: boolean }) =>
+    mutationFn: ({ id, ...updates }: { id: string; groupId?: string; name?: string; note?: string; token?: string; expiresAt?: string | null; maxUses?: number; isRevoked?: boolean; invitedAs?: InvitedAs }) =>
       updateGroupInviteWordPress(id, updates),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["groupInvites"] }); },
   });
