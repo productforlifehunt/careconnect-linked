@@ -122,18 +122,22 @@ export function MembersTab({
   const openCreateInvite = () => {
     setEditInvite(null);
     setLinkName("");
+    setLinkNote("");
     setLinkToken("");
     setLinkExpires("");
     setLinkMaxUses("0");
+    setLinkInvitedAs("normal group member");
     setCreateInviteOpen(true);
   };
 
   const openEditInvite = (inv: any) => {
     setEditInvite(inv);
     setLinkName(inv.name || "");
+    setLinkNote(inv.note || "");
     setLinkToken(inv.token || "");
     setLinkExpires(formatDateTimeLocal(inv.expires_at));
     setLinkMaxUses(String(inv.max_uses ?? 0));
+    setLinkInvitedAs((inv.invited_as as InvitedAs) || "normal group member");
     setCreateInviteOpen(true);
   };
 
@@ -161,18 +165,18 @@ export function MembersTab({
 
     if (editInvite) {
       updateInvite.mutate(
-        { id: editInvite.id, groupId: activeGroupId, name: linkName.trim(), token: trimmedToken || undefined, expiresAt, maxUses },
+        { id: editInvite.id, groupId: activeGroupId, name: linkName.trim(), note: linkNote, token: trimmedToken || undefined, expiresAt, maxUses, invitedAs: linkInvitedAs },
         {
           onSuccess: () => { setCreateInviteOpen(false); toast({ title: Z("邀请链接已更新", "Invite link updated") }); },
-          onError: (err: any) => toast({ title: Z("更新失败", "Failed to update"), description: err.message, variant: "destructive" }),
+          onError: (err: any) => toast({ title: Z("更新失败", "Could not update"), description: err.message, variant: "destructive" }),
         }
       );
     } else {
       createInvite.mutate(
-        { groupId: activeGroupId, name: linkName.trim(), token: trimmedToken || undefined, expiresAt, maxUses },
+        { groupId: activeGroupId, name: linkName.trim(), note: linkNote, token: trimmedToken || undefined, expiresAt, maxUses, invitedAs: linkInvitedAs, source: "custom" },
         {
           onSuccess: () => { setCreateInviteOpen(false); toast({ title: Z("邀请链接已创建", "Invite link created") }); },
-          onError: (err: any) => toast({ title: Z("创建失败", "Failed to create"), description: err.message, variant: "destructive" }),
+          onError: (err: any) => toast({ title: Z("创建失败", "Could not create"), description: err.message, variant: "destructive" }),
         }
       );
     }
