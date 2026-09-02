@@ -1,6 +1,6 @@
 // WooCommerce REST API Service Layer
 // Headless integration for Care Connector marketplace
-// Auth: uses Vite dev-proxy + Supabase edge proxy + JWT Bearer token
+// Auth: direct HTTPS to WordPress with a JWT Bearer token (no proxy)
 
 import { getWPToken, getStoredWPUser } from './wp-auth';
 import { buildWPUrl, buildWPHeaders, IS_DEV } from '@/lib/wp-url';

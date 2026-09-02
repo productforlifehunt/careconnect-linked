@@ -1,23 +1,20 @@
 /**
  * Centralized WordPress base URL helper.
  * Reads the active server from wp-servers registry.
- * - In dev with main server: uses Vite proxy (/wp-proxy)
- * - Otherwise: uses Supabase edge function proxy
+ * - Default: direct HTTPS to WordPress (JWT auth, permissive CORS) — no proxy.
+ * - Only credentialed guest reads (Woo catalog keys, sanitized provider search)
+ *   go through the backend proxy.
  */
 
 import { getActiveServer } from "@/lib/wp-servers";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
 
-/** Production: edge function proxy URL */
+/** Backend proxy URL — used only for credentialed guest reads. */
 const PROD_WP_PROXY = `${SUPABASE_URL}/functions/v1/wp-proxy`;
 
 export const IS_DEV = import.meta.env.DEV;
 
-function canUseLocalViteProxy(): boolean {
-  if (!IS_DEV || typeof window === 'undefined') return false;
-  return ['localhost', '127.0.0.1', '0.0.0.0'].includes(window.location.hostname);
-}
 
 /**
  * Returns the WP API URL for the given path.
@@ -40,20 +37,14 @@ export function buildWPUrl(
 
   const path = wpJsonPath.startsWith('/') ? wpJsonPath : `/wp-json/${wpJsonPath}`;
 
-  // Local dev with primary server → use Vite proxy. Remote previews must use the backend proxy.
-  if (!options?.forceEdge && canUseLocalViteProxy() && server.isPrimary) {
-    const devBase = `/wp-proxy/${server.sitePath}`;
-    const query = qs.toString();
-    return `${devBase}${path}${query ? `?${query}` : ''}`;
-  }
-
-  // Direct HTTPS to WordPress — the site serves permissive CORS headers, so an
-  // authenticated read/write needs no proxy hop at all. Skipping the edge
-  // function removes one full round-trip (and its cold start) per request.
+  // WordPress is HTTPS and sends permissive CORS headers, so both dev and
+  // production talk to it directly — no proxy hop, no cold start, identical
+  // behaviour in every environment.
   if (!options?.forceEdge) {
     const query = qs.toString();
     return `${server.baseUrl}${path}${query ? `?${query}` : ''}`;
   }
+
 
   // Guest / credentialed catalog reads → edge function proxy
   qs.set('path', path);
