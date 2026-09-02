@@ -68,7 +68,7 @@ export function AISmartBriefing() {
     // Missed check-in (latest >24h ago)
     if (caredOnes && caredOnes.length > 0) {
       const latest = checkins?.[0];
-      const name = caredOnes[0].cared_one?.full_name || "";
+      const name = caredOnes[0].cared_one?.full_name || t("common.noName");
       if (!latest) {
         out.push({
           level: "medium",
@@ -106,7 +106,7 @@ export function AISmartBriefing() {
     }
 
     return out.slice(0, 5);
-  }, [tasks, checkins, caredOnes, isChinese]);
+  }, [tasks, checkins, caredOnes, isChinese, t]);
 
   const generate = async (force = false) => {
     if (loading) return;

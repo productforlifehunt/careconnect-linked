@@ -32,7 +32,7 @@ export function AIInsightsPanel({ caredOnes, tasks, bookings }: AIInsightsPanelP
       const context = JSON.stringify({
         caredOnesCount: caredOnes?.length || 0,
         caredOnes: (caredOnes || []).slice(0, 3).map((co: any) => ({
-          name: co.cared_one?.full_name || "",
+          name: co.cared_one?.full_name || t("common.noName"),
           relationship: co.relationship,
         })),
         pendingTasks: (tasks || []).filter((t: any) => t.status !== "completed").length,
