@@ -27,7 +27,7 @@ import {
   fetchMemberCategoriesWordPress, createMemberCategoryWordPress, updateMemberCategoryWordPress, deleteMemberCategoryWordPress,
   fetchSubgroupMembersWordPress, fetchSubgroupMemberRecordsWordPress,
   addMemberToSubgroupWordPress, removeMemberFromSubgroupWordPress,
-  updateSubgroupMemberRoleWordPress, joinGroupByJoinCodeWordPress, previewGroupInviteWordPress,
+  updateSubgroupMemberRoleWordPress, joinGroupByJoinCodeWordPress, joinGroupByAnyCodeWordPress, previewGroupInviteWordPress,
   type InvitedAs,
   searchProfilesWordPress, addCaredOneToGroupWordPress, leaveGroupWordPress,
   fetchGroupInvitesWordPress, createGroupInviteWordPress, updateGroupInviteWordPress, deleteGroupInviteWordPress,

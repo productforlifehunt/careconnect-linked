@@ -19,7 +19,7 @@ import {
   useCareGroupGallery, useGroupCaredOnes,
   useGroupMessages, useSendMessage,
   useInviteToGroup, useUpdateMemberRole, useRemoveGroupMember,
-  useUpdateCareGroup, useDeleteCareGroup, useJoinGroupByCode,
+  useUpdateCareGroup, useDeleteCareGroup, useJoinGroupByAnyCode,
   useGroupInvitations, useCancelInvitation,
   useMemberCategories, useCreateMemberCategory, useDeleteMemberCategory,
   useDeleteTask, useLeaveGroup, useCreateJobPosting, useMyProfile,
@@ -64,7 +64,7 @@ export default function CareCircle() {
   const [editingPost, setEditingPost] = useState<any>(null);
   const [addCaredOneOpen, setAddCaredOneOpen] = useState(false);
 
-  const joinGroupByCode = useJoinGroupByCode();
+  const joinGroupByCode = useJoinGroupByAnyCode();
 
   const activeGroupId = selectedGroupId || (groups && groups.length > 0 ? groups[0].id : null);
   const activeGroup = (groups || []).find((g: any) => g.id === activeGroupId);
@@ -140,7 +140,7 @@ export default function CareCircle() {
 
   const handleJoinByCode = () => {
     if (!joinCode.trim()) return;
-    joinGroupByCode.mutate({ token: joinCode, displayName: joinMyName || undefined }, {
+    joinGroupByCode.mutate({ code: joinCode, displayName: joinMyName || undefined }, {
       onSuccess: () => { setJoinCode(""); setJoinMyName(""); setJoinCodeOpen(false); toast({ title: t("careCircle.joinedSuccess") }); },
       onError: (err: any) => toast({ title: t("careCircle.failedToJoin"), description: err.message, variant: "destructive" }),
     });
