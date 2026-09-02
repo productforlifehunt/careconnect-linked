@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Loader2, Plus, Pill, ClipboardCheck, HeartPulse, Lightbulb, Target, FileText,
   Phone, MapPin, FolderOpen, Activity, Trash2, Check, X, ArrowLeft, Clock, SkipForward,
-  Search, UserPlus, IdCard, Info,
+  Search, UserPlus, IdCard, Info, ListChecks,
 } from "lucide-react";
 import {
   useUserCaredOnes, useCreateUserCaredOne, useSearchProfiles,
@@ -32,6 +32,7 @@ import { getStoredWPUser } from "@/services/wp-auth";
 import { MedicineCard } from "@/components/cared-ones/MedicineCard";
 import { CheckInCard } from "@/components/cared-ones/CheckInCard";
 import { TipsCard } from "@/components/cared-ones/TipsCard";
+import { CareTasksCard } from "@/components/cared-ones/CareTasksCard";
 import { CarePlanCard } from "@/components/cared-ones/CarePlanCard";
 import { NotesCard } from "@/components/cared-ones/NotesCard";
 import { EmergencyCard } from "@/components/cared-ones/EmergencyCard";
@@ -44,6 +45,7 @@ function FeatureDetail({ cardKey, caredOneId, caredOneName }: { cardKey: string;
     case "medicine": return <MedicineCard caredOneId={caredOneId} />;
     case "checkin": return <CheckInCard caredOneId={caredOneId} />;
     case "tips": return <TipsCard caredOneId={caredOneId} />;
+    case "tasks": return <CareTasksCard caredOneId={caredOneId} />;
     case "plan": return <CarePlanCard caredOneId={caredOneId} />;
     case "notes": return <NotesCard caredOneId={caredOneId} />;
     case "emergency": return <EmergencyCard caredOneId={caredOneId} />;
@@ -91,6 +93,7 @@ export default function CaredOnes() {
     { key: "medicine", title: t("caredOnes.medicineTracker"), icon: Pill, subtitle: t("caredOnes.trackMedications") },
     { key: "checkin", title: t("caredOnes.dailyCheckIns"), icon: ClipboardCheck, subtitle: t("caredOnes.dailyWellness") },
     { key: "tips", title: t("caredOnes.careTips"), icon: Lightbulb, subtitle: t("caredOnes.helpfulReminders") },
+    { key: "tasks", title: t("caredOnes.careTasks", { defaultValue: "Care Tasks" }), icon: ListChecks, subtitle: t("caredOnes.careTasksSubtitle", { defaultValue: "Things to do for this person" }) },
     { key: "plan", title: t("caredOnes.carePlan"), icon: Target, subtitle: t("caredOnes.structuredGoals") },
     { key: "notes", title: t("caredOnes.careNotes"), icon: FileText, subtitle: t("caredOnes.freeFormNotes") },
     { key: "emergency", title: t("caredOnes.emergencyContacts"), icon: Phone, subtitle: t("caredOnes.emergencyList") },
