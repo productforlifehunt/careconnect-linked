@@ -85,8 +85,10 @@ export async function fetchNotificationsWordPress(): Promise<any[]> {
       action_url: n[F.ACTION_URL] || null,
       created_at: n.created_at ?? n.cct_created ?? null,
     }));
-  } catch {
-    return [];
+  } catch (error) {
+    // A failed fetch is not "no notifications" — let react-query show the
+    // error state instead of a fake empty inbox.
+    throw error;
   }
 }
 
