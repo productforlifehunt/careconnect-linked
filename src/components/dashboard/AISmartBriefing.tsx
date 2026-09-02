@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { invokeAI, parseAIJson } from "@/lib/ai-service";
 import { useUserCaredOnes, useCareTasks, useBookings, useCheckinLogs } from "@/hooks/use-care-data";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
+import { useSite } from "@/contexts/SiteContext";
 
 interface Briefing {
   alerts: { level: "high" | "medium" | "low"; text: string }[];
@@ -34,6 +35,7 @@ function saveCache(data: Briefing) {
 
 export function AISmartBriefing() {
   const { t, i18n } = useTranslation();
+  const site = useSite();
   const isChinese = i18n.language?.startsWith("zh");
   const { data: caredOnes } = useUserCaredOnes();
   const { data: tasks } = useCareTasks();
@@ -68,7 +70,9 @@ export function AISmartBriefing() {
     // Missed check-in (latest >24h ago)
     if (caredOnes && caredOnes.length > 0) {
       const latest = checkins?.[0];
-      const name = caredOnes[0].cared_one?.full_name || "";
+      // No display name on CCT 151 for this person: fall back to the role noun
+      // ("Cared One" / "被护理者") so alerts stay readable without inventing a name.
+      const name = caredOnes[0].cared_one?.full_name || site.caredOneSingular;
       if (!latest) {
         out.push({
           level: "medium",
@@ -106,7 +110,7 @@ export function AISmartBriefing() {
     }
 
     return out.slice(0, 5);
-  }, [tasks, checkins, caredOnes, isChinese]);
+  }, [tasks, checkins, caredOnes, isChinese, t, site.caredOneSingular]);
 
   const generate = async (force = false) => {
     if (loading) return;
