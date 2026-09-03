@@ -318,9 +318,11 @@ export default function SafetyMap() {
         </Button>
       </div>
 
+      {/* Map + side panel: stacked on phones, side by side from tablet up */}
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-4 lg:p-4">
       {/* Map */}
-      <div className="relative">
-        <div ref={mapEl} className="h-[45vh] min-h-[280px] w-full bg-muted" />
+      <div className="relative lg:overflow-hidden lg:rounded-2xl lg:border">
+        <div ref={mapEl} className="h-[45vh] min-h-[280px] w-full bg-muted md:h-[52vh] lg:h-[calc(100dvh-11rem)]" />
         <div className="absolute right-3 top-3 z-[400] flex flex-col gap-2">
           <Button size="icon" variant="secondary" className="h-9 w-9 shadow" onClick={recenter} aria-label={Z("回到我的位置", "Recenter")}>
             <Crosshair className="h-4 w-4" />
