@@ -99,7 +99,7 @@ export default function SafetyLanding() {
       </section>
 
       <footer className="border-t px-4 py-8 text-center text-sm text-muted-foreground">
-        <BrandMark size={22} className="justify-center" />
+        <BrandMark size={22} showWordmark className="justify-center" />
         <p className="mt-3">{L("家人位置 · 地点提醒 · 紧急求助", "Family location · Place alerts · SOS")}</p>
       </footer>
     </div>

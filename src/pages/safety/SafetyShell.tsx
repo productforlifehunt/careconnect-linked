@@ -55,7 +55,7 @@ export function SafetyShell({ children }: { children: ReactNode }) {
             className="flex items-center gap-2"
             aria-label={L("诺什安全首页", "NotchSafety home")}
           >
-            <BrandMark size={28} />
+            <BrandMark size={28} showWordmark />
           </button>
 
           {isAuthenticated && (
