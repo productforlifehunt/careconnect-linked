@@ -150,7 +150,72 @@ const cleanRels = relations.filter((r) => r.name && r.parent && r.child);
 
 // Relations created in the JetEngine UI after this dictionary revision was
 // exported. Verified live against /wp-json/jet-rel/<id>.
+
+// Fields added in the JetEngine GUI after this dictionary revision was
+// exported (verified live against /wp-json/jet-cct/<slug>). Codes and option
+// maps come straight from the user's dictionary — never inferred.
+const O = (pairs) => ({
+  options: pairs.map(([l, c], i) => `${i + 1}. “${l}” (Name/ID: ${c})`).join(' '),
+  optionMap: Object.fromEntries(pairs.map(([l, c]) => [c, l])),
+});
+const FIELD_PATCHES = {
+  // 200. Care group invite — invite metadata added in the JetEngine GUI.
+  200: [
+    { label: 'Is revoked', code: 'a60', type: 'Radio', ...O([['Yes', 'b55'], ['No', 'b56']]) },
+    { label: 'Note', code: 'a61', type: 'Textarea' },
+    { label: 'The user is invited as', code: 'a62', type: 'Radio', ...O([['normal group member', 'b55'], ['owner', 'b56'], ['admin', 'b57']]) },
+    { label: 'Custom or app native generated', code: 'a63', type: 'Radio', ...O([['custom', 'b55'], ['app native generated', 'b56']]) },
+  ],
+  187: [
+    { label: 'Medication concept identifier', code: 'a92', type: 'Text' },
+    { label: 'Medication dose quantity', code: 'a93', type: 'Number' },
+    { label: 'Medication dose unit', code: 'a94', type: 'Text' },
+    { label: 'Medication schedule type', code: 'a95', type: 'Radio', ...O([['asNeeded', 'b55'], ['schedule', 'b56']]) },
+    { label: 'Medicine log type', code: 'a96', type: 'Radio', ...O([['AI', 'b55'], ['Human', 'b56']]) },
+    { label: 'Checkin log type', code: 'a97', type: 'Radio', ...O([['AI', 'b55'], ['Human', 'b56']]) },
+    { label: 'Medicine stock', code: 'a98', type: 'Number' },
+    { label: 'Medicine refill', code: 'a99', type: 'Number' },
+    { label: 'Medicine prescriber', code: 'a100', type: 'Text' },
+    { label: 'Medicine bought pharmacy', code: 'a101', type: 'Text' },
+    { label: 'Medicine/checkin to remind caregiver time after missing', code: 'a102', type: 'Number' },
+  ],
+  // 206 mirrors Apple HKMedicationDoseEvent 1:1 (rebuilt in the JetEngine GUI).
+  206: [
+    { label: 'Dose event log status', code: 'a55', type: 'Radio', ...O([['notInteracted', 'b55'], ['notLogged', 'b56'], ['notificationNotSent', 'b57'], ['skipped', 'b58'], ['snoozed', 'b59'], ['taken', 'b60']]) },
+    { label: 'Dose event note', code: 'a56', type: 'Textarea' },
+    { label: 'Dose quantity', code: 'a57', type: 'Number' },
+    { label: 'Scheduled dose quantity', code: 'a58', type: 'Number' },
+    { label: 'Dose unit', code: 'a59', type: 'Text' },
+    { label: 'Scheduled date', code: 'a60', type: 'Datetime' },
+    { label: 'Schedule type', code: 'a61', type: 'Radio', ...O([['asNeeded', 'b55'], ['schedule', 'b56']]) },
+    { label: 'Concept identifier', code: 'a62', type: 'Text' },
+    { label: 'Concept display text', code: 'a63', type: 'Text' },
+    { label: 'Concept general form', code: 'a64', type: 'Text' },
+    { label: 'Clinical coding system', code: 'a65', type: 'Text' },
+    { label: 'Clinical coding code', code: 'a66', type: 'Text' },
+    { label: 'Clinical coding version', code: 'a67', type: 'Text' },
+    { label: 'Dose logged time', code: 'a68', type: 'Datetime' },
+  ],
+};
+for (const [id, fields] of Object.entries(FIELD_PATCHES)) {
+  const cct = cleanCcts.find((c) => Number(c.id) === Number(id));
+  if (!cct) continue;
+  for (const f of fields) {
+    const at = cct.fields.findIndex((x) => x.code === f.code);
+    const shaped = { options: '', optionMap: {}, ...f };
+    if (at >= 0) cct.fields[at] = shaped; else cct.fields.push(shaped);
+  }
+}
+
 const EXTRA_RELATIONS = [
+  {
+    id: 294,
+    name: 'One 215 care facility can have many related 31. reviews',
+    parent: '215. Care facility',
+    child: '31. Review',
+    type: 'One to Many',
+    fields: [],
+  },
   {
     id: 265,
     name: 'One 199. care group can have one related group live 121. chat conversation',

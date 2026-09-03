@@ -2810,6 +2810,92 @@
             "b59": "ChallengeD",
             "b60": "CareCNC"
           }
+        },
+        {
+          "options": "",
+          "optionMap": {},
+          "label": "Medication concept identifier",
+          "code": "a92",
+          "type": "Text"
+        },
+        {
+          "options": "",
+          "optionMap": {},
+          "label": "Medication dose quantity",
+          "code": "a93",
+          "type": "Number"
+        },
+        {
+          "options": "",
+          "optionMap": {},
+          "label": "Medication dose unit",
+          "code": "a94",
+          "type": "Text"
+        },
+        {
+          "options": "1. “asNeeded” (Name/ID: b55) 2. “schedule” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "asNeeded",
+            "b56": "schedule"
+          },
+          "label": "Medication schedule type",
+          "code": "a95",
+          "type": "Radio"
+        },
+        {
+          "options": "1. “AI” (Name/ID: b55) 2. “Human” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "AI",
+            "b56": "Human"
+          },
+          "label": "Medicine log type",
+          "code": "a96",
+          "type": "Radio"
+        },
+        {
+          "options": "1. “AI” (Name/ID: b55) 2. “Human” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "AI",
+            "b56": "Human"
+          },
+          "label": "Checkin log type",
+          "code": "a97",
+          "type": "Radio"
+        },
+        {
+          "options": "",
+          "optionMap": {},
+          "label": "Medicine stock",
+          "code": "a98",
+          "type": "Number"
+        },
+        {
+          "options": "",
+          "optionMap": {},
+          "label": "Medicine refill",
+          "code": "a99",
+          "type": "Number"
+        },
+        {
+          "options": "",
+          "optionMap": {},
+          "label": "Medicine prescriber",
+          "code": "a100",
+          "type": "Text"
+        },
+        {
+          "options": "",
+          "optionMap": {},
+          "label": "Medicine bought pharmacy",
+          "code": "a101",
+          "type": "Text"
+        },
+        {
+          "options": "",
+          "optionMap": {},
+          "label": "Medicine/checkin to remind caregiver time after missing",
+          "code": "a102",
+          "type": "Number"
         }
       ]
     },
@@ -3208,11 +3294,42 @@
           "optionMap": {}
         },
         {
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          },
           "label": "Is revoked",
           "code": "a60",
-          "type": "Switcher",
+          "type": "Radio"
+        },
+        {
           "options": "",
-          "optionMap": {}
+          "optionMap": {},
+          "label": "Note",
+          "code": "a61",
+          "type": "Textarea"
+        },
+        {
+          "options": "1. “normal group member” (Name/ID: b55) 2. “owner” (Name/ID: b56) 3. “admin” (Name/ID: b57)",
+          "optionMap": {
+            "b55": "normal group member",
+            "b56": "owner",
+            "b57": "admin"
+          },
+          "label": "The user is invited as",
+          "code": "a62",
+          "type": "Radio"
+        },
+        {
+          "options": "1. “custom” (Name/ID: b55) 2. “app native generated” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "custom",
+            "b56": "app native generated"
+          },
+          "label": "Custom or app native generated",
+          "code": "a63",
+          "type": "Radio"
         }
       ]
     },
@@ -3568,22 +3685,112 @@
       "name": "Medicine log",
       "fields": [
         {
-          "label": "Status",
-          "code": "a55",
-          "type": "Radio",
-          "options": "1. “Taken” (Name/ID: b55) 2. “Skipped” (Name/ID: b56) 3. “Missed” (Name/ID: b57)",
+          "options": "1. “notInteracted” (Name/ID: b55) 2. “notLogged” (Name/ID: b56) 3. “notificationNotSent” (Name/ID: b57) 4. “skipped” (Name/ID: b58) 5. “snoozed” (Name/ID: b59) 6. “taken” (Name/ID: b60)",
           "optionMap": {
-            "b55": "Taken",
-            "b56": "Skipped",
-            "b57": "Missed"
-          }
+            "b55": "notInteracted",
+            "b56": "notLogged",
+            "b57": "notificationNotSent",
+            "b58": "skipped",
+            "b59": "snoozed",
+            "b60": "taken"
+          },
+          "label": "Dose event log status",
+          "code": "a55",
+          "type": "Radio"
         },
         {
-          "label": "Note",
+          "options": "",
+          "optionMap": {},
+          "label": "Dose event note",
           "code": "a56",
-          "type": "Textarea",
-          "options": "Fr",
-          "optionMap": {}
+          "type": "Textarea"
+        },
+        {
+          "options": "",
+          "optionMap": {},
+          "label": "Dose quantity",
+          "code": "a57",
+          "type": "Number"
+        },
+        {
+          "options": "",
+          "optionMap": {},
+          "label": "Scheduled dose quantity",
+          "code": "a58",
+          "type": "Number"
+        },
+        {
+          "options": "",
+          "optionMap": {},
+          "label": "Dose unit",
+          "code": "a59",
+          "type": "Text"
+        },
+        {
+          "options": "",
+          "optionMap": {},
+          "label": "Scheduled date",
+          "code": "a60",
+          "type": "Datetime"
+        },
+        {
+          "options": "1. “asNeeded” (Name/ID: b55) 2. “schedule” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "asNeeded",
+            "b56": "schedule"
+          },
+          "label": "Schedule type",
+          "code": "a61",
+          "type": "Radio"
+        },
+        {
+          "options": "",
+          "optionMap": {},
+          "label": "Concept identifier",
+          "code": "a62",
+          "type": "Text"
+        },
+        {
+          "options": "",
+          "optionMap": {},
+          "label": "Concept display text",
+          "code": "a63",
+          "type": "Text"
+        },
+        {
+          "options": "",
+          "optionMap": {},
+          "label": "Concept general form",
+          "code": "a64",
+          "type": "Text"
+        },
+        {
+          "options": "",
+          "optionMap": {},
+          "label": "Clinical coding system",
+          "code": "a65",
+          "type": "Text"
+        },
+        {
+          "options": "",
+          "optionMap": {},
+          "label": "Clinical coding code",
+          "code": "a66",
+          "type": "Text"
+        },
+        {
+          "options": "",
+          "optionMap": {},
+          "label": "Clinical coding version",
+          "code": "a67",
+          "type": "Text"
+        },
+        {
+          "options": "",
+          "optionMap": {},
+          "label": "Dose logged time",
+          "code": "a68",
+          "type": "Datetime"
         }
       ]
     },
@@ -5676,6 +5883,14 @@
       "name": "One Challenged App Content can have many related cared one's care tips",
       "parent": "217. Challenged App Content",
       "child": "209. Cared one's care tip",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 294,
+      "name": "One 215 care facility can have many related 31. reviews",
+      "parent": "215. Care facility",
+      "child": "31. Review",
       "type": "One to Many",
       "fields": []
     }
