@@ -335,8 +335,9 @@ export default function SafetyMap() {
         )}
       </div>
 
+      <div className="lg:space-y-3">
       {/* Quick actions */}
-      <div className="grid grid-cols-2 gap-2 border-b px-4 py-3">
+      <div className="grid grid-cols-2 gap-2 border-b px-4 py-3 lg:rounded-2xl lg:border lg:p-3">
         <Button variant="secondary" onClick={handleCheckIn} disabled={busy === "checkin"}>
           {busy === "checkin" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
           {Z("签到", "Check in")}
