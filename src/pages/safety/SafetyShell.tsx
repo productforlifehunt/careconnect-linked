@@ -148,12 +148,12 @@ export function SafetyShell({ children }: { children: ReactNode }) {
                   type="button"
                   onClick={() => navigate(tab.url)}
                   aria-current={active ? "page" : undefined}
-                  className={`flex min-h-[56px] flex-1 flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors ${
+                  className={`flex min-h-[56px] min-w-0 flex-1 flex-col items-center justify-center gap-1 px-0.5 text-[10px] font-medium transition-colors ${
                     active ? "text-primary" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  <Icon className="h-5 w-5" />
-                  {tab.label}
+                  <Icon className="h-5 w-5 shrink-0" />
+                  <span className="w-full truncate text-center leading-tight">{tab.label}</span>
                 </button>
               );
             })}
