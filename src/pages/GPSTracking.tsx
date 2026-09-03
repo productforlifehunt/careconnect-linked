@@ -190,8 +190,6 @@ export default function GPSTracking() {
 
   // ─── Initialize Leaflet map ─────────────────────────────────
   useEffect(() => {
-    if (!mapRef.current || leafletMap.current) return;
-  useEffect(() => {
     if (!mapNode) return;
     const map = L.map(mapNode, { zoomControl: true }).setView([39.8283, -98.5795], 4);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
