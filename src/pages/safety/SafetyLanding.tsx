@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { MapPin, Bell, Route, ShieldAlert, BatteryFull, Sparkles, Users, Home } from "lucide-react";
+import { MapPin, Bell, Route, ShieldAlert, BatteryFull, Sparkles, Users, Home, MessageCircle, Car, Monitor, Smartphone, Tablet, Lock, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { BrandMark } from "@/components/BrandMark";
