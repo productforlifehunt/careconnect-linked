@@ -41,6 +41,8 @@ function decodeCard(raw: any): InformationCard {
     cared_ones_name: raw[F.CARED_ONE_S_NAME] || "",
     cared_ones_description: raw[F.CARED_ONE_S_DESCRIPTION] || "",
     cared_ones_information_card_name: raw[F.CARED_ONE_S_INFORMATION_CARD_NAME] || "",
+    cared_ones_information_card_description: raw[F.CARED_ONE_S_INFORMATION_CARD_DESCRIPTION] || "",
+
     status,
     displays_location: displaysLocation,
     share_token: raw[F.SHARE_TOKEN] || "",
