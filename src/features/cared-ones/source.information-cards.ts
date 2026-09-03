@@ -119,11 +119,18 @@ export async function fetchInformationCardsWordPress(caredOneId: string): Promis
   if (!id) return [];
   const rels = await wordpressFetch<any[]>(`jet-rel/${REL_USER_INFO_CARD}/children/${id}`);
   if (!Array.isArray(rels)) throw new Error(`Relation ${REL_USER_INFO_CARD} returned an invalid response`);
-  const rows = await Promise.all(rels.map((rel: any) => wordpressCCTFetch<any>(CCT_SLUG, { id: rel.child_object_id })));
-  // A relation row can point at a sheet that was already deleted; JetEngine
-  // answers `false` for it. Skip those rather than dropping the whole list.
-  return rows.filter((raw: any) => raw && typeof raw === "object").map(decodeCard);
+  const rows = await Promise.all(rels.map(async (rel: any) => {
+    try {
+      const raw = await wordpressCCTFetch<any>(CCT_SLUG, { id: rel.child_object_id });
+      return raw && typeof raw === "object" ? decodeCard(raw) : null;
+    } catch {
+      // One stale relation must not hide every valid care info sheet.
+      return null;
+    }
+  }));
+  return rows.filter((card): card is InformationCard => card !== null);
 }
+
 
 
 export async function fetchInformationCardWordPress(cardId: string): Promise<InformationCard | null> {
