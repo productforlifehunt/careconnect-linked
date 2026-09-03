@@ -18,6 +18,21 @@ export default function SafetyLanding() {
     { icon: ShieldAlert, t: L("一键紧急求助", "One-tap SOS"), d: L("紧急时把位置与求助同时发给圈子里的所有人。", "Send your location and a call for help to your whole circle.") },
     { icon: BatteryFull, t: L("电量与状态", "Battery & status"), d: L("看到家人手机电量与移动状态，不用再打电话确认。", "See phone battery and movement without calling to check.") },
     { icon: Sparkles, t: L("智能安全助手", "Safety assistant"), d: L("用日常语言问“他今天去过哪里”，助手基于你的圈子数据回答。", "Ask in plain words where someone has been — answered from your own circle data.") },
+    { icon: MessageCircle, t: L("家人聊天", "Family chat"), d: L("圈子内自带一条聊天，不用再切到别的软件。", "A built-in thread for your circle — no switching apps.") },
+    { icon: Car, t: L("出行报告", "Trip reports"), d: L("行程次数、里程、在路上时间与最高速度，一目了然。", "Trip count, distance, time moving and top speed at a glance.") },
+    { icon: Bell, t: L("紧急与签到提醒", "Alerts & check-ins"), d: L("求助、进出地点、签到全部汇总在提醒页。", "SOS, place events and check-ins all land in one alerts feed.") },
+  ];
+
+  const platforms = [
+    { icon: Smartphone, t: L("手机", "Phone"), d: L("底部导航、大按钮、单手可用。", "Bottom navigation, big targets, one-handed use.") },
+    { icon: Tablet, t: L("平板", "Tablet"), d: L("地图与家人列表并排显示。", "Map and family list side by side.") },
+    { icon: Monitor, t: L("网页端", "Web"), d: L("电脑上打开就是完整的大屏控制台。", "A full widescreen console right in your browser.") },
+  ];
+
+  const faqs = [
+    { q: L("位置多久更新一次？", "How often does location update?"), a: L("应用打开时每 15 秒更新一次，并保留位置历史用于路线与行程。", "Every 15 seconds while the app is open, and history is kept for routes and trips.") },
+    { q: L("谁能看到我的位置？", "Who can see my location?"), a: L("只有你圈子里的家人。你可以随时关闭共享。", "Only the family in your circle. You can switch sharing off at any time.") },
+    { q: L("需要下载吗？", "Do I need to download anything?"), a: L("不需要。网页打开即可用，也可以添加到手机主屏当作应用使用。", "No. It works in the browser and can be added to your home screen like an app.") },
   ];
 
   const steps = [
