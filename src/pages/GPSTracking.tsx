@@ -28,6 +28,8 @@ import {
   ZONE_TYPE, ZONE_TYPE_CODES, isCustomZone, isDangerZone,
   zoneTypeLabel,
 } from "@/features/location/zone-types";
+import { ZoneShapeEditor, type ZoneShape } from "@/components/location/ZoneShapeEditor";
+
 
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -428,10 +430,12 @@ export default function GPSTracking() {
 
   const openEditZone = (zone: any) => {
     setCustomNameDraft(isCustomZone(String(zone.zone_type)) ? String(zone.zone_name || "") : "");
+    const pts: [number, number][] = Array.isArray(zone.polygon_points) ? zone.polygon_points : [];
     setZoneForm({
       id: String(zone.id),
       zone_type: String(zone.zone_type),
-
+      shape_type: String(zone.shape_type).toLowerCase() === "polygon" && pts.length >= 3 ? "Polygon" : "Radius",
+      polygon_points: pts,
       latitude: zone.latitude != null ? String(zone.latitude) : "",
       longitude: zone.longitude != null ? String(zone.longitude) : "",
       radius_meters: String(zone.radius_meters ?? 200),
@@ -442,6 +446,7 @@ export default function GPSTracking() {
     });
     setZoneDialogOpen(true);
   };
+
 
   const useMyLocationForZone = async () => {
     try {
@@ -454,19 +459,31 @@ export default function GPSTracking() {
   };
 
   const handleSaveZone = async () => {
-    const lat = Number(zoneForm.latitude);
-    const lng = Number(zoneForm.longitude);
+    const isPolygon = zoneForm.shape_type === "Polygon";
+    const points = zoneForm.polygon_points;
     const radius = Number(zoneForm.radius_meters);
     const isCustom = isCustomZone(zoneForm.zone_type);
     if (isCustom && !customNameDraft.trim()) {
       toast({ title: Z("请填写自定义区域名称", "Custom zone name is required"), variant: "destructive" });
       return;
     }
+    // A drawn outline keeps its own points; its centre is their average so the
+    // list, popups and alerts still have one anchor point.
+    let lat = Number(zoneForm.latitude);
+    let lng = Number(zoneForm.longitude);
+    if (isPolygon) {
+      if (points.length < 3) {
+        toast({ title: Z("手绘范围至少需要 3 个点", "A drawn area needs at least 3 points"), variant: "destructive" });
+        return;
+      }
+      lat = points.reduce((s, p) => s + p[0], 0) / points.length;
+      lng = points.reduce((s, p) => s + p[1], 0) / points.length;
+    }
     if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
       toast({ title: Z("这个位置填得不对，请在地图上重新选一次", "That location doesn't look right — please pick the spot on the map again"), variant: "destructive" });
       return;
     }
-    if (!Number.isFinite(radius) || radius < 20) {
+    if (!isPolygon && (!Number.isFinite(radius) || radius < 20)) {
       toast({ title: Z("范围至少要 20 米", "Please make the area at least 20 metres wide"), variant: "destructive" });
       return;
     }
@@ -476,10 +493,11 @@ export default function GPSTracking() {
         zone_type: zoneForm.zone_type,
         // a57 — the zone's own name; Safe/Danger keep their fixed label.
         zone_name: isCustom ? customNameDraft.trim() : "",
-        shape_type: "Radius",
-        latitude: lat,
-        longitude: lng,
-        radius_meters: Math.round(radius),
+        shape_type: isPolygon ? "Polygon" : "Radius",
+        polygon_points: isPolygon ? points : [],
+        latitude: Number(lat.toFixed(6)),
+        longitude: Number(lng.toFixed(6)),
+        radius_meters: isPolygon ? 0 : Math.round(radius),
         notify_on_enter: zoneForm.notify_on_enter,
         notify_on_exit: zoneForm.notify_on_exit,
         is_active: zoneForm.is_active,
@@ -489,6 +507,7 @@ export default function GPSTracking() {
       };
       if (zoneForm.id) {
         await updateSafeZoneWordPress(zoneForm.id, payload);
+
       } else {
         await createSafeZoneWordPress({ user_id: String(userId), ...payload });
       }
