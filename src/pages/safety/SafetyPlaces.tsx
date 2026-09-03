@@ -21,7 +21,9 @@ import {
 import {
   ZONE_TYPE, ZONE_TYPE_CODES, zoneTypeLabel, isCustomZone, isDangerZone,
 } from "@/features/location/zone-types";
+import { ZoneShapeEditor, type ZoneShape } from "@/components/location/ZoneShapeEditor";
 import { useSafetyCircle } from "./useSafetyCircle";
+
 
 const emptyForm = {
   id: "",
@@ -29,6 +31,9 @@ const emptyForm = {
   zone_type: ZONE_TYPE.SAFE as string,
   custom_name: "",
   description: "",
+  // a56 shape type — a simple circle, or a hand-drawn precise outline (a63).
+  shape_type: "Radius" as ZoneShape,
+  polygon_points: [] as [number, number][],
   latitude: "",
   longitude: "",
   radius_meters: "200",
@@ -37,6 +42,7 @@ const emptyForm = {
   is_active: true,
   receiver_ids: [] as string[],
 };
+
 
 
 /** Life360-style "Places" — arrival/departure geofences, fully managed in-app. */
