@@ -400,12 +400,13 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onHistory, compact, slot }
             )}
           </>
         )}
-        <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => onHistory(med)}>
+        <Button size="icon" variant="ghost" aria-label={Z(`${med.name} 用药记录`, `${med.name} history`) as string} className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => onHistory(med)}>
           <History className="h-3.5 w-3.5" />
         </Button>
-        <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => onEdit(med)}>
+        <Button size="icon" variant="ghost" aria-label={Z(`编辑 ${med.name}`, `Edit ${med.name}`) as string} className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => onEdit(med)}>
           <Edit2 className="h-3.5 w-3.5" />
         </Button>
+
       </div>
     </motion.div>
   );

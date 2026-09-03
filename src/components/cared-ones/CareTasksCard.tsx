@@ -80,9 +80,10 @@ export function CareTasksCard({ caredOneId }: { caredOneId: string }) {
               {t.location && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {t.location}</span>}
             </div>
           </div>
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => del.mutate(t.id)}>
+          <Button variant="ghost" size="icon" aria-label={Z(`删除 ${t.title}`, `Delete ${t.title}`) as string} className="h-7 w-7 text-destructive shrink-0" onClick={() => del.mutate(t.id)}>
             <Trash2 className="h-3 w-3" />
           </Button>
+
         </div>
       </CardContent>
     </Card>
