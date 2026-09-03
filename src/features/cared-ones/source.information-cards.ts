@@ -2,15 +2,17 @@ import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-c
 import { getStoredWPUser } from "@/services/wp-auth";
 import { T, R } from "@/integrations/wp-schema";
 
-// JetEngine relations (live) — CCT 125 "Cared one's information card"
-const REL_USER_INFO_CARD = R.caredOneInfoCards;          // 1:M users → cared_ones_informat
-const REL_INFO_CARD_EMERGENCY = R.infoCardEmergencyContacts;     // 1:M cared_ones_informat → emergency_contact
+// JetEngine relations (live) — CCT 198 "Cared one's information card"
+const REL_USER_INFO_CARD = R.caredOneInfoCards;          // REL 220: 1:M users → cared_one_info_card
+const REL_INFO_CARD_EMERGENCY = R.infoCardEmergencyContacts;     // REL 221: 1:M cared_one_info_card → emergency contacts
 const CCT_SLUG = T.infoCard.slug;
 
-// Opaque field map (live verified). Values: a55 name, a56 desc, a57 card_name,
-// a58 status, a59 displays_location, a60 share_token, a61 share_expires_at,
-// a62 share_visibility.
+// Opaque field map (live verified). a55 cared one's name, a56 cared one's
+// description, a57 card name, a58 status, a59 displays location,
+// a60 share token, a61 share expires at, a62 share visibility,
+// a63 this sheet's own situation details.
 const F = T.infoCard.f;
+
 
 const STATUS_TO_CODE: Record<string, string> = { Draft: "b55", Active: "b56", Paused: "b57", draft: "b55", active: "b56", paused: "b57" };
 const STATUS_FROM_CODE: Record<string, string> = { b55: "Draft", b56: "Active", b57: "Paused" };
