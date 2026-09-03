@@ -220,8 +220,13 @@ export default function SafetyPlaces() {
                   </div>
 
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    {z.latitude != null && z.longitude != null ? `${z.latitude.toFixed(4)}, ${z.longitude.toFixed(4)}` : Z("暂无位置", "No location yet")} · {z.radius_meters || 200} m
+                    {z.latitude != null && z.longitude != null ? `${z.latitude.toFixed(4)}, ${z.longitude.toFixed(4)}` : Z("暂无位置", "No location yet")}
+                    {" · "}
+                    {String(z.shape_type).toLowerCase() === "polygon" && z.polygon_points?.length >= 3
+                      ? Z(`手绘范围 · ${z.polygon_points.length} 个点`, `Drawn area · ${z.polygon_points.length} points`)
+                      : `${z.radius_meters || 200} m`}
                   </p>
+
                   <p className="mt-0.5 text-[11px] text-muted-foreground">
                     {[z.notify_on_enter ? Z("到达提醒", "Arrival alerts") : null, z.notify_on_exit ? Z("离开提醒", "Departure alerts") : null]
                       .filter(Boolean)
@@ -300,30 +305,20 @@ export default function SafetyPlaces() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label htmlFor="place-lat">{Z("位置（南北）", "Position (north–south)")}</Label>
-                <Input id="place-lat" value={form.latitude} onChange={(e) => setForm((f) => ({ ...f, latitude: e.target.value }))} />
-              </div>
-              <div>
-                <Label htmlFor="place-lng">{Z("位置（东西）", "Position (east–west)")}</Label>
-                <Input id="place-lng" value={form.longitude} onChange={(e) => setForm((f) => ({ ...f, longitude: e.target.value }))} />
-              </div>
-            </div>
-            <Button type="button" variant="outline" size="sm" onClick={useMyLocation}>
-              <Crosshair className="mr-2 h-4 w-4" />
-              {Z("使用我的当前位置", "Use my current location")}
-            </Button>
-            <div>
-              <Label htmlFor="place-radius">{Z("半径（米）", "Radius (m)")}</Label>
-              <Input
-                id="place-radius"
-                type="number"
-                min={20}
-                value={form.radius_meters}
-                onChange={(e) => setForm((f) => ({ ...f, radius_meters: e.target.value }))}
-              />
-            </div>
+            <ZoneShapeEditor
+              shape={form.shape_type}
+              onShapeChange={(s) => setForm((f) => ({ ...f, shape_type: s }))}
+              latitude={form.latitude}
+              longitude={form.longitude}
+              onCenterChange={(lat, lng) => setForm((f) => ({ ...f, latitude: lat, longitude: lng }))}
+              radiusMeters={form.radius_meters}
+              onRadiusChange={(r) => setForm((f) => ({ ...f, radius_meters: r }))}
+              points={form.polygon_points}
+              onPointsChange={(p) => setForm((f) => ({ ...f, polygon_points: p }))}
+              onUseMyLocation={useMyLocation}
+              danger={isDangerZone(form.zone_type)}
+            />
+
             <div className="space-y-2 rounded-lg border p-3">
               <ToggleRow
                 label={Z("到达时提醒", "Alert on arrival")}
