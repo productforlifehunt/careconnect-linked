@@ -52,6 +52,8 @@ export default function SafetyApp() {
           <Route path="/circle" element={<RequireAuth><SafetyCircle /></RequireAuth>} />
           <Route path="/alerts" element={<RequireAuth><SafetyAlerts /></RequireAuth>} />
           <Route path="/assistant" element={<RequireAuth><SafetyAssistant /></RequireAuth>} />
+          <Route path="/chat" element={<RequireAuth><SafetyChat /></RequireAuth>} />
+          <Route path="/drives" element={<RequireAuth><SafetyDrives /></RequireAuth>} />
           <Route path="/me" element={<RequireAuth><SafetySettings /></RequireAuth>} />
           <Route path="/member/:userId" element={<RequireAuth><SafetyMemberDetail /></RequireAuth>} />
           <Route path="/auth" element={<Auth />} />
