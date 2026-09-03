@@ -18,7 +18,8 @@ export default function SafetyAssistant() {
   const { i18n } = useTranslation();
   const zh = i18n.language?.startsWith("zh");
   const L = (cn: string, en: string) => (zh ? cn : en);
-  const { members, zones, activeCircle } = useSafetyCircle(60_000);
+  const { members, zones, circles, circleId } = useSafetyCircle(60_000);
+  const activeCircle = (circles || []).find((c: any) => String(c.id) === String(circleId));
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
