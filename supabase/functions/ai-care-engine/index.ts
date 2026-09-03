@@ -206,7 +206,9 @@ serve(async (req) => {
       );
     }
 
-    const systemPrompt = buildSystemPrompt(mode);
+    const systemPrompt = contextPrompt
+      ? `${buildSystemPrompt(mode)}\n\n${contextPrompt}`
+      : buildSystemPrompt(mode);
 
     const aiMessages = [
       { role: "system", content: systemPrompt },
