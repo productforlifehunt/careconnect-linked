@@ -3204,6 +3204,13 @@
             "b57": "Visible to caregivers of the cared one",
             "b58": "Visible to author"
           }
+        },
+        {
+          "label": "Cared one’s information card description",
+          "code": "a63",
+          "type": "Textarea",
+          "options": "此卡片的具体情况说明，例如“请早上七点到九点帮忙照顾老人两小时，八点服药”，与被照顾者的基础护理计划描述不同",
+          "optionMap": {}
         }
       ]
     },
