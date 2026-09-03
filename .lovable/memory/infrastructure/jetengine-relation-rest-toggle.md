@@ -28,3 +28,19 @@ Also relevant: **"Register separate DB table"** must be on for the relation's ow
 ## Verified state (this project)
 
 All 83 relations referenced in `src/integrations/wp-schema.ts` return 200 on both GET and POST after enabling "Register update REST API Endpoint" on REL 260, 261, 262, 263.
+
+## 403 rest_forbidden ≠ 404 rest_no_route
+
+A `403` on `POST /wp-json/jet-rel/<id>` means the route EXISTS but the update endpoint's
+**"Access Capability"** field (the second one, under *Register update REST API Endpoint*)
+is set to `manage_options` — so only admins can write. App users (subscriber/customer) get 403.
+
+Fix in JetEngine GUI: relation edit screen → the **second** `Access Capability` input → clear it
+(empty = public/any authenticated) → click `Update Relation` (exact-string button match).
+
+Verified on `/afresh`: relations **112, 148, 260, 263** had `manage_options` on the update
+endpoint and were cleared. All 141 relation IDs referenced in `src/integrations/wp-schema.ts`
+now accept POST as the `test1` app user (0 × 403).
+
+Fast audit trick: POST `{"parent_id":0,"child_id":0,...}` with an app-user JWT — the capability
+check runs before validation, so `403` isolates permission problems without writing data.
