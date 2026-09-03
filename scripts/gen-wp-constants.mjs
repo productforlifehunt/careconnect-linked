@@ -86,6 +86,7 @@ const REL_ALIASES = {
   142: 'commentReplies',
   143: 'reviewComments',
   144: 'shopReviews',
+  66: 'facilityReviews',
   145: 'productReviews',
   147: 'productBrands',
   148: 'shopVendors',

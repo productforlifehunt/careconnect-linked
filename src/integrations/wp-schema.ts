@@ -914,11 +914,24 @@ export const WP = {
       slug: "medicine_log",
       name: "Medicine log",
       f: {
-        "STATUS": "a55",  // Radio
-        "NOTE": "a56",  // Textarea
+        "DOSE_EVENT_LOG_STATUS": "a55",  // Radio
+        "DOSE_EVENT_NOTE": "a56",  // Textarea
+        "DOSE_QUANTITY": "a57",  // Number
+        "SCHEDULED_DOSE_QUANTITY": "a58",  // Number
+        "DOSE_UNIT": "a59",  // Text
+        "SCHEDULED_DATE": "a60",  // Datetime
+        "SCHEDULE_TYPE": "a61",  // Radio
+        "CONCEPT_IDENTIFIER": "a62",  // Text
+        "CONCEPT_DISPLAY_TEXT": "a63",  // Text
+        "CONCEPT_GENERAL_FORM": "a64",  // Text
+        "CLINICAL_CODING_SYSTEM": "a65",  // Text
+        "CLINICAL_CODING_CODE": "a66",  // Text
+        "CLINICAL_CODING_VERSION": "a67",  // Text
+        "DOSE_LOGGED_TIME": "a68",  // Datetime
       },
       opt: {
-        "STATUS": { "TAKEN": "b55", "SKIPPED": "b56", "MISSED": "b57" },
+        "DOSE_EVENT_LOG_STATUS": { "NOTINTERACTED": "b55", "NOTLOGGED": "b56", "NOTIFICATIONNOTSENT": "b57", "SKIPPED": "b58", "SNOOZED": "b59", "TAKEN": "b60" },
+        "SCHEDULE_TYPE": { "ASNEEDED": "b55", "SCHEDULE": "b56" },
       },
     },
     /** 207. Checkin schedule */
@@ -1359,6 +1372,8 @@ export const WP = {
     "256": { id: 256, parent: "217. Challenged App Content", child: "218. User's study notes", type: "One to Many" },
     /** 257. One Challenged App Content can have many related cared one's care tips — 217. Challenged App Content -> 209. Cared one's care tip (One to Many) */
     "257": { id: 257, parent: "217. Challenged App Content", child: "209. Cared one's care tip", type: "One to Many" },
+    /** 66. One care facility can have many related reviews — 215. Care facility -> 31. Review (One to Many) */
+    "66": { id: 66, parent: "215. Care facility", child: "31. Review", type: "One to Many" },
   },
 } as const;
 
@@ -1656,6 +1671,8 @@ export const R = {
   contentStudyNotes: 256,
   /** 257. One Challenged App Content can have many related cared one's care tips */
   contentCareTips: 257,
+  /** 66. One care facility can have many related reviews */
+  facilityReviews: 66,
 } as const;
 
 /** Dictionary CCT number -> live JetEngine REST slug. */
