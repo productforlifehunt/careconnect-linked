@@ -119,13 +119,25 @@ export async function fetchInformationCardsWordPress(caredOneId: string): Promis
   if (!id) return [];
   const rels = await wordpressFetch<any[]>(`jet-rel/${REL_USER_INFO_CARD}/children/${id}`);
   if (!Array.isArray(rels)) throw new Error(`Relation ${REL_USER_INFO_CARD} returned an invalid response`);
-  return Promise.all(rels.map(async (rel: any) => decodeCard(await wordpressCCTFetch<any>(CCT_SLUG, { id: rel.child_object_id }))));
+  const rows = await Promise.all(rels.map(async (rel: any) => {
+    try {
+      const raw = await wordpressCCTFetch<any>(CCT_SLUG, { id: rel.child_object_id });
+      return raw && typeof raw === "object" ? decodeCard(raw) : null;
+    } catch {
+      // One stale relation must not hide every valid care info sheet.
+      return null;
+    }
+  }));
+  return rows.filter((card): card is InformationCard => card !== null);
 }
+
+
 
 export async function fetchInformationCardWordPress(cardId: string): Promise<InformationCard | null> {
   const raw = await wordpressCCTFetch<any>(CCT_SLUG, { id: normalizeWpId(cardId) });
-  return raw ? decodeCard(raw) : null;
+  return raw && typeof raw === "object" ? decodeCard(raw) : null;
 }
+
 
 /** REL 220 parent = the cared one (WP user) this card belongs to. */
 export async function fetchInformationCardCaredOneIdWordPress(cardId: string): Promise<string | null> {

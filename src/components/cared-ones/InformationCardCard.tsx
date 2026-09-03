@@ -57,11 +57,12 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
       : s === "Paused" ? Z("已暂停", "Paused")
       : Z("草稿", "Draft");
 
-  const { data: cards, isLoading } = useInformationCards(caredOneId);
+  const { data: cards, isLoading, isError } = useInformationCards(caredOneId);
   const create = useCreateInformationCard();
   const update = useUpdateInformationCard();
   const del = useDeleteInformationCard();
   const { data: emergencyContacts } = useEmergencyContacts(caredOneId);
+
 
   const [formOpen, setFormOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -128,6 +129,11 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
 
       {isLoading ? (
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground mx-auto my-8" />
+      ) : isError ? (
+        <div className="text-center py-10">
+          <ShieldOff className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+          <p className="text-muted-foreground">{Z("暂时无法加载照护须知，请稍后再试。", "Care info sheets could not be loaded. Please try again.")}</p>
+        </div>
       ) : (cards || []).length === 0 ? (
         <div className="text-center py-12">
           <IdCard className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
@@ -135,6 +141,7 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
           <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> {Z("创建第一份", "Create First Sheet")}</Button>
         </div>
       ) : (
+
         <div className="space-y-2">
           {(cards || []).map((c: any) => (
             <Card key={c.id} className="border-transparent card-elevated">
