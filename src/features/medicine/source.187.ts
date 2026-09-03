@@ -207,12 +207,12 @@ function mapSchedule(row: any, caredOneId: string): any {
     end_date: rruleUntil(rrule),
     is_active: String(row[F.STATUS] || O.STATUS.CONFIRMED) !== O.STATUS.CANCELLED,
     reminder_time_before: valarmMinutes(row[F.REMINDERS]),
-    stock_count: numOrNull(extras.stock_count),
-    refill_threshold: numOrNull(extras.refill_threshold),
-    time_to_send_to_caregiver: numOrNull(extras.time_to_send_to_caregiver),
+    stock_count: numOrNull(row[F.MEDICINE_STOCK]),
+    refill_threshold: numOrNull(row[F.MEDICINE_REFILL]),
+    time_to_send_to_caregiver: numOrNull(row[F.MEDICINE_CHECKIN_TO_REMIND_CAREGIVER_TIME_AFTER_MISSING]),
     time_to_be_considered_missing: numOrNull(extras.time_to_be_considered_missing),
-    prescribing_doctor: extras.prescribing_doctor || null,
-    pharmacy: extras.pharmacy || null,
+    prescribing_doctor: row[F.MEDICINE_PRESCRIBER] || null,
+    pharmacy: row[F.MEDICINE_BOUGHT_PHARMACY] || null,
     side_effects: extras.side_effects || null,
     check_in_type: [] as string[],
     created_at: row.cct_created || row.created_at,
@@ -306,6 +306,11 @@ export async function createMedicineWordPress(med: MedicineInput): Promise<void>
       ? O.MEDICATION_SCHEDULE_TYPE.AS_NEEDED
       : O.MEDICATION_SCHEDULE_TYPE.SCHEDULE,
     [F.MEDICINE_LOG_TYPE]: O.MEDICINE_LOG_TYPE.HUMAN,
+    [F.MEDICINE_STOCK]: wpStr(med.stock_count),
+    [F.MEDICINE_REFILL]: wpStr(med.refill_threshold),
+    [F.MEDICINE_PRESCRIBER]: med.prescribing_doctor || "",
+    [F.MEDICINE_BOUGHT_PHARMACY]: med.pharmacy || "",
+    [F.MEDICINE_CHECKIN_TO_REMIND_CAREGIVER_TIME_AFTER_MISSING]: wpStr(med.time_to_send_to_caregiver),
     [F.CUSTOM_DATA]: encodeExtras(med as any),
     ...appScopeBody("calendarEvent"),
   };
@@ -352,6 +357,14 @@ export async function updateMedicineWordPress(id: string, updates: Record<string
     body[F.MEDICATION_SCHEDULE_TYPE] = freq === "as_needed"
       ? O.MEDICATION_SCHEDULE_TYPE.AS_NEEDED
       : O.MEDICATION_SCHEDULE_TYPE.SCHEDULE;
+  }
+
+  if (updates.stock_count !== undefined) body[F.MEDICINE_STOCK] = wpStr(updates.stock_count);
+  if (updates.refill_threshold !== undefined) body[F.MEDICINE_REFILL] = wpStr(updates.refill_threshold);
+  if (updates.prescribing_doctor !== undefined) body[F.MEDICINE_PRESCRIBER] = updates.prescribing_doctor || "";
+  if (updates.pharmacy !== undefined) body[F.MEDICINE_BOUGHT_PHARMACY] = updates.pharmacy || "";
+  if (updates.time_to_send_to_caregiver !== undefined) {
+    body[F.MEDICINE_CHECKIN_TO_REMIND_CAREGIVER_TIME_AFTER_MISSING] = wpStr(updates.time_to_send_to_caregiver);
   }
 
   const touchesExtras = EXTRA_KEYS.some((k) => updates[k] !== undefined);
