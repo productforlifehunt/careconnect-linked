@@ -58,6 +58,7 @@ function encodeCardUpdates(u: Partial<InformationCard>): Record<string, string> 
   if (u.cared_ones_name !== undefined) b[F.CARED_ONE_S_NAME] = u.cared_ones_name || "";
   if (u.cared_ones_description !== undefined) b[F.CARED_ONE_S_DESCRIPTION] = u.cared_ones_description || "";
   if (u.cared_ones_information_card_name !== undefined) b[F.CARED_ONE_S_INFORMATION_CARD_NAME] = u.cared_ones_information_card_name || "";
+  if (u.cared_ones_information_card_description !== undefined) b[F.CARED_ONE_S_INFORMATION_CARD_DESCRIPTION] = u.cared_ones_information_card_description || "";
   if (u.status !== undefined) {
     const code = STATUS_TO_CODE[String(u.status)];
     if (!code) throw new Error(`Invalid information-card status: ${u.status}`);
@@ -89,6 +90,8 @@ export interface InformationCard {
   cared_ones_name?: string;
   cared_ones_description?: string;
   cared_ones_information_card_name?: string;
+  /** a63 — what this specific sheet is for (e.g. "cover 7–9am, meds at 8"). */
+  cared_ones_information_card_description?: string;
   status?: "Draft" | "Active" | "Paused" | string;
   displays_location?: "Yes" | "No" | string;
   share_token?: string;
@@ -165,6 +168,7 @@ export async function createInformationCardWordPress(input: {
   cared_ones_name?: string;
   cared_ones_description?: string;
   cared_ones_information_card_name: string;
+  cared_ones_information_card_description?: string;
   status?: "Draft" | "Active" | "Paused";
   displays_location?: "Yes" | "No";
   share_visibility?: ShareVisibility;
@@ -178,6 +182,7 @@ export async function createInformationCardWordPress(input: {
     cared_ones_name: input.cared_ones_name || "",
     cared_ones_description: input.cared_ones_description || "",
     cared_ones_information_card_name: input.cared_ones_information_card_name,
+    cared_ones_information_card_description: input.cared_ones_information_card_description || "",
     status: input.status || "Draft",
     displays_location: input.displays_location || "No",
     share_visibility: input.share_visibility || "Visible to author",
