@@ -770,6 +770,7 @@ export const WP = {
         "SHARE_TOKEN": "a60",  // Text
         "SHARE_EXPIRES_AT": "a61",  // Datetime
         "SHARE_VISIBILITY": "a62",  // Radio
+        "CARED_ONE_S_INFORMATION_CARD_DESCRIPTION": "a63",  // Textarea
       },
       opt: {
         "STATUS": { "DRAFT": "b55", "ACTIVE": "b56", "PAUSED": "b57" },
