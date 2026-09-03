@@ -173,7 +173,7 @@ const zhCN = {
     addPeopleDesc: "添加您正在照顾的人，追踪他们的健康、药物等。",
     addFirst: "添加您的第一位{{caredOne}}", added: "{{caredOne}}已添加！",
     removed: "{{name}}已从您的{{caredOnes}}中移除", searchDesc: "搜索要添加为您照顾的人",
-    medicineTracker: "药物追踪", dailyCheckIns: "每日签到",
+    medicineTracker: "药物追踪", dailyCheckIns: "签到", checkIns: "签到",
     careTips: "护理建议", carePlan: "护理计划", careNotes: "护理笔记",
     emergencyContacts: "紧急联系人", locationSafeZones: "位置与安全区域",
     documents: "文档", visitLog: "访问记录", trackMedications: "追踪药物和剂量",
@@ -182,7 +182,7 @@ const zhCN = {
     freeFormNotes: "自由格式护理笔记", emergencyList: "紧急联系人列表",
     gpsSafeZones: "GPS和安全区域", medicalDocs: "医疗记录和文档",
     visitHistory: "护理人员访问历史", failedToRemove: "移除失败",
-    informationCards: "信息卡片", informationCardsSubtitle: "可分享的资料卡",
+    informationCards: "照护须知", informationCardsSubtitle: "可分享的照护须知", careInfoSheets: "照护须知", careInfoSheetsSubtitle: "把帮忙的人需要知道的写清楚",
   },
   profile: {
     myProfile: "我的资料", personalInfo: "个人信息", avatar: "头像",
