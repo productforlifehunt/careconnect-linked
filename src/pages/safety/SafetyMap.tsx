@@ -349,7 +349,7 @@ export default function SafetyMap() {
       </div>
 
       {/* Sharing toggle */}
-      <div className="flex items-center justify-between border-b px-4 py-3">
+      <div className="flex items-center justify-between gap-3 border-b px-4 py-3 lg:rounded-2xl lg:border lg:p-3">
         <div>
           <Label htmlFor="notch-share" className="text-sm font-medium">
             {Z("共享我的位置", "Share my location")}
