@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { MapPin, Bell, Route, ShieldAlert, BatteryFull, Sparkles, Users, Home } from "lucide-react";
+import { MapPin, Bell, Route, ShieldAlert, BatteryFull, Sparkles, Users, Home, MessageCircle, Car, Monitor, Smartphone, Tablet, Lock, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { BrandMark } from "@/components/BrandMark";
@@ -18,6 +18,21 @@ export default function SafetyLanding() {
     { icon: ShieldAlert, t: L("一键紧急求助", "One-tap SOS"), d: L("紧急时把位置与求助同时发给圈子里的所有人。", "Send your location and a call for help to your whole circle.") },
     { icon: BatteryFull, t: L("电量与状态", "Battery & status"), d: L("看到家人手机电量与移动状态，不用再打电话确认。", "See phone battery and movement without calling to check.") },
     { icon: Sparkles, t: L("智能安全助手", "Safety assistant"), d: L("用日常语言问“他今天去过哪里”，助手基于你的圈子数据回答。", "Ask in plain words where someone has been — answered from your own circle data.") },
+    { icon: MessageCircle, t: L("家人聊天", "Family chat"), d: L("圈子内自带一条聊天，不用再切到别的软件。", "A built-in thread for your circle — no switching apps.") },
+    { icon: Car, t: L("出行报告", "Trip reports"), d: L("行程次数、里程、在路上时间与最高速度，一目了然。", "Trip count, distance, time moving and top speed at a glance.") },
+    { icon: Bell, t: L("紧急与签到提醒", "Alerts & check-ins"), d: L("求助、进出地点、签到全部汇总在提醒页。", "SOS, place events and check-ins all land in one alerts feed.") },
+  ];
+
+  const platforms = [
+    { icon: Smartphone, t: L("手机", "Phone"), d: L("底部导航、大按钮、单手可用。", "Bottom navigation, big targets, one-handed use.") },
+    { icon: Tablet, t: L("平板", "Tablet"), d: L("地图与家人列表并排显示。", "Map and family list side by side.") },
+    { icon: Monitor, t: L("网页端", "Web"), d: L("电脑上打开就是完整的大屏控制台。", "A full widescreen console right in your browser.") },
+  ];
+
+  const faqs = [
+    { q: L("位置多久更新一次？", "How often does location update?"), a: L("应用打开时每 15 秒更新一次，并保留位置历史用于路线与行程。", "Every 15 seconds while the app is open, and history is kept for routes and trips.") },
+    { q: L("谁能看到我的位置？", "Who can see my location?"), a: L("只有你圈子里的家人。你可以随时关闭共享。", "Only the family in your circle. You can switch sharing off at any time.") },
+    { q: L("需要下载吗？", "Do I need to download anything?"), a: L("不需要。网页打开即可用，也可以添加到手机主屏当作应用使用。", "No. It works in the browser and can be added to your home screen like an app.") },
   ];
 
   const steps = [
@@ -84,6 +99,57 @@ export default function SafetyLanding() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-5xl px-4 py-14">
+        <h2 className="text-center text-2xl font-bold md:text-3xl">{L("手机、平板、电脑都一样好用", "Same app on phone, tablet and computer")}</h2>
+        <p className="mx-auto mt-3 max-w-2xl text-center text-muted-foreground">
+          {L("同一个账号，同一份位置数据，界面会随屏幕自动调整。", "One account, one set of location data, and a layout that adapts to the screen.")}
+        </p>
+        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          {platforms.map((p) => (
+            <Card key={p.t} className="border-transparent card-elevated">
+              <CardContent className="p-6 text-center">
+                <p.icon className="mx-auto h-6 w-6 text-primary" />
+                <h3 className="mt-3 font-semibold">{p.t}</h3>
+                <p className="mt-1.5 text-sm text-muted-foreground">{p.d}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      <section className="bg-muted/50 px-4 py-14">
+        <div className="mx-auto max-w-3xl">
+          <div className="text-center">
+            <Lock className="mx-auto h-8 w-8 text-primary" />
+            <h2 className="mt-3 text-2xl font-bold md:text-3xl">{L("位置属于家人，不属于广告", "Your location belongs to your family")}</h2>
+          </div>
+          <ul className="mx-auto mt-6 max-w-xl space-y-3">
+            {[
+              L("位置只在你邀请的圈子内可见。", "Location is visible only inside the circle you invite."),
+              L("共享开关随时可以关闭，关闭后不再上报。", "Turn sharing off any time and nothing new is reported."),
+              L("不出售数据，不做广告画像。", "No data selling, no advertising profiles."),
+            ].map((line) => (
+              <li key={line} className="flex items-start gap-2 text-sm">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                <span>{line}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-3xl px-4 py-14">
+        <h2 className="text-center text-2xl font-bold md:text-3xl">{L("常见问题", "Common questions")}</h2>
+        <div className="mt-8 space-y-4">
+          {faqs.map((f) => (
+            <div key={f.q} className="rounded-2xl border p-5">
+              <h3 className="font-semibold">{f.q}</h3>
+              <p className="mt-1.5 text-sm text-muted-foreground">{f.a}</p>
+            </div>
+          ))}
         </div>
       </section>
 

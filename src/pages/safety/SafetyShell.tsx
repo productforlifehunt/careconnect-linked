@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { MapPin, Home, Users, Bell, Sparkles, User as UserIcon, Moon, Sun } from "lucide-react";
+import { MapPin, Home, Users, Bell, Sparkles, User as UserIcon, Moon, Sun, MessageCircle, Car } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "next-themes";
 import { useQuery } from "@tanstack/react-query";
@@ -37,8 +37,9 @@ export function SafetyShell({ children }: { children: ReactNode }) {
   const tabs = [
     { url: "/map", label: L("地图", "Map"), icon: MapPin },
     { url: "/places", label: L("地点", "Places"), icon: Home },
+    { url: "/chat", label: L("聊天", "Chat"), icon: MessageCircle },
+    { url: "/drives", label: L("出行", "Trips"), icon: Car },
     { url: "/circle", label: L("圈子", "Circle"), icon: Users },
-    { url: "/assistant", label: L("助手", "Assistant"), icon: Sparkles },
     { url: "/me", label: L("我的", "Me"), icon: UserIcon },
   ];
 
@@ -52,10 +53,15 @@ export function SafetyShell({ children }: { children: ReactNode }) {
           <button
             type="button"
             onClick={() => navigate(isAuthenticated ? "/map" : "/")}
-            className="flex items-center gap-2"
+            className="flex shrink-0 items-center gap-2"
             aria-label={L("诺驰安全首页", "NotchSafety home")}
           >
-            <BrandMark size={28} showWordmark />
+            <span className="hidden sm:flex">
+              <BrandMark size={28} showWordmark />
+            </span>
+            <span className="flex sm:hidden">
+              <BrandMark size={28} />
+            </span>
           </button>
 
           {isAuthenticated && (
@@ -79,6 +85,16 @@ export function SafetyShell({ children }: { children: ReactNode }) {
           )}
 
           <div className="ml-auto flex items-center gap-1">
+            {isAuthenticated && (
+              <Button
+                variant={isActive("/assistant") ? "secondary" : "ghost"}
+                size="icon"
+                onClick={() => navigate("/assistant")}
+                aria-label={L("安全助手", "Safety assistant")}
+              >
+                <Sparkles className="h-5 w-5" />
+              </Button>
+            )}
             {isAuthenticated && (
               <Button
                 variant="ghost"
@@ -137,12 +153,12 @@ export function SafetyShell({ children }: { children: ReactNode }) {
                   type="button"
                   onClick={() => navigate(tab.url)}
                   aria-current={active ? "page" : undefined}
-                  className={`flex min-h-[56px] flex-1 flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors ${
+                  className={`flex min-h-[56px] min-w-0 flex-1 flex-col items-center justify-center gap-1 px-0.5 text-[10px] font-medium transition-colors ${
                     active ? "text-primary" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  <Icon className="h-5 w-5" />
-                  {tab.label}
+                  <Icon className="h-5 w-5 shrink-0" />
+                  <span className="w-full truncate text-center leading-tight">{tab.label}</span>
                 </button>
               );
             })}
