@@ -15,6 +15,8 @@ import SafetyCircle from "./SafetyCircle";
 import SafetyAlerts from "./SafetyAlerts";
 import SafetySettings from "./SafetySettings";
 import SafetyAssistant from "./SafetyAssistant";
+import SafetyChat from "./SafetyChat";
+import SafetyDrives from "./SafetyDrives";
 
 /**
  * NotchSafety — standalone family locator.
