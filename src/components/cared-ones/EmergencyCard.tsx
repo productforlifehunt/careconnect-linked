@@ -90,8 +90,8 @@ export function EmergencyCard({ caredOneId }: { caredOneId: string }) {
         </Select>
       </div>
       <div>
-        <Label>{Z("其他联系方式", "Other ways to reach them")}</Label>
-        <Input className="mt-1" value={f.content} onChange={(e) => set({ content: e.target.value })} placeholder={Z("微信、邮箱、备用号码……", "WeChat, email, second number…")} />
+        <Label>{Z("详细信息", "Detail")}</Label>
+        <Input className="mt-1" value={f.content} onChange={(e) => set({ content: e.target.value })} placeholder={Z("微信、邮箱、备用号码或其他说明", "WeChat, email, second number, or other details")} />
       </div>
       <div>
         <Label>{Z("地址", "Address")}</Label>

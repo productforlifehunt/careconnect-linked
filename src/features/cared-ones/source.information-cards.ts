@@ -214,7 +214,7 @@ export async function deleteInformationCardWordPress(id: string): Promise<void> 
 }
 
 /**
- * Enable sharing on a card: ensures a share_token exists, sets visibility + optional expiry.
+ * Enable sharing on a care info sheet: ensures a share_token exists, sets visibility + optional expiry.
  * Returns the public URL.
  */
 export async function enableInformationCardShareWordPress(
@@ -240,7 +240,7 @@ export async function revokeInformationCardShareWordPress(cardId: string): Promi
   });
 }
 
-// ── Linked emergency contacts (REL 127) ─────────────────
+// ── Linked emergency contacts (REL 221) ─────────────────
 export async function fetchInformationCardContactIdsWordPress(cardId: string): Promise<string[]> {
   const id = normalizeWpId(cardId);
   if (!id) return [];

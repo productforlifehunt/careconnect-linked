@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useInformationCardByToken } from "@/hooks/use-care-data";
 import { useQuery } from "@tanstack/react-query";

@@ -541,8 +541,8 @@ export async function deleteCareNoteWordPress(id: string): Promise<void> {
   await wordpressCCTFetch(T.careNote.slug, { id, method: "DELETE" });
 }
 
-// ─── Emergency Contacts (CCT 24) ─────────────────────────────
-// a55=name, a56=content, a57=phone, a58=address, a59=relationship, a60=note
+// ─── Emergency Contacts (CCT 211) ────────────────────────────
+// a55=name, a56=detail, a57=phone, a58=address, a59=relationship, a60=note
 export async function fetchEmergencyContactsWordPress(caredOneId: string): Promise<any[]> {
   try {
     const contacts = await fetchRelatedCctChildren(REL_USER_EMERGENCY_CONTACT, caredOneId, T.emergencyContact.slug);
