@@ -273,7 +273,7 @@ export const useSite = (): SiteConfig => {
   if (base.family === "notchsafety") {
     return {
       ...base,
-      name: "诺什安全",
+      name: "诺驰安全",
       tagline: "让家人始终安全",
       caredOneSingular: "家人",
       careGroupSingular: "圈子",

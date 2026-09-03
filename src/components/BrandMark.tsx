@@ -49,7 +49,7 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
     icon = (
       <img
         src={notchSafetyIcon}
-        alt={isChinese ? "诺什安全" : "NotchSafety"}
+        alt={isChinese ? "诺驰安全" : "NotchSafety"}
         width={size}
         height={size}
         style={box}
@@ -87,7 +87,7 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
   const wordmark = isCareCNC
     ? (isChinese ? "护畅" : "Care cnc")
     : site.family === "notchsafety" && isChinese
-      ? "诺什安全"
+      ? "诺驰安全"
       : null;
 
   return (
