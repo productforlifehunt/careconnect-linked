@@ -180,12 +180,16 @@ serve(async (req) => {
     const payload = await req.json() as {
       mode: AIMode;
       messages: Array<{ role: string; content: string }>;
+      contextPrompt?: string;
     };
 
     const mode = normalizeMode(payload?.mode);
     const messages = Array.isArray(payload?.messages)
       ? payload.messages.filter((m) => typeof m?.role === "string" && typeof m?.content === "string")
       : [];
+    const contextPrompt = typeof payload?.contextPrompt === "string"
+      ? payload.contextPrompt.slice(0, 8000).trim()
+      : "";
 
     if (messages.length === 0) {
       return new Response(
