@@ -401,13 +401,13 @@ export async function logCheckinWordPress(log: { medicine_id?: string; checkin_i
 }
 
 // ─── Medicine schedules & logs ───────────────────────────────
-// Moved to CCT 187 (calendar event, a60=b55) + CCT 206 (Apple-shaped log).
-// Relation 190 links the cared one to the schedule; relation 238 links logs.
+// CCT 205 (medicine schedule) + CCT 206 (Apple-shaped dose log).
+// Relation 237 links the cared one to the schedule; relation 238 links logs.
 export {
   fetchMedicinesWordPress, createMedicineWordPress, updateMedicineWordPress,
   deleteMedicineWordPress, fetchMedicineLogsWordPress, fetchTodayMedicineLogsWordPress,
   logMedicineWordPress,
-} from "@/features/medicine/source.187";
+} from "@/features/medicine/source.medicine";
 
 // ─── Care Tip (CCT 19) ───────────────────────────────────────
 // a55=title, a56=content, a57=category (b55=tip, b56=avoid), a58=is_pinned (b55/b56)
