@@ -64,6 +64,9 @@ export default function GPSTracking() {
   const emptyZoneForm = {
     id: "" as string,
     zone_type: ZONE_TYPE.SAFE as string,
+    // a56 shape type: a plain circle, or a precise hand-drawn outline in a63.
+    shape_type: "Radius" as ZoneShape,
+    polygon_points: [] as [number, number][],
     latitude: "" as string,
     longitude: "" as string,
     radius_meters: "200" as string,
@@ -72,6 +75,7 @@ export default function GPSTracking() {
     is_active: true,
     receiver_ids: [] as string[],
   };
+
 
   const [zoneDialogOpen, setZoneDialogOpen] = useState(false);
   const [zoneForm, setZoneForm] = useState({ ...emptyZoneForm });
@@ -626,28 +630,20 @@ export default function GPSTracking() {
             )}
 
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="zone-lat">{Z("纬度", "Latitude")}</Label>
-                <Input id="zone-lat" inputMode="decimal" value={zoneForm.latitude}
-                  onChange={(e) => setZoneForm(f => ({ ...f, latitude: e.target.value }))} />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="zone-lng">{Z("经度", "Longitude")}</Label>
-                <Input id="zone-lng" inputMode="decimal" value={zoneForm.longitude}
-                  onChange={(e) => setZoneForm(f => ({ ...f, longitude: e.target.value }))} />
-              </div>
-            </div>
+            <ZoneShapeEditor
+              shape={zoneForm.shape_type}
+              onShapeChange={(s) => setZoneForm(f => ({ ...f, shape_type: s }))}
+              latitude={zoneForm.latitude}
+              longitude={zoneForm.longitude}
+              onCenterChange={(lat, lng) => setZoneForm(f => ({ ...f, latitude: lat, longitude: lng }))}
+              radiusMeters={zoneForm.radius_meters}
+              onRadiusChange={(r) => setZoneForm(f => ({ ...f, radius_meters: r }))}
+              points={zoneForm.polygon_points}
+              onPointsChange={(p) => setZoneForm(f => ({ ...f, polygon_points: p }))}
+              onUseMyLocation={useMyLocationForZone}
+              danger={isDangerZone(zoneForm.zone_type)}
+            />
 
-            <Button type="button" variant="outline" size="sm" onClick={useMyLocationForZone} className="w-full">
-              <Crosshair className="h-4 w-4 mr-1" /> {Z("使用我的当前位置", "Use my current location")}
-            </Button>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="zone-radius">{Z("半径（米）", "Radius (metres)")}</Label>
-              <Input id="zone-radius" inputMode="numeric" value={zoneForm.radius_meters}
-                onChange={(e) => setZoneForm(f => ({ ...f, radius_meters: e.target.value }))} />
-            </div>
 
             <div className="space-y-3 rounded-lg border border-border p-3">
               <div className="flex items-center justify-between">
