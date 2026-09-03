@@ -3294,11 +3294,42 @@
           "optionMap": {}
         },
         {
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          },
           "label": "Is revoked",
           "code": "a60",
-          "type": "Switcher",
+          "type": "Radio"
+        },
+        {
           "options": "",
-          "optionMap": {}
+          "optionMap": {},
+          "label": "Note",
+          "code": "a61",
+          "type": "Textarea"
+        },
+        {
+          "options": "1. “normal group member” (Name/ID: b55) 2. “owner” (Name/ID: b56) 3. “admin” (Name/ID: b57)",
+          "optionMap": {
+            "b55": "normal group member",
+            "b56": "owner",
+            "b57": "admin"
+          },
+          "label": "The user is invited as",
+          "code": "a62",
+          "type": "Radio"
+        },
+        {
+          "options": "1. “custom” (Name/ID: b55) 2. “app native generated” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "custom",
+            "b56": "app native generated"
+          },
+          "label": "Custom or app native generated",
+          "code": "a63",
+          "type": "Radio"
         }
       ]
     },

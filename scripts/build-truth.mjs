@@ -159,6 +159,13 @@ const O = (pairs) => ({
   optionMap: Object.fromEntries(pairs.map(([l, c]) => [c, l])),
 });
 const FIELD_PATCHES = {
+  // 200. Care group invite — invite metadata added in the JetEngine GUI.
+  200: [
+    { label: 'Is revoked', code: 'a60', type: 'Radio', ...O([['Yes', 'b55'], ['No', 'b56']]) },
+    { label: 'Note', code: 'a61', type: 'Textarea' },
+    { label: 'The user is invited as', code: 'a62', type: 'Radio', ...O([['normal group member', 'b55'], ['owner', 'b56'], ['admin', 'b57']]) },
+    { label: 'Custom or app native generated', code: 'a63', type: 'Radio', ...O([['custom', 'b55'], ['app native generated', 'b56']]) },
+  ],
   187: [
     { label: 'Medication concept identifier', code: 'a92', type: 'Text' },
     { label: 'Medication dose quantity', code: 'a93', type: 'Number' },
