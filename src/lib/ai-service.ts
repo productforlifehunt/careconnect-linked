@@ -36,6 +36,8 @@ export interface InvokeAIOptions {
   title?: string;
   caredOneId?: string | number | null;
   messages?: AIChatMessage[];
+  /** Extra facts/guardrails appended to the server system prompt (e.g. care sheet contents). */
+  contextPrompt?: string;
 }
 
 const CONVERSATION_SLUG = T.chatConversation.slug;
