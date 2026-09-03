@@ -753,7 +753,7 @@ export default function GPSTracking() {
             <TabsContent value="map" className="mt-0">
               <Card className="border-transparent card-elevated overflow-hidden relative">
                 <CardContent className="p-0">
-                  <div ref={mapRef} className="h-[500px] w-full" />
+                  <div ref={(node) => { mapRef.current = node; setMapNode(node); }} className="h-[500px] w-full" />
                   {sharingPeople.length === 0 && !isLoading && (
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[400]">
                       <div className="text-center bg-card/80 backdrop-blur-sm rounded-xl p-6">
