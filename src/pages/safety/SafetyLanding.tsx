@@ -102,6 +102,57 @@ export default function SafetyLanding() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-5xl px-4 py-14">
+        <h2 className="text-center text-2xl font-bold md:text-3xl">{L("手机、平板、电脑都一样好用", "Same app on phone, tablet and computer")}</h2>
+        <p className="mx-auto mt-3 max-w-2xl text-center text-muted-foreground">
+          {L("同一个账号，同一份位置数据，界面会随屏幕自动调整。", "One account, one set of location data, and a layout that adapts to the screen.")}
+        </p>
+        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          {platforms.map((p) => (
+            <Card key={p.t} className="border-transparent card-elevated">
+              <CardContent className="p-6 text-center">
+                <p.icon className="mx-auto h-6 w-6 text-primary" />
+                <h3 className="mt-3 font-semibold">{p.t}</h3>
+                <p className="mt-1.5 text-sm text-muted-foreground">{p.d}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      <section className="bg-muted/50 px-4 py-14">
+        <div className="mx-auto max-w-3xl">
+          <div className="text-center">
+            <Lock className="mx-auto h-8 w-8 text-primary" />
+            <h2 className="mt-3 text-2xl font-bold md:text-3xl">{L("位置属于家人，不属于广告", "Your location belongs to your family")}</h2>
+          </div>
+          <ul className="mx-auto mt-6 max-w-xl space-y-3">
+            {[
+              L("位置只在你邀请的圈子内可见。", "Location is visible only inside the circle you invite."),
+              L("共享开关随时可以关闭，关闭后不再上报。", "Turn sharing off any time and nothing new is reported."),
+              L("不出售数据，不做广告画像。", "No data selling, no advertising profiles."),
+            ].map((line) => (
+              <li key={line} className="flex items-start gap-2 text-sm">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                <span>{line}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-3xl px-4 py-14">
+        <h2 className="text-center text-2xl font-bold md:text-3xl">{L("常见问题", "Common questions")}</h2>
+        <div className="mt-8 space-y-4">
+          {faqs.map((f) => (
+            <div key={f.q} className="rounded-2xl border p-5">
+              <h3 className="font-semibold">{f.q}</h3>
+              <p className="mt-1.5 text-sm text-muted-foreground">{f.a}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <section className="mx-auto max-w-3xl px-4 py-16 text-center">
         <Users className="mx-auto h-10 w-10 text-primary" />
         <h2 className="mt-4 text-2xl font-bold md:text-3xl">{L("现在就把家人加进来", "Bring your family in today")}</h2>
