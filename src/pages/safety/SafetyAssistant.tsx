@@ -35,7 +35,10 @@ export default function SafetyAssistant() {
         loc?.recorded_at ? `${L("更新时间", "updated")}: ${loc.recorded_at}` : "",
       ].filter(Boolean).join(" · ");
     }).join("\n");
-    const places = (zones || []).map((z: any) => z.name).filter(Boolean).join(", ");
+    const places = (zones || [])
+      .map((z: any) => zoneTypeLabel(String(z.zone_type), z.zone_name, !!zh))
+      .filter(Boolean)
+      .join(", ");
     return [
       `${L("圈子", "Circle")}: ${activeCircle?.name || "-"}`,
       `${L("成员与最新位置", "Members and latest locations")}:\n${roster || "-"}`,
