@@ -22,7 +22,9 @@ export type AIMode =
   | "care_tips"
   | "daily_summary"
   | "routine_suggestion"
+  | "care_info_sheet"
   | "general_chat";
+
 
 export interface AIChatMessage {
   role: "system" | "user" | "assistant";

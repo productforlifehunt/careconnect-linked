@@ -14,6 +14,7 @@ type AIMode =
   | "care_tips"
   | "daily_summary"
   | "routine_suggestion"
+  | "care_info_sheet"
   | "general_chat";
 
 const AI_MODELS = ["google/gemini-3-flash-preview", "google/gemini-2.5-flash"] as const;
@@ -25,8 +26,10 @@ const VALID_MODES = new Set<AIMode>([
   "care_tips",
   "daily_summary",
   "routine_suggestion",
+  "care_info_sheet",
   "general_chat",
 ]);
+
 
 function normalizeMode(value: unknown): AIMode {
   return VALID_MODES.has(value as AIMode) ? (value as AIMode) : "general_chat";
@@ -157,7 +160,10 @@ function buildSystemPrompt(mode: AIMode): string {
       "Summarize the care day clearly, warmly, and usefully. Return plain text.",
     routine_suggestion:
       "Suggest safe, simple dementia-friendly daily routines. Return plain text.",
+    care_info_sheet:
+      "Answer only the current user's question using facts explicitly included in the user's latest message under 'Known sheet facts'. Never invent, infer, or fill in missing details. If the answer is not in those facts, say that it is not written on this sheet and suggest contacting a listed contact. Keep it short and plain-spoken. Do not give a diagnosis, medication instructions, or legal/financial advice. Return plain text.",
     general_chat:
+
       "Chat naturally and warmly. Happily tell stories, jokes, riddles, fun facts, or just listen and reply with empathy when asked. " +
       "Treat the user as a friend, not a patient. Only bring up dementia-care topics when the user actually asks. Return plain text.",
   };
