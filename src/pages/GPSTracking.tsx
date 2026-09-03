@@ -191,7 +191,9 @@ export default function GPSTracking() {
   // ─── Initialize Leaflet map ─────────────────────────────────
   useEffect(() => {
     if (!mapRef.current || leafletMap.current) return;
-    const map = L.map(mapRef.current, { zoomControl: true }).setView([39.8283, -98.5795], 4);
+  useEffect(() => {
+    if (!mapNode) return;
+    const map = L.map(mapNode, { zoomControl: true }).setView([39.8283, -98.5795], 4);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     }).addTo(map);
@@ -200,11 +202,21 @@ export default function GPSTracking() {
     mapContainer.querySelector<HTMLAnchorElement>(".leaflet-control-zoom-in")?.setAttribute("aria-label", Z("放大地图", "Zoom in"));
     mapContainer.querySelector<HTMLAnchorElement>(".leaflet-control-zoom-out")?.setAttribute("aria-label", Z("缩小地图", "Zoom out"));
     leafletMap.current = map;
+    // The panel animates in, so the tile grid needs a size recheck once painted.
+    const t = window.setTimeout(() => map.invalidateSize(), 200);
+    const ro = new ResizeObserver(() => map.invalidateSize());
+    ro.observe(mapNode);
     return () => {
+      window.clearTimeout(t);
+      ro.disconnect();
       map.remove();
       leafletMap.current = null;
+      markersRef.current = [];
+      trailLinesRef.current = [];
+      zoneLayers.current = [];
     };
-  }, []);
+  }, [mapNode]);
+
 
   // ─── Draw safe zones on map ─────────────────────────────────
   useEffect(() => {
