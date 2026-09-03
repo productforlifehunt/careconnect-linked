@@ -164,13 +164,10 @@ export function joinDosage(quantity: number | null, unit: string): string {
 }
 
 // ─── Fields with no dedicated column in CCT 187 ──────────────
-// The Bible's 187 has no columns for pharmacy-side data (stock, refill limit,
-// caregiver escalation timers, prescriber, pharmacy, side effects). They are
-// written to a90 "Custom data" with named keys until dedicated columns exist.
-const EXTRA_KEYS = [
-  "stock_count", "refill_threshold", "time_to_send_to_caregiver",
-  "time_to_be_considered_missing", "prescribing_doctor", "pharmacy", "side_effects",
-] as const;
+// Stock (a98), refill (a99), prescriber (a100), pharmacy (a101) and the
+// caregiver escalation delay (a102) now have real columns. Only these two
+// remain without one, so they live in a90 "Custom data".
+const EXTRA_KEYS = ["time_to_be_considered_missing", "side_effects"] as const;
 
 function encodeExtras(src: Record<string, any>, previous: Record<string, any> = {}): string {
   const obj: Record<string, any> = { ...previous };
@@ -183,6 +180,7 @@ function decodeExtras(raw: any): Record<string, any> {
   if (!raw) return {};
   try { const o = JSON.parse(String(raw)); return o && typeof o === "object" ? o : {}; } catch { return {}; }
 }
+
 
 // ─── Schedule reads ──────────────────────────────────────────
 function mapSchedule(row: any, caredOneId: string): any {
