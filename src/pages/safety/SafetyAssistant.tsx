@@ -27,9 +27,9 @@ export default function SafetyAssistant() {
 
   const context = useMemo(() => {
     const roster = (members || []).map((m: any) => {
-      const loc = m.location;
+      const loc = m.snapshot;
       return [
-        m.display_name || L("家人", "Family member"),
+        m.name || L("家人", "Family member"),
         loc?.address ? `${L("位置", "at")}: ${loc.address}` : loc ? `${loc.latitude}, ${loc.longitude}` : L("暂无位置", "no location yet"),
         loc?.battery_level != null ? `${L("电量", "battery")}: ${loc.battery_level}%` : "",
         loc?.recorded_at ? `${L("更新时间", "updated")}: ${loc.recorded_at}` : "",
