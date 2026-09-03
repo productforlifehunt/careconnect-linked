@@ -119,9 +119,9 @@ async function touchConversation(conversationId: string) {
 }
 
 /** Call the ai-care-engine edge function (Lovable AI Gateway) */
-async function callAI(mode: AIMode, messages: AIChatMessage[]): Promise<string> {
+async function callAI(mode: AIMode, messages: AIChatMessage[], contextPrompt?: string): Promise<string> {
   const { data, error } = await supabase.functions.invoke("ai-care-engine", {
-    body: { mode, messages },
+    body: { mode, messages, ...(contextPrompt ? { contextPrompt } : {}) },
   });
   if (error) {
     console.error("AI edge function error:", error);
