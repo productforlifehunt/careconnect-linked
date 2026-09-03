@@ -372,6 +372,8 @@ export default function SafetyMap() {
           <MemberRow key={m.userId} member={m} isCN={isCN} onOpen={() => navigate(`/member/${m.userId}`)} onFocus={() => setFocused(m.userId)} />
         ))}
       </ul>
+      </div>
+      </div>
 
       <Dialog open={sosOpen} onOpenChange={setSosOpen}>
         <DialogContent>
