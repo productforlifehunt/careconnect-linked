@@ -37,7 +37,7 @@ export function SafetyShell({ children }: { children: ReactNode }) {
   const tabs = [
     { url: "/map", label: L("地图", "Map"), icon: MapPin },
     { url: "/places", label: L("地点", "Places"), icon: Home },
-    { url: "/chat", label: L("家人聊天", "Chat"), icon: MessageCircle },
+    { url: "/chat", label: L("聊天", "Chat"), icon: MessageCircle },
     { url: "/drives", label: L("出行", "Trips"), icon: Car },
     { url: "/circle", label: L("圈子", "Circle"), icon: Users },
     { url: "/me", label: L("我的", "Me"), icon: UserIcon },
