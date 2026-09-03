@@ -249,7 +249,12 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (metaDesc) metaDesc.setAttribute("content", config.metaDescription);
     const favicon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
     if (favicon) {
-      favicon.href = config.family === "carecnc" ? "/favicon-carecnc.png" : "/favicon-challenged.png";
+      favicon.href =
+        config.family === "notchsafety"
+          ? "/favicon-notchsafety.png"
+          : config.family === "carecnc"
+            ? "/favicon-carecnc.png"
+            : "/favicon-challenged.png";
     }
 
   }, [config]);
@@ -263,6 +268,18 @@ export const useSite = (): SiteConfig => {
   const lang = i18nInstance.language || "en";
   const isCN = lang.startsWith("zh");
   if (!isCN) return base;
+  // NotchSafety is a family locator, not a care product — it never inherits
+  // caregiving vocabulary.
+  if (base.family === "notchsafety") {
+    return {
+      ...base,
+      name: "诺什安全",
+      tagline: "让家人始终安全",
+      caredOneSingular: "家人",
+      careGroupSingular: "圈子",
+      navLabels: { ...base.navLabels, gpsTracking: "地图", careGroups: "圈子", dashboard: "地图" },
+    };
+  }
   const isChallenged = base.family === "challenged";
   return {
     ...base,

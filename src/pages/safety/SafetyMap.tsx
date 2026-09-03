@@ -318,9 +318,11 @@ export default function SafetyMap() {
         </Button>
       </div>
 
+      {/* Map + side panel: stacked on phones, side by side from tablet up */}
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-4 lg:p-4">
       {/* Map */}
-      <div className="relative">
-        <div ref={mapEl} className="h-[45vh] min-h-[280px] w-full bg-muted" />
+      <div className="relative lg:overflow-hidden lg:rounded-2xl lg:border">
+        <div ref={mapEl} className="h-[45vh] min-h-[280px] w-full bg-muted md:h-[52vh] lg:h-[calc(100dvh-11rem)]" />
         <div className="absolute right-3 top-3 z-[400] flex flex-col gap-2">
           <Button size="icon" variant="secondary" className="h-9 w-9 shadow" onClick={recenter} aria-label={Z("回到我的位置", "Recenter")}>
             <Crosshair className="h-4 w-4" />
@@ -333,8 +335,9 @@ export default function SafetyMap() {
         )}
       </div>
 
+      <div className="lg:space-y-3">
       {/* Quick actions */}
-      <div className="grid grid-cols-2 gap-2 border-b px-4 py-3">
+      <div className="grid grid-cols-2 gap-2 border-b px-4 py-3 lg:rounded-2xl lg:border lg:p-3">
         <Button variant="secondary" onClick={handleCheckIn} disabled={busy === "checkin"}>
           {busy === "checkin" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
           {Z("签到", "Check in")}
@@ -346,7 +349,7 @@ export default function SafetyMap() {
       </div>
 
       {/* Sharing toggle */}
-      <div className="flex items-center justify-between border-b px-4 py-3">
+      <div className="flex items-center justify-between gap-3 border-b px-4 py-3 lg:rounded-2xl lg:border lg:p-3">
         <div>
           <Label htmlFor="notch-share" className="text-sm font-medium">
             {Z("共享我的位置", "Share my location")}
@@ -359,7 +362,7 @@ export default function SafetyMap() {
       </div>
 
       {/* Member list */}
-      <ul className="divide-y">
+      <ul className="divide-y lg:overflow-hidden lg:rounded-2xl lg:border">
         {members.length === 0 && !loading && (
           <li className="px-4 py-10 text-center text-sm text-muted-foreground">
             {Z("圈子里还没有成员。", "No one in this circle yet.")}
@@ -369,6 +372,8 @@ export default function SafetyMap() {
           <MemberRow key={m.userId} member={m} isCN={isCN} onOpen={() => navigate(`/member/${m.userId}`)} onFocus={() => setFocused(m.userId)} />
         ))}
       </ul>
+      </div>
+      </div>
 
       <Dialog open={sosOpen} onOpenChange={setSosOpen}>
         <DialogContent>
