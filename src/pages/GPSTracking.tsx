@@ -84,8 +84,12 @@ export default function GPSTracking() {
   const [zoneSaving, setZoneSaving] = useState(false);
   const [zoneDeletingId, setZoneDeletingId] = useState<string | null>(null);
 
-  const mapRef = useRef<HTMLDivElement>(null);
+  // The map lives inside a tab panel that Radix unmounts, so track the node in
+  // state: every re-mount hands us a fresh element and rebuilds the map.
+  const [mapNode, setMapNode] = useState<HTMLDivElement | null>(null);
+  const mapRef = useRef<HTMLDivElement | null>(null);
   const leafletMap = useRef<L.Map | null>(null);
+
   const markersRef = useRef<L.Marker[]>([]);
   const trailLinesRef = useRef<L.Polyline[]>([]);
   const zoneLayers = useRef<L.Layer[]>([]);
@@ -186,8 +190,8 @@ export default function GPSTracking() {
 
   // ─── Initialize Leaflet map ─────────────────────────────────
   useEffect(() => {
-    if (!mapRef.current || leafletMap.current) return;
-    const map = L.map(mapRef.current, { zoomControl: true }).setView([39.8283, -98.5795], 4);
+    if (!mapNode) return;
+    const map = L.map(mapNode, { zoomControl: true }).setView([39.8283, -98.5795], 4);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     }).addTo(map);
@@ -196,11 +200,21 @@ export default function GPSTracking() {
     mapContainer.querySelector<HTMLAnchorElement>(".leaflet-control-zoom-in")?.setAttribute("aria-label", Z("放大地图", "Zoom in"));
     mapContainer.querySelector<HTMLAnchorElement>(".leaflet-control-zoom-out")?.setAttribute("aria-label", Z("缩小地图", "Zoom out"));
     leafletMap.current = map;
+    // The panel animates in, so the tile grid needs a size recheck once painted.
+    const t = window.setTimeout(() => map.invalidateSize(), 200);
+    const ro = new ResizeObserver(() => map.invalidateSize());
+    ro.observe(mapNode);
     return () => {
+      window.clearTimeout(t);
+      ro.disconnect();
       map.remove();
       leafletMap.current = null;
+      markersRef.current = [];
+      trailLinesRef.current = [];
+      zoneLayers.current = [];
     };
-  }, []);
+  }, [mapNode]);
+
 
   // ─── Draw safe zones on map ─────────────────────────────────
   useEffect(() => {
@@ -739,7 +753,7 @@ export default function GPSTracking() {
             <TabsContent value="map" className="mt-0">
               <Card className="border-transparent card-elevated overflow-hidden relative">
                 <CardContent className="p-0">
-                  <div ref={mapRef} className="h-[500px] w-full" />
+                  <div ref={(node) => { mapRef.current = node; setMapNode(node); }} className="h-[500px] w-full" />
                   {sharingPeople.length === 0 && !isLoading && (
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[400]">
                       <div className="text-center bg-card/80 backdrop-blur-sm rounded-xl p-6">
