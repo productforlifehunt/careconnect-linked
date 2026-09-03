@@ -82,6 +82,16 @@ export function SafetyShell({ children }: { children: ReactNode }) {
           <div className="ml-auto flex items-center gap-1">
             {isAuthenticated && (
               <Button
+                variant={isActive("/assistant") ? "secondary" : "ghost"}
+                size="icon"
+                onClick={() => navigate("/assistant")}
+                aria-label={L("安全助手", "Safety assistant")}
+              >
+                <Sparkles className="h-5 w-5" />
+              </Button>
+            )}
+            {isAuthenticated && (
+              <Button
                 variant="ghost"
                 size="icon"
                 className="relative"
