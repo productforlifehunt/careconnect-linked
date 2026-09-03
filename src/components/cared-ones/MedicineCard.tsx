@@ -553,7 +553,6 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
         user_id: caredOneId,
         name: form.name.trim(),
         dosage: form.dosage || undefined,
-        medication_concept_identifier: form.rxcui || undefined,
         frequency: FREQUENCIES.find(f => f.value === form.frequency)?.label || form.frequency,
         time_slot: form.time_slots.length > 0 ? form.time_slots : ["08:00"],
         note: form.note || undefined,
@@ -644,7 +643,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
                 value={form.name}
                 onChange={(v) => setForm(p => ({ ...p, name: v }))}
                 onPick={({ name, strength, rxcui }) => {
-                  // rxcui → CCT 187 a92 (Apple HKMedicationConcept.identifier)
+                  // RxNorm lookup only prefills name/strength — CCT 205 has no concept column.
                   setForm(p => ({ ...p, name, dosage: p.dosage || strength || "", rxcui: rxcui || "" }));
                 }}
               />
