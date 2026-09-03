@@ -64,11 +64,14 @@ export default function SafetyPlaces() {
 
   const openEdit = (z: any) => {
     const code = String(z.zone_type || ZONE_TYPE.SAFE);
+    const pts: [number, number][] = Array.isArray(z.polygon_points) ? z.polygon_points : [];
     setForm({
       id: String(z.id),
       zone_type: code,
       custom_name: isCustomZone(code) ? String(z.zone_name || "") : "",
       description: z.description || "",
+      shape_type: String(z.shape_type).toLowerCase() === "polygon" && pts.length >= 3 ? "Polygon" : "Radius",
+      polygon_points: pts,
       latitude: z.latitude != null ? String(z.latitude) : "",
       longitude: z.longitude != null ? String(z.longitude) : "",
       radius_meters: String(z.radius_meters ?? 200),
@@ -91,15 +94,26 @@ export default function SafetyPlaces() {
   };
 
   const save = async () => {
-    const lat = Number(form.latitude);
-    const lng = Number(form.longitude);
+    const isPolygon = form.shape_type === "Polygon";
+    const points = form.polygon_points;
     const radius = Number(form.radius_meters);
     const isCustom = isCustomZone(form.zone_type);
     if (isCustom && !form.custom_name.trim())
       return toast({ title: Z("请填写自定义区域名称", "Custom zone name is required"), variant: "destructive" });
+
+    // A drawn area keeps its own outline; its centre is the average of the points
+    // so alerts, list rows and the map still have a single anchor.
+    let lat = Number(form.latitude);
+    let lng = Number(form.longitude);
+    if (isPolygon) {
+      if (points.length < 3)
+        return toast({ title: Z("手绘范围至少需要 3 个点", "A drawn area needs at least 3 points"), variant: "destructive" });
+      lat = points.reduce((s, p) => s + p[0], 0) / points.length;
+      lng = points.reduce((s, p) => s + p[1], 0) / points.length;
+    }
     if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180)
       return toast({ title: Z("这个位置填得不对，请重新选一次", "That location doesn't look right — please choose it again"), variant: "destructive" });
-    if (!Number.isFinite(radius) || radius < 20)
+    if (!isPolygon && (!Number.isFinite(radius) || radius < 20))
       return toast({ title: Z("半径至少 20 米", "Radius must be at least 20 m"), variant: "destructive" });
 
     setSaving(true);
@@ -109,10 +123,11 @@ export default function SafetyPlaces() {
         // a57 — the zone's own name; Safe/Danger get their fixed label.
         zone_name: isCustom ? form.custom_name.trim() : "",
         description: form.description.trim(),
-        shape_type: "Radius",
-        latitude: lat,
-        longitude: lng,
-        radius_meters: radius,
+        shape_type: isPolygon ? "Polygon" : "Radius",
+        polygon_points: isPolygon ? points : [],
+        latitude: Number(lat.toFixed(6)),
+        longitude: Number(lng.toFixed(6)),
+        radius_meters: isPolygon ? 0 : Math.round(radius),
         notify_on_enter: form.notify_on_enter,
         notify_on_exit: form.notify_on_exit,
         is_active: form.is_active,
@@ -133,6 +148,7 @@ export default function SafetyPlaces() {
     }
 
   };
+
 
   const remove = async (id: string) => {
     setDeletingId(id);
