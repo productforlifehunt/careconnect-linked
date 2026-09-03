@@ -171,7 +171,7 @@ export async function invokeAI(mode: AIMode, context: string, options: InvokeAIO
   }
 
   // Critical path
-  const reply = await callAI(mode, userMessages);
+  const reply = await callAI(mode, userMessages, options.contextPrompt);
 
   if (conversationId) {
     try {
