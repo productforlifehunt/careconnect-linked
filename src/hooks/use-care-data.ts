@@ -1322,7 +1322,7 @@ export function useEmergencyContacts(caredOneId: string | null) {
 export function useCreateEmergencyContact() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (contact: { user_id: string; name: string; phone?: string; email?: string; relationship?: string }) => createEmergencyContactWordPress(contact),
+    mutationFn: (contact: { user_id: string; name: string; phone?: string; email?: string; relationship?: string; content?: string; address?: string; note?: string }) => createEmergencyContactWordPress(contact),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["emergencyContacts"] }); },
   });
 }
