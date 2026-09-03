@@ -1378,8 +1378,8 @@ export const WP = {
     "256": { id: 256, parent: "217. Challenged App Content", child: "218. User's study notes", type: "One to Many" },
     /** 257. One Challenged App Content can have many related cared one's care tips — 217. Challenged App Content -> 209. Cared one's care tip (One to Many) */
     "257": { id: 257, parent: "217. Challenged App Content", child: "209. Cared one's care tip", type: "One to Many" },
-    /** 66. One care facility can have many related reviews — 215. Care facility -> 31. Review (One to Many) */
-    "66": { id: 66, parent: "215. Care facility", child: "31. Review", type: "One to Many" },
+    /** 294. One 215 care facility can have many related 31. reviews — 215. Care facility -> 31. Review (One to Many) */
+    "294": { id: 294, parent: "215. Care facility", child: "31. Review", type: "One to Many" },
   },
 } as const;
 
@@ -1677,8 +1677,8 @@ export const R = {
   contentStudyNotes: 256,
   /** 257. One Challenged App Content can have many related cared one's care tips */
   contentCareTips: 257,
-  /** 66. One care facility can have many related reviews */
-  facilityReviews: 66,
+  /** 294. One 215 care facility can have many related 31. reviews */
+  facilityReviews: 294,
 } as const;
 
 /** Dictionary CCT number -> live JetEngine REST slug. */

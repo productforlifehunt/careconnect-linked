@@ -209,8 +209,8 @@ for (const [id, fields] of Object.entries(FIELD_PATCHES)) {
 
 const EXTRA_RELATIONS = [
   {
-    id: 66,
-    name: 'One care facility can have many related reviews',
+    id: 294,
+    name: 'One 215 care facility can have many related 31. reviews',
     parent: '215. Care facility',
     child: '31. Review',
     type: 'One to Many',
