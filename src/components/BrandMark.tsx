@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { useSite } from "@/contexts/SiteContext";
 import yichangIcon from "@/assets/yichang-icon-128.webp";
 import huchangIcon from "@/assets/huchang-icon-128.webp";
+import notchSafetyIcon from "@/assets/notchsafety-icon.png";
 
 interface BrandMarkProps {
   /** Icon size in px. Wordmark scales with it. */
@@ -44,6 +45,20 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
         </span>
       </div>
     );
+  } else if (site.family === "notchsafety") {
+    icon = (
+      <img
+        src={notchSafetyIcon}
+        alt={isChinese ? "诺什安全" : "NotchSafety"}
+        width={size}
+        height={size}
+        style={box}
+        decoding="sync"
+        loading="eager"
+        fetchPriority="high"
+        className="rounded-[22%] object-cover"
+      />
+    );
   } else if (brand === "carecnc" && isChinese) {
     icon = <img src={huchangIcon} alt="护畅" width={size} height={size} style={box} decoding="sync" loading="eager" fetchPriority="high" className="rounded-xl object-cover" />;
   } else if (brand === "carecnc") {
@@ -71,7 +86,9 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
 
   const wordmark = isCareCNC
     ? (isChinese ? "护畅" : "Care cnc")
-    : null;
+    : site.family === "notchsafety" && isChinese
+      ? "诺什安全"
+      : null;
 
   return (
     <span className={`flex items-center gap-2 ${className}`}>

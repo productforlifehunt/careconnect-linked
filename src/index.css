@@ -198,26 +198,87 @@
   }
 }
 
-/* ===== NotchSafety (family locator) site theme ===== */
+/* ===== NotchSafety (family locator) site theme =====
+   One blue as the single brand colour across every surface. Red stays reserved
+   for SOS/danger (destructive) and green for "safe / arrived" (success). */
 @layer base {
   .site-notchsafety {
+    --background: 213 30% 98%;
+    --foreground: 222 30% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 30% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 30% 12%;
+
     --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 158 64% 42%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 221 60% 96%;
+    --secondary-foreground: 221 83% 38%;
     --accent: 221 70% 95%;
     --accent-foreground: 221 83% 35%;
+    --muted: 214 25% 95%;
+    --muted-foreground: 218 12% 44%;
+    --border: 214 22% 89%;
+    --input: 214 22% 89%;
     --ring: 221 83% 53%;
-    --hero-gradient: linear-gradient(135deg, hsl(221 83% 53%), hsl(199 89% 48%));
+
+    --destructive: 0 78% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 152 62% 40%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --coral: 221 83% 53%;
+    --coral-foreground: 0 0% 100%;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222 30% 12%;
+    --sidebar-primary: 221 83% 53%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 221 70% 95%;
+    --sidebar-accent-foreground: 221 83% 35%;
+    --sidebar-border: 214 22% 90%;
+    --sidebar-ring: 221 83% 53%;
+
+    --hero-gradient: linear-gradient(135deg, hsl(221 83% 53%), hsl(213 90% 44%));
+    --coral-gradient: linear-gradient(135deg, hsl(221 83% 53%), hsl(213 90% 44%));
+    --card-shadow: 0 2px 10px -4px hsl(221 60% 25% / 0.12);
+    --card-shadow-hover: 0 12px 30px -10px hsl(221 60% 25% / 0.22);
     --radius: 1rem;
   }
 
   .site-notchsafety.dark {
+    --background: 222 32% 8%;
+    --foreground: 210 30% 96%;
+    --card: 222 28% 12%;
+    --card-foreground: 210 30% 96%;
+    --popover: 222 28% 12%;
+    --popover-foreground: 210 30% 96%;
+
     --primary: 217 91% 62%;
     --primary-foreground: 0 0% 100%;
+    --secondary: 222 25% 18%;
+    --secondary-foreground: 210 30% 96%;
     --accent: 221 40% 22%;
     --accent-foreground: 221 70% 82%;
+    --muted: 222 20% 17%;
+    --muted-foreground: 215 15% 65%;
+    --border: 222 20% 20%;
+    --input: 222 20% 20%;
     --ring: 217 91% 62%;
+
+    --destructive: 0 70% 48%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 152 55% 45%;
+    --success-foreground: 0 0% 100%;
+    --coral: 217 91% 62%;
+    --coral-foreground: 0 0% 100%;
+
+    --sidebar-background: 222 30% 10%;
+    --sidebar-foreground: 210 30% 96%;
+    --sidebar-accent: 221 40% 20%;
+    --sidebar-accent-foreground: 221 70% 82%;
+    --sidebar-border: 222 20% 18%;
   }
 }
 
