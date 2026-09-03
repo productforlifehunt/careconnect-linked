@@ -86,6 +86,19 @@ export default function SafetyMap() {
     zones.filter((z) => z.is_active).forEach((z) => {
       const isDanger = !!z.is_danger;
       const color = isDanger ? "#ef4444" : (z.color || "hsl(var(--primary))");
+      const label = isCN ? z.zone_type_label_zh : z.zone_type_label;
+      const isPolygon = String(z.shape_type).toLowerCase() === "polygon" && z.polygon_points?.length >= 3;
+      if (isPolygon) {
+        const poly = L.polygon(z.polygon_points, {
+          color,
+          weight: 2,
+          fillOpacity: 0.15,
+          dashArray: isDanger ? "6 4" : undefined,
+        }).addTo(m);
+        poly.bindPopup(`<b>${label}</b><br/>${z.description ? `${z.description} · ` : ""}${isCN ? "手绘范围" : "Drawn area"}`);
+        zoneLayers.current.push(poly);
+        return;
+      }
       if (z.latitude == null || z.longitude == null) return;
       const c = L.circle([z.latitude, z.longitude], {
         radius: z.radius_meters || 200,
@@ -94,10 +107,10 @@ export default function SafetyMap() {
         fillOpacity: 0.12,
         dashArray: isDanger ? "6 4" : undefined,
       }).addTo(m);
-      const label = isCN ? z.zone_type_label_zh : z.zone_type_label;
       c.bindPopup(`<b>${label}</b><br/>${z.description ? `${z.description} · ` : ""}${z.radius_meters || 200}m`);
       zoneLayers.current.push(c);
     });
+
 
   }, [zones]);
 
