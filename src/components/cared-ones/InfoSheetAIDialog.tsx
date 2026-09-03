@@ -87,10 +87,8 @@ export function InfoSheetAIDialog({
     setSending(true);
     try {
       const reply = await invokeAI("general_chat", question, {
-        messages: [
-          { role: "system", content: buildSystemPrompt(context, !!isCN) },
-          ...next,
-        ],
+        messages: next,
+        contextPrompt: buildSystemPrompt(context, !!isCN),
       });
       setMessages([...next, { role: "assistant", content: reply }]);
     } catch (e: any) {

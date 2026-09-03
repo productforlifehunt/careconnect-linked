@@ -36,6 +36,8 @@ export interface InvokeAIOptions {
   title?: string;
   caredOneId?: string | number | null;
   messages?: AIChatMessage[];
+  /** Extra facts/guardrails appended to the server system prompt (e.g. care sheet contents). */
+  contextPrompt?: string;
 }
 
 const CONVERSATION_SLUG = T.chatConversation.slug;
@@ -117,9 +119,9 @@ async function touchConversation(conversationId: string) {
 }
 
 /** Call the ai-care-engine edge function (Lovable AI Gateway) */
-async function callAI(mode: AIMode, messages: AIChatMessage[]): Promise<string> {
+async function callAI(mode: AIMode, messages: AIChatMessage[], contextPrompt?: string): Promise<string> {
   const { data, error } = await supabase.functions.invoke("ai-care-engine", {
-    body: { mode, messages },
+    body: { mode, messages, ...(contextPrompt ? { contextPrompt } : {}) },
   });
   if (error) {
     console.error("AI edge function error:", error);
@@ -169,7 +171,7 @@ export async function invokeAI(mode: AIMode, context: string, options: InvokeAIO
   }
 
   // Critical path
-  const reply = await callAI(mode, userMessages);
+  const reply = await callAI(mode, userMessages, options.contextPrompt);
 
   if (conversationId) {
     try {
