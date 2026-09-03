@@ -1,8 +1,9 @@
 import { useTranslation } from "react-i18next";
+import { ShieldCheck } from "lucide-react";
 import { useSite } from "@/contexts/SiteContext";
 import yichangIcon from "@/assets/yichang-icon-128.webp";
 import huchangIcon from "@/assets/huchang-icon-128.webp";
-import notchSafetyIcon from "@/assets/notchsafety-icon.png";
+
 
 interface BrandMarkProps {
   /** Icon size in px. Wordmark scales with it. */
@@ -47,18 +48,20 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
     );
   } else if (site.family === "notchsafety") {
     icon = (
-      <img
-        src={notchSafetyIcon}
-        alt={isChinese ? "诺驰安全" : "NotchSafety"}
-        width={size}
-        height={size}
+      <span
         style={box}
-        decoding="sync"
-        loading="eager"
-        fetchPriority="high"
-        className="rounded-[22%] object-cover"
-      />
+        role="img"
+        aria-label={isChinese ? "诺驰安全" : "NotchSafety"}
+        className="rounded-[26%] bg-primary flex items-center justify-center shadow-sm"
+      >
+        <ShieldCheck
+          strokeWidth={2.2}
+          className="text-primary-foreground"
+          style={{ width: Math.round(size * 0.6), height: Math.round(size * 0.6) }}
+        />
+      </span>
     );
+
   } else if (brand === "carecnc" && isChinese) {
     icon = <img src={huchangIcon} alt="护畅" width={size} height={size} style={box} decoding="sync" loading="eager" fetchPriority="high" className="rounded-xl object-cover" />;
   } else if (brand === "carecnc") {
