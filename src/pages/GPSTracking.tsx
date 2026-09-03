@@ -84,8 +84,12 @@ export default function GPSTracking() {
   const [zoneSaving, setZoneSaving] = useState(false);
   const [zoneDeletingId, setZoneDeletingId] = useState<string | null>(null);
 
-  const mapRef = useRef<HTMLDivElement>(null);
+  // The map lives inside a tab panel that Radix unmounts, so track the node in
+  // state: every re-mount hands us a fresh element and rebuilds the map.
+  const [mapNode, setMapNode] = useState<HTMLDivElement | null>(null);
+  const mapRef = useRef<HTMLDivElement | null>(null);
   const leafletMap = useRef<L.Map | null>(null);
+
   const markersRef = useRef<L.Marker[]>([]);
   const trailLinesRef = useRef<L.Polyline[]>([]);
   const zoneLayers = useRef<L.Layer[]>([]);
