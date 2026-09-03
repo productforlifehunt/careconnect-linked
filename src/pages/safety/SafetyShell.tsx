@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { MapPin, Home, Users, Bell, Sparkles, User as UserIcon, Moon, Sun } from "lucide-react";
+import { MapPin, Home, Users, Bell, Sparkles, User as UserIcon, Moon, Sun, MessageCircle, Car } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "next-themes";
 import { useQuery } from "@tanstack/react-query";
