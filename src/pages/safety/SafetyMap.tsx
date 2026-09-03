@@ -362,7 +362,7 @@ export default function SafetyMap() {
       </div>
 
       {/* Member list */}
-      <ul className="divide-y">
+      <ul className="divide-y lg:overflow-hidden lg:rounded-2xl lg:border">
         {members.length === 0 && !loading && (
           <li className="px-4 py-10 text-center text-sm text-muted-foreground">
             {Z("圈子里还没有成员。", "No one in this circle yet.")}
