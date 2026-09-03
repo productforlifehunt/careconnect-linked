@@ -56,7 +56,7 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
   const [aiOpen, setAiOpen] = useState<{ open: boolean; checkin: any }>({ open: false, checkin: null });
 
   const [form, setForm] = useState({
-    name: Z("每日签到", "Daily Check-In"),
+    name: Z("签到", "Check-In"),
     detail: "",
     frequency: Z("每日一次", "Once daily"),
     time: "08:00",
@@ -116,7 +116,7 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
       },
       {
         onSuccess: () => {
-          setForm({ name: Z("每日签到", "Daily Check-In"), detail: "", frequency: Z("每日一次", "Once daily"), time: "08:00", instructions: "", start_date: "", note: "", reminder_time_before: "0", time_to_send_to_caregiver: "", time_to_be_considered_missing: "", check_in_type: ["human"] });
+          setForm({ name: Z("签到", "Check-In"), detail: "", frequency: Z("每日一次", "Once daily"), time: "08:00", instructions: "", start_date: "", note: "", reminder_time_before: "0", time_to_send_to_caregiver: "", time_to_be_considered_missing: "", check_in_type: ["human"] });
           setAddOpen(false);
           toast({ title: Z("签到日程已创建 ✓", "Check-in schedule created ✓") });
         },
@@ -212,7 +212,7 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-foreground">{Z("每日签到", "Daily Check-In")}</h2>
+        <h2 className="text-lg font-bold text-foreground">{Z("签到", "Check-In")}</h2>
         <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> {Z("新增签到", "Add Check-In")}</Button>
       </div>
 

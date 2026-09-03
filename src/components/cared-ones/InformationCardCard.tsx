@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Loader2, Plus, Pencil, Trash2, Share2, IdCard, MapPin, Eye, Link2, QrCode, Copy, ShieldOff, Users } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, Share2, IdCard, MapPin, Eye, Link2, QrCode, Copy, ShieldOff, Users, Bot } from "lucide-react";
 import {
   useInformationCards, useCreateInformationCard, useUpdateInformationCard, useDeleteInformationCard,
   useInformationCardContactIds, useSetInformationCardContacts, useEmergencyContacts,
@@ -17,6 +17,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { QRCodeSVG } from "qrcode.react";
 import { useTranslation } from "react-i18next";
+import { InfoSheetAIDialog } from "@/components/cared-ones/InfoSheetAIDialog";
 
 type Status = "Draft" | "Active" | "Paused";
 type DisplaysLocation = "Yes" | "No";
@@ -25,6 +26,7 @@ interface FormState {
   cared_ones_information_card_name: string;
   cared_ones_name: string;
   cared_ones_description: string;
+  cared_ones_information_card_description: string;
   status: Status;
   displays_location: DisplaysLocation;
 }
@@ -33,6 +35,7 @@ const EMPTY_FORM: FormState = {
   cared_ones_information_card_name: "",
   cared_ones_name: "",
   cared_ones_description: "",
+  cared_ones_information_card_description: "",
   status: "Draft",
   displays_location: "No",
 };
@@ -66,6 +69,7 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
   const [contactsCardId, setContactsCardId] = useState<string | null>(null);
   const [shareCard, setShareCard] = useState<any | null>(null);
   const [viewCard, setViewCard] = useState<any | null>(null);
+  const [aiCard, setAiCard] = useState<any | null>(null);
 
 
   const openCreate = () => {
@@ -81,6 +85,7 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
       cared_ones_information_card_name: card.cared_ones_information_card_name || "",
       cared_ones_name: card.cared_ones_name || "",
       cared_ones_description: card.cared_ones_description || "",
+      cared_ones_information_card_description: card.cared_ones_information_card_description || "",
       status: (card.status as Status) || "Draft",
       displays_location: (card.displays_location as DisplaysLocation) || "No",
     });
@@ -89,14 +94,14 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
 
   const handleSubmit = () => {
     if (!form.cared_ones_information_card_name.trim()) {
-      toast({ title: Z("请填写卡片名称", "Card name is required"), variant: "destructive" });
+      toast({ title: Z("请先写这份须知的用途", "Please say what this sheet is for"), variant: "destructive" });
       return;
     }
     if (editId) {
       update.mutate(
         { id: editId, ...form },
         {
-          onSuccess: () => { setFormOpen(false); toast({ title: Z("信息卡已更新", "Information card updated") }); },
+          onSuccess: () => { setFormOpen(false); toast({ title: Z("照护须知已更新", "Care info sheet updated") }); },
           onError: (e: any) => toast({ title: Z("更新失败", "Update failed"), description: e.message, variant: "destructive" }),
         },
       );
@@ -104,7 +109,7 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
       create.mutate(
         { caredOneUserId: caredOneId, ...form },
         {
-          onSuccess: () => { setFormOpen(false); toast({ title: Z("信息卡已创建", "Information card created") }); },
+          onSuccess: () => { setFormOpen(false); toast({ title: Z("照护须知已创建", "Care info sheet created") }); },
           onError: (e: any) => toast({ title: Z("创建失败", "Create failed"), description: e.message, variant: "destructive" }),
         },
       );
@@ -115,10 +120,10 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
     <div>
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-lg font-bold text-foreground">{Z("信息卡", "Information Cards")}</h2>
-          <p className="text-xs text-muted-foreground">{Z("可在不同场景分享的资料卡", "Shareable profile cards for different contexts")}</p>
+          <h2 className="text-lg font-bold text-foreground">{Z("照护须知", "Care Info Sheets")}</h2>
+          <p className="text-xs text-muted-foreground">{Z("可分享给帮忙照看的人，或在走失时给外人看", "Share with someone helping out, or with finders if they go missing")}</p>
         </div>
-        <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> {Z("新建卡片", "New Card")}</Button>
+        <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> {Z("新建一份", "New Sheet")}</Button>
       </div>
 
       {isLoading ? (
@@ -126,8 +131,8 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
       ) : (cards || []).length === 0 ? (
         <div className="text-center py-12">
           <IdCard className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground mb-3">{Z("暂无信息卡", "No information cards yet")}</p>
-          <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> {Z("创建第一张卡片", "Create First Card")}</Button>
+          <p className="text-muted-foreground mb-3">{Z("还没有照护须知", "No care info sheets yet")}</p>
+          <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> {Z("创建第一份", "Create First Sheet")}</Button>
         </div>
       ) : (
         <div className="space-y-2">
@@ -139,10 +144,10 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
                     type="button"
                     className="min-w-0 flex-1 text-left group"
                     onClick={() => setViewCard(c)}
-                    aria-label={Z("查看信息卡", "View information card")}
+                    aria-label={Z("查看照护须知", "View care info sheet")}
                   >
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="font-medium text-foreground text-sm truncate group-hover:underline">{c.cared_ones_information_card_name || Z("（未命名卡片）", "(Untitled card)")}</h4>
+                      <h4 className="font-medium text-foreground text-sm truncate group-hover:underline">{c.cared_ones_information_card_name || Z("（未命名）", "(Untitled)")}</h4>
                       <Badge variant={statusVariant(c.status)} className="text-[10px]">{statusLabel(c.status)}</Badge>
                       {c.displays_location === "Yes" && (
                         <Badge variant="outline" className="text-[10px]"><MapPin className="h-2.5 w-2.5 mr-1" />{Z("位置", "Location")}</Badge>
@@ -155,8 +160,8 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
                   </button>
                   <div className="flex gap-1 shrink-0">
                     <Button variant="outline" size="sm" onClick={() => setShareCard(c)}><Share2 className="h-3 w-3 mr-1" /> {Z("分享", "Share")}</Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setViewCard(c)} title={Z("查看卡片", "View card")}><Eye className="h-3 w-3" /></Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setContactsCardId(String(c.id))} title={Z("选择卡片上显示的紧急联系人", "Choose emergency contacts on this card")}><Users className="h-3 w-3" /></Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setViewCard(c)} title={Z("查看", "View")}><Eye className="h-3 w-3" /></Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setContactsCardId(String(c.id))} title={Z("选择这份须知上显示的紧急联系人", "Choose emergency contacts shown on this sheet")}><Users className="h-3 w-3" /></Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(c)}><Pencil className="h-3 w-3" /></Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => del.mutate(String(c.id))}><Trash2 className="h-3 w-3" /></Button>
                   </div>
@@ -172,18 +177,18 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editId ? Z("编辑信息卡", "Edit Information Card") : Z("新建信息卡", "New Information Card")}</DialogTitle>
-            <DialogDescription>{Z("为被照护者制作一张可重复使用的分享卡片。", "A reusable shareable profile card for your cared one.")}</DialogDescription>
+            <DialogTitle>{editId ? Z("编辑照护须知", "Edit Care Info Sheet") : Z("新建照护须知", "New Care Info Sheet")}</DialogTitle>
+            <DialogDescription>{Z("写一份可以直接发给别人的照护须知：要注意什么、这次需要帮什么。", "Write something you can hand to another person: what to watch out for and what help is needed this time.")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 mt-2">
             <div>
-              <Label>{Z("卡片名称", "Card name")} <span className="text-destructive">*</span></Label>
+              <Label>{Z("这份须知的用途", "What this sheet is for")} <span className="text-destructive">*</span></Label>
               <Input className="mt-1" value={form.cared_ones_information_card_name}
                 onChange={(e) => setForm((p) => ({ ...p, cared_ones_information_card_name: e.target.value }))}
-                placeholder={Z("例如：就诊、日间照料、学校", "e.g. Hospital visit, Day care, School")} />
+                placeholder={Z("例如：帮忙照看两小时、走失时给路人看、就诊陪同", "e.g. Cover two hours, Show to a finder, Hospital visit")} />
             </div>
             <div>
-              <Label>{Z("卡片上显示的被照护者姓名", "Name shown on the card")}</Label>
+              <Label>{Z("须知上显示的被照护者姓名", "Name shown on the sheet")}</Label>
               <Input className="mt-1" value={form.cared_ones_name}
                 onChange={(e) => setForm((p) => ({ ...p, cared_ones_name: e.target.value }))}
                 placeholder={caredOneName || Z("可填化名，不必是真名", "Can be a nickname, not necessarily the real name")} />
@@ -191,10 +196,17 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
             </div>
 
             <div>
-              <Label>{Z("说明", "Description")}</Label>
+              <Label>{Z("基本情况", "Background")}</Label>
               <Textarea className="mt-1" rows={3} value={form.cared_ones_description}
                 onChange={(e) => setForm((p) => ({ ...p, cared_ones_description: e.target.value }))}
-                placeholder={Z("背景、病史、偏好等需要在卡片上展示的信息……", "Background, conditions, preferences shared on this card…")} />
+                placeholder={Z("基本情况：身体状况、习惯、忌讳、怎么沟通……", "Background: condition, habits, what to avoid, how to communicate…")} />
+            </div>
+            <div>
+              <Label>{Z("这次的具体安排", "What's needed this time")}</Label>
+              <Textarea className="mt-1" rows={3} value={form.cared_ones_information_card_description}
+                onChange={(e) => setForm((p) => ({ ...p, cared_ones_information_card_description: e.target.value }))}
+                placeholder={Z("例如：请早上七点到九点帮忙照看两个小时，八点提醒吃药。", "e.g. Please stay 7–9am and remind about the 8am pill.")} />
+              <p className="text-[11px] text-muted-foreground mt-1">{Z("只写这一次的安排，长期的护理计划请写在「护理计划」里。", "Only this occasion. Long-term plans belong in the Care Plan.")}</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -224,7 +236,7 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
             <Button variant="ghost" onClick={() => setFormOpen(false)}>{Z("取消", "Cancel")}</Button>
             <Button onClick={handleSubmit} disabled={create.isPending || update.isPending}>
               {(create.isPending || update.isPending) && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              {editId ? Z("保存修改", "Save changes") : Z("创建卡片", "Create card")}
+              {editId ? Z("保存修改", "Save changes") : Z("创建", "Create sheet")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -242,15 +254,29 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
         <ShareCardDialog card={shareCard} onClose={() => setShareCard(null)} />
       )}
 
+      {aiCard && (
+        <InfoSheetAIDialog
+          open
+          onOpenChange={(o) => { if (!o) setAiCard(null); }}
+          context={{
+            sheetName: aiCard.cared_ones_information_card_name,
+            caredOneName: aiCard.cared_ones_name || caredOneName,
+            description: aiCard.cared_ones_description,
+            situationDetails: aiCard.cared_ones_information_card_description,
+            contacts: emergencyContacts || [],
+          }}
+        />
+      )}
+
       {viewCard && (
         <Dialog open onOpenChange={(o) => { if (!o) setViewCard(null); }}>
           <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <IdCard className="h-4 w-4 text-primary" />
-                {viewCard.cared_ones_information_card_name || Z("信息卡", "Information card")}
+                {viewCard.cared_ones_information_card_name || Z("照护须知", "Care info sheet")}
               </DialogTitle>
-              <DialogDescription>{Z("走失时可分享给 app 外人员查看的资料卡。", "The profile card you can share with people outside the app if the cared one goes missing.")}</DialogDescription>
+              <DialogDescription>{Z("可以发给帮忙照看的人，走失时也能给路人看。", "Send it to someone helping out, or show it to a finder if they go missing.")}</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="flex items-center gap-2 flex-wrap">
@@ -264,13 +290,19 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
                   : <Badge variant="outline" className="text-xs">{Z("未分享", "Not shared")}</Badge>}
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">{Z("卡片上显示的姓名", "Name shown on the card")}</p>
+                <p className="text-xs text-muted-foreground">{Z("须知上显示的姓名", "Name shown on the sheet")}</p>
                 <p className="text-sm text-foreground">{viewCard.cared_ones_name || ""}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">{Z("说明", "Description")}</p>
+                <p className="text-xs text-muted-foreground">{Z("基本情况", "Background")}</p>
                 <p className="text-sm text-foreground whitespace-pre-wrap">{viewCard.cared_ones_description || ""}</p>
               </div>
+              {viewCard.cared_ones_information_card_description && (
+                <div>
+                  <p className="text-xs text-muted-foreground">{Z("这次的具体安排", "What's needed this time")}</p>
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{viewCard.cared_ones_information_card_description}</p>
+                </div>
+              )}
               {viewCard.share_expires_at && (
                 <div>
                   <p className="text-xs text-muted-foreground">{Z("分享链接过期时间", "Share link expires at")}</p>
@@ -282,6 +314,9 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => { setViewCard(null); setShareCard(viewCard); }}>
                   <Share2 className="h-3 w-3 mr-1" /> {Z("分享", "Share")}
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setAiCard(viewCard)}>
+                  <Bot className="h-3 w-3 mr-1" /> {Z("问 AI", "Ask AI")}
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => { setViewCard(null); openEdit(viewCard); }}>
                   <Pencil className="h-3 w-3 mr-1" /> {Z("编辑", "Edit")}
@@ -316,7 +351,7 @@ function ShareCardDialog({ card, onClose }: { card: any; onClose: () => void }) 
   });
 
   const buildShareText = () => [
-    `📇 ${card.cared_ones_information_card_name || Z("信息卡", "Information Card")}`,
+    `📇 ${card.cared_ones_information_card_name || Z("照护须知", "Care Info Sheet")}`,
     card.cared_ones_name ? `${Z("姓名", "Name")}: ${card.cared_ones_name}` : "",
     generatedUrl ? `\n${generatedUrl}` : "",
   ].filter(Boolean).join("\n");
@@ -350,7 +385,7 @@ function ShareCardDialog({ card, onClose }: { card: any; onClose: () => void }) 
     const text = buildShareText();
     try {
       if ((navigator as any).share) {
-        await (navigator as any).share({ title: card.cared_ones_information_card_name || Z("信息卡", "Information Card"), text, url: generatedUrl });
+        await (navigator as any).share({ title: card.cared_ones_information_card_name || Z("照护须知", "Care Info Sheet"), text, url: generatedUrl });
         return;
       }
       await navigator.clipboard.writeText(text);
@@ -368,7 +403,7 @@ function ShareCardDialog({ card, onClose }: { card: any; onClose: () => void }) 
     <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><Share2 className="h-4 w-4" /> {Z("分享信息卡", "Share Information Card")}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2"><Share2 className="h-4 w-4" /> {Z("分享照护须知", "Share Care Info Sheet")}</DialogTitle>
           <DialogDescription>{Z("生成公开链接或二维码，可随时撤销。", "Generate a public link or QR code. You can revoke it any time.")}</DialogDescription>
         </DialogHeader>
 
@@ -476,8 +511,8 @@ function ContactSelectorDialog({
     <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{Z("可见的紧急联系人", "Visible emergency contacts")}</DialogTitle>
-          <DialogDescription>{Z("选择在此信息卡上显示哪些联系人。默认全部选中。", "Choose which contacts appear on this information card. All are selected by default.")}</DialogDescription>
+          <DialogTitle>{Z("显示哪些紧急联系人", "Emergency contacts to show")}</DialogTitle>
+          <DialogDescription>{Z("选择在这份须知上显示哪些联系人。默认全部选中。", "Choose which contacts appear on this sheet. All are selected by default.")}</DialogDescription>
         </DialogHeader>
         <div className="space-y-2 max-h-[50vh] overflow-y-auto py-2">
           {allContacts.length === 0 ? (

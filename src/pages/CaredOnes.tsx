@@ -38,7 +38,6 @@ import { NotesCard } from "@/components/cared-ones/NotesCard";
 import { EmergencyCard } from "@/components/cared-ones/EmergencyCard";
 import { DocumentsCard } from "@/components/cared-ones/DocumentsCard";
 import { InformationCardCard } from "@/components/cared-ones/InformationCardCard";
-import { VisitLogCard } from "@/components/cared-ones/VisitLogCard";
 
 function FeatureDetail({ cardKey, caredOneId, caredOneName }: { cardKey: string; caredOneId: string; caredOneName: string }) {
   switch (cardKey) {
@@ -51,7 +50,6 @@ function FeatureDetail({ cardKey, caredOneId, caredOneName }: { cardKey: string;
     case "emergency": return <EmergencyCard caredOneId={caredOneId} />;
     case "location": return <LocationCard caredOneId={caredOneId} caredOneName={caredOneName} />;
     case "documents": return <DocumentsCard caredOneId={caredOneId} />;
-    case "visits": return <VisitLogCard caredOneId={caredOneId} />;
     case "info-card": return <InformationCardCard caredOneId={caredOneId} caredOneName={caredOneName} />;
     default: return null;
   }
@@ -91,7 +89,7 @@ export default function CaredOnes() {
 
   const featureCards = [
     { key: "medicine", title: t("caredOnes.medicineTracker"), icon: Pill, subtitle: t("caredOnes.trackMedications") },
-    { key: "checkin", title: t("caredOnes.dailyCheckIns"), icon: ClipboardCheck, subtitle: t("caredOnes.dailyWellness") },
+    { key: "checkin", title: t("caredOnes.checkIns", { defaultValue: "Check-Ins" }), icon: ClipboardCheck, subtitle: t("caredOnes.dailyWellness") },
     { key: "tips", title: t("caredOnes.careTips"), icon: Lightbulb, subtitle: t("caredOnes.helpfulReminders") },
     { key: "tasks", title: t("caredOnes.careTasks", { defaultValue: "Care Tasks" }), icon: ListChecks, subtitle: t("caredOnes.careTasksSubtitle", { defaultValue: "Things to do for this person" }) },
     { key: "plan", title: t("caredOnes.carePlan"), icon: Target, subtitle: t("caredOnes.structuredGoals") },
@@ -99,8 +97,7 @@ export default function CaredOnes() {
     { key: "emergency", title: t("caredOnes.emergencyContacts"), icon: Phone, subtitle: t("caredOnes.emergencyList") },
     { key: "location", title: t("caredOnes.locationSafeZones"), icon: MapPin, subtitle: t("caredOnes.gpsSafeZones") },
     { key: "documents", title: t("caredOnes.documents"), icon: FolderOpen, subtitle: t("caredOnes.medicalDocs") },
-    { key: "visits", title: t("caredOnes.visitLog"), icon: Activity, subtitle: t("caredOnes.visitHistory") },
-    { key: "info-card", title: t("caredOnes.informationCards"), icon: IdCard, subtitle: t("caredOnes.informationCardsSubtitle") },
+    { key: "info-card", title: t("caredOnes.careInfoSheets", { defaultValue: "Care Info Sheets" }), icon: IdCard, subtitle: t("caredOnes.careInfoSheetsSubtitle", { defaultValue: "Share what a helper or finder needs to know" }) },
   ];
 
   const handleAddCaredOne = () => {

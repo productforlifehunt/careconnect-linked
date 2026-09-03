@@ -131,7 +131,7 @@ export function InfoSheetAIDialog({
           )}
           {messages.map((m, i) => (
             <div key={i} className={m.role === "user" ? "text-right" : ""}>
-              <div className={`inline-block text-sm rounded-lg px-3 py-2 max-w-[90%] whitespace-pre-wrap ${m.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`}>
+              <div className={`inline-block text-sm rounded-lg px-3 py-2 max-w-[90%] whitespace-pre-wrap ${m.role === "user" ? "bg-primary text-primary-foreground" : "text-foreground"}`}>
                 {m.content}
               </div>
             </div>
