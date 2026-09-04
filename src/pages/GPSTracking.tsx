@@ -9,8 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MapPin, Navigation, Clock, Shield, AlertTriangle, RefreshCw, Loader2, Radio, Route, Bell, Hexagon, Plus, Trash2, Pencil, Crosshair } from "lucide-react";
-import { useLocationShares, useCareGroups, useCareGroupMembers } from "@/hooks/use-care-data";
+import { useLocationShares, useCareGroups, useCareGroupMembers, useUserCaredOnes } from "@/hooks/use-care-data";
 import {
   shareMyLocationWordPress, disableMyLocationSharingWordPress,
   fetchCaredOneLocationSettingsWordPress,
@@ -109,17 +110,54 @@ export default function GPSTracking() {
   const { data: careGroups } = useCareGroups();
   const primaryGroupId = (careGroups || [])[0]?.id ? String((careGroups as any[])[0].id) : null;
   const { data: groupMembers } = useCareGroupMembers(primaryGroupId);
+  const { data: myCaredOnes } = useUserCaredOnes();
+
+  // Zones, alerts and sharing settings belong to the person being LOOKED AFTER,
+  // not to the phone in your hand. A caregiver opening this page must be able
+  // to manage the linked cared one's areas — the previous code silently scoped
+  // every one of these reads and writes to the signed-in user.
+  const [subjectId, setSubjectId] = useState<string>("");
+  const caredOneOptions = (() => {
+    const seen = new Set<string>();
+    const out: { id: string; name: string }[] = [];
+    const push = (uid: any, name?: string) => {
+      const key = String(uid ?? "").replace(/^wp-/, "");
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      out.push({ id: key, name: name || t("common.unknown") });
+    };
+    (myCaredOnes || []).forEach((c: any) =>
+      push(c.cared_one_user_id ?? c.user_id ?? c.id, c.full_name || c.display_name || c.name),
+    );
+    (groupMembers || [])
+      .filter((m: any) => m.is_cared_one)
+      .forEach((m: any) => push(m.user_id ?? m.id, m.display_name || m.profile?.full_name));
+    return out;
+  })();
+  const selfKey = String(userId ?? "").replace(/^wp-/, "");
+  // Default to the single cared one when there is exactly one, so the common
+  // case needs no picking at all; otherwise stay on yourself.
+  const effectiveSubjectId =
+    subjectId || (caredOneOptions.length === 1 ? caredOneOptions[0].id : selfKey);
+  const subjectIsSelf = effectiveSubjectId === selfKey;
+  // Relation 247 stores a user-type code on every snapshot (b56 = cared one,
+  // b55 = everyone else). Nothing used to set it, so every row was written as
+  // b55; flag it when the person sharing really is a cared one.
+  const selfIsCaredOne =
+    (groupMembers || []).some(
+      (m: any) => String(m.user_id ?? m.id).replace(/^wp-/, "") === selfKey && m.is_cared_one,
+    );
 
   // ─── Initialize sharing state ───────────────────────────────
   useEffect(() => {
     if (!userId) return;
     (async () => {
       try {
-        const settings = await fetchCaredOneLocationSettingsWordPress(String(userId));
+        const settings = await fetchCaredOneLocationSettingsWordPress(effectiveSubjectId);
         if (settings?.sharing_enabled) setShareMyLocation(true);
       } catch {}
     })();
-  }, [userId]);
+  }, [userId, effectiveSubjectId]);
 
   // ─── Load safe zones & alerts ───────────────────────────────
   useEffect(() => {
@@ -127,14 +165,14 @@ export default function GPSTracking() {
     (async () => {
       try {
         const [z, a] = await Promise.all([
-          fetchSafeZonesWordPress(String(userId)),
-          fetchSafeZoneAlertsWordPress(String(userId)),
+          fetchSafeZonesWordPress(effectiveSubjectId),
+          fetchSafeZoneAlertsWordPress(effectiveSubjectId),
         ]);
         setZones(z);
         setAlerts(a);
       } catch {}
     })();
-  }, [userId]);
+  }, [userId, effectiveSubjectId]);
 
   // ─── Build people list from location shares ─────────────────
   const people = (locationShares || []).map((ls: any) => {
@@ -353,6 +391,7 @@ export default function GPSTracking() {
         if (!pos) return;
         await writeLocationAndCheckZones(pos.latitude, pos.longitude, {
           accuracy: pos.accuracy,
+          is_cared_one: selfIsCaredOne,
         });
       } catch {}
     };
@@ -361,7 +400,7 @@ export default function GPSTracking() {
     sendMyLocation();
     const interval = setInterval(sendMyLocation, POLL_INTERVAL);
     return () => clearInterval(interval);
-  }, [shareMyLocation, userId]);
+  }, [shareMyLocation, userId, selfIsCaredOne]);
 
   // ─── Focus map on selected person ───────────────────────────
   useEffect(() => {
@@ -384,7 +423,7 @@ export default function GPSTracking() {
           setShareMyLocation(false);
           return;
         }
-        await writeLocationAndCheckZones(pos.latitude, pos.longitude, { accuracy: pos.accuracy });
+        await writeLocationAndCheckZones(pos.latitude, pos.longitude, { accuracy: pos.accuracy, is_cared_one: selfIsCaredOne });
         refetch();
         toast({ title: t("gps.locationSharingEnabled") });
       } else {
@@ -412,6 +451,7 @@ export default function GPSTracking() {
       await writeLocationAndCheckZones(pos?.latitude ?? 0, pos?.longitude ?? 0, {
         accuracy: pos?.accuracy,
         isEmergency: true,
+        is_cared_one: selfIsCaredOne,
       });
       refetch();
       setSosDialogOpen(false);
@@ -439,7 +479,7 @@ export default function GPSTracking() {
   const reloadZones = async () => {
     if (!userId) return;
     try {
-      const rows = await fetchSafeZonesWordPress(String(userId));
+      const rows = await fetchSafeZonesWordPress(effectiveSubjectId);
       setZones(rows);
     } catch {}
   };
@@ -539,14 +579,14 @@ export default function GPSTracking() {
         schedule_end_time: zoneForm.schedule_enabled ? zoneForm.schedule_end_time : "",
         is_active: zoneForm.is_active,
         // Receivers live on the cared one (Relation 290), shared by all zones.
-        user_id: String(userId),
+        user_id: effectiveSubjectId,
         receiver_ids: zoneForm.receiver_ids,
       };
       if (zoneForm.id) {
         await updateSafeZoneWordPress(zoneForm.id, payload);
 
       } else {
-        await createSafeZoneWordPress({ user_id: String(userId), ...payload });
+        await createSafeZoneWordPress({ user_id: effectiveSubjectId, ...payload });
       }
       await reloadZones();
       setZoneDialogOpen(false);
@@ -842,6 +882,24 @@ export default function GPSTracking() {
                       {Z("新建区域", "New zone")}
                     </Button>
                   </div>
+                  {caredOneOptions.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <Label className="text-xs text-muted-foreground shrink-0">
+                        {Z("区域属于", "Areas for")}
+                      </Label>
+                      <Select value={effectiveSubjectId} onValueChange={setSubjectId}>
+                        <SelectTrigger className="h-9 max-w-[240px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={selfKey}>{Z("我自己", "Myself")}</SelectItem>
+                          {caredOneOptions.map((c) => (
+                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   {zones.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-8">{t("gps.noZones", "No areas set up yet")}</p>
                   ) : (
