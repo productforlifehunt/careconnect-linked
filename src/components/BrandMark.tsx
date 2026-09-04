@@ -1,8 +1,9 @@
 import { useTranslation } from "react-i18next";
-import { ShieldCheck } from "lucide-react";
 import { useSite } from "@/contexts/SiteContext";
 import yichangIcon from "@/assets/yichang-icon-128.webp";
 import huchangIcon from "@/assets/huchang-icon-128.webp";
+import notchsafetyMark from "@/assets/notchsafety-mark.png.asset.json";
+
 
 
 interface BrandMarkProps {
