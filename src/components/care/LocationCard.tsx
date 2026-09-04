@@ -150,6 +150,15 @@ function zoneColor(code: string): string {
   return "#6B7280";
 }
 
+/** Colour actually painted for a zone: a custom zone may carry its own colour (a59). */
+function zoneFill(code: string, storedColor?: string | null): string {
+  if (isCustomZone(code) && typeof storedColor === "string" && /^#[0-9a-fA-F]{6}$/.test(storedColor)) return storedColor;
+  return zoneColor(code);
+}
+
+/** Palette offered for custom zones — includes the Safe green and Danger red. */
+const CUSTOM_ZONE_COLORS = ["#10B981", "#EF4444", "#3B82F6", "#F59E0B", "#8B5CF6", "#EC4899", "#0EA5E9", "#6B7280"];
+
 function zoneIcon(code: string) {
   if (isDangerZone(code)) return Ban;
   if (isSafeZone(code)) return Shield;
@@ -198,7 +207,7 @@ type Tab = "location" | "requests" | "alerts" | "safezones" | "history";
 interface Props { caredOneId: string; caredOneName: string; }
 
 const defaultForm = () => ({
-  zone_type: ZONE_TYPE.SAFE as string, shape_type: "radius",
+  zone_type: ZONE_TYPE.SAFE as string, shape_type: "radius", color: "#3B82F6",
   latitude: "", longitude: "", radius: 200,
   polygon_points: [] as [number, number][],
   corner_radius: [] as number[],
@@ -308,7 +317,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
       if (!zone.latitude || !zone.longitude) return;
       const zLat = parseFloat(zone.latitude), zLng = parseFloat(zone.longitude);
       if (isNaN(zLat) || isNaN(zLng)) return;
-      const color = zoneColor(zone.zone_type);
+      const color = zoneFill(zone.zone_type, zone.color);
       const isDanger = isDangerZone(zone.zone_type);
       if (zone.shape_type === "polygon" && zone.polygon_points?.length >= 3) {
         const pts: [number, number][] = zone.polygon_points;
@@ -351,7 +360,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
     drawLayersRef.current = [];
     if (drawnPoints.length === 0) return;
 
-    const color = zoneColor(zoneForm.zone_type);
+    const color = zoneFill(zoneForm.zone_type, zoneForm.color);
 
 
     if (drawnPoints.length >= 2) {
@@ -415,7 +424,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
       }
       drawLayersRef.current.push(vm);
     });
-  }, [drawnPoints, cornerRadii, selectedVertex, flashRed, drawMode, zoneForm.zone_type]);
+  }, [drawnPoints, cornerRadii, selectedVertex, flashRed, drawMode, zoneForm.zone_type, zoneForm.color]);
 
   // ─── Radius preview layer
   const renderRadiusPreview = useCallback(async () => {
@@ -427,11 +436,11 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
     const lat = parseFloat(zoneForm.latitude);
     const lng = parseFloat(zoneForm.longitude);
     if (isNaN(lat) || isNaN(lng)) return;
-    const color = zoneColor(zoneForm.zone_type);
+    const color = zoneFill(zoneForm.zone_type, zoneForm.color);
     const c = Lx.circle([lat, lng], { radius: zoneForm.radius, color, fillColor: color, fillOpacity: 0.2, weight: 2, dashArray: "4,4" }).addTo(map);
     drawLayersRef.current.push(c);
     try { map.panTo([lat, lng]); } catch (_) {}
-  }, [zoneForm.latitude, zoneForm.longitude, zoneForm.radius, zoneForm.zone_type]);
+  }, [zoneForm.latitude, zoneForm.longitude, zoneForm.radius, zoneForm.zone_type, zoneForm.color]);
 
 
   const isMapTab = activeTab === "location" || activeTab === "safezones";
@@ -585,6 +594,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
       setZoneForm({
         zone_type: zone.zone_type || ZONE_TYPE.SAFE,
         shape_type: zone.shape_type || "radius",
+        color: (typeof zone.color === "string" && /^#[0-9a-fA-F]{6}$/.test(zone.color)) ? zone.color : "#3B82F6",
         latitude: zone.latitude?.toString() || "", longitude: zone.longitude?.toString() || "",
         radius: zone.radius_meters || 200, description: zone.description || "",
         polygon_points: zone.polygon_points || [], corner_radius: zone.corner_radius || [],
@@ -637,7 +647,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
       user_id: caredOneId, zone_type: zoneForm.zone_type,
       zone_name: isCustom ? customNameDraft.trim() : "",
       shape_type: isPolygon ? "polygon" : "radius",
-      color: zoneColor(zoneForm.zone_type), latitude: lat, longitude: lng,
+      color: isCustom ? zoneForm.color : zoneColor(zoneForm.zone_type), latitude: lat, longitude: lng,
       radius_meters: isPolygon ? 0 : zoneForm.radius,
       polygon_points: isPolygon ? drawnPoints : null,
       corner_radius: isPolygon ? cornerRadii : null,
@@ -880,7 +890,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                       const breach = checkZoneBreach(zone, parseFloat(currentLocation.latitude), parseFloat(currentLocation.longitude));
                       return (
                         <div key={zone.id} className="flex items-center gap-2 text-xs">
-                          <div className="w-2 h-2 rounded-full" style={{ background: zoneColor(zone.zone_type) }} />
+                          <div className="w-2 h-2 rounded-full" style={{ background: zoneFill(zone.zone_type, zone.color) }} />
                           <span className="font-medium">{zoneLabel(zone.zone_type, zone.zone_name)}</span>
                           <span className={breach.breached ? "text-destructive font-semibold" : "text-success"}>
                             {isDangerZone(zone.zone_type)
@@ -1131,6 +1141,20 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                     </Label>
                     <Input value={customNameDraft} onChange={e => setCustomNameDraft(e.target.value)}
                       placeholder={isZh ? "例如：日托中心" : 'e.g. "Day centre"'} className="mt-1" />
+
+                    <Label className="text-xs mt-3 block">{isZh ? "区域颜色" : "Zone colour"}</Label>
+                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                      {CUSTOM_ZONE_COLORS.map(c => (
+                        <button key={c} type="button" aria-label={c}
+                          onClick={() => setZoneForm(p => ({ ...p, color: c }))}
+                          className={`h-7 w-7 rounded-full border-2 transition-transform ${zoneForm.color.toLowerCase() === c.toLowerCase() ? "scale-110 border-foreground" : "border-transparent"}`}
+                          style={{ background: c }} />
+                      ))}
+                      <input type="color" aria-label={isZh ? "自选颜色" : "Pick a colour"}
+                        value={zoneForm.color}
+                        onChange={e => setZoneForm(p => ({ ...p, color: e.target.value }))}
+                        className="h-7 w-9 rounded border bg-transparent p-0.5" />
+                    </div>
                   </div>
                 )}
 
@@ -1145,7 +1169,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                       }}
                         className={`flex-1 py-1.5 text-sm font-medium transition-colors
                           ${zoneForm.shape_type === st ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground hover:bg-accent"}`}>
-                        {st === "radius" ? "⬤ Radius" : "⬡ Precise Border"}
+                        {st === "radius" ? (isZh ? "⬤ 圆形范围" : "⬤ Circle area") : (isZh ? "⬡ 定位范围" : "⬡ Position area")}
                       </button>
                     ))}
                   </div>
@@ -1309,7 +1333,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                     Cancel
                   </Button>
                   <Button className="flex-1 text-white"
-                    style={{ background: zoneColor(zoneForm.zone_type) }}
+                    style={{ background: zoneFill(zoneForm.zone_type, zoneForm.color) }}
                     onClick={handleSaveZone}
                     disabled={createZone.isPending || updateZone.isPending}>
 
@@ -1334,7 +1358,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
               </div>
             )}
             {(zones || []).map((zone: any) => {
-              const color = zoneColor(zone.zone_type);
+              const color = zoneFill(zone.zone_type, zone.color);
               const Icon = zoneIcon(zone.zone_type);
               const label = zoneLabel(zone.zone_type, zone.zone_name);
 

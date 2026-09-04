@@ -251,8 +251,13 @@ export async function fetchSafeZonesWordPress(userId: string): Promise<any[]> {
   const zones = await Promise.all(
     zoneIds.map(async (zoneId) => {
       const zone = await wordpressCCTFetch<any>(T.safeZone.slug, { id: zoneId });
+      // A relation can outlive its row (zone deleted elsewhere): JetEngine then
+      // answers `false`/an empty body. Those ghosts must never reach the UI.
+      if (!zone || typeof zone !== "object" || Array.isArray(zone)) return null;
+      const mapped = mapSafeZone(zone, userId);
+      if (!mapped.id || mapped.id === "undefined" || mapped.id === "null") return null;
       // Receivers live on the cared one (Relation 290), shared by all zones.
-      return { ...mapSafeZone(zone, userId), receiver_ids: receiverIds };
+      return { ...mapped, receiver_ids: receiverIds };
     }),
   );
 
