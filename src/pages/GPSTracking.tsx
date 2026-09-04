@@ -35,6 +35,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { themeColor } from "@/lib/theme-color";
 import { useTranslation } from "react-i18next";
 import { getCurrentPosition } from "@/lib/geolocation";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
@@ -228,7 +229,7 @@ export default function GPSTracking() {
       const isDanger = isDangerZone(String(zone.zone_type));
       const isPolygon = String(zone.shape_type).toLowerCase() === "polygon";
       const label = zoneLabel(String(zone.zone_type), zone.zone_name);
-      const color = isDanger ? "#ef4444" : "hsl(var(--primary))";
+      const color = isDanger ? "#ef4444" : themeColor("--primary", "#4c1d95");
       if (isPolygon && zone.polygon_points?.length >= 3) {
         const poly = L.polygon(zone.polygon_points, {
           color,
@@ -251,7 +252,14 @@ export default function GPSTracking() {
       }
     });
 
-  }, [zones]);
+    // With nobody sharing a live position, the zones are the only thing worth
+    // looking at — frame them instead of leaving the map on the whole country.
+    if (zoneLayers.current.length && !sharingPeople.length) {
+      const group = L.featureGroup(zoneLayers.current as L.Layer[]);
+      const bounds = group.getBounds();
+      if (bounds.isValid()) map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+    }
+  }, [zones, mapNode, sharingPeople.length]);
 
   // ─── Update markers + trails when data changes ──────────────
   useEffect(() => {
@@ -287,7 +295,7 @@ export default function GPSTracking() {
       const trail = trailData[person.userId];
       if (trail && trail.length > 1) {
         const polyline = L.polyline(trail, {
-          color: "hsl(var(--primary))",
+          color: themeColor("--primary", "#4c1d95"),
           weight: 3,
           opacity: 0.6,
           dashArray: "4 6",
@@ -303,7 +311,7 @@ export default function GPSTracking() {
       const bounds = L.latLngBounds(sharingPeople.map(p => [p.coordinates.lat, p.coordinates.lng] as [number, number]));
       map.fitBounds(bounds, { padding: [50, 50] });
     }
-  }, [sharingPeople.length, locationShares, trailData]);
+  }, [sharingPeople.length, locationShares, trailData, mapNode]);
 
   // ─── Live breach detection on each poll ─────────────────────
   useEffect(() => {
@@ -573,7 +581,7 @@ export default function GPSTracking() {
             {t("gps.realtimeLocation")}
             <span className="ml-2 inline-block whitespace-nowrap text-xs text-muted-foreground/70">
               <Radio className="inline h-3 w-3 mr-1 text-success" />
-              {t("gps.autoRefresh", "Auto-refresh")} 15s
+              {t("gps.autoRefresh", "Auto-refreshing")}
             </span>
           </p>
         </div>
