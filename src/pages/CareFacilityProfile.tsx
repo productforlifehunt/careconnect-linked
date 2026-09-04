@@ -363,7 +363,7 @@ export default function CareFacilityProfile() {
             <CardContent className="space-y-6">
               <div className="grid lg:grid-cols-[220px_1fr] gap-6">
                 <div className="rounded-2xl border p-5 bg-muted/20">
-                  <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">{isZh ? "口碑概览" : "Review snapshot"}</div>
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">{isZh ? "口碑概览" : "Ratings at a glance"}</div>
                   <div className="text-4xl font-bold text-foreground mb-1">{reviewSummary.average?.toFixed(1) || "--"}</div>
                   <div className="text-sm text-muted-foreground mb-4">{isZh ? `${reviewSummary.count} 条公开评价` : `${reviewSummary.count} published reviews`}</div>
                   <div className="space-y-2">
@@ -387,8 +387,8 @@ export default function CareFacilityProfile() {
                   <div className="font-medium text-foreground mb-2 flex items-center gap-2"><MessageSquareText className="h-4 w-4" />{isZh ? "专业评价说明" : "Professional review note"}</div>
                   <p>
                     {isZh
-                      ? "当前评价模块严格基于现有字段：总评分、评论内容、发布时间、评价者信息与评论回复。后续如你确认分项评分字段，我们再升级为环境、护理质量、安全、沟通、性价比等专业维度。"
-                      : "The current review module is intentionally constrained to confirmed fields only: overall rating, comment text, published time, reviewer profile, and threaded replies. Once you confirm sub-rating fields, I can upgrade this into professional dimensions such as environment, care quality, safety, communication, and value."}
+                      ? "评价目前只显示总评分、评价内容、发布时间、评价人和回复。"
+                      : "Reviews here show the overall rating, what people wrote, when they wrote it, who wrote it, and any replies."}
                   </p>
                 </div>
               </div>

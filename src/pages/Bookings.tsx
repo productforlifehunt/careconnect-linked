@@ -202,7 +202,7 @@ export default function Bookings() {
             <Button variant="outline" size="sm" onClick={() => openReview(booking)}><Star className="h-3.5 w-3.5 mr-1.5" /> {t("bookings.leaveReview")}</Button>
           )}
           <Button variant="ghost" size="sm" onClick={() => { setIssueBooking(booking); setIssueOpen(true); }}>
-            <AlertTriangle className="h-3.5 w-3.5 mr-1.5" /> {i18n.language?.startsWith("zh") ? "沟通记录" : "Booking thread"}
+            <AlertTriangle className="h-3.5 w-3.5 mr-1.5" /> {i18n.language?.startsWith("zh") ? "问题与退款" : "Issues & refunds"}
           </Button>
           <Button variant="ghost" size="sm" onClick={() => handleMessage(booking)} disabled={messagingId === booking.provider_id}><MessageSquare className="h-3.5 w-3.5 mr-1.5" /> {t("common.message")}</Button>
         </div>

@@ -235,7 +235,7 @@ export default function ProviderDashboard() {
                     <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
                     {b.refund_status === "requested"
                       ? (isZh ? "查看并处理" : "Review & decide")
-                      : (isZh ? "查看沟通记录" : "View thread")}
+                      : (isZh ? "查看沟通" : "View messages")}
                   </Button>
                 </CardContent>
               </Card>

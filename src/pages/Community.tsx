@@ -335,7 +335,7 @@ export default function Community() {
                     className="inline-flex h-8 items-center rounded-full border px-3 text-xs text-muted-foreground transition-colors hover:text-foreground hover:border-foreground/20"
                   >
                     <MessageSquare className="mr-1.5 h-3.5 w-3.5" />
-                    {isZh ? "进入帖子讨论" : "Open thread"}
+                    {isZh ? "进入帖子讨论" : "Open discussion"}
                   </Link>
                   <CommentsSection entityType="community_post" entityId={post.id} compact hideComposer openPostHref={`/community/${post.id}`} />
                 </div>

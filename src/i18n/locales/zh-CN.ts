@@ -237,7 +237,7 @@ const zhCN = {
     sosSuccessDesc: "{{groups}}的所有成员已收到您当前位置的通知。",
     sosFailed: "发送失败", sosFailedDesc: "无法发送通知。如遇紧急情况，请直接拨打120/110。",
     trackedPeople: "追踪的人", notSharing: "未分享", shareMyLocation: "分享我的位置",
-    geofenceAlerts: "地理围栏警报", locationEncrypted: "位置数据已加密，仅与{{groups}}分享",
+    geofenceAlerts: "安全区域提醒", locationEncrypted: "位置数据已加密，仅与{{groups}}分享",
     noLocationShares: "未找到位置分享", noSharingDesc: "目前没有人分享位置",
     enableSharingDesc: "在下方启用位置分享以出现在地图上",
     locationSharingEnabled: "位置分享已启用", locationSharingDisabled: "位置分享已禁用",

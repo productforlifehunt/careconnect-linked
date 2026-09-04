@@ -584,7 +584,7 @@ const en = {
     trackedPeople: "Tracked People",
     notSharing: "Not sharing",
     shareMyLocation: "Share my location",
-    geofenceAlerts: "Geofence alerts",
+    geofenceAlerts: "Safe zone alerts",
     locationEncrypted: "Location data is encrypted and only shared with your {{groups}}",
     noLocationShares: "No location shares found",
     noSharingDesc: "No one is currently sharing their location",

@@ -278,8 +278,8 @@ export default function CalendarPage() {
                   {selectedEvent.source_cct_slug ? (
                     <p className="text-[12px] text-muted-foreground">
                       {isZh
-                        ? "此事件由其他功能自动同步，请到对应页面修改。"
-                        : "This event is synced from another feature — edit it there."}
+                        ? "这条日程来自其他功能，请到对应页面修改。"
+                        : "This came from another part of the app — change it there."}
                     </p>
                   ) : (
                     <div className="flex gap-2 pt-1">
