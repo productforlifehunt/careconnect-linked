@@ -163,10 +163,6 @@ export function SheetLocationTag({ caredOneId }: { caredOneId?: string | null })
   );
 }
 
-    </div>
-  );
-}
-
 /* ─────────────── Knowledge about the person ─────────────── */
 
 export function useInfoSheetKnowledge(caredOneId?: string | null, enabled = true) {
