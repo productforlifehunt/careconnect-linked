@@ -17,10 +17,80 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ChevronDown, Loader2, MapPin, Navigation, Bot, Send } from "lucide-react";
 import { fetchCurrentLocation } from "@/features/location/source.wordpress";
+import { fetchSafeZonesWordPress } from "@/features/location/source.wordpress-extended";
+import { isDangerZone, isSafeZone, isCustomZone, zoneTypeLabel } from "@/features/location/zone-types";
 import { fetchCareTipsWordPress, fetchCarePlansWordPress, fetchCareNotesWordPress } from "@/features/cared-ones/source.wordpress-extended";
 import { fetchMedicinesWordPress } from "@/features/medicine/source.medicine";
 import { invokeAI, type AIChatMessage } from "@/lib/ai-service";
 import { buildInfoSheetSystemPrompt, type InfoSheetAIContext } from "@/components/cared-ones/InfoSheetAIDialog";
+
+// Leaflet stylesheet, loaded once (same source as the main location hub).
+if (typeof document !== "undefined" && !document.getElementById("leaflet-css")) {
+  const link = document.createElement("link");
+  link.id = "leaflet-css";
+  link.rel = "stylesheet";
+  link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+  document.head.appendChild(link);
+}
+
+let LEAFLET: any = null;
+async function getLeaflet() {
+  if (LEAFLET) return LEAFLET;
+  LEAFLET = await import("leaflet");
+  delete (LEAFLET.Icon.Default.prototype as any)._getIconUrl;
+  LEAFLET.Icon.Default.mergeOptions({
+    iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+    iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+    shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  });
+  return LEAFLET;
+}
+
+function zoneColour(code: string, stored?: string | null): string {
+  if (isCustomZone(code) && typeof stored === "string" && /^#[0-9a-fA-F]{6}$/.test(stored)) return stored;
+  if (isDangerZone(code)) return "#EF4444";
+  if (isSafeZone(code)) return "#10B981";
+  if (isCustomZone(code)) return "#3B82F6";
+  return "#6B7280";
+}
+
+/** Small read-only map: the person's last position plus the places set for them. */
+function SheetMiniMap({ lat, lng, zones, isCN }: { lat: number; lng: number; zones: any[]; isCN: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<any>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const L = await getLeaflet();
+      if (cancelled || !ref.current || mapRef.current) return;
+      const map = L.map(ref.current, { zoomControl: true, attributionControl: false }).setView([lat, lng], 15);
+      mapRef.current = map;
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
+      L.marker([lat, lng]).addTo(map);
+      (zones || []).forEach((z: any) => {
+        const colour = zoneColour(String(z.zone_type), z.color);
+        const label = zoneTypeLabel(String(z.zone_type), z.zone_name, isCN);
+        if (z.shape_type === "polygon" && Array.isArray(z.polygon_points) && z.polygon_points.length >= 3) {
+          L.polygon(z.polygon_points, { color: colour, fillColor: colour, fillOpacity: 0.15, weight: 2 }).addTo(map).bindTooltip(label);
+        } else if (z.latitude != null && z.longitude != null) {
+          L.circle([Number(z.latitude), Number(z.longitude)], {
+            radius: Number(z.radius_meters) || 200,
+            color: colour, fillColor: colour, fillOpacity: 0.15, weight: 2,
+          }).addTo(map).bindTooltip(label);
+        }
+      });
+      setTimeout(() => map.invalidateSize(), 60);
+    })();
+    return () => {
+      cancelled = true;
+      if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; }
+    };
+  }, [lat, lng, zones, isCN]);
+
+  return <div ref={ref} className="h-56 w-full rounded-md border overflow-hidden bg-muted" />;
+}
+
 
 /* ─────────────── Location tag ─────────────── */
 
