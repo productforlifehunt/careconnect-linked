@@ -8,7 +8,6 @@ import { fetchBookingsWordPress, fetchProviderBookingsWordPress, createBookingWo
 import { fetchCareGroupsWordPress, fetchCareGroupMembersWordPress, createCareGroupWordPress } from "@/features/care-groups/source.wordpress";
 import { fetchUserCaredOnesWordPress } from "@/features/cared-ones/source.wordpress";
 import { fetchMyProfileWordPress, updateProfileWordPress } from "@/features/profile/source.wordpress";
-import { fetchDashboardStatsWordPress } from "@/features/dashboard/source.wordpress";
 import { fetchNotificationsWordPress, markNotificationReadWordPress, markAllNotificationsReadWordPress } from "@/features/notifications/source.wordpress";
 import { fetchCareFacilitiesWordPress, fetchCareFacilityByIdWordPress } from "@/features/facilities/source.wordpress";
 import {
@@ -1486,13 +1485,6 @@ export function useToggleVote() {
 }
 
 // ─── Dashboard Stats ─────────────────────────────────────────
-export function useDashboardStats() {
-  return useQuery({
-    queryKey: ["dashboard-stats"],
-    queryFn: () => fetchDashboardStatsWordPress(),
-  });
-}
-
 // ─── Task / Cared-One / Booking mutations ────────────────────
 export function useDeleteTask() {
   const qc = useQueryClient();
