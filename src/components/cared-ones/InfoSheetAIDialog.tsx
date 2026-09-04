@@ -13,9 +13,11 @@ export interface InfoSheetAIContext {
   situationDetails?: string;
   contacts?: Array<{ name?: string; phone?: string; relationship?: string; note?: string }>;
   locationText?: string | null;
+  /** Extra facts about the person (care plan, tips, medicines, notes). */
+  knowledge?: string;
 }
 
-function buildSystemPrompt(ctx: InfoSheetAIContext, isCN: boolean): string {
+export function buildInfoSheetSystemPrompt(ctx: InfoSheetAIContext, isCN: boolean): string {
   const facts = [
     ctx.sheetName ? `${isCN ? "说明标题" : "Sheet"}: ${ctx.sheetName}` : "",
     ctx.caredOneName ? `${isCN ? "被照护者" : "Person"}: ${ctx.caredOneName}` : "",
@@ -27,6 +29,7 @@ function buildSystemPrompt(ctx: InfoSheetAIContext, isCN: boolean): string {
           .map((c) => [c.name, c.relationship, c.phone, c.note].filter(Boolean).join(" / "))
           .join(" | ")}`
       : "",
+    ctx.knowledge ? ctx.knowledge : "",
   ].filter(Boolean).join("\n");
 
   return isCN
@@ -88,7 +91,8 @@ export function InfoSheetAIDialog({
     try {
       const reply = await invokeAI("general_chat", question, {
         messages: next,
-        contextPrompt: buildSystemPrompt(context, !!isCN),
+        contextPrompt: buildInfoSheetSystemPrompt(context, !!isCN),
+        persist: false,
       });
       setMessages([...next, { role: "assistant", content: reply }]);
     } catch (e: any) {
