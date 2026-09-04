@@ -1409,7 +1409,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openZoneForm(zone)}>
                           <Edit2 className="h-3 w-3" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => { console.log("DBGZONE", JSON.stringify(zone)); handleDeleteZone(zone.id, label); }}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteZone(zone.id, label)}>
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
