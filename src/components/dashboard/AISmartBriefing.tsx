@@ -2,12 +2,21 @@ import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, AlertTriangle, Lightbulb, ListChecks, RefreshCw, Loader2 } from "lucide-react";
+import { Sparkles, AlertTriangle, Lightbulb, ListChecks, RefreshCw, Loader2, Pill, ClipboardCheck, CheckSquare } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { invokeAI, parseAIJson } from "@/lib/ai-service";
-import { useUserCaredOnes, useCareTasks, useBookings, useCheckinLogs } from "@/hooks/use-care-data";
-import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
+import {
+  useUserCaredOnes,
+  useCareTasks,
+  useCheckinLogs,
+  useMedicines,
+  useCheckins,
+  useTodayMedicineLogs,
+  useTodayCheckinLogs,
+} from "@/hooks/use-care-data";
+import { formatDate } from "@/lib/locale";
 import { useSite } from "@/contexts/SiteContext";
+import { getStoredWPUser } from "@/services/wp-auth";
 
 interface Briefing {
   alerts: { level: "high" | "medium" | "low"; text: string }[];
@@ -15,7 +24,7 @@ interface Briefing {
   suggestions: { title: string; detail?: string }[];
 }
 
-const CACHE_KEY = "ai_smart_briefing_v1";
+const CACHE_KEY = "ai_smart_briefing_v2";
 
 function loadCache(): { date: string; data: Briefing } | null {
   try {
@@ -33,137 +42,167 @@ function saveCache(data: Briefing) {
   } catch {}
 }
 
+/** "08:30" → "8:30 AM" (locale-agnostic short clock used across the dashboard). */
+function clock(slot: string): { label: string; sort: number } {
+  const [h, m] = String(slot).split(":");
+  const hour = Number.parseInt(h || "0", 10);
+  const minute = Number.parseInt(m || "0", 10);
+  const isPM = hour >= 12;
+  return {
+    label: `${hour > 12 ? hour - 12 : hour || 12}:${String(minute).padStart(2, "0")} ${isPM ? "PM" : "AM"}`,
+    sort: hour * 100 + minute,
+  };
+}
+
 export function AISmartBriefing() {
   const { t, i18n } = useTranslation();
   const site = useSite();
   const isChinese = i18n.language?.startsWith("zh");
+  const Z = (cn: string, en: string) => (isChinese ? cn : en);
+
   const { data: caredOnes } = useUserCaredOnes();
   const { data: tasks } = useCareTasks();
-  const { data: bookings } = useBookings();
   const firstCaredOneId = caredOnes?.[0]?.user_id || null;
-  const { data: checkins } = useCheckinLogs(firstCaredOneId);
+  const { data: checkinLogs } = useCheckinLogs(firstCaredOneId);
+  const { data: medicines } = useMedicines(firstCaredOneId);
+  const { data: checkinSchedules } = useCheckins(firstCaredOneId);
+  const { data: todayMedLogs } = useTodayMedicineLogs(firstCaredOneId);
+  const { data: todayCheckinLogs } = useTodayCheckinLogs(firstCaredOneId);
 
   const [briefing, setBriefing] = useState<Briefing | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Local rule-based anomaly detection (always shown, instant, no AI cost)
+  const caredOneName =
+    caredOnes?.[0]?.cared_one?.full_name || site.caredOneSingular;
+
+  /** Only the tasks this user owns: created by them, or assigned to them. */
+  const myTasks = useMemo(() => {
+    const me = String(getStoredWPUser()?.user_id ?? "");
+    if (!me) return [];
+    return (tasks || []).filter((tk: any) => {
+      const ids = (tk.assigned_to_ids || []).map((x: any) => String(x));
+      return String(tk.created_by ?? "") === me || ids.includes(me);
+    });
+  }, [tasks]);
+
+  const today = new Date().toDateString();
+
+  /** Today's medicine slots, check-in slots and tasks — nothing else. */
+  const plan = useMemo(() => {
+    const medItems: { time: string; sort: number; text: string; done: boolean }[] = [];
+    (medicines || []).forEach((med: any) => {
+      const log = (todayMedLogs || []).find((l: any) => String(l.medicine_id) === String(med.id));
+      const done = log?.status === "taken";
+      const slots: string[] = Array.isArray(med.time_slot) ? med.time_slot : [];
+      const name = [med.name, med.dosage].filter(Boolean).join(" · ");
+      if (slots.length === 0) {
+        medItems.push({ time: Z("任意时间", "Any time"), sort: 2400, text: name, done });
+      } else {
+        slots.forEach((s) => {
+          const c = clock(s);
+          medItems.push({ time: c.label, sort: c.sort, text: name, done });
+        });
+      }
+    });
+
+    const checkinItems: { time: string; sort: number; text: string; done: boolean }[] = [];
+    (checkinSchedules || []).forEach((ci: any) => {
+      const log = (todayCheckinLogs || []).find((l: any) => String(l.medicine_id ?? l.checkin_id) === String(ci.id));
+      const done = log?.status === "taken" || log?.status === "checked";
+      const slots: string[] = Array.isArray(ci.time_slot) && ci.time_slot.length > 0 ? ci.time_slot : [];
+      const name = ci.name || Z("每日签到", "Daily check-in");
+      if (slots.length === 0) {
+        checkinItems.push({ time: Z("任意时间", "Any time"), sort: 2400, text: name, done });
+      } else {
+        slots.forEach((s) => {
+          const c = clock(s);
+          checkinItems.push({ time: c.label, sort: c.sort, text: name, done });
+        });
+      }
+    });
+
+    const taskItems = myTasks
+      .filter((tk: any) => {
+        const when = tk.task_date || tk.due_date;
+        return when && new Date(when).toDateString() === today;
+      })
+      .map((tk: any) => {
+        const c = tk.start_time ? clock(tk.start_time) : { label: Z("今天", "Today"), sort: 2400 };
+        return { time: c.label, sort: c.sort, text: tk.title, done: tk.status === "completed" };
+      });
+
+    const sort = (a: { sort: number }, b: { sort: number }) => a.sort - b.sort;
+    return {
+      medicines: medItems.sort(sort),
+      checkins: checkinItems.sort(sort),
+      tasks: taskItems.sort(sort),
+    };
+  }, [medicines, checkinSchedules, todayMedLogs, todayCheckinLogs, myTasks, today, isChinese]);
+
+  /** Rule-based alerts, scoped to this user's own tasks and cared one. */
   const ruleAlerts = useMemo(() => {
     const out: { level: "high" | "medium" | "low"; text: string }[] = [];
     const now = Date.now();
 
-    // Overdue tasks
-    (tasks || []).forEach((tk: any) => {
+    myTasks.forEach((tk: any) => {
       if (tk.status !== "completed" && tk.due_date) {
         const due = new Date(tk.due_date).getTime();
         if (due < now - 24 * 60 * 60 * 1000) {
           out.push({
             level: "high",
-            text: isChinese
-              ? `任务 "${tk.title}" 已逾期`
-              : `Task "${tk.title}" is overdue`,
+            text: Z(`任务「${tk.title}」已逾期`, `Task "${tk.title}" is overdue`),
           });
         }
       }
     });
 
-    // Missed check-in (latest >24h ago)
-    if (caredOnes && caredOnes.length > 0) {
-      const latest = checkins?.[0];
-      // No display name on CCT 151 for this person: fall back to the role noun
-      // ("Cared One" / "被护理者") so alerts stay readable without inventing a name.
-      const name = caredOnes[0].cared_one?.full_name || site.caredOneSingular;
-      if (!latest) {
+    const latest = checkinLogs?.[0];
+    if (latest) {
+      const ts = new Date(latest.created_at || latest.cct_created || latest.checkin_date || 0).getTime();
+      if (ts && now - ts > 24 * 60 * 60 * 1000 && (checkinSchedules?.length || 0) > 0) {
         out.push({
-          level: "medium",
-          text: isChinese
-            ? `${name} 尚未有签到记录`
-            : `${name} has no check-in records yet`,
+          level: "high",
+          text: Z(`${caredOneName} 已超过 24 小时没有签到`, `${caredOneName} has not checked in for over 24 hours`),
         });
-      } else {
-        const ts = new Date(latest.created_at || latest.cct_created || latest.checkin_date || 0).getTime();
-        if (ts && now - ts > 24 * 60 * 60 * 1000) {
-          out.push({
-            level: "high",
-            text: isChinese
-              ? `${name} 已超过 24 小时未签到`
-              : `${name} has not checked in for over 24 hours`,
-          });
-        }
-        if (latest.mood && ["sad", "anxious", "1", "2"].includes(String(latest.mood).toLowerCase())) {
-          out.push({
-            level: "medium",
-            text: isChinese
-              ? `${name} 最近情绪偏低（${latest.mood}）`
-              : `${name}'s recent mood is low (${latest.mood})`,
-          });
-        }
-        if (Number(latest.pain_level) >= 7) {
-          out.push({
-            level: "high",
-            text: isChinese
-              ? `${name} 报告疼痛等级 ${latest.pain_level}/10`
-              : `${name} reports pain level ${latest.pain_level}/10`,
-          });
-        }
+      }
+      if (Number(latest.pain_level) >= 7) {
+        out.push({
+          level: "high",
+          text: Z(`${caredOneName} 记录的疼痛为 ${latest.pain_level}/10`, `${caredOneName} recorded pain at ${latest.pain_level}/10`),
+        });
       }
     }
 
     return out.slice(0, 5);
-  }, [tasks, checkins, caredOnes, isChinese, t, site.caredOneSingular]);
+  }, [myTasks, checkinLogs, checkinSchedules, caredOneName, isChinese]);
 
-  const generate = async (force = false) => {
+  const generate = async () => {
     if (loading) return;
     setLoading(true);
     setError(null);
     try {
-      const today = formatDate(new Date(), i18n.language, {
-        weekday: "long",
-        month: "long",
-        day: "numeric",
-      });
+      const date = formatDate(new Date(), i18n.language, { weekday: "long", month: "long", day: "numeric" });
       const context = JSON.stringify({
         language: isChinese ? "zh-CN" : "en",
-        date: today,
-        caredOnes: (caredOnes || []).map((c: any) => ({
-          name: c.cared_one?.full_name,
-          relationship: c.relationship,
-        })),
-        upcomingBookings: (bookings || [])
-          .filter((b: any) => ["confirmed", "pending"].includes(b.status))
-          .slice(0, 5)
-          .map((b: any) => ({
-            date: b.appointment_date || b.start_time,
-            provider: b.provider?.full_name,
-            service: b.service_type,
-            status: b.status,
-          })),
-        tasks: (tasks || []).slice(0, 10).map((tk: any) => ({
-          title: tk.title,
-          status: tk.status,
-          priority: tk.priority,
-          due: tk.due_date,
-          assignee: tk.assignee_profile?.full_name,
-        })),
-        latestCheckin: checkins?.[0]
-          ? {
-              mood: checkins[0].mood,
-              energy: checkins[0].energy_level,
-              pain: checkins[0].pain_level,
-              notes: checkins[0].notes,
-              at: checkins[0].created_at || checkins[0].cct_created,
-            }
-          : null,
-        detectedAlerts: ruleAlerts,
+        date,
+        caredOne: caredOneName,
+        medicationSchedule: plan.medicines.map((m) => ({ time: m.time, medicine: m.text, taken: m.done })),
+        checkInSchedule: plan.checkins.map((c) => ({ time: c.time, checkIn: c.text, done: c.done })),
+        myTasksToday: plan.tasks.map((tk) => ({ time: tk.time, task: tk.text, done: tk.done })),
+        alerts: ruleAlerts,
       });
 
-      const prompt = isChinese
-        ? `你是家庭护理协调 AI 助手。基于以下数据生成今日护理简报。
-严格返回 JSON：{"alerts":[{"level":"high|medium|low","text":"..."}],"summary":"2-3 句中文概述","suggestions":[{"title":"...","detail":"..."}]}
-数据：${context}`
-        : `You are a family care coordination AI. Based on the data below, generate today's care briefing.
-Return STRICT JSON: {"alerts":[{"level":"high|medium|low","text":"..."}],"summary":"2-3 sentence overview","suggestions":[{"title":"...","detail":"..."}]}
-Data: ${context}`;
+      const prompt = Z(
+        `你是家庭护理助手。只根据下面的数据写今天的简报，不要编造任何安排。
+规则：如果今天没有用药安排，就直接说今天没有用药安排；如果今天没有签到安排，就直接说今天没有签到安排；有的话就说明几点该做什么。任务只有存在时才提。
+严格返回 JSON：{"alerts":[{"level":"high|medium|low","text":"..."}],"summary":"2-3 句中文，直接说今天几点做什么","suggestions":[{"title":"...","detail":"..."}]}
+数据：${context}`,
+        `You are a family care assistant. Write today's briefing strictly from the data below; never invent a schedule.
+Rules: if there is no medication scheduled today, say so plainly; if there is no check-in scheduled today, say so plainly; if there is, say what is due at what time. Mention tasks only if some exist.
+Return STRICT JSON: {"alerts":[{"level":"high|medium|low","text":"..."}],"summary":"2-3 sentences saying what is due today and when","suggestions":[{"title":"...","detail":"..."}]}
+Data: ${context}`
+      );
 
       const reply = await invokeAI("daily_summary", prompt);
       const parsed = parseAIJson<Briefing>(reply);
@@ -181,9 +220,8 @@ Data: ${context}`;
     }
   };
 
-  // Auto-load once per day. The rule-based alerts above render immediately;
-  // the AI call is deferred to browser idle time so it never queues ahead of
-  // the dashboard's own data requests (that was the "staircase" effect).
+  // Auto-load once per day, during browser idle time so the AI request never
+  // queues ahead of the dashboard's own data.
   useEffect(() => {
     if (!caredOnes) return;
     const cached = loadCache();
@@ -191,7 +229,7 @@ Data: ${context}`;
       setBriefing(cached.data);
       return;
     }
-    if ((caredOnes?.length || 0) === 0 && (tasks?.length || 0) === 0) return;
+    if ((caredOnes?.length || 0) === 0 && myTasks.length === 0) return;
 
     const idle = (window as any).requestIdleCallback as
       | ((cb: () => void, opts?: { timeout: number }) => number)
@@ -205,8 +243,7 @@ Data: ${context}`;
       else window.clearTimeout(handle);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [caredOnes?.length, tasks?.length]);
-
+  }, [caredOnes?.length, myTasks.length]);
 
   const levelColor: Record<string, string> = {
     high: "bg-destructive/10 text-destructive border-destructive/20",
@@ -216,34 +253,48 @@ Data: ${context}`;
 
   const mergedAlerts = [
     ...ruleAlerts,
-    ...((briefing?.alerts || []).filter(
-      (a) => !ruleAlerts.some((r) => r.text === a.text)
-    )),
+    ...((briefing?.alerts || []).filter((a) => !ruleAlerts.some((r) => r.text === a.text))),
   ].slice(0, 6);
+
+  const planRow = (
+    key: string,
+    icon: typeof Pill,
+    items: { time: string; text: string; done: boolean }[],
+    emptyText: string,
+  ) => {
+    const Icon = icon;
+    return (
+      <div key={key} className="flex items-start gap-2">
+        <Icon className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary" />
+        <div className="min-w-0 flex-1 space-y-0.5">
+          {items.length === 0 ? (
+            <p className="text-xs text-muted-foreground">{emptyText}</p>
+          ) : (
+            items.map((it, i) => (
+              <p key={i} className="text-sm text-foreground">
+                <span className="text-muted-foreground mr-1.5">{it.time}</span>
+                <span className={it.done ? "line-through text-muted-foreground" : ""}>{it.text}</span>
+              </p>
+            ))
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <Card className="border-transparent card-elevated bg-gradient-to-br from-primary/5 via-transparent to-coral/5">
       <CardHeader className="flex-row items-center justify-between pb-2">
         <CardTitle className="text-base flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-primary" />
-          {isChinese ? "AI 智能动态简报" : "AI Smart Briefing"}
+          {Z("今日简报", "Today's Briefing")}
           <Badge variant="outline" className="text-[9px] uppercase tracking-wide">
-            {isChinese ? "实时" : "Live"}
+            {Z("实时", "Live")}
           </Badge>
         </CardTitle>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => generate(true)}
-          disabled={loading}
-          className="h-7 text-xs"
-        >
-          {loading ? (
-            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-          ) : (
-            <RefreshCw className="h-3 w-3 mr-1" />
-          )}
-          {isChinese ? "刷新" : "Refresh"}
+        <Button variant="ghost" size="sm" onClick={() => generate()} disabled={loading} className="h-7 text-xs">
+          {loading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <RefreshCw className="h-3 w-3 mr-1" />}
+          {Z("刷新", "Refresh")}
         </Button>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -251,53 +302,50 @@ Data: ${context}`;
           <div className="space-y-1.5">
             <div className="flex items-center gap-1.5 text-[11px] font-semibold text-foreground/80">
               <AlertTriangle className="h-3 w-3" />
-              {isChinese ? "异常与提醒" : "Alerts"}
+              {Z("需要注意", "Needs attention")}
             </div>
             {mergedAlerts.map((a, i) => (
-              <div
-                key={i}
-                className={`text-xs px-2.5 py-2 rounded-lg border ${levelColor[a.level] || levelColor.low}`}
-              >
+              <div key={i} className={`text-xs px-2.5 py-2 rounded-lg border ${levelColor[a.level] || levelColor.low}`}>
                 {a.text}
               </div>
             ))}
           </div>
         )}
 
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <div className="flex items-center gap-1.5 text-[11px] font-semibold text-foreground/80">
             <ListChecks className="h-3 w-3" />
-            {isChinese ? "今日护理概述" : "Today's Overview"}
+            {Z("今天要做的事", "Due today")}
           </div>
-          {loading && !briefing ? (
-            <p className="text-xs text-muted-foreground animate-pulse">
-              {isChinese ? "AI 正在分析你的护理数据…" : "AI is analyzing your care data…"}
-            </p>
-          ) : briefing?.summary ? (
-            <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-              {briefing.summary}
-            </p>
-          ) : error ? (
-            <p className="text-xs text-destructive">{error}</p>
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              {isChinese ? "暂无概述，点击刷新生成。" : "No overview yet. Tap refresh to generate."}
-            </p>
-          )}
+          {planRow("meds", Pill, plan.medicines, Z("今天没有用药安排", "No medication scheduled today"))}
+          {planRow("checkins", ClipboardCheck, plan.checkins, Z("今天没有签到安排", "No check-in scheduled today"))}
+          {plan.tasks.length > 0 && planRow("tasks", CheckSquare, plan.tasks, "")}
         </div>
+
+        {(loading || briefing?.summary || error) && (
+          <div className="space-y-1.5">
+            {loading && !briefing ? (
+              <p className="text-xs text-muted-foreground animate-pulse">
+                {Z("正在整理今天的安排…", "Putting today's plan together…")}
+              </p>
+            ) : briefing?.summary ? (
+              <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{briefing.summary}</p>
+            ) : (
+              <p className="text-xs text-destructive">{error}</p>
+            )}
+          </div>
+        )}
 
         {briefing?.suggestions && briefing.suggestions.length > 0 && (
           <div className="space-y-1.5">
             <div className="flex items-center gap-1.5 text-[11px] font-semibold text-foreground/80">
               <Lightbulb className="h-3 w-3" />
-              {isChinese ? "AI 建议" : "Suggestions"}
+              {Z("建议", "Suggestions")}
             </div>
             {briefing.suggestions.slice(0, 4).map((s, i) => (
               <div key={i} className="text-xs p-2 rounded-lg bg-muted/50">
                 <p className="font-medium text-foreground">{s.title}</p>
-                {s.detail && (
-                  <p className="text-muted-foreground mt-0.5 leading-relaxed">{s.detail}</p>
-                )}
+                {s.detail && <p className="text-muted-foreground mt-0.5 leading-relaxed">{s.detail}</p>}
               </div>
             ))}
           </div>
