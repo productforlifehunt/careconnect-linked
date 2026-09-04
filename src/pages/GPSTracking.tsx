@@ -242,7 +242,7 @@ export default function GPSTracking() {
       const isDanger = isDangerZone(String(zone.zone_type));
       const isPolygon = String(zone.shape_type).toLowerCase() === "polygon";
       const label = zoneLabel(String(zone.zone_type), zone.zone_name);
-      const color = isDanger ? "#ef4444" : "hsl(var(--primary))";
+      const color = isDanger ? "#ef4444" : themeColor("--primary", "#4c1d95");
       if (isPolygon && zone.polygon_points?.length >= 3) {
         const poly = L.polygon(zone.polygon_points, {
           color,
@@ -265,7 +265,14 @@ export default function GPSTracking() {
       }
     });
 
-  }, [zones]);
+    // With nobody sharing a live position, the zones are the only thing worth
+    // looking at — frame them instead of leaving the map on the whole country.
+    if (zoneLayers.current.length && !sharingPeople.length) {
+      const group = L.featureGroup(zoneLayers.current as L.Layer[]);
+      const bounds = group.getBounds();
+      if (bounds.isValid()) map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+    }
+  }, [zones, mapNode, sharingPeople.length]);
 
   // ─── Update markers + trails when data changes ──────────────
   useEffect(() => {
