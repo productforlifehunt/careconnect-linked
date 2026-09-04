@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { themeColor } from "@/lib/theme-color";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Battery, Bell, Clock, Loader2, MapPin, Navigation, Route } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -74,9 +75,9 @@ export default function SafetyMemberDetail() {
   useEffect(() => {
     const m = map.current;
     if (!m || trail.length === 0) return;
-    const line = L.polyline(trail, { color: "hsl(var(--primary))", weight: 4, opacity: 0.7 }).addTo(m);
+    const line = L.polyline(trail, { color: themeColor("--primary", "#2563eb"), weight: 4, opacity: 0.7 }).addTo(m);
     const last = trail[trail.length - 1];
-    const pin = L.circleMarker(last, { radius: 8, color: "#fff", weight: 3, fillColor: "hsl(var(--primary))", fillOpacity: 1 }).addTo(m);
+    const pin = L.circleMarker(last, { radius: 8, color: "#fff", weight: 3, fillColor: themeColor("--primary", "#2563eb"), fillOpacity: 1 }).addTo(m);
     m.fitBounds(line.getBounds(), { padding: [40, 40] });
     return () => {
       line.remove();

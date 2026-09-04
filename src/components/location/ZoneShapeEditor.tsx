@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { themeColor } from "@/lib/theme-color";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -79,7 +80,7 @@ export function ZoneShapeEditor({
     const group = layerRef.current;
     if (!map || !group) return;
     group.clearLayers();
-    const color = danger ? "#ef4444" : "hsl(var(--primary))";
+    const color = danger ? "#ef4444" : themeColor("--primary", "#4c1d95");
 
     if (shape === "Polygon") {
       points.forEach(([lat, lng], i) => {
