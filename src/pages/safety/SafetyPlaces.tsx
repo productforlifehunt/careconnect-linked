@@ -229,7 +229,7 @@ export default function SafetyPlaces() {
                     {" · "}
                     {String(z.shape_type).toLowerCase() === "polygon" && z.polygon_points?.length >= 3
                       ? Z(`手绘范围 · ${z.polygon_points.length} 个点`, `Drawn area · ${z.polygon_points.length} points`)
-                      : `${z.radius_meters || 200} m`}
+                      : `${z.radius_meters || 100} m`}
                   </p>
 
                   <p className="mt-0.5 text-[11px] text-muted-foreground">
