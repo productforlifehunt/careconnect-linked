@@ -140,6 +140,13 @@ export default function GPSTracking() {
   const effectiveSubjectId =
     subjectId || (caredOneOptions.length === 1 ? caredOneOptions[0].id : selfKey);
   const subjectIsSelf = effectiveSubjectId === selfKey;
+  // Relation 247 stores a user-type code on every snapshot (b56 = cared one,
+  // b55 = everyone else). Nothing used to set it, so every row was written as
+  // b55; flag it when the person sharing really is a cared one.
+  const selfIsCaredOne =
+    (groupMembers || []).some(
+      (m: any) => String(m.user_id ?? m.id).replace(/^wp-/, "") === selfKey && m.is_cared_one,
+    );
 
   // ─── Initialize sharing state ───────────────────────────────
   useEffect(() => {
@@ -384,6 +391,7 @@ export default function GPSTracking() {
         if (!pos) return;
         await writeLocationAndCheckZones(pos.latitude, pos.longitude, {
           accuracy: pos.accuracy,
+          is_cared_one: selfIsCaredOne,
         });
       } catch {}
     };
@@ -392,7 +400,7 @@ export default function GPSTracking() {
     sendMyLocation();
     const interval = setInterval(sendMyLocation, POLL_INTERVAL);
     return () => clearInterval(interval);
-  }, [shareMyLocation, userId]);
+  }, [shareMyLocation, userId, selfIsCaredOne]);
 
   // ─── Focus map on selected person ───────────────────────────
   useEffect(() => {
@@ -415,7 +423,7 @@ export default function GPSTracking() {
           setShareMyLocation(false);
           return;
         }
-        await writeLocationAndCheckZones(pos.latitude, pos.longitude, { accuracy: pos.accuracy });
+        await writeLocationAndCheckZones(pos.latitude, pos.longitude, { accuracy: pos.accuracy, is_cared_one: selfIsCaredOne });
         refetch();
         toast({ title: t("gps.locationSharingEnabled") });
       } else {
