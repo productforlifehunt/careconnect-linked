@@ -383,7 +383,7 @@ const en = {
     noPendingTasks: "No pending tasks",
     customizeDashboard: "Customize Dashboard",
     chooseWidgets: "Choose which widgets to show on your dashboard",
-    timeline: "Daily Timeline",
+    timeline: "Today's Events",
   },
 
   // ═══ CARE CIRCLE ═══
