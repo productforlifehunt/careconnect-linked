@@ -35,23 +35,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { themeColor } from "@/lib/theme-color";
 import { useTranslation } from "react-i18next";
 import { getCurrentPosition } from "@/lib/geolocation";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
-
-/**
- * Leaflet paints shapes with SVG presentation attributes, which do NOT resolve
- * `var(--token)`. Read the theme token once and hand Leaflet a real colour so
- * zones and trails are actually visible.
- */
-function themeColor(token: string, fallback: string): string {
-  try {
-    const raw = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
-    return raw ? `hsl(${raw})` : fallback;
-  } catch {
-    return fallback;
-  }
-}
 
 const POLL_INTERVAL = 15_000; // 15 seconds
 const TRAIL_MAX_POINTS = 200;
