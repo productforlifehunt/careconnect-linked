@@ -142,7 +142,7 @@ export async function createNotificationWordPress(input: {
       message: "/messages",
       booking: "/bookings",
       community: "/community",
-      job: "/jobs",
+      task: "/shared-tasks",
       location: "/gps-tracking",
       safe_zone: "/gps-tracking",
     };

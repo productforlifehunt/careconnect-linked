@@ -273,7 +273,7 @@ const Index = () => {
               ] },
               { title: t("home.forCaregivers"), links: [
                 { label: t("home.joinAsCaregiver"), href: "/become-caregiver" },
-                { label: t("nav.jobsBoard"), href: "/jobs" },
+                { label: t("nav.sharedTasks"), href: "/shared-tasks" },
                 { label: t("nav.providerDashboard"), href: "/provider-dashboard" },
                 { label: t("nav.trustSafety"), href: "/trust-safety" },
               ] },
