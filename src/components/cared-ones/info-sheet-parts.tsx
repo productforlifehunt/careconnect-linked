@@ -17,10 +17,80 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ChevronDown, Loader2, MapPin, Navigation, Bot, Send } from "lucide-react";
 import { fetchCurrentLocation } from "@/features/location/source.wordpress";
+import { fetchSafeZonesWordPress } from "@/features/location/source.wordpress-extended";
+import { isDangerZone, isSafeZone, isCustomZone, zoneTypeLabel } from "@/features/location/zone-types";
 import { fetchCareTipsWordPress, fetchCarePlansWordPress, fetchCareNotesWordPress } from "@/features/cared-ones/source.wordpress-extended";
 import { fetchMedicinesWordPress } from "@/features/medicine/source.medicine";
 import { invokeAI, type AIChatMessage } from "@/lib/ai-service";
 import { buildInfoSheetSystemPrompt, type InfoSheetAIContext } from "@/components/cared-ones/InfoSheetAIDialog";
+
+// Leaflet stylesheet, loaded once (same source as the main location hub).
+if (typeof document !== "undefined" && !document.getElementById("leaflet-css")) {
+  const link = document.createElement("link");
+  link.id = "leaflet-css";
+  link.rel = "stylesheet";
+  link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+  document.head.appendChild(link);
+}
+
+let LEAFLET: any = null;
+async function getLeaflet() {
+  if (LEAFLET) return LEAFLET;
+  LEAFLET = await import("leaflet");
+  delete (LEAFLET.Icon.Default.prototype as any)._getIconUrl;
+  LEAFLET.Icon.Default.mergeOptions({
+    iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+    iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+    shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  });
+  return LEAFLET;
+}
+
+function zoneColour(code: string, stored?: string | null): string {
+  if (isCustomZone(code) && typeof stored === "string" && /^#[0-9a-fA-F]{6}$/.test(stored)) return stored;
+  if (isDangerZone(code)) return "#EF4444";
+  if (isSafeZone(code)) return "#10B981";
+  if (isCustomZone(code)) return "#3B82F6";
+  return "#6B7280";
+}
+
+/** Small read-only map: the person's last position plus the places set for them. */
+function SheetMiniMap({ lat, lng, zones, isCN }: { lat: number; lng: number; zones: any[]; isCN: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<any>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const L = await getLeaflet();
+      if (cancelled || !ref.current || mapRef.current) return;
+      const map = L.map(ref.current, { zoomControl: true, attributionControl: false }).setView([lat, lng], 15);
+      mapRef.current = map;
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
+      L.marker([lat, lng]).addTo(map);
+      (zones || []).forEach((z: any) => {
+        const colour = zoneColour(String(z.zone_type), z.color);
+        const label = zoneTypeLabel(String(z.zone_type), z.zone_name, isCN);
+        if (z.shape_type === "polygon" && Array.isArray(z.polygon_points) && z.polygon_points.length >= 3) {
+          L.polygon(z.polygon_points, { color: colour, fillColor: colour, fillOpacity: 0.15, weight: 2 }).addTo(map).bindTooltip(label);
+        } else if (z.latitude != null && z.longitude != null) {
+          L.circle([Number(z.latitude), Number(z.longitude)], {
+            radius: Number(z.radius_meters) || 200,
+            color: colour, fillColor: colour, fillOpacity: 0.15, weight: 2,
+          }).addTo(map).bindTooltip(label);
+        }
+      });
+      setTimeout(() => map.invalidateSize(), 60);
+    })();
+    return () => {
+      cancelled = true;
+      if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; }
+    };
+  }, [lat, lng, zones, isCN]);
+
+  return <div ref={ref} className="h-56 w-full rounded-md border overflow-hidden bg-muted" />;
+}
+
 
 /* ─────────────── Location tag ─────────────── */
 
@@ -36,6 +106,13 @@ export function SheetLocationTag({ caredOneId }: { caredOneId?: string | null })
     enabled: open && !!caredOneId,
   });
 
+  const { data: zones } = useQuery({
+    queryKey: ["infoSheetZones", caredOneId],
+    queryFn: () => fetchSafeZonesWordPress(String(caredOneId)),
+    enabled: open && !!caredOneId,
+    staleTime: 5 * 60 * 1000,
+  });
+
   return (
     <div className="w-full">
       <button type="button" onClick={() => setOpen((v) => !v)} className="inline-flex">
@@ -47,28 +124,36 @@ export function SheetLocationTag({ caredOneId }: { caredOneId?: string | null })
       </button>
 
       {open && (
-        <div className="mt-2">
+        <div className="mt-2 space-y-2">
           {isLoading ? (
             <div className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" /> {Z("正在获取位置…", "Getting location…")}</div>
           ) : location?.latitude != null && location?.longitude != null ? (
-            <a
-              href={`https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}`}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-3 rounded-md border p-3 hover:bg-accent transition"
-            >
-              <Navigation className="h-4 w-4 text-primary shrink-0" />
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium truncate">
-                  {location.address_text || `${Number(location.latitude).toFixed(5)}, ${Number(location.longitude).toFixed(5)}`}
-                </div>
-                {location.captured_at && (
-                  <div className="text-xs text-muted-foreground truncate">
-                    {new Date(String(location.captured_at).replace(" ", "T")).toLocaleString()}
+            <>
+              <SheetMiniMap
+                lat={Number(location.latitude)}
+                lng={Number(location.longitude)}
+                zones={zones || []}
+                isCN={!!isCN}
+              />
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-3 rounded-md border p-3 hover:bg-accent transition"
+              >
+                <Navigation className="h-4 w-4 text-primary shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-medium truncate">
+                    {location.address_text || `${Number(location.latitude).toFixed(5)}, ${Number(location.longitude).toFixed(5)}`}
                   </div>
-                )}
-              </div>
-            </a>
+                  {location.captured_at && (
+                    <div className="text-xs text-muted-foreground truncate">
+                      {new Date(String(location.captured_at).replace(" ", "T")).toLocaleString()}
+                    </div>
+                  )}
+                </div>
+              </a>
+            </>
           ) : (
             <p className="text-sm text-muted-foreground">{Z("暂无位置记录。", "No location record yet.")}</p>
           )}
@@ -159,8 +244,8 @@ export function SheetAIPanel({ context }: { context: InfoSheetAIContext }) {
         const reply = await invokeAI(
           "care_info_sheet",
           Z(
-            `请用两三句话，向刚拿到这份信息卡的人说明这次需要做什么：${task}。最后加一句：有不清楚的直接问我。`,
-            `In two or three sentences, tell the person who just received this card what is needed this time: ${task}. End by inviting them to ask you anything.`,
+            `${context.caredOneName || "这位家人"}的家人正在请人帮个忙。请用两三句温和、感谢的话，像跟邻居或朋友说话一样，说明这次是帮什么：${task}。不要用命令句（不要说"你需要"、"你必须"），可以说"想请你…"、"如果方便的话…"。最后一句请对方有不清楚的地方随时问你。`,
+            `A family is asking a neighbour or friend for a favour. In two or three warm, appreciative sentences — as you'd speak to a friend, never as an order — describe what the favour is this time: ${task}. Avoid "you need to" or "you must"; prefer "would you be able to…", "if it works for you…". End by warmly inviting them to ask you anything they're unsure about.`,
           ),
           { contextPrompt: buildInfoSheetSystemPrompt(context, !!isCN), persist: false },
         );
@@ -168,8 +253,12 @@ export function SheetAIPanel({ context }: { context: InfoSheetAIContext }) {
       } catch {
         setMessages([{
           role: "assistant",
-          content: Z(`这次需要：${task}\n\n有不清楚的地方直接问我。`, `What's needed this time: ${task}\n\nAsk me anything you're unsure about.`),
+          content: Z(
+            `谢谢你帮忙。这次想请你：${task}\n\n有不清楚的地方随时问我。`,
+            `Thank you for helping out. The favour this time: ${task}\n\nAsk me anything you're unsure about.`,
+          ),
         }]);
+
       } finally {
         setSending(false);
       }
