@@ -111,7 +111,20 @@ export default function Cart() {
                     <p className="font-semibold">{decodeEntities(item.name)}</p>
                     {detail && <p className="text-xs text-muted-foreground mt-0.5">{detail}</p>}
                     {vendor && <p className="text-xs text-muted-foreground">{cn ? "服务方" : "Provider"}: {decodeEntities(String(vendor))}</p>}
-                    <p className="text-sm text-muted-foreground mt-0.5">{cn ? "数量" : "Qty"}: {item.quantity} × {sym}{Number(item.price || 0).toFixed(2)}</p>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <Button variant="outline" size="icon" className="h-7 w-7" aria-label={cn ? "减少数量" : "Decrease quantity"}
+                        disabled={setQty.isPending}
+                        onClick={() => setQty.mutate({ itemKey: item.key, quantity: Number(item.quantity || 1) - 1 })}>
+                        <Minus className="h-3.5 w-3.5" />
+                      </Button>
+                      <span className="min-w-6 text-center text-sm font-medium">{item.quantity}</span>
+                      <Button variant="outline" size="icon" className="h-7 w-7" aria-label={cn ? "增加数量" : "Increase quantity"}
+                        disabled={setQty.isPending}
+                        onClick={() => setQty.mutate({ itemKey: item.key, quantity: Number(item.quantity || 1) + 1 })}>
+                        <Plus className="h-3.5 w-3.5" />
+                      </Button>
+                      <span className="text-sm text-muted-foreground">× {sym}{Number(item.price || 0).toFixed(2)}</span>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <Badge variant="secondary">{sym}{(Number(item.price || 0) * Number(item.quantity || 1)).toFixed(2)}</Badge>
@@ -126,7 +139,48 @@ export default function Cart() {
 
           <Card className="border-transparent card-elevated">
             <CardContent className="p-5 space-y-4">
-              <div className="flex justify-between text-lg font-bold"><span>{cn ? "合计" : "Total"}</span><span>{sym}{total}</span></div>
+              <div className="space-y-2">
+                <Label htmlFor="coupon-code">{cn ? "优惠码" : "Coupon code"}</Label>
+                <div className="flex gap-2">
+                  <Input id="coupon-code" value={couponCode} onChange={e => setCouponCode(e.target.value)} placeholder={cn ? "输入优惠码" : "Enter code"} />
+                  <Button variant="outline" disabled={!couponCode.trim() || applyCoupon.isPending}
+                    onClick={async () => { await applyCoupon.mutateAsync(couponCode.trim()); setCouponCode(""); }}>
+                    <Tag className="h-4 w-4 mr-1.5" />{cn ? "使用" : "Apply"}
+                  </Button>
+                </div>
+                {coupons.length > 0 && (
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {coupons.map((c: any) => (
+                      <Badge key={c.code} variant="secondary" className="gap-1">
+                        {c.code}
+                        <button type="button" aria-label={cn ? "移除优惠码" : "Remove coupon"} onClick={() => dropCoupon.mutate(c.code)}>
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-1.5 text-sm">
+                {totals.total_items != null && (
+                  <div className="flex justify-between"><span className="text-muted-foreground">{cn ? "小计" : "Subtotal"}</span><span>{sym}{money(totals.total_items)}</span></div>
+                )}
+                {Number(totals.total_discount || 0) > 0 && (
+                  <div className="flex justify-between text-emerald-600"><span>{cn ? "优惠" : "Discount"}</span><span>−{sym}{money(totals.total_discount)}</span></div>
+                )}
+                {Number(totals.total_fees || 0) > 0 && (
+                  <div className="flex justify-between"><span className="text-muted-foreground">{cn ? "服务费" : "Fees"}</span><span>{sym}{money(totals.total_fees)}</span></div>
+                )}
+                {Number(totals.total_shipping || 0) > 0 && (
+                  <div className="flex justify-between"><span className="text-muted-foreground">{cn ? "配送" : "Shipping"}</span><span>{sym}{money(totals.total_shipping)}</span></div>
+                )}
+                {Number(totals.total_tax || 0) > 0 && (
+                  <div className="flex justify-between"><span className="text-muted-foreground">{cn ? "税费" : "Tax"}</span><span>{sym}{money(totals.total_tax)}</span></div>
+                )}
+              </div>
+              <div className="flex justify-between text-lg font-bold border-t pt-3"><span>{cn ? "合计" : "Total"}</span><span>{sym}{total}</span></div>
+
               <div><Label htmlFor="billing-email">{cn ? "账单邮箱" : "Billing Email"} *</Label><Input id="billing-email" value={email} onChange={e => setEmail(e.target.value)} placeholder={(user as any)?.email || "email@example.com"} /></div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="sm:col-span-2">
