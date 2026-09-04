@@ -18,7 +18,7 @@ export default function SafetyLanding() {
     { icon: ShieldAlert, t: L("一键紧急求助", "One-tap SOS"), d: L("紧急时把位置与求助同时发给圈子里的所有人。", "Send your location and a call for help to your whole circle.") },
     { icon: BatteryFull, t: L("电量与状态", "Battery & status"), d: L("看到家人手机电量与移动状态，不用再打电话确认。", "See phone battery and movement without calling to check.") },
     { icon: Sparkles, t: L("智能安全助手", "Safety assistant"), d: L("用日常语言问“他今天去过哪里”，助手基于你的圈子数据回答。", "Ask in plain words where someone has been — answered from your own circle data.") },
-    { icon: MessageCircle, t: L("家人聊天", "Family chat"), d: L("圈子内自带一条聊天，不用再切到别的软件。", "A built-in thread for your circle — no switching apps.") },
+    { icon: MessageCircle, t: L("家人聊天", "Family chat"), d: L("圈子内自带一条聊天，不用再切到别的软件。", "A chat built into your circle — no switching apps.") },
     { icon: Car, t: L("出行报告", "Trip reports"), d: L("行程次数、里程、在路上时间与最高速度，一目了然。", "Trip count, distance, time moving and top speed at a glance.") },
     { icon: Bell, t: L("紧急与签到提醒", "Alerts & check-ins"), d: L("求助、进出地点、签到全部汇总在提醒页。", "SOS, place events and check-ins all land in one alerts feed.") },
   ];

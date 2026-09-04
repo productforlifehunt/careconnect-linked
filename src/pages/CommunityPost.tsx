@@ -241,7 +241,7 @@ export default function CommunityPost() {
                 {isZh ? `总分 ${voteState.score}` : `Score ${voteState.score}`}
               </span>
               <span className="text-sm text-muted-foreground">
-                {isZh ? "像传统论坛一样进入帖子页讨论" : "Traditional open-thread discussion with full replies"}
+                {isZh ? "像传统论坛一样进入帖子页讨论" : "Full discussion page, like a classic forum"}
               </span>
             </div>
 

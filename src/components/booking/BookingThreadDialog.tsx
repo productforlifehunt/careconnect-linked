@@ -84,7 +84,7 @@ export default function BookingThreadDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5 text-primary" />
-            {isZh ? "预约沟通记录" : "Booking thread"}
+            {isZh ? "这次预约的沟通" : "Messages about this booking"}
             {id > 0 && <span className="text-sm font-normal text-muted-foreground">#{id}</span>}
           </DialogTitle>
           <DialogDescription>
