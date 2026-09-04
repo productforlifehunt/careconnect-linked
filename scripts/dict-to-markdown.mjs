@@ -23,7 +23,7 @@ while (i < lines.length) {
     let buf = [];
     while (i < lines.length) {
       const l = lines[i];
-      if (buf.length === 0 && l.trim() === "") { i++; break; }
+      if (l.trim() === "") { if (buf.length) flush(); i++; break; }
       if (buf.length === 0 && (isHeader(l) || hardStop(l))) break;
       if (buf.length > 0 && (isHeader(l) || hardStop(l))) { flush(); break; }
       buf.push(l);
