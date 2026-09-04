@@ -38,6 +38,12 @@ export interface InvokeAIOptions {
   messages?: AIChatMessage[];
   /** Extra facts/guardrails appended to the server system prompt (e.g. care sheet contents). */
   contextPrompt?: string;
+  /**
+   * Write the exchange into the unified chat CCTs. Default true.
+   * Set false for people outside the app (e.g. someone opening a shared
+   * information card link) — nothing is stored, the chat lives in memory only.
+   */
+  persist?: boolean;
 }
 
 const CONVERSATION_SLUG = T.chatConversation.slug;
@@ -153,6 +159,8 @@ export async function loadAIConversation(
   } catch { return []; }
 }
 
+class SkipPersistence extends Error {}
+
 export async function invokeAI(mode: AIMode, context: string, options: InvokeAIOptions = {}): Promise<string> {
   const userMessages = options.messages && options.messages.length > 0
     ? options.messages.filter((m) => m.role !== "system")
@@ -162,11 +170,14 @@ export async function invokeAI(mode: AIMode, context: string, options: InvokeAIO
 
   // Persist (non-blocking on failure)
   let conversationId: string | null = null;
+  const shouldPersist = options.persist !== false;
   try {
+    if (!shouldPersist) throw new SkipPersistence();
     conversationId = await ensureConversation(mode, options);
     await createMessage(conversationId, "user", userMessage);
   } catch (e) {
-    if (isNetworkAbort(e)) console.debug("Chat CCT persistence skipped (request aborted)");
+    if (e instanceof SkipPersistence) conversationId = null;
+    else if (isNetworkAbort(e)) console.debug("Chat CCT persistence skipped (request aborted)");
     else console.warn("Chat CCT persistence unavailable, continuing without:", e);
   }
 
