@@ -199,7 +199,7 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
               <Input className="mt-1" value={form.cared_ones_name}
                 onChange={(e) => setForm((p) => ({ ...p, cared_ones_name: e.target.value }))}
                 placeholder={caredOneName || Z("可填化名，不必是真名", "Can be a nickname, not necessarily the real name")} />
-              <p className="text-[11px] text-muted-foreground mt-1">{Z("默认使用被照护者的用户名，可改成化名以保护隐私。", "Defaults to the cared one's name; you can change it to a nickname for privacy.")}</p>
+              <p className="text-[11px] text-muted-foreground mt-1">{Z("默认使用被照护者的用户名，可改成化名以保护隐私。", "Defaults to the loved one's name; you can change it to a nickname for privacy.")}</p>
             </div>
 
             <div>
@@ -421,8 +421,8 @@ function ShareCardDialog({ card, onClose }: { card: any; onClose: () => void }) 
               <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="Visible to public">{Z("任何拿到链接的人（包括 app 外的人）", "Anyone with the link, including people outside the app")}</SelectItem>
-                <SelectItem value="Visible to the care group of the cared one">{Z("仅此被照护者所在护理群组的成员（app 内）", "Only members of this cared one's care group in this app")}</SelectItem>
-                <SelectItem value="Visible to caregivers of the cared one">{Z("仅此被照护者的护理者（app 内）", "Only this cared one's caregivers in this app")}</SelectItem>
+                <SelectItem value="Visible to the care group of the loved one">{Z("仅此被照护者所在护理群组的成员（app 内）", "Only members of this loved one's care group in this app")}</SelectItem>
+                <SelectItem value="Visible to caregivers of the loved one">{Z("仅此被照护者的护理者（app 内）", "Only this loved one's caregivers in this app")}</SelectItem>
                 <SelectItem value="Visible to author">{Z("仅创建此卡片的我自己", "Only me, the person who created this card")}</SelectItem>
 
               </SelectContent>

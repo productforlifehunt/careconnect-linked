@@ -143,12 +143,12 @@ async function linkRel(relId: number, parentId: number, childId: number) {
   });
 }
 
-// ─── Cared Ones (Relation 219, Users → Users, many-to-many) ──
+// ─── Loved Ones (Relation 219, Users → Users, many-to-many) ──
 export async function createUserCaredOneWordPress(caredOne: { caredOneId: string; relationship?: string; isPrimary?: boolean }): Promise<void> {
   const stored = getStoredWPUser();
   if (!stored?.user_id) throw new Error("Not authenticated");
   const childId = normalizeWpObjectId(caredOne.caredOneId);
-  if (!childId) throw new Error("Invalid cared one user");
+  if (!childId) throw new Error("Invalid loved one user");
   await linkRel(REL_USER_CARED_ONE, Number(stored.user_id), childId);
 }
 
@@ -156,7 +156,7 @@ export async function deleteUserCaredOneWordPress(id: string): Promise<void> {
   const stored = getStoredWPUser();
   if (!stored?.user_id) throw new Error("Not authenticated");
   const childId = normalizeWpObjectId(id);
-  if (!childId) throw new Error("Invalid cared one user");
+  if (!childId) throw new Error("Invalid loved one user");
   await wordpressFetch(`jet-rel/${REL_USER_CARED_ONE}`, {
     method: "POST",
     body: { parent_id: Number(stored.user_id), child_id: childId, context: "child", store_items_type: "disconnect" },
@@ -168,7 +168,7 @@ export async function fetchGroupCaredOnesWordPress(groupId: string): Promise<any
   if (!Array.isArray(rels) || rels.length === 0) return [];
   const caredOneRels = rels.filter((r: any) => {
     const { memberRoles } = decodeRel72Meta(r?.meta);
-    return memberRoles.includes("cared one");
+    return memberRoles.includes("loved one");
   });
   const userIds = caredOneRels.map((r: any) => Number(r.child_object_id)).filter(Boolean);
   const caredOnes = await Promise.all(userIds.map(async (userId) => {
@@ -196,7 +196,7 @@ export async function fetchGroupCaredOnesWordPress(groupId: string): Promise<any
   return caredOnes;
 }
 
-// ─── Cared One Information Card (CCT 125) ───────────────────
+// ─── Loved One Information Card (CCT 125) ───────────────────
 // a55=name, a56=description, a57=card_name, a58=status(b55/b56/b57), a59=displays_location(b55/b56)
 export async function fetchCaredOnesCardsWordPress(): Promise<any[]> {
   const stored = getStoredWPUser();
@@ -406,7 +406,7 @@ export async function logCheckinWordPress(log: { medicine_id?: string; checkin_i
 
 // ─── Medicine schedules & logs ───────────────────────────────
 // CCT 205 (medicine schedule) + CCT 206 (Apple-shaped dose log).
-// Relation 237 links the cared one to the schedule; relation 238 links logs.
+// Relation 237 links the loved one to the schedule; relation 238 links logs.
 export {
   fetchMedicinesWordPress, createMedicineWordPress, updateMedicineWordPress,
   deleteMedicineWordPress, fetchMedicineLogsWordPress, fetchTodayMedicineLogsWordPress,
@@ -597,7 +597,7 @@ export async function deleteEmergencyContactWordPress(id: string): Promise<void>
   await wordpressCCTFetch(T.emergencyContact.slug, { id, method: "DELETE" });
 }
 
-// ─── Cared One Documents (CCT 212) ───────────────────────────
+// ─── Loved One Documents (CCT 212) ───────────────────────────
 // Attachments live in the CCT's Gallery field (F_DOC.ATTACHMENTS): a
 // comma-separated list of WP media IDs, so one document record can carry
 // several files (PDF / TXT / images).
@@ -672,8 +672,8 @@ export async function updateDementiaStageWordPress(caredOneId: string, stage: st
 
 // ─── Visit Log → the check-in system, CCT 208 (checkin_log) ───
 // A visit is a check-in entry: status a55 = b55 "Checked", details in the
-// note field a56. Entries hang off the cared one's check-in schedule
-// (CCT 207) through REL 240; the schedule itself hangs off the cared one
+// note field a56. Entries hang off the loved one's check-in schedule
+// (CCT 207) through REL 240; the schedule itself hangs off the loved one
 // through REL 239. No extra table, no extra fields.
 const VISIT_SCHEDULE_NAME = "Visit log";
 

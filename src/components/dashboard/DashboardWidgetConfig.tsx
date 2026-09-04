@@ -53,7 +53,7 @@ export function isWidgetVisible(id: string, defaults: Record<string, boolean>): 
 }
 
 const ZH_WIDGET_LABELS: Record<string, string> = {
-  "patient-summaries": "被护理者概览",
+  "patient-summaries": "家人概览",
   "daily-timeline": "每日时间线",
   "stats": "统计概览",
   "quick-actions": "快捷操作",

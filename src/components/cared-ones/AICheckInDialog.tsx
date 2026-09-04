@@ -53,7 +53,7 @@ export function AICheckInDialog({ open, onOpenChange, checkin, caredOneName }: P
   const isCN = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (isCN ? cn : en);
   const SYSTEM_PROMPT = isCN ? SYSTEM_PROMPT_CN : SYSTEM_PROMPT_EN;
-  const defaultCaredOneName = caredOneName || Z("您的被护理者", "your loved one");
+  const defaultCaredOneName = caredOneName || Z("您的家人", "your loved one");
   const logCheckin = useLogCheckin();
   const [messages, setMessages] = useState<AIChatMessage[]>([]);
   const [input, setInput] = useState("");

@@ -164,7 +164,7 @@ export async function writeLocationSnapshot(
         child_id: Number(newId),
         context: "child",
         store_items_type: "update",
-        // Relation field a55 "User type": b55 not someone special, b56 cared one.
+        // Relation field a55 "User type": b55 not someone special, b56 loved one.
         meta: { a55: opts?.is_cared_one ? "b56" : "b55" },
       },
   });

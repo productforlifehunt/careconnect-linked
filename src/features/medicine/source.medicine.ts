@@ -2,8 +2,8 @@
  * Medicine schedules & logs — dictionary-aligned storage
  *
  * SCHEDULE  → JetEngine CCT 205 `medicine_schedule` (a55–a72), linked to the
- *             cared one through JetEngine Relation 237
- *             ("One cared one can have many related 205. medicine schedules").
+ *             loved one through JetEngine Relation 237
+ *             ("One loved one can have many related 205. medicine schedules").
  * LOG       → JetEngine CCT 206 `medicine_log` (a55–a68), a field-for-field
  *             mirror of Apple HKMedicationDoseEvent, linked to its schedule
  *             through JetEngine Relation 238 (205 → 206).
