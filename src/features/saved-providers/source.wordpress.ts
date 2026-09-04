@@ -1,66 +1,76 @@
 /**
  * Saved providers (favorites).
  *
- * The data dictionary has no favorites table, so we deliberately do NOT
- * invent one — favorites are kept on this device only, and the UI says so.
- * The provider details shown in the list are read live from WordPress.
+ * Backed by JetEngine Relation 295 —
+ *   "295. One user can have many related saved/favorite care givers"
+ *   Users -> Users (Many to Many)
+ * Parent = the signed-in user, Child = the saved care provider.
+ * No local storage, no invented table: favorites follow the account.
  */
 
+import { wordpressFetch } from "@/features/shared/wordpress-client";
+import { getStoredWPUser } from "@/services/wp-auth";
 import { fetchProviderByIdWordPress } from "@/features/providers/source.wordpress";
 
-const STORAGE_KEY = "cc.saved_providers.v1";
+/** Relation 295 — user → saved/favorite care givers (verified live on /wp-json/jet-rel/295). */
+const REL_SAVED_PROVIDERS = 295;
 
-function readStore(): Array<{ id: string; provider_id: string; created_at: string }> {
-  try {
-    const raw = typeof window !== "undefined" ? window.localStorage.getItem(STORAGE_KEY) : null;
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
+const stripWp = (v: string | number | null | undefined) =>
+  v == null ? "" : String(v).replace(/^wp-/, "");
 
-function writeStore(items: Array<{ id: string; provider_id: string; created_at: string }>): void {
-  try {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    }
-  } catch {
-    /* ignore quota errors */
-  }
+function requireUserId(): number {
+  const stored = getStoredWPUser();
+  const id = stored?.user_id ? Number(stored.user_id) : null;
+  if (!id) throw new Error("Not authenticated");
+  return id;
 }
 
 export async function fetchSavedProvidersWordPress(): Promise<any[]> {
-  const saved = readStore();
+  const userId = requireUserId();
+  const rels = await wordpressFetch<any[]>(`jet-rel/${REL_SAVED_PROVIDERS}/children/${userId}`);
+  if (!Array.isArray(rels)) {
+    throw new Error(`Relation ${REL_SAVED_PROVIDERS} returned an invalid response`);
+  }
   const enriched = await Promise.all(
-    saved.map(async (s) => {
+    rels.map(async (r: any) => {
+      const childId = r.child_object_id ?? r.child_id;
+      if (!childId) return null;
       let provider: any = null;
-      try { provider = await fetchProviderByIdWordPress(s.provider_id); } catch { provider = null; }
+      try {
+        provider = await fetchProviderByIdWordPress(`wp-${childId}`);
+      } catch {
+        provider = null;
+      }
+      if (!provider) return null;
       return {
-        id: s.id,
-        provider_id: s.provider_id,
+        id: String(r._ID || r.id || `${userId}-${childId}`),
+        provider_id: `wp-${childId}`,
         provider,
-        provider_name: provider?.full_name ?? null,
-        provider_avatar: provider?.avatar_url ?? null,
-        created_at: s.created_at,
+        provider_name: provider.full_name ?? null,
+        provider_avatar: provider.avatar_url ?? null,
+        created_at: r.created_at || null,
       };
     }),
   );
-  return enriched.filter((e) => e.provider);
+  return enriched.filter(Boolean) as any[];
 }
 
 export async function toggleSavedProviderWordPress(providerId: string): Promise<void> {
-  const list = readStore();
-  const idx = list.findIndex(
-    (s) => s.provider_id === providerId || s.provider_id === `wp-${providerId.replace(/^wp-/, "")}`
-  );
-  if (idx >= 0) {
-    list.splice(idx, 1);
-  } else {
-    list.push({
-      id: `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      provider_id: providerId,
-      created_at: new Date().toISOString(),
-    });
-  }
-  writeStore(list);
+  const userId = requireUserId();
+  const childId = Number(stripWp(providerId));
+  if (!childId) throw new Error("Invalid provider id");
+
+  const rels = await wordpressFetch<any[]>(`jet-rel/${REL_SAVED_PROVIDERS}/children/${userId}`);
+  const already = Array.isArray(rels)
+    && rels.some((r: any) => Number(r.child_object_id ?? r.child_id) === childId);
+
+  await wordpressFetch(`jet-rel/${REL_SAVED_PROVIDERS}`, {
+    method: "POST",
+    body: {
+      parent_id: userId,
+      child_id: childId,
+      context: "child",
+      store_items_type: already ? "disconnect" : "update",
+    },
+  });
 }
