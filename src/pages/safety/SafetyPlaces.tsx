@@ -374,11 +374,16 @@ export default function SafetyPlaces() {
                   })}
                 </div>
               </div>
+              <ZoneScheduleFields
+                value={form}
+                onChange={(next) => setForm((f) => ({ ...f, ...next }))}
+              />
               <ToggleRow
                 label={Z("启用此地点", "Place active")}
                 checked={form.is_active}
                 onChange={(v) => setForm((f) => ({ ...f, is_active: v }))}
               />
+
             </div>
           </div>
           <DialogFooter>
