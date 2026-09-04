@@ -244,8 +244,8 @@ export function SheetAIPanel({ context }: { context: InfoSheetAIContext }) {
         const reply = await invokeAI(
           "care_info_sheet",
           Z(
-            `请用两三句话，向刚拿到这份信息卡的人说明这次需要做什么：${task}。最后加一句：有不清楚的直接问我。`,
-            `In two or three sentences, tell the person who just received this card what is needed this time: ${task}. End by inviting them to ask you anything.`,
+            `${context.caredOneName || "这位家人"}的家人正在请人帮个忙。请用两三句温和、感谢的话，像跟邻居或朋友说话一样，说明这次是帮什么：${task}。不要用命令句（不要说"你需要"、"你必须"），可以说"想请你…"、"如果方便的话…"。最后一句请对方有不清楚的地方随时问你。`,
+            `A family is asking a neighbour or friend for a favour. In two or three warm, appreciative sentences — as you'd speak to a friend, never as an order — describe what the favour is this time: ${task}. Avoid "you need to" or "you must"; prefer "would you be able to…", "if it works for you…". End by warmly inviting them to ask you anything they're unsure about.`,
           ),
           { contextPrompt: buildInfoSheetSystemPrompt(context, !!isCN), persist: false },
         );
@@ -253,8 +253,12 @@ export function SheetAIPanel({ context }: { context: InfoSheetAIContext }) {
       } catch {
         setMessages([{
           role: "assistant",
-          content: Z(`这次需要：${task}\n\n有不清楚的地方直接问我。`, `What's needed this time: ${task}\n\nAsk me anything you're unsure about.`),
+          content: Z(
+            `谢谢你帮忙。这次想请你：${task}\n\n有不清楚的地方随时问我。`,
+            `Thank you for helping out. The favour this time: ${task}\n\nAsk me anything you're unsure about.`,
+          ),
         }]);
+
       } finally {
         setSending(false);
       }
