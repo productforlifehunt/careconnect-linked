@@ -68,7 +68,7 @@ export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) 
       }
     });
 
-    // Today's tasks for this loved one (Relation task → loved one)
+    // Today's tasks for this cared one (Relation task → cared one)
     const coId = String(caredOneId).replace(/^wp-/, "");
     const me = String(getStoredWPUser()?.user_id ?? "");
     const todaysTasks = (tasks || []).filter((t: any) => {

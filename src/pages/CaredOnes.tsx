@@ -74,7 +74,7 @@ export default function CaredOnes() {
   const { data: searchResultsRaw } = useSearchProfiles(searchQuery);
   const [detailCaredOne, setDetailCaredOne] = useState<any>(null);
 
-  // A user is never their own loved one — exclude self and anyone already added.
+  // A user is never their own cared one — exclude self and anyone already added.
   const myWpId = String(getStoredWPUser()?.user_id || "");
   const searchResults = useMemo(() => {
     const existing = new Set((caredOnes || []).map((c: any) => String(c.user_id || "").replace(/^wp-/, "")));

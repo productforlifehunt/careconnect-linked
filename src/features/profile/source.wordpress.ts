@@ -5,7 +5,7 @@
  *   a55=Allow emergency location request (b55 Yes | b56 No)
  *   a56=Location share is on            (b55 Yes | b56 No)
  *   a57=Notification preference
- *   a58=General user role               (b55 loved one | b56 caring one)  [checkbox]
+ *   a58=General user role               (b55 cared one | b56 caring one)  [checkbox]
  *   a59=Is care provider                (b55 Yes | b56 No)
  *   a60=Care provider is active         (b55 Yes | b56 No)
  *   a61=Background checked              (b55 Yes | b56 No)
@@ -16,7 +16,7 @@
  *   a66=Hourly rate for in-person service (number)
  *   a67=Hourly rate for remote service    (number)
  *   a68=Offers care service type          [checkbox]
- *   a90=Loved one's AI system prompt
+ *   a90=Cared one's AI system prompt
  *
  * Notification / display / permission settings are NOT stored here — they live
  * as one JSON blob on CCT 151 (a95 ChallengeD, a96 CareCNC); see
@@ -44,8 +44,8 @@ const F = P2.f;
 const CCT_SLUG = P2.slug;
 
 // Role checkbox: opaque → role label
-const ROLE_OPT_TO_LABEL: Record<string, string> = { b55: "loved one", b56: "caring one" };
-const ROLE_LABEL_TO_OPT: Record<string, string> = { "loved one": "b55", "caring one": "b56" };
+const ROLE_OPT_TO_LABEL: Record<string, string> = { b55: "cared one", b56: "caring one" };
+const ROLE_LABEL_TO_OPT: Record<string, string> = { "cared one": "b55", "caring one": "b56" };
 const YES = "b55", NO = "b56";
 
 const yesNoToBool = (v: any): boolean => v === YES || v === true || v === 1 || v === "1" || v === "yes";

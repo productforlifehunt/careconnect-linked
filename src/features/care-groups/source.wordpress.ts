@@ -112,7 +112,7 @@ export async function fetchCareGroupMembersWordPress(groupId: string): Promise<a
             role: isOwner ? "owner" : isAdmin ? "admin" : "nothing special",
             is_admin: isAdmin,
             is_owner: isOwner,
-            is_cared_one: memberRoles.includes("loved one"),
+            is_cared_one: memberRoles.includes("cared one"),
             invitation_status: invitationStatus,
             profile: { id: `wp-${uid}`, full_name: displayName, email: u.email || null, avatar_url: u.avatar_url || null },
           };

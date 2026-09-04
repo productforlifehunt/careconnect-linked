@@ -6,7 +6,7 @@
  *  REL 223 — 199. Care Group → Users (Many to Many)
  *    a55 care group's member display name          Text
  *    a56 care group's member types                 Radio { nothing special | owner | admin }
- *    a57 care group's member roles                 Radio { nothing special | loved one }
+ *    a57 care group's member roles                 Radio { nothing special | cared one }
  *    a58 care group's member invitation status      Radio { accepted | pending | declined }
  *
  *  REL 225 — 201. Care group's private member group → Users (Many to Many)
@@ -44,7 +44,7 @@ const STATUS_OPT = R223.opt.CARE_GROUP_S_MEMBER_INVITATION_STATUS;
 const SUB_TYPE_OPT = R225.opt.CARE_GROUP_S_PRIVATE_MEMBER_GROUP_MEMBER_TYPES;
 
 export type MemberType = "nothing special" | "owner" | "admin";
-export type MemberRole = "nothing special" | "loved one";
+export type MemberRole = "nothing special" | "cared one";
 export type InvitationStatus = "accepted" | "pending" | "declined";
 
 /** label → code, accepting a few friendly synonyms used across the UI. */
@@ -63,13 +63,13 @@ export const MEMBER_TYPE_LABEL: Record<string, string> = {
 export const MEMBER_ROLE_CODE: Record<string, string> = {
   "nothing special": ROLE_OPT.NOTHING_SPECIAL,
   nothing: ROLE_OPT.NOTHING_SPECIAL,
-  "loved one": ROLE_OPT.CARED_ONE,
+  "cared one": ROLE_OPT.CARED_ONE,
   cared_one: ROLE_OPT.CARED_ONE,
   "cared-one": ROLE_OPT.CARED_ONE,
 };
 export const MEMBER_ROLE_LABEL: Record<string, string> = {
   [ROLE_OPT.NOTHING_SPECIAL]: "nothing special",
-  [ROLE_OPT.CARED_ONE]: "loved one",
+  [ROLE_OPT.CARED_ONE]: "cared one",
 };
 export const INVITATION_STATUS_CODE: Record<string, string> = {
   accepted: STATUS_OPT.ACCEPTED,
@@ -107,7 +107,7 @@ export const REL72_STATUS_CODE = INVITATION_STATUS_CODE;
 export const REL72_STATUS_LABEL = INVITATION_STATUS_LABEL;
 
 const TYPE_PRIORITY = ["owner", "admin", "nothing special"];
-const ROLE_PRIORITY = ["loved one", "nothing special"];
+const ROLE_PRIORITY = ["cared one", "nothing special"];
 
 /**
  * Meta values can come back as an array, a plain code, a comma list, or a

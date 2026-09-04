@@ -172,7 +172,7 @@ export function EditPostDialog({
   );
 }
 
-// ─── Add Loved One Dialog ───────────────────────────────────
+// ─── Add Cared One Dialog ───────────────────────────────────
 export function AddCaredOneDialog({
   open, onOpenChange, activeGroupId,
 }: {
@@ -211,16 +211,16 @@ export function AddCaredOneDialog({
   return (
     <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) reset(); }}>
       <DialogContent>
-        <DialogHeader><DialogTitle>{Z("添加家人到护理群组", "Add Loved Ones to Group")}</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{Z("添加被护理者到护理群组", "Add Cared Ones to Group")}</DialogTitle></DialogHeader>
         <div className="space-y-4 mt-2">
           <div>
-            <Label>{Z("我的家人", "My loved ones")}</Label>
+            <Label>{Z("我的被护理者", "My cared ones")}</Label>
             {(myCaredOnes || []).length > 0 ? (
               <div className="mt-1 border rounded-lg divide-y max-h-48 overflow-y-auto">
                 {(myCaredOnes || []).map((c: any) => {
                   const person = c.cared_one || {};
                   const id = String(person.id || c.user_id);
-                  const name = person.full_name || Z("家人", "Loved one");
+                  const name = person.full_name || Z("被护理者", "Cared one");
                   return (
                     <label key={id} className="flex items-center gap-3 p-3 cursor-pointer hover:bg-accent/50">
                       <Checkbox checked={picked.includes(id)} onCheckedChange={() => togglePicked(id)} />
@@ -236,7 +236,7 @@ export function AddCaredOneDialog({
                 })}
               </div>
             ) : (
-              <p className="text-xs text-muted-foreground mt-1">{Z("你还没有添加家人，可以在下方搜索。", "You have no loved ones yet — search below instead.")}</p>
+              <p className="text-xs text-muted-foreground mt-1">{Z("你还没有添加被护理者，可以在下方搜索。", "You have no cared ones yet — search below instead.")}</p>
             )}
           </div>
           <div>
@@ -275,7 +275,7 @@ export function AddCaredOneDialog({
           )}
           <Button variant="coral" className="w-full" onClick={handleAdd} disabled={(picked.length === 0 && !selectedPerson) || addCaredOne.isPending}>
             {addCaredOne.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Heart className="h-4 w-4 mr-2" />}
-            {Z("添加为家人", "Add as Loved One")}
+            {Z("添加为被护理者", "Add as Cared One")}
           </Button>
         </div>
       </DialogContent>

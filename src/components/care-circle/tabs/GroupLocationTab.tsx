@@ -9,7 +9,7 @@ interface GroupLocationTabProps {
 }
 
 /**
- * Shows the location of the group's loved ones. Reuses the exact same
+ * Shows the location of the group's cared ones. Reuses the exact same
  * LocationCard (current_location CCT + safe_zone CCT) as the cared-one hub —
  * no new data source.
  */
@@ -20,7 +20,7 @@ export function GroupLocationTab({ groupCaredOnes }: GroupLocationTabProps) {
 
   const people = useMemo(() => (groupCaredOnes || []).map((co: any) => ({
     id: String(co.user_id || co.profile?.id || co.id).replace(/^wp-/, ""),
-    name: co.profile?.full_name || co.full_name || co.name || Z("家人", "Loved one"),
+    name: co.profile?.full_name || co.full_name || co.name || Z("被护理者", "Cared one"),
   })), [groupCaredOnes, isCN]);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -30,7 +30,7 @@ export function GroupLocationTab({ groupCaredOnes }: GroupLocationTabProps) {
     return (
       <div className="text-center py-12">
         <MapPin className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-        <p className="text-muted-foreground">{Z("本群组还没有家人，先在「群组家人」标签中添加。", "No loved ones in this group yet — add them in the Group Loved Ones tab first.")}</p>
+        <p className="text-muted-foreground">{Z("本群组还没有被护理者，先在「群组被护理者」标签中添加。", "No cared ones in this group yet — add them in the Group Cared Ones tab first.")}</p>
       </div>
     );
   }

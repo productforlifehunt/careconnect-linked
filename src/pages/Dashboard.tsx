@@ -43,7 +43,7 @@ export default function Dashboard() {
   const { data: communityPosts, isLoading: postsLoading } = usePosts("care_community_post");
 
   const isChallenged = site.family === "challenged";
-  const isLovedOne = user?.general_user_role?.includes("loved one") === true;
+  const isLovedOne = user?.general_user_role?.includes("cared one") === true;
   const isProvider = user?.is_care_provider === true;
   const userRole: "caregiver" | "provider" | "caredOne" = isLovedOne
     ? "caredOne"
@@ -109,7 +109,7 @@ export default function Dashboard() {
     .sort((a: any, b: any) => bookingStart(a) - bookingStart(b));
   const upcomingBookings = myUpcomingBookings.slice(0, 4);
   // Only the signed-in user's own work: tasks they created, tasks assigned to
-  // them, or tasks attached to one of their loved ones. Never every task in the app.
+  // them, or tasks attached to one of their cared ones. Never every task in the app.
   const myUserId = String(user?.user_id ?? user?.id ?? "").replace(/^wp-/, "");
   const myCaredOneIds = new Set((caredOnes || []).map((c: any) => String(c.user_id).replace(/^wp-/, "")));
   const myTasks = (tasks || []).filter((tk: any) => {

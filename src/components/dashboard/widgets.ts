@@ -3,14 +3,14 @@ import type { WidgetDef } from "./DashboardWidgetConfig";
 /**
  * Master widget registry.
  * `roles` controls who sees the widget by default.
- *   "all" = everyone, "caregiver" = caregivers, "provider" = care providers, "caredOne" = loved ones
+ *   "all" = everyone, "caregiver" = caregivers, "provider" = care providers, "caredOne" = cared ones
  */
 export const WIDGET_REGISTRY: WidgetDef[] = [
   // ── Challenged-only (dementia) — visible to caregivers AND providers ──
   // NOTE: Several AI/clinical-flavoured widgets removed (cognitive stage selector,
   // symptom & behavior tracker, AI insights/care tips/daily summary) to avoid
   // implying medical assessment. The app provides companionship + logistics only.
-  { id: "patient-summaries",   label: "Loved One Overview",       roles: ["caregiver", "provider"],  challengedOnly: true },
+  { id: "patient-summaries",   label: "Cared One Overview",       roles: ["caregiver", "provider"],  challengedOnly: true },
   { id: "daily-timeline",     label: "Today's Events",            roles: ["caregiver", "provider"],  challengedOnly: true },
 
   // ── Shared widgets ──

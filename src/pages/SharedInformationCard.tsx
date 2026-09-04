@@ -20,7 +20,7 @@ export default function SharedInformationCard() {
   const { data: card, isLoading, isError } = useInformationCardByToken(token || null);
   const [aiOpen, setAiOpen] = useState(false);
 
-  // REL 220: the loved one this sheet belongs to.
+  // REL 220: the cared one this sheet belongs to.
   const { data: caredOneId } = useQuery({
     queryKey: ["sharedCardCaredOne", card?.id],
     queryFn: () => fetchInformationCardCaredOneIdWordPress(String(card?.id)),
