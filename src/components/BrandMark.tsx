@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { useSite } from "@/contexts/SiteContext";
 import yichangIcon from "@/assets/yichang-icon-128.webp";
 import huchangIcon from "@/assets/huchang-icon-128.webp";
-import notchsafetyMark from "@/assets/notchsafety-mark.png.asset.json";
+import notchsafetyMark from "@/assets/notchsafety-mark.png";
 
 
 
@@ -50,7 +50,7 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
   } else if (site.family === "notchsafety") {
     icon = (
       <img
-        src={notchsafetyMark.url}
+        src={notchsafetyMark}
         alt={isChinese ? "诺驰安全" : "NotchSafety"}
         width={size}
         height={size}
