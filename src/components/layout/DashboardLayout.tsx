@@ -11,7 +11,7 @@ import {
   Bell,
   User,
   LayoutDashboard,
-  Briefcase,
+  Briefcase, HeartHandshake,
   Settings,
   ShoppingCart,
   Lightbulb,
