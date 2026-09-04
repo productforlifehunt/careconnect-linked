@@ -7,8 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSite } from "@/contexts/SiteContext";
 import {
-  useBookings, useCareTasks, useUserCaredOnes, usePosts,
+  useBookings, useCareTasks, useUserCaredOnes, usePosts, useCareGroups, useConversations,
 } from "@/hooks/use-care-data";
+
 import {
   CalendarDays, Users, MapPin, ArrowRight, CheckCircle, AlertCircle, MessageSquare,
   ShoppingBag, Heart, BookOpen, Wand2, Briefcase, Bell, Calendar as CalIcon,
