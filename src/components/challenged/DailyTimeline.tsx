@@ -4,6 +4,7 @@ import { Pill, ClipboardCheck, CheckSquare, Clock, CalendarDays } from "lucide-r
 import { useMedicines, useCareTasks, useCheckins, useTodayCheckinLogs, useTodayMedicineLogs, useBookings } from "@/hooks/use-care-data";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { getStoredWPUser } from "@/services/wp-auth";
 
 interface DailyTimelineProps {
   caredOneId: string;
@@ -69,8 +70,12 @@ export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) 
 
     // Today's tasks for this cared one (Relation task → cared one)
     const coId = String(caredOneId).replace(/^wp-/, "");
+    const me = String(getStoredWPUser()?.user_id ?? "");
     const todaysTasks = (tasks || []).filter((t: any) => {
       if (String(t.cared_one_id ?? "").replace(/^wp-/, "") !== coId) return false;
+      // Only the viewer's own tasks: created by them, or assigned to them.
+      const assignees = (t.assigned_to_ids || []).map((x: any) => String(x));
+      if (me && String(t.created_by ?? "") !== me && !assignees.includes(me)) return false;
       const when = t.task_date || t.due_date;
       if (!when) return false;
       return new Date(when).toDateString() === today;
