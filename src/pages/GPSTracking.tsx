@@ -841,7 +841,7 @@ export default function GPSTracking() {
               <Card className="border-transparent card-elevated">
                 <CardContent className="py-4 space-y-3">
                   {alerts.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-8">{t("gps.noAlerts", "No geofence alerts")}</p>
+                    <p className="text-sm text-muted-foreground text-center py-8">{t("gps.noAlerts", "No safe zone alerts")}</p>
                   ) : (
                     alerts.slice(0, 20).map((alert: any) => (
                       <div

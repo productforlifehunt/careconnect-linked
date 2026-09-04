@@ -363,7 +363,7 @@ export default function CareFacilityProfile() {
             <CardContent className="space-y-6">
               <div className="grid lg:grid-cols-[220px_1fr] gap-6">
                 <div className="rounded-2xl border p-5 bg-muted/20">
-                  <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">{isZh ? "口碑概览" : "Review snapshot"}</div>
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">{isZh ? "口碑概览" : "Ratings at a glance"}</div>
                   <div className="text-4xl font-bold text-foreground mb-1">{reviewSummary.average?.toFixed(1) || "--"}</div>
                   <div className="text-sm text-muted-foreground mb-4">{isZh ? `${reviewSummary.count} 条公开评价` : `${reviewSummary.count} published reviews`}</div>
                   <div className="space-y-2">
