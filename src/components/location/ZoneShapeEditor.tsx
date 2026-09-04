@@ -129,7 +129,7 @@ export function ZoneShapeEditor({
           onClick={() => onShapeChange("Polygon")}
         >
           <PenLine className="mr-2 h-4 w-4" />
-          {Z("手绘精准范围", "Draw exact area")}
+          {Z("定位范围", "Position area")}
         </Button>
       </div>
 
