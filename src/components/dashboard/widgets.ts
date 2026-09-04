@@ -11,7 +11,7 @@ export const WIDGET_REGISTRY: WidgetDef[] = [
   // symptom & behavior tracker, AI insights/care tips/daily summary) to avoid
   // implying medical assessment. The app provides companionship + logistics only.
   { id: "patient-summaries",   label: "Cared One Overview",       roles: ["caregiver", "provider"],  challengedOnly: true },
-  { id: "daily-timeline",     label: "Daily Timeline",            roles: ["caregiver", "provider"],  challengedOnly: true },
+  { id: "daily-timeline",     label: "Today's Events",            roles: ["caregiver", "provider"],  challengedOnly: true },
 
   // ── Shared widgets ──
   { id: "ai-smart-briefing",  label: "AI Smart Briefing",          roles: ["caregiver", "provider"] },

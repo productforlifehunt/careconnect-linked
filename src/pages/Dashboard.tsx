@@ -317,7 +317,7 @@ export default function Dashboard() {
     "daily-timeline": firstCaredOne ? (
       <section>
         <h2 className="text-sm font-semibold text-foreground mb-2">
-          {t("dashboard.timeline", { defaultValue: "Daily Timeline" })}
+          {t("dashboard.timeline", { defaultValue: "Today's Events" })}
         </h2>
         {(caredOnes?.length ?? 0) > 1 ? (
           <Tabs defaultValue={firstCaredOne.user_id}>
@@ -345,7 +345,7 @@ export default function Dashboard() {
           />
         )}
       </section>
-    ) : caredOnesLoading ? slotSkeleton(t("dashboard.timeline", { defaultValue: "Daily Timeline" }), "h-32") : null,
+    ) : caredOnesLoading ? slotSkeleton(t("dashboard.timeline", { defaultValue: "Today's Events" }), "h-32") : null,
 
 
     "community-feed": recentPosts.length > 0 ? (

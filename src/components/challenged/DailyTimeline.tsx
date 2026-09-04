@@ -158,7 +158,7 @@ export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) 
       <CardHeader className="pb-2">
         <CardTitle className="text-base flex items-center gap-2">
           <Clock className="h-4 w-4 text-primary" />
-          {isZh ? `今日作息 — ${caredOneName}` : `Today's Routine — ${caredOneName}`}
+          {isZh ? `今日事项 — ${caredOneName}` : `Today's Events — ${caredOneName}`}
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-0">
