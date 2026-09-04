@@ -274,9 +274,11 @@ export async function writeLocationAndCheckZones(
     heading?: number | null;
     speed?: number | null;
     battery_level?: number | null;
+    phone_is_charging?: boolean | null;
     moving_type?: string;
     address_text?: string | null;
     isEmergency?: boolean;
+    is_cared_one?: boolean;
   }
 ): Promise<LocationSnapshot | null> {
   const storedUser = getStoredWPUser();
@@ -288,9 +290,11 @@ export async function writeLocationAndCheckZones(
     heading: opts?.heading,
     speed: opts?.speed,
     battery_level: opts?.battery_level,
+    phone_is_charging: opts?.phone_is_charging,
     moving_type: opts?.moving_type,
     address_text: opts?.address_text,
     is_emergency: opts?.isEmergency,
+    is_cared_one: opts?.is_cared_one,
   });
 
   // Run zone breach detection
@@ -303,33 +307,32 @@ export async function writeLocationAndCheckZones(
     } catch {}
   }
 
-  // Handle SOS emergency — notify care circle
+  // SOS — alert the location receivers linked through JetEngine relation 290.
   if (opts?.isEmergency && storedUser?.user_id) {
     try {
       const { createNotificationWordPress } = await import("@/features/notifications/source.wordpress");
-      const { fetchCareGroupsWordPress } = await import("@/features/care-groups/source.wordpress");
-      const groups = await fetchCareGroupsWordPress();
-      const notifiedUserIds = new Set<string>();
-      for (const group of groups) {
-        for (const member of ((group as any).members || [])) {
-          const memberId = String(member.user_id || member.id || "");
-          if (memberId && memberId !== String(storedUser.user_id) && !notifiedUserIds.has(memberId)) {
-            notifiedUserIds.add(memberId);
-            await createNotificationWordPress({
-              user_id: memberId,
+      const { fetchLocationReceiverIds } = await import("@/features/location/source.wordpress-extended");
+      const receivers = await fetchLocationReceiverIds(String(storedUser.user_id));
+      const name = (await fetchMyAppUserName().catch(() => "")) || "A care circle member";
+      await Promise.all(
+        receivers
+          .filter((rid) => String(rid) !== String(storedUser.user_id))
+          .map((rid) =>
+            createNotificationWordPress({
+              user_id: String(rid),
               type: "sos_emergency",
               title: "🚨 SOS Emergency Alert",
-              message: `${(await fetchMyAppUserName().catch(() => "")) || "A care circle member"} triggered an SOS emergency alert.`,
+              message: `${name} triggered an SOS emergency alert.`,
               action_url: `/gps-tracking?sos=${storedUser.user_id}`,
-            });
-          }
-        }
-      }
+            }).catch(() => null),
+          ),
+      );
     } catch {}
   }
 
   return snapshot;
 }
+
 
 // ─── Helpers ─────────────────────────────────────────────────
 
