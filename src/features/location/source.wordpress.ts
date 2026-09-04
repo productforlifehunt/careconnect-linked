@@ -53,7 +53,30 @@ function parseNum(v: any): number | null {
   return n;
 }
 
+/** Dictionary codes → plain words the UI can show. */
+const MOVING_LABEL: Record<string, string> = {
+  [O.MOVING_TYPE.STATIONARY]: "stationary",
+  [O.MOVING_TYPE.WALKING]: "walking",
+  [O.MOVING_TYPE.RUNNING]: "running",
+  [O.MOVING_TYPE.CYCLING]: "cycling",
+  [O.MOVING_TYPE.AUTOMOTIVE]: "automotive",
+  [O.MOVING_TYPE.UNKNOWN]: "unknown",
+};
+const PLATFORM_LABEL: Record<string, string> = {
+  [O.PLATFORM.IOS]: "iOS",
+  [O.PLATFORM.ANDROID]: "Android",
+  [O.PLATFORM.WEB]: "Web",
+};
+const YES_NO_LABEL: Record<string, string> = {
+  [O.PHONE_IS_CHARING.YES]: "Yes",
+  [O.PHONE_IS_CHARING.NO]: "No",
+};
+
 function mapSnapshot(raw: any): LocationSnapshot {
+  const movingCode = raw[F.MOVING_TYPE] || null;
+  const platformCode = raw[F.PLATFORM] || null;
+  const chargingCode = raw[F.PHONE_IS_CHARING] || null;
+  const emergencyCode = raw[F.IS_SO_MUCH_OF_AN_EMERGENCY_THAT_WE_DON_T_BOTHER_TO_ASK_FOR_THE_CARED_ONE_S_PERMISSION] || null;
   return {
     id: String(raw._ID || raw.id || ""),
     latitude: parseNum(raw[F.LATITUDE]),
@@ -62,16 +85,19 @@ function mapSnapshot(raw: any): LocationSnapshot {
     altitude_meters: parseNum(raw[F.ALTITUDE_METERS]),
     heading_degrees: parseNum(raw[F.HEADING_DEGREES]),
     speed: parseNum(raw[F.SPEED]),
-    moving_type: raw[F.MOVING_TYPE] || null,
-    platform: raw[F.PLATFORM] || null,
+    moving_type: movingCode ? MOVING_LABEL[movingCode] ?? null : null,
+    // a62 "stationary" is the only stillness signal — the old a61 "Is moving" is retired.
+    is_stationary: movingCode ? movingCode === O.MOVING_TYPE.STATIONARY : null,
+    platform: platformCode ? PLATFORM_LABEL[platformCode] ?? null : null,
     battery_level: parseNum(raw[F.BATTERY_LEVEL]),
-    phone_is_charging: raw[F.PHONE_IS_CHARING] || null,
+    phone_is_charging: chargingCode ? YES_NO_LABEL[chargingCode] ?? null : null,
     address_text: raw[F.ADDRESS_TEXT] || null,
     captured_at: raw[F.CAPTURED_AT] || null,
-    is_emergency: raw[F.IS_SO_MUCH_OF_AN_EMERGENCY_THAT_WE_DON_T_BOTHER_TO_ASK_FOR_THE_CARED_ONE_S_PERMISSION],
+    is_emergency: emergencyCode === O.IS_SO_MUCH_OF_AN_EMERGENCY_THAT_WE_DON_T_BOTHER_TO_ASK_FOR_THE_CARED_ONE_S_PERMISSION.YES ? "Yes" : "No",
     cct_author_id: raw.cct_author_id ? Number(raw.cct_author_id) : undefined,
   };
 }
+
 
 // ─── WRITE: Append a new location snapshot ───────────────────
 
