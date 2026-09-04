@@ -185,7 +185,7 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editId ? Z("编辑信息卡", "Edit information card") : Z("新建信息卡", "New information card")}</DialogTitle>
-            <DialogDescription>{Z("写一份可以直接发给别人的照护须知：要注意什么、这次需要帮什么。", "Write something you can hand to another person: what to watch out for and what help is needed this time.")}</DialogDescription>
+            <DialogDescription>{Z("写一张可以直接发给别人的信息卡：要注意什么、这次需要帮什么。", "Write something you can hand to another person: what to watch out for and what help is needed this time.")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 mt-2">
             <div>

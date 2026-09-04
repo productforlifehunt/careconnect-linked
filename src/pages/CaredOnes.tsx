@@ -98,7 +98,7 @@ export default function CaredOnes() {
     { key: "emergency", title: t("caredOnes.emergencyContacts"), icon: Phone, subtitle: t("caredOnes.emergencyList") },
     { key: "location", title: t("caredOnes.locationSafeZones"), icon: MapPin, subtitle: t("caredOnes.gpsSafeZones") },
     { key: "documents", title: t("caredOnes.documents"), icon: FolderOpen, subtitle: t("caredOnes.medicalDocs") },
-    { key: "info-card", title: t("caredOnes.careInfoSheets", { defaultValue: "Care Info Sheets" }), icon: IdCard, subtitle: t("caredOnes.careInfoSheetsSubtitle", { defaultValue: "Share what a helper or finder needs to know" }) },
+    { key: "info-card", title: t("caredOnes.careInfoSheets", { defaultValue: "Cared One Information Cards" }), icon: IdCard, subtitle: t("caredOnes.careInfoSheetsSubtitle", { defaultValue: "Share what a helper or finder needs to know" }) },
   ];
 
   const handleAddCaredOne = () => {
