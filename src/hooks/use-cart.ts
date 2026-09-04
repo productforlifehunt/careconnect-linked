@@ -3,6 +3,9 @@ import {
   getCart,
   addToCart,
   removeCartItem,
+  updateCartItemQuantity,
+  applyCartCoupon,
+  removeCartCoupon,
   clearCart,
   checkout,
   requestOrderRefund,
@@ -72,6 +75,53 @@ export function useRemoveCartItem() {
     },
   });
 }
+
+/** Change the quantity of a single cart line (0 removes it). */
+export function useUpdateCartQuantity() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: ({ itemKey, quantity }: { itemKey: string; quantity: number }) =>
+      updateCartItemQuantity(itemKey, quantity),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['wc-cart'] });
+    },
+    onError: (err: any) => {
+      toast({ title: Z('数量更新失败', 'Could not update quantity'), description: err.message, variant: 'destructive' });
+    },
+  });
+}
+
+/** Apply a WooCommerce coupon to the cart. */
+export function useApplyCoupon() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (code: string) => applyCartCoupon(code),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['wc-cart'] });
+      toast({ title: Z('优惠码已使用', 'Coupon applied') });
+    },
+    onError: (err: any) => {
+      toast({ title: Z('优惠码无效', 'Coupon not accepted'), description: err.message, variant: 'destructive' });
+    },
+  });
+}
+
+/** Remove a coupon from the cart. */
+export function useRemoveCoupon() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (code: string) => removeCartCoupon(code),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['wc-cart'] });
+    },
+  });
+}
+
 
 /**
  * Hook to clear the entire cart
