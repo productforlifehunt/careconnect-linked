@@ -49,18 +49,28 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
     );
   } else if (site.family === "notchsafety") {
     icon = (
-      <img
-        src={notchsafetyMark}
-        alt={isChinese ? "诺驰安全" : "NotchSafety"}
+      <svg
+        viewBox="0 0 48 48"
         width={size}
         height={size}
         style={box}
-        decoding="sync"
-        loading="eager"
-        fetchPriority="high"
-        className="rounded-[26%] object-cover shadow-sm"
-      />
+        role="img"
+        aria-label={isChinese ? "诺驰安全" : "NotchSafety"}
+        className="text-primary"
+      >
+        {/* Flat shield, single brand colour, no gradient and no background plate */}
+        <path
+          d="M24 3 41 9v14.5C41 34.2 33.8 42.4 24 45 14.2 42.4 7 34.2 7 23.5V9L24 3Z"
+          fill="currentColor"
+        />
+        {/* Location pin cut out of the shield */}
+        <path
+          d="M24 13.5c-4.1 0-7.4 3.3-7.4 7.4 0 5.2 5.7 11 7 12.2.2.2.6.2.8 0 1.3-1.2 7-7 7-12.2 0-4.1-3.3-7.4-7.4-7.4Zm0 10.4a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z"
+          fill="hsl(var(--primary-foreground))"
+        />
+      </svg>
     );
+
 
 
   } else if (brand === "carecnc" && isChinese) {
