@@ -118,6 +118,10 @@ function mapTask(t: any, groupId?: string | null) {
     start_time: t[F.TASK_START_TIME] || null,
     end_time: t[F.TASK_END_TIME] || null,
     completed_at: t[F.TASK_COMPLETED_AT] || null,
+    due_date_time: t[F.DUE_DATE] || null,
+    // Sharing a task to the marketplace: a68 Needs payment, a69 Price.
+    needs_payment: String(t[F.NEEDS_PAYMENT] || "") === O.NEEDS_PAYMENT.YES,
+    price: t[F.PRICE] || "",
     help_status: helpCode,
     help_status_label: HELP_STATUS_TO_LABEL[helpCode],
     finish_status: finishCode,
@@ -194,6 +198,8 @@ export async function createCareTaskWordPress(task: {
   start_time?: string;
   end_time?: string;
   help_status?: string; // b55|b56|b57
+  needs_payment?: boolean;
+  price?: string;
   // Legacy alias
   due_date?: string;
 }): Promise<string | null> {
@@ -212,6 +218,8 @@ export async function createCareTaskWordPress(task: {
     [F.TASK_COMPLETED_AT]: "",
     [F.TASK_HELP_STATUS]: helpStatusCode(task.help_status ?? O.TASK_HELP_STATUS.TASK_DOESN_T_NEED_HELP),
     [F.TASK_FINISH_STATUS]: T.careTask.opt.TASK_FINISH_STATUS.NOT_FINISHED,
+    [F.NEEDS_PAYMENT]: task.needs_payment ? O.NEEDS_PAYMENT.YES : O.NEEDS_PAYMENT.NO,
+    [F.PRICE]: task.price || "",
   };
   const created = await wordpressCCTFetch<any>(CCT_SLUG, { method: "POST", body });
   const taskId = normalizeWpObjectId(created?.item_id || created?._ID || created?.id);
@@ -257,7 +265,7 @@ export async function updateCareTaskWordPress(id: string, updates: Record<string
     assigned_to, cared_one_id,
     title, description, task_types, people_needed, location, photo, photo_ids,
     task_date, due_date, start_time, end_time, completed_at,
-    help_status, finish_status, status,
+    help_status, finish_status, status, needs_payment, price,
     ...rest
   } = updates || {};
 
@@ -280,6 +288,8 @@ export async function updateCareTaskWordPress(id: string, updates: Record<string
   if (end_time !== undefined) body[F.TASK_END_TIME] = end_time || "";
   if (completed_at !== undefined) body[F.TASK_COMPLETED_AT] = completed_at || "";
   if (help_status !== undefined) body[F.TASK_HELP_STATUS] = helpStatusCode(help_status);
+  if (needs_payment !== undefined) body[F.NEEDS_PAYMENT] = needs_payment ? O.NEEDS_PAYMENT.YES : O.NEEDS_PAYMENT.NO;
+  if (price !== undefined) body[F.PRICE] = price || "";
   if (finish_status !== undefined) {
     const code = String(finish_status);
     if (!FINISH_STATUS_TO_LABEL[code]) throw new Error(`Invalid care-task finish status: ${code}`);
@@ -390,3 +400,31 @@ export async function updateAssigneeStatusWordPress(taskId: string, userId: stri
 
 // Re-export relation IDs for callers that need them
 export { REL_TASK_COMMENT, REL_TASK_USERS, REL_TASK_PRIVATE_GROUPS, REL_TASK_CALENDAR, REL_TASK_ASSIGNEE, REL_TASK_CARED_ONE, REL_GROUP_TASK, CCT_SLUG };
+
+
+/**
+ * Sub-tasks — JetEngine Relation 253 (204. Care Task → 204. Care Task).
+ * A shared task can bundle other tasks the same way the removed "job" did.
+ */
+export async function fetchSubTaskIdsWordPress(taskId: string): Promise<string[]> {
+  const rels = await wordpressFetch<any[]>(`jet-rel/${R.careTaskSubTasks}/children/${normalizeWpObjectId(taskId)}`);
+  return (Array.isArray(rels) ? rels : []).map((r: any) => String(r.child_object_id)).filter(Boolean);
+}
+
+export async function linkSubTaskWordPress(parentTaskId: string, childTaskId: string): Promise<void> {
+  const pid = normalizeWpObjectId(parentTaskId), cid = normalizeWpObjectId(childTaskId);
+  if (!pid || !cid) throw new Error("Invalid task ID");
+  await wordpressFetch(`jet-rel/${R.careTaskSubTasks}`, {
+    method: "POST",
+    body: { parent_id: pid, child_id: cid, context: "child", store_items_type: "update" },
+  });
+}
+
+export async function unlinkSubTaskWordPress(parentTaskId: string, childTaskId: string): Promise<void> {
+  const pid = normalizeWpObjectId(parentTaskId), cid = normalizeWpObjectId(childTaskId);
+  if (!pid || !cid) throw new Error("Invalid task ID");
+  await wordpressFetch(`jet-rel/${R.careTaskSubTasks}`, {
+    method: "POST",
+    body: { parent_id: pid, child_id: cid, context: "child", store_items_type: "disconnect" },
+  });
+}

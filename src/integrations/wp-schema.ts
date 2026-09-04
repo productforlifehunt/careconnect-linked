@@ -1,5 +1,5 @@
 // AUTO-GENERATED — DO NOT EDIT BY HAND.
-// Dictionary:  /mnt/documents/最新数据字典-2026-08.txt
+// Dictionary:  /mnt/documents/最新数据字典-2026-09-04.txt
 // Pipeline:    scripts/build-truth.mjs -> docs/wp-truth.json -> scripts/gen-wp-constants.mjs
 // Slug map:    scripts/wp-cct-slugs.json (verified against the live /wp-json/ route list)
 //
@@ -343,7 +343,6 @@ export const WP = {
       f: {
         "ALLOW_EMERGENCY_LOCATION_REQUEST": "a55",  // Radio
         "LOCATION_SHARE_IS_ON": "a56",  // Radio
-        "NOTIFICATION_PREFERENCE": "a57",  // ?
         "GENERAL_USER_ROLE": "a58",  // Checkbox
         "IS_PAID_CARE_PROVIDER": "a59",  // Radio
         "CARE_PROVIDER_IS_ACTIVE": "a60",  // Radio
@@ -366,6 +365,7 @@ export const WP = {
         "CARED_ONE_S_TIME_NOT_REPORTING_TO_NOTIFY": "a103",  // Number
         "CARED_ONE_S_CONDITION_TYPE": "a104",  // Checkbox
         "CARED_ONE_S_CUSTOM_CONDITION_NAME": "a105",  // Text
+        "CARED_ONE_S_DESCRIPTION": "a106",  // Text
       },
       opt: {
         "ALLOW_EMERGENCY_LOCATION_REQUEST": { "YES": "b55", "NO": "b56" },
@@ -500,8 +500,11 @@ export const WP = {
         "CUSTOM_RECIPE_DETAIL": "a80",  // Textarea
         "CUSTOM_WORKOUT_DETAIL": "a81",  // Textarea
         "CUSTOM_MEDICINE_DETAIL": "a82",  // Textarea
-        "LOG_MEDICINE_LOG_TYPE": "a83",  // Radio
+        "CHECK_TYPE": "a83",  // Radio
         "LOG_MEDICINE_NOTE": "a84",  // Text
+        "LOG_CHECKIN_NOTE": "a85",  // Text
+        "CHECKED_BY_AI": "a86",  // Radio
+        "FOR_APP": "a87",  // Radio
       },
       opt: {
         "LOG_EVENT_TYPE": { "SMOKING": "b55", "DRINKING_ALCOHOL": "b56", "PORN": "b57", "WATER": "b58", "FOOD": "b59", "BREATHING_EXERCISE": "b60", "WORKOUT": "b61", "MOTIVATION": "b62", "PLEDGE": "b63", "MEMORY": "b64", "SLEEP": "b65", "MOOD": "b66", "APPLE_HEALTH_SYMPTOMS": "b67", "CUSTOM_HEALTH_SYMPTOMS": "b68", "CUSTOM_MEDICINE": "b69" },
@@ -512,7 +515,8 @@ export const WP = {
         "CRAVING_SMOKINGTRIGGER_CATEGORY": { "STRESS": "b55", "SOCIAL": "b56", "BOREDOM": "b57", "ALCOHOL": "b58", "COFFEE": "b59", "MEAL": "b60", "EMOTION": "b61", "HABIT": "b62", "OTHER": "b63" },
         "LOCATION_CATEGORY": { "HOME": "b55", "WORK": "b56", "BAR": "b57", "RESTAURANT": "b58", "CAR": "b59", "OUTDOOR": "b60" },
         "MEAL_TYPE": { "BREAKFAST": "b55", "LUNCH": "b56", "DINNER": "b57", "SNACK": "b58" },
-        "LOG_MEDICINE_LOG_TYPE": { "TAKEN": "b55", "SKIPPED": "b56", "MISSED": "b57" },
+        "CHECK_TYPE": { "TAKEN": "b55", "SKIPPED": "b56", "MISSED": "b57" },
+        "CHECKED_BY_AI": { "YES": "b55", "NO": "b56" },
       },
     },
     /** 177. User’s custom workout */
@@ -770,12 +774,12 @@ export const WP = {
         "SHARE_TOKEN": "a60",  // Text
         "SHARE_EXPIRES_AT": "a61",  // Datetime
         "SHARE_VISIBILITY": "a62",  // Radio
-        "CARED_ONE_S_INFORMATION_CARD_DESCRIPTION": "a63",  // Textarea
+        "CARED_ONE_S_INFORMATION_CARD_DESCRIPTION": "a63",  // Text
       },
       opt: {
         "STATUS": { "DRAFT": "b55", "ACTIVE": "b56", "PAUSED": "b57" },
         "DISPLAYS_LOCATION": { "YES": "b55", "NO": "b56" },
-        "SHARE_VISIBILITY": { "VISIBLE_TO_PUBLIC": "b55", "VISIBLE_TO_THE_CARE_GROUP_OF_THE_CARED_ONE": "b56", "VISIBLE_TO_CAREGIVERS_OF_THE_CARED_ONE": "b57", "VISIBLE_TO_AUTHOR": "b58" },
+        "SHARE_VISIBILITY": { "VISIBLE_TO_PUBLIC": "b55", "VISIBLE_TO_THE_CARE_GROUP_OF_THE_CARED_ONE": "b56", "VISIBLE_TO_CAREGIVERS_OF_THE_CARED_ONE": "b57", "VISIBLE_TO_THE_CARE_GROUP_OF_THE_CARED_ONE_AND_THE_CAREGIVERS_OF_THE_CARED_ONE": "b58" },
       },
     },
     /** 199. Care Group */
@@ -795,11 +799,11 @@ export const WP = {
         "STATUS": { "ACTIVE": "b55", "NO": "b56" },
       },
     },
-    /** 200. Care group invite */
+    /** 200. Care group invite link */
     "200": {
       id: 200,
       slug: "care_group_invite",
-      name: "Care group invite",
+      name: "Care group invite link",
       f: {
         "TOKEN": "a55",  // Text
         "NAME": "a56",  // Text
@@ -878,41 +882,15 @@ export const WP = {
         "TASK_COMPLETED_AT": "a64",  // Datetime
         "TASK_HELP_STATUS": "a65",  // Radio
         "TASK_FINISH_STATUS": "a66",  // Radio
+        "DUE_DATE": "a67",  // Datetime
+        "NEEDS_PAYMENT": "a68",  // Radio
+        "PRICE": "a69",  // Text
       },
       opt: {
         "TASK_TYPE": { "PREPARING_MEALS": "b55", "GIVING_RIDES": "b56", "SHOPPING": "b57", "CHILDCARE": "b58", "VISITS": "b59", "COVERAGE": "b60", "MEDICATIONS_MEDICAL_CARE": "b61", "MISCELLANEOUS": "b62", "OCCASIONS": "b63" },
         "TASK_HELP_STATUS": { "TASK_DOESN_T_NEED_HELP": "b55", "TASK_NEEDS_HELP": "b56", "TASK_HAS_FOUND_HELP": "b57" },
         "TASK_FINISH_STATUS": { "NOT_FINISHED": "b55", "FINISHED": "b56" },
-      },
-    },
-    /** 205. Medicine schedule */
-    "205": {
-      id: 205,
-      slug: "medicine_schedule",
-      name: "Medicine schedule",
-      f: {
-        "NAME": "a55",  // Text
-        "DOSAGE": "a56",  // Text
-        "FREQUENCY": "a57",  // Text
-        "TIME_SLOT": "a58",  // Textarea
-        "INSTRUCTIONS": "a59",  // Textarea
-        "PRESCRIBING_DOCTOR": "a60",  // Text
-        "PHARMACY": "a61",  // Text
-        "SIDE_EFFECTS": "a62",  // Textarea
-        "START_DATE": "a63",  // Date
-        "END_DATE": "a64",  // Date
-        "IS_ACTIVE": "a65",  // Radio
-        "NOTE": "a66",  // Textarea
-        "STOCK_COUNT": "a67",  // Number
-        "REFILL_THRESHOLD": "a68",  // Number
-        "REMINDER_TIME_BEFORE": "a69",  // Number
-        "TIME_TO_SEND_TO_CAREGIVER": "a70",  // Number
-        "TIME_TO_BE_CONSIDERED_AS_MISSING": "a71",  // Number
-        "CHECK_IN_TYPE": "a72",  // Checkbox
-      },
-      opt: {
-        "IS_ACTIVE": { "YES": "b55", "NO": "b56" },
-        "CHECK_IN_TYPE": { "AI": "b55", "HUMAN": "b56" },
+        "NEEDS_PAYMENT": { "YES": "b55", "NO": "b56" },
       },
     },
     /** 206. Medicine log */
@@ -939,47 +917,6 @@ export const WP = {
       opt: {
         "DOSE_EVENT_LOG_STATUS": { "NOTINTERACTED": "b55", "NOTLOGGED": "b56", "NOTIFICATIONNOTSENT": "b57", "SKIPPED": "b58", "SNOOZED": "b59", "TAKEN": "b60" },
         "SCHEDULE_TYPE": { "ASNEEDED": "b55", "SCHEDULE": "b56" },
-      },
-    },
-    /** 207. Checkin schedule */
-    "207": {
-      id: 207,
-      slug: "checkin_schedule",
-      name: "Checkin schedule",
-      f: {
-        "NAME": "a55",  // Text
-        "DETAIL": "a56",  // Text
-        "FREQUENCY": "a57",  // Text
-        "TIME_SLOT": "a58",  // Textarea
-        "INSTRUCTIONS": "a59",  // Text
-        "START_DATE": "a60",  // Date
-        "IS_ACTIVE": "a61",  // Radio
-        "NOTE": "a62",  // Textarea
-        "REMINDER_TIME_BEFORE": "a63",  // Number
-        "TIME_TO_SEND_TO_CAREGIVER": "a64",  // Number
-        "TIME_TO_BE_CONSIDERED_AS_MISSING": "a65",  // Number
-        "CHECK_IN_TYPE": "a66",  // Checkbox
-        "CHECKED_BY_AI": "a67",  // Radio
-      },
-      opt: {
-        "IS_ACTIVE": { "YES": "b55", "NO": "b56" },
-        "CHECK_IN_TYPE": { "AI": "b55", "HUMAN": "b56" },
-        "CHECKED_BY_AI": { "YES": "b55", "NO": "b56" },
-      },
-    },
-    /** 208. Checkin log */
-    "208": {
-      id: 208,
-      slug: "checkin_log",
-      name: "Checkin log",
-      f: {
-        "STATUS": "a55",  // Radio
-        "NOTE": "a56",  // Textarea
-        "CHECKED_BY_AI": "a57",  // Radio
-      },
-      opt: {
-        "STATUS": { "CHECKED": "b55", "SKIPPED": "b56", "MISSED": "b57" },
-        "CHECKED_BY_AI": { "YES": "b55", "NO": "b56" },
       },
     },
     /** 197. Cared one's care note */
@@ -1031,7 +968,7 @@ export const WP = {
       name: "Cared one's emergency contact person",
       f: {
         "NAME": "a55",  // Text
-        "CONTENT": "a56",  // Textarea
+        "DETAIL": "a56",  // Textarea
         "PHONE": "a57",  // Text
         "ADDRESS": "a58",  // Text
         "RELATIONSHIP": "a59",  // Text
@@ -1089,7 +1026,7 @@ export const WP = {
         "ZONE_TYPE": "a55",  // Radio
         "SHAPE_TYPE": "a56",  // Radio
         "ZONE_NAME": "a57",  // Text
-        "CUSTOM_DESCRIPTION": "a58",  // Text
+        "ZONE_DESCRIPTION": "a58",  // Text
         "CUSTOM_COLOR": "a59",  // Colorpicker
         "LATITUDE": "a60",  // Text
         "LONGITUDE": "a61",  // Text
@@ -1139,25 +1076,6 @@ export const WP = {
         "CARE_FACILITY_PROVIDES_COMMUNITY_FACILITY": { "SWIMMING_POOL": "b55", "ACTIVE_LIFESTYLE": "b56", "ENTERTAINMENT_VENUE": "b57", "LAUNDRY": "b58" },
         "CARE_FACILITY_PEOPLE_NUMBER": { "LESS_THAN_5": "b55", "5_20": "b56", "20_50": "b57", "MORE_THAN_50": "b58" },
         "FACILITY_IS_APPROVED": { "YES": "b55", "NO": "b56" },
-      },
-    },
-    /** 216. Care Job */
-    "216": {
-      id: 216,
-      slug: "care_job",
-      name: "Care Job",
-      f: {
-        "TITLE": "a55",  // Text
-        "DESCRIPTION": "a56",  // textarea
-        "DUE_DATE": "a57",  // Datetime
-        "COMPLETED_AT": "a58",  // Datetime
-        "STATUS": "a59",  // Radio
-        "NEEDS_PAYMENT": "a60",  // Radio
-        "PRICE": "a61",  // Text
-      },
-      opt: {
-        "STATUS": { "PENDING": "b55", "IN_PROGRESS": "b56", "COMPLETED": "b57" },
-        "NEEDS_PAYMENT": { "YES": "b55", "NO": "b56" },
       },
     },
     /** 217. Challenged App Content */
@@ -1232,9 +1150,11 @@ export const WP = {
     "144": { id: 144, parent: "2. Shop", child: "31. Review", type: "One to Many" },
     /** 264. One care provider can have many related 31. reviews — Users -> 31. Review (One to Many) */
     "264": { id: 264, parent: "Users", child: "31. Review", type: "One to Many" },
+    /** 294. One 215 care facility can have many related 31. reviews — 215. care facility -> 31. Review (One to Many) */
+    "294": { id: 294, parent: "215. care facility", child: "31. Review", type: "One to Many" },
     /** 143. One review can have many related comments — 31. Review -> 141. Comment (One to Many) */
     "143": { id: 143, parent: "31. Review", child: "141. Comment", type: "One to Many" },
-    /** 145. One nicotine product can have many related reviews — 140. Product -> 31. Review (One to Many) */
+    /** 145. One product can have many related reviews — 140. Product -> 31. Review (One to Many) */
     "145": { id: 145, parent: "140. Product", child: "31. Review", type: "One to Many" },
     /** 152. One user can have one related user's extended profile — Users -> 151. User's extended profile (One to One) */
     "152": { id: 152, parent: "Users", child: "151. User's extended profile", type: "One to One" },
@@ -1285,7 +1205,19 @@ export const WP = {
     /** 191. One 187. user's calendar event can have many related 161. user's log events — 187. User's calendar event -> 161. user's log events (One to Many) */
     "191": { id: 191, parent: "187. User's calendar event", child: "161. user's log events", type: "One to Many" },
     /** 263. One care task can have many related user's calendar events — 204. Care Task -> 187. User's calendar event (One to Many) */
-    "263": { id: 263, parent: "204. Care Task", child: "187. User's calendar event", type: "One to Many" },
+    "263": { id: 263, parent: "204. Care Task", child: "187. User's calendar event", type: "One to Many", f: { "TITLE": "a55", "BLOCK_TYPE": "a56", "PROPERTIES": "a57", "CONTENT_ORDER": "a58", "ALIVE": "a59", "ICON": "a60", "COVER": "a61", "FORMAT": "a62", "LAST_EDITED_AT": "a63" }, opt: {  } },
+    /** 280. One 277. block can have many related 277. blocks — 277. Block -> 277. Block (One to Many) */
+    "280": { id: 280, parent: "277. Block", child: "277. Block", type: "One to Many" },
+    /** 281. One 278. collection can have many related 277. blocks — 278. Collection -> 277. Block (One to Many) */
+    "281": { id: 281, parent: "278. Collection", child: "277. Block", type: "One to Many" },
+    /** 282. One 278. collection can have many related 279. collection views — 278. Collection -> 279. Collection view (One to Many) */
+    "282": { id: 282, parent: "278. Collection", child: "279. Collection view", type: "One to Many" },
+    /** 283. One 277. block can have many related 277. blocks (relation property) — 277. Block -> 277. Block (Many to Many) */
+    "283": { id: 283, parent: "277. Block", child: "277. Block", type: "Many to Many" },
+    /** 284. One user can have many related 277. blocks — Users -> 277. Block (One to Many) */
+    "284": { id: 284, parent: "Users", child: "277. Block", type: "One to Many" },
+    /** 285. One 277. block can have many related 278. collections — 277. Block -> 278. Collection (One to Many) */
+    "285": { id: 285, parent: "277. Block", child: "278. Collection", type: "One to Many", f: { "PROPERTY_ID": "a55", "LOG_EVENT_CONTENT": "a56", "LOG_EVENT_TYPE": "a57", "EVENT_TIME": "a61", "NOTE_CONTENT": "a77" }, opt: {  } },
     /** 103. One user can have many related 6. FreshCoin Transaction — Users -> 6. FreshCoin Transaction (One to Many) */
     "103": { id: 103, parent: "Users", child: "6. FreshCoin Transaction", type: "One to Many" },
     /** 194. One user can have many related 192. User's subscription — Users -> 192. User's subscription (One to Many) */
@@ -1298,14 +1230,16 @@ export const WP = {
     "220": { id: 220, parent: "Users", child: "198. Cared one's information card", type: "One to Many" },
     /** 221. One cared one's information card can have many related cared one's emergency contact persons — 198. Cared one's information card -> Users (One to Many) */
     "221": { id: 221, parent: "198. Cared one's information card", child: "Users", type: "One to Many" },
-    /** 222. One 199. care group can many related 200. care group invites — 199. Care Group -> 200. Care group invite (One to Many) */
-    "222": { id: 222, parent: "199. Care Group", child: "200. Care group invite", type: "One to Many" },
+    /** 295. One user can have many related saved/favorite care givers — Users -> Users (Many to Many) */
+    "295": { id: 295, parent: "Users", child: "Users", type: "Many to Many" },
+    /** 222. One 199. care group can many related 200. care group invite links — 199. Care Group -> 200. Care group invite link (One to Many) */
+    "222": { id: 222, parent: "199. Care Group", child: "200. Care group invite link", type: "One to Many" },
     /** 223. One care group can have many related care group members — 199. Care Group -> Users (Many to Many) */
     "223": { id: 223, parent: "199. Care Group", child: "Users", type: "Many to Many", f: { "CARE_GROUP_S_MEMBER_DISPLAY_NAME": "a55", "CARE_GROUP_S_MEMBER_TYPES": "a56", "CARE_GROUP_S_MEMBER_ROLES": "a57", "CARE_GROUP_S_MEMBER_INVITATION_STATUS": "a58" }, opt: { "CARE_GROUP_S_MEMBER_TYPES": { "NOTHING_SPECIAL": "b55", "OWNER": "b56", "ADMIN": "b57" }, "CARE_GROUP_S_MEMBER_ROLES": { "NOTHING_SPECIAL": "b55", "CARED_ONE": "b56" }, "CARE_GROUP_S_MEMBER_INVITATION_STATUS": { "ACCEPTED": "b55", "PENDING": "b56", "DECLINED": "b57" } } },
     /** 224. One care group can have many related private member groups — 199. Care Group -> 201. The related private member groups of one care group (One to Many) */
     "224": { id: 224, parent: "199. Care Group", child: "201. The related private member groups of one care group", type: "One to Many" },
     /** 225. One 201. care group's private member group can have related members — 201. The related private member groups of one care group -> Users (Many to Many) */
-    "225": { id: 225, parent: "201. The related private member groups of one care group", child: "Users", type: "Many to Many", f: { "CARE_GROUP_S_PRIVATE_MEMBER_GROUP_MEMBER_TYPES": "a55", "CARE_GROUP_S_PRIVATE_MEMBER_GROUP_MEMBER_INVITATION_STATUS": "a56" }, opt: { "CARE_GROUP_S_PRIVATE_MEMBER_GROUP_MEMBER_TYPES": { "NOTHING_SPECIAL": "b55", "OWNER": "b56", "ADMIN": "b57" }, "CARE_GROUP_S_PRIVATE_MEMBER_GROUP_MEMBER_INVITATION_STATUS": { "ACCEPTED": "b55", "PENDING": "b56", "DECLINED": "b57" } } },
+    "225": { id: 225, parent: "201. The related private member groups of one care group", child: "Users", type: "Many to Many", f: { "CARE_GROUP_S_PRIVATE_MEMBER_GROUP_MEMBER_TYPES": "a55" }, opt: { "CARE_GROUP_S_PRIVATE_MEMBER_GROUP_MEMBER_TYPES": { "NOTHING_SPECIAL": "b55", "OWNER": "b56", "ADMIN": "b57" } } },
     /** 226. One care group can have many related not too special posts — 199. Care Group -> 202. The related not too special posts of one care group (One to Many) */
     "226": { id: 226, parent: "199. Care Group", child: "202. The related not too special posts of one care group", type: "One to Many" },
     /** 227. One 202. related not too special posts of one care group can have many 201. related care group's private member groups that it's visible to — 202. The related not too special posts of one care group -> 201. The related private member groups of one care group (Many to Many) */
@@ -1314,7 +1248,7 @@ export const WP = {
     "293": { id: 293, parent: "202. The related not too special posts of one care group", child: "201. The related private member groups of one care group", type: "Many to Many" },
     /** 228. One related not too special posts of one care group can have many related users that it's visible to — 202. The related not too special posts of one care group -> Users (Many to Many) */
     "228": { id: 228, parent: "202. The related not too special posts of one care group", child: "Users", type: "Many to Many" },
-    /** 292. One related not too special posts of one care group can have many related users that it's visible to — 202. The related not too special posts of one care group -> Users (Many to Many) */
+    /** 292. One related not too special posts of one care group can have many related users that it's not visible to — 202. The related not too special posts of one care group -> Users (Many to Many) */
     "292": { id: 292, parent: "202. The related not too special posts of one care group", child: "Users", type: "Many to Many" },
     /** 229. One 202 related not too special posts of one care group can have many related 141. comments — 202. The related not too special posts of one care group -> 141. Comment (One to Many) */
     "229": { id: 229, parent: "202. The related not too special posts of one care group", child: "141. Comment", type: "One to Many" },
@@ -1332,16 +1266,12 @@ export const WP = {
     "235": { id: 235, parent: "204. Care Task", child: "Users", type: "Many to Many" },
     /** 236. One 204. care task can have many related comments — 204. Care Task -> 141. Comment (One to Many) */
     "236": { id: 236, parent: "204. Care Task", child: "141. Comment", type: "One to Many" },
-    /** 237. One cared one can have many related 205. cared one's medicine schedules — Users -> 205. Cared one’s medicine schedule (One to Many) */
-    "237": { id: 237, parent: "Users", child: "205. Cared one’s medicine schedule", type: "One to Many" },
-    /** 238. One 205. cared one's medicine schedule can have many related 206. care one's medicine logs — 205. Cared one’s medicine schedule -> 206. Care one's medicine log (One to Many) */
-    "238": { id: 238, parent: "205. Cared one’s medicine schedule", child: "206. Care one's medicine log", type: "One to Many" },
-    /** 239. One cared one can have many related cared one's 207. checkin schedules — Users -> 207. Checkin schedule (One to Many) */
-    "239": { id: 239, parent: "Users", child: "207. Checkin schedule", type: "One to Many" },
-    /** 240. One 207. cared one's checkin schedule can have many related 208. care one's checkin logs — 207. Checkin schedule -> 208. Care one's checkin log (One to Many) */
-    "240": { id: 240, parent: "207. Checkin schedule", child: "208. Care one's checkin log", type: "One to Many" },
-    /** 241. One check in schedule can have many related asigned check-in persons — 207. Checkin schedule -> Users (One to Many) */
-    "241": { id: 241, parent: "207. Checkin schedule", child: "Users", type: "One to Many" },
+    /** 253. One 204 care task can have many related 204. care tasks — 204. Care Task -> 204. Care Task (Many to Many) */
+    "253": { id: 253, parent: "204. Care Task", child: "204. Care Task", type: "Many to Many" },
+    /** 238. One 187 cared one's medicine schedule can have many related care one's medicine logs — 187. Cared one’s medicine schedule -> 206. Care one's medicine log (One to Many) */
+    "238": { id: 238, parent: "187. Cared one’s medicine schedule", child: "206. Care one's medicine log", type: "One to Many" },
+    /** 241. One check in schedule can have many related asigned check-in persons — 187. Checkin schedule -> Users (One to Many) */
+    "241": { id: 241, parent: "187. Checkin schedule", child: "Users", type: "One to Many" },
     /** 260. One 207. check in schedule can have many related asigned check-in persons — 207. Checkin schedule -> Users (One to Many) */
     "260": { id: 260, parent: "207. Checkin schedule", child: "Users", type: "One to Many" },
     /** 242. One cared one can have many related 197. cared one's care notes — Users -> 197. Cared one's care note (One to Many) */
@@ -1364,24 +1294,14 @@ export const WP = {
     "249": { id: 249, parent: "215. Care Facility", child: "Users", type: "One to Many", f: { "FACILITY_MEMBER_TYPE": "a55", "FACILITY_MEMBER_ROLE": "a56" }, opt: { "FACILITY_MEMBER_TYPE": { "NOTHING_SPECIAL": "b55", "OWNER": "b56", "ADMIN": "b57" } } },
     /** 291. One 215. Care Facility can have many related ownership claims — 215. Care Facility -> 288. ownership claim (Many to many（使用many to many以保证后续可拓展性)) */
     "291": { id: 291, parent: "215. Care Facility", child: "288. ownership claim", type: "Many to many（使用many to many以保证后续可拓展性)" },
-    /** 250. One care job can have many related cared ones — 216. Care Job -> Users (One to Many) */
-    "250": { id: 250, parent: "216. Care Job", child: "Users", type: "One to Many" },
-    /** 251. One 216. care job can have many assigned caregivers — 216. Care Job -> Users (One to Many) */
-    "251": { id: 251, parent: "216. Care Job", child: "Users", type: "One to Many" },
-    /** 252. One care group can have many related care jobs — 199. Care Group -> 216. Care Job (Many to Many) */
-    "252": { id: 252, parent: "199. Care Group", child: "216. Care Job", type: "Many to Many" },
-    /** 253. One 216. care job can have many related 204. care tasks — 216. Care Job -> 204. Care Task (Many to Many) */
-    "253": { id: 253, parent: "216. Care Job", child: "204. Care Task", type: "Many to Many" },
-    /** 254. One care job can have many related comments — 216. Care Job -> 141. Comment (One to Many) */
-    "254": { id: 254, parent: "216. Care Job", child: "141. Comment", type: "One to Many" },
     /** 255. One user can many related finished ChallengeD learn content — Users -> 217. Challenged App Content (One to Many) */
     "255": { id: 255, parent: "Users", child: "217. Challenged App Content", type: "One to Many", f: { "USER_HAS_FINISHED_LEARNING_THIS_LESSON": "a55" }, opt: { "USER_HAS_FINISHED_LEARNING_THIS_LESSON": { "YES": "b55", "NO": "b56" } } },
     /** 256. One 217. Challenged App Content can have many related user’s study notes — 217. Challenged App Content -> 218. User's study notes (One to Many) */
     "256": { id: 256, parent: "217. Challenged App Content", child: "218. User's study notes", type: "One to Many" },
     /** 257. One Challenged App Content can have many related cared one's care tips — 217. Challenged App Content -> 209. Cared one's care tip (One to Many) */
     "257": { id: 257, parent: "217. Challenged App Content", child: "209. Cared one's care tip", type: "One to Many" },
-    /** 294. One 215 care facility can have many related 31. reviews — 215. Care facility -> 31. Review (One to Many) */
-    "294": { id: 294, parent: "215. Care facility", child: "31. Review", type: "One to Many" },
+    /** 240. One 187. cared one's checkin schedule can have many related 161. care one's checkin logs — 187. User's calendar event -> 161. user's log events (One to Many) */
+    "240": { id: 240, parent: "187. User's calendar event", child: "161. user's log events", type: "One to Many" },
   },
 } as const;
 
@@ -1453,7 +1373,7 @@ export const T = {
   infoCard: WP.cct["198"],
   /** 199. Care Group */
   careGroup: WP.cct["199"],
-  /** 200. Care group invite */
+  /** 200. Care group invite link */
   careGroupInvite: WP.cct["200"],
   /** 201. The related private member groups of one 199. care group */
   careGroupPrivateMemberGroup: WP.cct["201"],
@@ -1463,14 +1383,8 @@ export const T = {
   careGroupGallery: WP.cct["203"],
   /** 204. Care Task */
   careTask: WP.cct["204"],
-  /** 205. Medicine schedule */
-  medicineSchedule: WP.cct["205"],
   /** 206. Medicine log */
   medicineLog: WP.cct["206"],
-  /** 207. Checkin schedule */
-  checkinSchedule: WP.cct["207"],
-  /** 208. Checkin log */
-  checkinLog: WP.cct["208"],
   /** 197. Cared one's care note */
   careNote: WP.cct["197"],
   /** 209. Cared one's care tip */
@@ -1487,8 +1401,6 @@ export const T = {
   safeZone: WP.cct["214"],
   /** 215. Care Facility */
   careFacility: WP.cct["215"],
-  /** 216. Care Job */
-  careJob: WP.cct["216"],
   /** 217. Challenged App Content */
   challengedContent: WP.cct["217"],
   /** 218. User's study notes */
@@ -1531,9 +1443,11 @@ export const R = {
   shopReviews: 144,
   /** 264. One care provider can have many related 31. reviews */
   providerReviews: 264,
+  /** 294. One 215 care facility can have many related 31. reviews */
+  facilityReviews: 294,
   /** 143. One review can have many related comments */
   reviewComments: 143,
-  /** 145. One nicotine product can have many related reviews */
+  /** 145. One product can have many related reviews */
   productReviews: 145,
   /** 152. One user can have one related user's extended profile */
   userProfileRel: 152,
@@ -1585,6 +1499,18 @@ export const R = {
   calendarEventLogEvents: 191,
   /** 263. One care task can have many related user's calendar events */
   careTaskCalendarEvents: 263,
+  /** 280. One 277. block can have many related 277. blocks */
+  blockChildBlocks: 280,
+  /** 281. One 278. collection can have many related 277. blocks */
+  collectionRowBlocks: 281,
+  /** 282. One 278. collection can have many related 279. collection views */
+  collectionViews: 282,
+  /** 283. One 277. block can have many related 277. blocks (relation property) */
+  blockRelationBlocks: 283,
+  /** 284. One user can have many related 277. blocks */
+  userBlocks: 284,
+  /** 285. One 277. block can have many related 278. collections */
+  blockCollections: 285,
   /** 103. One user can have many related 6. FreshCoin Transaction */
   userFreshcoinTransactions: 103,
   /** 194. One user can have many related 192. User's subscription */
@@ -1597,7 +1523,9 @@ export const R = {
   caredOneInfoCards: 220,
   /** 221. One cared one's information card can have many related cared one's emergency contact persons */
   infoCardEmergencyContacts: 221,
-  /** 222. One 199. care group can many related 200. care group invites */
+  /** 295. One user can have many related saved/favorite care givers */
+  userSavedCaregivers: 295,
+  /** 222. One 199. care group can many related 200. care group invite links */
   careGroupInvites: 222,
   /** 223. One care group can have many related care group members */
   careGroupMembers: 223,
@@ -1613,7 +1541,7 @@ export const R = {
   careGroupPostHiddenPrivateGroups: 293,
   /** 228. One related not too special posts of one care group can have many related users that it's visible to */
   careGroupPostMentionedUsers: 228,
-  /** 292. One related not too special posts of one care group can have many related users that it's visible to */
+  /** 292. One related not too special posts of one care group can have many related users that it's not visible to */
   careGroupPostHiddenUsers: 292,
   /** 229. One 202 related not too special posts of one care group can have many related 141. comments */
   careGroupPostComments: 229,
@@ -1631,14 +1559,10 @@ export const R = {
   careTaskVisibleUsers: 235,
   /** 236. One 204. care task can have many related comments */
   careTaskComments: 236,
-  /** 237. One cared one can have many related 205. cared one's medicine schedules */
-  caredOneMedicineSchedules: 237,
-  /** 238. One 205. cared one's medicine schedule can have many related 206. care one's medicine logs */
+  /** 253. One 204 care task can have many related 204. care tasks */
+  careTaskSubTasks: 253,
+  /** 238. One 187 cared one's medicine schedule can have many related care one's medicine logs */
   medicineScheduleLogs: 238,
-  /** 239. One cared one can have many related cared one's 207. checkin schedules */
-  caredOneCheckinSchedules: 239,
-  /** 240. One 207. cared one's checkin schedule can have many related 208. care one's checkin logs */
-  checkinScheduleLogs: 240,
   /** 241. One check in schedule can have many related asigned check-in persons */
   checkinScheduleAssignees: 241,
   /** 260. One 207. check in schedule can have many related asigned check-in persons */
@@ -1663,24 +1587,14 @@ export const R = {
   careFacilityMembers: 249,
   /** 291. One 215. Care Facility can have many related ownership claims */
   careFacilityOwnershipClaims: 291,
-  /** 250. One care job can have many related cared ones */
-  careJobCaredOnes: 250,
-  /** 251. One 216. care job can have many assigned caregivers */
-  careJobAssignees: 251,
-  /** 252. One care group can have many related care jobs */
-  careGroupJobs: 252,
-  /** 253. One 216. care job can have many related 204. care tasks */
-  careJobTasks: 253,
-  /** 254. One care job can have many related comments */
-  careJobComments: 254,
   /** 255. One user can many related finished ChallengeD learn content */
   userFinishedContent: 255,
   /** 256. One 217. Challenged App Content can have many related user’s study notes */
   contentStudyNotes: 256,
   /** 257. One Challenged App Content can have many related cared one's care tips */
   contentCareTips: 257,
-  /** 294. One 215 care facility can have many related 31. reviews */
-  facilityReviews: 294,
+  /** 240. One 187. cared one's checkin schedule can have many related 161. care one's checkin logs */
+  checkinScheduleLogs: 240,
 } as const;
 
 /** Dictionary CCT number -> live JetEngine REST slug. */
@@ -1721,10 +1635,7 @@ export const CCT_SLUG: Readonly<Record<string, string>> = {
   "202": "care_group_post",
   "203": "care_group_gallery",
   "204": "care_task",
-  "205": "medicine_schedule",
   "206": "medicine_log",
-  "207": "checkin_schedule",
-  "208": "checkin_log",
   "197": "care_note",
   "209": "care_tip",
   "210": "care_plan",
@@ -1733,7 +1644,6 @@ export const CCT_SLUG: Readonly<Record<string, string>> = {
   "213": "current_location",
   "214": "safe_zone",
   "215": "care_facility",
-  "216": "care_job",
   "217": "challenged_content",
   "218": "study_notes",
 } as const;

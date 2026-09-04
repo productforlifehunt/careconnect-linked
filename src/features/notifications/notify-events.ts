@@ -110,18 +110,18 @@ export function notifyTaskAssigned(
 }
 
 /** Caregiver applied to a job → notify the poster. */
-export function notifyJobApplication(
+export function notifyTaskHelpOffer(
   posterId: string | number | null | undefined,
-  jobTitle: string,
-  jobId: string,
+  taskTitle: string,
+  taskId: string,
 ) {
   return actorAppName().then((who) => notifyUsers([posterId], {
-    type: "job",
-    title: Z("有人应聘你的招聘", "New application for your job"),
+    type: "task",
+    title: Z("有人愿意帮你这件事", "Someone offered to help"),
     message: who
-      ? Z(`${who} 应聘了「${clip(jobTitle, 80)}」`, `${who} applied to ${clip(jobTitle, 80)}`)
-      : Z(`有人应聘了「${clip(jobTitle, 80)}」`, `Someone applied to ${clip(jobTitle, 80)}`),
-    action_url: `/jobs?id=${jobId}`,
+      ? Z(`${who} 想帮你完成「${clip(taskTitle, 80)}」`, `${who} offered to help with ${clip(taskTitle, 80)}`)
+      : Z(`有人想帮你完成「${clip(taskTitle, 80)}」`, `Someone offered to help with ${clip(taskTitle, 80)}`),
+    action_url: `/shared-tasks?id=${taskId}`,
   }));
 }
 
