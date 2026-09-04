@@ -56,7 +56,7 @@ export function GroupHelpTab({ groupName }: GroupHelpTabProps) {
     },
     {
       title: Z("群组被护理者", "Group Cared Ones"),
-      body: Z("把被护理者加入群组，并打开他们的健康卡片。", "Add cared ones to the group and open their health cards."),
+      body: Z("把被护理者加入群组，并查看他们的健康资料。", "Add cared ones to the group and view their health details."),
     },
     {
       title: Z("成员", "Members"),

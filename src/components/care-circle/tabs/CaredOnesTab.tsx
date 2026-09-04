@@ -39,7 +39,7 @@ export function CaredOnesTab({ groupCaredOnes, isAdmin, onAddCaredOne }: CaredOn
                     <p className="text-xs text-muted-foreground">{co.relationship || caredOneLabel}</p>
                   </div>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => navigate("/cared-ones")}>{Z("查看健康卡片 →", "View Health Cards →")}</Button>
+                <Button variant="outline" size="sm" onClick={() => navigate("/cared-ones")}>{Z("查看资料 →", "View details →")}</Button>
               </CardContent>
             </Card>
           ))}
