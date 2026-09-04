@@ -113,15 +113,20 @@ export function friendlyMessage(input: unknown): string {
   return text;
 }
 
-/** Same, but only rewrites strings; other React nodes pass through untouched. */
+/**
+ * Same, but only rewrites strings; other React nodes pass through untouched.
+ *
+ * Toast titles are usually written by hand for caregivers ("Valid coordinates
+ * required. Use 'Pick on Map'."). Those must survive verbatim — replacing them
+ * with a generic sentence hides the one instruction that fixes the problem.
+ * Only text that reads like developer output gets rewritten here.
+ */
 export function friendlyNode<T>(value: T): T | string {
   if (typeof value !== "string") return value;
   const text = value.trim();
   if (!text) return value;
-  const kind = classify(text);
-  if (kind) return say(kind);
-  if (isTechnical(text) || text.length > 180) return say("unknown");
-  return value;
+  if (!isTechnical(text) && text.length <= 180) return value;
+  return say(classify(text) ?? "unknown");
 }
 
 /** Generic heading for an error screen. */
