@@ -756,11 +756,11 @@ export const WP = {
         "THE_SUBSCRIPTION_IS_FOR_APP": { "AFRESH": "b55", "ADRY": "b56", "ABLOCKED": "b57", "BENOTCH": "b58" },
       },
     },
-    /** 198. Loved one's information card */
+    /** 198. Cared one's information card */
     "198": {
       id: 198,
       slug: "cared_one_info_card",
-      name: "Loved one's information card",
+      name: "Cared one's information card",
       f: {
         "CARED_ONE_S_NAME": "a55",  // Text
         "CARED_ONE_S_DESCRIPTION": "a56",  // Textarea
@@ -982,11 +982,11 @@ export const WP = {
         "CHECKED_BY_AI": { "YES": "b55", "NO": "b56" },
       },
     },
-    /** 197. Loved one's care note */
+    /** 197. Cared one's care note */
     "197": {
       id: 197,
       slug: "care_note",
-      name: "Loved one's care note",
+      name: "Cared one's care note",
       f: {
         "TITLE": "a55",  // Text
         "CONTENT": "a56",  // Textarea
@@ -994,11 +994,11 @@ export const WP = {
       opt: {
       },
     },
-    /** 209. Loved one's care tip */
+    /** 209. Cared one's care tip */
     "209": {
       id: 209,
       slug: "care_tip",
-      name: "Loved one's care tip",
+      name: "Cared one's care tip",
       f: {
         "TITLE": "a55",  // Text
         "CONTENT": "a56",  // Textarea
@@ -1010,11 +1010,11 @@ export const WP = {
         "IS_PINNED": { "YES": "b55", "NO": "b56" },
       },
     },
-    /** 210. Loved one's care plan */
+    /** 210. Cared one's care plan */
     "210": {
       id: 210,
       slug: "care_plan",
-      name: "Loved one's care plan",
+      name: "Cared one's care plan",
       f: {
         "TITLE": "a55",  // Text
         "CONTENT": "a56",  // Textarea
@@ -1024,11 +1024,11 @@ export const WP = {
         "IS_PINNED": { "YES": "b55", "NO": "b56" },
       },
     },
-    /** 211. Loved one's emergency contact person */
+    /** 211. Cared one's emergency contact person */
     "211": {
       id: 211,
       slug: "emergency_contact",
-      name: "Loved one's emergency contact person",
+      name: "Cared one's emergency contact person",
       f: {
         "NAME": "a55",  // Text
         "CONTENT": "a56",  // Textarea
@@ -1040,11 +1040,11 @@ export const WP = {
       opt: {
       },
     },
-    /** 212. Loved one's care document */
+    /** 212. Cared one's care document */
     "212": {
       id: 212,
       slug: "care_document",
-      name: "Loved one's care document",
+      name: "Cared one's care document",
       f: {
         "NAME": "a55",  // Text
         "CONTENT": "a56",  // Textarea
@@ -1291,12 +1291,12 @@ export const WP = {
     "194": { id: 194, parent: "Users", child: "192. User's subscription", type: "One to Many" },
     /** 195. One user can have many related 193. User's ai credit — Users -> 193. User's ai credit (One to Many) */
     "195": { id: 195, parent: "Users", child: "193. User's ai credit", type: "One to Many" },
-    /** 219. One user can have many related loved ones — Users -> Users (Many to Many) */
+    /** 219. One user can have many related cared ones — Users -> Users (Many to Many) */
     "219": { id: 219, parent: "Users", child: "Users", type: "Many to Many" },
-    /** 220. One loved one can have many related 198. loved one's information cards — Users -> 198. Loved one's information card (One to Many) */
-    "220": { id: 220, parent: "Users", child: "198. Loved one's information card", type: "One to Many" },
-    /** 221. One loved one's information card can have many related loved one's emergency contact persons — 198. Loved one's information card -> Users (One to Many) */
-    "221": { id: 221, parent: "198. Loved one's information card", child: "Users", type: "One to Many" },
+    /** 220. One cared one can have many related 198. cared one's information cards — Users -> 198. Cared one's information card (One to Many) */
+    "220": { id: 220, parent: "Users", child: "198. Cared one's information card", type: "One to Many" },
+    /** 221. One cared one's information card can have many related cared one's emergency contact persons — 198. Cared one's information card -> Users (One to Many) */
+    "221": { id: 221, parent: "198. Cared one's information card", child: "Users", type: "One to Many" },
     /** 222. One 199. care group can many related 200. care group invites — 199. Care Group -> 200. Care group invite (One to Many) */
     "222": { id: 222, parent: "199. Care Group", child: "200. Care group invite", type: "One to Many" },
     /** 223. One care group can have many related care group members — 199. Care Group -> Users (Many to Many) */
@@ -1319,7 +1319,7 @@ export const WP = {
     "229": { id: 229, parent: "202. The related not too special posts of one care group", child: "141. Comment", type: "One to Many" },
     /** 230. One care group can many related 203. care group galleries — 199. Care Group -> 203. Care Group Gallery (One to Many) */
     "230": { id: 230, parent: "199. Care Group", child: "203. Care Group Gallery", type: "One to Many" },
-    /** 231. One 204. care task can have many related loved ones — 204.  Care Task -> Users (One to Many) */
+    /** 231. One 204. care task can have many related cared ones — 204.  Care Task -> Users (One to Many) */
     "231": { id: 231, parent: "204.  Care Task", child: "Users", type: "One to Many" },
     /** 232. One 204. care task can have many related assigned caregivers — 204. Care Task -> Users (One to Many) */
     "232": { id: 232, parent: "204. Care Task", child: "Users", type: "One to Many", f: { "ASSIGNED_CAREGIVER_STATUS": "a55" }, opt: { "ASSIGNED_CAREGIVER_STATUS": { "PENDING": "b55", "ACCEPTED": "b56", "REJECTED": "b57" } } },
@@ -1331,39 +1331,39 @@ export const WP = {
     "235": { id: 235, parent: "204. Care Task", child: "Users", type: "Many to Many" },
     /** 236. One 204. care task can have many related comments — 204. Care Task -> 141. Comment (One to Many) */
     "236": { id: 236, parent: "204. Care Task", child: "141. Comment", type: "One to Many" },
-    /** 237. One loved one can have many related 205. loved one's medicine schedules — Users -> 205. Loved one’s medicine schedule (One to Many) */
-    "237": { id: 237, parent: "Users", child: "205. Loved one’s medicine schedule", type: "One to Many" },
-    /** 238. One 205. loved one's medicine schedule can have many related 206. care one's medicine logs — 205. Loved one’s medicine schedule -> 206. Care one's medicine log (One to Many) */
-    "238": { id: 238, parent: "205. Loved one’s medicine schedule", child: "206. Care one's medicine log", type: "One to Many" },
-    /** 239. One loved one can have many related loved one's 207. checkin schedules — Users -> 207. Checkin schedule (One to Many) */
+    /** 237. One cared one can have many related 205. cared one's medicine schedules — Users -> 205. Cared one’s medicine schedule (One to Many) */
+    "237": { id: 237, parent: "Users", child: "205. Cared one’s medicine schedule", type: "One to Many" },
+    /** 238. One 205. cared one's medicine schedule can have many related 206. care one's medicine logs — 205. Cared one’s medicine schedule -> 206. Care one's medicine log (One to Many) */
+    "238": { id: 238, parent: "205. Cared one’s medicine schedule", child: "206. Care one's medicine log", type: "One to Many" },
+    /** 239. One cared one can have many related cared one's 207. checkin schedules — Users -> 207. Checkin schedule (One to Many) */
     "239": { id: 239, parent: "Users", child: "207. Checkin schedule", type: "One to Many" },
-    /** 240. One 207. loved one's checkin schedule can have many related 208. care one's checkin logs — 207. Checkin schedule -> 208. Care one's checkin log (One to Many) */
+    /** 240. One 207. cared one's checkin schedule can have many related 208. care one's checkin logs — 207. Checkin schedule -> 208. Care one's checkin log (One to Many) */
     "240": { id: 240, parent: "207. Checkin schedule", child: "208. Care one's checkin log", type: "One to Many" },
     /** 241. One check in schedule can have many related asigned check-in persons — 207. Checkin schedule -> Users (One to Many) */
     "241": { id: 241, parent: "207. Checkin schedule", child: "Users", type: "One to Many" },
     /** 260. One 207. check in schedule can have many related asigned check-in persons — 207. Checkin schedule -> Users (One to Many) */
     "260": { id: 260, parent: "207. Checkin schedule", child: "Users", type: "One to Many" },
-    /** 242. One loved one can have many related 197. loved one's care notes — Users -> 197. Loved one's care note (One to Many) */
-    "242": { id: 242, parent: "Users", child: "197. Loved one's care note", type: "One to Many" },
-    /** 243. One loved one can have many related loved one's care tips — Users -> 209. Loved one's care tip (One to Many) */
-    "243": { id: 243, parent: "Users", child: "209. Loved one's care tip", type: "One to Many" },
-    /** 244. One loved one can have many related loved one's care plans — Users -> 210. Loved one's care plan (One to Many) */
-    "244": { id: 244, parent: "Users", child: "210. Loved one's care plan", type: "One to Many" },
-    /** 245. One loved one can have many related 211. loved one's emergency contact persons — Users -> 211. Loved one's emergency contact person (One to Many) */
-    "245": { id: 245, parent: "Users", child: "211. Loved one's emergency contact person", type: "One to Many" },
-    /** 246. One loved one can have many related 212. loved one's care documents — Users -> 212. Loved one's care document (One to Many) */
-    "246": { id: 246, parent: "Users", child: "212. Loved one's care document", type: "One to Many" },
+    /** 242. One cared one can have many related 197. cared one's care notes — Users -> 197. Cared one's care note (One to Many) */
+    "242": { id: 242, parent: "Users", child: "197. Cared one's care note", type: "One to Many" },
+    /** 243. One cared one can have many related cared one's care tips — Users -> 209. Cared one's care tip (One to Many) */
+    "243": { id: 243, parent: "Users", child: "209. Cared one's care tip", type: "One to Many" },
+    /** 244. One cared one can have many related cared one's care plans — Users -> 210. Cared one's care plan (One to Many) */
+    "244": { id: 244, parent: "Users", child: "210. Cared one's care plan", type: "One to Many" },
+    /** 245. One cared one can have many related 211. cared one's emergency contact persons — Users -> 211. Cared one's emergency contact person (One to Many) */
+    "245": { id: 245, parent: "Users", child: "211. Cared one's emergency contact person", type: "One to Many" },
+    /** 246. One cared one can have many related 212. cared one's care documents — Users -> 212. Cared one's care document (One to Many) */
+    "246": { id: 246, parent: "Users", child: "212. Cared one's care document", type: "One to Many" },
     /** 247. One user can have many related current location snapshots — Users -> 213. The current location of one user (One to many) */
     "247": { id: 247, parent: "Users", child: "213. The current location of one user", type: "One to many", f: { "USER_TYPE": "a55" }, opt: { "USER_TYPE": { "NOT_SOMEONE_SPECIAL": "b55", "CARED_ONE": "b56" } } },
     /** 248. One user can have many related safe zones — Users -> 214. Safe Zone (One to many) */
     "248": { id: 248, parent: "Users", child: "214. Safe Zone", type: "One to many" },
-    /** 290. One loved one’s location notification can have many added related receivers — Users -> Users (One to many) */
+    /** 290. One cared one’s location notification can have many added related receivers — Users -> Users (One to many) */
     "290": { id: 290, parent: "Users", child: "Users", type: "One to many" },
     /** 249. One care facility can have many related facility members — 215. Care Facility -> Users (One to Many) */
     "249": { id: 249, parent: "215. Care Facility", child: "Users", type: "One to Many", f: { "FACILITY_MEMBER_TYPE": "a55", "FACILITY_MEMBER_ROLE": "a56" }, opt: { "FACILITY_MEMBER_TYPE": { "NOTHING_SPECIAL": "b55", "OWNER": "b56", "ADMIN": "b57" } } },
     /** 291. One 215. Care Facility can have many related ownership claims — 215. Care Facility -> 288. ownership claim (Many to many（使用many to many以保证后续可拓展性)) */
     "291": { id: 291, parent: "215. Care Facility", child: "288. ownership claim", type: "Many to many（使用many to many以保证后续可拓展性)" },
-    /** 250. One care job can have many related loved ones — 216. Care Job -> Users (One to Many) */
+    /** 250. One care job can have many related cared ones — 216. Care Job -> Users (One to Many) */
     "250": { id: 250, parent: "216. Care Job", child: "Users", type: "One to Many" },
     /** 251. One 216. care job can have many assigned caregivers — 216. Care Job -> Users (One to Many) */
     "251": { id: 251, parent: "216. Care Job", child: "Users", type: "One to Many" },
@@ -1377,8 +1377,8 @@ export const WP = {
     "255": { id: 255, parent: "Users", child: "217. Challenged App Content", type: "One to Many", f: { "USER_HAS_FINISHED_LEARNING_THIS_LESSON": "a55" }, opt: { "USER_HAS_FINISHED_LEARNING_THIS_LESSON": { "YES": "b55", "NO": "b56" } } },
     /** 256. One 217. Challenged App Content can have many related user’s study notes — 217. Challenged App Content -> 218. User's study notes (One to Many) */
     "256": { id: 256, parent: "217. Challenged App Content", child: "218. User's study notes", type: "One to Many" },
-    /** 257. One Challenged App Content can have many related loved one's care tips — 217. Challenged App Content -> 209. Loved one's care tip (One to Many) */
-    "257": { id: 257, parent: "217. Challenged App Content", child: "209. Loved one's care tip", type: "One to Many" },
+    /** 257. One Challenged App Content can have many related cared one's care tips — 217. Challenged App Content -> 209. Cared one's care tip (One to Many) */
+    "257": { id: 257, parent: "217. Challenged App Content", child: "209. Cared one's care tip", type: "One to Many" },
     /** 294. One 215 care facility can have many related 31. reviews — 215. Care facility -> 31. Review (One to Many) */
     "294": { id: 294, parent: "215. Care facility", child: "31. Review", type: "One to Many" },
   },
@@ -1448,7 +1448,7 @@ export const T = {
   userSubscription: WP.cct["192"],
   /** 193. User's ai credit */
   userAiCredit: WP.cct["193"],
-  /** 198. Loved one's information card */
+  /** 198. Cared one's information card */
   infoCard: WP.cct["198"],
   /** 199. Care Group */
   careGroup: WP.cct["199"],
@@ -1470,15 +1470,15 @@ export const T = {
   checkinSchedule: WP.cct["207"],
   /** 208. Checkin log */
   checkinLog: WP.cct["208"],
-  /** 197. Loved one's care note */
+  /** 197. Cared one's care note */
   careNote: WP.cct["197"],
-  /** 209. Loved one's care tip */
+  /** 209. Cared one's care tip */
   careTip: WP.cct["209"],
-  /** 210. Loved one's care plan */
+  /** 210. Cared one's care plan */
   carePlan: WP.cct["210"],
-  /** 211. Loved one's emergency contact person */
+  /** 211. Cared one's emergency contact person */
   emergencyContact: WP.cct["211"],
-  /** 212. Loved one's care document */
+  /** 212. Cared one's care document */
   careDocument: WP.cct["212"],
   /** 213. The current location of one user */
   currentLocation: WP.cct["213"],
@@ -1590,11 +1590,11 @@ export const R = {
   userSubscriptions: 194,
   /** 195. One user can have many related 193. User's ai credit */
   userAiCredits: 195,
-  /** 219. One user can have many related loved ones */
+  /** 219. One user can have many related cared ones */
   userCaredOnes: 219,
-  /** 220. One loved one can have many related 198. loved one's information cards */
+  /** 220. One cared one can have many related 198. cared one's information cards */
   caredOneInfoCards: 220,
-  /** 221. One loved one's information card can have many related loved one's emergency contact persons */
+  /** 221. One cared one's information card can have many related cared one's emergency contact persons */
   infoCardEmergencyContacts: 221,
   /** 222. One 199. care group can many related 200. care group invites */
   careGroupInvites: 222,
@@ -1618,7 +1618,7 @@ export const R = {
   careGroupPostComments: 229,
   /** 230. One care group can many related 203. care group galleries */
   careGroupGalleries: 230,
-  /** 231. One 204. care task can have many related loved ones */
+  /** 231. One 204. care task can have many related cared ones */
   careTaskCaredOnes: 231,
   /** 232. One 204. care task can have many related assigned caregivers */
   careTaskAssignees: 232,
@@ -1630,39 +1630,39 @@ export const R = {
   careTaskVisibleUsers: 235,
   /** 236. One 204. care task can have many related comments */
   careTaskComments: 236,
-  /** 237. One loved one can have many related 205. loved one's medicine schedules */
+  /** 237. One cared one can have many related 205. cared one's medicine schedules */
   caredOneMedicineSchedules: 237,
-  /** 238. One 205. loved one's medicine schedule can have many related 206. care one's medicine logs */
+  /** 238. One 205. cared one's medicine schedule can have many related 206. care one's medicine logs */
   medicineScheduleLogs: 238,
-  /** 239. One loved one can have many related loved one's 207. checkin schedules */
+  /** 239. One cared one can have many related cared one's 207. checkin schedules */
   caredOneCheckinSchedules: 239,
-  /** 240. One 207. loved one's checkin schedule can have many related 208. care one's checkin logs */
+  /** 240. One 207. cared one's checkin schedule can have many related 208. care one's checkin logs */
   checkinScheduleLogs: 240,
   /** 241. One check in schedule can have many related asigned check-in persons */
   checkinScheduleAssignees: 241,
   /** 260. One 207. check in schedule can have many related asigned check-in persons */
   checkinNotificationReceivers: 260,
-  /** 242. One loved one can have many related 197. loved one's care notes */
+  /** 242. One cared one can have many related 197. cared one's care notes */
   caredOneCareNotes: 242,
-  /** 243. One loved one can have many related loved one's care tips */
+  /** 243. One cared one can have many related cared one's care tips */
   caredOneCareTips: 243,
-  /** 244. One loved one can have many related loved one's care plans */
+  /** 244. One cared one can have many related cared one's care plans */
   caredOneCarePlans: 244,
-  /** 245. One loved one can have many related 211. loved one's emergency contact persons */
+  /** 245. One cared one can have many related 211. cared one's emergency contact persons */
   caredOneEmergencyContacts: 245,
-  /** 246. One loved one can have many related 212. loved one's care documents */
+  /** 246. One cared one can have many related 212. cared one's care documents */
   caredOneCareDocuments: 246,
   /** 247. One user can have many related current location snapshots */
   userCurrentLocations: 247,
   /** 248. One user can have many related safe zones */
   userSafeZones: 248,
-  /** 290. One loved one’s location notification can have many added related receivers */
+  /** 290. One cared one’s location notification can have many added related receivers */
   caredOneLocationReceivers: 290,
   /** 249. One care facility can have many related facility members */
   careFacilityMembers: 249,
   /** 291. One 215. Care Facility can have many related ownership claims */
   careFacilityOwnershipClaims: 291,
-  /** 250. One care job can have many related loved ones */
+  /** 250. One care job can have many related cared ones */
   careJobCaredOnes: 250,
   /** 251. One 216. care job can have many assigned caregivers */
   careJobAssignees: 251,
@@ -1676,7 +1676,7 @@ export const R = {
   userFinishedContent: 255,
   /** 256. One 217. Challenged App Content can have many related user’s study notes */
   contentStudyNotes: 256,
-  /** 257. One Challenged App Content can have many related loved one's care tips */
+  /** 257. One Challenged App Content can have many related cared one's care tips */
   contentCareTips: 257,
   /** 294. One 215 care facility can have many related 31. reviews */
   facilityReviews: 294,

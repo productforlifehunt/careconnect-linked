@@ -832,7 +832,7 @@ export function useSearchProfiles(query: string) {
   });
 }
 
-// ─── Add Loved One to Group ─────────────────────────────────
+// ─── Add Cared One to Group ─────────────────────────────────
 export function useAddCaredOneToGroup() {
   const qc = useQueryClient();
   return useMutation({
@@ -844,7 +844,7 @@ export function useAddCaredOneToGroup() {
   });
 }
 
-// ─── Create Personal Loved One (user_cared_one) ─────────────
+// ─── Create Personal Cared One (user_cared_one) ─────────────
 export function useCreateUserCaredOne() {
   const qc = useQueryClient();
   return useMutation({
@@ -1067,7 +1067,7 @@ export function useServiceCategories() {
   });
 }
 
-// ─── Loved Ones (user_cared_one junction) ───────────────────
+// ─── Cared Ones (user_cared_one junction) ───────────────────
 export function useUserCaredOnes() {
   return useQuery({
     queryKey: ["userCaredOnes"],
@@ -1075,7 +1075,7 @@ export function useUserCaredOnes() {
   });
 }
 
-// ─── Group Loved Ones (members with is_cared_one = true) ────
+// ─── Group Cared Ones (members with is_cared_one = true) ────
 export function useGroupCaredOnes(groupId: string | null) {
   return useQuery({
     queryKey: ["groupCaredOnes", groupId],
@@ -1715,7 +1715,7 @@ export function useCancelLocationRequest() {
   });
 }
 
-// ─── Information Cards (Loved one's information card CCT) ───
+// ─── Information Cards (Cared one's information card CCT) ───
 export function useInformationCards(caredOneId: string | null) {
   return useQuery({
     queryKey: ["informationCards", caredOneId],

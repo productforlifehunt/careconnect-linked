@@ -114,7 +114,7 @@ export default function GPSTracking() {
 
   // Zones, alerts and sharing settings belong to the person being LOOKED AFTER,
   // not to the phone in your hand. A caregiver opening this page must be able
-  // to manage the linked loved one's areas — the previous code silently scoped
+  // to manage the linked cared one's areas — the previous code silently scoped
   // every one of these reads and writes to the signed-in user.
   const [subjectId, setSubjectId] = useState<string>("");
   const caredOneOptions = (() => {
@@ -135,14 +135,14 @@ export default function GPSTracking() {
     return out;
   })();
   const selfKey = String(userId ?? "").replace(/^wp-/, "");
-  // Default to the single loved one when there is exactly one, so the common
+  // Default to the single cared one when there is exactly one, so the common
   // case needs no picking at all; otherwise stay on yourself.
   const effectiveSubjectId =
     subjectId || (caredOneOptions.length === 1 ? caredOneOptions[0].id : selfKey);
   const subjectIsSelf = effectiveSubjectId === selfKey;
-  // Relation 247 stores a user-type code on every snapshot (b56 = loved one,
+  // Relation 247 stores a user-type code on every snapshot (b56 = cared one,
   // b55 = everyone else). Nothing used to set it, so every row was written as
-  // b55; flag it when the person sharing really is a loved one.
+  // b55; flag it when the person sharing really is a cared one.
   const selfIsCaredOne =
     (groupMembers || []).some(
       (m: any) => String(m.user_id ?? m.id).replace(/^wp-/, "") === selfKey && m.is_cared_one,
@@ -578,7 +578,7 @@ export default function GPSTracking() {
         schedule_start_time: zoneForm.schedule_enabled ? zoneForm.schedule_start_time : "",
         schedule_end_time: zoneForm.schedule_enabled ? zoneForm.schedule_end_time : "",
         is_active: zoneForm.is_active,
-        // Receivers live on the loved one (Relation 290), shared by all zones.
+        // Receivers live on the cared one (Relation 290), shared by all zones.
         user_id: effectiveSubjectId,
         receiver_ids: zoneForm.receiver_ids,
       };

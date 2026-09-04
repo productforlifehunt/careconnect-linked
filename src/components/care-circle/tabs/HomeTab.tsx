@@ -74,7 +74,7 @@ export function HomeTab({
         {[
           { label: isCN ? "待办任务" : "Pending Tasks", value: pendingTasksCount, icon: ListTodo, tab: "tasks" },
           { label: isCN ? "成员" : "Members", value: membersCount, icon: Users, tab: "members" },
-          { label: isCN ? "家人" : site.navLabels.caredOnes, value: caredOnesCount, icon: Heart, tab: "cared-ones" },
+          { label: isCN ? "被护理者" : site.navLabels.caredOnes, value: caredOnesCount, icon: Heart, tab: "cared-ones" },
         ].map(s => (
           <button
             key={s.label}

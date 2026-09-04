@@ -252,7 +252,7 @@ export async function wpFetchCareTasks(): Promise<any[]> {
   }
 }
 
-// ─── Loved Ones ─────────────────────────────────────────────
+// ─── Cared Ones ─────────────────────────────────────────────
 export async function wpFetchCaredOnes(): Promise<any[]> {
   try {
     const items = await wpFetchCPT("cared_one");
@@ -261,7 +261,7 @@ export async function wpFetchCaredOnes(): Promise<any[]> {
       user_id: String(c.id),
       relationship: c.acf?.relationship || null,
       cared_one: {
-        full_name: c.title?.rendered || "Loved One",
+        full_name: c.title?.rendered || "Cared One",
         first_name: c.title?.rendered?.split(" ")[0] || null,
         avatar_url: c.acf?.avatar_url || null,
         dementia_stage: c.acf?.dementia_stage || null,

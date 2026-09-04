@@ -13,7 +13,7 @@ export interface Profile {
   bio: string | null;
 
   // ─── CCT: User's extended profile (exact match) ─────────────
-  general_user_role: string[] | null;       // checkbox: ["loved one", "caring one"]
+  general_user_role: string[] | null;       // checkbox: ["cared one", "caring one"]
   is_care_provider: boolean;                // radio: yes/no
   provider_is_active: boolean;              // radio: yes/no
   care_provider_is_background_checked: boolean; // radio: yes/no

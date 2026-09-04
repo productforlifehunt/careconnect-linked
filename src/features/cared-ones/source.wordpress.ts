@@ -6,8 +6,8 @@ import { fetchWPUserProfile } from "@/features/shared/wp-users";
 const REL_USER_CARED_ONE = R.userCaredOnes;
 
 /**
- * Loved ones via JetEngine Relation 219 (Users -> Users, Many to Many).
- * Each loved one is a real WordPress user; its identity comes from the user
+ * Cared ones via JetEngine Relation 219 (Users -> Users, Many to Many).
+ * Each cared one is a real WordPress user; its identity comes from the user
  * record plus CCT 151 / 258 joined through Relations 152 / 259. No fallbacks,
  * no placeholders — a failed read surfaces as a failed read.
  */
@@ -19,7 +19,7 @@ export async function fetchUserCaredOnesWordPress(): Promise<any[]> {
   if (!Array.isArray(rels) || rels.length === 0) return [];
 
   const selfId = String(storedUser.user_id).replace(/^wp-/, "");
-  // A user is never their own loved one — Relation 219 rows pointing back at the
+  // A user is never their own cared one — Relation 219 rows pointing back at the
   // caller are ignored so the dashboard never lists the signed-in user.
   const caredOneIds = rels
     .map((r: any) => String(r.child_object_id))
