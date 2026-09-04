@@ -873,6 +873,24 @@ export default function GPSTracking() {
                       {Z("新建区域", "New zone")}
                     </Button>
                   </div>
+                  {caredOneOptions.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <Label className="text-xs text-muted-foreground shrink-0">
+                        {Z("区域属于", "Areas for")}
+                      </Label>
+                      <Select value={effectiveSubjectId} onValueChange={setSubjectId}>
+                        <SelectTrigger className="h-9 max-w-[240px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={selfKey}>{Z("我自己", "Myself")}</SelectItem>
+                          {caredOneOptions.map((c) => (
+                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   {zones.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-8">{t("gps.noZones", "No areas set up yet")}</p>
                   ) : (
