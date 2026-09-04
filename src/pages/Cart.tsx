@@ -60,8 +60,12 @@ export default function Cart() {
   const stateRequired = stateOptions.length > 0;
 
   const items = cart?.items || [];
-  const total = cart?.totals?.total_price ? (parseInt(cart.totals.total_price) / 100).toFixed(2) : "0.00";
-  const sym = (cart?.totals as any)?.currency_symbol || "$";
+  const totals: any = cart?.totals || {};
+  const minor = Number(totals.currency_minor_unit ?? 2);
+  const money = (raw: any) => (Number(raw || 0) / Math.pow(10, minor)).toFixed(2);
+  const total = totals.total_price ? money(totals.total_price) : "0.00";
+  const sym = totals.currency_symbol || "$";
+  const coupons: any[] = ((cart as any)?.raw?.coupons || []) as any[];
   const missingFields = [
     [email, cn ? "账单邮箱" : "billing email"],
     [address1, cn ? "街道地址" : "street address"],
