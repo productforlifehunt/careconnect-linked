@@ -433,7 +433,7 @@ const en = {
     child: "Child",
     sibling: "Sibling",
     other: "Other",
-    backToCards: "Back to cards",
+    backToCards: "Back",
     noCaredOnesYet: "No {{caredOnes}} yet",
     addPeopleDesc: "Add the people you're caring for to track their health, medications, and more.",
     addFirst: "Add Your First {{caredOne}}",

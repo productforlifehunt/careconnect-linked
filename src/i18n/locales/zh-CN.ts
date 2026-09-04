@@ -169,7 +169,7 @@ const zhCN = {
     searchByNameEmail: "按姓名或邮箱搜索", selectRelationship: "选择关系", relationship: "关系",
     mother: "母亲", father: "父亲", grandmother: "祖母/外祖母", grandfather: "祖父/外祖父",
     spouse: "配偶", child: "孩子", sibling: "兄弟姐妹", other: "其他",
-    backToCards: "返回卡片", noCaredOnesYet: "还没有{{caredOnes}}",
+    backToCards: "返回", noCaredOnesYet: "还没有{{caredOnes}}",
     addPeopleDesc: "添加您正在照顾的人，追踪他们的健康、药物等。",
     addFirst: "添加您的第一位{{caredOne}}", added: "{{caredOne}}已添加！",
     removed: "{{name}}已从您的{{caredOnes}}中移除", searchDesc: "搜索要添加为您照顾的人",
