@@ -383,10 +383,41 @@ export default function SearchResults() {
                             <div className="flex flex-wrap gap-1.5">
                               {(cg.service_location_slugs || []).map(slug => {
                                 const opt = LOCATION_OPTIONS.find(o => o.slug === slug);
-                                return <Badge key={`loc-${slug}`} variant="outline" className="text-xs border-primary/40 text-primary">{opt ? (isZh ? opt.zh : opt.en) : slug}</Badge>;
+                                const active = selectedLocations.includes(slug);
+                                return (
+                                  <Badge
+                                    key={`loc-${slug}`}
+                                    variant={active ? "default" : "outline"}
+                                    role="button"
+                                    tabIndex={0}
+                                    title={isZh ? "点击筛选同类服务者" : "Tap to see everyone offering this"}
+                                    className="text-xs cursor-pointer border-primary/40 hover:bg-primary hover:text-primary-foreground transition-colors"
+                                    onClick={(e) => { e.stopPropagation(); toggleLocation(slug); }}
+                                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); toggleLocation(slug); } }}
+                                  >
+                                    {opt ? (isZh ? opt.zh : opt.en) : slug}
+                                  </Badge>
+                                );
                               })}
-                              {(cg.service_type_slugs || []).map(slug => (<Badge key={slug} variant="secondary" className="bg-accent text-accent-foreground text-xs">{careServiceTypeLabel(slug, isZh)}</Badge>))}
+                              {(cg.service_type_slugs || []).map(slug => {
+                                const active = selectedServiceTypeSlugs.includes(slug);
+                                return (
+                                  <Badge
+                                    key={slug}
+                                    variant={active ? "default" : "secondary"}
+                                    role="button"
+                                    tabIndex={0}
+                                    title={isZh ? "点击筛选同类服务者" : "Tap to see everyone offering this"}
+                                    className={`text-xs cursor-pointer transition-colors ${active ? "" : "bg-accent text-accent-foreground"} hover:bg-primary hover:text-primary-foreground`}
+                                    onClick={(e) => { e.stopPropagation(); toggleServiceTypeSlug(slug); }}
+                                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); toggleServiceTypeSlug(slug); } }}
+                                  >
+                                    {careServiceTypeLabel(slug, isZh)}
+                                  </Badge>
+                                );
+                              })}
                             </div>
+
                           </div>
                           <div className="sm:text-right shrink-0 flex sm:flex-col items-center sm:items-end gap-3">
                             <div>
