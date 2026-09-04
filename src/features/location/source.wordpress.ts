@@ -336,10 +336,60 @@ export async function writeLocationAndCheckZones(
 
 // ─── Helpers ─────────────────────────────────────────────────
 
-function detectPlatform(): string {
-  if (typeof navigator === "undefined") return "unknown";
+/** a63 Platform — dictionary codes only: b55 iOS, b56 Android, b57 Web. */
+function detectPlatformCode(): string {
+  if (typeof navigator === "undefined") return O.PLATFORM.WEB;
+  const cap = (window as any)?.Capacitor;
+  const native = cap?.getPlatform?.();
+  if (native === "ios") return O.PLATFORM.IOS;
+  if (native === "android") return O.PLATFORM.ANDROID;
   const ua = navigator.userAgent.toLowerCase();
-  if (ua.includes("android")) return "android";
-  if (ua.includes("iphone") || ua.includes("ipad")) return "ios";
-  return "web";
+  if (ua.includes("android")) return O.PLATFORM.ANDROID;
+  if (ua.includes("iphone") || ua.includes("ipad") || ua.includes("ipod")) return O.PLATFORM.IOS;
+  return O.PLATFORM.WEB;
 }
+
+/**
+ * a62 Moving type — dictionary codes only. Accepts the plain word a caller
+ * already knows (native CMMotionActivity), otherwise infers from speed in m/s.
+ */
+function movingTypeCode(word?: string, speed?: number | null): string {
+  const byWord: Record<string, string> = {
+    stationary: O.MOVING_TYPE.STATIONARY,
+    walking: O.MOVING_TYPE.WALKING,
+    running: O.MOVING_TYPE.RUNNING,
+    cycling: O.MOVING_TYPE.CYCLING,
+    automotive: O.MOVING_TYPE.AUTOMOTIVE,
+    unknown: O.MOVING_TYPE.UNKNOWN,
+  };
+  if (word) {
+    const code = byWord[word.trim().toLowerCase()] ?? (Object.values(O.MOVING_TYPE) as string[]).find((c) => c === word);
+    if (!code) throw new Error(`Unknown moving type "${word}" — CCT 213 a62 accepts b55..b60 only`);
+    return code;
+  }
+  if (speed == null || !Number.isFinite(speed)) return O.MOVING_TYPE.UNKNOWN;
+  if (speed < 0.3) return O.MOVING_TYPE.STATIONARY;
+  if (speed < 2) return O.MOVING_TYPE.WALKING;
+  if (speed < 4) return O.MOVING_TYPE.RUNNING;
+  if (speed < 8) return O.MOVING_TYPE.CYCLING;
+  return O.MOVING_TYPE.AUTOMOTIVE;
+}
+
+/** a65 Phone is charging — from the Battery API / Capacitor Device info. */
+async function detectCharging(): Promise<boolean | null> {
+  try {
+    const cap = (window as any)?.Capacitor;
+    if (cap?.isNativePlatform?.()) {
+      const { Device } = await import("@capacitor/core" as any);
+      const info = await Device.getBatteryInfo();
+      return typeof info?.isCharging === "boolean" ? info.isCharging : null;
+    }
+    const nav: any = typeof navigator !== "undefined" ? navigator : null;
+    if (nav?.getBattery) {
+      const battery = await nav.getBattery();
+      return typeof battery?.charging === "boolean" ? battery.charging : null;
+    }
+  } catch {}
+  return null;
+}
+
