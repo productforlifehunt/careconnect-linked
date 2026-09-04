@@ -52,6 +52,15 @@ while (i < lines.length) {
   // The table continues past blank / untabbed lines only when a further
   // TSV data row (not a new header) follows within a short window; otherwise
   // those lines are real prose and the table has ended.
+  const headingRe = /^\s*(?:[（(]?(\d+)[）).、]|\(([A-Z])\))\s*(\S.*)?$/;
+  const isHeading = (s) => {
+    if (!s.trim() || s.includes("\t")) return false;
+    const m = headingRe.exec(s);
+    if (!m) return false;
+    if (m[1] && Number(m[1]) >= 100) return false;
+    if (/^\s*\d+\s*[.、]\s*[“"”]/.test(s)) return false;
+    return true;
+  };
   const tableContinuesAt = (start) => {
     let scanned = 0;
     for (let j = start; j < lines.length && scanned < 15; j++) {
@@ -59,10 +68,13 @@ while (i < lines.length) {
       if (s.trim() === "") continue;
       scanned++;
       if (isHeader(s)) return -1;
+      // A new numbered item heading always ends the table.
+      if (isHeading(s)) return -1;
       if (s.includes("\t")) return j;
     }
     return -1;
   };
+
 
   while (i < lines.length) {
     const l = lines[i];
