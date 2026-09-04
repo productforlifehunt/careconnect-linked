@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useInformationCardByToken } from "@/hooks/use-care-data";
 import { useQuery } from "@tanstack/react-query";
@@ -6,8 +5,7 @@ import { fetchInformationCardContactIdsWordPress, fetchInformationCardCaredOneId
 import { fetchEmergencyContactsWordPress } from "@/features/cared-ones/source.wordpress-extended";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { IdCard, MapPin, Phone, Loader2, ShieldOff, Home, FileText } from "lucide-react";
+import { IdCard, Phone, Loader2, ShieldOff, Home, FileText } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { SheetAIPanel, SheetLocationTag, useInfoSheetKnowledge } from "@/components/cared-ones/info-sheet-parts";
 
