@@ -112,18 +112,26 @@ export async function writeLocationSnapshot(
     altitude?: number | null;
     heading?: number | null;
     speed?: number | null;
+    /** Plain word (stationary/walking/running/cycling/automotive/unknown); derived from speed when omitted. */
     moving_type?: string;
-    platform?: string;
     battery_level?: number | null;
-    phone_is_charging?: string;
+    /** true = charging. Read from the Battery API when omitted. */
+    phone_is_charging?: boolean | null;
     address_text?: string | null;
     is_emergency?: boolean;
+    /** Whose location this is: the relation's a55 user type. */
+    is_cared_one?: boolean;
+    /** Person the snapshot belongs to; defaults to the signed-in user. */
+    subject_user_id?: string | number;
   }
 ): Promise<LocationSnapshot | null> {
   const storedUser = getStoredWPUser();
   if (!storedUser?.user_id) throw new Error("Not authenticated");
 
-  const userId = Number(storedUser.user_id);
+  const userId = Number(String(opts?.subject_user_id ?? storedUser.user_id).replace(/^wp-/, ""));
+  if (!userId) throw new Error("Invalid user for location snapshot");
+
+  const charging = opts?.phone_is_charging ?? (await detectCharging());
 
   // Create a new CCT row (append-only — never update)
   const created = await wordpressCCTFetch<any>(CCT_SLUG, {
@@ -135,10 +143,10 @@ export async function writeLocationSnapshot(
       [F.ALTITUDE_METERS]: opts?.altitude != null ? String(opts.altitude) : "",
       [F.HEADING_DEGREES]: opts?.heading != null ? String(opts.heading) : "",
       [F.SPEED]: opts?.speed != null ? String(opts.speed) : "",
-      [F.MOVING_TYPE]: opts?.moving_type || "",
-      [F.PLATFORM]: opts?.platform || detectPlatform(),
+      [F.MOVING_TYPE]: movingTypeCode(opts?.moving_type, opts?.speed),
+      [F.PLATFORM]: detectPlatformCode(),
       [F.BATTERY_LEVEL]: opts?.battery_level != null ? String(opts.battery_level) : "",
-      [F.PHONE_IS_CHARING]: opts?.phone_is_charging || "",
+      [F.PHONE_IS_CHARING]: charging == null ? "" : charging ? O.PHONE_IS_CHARING.YES : O.PHONE_IS_CHARING.NO,
       [F.ADDRESS_TEXT]: opts?.address_text || "",
       [F.CAPTURED_AT]: new Date().toISOString(),
       [F.IS_SO_MUCH_OF_AN_EMERGENCY_THAT_WE_DON_T_BOTHER_TO_ASK_FOR_THE_CARED_ONE_S_PERMISSION]: opts?.is_emergency ? O.IS_SO_MUCH_OF_AN_EMERGENCY_THAT_WE_DON_T_BOTHER_TO_ASK_FOR_THE_CARED_ONE_S_PERMISSION.YES : O.IS_SO_MUCH_OF_AN_EMERGENCY_THAT_WE_DON_T_BOTHER_TO_ASK_FOR_THE_CARED_ONE_S_PERMISSION.NO,
@@ -148,7 +156,7 @@ export async function writeLocationSnapshot(
   const newId = String(created._ID || created.id || "");
   if (!newId) throw new Error("Location snapshot was created without an item ID");
 
-  // Attach to user via JetEngine relation
+  // Attach to the person this snapshot belongs to via JetEngine relation 247.
   await wordpressFetch(`jet-rel/${REL_USER_CURRENT_LOCATION}`, {
       method: "POST",
       body: {
@@ -156,9 +164,11 @@ export async function writeLocationSnapshot(
         child_id: Number(newId),
         context: "child",
         store_items_type: "update",
-        meta: { a55: "b56" },
+        // Relation field a55 "User type": b55 not someone special, b56 cared one.
+        meta: { a55: opts?.is_cared_one ? "b56" : "b55" },
       },
   });
+
 
   return mapSnapshot(created);
 }
