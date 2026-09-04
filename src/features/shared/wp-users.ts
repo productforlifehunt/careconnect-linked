@@ -252,10 +252,14 @@ export async function fetchWPUserPublicProfile(id: number | string): Promise<{
   const user = users.get(numeric);
 
   const profileName = profile?.[appUserNameField()];
+  const displayName = typeof profileName === "string" ? profileName.trim() : "";
   return {
     id: numeric,
     slug: user?.slug || "",
     avatar_url: user?.avatar_url || null,
-    full_name: typeof profileName === "string" ? profileName.trim() : "",
+    // People who never filled in a display name still deserve a name on screen:
+    // fall back to their WordPress account name, then their login slug.
+    full_name: displayName || (user?.name || "").trim() || user?.slug || "",
   };
+
 }
