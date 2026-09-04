@@ -24,7 +24,7 @@ import {
   useUpdateCareGroup, useDeleteCareGroup, useJoinGroupByAnyCode,
   useGroupInvitations, useCancelInvitation,
   useMemberCategories, useCreateMemberCategory, useDeleteMemberCategory,
-  useDeleteTask, useLeaveGroup, useCreateJobPosting, useMyProfile,
+  useDeleteTask, useLeaveGroup, useShareTask, useMyProfile,
 } from "@/hooks/use-care-data";
 import { useSite } from "@/contexts/SiteContext";
 import { useToast } from "@/hooks/use-toast";
@@ -126,7 +126,7 @@ export default function CareCircle() {
   const createCategory = useCreateMemberCategory();
   const deleteCategory = useDeleteMemberCategory();
   const leaveGroup = useLeaveGroup();
-  const createJob = useCreateJobPosting();
+  const shareTask = useShareTask();
 
   const currentUserId = String(profile?.id || profile?.user_id || "").replace(/^wp-/, "");
   const currentMember = (members || []).find((m: any) => {
@@ -287,7 +287,7 @@ export default function CareCircle() {
         </TabsContent>
 
         <TabsContent value="calendar" className="mt-4"><CalendarTab tasks={tasks || []} /></TabsContent>
-        <TabsContent value="tasks" className="mt-4"><TasksTab tasks={tasks || []} tasksLoading={tasksLoading} members={members || []} activeGroupId={activeGroupId} userId={profile?.id} isAdmin={!!isAdmin} memberCategories={memberCategories || []} createTask={createTask} updateTaskStatus={updateTaskStatus} deleteTask={deleteTask} createJob={createJob} /></TabsContent>
+        <TabsContent value="tasks" className="mt-4"><TasksTab tasks={tasks || []} tasksLoading={tasksLoading} members={members || []} activeGroupId={activeGroupId} userId={profile?.id} isAdmin={!!isAdmin} memberCategories={memberCategories || []} createTask={createTask} updateTaskStatus={updateTaskStatus} deleteTask={deleteTask} shareTask={shareTask} /></TabsContent>
         <TabsContent value="location" className="mt-4"><GroupLocationTab groupCaredOnes={groupCaredOnes || []} /></TabsContent>
         <TabsContent value="messages" className="mt-4"><MessagesTab groupMessages={groupMessages || []} userId={profile?.id} activeGroupId={activeGroupId} sendMessage={sendMessage} /></TabsContent>
         <TabsContent value="announcements" className="mt-4"><AnnouncementsTab announcements={announcementsWithAuthors} announcementsLoading={announcementsLoading} activeGroupId={activeGroupId} userId={profile?.id} isAdmin={!!isAdmin} memberCategories={memberCategories || []} members={members || []} createPost={createPost} onEditPost={setEditingPost} onTogglePin={handleTogglePin} onDeletePost={handleDeletePost} /></TabsContent>

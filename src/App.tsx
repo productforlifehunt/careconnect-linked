@@ -32,7 +32,7 @@ import BecomeCaregiver from "./pages/BecomeCaregiver";
 import Notifications from "./pages/Notifications";
 import Inbox from "./pages/Inbox";
 import CaredOnes from "./pages/CaredOnes";
-import Jobs from "./pages/Jobs";
+import SharedTasks from "./pages/SharedTasks";
 import ProviderDashboard from "./pages/ProviderDashboard";
 import NotFound from "./pages/NotFound";
 import Community from "./pages/Community";
@@ -75,7 +75,7 @@ const queryClient = new QueryClient({
 });
 
 // Dashboard routes that always get sidebar
-const baseDashboardPaths = ["/dashboard", "/bookings", "/care-circle", "/gps-tracking", "/messages", "/favorites", "/notifications", "/profile", "/cared-ones", "/jobs", "/provider-dashboard", "/community", "/articles", "/cart", "/order-confirmation", "/aware", "/care-guides", "/coping", "/safety-guides", "/accompanied", "/calendar", "/resources"];
+const baseDashboardPaths = ["/dashboard", "/bookings", "/care-circle", "/gps-tracking", "/messages", "/favorites", "/notifications", "/profile", "/cared-ones", "/shared-tasks", "/provider-dashboard", "/community", "/articles", "/cart", "/order-confirmation", "/aware", "/care-guides", "/coping", "/safety-guides", "/accompanied", "/calendar", "/resources"];
 // Routes that get sidebar only when authenticated
 const authDashboardPaths = ["/search", "/caregiver"];
 
@@ -136,7 +136,7 @@ function AppRoutes() {
       <Route path="/notifications" element={<RequireAuth><Notifications /></RequireAuth>} />
       <Route path="/inbox" element={<RequireAuth><Inbox /></RequireAuth>} />
       <Route path="/cared-ones" element={<RequireAuth><CaredOnes /></RequireAuth>} />
-      <Route path="/jobs" element={<RequireAuth><Jobs /></RequireAuth>} />
+      <Route path="/shared-tasks" element={<RequireAuth><SharedTasks /></RequireAuth>} />
       <Route path="/provider-dashboard" element={<RequireAuth><ProviderDashboard /></RequireAuth>} />
       <Route path="/cart" element={<RequireAuth><Cart /></RequireAuth>} />
       <Route path="/order-confirmation" element={<RequireAuth><OrderConfirmation /></RequireAuth>} />

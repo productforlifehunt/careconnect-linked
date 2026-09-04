@@ -11,7 +11,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, CheckCircle, Circle, Loader2, Trash2, Briefcase, Check, X, Pencil, Clock, MapPin, Users, Search } from "lucide-react";
+import { Plus, CheckCircle, Circle, Loader2, Trash2, Briefcase, Check, X, Pencil, Clock, MapPin, Users, Search, HeartHandshake } from "lucide-react";
 import { VisibilityPicker, EMPTY_VISIBILITY, type VisibilityValue } from "../VisibilityPicker";
 import { CommentsSection } from "@/components/comments/CommentsSection";
 import { MediaAttachments, MediaAttachmentList } from "@/components/shared/MediaAttachments";
@@ -31,7 +31,7 @@ interface TasksTabProps {
   createTask: any;
   updateTaskStatus: any;
   deleteTask: any;
-  createJob: any;
+  shareTask: any;
 }
 
 // Exact option codes from CCT 204 a57.
@@ -68,7 +68,7 @@ const dateOnly = (raw?: string | null): string => {
 
 export function TasksTab({
   tasks, tasksLoading, members, activeGroupId, userId, isAdmin,
-  memberCategories, createTask, updateTaskStatus, deleteTask, createJob,
+  memberCategories, createTask, updateTaskStatus, deleteTask, shareTask,
 }: TasksTabProps) {
   const { toast } = useToast();
   const { i18n } = useTranslation();
@@ -81,7 +81,9 @@ export function TasksTab({
   const [extraAssignees, setExtraAssignees] = useState<Record<string, string>>({});
   const [addOpen, setAddOpen] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
-  const [jobConfirmTask, setJobConfirmTask] = useState<any | null>(null);
+  const [shareConfirmTask, setShareConfirmTask] = useState<any | null>(null);
+  const [sharePaid, setSharePaid] = useState(false);
+  const [sharePrice, setSharePrice] = useState("");
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [visibility, setVisibility] = useState<VisibilityValue>(EMPTY_VISIBILITY);
 
@@ -204,21 +206,25 @@ export function TasksTab({
 
   const myWpId = userId ? `wp-${String(userId).replace(/^wp-/, "")}` : "";
 
-  const confirmPostJob = () => {
-    const t = jobConfirmTask;
+  const confirmShareTask = () => {
+    const t = shareConfirmTask;
     if (!t) return;
-    createJob.mutate({
-      title: t.title,
-      description: t.description || Z(`需要帮助：${t.title}`, `Help needed with: ${t.title}`),
-      job_source_type: "group_task",
-      linked_task_id: t.id,
-      linked_group_id: activeGroupId!,
-      location: t.location || "",
+    shareTask.mutate({
+      taskId: t.id,
+      needs_payment: sharePaid,
+      price: sharePaid ? sharePrice : "",
     }, {
       onSuccess: () => {
-        toast({ title: Z("已发布到护理工作板", "Posted to Job Board") });
-        setJobConfirmTask(null);
+        toast({ title: Z("已分享出去找帮手", "Shared out for help") });
+        setShareConfirmTask(null);
+        setSharePaid(false);
+        setSharePrice("");
       },
+      onError: (err: any) => toast({
+        title: Z("没能分享出去", "Couldn't share that"),
+        description: err?.message || Z("请再试一次。", "Please try again."),
+        variant: "destructive",
+      }),
     });
   };
 
@@ -449,7 +455,7 @@ export function TasksTab({
                       </Button>
                     )}
                     <Button variant="ghost" size="icon" className="h-7 w-7" title={Z("发布到护理工作板", "Post to Job Board")}
-                      onClick={() => setJobConfirmTask(t)}>
+                      onClick={() => setShareConfirmTask(t)}>
                       <Briefcase className="h-3.5 w-3.5" />
                     </Button>
                     {canEdit && (
@@ -491,20 +497,32 @@ export function TasksTab({
         </div>
       )}
 
-      <AlertDialog open={!!jobConfirmTask} onOpenChange={(open) => !open && setJobConfirmTask(null)}>
+      <AlertDialog open={!!shareConfirmTask} onOpenChange={(open) => { if (!open) { setShareConfirmTask(null); setSharePaid(false); setSharePrice(""); } }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{Z("发布到护理工作板？", "Post to Job Board?")}</AlertDialogTitle>
+            <AlertDialogTitle>{Z("分享这件事去找帮手？", "Share this task for help?")}</AlertDialogTitle>
             <AlertDialogDescription>
-              {Z(`此操作会将「${jobConfirmTask?.title ?? ""}」发布到公开的护理工作板，护理群组之外的护理者也可以申请帮忙。`,
-                 `This will publish "${jobConfirmTask?.title}" to the public Job Board so caregivers outside your group can apply to help.`)}
+              {Z(`「${shareConfirmTask?.title ?? ""}」会出现在「需要帮手的任务」里，护理小组以外的人也能看到并表示愿意帮忙。`,
+                 `"${shareConfirmTask?.title}" will appear under Tasks Needing Help, so people outside your group can offer to help.`)}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="space-y-3">
+            <label className="flex items-center gap-2 text-sm text-foreground">
+              <Checkbox checked={sharePaid} onCheckedChange={(v) => setSharePaid(!!v)} />
+              {Z("这件事有报酬", "I'm offering payment")}
+            </label>
+            {sharePaid && (
+              <div>
+                <Label className="text-xs">{Z("报酬（自己写，例如「每小时 80 元」）", "Payment (free text, e.g. \"$25/hour\")")}</Label>
+                <Input value={sharePrice} onChange={(e) => setSharePrice(e.target.value)} className="mt-1" />
+              </div>
+            )}
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel>{Z("取消", "Cancel")}</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmPostJob} disabled={createJob.isPending}>
-              {createJob.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Briefcase className="h-4 w-4 mr-2" />}
-              {Z("发布工作", "Post Job")}
+            <AlertDialogAction onClick={confirmShareTask} disabled={shareTask.isPending}>
+              {shareTask.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <HeartHandshake className="h-4 w-4 mr-2" />}
+              {Z("分享找帮手", "Share for help")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
