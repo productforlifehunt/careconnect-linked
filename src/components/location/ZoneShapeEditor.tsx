@@ -104,7 +104,7 @@ export function ZoneShapeEditor({
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
     L.circleMarker([lat, lng], { radius: 6, color: "#fff", weight: 3, fillColor: color, fillOpacity: 1 }).addTo(group);
     const circle = L.circle([lat, lng], {
-      radius: Number.isFinite(radius) && radius > 0 ? radius : 200,
+      radius: Number.isFinite(radius) && radius > 0 ? radius : 100,
       color, weight: 2, fillOpacity: 0.12,
     }).addTo(group);
     map.fitBounds(circle.getBounds(), { padding: [30, 30] });

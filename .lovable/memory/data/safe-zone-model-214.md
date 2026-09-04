@@ -7,7 +7,7 @@ type: feature
 CCT 214 `safe_zone`:
 - a55 Zone type = Radio, **3 options only**: b55 Safe, b56 Danger, b57 Custom.
 - a57 Zone name = Text. "Safe"/"Danger" for the fixed types; the user's own name for a Custom zone (unlimited custom zone types, one name per zone).
-- a58 Custom description = note only, never a name.
+- a58 Zone description = note for any zone type, never a name.
 - a59 Custom color.
 
 There are **no** custom-zone-name slots on any profile CCT. The old model

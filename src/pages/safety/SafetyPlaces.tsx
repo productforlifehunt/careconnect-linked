@@ -22,6 +22,7 @@ import {
   ZONE_TYPE, ZONE_TYPE_CODES, zoneTypeLabel, isCustomZone, isDangerZone,
 } from "@/features/location/zone-types";
 import { ZoneShapeEditor, type ZoneShape } from "@/components/location/ZoneShapeEditor";
+import { ZoneColorPicker, defaultZoneColor, zoneColorOf } from "@/components/location/ZoneColorPicker";
 import { useSafetyCircle } from "./useSafetyCircle";
 
 
@@ -34,9 +35,11 @@ const emptyForm = {
   // a56 shape type — a simple circle, or a hand-drawn precise outline (a63).
   shape_type: "Radius" as ZoneShape,
   polygon_points: [] as [number, number][],
+  // a59 custom colour — every zone type may carry its own colour.
+  color: "#10B981",
   latitude: "",
   longitude: "",
-  radius_meters: "200",
+  radius_meters: "100",
   notify_on_enter: true,
   notify_on_exit: true,
   is_active: true,
@@ -74,7 +77,8 @@ export default function SafetyPlaces() {
       polygon_points: pts,
       latitude: z.latitude != null ? String(z.latitude) : "",
       longitude: z.longitude != null ? String(z.longitude) : "",
-      radius_meters: String(z.radius_meters ?? 200),
+      radius_meters: String(z.radius_meters ?? 100),
+      color: zoneColorOf(z, defaultZoneColor(code, ZONE_TYPE)),
       notify_on_enter: !!z.notify_on_enter,
       notify_on_exit: !!z.notify_on_exit,
       is_active: !!z.is_active,
@@ -128,6 +132,7 @@ export default function SafetyPlaces() {
         latitude: Number(lat.toFixed(6)),
         longitude: Number(lng.toFixed(6)),
         radius_meters: isPolygon ? 0 : Math.round(radius),
+        color: form.color,
         notify_on_enter: form.notify_on_enter,
         notify_on_exit: form.notify_on_exit,
         is_active: form.is_active,
@@ -224,7 +229,7 @@ export default function SafetyPlaces() {
                     {" · "}
                     {String(z.shape_type).toLowerCase() === "polygon" && z.polygon_points?.length >= 3
                       ? Z(`手绘范围 · ${z.polygon_points.length} 个点`, `Drawn area · ${z.polygon_points.length} points`)
-                      : `${z.radius_meters || 200} m`}
+                      : `${z.radius_meters || 100} m`}
                   </p>
 
                   <p className="mt-0.5 text-[11px] text-muted-foreground">
@@ -267,6 +272,7 @@ export default function SafetyPlaces() {
                 onValueChange={(v) => setForm((f) => ({
                   ...f,
                   zone_type: v,
+                  color: defaultZoneColor(v, ZONE_TYPE),
                   custom_name: isCustomZone(v) ? f.custom_name : "",
                 }))}
               >
@@ -304,6 +310,8 @@ export default function SafetyPlaces() {
                 placeholder={Z("可选说明", "Optional detail")}
               />
             </div>
+
+            <ZoneColorPicker value={form.color} onChange={(c) => setForm((f) => ({ ...f, color: c }))} />
 
             <ZoneShapeEditor
               shape={form.shape_type}

@@ -219,7 +219,7 @@ function evaluateZoneAlert(zone: any, lat: number, lng: number): { distance: num
   } else {
     if (zone.latitude == null || zone.longitude == null) return null;
     distance = Math.round(getDistanceMeters(lat, lng, zone.latitude, zone.longitude));
-    inside = distance <= (zone.radius_meters || 200);
+    inside = distance <= (zone.radius_meters || 100);
   }
 
   if (zone.is_danger) {
@@ -231,7 +231,7 @@ function evaluateZoneAlert(zone: any, lat: number, lng: number): { distance: num
     if (!zone.notify_on_exit) return null;
     return { distance, alertType: "exited_safe_zone" };
   }
-  // Custom zone types (b57..b63) have no safe/danger semantics — they alert on
+  // Custom zone type (b57) has no safe/danger semantics — it alerts on
   // whichever transition the zone itself enabled.
   if (inside) {
     if (!zone.notify_on_enter) return null;

@@ -34,7 +34,10 @@ export interface LocationSnapshot {
   altitude_meters: number | null;
   heading_degrees: number | null;
   speed: number | null;
+  /** Plain word: stationary / walking / running / cycling / automotive / unknown. */
   moving_type: string | null;
+  /** True when a62 says "stationary" (the retired "Is moving" column is never used). */
+  is_stationary: boolean | null;
   platform: string | null;
   battery_level: number | null;
   phone_is_charging: string | null;
@@ -53,7 +56,30 @@ function parseNum(v: any): number | null {
   return n;
 }
 
+/** Dictionary codes → plain words the UI can show. */
+const MOVING_LABEL: Record<string, string> = {
+  [O.MOVING_TYPE.STATIONARY]: "stationary",
+  [O.MOVING_TYPE.WALKING]: "walking",
+  [O.MOVING_TYPE.RUNNING]: "running",
+  [O.MOVING_TYPE.CYCLING]: "cycling",
+  [O.MOVING_TYPE.AUTOMOTIVE]: "automotive",
+  [O.MOVING_TYPE.UNKNOWN]: "unknown",
+};
+const PLATFORM_LABEL: Record<string, string> = {
+  [O.PLATFORM.IOS]: "iOS",
+  [O.PLATFORM.ANDROID]: "Android",
+  [O.PLATFORM.WEB]: "Web",
+};
+const YES_NO_LABEL: Record<string, string> = {
+  [O.PHONE_IS_CHARING.YES]: "Yes",
+  [O.PHONE_IS_CHARING.NO]: "No",
+};
+
 function mapSnapshot(raw: any): LocationSnapshot {
+  const movingCode = raw[F.MOVING_TYPE] || null;
+  const platformCode = raw[F.PLATFORM] || null;
+  const chargingCode = raw[F.PHONE_IS_CHARING] || null;
+  const emergencyCode = raw[F.IS_SO_MUCH_OF_AN_EMERGENCY_THAT_WE_DON_T_BOTHER_TO_ASK_FOR_THE_CARED_ONE_S_PERMISSION] || null;
   return {
     id: String(raw._ID || raw.id || ""),
     latitude: parseNum(raw[F.LATITUDE]),
@@ -62,16 +88,19 @@ function mapSnapshot(raw: any): LocationSnapshot {
     altitude_meters: parseNum(raw[F.ALTITUDE_METERS]),
     heading_degrees: parseNum(raw[F.HEADING_DEGREES]),
     speed: parseNum(raw[F.SPEED]),
-    moving_type: raw[F.MOVING_TYPE] || null,
-    platform: raw[F.PLATFORM] || null,
+    moving_type: movingCode ? MOVING_LABEL[movingCode] ?? null : null,
+    // a62 "stationary" is the only stillness signal — the old a61 "Is moving" is retired.
+    is_stationary: movingCode ? movingCode === O.MOVING_TYPE.STATIONARY : null,
+    platform: platformCode ? PLATFORM_LABEL[platformCode] ?? null : null,
     battery_level: parseNum(raw[F.BATTERY_LEVEL]),
-    phone_is_charging: raw[F.PHONE_IS_CHARING] || null,
+    phone_is_charging: chargingCode ? YES_NO_LABEL[chargingCode] ?? null : null,
     address_text: raw[F.ADDRESS_TEXT] || null,
     captured_at: raw[F.CAPTURED_AT] || null,
-    is_emergency: raw[F.IS_SO_MUCH_OF_AN_EMERGENCY_THAT_WE_DON_T_BOTHER_TO_ASK_FOR_THE_CARED_ONE_S_PERMISSION],
+    is_emergency: emergencyCode === O.IS_SO_MUCH_OF_AN_EMERGENCY_THAT_WE_DON_T_BOTHER_TO_ASK_FOR_THE_CARED_ONE_S_PERMISSION.YES ? "Yes" : "No",
     cct_author_id: raw.cct_author_id ? Number(raw.cct_author_id) : undefined,
   };
 }
+
 
 // ─── WRITE: Append a new location snapshot ───────────────────
 
@@ -83,18 +112,26 @@ export async function writeLocationSnapshot(
     altitude?: number | null;
     heading?: number | null;
     speed?: number | null;
+    /** Plain word (stationary/walking/running/cycling/automotive/unknown); derived from speed when omitted. */
     moving_type?: string;
-    platform?: string;
     battery_level?: number | null;
-    phone_is_charging?: string;
+    /** true = charging. Read from the Battery API when omitted. */
+    phone_is_charging?: boolean | null;
     address_text?: string | null;
     is_emergency?: boolean;
+    /** Whose location this is: the relation's a55 user type. */
+    is_cared_one?: boolean;
+    /** Person the snapshot belongs to; defaults to the signed-in user. */
+    subject_user_id?: string | number;
   }
 ): Promise<LocationSnapshot | null> {
   const storedUser = getStoredWPUser();
   if (!storedUser?.user_id) throw new Error("Not authenticated");
 
-  const userId = Number(storedUser.user_id);
+  const userId = Number(String(opts?.subject_user_id ?? storedUser.user_id).replace(/^wp-/, ""));
+  if (!userId) throw new Error("Invalid user for location snapshot");
+
+  const charging = opts?.phone_is_charging ?? (await detectCharging());
 
   // Create a new CCT row (append-only — never update)
   const created = await wordpressCCTFetch<any>(CCT_SLUG, {
@@ -106,10 +143,10 @@ export async function writeLocationSnapshot(
       [F.ALTITUDE_METERS]: opts?.altitude != null ? String(opts.altitude) : "",
       [F.HEADING_DEGREES]: opts?.heading != null ? String(opts.heading) : "",
       [F.SPEED]: opts?.speed != null ? String(opts.speed) : "",
-      [F.MOVING_TYPE]: opts?.moving_type || "",
-      [F.PLATFORM]: opts?.platform || detectPlatform(),
+      [F.MOVING_TYPE]: movingTypeCode(opts?.moving_type, opts?.speed),
+      [F.PLATFORM]: detectPlatformCode(),
       [F.BATTERY_LEVEL]: opts?.battery_level != null ? String(opts.battery_level) : "",
-      [F.PHONE_IS_CHARING]: opts?.phone_is_charging || "",
+      [F.PHONE_IS_CHARING]: charging == null ? "" : charging ? O.PHONE_IS_CHARING.YES : O.PHONE_IS_CHARING.NO,
       [F.ADDRESS_TEXT]: opts?.address_text || "",
       [F.CAPTURED_AT]: new Date().toISOString(),
       [F.IS_SO_MUCH_OF_AN_EMERGENCY_THAT_WE_DON_T_BOTHER_TO_ASK_FOR_THE_CARED_ONE_S_PERMISSION]: opts?.is_emergency ? O.IS_SO_MUCH_OF_AN_EMERGENCY_THAT_WE_DON_T_BOTHER_TO_ASK_FOR_THE_CARED_ONE_S_PERMISSION.YES : O.IS_SO_MUCH_OF_AN_EMERGENCY_THAT_WE_DON_T_BOTHER_TO_ASK_FOR_THE_CARED_ONE_S_PERMISSION.NO,
@@ -119,7 +156,7 @@ export async function writeLocationSnapshot(
   const newId = String(created._ID || created.id || "");
   if (!newId) throw new Error("Location snapshot was created without an item ID");
 
-  // Attach to user via JetEngine relation
+  // Attach to the person this snapshot belongs to via JetEngine relation 247.
   await wordpressFetch(`jet-rel/${REL_USER_CURRENT_LOCATION}`, {
       method: "POST",
       body: {
@@ -127,9 +164,11 @@ export async function writeLocationSnapshot(
         child_id: Number(newId),
         context: "child",
         store_items_type: "update",
-        meta: { a55: "b56" },
+        // Relation field a55 "User type": b55 not someone special, b56 cared one.
+        meta: { a55: opts?.is_cared_one ? "b56" : "b55" },
       },
   });
+
 
   return mapSnapshot(created);
 }
@@ -235,9 +274,11 @@ export async function writeLocationAndCheckZones(
     heading?: number | null;
     speed?: number | null;
     battery_level?: number | null;
+    phone_is_charging?: boolean | null;
     moving_type?: string;
     address_text?: string | null;
     isEmergency?: boolean;
+    is_cared_one?: boolean;
   }
 ): Promise<LocationSnapshot | null> {
   const storedUser = getStoredWPUser();
@@ -249,9 +290,11 @@ export async function writeLocationAndCheckZones(
     heading: opts?.heading,
     speed: opts?.speed,
     battery_level: opts?.battery_level,
+    phone_is_charging: opts?.phone_is_charging,
     moving_type: opts?.moving_type,
     address_text: opts?.address_text,
     is_emergency: opts?.isEmergency,
+    is_cared_one: opts?.is_cared_one,
   });
 
   // Run zone breach detection
@@ -264,40 +307,89 @@ export async function writeLocationAndCheckZones(
     } catch {}
   }
 
-  // Handle SOS emergency — notify care circle
+  // SOS — alert the location receivers linked through JetEngine relation 290.
   if (opts?.isEmergency && storedUser?.user_id) {
     try {
       const { createNotificationWordPress } = await import("@/features/notifications/source.wordpress");
-      const { fetchCareGroupsWordPress } = await import("@/features/care-groups/source.wordpress");
-      const groups = await fetchCareGroupsWordPress();
-      const notifiedUserIds = new Set<string>();
-      for (const group of groups) {
-        for (const member of ((group as any).members || [])) {
-          const memberId = String(member.user_id || member.id || "");
-          if (memberId && memberId !== String(storedUser.user_id) && !notifiedUserIds.has(memberId)) {
-            notifiedUserIds.add(memberId);
-            await createNotificationWordPress({
-              user_id: memberId,
+      const { fetchLocationReceiverIds } = await import("@/features/location/source.wordpress-extended");
+      const receivers = await fetchLocationReceiverIds(String(storedUser.user_id));
+      const name = (await fetchMyAppUserName().catch(() => "")) || "A care circle member";
+      await Promise.all(
+        receivers
+          .filter((rid) => String(rid) !== String(storedUser.user_id))
+          .map((rid) =>
+            createNotificationWordPress({
+              user_id: String(rid),
               type: "sos_emergency",
               title: "🚨 SOS Emergency Alert",
-              message: `${(await fetchMyAppUserName().catch(() => "")) || "A care circle member"} triggered an SOS emergency alert.`,
+              message: `${name} triggered an SOS emergency alert.`,
               action_url: `/gps-tracking?sos=${storedUser.user_id}`,
-            });
-          }
-        }
-      }
+            }).catch(() => null),
+          ),
+      );
     } catch {}
   }
 
   return snapshot;
 }
 
+
 // ─── Helpers ─────────────────────────────────────────────────
 
-function detectPlatform(): string {
-  if (typeof navigator === "undefined") return "unknown";
+/** a63 Platform — dictionary codes only: b55 iOS, b56 Android, b57 Web. */
+function detectPlatformCode(): string {
+  if (typeof navigator === "undefined") return O.PLATFORM.WEB;
+  const cap = (window as any)?.Capacitor;
+  const native = cap?.getPlatform?.();
+  if (native === "ios") return O.PLATFORM.IOS;
+  if (native === "android") return O.PLATFORM.ANDROID;
   const ua = navigator.userAgent.toLowerCase();
-  if (ua.includes("android")) return "android";
-  if (ua.includes("iphone") || ua.includes("ipad")) return "ios";
-  return "web";
+  if (ua.includes("android")) return O.PLATFORM.ANDROID;
+  if (ua.includes("iphone") || ua.includes("ipad") || ua.includes("ipod")) return O.PLATFORM.IOS;
+  return O.PLATFORM.WEB;
 }
+
+/**
+ * a62 Moving type — dictionary codes only. Accepts the plain word a caller
+ * already knows (native CMMotionActivity), otherwise infers from speed in m/s.
+ */
+function movingTypeCode(word?: string, speed?: number | null): string {
+  const byWord: Record<string, string> = {
+    stationary: O.MOVING_TYPE.STATIONARY,
+    walking: O.MOVING_TYPE.WALKING,
+    running: O.MOVING_TYPE.RUNNING,
+    cycling: O.MOVING_TYPE.CYCLING,
+    automotive: O.MOVING_TYPE.AUTOMOTIVE,
+    unknown: O.MOVING_TYPE.UNKNOWN,
+  };
+  if (word) {
+    const code = byWord[word.trim().toLowerCase()] ?? (Object.values(O.MOVING_TYPE) as string[]).find((c) => c === word);
+    if (!code) throw new Error(`Unknown moving type "${word}" — CCT 213 a62 accepts b55..b60 only`);
+    return code;
+  }
+  if (speed == null || !Number.isFinite(speed)) return O.MOVING_TYPE.UNKNOWN;
+  if (speed < 0.3) return O.MOVING_TYPE.STATIONARY;
+  if (speed < 2) return O.MOVING_TYPE.WALKING;
+  if (speed < 4) return O.MOVING_TYPE.RUNNING;
+  if (speed < 8) return O.MOVING_TYPE.CYCLING;
+  return O.MOVING_TYPE.AUTOMOTIVE;
+}
+
+/** a65 Phone is charging — from the Battery API / Capacitor Device info. */
+async function detectCharging(): Promise<boolean | null> {
+  try {
+    const cap = (window as any)?.Capacitor;
+    if (cap?.isNativePlatform?.()) {
+      const { Device } = await import("@capacitor/core" as any);
+      const info = await Device.getBatteryInfo();
+      return typeof info?.isCharging === "boolean" ? info.isCharging : null;
+    }
+    const nav: any = typeof navigator !== "undefined" ? navigator : null;
+    if (nav?.getBattery) {
+      const battery = await nav.getBattery();
+      return typeof battery?.charging === "boolean" ? battery.charging : null;
+    }
+  } catch {}
+  return null;
+}
+

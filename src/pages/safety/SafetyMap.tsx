@@ -19,6 +19,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { getCurrentPosition, getBatteryLevel, reverseGeocode, checkBreaches } from "@/lib/locationService";
 import { writeLocationAndCheckZones } from "@/features/location/source.wordpress";
+import { zoneColorOf } from "@/components/location/ZoneColorPicker";
 import { createNotificationWordPress } from "@/features/notifications/source.wordpress";
 import { fetchCaredOneLocationSettingsWordPress } from "@/features/location/source.wordpress-extended";
 import { useSafetyCircle, timeAgo, type SafetyMember } from "./useSafetyCircle";
@@ -86,7 +87,7 @@ export default function SafetyMap() {
     zoneLayers.current = [];
     zones.filter((z) => z.is_active).forEach((z) => {
       const isDanger = !!z.is_danger;
-      const color = isDanger ? "#ef4444" : (z.color || themeColor("--primary", "#2563eb"));
+      const color = zoneColorOf(z, isDanger ? "#EF4444" : themeColor("--primary", "#2563eb"));
       const label = isCN ? z.zone_type_label_zh : z.zone_type_label;
       const isPolygon = String(z.shape_type).toLowerCase() === "polygon" && z.polygon_points?.length >= 3;
       if (isPolygon) {

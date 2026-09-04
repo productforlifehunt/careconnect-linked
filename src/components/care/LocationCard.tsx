@@ -1100,8 +1100,8 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                   </Button>
                 </div>
 
-                {/* Zone type — the nine dictionary types (a55). A zone has no
-                    name of its own; its type IS its label. */}
+                {/* Zone type — the three dictionary types (a55): Safe, Danger,
+                    Custom. A custom zone carries its own name in a57. */}
                 <div>
                   <Label className="text-xs">{isZh ? "区域类型 *" : "Zone Type *"}</Label>
                   <div className="grid grid-cols-3 gap-1.5 mt-1">
