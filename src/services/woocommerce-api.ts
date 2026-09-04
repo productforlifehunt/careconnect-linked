@@ -421,12 +421,48 @@ export async function removeCartItem(itemKey: string) {
   return normalizeStoreCart(cart);
 }
 
+/**
+ * POST /wc/store/v1/cart/update-item — change the quantity of one line.
+ * Setting the quantity to 0 lets WooCommerce drop the line itself.
+ */
+export async function updateCartItemQuantity(itemKey: string, quantity: number) {
+  const qty = Math.max(0, Math.floor(quantity));
+  if (qty === 0) return removeCartItem(itemKey);
+  const cart = await storeApiFetch('cart/update-item', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ key: itemKey, quantity: qty }),
+  });
+  return normalizeStoreCart(cart);
+}
+
+/** POST /wc/store/v1/cart/apply-coupon */
+export async function applyCartCoupon(code: string) {
+  const cart = await storeApiFetch('cart/apply-coupon', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code: code.trim() }),
+  });
+  return normalizeStoreCart(cart);
+}
+
+/** POST /wc/store/v1/cart/remove-coupon */
+export async function removeCartCoupon(code: string) {
+  const cart = await storeApiFetch('cart/remove-coupon', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code }),
+  });
+  return normalizeStoreCart(cart);
+}
+
 /** DELETE /wc/store/v1/cart/items */
 export async function clearCart() {
   const cart = await storeApiFetch('cart/items', { method: 'DELETE' });
   writeCartIntent([]);
   return normalizeStoreCart(cart);
 }
+
 
 
 /**
