@@ -17,7 +17,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { QRCodeSVG } from "qrcode.react";
 import { useTranslation } from "react-i18next";
-import { InfoSheetAIDialog } from "@/components/cared-ones/InfoSheetAIDialog";
+import { SheetAIPanel, SheetLocationTag, useInfoSheetKnowledge } from "@/components/cared-ones/info-sheet-parts";
 
 type Status = "Draft" | "Active" | "Paused";
 type DisplaysLocation = "Yes" | "No";
@@ -62,6 +62,7 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
   const update = useUpdateInformationCard();
   const del = useDeleteInformationCard();
   const { data: emergencyContacts } = useEmergencyContacts(caredOneId);
+  const knowledge = useInfoSheetKnowledge(caredOneId);
 
 
   const [formOpen, setFormOpen] = useState(false);
@@ -70,7 +71,6 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
   const [contactsCardId, setContactsCardId] = useState<string | null>(null);
   const [shareCard, setShareCard] = useState<any | null>(null);
   const [viewCard, setViewCard] = useState<any | null>(null);
-  const [aiCard, setAiCard] = useState<any | null>(null);
 
 
   const openCreate = () => {
@@ -102,7 +102,7 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
       update.mutate(
         { id: editId, ...form },
         {
-          onSuccess: () => { setFormOpen(false); toast({ title: Z("照护须知已更新", "Care info sheet updated") }); },
+          onSuccess: () => { setFormOpen(false); toast({ title: Z("信息卡已更新", "Information card updated") }); },
           onError: (e: any) => toast({ title: Z("更新失败", "Update failed"), description: e.message, variant: "destructive" }),
         },
       );
@@ -110,7 +110,7 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
       create.mutate(
         { caredOneUserId: caredOneId, ...form },
         {
-          onSuccess: () => { setFormOpen(false); toast({ title: Z("照护须知已创建", "Care info sheet created") }); },
+          onSuccess: () => { setFormOpen(false); toast({ title: Z("信息卡已创建", "Information card created") }); },
           onError: (e: any) => toast({ title: Z("创建失败", "Create failed"), description: e.message, variant: "destructive" }),
         },
       );
@@ -121,10 +121,10 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
     <div>
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-lg font-bold text-foreground">{Z("照护须知", "Care Info Sheets")}</h2>
+          <h2 className="text-lg font-bold text-foreground">{Z("被照护者信息卡", "Cared One Information Cards")}</h2>
           <p className="text-xs text-muted-foreground">{Z("可分享给帮忙照看的人，或在走失时给外人看", "Share with someone helping out, or with finders if they go missing")}</p>
         </div>
-        <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> {Z("新建一份", "New Sheet")}</Button>
+        <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> {Z("新建一张", "New card")}</Button>
       </div>
 
       {isLoading ? (
@@ -132,13 +132,13 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
       ) : isError ? (
         <div className="text-center py-10">
           <ShieldOff className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground">{Z("暂时无法加载照护须知，请稍后再试。", "Care info sheets could not be loaded. Please try again.")}</p>
+          <p className="text-muted-foreground">{Z("暂时无法加载信息卡，请稍后再试。", "Information cards could not be loaded. Please try again.")}</p>
         </div>
       ) : (cards || []).length === 0 ? (
         <div className="text-center py-12">
           <IdCard className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground mb-3">{Z("还没有照护须知", "No care info sheets yet")}</p>
-          <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> {Z("创建第一份", "Create First Sheet")}</Button>
+          <p className="text-muted-foreground mb-3">{Z("还没有信息卡", "No information cards yet")}</p>
+          <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> {Z("创建第一张", "Create first card")}</Button>
         </div>
       ) : (
 
@@ -151,7 +151,7 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
                     type="button"
                     className="min-w-0 flex-1 text-left group"
                     onClick={() => setViewCard(c)}
-                    aria-label={Z("查看照护须知", "View care info sheet")}
+                    aria-label={Z("查看信息卡", "View information card")}
                   >
                     <div className="flex items-center gap-2 flex-wrap">
                       <h4 className="font-medium text-foreground text-sm truncate group-hover:underline">{c.cared_ones_information_card_name || Z("（未命名）", "(Untitled)")}</h4>
@@ -184,7 +184,7 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editId ? Z("编辑照护须知", "Edit Care Info Sheet") : Z("新建照护须知", "New Care Info Sheet")}</DialogTitle>
+            <DialogTitle>{editId ? Z("编辑信息卡", "Edit information card") : Z("新建信息卡", "New information card")}</DialogTitle>
             <DialogDescription>{Z("写一份可以直接发给别人的照护须知：要注意什么、这次需要帮什么。", "Write something you can hand to another person: what to watch out for and what help is needed this time.")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 mt-2">
@@ -259,20 +259,6 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
 
       {shareCard && (
         <ShareCardDialog card={shareCard} onClose={() => setShareCard(null)} />
-      )}
-
-      {aiCard && (
-        <InfoSheetAIDialog
-          open
-          onOpenChange={(o) => { if (!o) setAiCard(null); }}
-          context={{
-            sheetName: aiCard.cared_ones_information_card_name,
-            caredOneName: aiCard.cared_ones_name || caredOneName,
-            description: aiCard.cared_ones_description,
-            situationDetails: aiCard.cared_ones_information_card_description,
-            contacts: emergencyContacts || [],
-          }}
-        />
       )}
 
       {viewCard && (
@@ -358,7 +344,7 @@ function ShareCardDialog({ card, onClose }: { card: any; onClose: () => void }) 
   });
 
   const buildShareText = () => [
-    `📇 ${card.cared_ones_information_card_name || Z("照护须知", "Care Info Sheet")}`,
+    `📇 ${card.cared_ones_information_card_name || Z("被照护者信息卡", "Cared One Information Card")}`,
     card.cared_ones_name ? `${Z("姓名", "Name")}: ${card.cared_ones_name}` : "",
     generatedUrl ? `\n${generatedUrl}` : "",
   ].filter(Boolean).join("\n");
@@ -392,7 +378,7 @@ function ShareCardDialog({ card, onClose }: { card: any; onClose: () => void }) 
     const text = buildShareText();
     try {
       if ((navigator as any).share) {
-        await (navigator as any).share({ title: card.cared_ones_information_card_name || Z("照护须知", "Care Info Sheet"), text, url: generatedUrl });
+        await (navigator as any).share({ title: card.cared_ones_information_card_name || Z("被照护者信息卡", "Cared One Information Card"), text, url: generatedUrl });
         return;
       }
       await navigator.clipboard.writeText(text);
@@ -410,7 +396,7 @@ function ShareCardDialog({ card, onClose }: { card: any; onClose: () => void }) 
     <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><Share2 className="h-4 w-4" /> {Z("分享照护须知", "Share Care Info Sheet")}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2"><Share2 className="h-4 w-4" /> {Z("分享信息卡", "Share information card")}</DialogTitle>
           <DialogDescription>{Z("生成公开链接或二维码，可随时撤销。", "Generate a public link or QR code. You can revoke it any time.")}</DialogDescription>
         </DialogHeader>
 
