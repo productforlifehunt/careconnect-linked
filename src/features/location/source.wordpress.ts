@@ -34,7 +34,10 @@ export interface LocationSnapshot {
   altitude_meters: number | null;
   heading_degrees: number | null;
   speed: number | null;
+  /** Plain word: stationary / walking / running / cycling / automotive / unknown. */
   moving_type: string | null;
+  /** True when a62 says "stationary" (the retired "Is moving" column is never used). */
+  is_stationary: boolean | null;
   platform: string | null;
   battery_level: number | null;
   phone_is_charging: string | null;
