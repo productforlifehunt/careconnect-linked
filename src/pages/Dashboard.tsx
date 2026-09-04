@@ -7,8 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSite } from "@/contexts/SiteContext";
 import {
-  useBookings, useCareTasks, useDashboardStats, useUserCaredOnes, usePosts,
+  useBookings, useCareTasks, useUserCaredOnes, usePosts, useCareGroups, useConversations,
 } from "@/hooks/use-care-data";
+
 import {
   CalendarDays, Users, MapPin, ArrowRight, CheckCircle, AlertCircle, MessageSquare,
   ShoppingBag, Heart, BookOpen, Wand2, Briefcase, Bell, Calendar as CalIcon,
@@ -36,7 +37,8 @@ export default function Dashboard() {
   const careGroupsLabel = isChinese ? t("nav.united", { defaultValue: "护理群组" }) : site.navLabels.careGroups;
   const { data: bookings, isLoading: bookingsLoading } = useBookings();
   const { data: tasks, isLoading: tasksLoading } = useCareTasks();
-  const { data: stats } = useDashboardStats();
+  const { data: myCareGroups } = useCareGroups();
+  const { data: conversations } = useConversations();
   const { data: caredOnes, isLoading: caredOnesLoading } = useUserCaredOnes();
   const { data: communityPosts, isLoading: postsLoading } = usePosts("care_community_post");
 
@@ -94,9 +96,18 @@ export default function Dashboard() {
   }
 
   const displayName = user?.full_name || (isChinese ? "朋友" : "there");
-  const upcomingBookings = (bookings || [])
+  // Only this user's own bookings, and only ones still ahead of us, sorted by
+  // when they start. Nothing from other people's calendars.
+  const bookingStart = (b: any) => new Date(b.appointment_date || b.start_time || b.created_at).getTime();
+  const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
+  const myUpcomingBookings = (bookings || [])
     .filter((b: any) => ["confirmed", "pending"].includes(b.status))
-    .slice(0, 4);
+    .filter((b: any) => {
+      const t = bookingStart(b);
+      return !Number.isFinite(t) || t >= startOfToday.getTime();
+    })
+    .sort((a: any, b: any) => bookingStart(a) - bookingStart(b));
+  const upcomingBookings = myUpcomingBookings.slice(0, 4);
   // Only the signed-in user's own work: tasks they created, tasks assigned to
   // them, or tasks attached to one of their cared ones. Never every task in the app.
   const myUserId = String(user?.user_id ?? user?.id ?? "").replace(/^wp-/, "");
@@ -111,6 +122,10 @@ export default function Dashboard() {
   });
   const myPendingTasks = myTasks.filter((t: any) => t.status !== "completed");
   const pendingTasks = myPendingTasks.slice(0, 5);
+  // Care teams the user actually belongs to, and unread messages sent to them.
+  const myCareGroupCount = (myCareGroups || []).length;
+  const myUnreadMessages = (conversations || []).reduce(
+    (sum: number, c: any) => sum + (Number(c.unread_count) || 0), 0);
   const firstCaredOne = caredOnes?.[0];
   const recentPosts = (communityPosts || []).slice(0, 3);
 
@@ -197,10 +212,10 @@ export default function Dashboard() {
     "stats": (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
         {[
-          { label: t("dashboard.upcomingBookings"), value: stats?.upcomingBookings ?? 0, icon: CalendarDays, color: "text-primary", to: "/bookings" },
-          { label: careGroupsLabel, value: stats?.careGroups ?? 0, icon: Users, color: "text-success", to: "/care-circle" },
+          { label: t("dashboard.upcomingBookings"), value: myUpcomingBookings.length, icon: CalendarDays, color: "text-primary", to: "/bookings" },
+          { label: careGroupsLabel, value: myCareGroupCount, icon: Users, color: "text-success", to: "/care-circle" },
           { label: t("dashboard.pendingTasks"), value: myPendingTasks.length, icon: AlertCircle, color: "text-warning", to: "/care-circle" },
-          { label: t("dashboard.unreadMessages"), value: stats?.unreadMessages ?? 0, icon: MessageSquare, color: "text-coral", to: "/messages" },
+          { label: t("dashboard.unreadMessages"), value: myUnreadMessages, icon: MessageSquare, color: "text-coral", to: "/messages" },
         ].map((s) => (
           <button key={s.label} onClick={() => navigate(s.to)}
             className="text-left rounded-lg border border-transparent card-elevated p-3 hover:border-primary/30 transition-colors">
