@@ -451,6 +451,7 @@ export default function GPSTracking() {
       await writeLocationAndCheckZones(pos?.latitude ?? 0, pos?.longitude ?? 0, {
         accuracy: pos?.accuracy,
         isEmergency: true,
+        is_cared_one: selfIsCaredOne,
       });
       refetch();
       setSosDialogOpen(false);
