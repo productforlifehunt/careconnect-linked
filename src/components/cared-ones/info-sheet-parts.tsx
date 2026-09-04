@@ -106,6 +106,13 @@ export function SheetLocationTag({ caredOneId }: { caredOneId?: string | null })
     enabled: open && !!caredOneId,
   });
 
+  const { data: zones } = useQuery({
+    queryKey: ["infoSheetZones", caredOneId],
+    queryFn: () => fetchSafeZonesWordPress(String(caredOneId)),
+    enabled: open && !!caredOneId,
+    staleTime: 5 * 60 * 1000,
+  });
+
   return (
     <div className="w-full">
       <button type="button" onClick={() => setOpen((v) => !v)} className="inline-flex">
@@ -117,33 +124,45 @@ export function SheetLocationTag({ caredOneId }: { caredOneId?: string | null })
       </button>
 
       {open && (
-        <div className="mt-2">
+        <div className="mt-2 space-y-2">
           {isLoading ? (
             <div className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" /> {Z("正在获取位置…", "Getting location…")}</div>
           ) : location?.latitude != null && location?.longitude != null ? (
-            <a
-              href={`https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}`}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-3 rounded-md border p-3 hover:bg-accent transition"
-            >
-              <Navigation className="h-4 w-4 text-primary shrink-0" />
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium truncate">
-                  {location.address_text || `${Number(location.latitude).toFixed(5)}, ${Number(location.longitude).toFixed(5)}`}
-                </div>
-                {location.captured_at && (
-                  <div className="text-xs text-muted-foreground truncate">
-                    {new Date(String(location.captured_at).replace(" ", "T")).toLocaleString()}
+            <>
+              <SheetMiniMap
+                lat={Number(location.latitude)}
+                lng={Number(location.longitude)}
+                zones={zones || []}
+                isCN={!!isCN}
+              />
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-3 rounded-md border p-3 hover:bg-accent transition"
+              >
+                <Navigation className="h-4 w-4 text-primary shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-medium truncate">
+                    {location.address_text || `${Number(location.latitude).toFixed(5)}, ${Number(location.longitude).toFixed(5)}`}
                   </div>
-                )}
-              </div>
-            </a>
+                  {location.captured_at && (
+                    <div className="text-xs text-muted-foreground truncate">
+                      {new Date(String(location.captured_at).replace(" ", "T")).toLocaleString()}
+                    </div>
+                  )}
+                </div>
+              </a>
+            </>
           ) : (
             <p className="text-sm text-muted-foreground">{Z("暂无位置记录。", "No location record yet.")}</p>
           )}
         </div>
       )}
+    </div>
+  );
+}
+
     </div>
   );
 }
