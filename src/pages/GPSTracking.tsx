@@ -308,7 +308,7 @@ export default function GPSTracking() {
       const trail = trailData[person.userId];
       if (trail && trail.length > 1) {
         const polyline = L.polyline(trail, {
-          color: "hsl(var(--primary))",
+          color: themeColor("--primary", "#4c1d95"),
           weight: 3,
           opacity: 0.6,
           dashArray: "4 6",
@@ -324,7 +324,7 @@ export default function GPSTracking() {
       const bounds = L.latLngBounds(sharingPeople.map(p => [p.coordinates.lat, p.coordinates.lng] as [number, number]));
       map.fitBounds(bounds, { padding: [50, 50] });
     }
-  }, [sharingPeople.length, locationShares, trailData]);
+  }, [sharingPeople.length, locationShares, trailData, mapNode]);
 
   // ─── Live breach detection on each poll ─────────────────────
   useEffect(() => {
