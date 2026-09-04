@@ -4096,6 +4096,13 @@
           "type": "Textarea",
           "options": "",
           "optionMap": {}
+        },
+        {
+          "options": "",
+          "optionMap": {},
+          "label": "Attachments",
+          "code": "a57",
+          "type": "Gallery"
         }
       ]
     },
