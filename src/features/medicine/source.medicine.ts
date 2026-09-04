@@ -1,100 +1,61 @@
 /**
- * Medicine schedules & logs — dictionary-aligned storage
+ * Medicine schedules & logs — dictionary-aligned storage (bible 2026-09-04)
  *
- * SCHEDULE  → JetEngine CCT 205 `medicine_schedule` (a55–a72), linked to the
- *             cared one through JetEngine Relation 237
- *             ("One cared one can have many related 205. medicine schedules").
+ * SCHEDULE  → JetEngine CCT 187 `users_calendar_event`, a60 = b55
+ *             ("Medicine schedule"), owned through JetEngine Relation 190
+ *             (Users → 187) with the cared one as parent.
+ *             CCT 205 no longer exists — the calendar event replaced it.
  * LOG       → JetEngine CCT 206 `medicine_log` (a55–a68), a field-for-field
  *             mirror of Apple HKMedicationDoseEvent, linked to its schedule
- *             through JetEngine Relation 238 (205 → 206).
+ *             through JetEngine Relation 238 (187 → 206).
  *
- * Every value lives in its own dedicated column — no JSON blobs, no invented
- * fields, no fallbacks.
+ * Recurrence uses the RFC 5545 columns of the calendar (a66 RRULE, a73 VALARM);
+ * values the calendar has no Apple/iCal column for (exact time slots, UI
+ * frequency code, instructions, side effects, missing window) live in the
+ * dedicated a90 Custom data JSON column. No invented columns, no fallbacks.
  */
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { T, R } from "@/integrations/wp-schema";
-import { dedupeRead, fetchRelChildrenMap } from "@/features/shared/rel-batch";
+import { fetchRelChildrenMap } from "@/features/shared/rel-batch";
+import {
+  FC, EVENT_TYPE, STATUS_CONFIRMED, STATUS_CANCELLED, APP_CHALLENGED,
+  LOG_TYPE_AI, LOG_TYPE_HUMAN, CAL,
+  numId, wpStr, numOrNull, linkRel,
+  toFrequencyCode, FREQ_EN, buildRRule, buildReminders, readReminderMinutes,
+  decodeSlots, readCustom, writeCustom,
+  fetchEventsOfType, createEvent, updateEvent, deleteEvent, readEvent,
+} from "@/features/schedules/calendar-schedule";
 
-const SCH = T.medicineSchedule;      // 205
 const LOG = T.medicineLog;           // 206
-const F = SCH.f;
-const O = SCH.opt as Record<string, Record<string, string>>;
 const FL = LOG.f;
 const OL = LOG.opt as Record<string, Record<string, string>>;
+const OC = CAL.opt as Record<string, Record<string, string>>;
 
-const REL_USER_SCHEDULE = R.caredOneMedicineSchedules; // 237 Users → 205
-const REL_SCHEDULE_LOG = R.medicineScheduleLogs;       // 238 205 → 206
+const REL_SCHEDULE_LOG = R.medicineScheduleLogs;       // 238 187 → 206
 
 const RXNORM_SYSTEM = "http://www.nlm.nih.gov/research/umls/rxnorm";
 
-const numId = (v: any): number => Number(String(v ?? "").replace(/^wp-/, ""));
-/** JetEngine REST rejects non-string scalars (rest_invalid_type). */
-const wpStr = (v: any): string => (v === null || v === undefined || v === "" ? "" : String(v));
-const numOrNull = (v: any): number | null =>
-  v === null || v === undefined || v === "" ? null : Number.isFinite(Number(v)) ? Number(v) : null;
-
 function pad(n: number): string { return String(n).padStart(2, "0"); }
 
-async function linkRel(relId: number, parentId: number, childId: number): Promise<void> {
-  await wordpressFetch(`jet-rel/${relId}`, {
-    method: "POST",
-    body: { parent_id: parentId, child_id: childId, context: "child", store_items_type: "update" },
-  });
-}
-
-// ─── Frequency (CCT 205 a57 is a free Text column) ───────────
+// Re-exported for the UI: the medicine frequency vocabulary.
 export const MED_FREQUENCY_CODES = [
   "once_daily", "twice_daily", "three_daily", "four_daily",
   "every_other_day", "weekly", "as_needed",
 ] as const;
 export type MedFrequencyCode = (typeof MED_FREQUENCY_CODES)[number];
 
-const FREQ_EN: Record<MedFrequencyCode, string> = {
-  once_daily: "Once daily",
-  twice_daily: "Twice daily",
-  three_daily: "Three times daily",
-  four_daily: "Four times daily",
-  every_other_day: "Every other day",
-  weekly: "Weekly",
-  as_needed: "As needed",
-};
-
-function toFrequencyCode(value?: string): MedFrequencyCode {
-  const v = String(value || "once_daily");
-  if ((MED_FREQUENCY_CODES as readonly string[]).includes(v)) return v as MedFrequencyCode;
-  const hit = (Object.keys(FREQ_EN) as MedFrequencyCode[]).find(
-    (k) => FREQ_EN[k].toLowerCase() === v.toLowerCase());
-  return hit || "once_daily";
+// ─── Check-in type (a96 Medicine log type: AI | Human) ───────
+function encodeLogType(codes: string[] | undefined): string {
+  const first = (codes || []).map((c) => String(c).toLowerCase())[0];
+  if (first === "ai") return LOG_TYPE_AI;
+  if (first === "human") return LOG_TYPE_HUMAN;
+  return "";
 }
-
-// ─── Time slots (a58 Textarea, one HH:MM per line) ───────────
-function encodeSlots(slots: string[]): string {
-  return (slots || []).map((s) => String(s).slice(0, 5)).filter(Boolean).join("\n");
-}
-function decodeSlots(raw: any): string[] {
-  return String(raw ?? "")
-    .split(/[\n,]/)
-    .map((s) => s.trim())
-    .filter((s) => /^\d{1,2}:\d{2}$/.test(s))
-    .map((s) => (s.length === 4 ? `0${s}` : s));
-}
-
-// ─── Check-in type (a72 Checkbox, multi-select codes) ────────
-function encodeCheckInType(codes: string[]): string {
-  const list = (codes || []).filter(Boolean);
-  return list.length ? JSON.stringify(list) : "";
-}
-function decodeCheckInType(raw: any): string[] {
-  if (!raw) return [];
-  const s = String(raw);
-  try {
-    const parsed = JSON.parse(s);
-    if (Array.isArray(parsed)) return parsed.map(String);
-    if (parsed && typeof parsed === "object") {
-      return Object.entries(parsed).filter(([, v]) => v === true || v === "true" || v === 1 || v === "1").map(([k]) => k);
-    }
-  } catch { /* not JSON — fall through to CSV */ }
-  return s.split(",").map((x) => x.trim()).filter(Boolean);
+function decodeLogType(raw: any): string[] {
+  const v = String(raw ?? "");
+  if (v === LOG_TYPE_AI) return ["ai"];
+  if (v === LOG_TYPE_HUMAN) return ["human"];
+  return [];
 }
 
 // ─── Dosage text ⇄ quantity + UCUM unit ──────────────────────
@@ -115,49 +76,40 @@ export function joinDosage(quantity: number | null, unit: string): string {
 
 // ─── Schedule reads ──────────────────────────────────────────
 function mapSchedule(row: any, caredOneId: string): any {
-  const dosage = row[F.DOSAGE] || "";
-  const dose = splitDosage(dosage);
-  const freqCode = toFrequencyCode(row[F.FREQUENCY]);
+  const custom = readCustom(row[FC.CUSTOM_DATA]);
+  const quantity = numOrNull(row[FC.MEDICATION_DOSE_QUANTITY]);
+  const unit = row[FC.MEDICATION_DOSE_UNIT] || "";
+  const freqCode = toFrequencyCode(custom.frequency_code);
   return {
     id: String(row.id || row._ID),
     user_id: caredOneId,
-    name: row[F.NAME] || "",
-    dosage,
-    dose_quantity: dose.quantity,
-    dose_unit: dose.unit,
+    name: row[FC.TITLE] || "",
+    dosage: joinDosage(quantity, unit),
+    dose_quantity: quantity,
+    dose_unit: unit,
     frequency_code: freqCode,
-    frequency: row[F.FREQUENCY] || FREQ_EN[freqCode],
-    time_slot: decodeSlots(row[F.TIME_SLOT]),
-    instructions: row[F.INSTRUCTIONS] || null,
-    note: row[F.NOTE] || null,
-    start_date: row[F.START_DATE] ? String(row[F.START_DATE]).slice(0, 10) : null,
-    end_date: row[F.END_DATE] ? String(row[F.END_DATE]).slice(0, 10) : null,
-    is_active: String(row[F.IS_ACTIVE] || O.IS_ACTIVE.YES) === O.IS_ACTIVE.YES,
-    reminder_time_before: numOrNull(row[F.REMINDER_TIME_BEFORE]),
-    stock_count: numOrNull(row[F.STOCK_COUNT]),
-    refill_threshold: numOrNull(row[F.REFILL_THRESHOLD]),
-    time_to_send_to_caregiver: numOrNull(row[F.TIME_TO_SEND_TO_CAREGIVER]),
-    time_to_be_considered_missing: numOrNull(row[F.TIME_TO_BE_CONSIDERED_AS_MISSING]),
-    prescribing_doctor: row[F.PRESCRIBING_DOCTOR] || null,
-    pharmacy: row[F.PHARMACY] || null,
-    side_effects: row[F.SIDE_EFFECTS] || null,
-    check_in_type: decodeCheckInType(row[F.CHECK_IN_TYPE]),
+    frequency: FREQ_EN[freqCode],
+    time_slot: decodeSlots(custom.time_slot),
+    instructions: custom.instructions || null,
+    note: row[FC.DESCRIPTION] || null,
+    start_date: row[FC.START_AT] ? String(row[FC.START_AT]).slice(0, 10) : null,
+    end_date: row[FC.END_AT] ? String(row[FC.END_AT]).slice(0, 10) : null,
+    is_active: String(row[FC.STATUS] || STATUS_CONFIRMED) !== STATUS_CANCELLED,
+    reminder_time_before: readReminderMinutes(row[FC.REMINDERS]),
+    stock_count: numOrNull(row[FC.MEDICINE_STOCK]),
+    refill_threshold: numOrNull(row[FC.MEDICINE_REFILL]),
+    time_to_send_to_caregiver: numOrNull(row[FC.MEDICINE_CHECKIN_TO_REMIND_CAREGIVER_TIME_AFTER_MISSING]),
+    time_to_be_considered_missing: numOrNull(custom.time_to_be_considered_missing),
+    prescribing_doctor: row[FC.MEDICINE_PRESCRIBER] || null,
+    pharmacy: row[FC.MEDICINE_BOUGHT_PHARMACY] || null,
+    side_effects: custom.side_effects || null,
+    check_in_type: decodeLogType(row[FC.MEDICINE_LOG_TYPE]),
     created_at: row.cct_created || row.created_at,
   };
 }
 
 async function fetchScheduleRows(caredOneId: string): Promise<any[]> {
-  const userId = numId(caredOneId);
-  if (!userId) return [];
-  const rels = await dedupeRead(`rel-children-raw:${REL_USER_SCHEDULE}:${userId}`, () =>
-    wordpressFetch<any[]>(`jet-rel/${REL_USER_SCHEDULE}/children/${userId}`));
-  const ids = (Array.isArray(rels) ? rels : [])
-    .map((r: any) => String(r?.child_object_id ?? "").replace(/^wp-/, ""))
-    .filter(Boolean);
-  if (ids.length === 0) return [];
-  const rows = await Promise.all(ids.map((id) =>
-    dedupeRead(`cct:${SCH.slug}:${id}`, () => wordpressCCTFetch<any>(SCH.slug, { id }))));
-  return rows.filter(Boolean);
+  return fetchEventsOfType(caredOneId, EVENT_TYPE.MEDICINE);
 }
 
 export async function fetchMedicinesWordPress(caredOneId: string): Promise<any[]> {
@@ -191,68 +143,106 @@ export interface MedicineInput {
 
 export async function createMedicineWordPress(med: MedicineInput): Promise<void> {
   const freq = toFrequencyCode(med.frequency);
-  const dosage = med.dose_quantity != null || med.dose_unit
-    ? joinDosage(med.dose_quantity ?? null, med.dose_unit || "")
-    : (med.dosage || "");
+  const dose = med.dose_quantity != null || med.dose_unit
+    ? { quantity: med.dose_quantity ?? null, unit: med.dose_unit || "" }
+    : splitDosage(med.dosage);
+  const slots = decodeSlots(med.time_slot || []);
+  const startDate = med.start_date || new Date().toISOString().slice(0, 10);
 
   const body: Record<string, any> = {
-    [F.NAME]: med.name,
-    [F.DOSAGE]: dosage,
-    [F.FREQUENCY]: FREQ_EN[freq],
-    [F.TIME_SLOT]: encodeSlots(med.time_slot || []),
-    [F.INSTRUCTIONS]: med.instructions || "",
-    [F.PRESCRIBING_DOCTOR]: med.prescribing_doctor || "",
-    [F.PHARMACY]: med.pharmacy || "",
-    [F.SIDE_EFFECTS]: med.side_effects || "",
-    [F.START_DATE]: med.start_date || new Date().toISOString().slice(0, 10),
-    [F.END_DATE]: med.end_date || "",
-    [F.IS_ACTIVE]: O.IS_ACTIVE.YES,
-    [F.NOTE]: med.note || "",
-    [F.STOCK_COUNT]: wpStr(med.stock_count),
-    [F.REFILL_THRESHOLD]: wpStr(med.refill_threshold),
-    [F.REMINDER_TIME_BEFORE]: wpStr(med.reminder_time_before),
-    [F.TIME_TO_SEND_TO_CAREGIVER]: wpStr(med.time_to_send_to_caregiver),
-    [F.TIME_TO_BE_CONSIDERED_AS_MISSING]: wpStr(med.time_to_be_considered_missing),
-    [F.CHECK_IN_TYPE]: encodeCheckInType(med.check_in_type || []),
+    [FC.TITLE]: med.name,
+    [FC.DESCRIPTION]: med.note || "",
+    [FC.CUSTOM_EVENT_TYPE]: EVENT_TYPE.MEDICINE,
+    [FC.APP]: APP_CHALLENGED,
+    [FC.START_AT]: slots[0] ? `${startDate} ${slots[0]}:00` : startDate,
+    [FC.END_AT]: med.end_date || "",
+    [FC.STATUS]: STATUS_CONFIRMED,
+    [FC.RRULE]: buildRRule(freq, slots),
+    [FC.REMINDERS]: buildReminders(med.reminder_time_before),
+    [FC.MEDICATION_DOSE_QUANTITY]: wpStr(dose.quantity),
+    [FC.MEDICATION_DOSE_UNIT]: dose.unit || "",
+    [FC.MEDICATION_SCHEDULE_TYPE]: freq === "as_needed"
+      ? OC.MEDICATION_SCHEDULE_TYPE.ASNEEDED
+      : OC.MEDICATION_SCHEDULE_TYPE.SCHEDULE,
+    [FC.MEDICINE_LOG_TYPE]: encodeLogType(med.check_in_type),
+    [FC.MEDICINE_STOCK]: wpStr(med.stock_count),
+    [FC.MEDICINE_REFILL]: wpStr(med.refill_threshold),
+    [FC.MEDICINE_PRESCRIBER]: med.prescribing_doctor || "",
+    [FC.MEDICINE_BOUGHT_PHARMACY]: med.pharmacy || "",
+    [FC.MEDICINE_CHECKIN_TO_REMIND_CAREGIVER_TIME_AFTER_MISSING]: wpStr(med.time_to_send_to_caregiver),
+    [FC.CUSTOM_DATA]: writeCustom({
+      frequency_code: freq,
+      time_slot: slots,
+      instructions: med.instructions || "",
+      side_effects: med.side_effects || "",
+      time_to_be_considered_missing: med.time_to_be_considered_missing ?? "",
+    }),
   };
-  const created = await wordpressCCTFetch<any>(SCH.slug, { method: "POST", body });
-  const newId = numId(created?.item_id || created?._ID || created?.id);
-  if (!newId) throw new Error("Medicine schedule was not saved");
-  await linkRel(REL_USER_SCHEDULE, numId(med.user_id), newId);
+  await createEvent(body, med.user_id);
 }
 
 export async function updateMedicineWordPress(id: string, updates: Record<string, any>): Promise<void> {
   const body: Record<string, any> = {};
+  const customKeys = ["frequency", "time_slot", "instructions", "side_effects", "time_to_be_considered_missing"];
+  const touchesCustom = customKeys.some((k) => updates[k] !== undefined);
 
-  if (updates.name !== undefined) body[F.NAME] = updates.name;
+  if (updates.name !== undefined) body[FC.TITLE] = updates.name;
+  if (updates.note !== undefined || updates.notes !== undefined) body[FC.DESCRIPTION] = updates.note ?? updates.notes ?? "";
   if (updates.dosage !== undefined || updates.dose_quantity !== undefined || updates.dose_unit !== undefined) {
-    body[F.DOSAGE] = updates.dose_quantity !== undefined || updates.dose_unit !== undefined
-      ? joinDosage(updates.dose_quantity ?? null, updates.dose_unit || "")
-      : (updates.dosage || "");
+    const dose = updates.dose_quantity !== undefined || updates.dose_unit !== undefined
+      ? { quantity: updates.dose_quantity ?? null, unit: updates.dose_unit || "" }
+      : splitDosage(updates.dosage);
+    body[FC.MEDICATION_DOSE_QUANTITY] = wpStr(dose.quantity);
+    body[FC.MEDICATION_DOSE_UNIT] = dose.unit || "";
   }
-  if (updates.frequency !== undefined) body[F.FREQUENCY] = FREQ_EN[toFrequencyCode(updates.frequency)];
-  if (updates.time_slot !== undefined) body[F.TIME_SLOT] = encodeSlots(updates.time_slot || []);
-  if (updates.instructions !== undefined) body[F.INSTRUCTIONS] = updates.instructions || "";
-  if (updates.prescribing_doctor !== undefined) body[F.PRESCRIBING_DOCTOR] = updates.prescribing_doctor || "";
-  if (updates.pharmacy !== undefined) body[F.PHARMACY] = updates.pharmacy || "";
-  if (updates.side_effects !== undefined) body[F.SIDE_EFFECTS] = updates.side_effects || "";
-  if (updates.start_date !== undefined) body[F.START_DATE] = updates.start_date || "";
-  if (updates.end_date !== undefined) body[F.END_DATE] = updates.end_date || "";
-  if (updates.is_active !== undefined) body[F.IS_ACTIVE] = updates.is_active ? O.IS_ACTIVE.YES : O.IS_ACTIVE.NO;
-  if (updates.note !== undefined || updates.notes !== undefined) body[F.NOTE] = updates.note ?? updates.notes ?? "";
-  if (updates.stock_count !== undefined) body[F.STOCK_COUNT] = wpStr(updates.stock_count);
-  if (updates.refill_threshold !== undefined) body[F.REFILL_THRESHOLD] = wpStr(updates.refill_threshold);
-  if (updates.reminder_time_before !== undefined) body[F.REMINDER_TIME_BEFORE] = wpStr(updates.reminder_time_before);
-  if (updates.time_to_send_to_caregiver !== undefined) body[F.TIME_TO_SEND_TO_CAREGIVER] = wpStr(updates.time_to_send_to_caregiver);
-  if (updates.time_to_be_considered_missing !== undefined) body[F.TIME_TO_BE_CONSIDERED_AS_MISSING] = wpStr(updates.time_to_be_considered_missing);
-  if (updates.check_in_type !== undefined) body[F.CHECK_IN_TYPE] = encodeCheckInType(updates.check_in_type || []);
+  if (updates.end_date !== undefined) body[FC.END_AT] = updates.end_date || "";
+  if (updates.is_active !== undefined) body[FC.STATUS] = updates.is_active ? STATUS_CONFIRMED : STATUS_CANCELLED;
+  if (updates.reminder_time_before !== undefined) body[FC.REMINDERS] = buildReminders(updates.reminder_time_before);
+  if (updates.stock_count !== undefined) body[FC.MEDICINE_STOCK] = wpStr(updates.stock_count);
+  if (updates.refill_threshold !== undefined) body[FC.MEDICINE_REFILL] = wpStr(updates.refill_threshold);
+  if (updates.prescribing_doctor !== undefined) body[FC.MEDICINE_PRESCRIBER] = updates.prescribing_doctor || "";
+  if (updates.pharmacy !== undefined) body[FC.MEDICINE_BOUGHT_PHARMACY] = updates.pharmacy || "";
+  if (updates.time_to_send_to_caregiver !== undefined) {
+    body[FC.MEDICINE_CHECKIN_TO_REMIND_CAREGIVER_TIME_AFTER_MISSING] = wpStr(updates.time_to_send_to_caregiver);
+  }
+  if (updates.check_in_type !== undefined) body[FC.MEDICINE_LOG_TYPE] = encodeLogType(updates.check_in_type);
 
-  if (Object.keys(body).length === 0) return;
-  await wordpressCCTFetch(SCH.slug, { id, method: "PUT", body });
+  if (touchesCustom || updates.start_date !== undefined) {
+    const row = await readEvent(id);
+    const custom = readCustom(row?.[FC.CUSTOM_DATA]);
+    const freq = updates.frequency !== undefined
+      ? toFrequencyCode(updates.frequency)
+      : toFrequencyCode(custom.frequency_code);
+    const slots = updates.time_slot !== undefined ? decodeSlots(updates.time_slot) : decodeSlots(custom.time_slot);
+    const startDate = updates.start_date !== undefined
+      ? (updates.start_date || "")
+      : String(row?.[FC.START_AT] || "").slice(0, 10);
+    if (updates.start_date !== undefined || updates.time_slot !== undefined) {
+      body[FC.START_AT] = startDate && slots[0] ? `${startDate} ${slots[0]}:00` : startDate;
+    }
+    if (updates.frequency !== undefined || updates.time_slot !== undefined) {
+      body[FC.RRULE] = buildRRule(freq, slots);
+      body[FC.MEDICATION_SCHEDULE_TYPE] = freq === "as_needed"
+        ? OC.MEDICATION_SCHEDULE_TYPE.ASNEEDED
+        : OC.MEDICATION_SCHEDULE_TYPE.SCHEDULE;
+    }
+    body[FC.CUSTOM_DATA] = writeCustom({
+      ...custom,
+      frequency_code: freq,
+      time_slot: slots,
+      instructions: updates.instructions !== undefined ? (updates.instructions || "") : (custom.instructions || ""),
+      side_effects: updates.side_effects !== undefined ? (updates.side_effects || "") : (custom.side_effects || ""),
+      time_to_be_considered_missing: updates.time_to_be_considered_missing !== undefined
+        ? (updates.time_to_be_considered_missing ?? "")
+        : (custom.time_to_be_considered_missing ?? ""),
+    });
+  }
+
+  await updateEvent(id, body);
 }
 
 export async function deleteMedicineWordPress(id: string): Promise<void> {
-  await wordpressCCTFetch(SCH.slug, { id, method: "DELETE" });
+  await deleteEvent(id);
 }
 
 // ─── Logs (CCT 206, Apple HKMedicationDoseEvent) ─────────────

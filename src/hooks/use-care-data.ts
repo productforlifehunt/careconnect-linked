@@ -43,10 +43,10 @@ import {
   fetchCaredOneLocationSettingsWordPress,
 } from "@/features/location/source.wordpress-extended";
 import {
-  fetchJobPostingsWordPress, createJobPostingWordPress, fetchJobApplicationsWordPress,
-  applyToJobWordPress, fetchMyJobPostingsWordPress, fetchMyJobApplicationsWordPress,
-  updateJobApplicationWordPress,
-} from "@/features/jobs/source.wordpress";
+  fetchSharedTasksWordPress, fetchMySharedTasksWordPress, fetchTaskApplicantsWordPress,
+  applyToSharedTaskWordPress, fetchMyTaskApplicationsWordPress, decideTaskApplicantWordPress,
+  shareTaskWordPress, unshareTaskWordPress,
+} from "@/features/care-tasks/shared-tasks";
 import {
   fetchPostsWordPress, fetchPostByIdWordPress, createPostWordPress, updatePostWordPress, deletePostWordPress,
 } from "@/features/posts/source.wordpress";
@@ -1555,70 +1555,82 @@ export function useUpsertProviderAvailability() {
 // useProviderPayouts removed — platform does not process payments.
 
 
-// ─── Jobs ────────────────────────────────────────────────────
-export function useJobPostings(filters?: { source?: string; status?: string }) {
+// ─── Shared care tasks (the task IS the job) ─────────────────
+export function useSharedTasks(filters?: { paid?: boolean; status?: "open" | "filled" }) {
   return useQuery({
-    queryKey: ["jobPostings", filters],
-    queryFn: () => fetchJobPostingsWordPress(filters),
+    queryKey: ["sharedTasks", filters],
+    queryFn: () => fetchSharedTasksWordPress(filters),
   });
 }
 
-export function useCreateJobPosting() {
+export function useMySharedTasks() {
+  return useQuery({
+    queryKey: ["mySharedTasks"],
+    queryFn: () => fetchMySharedTasksWordPress(),
+  });
+}
+
+export function useMyTaskApplications() {
+  return useQuery({
+    queryKey: ["myTaskApplications"],
+    queryFn: () => fetchMyTaskApplicationsWordPress(),
+  });
+}
+
+export function useTaskApplicants(taskId: string | null) {
+  return useQuery({
+    queryKey: ["taskApplicants", taskId],
+    queryFn: () => fetchTaskApplicantsWordPress(taskId!),
+    enabled: !!taskId,
+  });
+}
+
+export function useApplyToSharedTask() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (job: { title: string; description: string; location?: string; start_date?: string }) => createJobPostingWordPress(job),
+    mutationFn: ({ taskId, message }: { taskId: string; message?: string }) => applyToSharedTaskWordPress(taskId, message),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["jobPostings"] });
-      qc.invalidateQueries({ queryKey: ["myJobPostings"] });
+      qc.invalidateQueries({ queryKey: ["sharedTasks"] });
+      qc.invalidateQueries({ queryKey: ["myTaskApplications"] });
+      qc.invalidateQueries({ queryKey: ["taskApplicants"] });
     },
   });
 }
 
-export function useApplyToJob() {
+export function useDecideTaskApplicant() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ jobId, coverLetter }: { jobId: string; coverLetter?: string }) => applyToJobWordPress(jobId, coverLetter),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["jobApplications"] }); qc.invalidateQueries({ queryKey: ["myJobApplications"] }); },
-  });
-}
-
-export function useMyJobApplications() {
-  return useQuery({
-    queryKey: ["myJobApplications"],
-    queryFn: () => fetchMyJobApplicationsWordPress(),
-  });
-}
-
-export function useMyJobPostings() {
-  return useQuery({
-    queryKey: ["myJobPostings"],
-    queryFn: () => fetchMyJobPostingsWordPress(),
-  });
-}
-
-export function useJobApplications(jobId: string | null) {
-  return useQuery({
-    queryKey: ["jobApplications", jobId],
-    queryFn: () => fetchJobApplicationsWordPress(jobId!),
-    enabled: !!jobId,
-  });
-}
-
-export function useUpdateJobApplication() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) => updateJobApplicationWordPress(id, status),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["jobApplications"] }); },
-  });
-}
-
-export function useCreateExternalTestJob() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (job: { title: string; description: string; location?: string }) => {
-      await createJobPostingWordPress({ ...job, start_date: new Date().toISOString() });
+    mutationFn: ({ id, status }: { id: string; status: "accepted" | "rejected" }) => decideTaskApplicantWordPress(id, status),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["taskApplicants"] });
+      qc.invalidateQueries({ queryKey: ["sharedTasks"] });
+      qc.invalidateQueries({ queryKey: ["mySharedTasks"] });
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["jobPostings"] }); },
+  });
+}
+
+export function useShareTask() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ taskId, needs_payment, price }: { taskId: string; needs_payment?: boolean; price?: string }) =>
+      shareTaskWordPress(taskId, { needs_payment, price }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["sharedTasks"] });
+      qc.invalidateQueries({ queryKey: ["mySharedTasks"] });
+      qc.invalidateQueries({ queryKey: ["careTasks"] });
+    },
+  });
+}
+
+export function useUnshareTask() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (taskId: string) => unshareTaskWordPress(taskId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["sharedTasks"] });
+      qc.invalidateQueries({ queryKey: ["mySharedTasks"] });
+      qc.invalidateQueries({ queryKey: ["careTasks"] });
+    },
   });
 }
 

@@ -35,10 +35,7 @@
   "202": "care_group_post",
   "203": "care_group_gallery",
   "204": "care_task",
-  "205": "medicine_schedule",
   "206": "medicine_log",
-  "207": "checkin_schedule",
-  "208": "checkin_log",
   "209": "care_tip",
   "210": "care_plan",
   "211": "emergency_contact",
@@ -46,9 +43,11 @@
   "213": "current_location",
   "214": "safe_zone",
   "215": "care_facility",
-  "216": "care_job",
   "217": "challenged_content",
   "218": "study_notes",
   "258": "user_ext_profile_2",
-  "288": "ownership_claim"
+  "288": "ownership_claim",
+  "277": "block",
+  "278": "collection",
+  "279": "collection_view"
 }

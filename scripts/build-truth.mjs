@@ -1,11 +1,11 @@
 // Parse the merged challenged+afresh data dictionary (tab-separated tables)
 // into the canonical schema truth file docs/wp-truth.json.
 //
-// Source of truth: /mnt/documents/最新数据字典-2026-08.txt
+// Source of truth: /mnt/documents/最新数据字典-2026-09-04.txt
 // Run: node scripts/build-truth.mjs && node scripts/gen-wp-constants.mjs
 import fs from 'node:fs';
 
-const SRC = process.env.DICT_PATH || '/mnt/documents/最新数据字典-2026-08.txt';
+const SRC = process.env.DICT_PATH || '/mnt/documents/最新数据字典-2026-09-04.txt';
 const raw = fs.readFileSync(SRC, 'utf8');
 const lines = raw.split('\n');
 
@@ -214,6 +214,17 @@ for (const [id, fields] of Object.entries(FIELD_PATCHES)) {
 }
 
 const EXTRA_RELATIONS = [
+  {
+    // Prose-only in the dictionary ("查看/探望记录通过通用 Jet Engine Relation
+    // 240 ... 关联到查看/探望计划"): the checkin schedule now lives in CCT 187 and
+    // the checkin log in CCT 161. Verified live: /wp-json/jet-rel/240 answers 200.
+    id: 240,
+    name: "One 187. cared one's checkin schedule can have many related 161. care one's checkin logs",
+    parent: "187. User's calendar event",
+    child: "161. user's log events",
+    type: 'One to Many',
+    fields: [],
+  },
   {
     id: 294,
     name: 'One 215 care facility can have many related 31. reviews',

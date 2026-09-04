@@ -1,5 +1,5 @@
 {
-  "source": "/mnt/documents/最新数据字典-2026-08.txt",
+  "source": "/mnt/documents/最新数据字典-2026-09-04.txt",
   "ccts": [
     {
       "id": 140,
@@ -1349,13 +1349,6 @@
           }
         },
         {
-          "label": "Notification preference",
-          "code": "a57",
-          "type": "",
-          "options": "",
-          "optionMap": {}
-        },
-        {
           "label": "General user role",
           "code": "a58",
           "type": "Checkbox",
@@ -1625,6 +1618,13 @@
         {
           "label": "Cared one’s custom condition name",
           "code": "a105",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Cared one’s description",
+          "code": "a106",
           "type": "Text",
           "options": "",
           "optionMap": {}
@@ -2202,7 +2202,7 @@
           "optionMap": {}
         },
         {
-          "label": "Log medicine log type",
+          "label": "Check type",
           "code": "a83",
           "type": "Radio",
           "options": "1. “Taken” (Name/ID: b55) 2. “Skipped” (Name/ID: b56) 3. “Missed” (Name/ID: b57)",
@@ -2216,6 +2216,30 @@
           "label": "Log medicine note",
           "code": "a84",
           "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Log checkin note",
+          "code": "a85",
+          "type": "Text",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Checked by AI",
+          "code": "a86",
+          "type": "Radio",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
+          "optionMap": {
+            "b55": "Yes",
+            "b56": "No"
+          }
+        },
+        {
+          "label": "for app",
+          "code": "a87",
+          "type": "Radio",
           "options": "",
           "optionMap": {}
         }
@@ -2661,7 +2685,7 @@
           "label": "Reminders",
           "code": "a73",
           "type": "Textarea",
-          "options": "对应VALARM， 按照RFC 5545 写入",
+          "options": "对应VALARM，按照RFC 5545 写入。提前提醒时间一律写这里的 TRIGGER，不另建 Remind before 列",
           "optionMap": {}
         },
         {
@@ -3141,21 +3165,21 @@
           "label": "Cared one’s name",
           "code": "a55",
           "type": "Text",
-          "options": "这里默认写入被关联的被照顾者的用户名，但允许修改，因为用户在展示时有可能并不希望使用真名",
+          "options": "在设置时前端表单placeholder默认写入被关联的被照顾者的用户名（Jet Engine CCT “151. User‘s extended profile”a556或a557），但允许修改，因为用户在展示时有可能并不希望使用真名",
           "optionMap": {}
         },
         {
           "label": "Cared one’s description",
           "code": "a56",
           "type": "Textarea",
-          "options": "",
+          "options": "在设置时前端表单placeholder默认写入被关联的被照顾者的用户详情（Jet Engine CCT “258. User‘s extended profile 2 a106 Cared one’s description )”，但允许修改，因为用户在展示时有可能希望写入不同的信息",
           "optionMap": {}
         },
         {
           "label": "Cared one’s information card name",
           "code": "a57",
           "type": "Text",
-          "options": "",
+          "options": "此卡片的名字",
           "optionMap": {}
         },
         {
@@ -3197,18 +3221,18 @@
           "label": "Share visibility",
           "code": "a62",
           "type": "Radio",
-          "options": "1. “Visible to public” (Name/ID: b55) 2. “Visible to the care group of the cared one” (Name/ID: b56) 3. “Visible to caregivers of the cared one” (Name/ID: b57) 4. “Visible to author” (Name/ID: b58)",
+          "options": "1. “Visible to public” (Name/ID: b55) 2. “Visible to the care group of the cared one” (Name/ID: b56) 3. “Visible to caregivers of the cared one” (Name/ID: b57) 4. “Visible to the care group of the cared one and the caregivers of the cared one” (Name/ID: b58)   注意： 卡片永远对卡片的填写人(即CCT作者)可见",
           "optionMap": {
             "b55": "Visible to public",
             "b56": "Visible to the care group of the cared one",
             "b57": "Visible to caregivers of the cared one",
-            "b58": "Visible to author"
+            "b58": "Visible to the care group of the cared one and the caregivers of the cared one"
           }
         },
         {
-          "label": "Cared one’s information card description",
+          "label": "Cared one's information card description",
           "code": "a63",
-          "type": "Textarea",
+          "type": "Text",
           "options": "此卡片的具体情况说明，例如“请早上七点到九点帮忙照顾老人两小时，八点服药”，与被照顾者的基础护理计划描述不同",
           "optionMap": {}
         }
@@ -3236,7 +3260,7 @@
           "label": "Group type",
           "code": "a57",
           "type": "Radio",
-          "options": "1. “Public” (Name/ID: b55) 2. “Private” (Name/ID: b56)",
+          "options": "1. “Public” (Name/ID: b55) 2. “Private” (Name/ID: b56) Public为公开群组，对所有人可见，包括未注册App的用户；Private为私密群组，只对群组成员可见",
           "optionMap": {
             "b55": "Public",
             "b56": "Private"
@@ -3246,14 +3270,14 @@
           "label": "Join code",
           "code": "a58",
           "type": "Text",
-          "options": "",
+          "options": "群主人(owner）和管理员(admin）可以设置群组的加入码，如果用户不是组员，点击群组页面或群组内容子页面时显示请输入群组的加入码或联系群组的管理员，如果用户输入了加入码则弹出群组的onboarding页面",
           "optionMap": {}
         },
         {
           "label": "Status",
           "code": "a59",
           "type": "Radio",
-          "options": "1. “Active” (Name/ID: b55) 2. “No” (Name/ID: b56)",
+          "options": "1. “Active” (Name/ID: b55) 2. “No” (Name/ID: b56) 添加群组时默认把群组设为active，群主人(owner）和管理员(admin）可以在群组设置页面把状态改为No；active群组为正常群组，不做任何额外显示，非active群组在群组首页显示群组is no longer active，但功能上我们暂不做区分",
           "optionMap": {
             "b55": "Active",
             "b56": "No"
@@ -3263,20 +3287,20 @@
     },
     {
       "id": 200,
-      "name": "Care group invite",
+      "name": "Care group invite link",
       "fields": [
         {
           "label": "Token",
           "code": "a55",
           "type": "Text",
-          "options": "",
+          "options": "邀请链接的内部识别码",
           "optionMap": {}
         },
         {
           "label": "Name",
           "code": "a56",
           "type": "Text",
-          "options": "",
+          "options": "用户可以设置邀请链接的名字，可为空",
           "optionMap": {}
         },
         {
@@ -3546,144 +3570,30 @@
             "b55": "Not finished",
             "b56": "Finished"
           }
-        }
-      ]
-    },
-    {
-      "id": 205,
-      "name": "Medicine schedule",
-      "fields": [
+        },
         {
-          "label": "Name",
-          "code": "a55",
-          "type": "Text",
+          "label": "Due date",
+          "code": "a67",
+          "type": "Datetime",
           "options": "",
           "optionMap": {}
         },
         {
-          "label": "Dosage",
-          "code": "a56",
-          "type": "Text",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Frequency",
-          "code": "a57",
-          "type": "Text",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Time slot",
-          "code": "a58",
-          "type": "Textarea",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Instructions",
-          "code": "a59",
-          "type": "Textarea",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Prescribing doctor",
-          "code": "a60",
-          "type": "Text",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Pharmacy",
-          "code": "a61",
-          "type": "Text",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Side effects",
-          "code": "a62",
-          "type": "Textarea",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Start date",
-          "code": "a63",
-          "type": "Date",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "End date",
-          "code": "a64",
-          "type": "Date",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Is active",
-          "code": "a65",
+          "label": "Needs payment",
+          "code": "a68",
           "type": "Radio",
-          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56) No即免费，Yes是提供报酬",
           "optionMap": {
             "b55": "Yes",
             "b56": "No"
           }
         },
         {
-          "label": "Note",
-          "code": "a66",
-          "type": "Textarea",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Stock count",
-          "code": "a67",
-          "type": "Number",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Refill threshold",
-          "code": "a68",
-          "type": "Number",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Reminder time before",
+          "label": "Price",
           "code": "a69",
-          "type": "Number",
-          "options": "提前提醒时间，默认为0",
+          "type": "Text",
+          "options": "",
           "optionMap": {}
-        },
-        {
-          "label": "Time to send to caregiver",
-          "code": "a70",
-          "type": "Number",
-          "options": "多长时间没吃就发送给caregiver",
-          "optionMap": {}
-        },
-        {
-          "label": "Time to be considered as missing",
-          "code": "a71",
-          "type": "Number",
-          "options": "多长时间没吃就被记录为missing",
-          "optionMap": {}
-        },
-        {
-          "label": "Check in type",
-          "code": "a72",
-          "type": "Checkbox",
-          "options": "1. “AI” (Name/ID: b55) 2. “Human” (Name/ID: b56)",
-          "optionMap": {
-            "b55": "AI",
-            "b56": "Human"
-          }
         }
       ]
     },
@@ -3802,146 +3712,6 @@
       ]
     },
     {
-      "id": 207,
-      "name": "Checkin schedule",
-      "fields": [
-        {
-          "label": "Name",
-          "code": "a55",
-          "type": "Text",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Detail",
-          "code": "a56",
-          "type": "Text",
-          "options": "Fr",
-          "optionMap": {}
-        },
-        {
-          "label": "Frequency",
-          "code": "a57",
-          "type": "Text",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Time slot",
-          "code": "a58",
-          "type": "Textarea",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Instructions",
-          "code": "a59",
-          "type": "Text",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Start date",
-          "code": "a60",
-          "type": "Date",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Is active",
-          "code": "a61",
-          "type": "Radio",
-          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
-          "optionMap": {
-            "b55": "Yes",
-            "b56": "No"
-          }
-        },
-        {
-          "label": "Note",
-          "code": "a62",
-          "type": "Textarea",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Reminder time before",
-          "code": "a63",
-          "type": "Number",
-          "options": "提前多长时间提醒",
-          "optionMap": {}
-        },
-        {
-          "label": "Time to send to caregiver",
-          "code": "a64",
-          "type": "Number",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Time to be considered as missing",
-          "code": "a65",
-          "type": "Number",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Check in type",
-          "code": "a66",
-          "type": "Checkbox",
-          "options": "1. “AI” (Name/ID: b55) 2. “Human” (Name/ID: b56)",
-          "optionMap": {
-            "b55": "AI",
-            "b56": "Human"
-          }
-        },
-        {
-          "label": "Checked by AI",
-          "code": "a67",
-          "type": "Radio",
-          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
-          "optionMap": {
-            "b55": "Yes",
-            "b56": "No"
-          }
-        }
-      ]
-    },
-    {
-      "id": 208,
-      "name": "Checkin log",
-      "fields": [
-        {
-          "label": "Status",
-          "code": "a55",
-          "type": "Radio",
-          "options": "1. “Checked” (Name/ID: b55) 2. “Skipped” (Name/ID: b56) 3. “Missed” (Name/ID: b57)",
-          "optionMap": {
-            "b55": "Checked",
-            "b56": "Skipped",
-            "b57": "Missed"
-          }
-        },
-        {
-          "label": "Note",
-          "code": "a56",
-          "type": "Textarea",
-          "options": "Fr",
-          "optionMap": {}
-        },
-        {
-          "label": "Checked by AI",
-          "code": "a57",
-          "type": "Radio",
-          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56)",
-          "optionMap": {
-            "b55": "Yes",
-            "b56": "No"
-          }
-        }
-      ]
-    },
-    {
       "id": 197,
       "name": "Cared one's care note",
       "fields": [
@@ -3956,7 +3726,7 @@
           "label": "Content",
           "code": "a56",
           "type": "Textarea",
-          "options": "Fr",
+          "options": "",
           "optionMap": {}
         }
       ]
@@ -3976,7 +3746,7 @@
           "label": "Content",
           "code": "a56",
           "type": "Textarea",
-          "options": "Fr",
+          "options": "",
           "optionMap": {}
         },
         {
@@ -4043,7 +3813,7 @@
           "optionMap": {}
         },
         {
-          "label": "Content",
+          "label": "Detail",
           "code": "a56",
           "type": "Textarea",
           "options": "",
@@ -4228,7 +3998,7 @@
           "label": "Zone type",
           "code": "a55",
           "type": "Radio",
-          "options": "1. “Safe” (Name/ID: b55) 2. “Danger” (Name/ID: b56) 3. “Custom” (Name/ID: b57)  用户也可以自定义无限区域类型，自定义区域名称储存在a57",
+          "options": "1. “Safe” (Name/ID: b55) 2. “Danger” (Name/ID: b56) 3. “Custom” (Name/ID: b57)  用户也可以自定义区域类型，自定义区域名称储存在a57",
           "optionMap": {
             "b55": "Safe",
             "b56": "Danger",
@@ -4239,7 +4009,7 @@
           "label": "Shape type",
           "code": "a56",
           "type": "Radio",
-          "options": "1. “Radius” (Name/ID: b55) 2. “Polygon” (Name/ID: b56)",
+          "options": "1. “Radius” (Name/ID: b55) 2. “Polygon” (Name/ID: b56) Radius是基于半径的区域，Polygon是基于自定义精确描边的区域",
           "optionMap": {
             "b55": "Radius",
             "b56": "Polygon"
@@ -4253,52 +4023,52 @@
           "optionMap": {}
         },
         {
-          "label": "Custom description",
+          "label": "Zone description",
           "code": "a58",
           "type": "Text",
-          "options": "",
+          "options": "任何类型的Zone都可以在这里加入详情介绍",
           "optionMap": {}
         },
         {
           "label": "Custom color",
           "code": "a59",
           "type": "Colorpicker",
-          "options": "",
+          "options": "任何类型的Zone都可以在这里自定义颜色，safe zone默认为绿色，danger zone默认为红色，custom zone默认为蓝色，但是用户可以更改为一切颜色，所有zone的颜色选项列表都必须有标准绿红蓝三色",
           "optionMap": {}
         },
         {
           "label": "Latitude",
           "code": "a60",
           "type": "Text",
-          "options": "Only applies to Radius",
+          "options": "记录半径类区域的Latitude，只有半径类区域需要记录",
           "optionMap": {}
         },
         {
           "label": "Longitude",
           "code": "a61",
           "type": "Text",
-          "options": "Only applies to Radius",
+          "options": "记录半径类区域的Longitude，只有半径类区域需要记录",
           "optionMap": {}
         },
         {
           "label": "Radius meters",
           "code": "a62",
           "type": "Number",
-          "options": "Default:100 Only applies to Radius",
+          "options": "Default:100 记录半径类区域的半径，只有半径类区域需要记录",
           "optionMap": {}
         },
         {
           "label": "Polygon points",
           "code": "a63",
           "type": "Textarea",
-          "options": "",
+          "options": "记录Polygon区域的边界点，储存为json",
           "optionMap": {}
         },
         {
           "label": "Notify on enter",
           "code": "a64",
           "type": "Radio",
-          "options": "1. “Off” (Name/ID: b55) 2. “On” (Name/ID: b56)",
+          "options": "1. “Off” (Name/ID: b55) 2. “On” (Name/ID: b56) 进入区域时提醒",
           "optionMap": {
             "b55": "Off",
             "b56": "On"
@@ -4308,7 +4078,7 @@
           "label": "Notify on exit",
           "code": "a65",
           "type": "Radio",
-          "options": "1. “Off” (Name/ID: b55) 2. “On” (Name/ID: b56)",
+          "options": "1. “Off” (Name/ID: b55) 2. “On” (Name/ID: b56) 离开区域时提醒",
           "optionMap": {
             "b55": "Off",
             "b56": "On"
@@ -4342,7 +4112,7 @@
           "label": "Is active",
           "code": "a69",
           "type": "Radio",
-          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56) 是否启用，如果预设时间来临则overide是否active",
+          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56) 是否启用",
           "optionMap": {
             "b55": "Yes",
             "b56": "No"
@@ -4478,68 +4248,6 @@
           "label": "email",
           "code": "a67",
           "type": "text",
-          "options": "",
-          "optionMap": {}
-        }
-      ]
-    },
-    {
-      "id": 216,
-      "name": "Care Job",
-      "fields": [
-        {
-          "label": "title",
-          "code": "a55",
-          "type": "Text",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "description",
-          "code": "a56",
-          "type": "textarea",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Due date",
-          "code": "a57",
-          "type": "Datetime",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Completed at",
-          "code": "a58",
-          "type": "Datetime",
-          "options": "",
-          "optionMap": {}
-        },
-        {
-          "label": "Status",
-          "code": "a59",
-          "type": "Radio",
-          "options": "1. “pending” (Name/ID: b55) 2. “in progress” (Name/ID: b56) 3. “completed” (Name/ID: b57)",
-          "optionMap": {
-            "b55": "pending",
-            "b56": "in progress",
-            "b57": "completed"
-          }
-        },
-        {
-          "label": "Needs payment",
-          "code": "a60",
-          "type": "Radio",
-          "options": "1. “Yes” (Name/ID: b55) 2. “No” (Name/ID: b56) No即免费，Yes是提供报酬",
-          "optionMap": {
-            "b55": "Yes",
-            "b56": "No"
-          }
-        },
-        {
-          "label": "Price",
-          "code": "a61",
-          "type": "Text",
           "options": "",
           "optionMap": {}
         }
@@ -4942,6 +4650,14 @@
       "fields": []
     },
     {
+      "id": 294,
+      "name": "One 215 care facility can have many related 31. reviews",
+      "parent": "215. care facility",
+      "child": "31. Review",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
       "id": 143,
       "name": "One review can have many related comments",
       "parent": "31. Review",
@@ -4951,7 +4667,7 @@
     },
     {
       "id": 145,
-      "name": "One nicotine product can have many related reviews",
+      "name": "One product can have many related reviews",
       "parent": "140. Product",
       "child": "31. Review",
       "type": "One to Many",
@@ -5406,7 +5122,155 @@
       "parent": "204. Care Task",
       "child": "187. User's calendar event",
       "type": "One to Many",
+      "fields": [
+        {
+          "label": "Title",
+          "code": "a55",
+          "type": "Text",
+          "options": "块的文本内容。页面时是页面标题；文字块时是这段文字；待办时是待办文案；评论时是评论正文",
+          "optionMap": {}
+        },
+        {
+          "label": "Block type",
+          "code": "a56",
+          "type": "Radio",
+          "options": "1. “page” (b55) 2. “text” (b56) 3. “heading” (b57) 4. “bulleted_list” (b58) 5. “numbered_list” (b59) 6. “to_do” (b60) 7. “toggle” (b61) 8. “quote” (b62) 9. “callout” (b63) 10. “divider” (b64) 11. “code” (b65) 12. “image” (b66) 13. “file” (b67) 14. “bookmark” (b68) 15. “table_row” (b69) 16. “collection_view” (b70) 17. “collection_row” (b71) 决定前端怎么渲染这一行。b55 page = 侧栏能看到的顶层页面；b71 collection_row = 数据库里的一行；b70 collection_view = 页面里内嵌数据库的占位块",
+          "optionMap": {}
+        },
+        {
+          "label": "Properties",
+          "code": "a57",
+          "type": "Textarea",
+          "options": "JSON 对象。普通块存渲染附加值（如 to_do 的 checked）；数据库行存该行所有属性值，key 是 CCT 278 a56 schema 里定义的属性 id",
+          "optionMap": {}
+        },
+        {
+          "label": "Content order",
+          "code": "a58",
+          "type": "Textarea",
+          "options": "JSON 数组，按顺序存子块的 item id。只管顺序，不管归属；归属永远是 Relation 280。拖动排序只改这个数组",
+          "optionMap": {}
+        },
+        {
+          "label": "Alive",
+          "code": "a59",
+          "type": "Radio",
+          "options": "1. “Alive” (b55) 2. “Trashed” (b56) 软删除。b56 的块不在页面渲染，只在 Trash 页出现，可还原",
+          "optionMap": {}
+        },
+        {
+          "label": "Icon",
+          "code": "a60",
+          "type": "Text",
+          "options": "页面 emoji / 图标",
+          "optionMap": {}
+        },
+        {
+          "label": "Cover",
+          "code": "a61",
+          "type": "Text",
+          "options": "页面封面图 URL",
+          "optionMap": {}
+        },
+        {
+          "label": "Format",
+          "code": "a62",
+          "type": "Textarea",
+          "options": "JSON。存：versions（最近 20 条版本快照，用于版本历史与还原）、share（public / allowEdit 分享设置）、评论块的 kind=\"comment\" + author + at",
+          "optionMap": {}
+        },
+        {
+          "label": "Last edited at",
+          "code": "a63",
+          "type": "Datetime",
+          "options": "每次写入自动更新，侧栏页面列表按它倒序",
+          "optionMap": {}
+        }
+      ]
+    },
+    {
+      "id": 280,
+      "name": "One 277. block can have many related 277. blocks",
+      "parent": "277. Block",
+      "child": "277. Block",
+      "type": "One to Many",
       "fields": []
+    },
+    {
+      "id": 281,
+      "name": "One 278. collection can have many related 277. blocks",
+      "parent": "278. Collection",
+      "child": "277. Block",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 282,
+      "name": "One 278. collection can have many related 279. collection views",
+      "parent": "278. Collection",
+      "child": "279. Collection view",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 283,
+      "name": "One 277. block can have many related 277. blocks (relation property)",
+      "parent": "277. Block",
+      "child": "277. Block",
+      "type": "Many to Many",
+      "fields": []
+    },
+    {
+      "id": 284,
+      "name": "One user can have many related 277. blocks",
+      "parent": "Users",
+      "child": "277. Block",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 285,
+      "name": "One 277. block can have many related 278. collections",
+      "parent": "277. Block",
+      "child": "278. Collection",
+      "type": "One to Many",
+      "fields": [
+        {
+          "label": "Property id",
+          "code": "a55",
+          "type": "Text",
+          "options": "这条连线属于哪一个 relation 属性。值取自 CCT 278 a56 schema 里的属性 id；评论固定写保留值 __comment；同步块固定写 __synced 前端读 meta.property_id，回退读 meta.a55",
+          "optionMap": {}
+        },
+        {
+          "label": "Log event content",
+          "code": "a56",
+          "type": "JSON {cid,title,tags,folderId,pinned,trashedAt,createdAt,updatedAt}",
+          "options": "笔记元数据",
+          "optionMap": {}
+        },
+        {
+          "label": "Log event type",
+          "code": "a57",
+          "type": "“Memory”(b64)",
+          "options": "固定 radio",
+          "optionMap": {}
+        },
+        {
+          "label": "Event time",
+          "code": "a61",
+          "type": "创建时间",
+          "options": "",
+          "optionMap": {}
+        },
+        {
+          "label": "Note content",
+          "code": "a77",
+          "type": "笔记正文（markdown）",
+          "options": "",
+          "optionMap": {}
+        }
+      ]
     },
     {
       "id": 103,
@@ -5457,10 +5321,18 @@
       "fields": []
     },
     {
+      "id": 295,
+      "name": "One user can have many related saved/favorite care givers",
+      "parent": "Users",
+      "child": "Users",
+      "type": "Many to Many",
+      "fields": []
+    },
+    {
       "id": 222,
-      "name": "One 199. care group can many related 200. care group invites",
+      "name": "One 199. care group can many related 200. care group invite links",
       "parent": "199. Care Group",
-      "child": "200. Care group invite",
+      "child": "200. Care group invite link",
       "type": "One to Many",
       "fields": []
     },
@@ -5482,7 +5354,7 @@
           "label": "care group's member types",
           "code": "a56",
           "type": "Radio",
-          "options": "1. “nothing special” (Name/ID: b55) 2. “owner” (Name/ID: b56) 3. “admin” (Name/ID: b57) 群的创建者在创建时自动添加为owner，owner可以添加管理员也可以转让owner，owner和管理员均可以修改群组设置",
+          "options": "1. “nothing special” (Name/ID: b55) 2. “owner” (Name/ID: b56) 3. “admin” (Name/ID: b57) 群的创建者在创建时自动添加为owner，owner可以添加管理员也可以转让owner，owner和管理员均可以修改群组设置，管理员不可以添加其他管理员，owner可以有多个，owner也可以把其他用户设为owner而管理员不能",
           "optionMap": {
             "b55": "nothing special",
             "b56": "owner",
@@ -5537,17 +5409,6 @@
             "b56": "owner",
             "b57": "admin"
           }
-        },
-        {
-          "label": "care group's private member group member invitation status",
-          "code": "a56",
-          "type": "Radio",
-          "options": "1. “accepted” (Name/ID: b55) 2. “pending” (Name/ID: b56) 3.“declined” (Name/ID: b57)私密子群组创建者自动把invitation status设为accepted",
-          "optionMap": {
-            "b55": "accepted",
-            "b56": "pending",
-            "b57": "declined"
-          }
         }
       ]
     },
@@ -5585,7 +5446,7 @@
     },
     {
       "id": 292,
-      "name": "One related not too special posts of one care group can have many related users that it's visible to",
+      "name": "One related not too special posts of one care group can have many related users that it's not visible to",
       "parent": "202. The related not too special posts of one care group",
       "child": "Users",
       "type": "Many to Many",
@@ -5668,41 +5529,25 @@
       "fields": []
     },
     {
-      "id": 237,
-      "name": "One cared one can have many related 205. cared one's medicine schedules",
-      "parent": "Users",
-      "child": "205. Cared one’s medicine schedule",
-      "type": "One to Many",
+      "id": 253,
+      "name": "One 204 care task can have many related 204. care tasks",
+      "parent": "204. Care Task",
+      "child": "204. Care Task",
+      "type": "Many to Many",
       "fields": []
     },
     {
       "id": 238,
-      "name": "One 205. cared one's medicine schedule can have many related 206. care one's medicine logs",
-      "parent": "205. Cared one’s medicine schedule",
+      "name": "One 187 cared one's medicine schedule can have many related care one's medicine logs",
+      "parent": "187. Cared one’s medicine schedule",
       "child": "206. Care one's medicine log",
-      "type": "One to Many",
-      "fields": []
-    },
-    {
-      "id": 239,
-      "name": "One cared one can have many related cared one's 207. checkin schedules",
-      "parent": "Users",
-      "child": "207. Checkin schedule",
-      "type": "One to Many",
-      "fields": []
-    },
-    {
-      "id": 240,
-      "name": "One 207. cared one's checkin schedule can have many related 208. care one's checkin logs",
-      "parent": "207. Checkin schedule",
-      "child": "208. Care one's checkin log",
       "type": "One to Many",
       "fields": []
     },
     {
       "id": 241,
       "name": "One check in schedule can have many related asigned check-in persons",
-      "parent": "207. Checkin schedule",
+      "parent": "187. Checkin schedule",
       "child": "Users",
       "type": "One to Many",
       "fields": []
@@ -5826,46 +5671,6 @@
       "fields": []
     },
     {
-      "id": 250,
-      "name": "One care job can have many related cared ones",
-      "parent": "216. Care Job",
-      "child": "Users",
-      "type": "One to Many",
-      "fields": []
-    },
-    {
-      "id": 251,
-      "name": "One 216. care job can have many assigned caregivers",
-      "parent": "216. Care Job",
-      "child": "Users",
-      "type": "One to Many",
-      "fields": []
-    },
-    {
-      "id": 252,
-      "name": "One care group can have many related care jobs",
-      "parent": "199. Care Group",
-      "child": "216. Care Job",
-      "type": "Many to Many",
-      "fields": []
-    },
-    {
-      "id": 253,
-      "name": "One 216. care job can have many related 204. care tasks",
-      "parent": "216. Care Job",
-      "child": "204. Care Task",
-      "type": "Many to Many",
-      "fields": []
-    },
-    {
-      "id": 254,
-      "name": "One care job can have many related comments",
-      "parent": "216. Care Job",
-      "child": "141. Comment",
-      "type": "One to Many",
-      "fields": []
-    },
-    {
       "id": 255,
       "name": "One user can many related finished ChallengeD learn content",
       "parent": "Users",
@@ -5901,10 +5706,10 @@
       "fields": []
     },
     {
-      "id": 294,
-      "name": "One 215 care facility can have many related 31. reviews",
-      "parent": "215. Care facility",
-      "child": "31. Review",
+      "id": 240,
+      "name": "One 187. cared one's checkin schedule can have many related 161. care one's checkin logs",
+      "parent": "187. User's calendar event",
+      "child": "161. user's log events",
       "type": "One to Many",
       "fields": []
     }

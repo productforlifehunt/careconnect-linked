@@ -26,8 +26,6 @@ const ENTITY_REL: Record<string, number> = {
   care_task_real: R.careTaskComments,
   universal_care_task: R.careTaskComments,
   task: R.careTaskComments,
-  job: R.careJobComments,
-  care_job: R.careJobComments,
   comment: R.commentReplies,
 };
 
