@@ -29,6 +29,7 @@ import {
   zoneTypeLabel,
 } from "@/features/location/zone-types";
 import { ZoneShapeEditor, type ZoneShape } from "@/components/location/ZoneShapeEditor";
+import { ZoneScheduleFields } from "@/components/location/ZoneScheduleFields";
 import { ZoneColorPicker, defaultZoneColor, zoneColorOf } from "@/components/location/ZoneColorPicker";
 
 
@@ -78,6 +79,9 @@ export default function GPSTracking() {
     radius_meters: "100" as string,
     notify_on_enter: true,
     notify_on_exit: true,
+    schedule_enabled: false,
+    schedule_start_time: "",
+    schedule_end_time: "",
     is_active: true,
     receiver_ids: [] as string[],
   };
@@ -467,6 +471,9 @@ export default function GPSTracking() {
       color: zoneColorOf(zone, defaultZoneColor(String(zone.zone_type), ZONE_TYPE)),
       notify_on_enter: !!zone.notify_on_enter,
       notify_on_exit: !!zone.notify_on_exit,
+      schedule_enabled: !!zone.schedule_enabled,
+      schedule_start_time: zone.schedule_start_time || "",
+      schedule_end_time: zone.schedule_end_time || "",
       is_active: !!zone.is_active,
       receiver_ids: Array.isArray(zone.receiver_ids) ? zone.receiver_ids.map(String) : [],
     });
@@ -527,6 +534,9 @@ export default function GPSTracking() {
         color: zoneForm.color,
         notify_on_enter: zoneForm.notify_on_enter,
         notify_on_exit: zoneForm.notify_on_exit,
+        schedule_enabled: zoneForm.schedule_enabled,
+        schedule_start_time: zoneForm.schedule_enabled ? zoneForm.schedule_start_time : "",
+        schedule_end_time: zoneForm.schedule_enabled ? zoneForm.schedule_end_time : "",
         is_active: zoneForm.is_active,
         // Receivers live on the cared one (Relation 290), shared by all zones.
         user_id: String(userId),
@@ -730,6 +740,11 @@ export default function GPSTracking() {
                   })}
                 </div>
               </div>
+
+              <ZoneScheduleFields
+                value={zoneForm}
+                onChange={(next) => setZoneForm(f => ({ ...f, ...next }))}
+              />
 
               <div className="flex items-center justify-between">
                 <Label className="text-sm">{Z("启用此区域", "Zone active")}</Label>

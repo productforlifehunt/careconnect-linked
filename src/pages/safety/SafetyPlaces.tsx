@@ -22,6 +22,7 @@ import {
   ZONE_TYPE, ZONE_TYPE_CODES, zoneTypeLabel, isCustomZone, isDangerZone,
 } from "@/features/location/zone-types";
 import { ZoneShapeEditor, type ZoneShape } from "@/components/location/ZoneShapeEditor";
+import { ZoneScheduleFields } from "@/components/location/ZoneScheduleFields";
 import { ZoneColorPicker, defaultZoneColor, zoneColorOf } from "@/components/location/ZoneColorPicker";
 import { useSafetyCircle } from "./useSafetyCircle";
 
@@ -42,6 +43,9 @@ const emptyForm = {
   radius_meters: "100",
   notify_on_enter: true,
   notify_on_exit: true,
+  schedule_enabled: false,
+  schedule_start_time: "",
+  schedule_end_time: "",
   is_active: true,
   receiver_ids: [] as string[],
 };
@@ -81,6 +85,9 @@ export default function SafetyPlaces() {
       color: zoneColorOf(z, defaultZoneColor(code, ZONE_TYPE)),
       notify_on_enter: !!z.notify_on_enter,
       notify_on_exit: !!z.notify_on_exit,
+      schedule_enabled: !!z.schedule_enabled,
+      schedule_start_time: z.schedule_start_time || "",
+      schedule_end_time: z.schedule_end_time || "",
       is_active: !!z.is_active,
       receiver_ids: Array.isArray(z.receiver_ids) ? z.receiver_ids.map(String) : [],
     });
@@ -135,6 +142,9 @@ export default function SafetyPlaces() {
         color: form.color,
         notify_on_enter: form.notify_on_enter,
         notify_on_exit: form.notify_on_exit,
+        schedule_enabled: form.schedule_enabled,
+        schedule_start_time: form.schedule_enabled ? form.schedule_start_time : "",
+        schedule_end_time: form.schedule_enabled ? form.schedule_end_time : "",
         is_active: form.is_active,
         receiver_ids: form.receiver_ids,
       };
@@ -364,11 +374,16 @@ export default function SafetyPlaces() {
                   })}
                 </div>
               </div>
+              <ZoneScheduleFields
+                value={form}
+                onChange={(next) => setForm((f) => ({ ...f, ...next }))}
+              />
               <ToggleRow
                 label={Z("启用此地点", "Place active")}
                 checked={form.is_active}
                 onChange={(v) => setForm((f) => ({ ...f, is_active: v }))}
               />
+
             </div>
           </div>
           <DialogFooter>
