@@ -75,7 +75,7 @@ export default function GPSTracking() {
     color: defaultZoneColor(ZONE_TYPE.SAFE, ZONE_TYPE) as string,
     latitude: "" as string,
     longitude: "" as string,
-    radius_meters: "200" as string,
+    radius_meters: "100" as string,
     notify_on_enter: true,
     notify_on_exit: true,
     is_active: true,
@@ -244,13 +244,13 @@ export default function GPSTracking() {
         zoneLayers.current.push(poly);
       } else if (zone.latitude && zone.longitude) {
         const circle = L.circle([zone.latitude, zone.longitude], {
-          radius: zone.radius_meters || 200,
+          radius: zone.radius_meters || 100,
           color,
           weight: 2,
           fillOpacity: 0.12,
           dashArray: isDanger ? "6 4" : undefined,
         }).addTo(map);
-        circle.bindPopup(`<b>${label}</b><br/>${Z("半径", "Radius")}: ${zone.radius_meters || 200}m`);
+        circle.bindPopup(`<b>${label}</b><br/>${Z("半径", "Radius")}: ${zone.radius_meters || 100}m`);
         zoneLayers.current.push(circle);
       }
     });
@@ -864,7 +864,7 @@ export default function GPSTracking() {
                             </div>
                           </div>
                           <p className="text-xs text-muted-foreground mt-1">
-                            {isPolygon ? `Polygon (${zone.polygon_points?.length || 0} points)` : `${Z("半径", "Radius")}: ${zone.radius_meters || 200}m`}
+                            {isPolygon ? `Polygon (${zone.polygon_points?.length || 0} points)` : `${Z("半径", "Radius")}: ${zone.radius_meters || 100}m`}
                             {" · "}{isDanger ? Z("⚠️ 危险", "⚠️ Danger") : zoneLabel(String(zone.zone_type), zone.zone_name)}
                             {" · "}{zone.is_active ? t("common.active", "Active") : t("common.inactive", "Inactive")}
                           </p>

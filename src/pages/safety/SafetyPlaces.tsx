@@ -39,7 +39,7 @@ const emptyForm = {
   color: "#10B981",
   latitude: "",
   longitude: "",
-  radius_meters: "200",
+  radius_meters: "100",
   notify_on_enter: true,
   notify_on_exit: true,
   is_active: true,
