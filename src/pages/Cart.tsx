@@ -32,6 +32,10 @@ export default function Cart() {
   const removeItem = useRemoveCartItem();
   const clearAll = useClearCart();
   const doCheckout = useCheckout();
+  const setQty = useUpdateCartQuantity();
+  const applyCoupon = useApplyCoupon();
+  const dropCoupon = useRemoveCoupon();
+  const [couponCode, setCouponCode] = useState("");
   const [email, setEmail] = useState("");
   const [address1, setAddress1] = useState("");
   const [city, setCity] = useState("");
