@@ -146,11 +146,11 @@ export default function GPSTracking() {
     if (!userId) return;
     (async () => {
       try {
-        const settings = await fetchCaredOneLocationSettingsWordPress(String(userId));
+        const settings = await fetchCaredOneLocationSettingsWordPress(effectiveSubjectId);
         if (settings?.sharing_enabled) setShareMyLocation(true);
       } catch {}
     })();
-  }, [userId]);
+  }, [userId, effectiveSubjectId]);
 
   // ─── Load safe zones & alerts ───────────────────────────────
   useEffect(() => {
@@ -158,14 +158,14 @@ export default function GPSTracking() {
     (async () => {
       try {
         const [z, a] = await Promise.all([
-          fetchSafeZonesWordPress(String(userId)),
-          fetchSafeZoneAlertsWordPress(String(userId)),
+          fetchSafeZonesWordPress(effectiveSubjectId),
+          fetchSafeZoneAlertsWordPress(effectiveSubjectId),
         ]);
         setZones(z);
         setAlerts(a);
       } catch {}
     })();
-  }, [userId]);
+  }, [userId, effectiveSubjectId]);
 
   // ─── Build people list from location shares ─────────────────
   const people = (locationShares || []).map((ls: any) => {
@@ -470,7 +470,7 @@ export default function GPSTracking() {
   const reloadZones = async () => {
     if (!userId) return;
     try {
-      const rows = await fetchSafeZonesWordPress(String(userId));
+      const rows = await fetchSafeZonesWordPress(effectiveSubjectId);
       setZones(rows);
     } catch {}
   };
@@ -570,14 +570,14 @@ export default function GPSTracking() {
         schedule_end_time: zoneForm.schedule_enabled ? zoneForm.schedule_end_time : "",
         is_active: zoneForm.is_active,
         // Receivers live on the cared one (Relation 290), shared by all zones.
-        user_id: String(userId),
+        user_id: effectiveSubjectId,
         receiver_ids: zoneForm.receiver_ids,
       };
       if (zoneForm.id) {
         await updateSafeZoneWordPress(zoneForm.id, payload);
 
       } else {
-        await createSafeZoneWordPress({ user_id: String(userId), ...payload });
+        await createSafeZoneWordPress({ user_id: effectiveSubjectId, ...payload });
       }
       await reloadZones();
       setZoneDialogOpen(false);
