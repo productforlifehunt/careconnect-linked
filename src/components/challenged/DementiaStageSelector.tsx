@@ -1,6 +1,6 @@
 /**
  * Dementia Stage Selector — allows caregivers to set and update the
- * cognitive stage for their cared one, personalizing the entire care experience.
+ * cognitive stage for their loved one, personalizing the entire care experience.
  */
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

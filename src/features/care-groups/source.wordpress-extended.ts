@@ -405,7 +405,7 @@ export async function updateMemberRoleWordPress(memberId: string, updates: any, 
   } else {
     if (updates?.is_owner !== undefined) updates.is_owner ? nextTypes.add("owner") : nextTypes.delete("owner");
     if (updates?.is_admin !== undefined) updates.is_admin ? nextTypes.add("admin") : nextTypes.delete("admin");
-    if (updates?.is_cared_one !== undefined) updates.is_cared_one ? nextRoles.add("cared one") : nextRoles.delete("cared one");
+    if (updates?.is_cared_one !== undefined) updates.is_cared_one ? nextRoles.add("loved one") : nextRoles.delete("loved one");
   }
   if ([...nextTypes].some((v) => v !== "nothing special")) nextTypes.delete("nothing special");
   if ([...nextRoles].some((v) => v !== "nothing special")) nextRoles.delete("nothing special");
@@ -1033,13 +1033,13 @@ export async function searchProfilesWordPress(query: string): Promise<any[]> {
   } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
-// ─── Add Cared One to Group ─────────────────────────────────
-// Cared ones are stored as users. Adding them to the group is identical to adding any user via rel 72.
+// ─── Add Loved One to Group ─────────────────────────────────
+// Loved ones are stored as users. Adding them to the group is identical to adding any user via rel 72.
 export async function addCaredOneToGroupWordPress(groupId: string, caredOneId: string): Promise<void> {
   const normalizedGroupId = normalizeWpObjectId(groupId);
   const normalizedCaredOneId = normalizeWpObjectId(caredOneId);
   if (!normalizedGroupId || !normalizedCaredOneId) return;
-  let displayName = "Cared One";
+  let displayName = "Loved One";
   try {
     const user = await fetchWPUserSafe(normalizedCaredOneId);
     displayName = user?.name || user?.slug || displayName;
@@ -1051,7 +1051,7 @@ export async function addCaredOneToGroupWordPress(groupId: string, caredOneId: s
       child_id: normalizedCaredOneId,
       context: "child",
       store_items_type: "update",
-      meta: memberMeta({ displayName, memberTypes: ["nothing special"], memberRoles: ["cared one"], invitationStatus: "accepted" }),
+      meta: memberMeta({ displayName, memberTypes: ["nothing special"], memberRoles: ["loved one"], invitationStatus: "accepted" }),
     },
   });
 }

@@ -27,7 +27,7 @@ export function CareTasksCard({ caredOneId }: { caredOneId: string }) {
   const [tab, setTab] = useState("view");
   const [form, setForm] = useState({ ...EMPTY });
 
-  // Tasks belong to this cared one through the task → cared one relation only.
+  // Tasks belong to this loved one through the task → loved one relation only.
   const tasks = useMemo(
     () => (allTasks || []).filter((t: any) => numId(t.cared_one_id) && numId(t.cared_one_id) === numId(caredOneId)),
     [allTasks, caredOneId],
@@ -101,7 +101,7 @@ export function CareTasksCard({ caredOneId }: { caredOneId: string }) {
           {isLoading ? (
             <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
           ) : tasks.length === 0 ? (
-            <p className="text-center py-8 text-muted-foreground">{Z("还没有为这位被护理者安排任务。从「新增」标签添加一个。", 'No tasks for this person yet. Add one from the "Add New" tab.')}</p>
+            <p className="text-center py-8 text-muted-foreground">{Z("还没有为这位家人安排任务。从「新增」标签添加一个。", 'No tasks for this person yet. Add one from the "Add New" tab.')}</p>
           ) : (
             <div className="space-y-4">
               <div className="space-y-2">{pending.map(row)}</div>

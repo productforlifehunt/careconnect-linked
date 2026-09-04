@@ -2,12 +2,12 @@ import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-c
 import { getStoredWPUser } from "@/services/wp-auth";
 import { T, R } from "@/integrations/wp-schema";
 
-// JetEngine relations (live) — CCT 198 "Cared one's information card"
+// JetEngine relations (live) — CCT 198 "Loved one's information card"
 const REL_USER_INFO_CARD = R.caredOneInfoCards;          // REL 220: 1:M users → cared_one_info_card
 const REL_INFO_CARD_EMERGENCY = R.infoCardEmergencyContacts;     // REL 221: 1:M cared_one_info_card → emergency contacts
 const CCT_SLUG = T.infoCard.slug;
 
-// Opaque field map (live verified). a55 cared one's name, a56 cared one's
+// Opaque field map (live verified). a55 loved one's name, a56 loved one's
 // description, a57 card name, a58 status, a59 displays location,
 // a60 share token, a61 share expires at, a62 share visibility,
 // a63 this sheet's own situation details.
@@ -20,14 +20,14 @@ const YESNO_TO_CODE: Record<string, string> = { Yes: "b55", No: "b56" };
 const YESNO_FROM_CODE: Record<string, string> = { b55: "Yes", b56: "No" };
 const VIS_TO_CODE: Record<string, string> = {
   "Visible to public": "b55",
-  "Visible to the care group of the cared one": "b56",
-  "Visible to caregivers of the cared one": "b57",
+  "Visible to the care group of the loved one": "b56",
+  "Visible to caregivers of the loved one": "b57",
   "Visible to author": "b58",
 };
 const VIS_FROM_CODE: Record<string, string> = {
   b55: "Visible to public",
-  b56: "Visible to the care group of the cared one",
-  b57: "Visible to caregivers of the cared one",
+  b56: "Visible to the care group of the loved one",
+  b57: "Visible to caregivers of the loved one",
   b58: "Visible to author",
 };
 
@@ -81,8 +81,8 @@ function encodeCardUpdates(u: Partial<InformationCard>): Record<string, string> 
 
 export type ShareVisibility =
   | "Visible to public"
-  | "Visible to the care group of the cared one"
-  | "Visible to caregivers of the cared one"
+  | "Visible to the care group of the loved one"
+  | "Visible to caregivers of the loved one"
   | "Visible to author";
 
 export interface InformationCard {
@@ -139,7 +139,7 @@ export async function fetchInformationCardWordPress(cardId: string): Promise<Inf
 }
 
 
-/** REL 220 parent = the cared one (WP user) this card belongs to. */
+/** REL 220 parent = the loved one (WP user) this card belongs to. */
 export async function fetchInformationCardCaredOneIdWordPress(cardId: string): Promise<string | null> {
   const id = normalizeWpId(cardId);
   if (!id) return null;
@@ -188,7 +188,7 @@ export async function createInformationCardWordPress(input: {
   const stored = getStoredWPUser();
   if (!stored?.user_id) throw new Error("Not authenticated");
   const parentId = normalizeWpId(input.caredOneUserId);
-  if (!parentId) throw new Error("Invalid cared one");
+  if (!parentId) throw new Error("Invalid loved one");
 
   const body = encodeCardUpdates({
     cared_ones_name: input.cared_ones_name || "",

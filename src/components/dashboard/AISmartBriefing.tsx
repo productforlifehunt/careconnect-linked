@@ -140,7 +140,7 @@ export function AISmartBriefing() {
     };
   }, [medicines, checkinSchedules, todayMedLogs, todayCheckinLogs, myTasks, today, isChinese]);
 
-  /** Rule-based alerts, scoped to this user's own tasks and cared one. */
+  /** Rule-based alerts, scoped to this user's own tasks and loved one. */
   const ruleAlerts = useMemo(() => {
     const out: { level: "high" | "medium" | "low"; text: string }[] = [];
     const now = Date.now();

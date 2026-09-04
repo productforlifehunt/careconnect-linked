@@ -34,7 +34,7 @@ function useSidebarItems() {
 
   const base = [
     { title: L("控制面板", site.navLabels.dashboard), url: "/dashboard", icon: LayoutDashboard },
-    { title: L(isChallenged ? "被护理者" : "被照顾者", site.navLabels.caredOnes), url: "/cared-ones", icon: HeartIcon },
+    { title: L(isChallenged ? "家人" : "家人", site.navLabels.caredOnes), url: "/cared-ones", icon: HeartIcon },
     { title: L("预约", "Appointments"), url: "/bookings", icon: CalendarDays },
     { title: L("消息", "Messages"), url: "/messages", icon: MessageSquare },
     { title: L(isChallenged ? "护理群组" : "照护小组", site.navLabels.careGroups), url: "/care-circle", icon: Users },

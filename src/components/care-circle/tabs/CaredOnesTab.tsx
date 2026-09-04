@@ -15,14 +15,14 @@ export function CaredOnesTab({ groupCaredOnes, isAdmin, onAddCaredOne }: CaredOn
   const { i18n } = useTranslation();
   const isCN = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (isCN ? cn : en);
-  const caredOneLabel = Z("被护理者", "Cared One");
-  const caredOnesLabel = Z("被护理者", "Cared Ones");
+  const caredOneLabel = Z("家人", "Loved One");
+  const caredOnesLabel = Z("家人", "Loved Ones");
 
   return (
     <div>
       {isAdmin && (
         <div className="mb-4">
-          <Button variant="coral" size="sm" onClick={onAddCaredOne}><Plus className="h-4 w-4 mr-1" /> {Z("添加被护理者", `Add ${caredOneLabel}`)}</Button>
+          <Button variant="coral" size="sm" onClick={onAddCaredOne}><Plus className="h-4 w-4 mr-1" /> {Z("添加家人", `Add ${caredOneLabel}`)}</Button>
         </div>
       )}
       {(groupCaredOnes || []).length > 0 ? (
@@ -47,11 +47,11 @@ export function CaredOnesTab({ groupCaredOnes, isAdmin, onAddCaredOne }: CaredOn
       ) : (
         <div className="text-center py-12">
           <Heart className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="text-muted-foreground mb-2">{Z("本护理群组中暂无被护理者。", `No ${caredOnesLabel.toLowerCase()} in this group yet.`)}</p>
+          <p className="text-muted-foreground mb-2">{Z("本护理群组中暂无家人。", `No ${caredOnesLabel.toLowerCase()} in this group yet.`)}</p>
           {isAdmin ? (
-            <Button variant="coral" size="sm" onClick={onAddCaredOne}><Plus className="h-4 w-4 mr-1" /> {Z("添加被护理者", `Add ${caredOneLabel}`)}</Button>
+            <Button variant="coral" size="sm" onClick={onAddCaredOne}><Plus className="h-4 w-4 mr-1" /> {Z("添加家人", `Add ${caredOneLabel}`)}</Button>
           ) : (
-            <p className="text-sm text-muted-foreground">{Z("请联系护理群组管理员添加被护理者。", "Ask a group admin to add a cared one.")}</p>
+            <p className="text-sm text-muted-foreground">{Z("请联系护理群组管理员添加家人。", "Ask a group admin to add a loved one.")}</p>
           )}
         </div>
       )}

@@ -4,7 +4,7 @@
  *     a55=title, a56=description, a57=Due date, a58=Completed at,
  *     a59=Status (b55 pending | b56 in progress | b57 completed)
  *   Relations:
- *     250: care_job → users  (cared ones)              1:M
+ *     250: care_job → users  (loved ones)              1:M
  *     251: care_job → users  (assigned caregivers)     1:M
  *     252: care_group → care_job                       M:M
  *     253: care_job → care_task                        M:M

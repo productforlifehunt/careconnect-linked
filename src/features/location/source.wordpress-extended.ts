@@ -40,7 +40,7 @@ const ALERT_DEDUP_WINDOW_MS = 5 * 60 * 1000;
 
 // ─── Relation IDs ────────────────────────────────────────────
 const REL_USER_SAFE_ZONE = R.userSafeZones;
-// Dictionary Relation 290: "One cared one's location notification can have many
+// Dictionary Relation 290: "One loved one's location notification can have many
 // added related receivers" — Users -> Users. Receivers are configured per cared
 // one (not per zone), so every zone of that user alerts the same receivers.
 const REL_LOCATION_RECEIVER = R.caredOneLocationReceivers;
@@ -71,12 +71,12 @@ async function attachChildToUserRelation(relationId: number, parentUserId: numbe
   });
 }
 
-/** Users who receive this cared one's location alerts (JetEngine Relation 290). */
+/** Users who receive this loved one's location alerts (JetEngine Relation 290). */
 export async function fetchLocationReceiverIds(userId: string): Promise<string[]> {
   return fetchRelationChildIds(REL_LOCATION_RECEIVER, normalizeWpUserId(userId));
 }
 
-/** Replace the cared one's location-alert receiver list (Relation 290 only). */
+/** Replace the loved one's location-alert receiver list (Relation 290 only). */
 export async function setLocationReceivers(userId: string, receiverIds: Array<string | number>): Promise<void> {
   const parentId = normalizeWpUserId(userId);
   if (!parentId) throw new Error("Invalid user for location alert receivers");
@@ -256,7 +256,7 @@ export async function fetchSafeZonesWordPress(userId: string): Promise<any[]> {
       if (!zone || typeof zone !== "object" || Array.isArray(zone)) return null;
       const mapped = mapSafeZone(zone, userId);
       if (!mapped.id || mapped.id === "undefined" || mapped.id === "null") return null;
-      // Receivers live on the cared one (Relation 290), shared by all zones.
+      // Receivers live on the loved one (Relation 290), shared by all zones.
       return { ...mapped, receiver_ids: receiverIds };
     }),
   );
@@ -335,7 +335,7 @@ export async function updateSafeZoneWordPress(id: string, updates: Record<string
   if (updates.is_active !== undefined) body.a69 = updates.is_active ? T.safeZone.opt.IS_ACTIVE.YES : T.safeZone.opt.IS_ACTIVE.NO;
   await wordpressCCTFetch(T.safeZone.slug, { id, method: "PUT", body });
   if (updates.receiver_ids !== undefined) {
-    if (!updates.user_id) throw new Error("Cannot save location alert receivers without the cared one's user id");
+    if (!updates.user_id) throw new Error("Cannot save location alert receivers without the loved one's user id");
     await setLocationReceivers(String(updates.user_id), updates.receiver_ids || []);
   }
 }
@@ -375,7 +375,7 @@ export async function acknowledgeAllAlertsWordPress(_caredOneId: string): Promis
 }
 
 
-// ─── Cared One Location (delegates to source.wordpress.ts) ───
+// ─── Loved One Location (delegates to source.wordpress.ts) ───
 
 export async function fetchCaredOneLocationWordPress(caredOneId: string): Promise<any | null> {
   const snapshot = await fetchCurrentLocation(caredOneId);
@@ -444,7 +444,7 @@ export async function createSafeZoneAlertsForLocation(userId: string, lat: numbe
           message: msg,
           action_url: `/gps-tracking?zone=${zone.id}`,
         });
-        // Fan out to the cared one's configured receivers (Relation 290).
+        // Fan out to the loved one's configured receivers (Relation 290).
         const receivers: string[] = Array.isArray(zone.receiver_ids)
           ? zone.receiver_ids
           : await fetchLocationReceiverIds(userId);
@@ -502,7 +502,7 @@ export async function fetchLocationRequestsWordPress(_caredOneId: string): Promi
 
 export async function sendLocationRequestWordPress(input: { caredOneId: string; message?: string; isEmergency?: boolean }): Promise<void> {
   const caredOneUserId = normalizeWpUserId(input.caredOneId);
-  if (!caredOneUserId) throw new Error("Invalid cared one user");
+  if (!caredOneUserId) throw new Error("Invalid loved one user");
   const storedUser = getStoredWPUser();
   if (!storedUser?.user_id) throw new Error("Not authenticated");
   {

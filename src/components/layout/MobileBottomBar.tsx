@@ -86,7 +86,7 @@ export function MobileBottomBar() {
   const isV1 = site.id === "challenged-v1";
   const moreActive = open;
 
-  const caredOnesLabel = isChinese ? "被护理者" : site.navLabels.caredOnes;
+  const caredOnesLabel = isChinese ? "家人" : site.navLabels.caredOnes;
   const careGroupLabel = isChinese
     ? (isChallenged ? "护理群组" : "照护小组")
     : (isChallenged ? "Care Teams" : site.navLabels.careGroups);

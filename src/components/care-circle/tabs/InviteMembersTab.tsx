@@ -238,15 +238,15 @@ export function InviteMembersTab({
           </div>
 
           <div className="border-t pt-3">
-            <h4 className="text-sm font-medium text-foreground flex items-center gap-2 mb-2"><Heart className="h-4 w-4" /> {Z("从我的被护理者中邀请", "Invite from my cared ones")}</h4>
+            <h4 className="text-sm font-medium text-foreground flex items-center gap-2 mb-2"><Heart className="h-4 w-4" /> {Z("从我的家人中邀请", "Invite from my loved ones")}</h4>
             {(myCaredOnes || []).length === 0 ? (
-              <p className="text-xs text-muted-foreground">{Z("你还没有添加被护理者。", "You have no cared ones yet.")}</p>
+              <p className="text-xs text-muted-foreground">{Z("你还没有添加家人。", "You have no loved ones yet.")}</p>
             ) : (
               <div className="border rounded-lg divide-y max-h-56 overflow-auto">
                 {(myCaredOnes || []).map((c: any) => {
                   const person = c.cared_one || {};
                   const id = String(person.id || c.user_id);
-                  const name = person.full_name || Z("被护理者", "Cared one");
+                  const name = person.full_name || Z("家人", "Loved one");
                   const already = (members || []).some((m: any) => String(m.user_id || m.id || "").replace(/^wp-/, "") === id.replace(/^wp-/, ""));
                   return (
                     <div key={id} className="flex items-center gap-3 px-3 py-2">

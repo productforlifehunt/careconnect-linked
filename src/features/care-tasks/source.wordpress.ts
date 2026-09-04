@@ -11,7 +11,7 @@ import { R, T, WP } from "@/integrations/wp-schema";
  *     a64 = Completed at, a65 = Help status, a66 = Finish status
  *
  * Relations (per data model):
- *   REL 231 → cared ones; REL 232 → assigned caregivers
+ *   REL 231 → loved ones; REL 232 → assigned caregivers
  *   REL 233 → care groups; REL 234 → private groups
  *   REL 235 → visible users; REL 236 → comments
  *   REL 263 → 187. User's calendar event
@@ -29,7 +29,7 @@ const REL_TASK_ASSIGNEE = R.careTaskAssignees;      // 1:M  care_task → users 
 const REL_TASK_COMMENT = R.careTaskComments;
 const REL_TASK_USERS = R.careTaskVisibleUsers;          // M:M  care_task ↔ users (visibility)
 const REL_TASK_PRIVATE_GROUPS = R.careTaskPrivateMemberGroups;// 1:M  care_task → private_member_group
-const REL_TASK_CARED_ONE = R.careTaskCaredOnes;     // 1:M  care_task → users (cared ones)
+const REL_TASK_CARED_ONE = R.careTaskCaredOnes;     // 1:M  care_task → users (loved ones)
 const REL_TASK_CALENDAR = R.careTaskCalendarEvents;
 
 function normalizeWpObjectId(value: string | number | null | undefined): number {
