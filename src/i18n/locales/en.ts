@@ -571,7 +571,7 @@ const en = {
   // ═══ GPS TRACKING ═══
   gps: {
     gpsTracking: "GPS Location",
-    realtimeLocation: "View your care team's location (for reference only)",
+    realtimeLocation: "See where your loved one is right now",
     sos: "Notify Care Circle",
     emergencySOS: "Notify Care Circle",
     sosDesc: "This will share your current location and send a notification to all members of your {{groups}}. For real emergencies, please also call your local emergency number.",

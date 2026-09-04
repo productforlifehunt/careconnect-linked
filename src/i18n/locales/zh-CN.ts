@@ -231,7 +231,7 @@ const zhCN = {
     browseCaregivers: "浏览护理人员",
   },
   gps: {
-    gpsTracking: "GPS位置", realtimeLocation: "查看护理团队的位置（仅供辅助参考）", sos: "通知亲友",
+    gpsTracking: "GPS位置", realtimeLocation: "查看被照护人现在在哪里", sos: "通知亲友",
     emergencySOS: "向亲友发送通知", sosDesc: "这将分享您当前的位置，并向{{groups}}的所有成员发送通知。如遇真正紧急情况，请同时拨打120/110。",
     sendSOS: "发送通知", sosConfirmSending: "发送中...", sosSuccess: "通知已发送",
     sosSuccessDesc: "{{groups}}的所有成员已收到您当前位置的通知。",
@@ -243,7 +243,7 @@ const zhCN = {
     locationSharingEnabled: "位置分享已启用", locationSharingDisabled: "位置分享已禁用",
     couldNotGetLocation: "无法获取位置", enableLocationAccess: "请在浏览器设置中启用位置访问。",
     locationsUpdated: "位置已更新", coordinates: "坐标", lastUpdated: "最后更新",
-    map: "地图", alerts: "警报", zones: "区域", autoRefresh: "自动刷新",
+    map: "地图", alerts: "警报", zones: "区域", autoRefresh: "自动更新中",
     sharingActive: "每 15 秒分享一次", sharingInactive: "未分享",
     zonesConfigured: "个区域", danger: "个危险区域",
     noZones: "尚未设置任何地理围栏", noAlerts: "暂无围栏警报",

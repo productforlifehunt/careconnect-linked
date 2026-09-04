@@ -573,7 +573,7 @@ export default function GPSTracking() {
             {t("gps.realtimeLocation")}
             <span className="ml-2 inline-block whitespace-nowrap text-xs text-muted-foreground/70">
               <Radio className="inline h-3 w-3 mr-1 text-success" />
-              {t("gps.autoRefresh", "Auto-refresh")} 15s
+              {t("gps.autoRefresh", "Auto-refreshing")}
             </span>
           </p>
         </div>
