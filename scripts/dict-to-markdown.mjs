@@ -81,6 +81,12 @@ while (i < lines.length) {
     const pending = buf.length > 0;
 
     if (isHeader(l)) break;
+    // A numbered item heading always ends the table, even mid-row.
+    if (isHeading(l)) {
+      if (pending) { md.push("| " + cellsFrom(buf, n).join(" | ") + " |"); buf = []; }
+      break;
+    }
+
     if (!pending && (l.trim() === "" || !l.includes("\t"))) {
       const j = tableContinuesAt(i);
       if (j === -1) { if (l.trim() === "") i++; break; }
