@@ -9,8 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MapPin, Navigation, Clock, Shield, AlertTriangle, RefreshCw, Loader2, Radio, Route, Bell, Hexagon, Plus, Trash2, Pencil, Crosshair } from "lucide-react";
-import { useLocationShares, useCareGroups, useCareGroupMembers } from "@/hooks/use-care-data";
+import { useLocationShares, useCareGroups, useCareGroupMembers, useUserCaredOnes } from "@/hooks/use-care-data";
 import {
   shareMyLocationWordPress, disableMyLocationSharingWordPress,
   fetchCaredOneLocationSettingsWordPress,
