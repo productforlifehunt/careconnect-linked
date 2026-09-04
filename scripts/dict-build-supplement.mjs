@@ -19,7 +19,9 @@ for (let k = 0; k < headingIdx.length; k++) {
   const start = headingIdx[k];
   const end = k + 1 < headingIdx.length ? headingIdx[k + 1] - 1 : lines.length;
   const title = lines[start - 1].trim();
-  const body = lines.slice(start, end).join("\n").replace(/^\n+/, "").replace(/\n+$/, "");
+  const body = lines.slice(start, end)
+    .filter((l) => !/^\s*《[12]》\s*(目的|数据结构)\s*[：:]?\s*$/.test(l))
+    .join("\n").replace(/^\n+/, "").replace(/\n+$/, "");
   out.push("");
   out.push(title);
   out.push("");
