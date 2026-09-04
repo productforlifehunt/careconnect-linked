@@ -1048,6 +1048,7 @@ export const WP = {
       f: {
         "NAME": "a55",  // Text
         "CONTENT": "a56",  // Textarea
+        "ATTACHMENTS": "a57",  // Gallery
       },
       opt: {
       },

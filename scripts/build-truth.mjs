@@ -196,7 +196,13 @@ const FIELD_PATCHES = {
     { label: 'Clinical coding version', code: 'a67', type: 'Text' },
     { label: 'Dose logged time', code: 'a68', type: 'Datetime' },
   ],
+  // 212 carries a Gallery field (verified in the JetEngine GUI: "Attachments
+  // a57 (gallery)", value = media ID) that the dictionary row never listed.
+  212: [
+    { label: 'Attachments', code: 'a57', type: 'Gallery' },
+  ],
 };
+
 for (const [id, fields] of Object.entries(FIELD_PATCHES)) {
   const cct = cleanCcts.find((c) => Number(c.id) === Number(id));
   if (!cct) continue;
