@@ -11,7 +11,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, CheckCircle, Circle, Loader2, Trash2, Briefcase, Check, X, Pencil, Clock, MapPin, Users, Search, HeartHandshake } from "lucide-react";
+import { Plus, CheckCircle, Circle, Loader2, Trash2, Check, X, Pencil, Clock, MapPin, Users, Search, HeartHandshake } from "lucide-react";
 import { VisibilityPicker, EMPTY_VISIBILITY, type VisibilityValue } from "../VisibilityPicker";
 import { CommentsSection } from "@/components/comments/CommentsSection";
 import { MediaAttachments, MediaAttachmentList } from "@/components/shared/MediaAttachments";
@@ -454,9 +454,9 @@ export function TasksTab({
                         <X className="h-3.5 w-3.5" />
                       </Button>
                     )}
-                    <Button variant="ghost" size="icon" className="h-7 w-7" title={Z("发布到护理工作板", "Post to Job Board")}
+                    <Button variant="ghost" size="icon" className="h-7 w-7" title={Z("分享找帮手", "Share for help")}
                       onClick={() => setShareConfirmTask(t)}>
-                      <Briefcase className="h-3.5 w-3.5" />
+                      <HeartHandshake className="h-3.5 w-3.5" />
                     </Button>
                     {canEdit && (
                       <Button variant="ghost" size="icon" className="h-7 w-7" title={Z("编辑", "Edit")}
