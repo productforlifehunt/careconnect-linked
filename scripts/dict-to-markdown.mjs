@@ -12,7 +12,7 @@ import fs from "node:fs";
 
 const src = process.argv[2];
 const out = process.argv[3];
-const lines = fs.readFileSync(src, "utf8").replace(/\r/g, "").split("\n");
+const lines = fs.readFileSync(src, "utf8").replace(/\r/g, "").replace(/[\u2028\u2029\u000b\u000c\u0085]/g, "\n").split("\n");
 
 const isHeader = (l) => l.includes("\t") && /Note: Double check/.test(l);
 
