@@ -110,6 +110,36 @@ export default function GPSTracking() {
   const { data: careGroups } = useCareGroups();
   const primaryGroupId = (careGroups || [])[0]?.id ? String((careGroups as any[])[0].id) : null;
   const { data: groupMembers } = useCareGroupMembers(primaryGroupId);
+  const { data: myCaredOnes } = useUserCaredOnes();
+
+  // Zones, alerts and sharing settings belong to the person being LOOKED AFTER,
+  // not to the phone in your hand. A caregiver opening this page must be able
+  // to manage the linked cared one's areas — the previous code silently scoped
+  // every one of these reads and writes to the signed-in user.
+  const [subjectId, setSubjectId] = useState<string>("");
+  const caredOneOptions = (() => {
+    const seen = new Set<string>();
+    const out: { id: string; name: string }[] = [];
+    const push = (uid: any, name?: string) => {
+      const key = String(uid ?? "").replace(/^wp-/, "");
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      out.push({ id: key, name: name || t("common.unknown") });
+    };
+    (myCaredOnes || []).forEach((c: any) =>
+      push(c.cared_one_user_id ?? c.user_id ?? c.id, c.full_name || c.display_name || c.name),
+    );
+    (groupMembers || [])
+      .filter((m: any) => m.is_cared_one)
+      .forEach((m: any) => push(m.user_id ?? m.id, m.display_name || m.profile?.full_name));
+    return out;
+  })();
+  const selfKey = String(userId ?? "").replace(/^wp-/, "");
+  // Default to the single cared one when there is exactly one, so the common
+  // case needs no picking at all; otherwise stay on yourself.
+  const effectiveSubjectId =
+    subjectId || (caredOneOptions.length === 1 ? caredOneOptions[0].id : selfKey);
+  const subjectIsSelf = effectiveSubjectId === selfKey;
 
   // ─── Initialize sharing state ───────────────────────────────
   useEffect(() => {
