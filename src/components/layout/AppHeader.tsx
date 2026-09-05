@@ -45,31 +45,8 @@ export function AppHeader() {
     ? (isChinese ? "护畅" : "Care cnc")
     : (isChinese ? "忆畅" : "ChallengeD");
 
-  const publicNav = isChallenged
-    ? [
-        ...(isV1 ? [] : [
-          { title: t("nav.awareD"), url: "/aware", icon: Search },
-          { title: t("nav.careD"), url: "/care-guides", icon: Heart },
-          { title: t("nav.copeD"), url: "/coping", icon: Heart },
-          { title: t("nav.safeD"), url: "/safety-guides", icon: Heart },
-          { title: t("nav.accompanieD"), url: "/accompanied", icon: Heart },
-        ]),
-        { title: t("nav.findCaregivers"), url: "/search?service_category=care", icon: Search },
-        { title: t("nav.findLocalCompanion"), url: "/search?service_category=care&service_location=in-person&service_type=companionship", icon: Heart },
-        { title: t("nav.findRemoteCompanion"), url: "/search?service_category=care&service_location=remote&service_type=companionship", icon: MessageSquare },
-        { title: t("nav.aiCompanion"), url: "/ai-companion", icon: Bot, badge: isChinese ? "小忆" : "AI" },
-        { title: t("nav.seniorFacilities"), url: "/search?service_category=facility", icon: Building2 },
-        { title: isChinese ? t("nav.united") : site.navLabels.careGroups, url: "/care-circle", icon: Users },
-        { title: t("nav.community"), url: "/community", icon: Newspaper },
-        { title: t("nav.howItWorks"), url: "/how-it-works", icon: HelpCircle },
-      ]
-    : [
-        { title: t(site.family === "challenged" ? "nav.careTeams" : "nav.careGroups"), url: "/care-circle", icon: Users },
-        { title: t(site.family === "challenged" ? "nav.findHelp" : "nav.findCare"), url: "/search", icon: Search },
-        ...(isCareCNC ? [] : [{ title: t("nav.community"), url: "/community", icon: Newspaper }]),
-        { title: t("nav.articles"), url: "/articles", icon: Newspaper },
-        { title: t("nav.howItWorks"), url: "/how-it-works", icon: HelpCircle },
-      ];
+  const publicNav = buildPublicNav({ site, t, isChinese });
+
 
   // Keep the header on one row: show the first links inline, rest under "More".
   const PRIMARY_COUNT = 5;
