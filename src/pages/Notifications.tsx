@@ -23,28 +23,17 @@ export default function Notifications({ embedded = false }: { embedded?: boolean
   const acceptInvitation = useAcceptInvitation();
   const declineInvitation = useDeclineInvitation();
 
-  const allNotifs = notifications || [];
+  // Newest first, one single list. No category icons and no category tabs:
+  // those were matching notification kinds that no longer exist, so they only
+  // ever produced wrong icons and empty tabs.
+  const allNotifs = [...(notifications || [])].sort((a: any, b: any) => {
+    const ta = new Date(a.created_at || 0).getTime();
+    const tb = new Date(b.created_at || 0).getTime();
+    return tb - ta;
+  });
   const unreadCount = allNotifs.filter(n => !n.is_read).length;
   const invitationCount = (pendingInvitations || []).length;
 
-  const typeIcons: Record<string, React.ReactNode> = {
-    booking: <CalendarDays className="h-5 w-5 text-primary" />,
-    booking_confirmed: <Check className="h-5 w-5 text-success" />,
-    booking_approved: <Check className="h-5 w-5 text-success" />,
-    booking_request: <CalendarDays className="h-5 w-5 text-primary" />,
-    appointment: <CalendarDays className="h-5 w-5 text-primary" />,
-    "care-circle": <Users className="h-5 w-5 text-success" />,
-    care_group: <Users className="h-5 w-5 text-success" />,
-    task: <Users className="h-5 w-5 text-success" />,
-    message: <MessageSquare className="h-5 w-5 text-coral" />,
-    safety: <AlertTriangle className="h-5 w-5 text-warning" />,
-    system: <Settings className="h-5 w-5 text-muted-foreground" />,
-  };
-
-  const filterNotifs = (type?: string) => {
-    if (!type || type === "all") return allNotifs;
-    return allNotifs.filter(n => n.type.startsWith(type));
-  };
 
   const handleAccept = (inv: any) => {
     acceptInvitation.mutate(inv.id, {
