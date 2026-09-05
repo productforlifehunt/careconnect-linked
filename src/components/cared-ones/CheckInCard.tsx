@@ -133,7 +133,7 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
   const confirmLog = () => {
     const { checkin, status } = logDialog;
     logCheckin.mutate(
-      { checkin_id: String(checkin.id), status, note: logNote || undefined },
+      { checkin_id: String(checkin.id), status, note: logNote || undefined, cared_one_id: caredOneId, checkin_name: checkin.name },
       {
         onSuccess: () => {
           setLogDialog({ open: false, checkin: null, status: "checked" });

@@ -290,3 +290,47 @@ export function notifyTaskStatusChanged(
 }
 
 
+
+/**
+ * Medicine dose logged → notify the cared one's caregivers.
+ * No extra relation is needed: the deep link lives in the notification's
+ * action_url text field, so tapping the row opens the medicine card itself.
+ */
+export function notifyMedicineDose(
+  recipientIds: Array<string | number | null | undefined>,
+  caredOneId: string | number,
+  medicineName: string,
+  status: "taken" | "skipped" | "missed",
+) {
+  const label = status === "taken"
+    ? Z("已服用", "taken")
+    : status === "skipped" ? Z("已跳过", "skipped") : Z("漏服", "missed");
+  return notifyUsers(recipientIds, {
+    type: "medicine",
+    title: status === "missed"
+      ? Z("⚠️ 漏服用药", "⚠️ Missed medication")
+      : Z("用药记录已更新", "Medication logged"),
+    message: Z(`${clip(medicineName, 60)}：${label}。`, `${clip(medicineName, 60)}: ${label}.`),
+    action_url: `/cared-ones?person=${strip(caredOneId)}&card=medicine`,
+  });
+}
+
+/** Check-in logged → notify the check-in's notification receivers (Relation 260). */
+export function notifyCheckIn(
+  recipientIds: Array<string | number | null | undefined>,
+  caredOneId: string | number,
+  checkinName: string,
+  status: "checked" | "skipped" | "missed",
+) {
+  const label = status === "checked"
+    ? Z("已完成", "completed")
+    : status === "skipped" ? Z("已跳过", "skipped") : Z("未完成", "missed");
+  return notifyUsers(recipientIds, {
+    type: "check_in",
+    title: status === "missed"
+      ? Z("⚠️ 签到未完成", "⚠️ Check-in missed")
+      : Z("签到已更新", "Check-in updated"),
+    message: Z(`${clip(checkinName || "签到", 60)}：${label}。`, `${clip(checkinName || "Check-in", 60)}: ${label}.`),
+    action_url: `/cared-ones?person=${strip(caredOneId)}&card=checkin`,
+  });
+}

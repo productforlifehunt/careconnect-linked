@@ -353,4 +353,23 @@ export async function logMedicineWordPress(log: MedicineLogInput): Promise<void>
   const newId = numId(created?.item_id || created?._ID || created?.id);
   if (!newId) throw new Error("Dose log was not saved");
   await linkRel(REL_SCHEDULE_LOG, numId(log.medicine_id), newId);
+
+  // Tell the cared one's caregivers. Non-blocking: the dose log is already
+  // saved, and the tap-through target is just a route string in action_url —
+  // no notification↔dose relation is needed.
+  if (log.user_id) {
+    try {
+      const caregiverIds = await wordpressFetch<any[]>(
+        `jet-rel/${R.userCaredOnes}/parents/${numId(log.user_id)}`,
+      ).then((rows) => (Array.isArray(rows) ? rows.map((r: any) => String(r.parent_object_id)) : []))
+        .catch(() => [] as string[]);
+      const { notifyMedicineDose } = await import("@/features/notifications/notify-events");
+      await notifyMedicineDose(
+        caregiverIds,
+        String(log.user_id),
+        log.concept_display_text || "Medication",
+        (String(log.status || "taken").toLowerCase() as "taken" | "skipped" | "missed"),
+      );
+    } catch { /* notifications never block a saved log */ }
+  }
 }

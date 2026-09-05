@@ -425,7 +425,7 @@ export async function fetchTodayCheckinLogsWordPress(caredOneId: string): Promis
   return logs.filter((log: any) => log.created_at && new Date(log.created_at) >= today);
 }
 
-export async function logCheckinWordPress(log: { medicine_id?: string; checkin_id?: string; status?: "checked" | "skipped" | "missed"; note?: string; checked_by_ai?: boolean }): Promise<void> {
+export async function logCheckinWordPress(log: { medicine_id?: string; checkin_id?: string; status?: "checked" | "skipped" | "missed"; note?: string; checked_by_ai?: boolean; cared_one_id?: string; checkin_name?: string }): Promise<void> {
   const statusCode = CHK_STATUS_CODE[log.status || "checked"] || "b55";
   const now = new Date();
   const p = (n: number) => String(n).padStart(2, "0");
@@ -443,6 +443,23 @@ export async function logCheckinWordPress(log: { medicine_id?: string; checkin_i
   const newLogId = normalizeWpObjectId(result?.item_id || result?._ID || result?.id);
   const parentId = normalizeWpObjectId(log.checkin_id || log.medicine_id);
   await linkRel(REL_CHECKIN_LOG, parentId, newLogId);
+
+  // Notify the check-in's configured receivers (Relation 260). Non-blocking;
+  // the tap-through target is a plain route in action_url, so no extra
+  // notification↔check-in relation is required.
+  try {
+    const checkinId = String(log.checkin_id || log.medicine_id || "");
+    if (checkinId) {
+      const receivers = await fetchCheckinReceiverIdsWordPress(checkinId).catch(() => [] as string[]);
+      const { notifyCheckIn } = await import("@/features/notifications/notify-events");
+      await notifyCheckIn(
+        receivers,
+        String(log.cared_one_id || ""),
+        log.checkin_name || "Check-in",
+        (log.status || "checked"),
+      );
+    }
+  } catch { /* notifications never block a saved log */ }
 }
 
 // ─── Medicine schedules & logs ───────────────────────────────

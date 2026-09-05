@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -63,8 +64,10 @@ export default function CaredOnes() {
   const { data: caredOnes, isLoading } = useUserCaredOnes();
   const createUserCaredOne = useCreateUserCaredOne();
   const deleteUserCaredOne = useDeleteUserCaredOne();
-  const [activeTab, setActiveTab] = useState<string | null>(null);
-  const [openCard, setOpenCard] = useState<string | null>(null);
+  // Notification rows link straight here, e.g. /cared-ones?person=12&card=medicine
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState<string | null>(searchParams.get("person"));
+  const [openCard, setOpenCard] = useState<string | null>(searchParams.get("card"));
 
   const [addOpen, setAddOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -84,8 +87,10 @@ export default function CaredOnes() {
     });
   }, [searchResultsRaw, caredOnes, myWpId]);
 
-  const selectedId = activeTab || (caredOnes && caredOnes.length > 0 ? caredOnes[0].user_id : null);
-  const selectedCaredOne = caredOnes?.find((c: any) => c.user_id === selectedId);
+  const bare = (v: any) => String(v ?? "").replace(/^wp-/, "");
+  const linked = caredOnes?.find((c: any) => activeTab && bare(c.user_id) === bare(activeTab));
+  const selectedId = linked?.user_id || activeTab || (caredOnes && caredOnes.length > 0 ? caredOnes[0].user_id : null);
+  const selectedCaredOne = caredOnes?.find((c: any) => bare(c.user_id) === bare(selectedId));
   const caredOneName = selectedCaredOne?.cared_one?.full_name || site.caredOneSingular;
 
   const featureCards = [

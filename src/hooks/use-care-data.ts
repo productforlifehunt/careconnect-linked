@@ -1125,7 +1125,7 @@ export function useCreateCheckin() {
 export function useLogCheckin() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (log: { medicine_id?: string; checkin_id?: string; status?: "checked" | "skipped" | "missed"; note?: string; checked_by_ai?: boolean }) => logCheckinWordPress(log),
+    mutationFn: (log: Parameters<typeof logCheckinWordPress>[0]) => logCheckinWordPress(log),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["checkinLogs"] });
       qc.invalidateQueries({ queryKey: ["todayCheckinLogs"] });
