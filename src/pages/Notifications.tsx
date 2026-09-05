@@ -104,52 +104,44 @@ export default function Notifications({ embedded = false }: { embedded?: boolean
         </div>
       )}
 
-      <Tabs defaultValue="all">
-        <TabsList className="mb-4">
-          <TabsTrigger value="all">{t("common.all")}</TabsTrigger>
-          <TabsTrigger value="booking">{t("bookings.myBookings")}</TabsTrigger>
-          <TabsTrigger value="care">{site.navLabels.careGroups}</TabsTrigger>
-          <TabsTrigger value="message">{t("messages.messages")}</TabsTrigger>
-        </TabsList>
-
-        {["all", "booking", "care", "message"].map(tab => (
-          <TabsContent key={tab} value={tab} className="space-y-2">
-            {filterNotifs(tab).length > 0 ? filterNotifs(tab).map(n => (
-              <Card
-                key={n.id}
-                className={`cursor-pointer transition-colors border-transparent ${n.is_read ? "opacity-70" : "card-elevated"}`}
-                onClick={() => {
-                  if (!n.is_read) markRead.mutate(n.id);
-                  let url = n.link_url;
-                  if (url?.includes("/dashboard/appointments")) url = "/bookings";
-                  if (url?.includes("/dashboard/booking-history")) url = "/bookings";
-                  if (url) navigate(url);
-                }}
-              >
-                <CardContent className="p-4 flex items-start gap-3">
-                  <div className="mt-0.5 shrink-0">{typeIcons[n.type] || <Bell className="h-5 w-5 text-muted-foreground" />}</div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className={`text-sm ${n.is_read ? "font-normal text-muted-foreground" : "font-semibold text-foreground"}`}>{n.title}</h3>
-                      {!n.is_read && <div className="w-2 h-2 rounded-full bg-coral shrink-0" />}
-                    </div>
-                    {n.content && <p className="text-sm text-muted-foreground mt-0.5">{n.content}</p>}
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {formatDate(n.created_at, i18n.language, { month: "short", day: "numeric" })} {t("common.at")}{" "}
-                      {formatTime(n.created_at, "en", { hour: "numeric", minute: "2-digit" })}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            )) : (
-              <div className="text-center py-12">
-                <Bell className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-muted-foreground">{t("notifs.noNotifications")}</p>
+      <div className="space-y-2">
+        {allNotifs.length > 0 ? allNotifs.map((n: any) => (
+          <Card
+            key={n.id}
+            className={`cursor-pointer transition-colors border-transparent ${n.is_read ? "opacity-70" : "card-elevated"}`}
+            onClick={() => {
+              if (!n.is_read) markRead.mutate(n.id);
+              let url = n.action_url || n.link_url;
+              if (url?.includes("/dashboard/appointments")) url = "/bookings";
+              if (url?.includes("/dashboard/booking-history")) url = "/bookings";
+              if (url) navigate(url);
+            }}
+          >
+            <CardContent className="p-4 flex items-start gap-3">
+              <div className="mt-0.5 shrink-0"><Bell className="h-5 w-5 text-muted-foreground" /></div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className={`text-sm ${n.is_read ? "font-normal text-muted-foreground" : "font-semibold text-foreground"}`}>{n.title}</h3>
+                  {!n.is_read && <div className="w-2 h-2 rounded-full bg-coral shrink-0" />}
+                </div>
+                {(n.message || n.content) && (
+                  <p className="text-sm text-muted-foreground mt-0.5">{n.message || n.content}</p>
+                )}
+                <p className="text-xs text-muted-foreground mt-1">
+                  {formatDate(n.created_at, i18n.language, { month: "short", day: "numeric" })} {t("common.at")}{" "}
+                  {formatTime(n.created_at, "en", { hour: "numeric", minute: "2-digit" })}
+                </p>
               </div>
-            )}
-          </TabsContent>
-        ))}
-      </Tabs>
+            </CardContent>
+          </Card>
+        )) : (
+          <div className="text-center py-12">
+            <Bell className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+            <p className="text-muted-foreground">{t("notifs.noNotifications")}</p>
+          </div>
+        )}
+      </div>
+
     </div>
   );
 }
