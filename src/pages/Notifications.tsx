@@ -1,8 +1,8 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bell, CalendarDays, Users, MessageSquare, AlertTriangle, Settings, Loader2, Check, X, UserPlus } from "lucide-react";
+import { Bell, Users, Loader2, Check, X, UserPlus } from "lucide-react";
+
 import { useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead, useMyPendingInvitations, useAcceptInvitation, useDeclineInvitation } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useSite } from "@/contexts/SiteContext";
@@ -23,28 +23,17 @@ export default function Notifications({ embedded = false }: { embedded?: boolean
   const acceptInvitation = useAcceptInvitation();
   const declineInvitation = useDeclineInvitation();
 
-  const allNotifs = notifications || [];
+  // Newest first, one single list. No category icons and no category tabs:
+  // those were matching notification kinds that no longer exist, so they only
+  // ever produced wrong icons and empty tabs.
+  const allNotifs = [...(notifications || [])].sort((a: any, b: any) => {
+    const ta = new Date(a.created_at || 0).getTime();
+    const tb = new Date(b.created_at || 0).getTime();
+    return tb - ta;
+  });
   const unreadCount = allNotifs.filter(n => !n.is_read).length;
   const invitationCount = (pendingInvitations || []).length;
 
-  const typeIcons: Record<string, React.ReactNode> = {
-    booking: <CalendarDays className="h-5 w-5 text-primary" />,
-    booking_confirmed: <Check className="h-5 w-5 text-success" />,
-    booking_approved: <Check className="h-5 w-5 text-success" />,
-    booking_request: <CalendarDays className="h-5 w-5 text-primary" />,
-    appointment: <CalendarDays className="h-5 w-5 text-primary" />,
-    "care-circle": <Users className="h-5 w-5 text-success" />,
-    care_group: <Users className="h-5 w-5 text-success" />,
-    task: <Users className="h-5 w-5 text-success" />,
-    message: <MessageSquare className="h-5 w-5 text-coral" />,
-    safety: <AlertTriangle className="h-5 w-5 text-warning" />,
-    system: <Settings className="h-5 w-5 text-muted-foreground" />,
-  };
-
-  const filterNotifs = (type?: string) => {
-    if (!type || type === "all") return allNotifs;
-    return allNotifs.filter(n => n.type.startsWith(type));
-  };
 
   const handleAccept = (inv: any) => {
     acceptInvitation.mutate(inv.id, {
@@ -115,52 +104,44 @@ export default function Notifications({ embedded = false }: { embedded?: boolean
         </div>
       )}
 
-      <Tabs defaultValue="all">
-        <TabsList className="mb-4">
-          <TabsTrigger value="all">{t("common.all")}</TabsTrigger>
-          <TabsTrigger value="booking">{t("bookings.myBookings")}</TabsTrigger>
-          <TabsTrigger value="care">{site.navLabels.careGroups}</TabsTrigger>
-          <TabsTrigger value="message">{t("messages.messages")}</TabsTrigger>
-        </TabsList>
-
-        {["all", "booking", "care", "message"].map(tab => (
-          <TabsContent key={tab} value={tab} className="space-y-2">
-            {filterNotifs(tab).length > 0 ? filterNotifs(tab).map(n => (
-              <Card
-                key={n.id}
-                className={`cursor-pointer transition-colors border-transparent ${n.is_read ? "opacity-70" : "card-elevated"}`}
-                onClick={() => {
-                  if (!n.is_read) markRead.mutate(n.id);
-                  let url = n.link_url;
-                  if (url?.includes("/dashboard/appointments")) url = "/bookings";
-                  if (url?.includes("/dashboard/booking-history")) url = "/bookings";
-                  if (url) navigate(url);
-                }}
-              >
-                <CardContent className="p-4 flex items-start gap-3">
-                  <div className="mt-0.5 shrink-0">{typeIcons[n.type] || <Bell className="h-5 w-5 text-muted-foreground" />}</div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className={`text-sm ${n.is_read ? "font-normal text-muted-foreground" : "font-semibold text-foreground"}`}>{n.title}</h3>
-                      {!n.is_read && <div className="w-2 h-2 rounded-full bg-coral shrink-0" />}
-                    </div>
-                    {n.content && <p className="text-sm text-muted-foreground mt-0.5">{n.content}</p>}
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {formatDate(n.created_at, i18n.language, { month: "short", day: "numeric" })} {t("common.at")}{" "}
-                      {formatTime(n.created_at, "en", { hour: "numeric", minute: "2-digit" })}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            )) : (
-              <div className="text-center py-12">
-                <Bell className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-muted-foreground">{t("notifs.noNotifications")}</p>
+      <div className="space-y-2">
+        {allNotifs.length > 0 ? allNotifs.map((n: any) => (
+          <Card
+            key={n.id}
+            className={`cursor-pointer transition-colors border-transparent ${n.is_read ? "opacity-70" : "card-elevated"}`}
+            onClick={() => {
+              if (!n.is_read) markRead.mutate(n.id);
+              let url = n.action_url || n.link_url;
+              if (url?.includes("/dashboard/appointments")) url = "/bookings";
+              if (url?.includes("/dashboard/booking-history")) url = "/bookings";
+              if (url) navigate(url);
+            }}
+          >
+            <CardContent className="p-4 flex items-start gap-3">
+              <div className="mt-0.5 shrink-0"><Bell className="h-5 w-5 text-muted-foreground" /></div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className={`text-sm ${n.is_read ? "font-normal text-muted-foreground" : "font-semibold text-foreground"}`}>{n.title}</h3>
+                  {!n.is_read && <div className="w-2 h-2 rounded-full bg-coral shrink-0" />}
+                </div>
+                {(n.message || n.content) && (
+                  <p className="text-sm text-muted-foreground mt-0.5">{n.message || n.content}</p>
+                )}
+                <p className="text-xs text-muted-foreground mt-1">
+                  {formatDate(n.created_at, i18n.language, { month: "short", day: "numeric" })} {t("common.at")}{" "}
+                  {formatTime(n.created_at, "en", { hour: "numeric", minute: "2-digit" })}
+                </p>
               </div>
-            )}
-          </TabsContent>
-        ))}
-      </Tabs>
+            </CardContent>
+          </Card>
+        )) : (
+          <div className="text-center py-12">
+            <Bell className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+            <p className="text-muted-foreground">{t("notifs.noNotifications")}</p>
+          </div>
+        )}
+      </div>
+
     </div>
   );
 }
