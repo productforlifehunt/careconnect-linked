@@ -24,6 +24,8 @@ import { useNotifications } from "@/hooks/use-care-data";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useStandaloneMode } from "@/hooks/useStandaloneMode";
 import { BrandMark } from "@/components/BrandMark";
+import { buildPublicNav } from "@/config/nav";
+
 
 export function AppHeader() {
   const { user, isAuthenticated, logout, authSource } = useAuth();
