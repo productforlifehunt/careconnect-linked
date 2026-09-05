@@ -63,8 +63,10 @@ export default function CaredOnes() {
   const { data: caredOnes, isLoading } = useUserCaredOnes();
   const createUserCaredOne = useCreateUserCaredOne();
   const deleteUserCaredOne = useDeleteUserCaredOne();
-  const [activeTab, setActiveTab] = useState<string | null>(null);
-  const [openCard, setOpenCard] = useState<string | null>(null);
+  // Notification rows link straight here, e.g. /cared-ones?person=12&card=medicine
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState<string | null>(searchParams.get("person"));
+  const [openCard, setOpenCard] = useState<string | null>(searchParams.get("card"));
 
   const [addOpen, setAddOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
