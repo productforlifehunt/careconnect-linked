@@ -13,25 +13,9 @@ import { useTranslation } from "react-i18next";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSite } from "@/contexts/SiteContext";
-import {
-  Home,
-  Search,
-  CalendarDays,
-  LayoutDashboard,
-  Users,
-  MapPin,
-  MessageSquare,
-  Heart,
-  HelpCircle,
-  Shield,
-  Bell,
-  UserPlus,
-  User,
-  Newspaper,
-  ShoppingCart,
-} from "lucide-react";
+import { buildAuthNav, buildPublicNav } from "@/config/nav";
+import { Shield } from "lucide-react";
 
-import { Bot, Building2 } from "lucide-react";
 
 export function AppSidebar() {
   const { isAuthenticated } = useAuth();
