@@ -87,8 +87,10 @@ export default function CaredOnes() {
     });
   }, [searchResultsRaw, caredOnes, myWpId]);
 
-  const selectedId = activeTab || (caredOnes && caredOnes.length > 0 ? caredOnes[0].user_id : null);
-  const selectedCaredOne = caredOnes?.find((c: any) => c.user_id === selectedId);
+  const bare = (v: any) => String(v ?? "").replace(/^wp-/, "");
+  const linked = caredOnes?.find((c: any) => activeTab && bare(c.user_id) === bare(activeTab));
+  const selectedId = linked?.user_id || activeTab || (caredOnes && caredOnes.length > 0 ? caredOnes[0].user_id : null);
+  const selectedCaredOne = caredOnes?.find((c: any) => bare(c.user_id) === bare(selectedId));
   const caredOneName = selectedCaredOne?.cared_one?.full_name || site.caredOneSingular;
 
   const featureCards = [
