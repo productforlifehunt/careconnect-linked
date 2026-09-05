@@ -34,9 +34,10 @@ export type NavItem = {
 
 type SiteLike = {
   id: string;
-  family: string;
+  family?: string;
   navLabels: { careGroups: string; caredOnes: string };
 };
+
 
 type Opts = {
   site: SiteLike;
