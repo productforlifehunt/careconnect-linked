@@ -106,9 +106,7 @@ export function AppHeader() {
       </SheetContent>
     </Sheet>
 
-      </SheetContent>
-    </Sheet>
-  );
+
 
   return (
     <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
