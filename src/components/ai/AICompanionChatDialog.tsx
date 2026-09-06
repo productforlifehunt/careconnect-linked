@@ -3,8 +3,8 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Bot, Send, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
-import { streamChatTextOnly } from "@/lib/ai-stream";
-import { trimMessagesToCharLimit } from "@/lib/ai-memory";
+import { streamChatTextOnly } from "@/lib/ai";
+import { trimMessagesToCharLimit } from "@/lib/ai";
 import { aiBrand, aiGreeting } from "../../../supabase/functions/_shared/ai-prompts";
 
 type Msg = { role: "user" | "assistant"; content: string };

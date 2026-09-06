@@ -5,8 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Bot, Loader2, Send, Check, SkipForward } from "lucide-react";
 
-import { invokeAI, parseAIJson, type AIChatMessage } from "@/lib/ai-service";
-import { trimMessagesToCharLimit } from "@/lib/ai-memory";
+import { invokeAI, parseAIJson, type AIChatMessage } from "@/lib/ai";
+import { trimMessagesToCharLimit } from "@/lib/ai";
 import { useLogCheckin } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";

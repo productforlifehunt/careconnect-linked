@@ -1,5 +1,20 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// SINGLE AI EDGE FUNCTION — every AI capability of the app lives in this file.
+//   POST /ai/chat    non-streaming chat / one-shot generation (all AI modes)
+//   POST /ai/stream  Server-Sent-Events token stream (voice assistant)
+//   POST /ai/note    note-writing assist (Notch)
+//   POST /ai/voice   text-to-speech (multi-provider)
+// System prompts are NOT here: they are the single registry in
+// ../_shared/ai-prompts.ts, imported by both this function and the frontend.
+// ─────────────────────────────────────────────────────────────────────────────
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { TTS_READER_SYSTEM_PROMPT } from "../_shared/ai-prompts.ts";
+import {
+  buildFallbackReply,
+  buildSystemPrompt,
+  NOTE_WRITING_SYSTEM_PROMPT,
+  TTS_READER_SYSTEM_PROMPT,
+  type AIMode,
+} from "../_shared/ai-prompts.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,6 +22,259 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// ═══ 1. CHAT (non-streaming) ═══
+const AI_MODELS = ["google/gemini-3-flash-preview", "google/gemini-2.5-flash"] as const;
+const VALID_MODES = new Set<AIMode>([
+  "insights",
+  "cognitive_exercise",
+  "medication_check",
+  "behavior_analysis",
+  "care_tips",
+  "daily_summary",
+  "routine_suggestion",
+  "care_info_sheet",
+  "general_chat",
+]);
+
+
+function normalizeMode(value: unknown): AIMode {
+  return VALID_MODES.has(value as AIMode) ? (value as AIMode) : "general_chat";
+}
+
+async function requestAIReply(apiKey: string, messages: Array<{ role: string; content: string }>) {
+  for (const model of AI_MODELS) {
+    try {
+      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          messages,
+          stream: false,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error("AI gateway error:", model, response.status, await response.text());
+        continue;
+      }
+
+      const data = await response.json();
+      const reply = data?.choices?.[0]?.message?.content;
+      if (typeof reply === "string" && reply.trim()) {
+        return reply;
+      }
+    } catch (error) {
+      console.error("AI gateway request failed:", model, error);
+    }
+  }
+
+  return null;
+}
+
+async function handleChat(req: Request): Promise<Response> {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const payload = await req.json() as {
+      mode: AIMode;
+      messages: Array<{ role: string; content: string }>;
+      contextPrompt?: string;
+      language?: string;
+    };
+
+    const mode = normalizeMode(payload?.mode);
+    const messages = Array.isArray(payload?.messages)
+      ? payload.messages.filter((m) => typeof m?.role === "string" && typeof m?.content === "string")
+      : [];
+    const contextPrompt = typeof payload?.contextPrompt === "string"
+      ? payload.contextPrompt.slice(0, 8000).trim()
+      : "";
+
+    if (messages.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "messages must be a non-empty array" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      return new Response(
+        JSON.stringify({ reply: buildFallbackReply(mode, payload?.language), degraded: true }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const systemPrompt = [buildSystemPrompt(mode, payload?.language), contextPrompt].filter(Boolean).join("\n\n");
+
+    const aiMessages = [
+      { role: "system", content: systemPrompt },
+      ...messages.filter((m) => m.role !== "system"),
+    ];
+
+    const reply = await requestAIReply(LOVABLE_API_KEY, aiMessages);
+
+    return new Response(
+      JSON.stringify({ reply: reply || buildFallbackReply(mode, payload?.language), degraded: !reply }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (e) {
+    console.error("ai chat error:", e);
+    return new Response(
+      JSON.stringify({ reply: buildFallbackReply("general_chat"), degraded: true }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+}
+
+// ═══ 2. STREAM (SSE) ═══
+// Streaming AI chat for the dementia assistant.
+// Returns Server-Sent Events (SSE) — token-by-token deltas — so the frontend
+// can detect sentence boundaries and dispatch TTS in parallel.
+
+
+
+async function handleStream(req: Request): Promise<Response> {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { messages, language } = await req.json() as {
+      messages: Array<{ role: string; content: string }>;
+      language?: string;
+    };
+
+    if (!Array.isArray(messages) || messages.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "messages must be a non-empty array" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      return new Response(
+        JSON.stringify({ error: "LOVABLE_API_KEY not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    const cleaned = messages
+      .filter((m) => typeof m?.role === "string" && typeof m?.content === "string")
+      .filter((m) => m.role !== "system");
+
+    const systemPrompt = buildSystemPrompt("general_chat", language, true);
+
+    const upstream = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        stream: true,
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...cleaned,
+        ],
+      }),
+    });
+
+    if (!upstream.ok || !upstream.body) {
+      const status = upstream.status;
+      const text = await upstream.text().catch(() => "");
+      console.error("AI gateway stream error:", status, text);
+      if (status === 429) {
+        return new Response(
+          JSON.stringify({ error: "Rate limited, please retry shortly." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      if (status === 402) {
+        return new Response(
+          JSON.stringify({ error: "AI credits exhausted." }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      return new Response(
+        JSON.stringify({ error: `AI gateway error [${status}]` }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // Pass the gateway SSE stream straight through to the client.
+    return new Response(upstream.body, {
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
+    });
+  } catch (e) {
+    console.error("ai stream error:", e);
+    return new Response(
+      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
+}
+
+// ═══ 3. NOTE WRITING ASSIST ═══
+// AI writing assist for Notch Note. Uses Lovable AI Gateway.
+
+async function handleNote(req: Request): Promise<Response> {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  try {
+    const { prompt, model } = await req.json();
+    if (!prompt || typeof prompt !== 'string' || prompt.length > 8000) {
+      return new Response(JSON.stringify({ error: 'Invalid prompt' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      return new Response(JSON.stringify({ error: 'LOVABLE_API_KEY not configured' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: model || 'google/gemini-2.5-flash',
+        messages: [
+          { role: 'system', content: NOTE_WRITING_SYSTEM_PROMPT },
+          { role: 'user', content: prompt },
+        ],
+      }),
+    });
+    if (!res.ok) {
+      const body = await res.text();
+      return new Response(JSON.stringify({ error: 'Gateway request failed', status: res.status, details: body }), {
+        status: res.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const data = await res.json();
+    const text = data?.choices?.[0]?.message?.content?.trim() || '';
+    return new Response(JSON.stringify({ text }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  } catch (e: any) {
+    return new Response(JSON.stringify({ error: String(e?.message || e) }), {
+      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+}
+
+// ═══ 4. VOICE (TTS) ═══
 // ─── SiliconFlow / CosyVoice2 voice mapping ───
 const COSY_VOICE_MAP: Record<string, string> = {
   alloy: "FunAudioLLM/CosyVoice2-0.5B:alex",
@@ -405,7 +673,7 @@ function cleanMarkdown(text: string): string {
     .trim();
 }
 
-serve(async (req) => {
+async function handleVoice(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -823,5 +1091,20 @@ serve(async (req) => {
       JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
+  }
+}
+
+// ─── Router: one function, four actions ───
+serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  const url = new URL(req.url);
+  const action = (url.pathname.split("/").filter(Boolean).pop() || "chat").toLowerCase();
+  switch (action) {
+    case "stream": return handleStream(req);
+    case "note": return handleNote(req);
+    case "voice": return handleVoice(req);
+    case "chat":
+    case "ai":
+    default: return handleChat(req);
   }
 });

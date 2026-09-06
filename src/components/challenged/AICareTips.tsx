@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Lightbulb, RefreshCw, Heart, Shield, MessageCircle, Activity, Gamepad2 } from "lucide-react";
-import { invokeAI, parseAIJson } from "@/lib/ai-service";
+import { invokeAI, parseAIJson } from "@/lib/ai";
 import { useTranslation } from "react-i18next";
 
 interface CareTip {

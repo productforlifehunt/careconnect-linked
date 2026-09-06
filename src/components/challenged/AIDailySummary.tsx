@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileText, Loader2, RefreshCw } from "lucide-react";
-import { invokeAI } from "@/lib/ai-service";
+import { invokeAI } from "@/lib/ai";
 import { useTranslation } from "react-i18next";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 

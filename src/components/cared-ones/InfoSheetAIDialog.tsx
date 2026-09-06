@@ -3,8 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Bot, Loader2, Send } from "lucide-react";
-import { invokeAI, type AIChatMessage } from "@/lib/ai-service";
-import { trimMessagesToCharLimit } from "@/lib/ai-memory";
+import { invokeAI, type AIChatMessage } from "@/lib/ai";
+import { trimMessagesToCharLimit } from "@/lib/ai";
 import { useTranslation } from "react-i18next";
 import { buildInfoSheetContext, type InfoSheetPromptContext } from "../../../supabase/functions/_shared/ai-prompts";
 
