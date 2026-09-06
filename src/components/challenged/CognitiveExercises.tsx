@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Puzzle, RefreshCw, Loader2, CheckCircle, Wand2 } from "lucide-react";
-import { invokeAI, parseAIJson } from "@/lib/ai-service";
+import { invokeAI, parseAIJson } from "@/lib/ai";
 import { useTranslation } from "react-i18next";
 import { COGNITIVE_EXERCISE_REQUEST } from "../../../supabase/functions/_shared/ai-prompts";
 

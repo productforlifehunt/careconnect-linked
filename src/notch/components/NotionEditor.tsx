@@ -666,7 +666,7 @@ export function NotionEditor({ content, onChange, placeholder = "Write, press '/
         continue: `Continue writing naturally where this text left off. Return only the continuation:\n\n${context}`,
         brainstorm: `Brainstorm 5 concise ideas about: ${context || "the current page topic"}. Return only the bulleted list.`,
       };
-      const { data, error } = await supabase.functions.invoke("notch-ai-assist", { body: { prompt: prompts[mode] } });
+      const { data, error } = await supabase.functions.invoke("ai/note", { body: { prompt: prompts[mode] } });
       if (error) throw error;
       const text = (data as any)?.text;
       if (!text) throw new Error("empty response");

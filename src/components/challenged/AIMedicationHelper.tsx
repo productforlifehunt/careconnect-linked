@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Pill, Loader2, AlertTriangle, RefreshCw } from "lucide-react";
-import { invokeAI } from "@/lib/ai-service";
+import { invokeAI } from "@/lib/ai";
 import { useTranslation } from "react-i18next";
 
 interface AIMedicationHelperProps {

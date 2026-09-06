@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { HelpCircle, Bot, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
-import { invokeAI } from "@/lib/ai-service";
+import { invokeAI } from "@/lib/ai";
 import { buildCareGroupHelpRequest } from "../../../../supabase/functions/_shared/ai-prompts";
 
 interface GroupHelpTabProps {

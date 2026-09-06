@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { invokeAI } from "@/lib/ai-service";
+import { invokeAI } from "@/lib/ai";
 import { trimMessagesToCharLimit } from "@/lib/ai-memory";
 import { zoneTypeLabel } from "@/features/location/zone-types";
 import { useSafetyCircle } from "./useSafetyCircle";

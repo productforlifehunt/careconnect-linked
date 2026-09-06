@@ -14,7 +14,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   streamChatWithVoice, streamChatTextOnly, speakTextStreaming, type StreamControls,
-} from "@/lib/ai-stream";
+} from "@/lib/ai";
 import { trimMessagesToCharLimit } from "@/lib/ai-memory";
 import { toast } from "sonner";
 

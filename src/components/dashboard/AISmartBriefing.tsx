@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, AlertTriangle, Lightbulb, ListChecks, RefreshCw, Loader2, Pill, ClipboardCheck, CheckSquare } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { invokeAI, parseAIJson } from "@/lib/ai-service";
+import { invokeAI, parseAIJson } from "@/lib/ai";
 import {
   useUserCaredOnes,
   useCareTasks,

@@ -114,7 +114,7 @@ export function NotchAskAI({ onClose }: Props) {
         `[${i + 1}] ${h.p.title || "Untitled"}\n${h.passage.slice(0, 1200)}`
       ).join("\n\n---\n\n");
       const prompt = buildWorkspaceNotesRequest(question, ctxText);
-      const { data, error } = await supabase.functions.invoke("notch-ai-assist", { body: { prompt } });
+      const { data, error } = await supabase.functions.invoke("ai/note", { body: { prompt } });
       if (error) throw error;
       const text = (data as any)?.text || "(no answer)";
       setMsgs((m) => [...m, {
