@@ -4,6 +4,7 @@ import { Bot, Send, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import { streamChatTextOnly } from "@/lib/ai-stream";
+import { trimMessagesToCharLimit } from "@/lib/ai-memory";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -50,9 +51,10 @@ export function AICompanionChatDialog({
     setLoading(true);
 
     try {
-      const { abort, result } = streamChatTextOnly(
-        next.slice(0, -1).map((m) => ({ role: m.role, content: m.content })),
-        {
+      const history = trimMessagesToCharLimit(
+        next.slice(0, -1).map((m) => ({ role: m.role, content: m.content }))
+      );
+      const { abort, result } = streamChatTextOnly(history, {
           language: isZh ? "zh" : "en",
           onTextDelta: (_d, full) => {
             setMessages((prev) => {

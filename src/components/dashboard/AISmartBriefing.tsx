@@ -204,7 +204,7 @@ Return STRICT JSON: {"alerts":[{"level":"high|medium|low","text":"..."}],"summar
 Data: ${context}`
       );
 
-      const reply = await invokeAI("daily_summary", prompt);
+      const reply = await invokeAI("daily_summary", prompt, { persist: false });
       const parsed = parseAIJson<Briefing>(reply);
       if (parsed && parsed.summary) {
         setBriefing(parsed);

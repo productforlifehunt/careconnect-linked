@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Bot, Loader2, Send, Check, SkipForward } from "lucide-react";
 
 import { invokeAI, parseAIJson, type AIChatMessage } from "@/lib/ai-service";
+import { trimMessagesToCharLimit } from "@/lib/ai-memory";
 import { useLogCheckin } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
@@ -75,6 +76,7 @@ export function AICheckInDialog({ open, onOpenChange, checkin, caredOneName }: P
         { role: "system", content: sys },
         { role: "user", content: starter },
       ],
+      persist: false,
     })
       .then((reply) => setMessages([{ role: "assistant", content: reply }]))
       .catch((e) => toast({ title: Z("AI 不可用", "AI unavailable"), description: String(e?.message || e), variant: "destructive" }))
@@ -106,11 +108,13 @@ export function AICheckInDialog({ open, onOpenChange, checkin, caredOneName }: P
     setInput("");
     const sys = SYSTEM_PROMPT(checkin?.name || Z("签到", "Check-In"), checkin?.instructions || "", defaultCaredOneName);
     const next: AIChatMessage[] = [...messages, { role: "user", content: text }];
+    const capped = trimMessagesToCharLimit([{ role: "system" as const, content: sys }, ...next]);
     setMessages(next);
     setSending(true);
     try {
       const reply = await invokeAI("general_chat", text, {
-        messages: [{ role: "system", content: sys }, ...next],
+        messages: capped,
+        persist: false,
       });
 
       const parsed = parseAIJson<{ done?: boolean; summary?: string; status?: "checked" | "skipped" }>(reply);

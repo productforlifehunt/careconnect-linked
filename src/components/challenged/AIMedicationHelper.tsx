@@ -22,7 +22,8 @@ export function AIMedicationHelper({ medications, caredOneName }: AIMedicationHe
       const medList = medications.map((m: any) => `${m.name} (${m.dosage || "dosage unknown"}, ${m.frequency || "frequency unknown"})`).join(", ");
       const reply = await invokeAI(
         "medication_check",
-        `Patient: ${caredOneName || "a person with dementia"}. Current medications: ${medList}. Check for potential interactions and provide timing advice.`
+        `Patient: ${caredOneName || "a person with dementia"}. Current medications: ${medList}. Check for potential interactions and provide timing advice.`,
+        { persist: false }
       );
       setAnalysis(reply);
     } catch (err) {

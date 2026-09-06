@@ -85,7 +85,7 @@ export function GroupHelpTab({ groupName }: GroupHelpTabProps) {
         `用户在护理群组${groupName ? `「${groupName}」` : ""}中提问，请用简单、口语化的中文回答，只解释这个护理群组里能做的事（首页、日历、任务、被护理者位置、对话、公告、祝福、相册、群组被护理者、成员、邀请成员、子群组、群组设置）。不要给医疗诊断。问题：${question.trim()}`,
         `The user is asking about their care group${groupName ? ` "${groupName}"` : ""}. Answer in plain, warm English and only explain what can be done inside this care group (Home, Calendar, Tasks, Cared One's Location, Messages, Announcements, Well Wishes, Gallery, Group Cared Ones, Members, Invite Members, Member Groups, Group Setting). Never give a medical diagnosis. Question: ${question.trim()}`
       );
-      const reply = await invokeAI("general_chat", context, { title: Z("护理群组帮助", "Care group help") });
+      const reply = await invokeAI("general_chat", context, { title: Z("护理群组帮助", "Care group help"), persist: false });
       setAnswer(reply);
     } catch (err: any) {
       toast({ title: Z("暂时问不到答案", "Could not get an answer right now"), description: err?.message, variant: "destructive" });

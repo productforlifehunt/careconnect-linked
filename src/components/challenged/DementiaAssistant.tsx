@@ -15,6 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import {
   streamChatWithVoice, streamChatTextOnly, speakTextStreaming, type StreamControls,
 } from "@/lib/ai-stream";
+import { trimMessagesToCharLimit } from "@/lib/ai-memory";
 import { toast } from "sonner";
 
 interface Message {
@@ -248,10 +249,10 @@ export function DementiaAssistant() {
     const assistantIdx = nextMessages.length;
 
     try {
-      const history = nextMessages.map((m) => ({
+      const history = trimMessagesToCharLimit(nextMessages.map((m) => ({
         role: m.role as "user" | "assistant",
         content: m.content,
-      }));
+      })));
 
       // Resolve language for the AI: explicit override > UI language.
       const resolvedLang =
