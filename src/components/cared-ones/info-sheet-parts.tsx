@@ -250,7 +250,6 @@ export function SheetAIPanel({ context }: { context: InfoSheetAIContext }) {
           ),
           { contextPrompt: buildInfoSheetSystemPrompt(context, !!isCN), persist: false },
         );
-        // First greeting is a single assistant message; no history to cap yet.
         setMessages([{ role: "assistant", content: reply }]);
       } catch {
         setMessages([{
@@ -277,7 +276,7 @@ export function SheetAIPanel({ context }: { context: InfoSheetAIContext }) {
     setSending(true);
     try {
       const reply = await invokeAI("care_info_sheet", question, {
-        messages: next,
+        messages: trimMessagesToCharLimit(next),
         contextPrompt: buildInfoSheetSystemPrompt(context, !!isCN),
         persist: false,
       });
