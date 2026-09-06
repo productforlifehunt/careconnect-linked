@@ -23,7 +23,8 @@ import { fetchCareTipsWordPress, fetchCarePlansWordPress, fetchCareNotesWordPres
 import { fetchMedicinesWordPress } from "@/features/medicine/source.medicine";
 import { invokeAI, type AIChatMessage } from "@/lib/ai-service";
 import { trimMessagesToCharLimit } from "@/lib/ai-memory";
-import { buildInfoSheetSystemPrompt, type InfoSheetAIContext } from "@/components/cared-ones/InfoSheetAIDialog";
+import type { InfoSheetAIContext } from "@/components/cared-ones/InfoSheetAIDialog";
+import { buildInfoSheetContext, buildInfoSheetIntroduction } from "../../../supabase/functions/_shared/ai-prompts";
 
 // Leaflet stylesheet, loaded once (same source as the main location hub).
 if (typeof document !== "undefined" && !document.getElementById("leaflet-css")) {
@@ -244,11 +245,8 @@ export function SheetAIPanel({ context }: { context: InfoSheetAIContext }) {
       try {
         const reply = await invokeAI(
           "care_info_sheet",
-          Z(
-            `${context.caredOneName || "这位家人"}的家人正在请人帮个忙。请用两三句温和、感谢的话，像跟邻居或朋友说话一样，说明这次是帮什么：${task}。不要用命令句（不要说"你需要"、"你必须"），可以说"想请你…"、"如果方便的话…"。最后一句请对方有不清楚的地方随时问你。`,
-            `A family is asking a neighbour or friend for a favour. In two or three warm, appreciative sentences — as you'd speak to a friend, never as an order — describe what the favour is this time: ${task}. Avoid "you need to" or "you must"; prefer "would you be able to…", "if it works for you…". End by warmly inviting them to ask you anything they're unsure about.`,
-          ),
-          { contextPrompt: buildInfoSheetSystemPrompt(context, !!isCN), persist: false },
+          buildInfoSheetIntroduction(task, context.caredOneName, !!isCN),
+          { contextPrompt: buildInfoSheetContext(context, !!isCN), persist: false, language: isCN ? "zh" : "en" },
         );
         setMessages([{ role: "assistant", content: reply }]);
       } catch {
@@ -277,8 +275,9 @@ export function SheetAIPanel({ context }: { context: InfoSheetAIContext }) {
     try {
       const reply = await invokeAI("care_info_sheet", question, {
         messages: trimMessagesToCharLimit(next),
-        contextPrompt: buildInfoSheetSystemPrompt(context, !!isCN),
+        contextPrompt: buildInfoSheetContext(context, !!isCN),
         persist: false,
+        language: isCN ? "zh" : "en",
       });
       setMessages([...next, { role: "assistant", content: reply }]);
     } catch {

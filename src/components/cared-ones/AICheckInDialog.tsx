@@ -10,6 +10,7 @@ import { trimMessagesToCharLimit } from "@/lib/ai-memory";
 import { useLogCheckin } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { buildCheckInContext } from "../../../supabase/functions/_shared/ai-prompts";
 
 interface Props {
   open: boolean;
@@ -18,42 +19,11 @@ interface Props {
   caredOneName?: string;
 }
 
-const SYSTEM_PROMPT_EN = (checkinName: string, instructions: string, caredOneName: string) => `
-You are a warm, caring wellness companion conducting a daily check-in for "${caredOneName}".
-Check-in: "${checkinName}". ${instructions ? `Instructions: ${instructions}.` : ""}
-
-Your job:
-1. Greet warmly (1 sentence) and ask 3-5 short, friendly wellness questions, ONE at a time.
-2. Cover: mood, sleep, appetite, pain/discomfort, anything notable today.
-3. Keep each message under 2 sentences. Be empathetic, never clinical.
-4. After enough info (usually 4-5 exchanges), respond with EXACTLY this JSON (no prose, no fences):
-{"done": true, "summary": "<2-3 sentence summary of how they're doing today>", "status": "checked"}
-If the person clearly wants to skip, return: {"done": true, "summary": "User chose to skip.", "status": "skipped"}
-
-Never give medical advice. If they mention emergencies, urge them to contact help and still complete the check-in.
-`.trim();
-
-const SYSTEM_PROMPT_CN = (checkinName: string, instructions: string, caredOneName: string) => `
-你是一位温暖、关心的健康陪伴助手,正在为"${caredOneName}"进行每日签到。
-签到名称:"${checkinName}"。${instructions ? `说明:${instructions}。` : ""}
-
-你的任务:
-1. 用一句话温暖地问候,然后逐个询问 3-5 个简短、友好的健康问题。
-2. 涵盖:心情、睡眠、食欲、疼痛/不适、今天有什么特别的事。
-3. 每条信息控制在两句以内。要有同理心,不要像医生那样说话。
-4. 收集到足够信息后(通常 4-5 轮对话),严格按照下方 JSON 格式回复,不要有其他文字或代码块:
-{"done": true, "summary": "<用 2-3 句中文总结今天的状态>", "status": "checked"}
-如果用户明确想跳过,返回:{"done": true, "summary": "用户选择跳过。", "status": "skipped"}
-
-绝不提供医疗建议。如果提到紧急情况,请提醒立刻寻求帮助并完成签到。
-`.trim();
-
 export function AICheckInDialog({ open, onOpenChange, checkin, caredOneName }: Props) {
   const { toast } = useToast();
   const { i18n } = useTranslation();
   const isCN = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (isCN ? cn : en);
-  const SYSTEM_PROMPT = isCN ? SYSTEM_PROMPT_CN : SYSTEM_PROMPT_EN;
   const defaultCaredOneName = caredOneName || Z("您的被护理者", "your loved one");
   const logCheckin = useLogCheckin();
   const [messages, setMessages] = useState<AIChatMessage[]>([]);
@@ -68,7 +38,7 @@ export function AICheckInDialog({ open, onOpenChange, checkin, caredOneName }: P
     setMessages([]);
     setInput("");
     setCompleted(false);
-    const sys = SYSTEM_PROMPT(checkin?.name || Z("签到", "Check-In"), checkin?.instructions || "", defaultCaredOneName);
+    const sys = buildCheckInContext(checkin?.name || Z("签到", "Check-In"), checkin?.instructions || "", defaultCaredOneName, !!isCN);
     const starter = Z("现在请开始签到。", "Please start the check-in now.");
     setSending(true);
     invokeAI("general_chat", starter, {
@@ -77,6 +47,7 @@ export function AICheckInDialog({ open, onOpenChange, checkin, caredOneName }: P
         { role: "user", content: starter },
       ],
       persist: false,
+      language: isCN ? "zh" : "en",
     })
       .then((reply) => setMessages([{ role: "assistant", content: reply }]))
       .catch((e) => toast({ title: Z("AI 不可用", "AI unavailable"), description: String(e?.message || e), variant: "destructive" }))
@@ -106,7 +77,7 @@ export function AICheckInDialog({ open, onOpenChange, checkin, caredOneName }: P
     const text = input.trim();
     if (!text || sending) return;
     setInput("");
-    const sys = SYSTEM_PROMPT(checkin?.name || Z("签到", "Check-In"), checkin?.instructions || "", defaultCaredOneName);
+    const sys = buildCheckInContext(checkin?.name || Z("签到", "Check-In"), checkin?.instructions || "", defaultCaredOneName, !!isCN);
     const next: AIChatMessage[] = [...messages, { role: "user", content: text }];
     const capped = trimMessagesToCharLimit([{ role: "system" as const, content: sys }, ...next]);
     setMessages(next);
@@ -115,6 +86,7 @@ export function AICheckInDialog({ open, onOpenChange, checkin, caredOneName }: P
       const reply = await invokeAI("general_chat", text, {
         messages: capped,
         persist: false,
+        language: isCN ? "zh" : "en",
       });
 
       const parsed = parseAIJson<{ done?: boolean; summary?: string; status?: "checked" | "skipped" }>(reply);

@@ -17,6 +17,7 @@ import {
 import { formatDate } from "@/lib/locale";
 import { useSite } from "@/contexts/SiteContext";
 import { getStoredWPUser } from "@/services/wp-auth";
+import { buildBriefingRequest } from "../../../supabase/functions/_shared/ai-prompts";
 
 interface Briefing {
   alerts: { level: "high" | "medium" | "low"; text: string }[];
@@ -193,18 +194,9 @@ export function AISmartBriefing() {
         alerts: ruleAlerts,
       });
 
-      const prompt = Z(
-        `你是家庭护理助手。只根据下面的数据写今天的简报，不要编造任何安排。
-规则：如果今天没有用药安排，就直接说今天没有用药安排；如果今天没有签到安排，就直接说今天没有签到安排；有的话就说明几点该做什么。任务只有存在时才提。
-严格返回 JSON：{"alerts":[{"level":"high|medium|low","text":"..."}],"summary":"2-3 句中文，直接说今天几点做什么","suggestions":[{"title":"...","detail":"..."}]}
-数据：${context}`,
-        `You are a family care assistant. Write today's briefing strictly from the data below; never invent a schedule.
-Rules: if there is no medication scheduled today, say so plainly; if there is no check-in scheduled today, say so plainly; if there is, say what is due at what time. Mention tasks only if some exist.
-Return STRICT JSON: {"alerts":[{"level":"high|medium|low","text":"..."}],"summary":"2-3 sentences saying what is due today and when","suggestions":[{"title":"...","detail":"..."}]}
-Data: ${context}`
-      );
+      const prompt = buildBriefingRequest(context, !!isChinese);
 
-      const reply = await invokeAI("daily_summary", prompt, { persist: false });
+      const reply = await invokeAI("daily_summary", prompt, { persist: false, language: isChinese ? "zh" : "en" });
       const parsed = parseAIJson<Briefing>(reply);
       if (parsed && parsed.summary) {
         setBriefing(parsed);

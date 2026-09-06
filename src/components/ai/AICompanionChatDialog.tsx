@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import { streamChatTextOnly } from "@/lib/ai-stream";
 import { trimMessagesToCharLimit } from "@/lib/ai-memory";
+import { aiBrand, aiGreeting } from "../../../supabase/functions/_shared/ai-prompts";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -20,9 +21,7 @@ export function AICompanionChatDialog({
   const [messages, setMessages] = useState<Msg[]>([
     {
       role: "assistant",
-      content: isZh
-        ? "你好，我是小忆。可以陪你聊天，也可以帮你了解失智症照护。今天想聊什么？"
-        : "Hi, I'm your AI companion. I can chat with you or help with dementia care questions. What's on your mind?",
+      content: aiGreeting(!!isZh),
     },
   ]);
   const [input, setInput] = useState("");
@@ -89,7 +88,7 @@ export function AICompanionChatDialog({
                 <Bot className="h-4 w-4" />
               </div>
               <DialogPrimitive.Title className="text-sm font-semibold">
-                {isZh ? "小忆 AI 助手" : "ChallengeD Assistant"}
+                {aiBrand(isZh ? "zh" : "en")}
               </DialogPrimitive.Title>
             </div>
             <DialogPrimitive.Close asChild>

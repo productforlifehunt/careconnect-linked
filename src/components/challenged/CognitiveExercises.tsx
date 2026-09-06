@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Puzzle, RefreshCw, Loader2, CheckCircle, Wand2 } from "lucide-react";
 import { invokeAI, parseAIJson } from "@/lib/ai-service";
 import { useTranslation } from "react-i18next";
+import { COGNITIVE_EXERCISE_REQUEST } from "../../../supabase/functions/_shared/ai-prompts";
 
 interface ExerciseItem {
   emoji?: string;
@@ -36,7 +37,7 @@ export function CognitiveExercises() {
     setRevealed(new Set());
     setCompleted(false);
     try {
-      const reply = await invokeAI("cognitive_exercise", "Generate a fun, gentle cognitive exercise suitable for someone living with early-to-mid stage dementia. Make it warm and encouraging.", { persist: false });
+      const reply = await invokeAI("cognitive_exercise", COGNITIVE_EXERCISE_REQUEST, { persist: false });
       const parsed = parseAIJson<Exercise>(reply);
       if (parsed) setExercise(parsed);
     } catch (err) {
