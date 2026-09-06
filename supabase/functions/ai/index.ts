@@ -125,7 +125,7 @@ async function handleChat(req: Request): Promise<Response> {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {
-    console.error("ai-care-engine error:", e);
+    console.error("ai chat error:", e);
     return new Response(
       JSON.stringify({ reply: buildFallbackReply("general_chat"), degraded: true }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -220,7 +220,7 @@ async function handleStream(req: Request): Promise<Response> {
       },
     });
   } catch (e) {
-    console.error("ai-care-stream error:", e);
+    console.error("ai stream error:", e);
     return new Response(
       JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },

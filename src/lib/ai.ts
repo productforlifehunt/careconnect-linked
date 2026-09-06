@@ -112,7 +112,7 @@ async function touchConversation(conversationId: string) {
   } catch { /* non-blocking */ }
 }
 
-/** Call the ai-care-engine edge function (Lovable AI Gateway) */
+/** Call the single `ai` edge function (Lovable AI Gateway) */
 async function callAI(mode: AIMode, messages: AIChatMessage[], contextPrompt?: string, language?: string): Promise<string> {
   const { data, error } = await supabase.functions.invoke("ai/chat", {
     body: { mode, messages, ...(contextPrompt ? { contextPrompt } : {}), ...(language ? { language } : {}) },
@@ -709,3 +709,33 @@ function mergeSignals(a: AbortSignal, b: AbortSignal): AbortSignal {
   return ctrl.signal;
 }
 
+
+
+// ═════════ CONVERSATION MEMORY STANDARD ═════════
+// 1. Casual/companion chat: frontend-only, 10,000-char rolling window, no DB.
+// 2. Care-fact/one-shot: no memory; fresh facts each call; only conclusions stored.
+// Shared-link visitors: nothing stored, ever.
+export const AI_MEMORY_CHAR_LIMIT = 10_000;
+
+/**
+ * Keep the newest messages whose total character count is within the limit.
+ * Drops oldest messages first. Always keeps at least the last message so a
+ * single long user prompt can still be sent.
+ *
+ * The count includes BOTH user messages and assistant replies — the model
+ * sees the full conversation, not just what the user typed.
+ */
+export function trimMessagesToCharLimit<T extends { role: string; content?: string | null }>(
+  messages: T[],
+  limit = AI_MEMORY_CHAR_LIMIT
+): T[] {
+  if (!messages.length) return [];
+  const chars = messages.map((m) => (m.content?.length ?? 0));
+  let total = chars.reduce((a, b) => a + b, 0);
+  let start = 0;
+  while (total > limit && start < messages.length - 1) {
+    total -= chars[start] ?? 0;
+    start++;
+  }
+  return messages.slice(start);
+}

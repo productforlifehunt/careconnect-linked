@@ -22,7 +22,7 @@ import { isDangerZone, isSafeZone, isCustomZone, zoneTypeLabel } from "@/feature
 import { fetchCareTipsWordPress, fetchCarePlansWordPress, fetchCareNotesWordPress } from "@/features/cared-ones/source.wordpress-extended";
 import { fetchMedicinesWordPress } from "@/features/medicine/source.medicine";
 import { invokeAI, type AIChatMessage } from "@/lib/ai";
-import { trimMessagesToCharLimit } from "@/lib/ai-memory";
+import { trimMessagesToCharLimit } from "@/lib/ai";
 import type { InfoSheetAIContext } from "@/components/cared-ones/InfoSheetAIDialog";
 import { buildInfoSheetContext, buildInfoSheetIntroduction } from "../../../supabase/functions/_shared/ai-prompts";
 
