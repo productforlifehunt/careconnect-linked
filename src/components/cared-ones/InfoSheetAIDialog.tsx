@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Bot, Loader2, Send } from "lucide-react";
 import { invokeAI, type AIChatMessage } from "@/lib/ai-service";
+import { trimMessagesToCharLimit } from "@/lib/ai-memory";
 import { useTranslation } from "react-i18next";
 
 export interface InfoSheetAIContext {
@@ -93,7 +94,7 @@ export function InfoSheetAIDialog({
     setSending(true);
     try {
       const reply = await invokeAI("general_chat", question, {
-        messages: next,
+        messages: trimMessagesToCharLimit(next),
         contextPrompt: buildInfoSheetSystemPrompt(context, !!isCN),
         persist: false,
       });

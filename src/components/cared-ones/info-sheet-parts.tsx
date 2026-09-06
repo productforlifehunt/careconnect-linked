@@ -22,6 +22,7 @@ import { isDangerZone, isSafeZone, isCustomZone, zoneTypeLabel } from "@/feature
 import { fetchCareTipsWordPress, fetchCarePlansWordPress, fetchCareNotesWordPress } from "@/features/cared-ones/source.wordpress-extended";
 import { fetchMedicinesWordPress } from "@/features/medicine/source.medicine";
 import { invokeAI, type AIChatMessage } from "@/lib/ai-service";
+import { trimMessagesToCharLimit } from "@/lib/ai-memory";
 import { buildInfoSheetSystemPrompt, type InfoSheetAIContext } from "@/components/cared-ones/InfoSheetAIDialog";
 
 // Leaflet stylesheet, loaded once (same source as the main location hub).
@@ -249,6 +250,7 @@ export function SheetAIPanel({ context }: { context: InfoSheetAIContext }) {
           ),
           { contextPrompt: buildInfoSheetSystemPrompt(context, !!isCN), persist: false },
         );
+        // First greeting is a single assistant message; no history to cap yet.
         setMessages([{ role: "assistant", content: reply }]);
       } catch {
         setMessages([{
