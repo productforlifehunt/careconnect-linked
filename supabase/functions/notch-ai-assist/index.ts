@@ -1,5 +1,6 @@
 // AI writing assist for Notch Note. Uses Lovable AI Gateway.
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { NOTE_WRITING_SYSTEM_PROMPT } from '../_shared/ai-prompts.ts';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -21,7 +22,7 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         model: model || 'google/gemini-2.5-flash',
         messages: [
-          { role: 'system', content: 'You are a helpful writing assistant embedded in a note-taking app. Keep responses concise and directly usable. Do not add preambles like "Here is..." — return only the requested content.' },
+          { role: 'system', content: NOTE_WRITING_SYSTEM_PROMPT },
           { role: 'user', content: prompt },
         ],
       }),

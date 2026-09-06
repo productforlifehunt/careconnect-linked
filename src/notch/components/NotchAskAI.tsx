@@ -4,6 +4,7 @@ import { Sparkles, ArrowUp, FileText } from "lucide-react";
 import { cctList, NN } from "@/notch/lib/nn-client";
 import { useNotchPath } from "@/notch/context/NotchBaseContext";
 import { supabase } from "@/integrations/supabase/client";
+import { buildWorkspaceNotesRequest } from "../../../supabase/functions/_shared/ai-prompts";
 
 interface Block {
   id: string; title?: string; icon?: string; type?: string;
@@ -112,7 +113,7 @@ export function NotchAskAI({ onClose }: Props) {
       const ctxText = hits.map((h, i) =>
         `[${i + 1}] ${h.p.title || "Untitled"}\n${h.passage.slice(0, 1200)}`
       ).join("\n\n---\n\n");
-      const prompt = `You are answering a question using only the workspace notes below. Cite sources inline as [1], [2], etc. — never invent citations beyond the notes shown. If the notes don't contain the answer, say so plainly and suggest which of the listed pages might be closest.\n\nNotes:\n${ctxText || "(no matching notes found)"}\n\nQuestion: ${question}\n\nAnswer:`;
+      const prompt = buildWorkspaceNotesRequest(question, ctxText);
       const { data, error } = await supabase.functions.invoke("notch-ai-assist", { body: { prompt } });
       if (error) throw error;
       const text = (data as any)?.text || "(no answer)";

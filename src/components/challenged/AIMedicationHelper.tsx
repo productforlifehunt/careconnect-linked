@@ -11,7 +11,7 @@ interface AIMedicationHelperProps {
 }
 
 export function AIMedicationHelper({ medications, caredOneName }: AIMedicationHelperProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [analysis, setAnalysis] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -22,8 +22,8 @@ export function AIMedicationHelper({ medications, caredOneName }: AIMedicationHe
       const medList = medications.map((m: any) => `${m.name} (${m.dosage || "dosage unknown"}, ${m.frequency || "frequency unknown"})`).join(", ");
       const reply = await invokeAI(
         "medication_check",
-        `Patient: ${caredOneName || "a person with dementia"}. Current medications: ${medList}. Check for potential interactions and provide timing advice.`,
-        { persist: false }
+        `Person: ${caredOneName || "unknown"}. Current medicines: ${medList}.`,
+        { persist: false, language: i18n.language }
       );
       setAnalysis(reply);
     } catch (err) {

@@ -15,17 +15,9 @@ import { wordpressCCTFetch, wordpressFetch, isNetworkAbort } from "@/features/sh
 import { T, R } from "@/integrations/wp-schema";
 import { appScopeBody } from "@/features/shared/app-scope";
 import { supabase } from "@/integrations/supabase/client";
+import type { AIMode } from "../../supabase/functions/_shared/ai-prompts";
 
-export type AIMode =
-  | "insights"
-  | "cognitive_exercise"
-  | "medication_check"
-  | "behavior_analysis"
-  | "care_tips"
-  | "daily_summary"
-  | "routine_suggestion"
-  | "care_info_sheet"
-  | "general_chat";
+export type { AIMode } from "../../supabase/functions/_shared/ai-prompts";
 
 
 export interface AIChatMessage {
@@ -40,6 +32,7 @@ export interface InvokeAIOptions {
   messages?: AIChatMessage[];
   /** Extra facts/guardrails appended to the server system prompt (e.g. care sheet contents). */
   contextPrompt?: string;
+  language?: string;
   /**
    * Write the exchange into the unified chat CCTs. Default FALSE.
    * Only opt-in if you explicitly need a persisted transcript.
@@ -126,9 +119,9 @@ async function touchConversation(conversationId: string) {
 }
 
 /** Call the ai-care-engine edge function (Lovable AI Gateway) */
-async function callAI(mode: AIMode, messages: AIChatMessage[], contextPrompt?: string): Promise<string> {
+async function callAI(mode: AIMode, messages: AIChatMessage[], contextPrompt?: string, language?: string): Promise<string> {
   const { data, error } = await supabase.functions.invoke("ai-care-engine", {
-    body: { mode, messages, ...(contextPrompt ? { contextPrompt } : {}) },
+    body: { mode, messages, ...(contextPrompt ? { contextPrompt } : {}), ...(language ? { language } : {}) },
   });
   if (error) {
     console.error("AI edge function error:", error);
@@ -183,7 +176,7 @@ export async function invokeAI(mode: AIMode, context: string, options: InvokeAIO
   }
 
   // Critical path
-  const reply = await callAI(mode, userMessages, options.contextPrompt);
+  const reply = await callAI(mode, userMessages, options.contextPrompt, options.language);
 
   if (conversationId) {
     try {

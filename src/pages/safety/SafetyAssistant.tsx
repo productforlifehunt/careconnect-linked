@@ -9,6 +9,7 @@ import { invokeAI } from "@/lib/ai-service";
 import { trimMessagesToCharLimit } from "@/lib/ai-memory";
 import { zoneTypeLabel } from "@/features/location/zone-types";
 import { useSafetyCircle } from "./useSafetyCircle";
+import { buildSafetyContext } from "../../../supabase/functions/_shared/ai-prompts";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -61,14 +62,12 @@ export default function SafetyAssistant() {
     setMessages((m) => [...m, { role: "user", content: q }]);
     setBusy(true);
     try {
-      const system = L(
-        "你是家庭定位应用的安全助手。只根据提供的圈子数据回答，不要编造位置或数据；数据缺失时直接说明。回答简短、口语化。",
-        "You are the safety assistant of a family locator app. Answer only from the circle data provided, never invent locations or data, and say plainly when something is unknown. Keep answers short and conversational.",
-      );
       const history = trimMessagesToCharLimit([...messages, { role: "user" as const, content: q }]);
       const reply = await invokeAI("general_chat", q, {
-        messages: [{ role: "system" as const, content: `${system}\n\n${context}` }, ...history],
+        messages: history,
+        contextPrompt: buildSafetyContext(context, !!zh),
         persist: false,
+        language: zh ? "zh" : "en",
       });
       setMessages((m) => [...m, { role: "assistant", content: reply }]);
       requestAnimationFrame(() => endRef.current?.scrollIntoView({ behavior: "smooth" }));

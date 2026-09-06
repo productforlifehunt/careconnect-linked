@@ -33,6 +33,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { AICompanionChatDialog } from "@/components/ai/AICompanionChatDialog";
 import { Switch } from "@/components/ui/switch";
 import { useStandaloneMode } from "@/hooks/useStandaloneMode";
+import { aiBrand } from "../../../supabase/functions/_shared/ai-prompts";
 
 type ToolItem = {
   id: string;
@@ -126,7 +127,7 @@ export function MobileBottomBar() {
         { id: "daily-calendar", title: isChinese ? "日历" : "Calendar", url: "/calendar", icon: CalendarDays },
         { id: "daily-bookings", title: isChinese ? "预约" : "Bookings", url: "/bookings", icon: ClipboardList },
         { id: "daily-gps", title: isChinese ? "定位" : "GPS", url: "/gps-tracking", icon: MapPin },
-        { id: "daily-ai", title: isChinese ? "小忆 AI 助手" : "ChallengeD Assistant", icon: Bot, onClick: openAi },
+        { id: "daily-ai", title: aiBrand(isChinese ? "zh" : "en"), icon: Bot, onClick: openAi },
       ]
     : [
         { id: "daily-bookings", title: isChinese ? "预约" : "Bookings", url: "/bookings", icon: ClipboardList },

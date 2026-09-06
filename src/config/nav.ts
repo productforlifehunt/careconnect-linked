@@ -24,6 +24,7 @@ import {
   User,
   ShoppingCart,
 } from "lucide-react";
+import { aiBrand } from "../../supabase/functions/_shared/ai-prompts";
 
 export type NavItem = {
   title: string;
@@ -77,7 +78,7 @@ export function buildPublicNav({ site, t, isChinese, withHome }: Opts): NavItem[
         url: "/search?service_category=care&service_location=remote&service_type=companionship",
         icon: MessageSquare,
       },
-      { title: t("nav.aiCompanion"), url: "/ai-companion", icon: Bot, badge: isChinese ? "小忆" : "AI" },
+      { title: t("nav.aiCompanion"), url: "/ai-companion", icon: Bot, badge: aiBrand(isChinese ? "zh" : "en") },
       { title: t("nav.seniorFacilities"), url: "/search?service_category=facility", icon: Building2 },
       { title: isChinese ? t("nav.united") : site.navLabels.careGroups, url: "/care-circle", icon: Users },
       { title: t("nav.community"), url: "/community", icon: Newspaper },
