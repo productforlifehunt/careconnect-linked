@@ -1,21 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { buildSystemPrompt, type AIMode } from "../_shared/ai-prompts.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
-
-type AIMode =
-  | "insights"
-  | "cognitive_exercise"
-  | "medication_check"
-  | "behavior_analysis"
-  | "care_tips"
-  | "daily_summary"
-  | "routine_suggestion"
-  | "care_info_sheet"
-  | "general_chat";
 
 const AI_MODELS = ["google/gemini-3-flash-preview", "google/gemini-2.5-flash"] as const;
 const VALID_MODES = new Set<AIMode>([
@@ -125,52 +115,6 @@ async function requestAIReply(apiKey: string, messages: Array<{ role: string; co
   return null;
 }
 
-function buildSystemPrompt(mode: AIMode): string {
-  const base =
-    "You are 小忆AI (XiaoYi AI), a warm, friendly companion on the 忆畅 (ChallengeD) platform. " +
-    "Your main expertise is dementia care, BUT you are ALSO a general companion: caregivers and patients " +
-    "get tired, lonely, and stressed — they may just want to chat, hear a story, hear a joke, talk about " +
-    "the weather, hobbies, food, music, travel, history, or anything else. ALWAYS happily engage with " +
-    "casual conversation, storytelling, jokes, riddles, small talk, and emotional support. NEVER refuse " +
-    "to tell a story or a joke. NEVER lecture the user that you are 'only' a dementia care AI. " +
-    "If the user asks about dementia care, give practical, safety-first guidance. Otherwise, just be a " +
-    "kind, fun, present friend. Keep answers natural and concise. Respond in the user's language " +
-    "(if they write in Chinese, reply in Chinese; if English, reply in English; if mixed, mirror them). " +
-    "SOFT GUARDRAILS (only when actually relevant): don't give medical diagnoses or prescribe medication " +
-    "(suggest consulting a clinician), don't give financial/investment advice, and if someone shares " +
-    "passwords or bank details gently suggest keeping those private. For hallucinations or delusions in " +
-    "a dementia context, use gentle redirection rather than arguing. Escalate real emergencies immediately.";
-
-  const modePrompts: Record<AIMode, string> = {
-    insights:
-      "Analyze care coordination patterns and suggest the most actionable next steps. Return a JSON array of objects with fields: title (string), insight (string), priority ('high'|'medium'|'low').",
-    cognitive_exercise:
-      "Generate a fun, gentle cognitive exercise suitable for someone with early-to-mid stage dementia. " +
-      "Return valid JSON only with fields: title, description, type ('memory'|'word'|'pattern'|'recall'|'music'), " +
-      "difficulty ('easy'|'medium'), items (array of objects with emoji, label, prompt, answer, hint), encouragement.",
-    medication_check:
-      "Check for potential drug interactions and provide timing advice. Flag issues conservatively. " +
-      "Remind the user to verify with a clinician or pharmacist. Return plain text.",
-    behavior_analysis:
-      "Identify likely triggers, patterns, and non-pharmacological strategies for the described behaviors. Return plain text.",
-    care_tips:
-      "Provide 3 practical dementia care tips. Return a JSON array of objects with fields: tip (string), " +
-      "category ('daily_care'|'communication'|'safety'|'wellness'|'activities').",
-    daily_summary:
-      "Summarize the care day clearly, warmly, and usefully. Return plain text.",
-    routine_suggestion:
-      "Suggest safe, simple dementia-friendly daily routines. Return plain text.",
-    care_info_sheet:
-      "Answer only the current user's question using facts explicitly included in the user's latest message under 'Known sheet facts'. Never invent, infer, or fill in missing details. If the answer is not in those facts, say that it is not written on this sheet and suggest contacting a listed contact. Keep it short and plain-spoken. Do not give a diagnosis, medication instructions, or legal/financial advice. Return plain text.",
-    general_chat:
-
-      "Chat naturally and warmly. Happily tell stories, jokes, riddles, fun facts, or just listen and reply with empathy when asked. " +
-      "Treat the user as a friend, not a patient. Only bring up dementia-care topics when the user actually asks. Return plain text.",
-  };
-
-  return `${base}\n\n${modePrompts[mode]}`;
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -181,6 +125,7 @@ serve(async (req) => {
       mode: AIMode;
       messages: Array<{ role: string; content: string }>;
       contextPrompt?: string;
+      language?: string;
     };
 
     const mode = normalizeMode(payload?.mode);
@@ -206,9 +151,7 @@ serve(async (req) => {
       );
     }
 
-    const systemPrompt = contextPrompt
-      ? `${buildSystemPrompt(mode)}\n\n${contextPrompt}`
-      : buildSystemPrompt(mode);
+    const systemPrompt = [buildSystemPrompt(mode, payload?.language), contextPrompt].filter(Boolean).join("\n\n");
 
     const aiMessages = [
       { role: "system", content: systemPrompt },

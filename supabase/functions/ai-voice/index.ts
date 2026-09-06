@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { TTS_READER_SYSTEM_PROMPT } from "../_shared/ai-prompts.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -489,8 +490,7 @@ serve(async (req) => {
           messages: [
             {
               role: "system",
-              content:
-                "You are a text-to-speech reader. Read the user's message aloud verbatim in its original language with natural, warm intonation. Do not add, remove, translate, or comment on anything. Just read it.",
+              content: TTS_READER_SYSTEM_PROMPT,
             },
             {
               role: "user",

@@ -15,17 +15,9 @@ import { wordpressCCTFetch, wordpressFetch, isNetworkAbort } from "@/features/sh
 import { T, R } from "@/integrations/wp-schema";
 import { appScopeBody } from "@/features/shared/app-scope";
 import { supabase } from "@/integrations/supabase/client";
+import type { AIMode } from "../../supabase/functions/_shared/ai-prompts";
 
-export type AIMode =
-  | "insights"
-  | "cognitive_exercise"
-  | "medication_check"
-  | "behavior_analysis"
-  | "care_tips"
-  | "daily_summary"
-  | "routine_suggestion"
-  | "care_info_sheet"
-  | "general_chat";
+export type { AIMode } from "../../supabase/functions/_shared/ai-prompts";
 
 
 export interface AIChatMessage {
@@ -40,6 +32,7 @@ export interface InvokeAIOptions {
   messages?: AIChatMessage[];
   /** Extra facts/guardrails appended to the server system prompt (e.g. care sheet contents). */
   contextPrompt?: string;
+  language?: string;
   /**
    * Write the exchange into the unified chat CCTs. Default FALSE.
    * Only opt-in if you explicitly need a persisted transcript.
