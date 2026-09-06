@@ -36,7 +36,7 @@ export function CognitiveExercises() {
     setRevealed(new Set());
     setCompleted(false);
     try {
-      const reply = await invokeAI("cognitive_exercise", "Generate a fun, gentle cognitive exercise suitable for someone living with early-to-mid stage dementia. Make it warm and encouraging.");
+      const reply = await invokeAI("cognitive_exercise", "Generate a fun, gentle cognitive exercise suitable for someone living with early-to-mid stage dementia. Make it warm and encouraging.", { persist: false });
       const parsed = parseAIJson<Exercise>(reply);
       if (parsed) setExercise(parsed);
     } catch (err) {
