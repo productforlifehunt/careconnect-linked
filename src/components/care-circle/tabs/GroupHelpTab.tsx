@@ -6,6 +6,7 @@ import { HelpCircle, Bot, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
 import { invokeAI } from "@/lib/ai-service";
+import { trimMessagesToCharLimit } from "@/lib/ai-memory";
 
 interface GroupHelpTabProps {
   groupName?: string;
