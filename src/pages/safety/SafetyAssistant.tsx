@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { invokeAI } from "@/lib/ai-service";
+import { trimMessagesToCharLimit } from "@/lib/ai-memory";
 import { zoneTypeLabel } from "@/features/location/zone-types";
 import { useSafetyCircle } from "./useSafetyCircle";
 
@@ -64,7 +65,11 @@ export default function SafetyAssistant() {
         "你是家庭定位应用的安全助手。只根据提供的圈子数据回答，不要编造位置或数据；数据缺失时直接说明。回答简短、口语化。",
         "You are the safety assistant of a family locator app. Answer only from the circle data provided, never invent locations or data, and say plainly when something is unknown. Keep answers short and conversational.",
       );
-      const reply = await invokeAI("general_chat", `${system}\n\n${context}\n\n${q}`);
+      const history = trimMessagesToCharLimit([...messages, { role: "user" as const, content: q }]);
+      const reply = await invokeAI("general_chat", q, {
+        messages: [{ role: "system" as const, content: `${system}\n\n${context}` }, ...history],
+        persist: false,
+      });
       setMessages((m) => [...m, { role: "assistant", content: reply }]);
       requestAnimationFrame(() => endRef.current?.scrollIntoView({ behavior: "smooth" }));
     } catch (e: any) {
