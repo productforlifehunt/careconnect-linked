@@ -85,3 +85,4 @@
 - [Business-School Church Doctrine](mem://constraints/business-school-church-doctrine) — HBS exec-program field report (engineered discomfort → self-blame → worship), Pfeffer & Fong 2002, Mintzberg 2004 "Managers Not MBAs", case method = institutionalised rehearsed-case doctrine, Scott Galloway as worship-the-strong proof case, rules for teaching design thinking inside a business school
 - [JetEngine Relation REST Toggle](mem://infrastructure/jetengine-relation-rest-toggle) — jet-rel 404 = "Register REST API Endpoint" switch OFF, not a missing relation; fix in GUI, never duplicate the relation
 - [WP users context=edit 403](mem://infrastructure/wp-users-context-edit-403) — App roles 403 on context=edit user reads; use fetchWPUserSafe public fallback
+- [AI Memory Standard](mem://features/ai-memory-standard) — Two-bucket rule: casual chat frontend-only 10k char rolling window; care-fact calls re-read DB and only persist conclusions
