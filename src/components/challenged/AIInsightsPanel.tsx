@@ -20,7 +20,7 @@ interface AIInsightsPanelProps {
 }
 
 export function AIInsightsPanel({ caredOnes, tasks, bookings }: AIInsightsPanelProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [insights, setInsights] = useState<Insight[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +39,7 @@ export function AIInsightsPanel({ caredOnes, tasks, bookings }: AIInsightsPanelP
         taskTitles: (tasks || []).filter((t: any) => t.status !== "completed").slice(0, 5).map((t: any) => t.title),
         upcomingBookings: (bookings || []).filter((b: any) => ["confirmed", "pending"].includes(b.status)).length,
       });
-      const reply = await invokeAI("insights", `Here is the current care data for this caregiver:\n${context}`, { persist: false });
+      const reply = await invokeAI("insights", context, { persist: false, language: i18n.language });
       const parsed = parseAIJson<Insight[]>(reply);
       if (parsed && Array.isArray(parsed)) {
         setInsights(parsed);

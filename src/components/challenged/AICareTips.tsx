@@ -32,15 +32,15 @@ interface AICareTipsProps {
 }
 
 export function AICareTips({ caredOneName, dementiaStage }: AICareTipsProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [tips, setTips] = useState<CareTip[]>([]);
   const [loading, setLoading] = useState(false);
 
   const fetchTips = async () => {
     setLoading(true);
     try {
-      const context = `Patient: ${caredOneName || "a cared one"}. Dementia stage: ${dementiaStage || "unknown"}. Provide 3 personalized daily care tips.`;
-      const reply = await invokeAI("care_tips", context, { persist: false });
+      const context = `Person: ${caredOneName || "unknown"}. Dementia stage: ${dementiaStage || "unknown"}.`;
+      const reply = await invokeAI("care_tips", context, { persist: false, language: i18n.language });
       const parsed = parseAIJson<CareTip[]>(reply);
       if (parsed && Array.isArray(parsed)) setTips(parsed);
     } catch (err) {
