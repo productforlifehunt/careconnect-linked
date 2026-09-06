@@ -1,12 +1,14 @@
 /**
  * AI Service — Lovable AI Gateway via edge function.
  *
- * Storage uses the SAME unified chat CCTs as user/group chat:
- *   - chat_conversation (chat_type="AI", ai_chat_mode=<mode>)
- *   - chat_message      (chat_message_type="ai" for assistant, "text" for user)
- *   - REL 143           (1:M chat_conversation → chat_message)
+ * Memory rule (two buckets):
+ *   1. Casual / companion chat: frontend-only, 10k char rolling window,
+ *      no backend persistence, never attached to a cared-one record.
+ *   2. Care-fact / one-shot: no conversation memory; fresh DB facts every call;
+ *      only the outcome/conclusion is stored as a formal record.
  *
- * NO separate ai_conversations / ai_messages CCTs. Those were hallucinations.
+ * Persistence into the unified chat CCTs is OPT-IN via `persist: true`.
+ * All current call sites use the non-persisting default.
  */
 
 import { wordpressCCTFetch, wordpressFetch, isNetworkAbort } from "@/features/shared/wordpress-client";
@@ -39,9 +41,8 @@ export interface InvokeAIOptions {
   /** Extra facts/guardrails appended to the server system prompt (e.g. care sheet contents). */
   contextPrompt?: string;
   /**
-   * Write the exchange into the unified chat CCTs. Default true.
-   * Set false for people outside the app (e.g. someone opening a shared
-   * information card link) — nothing is stored, the chat lives in memory only.
+   * Write the exchange into the unified chat CCTs. Default FALSE.
+   * Only opt-in if you explicitly need a persisted transcript.
    */
   persist?: boolean;
 }
@@ -168,9 +169,9 @@ export async function invokeAI(mode: AIMode, context: string, options: InvokeAIO
 
   const userMessage = userMessages.filter((m) => m.role === "user").at(-1)?.content || context;
 
-  // Persist (non-blocking on failure)
+  // Persist only when explicitly requested (non-blocking on failure)
   let conversationId: string | null = null;
-  const shouldPersist = options.persist !== false;
+  const shouldPersist = options.persist === true;
   try {
     if (!shouldPersist) throw new SkipPersistence();
     conversationId = await ensureConversation(mode, options);
