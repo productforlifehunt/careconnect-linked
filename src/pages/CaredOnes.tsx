@@ -66,11 +66,11 @@ export default function CaredOnes() {
   const deleteUserCaredOne = useDeleteUserCaredOne();
   // Notification rows link straight here, e.g. /cared-ones?person=12&card=medicine
   const [searchParams] = useSearchParams();
-  const { personId, card } = useParams();
+  const { personId, card: cardParam } = useParams();
   const navigate = useNavigate();
   // Address is the state: /cared-ones/:personId/:card (older links with ?person=&card= still work).
   const activeTab = personId || searchParams.get("person") || null;
-  const openCard = card || searchParams.get("card") || null;
+  const openCard = cardParam || searchParams.get("card") || null;
   const setActiveTab = (id: string | null) =>
     navigate(id ? `/cared-ones/${String(id).replace(/^wp-/, "")}` : "/cared-ones");
   const setOpenCard = (key: string | null) => {

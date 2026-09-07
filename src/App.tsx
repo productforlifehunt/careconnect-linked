@@ -95,6 +95,10 @@ function AppRoutes() {
       {/* Public routes */}
       <Route path="/" element={<Index />} />
       <Route path="/search" element={<SearchResults />} />
+      <Route path="/search-caregiver" element={<SearchResults />} />
+      <Route path="/search-local-caregiver" element={<SearchResults />} />
+      <Route path="/search-remote-caregiver" element={<SearchResults />} />
+      <Route path="/search-care-facility" element={<SearchResults />} />
       <Route path="/caregiver/:id" element={<CaregiverProfile />} />
       <Route path="/facility/:id" element={<CareFacilityProfile />} />
       <Route path="/auth" element={<Auth />} />
@@ -136,6 +140,8 @@ function AppRoutes() {
       <Route path="/notifications" element={<RequireAuth><Notifications /></RequireAuth>} />
       <Route path="/inbox" element={<RequireAuth><Inbox /></RequireAuth>} />
       <Route path="/cared-ones" element={<RequireAuth><CaredOnes /></RequireAuth>} />
+      <Route path="/cared-ones/:personId" element={<RequireAuth><CaredOnes /></RequireAuth>} />
+      <Route path="/cared-ones/:personId/:card" element={<RequireAuth><CaredOnes /></RequireAuth>} />
       <Route path="/shared-tasks" element={<RequireAuth><SharedTasks /></RequireAuth>} />
       <Route path="/provider-dashboard" element={<RequireAuth><ProviderDashboard /></RequireAuth>} />
       <Route path="/cart" element={<RequireAuth><Cart /></RequireAuth>} />
