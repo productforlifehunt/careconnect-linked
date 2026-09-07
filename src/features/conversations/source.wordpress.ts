@@ -295,6 +295,7 @@ export async function fetchConversationsWordPress(currentUserId?: string): Promi
         other_user_avatar: null as string | null,
         last_message: last || null,
         last_message_at: last?.created_at || c[CF.LAST_MESSAGE_AT] || c.updated_at || c.created_at,
+        unread_count: unreadFlag(id, last, myId ? `wp-${myId}` : null),
         created_at: c.created_at,
       };
     }))).filter(Boolean) as any[];
