@@ -37,7 +37,7 @@ async function requestAIReply(apiKey: string, messages: Array<{ role: string; co
           messages,
           stream: false,
           // Cheapest possible: no reasoning tokens.
-          ...(model.startsWith("openai/") ? { reasoning_effort: "minimal" } : {}),
+          ...(model.startsWith("openai/") ? { reasoning_effort: "none" } : {}),
         }),
       });
 
@@ -164,7 +164,7 @@ async function handleStream(req: Request): Promise<Response> {
       },
       body: JSON.stringify({
         model: "openai/gpt-5-nano",
-        reasoning_effort: "minimal",
+        reasoning_effort: "none",
         stream: true,
         messages: [
           { role: "system", content: systemPrompt },
