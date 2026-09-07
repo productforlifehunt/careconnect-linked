@@ -22,7 +22,7 @@ const corsHeaders = {
 
 // ═══ 1. CHAT (non-streaming) ═══
 // Cheapest capable model first; only escalate if it fails to answer.
-const AI_MODELS = ["google/gemini-3.1-flash-lite", "google/gemini-3.7-flash"] as const;
+const AI_MODELS = ["openai/gpt-5-nano", "google/gemini-3.1-flash-lite"] as const;
 async function requestAIReply(apiKey: string, messages: Array<{ role: string; content: string }>) {
   for (const model of AI_MODELS) {
     try {
@@ -36,6 +36,8 @@ async function requestAIReply(apiKey: string, messages: Array<{ role: string; co
           model,
           messages,
           stream: false,
+          // Cheapest possible: no reasoning tokens.
+          ...(model.startsWith("openai/") ? { reasoning_effort: "minimal" } : {}),
         }),
       });
 
@@ -161,7 +163,8 @@ async function handleStream(req: Request): Promise<Response> {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3.1-flash-lite",
+        model: "openai/gpt-5-nano",
+        reasoning_effort: "minimal",
         stream: true,
         messages: [
           { role: "system", content: systemPrompt },
