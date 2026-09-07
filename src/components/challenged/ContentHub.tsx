@@ -27,7 +27,7 @@ interface ContentHubProps {
   icon: React.ReactNode;
   accentColor: string; // tailwind class like "from-purple-600 to-indigo-700"
   subcategories: ContentHubSubcategory[];
-  basePath: string; // e.g. "/aware"
+  basePath: string; // e.g. "/awared"
 }
 
 export function ContentHub({

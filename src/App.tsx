@@ -75,7 +75,7 @@ const queryClient = new QueryClient({
 });
 
 // Dashboard routes that always get sidebar
-const baseDashboardPaths = ["/dashboard", "/bookings", "/care-circle", "/gps-tracking", "/messages", "/favorites", "/notifications", "/profile", "/cared-ones", "/shared-tasks", "/provider-dashboard", "/community", "/articles", "/cart", "/order-confirmation", "/aware", "/care-guides", "/coping", "/safety-guides", "/accompanied", "/calendar", "/resources", "/inbox"];
+const baseDashboardPaths = ["/dashboard", "/bookings", "/care-circle", "/find", "/messages", "/favorites", "/notifications", "/profile", "/cared-ones", "/shared-tasks", "/provider-dashboard", "/community", "/articles", "/cart", "/order-confirmation", "/awared", "/cared", "/coped", "/safed", "/accompanied", "/calendar", "/resources", "/inbox"];
 // Routes that get sidebar only when authenticated
 const authDashboardPaths = ["/search", "/caregiver"];
 
@@ -112,14 +112,14 @@ function AppRoutes() {
       <Route path="/xianyu-listings" element={<XianyuListings />} />
       <Route path="/share/card/:token" element={<SharedInformationCard />} />
       {/* ChallengeD content sections */}
-      <Route path="/aware" element={<AwareD />} />
-      <Route path="/aware/:id" element={<ChallengedArticleDetail />} />
-      <Route path="/care-guides" element={<CareD />} />
-      <Route path="/care-guides/:id" element={<ChallengedArticleDetail />} />
-      <Route path="/coping" element={<CopeD />} />
-      <Route path="/coping/:id" element={<ChallengedArticleDetail />} />
-      <Route path="/safety-guides" element={<SafeD />} />
-      <Route path="/safety-guides/:id" element={<ChallengedArticleDetail />} />
+      <Route path="/awared" element={<AwareD />} />
+      <Route path="/awared/:id" element={<ChallengedArticleDetail />} />
+      <Route path="/cared" element={<CareD />} />
+      <Route path="/cared/:id" element={<ChallengedArticleDetail />} />
+      <Route path="/coped" element={<CopeD />} />
+      <Route path="/coped/:id" element={<ChallengedArticleDetail />} />
+      <Route path="/safed" element={<SafeD />} />
+      <Route path="/safed/:id" element={<ChallengedArticleDetail />} />
       <Route path="/accompanied" element={<AccompanieD />} />
       <Route path="/accompanied/:id" element={<ChallengedArticleDetail />} />
       <Route path="/facilities/new" element={<RequireAuth><CareFacilityForm /></RequireAuth>} />
@@ -128,7 +128,7 @@ function AppRoutes() {
       {/* Protected routes */}
       <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
       <Route path="/care-circle" element={<RequireAuth><CareCircle /></RequireAuth>} />
-      <Route path="/gps-tracking" element={<RequireAuth><GPSTracking /></RequireAuth>} />
+      <Route path="/find" element={<RequireAuth><GPSTracking /></RequireAuth>} />
       <Route path="/bookings" element={<RequireAuth><Bookings /></RequireAuth>} />
       <Route path="/messages" element={<RequireAuth><Messages /></RequireAuth>} />
       <Route path="/favorites" element={<RequireAuth><Favorites /></RequireAuth>} />

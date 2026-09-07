@@ -33,7 +33,7 @@ export function LovedOneSimpleView() {
   const bigActions = [
     { label: t("lovedOneView.myMedications"), icon: Pill, color: "bg-primary text-primary-foreground", onClick: () => navigate("/cared-ones") },
     { label: t("lovedOneView.callForHelp"), icon: Phone, color: "bg-destructive text-destructive-foreground", onClick: primaryContact ? () => window.open(`tel:${primaryContact.phone}`) : undefined },
-    { label: t("lovedOneView.myLocation"), icon: MapPin, color: "bg-success text-success-foreground", onClick: () => navigate("/gps-tracking") },
+    { label: t("lovedOneView.myLocation"), icon: MapPin, color: "bg-success text-success-foreground", onClick: () => navigate("/find") },
     { label: t("messages.messages"), icon: MessageSquare, color: "bg-secondary text-secondary-foreground", onClick: () => navigate("/messages") },
     { label: t("lovedOneView.myCareTeam"), icon: Users, color: "bg-accent text-accent-foreground", onClick: () => navigate("/care-circle") },
     { label: t("lovedOneView.appointments"), icon: Calendar, color: "bg-primary text-primary-foreground", onClick: () => navigate("/bookings") },

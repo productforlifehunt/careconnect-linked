@@ -25,7 +25,7 @@ export default function SafeD() {
       icon={<ShieldCheck className="h-6 w-6 text-white" />}
       accentColor="from-green-500 to-emerald-600"
       subcategories={SUBCATEGORIES}
-      basePath="/safety-guides"
+      basePath="/safed"
     />
   );
 }

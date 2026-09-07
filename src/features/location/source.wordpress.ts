@@ -323,7 +323,7 @@ export async function writeLocationAndCheckZones(
               type: "sos_emergency",
               title: "🚨 SOS Emergency Alert",
               message: `${name} triggered an SOS emergency alert.`,
-              action_url: `/gps-tracking?sos=${storedUser.user_id}`,
+              action_url: `/find?sos=${storedUser.user_id}`,
             }).catch(() => null),
           ),
       );

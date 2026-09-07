@@ -442,7 +442,7 @@ export async function createSafeZoneAlertsForLocation(userId: string, lat: numbe
           type: "safe_zone_breach",
           title: result.alertType === "entered_danger_zone" ? "⚠️ Danger Zone Alert" : "📍 Safe Zone Alert",
           message: msg,
-          action_url: `/gps-tracking?zone=${zone.id}`,
+          action_url: `/find?zone=${zone.id}`,
         });
         // Fan out to the cared one's configured receivers (Relation 290).
         const receivers: string[] = Array.isArray(zone.receiver_ids)
@@ -456,7 +456,7 @@ export async function createSafeZoneAlertsForLocation(userId: string, lat: numbe
               type: "safe_zone_breach",
               title: result.alertType === "entered_danger_zone" ? "⚠️ Danger Zone Alert" : "📍 Safe Zone Alert",
               message: msg,
-              action_url: `/gps-tracking?zone=${zone.id}`,
+              action_url: `/find?zone=${zone.id}`,
             })),
         );
       }
@@ -513,7 +513,7 @@ export async function sendLocationRequestWordPress(input: { caredOneId: string; 
       type: input.isEmergency ? "emergency_location_request" : "location_request",
       title: input.isEmergency ? "🚨 Emergency Location Request" : "📍 Location Request",
       message: `${askerName || "A care circle member"} ${input.isEmergency ? "urgently needs" : "is requesting"} your location.${input.message ? ` "${input.message}"` : ""}`,
-      action_url: `/gps-tracking?request_from=${storedUser.user_id}`,
+      action_url: `/find?request_from=${storedUser.user_id}`,
     });
   }
 }

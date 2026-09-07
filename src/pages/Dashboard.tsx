@@ -140,7 +140,7 @@ export default function Dashboard() {
 
   const quickTools = [
     { icon: ShoppingBag, label: t("nav.findHelp", { defaultValue: "Marketplace" }), to: "/search", color: "text-coral" },
-    { icon: MapPin,      label: t("dashboard.gpsTrack", { defaultValue: "GPS" }),    to: "/gps-tracking", color: "text-primary" },
+    { icon: MapPin,      label: t("dashboard.gpsTrack", { defaultValue: "GPS" }),    to: "/find", color: "text-primary" },
     { icon: CalIcon,     label: t("nav.calendar", { defaultValue: "Calendar" }),     to: "/calendar", color: "text-success" },
     { icon: MessageSquare, label: t("nav.messages", { defaultValue: "Messages" }),   to: "/messages", color: "text-coral" },
     { icon: Briefcase,   label: t("nav.bookings", { defaultValue: "Bookings" }),     to: "/bookings", color: "text-primary" },

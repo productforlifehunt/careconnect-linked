@@ -24,7 +24,7 @@ export default function AwareD() {
       icon={<Lightbulb className="h-6 w-6 text-white" />}
       accentColor="from-amber-500 to-orange-600"
       subcategories={SUBCATEGORIES}
-      basePath="/aware"
+      basePath="/awared"
     />
   );
 }
