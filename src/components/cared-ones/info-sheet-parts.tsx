@@ -22,7 +22,7 @@ import { fetchCareTipsWordPress, fetchCarePlansWordPress, fetchCareNotesWordPres
 import { fetchMedicinesWordPress } from "@/features/medicine/source.medicine";
 import type { InfoSheetAIContext } from "@/components/cared-ones/InfoSheetAIDialog";
 import { buildInfoSheetContext, buildInfoSheetIntroduction } from "../../../supabase/functions/_shared/ai-prompts";
-import { useAIAssistant } from "@/contexts/AIAssistantContext";
+import { AICompanionChat } from "@/components/ai/AICompanionChat";
 
 // Leaflet stylesheet, loaded once (same source as the main location hub).
 if (typeof document !== "undefined" && !document.getElementById("leaflet-css")) {
