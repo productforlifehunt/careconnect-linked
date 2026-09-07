@@ -121,23 +121,70 @@ export function buildPublicNav({ site, t, isChinese, withHome }: Opts): NavItem[
   ];
 }
 
-/** Signed-in entries. `dashboardLabel` differs between installed app and web. */
-export function buildAuthNav({
-  site,
-  t,
-  dashboardLabel,
-}: Opts & { dashboardLabel?: string }): NavItem[] {
+/**
+ * Dashboard sidebar (desktop, signed in). This list used to live inside
+ * DashboardLayout; it is the canonical signed-in list now.
+ */
+export function buildSidebarNav({ site, t, isChinese }: Opts): NavItem[] {
   const isChallenged = site.family === "challenged";
+  const isCareCNC = site.id === "carecnc";
+  const isV1 = site.id === "challenged-v1";
+  const L = (zh: string, en: string) => (isChinese ? zh : en);
+
+  const items: NavItem[] = [
+    { title: L("控制面板", site.navLabels.dashboard || "Dashboard"), url: "/dashboard", icon: LayoutDashboard },
+    { title: L(isChallenged ? "被护理者" : "被照顾者", site.navLabels.caredOnes), url: "/cared-ones", icon: Heart },
+    { title: L("预约", "Appointments"), url: "/bookings", icon: CalendarDays },
+    { title: L("消息", "Messages"), url: "/messages", icon: MessageSquare },
+    { title: L(isChallenged ? "护理群组" : "照护小组", site.navLabels.careGroups), url: "/care-circle", icon: Users },
+    { title: L("需要帮手的任务", "Tasks Needing Help"), url: "/shared-tasks", icon: HeartHandshake },
+    { title: L(isChallenged ? "寻求帮助" : "寻找护理", site.navLabels.findCare || "Find Care"), url: "/search", icon: Search },
+    { title: L(isChallenged ? "定位" : "定位追踪", site.navLabels.gpsTracking || "GPS"), url: "/gps-tracking", icon: MapPin },
+    { title: L("收藏", "Favorites"), url: "/favorites", icon: Heart },
+    { title: L("护理者面板", "Provider Dashboard"), url: "/provider-dashboard", icon: Settings },
+    { title: L("购物车", "Cart"), url: "/cart", icon: ShoppingCart },
+  ];
+
+  if (isChallenged && !isV1) {
+    items.push(
+      { title: L("认知篇", site.navLabels.awareD || "AwareD"), url: "/aware", icon: Lightbulb },
+      { title: L("护理篇", site.navLabels.careD || "CareD"), url: "/care-guides", icon: HeartPulse },
+      { title: L("应对篇", site.navLabels.copeD || "CopeD"), url: "/coping", icon: Wand2 },
+      { title: L("安全篇", site.navLabels.safeD || "SafeD"), url: "/safety-guides", icon: ShieldCheck },
+      { title: L("陪伴篇", site.navLabels.accompanieD || "AccompanieD"), url: "/accompanied", icon: HandHeart },
+    );
+  }
+
+  // Resources is only for the ChallengeD full build — not CareCNC, not v1.
+  if (!isCareCNC && !isV1) {
+    items.push({ title: L("资源", "Resources"), url: "/resources", icon: BookOpen });
+  }
+
+  items.push(
+    { title: L("收件箱", "Inbox"), url: "/inbox", icon: Inbox },
+    { title: L("通知", "Notifications"), url: "/notifications", icon: Bell },
+    { title: L("我的资料", "My Profile"), url: "/profile", icon: User },
+  );
+
+  return items;
+}
+
+/** The four fixed tabs of the mobile bottom bar (the 5th slot is "More"). */
+export function buildBottomTabs({ site, t, isChinese }: Opts): NavItem[] {
+  const isChallenged = site.family === "challenged";
+  const caredOnesLabel = isChinese ? "被护理者" : site.navLabels.caredOnes;
+  const careGroupLabel = isChinese
+    ? isChallenged
+      ? "护理群组"
+      : "照护小组"
+    : isChallenged
+      ? "Care Teams"
+      : site.navLabels.careGroups;
+
   return [
-    { title: dashboardLabel || t("nav.dashboard"), url: "/dashboard", icon: LayoutDashboard },
-    { title: t(isChallenged ? "nav.myLovedOnes" : "nav.caredOnes"), url: "/cared-ones", icon: Heart },
-    { title: t("nav.myBookings"), url: "/bookings", icon: CalendarDays },
-    { title: t(isChallenged ? "nav.united" : "nav.careGroups"), url: "/care-circle", icon: Users },
-    { title: isChallenged ? t("nav.find") : t("nav.gpsTracking"), url: "/gps-tracking", icon: MapPin },
-    { title: t("nav.messages"), url: "/messages", icon: MessageSquare },
-    { title: t("nav.notifications"), url: "/notifications", icon: Bell },
-    { title: t("nav.favorites"), url: "/favorites", icon: Heart },
-    { title: t("nav.cart", "Cart"), url: "/cart", icon: ShoppingCart },
-    { title: t("nav.myProfile"), url: "/profile", icon: User },
+    { title: isChinese ? "首页" : "Home", url: "/dashboard", icon: LayoutDashboard },
+    { title: caredOnesLabel, url: "/cared-ones", icon: Heart },
+    { title: careGroupLabel, url: "/care-circle", icon: Users },
+    { title: isChinese ? "收件箱" : "Inbox", url: "/inbox", icon: Inbox },
   ];
 }
