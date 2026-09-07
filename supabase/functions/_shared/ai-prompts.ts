@@ -127,6 +127,19 @@ export function buildCheckInContext(checkinName: string, instructions: string, c
     : `Conduct the “${checkinName}” daily check-in for “${caredOneName}”. ${instructions ? `Additional instructions: ${instructions}.` : ""}\nAsk 3–5 short, friendly questions one at a time about mood, sleep, appetite, pain or discomfort, and anything notable today. Keep each turn under two sentences and never sound clinical. Once enough is known, return only JSON: {"done":true,"summary":"2–3 sentence summary","status":"checked"}. If they clearly skip, return: {"done":true,"summary":"User chose to skip.","status":"skipped"}. Do not give medical advice; urge immediate help for emergencies.`;
 }
 
+/** Medicine dose reminder — same registry home as the check-in prompt. */
+export function buildMedicineDoseContext(dose: string, isChinese: boolean): string {
+  return isChinese
+    ? `这是已从用药日程精确读取的本次提醒：${dose}。只确认本次是否服用或跳过，不更改剂量，不提供诊断。确认后只返回 JSON：{"done":true,"summary":"一句说明","status":"taken"} 或 status 为 "skipped"。`
+    : `This reminder was read directly from the medicine schedule: ${dose}. Confirm only whether this dose was taken or skipped; never change dosage or diagnose. When confirmed, return only JSON: {"done":true,"summary":"one sentence","status":"taken"} or status "skipped".`;
+}
+
+export function buildMedicineDoseStarter(dose: string, isChinese: boolean): string {
+  return isChinese
+    ? `现在提醒用户确认这次用药：${dose}。`
+    : `Prompt the user to confirm this scheduled dose now: ${dose}.`;
+}
+
 export function buildSafetyContext(circleFacts: string, isChinese: boolean): string {
   const rule = isChinese
     ? "你是家庭定位安全助手。只根据圈子事实回答，不编造位置或数据；缺失时直接说明。回答简短、口语化。"
