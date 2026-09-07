@@ -55,7 +55,6 @@ import Calendar from "./pages/Calendar";
 import Resources from "./pages/Resources";
 import JoinGroup from "./pages/JoinGroup";
 import XianyuListings from "./pages/XianyuListings";
-import NotchApp from "./notch/NotchApp";
 import SafetyApp from "./pages/safety/SafetyApp";
 
 // Static-first defaults: no auto refetch on focus/mount/reconnect.
@@ -160,18 +159,12 @@ function AppRoutes() {
 function RootRouter() {
   const site = useSite();
   useApplyDisplaySettings();
-  // When Notch Note site is selected (via ?__site=notchnote or its own domain),
-  // mount the entire app as Notch Note in standalone mode.
-  if (site.id === "notchnote") {
-    return <NotchApp base="" standalone />;
-  }
   // NotchSafety — standalone family-locator front over the same data model.
   if (site.id === "notchsafety") {
     return <SafetyApp />;
   }
   return (
     <Routes>
-      <Route path="/notch/*" element={<NotchApp base="/notch" />} />
       <Route path="*" element={
         <AppLayout>
           <ErrorBoundary>

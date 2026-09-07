@@ -11,7 +11,6 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import {
   buildFallbackReply,
   buildSystemPrompt,
-  NOTE_WRITING_SYSTEM_PROMPT,
   TTS_READER_SYSTEM_PROMPT,
 } from "../_shared/ai-prompts.ts";
 
@@ -206,52 +205,6 @@ async function handleStream(req: Request): Promise<Response> {
       JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
-  }
-}
-
-// ═══ 3. NOTE WRITING ASSIST ═══
-// AI writing assist for Notch Note. Uses Lovable AI Gateway.
-
-async function handleNote(req: Request): Promise<Response> {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
-  try {
-    const { prompt, model } = await req.json();
-    if (!prompt || typeof prompt !== 'string' || prompt.length > 8000) {
-      return new Response(JSON.stringify({ error: 'Invalid prompt' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      return new Response(JSON.stringify({ error: 'LOVABLE_API_KEY not configured' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-    const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: model || 'google/gemini-3.1-flash-lite',
-        messages: [
-          { role: 'system', content: NOTE_WRITING_SYSTEM_PROMPT },
-          { role: 'user', content: prompt },
-        ],
-      }),
-    });
-    if (!res.ok) {
-      const body = await res.text();
-      return new Response(JSON.stringify({ error: 'Gateway request failed', status: res.status, details: body }), {
-        status: res.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-    const data = await res.json();
-    const text = data?.choices?.[0]?.message?.content?.trim() || '';
-    return new Response(JSON.stringify({ text }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  } catch (e: any) {
-    return new Response(JSON.stringify({ error: String(e?.message || e) }), {
-      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
   }
 }
 
@@ -1076,13 +1029,12 @@ async function handleVoice(req: Request): Promise<Response> {
 }
 
 // ─── Router: tolerant path matching, no exact-name whitelist ───
-// Anything that merely *looks* like stream / note / voice routes there;
+// Anything that merely *looks* like a stream / voice route goes there;
 // everything else (including typos and unknown paths) is a normal chat call.
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   const path = new URL(req.url).pathname.toLowerCase();
   if (path.includes("stream")) return handleStream(req);
-  if (path.includes("note")) return handleNote(req);
   if (path.includes("voice") || path.includes("tts") || path.includes("speech")) return handleVoice(req);
   return handleChat(req);
 });

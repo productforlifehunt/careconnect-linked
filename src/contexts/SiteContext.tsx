@@ -2,13 +2,13 @@ import React, { createContext, useContext, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n/config";
 
-export type SiteId = "carecnc" | "challenged" | "challenged-v1" | "notchnote" | "notchsafety";
+export type SiteId = "carecnc" | "challenged" | "challenged-v1" | "notchsafety";
 
 export interface SiteConfig {
   id: SiteId;
   /** Brand family — versioned variants (e.g. challenged-v1) share the
    *  same family as their parent so id-based UI checks keep working. */
-  family?: "challenged" | "carecnc" | "notchnote" | "notchsafety";
+  family?: "challenged" | "carecnc" | "notchsafety";
   name: string;
   tagline: string;
   logoText: string;
@@ -171,7 +171,6 @@ function detectSite(): SiteId {
     siteParam === "challenged" ? "challenged" :
     siteParam === "challenged-v1" || siteParam === "challenged-1.0" || siteParam === "yichang-v1" ? "challenged-v1" :
     siteParam === "carecnc" || siteParam === "careconnected" ? "carecnc" :
-    siteParam === "notchnote" || siteParam === "notch" ? "notchnote" :
     siteParam === "notchsafety" || siteParam === "safety" ? "notchsafety" : null;
 
   // The query override is used to preview separate sub-apps on one host. Keep
@@ -198,16 +197,6 @@ function detectSite(): SiteId {
   return "challenged";
 }
 
-const notchNoteConfig: SiteConfig = {
-  ...careCNCConfig,
-  id: "notchnote", family: "notchnote", name: "Notch Note",
-  tagline: "The connected workspace",
-  logoText: "Notch", logoAccent: "Note",
-  metaTitle: "Notch Note — Write, plan, share",
-  metaDescription: "The connected workspace. Notion-like pages, databases, and collaboration.",
-  cssClass: "site-notchnote", brandSlug: "notchnote",
-};
-
 const notchSafetyConfig: SiteConfig = {
   ...careCNCConfig,
   id: "notchsafety", family: "notchsafety", name: "NotchSafety",
@@ -224,7 +213,6 @@ const SITE_CONFIGS: Record<SiteId, SiteConfig> = {
   challenged: challengedConfig,
   "challenged-v1": challengedV1Config,
   carecnc: careCNCConfig,
-  notchnote: notchNoteConfig,
   notchsafety: notchSafetyConfig,
 };
 
@@ -240,7 +228,7 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const html = document.documentElement;
     // Remove any existing site class
-    html.classList.remove("site-carecnc", "site-challenged", "site-notchnote", "site-notchsafety");
+    html.classList.remove("site-carecnc", "site-challenged", "site-notchsafety");
     html.classList.add(config.cssClass);
 
     // Update page title

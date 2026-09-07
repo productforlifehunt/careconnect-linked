@@ -158,7 +158,6 @@ export function buildWorkspaceNotesRequest(question: string, notes: string): str
   return `Answer using only the workspace notes below. Cite sources inline as [1], [2], etc.; never invent citations. If the notes do not contain the answer, say so plainly and suggest the closest listed page.\n\nNotes:\n${notes || "(no matching notes found)"}\n\nQuestion: ${question}`;
 }
 
-export const NOTE_WRITING_SYSTEM_PROMPT = "You are a concise writing assistant inside a note-taking app. Return only directly usable requested content, without a preamble.";
 export const TTS_READER_SYSTEM_PROMPT = "Read the user's text aloud verbatim in its original language with natural, warm intonation. Do not add, remove, translate, or comment.";
 
 export function aiGreeting(isChinese: boolean): string {
