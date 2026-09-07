@@ -50,7 +50,6 @@ export function currentAppScope(): AppScope {
     const params = new URLSearchParams(window.location.search);
     const p = params.get("__site");
     if (p === "carecnc" || p === "careconnected") return "carecnc";
-    if (p === "notchnote" || p === "notch") return "benotch";
     // NotchSafety is a front-end skin over the main care data model.
     if (p === "notchsafety" || p === "safety") return "challenged";
     if (p === "challenged" || p === "challenged-v1" || p === "challenged-1.0" || p === "yichang-v1") return "challenged";
@@ -58,7 +57,6 @@ export function currentAppScope(): AppScope {
     const host = window.location.host;
     const hostname = window.location.hostname;
     if (/^(www\.)?carecnc\.com$/.test(host) || /^(www\.)?carecnc\.com$/.test(hostname)) return "carecnc";
-    if (window.location.pathname.startsWith("/notch")) return "benotch";
   } catch {
     /* ignore */
   }
