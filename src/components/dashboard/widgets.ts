@@ -14,15 +14,11 @@ export const WIDGET_REGISTRY: WidgetDef[] = [
   { id: "daily-timeline",     label: "Today's Events",            roles: ["caregiver", "provider"],  challengedOnly: true },
 
   // ── Shared widgets ──
-  { id: "ai-smart-briefing",  label: "AI Smart Briefing",          roles: ["caregiver", "provider"] },
   { id: "stats",              label: "Stats Overview",             roles: ["all"] },
   { id: "quick-actions",      label: "Quick Actions",              roles: ["all"] },
   { id: "upcoming-bookings",  label: "Upcoming Bookings",          roles: ["all"] },
   { id: "care-tasks",         label: "Care Tasks",                 roles: ["caregiver", "provider"] },
   { id: "community-feed",     label: "Community Feed",             roles: ["all"] },
-
-  // ── Challenged-only footer ──
-  { id: "dementia-assistant",  label: "AI Companion",              roles: ["caregiver", "provider"], challengedOnly: true },
 ];
 
 /** Filter widgets to those relevant for the current user & site */

@@ -18,14 +18,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PatientSummaryCard } from "@/components/challenged/PatientSummaryCard";
 import { DailyTimeline } from "@/components/challenged/DailyTimeline";
-import { LovedOneSimpleView } from "@/components/challenged/LovedOneSimpleView";
-import { DementiaAssistant } from "@/components/challenged/DementiaAssistant";
 import {
   DashboardWidgetConfig, getWidgetPrefs, setWidgetPrefs,
   getWidgetOrder, setWidgetOrder, resolveOrder,
 } from "@/components/dashboard/DashboardWidgetConfig";
 import { getAvailableWidgets, getDefaultVisibility } from "@/components/dashboard/widgets";
-import { AISmartBriefing } from "@/components/dashboard/AISmartBriefing";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 export default function Dashboard() {
@@ -85,15 +82,6 @@ export default function Dashboard() {
 
   const show = (id: string) =>
     visibility[id] !== false && availableWidgets.some((w) => w.id === id);
-
-  if (isChallenged && isLovedOne) {
-    return (
-      <>
-        <LovedOneSimpleView />
-        <DementiaAssistant />
-      </>
-    );
-  }
 
   const displayName = user?.full_name || (isChinese ? "朋友" : "there");
   // Only this user's own bookings, and only ones still ahead of us, sorted by
@@ -390,7 +378,6 @@ export default function Dashboard() {
     ) : postsLoading ? slotSkeleton(t("nav.community", { defaultValue: "Community" }), "h-24") : null,
 
 
-    "ai-smart-briefing": <AISmartBriefing />,
   };
 
   return (
@@ -419,9 +406,6 @@ export default function Dashboard() {
         if (!block) return null;
         return <div key={id}>{block}</div>;
       })}
-
-      {/* Floating AI Companion (not part of reorderable flow) */}
-      {show("dementia-assistant") && <DementiaAssistant />}
     </div>
   );
 }
