@@ -9,6 +9,7 @@ import { fetchCareGroupsWordPress, fetchCareGroupMembersWordPress, createCareGro
 import { fetchUserCaredOnesWordPress } from "@/features/cared-ones/source.wordpress";
 import { fetchMyProfileWordPress, updateProfileWordPress } from "@/features/profile/source.wordpress";
 import { fetchNotificationsWordPress, markNotificationReadWordPress, markAllNotificationsReadWordPress } from "@/features/notifications/source.wordpress";
+import { notifySubgroupApproved } from "@/features/notifications/notify-events";
 import { fetchCareFacilitiesWordPress, fetchCareFacilityByIdWordPress } from "@/features/facilities/source.wordpress";
 import {
   createCareFacilityWordPress, updateCareFacilityWordPress,
