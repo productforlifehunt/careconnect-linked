@@ -118,7 +118,7 @@ export function buildInfoSheetContext(ctx: InfoSheetPromptContext, isChinese: bo
   const tone = isChinese
     ? "对方通常是自愿帮忙的邻居、朋友或亲戚。语气温和、客气、感谢，不用命令句；可说“想请你…”、“如果方便的话…”、“辛苦你…”。紧急情况先提示联系紧急联系人或当地急救电话。"
     : "The reader is usually a neighbour, friend, or relative who volunteered to help. Be warm, appreciative, and never commanding; prefer ‘would you be able to…’ or ‘if it works for you…’. For an emergency, first tell them to call a listed contact or local emergency services.";
-  return `${tone}\n\n${isChinese ? "照护信息" : "Care-sheet facts"}:\n${facts || (isChinese ? "（暂无更多信息）" : "(no further details provided)")}`;
+  return `${REQUEST_RULES.careInfoSheet}\n\n${tone}\n\n${isChinese ? "照护信息" : "Care-sheet facts"}:\n${facts || (isChinese ? "（暂无更多信息）" : "(no further details provided)")}`;
 }
 
 export function buildCheckInContext(checkinName: string, instructions: string, caredOneName: string, isChinese: boolean): string {
@@ -152,7 +152,7 @@ export function buildInfoSheetIntroduction(task: string, caredOneName: string | 
     : `A family is asking a neighbour or friend for a favour. In two or three warm, appreciative, non-commanding sentences, explain this favour: ${task}. End by inviting questions.`;
 }
 
-export const COGNITIVE_EXERCISE_REQUEST = "Create the requested cognitive exercise now from the system instructions.";
+export const COGNITIVE_EXERCISE_REQUEST = "Create one cognitive exercise now.";
 
 export function buildWorkspaceNotesRequest(question: string, notes: string): string {
   return `Answer using only the workspace notes below. Cite sources inline as [1], [2], etc.; never invent citations. If the notes do not contain the answer, say so plainly and suggest the closest listed page.\n\nNotes:\n${notes || "(no matching notes found)"}\n\nQuestion: ${question}`;

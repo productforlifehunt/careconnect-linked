@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Wand2, RefreshCw, AlertTriangle, Lightbulb, Shield } from "lucide-react";
 import { invokeAI, parseAIJson } from "@/lib/ai";
 import { useTranslation } from "react-i18next";
+import { REQUEST_RULES } from "../../../supabase/functions/_shared/ai-prompts";
 
 interface Insight {
   title: string;

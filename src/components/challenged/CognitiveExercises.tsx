@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Puzzle, RefreshCw, Loader2, CheckCircle, Wand2 } from "lucide-react";
 import { invokeAI, parseAIJson } from "@/lib/ai";
 import { useTranslation } from "react-i18next";
-import { COGNITIVE_EXERCISE_REQUEST } from "../../../supabase/functions/_shared/ai-prompts";
+import { COGNITIVE_EXERCISE_REQUEST, REQUEST_RULES } from "../../../supabase/functions/_shared/ai-prompts";
 
 interface ExerciseItem {
   emoji?: string;

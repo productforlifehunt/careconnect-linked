@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Lightbulb, RefreshCw, Heart, Shield, MessageCircle, Activity, Gamepad2 } from "lucide-react";
 import { invokeAI, parseAIJson } from "@/lib/ai";
 import { useTranslation } from "react-i18next";
+import { REQUEST_RULES } from "../../../supabase/functions/_shared/ai-prompts";
 
 interface CareTip {
   tip: string;

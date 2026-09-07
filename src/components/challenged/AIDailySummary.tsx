@@ -5,6 +5,7 @@ import { FileText, Loader2, RefreshCw } from "lucide-react";
 import { invokeAI } from "@/lib/ai";
 import { useTranslation } from "react-i18next";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
+import { REQUEST_RULES } from "../../../supabase/functions/_shared/ai-prompts";
 
 interface AIDailySummaryProps {
   caredOneName: string;

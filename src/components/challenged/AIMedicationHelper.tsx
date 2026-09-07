@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Pill, Loader2, AlertTriangle, RefreshCw } from "lucide-react";
 import { invokeAI } from "@/lib/ai";
 import { useTranslation } from "react-i18next";
+import { REQUEST_RULES } from "../../../supabase/functions/_shared/ai-prompts";
 
 interface AIMedicationHelperProps {
   medications: any[];
