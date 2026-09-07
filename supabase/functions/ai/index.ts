@@ -22,8 +22,8 @@ const corsHeaders = {
 };
 
 // ═══ 1. CHAT (non-streaming) ═══
-// Highest capability first, then progressively cheaper fallbacks.
-const AI_MODELS = ["google/gemini-3.1-pro-preview", "google/gemini-3.7-flash", "google/gemini-2.5-flash"] as const;
+// Cheapest capable model first; only escalate if it fails to answer.
+const AI_MODELS = ["google/gemini-3.1-flash-lite", "google/gemini-3.7-flash"] as const;
 async function requestAIReply(apiKey: string, messages: Array<{ role: string; content: string }>) {
   for (const model of AI_MODELS) {
     try {
@@ -160,7 +160,7 @@ async function handleStream(req: Request): Promise<Response> {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3.7-flash",
+        model: "google/gemini-3.1-flash-lite",
         stream: true,
         messages: [
           { role: "system", content: systemPrompt },
@@ -230,7 +230,7 @@ async function handleNote(req: Request): Promise<Response> {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: model || 'google/gemini-3.7-flash',
+        model: model || 'google/gemini-3.1-flash-lite',
         messages: [
           { role: 'system', content: NOTE_WRITING_SYSTEM_PROMPT },
           { role: 'user', content: prompt },
