@@ -48,7 +48,7 @@ export function AICompanionChatDialog({
       onError: () => setMessages([{ role: "assistant", content: request.starterFallback || aiGreeting(!!isZh) }]),
     });
     abortRef.current = { abort };
-    void result.finally(() => { setLoading(false); abortRef.current = null; });
+    void result.catch(() => undefined).finally(() => { setLoading(false); abortRef.current = null; });
   }, [open, request, isZh]);
 
   useEffect(() => {

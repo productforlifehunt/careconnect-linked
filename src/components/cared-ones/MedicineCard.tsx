@@ -625,7 +625,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
         toast({ title: status === "skipped" ? Z(`${due.med.name} 已跳过`, `${due.med.name} skipped`) : Z(`${due.med.name} 已记录服用`, `${due.med.name} recorded as taken`) });
       },
     });
-  }, [meds, todayLogs, caredOneId, logMed, openAssistant, toast]);
+  }, [meds, todayLogs, caredOneId]);
 
   const hasScheduledMeds = Object.keys(timelineMeds).length > 0;
   const currentHour = new Date().getHours();
