@@ -189,6 +189,7 @@ export interface StreamHandlers {
   signal?: AbortSignal;
   language?: string;
   engine?: "siliconflow" | "openai" | "openai-full" | "qwen-tts" | "cosyvoice-v35-plus" | "cosyvoice-v35-flash";
+  contextPrompt?: string;
 }
 
 export interface TextStreamHandlers {
