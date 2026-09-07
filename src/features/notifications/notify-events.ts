@@ -243,21 +243,6 @@ export function notifyMemberRemoved(
   }));
 }
 
-/** Someone asked to join a sub-group → notify its owners/admins. */
-export function notifySubgroupJoinRequest(
-  approverIds: Array<string | number | null | undefined>,
-  subgroupId: string,
-) {
-  return withActor((who) => notifyUsers(approverIds, {
-    type: "system",
-    title: Z("有人申请加入子小组", "New sub-group join request"),
-    message: who
-      ? Z(`${who} 申请加入你的子小组。`, `${who} asked to join your sub-group.`)
-      : Z("有人申请加入你的子小组。", "Someone asked to join your sub-group."),
-    action_url: `/care-circle?subgroup=${subgroupId}&tab=members`,
-  }));
-}
-
 /** Sub-group request approved → notify the requester. */
 export function notifySubgroupApproved(
   userId: string | number | null | undefined,
