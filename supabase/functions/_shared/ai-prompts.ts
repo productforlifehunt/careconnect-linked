@@ -7,16 +7,8 @@
 
 export type AILanguage = "zh" | "en" | "auto";
 
-export type AIMode =
-  | "insights"
-  | "cognitive_exercise"
-  | "medication_check"
-  | "behavior_analysis"
-  | "care_tips"
-  | "daily_summary"
-  | "routine_suggestion"
-  | "care_info_sheet"
-  | "general_chat";
+// There is deliberately no AIMode union: modes were removed from the whole app.
+
 
 export const AI_BRAND = {
   zh: "小忆 AI",
