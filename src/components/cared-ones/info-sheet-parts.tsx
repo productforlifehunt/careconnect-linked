@@ -14,17 +14,15 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ChevronDown, Loader2, MapPin, Navigation, Bot, Send } from "lucide-react";
+import { ChevronDown, MapPin, Navigation, Bot } from "lucide-react";
 import { fetchCurrentLocation } from "@/features/location/source.wordpress";
 import { fetchSafeZonesWordPress } from "@/features/location/source.wordpress-extended";
 import { isDangerZone, isSafeZone, isCustomZone, zoneTypeLabel } from "@/features/location/zone-types";
 import { fetchCareTipsWordPress, fetchCarePlansWordPress, fetchCareNotesWordPress } from "@/features/cared-ones/source.wordpress-extended";
 import { fetchMedicinesWordPress } from "@/features/medicine/source.medicine";
-import { invokeAI, type AIChatMessage } from "@/lib/ai";
-import { trimMessagesToCharLimit } from "@/lib/ai";
 import type { InfoSheetAIContext } from "@/components/cared-ones/InfoSheetAIDialog";
 import { buildInfoSheetContext, buildInfoSheetIntroduction } from "../../../supabase/functions/_shared/ai-prompts";
+import { useAIAssistant } from "@/contexts/AIAssistantContext";
 
 // Leaflet stylesheet, loaded once (same source as the main location hub).
 if (typeof document !== "undefined" && !document.getElementById("leaflet-css")) {
@@ -213,128 +211,31 @@ export function SheetAIPanel({ context }: { context: InfoSheetAIContext }) {
   const { i18n } = useTranslation();
   const isCN = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (isCN ? cn : en);
-  const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<AIChatMessage[]>([]);
-  const [input, setInput] = useState("");
-  const [sending, setSending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const started = useRef(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [messages, sending]);
-
-  // First open: the assistant explains the task in its own words.
-  useEffect(() => {
-    if (!open || started.current) return;
-    started.current = true;
+  const { openAssistant } = useAIAssistant();
+  const open = () => {
     const task = context.situationDetails?.trim();
-    if (!task) {
-      setMessages([{
-        role: "assistant",
-        content: Z(
-          "你好，我了解这位家人的情况。有什么想问的，直接问我。",
-          "Hi — I know this person's details. Ask me anything you're unsure about.",
-        ),
-      }]);
-      return;
-    }
-    void (async () => {
-      setSending(true);
-      try {
-        const reply = await invokeAI(
-          buildInfoSheetIntroduction(task, context.caredOneName, !!isCN),
-          { contextPrompt: buildInfoSheetContext(context, !!isCN), persist: false, language: isCN ? "zh" : "en" },
-        );
-        setMessages([{ role: "assistant", content: reply }]);
-      } catch {
-        setMessages([{
-          role: "assistant",
-          content: Z(
-            `谢谢你帮忙。这次想请你：${task}\n\n有不清楚的地方随时问我。`,
-            `Thank you for helping out. The favour this time: ${task}\n\nAsk me anything you're unsure about.`,
-          ),
-        }]);
-
-      } finally {
-        setSending(false);
-      }
-    })();
-  }, [open, context, isCN]);
-
-  const send = async (text: string) => {
-    const question = text.trim();
-    if (!question || sending) return;
-    setInput("");
-    setError(null);
-    const next: AIChatMessage[] = [...messages, { role: "user", content: question }];
-    setMessages(next);
-    setSending(true);
-    try {
-      const reply = await invokeAI(question, {
-        messages: trimMessagesToCharLimit(next),
-        contextPrompt: buildInfoSheetContext(context, !!isCN),
-        persist: false,
-        language: isCN ? "zh" : "en",
-      });
-      setMessages([...next, { role: "assistant", content: reply }]);
-    } catch {
-      setError(Z("现在问不通，请稍后再试，或直接打电话给上面的联系人。", "Can't get an answer right now. Please try again later, or call one of the contacts above."));
-    } finally {
-      setSending(false);
-    }
+    openAssistant({
+      id: `information-card-${context.caredOneName || "shared"}-${Date.now()}`,
+      title: Z("信息卡助手", "Information card assistant"),
+      contextPrompt: buildInfoSheetContext(context, !!isCN),
+      starterPrompt: task ? buildInfoSheetIntroduction(task, context.caredOneName, !!isCN) : Z("请先简单介绍你能根据这张信息卡回答什么。", "Briefly explain what you can answer from this information card."),
+      starterFallback: Z("我只根据这张信息卡上的内容回答。有什么想问的？", "I answer only from this information card. What would you like to know?"),
+    });
   };
 
   return (
     <div className="rounded-md border">
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={open}
         className="flex w-full items-center justify-between gap-2 p-3 text-left hover:bg-accent transition"
-        aria-expanded={open}
       >
         <span className="flex items-center gap-2 text-sm font-medium">
           <Bot className="h-4 w-4 text-primary" />
           {Z("有问题？直接问助手", "Have a question? Ask the assistant")}
         </span>
-        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className="h-4 w-4 -rotate-90 text-muted-foreground" />
       </button>
-
-      {open && (
-        <div className="border-t p-3 space-y-3">
-          <div ref={scrollRef} className="space-y-3 max-h-[40vh] overflow-y-auto">
-            {messages.map((m, i) => (
-              <div key={i} className={m.role === "user" ? "text-right" : ""}>
-                <div className={`inline-block text-sm rounded-lg px-3 py-2 max-w-[90%] whitespace-pre-wrap ${m.role === "user" ? "bg-primary text-primary-foreground" : "text-foreground"}`}>
-                  {m.content}
-                </div>
-              </div>
-            ))}
-            {sending && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-3.5 w-3.5 animate-spin" /> {Z("正在思考…", "Thinking…")}
-              </div>
-            )}
-            {error && <p className="text-sm text-destructive">{error}</p>}
-          </div>
-
-          <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); send(input); }}>
-            <Input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder={Z("输入你的问题…", "Type your question…")}
-              aria-label={Z("你的问题", "Your question")}
-            />
-            <Button type="submit" size="icon" disabled={sending || !input.trim()} aria-label={Z("发送", "Send")}>
-              <Send className="h-4 w-4" />
-            </Button>
-          </form>
-          <p className="text-[11px] text-muted-foreground">
-            {Z("回答基于这张信息卡上的内容，不是医疗建议；对话不会被保存。", "Answers come from this card's information. Not medical advice; this chat isn't saved.")}
-          </p>
-        </div>
-      )}
     </div>
   );
 }

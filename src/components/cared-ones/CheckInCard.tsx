@@ -88,13 +88,14 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
   };
 
   useEffect(() => {
-    if (!checkins || !logs) return;
+    if (!checkins || !todayLogs) return;
     const now = new Date();
     const nowMinutes = now.getHours() * 60 + now.getMinutes();
-    const completed = new Set((logs || []).map((l: any) => String(l.checkin_id)));
+    const completed = new Set((todayLogs || []).map((l: any) => String(l.checkin_id)));
     const due = (checkins as any[]).find((checkin) => {
       if (checkin.is_active === false || completed.has(String(checkin.id)) || !checkin.check_in_type?.includes("ai")) return false;
-      const [h = "0", m = "0"] = String(checkin.time || "").split(":");
+      const slot = Array.isArray(checkin.time_slot) ? checkin.time_slot[0] : checkin.time_slot;
+      const [h = "0", m = "0"] = String(slot || "").split(":");
       const scheduled = Number(h) * 60 + Number(m);
       return Number.isFinite(scheduled) && nowMinutes >= scheduled;
     });
@@ -103,7 +104,7 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
     if (autoOpenedRef.current === key) return;
     autoOpenedRef.current = key;
     openAICheckIn(due);
-  }, [checkins, logs]);
+  }, [checkins, todayLogs]);
 
   // Today: status by checkin id
   const todayStatusByCheckin = useMemo(() => {

@@ -30,7 +30,6 @@ import {
   HandHeart,
 } from "lucide-react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { AICompanionChatDialog } from "@/components/ai/AICompanionChatDialog";
 import { Switch } from "@/components/ui/switch";
 import { useStandaloneMode } from "@/hooks/useStandaloneMode";
 import { aiBrand } from "../../../supabase/functions/_shared/ai-prompts";
