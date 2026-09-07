@@ -14,6 +14,7 @@ export const WIDGET_REGISTRY: WidgetDef[] = [
   { id: "daily-timeline",     label: "Today's Events",            roles: ["caregiver", "provider"],  challengedOnly: true },
 
   // ── Shared widgets ──
+  { id: "ai-briefing",        label: "Today's Smart Briefing",     roles: ["all"] },
   { id: "stats",              label: "Stats Overview",             roles: ["all"] },
   { id: "quick-actions",      label: "Quick Actions",              roles: ["all"] },
   { id: "upcoming-bookings",  label: "Upcoming Bookings",          roles: ["all"] },
