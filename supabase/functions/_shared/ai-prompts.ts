@@ -66,52 +66,42 @@ const THERAPY_AND_VOICE_RULES =
   "offer simple cognitive conversation when welcomed; and provide gentle orientation only when a calm user asks about time, place, or people. " +
   "If configured to speak as a relative, warmly play that role but never fabricate sensitive facts, medical history, money, or promises.";
 
-export const MODE_PROMPTS: Record<AIMode, string> = {
-  insights: "Analyze care coordination patterns and suggest the most actionable next steps. Return a JSON array of objects with fields: title (string), insight (string), priority ('high'|'medium'|'low').",
-  cognitive_exercise: "Generate a warm, gentle cognitive exercise for someone with early-to-mid stage dementia. Return valid JSON only with fields: title, description, type ('memory'|'word'|'pattern'|'recall'|'music'), difficulty ('easy'|'medium'), items (array of objects with emoji, label, prompt, answer, hint), encouragement.",
-  medication_check: "Check the supplied medicines conservatively for potential interactions and timing concerns. Tell the user to verify with a clinician or pharmacist. Return plain text.",
-  behavior_analysis: "Identify likely triggers, patterns, and non-pharmacological strategies for the described behavior. Return plain text.",
-  care_tips: "Provide 3 practical dementia-care tips. Return a JSON array of objects with fields: tip (string), category ('daily_care'|'communication'|'safety'|'wellness'|'activities').",
-  daily_summary: "Summarize the supplied care-day facts clearly, warmly, and usefully without inventing missing information. Return plain text unless the request explicitly requires JSON.",
-  routine_suggestion: "Suggest safe, simple, dementia-friendly daily routines from the supplied facts. Return plain text.",
-  care_info_sheet: "Answer only from the supplied care-sheet facts. Never invent, infer, or fill missing details. If an answer is absent, say it is not written on the sheet and suggest contacting a listed contact. Be short and plain-spoken. Do not diagnose or provide medication, legal, or financial advice.",
-  general_chat: "Chat naturally and warmly. Treat the user as a person and friend, not as a patient. Only introduce dementia-care topics when relevant. Return plain text.",
-};
+/**
+ * NO MODES. The backend never inspects a mode word: every call gets the same
+ * companion system prompt, and whatever a screen needs (facts, output shape) is
+ * written in plain language by the caller and appended at request time.
+ * The strings below are just reusable request text, not a whitelist.
+ */
+export const REQUEST_RULES = {
+  insights:
+    "Analyze the supplied care-coordination facts and suggest the most actionable next steps. Return only a JSON array of objects with fields: title (string), insight (string), priority ('high'|'medium'|'low').",
+  cognitiveExercise:
+    "Generate a warm, gentle cognitive exercise for someone with early-to-mid stage dementia. Return valid JSON only with fields: title, description, type ('memory'|'word'|'pattern'|'recall'|'music'), difficulty ('easy'|'medium'), items (array of objects with emoji, label, prompt, answer, hint), encouragement.",
+  medicationCheck:
+    "Check the supplied medicines conservatively for potential interactions and timing concerns. Tell the user to verify with a clinician or pharmacist. Return plain text.",
+  careTips:
+    "Provide 3 practical dementia-care tips. Return only a JSON array of objects with fields: tip (string), category ('daily_care'|'communication'|'safety'|'wellness'|'activities').",
+  dailySummary:
+    "Summarize the supplied care-day facts clearly, warmly, and usefully without inventing missing information. Return plain text unless the request explicitly asks for JSON.",
+  careInfoSheet:
+    "Answer only from the supplied care-sheet facts. Never invent, infer, or fill missing details. If an answer is absent, say it is not written on the sheet and suggest contacting a listed contact. Be short and plain-spoken. Do not diagnose or provide medication, legal, or financial advice.",
+} as const;
 
-export function buildSystemPrompt(mode: AIMode, language = "auto", streaming = false): string {
+export function buildSystemPrompt(language = "auto", streaming = false): string {
   return [
     COMPANION_CORE,
     streaming ? THERAPY_AND_VOICE_RULES : "",
-    MODE_PROMPTS[mode],
     buildLanguageRule(language),
   ].filter(Boolean).join("\n\n");
 }
 
-export function buildFallbackReply(mode: AIMode, language = "auto"): string {
-  const zh = language.toLowerCase().startsWith("zh");
-  switch (mode) {
-    case "insights":
-      return JSON.stringify([{ title: zh ? "暂时无法连接" : "Temporary connection issue", insight: zh ? "AI 暂时不可用，请先手动查看最近的签到、用药和任务。" : "AI is temporarily unavailable, so review recent check-ins, medicines, and tasks manually.", priority: "medium" }]);
-    case "cognitive_exercise":
-      return JSON.stringify({ title: zh ? "照片回忆" : "Photo Memory Match", description: zh ? "一起看一张熟悉的照片，说出其中的人、地点或回忆。" : "Look at a familiar photo together and name the person, place, or memory connected to it.", type: "memory", difficulty: "easy", items: [{ emoji: "📷", label: zh ? "家庭照片" : "Family photo", prompt: zh ? "照片里是谁？你记得当时发生了什么开心的事吗？" : "Who is in this photo and what happy moment do you remember?", answer: zh ? "任何熟悉的名字或回忆都是好答案。" : "Any familiar name or memory is a good answer.", hint: zh ? "从一张熟悉的脸或一个记得的地点开始。" : "Start with one familiar face or place." }], encouragement: zh ? "想起一点点就很好。" : "Gentle recall is enough—celebrate any small memory." });
-    case "care_tips":
-      return JSON.stringify([
-        { tip: zh ? "保持平静、规律的日常安排，减少困惑。" : "Keep the daily routine calm and predictable to reduce confusion.", category: "daily_care" },
-        { tip: zh ? "使用简短、安心的话，一次只说一件事。" : "Use short, reassuring sentences and give one instruction at a time.", category: "communication" },
-        { tip: zh ? "留意跌倒风险、补水和服药时间。" : "Check fall risks, hydration, and medicine timing throughout the day.", category: "safety" },
-      ]);
-    case "medication_check":
-      return zh ? "AI 药物检查暂时不可用。请再次确认服药时间，不要自行调整药物，并向医生或药师核实相互作用。" : "AI medicine review is temporarily unavailable. Double-check dosing times, do not change medicines without a clinician, and verify interactions with a pharmacist.";
-    case "behavior_analysis":
-      return zh ? "AI 行为分析暂时不可用。可先检查疼痛、饥饿、噪音、疲劳或刺激过多等诱因，并提供安抚和更平静的环境。" : "AI behavior analysis is temporarily unavailable. Check for pain, hunger, noise, fatigue, or overstimulation, then offer reassurance and a calmer environment.";
-    case "daily_summary":
-      return zh ? "每日简报暂时不可用。请先手动查看今天的饮食、用药、情绪、活动、睡眠和签到记录。" : "The daily briefing is temporarily unavailable. Review today's meals, medicines, mood, mobility, sleep, and check-ins manually.";
-    case "routine_suggestion":
-      return zh ? "日常建议暂时不可用。安全的默认安排是轻柔洗漱、补水、检查用药、一个简单活动、安静休息和平静的晚间流程。" : "Routine suggestions are temporarily unavailable. A safe default is gentle hygiene, hydration, a medicine check, one simple activity, quiet rest, and a calm evening routine.";
-    default:
-      return zh ? "我暂时无法连接到 AI 服务，请稍后再试。" : "I'm temporarily having trouble reaching the AI service. Please try again in a moment.";
-  }
+/** One degraded reply for every call — no per-mode branching. */
+export function buildFallbackReply(language = "auto"): string {
+  return String(language || "").toLowerCase().startsWith("zh")
+    ? "我暂时无法连接到 AI 服务，请稍后再试。"
+    : "I'm temporarily having trouble reaching the AI service. Please try again in a moment.";
 }
+
 
 export type InfoSheetPromptContext = {
   sheetName?: string;
