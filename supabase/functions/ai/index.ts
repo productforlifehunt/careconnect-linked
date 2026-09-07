@@ -230,7 +230,7 @@ async function handleNote(req: Request): Promise<Response> {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: model || 'google/gemini-2.5-flash',
+        model: model || 'google/gemini-3.7-flash',
         messages: [
           { role: 'system', content: NOTE_WRITING_SYSTEM_PROMPT },
           { role: 'user', content: prompt },
@@ -1075,17 +1075,14 @@ async function handleVoice(req: Request): Promise<Response> {
   }
 }
 
-// ─── Router: one function, four actions ───
+// ─── Router: tolerant path matching, no exact-name whitelist ───
+// Anything that merely *looks* like stream / note / voice routes there;
+// everything else (including typos and unknown paths) is a normal chat call.
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
-  const url = new URL(req.url);
-  const action = (url.pathname.split("/").filter(Boolean).pop() || "chat").toLowerCase();
-  switch (action) {
-    case "stream": return handleStream(req);
-    case "note": return handleNote(req);
-    case "voice": return handleVoice(req);
-    case "chat":
-    case "ai":
-    default: return handleChat(req);
-  }
+  const path = new URL(req.url).pathname.toLowerCase();
+  if (path.includes("stream")) return handleStream(req);
+  if (path.includes("note")) return handleNote(req);
+  if (path.includes("voice") || path.includes("tts") || path.includes("speech")) return handleVoice(req);
+  return handleChat(req);
 });
