@@ -33,6 +33,7 @@ export default function Profile() {
   const [address, setAddress] = useState("");
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [roles, setRoles] = useState<string[]>([]);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [downloadingData, setDownloadingData] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
@@ -49,6 +50,7 @@ export default function Profile() {
       setAddress(profile.location || "");
       setBio(profile.bio || "");
       setAvatarUrl(profile.avatar_url || "");
+      setRoles((profile.general_user_role || []).filter((role) => role === "cared one" || role === "caring one"));
       setEmailNotifs(true);
       setPushNotifs(true);
     }
@@ -62,6 +64,7 @@ export default function Profile() {
         location: address,
         bio,
         avatar_url: avatarUrl || null,
+        general_user_role: roles,
       });
       toast({ title: t("profile.profileUpdated") });
     } catch (err: any) {
@@ -81,7 +84,7 @@ export default function Profile() {
           location: profile?.location,
           bio: profile?.bio,
           avatar_url: profile?.avatar_url,
-          is_care_provider: profile?.is_care_provider,
+          general_user_role: profile?.general_user_role,
         },
       };
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
@@ -126,7 +129,8 @@ export default function Profile() {
   }
 
   const displayName = name || user?.full_name || "User";
-  const roleLabel = profile?.is_care_provider ? t("profile.careProvider") : t("profile.careSeeker");
+  const roleLabel = roles.length ? roles.join(" · ") : "—";
+  const toggleRole = (role: string, checked: boolean) => setRoles((current) => checked ? [...new Set([...current, role])] : current.filter((item) => item !== role));
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-5">
@@ -197,6 +201,16 @@ export default function Profile() {
                 <div className="relative"><MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input value={address} onChange={e => setAddress(e.target.value)} className="pl-9" /></div>
               </div>
               <div><Label>{t("profile.aboutMe")}</Label><Textarea value={bio} onChange={e => setBio(e.target.value)} rows={3} /></div>
+              <div className="space-y-3">
+                <Label>{t("common.role", "Role")}</Label>
+                <p className="text-xs text-muted-foreground">{t("profile.roleHelp", "Select every role that applies. These exact values are saved to A58.")}</p>
+                {(["cared one", "caring one"] as const).map((role) => (
+                  <div key={role} className="flex items-center justify-between rounded-lg border p-3">
+                    <span className="text-sm font-medium">{role}</span>
+                    <Switch checked={roles.includes(role)} onCheckedChange={(checked) => toggleRole(role, checked)} aria-label={role} />
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
 

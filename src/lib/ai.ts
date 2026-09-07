@@ -197,6 +197,7 @@ export interface TextStreamHandlers {
   onError?: (err: Error) => void;
   signal?: AbortSignal;
   language?: string;
+  contextPrompt?: string;
 }
 
 export interface StreamControls {
@@ -422,7 +423,7 @@ export function streamChatWithVoice(
         "Content-Type": "application/json",
         Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
       },
-      body: JSON.stringify({ messages, language: handlers.language }),
+      body: JSON.stringify({ messages, language: handlers.language, contextPrompt: handlers.contextPrompt }),
       signal: handlers.signal,
     });
 
@@ -620,7 +621,7 @@ export function streamChatTextOnly(
         "Content-Type": "application/json",
         Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
       },
-      body: JSON.stringify({ messages, language: handlers.language }),
+      body: JSON.stringify({ messages, language: handlers.language, contextPrompt: handlers.contextPrompt }),
       signal,
     });
 

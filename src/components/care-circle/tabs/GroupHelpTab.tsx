@@ -1,12 +1,8 @@
-import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { HelpCircle, Bot, Loader2 } from "lucide-react";
+import { HelpCircle, Bot } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useToast } from "@/hooks/use-toast";
-import { invokeAI } from "@/lib/ai";
-import { buildCareGroupHelpRequest } from "../../../../supabase/functions/_shared/ai-prompts";
+import { useAIAssistant } from "@/contexts/AIAssistantContext";
 
 interface GroupHelpTabProps {
   groupName?: string;
@@ -16,11 +12,7 @@ export function GroupHelpTab({ groupName }: GroupHelpTabProps) {
   const { i18n } = useTranslation();
   const isCN = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (isCN ? cn : en);
-  const { toast } = useToast();
-
-  const [question, setQuestion] = useState("");
-  const [answer, setAnswer] = useState("");
-  const [loading, setLoading] = useState(false);
+  const { openAssistant } = useAIAssistant();
 
   const guide: { title: string; body: string }[] = [
     {
@@ -77,20 +69,15 @@ export function GroupHelpTab({ groupName }: GroupHelpTabProps) {
     },
   ];
 
-  const ask = async () => {
-    if (!question.trim()) return;
-    setLoading(true);
-    setAnswer("");
-    try {
-      const context = buildCareGroupHelpRequest(question.trim(), groupName, !!isCN);
-      const reply = await invokeAI(context, { title: Z("护理群组帮助", "Care group help"), persist: false, language: isCN ? "zh" : "en" });
-      setAnswer(reply);
-    } catch (err: any) {
-      toast({ title: Z("暂时问不到答案", "Could not get an answer right now"), description: err?.message, variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const openHelp = () => openAssistant({
+    id: `group-help-${groupName || "current"}`,
+    title: Z("护理群组帮助", "Care group help"),
+    contextPrompt: Z(
+      `用户正在使用护理群组${groupName ? `“${groupName}”` : ""}。只解释本页列出的真实功能，不作医疗诊断；不知道时明确说明。`,
+      `The user is using the care group${groupName ? ` “${groupName}”` : ""}. Explain only the real features listed on this page, never diagnose, and say plainly when unsure.`,
+    ),
+    starterPrompt: Z("请问我需要怎样使用这个护理群组？", "Ask me how to use this care group."),
+  });
 
   return (
     <div className="space-y-4 max-w-3xl">
@@ -115,19 +102,8 @@ export function GroupHelpTab({ groupName }: GroupHelpTabProps) {
           <CardTitle className="text-base flex items-center gap-2"><Bot className="h-4 w-4" /> {Z("问一句，AI 帮你解答", "Ask a question, AI will help")}</CardTitle>
         </CardHeader>
         <CardContent className="pt-2 space-y-3">
-          <Textarea
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            rows={3}
-            placeholder={Z("例如：怎么把姐姐加进来？任务怎么只给夜班看？", "e.g. How do I add my sister? How do I show a task only to the night shift?")}
-          />
-          <Button variant="coral" onClick={ask} disabled={loading || !question.trim()}>
-            {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Bot className="h-4 w-4 mr-2" />}
-            {Z("提问", "Ask")}
-          </Button>
-          {answer && (
-            <div className="rounded-lg border bg-muted/30 p-3 text-sm text-foreground whitespace-pre-wrap">{answer}</div>
-          )}
+          <p className="text-sm text-muted-foreground">{Z("使用同一个通用助手询问本群组的操作方法。", "Use the same assistant available throughout the app to ask how this group works.")}</p>
+          <Button variant="coral" onClick={openHelp}><Bot className="h-4 w-4 mr-2" />{Z("打开助手", "Open assistant")}</Button>
         </CardContent>
       </Card>
     </div>

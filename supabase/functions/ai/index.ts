@@ -126,9 +126,10 @@ async function handleStream(req: Request): Promise<Response> {
   }
 
   try {
-    const { messages, language } = await req.json() as {
+    const { messages, language, contextPrompt: rawContextPrompt } = await req.json() as {
       messages: Array<{ role: string; content: string }>;
       language?: string;
+      contextPrompt?: string;
     };
 
     if (!Array.isArray(messages) || messages.length === 0) {
@@ -150,7 +151,8 @@ async function handleStream(req: Request): Promise<Response> {
       .filter((m) => typeof m?.role === "string" && typeof m?.content === "string")
       .filter((m) => m.role !== "system");
 
-    const systemPrompt = buildSystemPrompt(language, true);
+    const contextPrompt = typeof rawContextPrompt === "string" ? rawContextPrompt.slice(0, 8000).trim() : "";
+    const systemPrompt = [buildSystemPrompt(language, true), contextPrompt].filter(Boolean).join("\n\n");
 
     const upstream = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

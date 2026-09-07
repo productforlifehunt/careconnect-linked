@@ -197,7 +197,7 @@ const zhCN = {
     deleteConfirmDesc: "这将永久匿名化您的个人资料，移除保存的服务提供者，并退出登录。您的预约和消息将保留但不再与您的身份关联。此操作无法撤销。",
     accountDeleted: "账户已删除", accountDeletedDesc: "您的个人资料数据已移除，已退出登录。",
     deletionFailed: "删除失败", yesDeleteAccount: "是的，删除我的账户",
-    careProvider: "护理提供者", careSeeker: "寻求护理者", avatarUpdated: "头像已更新！",
+    careProvider: "护理提供者", avatarUpdated: "头像已更新！",
     uploadFailed: "上传失败", fileTooLarge: "文件太大", maxSize: "最大5MB",
   },
   messages: {

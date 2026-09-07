@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -9,9 +9,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { ClipboardCheck, Plus, Loader2, SkipForward, Check, AlertCircle, History, StickyNote, Edit2, Trash2, Pause, Play, Bot } from "lucide-react";
 import { useCheckins, useCreateCheckin, useUpdateCheckin, useDeleteCheckin, useCheckinLogs, useTodayCheckinLogs, useLogCheckin } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
-import { AICheckInDialog } from "./AICheckInDialog";
 import { useTranslation } from "react-i18next";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
+import { useAIAssistant } from "@/contexts/AIAssistantContext";
+import { buildCheckInContext } from "../../../supabase/functions/_shared/ai-prompts";
+import { useAuth } from "@/contexts/AuthContext";
 
 function formatSlot(slot: string, isCN: boolean) {
   const [hourRaw = "8", minuteRaw = "00"] = String(slot || "08:00").split(":");
@@ -31,6 +33,7 @@ const STATUS_STYLE: Record<string, string> = {
 
 export function CheckInCard({ caredOneId }: { caredOneId: string }) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const { i18n } = useTranslation();
   const isCN = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (isCN ? cn : en);
@@ -53,7 +56,8 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
   const [logDialog, setLogDialog] = useState<{ open: boolean; checkin: any; status: "checked" | "skipped" | "missed" }>({ open: false, checkin: null, status: "checked" });
   const [logNote, setLogNote] = useState("");
   const [historyOpen, setHistoryOpen] = useState<{ open: boolean; checkin: any }>({ open: false, checkin: null });
-  const [aiOpen, setAiOpen] = useState<{ open: boolean; checkin: any }>({ open: false, checkin: null });
+  const { openAssistant } = useAIAssistant();
+  const autoOpenedRef = useRef<string | null>(null);
 
   const [form, setForm] = useState({
     name: Z("签到", "Check-In"),
@@ -68,6 +72,41 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
     time_to_be_considered_missing: "",
     check_in_type: ["human"] as string[],
   });
+
+  const openAICheckIn = (checkin: any) => {
+    const title = Z("AI 签到", "AI Check-In");
+    openAssistant({
+      id: `checkin-${checkin.id}-${new Date().toISOString().slice(0, 10)}`,
+      title,
+      contextPrompt: buildCheckInContext(checkin.name || Z("签到", "Check-In"), checkin.instructions || "", Z("被护理者", "the cared one"), !!isCN),
+      starterPrompt: Z("现在请开始签到。", "Please start the check-in now."),
+      starterFallback: Z("你好，到了签到时间。今天感觉怎么样？", "Hi, it is check-in time. How are you today?"),
+      completionStatuses: ["checked", "skipped"],
+      onComplete: async ({ status, summary }) => {
+        await logCheckin.mutateAsync({ checkin_id: String(checkin.id), status: status === "skipped" ? "skipped" : "checked", note: summary || "", checked_by_ai: true });
+        toast({ title: Z("AI 签到已保存", "AI check-in saved") });
+      },
+    });
+  };
+
+  useEffect(() => {
+    if (!user?.general_user_role?.includes("cared one") || !checkins || !todayLogs) return;
+    const now = new Date();
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    const completed = new Set((todayLogs || []).map((l: any) => String(l.checkin_id)));
+    const due = (checkins as any[]).find((checkin) => {
+      if (checkin.is_active === false || completed.has(String(checkin.id)) || !checkin.check_in_type?.includes("ai")) return false;
+      const slot = Array.isArray(checkin.time_slot) ? checkin.time_slot[0] : checkin.time_slot;
+      const [h = "0", m = "0"] = String(slot || "").split(":");
+      const scheduled = Number(h) * 60 + Number(m);
+      return Number.isFinite(scheduled) && nowMinutes >= scheduled;
+    });
+    if (!due) return;
+    const key = `${new Date().toISOString().slice(0, 10)}-${due.id}`;
+    if (autoOpenedRef.current === key) return;
+    autoOpenedRef.current = key;
+    openAICheckIn(due);
+  }, [checkins, todayLogs, user?.general_user_role]);
 
   // Today: status by checkin id
   const todayStatusByCheckin = useMemo(() => {
@@ -447,7 +486,7 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
                       </Badge>
                       {!todayStatus && (
                         <div className="flex items-center gap-1 flex-wrap justify-end">
-                          <Button size="sm" variant="outline" className="border-primary/40 text-primary hover:bg-primary/10" onClick={() => setAiOpen({ open: true, checkin })}><Bot className="h-3 w-3 mr-1" /> {Z("AI 签到", "AI Check")}</Button>
+                          <Button size="sm" variant="outline" className="border-primary/40 text-primary hover:bg-primary/10" onClick={() => openAICheckIn(checkin)}><Bot className="h-3 w-3 mr-1" /> {Z("AI 签到", "AI Check")}</Button>
                           <Button size="sm" variant="outline" onClick={() => openLog(checkin, "skipped")} disabled={logCheckin.isPending}><SkipForward className="h-3 w-3 mr-1" /> {Z("跳过", "Skip")}</Button>
                           {isMissed && (
                             <Button size="sm" variant="outline" className="border-destructive/40 text-destructive hover:bg-destructive/10" onClick={() => openLog(checkin, "missed")} disabled={logCheckin.isPending}><AlertCircle className="h-3 w-3 mr-1" /> {Z("未完成", "Missed")}</Button>
@@ -491,11 +530,6 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
         </div>
       )}
 
-      <AICheckInDialog
-        open={aiOpen.open}
-        onOpenChange={(o) => !o && setAiOpen({ open: false, checkin: null })}
-        checkin={aiOpen.checkin}
-      />
     </div>
   );
 }

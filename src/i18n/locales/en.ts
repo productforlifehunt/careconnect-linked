@@ -497,7 +497,6 @@ const en = {
     deletionFailed: "Deletion failed",
     yesDeleteAccount: "Yes, delete my account",
     careProvider: "Care Provider",
-    careSeeker: "Care Seeker",
     avatarUpdated: "Avatar updated!",
     uploadFailed: "Upload failed",
     fileTooLarge: "File too large",

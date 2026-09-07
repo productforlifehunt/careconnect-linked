@@ -1,37 +1,55 @@
 import { useEffect, useRef, useState } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { Bot, Send, X, Loader2 } from "lucide-react";
+import { Bot, Check, SkipForward, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
-import { streamChatTextOnly } from "@/lib/ai";
-import { trimMessagesToCharLimit } from "@/lib/ai";
+import { parseAIJson, streamChatTextOnly, trimMessagesToCharLimit } from "@/lib/ai";
 import { aiBrand, aiGreeting } from "../../../supabase/functions/_shared/ai-prompts";
+import type { AssistantRequest } from "@/contexts/AIAssistantContext";
+import { Conversation, ConversationContent, ConversationScrollButton } from "@/components/ai-elements/conversation";
+import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
+import { PromptInput, PromptInputBody, PromptInputFooter, PromptInputSubmit, PromptInputTextarea } from "@/components/ai-elements/prompt-input";
+import { Shimmer } from "@/components/ai-elements/shimmer";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
 export function AICompanionChatDialog({
   open,
   onOpenChange,
+  request = {},
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  request?: AssistantRequest;
 }) {
   const { i18n } = useTranslation();
   const isZh = i18n.language?.startsWith("zh");
-  const [messages, setMessages] = useState<Msg[]>([
-    {
-      role: "assistant",
-      content: aiGreeting(!!isZh),
-    },
-  ]);
+  const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const abortRef = useRef<{ abort: () => void } | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const activeRequestId = useRef<string | undefined>();
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, loading]);
+    if (!open || activeRequestId.current === request.id) return;
+    activeRequestId.current = request.id;
+    setInput("");
+    const starter = request.starterPrompt?.trim();
+    if (!starter) {
+      setMessages([{ role: "assistant", content: aiGreeting(!!isZh) }]);
+      return;
+    }
+    setMessages([{ role: "assistant", content: "" }]);
+    setLoading(true);
+    const { abort, result } = streamChatTextOnly([{ role: "user", content: starter }], {
+      language: isZh ? "zh" : "en",
+      contextPrompt: request.contextPrompt,
+      onTextDelta: (_delta, full) => setMessages([{ role: "assistant", content: full }]),
+      onError: () => setMessages([{ role: "assistant", content: request.starterFallback || aiGreeting(!!isZh) }]),
+    });
+    abortRef.current = { abort };
+    void result.catch(() => undefined).finally(() => { setLoading(false); abortRef.current = null; });
+  }, [open, request, isZh]);
 
   useEffect(() => {
     if (!open && abortRef.current) {
@@ -41,8 +59,8 @@ export function AICompanionChatDialog({
     }
   }, [open]);
 
-  const send = async () => {
-    const text = input.trim();
+  const send = async (submittedText?: string) => {
+    const text = (submittedText ?? input).trim();
     if (!text || loading) return;
     setInput("");
     const next: Msg[] = [...messages, { role: "user", content: text }, { role: "assistant", content: "" }];
@@ -55,6 +73,7 @@ export function AICompanionChatDialog({
       );
       const { abort, result } = streamChatTextOnly(history, {
           language: isZh ? "zh" : "en",
+           contextPrompt: request.contextPrompt,
           onTextDelta: (_d, full) => {
             setMessages((prev) => {
               const copy = [...prev];
@@ -66,7 +85,19 @@ export function AICompanionChatDialog({
         }
       );
       abortRef.current = { abort };
-      await result;
+      const reply = await result;
+      const parsed = parseAIJson<{ done?: boolean; summary?: string; status?: string }>(reply);
+      if (parsed?.done && parsed.summary && request.onComplete) {
+        const allowed = request.completionStatuses || [];
+        if (!parsed.status || allowed.length === 0 || allowed.includes(parsed.status)) {
+          setMessages((prev) => {
+            const copy = [...prev];
+            copy[copy.length - 1] = { role: "assistant", content: `✅ ${parsed.summary}` };
+            return copy;
+          });
+          await request.onComplete({ status: parsed.status, summary: parsed.summary });
+        }
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -88,7 +119,7 @@ export function AICompanionChatDialog({
                 <Bot className="h-4 w-4" />
               </div>
               <DialogPrimitive.Title className="text-sm font-semibold">
-                {aiBrand(isZh ? "zh" : "en")}
+                {request.title || aiBrand(isZh ? "zh" : "en")}
               </DialogPrimitive.Title>
             </div>
             <DialogPrimitive.Close asChild>
@@ -98,44 +129,30 @@ export function AICompanionChatDialog({
             </DialogPrimitive.Close>
           </div>
 
-          <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-4 space-y-3">
-            {messages.map((m, i) => (
-              <div
-                key={i}
-                className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
-              >
-                <div
-                  className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap break-words ${
-                    m.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-accent text-foreground"
-                  }`}
-                >
-                  {m.content || (loading && i === messages.length - 1 ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : null)}
-                </div>
-              </div>
-            ))}
-          </div>
+          <Conversation className="min-h-0">
+            <ConversationContent className="gap-4 px-4 py-4">
+              {messages.map((m, i) => (
+                <Message from={m.role} key={`${m.role}-${i}`}>
+                  <MessageContent>
+                    {m.content ? <MessageResponse>{m.content}</MessageResponse> : <Shimmer>{isZh ? "正在思考…" : "Thinking…"}</Shimmer>}
+                  </MessageContent>
+                </Message>
+              ))}
+            </ConversationContent>
+            <ConversationScrollButton />
+          </Conversation>
 
-          <div className="border-t p-2 flex items-end gap-2">
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  send();
-                }
-              }}
-              rows={1}
-              placeholder={isZh ? "说点什么…" : "Type a message…"}
-              className="flex-1 resize-none rounded-xl border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 max-h-32"
-            />
-            <Button onClick={send} disabled={loading || !input.trim()} size="icon" className="h-9 w-9 shrink-0">
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            </Button>
+          <div className="border-t p-3 space-y-2">
+            {request.onComplete && (
+              <div className="flex justify-end gap-2">
+                {(request.completionStatuses || []).includes("skipped") && <Button size="sm" variant="outline" onClick={() => request.onComplete?.({ status: "skipped", summary: isZh ? "用户选择跳过。" : "User chose to skip." })}><SkipForward className="h-3.5 w-3.5 mr-1" />{isZh ? "跳过" : "Skip"}</Button>}
+                <Button size="sm" onClick={() => request.onComplete?.({ status: request.completionStatuses?.[0], summary: messages.map((m) => `${m.role}: ${m.content}`).join("\n").slice(0, 1500) })}><Check className="h-3.5 w-3.5 mr-1" />{isZh ? "完成并保存" : "Finish & save"}</Button>
+              </div>
+            )}
+            <PromptInput onSubmit={({ text }) => send(text)}>
+              <PromptInputBody><PromptInputTextarea value={input} onChange={(e) => setInput(e.target.value)} placeholder={isZh ? "说点什么…" : "Type a message…"} /></PromptInputBody>
+              <PromptInputFooter className="justify-end"><PromptInputSubmit status={loading ? "streaming" : "ready"} disabled={loading || !input.trim()} onStop={() => abortRef.current?.abort()} /></PromptInputFooter>
+            </PromptInput>
           </div>
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>

@@ -30,11 +30,11 @@ import {
   HandHeart,
 } from "lucide-react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { AICompanionChatDialog } from "@/components/ai/AICompanionChatDialog";
 import { Switch } from "@/components/ui/switch";
 import { useStandaloneMode } from "@/hooks/useStandaloneMode";
 import { aiBrand } from "../../../supabase/functions/_shared/ai-prompts";
 import { buildBottomTabs } from "@/config/nav";
+import { useAIAssistant } from "@/contexts/AIAssistantContext";
 
 type ToolItem = {
   id: string;
@@ -75,7 +75,7 @@ export function MobileBottomBar() {
   const { data: notifications } = useNotifications();
   const unreadCount = (notifications || []).filter((n) => !n.is_read).length;
   const [open, setOpen] = useState(false);
-  const [aiOpen, setAiOpen] = useState(false);
+  const { openAssistant } = useAIAssistant();
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [prefs, setPrefs] = useState<Prefs>(() => loadPrefs());
   const [findTab, setFindTab] = useState<"care" | "work">(prefs.defaultFindTab);
@@ -97,7 +97,7 @@ export function MobileBottomBar() {
 
   const moreLabel = isChinese ? "工具" : "More";
 
-  const openAi = () => { setOpen(false); setAiOpen(true); };
+  const openAi = () => { setOpen(false); openAssistant(); };
 
   // ── Build tool item registry ──
   const findCareItems: ToolItem[] = isChallenged
@@ -412,13 +412,10 @@ export function MobileBottomBar() {
         </DialogPrimitive.Portal>
       </DialogPrimitive.Root>
 
-      {/* AI FAB is owned by <DementiaAssistant /> on the dashboard for challenged sites.
-          For non-challenged sites (or non-dashboard surfaces) we expose the chat via
-          the "工具/More" drawer instead, to avoid two stacked floating buttons. */}
-      {isAuthenticated && !isChallenged && (
+      {isAuthenticated && (
         <button
           type="button"
-          onClick={() => setAiOpen(true)}
+          onClick={() => openAssistant()}
           aria-label={isChinese ? "AI 助手" : "AI Assistant"}
           className="fixed right-4 bottom-20 md:bottom-6 z-40 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-105 active:scale-95 transition-transform flex items-center justify-center"
         >
@@ -426,7 +423,6 @@ export function MobileBottomBar() {
         </button>
       )}
 
-      <AICompanionChatDialog open={aiOpen} onOpenChange={setAiOpen} />
     </>
   );
 }

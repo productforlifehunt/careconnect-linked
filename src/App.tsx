@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
+import { AIAssistantProvider } from "@/contexts/AIAssistantContext";
 import { useApplyDisplaySettings } from "@/features/settings/display";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { SiteProvider, useSite } from "@/contexts/SiteContext";
@@ -185,7 +186,9 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
-              <RootRouter />
+              <AIAssistantProvider>
+                <RootRouter />
+              </AIAssistantProvider>
             </BrowserRouter>
           </TooltipProvider>
         </QueryClientProvider>
