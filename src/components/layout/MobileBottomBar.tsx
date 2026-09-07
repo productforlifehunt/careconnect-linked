@@ -34,6 +34,7 @@ import { AICompanionChatDialog } from "@/components/ai/AICompanionChatDialog";
 import { Switch } from "@/components/ui/switch";
 import { useStandaloneMode } from "@/hooks/useStandaloneMode";
 import { aiBrand } from "../../../supabase/functions/_shared/ai-prompts";
+import { buildBottomTabs } from "@/config/nav";
 
 type ToolItem = {
   id: string;
@@ -68,7 +69,7 @@ function savePrefs(p: Prefs) {
 export function MobileBottomBar() {
   const site = useSite();
   const { isAuthenticated } = useAuth();
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const isChinese = i18n.language?.startsWith("zh");
   const isStandalone = useStandaloneMode();
   const { data: notifications } = useNotifications();
