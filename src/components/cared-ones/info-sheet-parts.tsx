@@ -14,7 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, MapPin, Navigation, Bot } from "lucide-react";
+import { ChevronDown, Loader2, MapPin, Navigation, Bot } from "lucide-react";
 import { fetchCurrentLocation } from "@/features/location/source.wordpress";
 import { fetchSafeZonesWordPress } from "@/features/location/source.wordpress-extended";
 import { isDangerZone, isSafeZone, isCustomZone, zoneTypeLabel } from "@/features/location/zone-types";

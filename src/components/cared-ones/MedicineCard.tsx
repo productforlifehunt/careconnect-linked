@@ -17,6 +17,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { rxnormSuggest, rxnormLookup, type RxSuggestion } from "@/lib/rxnorm";
 import { formatDate, formatTime as formatLocaleTime, formatDateTime } from "@/lib/locale";
 import { useAIAssistant } from "@/contexts/AIAssistantContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 const TIMELINE_HOURS = [
   "06:00","07:00","08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00",
@@ -185,6 +186,7 @@ function MedHistoryDialog({ open, onClose, med }: { open: boolean; onClose: () =
 function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClose: () => void; med: any; onDelete: () => void }) {
   const updateMed = useUpdateMedicine();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [form, setForm] = useState({ name: "", dosage: "", rxcui: "", frequency: "once_daily", time_slots: ["08:00"] as string[], note: "", stock_count: "" as string | number, refill_threshold: "" as string | number, reminder_time_before: "0" as string | number, time_to_send_to_caregiver: "" as string | number, time_to_be_considered_missing: "" as string | number });
 
   // Populate form on open
@@ -596,7 +598,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
   }, [meds]);
 
   useEffect(() => {
-    if (!meds || !todayLogs) return;
+    if (!user?.general_user_role?.includes("cared one") || !meds || !todayLogs) return;
     const now = new Date();
     const nowMinutes = now.getHours() * 60 + now.getMinutes();
     const loggedMedicineIds = new Set((todayLogs as any[]).map((log) => String(log.medicine_id)));
@@ -625,7 +627,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
         toast({ title: status === "skipped" ? Z(`${due.med.name} 已跳过`, `${due.med.name} skipped`) : Z(`${due.med.name} 已记录服用`, `${due.med.name} recorded as taken`) });
       },
     });
-  }, [meds, todayLogs, caredOneId]);
+  }, [meds, todayLogs, caredOneId, user?.general_user_role]);
 
   const hasScheduledMeds = Object.keys(timelineMeds).length > 0;
   const currentHour = new Date().getHours();

@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 import { useAIAssistant } from "@/contexts/AIAssistantContext";
 import { buildCheckInContext } from "../../../supabase/functions/_shared/ai-prompts";
+import { useAuth } from "@/contexts/AuthContext";
 
 function formatSlot(slot: string, isCN: boolean) {
   const [hourRaw = "8", minuteRaw = "00"] = String(slot || "08:00").split(":");
@@ -32,6 +33,7 @@ const STATUS_STYLE: Record<string, string> = {
 
 export function CheckInCard({ caredOneId }: { caredOneId: string }) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const { i18n } = useTranslation();
   const isCN = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (isCN ? cn : en);
@@ -88,7 +90,7 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
   };
 
   useEffect(() => {
-    if (!checkins || !todayLogs) return;
+    if (!user?.general_user_role?.includes("cared one") || !checkins || !todayLogs) return;
     const now = new Date();
     const nowMinutes = now.getHours() * 60 + now.getMinutes();
     const completed = new Set((todayLogs || []).map((l: any) => String(l.checkin_id)));
@@ -104,7 +106,7 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
     if (autoOpenedRef.current === key) return;
     autoOpenedRef.current = key;
     openAICheckIn(due);
-  }, [checkins, todayLogs]);
+  }, [checkins, todayLogs, user?.general_user_role]);
 
   // Today: status by checkin id
   const todayStatusByCheckin = useMemo(() => {
