@@ -46,7 +46,7 @@ export function InfoSheetAIDialog({
     setMessages(next);
     setSending(true);
     try {
-      const reply = await invokeAI("care_info_sheet", question, {
+      const reply = await invokeAI(question, {
         messages: trimMessagesToCharLimit(next),
         contextPrompt: buildInfoSheetContext(context, !!isCN),
         persist: false,

@@ -40,7 +40,7 @@ export function AICareTips({ caredOneName, dementiaStage }: AICareTipsProps) {
     setLoading(true);
     try {
       const context = `Person: ${caredOneName || "unknown"}. Dementia stage: ${dementiaStage || "unknown"}.`;
-      const reply = await invokeAI("care_tips", context, { persist: false, language: i18n.language });
+      const reply = await invokeAI(context, { persist: false, language: i18n.language, contextPrompt: REQUEST_RULES.careTips });
       const parsed = parseAIJson<CareTip[]>(reply);
       if (parsed && Array.isArray(parsed)) setTips(parsed);
     } catch (err) {

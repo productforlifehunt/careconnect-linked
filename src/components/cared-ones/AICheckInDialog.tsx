@@ -41,7 +41,7 @@ export function AICheckInDialog({ open, onOpenChange, checkin, caredOneName }: P
     const sys = buildCheckInContext(checkin?.name || Z("签到", "Check-In"), checkin?.instructions || "", defaultCaredOneName, !!isCN);
     const starter = Z("现在请开始签到。", "Please start the check-in now.");
     setSending(true);
-    invokeAI("general_chat", starter, {
+    invokeAI(starter, {
       messages: [{ role: "user", content: starter }],
       contextPrompt: sys,
       persist: false,
@@ -81,7 +81,7 @@ export function AICheckInDialog({ open, onOpenChange, checkin, caredOneName }: P
     setMessages(next);
     setSending(true);
     try {
-      const reply = await invokeAI("general_chat", text, {
+      const reply = await invokeAI(text, {
         messages: capped,
         contextPrompt: sys,
         persist: false,

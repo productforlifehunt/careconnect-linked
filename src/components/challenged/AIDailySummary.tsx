@@ -37,7 +37,7 @@ export function AIDailySummary({ caredOneName, medicines, tasks, checkins }: AID
           notes: checkins[0].notes,
         } : null,
       });
-      const reply = await invokeAI("daily_summary", context, { persist: false, language: i18n.language });
+      const reply = await invokeAI(context, { persist: false, language: i18n.language, contextPrompt: REQUEST_RULES.dailySummary });
       setSummary(reply);
     } catch (err) {
       console.error("Daily summary error:", err);

@@ -21,9 +21,8 @@ export function AIMedicationHelper({ medications, caredOneName }: AIMedicationHe
     try {
       const medList = medications.map((m: any) => `${m.name} (${m.dosage || "dosage unknown"}, ${m.frequency || "frequency unknown"})`).join(", ");
       const reply = await invokeAI(
-        "medication_check",
         `Person: ${caredOneName || "unknown"}. Current medicines: ${medList}.`,
-        { persist: false, language: i18n.language }
+        { persist: false, language: i18n.language, contextPrompt: REQUEST_RULES.medicationCheck }
       );
       setAnalysis(reply);
     } catch (err) {

@@ -37,7 +37,7 @@ export function CognitiveExercises() {
     setRevealed(new Set());
     setCompleted(false);
     try {
-      const reply = await invokeAI("cognitive_exercise", COGNITIVE_EXERCISE_REQUEST, { persist: false });
+      const reply = await invokeAI(COGNITIVE_EXERCISE_REQUEST, { persist: false, contextPrompt: REQUEST_RULES.cognitiveExercise });
       const parsed = parseAIJson<Exercise>(reply);
       if (parsed) setExercise(parsed);
     } catch (err) {

@@ -196,7 +196,7 @@ export function AISmartBriefing() {
 
       const prompt = buildBriefingRequest(context, !!isChinese);
 
-      const reply = await invokeAI("daily_summary", prompt, { persist: false, language: isChinese ? "zh" : "en" });
+      const reply = await invokeAI(prompt, { persist: false, language: isChinese ? "zh" : "en" });
       const parsed = parseAIJson<Briefing>(reply);
       if (parsed && parsed.summary) {
         setBriefing(parsed);

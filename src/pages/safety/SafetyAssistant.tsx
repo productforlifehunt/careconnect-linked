@@ -63,7 +63,7 @@ export default function SafetyAssistant() {
     setBusy(true);
     try {
       const history = trimMessagesToCharLimit([...messages, { role: "user" as const, content: q }]);
-      const reply = await invokeAI("general_chat", q, {
+      const reply = await invokeAI(q, {
         messages: history,
         contextPrompt: buildSafetyContext(context, !!zh),
         persist: false,
