@@ -16,6 +16,7 @@ const Z = (cn: string, en: string) => (isCN() ? cn : en);
 import { motion, AnimatePresence } from "framer-motion";
 import { rxnormSuggest, rxnormLookup, type RxSuggestion } from "@/lib/rxnorm";
 import { formatDate, formatTime as formatLocaleTime, formatDateTime } from "@/lib/locale";
+import { useAIAssistant } from "@/contexts/AIAssistantContext";
 
 const TIMELINE_HOURS = [
   "06:00","07:00","08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00",
@@ -497,6 +498,8 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
   const createMed = useCreateMedicine();
   const deleteMed = useDeleteMedicine();
   const logMed = useLogMedicine();
+  const { openAssistant } = useAIAssistant();
+  const autoOpenedDoseRef = useRef<string | null>(null);
 
   const [addOpen, setAddOpen] = useState(false);
   const [view, setView] = useState<"timeline" | "list">("timeline");
@@ -591,6 +594,38 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
     });
     return grouped;
   }, [meds]);
+
+  useEffect(() => {
+    if (!meds || !todayLogs) return;
+    const now = new Date();
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    const loggedMedicineIds = new Set((todayLogs as any[]).map((log) => String(log.medicine_id)));
+    const due = (meds as any[]).flatMap((med) => {
+      const slots: string[] = med.time_slot?.length ? med.time_slot : ["08:00"];
+      return slots.map((slot) => ({ med, slot }));
+    }).find(({ med, slot }) => {
+      if (loggedMedicineIds.has(String(med.id)) || med.is_active === false) return false;
+      const [hour = "0", minute = "0"] = String(slot).split(":");
+      return nowMinutes >= Number(hour) * 60 + Number(minute);
+    });
+    if (!due) return;
+    const key = `${now.toISOString().slice(0, 10)}-${due.med.id}-${due.slot}`;
+    if (autoOpenedDoseRef.current === key) return;
+    autoOpenedDoseRef.current = key;
+    const dose = [due.med.name, due.med.dosage, due.slot].filter(Boolean).join(" · ");
+    openAssistant({
+      id: `medicine-${key}`,
+      title: Z("用药提醒", "Medicine reminder"),
+      contextPrompt: Z(`这是已从用药日程精确读取的本次提醒：${dose}。只确认本次是否服用或跳过，不更改剂量，不提供诊断。`, `This reminder was read directly from the medicine schedule: ${dose}. Confirm only whether this dose was taken or skipped; do not change dosage or diagnose.`),
+      starterPrompt: Z(`现在提醒用户确认这次用药：${dose}。`, `Prompt the user to confirm this scheduled dose now: ${dose}.`),
+      starterFallback: Z(`到了 ${due.med.name} 的用药时间。已经服用了吗？`, `It is time for ${due.med.name}. Has this dose been taken?`),
+      completionStatuses: ["taken", "skipped"],
+      onComplete: async ({ status, summary }) => {
+        await logMed.mutateAsync({ medicine_id: due.med.id, status: status === "skipped" ? "skipped" : "taken", note: summary || undefined, user_id: caredOneId });
+        toast({ title: status === "skipped" ? Z(`${due.med.name} 已跳过`, `${due.med.name} skipped`) : Z(`${due.med.name} 已记录服用`, `${due.med.name} recorded as taken`) });
+      },
+    });
+  }, [meds, todayLogs, caredOneId, logMed, openAssistant, toast]);
 
   const hasScheduledMeds = Object.keys(timelineMeds).length > 0;
   const currentHour = new Date().getHours();
