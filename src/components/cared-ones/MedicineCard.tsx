@@ -501,6 +501,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
   const deleteMed = useDeleteMedicine();
   const logMed = useLogMedicine();
   const { openAssistant } = useAIAssistant();
+  const { user } = useAuth();
   const autoOpenedDoseRef = useRef<string | null>(null);
 
   const [addOpen, setAddOpen] = useState(false);

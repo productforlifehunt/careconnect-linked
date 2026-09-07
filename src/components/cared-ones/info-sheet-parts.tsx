@@ -22,7 +22,7 @@ import { fetchCareTipsWordPress, fetchCarePlansWordPress, fetchCareNotesWordPres
 import { fetchMedicinesWordPress } from "@/features/medicine/source.medicine";
 import type { InfoSheetAIContext } from "@/components/cared-ones/InfoSheetAIDialog";
 import { buildInfoSheetContext, buildInfoSheetIntroduction } from "../../../supabase/functions/_shared/ai-prompts";
-import { useAIAssistant } from "@/contexts/AIAssistantContext";
+import { AICompanionChat } from "@/components/ai/AICompanionChat";
 
 // Leaflet stylesheet, loaded once (same source as the main location hub).
 if (typeof document !== "undefined" && !document.getElementById("leaflet-css")) {
@@ -211,31 +211,42 @@ export function SheetAIPanel({ context }: { context: InfoSheetAIContext }) {
   const { i18n } = useTranslation();
   const isCN = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (isCN ? cn : en);
-  const { openAssistant } = useAIAssistant();
-  const open = () => {
-    const task = context.situationDetails?.trim();
-    openAssistant({
-      id: `information-card-${context.caredOneName || "shared"}-${Date.now()}`,
+  const [open, setOpen] = useState(false);
+
+  const task = context.situationDetails?.trim();
+  const request = useMemo(
+    () => ({
+      id: `information-card-${context.caredOneName || "shared"}`,
       title: Z("信息卡助手", "Information card assistant"),
       contextPrompt: buildInfoSheetContext(context, !!isCN),
-      starterPrompt: task ? buildInfoSheetIntroduction(task, context.caredOneName, !!isCN) : Z("请先简单介绍你能根据这张信息卡回答什么。", "Briefly explain what you can answer from this information card."),
+      starterPrompt: task
+        ? buildInfoSheetIntroduction(task, context.caredOneName, !!isCN)
+        : Z("请先简单介绍你能根据这张信息卡回答什么。", "Briefly explain what you can answer from this information card."),
       starterFallback: Z("我只根据这张信息卡上的内容回答。有什么想问的？", "I answer only from this information card. What would you like to know?"),
-    });
-  };
+    }),
+    [context, isCN, task],
+  );
 
   return (
-    <div className="rounded-md border">
+    <div className="rounded-md border overflow-hidden">
       <button
         type="button"
-        onClick={open}
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
         className="flex w-full items-center justify-between gap-2 p-3 text-left hover:bg-accent transition"
       >
         <span className="flex items-center gap-2 text-sm font-medium">
           <Bot className="h-4 w-4 text-primary" />
           {Z("有问题？直接问助手", "Have a question? Ask the assistant")}
         </span>
-        <ChevronDown className="h-4 w-4 -rotate-90 text-muted-foreground" />
+        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "" : "-rotate-90"}`} />
       </button>
+      {open && (
+        <div className="border-t">
+          <AICompanionChat active={open} request={request} className="flex h-[380px] flex-col" />
+        </div>
+      )}
     </div>
   );
 }
+
