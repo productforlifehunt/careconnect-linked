@@ -42,7 +42,11 @@ export const MUTE_CATEGORY: Record<string, string> = {
   booking: "booking",
   location: "location",
   safe_zone: "location",
+  safe_zone_breach: "location",
   location_alert: "location",
+  location_request: "location",
+  emergency_location_request: "location",
+  sos_emergency: "location",
   check_in: "check_in",
   checkin: "check_in",
   medicine: "medicine",
@@ -59,7 +63,11 @@ export const TYPE_CODE: Record<string, string> = {
   system: "b57",
   location: "b58",
   safe_zone: "b58",
+  safe_zone_breach: "b58",
   location_alert: "b58",
+  location_request: "b58",
+  emergency_location_request: "b58",
+  sos_emergency: "b58",
   check_in: "b59",
   checkin: "b59",
   medicine: "b60",
@@ -340,7 +348,7 @@ export async function dispatch(app: AppKey, req: NotifyRequest, token: string | 
   const want = { inbox: true, push: true, email: false, sms: false, ...(req.channels ?? {}) };
 
   // Quiet hours silence the noisy channels only; a wandering alert always rings.
-  const urgent = req.type === "location" || req.type === "safe_zone" || req.type === "location_alert";
+  const urgent = MUTE_CATEGORY[req.type] === "location";
   if (!urgent && inQuietHours(prefs.quiet)) {
     want.push = false;
     want.sms = false;
