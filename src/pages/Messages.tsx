@@ -257,7 +257,7 @@ export default function Messages({ embedded = false }: { embedded?: boolean } = 
               <div
                 key={c.id}
                 className={`p-4 cursor-pointer border-b transition-colors ${isSelected ? "bg-accent" : "hover:bg-muted/50"}`}
-                onClick={() => { setSelectedConvoId(c.id); setSelectedOtherUser(other); if (other?.id && c.unread_count > 0) markRead.mutate(other.id); }}
+                onClick={() => { setSelectedConvoId(c.id); setSelectedOtherUser(other); if (c.unread_count > 0) markRead.mutate(c.id); }}
               >
                 <div className="flex items-center gap-3">
                   <div className="relative shrink-0">
