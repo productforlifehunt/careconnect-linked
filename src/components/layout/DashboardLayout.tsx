@@ -1,72 +1,14 @@
 import { NavLink } from "@/components/NavLink";
 import { useSite } from "@/contexts/SiteContext";
 import { useTranslation } from "react-i18next";
-import {
-  CalendarDays,
-  MessageSquare,
-  Heart as HeartIcon,
-  Users,
-  Search,
-  MapPin,
-  Bell,
-  User,
-  LayoutDashboard,
-  Briefcase, HeartHandshake,
-  Settings,
-  ShoppingCart,
-  Lightbulb,
-  HeartPulse,
-  Wand2,
-  ShieldCheck,
-  HandHeart,
-  BookOpen,
-} from "lucide-react";
+import { buildSidebarNav } from "@/config/nav";
 
+/** Sidebar links come from src/config/nav.ts — the one navigation list. */
 function useSidebarItems() {
   const site = useSite();
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const isChinese = i18n.language?.startsWith("zh");
-  const isChallenged = site.family === "challenged";
-  const isCareCNC = site.id === "carecnc";
-  // challenged-v1 — trim build: hide Resources & Help (assistants + /resources)
-  const isV1 = site.id === "challenged-v1";
-  const L = (zh: string, en: string) => (isChinese ? zh : en);
-
-  const base = [
-    { title: L("控制面板", site.navLabels.dashboard), url: "/dashboard", icon: LayoutDashboard },
-    { title: L(isChallenged ? "被护理者" : "被照顾者", site.navLabels.caredOnes), url: "/cared-ones", icon: HeartIcon },
-    { title: L("预约", "Appointments"), url: "/bookings", icon: CalendarDays },
-    { title: L("消息", "Messages"), url: "/messages", icon: MessageSquare },
-    { title: L(isChallenged ? "护理群组" : "照护小组", site.navLabels.careGroups), url: "/care-circle", icon: Users },
-    { title: L("需要帮手的任务", "Tasks Needing Help"), url: "/shared-tasks", icon: HeartHandshake },
-    { title: L(isChallenged ? "寻求帮助" : "寻找护理", site.navLabels.findCare), url: "/search", icon: Search },
-    { title: L(isChallenged ? "定位" : "定位追踪", site.navLabels.gpsTracking), url: "/gps-tracking", icon: MapPin },
-    { title: L("收藏", "Favorites"), url: "/favorites", icon: HeartIcon },
-    { title: L("护理者面板", "Provider Dashboard"), url: "/provider-dashboard", icon: Settings },
-    { title: L("购物车", "Cart"), url: "/cart", icon: ShoppingCart },
-  ];
-
-  if (isChallenged && !isV1) {
-    base.push(
-      { title: L("认知篇", site.navLabels.awareD || "AwareD"), url: "/aware", icon: Lightbulb },
-      { title: L("护理篇", site.navLabels.careD || "CareD"), url: "/care-guides", icon: HeartPulse },
-      { title: L("应对篇", site.navLabels.copeD || "CopeD"), url: "/coping", icon: Wand2 },
-      { title: L("安全篇", site.navLabels.safeD || "SafeD"), url: "/safety-guides", icon: ShieldCheck },
-      { title: L("陪伴篇", site.navLabels.accompanieD || "AccompanieD"), url: "/accompanied", icon: HandHeart },
-    );
-  }
-
-  // Resources is only for ChallengeD/忆畅 full build — not for CareCNC/护畅 or challenged-v1
-  if (!isCareCNC && !isV1) {
-    base.push({ title: L("资源", "Resources"), url: "/resources", icon: BookOpen });
-  }
-
-  base.push(
-    { title: L("通知", "Notifications"), url: "/notifications", icon: Bell },
-    { title: L("我的资料", "My Profile"), url: "/profile", icon: User },
-  );
-
-  return base;
+  return buildSidebarNav({ site, t, isChinese });
 }
 
 interface DashboardLayoutProps {
