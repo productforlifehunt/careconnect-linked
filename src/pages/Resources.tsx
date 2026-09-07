@@ -457,13 +457,13 @@ function LessonView({
 
   const articleBasePath =
     lesson.contentCategory === "aware"
-      ? "/aware"
+      ? "/awared"
       : lesson.contentCategory === "care"
-        ? "/care-guides"
+        ? "/cared"
         : lesson.contentCategory === "coping"
-          ? "/coping"
+          ? "/coped"
           : lesson.contentCategory === "safe"
-            ? "/safety-guides"
+            ? "/safed"
             : "/accompanied";
 
   const lessonSections = lesson.sections ?? [];

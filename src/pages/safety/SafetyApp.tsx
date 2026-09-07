@@ -60,7 +60,7 @@ export default function SafetyApp() {
           <Route path="/join/:code" element={<JoinGroup />} />
           {/* Aliases — shared pages navigate to the care app's paths. */}
           <Route path="/dashboard" element={<Navigate to="/map" replace />} />
-          <Route path="/gps-tracking" element={<Navigate to="/map" replace />} />
+          <Route path="/find" element={<Navigate to="/map" replace />} />
           <Route path="/care-circle" element={<Navigate to="/circle" replace />} />
           <Route path="/notifications" element={<Navigate to="/alerts" replace />} />
           <Route path="/profile" element={<Navigate to="/me" replace />} />

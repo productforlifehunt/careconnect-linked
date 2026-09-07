@@ -25,7 +25,7 @@ export default function CareD() {
       icon={<HeartPulse className="h-6 w-6 text-white" />}
       accentColor="from-rose-500 to-pink-600"
       subcategories={SUBCATEGORIES}
-      basePath="/care-guides"
+      basePath="/cared"
     />
   );
 }

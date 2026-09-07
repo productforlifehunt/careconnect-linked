@@ -241,7 +241,7 @@ export function AppHeader() {
                 <DropdownMenuItem onClick={() => navigate("/care-circle")}>
                   <Users className="mr-2 h-4 w-4" /> {isChallenged ? t("nav.united") : t(site.family === "challenged" ? "nav.careTeams" : "nav.careGroups")}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/gps-tracking")}>
+                <DropdownMenuItem onClick={() => navigate("/find")}>
                   <MapPin className="mr-2 h-4 w-4" /> {isChallenged ? t("nav.find") : t("nav.gpsTracking")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/messages")}>

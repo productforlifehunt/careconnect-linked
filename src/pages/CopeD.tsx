@@ -25,7 +25,7 @@ export default function CopeD() {
       icon={<Wand2 className="h-6 w-6 text-white" />}
       accentColor="from-teal-500 to-cyan-600"
       subcategories={SUBCATEGORIES}
-      basePath="/coping"
+      basePath="/coped"
     />
   );
 }

@@ -143,8 +143,8 @@ export async function createNotificationWordPress(input: {
       booking: "/bookings",
       community: "/community",
       shared_task: "/shared-tasks",
-      location: "/gps-tracking",
-      safe_zone: "/gps-tracking",
+      location: "/find",
+      safe_zone: "/find",
     };
     const base = map[input.related_type] || "/notifications";
     url = `${base}?id=${input.related_id}`;

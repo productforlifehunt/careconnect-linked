@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -66,8 +66,18 @@ export default function CaredOnes() {
   const deleteUserCaredOne = useDeleteUserCaredOne();
   // Notification rows link straight here, e.g. /cared-ones?person=12&card=medicine
   const [searchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState<string | null>(searchParams.get("person"));
-  const [openCard, setOpenCard] = useState<string | null>(searchParams.get("card"));
+  const { personId, card: cardParam } = useParams();
+  const navigate = useNavigate();
+  // Address is the state: /cared-ones/:personId/:card (older links with ?person=&card= still work).
+  const activeTab = personId || searchParams.get("person") || null;
+  const openCard = cardParam || searchParams.get("card") || null;
+  const setActiveTab = (id: string | null) =>
+    navigate(id ? `/cared-ones/${String(id).replace(/^wp-/, "")}` : "/cared-ones");
+  const setOpenCard = (key: string | null) => {
+    const person = String(activeTab || selectedId || "").replace(/^wp-/, "");
+    if (!person) return navigate("/cared-ones");
+    navigate(key ? `/cared-ones/${person}/${key}` : `/cared-ones/${person}`);
+  };
 
   const [addOpen, setAddOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -116,7 +126,7 @@ export default function CaredOnes() {
 
   const handleRemoveCaredOne = (id: string, name: string) => {
     deleteUserCaredOne.mutate(id, {
-      onSuccess: () => { setActiveTab(null); setOpenCard(null); toast({ title: t("caredOnes.removed", { name, caredOnes: site.navLabels.caredOnes.toLowerCase() }) }); },
+      onSuccess: () => { setActiveTab(null); toast({ title: t("caredOnes.removed", { name, caredOnes: site.navLabels.caredOnes.toLowerCase() }) }); },
       onError: (err: any) => toast({ title: t("caredOnes.failedToRemove"), description: err.message, variant: "destructive" }),
     });
   };
@@ -193,7 +203,7 @@ export default function CaredOnes() {
               const isActive = selectedId === co.user_id;
               return (
                 <div key={co.user_id} className={`flex items-center rounded-lg border transition-colors ${isActive ? "bg-card border-primary shadow-sm" : "bg-transparent border-border hover:bg-accent/50"}`}>
-                  <button type="button" onClick={() => { setActiveTab(co.user_id); setOpenCard(null); }} className="min-h-11 px-4 py-2 text-sm font-medium">
+                  <button type="button" onClick={() => setActiveTab(co.user_id)} className="min-h-11 px-4 py-2 text-sm font-medium">
                     {name}{co.relationship && <span className="text-xs text-muted-foreground ml-1">({co.relationship})</span>}
                   </button>
                   <button

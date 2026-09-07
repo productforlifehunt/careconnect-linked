@@ -122,22 +122,22 @@ export function MobileBottomBar() {
     ? [
         { id: "daily-calendar", title: isChinese ? "日历" : "Calendar", url: "/calendar", icon: CalendarDays },
         { id: "daily-bookings", title: isChinese ? "预约" : "Bookings", url: "/bookings", icon: ClipboardList },
-        { id: "daily-gps", title: isChinese ? "定位" : "GPS", url: "/gps-tracking", icon: MapPin },
+        { id: "daily-gps", title: isChinese ? "定位" : "GPS", url: "/find", icon: MapPin },
         { id: "daily-ai", title: aiBrand(isChinese ? "zh" : "en"), icon: Bot, onClick: openAi },
       ]
     : [
         { id: "daily-bookings", title: isChinese ? "预约" : "Bookings", url: "/bookings", icon: ClipboardList },
-        { id: "daily-gps", title: isChinese ? "定位" : "GPS", url: "/gps-tracking", icon: MapPin },
+        { id: "daily-gps", title: isChinese ? "定位" : "GPS", url: "/find", icon: MapPin },
         { id: "daily-ai", title: isChinese ? "AI 助手" : "AI Assistant", icon: Bot, onClick: openAi },
       ];
 
   const resourceItems: ToolItem[] = isChallenged && !isV1
     ? [
         { id: "community-resources", title: isChinese ? "资源与帮助" : "Resources & Help", url: "/resources", icon: BookOpen },
-        { id: "res-cared", title: isChinese ? "护理篇" : "CareD", url: "/care-guides", icon: HeartHandshake },
-        { id: "res-safed", title: isChinese ? "安全篇" : "SafeD", url: "/safety-guides", icon: ShieldCheck },
-        { id: "res-coped", title: isChinese ? "应对篇" : "CopeD", url: "/coping", icon: Smile },
-        { id: "res-awared", title: isChinese ? "认知篇" : "AwareD", url: "/aware", icon: Brain },
+        { id: "res-cared", title: isChinese ? "护理篇" : "CareD", url: "/cared", icon: HeartHandshake },
+        { id: "res-safed", title: isChinese ? "安全篇" : "SafeD", url: "/safed", icon: ShieldCheck },
+        { id: "res-coped", title: isChinese ? "应对篇" : "CopeD", url: "/coped", icon: Smile },
+        { id: "res-awared", title: isChinese ? "认知篇" : "AwareD", url: "/awared", icon: Brain },
         { id: "res-accompd", title: isChinese ? "陪伴篇" : "AccompanieD", url: "/accompanied", icon: HandHeart },
       ]
     : [];

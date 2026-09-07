@@ -11,10 +11,10 @@ import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 /** Maps category to route base */
 const CATEGORY_ROUTES: Record<string, string> = {
-  aware: "/aware",
-  care: "/care-guides",
-  cope: "/coping",
-  safe: "/safety-guides",
+  aware: "/awared",
+  care: "/cared",
+  cope: "/coped",
+  safe: "/safed",
   accompany: "/accompanied",
 };
 
@@ -63,7 +63,7 @@ export default function ChallengedArticleDetail() {
     );
   }
 
-  const categoryRoute = CATEGORY_ROUTES[article.category] || "/aware";
+  const categoryRoute = CATEGORY_ROUTES[article.category] || "/awared";
   const categoryName = CATEGORY_NAMES[article.category];
   const readTime = article.reading_time || (isChinese ? "3分钟" : "3 min read");
 

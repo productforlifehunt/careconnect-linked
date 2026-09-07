@@ -85,25 +85,25 @@ export function buildPublicNav({ site, t, isChinese, withHome }: Opts): NavItem[
       ...(isV1
         ? []
         : [
-            { title: t("nav.awareD"), url: "/aware", icon: Search },
-            { title: t("nav.careD"), url: "/care-guides", icon: Heart },
-            { title: t("nav.copeD"), url: "/coping", icon: Heart },
-            { title: t("nav.safeD"), url: "/safety-guides", icon: Heart },
+            { title: t("nav.awareD"), url: "/awared", icon: Search },
+            { title: t("nav.careD"), url: "/cared", icon: Heart },
+            { title: t("nav.copeD"), url: "/coped", icon: Heart },
+            { title: t("nav.safeD"), url: "/safed", icon: Heart },
             { title: t("nav.accompanieD"), url: "/accompanied", icon: Heart },
           ]),
-      { title: t("nav.findCaregivers"), url: "/search?service_category=care", icon: Search },
+      { title: t("nav.findCaregivers"), url: "/search-caregiver", icon: Search },
       {
         title: t("nav.findLocalCompanion"),
-        url: "/search?service_category=care&service_location=in-person&service_type=companionship",
+        url: "/search-local-caregiver",
         icon: Heart,
       },
       {
         title: t("nav.findRemoteCompanion"),
-        url: "/search?service_category=care&service_location=remote&service_type=companionship",
+        url: "/search-remote-caregiver",
         icon: MessageSquare,
       },
       { title: t("nav.aiCompanion"), url: "/ai-companion", icon: Bot, badge: aiBrand(isChinese ? "zh" : "en") },
-      { title: t("nav.seniorFacilities"), url: "/search?service_category=facility", icon: Building2 },
+      { title: t("nav.seniorFacilities"), url: "/search-care-facility", icon: Building2 },
       { title: isChinese ? t("nav.united") : site.navLabels.careGroups, url: "/care-circle", icon: Users },
       { title: t("nav.community"), url: "/community", icon: Newspaper },
       { title: t("nav.howItWorks"), url: "/how-it-works", icon: HelpCircle },
@@ -139,7 +139,7 @@ export function buildSidebarNav({ site, t, isChinese }: Opts): NavItem[] {
     { title: L(isChallenged ? "护理群组" : "照护小组", site.navLabels.careGroups), url: "/care-circle", icon: Users },
     { title: L("需要帮手的任务", "Tasks Needing Help"), url: "/shared-tasks", icon: HeartHandshake },
     { title: L(isChallenged ? "寻求帮助" : "寻找护理", site.navLabels.findCare || "Find Care"), url: "/search", icon: Search },
-    { title: L(isChallenged ? "定位" : "定位追踪", site.navLabels.gpsTracking || "GPS"), url: "/gps-tracking", icon: MapPin },
+    { title: L(isChallenged ? "定位" : "定位追踪", site.navLabels.gpsTracking || "GPS"), url: "/find", icon: MapPin },
     { title: L("收藏", "Favorites"), url: "/favorites", icon: Heart },
     { title: L("护理者面板", "Provider Dashboard"), url: "/provider-dashboard", icon: Settings },
     { title: L("购物车", "Cart"), url: "/cart", icon: ShoppingCart },
@@ -147,10 +147,10 @@ export function buildSidebarNav({ site, t, isChinese }: Opts): NavItem[] {
 
   if (isChallenged && !isV1) {
     items.push(
-      { title: L("认知篇", site.navLabels.awareD || "AwareD"), url: "/aware", icon: Lightbulb },
-      { title: L("护理篇", site.navLabels.careD || "CareD"), url: "/care-guides", icon: HeartPulse },
-      { title: L("应对篇", site.navLabels.copeD || "CopeD"), url: "/coping", icon: Wand2 },
-      { title: L("安全篇", site.navLabels.safeD || "SafeD"), url: "/safety-guides", icon: ShieldCheck },
+      { title: L("认知篇", site.navLabels.awareD || "AwareD"), url: "/awared", icon: Lightbulb },
+      { title: L("护理篇", site.navLabels.careD || "CareD"), url: "/cared", icon: HeartPulse },
+      { title: L("应对篇", site.navLabels.copeD || "CopeD"), url: "/coped", icon: Wand2 },
+      { title: L("安全篇", site.navLabels.safeD || "SafeD"), url: "/safed", icon: ShieldCheck },
       { title: L("陪伴篇", site.navLabels.accompanieD || "AccompanieD"), url: "/accompanied", icon: HandHeart },
     );
   }

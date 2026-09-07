@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -43,16 +43,25 @@ export default function SearchResults() {
   const { serviceTypes } = useServiceTypes();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { pathname } = useLocation();
+  // Each search entry has its own clean address; the path decides the preset filters.
+  const PRESETS: Record<string, { category?: string; location?: string; type?: string }> = {
+    "/search-caregiver": { category: "care" },
+    "/search-local-caregiver": { category: "care", location: "in-person", type: "companionship" },
+    "/search-remote-caregiver": { category: "care", location: "remote", type: "companionship" },
+    "/search-care-facility": { category: "facility" },
+  };
+  const preset = PRESETS[pathname] || {};
   const initialQuery = searchParams.get("q") || "";
   const initialLocation = searchParams.get("location") || "";
-  const serviceCategory = searchParams.get("service_category") || "care";
+  const serviceCategory = searchParams.get("service_category") || preset.category || "care";
   const isFacilityMode = serviceCategory === "facility";
   const isZh = i18n.language?.startsWith("zh");
   const facilityArea = isZh ? "china" : "global";
-  // URL-driven filter pre-selection (e.g. nav links: ?service_location=in-person&service_type=companionship)
-  const initialServiceLocations = (searchParams.get("service_location") || "")
+  // Filter pre-selection from the path preset, overridable by query params.
+  const initialServiceLocations = (searchParams.get("service_location") || preset.location || "")
     .split(",").map(s => s.trim()).filter(Boolean);
-  const initialServiceTypeSlugs = (searchParams.get("service_type") || "")
+  const initialServiceTypeSlugs = (searchParams.get("service_type") || preset.type || "")
     .split(",").map(s => s.trim()).filter(Boolean);
 
   const [query, setQuery] = useState(initialQuery);
