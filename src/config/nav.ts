@@ -1,9 +1,12 @@
 /**
  * Single source of truth for app navigation.
  *
- * Before this file the same link lists were hand-written in AppHeader,
- * AppSidebar and the mobile drawer, which is how they drifted apart.
- * Every surface now derives its items from here.
+ * Before this file the same link lists were hand-written in the header, the
+ * dashboard sidebar and the mobile bottom bar, which is how they drifted apart.
+ * Every surface now derives its items from here:
+ *   header        → buildPublicNav
+ *   sidebar       → buildSidebarNav
+ *   bottom tabs   → buildBottomTabs
  */
 import type { TFunction } from "i18next";
 import {
@@ -23,6 +26,15 @@ import {
   Bell,
   User,
   ShoppingCart,
+  Inbox,
+  Settings,
+  HeartHandshake,
+  Lightbulb,
+  HeartPulse,
+  Wand2,
+  ShieldCheck,
+  HandHeart,
+  BookOpen,
 } from "lucide-react";
 import { aiBrand } from "../../supabase/functions/_shared/ai-prompts";
 
@@ -36,7 +48,18 @@ export type NavItem = {
 type SiteLike = {
   id: string;
   family?: string;
-  navLabels: { careGroups: string; caredOnes: string };
+  navLabels: {
+    careGroups: string;
+    caredOnes: string;
+    findCare?: string;
+    dashboard?: string;
+    gpsTracking?: string;
+    awareD?: string;
+    careD?: string;
+    copeD?: string;
+    safeD?: string;
+    accompanieD?: string;
+  };
 };
 
 
@@ -47,6 +70,7 @@ type Opts = {
   /** Include a Home/Dashboard entry first (sidebar does, header does not). */
   withHome?: boolean;
 };
+
 
 /** Public entries: visible to everyone, signed in or not. */
 export function buildPublicNav({ site, t, isChinese, withHome }: Opts): NavItem[] {
