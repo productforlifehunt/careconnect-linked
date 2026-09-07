@@ -59,7 +59,15 @@ export default function GPSTracking() {
   const [updatingShare, setUpdatingShare] = useState(false);
   const [sosDialogOpen, setSosDialogOpen] = useState(false);
   const [sosSending, setSosSending] = useState(false);
-  const [activeTab, setActiveTab] = useState("map");
+  // Variant entry points (NotchSafety reuses this same page): the path decides
+  // which tab opens first — /places → zones, /alerts → alerts.
+  const initialTab =
+    typeof window !== "undefined" && window.location.pathname.startsWith("/places")
+      ? "zones"
+      : typeof window !== "undefined" && window.location.pathname.startsWith("/alerts")
+        ? "alerts"
+        : "map";
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [alerts, setAlerts] = useState<any[]>([]);
   const [zones, setZones] = useState<any[]>([]);
   const [trailData, setTrailData] = useState<Record<string, [number, number][]>>({});
