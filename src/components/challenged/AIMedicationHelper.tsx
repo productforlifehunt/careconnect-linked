@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Pill, Loader2, AlertTriangle, RefreshCw } from "lucide-react";
 import { invokeAI } from "@/lib/ai";
 import { useTranslation } from "react-i18next";
+import { REQUEST_RULES } from "../../../supabase/functions/_shared/ai-prompts";
 
 interface AIMedicationHelperProps {
   medications: any[];
@@ -21,9 +22,8 @@ export function AIMedicationHelper({ medications, caredOneName }: AIMedicationHe
     try {
       const medList = medications.map((m: any) => `${m.name} (${m.dosage || "dosage unknown"}, ${m.frequency || "frequency unknown"})`).join(", ");
       const reply = await invokeAI(
-        "medication_check",
         `Person: ${caredOneName || "unknown"}. Current medicines: ${medList}.`,
-        { persist: false, language: i18n.language }
+        { persist: false, language: i18n.language, contextPrompt: REQUEST_RULES.medicationCheck }
       );
       setAnalysis(reply);
     } catch (err) {

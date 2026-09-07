@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // SINGLE AI EDGE FUNCTION — every AI capability of the app lives in this file.
-//   POST /ai/chat    non-streaming chat / one-shot generation (all AI modes)
+//   POST /ai/chat    non-streaming chat / one-shot generation (no modes at all)
 //   POST /ai/stream  Server-Sent-Events token stream (voice assistant)
 //   POST /ai/note    note-writing assist (Notch)
 //   POST /ai/voice   text-to-speech (multi-provider)
@@ -13,7 +13,6 @@ import {
   buildSystemPrompt,
   NOTE_WRITING_SYSTEM_PROMPT,
   TTS_READER_SYSTEM_PROMPT,
-  type AIMode,
 } from "../_shared/ai-prompts.ts";
 
 const corsHeaders = {
@@ -23,24 +22,8 @@ const corsHeaders = {
 };
 
 // ═══ 1. CHAT (non-streaming) ═══
-const AI_MODELS = ["google/gemini-3-flash-preview", "google/gemini-2.5-flash"] as const;
-const VALID_MODES = new Set<AIMode>([
-  "insights",
-  "cognitive_exercise",
-  "medication_check",
-  "behavior_analysis",
-  "care_tips",
-  "daily_summary",
-  "routine_suggestion",
-  "care_info_sheet",
-  "general_chat",
-]);
-
-
-function normalizeMode(value: unknown): AIMode {
-  return VALID_MODES.has(value as AIMode) ? (value as AIMode) : "general_chat";
-}
-
+// Highest capability first, then progressively cheaper fallbacks.
+const AI_MODELS = ["google/gemini-3.1-pro-preview", "google/gemini-3.7-flash", "google/gemini-2.5-flash"] as const;
 async function requestAIReply(apiKey: string, messages: Array<{ role: string; content: string }>) {
   for (const model of AI_MODELS) {
     try {
@@ -82,13 +65,11 @@ async function handleChat(req: Request): Promise<Response> {
 
   try {
     const payload = await req.json() as {
-      mode: AIMode;
       messages: Array<{ role: string; content: string }>;
       contextPrompt?: string;
       language?: string;
     };
 
-    const mode = normalizeMode(payload?.mode);
     const messages = Array.isArray(payload?.messages)
       ? payload.messages.filter((m) => typeof m?.role === "string" && typeof m?.content === "string")
       : [];
@@ -106,12 +87,12 @@ async function handleChat(req: Request): Promise<Response> {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       return new Response(
-        JSON.stringify({ reply: buildFallbackReply(mode, payload?.language), degraded: true }),
+        JSON.stringify({ reply: buildFallbackReply(payload?.language), degraded: true }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const systemPrompt = [buildSystemPrompt(mode, payload?.language), contextPrompt].filter(Boolean).join("\n\n");
+    const systemPrompt = [buildSystemPrompt(payload?.language), contextPrompt].filter(Boolean).join("\n\n");
 
     const aiMessages = [
       { role: "system", content: systemPrompt },
@@ -121,13 +102,13 @@ async function handleChat(req: Request): Promise<Response> {
     const reply = await requestAIReply(LOVABLE_API_KEY, aiMessages);
 
     return new Response(
-      JSON.stringify({ reply: reply || buildFallbackReply(mode, payload?.language), degraded: !reply }),
+      JSON.stringify({ reply: reply || buildFallbackReply(payload?.language), degraded: !reply }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {
     console.error("ai chat error:", e);
     return new Response(
-      JSON.stringify({ reply: buildFallbackReply("general_chat"), degraded: true }),
+      JSON.stringify({ reply: buildFallbackReply(), degraded: true }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
@@ -170,7 +151,7 @@ async function handleStream(req: Request): Promise<Response> {
       .filter((m) => typeof m?.role === "string" && typeof m?.content === "string")
       .filter((m) => m.role !== "system");
 
-    const systemPrompt = buildSystemPrompt("general_chat", language, true);
+    const systemPrompt = buildSystemPrompt(language, true);
 
     const upstream = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -179,7 +160,7 @@ async function handleStream(req: Request): Promise<Response> {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-3.7-flash",
         stream: true,
         messages: [
           { role: "system", content: systemPrompt },
@@ -249,7 +230,7 @@ async function handleNote(req: Request): Promise<Response> {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: model || 'google/gemini-2.5-flash',
+        model: model || 'google/gemini-3.7-flash',
         messages: [
           { role: 'system', content: NOTE_WRITING_SYSTEM_PROMPT },
           { role: 'user', content: prompt },
@@ -1094,17 +1075,14 @@ async function handleVoice(req: Request): Promise<Response> {
   }
 }
 
-// ─── Router: one function, four actions ───
+// ─── Router: tolerant path matching, no exact-name whitelist ───
+// Anything that merely *looks* like stream / note / voice routes there;
+// everything else (including typos and unknown paths) is a normal chat call.
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
-  const url = new URL(req.url);
-  const action = (url.pathname.split("/").filter(Boolean).pop() || "chat").toLowerCase();
-  switch (action) {
-    case "stream": return handleStream(req);
-    case "note": return handleNote(req);
-    case "voice": return handleVoice(req);
-    case "chat":
-    case "ai":
-    default: return handleChat(req);
-  }
+  const path = new URL(req.url).pathname.toLowerCase();
+  if (path.includes("stream")) return handleStream(req);
+  if (path.includes("note")) return handleNote(req);
+  if (path.includes("voice") || path.includes("tts") || path.includes("speech")) return handleVoice(req);
+  return handleChat(req);
 });

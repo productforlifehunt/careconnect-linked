@@ -83,7 +83,7 @@ export function GroupHelpTab({ groupName }: GroupHelpTabProps) {
     setAnswer("");
     try {
       const context = buildCareGroupHelpRequest(question.trim(), groupName, !!isCN);
-      const reply = await invokeAI("general_chat", context, { title: Z("护理群组帮助", "Care group help"), persist: false, language: isCN ? "zh" : "en" });
+      const reply = await invokeAI(context, { title: Z("护理群组帮助", "Care group help"), persist: false, language: isCN ? "zh" : "en" });
       setAnswer(reply);
     } catch (err: any) {
       toast({ title: Z("暂时问不到答案", "Could not get an answer right now"), description: err?.message, variant: "destructive" });

@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Wand2, RefreshCw, AlertTriangle, Lightbulb, Shield } from "lucide-react";
 import { invokeAI, parseAIJson } from "@/lib/ai";
 import { useTranslation } from "react-i18next";
+import { REQUEST_RULES } from "../../../supabase/functions/_shared/ai-prompts";
 
 interface Insight {
   title: string;
@@ -39,7 +40,7 @@ export function AIInsightsPanel({ caredOnes, tasks, bookings }: AIInsightsPanelP
         taskTitles: (tasks || []).filter((t: any) => t.status !== "completed").slice(0, 5).map((t: any) => t.title),
         upcomingBookings: (bookings || []).filter((b: any) => ["confirmed", "pending"].includes(b.status)).length,
       });
-      const reply = await invokeAI("insights", context, { persist: false, language: i18n.language });
+      const reply = await invokeAI(context, { persist: false, language: i18n.language, contextPrompt: REQUEST_RULES.insights });
       const parsed = parseAIJson<Insight[]>(reply);
       if (parsed && Array.isArray(parsed)) {
         setInsights(parsed);

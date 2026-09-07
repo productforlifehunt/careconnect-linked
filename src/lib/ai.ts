@@ -1,6 +1,6 @@
 /**
  * SINGLE FRONTEND AI MODULE — every AI call from the app goes through this file.
- * Part 1: invokeAI / conversation memory (non-streaming, all AI modes).
+ * Part 1: invokeAI / conversation memory (non-streaming; no modes anywhere).
  * Part 2: streaming voice pipeline (SSE text + sentence-level TTS playback).
  * Backend: the single `ai` edge function (/ai/chat, /ai/stream, /ai/voice, /ai/note).
  * System prompts: supabase/functions/_shared/ai-prompts.ts (single registry).
@@ -9,9 +9,6 @@ import { wordpressCCTFetch, wordpressFetch, isNetworkAbort } from "@/features/sh
 import { T, R } from "@/integrations/wp-schema";
 import { appScopeBody } from "@/features/shared/app-scope";
 import { supabase } from "@/integrations/supabase/client";
-import type { AIMode } from "../../supabase/functions/_shared/ai-prompts";
-
-export type { AIMode } from "../../supabase/functions/_shared/ai-prompts";
 
 
 export interface AIChatMessage {
@@ -24,7 +21,10 @@ export interface InvokeAIOptions {
   title?: string;
   caredOneId?: string | number | null;
   messages?: AIChatMessage[];
-  /** Extra facts/guardrails appended to the server system prompt (e.g. care sheet contents). */
+  /**
+   * Everything this screen needs the AI to know or do, in plain language:
+   * live facts, guardrails, and the wanted output shape. There are no modes.
+   */
   contextPrompt?: string;
   language?: string;
   /**
@@ -32,6 +32,8 @@ export interface InvokeAIOptions {
    * Only opt-in if you explicitly need a persisted transcript.
    */
   persist?: boolean;
+  /** Only used to keep separate persisted transcripts apart. Free-form. */
+  threadKey?: string;
 }
 
 const CONVERSATION_SLUG = T.chatConversation.slug;
@@ -46,23 +48,23 @@ function nowWPDateTime() {
   return new Date().toISOString().slice(0, 19).replace("T", " ");
 }
 
-function conversationStorageKey(mode: AIMode, caredOneId?: string | number | null) {
-  return `ai_conversation:${mode}:${caredOneId ?? "none"}`;
+function conversationStorageKey(threadKey: string, caredOneId?: string | number | null) {
+  return `ai_conversation:${threadKey || "chat"}:${caredOneId ?? "none"}`;
 }
 
 const stripWp = (id: string | number | null | undefined): string =>
   id == null ? "" : String(id).replace(/^wp-/, "");
 const numId = (id: string | number | null | undefined): number => Number(stripWp(id));
 
-async function ensureConversation(mode: AIMode, options: InvokeAIOptions = {}): Promise<string> {
-  const cachedId = options.conversationId || localStorage.getItem(conversationStorageKey(mode, options.caredOneId));
+async function ensureConversation(threadKey: string, options: InvokeAIOptions = {}): Promise<string> {
+  const cachedId = options.conversationId || localStorage.getItem(conversationStorageKey(threadKey, options.caredOneId));
 
   if (cachedId) {
     try {
       const existing = await wordpressCCTFetch<Record<string, any>>(CONVERSATION_SLUG, { id: cachedId });
       const id = existing?.id || existing?._ID;
       if (id) {
-        localStorage.setItem(conversationStorageKey(mode, options.caredOneId), String(id));
+        localStorage.setItem(conversationStorageKey(threadKey, options.caredOneId), String(id));
         return String(id);
       }
     } catch { /* fall through */ }
@@ -78,7 +80,7 @@ async function ensureConversation(mode: AIMode, options: InvokeAIOptions = {}): 
     },
   });
   const createdId = String(result?.item_id || result?._ID || result?.id);
-  if (createdId) localStorage.setItem(conversationStorageKey(mode, options.caredOneId), createdId);
+  if (createdId) localStorage.setItem(conversationStorageKey(threadKey, options.caredOneId), createdId);
   return createdId;
 }
 
@@ -113,9 +115,9 @@ async function touchConversation(conversationId: string) {
 }
 
 /** Call the single `ai` edge function (Lovable AI Gateway) */
-async function callAI(mode: AIMode, messages: AIChatMessage[], contextPrompt?: string, language?: string): Promise<string> {
+async function callAI(messages: AIChatMessage[], contextPrompt?: string, language?: string): Promise<string> {
   const { data, error } = await supabase.functions.invoke("ai/chat", {
-    body: { mode, messages, ...(contextPrompt ? { contextPrompt } : {}), ...(language ? { language } : {}) },
+    body: { messages, ...(contextPrompt ? { contextPrompt } : {}), ...(language ? { language } : {}) },
   });
   if (error) {
     console.error("AI edge function error:", error);
@@ -125,43 +127,21 @@ async function callAI(mode: AIMode, messages: AIChatMessage[], contextPrompt?: s
   return data?.reply || "";
 }
 
-export async function loadAIConversation(
-  mode: AIMode,
-  options: Pick<InvokeAIOptions, "conversationId" | "caredOneId"> = {}
-): Promise<AIChatMessage[]> {
-  const conversationId = options.conversationId || localStorage.getItem(conversationStorageKey(mode, options.caredOneId));
-  if (!conversationId) return [];
-  try {
-    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_CONV_MESSAGE}/children/${numId(conversationId)}`);
-    if (!Array.isArray(rels) || rels.length === 0) return [];
-    const messages = await Promise.all(rels.map(async (r: any) => {
-      try { return await wordpressCCTFetch<any>(MESSAGE_SLUG, { id: r.child_object_id }); }
-      catch { return null; }
-    }));
-    return (messages.filter(Boolean) as any[])
-      .sort((a, b) => String(a.cct_created || "").localeCompare(String(b.cct_created || "")))
-      .map((m: any) => ({
-        role: (m.chat_message_type === "ai" ? "assistant" : "user") as AIChatMessage["role"],
-        content: m.chat_message_content || "",
-      }));
-  } catch { return []; }
-}
-
 class SkipPersistence extends Error {}
 
-export async function invokeAI(mode: AIMode, context: string, options: InvokeAIOptions = {}): Promise<string> {
+export async function invokeAI(request: string, options: InvokeAIOptions = {}): Promise<string> {
   const userMessages = options.messages && options.messages.length > 0
     ? options.messages.filter((m) => m.role !== "system")
-    : [{ role: "user" as const, content: context }];
+    : [{ role: "user" as const, content: request }];
 
-  const userMessage = userMessages.filter((m) => m.role === "user").at(-1)?.content || context;
+  const userMessage = userMessages.filter((m) => m.role === "user").at(-1)?.content || request;
 
   // Persist only when explicitly requested (non-blocking on failure)
   let conversationId: string | null = null;
   const shouldPersist = options.persist === true;
   try {
     if (!shouldPersist) throw new SkipPersistence();
-    conversationId = await ensureConversation(mode, options);
+    conversationId = await ensureConversation(options.threadKey || "chat", options);
     await createMessage(conversationId, "user", userMessage);
   } catch (e) {
     if (e instanceof SkipPersistence) conversationId = null;
@@ -170,7 +150,7 @@ export async function invokeAI(mode: AIMode, context: string, options: InvokeAIO
   }
 
   // Critical path
-  const reply = await callAI(mode, userMessages, options.contextPrompt, options.language);
+  const reply = await callAI(userMessages, options.contextPrompt, options.language);
 
   if (conversationId) {
     try {
