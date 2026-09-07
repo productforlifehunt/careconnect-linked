@@ -18,6 +18,7 @@ import { rxnormSuggest, rxnormLookup, type RxSuggestion } from "@/lib/rxnorm";
 import { formatDate, formatTime as formatLocaleTime, formatDateTime } from "@/lib/locale";
 import { useAIAssistant } from "@/contexts/AIAssistantContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { buildMedicineDoseContext, buildMedicineDoseStarter } from "../../../supabase/functions/_shared/ai-prompts";
 
 const TIMELINE_HOURS = [
   "06:00","07:00","08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00",
@@ -619,8 +620,8 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
     openAssistant({
       id: `medicine-${key}`,
       title: Z("用药提醒", "Medicine reminder"),
-      contextPrompt: Z(`这是已从用药日程精确读取的本次提醒：${dose}。只确认本次是否服用或跳过，不更改剂量，不提供诊断。`, `This reminder was read directly from the medicine schedule: ${dose}. Confirm only whether this dose was taken or skipped; do not change dosage or diagnose.`),
-      starterPrompt: Z(`现在提醒用户确认这次用药：${dose}。`, `Prompt the user to confirm this scheduled dose now: ${dose}.`),
+      contextPrompt: buildMedicineDoseContext(dose, isCN()),
+      starterPrompt: buildMedicineDoseStarter(dose, isCN()),
       starterFallback: Z(`到了 ${due.med.name} 的用药时间。已经服用了吗？`, `It is time for ${due.med.name}. Has this dose been taken?`),
       completionStatuses: ["taken", "skipped"],
       onComplete: async ({ status, summary }) => {
