@@ -925,13 +925,15 @@ export function useAddMemberToSubgroup() {
   return useMutation({
     mutationFn: ({ subgroupId, userId, types }: { subgroupId: string; userId: string | number; types?: string[] }) =>
       addMemberToSubgroupWordPress(subgroupId, userId, { types }),
-    onSuccess: () => {
+    onSuccess: (_res, vars) => {
       qc.invalidateQueries({ queryKey: ["subgroupMembers"] });
       qc.invalidateQueries({ queryKey: ["subgroupMemberRecords"] });
       qc.invalidateQueries({ queryKey: ["subgroupPending"] });
       qc.invalidateQueries({ queryKey: ["mySubgroupPending"] });
       qc.invalidateQueries({ queryKey: ["careGroupPosts"] });
       qc.invalidateQueries({ queryKey: ["careTasks"] });
+      // Tell the person they are in — this message was written but never sent.
+      void notifySubgroupApproved(vars.userId, vars.subgroupId);
     },
   });
 }
