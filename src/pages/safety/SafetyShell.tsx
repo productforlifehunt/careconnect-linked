@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { MapPin, Home, Users, Bell, Sparkles, User as UserIcon, Moon, Sun, MessageCircle, Car } from "lucide-react";
+import { MapPin, Home, Users, Bell, Sparkles, User as UserIcon, Moon, Sun, MessageCircle} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "next-themes";
 import { useQuery } from "@tanstack/react-query";
@@ -38,7 +38,7 @@ export function SafetyShell({ children }: { children: ReactNode }) {
     { url: "/map", label: L("地图", "Map"), icon: MapPin },
     { url: "/places", label: L("地点", "Places"), icon: Home },
     { url: "/chat", label: L("聊天", "Chat"), icon: MessageCircle },
-    { url: "/drives", label: L("出行", "Trips"), icon: Car },
+    
     { url: "/circle", label: L("圈子", "Circle"), icon: Users },
     { url: "/me", label: L("我的", "Me"), icon: UserIcon },
   ];
