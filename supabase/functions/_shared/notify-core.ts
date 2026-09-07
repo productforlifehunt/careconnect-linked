@@ -348,7 +348,7 @@ export async function dispatch(app: AppKey, req: NotifyRequest, token: string | 
   const want = { inbox: true, push: true, email: false, sms: false, ...(req.channels ?? {}) };
 
   // Quiet hours silence the noisy channels only; a wandering alert always rings.
-  const urgent = req.type === "location" || req.type === "safe_zone" || req.type === "location_alert";
+  const urgent = MUTE_CATEGORY[req.type] === "location";
   if (!urgent && inQuietHours(prefs.quiet)) {
     want.push = false;
     want.sms = false;
