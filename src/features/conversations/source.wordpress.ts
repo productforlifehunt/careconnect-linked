@@ -403,9 +403,10 @@ export async function sendMessageWordPress(
   } catch { /* non-blocking */ }
 }
 
-export async function markMessagesReadWordPress(_conversationId: string): Promise<void> {
-  // Per-user read state requires per-member tracking — deferred until schema supports it
-  return;
+export async function markMessagesReadWordPress(conversationId: string): Promise<void> {
+  // No per-member read column exists on the conversation relation, so the mark
+  // is stored on the device (see read-state.ts). Opening a chat clears its badge.
+  setReadMark(conversationId);
 }
 
 export async function startConversationWordPress(
