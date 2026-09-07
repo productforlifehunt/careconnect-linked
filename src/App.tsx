@@ -75,7 +75,7 @@ const queryClient = new QueryClient({
 });
 
 // Dashboard routes that always get sidebar
-const baseDashboardPaths = ["/dashboard", "/bookings", "/care-circle", "/gps-tracking", "/messages", "/favorites", "/notifications", "/profile", "/cared-ones", "/shared-tasks", "/provider-dashboard", "/community", "/articles", "/cart", "/order-confirmation", "/aware", "/care-guides", "/coping", "/safety-guides", "/accompanied", "/calendar", "/resources"];
+const baseDashboardPaths = ["/dashboard", "/bookings", "/care-circle", "/gps-tracking", "/messages", "/favorites", "/notifications", "/profile", "/cared-ones", "/shared-tasks", "/provider-dashboard", "/community", "/articles", "/cart", "/order-confirmation", "/aware", "/care-guides", "/coping", "/safety-guides", "/accompanied", "/calendar", "/resources", "/inbox"];
 // Routes that get sidebar only when authenticated
 const authDashboardPaths = ["/search", "/caregiver"];
 

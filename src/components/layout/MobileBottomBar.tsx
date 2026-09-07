@@ -34,6 +34,7 @@ import { AICompanionChatDialog } from "@/components/ai/AICompanionChatDialog";
 import { Switch } from "@/components/ui/switch";
 import { useStandaloneMode } from "@/hooks/useStandaloneMode";
 import { aiBrand } from "../../../supabase/functions/_shared/ai-prompts";
+import { buildBottomTabs } from "@/config/nav";
 
 type ToolItem = {
   id: string;
@@ -68,7 +69,7 @@ function savePrefs(p: Prefs) {
 export function MobileBottomBar() {
   const site = useSite();
   const { isAuthenticated } = useAuth();
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const isChinese = i18n.language?.startsWith("zh");
   const isStandalone = useStandaloneMode();
   const { data: notifications } = useNotifications();
@@ -87,17 +88,12 @@ export function MobileBottomBar() {
   const isV1 = site.id === "challenged-v1";
   const moreActive = open;
 
-  const caredOnesLabel = isChinese ? "被护理者" : site.navLabels.caredOnes;
   const careGroupLabel = isChinese
     ? (isChallenged ? "护理群组" : "照护小组")
     : (isChallenged ? "Care Teams" : site.navLabels.careGroups);
 
-  const items = [
-    { title: isChinese ? "首页" : "Home", url: "/dashboard", icon: LayoutDashboard },
-    { title: caredOnesLabel, url: "/cared-ones", icon: HeartIcon },
-    { title: careGroupLabel, url: "/care-circle", icon: Users },
-    { title: isChinese ? "收件箱" : "Inbox", url: "/inbox", icon: Inbox },
-  ];
+  // The four fixed tabs come from src/config/nav.ts (one navigation list).
+  const items = buildBottomTabs({ site, t, isChinese });
 
   const moreLabel = isChinese ? "工具" : "More";
 
