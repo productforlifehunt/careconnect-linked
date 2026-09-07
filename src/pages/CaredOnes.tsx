@@ -74,7 +74,7 @@ export default function CaredOnes() {
   const setActiveTab = (id: string | null) =>
     navigate(id ? `/cared-ones/${String(id).replace(/^wp-/, "")}` : "/cared-ones");
   const setOpenCard = (key: string | null) => {
-    const person = String(activeTab || "").replace(/^wp-/, "");
+    const person = String(activeTab || selectedId || "").replace(/^wp-/, "");
     if (!person) return navigate("/cared-ones");
     navigate(key ? `/cared-ones/${person}/${key}` : `/cared-ones/${person}`);
   };
