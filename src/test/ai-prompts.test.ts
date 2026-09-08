@@ -7,16 +7,20 @@ import {
 } from "../../supabase/functions/_shared/ai-prompts";
 
 describe("central AI prompt registry", () => {
-  it("uses the English brand without leaking the Chinese name", () => {
-    const prompt = buildSystemPrompt("en", true);
-    expect(aiBrand("en")).toBe("ChallengeD Assistant");
-    expect(prompt).toContain("ChallengeD Assistant");
-    expect(prompt).toContain("Never output the Chinese name");
+  it("names the assistant per site and language", () => {
+    expect(aiBrand("en", "challenged")).toBe("ChallengeD AI Assistant");
+    expect(aiBrand("zh", "challenged")).toBe("AI助手小忆");
+    expect(aiBrand("en", "carecnc")).toBe("CareCNC AI Assistant");
+    expect(aiBrand("zh", "carecnc")).toBe("护畅AI助手");
+    expect(aiBrand("en", "notchsafety")).toBe("NotchSafety AI Assistant");
+    expect(aiBrand("zh", "notchsafety")).toBe("诺驰安全AI助手");
   });
 
-  it("uses the Chinese brand for Chinese", () => {
-    expect(aiBrand("zh-CN")).toBe("小忆 AI");
-    expect(buildSystemPrompt("zh")).toContain("小忆 AI");
+  it("keeps the system prompt minimal and non-refusing", () => {
+    const prompt = buildSystemPrompt("en", false, "carecnc");
+    expect(prompt).toContain("CareCNC AI Assistant");
+    expect(prompt).toContain("Never refuse");
+    expect(prompt.length).toBeLessThan(900);
   });
 
   it("keeps dynamic care facts in request context", () => {
