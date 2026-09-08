@@ -18,9 +18,7 @@ import { rxnormSuggest, rxnormLookup, type RxSuggestion } from "@/lib/rxnorm";
 import { formatDate, formatTime as formatLocaleTime, formatDateTime } from "@/lib/locale";
 import { useAIAssistant } from "@/contexts/AIAssistantContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { resolveWriteSpec } from "@/lib/ai-dynamic-knowledge";
 import { useQueryClient } from "@tanstack/react-query";
-import { buildMedicineDoseContext, buildMedicineDoseStarter } from "../../../supabase/functions/_shared/ai-prompts";
 
 const TIMELINE_HOURS = [
   "06:00","07:00","08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00",
@@ -620,24 +618,15 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
     if (autoOpenedDoseRef.current === key) return;
     autoOpenedDoseRef.current = key;
     const dose = [due.med.name, due.med.dosage, due.slot].filter(Boolean).join(" · ");
-    // Statuses, the finish rule, and the write itself all come from the one
-    // registry in src/lib/ai-dynamic-knowledge.ts.
-    const spec = resolveWriteSpec(
-      "medicine-dose",
-      { caredOneId: String(caredOneId), recordId: String(due.med.id), label: due.med.name },
-      { isChinese: isCN() }
-    );
-    openAssistant({
+    // One call: the registry decides wording, outcomes, the write and the refresh.
+    openWriteAssistant({
+      intent: "medicine-dose",
       id: `medicine-${key}`,
-      title: Z("用药提醒", "Medicine reminder"),
-      contextPrompt: [buildMedicineDoseContext(dose, isCN()), spec.rule].join("\n\n"),
-      starterPrompt: buildMedicineDoseStarter(dose, isCN()),
-      starterFallback: Z(`到了 ${due.med.name} 的用药时间。已经服用了吗？`, `It is time for ${due.med.name}. Has this dose been taken?`),
-      completionStatuses: spec.statuses,
-      onComplete: async (result) => {
-        await spec.write(result);
-        spec.invalidateKeys.forEach((queryKey) => qcMed.invalidateQueries({ queryKey }));
-        toast({ title: result.status === "skipped" ? Z(`${due.med.name} 已跳过`, `${due.med.name} skipped`) : Z(`${due.med.name} 已记录服用`, `${due.med.name} recorded as taken`) });
+      target: {
+        caredOneId: String(caredOneId),
+        recordId: String(due.med.id),
+        label: due.med.name,
+        detail: dose,
       },
     });
   }, [meds, todayLogs, caredOneId, user?.general_user_role]);
