@@ -135,7 +135,7 @@ export function buildSidebarNav({ site, t, isChinese }: Opts): NavItem[] {
     { title: L("控制面板", site.navLabels.dashboard || "Dashboard"), url: "/dashboard", icon: LayoutDashboard },
     { title: L(isChallenged ? "被护理者" : "被照顾者", site.navLabels.caredOnes), url: "/cared-ones", icon: Heart },
     { title: L("预约", "Appointments"), url: "/bookings", icon: CalendarDays },
-    { title: L("消息", "Messages"), url: "/messages", icon: MessageSquare },
+    { title: L("消息", "Messages"), url: "/inbox?tab=messages", icon: MessageSquare },
     { title: L(isChallenged ? "护理群组" : "照护小组", site.navLabels.careGroups), url: "/care-circle", icon: Users },
     { title: L("需要帮手的任务", "Tasks Needing Help"), url: "/shared-tasks", icon: HeartHandshake },
     { title: L(isChallenged ? "寻求帮助" : "寻找护理", site.navLabels.findCare || "Find Care"), url: "/search", icon: Search },
@@ -162,7 +162,7 @@ export function buildSidebarNav({ site, t, isChinese }: Opts): NavItem[] {
 
   items.push(
     { title: L("收件箱", "Inbox"), url: "/inbox", icon: Inbox },
-    { title: L("通知", "Notifications"), url: "/notifications", icon: Bell },
+    { title: L("通知", "Notifications"), url: "/inbox?tab=notifications", icon: Bell },
     { title: L("我的资料", "My Profile"), url: "/profile", icon: User },
   );
 
