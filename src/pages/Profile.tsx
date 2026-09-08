@@ -39,6 +39,7 @@ export default function Profile() {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [downloadingData, setDownloadingData] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [emailNotifs, setEmailNotifs] = useState(true);
@@ -59,6 +60,7 @@ export default function Profile() {
   }, [profile]);
 
   const handleSave = async () => {
+    setSavingProfile(true);
     try {
       // One write path: the "set-personal-profile" skill.
       await runSettingSkill("set-personal-profile", {
@@ -73,6 +75,8 @@ export default function Profile() {
       toast({ title: t("profile.profileUpdated") });
     } catch (err: any) {
       toast({ title: t("profile.updateFailed"), description: err.message, variant: "destructive" });
+    } finally {
+      setSavingProfile(false);
     }
   };
 
@@ -208,8 +212,8 @@ export default function Profile() {
             </CardContent>
           </Card>
 
-          <Button variant="coral" onClick={handleSave} disabled={updateProfile.isPending}>
-            {updateProfile.isPending ? t("common.saving") : t("profile.saveChanges")}
+          <Button variant="coral" onClick={handleSave} disabled={savingProfile}>
+            {savingProfile ? t("common.saving") : t("profile.saveChanges")}
           </Button>
         </TabsContent>
 
