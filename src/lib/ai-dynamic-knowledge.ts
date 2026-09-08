@@ -16,6 +16,11 @@
  */
 
 import { retrieveStaticKnowledge, type KnowledgeTopic } from "@/lib/ai-static-knowledge";
+import {
+  buildCheckInContext,
+  buildMedicineDoseContext,
+  buildMedicineDoseStarter,
+} from "../../supabase/functions/_shared/ai-prompts";
 
 type Lang = { isChinese: boolean };
 
@@ -387,10 +392,22 @@ export interface WriteTarget {
   recordId?: string;
   /** Human label used in the rule text, e.g. the medicine or check-in name. */
   label?: string;
+  /** Extra plain-language detail, e.g. "Aricept · 5mg · 08:00" or check-in instructions. */
+  detail?: string;
 }
 
 export interface WriteSpec {
   intent: WriteIntent;
+  /** Dialog title shown above the conversation. */
+  title: string;
+  /** Full context text handed to the AI (scene + finish rule). */
+  contextPrompt: string;
+  /** First instruction that makes the assistant open the conversation. */
+  starterPrompt: string;
+  /** Shown if the model is unreachable. */
+  starterFallback: string;
+  /** Toast text after a successful write, by outcome. */
+  toastFor: (status?: string) => string;
   /** Allowed outcomes; the first one is the default when the AI omits status. */
   statuses: string[];
   /** The rule sentence appended to the context so the AI knows when to finish. */
