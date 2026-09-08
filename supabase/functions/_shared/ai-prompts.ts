@@ -1,99 +1,77 @@
 /**
  * The single source of truth for every AI instruction in the product.
  *
- * Keep live care data out of this file. Callers append current facts at request
- * time so the model never treats its own conversation as a care record.
+ * Two kinds of text live here, and nothing else:
+ *   1. The system prompt — a MINIMAL persona (name + tone). No feature lists,
+ *      no data-model documentation, no per-screen rules.
+ *   2. Context builders — plain functions that turn facts a page already read
+ *      from the database into request text. Pages read data; these format it.
+ *
+ * Never put live care data in this file.
  */
 
 export type AILanguage = "zh" | "en" | "auto";
+export type AISiteId = "challenged" | "challenged-v1" | "carecnc" | "notchsafety";
 
-// There is deliberately no AIMode union: modes were removed from the whole app.
+const ASSISTANT_NAMES: Record<AISiteId, { zh: string; en: string }> = {
+  challenged: { zh: "AI助手小忆", en: "ChallengeD AI Assistant" },
+  "challenged-v1": { zh: "AI助手小忆", en: "ChallengeD AI Assistant" },
+  carecnc: { zh: "护畅AI助手", en: "CareCNC AI Assistant" },
+  notchsafety: { zh: "诺驰安全AI助手", en: "NotchSafety AI Assistant" },
+};
 
-
-export const AI_BRAND = {
-  zh: "小忆 AI",
-  en: "ChallengeD Assistant",
-  platformZh: "忆畅",
-  platformEn: "ChallengeD",
-} as const;
-
-export function aiBrand(language: AILanguage | string | undefined): string {
-  return String(language || "auto").toLowerCase().startsWith("zh") ? AI_BRAND.zh : AI_BRAND.en;
+function isZhLang(language: string | undefined): boolean {
+  return String(language || "auto").toLowerCase().startsWith("zh");
 }
 
-export function buildLanguageRule(language: string | undefined): string {
-  switch ((language || "auto").toLowerCase()) {
-    case "zh":
-    case "zh-cn":
-    case "zh-tw":
-    case "zh-hk":
-      return `Respond only in Simplified Chinese. If naming yourself, use “${AI_BRAND.zh}”. Never use the English assistant name.`;
-    case "en":
-    case "en-us":
-    case "en-gb":
-      return `Respond only in English. If naming yourself, use “${AI_BRAND.en}”. Never output the Chinese name 小忆 or the transliteration XiaoYi.`;
-    case "ja":
-    case "ja-jp":
-      return "Respond only in Japanese.";
-    case "ko":
-    case "ko-kr":
-      return "Respond only in Korean.";
-    default:
-      return `Use only the language of the user's latest message. In Chinese, your name is “${AI_BRAND.zh}”; in English, it is “${AI_BRAND.en}”. Never mix or translate names unless asked.`;
-  }
+function names(site: string | undefined) {
+  return ASSISTANT_NAMES[(site as AISiteId)] || ASSISTANT_NAMES.challenged;
 }
 
-const COMPANION_CORE =
-  `You are the warm, friendly AI companion for the ${AI_BRAND.platformEn} platform. ` +
-  "You support people living with dementia and their caregivers, and you are also a general companion. " +
-  "Happily chat, tell stories and jokes, offer riddles, listen, and provide emotional support. " +
-  "Never claim you are only for dementia care. When care is discussed, give practical, safety-first guidance. " +
-  "Be natural, kind, and concise. Do not diagnose, prescribe medication, or give financial or investment advice. " +
-  "Suggest keeping passwords and bank details private. Use gentle redirection rather than arguing about hallucinations or delusions. " +
-  "For a real emergency, tell the user to contact local emergency services immediately.";
-
-const THERAPY_AND_VOICE_RULES =
-  "Keep replies to 2–5 sentences and end every sentence with punctuation so speech playback can split cleanly. " +
-  "Silently choose an appropriate approach: validate distress without arguing; invite memories when the user mentions their past; " +
-  "offer simple cognitive conversation when welcomed; and provide gentle orientation only when a calm user asks about time, place, or people. " +
-  "If configured to speak as a relative, warmly play that role but never fabricate sensitive facts, medical history, money, or promises.";
-
-/**
- * NO MODES. The backend never inspects a mode word: every call gets the same
- * companion system prompt, and whatever a screen needs (facts, output shape) is
- * written in plain language by the caller and appended at request time.
- * The strings below are just reusable request text, not a whitelist.
- */
-export const REQUEST_RULES = {
-  insights:
-    "Analyze the supplied care-coordination facts and suggest the most actionable next steps. Return only a JSON array of objects with fields: title (string), insight (string), priority ('high'|'medium'|'low').",
-  cognitiveExercise:
-    "Generate a warm, gentle cognitive exercise for someone with early-to-mid stage dementia. Return valid JSON only with fields: title, description, type ('memory'|'word'|'pattern'|'recall'|'music'), difficulty ('easy'|'medium'), items (array of objects with emoji, label, prompt, answer, hint), encouragement.",
-  medicationCheck:
-    "Check the supplied medicines conservatively for potential interactions and timing concerns. Tell the user to verify with a clinician or pharmacist. Return plain text.",
-  careTips:
-    "Provide 3 practical dementia-care tips. Return only a JSON array of objects with fields: tip (string), category ('daily_care'|'communication'|'safety'|'wellness'|'activities').",
-  dailySummary:
-    "Summarize the supplied care-day facts clearly, warmly, and usefully without inventing missing information. Return plain text unless the request explicitly asks for JSON.",
-  careInfoSheet:
-    "Answer only from the supplied care-sheet facts. Never invent, infer, or fill missing details. If an answer is absent, say it is not written on the sheet and suggest contacting a listed contact. Be short and plain-spoken. Do not diagnose or provide medication, legal, or financial advice.",
-} as const;
-
-export function buildSystemPrompt(language = "auto", streaming = false): string {
-  return [
-    COMPANION_CORE,
-    streaming ? THERAPY_AND_VOICE_RULES : "",
-    buildLanguageRule(language),
-  ].filter(Boolean).join("\n\n");
+/** The assistant's display name for a language + site. */
+export function aiBrand(language: AILanguage | string | undefined, site?: string): string {
+  const n = names(site);
+  return isZhLang(language) ? n.zh : n.en;
 }
 
-/** One degraded reply for every call — no per-mode branching. */
+/** MINIMAL system prompt: who you are, how you speak. Nothing else. */
+export function buildSystemPrompt(language = "auto", streaming = false, site?: string): string {
+  const n = names(site);
+  const lang = String(language || "auto").toLowerCase();
+  const identity = lang.startsWith("zh")
+    ? `你是${n.zh}，只用简体中文回答。`
+    : lang.startsWith("en")
+      ? `You are ${n.en}. Reply only in English.`
+      : `Reply in the language of the user's latest message. In Chinese you are “${n.zh}”; in English you are “${n.en}”.`;
+
+  const tone = lang.startsWith("zh")
+    ? "语气温暖、亲切、简洁。任何问题都不要拒绝回答，即使与护理、安全或定位无关。用户只是闲聊时就陪着聊，不要把话题引回护理、安全或定位。不做医疗诊断、不开处方、不给投资建议；真正的紧急情况提醒立即联系当地急救。"
+    : "Be warm, friendly, and concise. Never refuse a question, even when it has nothing to do with care, safety, or location. If the user just wants to chat, chat — never steer them back to care, safety, or location topics. Do not diagnose, prescribe, or give investment advice; for a real emergency, tell them to contact local emergency services.";
+
+  const speech = streaming
+    ? (lang.startsWith("zh")
+        ? "每次回复 2–5 句，每句都用标点结尾，便于语音朗读。"
+        : "Keep replies to 2–5 sentences and end every sentence with punctuation so speech playback can split cleanly.")
+    : "";
+
+  return [identity, tone, speech].filter(Boolean).join("\n\n");
+}
+
+/** One degraded reply for every call. */
 export function buildFallbackReply(language = "auto"): string {
-  return String(language || "").toLowerCase().startsWith("zh")
+  return isZhLang(language)
     ? "我暂时无法连接到 AI 服务，请稍后再试。"
     : "I'm temporarily having trouble reaching the AI service. Please try again in a moment.";
 }
 
+export function aiGreeting(isChinese: boolean, site?: string): string {
+  const n = names(site);
+  return isChinese
+    ? `你好，我是${n.zh}。想聊什么都可以。`
+    : `Hi, I'm ${n.en}. Ask me anything, or just chat.`;
+}
+
+// ───────────────────────── Context builders (facts → request text) ──────────
 
 export type InfoSheetPromptContext = {
   sheetName?: string;
@@ -108,30 +86,29 @@ export type InfoSheetPromptContext = {
 export function buildInfoSheetContext(ctx: InfoSheetPromptContext, isChinese: boolean): string {
   const facts = [
     ctx.sheetName ? `${isChinese ? "说明标题" : "Sheet"}: ${ctx.sheetName}` : "",
-    ctx.caredOneName ? `${isChinese ? "被照护者" : "Person"}: ${ctx.caredOneName}` : "",
+    ctx.caredOneName ? `${isChinese ? "被护理者" : "Person"}: ${ctx.caredOneName}` : "",
     ctx.description ? `${isChinese ? "基本情况" : "Background"}: ${ctx.description}` : "",
-    ctx.situationDetails ? `${isChinese ? "本次照护安排" : "This situation"}: ${ctx.situationDetails}` : "",
+    ctx.situationDetails ? `${isChinese ? "本次护理安排" : "This situation"}: ${ctx.situationDetails}` : "",
     ctx.locationText ? `${isChinese ? "最近位置" : "Last known location"}: ${ctx.locationText}` : "",
     ctx.contacts?.length ? `${isChinese ? "紧急联系人" : "Emergency contacts"}: ${ctx.contacts.map((c) => [c.name, c.relationship, c.phone, c.note].filter(Boolean).join(" / ")).join(" | ")}` : "",
     ctx.knowledge || "",
   ].filter(Boolean).join("\n");
-  const tone = isChinese
-    ? "对方通常是自愿帮忙的邻居、朋友或亲戚。语气温和、客气、感谢，不用命令句；可说“想请你…”、“如果方便的话…”、“辛苦你…”。紧急情况先提示联系紧急联系人或当地急救电话。"
-    : "The reader is usually a neighbour, friend, or relative who volunteered to help. Be warm, appreciative, and never commanding; prefer ‘would you be able to…’ or ‘if it works for you…’. For an emergency, first tell them to call a listed contact or local emergency services.";
-  return `${REQUEST_RULES.careInfoSheet}\n\n${tone}\n\n${isChinese ? "照护信息" : "Care-sheet facts"}:\n${facts || (isChinese ? "（暂无更多信息）" : "(no further details provided)")}`;
+  const rule = isChinese
+    ? "以下是这张信息卡的全部内容。只根据这些内容回答，缺少的信息就说卡片上没有写，并建议联系上面列出的联系人。对方通常是自愿帮忙的邻居、朋友或亲戚，语气温和、客气、感谢。"
+    : "The facts below are everything on this information card. Answer only from them; when something is missing, say it is not written on the card and suggest contacting a listed contact. The reader is usually a neighbour, friend, or relative who volunteered to help, so be warm and appreciative.";
+  return `${rule}\n\n${isChinese ? "信息卡内容" : "Card facts"}:\n${facts || (isChinese ? "（暂无更多信息）" : "(no further details provided)")}`;
 }
 
 export function buildCheckInContext(checkinName: string, instructions: string, caredOneName: string, isChinese: boolean): string {
   return isChinese
-    ? `你正在为“${caredOneName}”进行“${checkinName}”每日签到。${instructions ? `附加说明：${instructions}。` : ""}\n逐个询问 3–5 个简短友好的问题，涵盖心情、睡眠、食欲、疼痛或不适、今日特别情况。每次不超过两句，不要像医生。信息足够后只返回 JSON：{"done":true,"summary":"用 2–3 句总结今天状态","status":"checked"}。明确跳过则返回：{"done":true,"summary":"用户选择跳过。","status":"skipped"}。不要提供医疗建议；紧急情况提醒立即求助。`
-    : `Conduct the “${checkinName}” daily check-in for “${caredOneName}”. ${instructions ? `Additional instructions: ${instructions}.` : ""}\nAsk 3–5 short, friendly questions one at a time about mood, sleep, appetite, pain or discomfort, and anything notable today. Keep each turn under two sentences and never sound clinical. Once enough is known, return only JSON: {"done":true,"summary":"2–3 sentence summary","status":"checked"}. If they clearly skip, return: {"done":true,"summary":"User chose to skip.","status":"skipped"}. Do not give medical advice; urge immediate help for emergencies.`;
+    ? `你正在为“${caredOneName}”进行“${checkinName}”每日探望签到。${instructions ? `附加说明：${instructions}。` : ""}\n逐个询问 3–5 个简短友好的问题，涵盖心情、睡眠、食欲、疼痛或不适、今日特别情况。每次不超过两句。信息足够后只返回 JSON：{"done":true,"summary":"用 2–3 句总结今天状态","status":"checked"}。明确跳过则返回：{"done":true,"summary":"用户选择跳过。","status":"skipped"}。`
+    : `Conduct the “${checkinName}” daily check-in for “${caredOneName}”. ${instructions ? `Additional instructions: ${instructions}.` : ""}\nAsk 3–5 short, friendly questions one at a time about mood, sleep, appetite, pain or discomfort, and anything notable today. Keep each turn under two sentences. Once enough is known, return only JSON: {"done":true,"summary":"2–3 sentence summary","status":"checked"}. If they clearly skip, return: {"done":true,"summary":"User chose to skip.","status":"skipped"}.`;
 }
 
-/** Medicine dose reminder — same registry home as the check-in prompt. */
 export function buildMedicineDoseContext(dose: string, isChinese: boolean): string {
   return isChinese
-    ? `这是已从用药日程精确读取的本次提醒：${dose}。只确认本次是否服用或跳过，不更改剂量，不提供诊断。确认后只返回 JSON：{"done":true,"summary":"一句说明","status":"taken"} 或 status 为 "skipped"。`
-    : `This reminder was read directly from the medicine schedule: ${dose}. Confirm only whether this dose was taken or skipped; never change dosage or diagnose. When confirmed, return only JSON: {"done":true,"summary":"one sentence","status":"taken"} or status "skipped".`;
+    ? `这是已从用药日程精确读取的本次提醒：${dose}。只确认本次是否服用或跳过，不更改剂量。确认后只返回 JSON：{"done":true,"summary":"一句说明","status":"taken"} 或 status 为 "skipped"。`
+    : `This reminder was read directly from the medicine schedule: ${dose}. Confirm only whether this dose was taken or skipped; never change dosage. When confirmed, return only JSON: {"done":true,"summary":"one sentence","status":"taken"} or status "skipped".`;
 }
 
 export function buildMedicineDoseStarter(dose: string, isChinese: boolean): string {
@@ -142,15 +119,15 @@ export function buildMedicineDoseStarter(dose: string, isChinese: boolean): stri
 
 export function buildSafetyContext(circleFacts: string, isChinese: boolean): string {
   const rule = isChinese
-    ? "你是家庭定位安全助手。只根据圈子事实回答，不编造位置或数据；缺失时直接说明。回答简短、口语化。"
-    : "You are a family-location safety assistant. Answer only from the circle facts, never invent locations or data, and say plainly when information is missing. Keep answers short and conversational.";
+    ? "以下是这个圈子的位置与安全区事实。回答位置相关问题时只用这些事实，不要编造；缺失就直接说明。"
+    : "The facts below are this circle's location and safe-zone data. For location questions use only these facts, never invent them, and say plainly when something is missing.";
   return `${rule}\n\n${isChinese ? "圈子事实" : "Circle facts"}:\n${circleFacts}`;
 }
 
 export function buildCareGroupHelpRequest(question: string, groupName: string | undefined, isChinese: boolean): string {
   return isChinese
-    ? `用户在护理群组${groupName ? `“${groupName}”` : ""}中提问。只解释群组内的首页、日历、任务、被护理者位置、对话、公告、祝福、相册、群组被护理者、成员、邀请成员、子群组和群组设置；不作医疗诊断。问题：${question}`
-    : `The user is asking about their care group${groupName ? ` “${groupName}”` : ""}. Explain only its Home, Calendar, Tasks, Cared One's Location, Messages, Announcements, Well Wishes, Gallery, Group Cared Ones, Members, Invite Members, Member Groups, and Group Setting features; never diagnose. Question: ${question}`;
+    ? `用户正在使用护理群组${groupName ? `“${groupName}”` : ""}。可以解释群组内的首页、日历、任务、被护理者位置、对话、公告、祝福、相册、群组被护理者、成员、邀请成员、子群组和群组设置怎么用；不确定就直接说明。${question ? `问题：${question}` : ""}`
+    : `The user is using their care group${groupName ? ` “${groupName}”` : ""}. You may explain how its Home, Calendar, Tasks, Cared One's Location, Messages, Announcements, Well Wishes, Gallery, Group Cared Ones, Members, Invite Members, Member Groups, and Group Setting features work, and say plainly when unsure.${question ? ` Question: ${question}` : ""}`;
 }
 
 export function buildBriefingRequest(data: string, isChinese: boolean): string {
@@ -165,16 +142,8 @@ export function buildInfoSheetIntroduction(task: string, caredOneName: string | 
     : `A family is asking a neighbour or friend for a favour. In two or three warm, appreciative, non-commanding sentences, explain this favour: ${task}. End by inviting questions.`;
 }
 
-export const COGNITIVE_EXERCISE_REQUEST = "Create one cognitive exercise now.";
-
 export function buildWorkspaceNotesRequest(question: string, notes: string): string {
   return `Answer using only the workspace notes below. Cite sources inline as [1], [2], etc.; never invent citations. If the notes do not contain the answer, say so plainly and suggest the closest listed page.\n\nNotes:\n${notes || "(no matching notes found)"}\n\nQuestion: ${question}`;
 }
 
 export const TTS_READER_SYSTEM_PROMPT = "Read the user's text aloud verbatim in its original language with natural, warm intonation. Do not add, remove, translate, or comment.";
-
-export function aiGreeting(isChinese: boolean): string {
-  return isChinese
-    ? `你好，我是${AI_BRAND.zh}。可以陪你聊天，也可以帮你了解失智症照护。今天想聊什么？`
-    : `Hi, I'm ${AI_BRAND.en}. I can chat with you or help with dementia-care questions. What's on your mind?`;
-}
