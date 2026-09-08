@@ -7,6 +7,7 @@ import { invokeAI, type AIChatMessage } from "@/lib/ai";
 import { trimMessagesToCharLimit } from "@/lib/ai";
 import { useTranslation } from "react-i18next";
 import { buildInfoSheetContext, type InfoSheetPromptContext } from "../../../supabase/functions/_shared/ai-prompts";
+import { retrieveStaticKnowledge } from "@/lib/ai-static-knowledge";
 
 export type InfoSheetAIContext = InfoSheetPromptContext;
 
@@ -48,7 +49,11 @@ export function InfoSheetAIDialog({
     try {
       const reply = await invokeAI(question, {
         messages: trimMessagesToCharLimit(next),
-        contextPrompt: buildInfoSheetContext(context, !!isCN),
+        contextPrompt: [
+          buildInfoSheetContext(context, !!isCN),
+          // Only the care tips that match this question are attached.
+          retrieveStaticKnowledge(question, { topics: ["care-tips"], isChinese: !!isCN, fallbackToIndex: false }),
+        ].filter(Boolean).join("\n\n"),
         persist: false,
         language: isCN ? "zh" : "en",
       });

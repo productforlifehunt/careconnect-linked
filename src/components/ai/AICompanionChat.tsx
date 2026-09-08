@@ -42,7 +42,10 @@ export function AICompanionChat({
    * the permitted dynamic facts it needs. See src/lib/ai-context-resolvers.ts.
    */
   const buildContext = async (question: string): Promise<string | undefined> => {
-    const scope = request.contextScope;
+    // The general floating assistant has no scope of its own: give it the app
+    // how-to and care-tip libraries, still retrieved per question.
+    const scope = request.contextScope
+      ?? (request.contextPrompt ? undefined : { topics: ["app-basics", "care-tips"] as const });
     if (!scope) return request.contextPrompt;
     let resolved = "";
     try {
@@ -52,7 +55,7 @@ export function AICompanionChat({
         caredOneId: scope.caredOneId,
         groupId: scope.groupId,
         groupName: scope.groupName,
-        topics: scope.topics,
+        topics: scope.topics as any,
         sharedCard: scope.sharedCard,
       });
     } catch (e) {
