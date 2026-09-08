@@ -75,7 +75,7 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
   // One call: the registry decides wording, outcomes, the write and the refresh.
   const openAICheckIn = (checkin: any) => {
     openWriteAssistant({
-      intent: "check-in",
+      skill: "record-check-in",
       id: `checkin-${checkin.id}-${new Date().toISOString().slice(0, 10)}`,
       target: {
         caredOneId: String(caredOneId),
