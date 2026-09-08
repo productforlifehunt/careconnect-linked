@@ -298,7 +298,7 @@ export default function CareCircle() {
         <TabsContent value="invite" className="mt-4"><InviteMembersTab members={members || []} activeGroupId={activeGroupId} isAdmin={!!isAdmin} pendingInvitations={pendingInvitations || []} inviteToGroup={inviteToGroup} cancelInvitation={cancelInvitation} /></TabsContent>
         <TabsContent value="member-groups" className="mt-4"><MemberGroupsTab members={members || []} memberCategories={memberCategories || []} activeGroupId={activeGroupId} userId={profile?.id} isAdmin={!!isAdmin} createCategory={createCategory} deleteCategory={deleteCategory} /></TabsContent>
         <TabsContent value="settings" className="mt-4"><GroupSettingsTab activeGroup={activeGroup} activeGroupId={activeGroupId} isAdmin={!!isAdmin} isOwner={!!isOwner} myDisplayName={currentMember?.display_name || ""} updateGroup={updateGroup} deleteGroup={deleteGroup} onDeleteSuccess={() => { setSelectedGroupId(null); setActiveTab("home"); }} onLeaveGroup={handleLeaveGroup} /></TabsContent>
-        <TabsContent value="help" className="mt-4"><GroupHelpTab groupName={activeGroup?.name} /></TabsContent>
+        <TabsContent value="help" className="mt-4"><GroupHelpTab groupName={activeGroup?.name} groupId={activeGroup?.id ? String(activeGroup.id) : undefined} /></TabsContent>
       </Tabs>
 
     </div>
