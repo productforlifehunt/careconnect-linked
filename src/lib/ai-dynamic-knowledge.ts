@@ -288,17 +288,15 @@ export async function resolveGroupFacts(
 }
 
 /**
- * Settings: read straight off the ONE registry that also performs the writes
- * (SETTING_SPECS in src/lib/ai-auto-fill-form.ts). This file owns the wording
- * shown to the AI, so no second description helper exists anywhere.
+ * Settings: read straight off the SETTING SKILLS registry at the bottom of this
+ * same file, which also performs the writes. One structure, one file.
  */
 export async function resolveSettingFacts({ isChinese }: Lang): Promise<string> {
   try {
-    const { SETTING_SPECS, settingAppliesTo, fetchAppSettings } = await import("@/lib/ai-auto-fill-form");
-    const specs = SETTING_SPECS.filter((s) => settingAppliesTo(s));
+    const skills = settingSkillsForApp().filter((s) => s.kind !== "action");
     const current = await fetchAppSettings().catch(() => null);
-    const rows = specs.map((s) => {
-      const value = current ? s.read(current) : undefined;
+    const rows = skills.map((s) => {
+      const value = current && s.readFrom ? s.readFrom(current) : undefined;
       const shown =
         typeof value === "boolean"
           ? Z(isChinese, value ? "开" : "关", value ? "on" : "off")
@@ -317,14 +315,13 @@ export async function resolveSettingFacts({ isChinese }: Lang): Promise<string> 
           : s.kind === "time"
             ? "HH:MM"
             : (s.options?.(isChinese) ?? []).map((o) => o.value).join(" / ");
-      return `- ${s.id} — ${s.label(isChinese)}（${where}${allowed ? `; ${Z(isChinese, "可选值", "allowed")}: ${allowed}` : ""}）: ${shown}`;
-
+      return `- ${s.name} — ${s.label(isChinese)}（${where}${allowed ? `; ${Z(isChinese, "可选值", "allowed")}: ${allowed}` : ""}）: ${shown}`;
     });
     return join([
       Z(
         isChinese,
-        "用户设置全部保存在同一处（扩展资料 CCT 151 的应用设置 JSON）。当前应用可用的设置项及当前值：",
-        "All user settings live in one place (the app-settings JSON on extended profile CCT 151). Items available in this app, with their current values:",
+        "用户设置全部保存在同一处（扩展资料 CCT 151 的应用设置 JSON）。要修改设置时，只能使用下面列出的 skill 名，并给出允许值：",
+        "All user settings live in one place (the app-settings JSON on extended profile CCT 151). To change one, use only the skill names listed below with an allowed value:",
       ),
       ...rows,
     ]);
@@ -332,6 +329,7 @@ export async function resolveSettingFacts({ isChinese }: Lang): Promise<string> 
     return "";
   }
 }
+
 
 // ──────────────────────────── Request dispatcher ────────────────────────────
 
