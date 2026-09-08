@@ -19,6 +19,7 @@ import { formatDate, formatTime as formatLocaleTime, formatDateTime } from "@/li
 import { useAIAssistant } from "@/contexts/AIAssistantContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { resolveWriteSpec } from "@/lib/ai-dynamic-knowledge";
+import { useQueryClient } from "@tanstack/react-query";
 import { buildMedicineDoseContext, buildMedicineDoseStarter } from "../../../supabase/functions/_shared/ai-prompts";
 
 const TIMELINE_HOURS = [
