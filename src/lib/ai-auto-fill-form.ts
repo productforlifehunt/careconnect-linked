@@ -514,6 +514,30 @@ export function settingSpec(id: string): SettingSpec | undefined {
   return SETTING_SPECS.find((s) => s.id === id);
 }
 
+/** Every legal setting id. Handed to the AI verbatim, so it can never invent one. */
+export const SETTING_IDS: string[] = SETTING_SPECS.map((s) => s.id);
+
+/**
+ * Guard for anything coming from outside this file (the AI hidden form above all).
+ * A wrong id or a value outside the declared options is rejected here, never
+ * half-written to the backend.
+ */
+export function validateSettingWrite(id: string, value: any): { ok: true; spec: SettingSpec } | { ok: false; error: string } {
+  const spec = settingSpec(id);
+  if (!spec) return { ok: false, error: `Unknown setting: ${id}. Allowed: ${SETTING_IDS.join(", ")}` };
+  if (spec.locked && value === false) return { ok: false, error: `Setting ${id} cannot be switched off` };
+  if (spec.kind === "switch" && typeof value !== "boolean") return { ok: false, error: `${id} expects true or false` };
+  if (spec.kind === "choice") {
+    const allowed = (spec.options?.(false) ?? []).map((o) => o.value);
+    if (allowed.length && !allowed.includes(String(value)))
+      return { ok: false, error: `${id} expects one of: ${allowed.join(", ")}` };
+  }
+  if (spec.kind === "time" && !/^\d{2}:\d{2}$/.test(String(value)))
+    return { ok: false, error: `${id} expects a time like 22:00` };
+  return { ok: true, spec };
+}
+
+
 export function settingAppliesTo(spec: SettingSpec, scope: AppScope = currentAppScope()): boolean {
   return spec.apps === "all" || spec.apps.includes(scope);
 }
@@ -539,9 +563,11 @@ export async function applySetting(
   value: any,
   current?: AppSettings,
 ): Promise<AppSettings> {
-  const spec = settingSpec(id);
-  if (!spec) throw new Error(`Unknown setting: ${id}`);
-  if (spec.locked && value === false) throw new Error(`Setting ${id} cannot be switched off`);
+  const checked = validateSettingWrite(id, value);
+  if (checked.ok === false) throw new Error(checked.error);
+  const spec = checked.spec;
+
+
 
   const base = current ?? (await fetchAppSettings());
 
