@@ -878,21 +878,26 @@ export const SETTING_SKILLS: SettingSkill[] = [
   {
     name: "set-location-sharing",
     group: "location",
-    kind: "switch",
+    kind: "form",
     storage: "backend",
     apps: "all",
     label: (cn) => Z(cn, "把我的位置分享给护理团队", "Share my location with my care team"),
-    run: async (value: boolean) => {
-      if (value) {
-        const { getCurrentPosition } = await import("@/lib/geolocation");
-        const pos = await getCurrentPosition();
-        if (!pos) throw new Error("Could not read this device's location");
-        const { shareMyLocationWordPress } = await import("@/features/location/source.wordpress-extended");
-        await shareMyLocationWordPress(pos.coords.latitude, pos.coords.longitude);
+    hint: (cn) => Z(cn, "开启后会写入当前位置并检查安全区（CCT 213 / 214）。", "Turning it on writes the current position and checks the safe areas (CCT 213 / 214)."),
+    run: async (value: { enabled: boolean; isCaredOne?: boolean }) => {
+      const enabled = typeof value === "boolean" ? value : !!value?.enabled;
+      if (!enabled) {
+        const { disableMyLocationSharingWordPress } = await import("@/features/location/source.wordpress-extended");
+        await disableMyLocationSharingWordPress();
         return;
       }
-      const { disableMyLocationSharingWordPress } = await import("@/features/location/source.wordpress-extended");
-      await disableMyLocationSharingWordPress();
+      const { getCurrentPosition } = await import("@/lib/geolocation");
+      const pos = await getCurrentPosition({ timeout: 10000 });
+      if (!pos) throw new Error("Could not read this device's location");
+      const { writeLocationAndCheckZones } = await import("@/features/location/source.wordpress");
+      await writeLocationAndCheckZones(pos.latitude, pos.longitude, {
+        accuracy: pos.accuracy,
+        is_cared_one: !!(value as any)?.isCaredOne,
+      });
     },
   },
   {

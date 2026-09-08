@@ -35,6 +35,7 @@ import { ZoneColorPicker, defaultZoneColor, zoneColorOf } from "@/components/loc
 
 
 import { useToast } from "@/hooks/use-toast";
+import { runSettingSkill } from "@/lib/ai-dynamic-knowledge";
 import { useAuth } from "@/contexts/AuthContext";
 import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -423,23 +424,15 @@ export default function GPSTracking() {
     setUpdatingShare(true);
     try {
       if (!userId) return;
-      if (checked) {
-        const pos = await getCurrentPosition({ timeout: 10000 });
-        if (!pos) {
-          setUpdatingShare(false);
-          toast({ title: t("gps.couldNotGetLocation"), description: t("gps.enableLocationAccess"), variant: "destructive" });
-          setShareMyLocation(false);
-          return;
-        }
-        await writeLocationAndCheckZones(pos.latitude, pos.longitude, { accuracy: pos.accuracy, is_cared_one: selfIsCaredOne });
-        refetch();
-        toast({ title: t("gps.locationSharingEnabled") });
-      } else {
-        await disableMyLocationSharingWordPress();
-        refetch();
-        toast({ title: t("gps.locationSharingDisabled") });
-      }
+      // One write path: the "set-location-sharing" skill.
+      await runSettingSkill("set-location-sharing", { enabled: checked, isCaredOne: selfIsCaredOne });
+      refetch();
+      toast({ title: checked ? t("gps.locationSharingEnabled") : t("gps.locationSharingDisabled") });
     } catch {
+      if (checked) {
+        setShareMyLocation(false);
+        toast({ title: t("gps.couldNotGetLocation"), description: t("gps.enableLocationAccess"), variant: "destructive" });
+      }
     } finally {
       setUpdatingShare(false);
     }
