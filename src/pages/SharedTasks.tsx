@@ -167,7 +167,7 @@ export default function SharedTasks() {
                             variant="outline"
                             disabled={startConversation.isPending}
                             onClick={() => startConversation.mutate(task.poster.id, {
-                              onSuccess: () => navigate("/messages", {
+                              onSuccess: () => navigate("/inbox?tab=messages", {
                                 state: {
                                   targetUserId: task.poster.id,
                                   targetUserName: task.poster.full_name,
@@ -176,7 +176,7 @@ export default function SharedTasks() {
                                   quotePrefill: { serviceType: task.title, taskId: task.id },
                                 },
                               }),
-                              onError: () => navigate("/messages"),
+                              onError: () => navigate("/inbox?tab=messages"),
                             })}
                           >
                             <Tag className="h-3 w-3 mr-1" /> {task.needs_payment ? Z("联系与报价", "Contact & Quote") : Z("联系", "Contact")}

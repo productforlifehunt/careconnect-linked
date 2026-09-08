@@ -639,8 +639,8 @@ export default function CaregiverProfile() {
               <Button variant="outline" className="w-full mb-3" onClick={() => {
                 if (!isAuthenticated) { navigate("/auth"); return; }
                 startConversation.mutate({ otherUserId: caregiver.id }, {
-                  onSuccess: () => navigate("/messages", { state: { targetUserId: caregiver.id, targetUserName: caregiver.full_name, targetUserAvatar: caregiver.avatar_url } }),
-                  onError: () => navigate("/messages"),
+                  onSuccess: () => navigate("/inbox?tab=messages", { state: { targetUserId: caregiver.id, targetUserName: caregiver.full_name, targetUserAvatar: caregiver.avatar_url } }),
+                  onError: () => navigate("/inbox?tab=messages"),
                 });
               }} disabled={startConversation.isPending}>
                 <MessageSquare className="mr-2 h-4 w-4" /> {startConversation.isPending ? (isZh ? "正在打开…" : "Opening...") : (isZh ? "发消息 / 议价" : "Message / Negotiate Price")}

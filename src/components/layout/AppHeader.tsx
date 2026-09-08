@@ -200,7 +200,7 @@ export function AppHeader() {
               variant="ghost"
               size="icon"
               className="relative min-h-11 min-w-11 shrink-0"
-              onClick={() => navigate("/notifications")}
+              onClick={() => navigate("/inbox?tab=notifications")}
               title={t("nav.notifications")}
               aria-label={t("nav.notifications")}
             >
@@ -244,7 +244,7 @@ export function AppHeader() {
                 <DropdownMenuItem onClick={() => navigate("/find")}>
                   <MapPin className="mr-2 h-4 w-4" /> {isChallenged ? t("nav.find") : t("nav.gpsTracking")}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/messages")}>
+                <DropdownMenuItem onClick={() => navigate("/inbox?tab=messages")}>
                   <MessageSquare className="mr-2 h-4 w-4" /> {t("nav.messages")}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -257,7 +257,7 @@ export function AppHeader() {
                 <DropdownMenuItem onClick={() => navigate("/facilities/new")}>
                   <Building2 className="mr-2 h-4 w-4" /> {isChinese ? "提交养老院" : "Submit Facility"}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/notifications")}>
+                <DropdownMenuItem onClick={() => navigate("/inbox?tab=notifications")}>
                   <Bell className="mr-2 h-4 w-4" /> {t("nav.notifications")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/profile?tab=settings")}>
