@@ -7,26 +7,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Globe } from "lucide-react";
+import { LANGUAGES as SETTING_LANGUAGES, applySetting } from "@/lib/app-setting-form";
 
-const LANGUAGES = [
-  { code: "en", flag: "🇺🇸" },
-  { code: "zh-CN", flag: "🇨🇳" },
-  { code: "zh-TW", flag: "🇹🇼" },
-  { code: "ja", flag: "🇯🇵" },
-  { code: "ko", flag: "🇰🇷" },
-  { code: "es", flag: "🇪🇸" },
-  { code: "fr", flag: "🇫🇷" },
-  { code: "de", flag: "🇩🇪" },
-  { code: "pt", flag: "🇧🇷" },
-  { code: "hi", flag: "🇮🇳" },
-  { code: "ar", flag: "🇸🇦" },
-  { code: "vi", flag: "🇻🇳" },
-  { code: "th", flag: "🇹🇭" },
-  { code: "id", flag: "🇮🇩" },
-  { code: "tl", flag: "🇵🇭" },
-  { code: "ru", flag: "🇷🇺" },
-  { code: "it", flag: "🇮🇹" },
-] as const;
+const LANGUAGES = SETTING_LANGUAGES;
 
 export function LanguageSwitcher() {
   const { t, i18n } = useTranslation();
@@ -34,7 +17,8 @@ export function LanguageSwitcher() {
 
 
   const selectLanguage = (code: string) => {
-    try { localStorage.setItem("i18nextLng", code); } catch {}
+    // Single settings write path (src/lib/app-setting-form.ts).
+    void applySetting("language.app", code);
     i18n.changeLanguage(code);
   };
 
