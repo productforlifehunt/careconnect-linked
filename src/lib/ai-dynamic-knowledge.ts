@@ -861,12 +861,16 @@ export const SETTING_SKILLS: SettingSkill[] = [
     apps: ["challenged", "carecnc"],
     label: (cn) => Z(cn, "可预约时间", "Bookable hours"),
     read: async () => {
-      const { fetchMyAvailabilityWordPress } = await import("@/features/provider/source.wordpress");
-      return await fetchMyAvailabilityWordPress();
+      const { getProviderCalendarAvailability } = await import("@/features/calendar/booking-availability");
+      const me = getCurrentUserIdNumber();
+      if (!me) return null;
+      return await getProviderCalendarAvailability(String(me));
     },
-    run: async (value: any) => {
-      const { saveMyAvailabilityWordPress } = await import("@/features/provider/source.wordpress");
-      await saveMyAvailabilityWordPress(value);
+    run: async (value: { providerId?: string; slots: any[] }) => {
+      const { upsertProviderCalendarAvailability } = await import("@/features/calendar/booking-availability");
+      const providerId = value?.providerId || String(getCurrentUserIdNumber() ?? "");
+      if (!providerId) throw new Error("set-provider-availability needs the signed-in provider");
+      await upsertProviderCalendarAvailability(providerId, (value?.slots ?? []) as any);
     },
   },
 
@@ -882,6 +886,7 @@ export const SETTING_SKILLS: SettingSkill[] = [
       if (value) {
         const { getCurrentPosition } = await import("@/lib/geolocation");
         const pos = await getCurrentPosition();
+        if (!pos) throw new Error("Could not read this device's location");
         const { shareMyLocationWordPress } = await import("@/features/location/source.wordpress-extended");
         await shareMyLocationWordPress(pos.coords.latitude, pos.coords.longitude);
         return;
