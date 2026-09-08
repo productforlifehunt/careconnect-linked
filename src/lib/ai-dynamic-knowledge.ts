@@ -287,6 +287,45 @@ export async function resolveGroupFacts(
   }
 }
 
+/**
+ * Settings: read straight off the ONE registry that also performs the writes
+ * (SETTING_SPECS in src/lib/ai-auto-fill-form.ts). This file owns the wording
+ * shown to the AI, so no second description helper exists anywhere.
+ */
+export async function resolveSettingFacts({ isChinese }: Lang): Promise<string> {
+  try {
+    const { SETTING_SPECS, settingAppliesTo, fetchAppSettings } = await import("@/lib/ai-auto-fill-form");
+    const specs = SETTING_SPECS.filter((s) => settingAppliesTo(s));
+    const current = await fetchAppSettings().catch(() => null);
+    const rows = specs.map((s) => {
+      const value = current ? s.read(current) : undefined;
+      const shown =
+        typeof value === "boolean"
+          ? Z(isChinese, value ? "开" : "关", value ? "on" : "off")
+          : value == null
+            ? Z(isChinese, "未设置", "not set")
+            : String(value);
+      const where =
+        s.storage === "backend"
+          ? Z(isChinese, "保存在账号里", "saved to the account")
+          : s.storage === "local"
+            ? Z(isChinese, "只保存在这台设备", "this device only")
+            : Z(isChinese, "设备权限", "device permission");
+      return `- ${s.id} — ${s.label(isChinese)}（${where}）: ${shown}`;
+    });
+    return join([
+      Z(
+        isChinese,
+        "用户设置全部保存在同一处（扩展资料 CCT 151 的应用设置 JSON）。当前应用可用的设置项及当前值：",
+        "All user settings live in one place (the app-settings JSON on extended profile CCT 151). Items available in this app, with their current values:",
+      ),
+      ...rows,
+    ]);
+  } catch {
+    return "";
+  }
+}
+
 // ──────────────────────────── Request dispatcher ────────────────────────────
 
 /** Cheap, deterministic intent detection. Rules, not a model. */
@@ -356,11 +395,8 @@ export async function resolveAssistantContext(input: AssistantContextInput): Pro
   }
 
   if (want.tasks) dynamic.push(await resolveTaskFacts(lang));
-  if (want.settings && !sharedCard) {
-    // Same registry that performs the writes — never a second copy of the shape.
-    const { describeSettingsForAI } = await import("@/lib/ai-auto-fill-form");
-    dynamic.push(describeSettingsForAI(isChinese));
-  }
+  if (want.settings && !sharedCard) dynamic.push(await resolveSettingFacts(lang));
+
   if (groupId || groupName) dynamic.push(await resolveGroupFacts(groupId, groupName, lang));
   if (!sharedCard) dynamic.push(await resolveViewerFacts(lang));
 
