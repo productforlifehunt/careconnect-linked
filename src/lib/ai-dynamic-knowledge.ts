@@ -356,11 +356,8 @@ export async function resolveAssistantContext(input: AssistantContextInput): Pro
   }
 
   if (want.tasks) dynamic.push(await resolveTaskFacts(lang));
-  if (want.settings && !sharedCard) {
-    // Same registry that performs the writes — never a second copy of the shape.
-    const { describeSettingsForAI } = await import("@/lib/ai-auto-fill-form");
-    dynamic.push(describeSettingsForAI(isChinese));
-  }
+  if (want.settings && !sharedCard) dynamic.push(await resolveSettingFacts(lang));
+
   if (groupId || groupName) dynamic.push(await resolveGroupFacts(groupId, groupName, lang));
   if (!sharedCard) dynamic.push(await resolveViewerFacts(lang));
 
