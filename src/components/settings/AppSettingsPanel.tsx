@@ -1,7 +1,7 @@
 /**
- * General app settings — rendered entirely from the ONE registry in
- * src/lib/ai-auto-fill-form.ts. This file only draws rows; it decides nothing
- * about wording, app scope, storage or persistence.
+ * General app settings — rendered entirely from the SETTING SKILLS in
+ * src/lib/ai-dynamic-knowledge.ts. This file only draws rows; it decides nothing
+ * about wording, app scope, storage or persistence, and it stores no data shape.
  */
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -17,24 +17,24 @@ import { useTranslation } from "react-i18next";
 import { Bell, MapPin, CalendarDays, Loader2, Settings2, ExternalLink } from "lucide-react";
 import {
   SETTING_GROUPS,
-  settingsInGroup,
-  applySetting,
-  askPermissionSetting,
-  permissionStates,
+  settingSkillsInGroup,
+  runSettingSkill,
+  askPermissionSkill,
+  permissionSkillStates,
   fetchAppSettings,
   DEFAULT_APP_SETTINGS,
   type AppSettings,
-  type SettingSpec,
-} from "@/lib/ai-auto-fill-form";
+  type SettingSkill,
+} from "@/lib/ai-dynamic-knowledge";
 import { openAppSettings, isNative, type PermissionState } from "@/features/settings/permissions";
 import { subscribeWebPushAndRegister } from "@/features/notifications/tokens.wordpress";
 
 type Z = (cn: string, en: string) => string;
 
 const PERM_ICON: Record<string, typeof Bell> = {
-  "permissions.push": Bell,
-  "permissions.location": MapPin,
-  "permissions.calendar": CalendarDays,
+  "set-permission-phone-alerts": Bell,
+  "set-permission-location": MapPin,
+  "set-permission-calendar": CalendarDays,
 };
 
 function stateBadge(state: PermissionState | undefined, Z: Z) {
@@ -57,12 +57,12 @@ export function AppSettingsPanel() {
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ["appSettings"],
-    queryFn: fetchAppSettings,
+    queryFn: () => fetchAppSettings(),
   });
   const local: AppSettings = settings ?? DEFAULT_APP_SETTINGS;
 
   const save = useMutation({
-    mutationFn: ({ id, value }: { id: string; value: any }) => applySetting(id, value, local),
+    mutationFn: ({ name, value }: { name: string; value: any }) => runSettingSkill(name, value, { settings: local }),
     onSuccess: (next) => {
       qc.setQueryData(["appSettings"], next);
       toast({ title: Z("已保存", "Saved") });
@@ -70,24 +70,24 @@ export function AppSettingsPanel() {
     onError: () =>
       toast({ title: Z("没能保存，请再试一次", "Could not save — please try again"), variant: "destructive" }),
   });
-  const set = (id: string, value: any) => save.mutate({ id, value });
+  const set = (name: string, value: any) => save.mutate({ name, value });
 
   const [perm, setPerm] = useState<Record<string, PermissionState>>({});
   const [busy, setBusy] = useState<string | null>(null);
 
   useEffect(() => {
-    permissionStates().then(setPerm).catch(() => {});
+    permissionSkillStates().then(setPerm).catch(() => {});
   }, []);
 
-  const ask = async (spec: SettingSpec) => {
-    setBusy(spec.id);
+  const ask = async (spec: SettingSkill) => {
+    setBusy(spec.name);
     try {
-      const { state, settings: next } = await askPermissionSetting(spec.id, local);
-      setPerm((p) => ({ ...p, [spec.id]: state }));
+      const { state, settings: next } = await askPermissionSkill(spec.name, local);
+      setPerm((p) => ({ ...p, [spec.name]: state }));
       qc.setQueryData(["appSettings"], next);
       if (spec.permission === "push" && state === "granted") {
         await subscribeWebPushAndRegister(import.meta.env.VITE_VAPID_PUBLIC_KEY);
-        set("channels.push", true);
+        set("set-alerts-on-phone", true);
       }
       if (state === "denied") {
         toast({
@@ -111,31 +111,31 @@ export function AppSettingsPanel() {
     );
   }
 
-  const renderSwitch = (spec: SettingSpec) => (
-    <div key={spec.id} className="flex items-start justify-between gap-4">
+  const renderSwitch = (spec: SettingSkill) => (
+    <div key={spec.name} className="flex items-start justify-between gap-4">
       <div className="min-w-0">
-        <Label htmlFor={spec.id} className="text-sm font-medium">{spec.label(isCN)}</Label>
+        <Label htmlFor={spec.name} className="text-sm font-medium">{spec.label(isCN)}</Label>
         {spec.hint && <p className="text-xs text-muted-foreground mt-0.5">{spec.hint(isCN)}</p>}
       </div>
       <Switch
-        id={spec.id}
-        checked={!!spec.read(local)}
-        onCheckedChange={(v) => set(spec.id, v)}
+        id={spec.name}
+        checked={!!spec.readFrom?.(local)}
+        onCheckedChange={(v) => set(spec.name, v)}
         disabled={save.isPending || spec.locked}
       />
     </div>
   );
 
-  const renderChoice = (spec: SettingSpec) => (
-    <div key={spec.id} className="space-y-2">
+  const renderChoice = (spec: SettingSkill) => (
+    <div key={spec.name} className="space-y-2">
       <Label className="text-sm font-medium">{spec.label(isCN)}</Label>
       <div className="flex flex-wrap gap-2">
         {(spec.options?.(isCN) ?? []).map((o) => (
           <Button
             key={o.value}
             size="sm"
-            variant={spec.read(local) === o.value ? "default" : "outline"}
-            onClick={() => set(spec.id, o.value)}
+            variant={spec.readFrom?.(local) === o.value ? "default" : "outline"}
+            onClick={() => set(spec.name, o.value)}
             disabled={save.isPending}
           >
             {o.label}
@@ -145,8 +145,8 @@ export function AppSettingsPanel() {
     </div>
   );
 
-  const quietSpecs = settingsInGroup("quiet");
-  const quietEnabled = quietSpecs.find((s) => s.id === "quiet.enabled");
+  const quietSpecs = settingSkillsInGroup("quiet");
+  const quietEnabled = quietSpecs.find((s) => s.name === "set-quiet-hours");
   const quietTimes = quietSpecs.filter((s) => s.kind === "time");
 
   const groupTitle = (id: string) => SETTING_GROUPS.find((g) => g.id === id)!;
@@ -161,7 +161,7 @@ export function AppSettingsPanel() {
               <CardTitle className="text-base sm:text-lg">{g.title(isCN)}</CardTitle>
               <CardDescription className="text-sm">{g.description(isCN)}</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">{settingsInGroup(gid).map(renderSwitch)}</CardContent>
+            <CardContent className="space-y-4">{settingSkillsInGroup(gid).map(renderSwitch)}</CardContent>
           </Card>
         );
       })}
@@ -173,16 +173,16 @@ export function AppSettingsPanel() {
         </CardHeader>
         <CardContent className="space-y-4">
           {quietEnabled && renderSwitch(quietEnabled)}
-          {quietEnabled?.read(local) && (
+          {quietEnabled?.readFrom?.(local) && (
             <div className="flex items-center gap-3">
               {quietTimes.map((spec) => (
-                <div key={spec.id} className="space-y-1">
-                  <Label htmlFor={spec.id} className="text-xs text-muted-foreground">{spec.label(isCN)}</Label>
+                <div key={spec.name} className="space-y-1">
+                  <Label htmlFor={spec.name} className="text-xs text-muted-foreground">{spec.label(isCN)}</Label>
                   <Input
-                    id={spec.id}
+                    id={spec.name}
                     type="time"
-                    value={spec.read(local)}
-                    onChange={(e) => set(spec.id, e.target.value)}
+                    value={spec.readFrom?.(local) ?? ""}
+                    onChange={(e) => set(spec.name, e.target.value)}
                     className="w-28"
                   />
                 </div>
@@ -198,7 +198,7 @@ export function AppSettingsPanel() {
           <CardDescription className="text-sm">{groupTitle("display").description(isCN)}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
-          {settingsInGroup("display").map((spec) =>
+          {settingSkillsInGroup("display").map((spec) =>
             spec.kind === "choice" ? renderChoice(spec) : renderSwitch(spec),
           )}
         </CardContent>
@@ -210,11 +210,11 @@ export function AppSettingsPanel() {
           <CardDescription className="text-sm">{groupTitle("permissions").description(isCN)}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {settingsInGroup("permissions").map((spec) => {
-            const Icon = PERM_ICON[spec.id] ?? Bell;
-            const state = perm[spec.id];
+          {settingSkillsInGroup("permissions").map((spec) => {
+            const Icon = PERM_ICON[spec.name] ?? Bell;
+            const state = perm[spec.name];
             return (
-              <div key={spec.id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div key={spec.name} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-start gap-3 min-w-0">
                   <Icon className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
                   <div className="min-w-0">
@@ -235,9 +235,9 @@ export function AppSettingsPanel() {
                       size="sm"
                       variant={state === "granted" ? "ghost" : "outline"}
                       onClick={() => ask(spec)}
-                      disabled={busy === spec.id}
+                      disabled={busy === spec.name}
                     >
-                      {busy === spec.id ? (
+                      {busy === spec.name ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : state === "granted" ? (
                         Z("重新检查", "Check again")
