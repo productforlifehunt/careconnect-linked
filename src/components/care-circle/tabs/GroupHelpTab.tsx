@@ -7,9 +7,10 @@ import { buildCareGroupHelpRequest } from "../../../../supabase/functions/_share
 
 interface GroupHelpTabProps {
   groupName?: string;
+  groupId?: string;
 }
 
-export function GroupHelpTab({ groupName }: GroupHelpTabProps) {
+export function GroupHelpTab({ groupName, groupId }: GroupHelpTabProps) {
   const { i18n } = useTranslation();
   const isCN = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (isCN ? cn : en);
@@ -74,6 +75,8 @@ export function GroupHelpTab({ groupName }: GroupHelpTabProps) {
     id: `group-help-${groupName || "current"}`,
     title: Z("护理群组帮助", "Care group help"),
     contextPrompt: buildCareGroupHelpRequest("", groupName, !!isCN),
+    // Static group know-how + live group facts are retrieved per question.
+    contextScope: { groupId, groupName, topics: ["care-group", "app-basics"] },
     starterPrompt: Z("请问我需要怎样使用这个护理群组？", "Ask me how to use this care group."),
   });
 

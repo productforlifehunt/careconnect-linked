@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { parseAIJson, streamChatTextOnly, trimMessagesToCharLimit } from "@/lib/ai";
 import { aiGreeting } from "../../../supabase/functions/_shared/ai-prompts";
 import type { AssistantRequest } from "@/contexts/AIAssistantContext";
+import { resolveAssistantContext } from "@/lib/ai-context-resolvers";
 import { useSite } from "@/contexts/SiteContext";
 import { Conversation, ConversationContent, ConversationScrollButton } from "@/components/ai-elements/conversation";
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
@@ -36,6 +37,30 @@ export function AICompanionChat({
   const abortRef = useRef<{ abort: () => void } | null>(null);
   const activeRequestId = useRef<string | undefined>();
 
+  /**
+   * On-demand context: the static snippets that match this question plus only
+   * the permitted dynamic facts it needs. See src/lib/ai-context-resolvers.ts.
+   */
+  const buildContext = async (question: string): Promise<string | undefined> => {
+    const scope = request.contextScope;
+    if (!scope) return request.contextPrompt;
+    let resolved = "";
+    try {
+      resolved = await resolveAssistantContext({
+        question,
+        isChinese: !!isZh,
+        caredOneId: scope.caredOneId,
+        groupId: scope.groupId,
+        groupName: scope.groupName,
+        topics: scope.topics,
+        sharedCard: scope.sharedCard,
+      });
+    } catch (e) {
+      console.warn("AI context resolution failed, continuing without facts:", e);
+    }
+    return [request.contextPrompt, resolved].filter(Boolean).join("\n\n") || undefined;
+  };
+
   useEffect(() => {
     if (!active || activeRequestId.current === request.id) return;
     activeRequestId.current = request.id;
@@ -47,14 +72,16 @@ export function AICompanionChat({
     }
     setMessages([{ role: "assistant", content: "" }]);
     setLoading(true);
+    void buildContext(starter).then((contextPrompt) => {
     const { abort, result } = streamChatTextOnly([{ role: "user", content: starter }], {
       language: isZh ? "zh" : "en",
-      contextPrompt: request.contextPrompt,
+      contextPrompt,
       onTextDelta: (_delta, full) => setMessages([{ role: "assistant", content: full }]),
       onError: () => setMessages([{ role: "assistant", content: request.starterFallback || aiGreeting(!!isZh, site.id) }]),
     });
     abortRef.current = { abort };
     void result.catch(() => undefined).finally(() => { setLoading(false); abortRef.current = null; });
+    });
   }, [active, request, isZh]);
 
   useEffect(() => {
@@ -77,9 +104,10 @@ export function AICompanionChat({
       const history = trimMessagesToCharLimit(
         next.slice(0, -1).map((m) => ({ role: m.role, content: m.content }))
       );
+      const contextPrompt = await buildContext(text);
       const { abort, result } = streamChatTextOnly(history, {
         language: isZh ? "zh" : "en",
-        contextPrompt: request.contextPrompt,
+        contextPrompt,
         onTextDelta: (_d, full) => {
           setMessages((prev) => {
             const copy = [...prev];
