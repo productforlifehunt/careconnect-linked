@@ -123,7 +123,7 @@ export function MobileBottomBar() {
         { id: "daily-calendar", title: isChinese ? "日历" : "Calendar", url: "/calendar", icon: CalendarDays },
         { id: "daily-bookings", title: isChinese ? "预约" : "Bookings", url: "/bookings", icon: ClipboardList },
         { id: "daily-gps", title: isChinese ? "定位" : "GPS", url: "/find", icon: MapPin },
-        { id: "daily-ai", title: aiBrand(isChinese ? "zh" : "en"), icon: Bot, onClick: openAi },
+        { id: "daily-ai", title: aiBrand(isChinese ? "zh" : "en", site.id), icon: Bot, onClick: openAi },
       ]
     : [
         { id: "daily-bookings", title: isChinese ? "预约" : "Bookings", url: "/bookings", icon: ClipboardList },

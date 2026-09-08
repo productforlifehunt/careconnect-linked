@@ -16,6 +16,7 @@ export function AICompanionChatDialog({
   request?: AssistantRequest;
 }) {
   const { i18n } = useTranslation();
+  const site = useSite();
   const isZh = i18n.language?.startsWith("zh");
 
   return (
@@ -31,7 +32,7 @@ export function AICompanionChatDialog({
                 <Bot className="h-4 w-4" />
               </div>
               <DialogPrimitive.Title className="text-sm font-semibold">
-                {request.title || aiBrand(isZh ? "zh" : "en")}
+                {request.title || aiBrand(isZh ? "zh" : "en", site.id)}
               </DialogPrimitive.Title>
             </div>
             <DialogPrimitive.Close asChild>

@@ -69,6 +69,7 @@ async function handleChat(req: Request): Promise<Response> {
       messages: Array<{ role: string; content: string }>;
       contextPrompt?: string;
       language?: string;
+      site?: string;
     };
 
     const messages = Array.isArray(payload?.messages)
@@ -93,7 +94,7 @@ async function handleChat(req: Request): Promise<Response> {
       );
     }
 
-    const systemPrompt = [buildSystemPrompt(payload?.language), contextPrompt].filter(Boolean).join("\n\n");
+    const systemPrompt = [buildSystemPrompt(payload?.language, false, payload?.site), contextPrompt].filter(Boolean).join("\n\n");
 
     const aiMessages = [
       { role: "system", content: systemPrompt },
@@ -128,9 +129,10 @@ async function handleStream(req: Request): Promise<Response> {
   }
 
   try {
-    const { messages, language, contextPrompt: rawContextPrompt } = await req.json() as {
+    const { messages, language, site, contextPrompt: rawContextPrompt } = await req.json() as {
       messages: Array<{ role: string; content: string }>;
       language?: string;
+      site?: string;
       contextPrompt?: string;
     };
 
@@ -154,7 +156,7 @@ async function handleStream(req: Request): Promise<Response> {
       .filter((m) => m.role !== "system");
 
     const contextPrompt = typeof rawContextPrompt === "string" ? rawContextPrompt.slice(0, 8000).trim() : "";
-    const systemPrompt = [buildSystemPrompt(language, true), contextPrompt].filter(Boolean).join("\n\n");
+    const systemPrompt = [buildSystemPrompt(language, true, site), contextPrompt].filter(Boolean).join("\n\n");
 
     const upstream = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
