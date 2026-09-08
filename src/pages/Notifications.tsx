@@ -26,11 +26,13 @@ export default function Notifications({ embedded = false, readFilter = "all" }: 
   // Newest first, one single list. No category icons and no category tabs:
   // those were matching notification kinds that no longer exist, so they only
   // ever produced wrong icons and empty tabs.
-  const allNotifs = [...(notifications || [])].sort((a: any, b: any) => {
-    const ta = new Date(a.created_at || 0).getTime();
-    const tb = new Date(b.created_at || 0).getTime();
-    return tb - ta;
-  });
+  const allNotifs = [...(notifications || [])]
+    .filter((n: any) => (readFilter === "unread" ? !n.is_read : readFilter === "read" ? !!n.is_read : true))
+    .sort((a: any, b: any) => {
+      const ta = new Date(a.created_at || 0).getTime();
+      const tb = new Date(b.created_at || 0).getTime();
+      return tb - ta;
+    });
   const unreadCount = allNotifs.filter(n => !n.is_read).length;
   const invitationCount = (pendingInvitations || []).length;
 
