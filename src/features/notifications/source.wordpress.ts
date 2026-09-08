@@ -139,14 +139,14 @@ export async function createNotificationWordPress(input: {
   if (!url && input.related_type && input.related_id) {
     const map: Record<string, string> = {
       task: "/dashboard?tab=tasks",
-      message: "/messages",
+      message: "/inbox?tab=messages",
       booking: "/bookings",
       community: "/community",
       shared_task: "/shared-tasks",
       location: "/find",
       safe_zone: "/find",
     };
-    const base = map[input.related_type] || "/notifications";
+    const base = map[input.related_type] || "/inbox?tab=notifications";
     url = `${base}?id=${input.related_id}`;
   }
 
