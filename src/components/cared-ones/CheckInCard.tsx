@@ -14,6 +14,8 @@ import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 import { useAIAssistant } from "@/contexts/AIAssistantContext";
 import { buildCheckInContext } from "../../../supabase/functions/_shared/ai-prompts";
 import { useAuth } from "@/contexts/AuthContext";
+import { resolveWriteSpec } from "@/lib/ai-dynamic-knowledge";
+import { useQueryClient } from "@tanstack/react-query";
 
 function formatSlot(slot: string, isCN: boolean) {
   const [hourRaw = "8", minuteRaw = "00"] = String(slot || "08:00").split(":");
@@ -49,6 +51,7 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
   const update = useUpdateCheckin();
   const remove = useDeleteCheckin();
   const logCheckin = useLogCheckin();
+  const qc = useQueryClient();
 
   const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState<{ open: boolean; checkin: any }>({ open: false, checkin: null });
@@ -75,19 +78,32 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
 
   const openAICheckIn = (checkin: any) => {
     const title = Z("AI 签到", "AI Check-In");
+    const name = checkin.name || Z("签到", "Check-In");
+    // Statuses, the finish rule, and the write itself all come from the one
+    // registry in src/lib/ai-dynamic-knowledge.ts.
+    const spec = resolveWriteSpec(
+      "check-in",
+      { caredOneId: String(caredOneId), recordId: String(checkin.id), label: name },
+      { isChinese: !!isCN }
+    );
     openAssistant({
       id: `checkin-${checkin.id}-${new Date().toISOString().slice(0, 10)}`,
       title,
-      contextPrompt: buildCheckInContext(checkin.name || Z("签到", "Check-In"), checkin.instructions || "", Z("被护理者", "the cared one"), !!isCN),
+      contextPrompt: [
+        buildCheckInContext(name, checkin.instructions || "", Z("被护理者", "the cared one"), !!isCN),
+        spec.rule,
+      ].join("\n\n"),
       starterPrompt: Z("现在请开始签到。", "Please start the check-in now."),
       starterFallback: Z("你好，到了签到时间。今天感觉怎么样？", "Hi, it is check-in time. How are you today?"),
-      completionStatuses: ["checked", "skipped"],
-      onComplete: async ({ status, summary }) => {
-        await logCheckin.mutateAsync({ checkin_id: String(checkin.id), status: status === "skipped" ? "skipped" : "checked", note: summary || "", checked_by_ai: true });
+      completionStatuses: spec.statuses,
+      onComplete: async (result) => {
+        await spec.write(result);
+        spec.invalidateKeys.forEach((queryKey) => qc.invalidateQueries({ queryKey }));
         toast({ title: Z("AI 签到已保存", "AI check-in saved") });
       },
     });
   };
+
 
   useEffect(() => {
     if (!user?.general_user_role?.includes("cared one") || !checkins || !todayLogs) return;
