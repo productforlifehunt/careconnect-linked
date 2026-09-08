@@ -397,6 +397,8 @@ export interface WriteSpec {
   rule: string;
   /** Performs the real write through the feature layer the manual forms use. */
   write: (result: { status?: string; summary?: string }) => Promise<void>;
+  /** Cached lists that must refresh after the write. */
+  invalidateKeys: string[][];
 }
 
 const asStatus = (spec: string[], status?: string) =>
@@ -428,6 +430,7 @@ export function resolveWriteSpec(
           user_id: target.caredOneId,
         } as any);
       },
+      invalidateKeys: [["medicineLogs"], ["todayMedicineLogs"]],
     };
   }
 
@@ -453,6 +456,7 @@ export function resolveWriteSpec(
           checkin_name: name || undefined,
         });
       },
+      invalidateKeys: [["checkinLogs"], ["todayCheckinLogs"]],
     };
   }
 
@@ -470,5 +474,6 @@ export function resolveWriteSpec(
       const { createCareTipWordPress } = await import("@/features/cared-ones/source.wordpress-extended");
       await createCareTipWordPress({ user_id: String(target.caredOneId), content: summary });
     },
+    invalidateKeys: [["careTips"]],
   };
 }
