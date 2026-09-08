@@ -72,10 +72,7 @@ export function GroupHelpTab({ groupName }: GroupHelpTabProps) {
   const openHelp = () => openAssistant({
     id: `group-help-${groupName || "current"}`,
     title: Z("护理群组帮助", "Care group help"),
-    contextPrompt: Z(
-      `用户正在使用护理群组${groupName ? `“${groupName}”` : ""}。只解释本页列出的真实功能，不作医疗诊断；不知道时明确说明。`,
-      `The user is using the care group${groupName ? ` “${groupName}”` : ""}. Explain only the real features listed on this page, never diagnose, and say plainly when unsure.`,
-    ),
+    contextPrompt: buildCareGroupHelpRequest("", groupName, !!isCN),
     starterPrompt: Z("请问我需要怎样使用这个护理群组？", "Ask me how to use this care group."),
   });
 

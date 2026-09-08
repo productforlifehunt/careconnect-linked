@@ -158,7 +158,7 @@ const DOMAIN_MAP: Record<string, SiteId> = {
   "localhost:5174": "challenged",
 };
 
-function detectSite(): SiteId {
+export function detectSite(): SiteId {
   if (typeof window === "undefined") return "challenged";
 
   const host = window.location.host;

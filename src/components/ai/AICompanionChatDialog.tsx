@@ -2,6 +2,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Bot, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { aiBrand } from "../../../supabase/functions/_shared/ai-prompts";
+import { useSite } from "@/contexts/SiteContext";
 import type { AssistantRequest } from "@/contexts/AIAssistantContext";
 import { AICompanionChat } from "@/components/ai/AICompanionChat";
 
