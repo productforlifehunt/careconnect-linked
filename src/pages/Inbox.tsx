@@ -39,6 +39,9 @@ export default function Inbox() {
     return "all";
   })();
   const [tab, setTab] = useState(initial);
+  // Read-state filter, shared by all three tabs (macOS Mail style: tabs left,
+  // All / Unread / Read segmented control right, same row).
+  const [readFilter, setReadFilter] = useState<"all" | "unread" | "read">("all");
 
   const { data: notifications, isLoading: notifsLoading } = useNotifications();
   const { data: conversations, isLoading: convosLoading } = useConversations();
