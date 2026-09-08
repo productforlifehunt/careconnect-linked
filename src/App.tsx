@@ -73,12 +73,7 @@ const queryClient = new QueryClient({
 });
 
 // Dashboard routes that always get sidebar
-function InboxRedirect({ tab }: { tab: "messages" | "notifications" }) {
-  const location = useLocation();
-  return <Navigate to={`/inbox?tab=${tab}`} replace state={location.state} />;
-}
-
-const baseDashboardPaths = ["/dashboard", "/bookings", "/care-circle", "/find", "/messages", "/favorites", "/notifications", "/profile", "/cared-ones", "/shared-tasks", "/provider-dashboard", "/community", "/articles", "/cart", "/order-confirmation", "/awared", "/cared", "/coped", "/safed", "/accompanied", "/calendar", "/resources", "/inbox"];
+const baseDashboardPaths = ["/dashboard", "/bookings", "/care-circle", "/find", "/favorites", "/profile", "/cared-ones", "/shared-tasks", "/provider-dashboard", "/community", "/articles", "/cart", "/order-confirmation", "/awared", "/cared", "/coped", "/safed", "/accompanied", "/calendar", "/resources", "/inbox"];
 // Routes that get sidebar only when authenticated
 const authDashboardPaths = ["/search", "/caregiver"];
 
