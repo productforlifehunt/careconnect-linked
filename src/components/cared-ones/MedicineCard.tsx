@@ -18,7 +18,6 @@ import { rxnormSuggest, rxnormLookup, type RxSuggestion } from "@/lib/rxnorm";
 import { formatDate, formatTime as formatLocaleTime, formatDateTime } from "@/lib/locale";
 import { useAIAssistant } from "@/contexts/AIAssistantContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { useQueryClient } from "@tanstack/react-query";
 
 const TIMELINE_HOURS = [
   "06:00","07:00","08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00",
@@ -501,8 +500,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
   const createMed = useCreateMedicine();
   const deleteMed = useDeleteMedicine();
   const logMed = useLogMedicine();
-  const qcMed = useQueryClient();
-  const { openAssistant } = useAIAssistant();
+  const { openWriteAssistant } = useAIAssistant();
   const { user } = useAuth();
   const autoOpenedDoseRef = useRef<string | null>(null);
 
