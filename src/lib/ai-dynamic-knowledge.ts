@@ -299,6 +299,7 @@ function needs(question: string) {
     location: has("location", "where", "gps", "zone", "位置", "在哪", "定位", "安全区"),
     pattern: has("usually", "often", "pattern", "常", "经常", "一般在", "平时"),
     tasks: has("task", "todo", "任务", "待办"),
+    settings: has("setting", "notification", "notify", "language", "theme", "dark mode", "text size", "quiet hours", "permission", "设置", "通知", "提醒方式", "语言", "主题", "字号", "免打扰", "权限"),
   };
 }
 
@@ -355,6 +356,11 @@ export async function resolveAssistantContext(input: AssistantContextInput): Pro
   }
 
   if (want.tasks) dynamic.push(await resolveTaskFacts(lang));
+  if (want.settings && !sharedCard) {
+    // Same registry that performs the writes — never a second copy of the shape.
+    const { describeSettingsForAI } = await import("@/lib/ai-auto-fill-form");
+    dynamic.push(describeSettingsForAI(isChinese));
+  }
   if (groupId || groupName) dynamic.push(await resolveGroupFacts(groupId, groupName, lang));
   if (!sharedCard) dynamic.push(await resolveViewerFacts(lang));
 
