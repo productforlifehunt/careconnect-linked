@@ -131,13 +131,13 @@ export default function Dashboard() {
     { icon: ShoppingBag, label: t("nav.findHelp", { defaultValue: "Marketplace" }), to: "/search", color: "text-coral" },
     { icon: MapPin,      label: t("dashboard.gpsTrack", { defaultValue: "GPS" }),    to: "/find", color: "text-primary" },
     { icon: CalIcon,     label: t("nav.calendar", { defaultValue: "Calendar" }),     to: "/calendar", color: "text-success" },
-    { icon: MessageSquare, label: t("nav.messages", { defaultValue: "Messages" }),   to: "/messages", color: "text-coral" },
+    { icon: MessageSquare, label: t("nav.messages", { defaultValue: "Messages" }),   to: "/inbox?tab=messages", color: "text-coral" },
     { icon: Briefcase,   label: t("nav.bookings", { defaultValue: "Bookings" }),     to: "/bookings", color: "text-primary" },
     { icon: Users,       label: careGroupsLabel,                                        to: "/care-circle", color: "text-success" },
     ...(isChallenged
       ? [{ icon: BookOpen, label: t("nav.resources", { defaultValue: "Resources" }), to: "/resources", color: "text-primary" }]
       : []),
-    { icon: Bell,        label: t("nav.notifications", { defaultValue: "Alerts" }), to: "/notifications", color: "text-warning" },
+    { icon: Bell,        label: t("nav.notifications", { defaultValue: "Alerts" }), to: "/inbox?tab=notifications", color: "text-warning" },
     { icon: Wand2,    label: isChallenged ? t("nav.aiCompanion", { defaultValue: "AI Companion" }) : (isChinese ? "AI助手" : "AI Assistant"), to: "/ai-companion", color: "text-primary" },
   ];
 
@@ -213,7 +213,7 @@ export default function Dashboard() {
           { label: t("dashboard.upcomingBookings"), value: myUpcomingBookings.length, icon: CalendarDays, color: "text-primary", to: "/bookings" },
           { label: careGroupsLabel, value: myCareGroupCount, icon: Users, color: "text-success", to: "/care-circle" },
           { label: t("dashboard.pendingTasks"), value: myPendingTasks.length, icon: AlertCircle, color: "text-warning", to: "/care-circle" },
-          { label: t("dashboard.unreadMessages"), value: myUnreadMessages, icon: MessageSquare, color: "text-coral", to: "/messages" },
+          { label: t("dashboard.unreadMessages"), value: myUnreadMessages, icon: MessageSquare, color: "text-coral", to: "/inbox?tab=messages" },
         ].map((s) => (
           <button key={s.label} onClick={() => navigate(s.to)}
             className="text-left rounded-lg border border-transparent card-elevated p-3 hover:border-primary/30 transition-colors">

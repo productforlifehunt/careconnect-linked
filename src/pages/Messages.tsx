@@ -16,7 +16,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
-export default function Messages({ embedded = false }: { embedded?: boolean } = {}) {
+export default function Messages({ embedded = false, readFilter = "all" }: { embedded?: boolean; readFilter?: "all" | "unread" | "read" } = {}) {
   const Heading = (embedded ? "h2" : "h1") as "h1" | "h2";
   const { t, i18n } = useTranslation();
   const isCN = i18n.language?.startsWith("zh");
@@ -206,6 +206,8 @@ export default function Messages({ embedded = false }: { embedded?: boolean } = 
   };
 
   const filteredConvos = (conversations || []).filter((c: any) => {
+    if (readFilter === "unread" && !(c.unread_count > 0)) return false;
+    if (readFilter === "read" && c.unread_count > 0) return false;
     if (!searchQuery.trim()) return true;
     const other = getOtherUser(c);
     return (other?.full_name || "").toLowerCase().includes(searchQuery.toLowerCase());

@@ -75,9 +75,9 @@ export default function Bookings() {
     setMessagingId(booking.provider_id);
     startConversation.mutate(booking.provider_id, {
       onSuccess: () => {
-        navigate("/messages", { state: { targetUserId: booking.provider_id, targetUserName: booking.provider?.full_name, targetUserAvatar: booking.provider?.avatar_url } });
+        navigate("/inbox?tab=messages", { state: { targetUserId: booking.provider_id, targetUserName: booking.provider?.full_name, targetUserAvatar: booking.provider?.avatar_url } });
       },
-      onError: () => { setMessagingId(null); navigate("/messages"); },
+      onError: () => { setMessagingId(null); navigate("/inbox?tab=messages"); },
     });
   };
 

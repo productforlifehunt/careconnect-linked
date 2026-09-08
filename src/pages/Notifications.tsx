@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
-export default function Notifications({ embedded = false }: { embedded?: boolean } = {}) {
+export default function Notifications({ embedded = false, readFilter = "all" }: { embedded?: boolean; readFilter?: "all" | "unread" | "read" } = {}) {
   const Heading = (embedded ? "h2" : "h1") as "h1" | "h2";
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
@@ -26,12 +26,14 @@ export default function Notifications({ embedded = false }: { embedded?: boolean
   // Newest first, one single list. No category icons and no category tabs:
   // those were matching notification kinds that no longer exist, so they only
   // ever produced wrong icons and empty tabs.
-  const allNotifs = [...(notifications || [])].sort((a: any, b: any) => {
-    const ta = new Date(a.created_at || 0).getTime();
-    const tb = new Date(b.created_at || 0).getTime();
-    return tb - ta;
-  });
-  const unreadCount = allNotifs.filter(n => !n.is_read).length;
+  const allNotifs = [...(notifications || [])]
+    .filter((n: any) => (readFilter === "unread" ? !n.is_read : readFilter === "read" ? !!n.is_read : true))
+    .sort((a: any, b: any) => {
+      const ta = new Date(a.created_at || 0).getTime();
+      const tb = new Date(b.created_at || 0).getTime();
+      return tb - ta;
+    });
+  const unreadCount = (notifications || []).filter((n: any) => !n.is_read).length;
   const invitationCount = (pendingInvitations || []).length;
 
 

@@ -39,6 +39,9 @@ export default function Inbox() {
     return "all";
   })();
   const [tab, setTab] = useState(initial);
+  // Read-state filter, shared by all three tabs (macOS Mail style: tabs left,
+  // All / Unread / Read segmented control right, same row).
+  const [readFilter, setReadFilter] = useState<"all" | "unread" | "read">("all");
 
   const { data: notifications, isLoading: notifsLoading } = useNotifications();
   const { data: conversations, isLoading: convosLoading } = useConversations();
@@ -88,7 +91,10 @@ export default function Inbox() {
         raw: c,
       };
     }),
-  ].sort((a, b) => new Date(b.at || 0).getTime() - new Date(a.at || 0).getTime());
+  ]
+    .filter((r) => (readFilter === "all" ? true : readFilter === "unread" ? r.unread : !r.unread))
+    .sort((a, b) => new Date(b.at || 0).getTime() - new Date(a.at || 0).getTime());
+
 
   const openRow = (row: (typeof feed)[number]) => {
     if (row.kind === "notification") {
@@ -123,14 +129,14 @@ export default function Inbox() {
       </div>
 
       <Tabs value={tab} onValueChange={(v) => switchTab(v)} className="w-full">
-        <div className="max-w-3xl mx-auto px-4">
-          <TabsList className="grid grid-cols-3 w-full h-11 bg-muted/50 rounded-xl p-1">
+        <div className="max-w-3xl mx-auto px-4 flex items-center gap-2">
+          <TabsList className="grid grid-cols-3 flex-1 min-w-0 h-11 bg-muted/50 rounded-xl p-1">
             <TabsTrigger
               value="all"
-              className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-2"
+              className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5 px-1"
             >
-              <InboxIcon className="h-4 w-4" />
-              {Z("全部", "All")}
+              <InboxIcon className="h-4 w-4 shrink-0" />
+              <span className="truncate">{Z("全部", "All")}</span>
               {unreadAll > 0 && (
                 <Badge className="h-5 min-w-5 px-1.5 bg-coral text-coral-foreground text-[10px]">
                   {unreadAll}
@@ -139,19 +145,42 @@ export default function Inbox() {
             </TabsTrigger>
             <TabsTrigger
               value="notifications"
-              className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-2"
+              className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5 px-1"
             >
-              <Bell className="h-4 w-4" />
-              {Z("通知", "Notifications")}
+              <Bell className="h-4 w-4 shrink-0" />
+              <span className="truncate">{Z("通知", "Notifications")}</span>
             </TabsTrigger>
             <TabsTrigger
               value="messages"
-              className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-2"
+              className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5 px-1"
             >
-              <MessageSquare className="h-4 w-4" />
-              {Z("消息", "Messages")}
+              <MessageSquare className="h-4 w-4 shrink-0" />
+              <span className="truncate">{Z("消息", "Messages")}</span>
             </TabsTrigger>
           </TabsList>
+
+          {/* Read-state filter, macOS Mail style: same row, right-aligned. */}
+          <div className="flex h-11 shrink-0 items-center gap-1 rounded-xl bg-muted/50 p-1">
+            {([
+              ["all", Z("全部", "All")],
+              ["unread", Z("未读", "Unread")],
+              ["read", Z("已读", "Read")],
+            ] as const).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setReadFilter(key)}
+                aria-pressed={readFilter === key}
+                className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                  readFilter === key
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <TabsContent value="all" className="mt-0 focus-visible:outline-none">
@@ -218,10 +247,10 @@ export default function Inbox() {
           </div>
         </TabsContent>
         <TabsContent value="notifications" className="mt-0 focus-visible:outline-none">
-          <Notifications embedded />
+          <Notifications embedded readFilter={readFilter} />
         </TabsContent>
         <TabsContent value="messages" className="mt-0 focus-visible:outline-none">
-          <Messages embedded />
+          <Messages embedded readFilter={readFilter} />
         </TabsContent>
       </Tabs>
     </div>

@@ -73,12 +73,7 @@ const queryClient = new QueryClient({
 });
 
 // Dashboard routes that always get sidebar
-function InboxRedirect({ tab }: { tab: "messages" | "notifications" }) {
-  const location = useLocation();
-  return <Navigate to={`/inbox?tab=${tab}`} replace state={location.state} />;
-}
-
-const baseDashboardPaths = ["/dashboard", "/bookings", "/care-circle", "/find", "/messages", "/favorites", "/notifications", "/profile", "/cared-ones", "/shared-tasks", "/provider-dashboard", "/community", "/articles", "/cart", "/order-confirmation", "/awared", "/cared", "/coped", "/safed", "/accompanied", "/calendar", "/resources", "/inbox"];
+const baseDashboardPaths = ["/dashboard", "/bookings", "/care-circle", "/find", "/favorites", "/profile", "/cared-ones", "/shared-tasks", "/provider-dashboard", "/community", "/articles", "/cart", "/order-confirmation", "/awared", "/cared", "/coped", "/safed", "/accompanied", "/calendar", "/resources", "/inbox"];
 // Routes that get sidebar only when authenticated
 const authDashboardPaths = ["/search", "/caregiver"];
 
@@ -137,13 +132,10 @@ function AppRoutes() {
       <Route path="/care-circle" element={<RequireAuth><CareCircle /></RequireAuth>} />
       <Route path="/find" element={<RequireAuth><GPSTracking /></RequireAuth>} />
       <Route path="/bookings" element={<RequireAuth><Bookings /></RequireAuth>} />
-      {/* Standalone Messages / Notifications pages are gone: the Inbox tabs are
-          the only surface. These redirects keep old links and in-app navigation
-          (including router state such as targetUserId) working. */}
-      <Route path="/messages" element={<InboxRedirect tab="messages" />} />
+      {/* Inbox is the ONLY messages/notifications surface — no standalone
+          routes and no redirects. All entry points link to /inbox?tab=... */}
       <Route path="/favorites" element={<RequireAuth><Favorites /></RequireAuth>} />
       <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
-      <Route path="/notifications" element={<InboxRedirect tab="notifications" />} />
       <Route path="/inbox" element={<RequireAuth><Inbox /></RequireAuth>} />
       <Route path="/cared-ones" element={<RequireAuth><CaredOnes /></RequireAuth>} />
       <Route path="/cared-ones/:personId" element={<RequireAuth><CaredOnes /></RequireAuth>} />
