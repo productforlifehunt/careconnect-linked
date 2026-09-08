@@ -2,15 +2,29 @@ import { createContext, useCallback, useContext, useMemo, useState, type ReactNo
 import { AICompanionChatDialog } from "@/components/ai/AICompanionChatDialog";
 
 export type AssistantResult = { status?: string; summary?: string };
+/**
+ * `contextScope` turns on on-demand retrieval: for every message the chat asks
+ * src/lib/ai-context-resolvers.ts for the matching static snippets and the
+ * permitted dynamic facts, instead of shipping a whole knowledge base.
+ */
+export type AssistantContextScope = {
+  caredOneId?: string;
+  groupId?: string;
+  groupName?: string;
+  topics?: Array<"app-basics" | "care-group" | "care-tips">;
+  sharedCard?: boolean;
+};
 export type AssistantRequest = {
   id?: string;
   title?: string;
   contextPrompt?: string;
+  contextScope?: AssistantContextScope;
   starterPrompt?: string;
   starterFallback?: string;
   completionStatuses?: string[];
   onComplete?: (result: AssistantResult) => void | Promise<void>;
 };
+
 
 const AIAssistantContext = createContext<{
   openAssistant: (request?: AssistantRequest) => void;
