@@ -247,10 +247,10 @@ export default function Inbox() {
           </div>
         </TabsContent>
         <TabsContent value="notifications" className="mt-0 focus-visible:outline-none">
-          <Notifications embedded />
+          <Notifications embedded readFilter={readFilter} />
         </TabsContent>
         <TabsContent value="messages" className="mt-0 focus-visible:outline-none">
-          <Messages embedded />
+          <Messages embedded readFilter={readFilter} />
         </TabsContent>
       </Tabs>
     </div>
