@@ -33,7 +33,7 @@ export default function Notifications({ embedded = false, readFilter = "all" }: 
       const tb = new Date(b.created_at || 0).getTime();
       return tb - ta;
     });
-  const unreadCount = allNotifs.filter(n => !n.is_read).length;
+  const unreadCount = (notifications || []).filter((n: any) => !n.is_read).length;
   const invitationCount = (pendingInvitations || []).length;
 
 
