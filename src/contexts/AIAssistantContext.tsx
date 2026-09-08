@@ -4,7 +4,7 @@ import { AICompanionChatDialog } from "@/components/ai/AICompanionChatDialog";
 export type AssistantResult = { status?: string; summary?: string };
 /**
  * `contextScope` turns on on-demand retrieval: for every message the chat asks
- * src/lib/ai-context-resolvers.ts for the matching static snippets and the
+ * src/lib/ai-dynamic-knowledge.ts for the matching static snippets and the
  * permitted dynamic facts, instead of shipping a whole knowledge base.
  */
 export type AssistantContextScope = {
