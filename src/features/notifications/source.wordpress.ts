@@ -147,7 +147,7 @@ export async function createNotificationWordPress(input: {
       safe_zone: "/find",
     };
     const base = map[input.related_type] || "/inbox?tab=notifications";
-    url = `${base}?id=${input.related_id}`;
+    url = `${base}${base.includes("?") ? "&" : "?"}id=${input.related_id}`;
   }
 
   // Primary path: the app's single notification edge function. It owns every
