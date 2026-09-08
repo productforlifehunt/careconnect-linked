@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Globe } from "lucide-react";
-import { LANGUAGES as SETTING_LANGUAGES, applySetting } from "@/lib/ai-auto-fill-form";
+import { LANGUAGES as SETTING_LANGUAGES, runSettingSkill } from "@/lib/ai-dynamic-knowledge";
 
 const LANGUAGES = SETTING_LANGUAGES;
 
@@ -17,8 +17,8 @@ export function LanguageSwitcher() {
 
 
   const selectLanguage = (code: string) => {
-    // Single settings write path (src/lib/ai-auto-fill-form.ts).
-    void applySetting("language.app", code);
+    // One write path: the "set-language" skill in ai-dynamic-knowledge.ts.
+    void runSettingSkill("set-language", code);
     i18n.changeLanguage(code);
   };
 

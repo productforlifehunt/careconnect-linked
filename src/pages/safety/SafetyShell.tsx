@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { MapPin, Home, Users, Bell, Sparkles, User as UserIcon, Moon, Sun, MessageCircle} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "next-themes";
-import { applySetting } from "@/lib/ai-auto-fill-form";
+import { runSettingSkill } from "@/lib/ai-dynamic-knowledge";
 import { useQuery } from "@tanstack/react-query";
 import { BrandMark } from "@/components/BrandMark";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
@@ -119,7 +119,7 @@ export function SafetyShell({ children }: { children: ReactNode }) {
               onClick={() => {
                 const next = theme === "dark" ? "light" : "dark";
                 setTheme(next);
-                void applySetting("display.theme", next).catch(() => {});
+                void runSettingSkill("set-light-or-dark", next).catch(() => {});
               }}
               aria-label={L("切换主题", "Toggle theme")}
             >

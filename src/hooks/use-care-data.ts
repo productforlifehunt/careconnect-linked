@@ -1548,8 +1548,9 @@ export function useUpsertProviderAvailability() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: { providerId: string; slots: any[] }) => {
-      const { upsertProviderCalendarAvailability } = await import("@/features/calendar/booking-availability");
-      return upsertProviderCalendarAvailability(data.providerId, data.slots as any);
+      // One write path: the "set-provider-availability" skill.
+      const { runSettingSkill } = await import("@/lib/ai-dynamic-knowledge");
+      return runSettingSkill("set-provider-availability", { providerId: data.providerId, slots: data.slots });
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["providerAvailability"] }); },
   });

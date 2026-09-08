@@ -9,9 +9,11 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/contexts/AuthContext";
-import { useMyProfile, useUpdateProfile } from "@/hooks/use-care-data";
+import { useMyProfile } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
-import { wpUploadMedia, wpDeleteAccount } from "@/services/wp-auth";
+import { useQueryClient } from "@tanstack/react-query";
+import { wpUploadMedia } from "@/services/wp-auth";
+import { runSettingSkill } from "@/lib/ai-dynamic-knowledge";
 import { User, Bell, Shield, MapPin, Loader2, Upload, Camera, Download, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSite } from "@/contexts/SiteContext";
@@ -24,8 +26,8 @@ export default function Profile() {
   const site = useSite();
   const navigate = useNavigate();
   const { data: profile, isLoading } = useMyProfile();
-  const updateProfile = useUpdateProfile();
   const { toast } = useToast();
+  const qc = useQueryClient();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -37,6 +39,7 @@ export default function Profile() {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [downloadingData, setDownloadingData] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [emailNotifs, setEmailNotifs] = useState(true);
@@ -57,8 +60,10 @@ export default function Profile() {
   }, [profile]);
 
   const handleSave = async () => {
+    setSavingProfile(true);
     try {
-      await updateProfile.mutateAsync({
+      // One write path: the "set-personal-profile" skill.
+      await runSettingSkill("set-personal-profile", {
         full_name: name,
         phone,
         location: address,
@@ -66,32 +71,25 @@ export default function Profile() {
         avatar_url: avatarUrl || null,
         general_user_role: roles,
       });
+      await qc.invalidateQueries({ queryKey: ["myProfile"] });
       toast({ title: t("profile.profileUpdated") });
     } catch (err: any) {
       toast({ title: t("profile.updateFailed"), description: err.message, variant: "destructive" });
+    } finally {
+      setSavingProfile(false);
     }
   };
 
   const handleDownloadData = async () => {
     setDownloadingData(true);
     try {
-      const exportData = {
-        exported_at: new Date().toISOString(),
-        profile: {
-          full_name: profile?.full_name,
-          email: profile?.email,
-          phone: profile?.phone,
-          location: profile?.location,
-          bio: profile?.bio,
-          avatar_url: profile?.avatar_url,
-          general_user_role: profile?.general_user_role,
-        },
-      };
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      // The "download-my-data" skill assembles what may be exported.
+      const exportData = await runSettingSkill("download-my-data");
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = `carecnc-data-${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `my-data-${new Date().toISOString().split("T")[0]}.json`;
       a.click();
       URL.revokeObjectURL(url);
       toast({ title: t("profile.dataDownloaded", "Your data has been downloaded") });
@@ -105,7 +103,7 @@ export default function Profile() {
   const handleDeleteAccount = async () => {
     setDeletingAccount(true);
     try {
-      await wpDeleteAccount();
+      await runSettingSkill("close-my-account");
       toast({
         title: t("profile.accountDeleted", "Account Deleted"),
         description: t("profile.accountDeletedDesc", "Your account data has been anonymized and you have been logged out."),
@@ -214,8 +212,8 @@ export default function Profile() {
             </CardContent>
           </Card>
 
-          <Button variant="coral" onClick={handleSave} disabled={updateProfile.isPending}>
-            {updateProfile.isPending ? t("common.saving") : t("profile.saveChanges")}
+          <Button variant="coral" onClick={handleSave} disabled={savingProfile}>
+            {savingProfile ? t("common.saving") : t("profile.saveChanges")}
           </Button>
         </TabsContent>
 

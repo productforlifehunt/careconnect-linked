@@ -20,7 +20,7 @@ import { Menu, User, LogOut, LayoutDashboard, Bell, Heart, Search, HelpCircle, C
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { useTheme } from "next-themes";
-import { applySetting } from "@/lib/ai-auto-fill-form";
+import { runSettingSkill } from "@/lib/ai-dynamic-knowledge";
 import { useNotifications } from "@/hooks/use-care-data";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useStandaloneMode } from "@/hooks/useStandaloneMode";
@@ -180,7 +180,7 @@ export function AppHeader() {
             const next = theme === "dark" ? "light" : "dark";
             setTheme(next);
             // Persisted through the one settings registry so Profile agrees.
-            void applySetting("display.theme", next).catch(() => {});
+            void runSettingSkill("set-light-or-dark", next).catch(() => {});
           }}
           title={t("nav.toggleTheme")}
           aria-label={t("nav.toggleTheme")}
