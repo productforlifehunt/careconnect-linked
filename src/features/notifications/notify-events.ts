@@ -91,7 +91,7 @@ export function notifyNewMessage(
     type: "chat",
     title: who ? Z(`${who} 给你发来新消息`, `New message from ${who}`) : Z("你有一条新消息", "You have a new message"),
     message: clip(content),
-    action_url: `/messages?conversation=${conversationId}`,
+    action_url: `/inbox?tab=messages&conversation=${conversationId}`,
   }));
 }
 
