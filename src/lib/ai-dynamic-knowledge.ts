@@ -16,12 +16,6 @@
  */
 
 import { retrieveStaticKnowledge, type KnowledgeTopic } from "@/lib/ai-static-knowledge";
-import {
-  buildCheckInContext,
-  buildMedicineDoseContext,
-  buildMedicineDoseStarter,
-} from "../../supabase/functions/_shared/ai-prompts";
-
 type Lang = { isChinese: boolean };
 
 const Z = (isChinese: boolean, zh: string, en: string) => (isChinese ? zh : en);
