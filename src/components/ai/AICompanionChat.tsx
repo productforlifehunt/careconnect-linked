@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { parseAIJson, streamChatTextOnly, trimMessagesToCharLimit } from "@/lib/ai";
 import { aiGreeting } from "../../../supabase/functions/_shared/ai-prompts";
 import type { AssistantRequest } from "@/contexts/AIAssistantContext";
-import { resolveAssistantContext } from "@/lib/ai-context-resolvers";
+import { resolveAssistantContext } from "@/lib/ai-dynamic-knowledge";
 import { useSite } from "@/contexts/SiteContext";
 import { Conversation, ConversationContent, ConversationScrollButton } from "@/components/ai-elements/conversation";
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
