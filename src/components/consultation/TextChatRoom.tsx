@@ -31,7 +31,7 @@ export function TextChatRoom({ delivery, isProvider }: Props) {
         </p>
         {convoId ? (
           <Button asChild className="w-full">
-            <Link to={`/messages?conversation=${convoId}`}>
+            <Link to={`/inbox?tab=messages&conversation=${convoId}`}>
               <MessageSquare className="mr-2 h-4 w-4" />
               {zh ? '打开聊天室' : 'Open Chat Room'}
             </Link>
