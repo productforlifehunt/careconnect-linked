@@ -206,6 +206,8 @@ export default function Messages({ embedded = false }: { embedded?: boolean } = 
   };
 
   const filteredConvos = (conversations || []).filter((c: any) => {
+    if (readFilter === "unread" && !(c.unread_count > 0)) return false;
+    if (readFilter === "read" && c.unread_count > 0) return false;
     if (!searchQuery.trim()) return true;
     const other = getOtherUser(c);
     return (other?.full_name || "").toLowerCase().includes(searchQuery.toLowerCase());
