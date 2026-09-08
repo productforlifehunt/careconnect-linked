@@ -20,6 +20,7 @@ import { Menu, User, LogOut, LayoutDashboard, Bell, Heart, Search, HelpCircle, C
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { useTheme } from "next-themes";
+import { applySetting } from "@/lib/app-setting-form";
 import { useNotifications } from "@/hooks/use-care-data";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useStandaloneMode } from "@/hooks/useStandaloneMode";
@@ -175,7 +176,12 @@ export function AppHeader() {
           variant="ghost"
           size="icon"
           className="relative min-h-11 min-w-11 shrink-0"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          onClick={() => {
+            const next = theme === "dark" ? "light" : "dark";
+            setTheme(next);
+            // Persisted through the one settings registry so Profile agrees.
+            void applySetting("display.theme", next).catch(() => {});
+          }}
           title={t("nav.toggleTheme")}
           aria-label={t("nav.toggleTheme")}
         >

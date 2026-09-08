@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { MapPin, Home, Users, Bell, Sparkles, User as UserIcon, Moon, Sun, MessageCircle} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "next-themes";
+import { applySetting } from "@/lib/app-setting-form";
 import { useQuery } from "@tanstack/react-query";
 import { BrandMark } from "@/components/BrandMark";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
@@ -115,7 +116,11 @@ export function SafetyShell({ children }: { children: ReactNode }) {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              onClick={() => {
+                const next = theme === "dark" ? "light" : "dark";
+                setTheme(next);
+                void applySetting("display.theme", next).catch(() => {});
+              }}
               aria-label={L("切换主题", "Toggle theme")}
             >
               <Sun className="h-5 w-5 dark:hidden" />
