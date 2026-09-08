@@ -39,7 +39,7 @@ export function AICompanionChat({
 
   /**
    * On-demand context: the static snippets that match this question plus only
-   * the permitted dynamic facts it needs. See src/lib/ai-context-resolvers.ts.
+   * the permitted dynamic facts it needs. See src/lib/ai-dynamic-knowledge.ts.
    */
   const buildContext = async (question: string): Promise<string | undefined> => {
     // The general floating assistant has no scope of its own: give it the app

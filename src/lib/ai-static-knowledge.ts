@@ -7,7 +7,7 @@
  * as the library grows from 20 entries to 2,000.
  *
  * Rules:
- *  - No live care data here (that belongs in ai-context-resolvers.ts).
+ *  - No live care data here (that belongs in ai-dynamic-knowledge.ts).
  *  - No persona or tone rules here (those live in ai-prompts.ts).
  *  - Adding knowledge = adding an entry to KNOWLEDGE below. Nothing else changes.
  */
