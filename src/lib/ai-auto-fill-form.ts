@@ -563,9 +563,10 @@ export async function applySetting(
   value: any,
   current?: AppSettings,
 ): Promise<AppSettings> {
-  const spec = settingSpec(id);
-  if (!spec) throw new Error(`Unknown setting: ${id}`);
-  if (spec.locked && value === false) throw new Error(`Setting ${id} cannot be switched off`);
+  const checked = validateSettingWrite(id, value);
+  if (!checked.ok) throw new Error(checked.error);
+  const spec = checked.spec;
+
 
   const base = current ?? (await fetchAppSettings());
 
