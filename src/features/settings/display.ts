@@ -1,29 +1,25 @@
 /**
- * Applies the display half of the app settings blob (CCT 151 a95/a96) to the
- * live document, so a switch flipped in Settings actually changes the screen:
- *   text_size    → root font-size class (`text-size-large` / `text-size-xlarge`)
- *   reduce_motion→ `reduce-motion` class (kills transitions/animations)
- *   theme        → next-themes
+ * Keeps the screen in sync with the display settings. It stores nothing: the
+ * values, their allowed options and the write path all live in the setting
+ * skills in src/lib/ai-dynamic-knowledge.ts.
  */
 import { useEffect } from "react";
 import { useTheme } from "next-themes";
 import { useQuery } from "@tanstack/react-query";
-import { fetchAppSettings, DEFAULT_APP_SETTINGS, type AppSettings } from "./app-settings";
+import {
+  fetchAppSettings,
+  applyDisplaySettings,
+  DEFAULT_APP_SETTINGS,
+} from "@/lib/ai-dynamic-knowledge";
 
-export function applyDisplaySettings(display: AppSettings["display"]) {
-  const root = document.documentElement;
-  root.classList.remove("text-size-large", "text-size-xlarge");
-  if (display.text_size === "large") root.classList.add("text-size-large");
-  if (display.text_size === "xlarge") root.classList.add("text-size-xlarge");
-  root.classList.toggle("reduce-motion", !!display.reduce_motion);
-}
+export { applyDisplaySettings };
 
-/** Mount once, high in the tree: keeps the DOM in sync with the saved settings. */
+/** Mount once, high in the tree. */
 export function useApplyDisplaySettings() {
   const { setTheme } = useTheme();
   const { data } = useQuery({
     queryKey: ["appSettings"],
-    queryFn: fetchAppSettings,
+    queryFn: () => fetchAppSettings(),
     staleTime: 60_000,
   });
   const display = (data ?? DEFAULT_APP_SETTINGS).display;
