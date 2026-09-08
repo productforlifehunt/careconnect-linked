@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { AICompanionChatDialog } from "@/components/ai/AICompanionChatDialog";
-import { resolveWriteSpec, type WriteIntent, type WriteTarget } from "@/lib/ai-dynamic-knowledge";
+import { resolveWriteSpec, type WriteIntent, type WriteTarget } from "@/lib/ai-auto-fill-form";
 import { useToast } from "@/hooks/use-toast";
 import i18n from "@/i18n/config";
 
