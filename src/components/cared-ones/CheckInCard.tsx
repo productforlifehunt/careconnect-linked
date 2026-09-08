@@ -12,7 +12,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 import { useAIAssistant } from "@/contexts/AIAssistantContext";
-import { buildCheckInContext } from "../../../supabase/functions/_shared/ai-prompts";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -58,7 +57,7 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
   const [logDialog, setLogDialog] = useState<{ open: boolean; checkin: any; status: "checked" | "skipped" | "missed" }>({ open: false, checkin: null, status: "checked" });
   const [logNote, setLogNote] = useState("");
   const [historyOpen, setHistoryOpen] = useState<{ open: boolean; checkin: any }>({ open: false, checkin: null });
-  const { openAssistant } = useAIAssistant();
+  const { openWriteAssistant } = useAIAssistant();
   const autoOpenedRef = useRef<string | null>(null);
 
   const [form, setForm] = useState({
