@@ -311,7 +311,14 @@ export async function resolveSettingFacts({ isChinese }: Lang): Promise<string> 
           : s.storage === "local"
             ? Z(isChinese, "只保存在这台设备", "this device only")
             : Z(isChinese, "设备权限", "device permission");
-      return `- ${s.id} — ${s.label(isChinese)}（${where}）: ${shown}`;
+      const allowed =
+        s.kind === "switch"
+          ? "true / false"
+          : s.kind === "time"
+            ? "HH:MM"
+            : (s.options?.(isChinese) ?? []).map((o) => o.value).join(" / ");
+      return `- ${s.id} — ${s.label(isChinese)}（${where}${allowed ? `; ${Z(isChinese, "可选值", "allowed")}: ${allowed}` : ""}）: ${shown}`;
+
     });
     return join([
       Z(
