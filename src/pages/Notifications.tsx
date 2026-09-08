@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
-export default function Notifications({ embedded = false }: { embedded?: boolean } = {}) {
+export default function Notifications({ embedded = false, readFilter = "all" }: { embedded?: boolean; readFilter?: "all" | "unread" | "read" } = {}) {
   const Heading = (embedded ? "h2" : "h1") as "h1" | "h2";
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
