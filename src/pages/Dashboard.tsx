@@ -150,17 +150,8 @@ export default function Dashboard() {
     </section>
   );
 
-  // ── Each widget id maps to its own block; rendered in user-defined order ──
-  const briefingFacts = [
-    `${isChinese ? "今天日期" : "Today"}: ${new Date().toISOString().slice(0, 10)}`,
-    `${isChinese ? "被护理者" : "Cared ones"}: ${(caredOnes || []).map((c: any) => c.full_name || c.name).filter(Boolean).join(", ") || (isChinese ? "无" : "none")}`,
-    `${isChinese ? "未完成任务" : "Open tasks"}: ${myPendingTasks.map((tk: any) => `${tk.title || ""}${tk.due_date ? ` (${tk.due_date})` : ""}`).filter(Boolean).join("; ") || (isChinese ? "无" : "none")}`,
-    `${isChinese ? "接下来的预约" : "Upcoming bookings"}: ${myUpcomingBookings.slice(0, 5).map((b: any) => `${b.service_name || b.title || ""} ${b.appointment_date || b.start_time || ""}`.trim()).filter(Boolean).join("; ") || (isChinese ? "无" : "none")}`,
-    `${isChinese ? "未读消息" : "Unread messages"}: ${myUnreadMessages}`,
-  ].join("\n");
-
   const blocks: Record<string, ReactNode> = {
-    "ai-briefing": <AISmartBriefing facts={briefingFacts} />,
+    "ai-briefing": <AISmartBriefing />,
     "patient-summaries": caredOnes && caredOnes.length > 0 ? (
       <section>
         <h2 className="text-sm font-semibold text-foreground mb-2">

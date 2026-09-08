@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkles, RefreshCw, AlertTriangle } from "lucide-react";
 import { invokeAI, parseAIJson } from "@/lib/ai";
 import { buildBriefingRequest } from "../../../supabase/functions/_shared/ai-prompts";
+import { resolveBriefingFacts } from "@/lib/ai-dynamic-knowledge";
 import i18n from "@/i18n/config";
 import { formatDate } from "@/lib/locale";
 
@@ -14,7 +15,7 @@ type Briefing = {
   suggestions?: Array<{ title?: string; detail?: string }>;
 };
 
-export function AISmartBriefing({ facts }: { facts: string }) {
+export function AISmartBriefing() {
   const isCN = (i18n.language || "").startsWith("zh");
   const Z = (cn: string, en: string) => (isCN ? cn : en);
   const [data, setData] = useState<Briefing | null>(null);
@@ -25,6 +26,7 @@ export function AISmartBriefing({ facts }: { facts: string }) {
     setLoading(true);
     setFailed(false);
     try {
+      const facts = await resolveBriefingFacts({ isChinese: isCN });
       const reply = await invokeAI(buildBriefingRequest(facts, isCN), { language: isCN ? "zh" : "en" });
       const parsed = parseAIJson<Briefing>(reply);
       if (parsed) setData(parsed);
@@ -34,7 +36,7 @@ export function AISmartBriefing({ facts }: { facts: string }) {
     } finally {
       setLoading(false);
     }
-  }, [facts, isCN]);
+  }, [isCN]);
 
   useEffect(() => { void run(); }, [run]);
 

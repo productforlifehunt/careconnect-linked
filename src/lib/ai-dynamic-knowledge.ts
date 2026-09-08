@@ -16,6 +16,11 @@
  */
 
 import { retrieveStaticKnowledge, type KnowledgeTopic } from "@/lib/ai-static-knowledge";
+import {
+  buildCheckInContext,
+  buildMedicineDoseContext,
+  buildMedicineDoseStarter,
+} from "../../supabase/functions/_shared/ai-prompts";
 type Lang = { isChinese: boolean };
 
 const Z = (isChinese: boolean, zh: string, en: string) => (isChinese ? zh : en);
@@ -258,6 +263,37 @@ export async function resolveTaskFacts({ isChinese }: Lang): Promise<string> {
   } catch {
     return "";
   }
+}
+
+/**
+ * Dashboard smart-briefing facts. The dashboard page renders only; every read
+ * and every permission decision happens here.
+ */
+export async function resolveBriefingFacts({ isChinese }: Lang): Promise<string> {
+  const [viewer, tasks] = await Promise.all([
+    resolveViewerFacts({ isChinese }),
+    resolveTaskFacts({ isChinese }),
+  ]);
+  let bookings = "";
+  let unread = "";
+  try {
+    const { wpFetchBookings } = await import("@/services/wp-data");
+    const list = await wpFetchBookings().catch(() => []);
+    const today = new Date().toISOString().slice(0, 10);
+    const next = list
+      .filter((b: any) => String(b.appointment_date || b.start_time || "").slice(0, 10) >= today)
+      .slice(0, 5)
+      .map((b: any) => `${b.service_name || b.title || ""} ${b.appointment_date || b.start_time || ""}`.trim())
+      .filter(Boolean);
+    bookings = line(Z(isChinese, "接下来的预约", "Upcoming bookings"), next.join("; "));
+  } catch { /* optional */ }
+  try {
+    const { wpFetchConversations } = await import("@/services/wp-data");
+    const convos = await wpFetchConversations().catch(() => []);
+    const n = convos.reduce((sum: number, c: any) => sum + Number(c.unread_count || 0), 0);
+    unread = line(Z(isChinese, "未读消息", "Unread messages"), n);
+  } catch { /* optional */ }
+  return join([viewer, tasks, bookings, unread]);
 }
 
 /** Group facts, gated on membership. */
@@ -1040,4 +1076,173 @@ export async function permissionSkillStates() {
     string,
     Awaited<ReturnType<typeof checkPermission>>
   >;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * WRITE SKILLS — the ONE place every AI-driven record write is declared.
+ *
+ * name: record-medicine-dose | record-check-in | save-care-tip
+ *
+ * Each write skill declares, in a single entry: the wording shown to the user,
+ * the finish rule sent to the model, the allowed outcomes, the real database
+ * write (delegated to the same feature function the manual form uses), and the
+ * cached lists to refresh. The model never writes and never calls a tool — it
+ * only returns {done, status, summary}, and it can only name a skill from
+ * WRITE_SKILL_NAMES; anything else is rejected by resolveWriteSkill().
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+export type WriteSkillName = "record-medicine-dose" | "record-check-in" | "save-care-tip";
+
+export const WRITE_SKILL_NAMES: WriteSkillName[] = [
+  "record-medicine-dose",
+  "record-check-in",
+  "save-care-tip",
+];
+
+export interface WriteTarget {
+  caredOneId?: string;
+  /** Medicine record id (record-medicine-dose) or check-in record id (record-check-in). */
+  recordId?: string;
+  /** Human label used in the rule text, e.g. the medicine or check-in name. */
+  label?: string;
+  /** Extra plain-language detail, e.g. "Aricept · 5mg · 08:00". */
+  detail?: string;
+}
+
+export interface WriteSkill {
+  name: WriteSkillName;
+  title: string;
+  contextPrompt: string;
+  starterPrompt: string;
+  starterFallback: string;
+  toastFor: (status?: string) => string;
+  statuses: string[];
+  rule: string;
+  write: (result: { status?: string; summary?: string }) => Promise<void>;
+  invalidateKeys: string[][];
+}
+
+const asStatus = (allowed: string[], status?: string) =>
+  status && allowed.includes(status) ? status : allowed[0];
+
+export function resolveWriteSkill(
+  name: WriteSkillName,
+  target: WriteTarget,
+  { isChinese }: Lang
+): WriteSkill {
+  if (!WRITE_SKILL_NAMES.includes(name)) {
+    throw new Error(`Unknown write skill: ${name}`);
+  }
+  const label = target.label || "";
+
+  if (name === "record-medicine-dose") {
+    const statuses = ["taken", "skipped", "no-response"];
+    const dose = target.detail || label;
+    const rule = Z(
+      isChinese,
+      `这是${label || "这次"}用药的记录对话。确认服用、跳过，或对方始终没有回应时，返回 JSON：{"done":true,"status":"taken|skipped|no-response","summary":"一两句说明"}。不要询问剂量以外的医疗判断。`,
+      `This exchange records the ${label || "current"} dose. When it is confirmed taken, skipped, or the person never responds, return JSON: {"done":true,"status":"taken|skipped|no-response","summary":"one or two sentences"}. Do not give medical judgement beyond the dose.`
+    );
+    return {
+      name,
+      statuses,
+      rule,
+      title: Z(isChinese, "用药提醒", "Medicine reminder"),
+      contextPrompt: [buildMedicineDoseContext(dose, isChinese), rule].join("\n\n"),
+      starterPrompt: buildMedicineDoseStarter(dose, isChinese),
+      starterFallback: Z(
+        isChinese,
+        `到了 ${label} 的用药时间。已经服用了吗？`,
+        `It is time for ${label}. Has this dose been taken?`
+      ),
+      toastFor: (status) =>
+        asStatus(statuses, status) === "taken"
+          ? Z(isChinese, `${label} 已记录服用`, `${label} recorded as taken`)
+          : Z(isChinese, `${label} 已跳过`, `${label} skipped`),
+      write: async ({ status, summary }) => {
+        const { logMedicineWordPress } = await import("@/features/medicine/source.medicine");
+        await logMedicineWordPress({
+          medicine_id: String(target.recordId),
+          status: asStatus(statuses, status) === "taken" ? "taken" : "skipped",
+          note: summary || undefined,
+          user_id: target.caredOneId,
+        } as any);
+      },
+      invalidateKeys: [["medicineLogs"], ["todayMedicineLogs"]],
+    };
+  }
+
+  if (name === "record-check-in") {
+    const statuses = ["checked", "skipped", "no-response"];
+    const rule = Z(
+      isChinese,
+      `这是${label || "本次"}签到对话。签到完成、对方选择跳过，或对方始终没有回应时，返回 JSON：{"done":true,"status":"checked|skipped|no-response","summary":"把问到的情况写成一两句"}。`,
+      `This exchange is the ${label || "current"} check-in. When it is completed, skipped, or the person never responds, return JSON: {"done":true,"status":"checked|skipped|no-response","summary":"one or two sentences of what was reported"}.`
+    );
+    return {
+      name,
+      statuses,
+      rule,
+      title: Z(isChinese, "AI 签到", "AI Check-In"),
+      contextPrompt: [
+        buildCheckInContext(
+          label || Z(isChinese, "签到", "Check-In"),
+          target.detail || "",
+          Z(isChinese, "被护理者", "the cared one"),
+          isChinese
+        ),
+        rule,
+      ].join("\n\n"),
+      starterPrompt: Z(isChinese, "现在请开始签到。", "Please start the check-in now."),
+      starterFallback: Z(
+        isChinese,
+        "你好，到了签到时间。今天感觉怎么样？",
+        "Hi, it is check-in time. How are you today?"
+      ),
+      toastFor: () => Z(isChinese, "AI 签到已保存", "AI check-in saved"),
+      write: async ({ status, summary }) => {
+        const { logCheckinWordPress } = await import(
+          "@/features/cared-ones/source.wordpress-extended"
+        );
+        const s = asStatus(statuses, status);
+        await logCheckinWordPress({
+          checkin_id: String(target.recordId),
+          status: s === "checked" ? "checked" : s === "skipped" ? "skipped" : "missed",
+          note: summary || "",
+          checked_by_ai: true,
+          cared_one_id: target.caredOneId,
+          checkin_name: label || undefined,
+        });
+      },
+      invalidateKeys: [["checkinLogs"], ["todayCheckinLogs"]],
+    };
+  }
+
+  const statuses = ["saved", "discarded"];
+  const tipRule = Z(
+    isChinese,
+    `当用户想把一条护理小贴士存下来时，返回 JSON：{"done":true,"status":"saved","summary":"小贴士正文"}；用户改主意就用 status "discarded"。`,
+    `When the user wants a care tip saved, return JSON: {"done":true,"status":"saved","summary":"the tip text"}; use status "discarded" if they change their mind.`
+  );
+  return {
+    name: "save-care-tip",
+    statuses,
+    rule: tipRule,
+    title: Z(isChinese, "护理小贴士", "Care tip"),
+    contextPrompt: tipRule,
+    starterPrompt: Z(isChinese, "请帮我把这条护理小贴士整理好。", "Help me word this care tip."),
+    starterFallback: Z(isChinese, "想记下哪一条护理小贴士？", "Which care tip would you like to save?"),
+    toastFor: (status) =>
+      asStatus(statuses, status) === "saved"
+        ? Z(isChinese, "小贴士已保存", "Care tip saved")
+        : Z(isChinese, "已丢弃", "Discarded"),
+    write: async ({ status, summary }) => {
+      if (asStatus(statuses, status) !== "saved" || !summary) return;
+      const { createCareTipWordPress } = await import(
+        "@/features/cared-ones/source.wordpress-extended"
+      );
+      await createCareTipWordPress({ user_id: String(target.caredOneId), content: summary });
+    },
+    invalidateKeys: [["careTips"]],
+  };
 }

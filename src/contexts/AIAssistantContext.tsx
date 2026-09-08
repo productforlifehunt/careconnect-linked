@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { AICompanionChatDialog } from "@/components/ai/AICompanionChatDialog";
-import { resolveWriteSpec, type WriteIntent, type WriteTarget } from "@/lib/ai-auto-fill-form";
+import { resolveWriteSkill, type WriteSkillName, type WriteTarget } from "@/lib/ai-dynamic-knowledge";
 import { useToast } from "@/hooks/use-toast";
 import i18n from "@/i18n/config";
 
@@ -37,7 +37,8 @@ export type AssistantRequest = {
  * refresh. No page holds write logic of its own.
  */
 export type WriteRequest = {
-  intent: WriteIntent;
+  /** Write skill name declared in src/lib/ai-dynamic-knowledge.ts. */
+  skill: WriteSkillName;
   target: WriteTarget;
   /** Optional de-duplication id, e.g. one per day per record. */
   id?: string;
@@ -64,11 +65,11 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
 
   const openWriteAssistant = useCallback(
-    ({ intent, target, id, contextScope, onWritten }: WriteRequest) => {
+    ({ skill, target, id, contextScope, onWritten }: WriteRequest) => {
       const isChinese = (i18n.language || "").startsWith("zh");
-      const spec = resolveWriteSpec(intent, target, { isChinese });
+      const spec = resolveWriteSkill(skill, target, { isChinese });
       openAssistant({
-        id: id || `${intent}-${target.recordId || target.caredOneId || "new"}`,
+        id: id || `${skill}-${target.recordId || target.caredOneId || "new"}`,
         title: spec.title,
         contextPrompt: spec.contextPrompt,
         contextScope: contextScope || (target.caredOneId ? { caredOneId: target.caredOneId } : undefined),

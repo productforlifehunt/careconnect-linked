@@ -618,7 +618,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
     const dose = [due.med.name, due.med.dosage, due.slot].filter(Boolean).join(" · ");
     // One call: the registry decides wording, outcomes, the write and the refresh.
     openWriteAssistant({
-      intent: "medicine-dose",
+      skill: "record-medicine-dose",
       id: `medicine-${key}`,
       target: {
         caredOneId: String(caredOneId),
