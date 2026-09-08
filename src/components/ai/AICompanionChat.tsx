@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { parseAIJson, streamChatTextOnly, trimMessagesToCharLimit } from "@/lib/ai";
 import { aiGreeting } from "../../../supabase/functions/_shared/ai-prompts";
 import type { AssistantRequest } from "@/contexts/AIAssistantContext";
+import { useSite } from "@/contexts/SiteContext";
 import { Conversation, ConversationContent, ConversationScrollButton } from "@/components/ai-elements/conversation";
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
 import { PromptInput, PromptInputBody, PromptInputFooter, PromptInputSubmit, PromptInputTextarea } from "@/components/ai-elements/prompt-input";
@@ -27,6 +28,7 @@ export function AICompanionChat({
   className?: string;
 }) {
   const { i18n } = useTranslation();
+  const site = useSite();
   const isZh = i18n.language?.startsWith("zh");
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
@@ -40,7 +42,7 @@ export function AICompanionChat({
     setInput("");
     const starter = request.starterPrompt?.trim();
     if (!starter) {
-      setMessages([{ role: "assistant", content: aiGreeting(!!isZh) }]);
+      setMessages([{ role: "assistant", content: aiGreeting(!!isZh, site.id) }]);
       return;
     }
     setMessages([{ role: "assistant", content: "" }]);
@@ -49,7 +51,7 @@ export function AICompanionChat({
       language: isZh ? "zh" : "en",
       contextPrompt: request.contextPrompt,
       onTextDelta: (_delta, full) => setMessages([{ role: "assistant", content: full }]),
-      onError: () => setMessages([{ role: "assistant", content: request.starterFallback || aiGreeting(!!isZh) }]),
+      onError: () => setMessages([{ role: "assistant", content: request.starterFallback || aiGreeting(!!isZh, site.id) }]),
     });
     abortRef.current = { abort };
     void result.catch(() => undefined).finally(() => { setLoading(false); abortRef.current = null; });

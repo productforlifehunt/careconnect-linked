@@ -9,6 +9,7 @@ import { wordpressCCTFetch, wordpressFetch, isNetworkAbort } from "@/features/sh
 import { T, R } from "@/integrations/wp-schema";
 import { appScopeBody } from "@/features/shared/app-scope";
 import { supabase } from "@/integrations/supabase/client";
+import { detectSite } from "@/contexts/SiteContext";
 
 
 export interface AIChatMessage {
@@ -117,7 +118,7 @@ async function touchConversation(conversationId: string) {
 /** Call the single `ai` edge function (Lovable AI Gateway) */
 async function callAI(messages: AIChatMessage[], contextPrompt?: string, language?: string): Promise<string> {
   const { data, error } = await supabase.functions.invoke("ai/chat", {
-    body: { messages, ...(contextPrompt ? { contextPrompt } : {}), ...(language ? { language } : {}) },
+    body: { messages, site: detectSite(), ...(contextPrompt ? { contextPrompt } : {}), ...(language ? { language } : {}) },
   });
   if (error) {
     console.error("AI edge function error:", error);
@@ -424,7 +425,7 @@ export function streamChatWithVoice(
         "Content-Type": "application/json",
         Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
       },
-      body: JSON.stringify({ messages, language: handlers.language, contextPrompt: handlers.contextPrompt }),
+      body: JSON.stringify({ messages, site: detectSite(), language: handlers.language, contextPrompt: handlers.contextPrompt }),
       signal: handlers.signal,
     });
 
@@ -622,7 +623,7 @@ export function streamChatTextOnly(
         "Content-Type": "application/json",
         Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
       },
-      body: JSON.stringify({ messages, language: handlers.language, contextPrompt: handlers.contextPrompt }),
+      body: JSON.stringify({ messages, site: detectSite(), language: handlers.language, contextPrompt: handlers.contextPrompt }),
       signal,
     });
 

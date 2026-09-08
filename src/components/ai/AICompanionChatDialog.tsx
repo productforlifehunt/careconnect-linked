@@ -2,6 +2,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Bot, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { aiBrand } from "../../../supabase/functions/_shared/ai-prompts";
+import { useSite } from "@/contexts/SiteContext";
 import type { AssistantRequest } from "@/contexts/AIAssistantContext";
 import { AICompanionChat } from "@/components/ai/AICompanionChat";
 
@@ -15,6 +16,7 @@ export function AICompanionChatDialog({
   request?: AssistantRequest;
 }) {
   const { i18n } = useTranslation();
+  const site = useSite();
   const isZh = i18n.language?.startsWith("zh");
 
   return (
@@ -30,7 +32,7 @@ export function AICompanionChatDialog({
                 <Bot className="h-4 w-4" />
               </div>
               <DialogPrimitive.Title className="text-sm font-semibold">
-                {request.title || aiBrand(isZh ? "zh" : "en")}
+                {request.title || aiBrand(isZh ? "zh" : "en", site.id)}
               </DialogPrimitive.Title>
             </div>
             <DialogPrimitive.Close asChild>
