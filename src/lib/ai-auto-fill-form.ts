@@ -564,8 +564,9 @@ export async function applySetting(
   current?: AppSettings,
 ): Promise<AppSettings> {
   const checked = validateSettingWrite(id, value);
-  if (!checked.ok) throw new Error(checked.error);
+  if (checked.ok === false) throw new Error(checked.error);
   const spec = checked.spec;
+
 
 
   const base = current ?? (await fetchAppSettings());
