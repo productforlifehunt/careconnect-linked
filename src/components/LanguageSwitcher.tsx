@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Globe } from "lucide-react";
-import { LANGUAGES as SETTING_LANGUAGES, applySetting } from "@/lib/app-setting-form";
+import { LANGUAGES as SETTING_LANGUAGES, applySetting } from "@/lib/ai-auto-fill-form";
 
 const LANGUAGES = SETTING_LANGUAGES;
 
@@ -17,7 +17,7 @@ export function LanguageSwitcher() {
 
 
   const selectLanguage = (code: string) => {
-    // Single settings write path (src/lib/app-setting-form.ts).
+    // Single settings write path (src/lib/ai-auto-fill-form.ts).
     void applySetting("language.app", code);
     i18n.changeLanguage(code);
   };

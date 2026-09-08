@@ -1,6 +1,6 @@
 /**
  * General app settings — rendered entirely from the ONE registry in
- * src/lib/app-setting-form.ts. This file only draws rows; it decides nothing
+ * src/lib/ai-auto-fill-form.ts. This file only draws rows; it decides nothing
  * about wording, app scope, storage or persistence.
  */
 import { useEffect, useState } from "react";
@@ -25,7 +25,7 @@ import {
   DEFAULT_APP_SETTINGS,
   type AppSettings,
   type SettingSpec,
-} from "@/lib/app-setting-form";
+} from "@/lib/ai-auto-fill-form";
 import { openAppSettings, isNative, type PermissionState } from "@/features/settings/permissions";
 import { subscribeWebPushAndRegister } from "@/features/notifications/tokens.wordpress";
 
