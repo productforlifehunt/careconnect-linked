@@ -571,17 +571,10 @@ export async function permissionStates() {
   return Object.fromEntries(specs.map((s, i) => [s.id, states[i]])) as Record<string, Awaited<ReturnType<typeof checkPermission>>>;
 }
 
-/** Plain-language description of the settings data structure, for the AI context. */
-export function describeSettingsForAI(isChinese = false): string {
-  const rows = SETTING_SPECS.filter((s) => settingAppliesTo(s)).map(
-    (s) => `- ${s.id} (${s.storage}): ${s.label(isChinese)}`,
-  );
-  return [
-    Z(
-      isChinese,
-      "用户设置都保存在同一处（扩展资料 CCT 151 的应用设置 JSON），下面是可用项：",
-      "All user settings live in one place (the app-settings JSON on extended profile CCT 151). Available items:",
-    ),
-    ...rows,
-  ].join("\n");
-}
+/*
+ * No settings-for-AI description lives here on purpose.
+ * SETTING_SPECS above is the only settings structure; the AI wording is derived
+ * from it inside src/lib/ai-dynamic-knowledge.ts, which is the single place that
+ * decides what the AI may read.
+ */
+
