@@ -14,6 +14,8 @@ import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 import { useAIAssistant } from "@/contexts/AIAssistantContext";
 import { buildCheckInContext } from "../../../supabase/functions/_shared/ai-prompts";
 import { useAuth } from "@/contexts/AuthContext";
+import { resolveWriteSpec } from "@/lib/ai-dynamic-knowledge";
+import { useQueryClient } from "@tanstack/react-query";
 
 function formatSlot(slot: string, isCN: boolean) {
   const [hourRaw = "8", minuteRaw = "00"] = String(slot || "08:00").split(":");
@@ -49,6 +51,7 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
   const update = useUpdateCheckin();
   const remove = useDeleteCheckin();
   const logCheckin = useLogCheckin();
+  const qc = useQueryClient();
 
   const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState<{ open: boolean; checkin: any }>({ open: false, checkin: null });
