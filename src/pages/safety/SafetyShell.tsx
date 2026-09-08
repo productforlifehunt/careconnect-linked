@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { MapPin, Home, Users, Bell, Sparkles, User as UserIcon, Moon, Sun, MessageCircle} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "next-themes";
-import { applySetting } from "@/lib/app-setting-form";
+import { applySetting } from "@/lib/ai-auto-fill-form";
 import { useQuery } from "@tanstack/react-query";
 import { BrandMark } from "@/components/BrandMark";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";

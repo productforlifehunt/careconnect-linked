@@ -20,7 +20,7 @@ import { Menu, User, LogOut, LayoutDashboard, Bell, Heart, Search, HelpCircle, C
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { useTheme } from "next-themes";
-import { applySetting } from "@/lib/app-setting-form";
+import { applySetting } from "@/lib/ai-auto-fill-form";
 import { useNotifications } from "@/hooks/use-care-data";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useStandaloneMode } from "@/hooks/useStandaloneMode";
