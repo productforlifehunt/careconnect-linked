@@ -91,7 +91,10 @@ export default function Inbox() {
         raw: c,
       };
     }),
-  ].sort((a, b) => new Date(b.at || 0).getTime() - new Date(a.at || 0).getTime());
+  ]
+    .filter((r) => (readFilter === "all" ? true : readFilter === "unread" ? r.unread : !r.unread))
+    .sort((a, b) => new Date(b.at || 0).getTime() - new Date(a.at || 0).getTime());
+
 
   const openRow = (row: (typeof feed)[number]) => {
     if (row.kind === "notification") {
