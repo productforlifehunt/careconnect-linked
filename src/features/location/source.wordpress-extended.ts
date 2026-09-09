@@ -434,6 +434,7 @@ export async function createSafeZoneAlertsForLocation(userId: string, lat: numbe
       {
         await runNotificationSkill("send-notification", {
           userIds: [userId],
+          includeSelf: true,
           type: "safe_zone_breach",
           title: result.alertType === "entered_danger_zone" ? "⚠️ Danger Zone Alert" : "📍 Safe Zone Alert",
           message: msg,

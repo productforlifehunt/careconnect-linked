@@ -1346,6 +1346,8 @@ export interface SendNotificationParams {
   title: string;
   message: string;
   actionUrl?: string | null;
+  /** Keep the actor as a recipient (own-device alerts such as a zone breach). */
+  includeSelf?: boolean;
 }
 
 export interface NotificationRow {
@@ -1407,7 +1409,9 @@ export async function runNotificationSkill(
 
   if (name === "send-notification") {
     const p = params as SendNotificationParams;
-    const targets = await notificationRecipients(p?.userIds ?? []);
+    const targets = p?.includeSelf
+      ? [...new Set((p.userIds ?? []).map(stripWp).filter(Boolean))]
+      : await notificationRecipients(p?.userIds ?? []);
     if (targets.length === 0) return 0;
     const type = normalizeNotificationType(p.type);
     const title = String(p.title || "").trim();
