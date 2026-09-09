@@ -206,6 +206,9 @@ export default function GPSTracking() {
     const lat = parseFloat(ls.latitude) || 0;
     const lng = parseFloat(ls.longitude) || 0;
     const key = String(ls.user_id ?? "").replace(/^wp-/, "");
+    const stampMs = ls.updated_at
+      ? (typeof ls.updated_at === "number" ? ls.updated_at * 1000 : new Date(ls.updated_at).getTime())
+      : 0;
     return {
       id: ls.id,
       userId: ls.user_id,
@@ -216,6 +219,11 @@ export default function GPSTracking() {
       lastUpdated: ls.updated_at
         ? formatTime(typeof ls.updated_at === "number" ? ls.updated_at * 1000 : ls.updated_at, "en", { hour: "numeric", minute: "2-digit" })
         : "",
+      // Phone + movement facts already stored on every location snapshot.
+      lastSeenMs: Number.isFinite(stampMs) ? stampMs : 0,
+      battery: ls.battery_level != null ? Math.round(Number(ls.battery_level)) : null,
+      isCharging: ls.phone_is_charging === "Yes" || ls.phone_is_charging === true,
+      movingType: ls.moving_type || null,
       status: "active" as const,
       isSharing: ls.sharing_status !== "off" && ls.is_sharing_enabled !== false,
     };
