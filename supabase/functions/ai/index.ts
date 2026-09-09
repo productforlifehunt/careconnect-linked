@@ -902,7 +902,7 @@ async function handleVoice(req: Request): Promise<Response> {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash-tts",
+          model: "google/gemini-3.1-flash-tts-preview",
           contents: [{ role: "user", parts: [{ text: cleanText }] }],
           generationConfig: {
             responseModalities: ["AUDIO"],
