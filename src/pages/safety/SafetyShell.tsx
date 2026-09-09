@@ -9,7 +9,7 @@ import { BrandMark } from "@/components/BrandMark";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { fetchNotificationsWordPress } from "@/features/notifications/source.wordpress";
+import { runNotificationSkill } from "@/lib/ai-dynamic-knowledge";
 
 /**
  * NotchSafety app shell — one persistent header on every screen and one
@@ -30,7 +30,7 @@ export function SafetyShell({ children }: { children: ReactNode }) {
     enabled: isAuthenticated,
     refetchInterval: 60_000,
     queryFn: async () => {
-      const all = await fetchNotificationsWordPress();
+      const all = await runNotificationSkill("list-notifications");
       return (Array.isArray(all) ? all : []).filter((n: any) => !n.is_read).length;
     },
   });

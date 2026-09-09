@@ -12,10 +12,6 @@ import { fetchMyAppUserName } from "@/features/profile/app-user-name";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { T, R } from "@/integrations/wp-schema";
 import {
-  createNotificationWordPress,
-  fetchNotificationsWordPress,
-  markNotificationReadWordPress,
-  markAllNotificationsReadWordPress,
 } from "@/features/notifications/source.wordpress";
 import { fetchCurrentLocation, fetchLocationHistory, writeLocationAndCheckZones } from "@/features/location/source.wordpress";
 import {
@@ -353,7 +349,7 @@ export async function deleteSafeZoneWordPress(id: string): Promise<void> {
 // filters it down to location events instead of showing an empty list.
 
 export async function fetchSafeZoneAlertsWordPress(_caredOneId: string): Promise<any[]> {
-  const all = await fetchNotificationsWordPress();
+  const all = await runNotificationSkill("list-notifications");
   return all
       .filter((n: any) => n.type === "location")
       .map((n: any) => ({
@@ -367,11 +363,11 @@ export async function fetchSafeZoneAlertsWordPress(_caredOneId: string): Promise
 
 export async function acknowledgeAlertWordPress(alertId: string): Promise<void> {
   // Alerts are notification rows — acknowledging one marks it read.
-  await markNotificationReadWordPress(alertId);
+  await runNotificationSkill("mark-notification-read", { id: alertId });
 }
 
 export async function acknowledgeAllAlertsWordPress(_caredOneId: string): Promise<void> {
-  await markAllNotificationsReadWordPress();
+  await runNotificationSkill("mark-all-notifications-read");
 }
 
 

@@ -10,7 +10,6 @@
  * roll back or fail the underlying write that already succeeded.
  */
 import i18n from "i18next";
-import { getStoredWPUser } from "@/services/wp-auth";
 import { fetchMyAppUserName } from "@/features/profile/app-user-name";
 
 /**
@@ -37,11 +36,6 @@ const Z = (zh: string, en: string) => ((i18n.language || "").startsWith("zh") ? 
 
 const strip = (id: string | number | null | undefined): string =>
   id == null ? "" : String(id).replace(/^wp-/, "");
-
-function currentUserId(): string {
-  const stored = getStoredWPUser();
-  return strip(stored?.user_id);
-}
 
 /**
  * Recipients minus the actor, de-duplicated, empty entries dropped.

@@ -8,7 +8,7 @@ import { fetchBookingsWordPress, fetchProviderBookingsWordPress, createBookingWo
 import { fetchCareGroupsWordPress, fetchCareGroupMembersWordPress, createCareGroupWordPress } from "@/features/care-groups/source.wordpress";
 import { fetchUserCaredOnesWordPress } from "@/features/cared-ones/source.wordpress";
 import { fetchMyProfileWordPress, updateProfileWordPress } from "@/features/profile/source.wordpress";
-import { fetchNotificationsWordPress, markNotificationReadWordPress, markAllNotificationsReadWordPress } from "@/features/notifications/source.wordpress";
+import { runNotificationSkill } from "@/lib/ai-dynamic-knowledge";
 import { notifySubgroupApproved } from "@/features/notifications/notify-events";
 import { fetchCareFacilitiesWordPress, fetchCareFacilityByIdWordPress } from "@/features/facilities/source.wordpress";
 import {
@@ -591,7 +591,7 @@ export function useUpdateTaskStatus() {
 export function useNotifications() {
   return useQuery({
     queryKey: ["notifications"],
-    queryFn: () => fetchNotificationsWordPress(),
+    queryFn: () => runNotificationSkill("list-notifications"),
     enabled: hasWPSession(),
   });
 }
@@ -599,7 +599,7 @@ export function useNotifications() {
 export function useMarkNotificationRead() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => markNotificationReadWordPress(id),
+    mutationFn: (id: string) => runNotificationSkill("mark-notification-read", { id }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["notifications"] }); },
   });
 }
@@ -607,7 +607,7 @@ export function useMarkNotificationRead() {
 export function useMarkAllNotificationsRead() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => markAllNotificationsReadWordPress(),
+    mutationFn: () => runNotificationSkill("mark-all-notifications-read"),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["notifications"] }); },
   });
 }
