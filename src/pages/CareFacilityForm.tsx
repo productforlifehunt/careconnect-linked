@@ -165,15 +165,23 @@ export default function CareFacilityForm() {
         toast({ title: isZh ? "机构已更新" : "Facility updated" });
         navigate(`/facility/${updated.id}`);
       } else {
-        const created = await createFacility.mutateAsync({
+        await createFacility.mutateAsync({
           ...(payload as any),
           isOwner,
           ownerRole: ownerRole.trim() || null,
           ownershipClaim: ownershipClaim.trim() || null,
           ownershipAttachmentUrls: ownershipAttachmentUrls.trim() || null,
         });
-        toast({ title: isZh ? "机构已提交" : "Facility submitted" });
-        navigate(`/facility/${created.id}`);
+        // A new listing is checked by our team before it goes public, so we
+        // land the person back on the facility list with a plain explanation
+        // instead of an empty "not found" page.
+        toast({
+          title: isZh ? "已提交，我们会先审核" : "Submitted — we'll check it first",
+          description: isZh
+            ? "审核通过后，它就会出现在机构列表里。"
+            : "Once it's approved it will show up in the facility list.",
+        });
+        navigate("/search?service_category=facility");
       }
     } catch (err: any) {
       toast({ title: isZh ? "提交失败" : "Save failed", description: err.message, variant: "destructive" });

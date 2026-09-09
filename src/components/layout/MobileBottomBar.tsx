@@ -28,6 +28,11 @@ import {
   Smile,
   Brain,
   HandHeart,
+  User,
+  Settings,
+  ShoppingCart,
+  HelpCircle,
+
 } from "lucide-react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Switch } from "@/components/ui/switch";
@@ -146,6 +151,20 @@ export function MobileBottomBar() {
     ? [{ id: "community-community", title: isChinese ? "社区" : "Community", url: "/community", icon: Newspaper }]
     : [];
 
+  // Account & settings — everything the desktop avatar menu offers, so a phone
+  // user can reach the same places without a keyboard-sized header.
+  const accountItems: ToolItem[] = [
+    { id: "acct-profile", title: isChinese ? "我的资料" : "My Profile", url: "/profile", icon: User },
+    { id: "acct-settings", title: isChinese ? "设置" : "Settings", url: "/profile?tab=notifications", icon: Settings },
+    { id: "acct-provider-settings", title: isChinese ? "护理者设置" : "Caregiver Settings", url: "/provider-dashboard?tab=profile", icon: Briefcase },
+    { id: "acct-favorites", title: isChinese ? "收藏" : "Favorites", url: "/favorites", icon: HeartIcon },
+    { id: "acct-cart", title: isChinese ? "购物车" : "Cart", url: "/cart", icon: ShoppingCart },
+    { id: "acct-submit-facility", title: isChinese ? "提交机构" : "Submit Facility", url: "/facilities/new", icon: Building2 },
+    { id: "acct-help", title: isChinese ? "使用指南" : "How It Works", url: "/how-it-works", icon: HelpCircle },
+  ];
+
+
+
   // Filter by user prefs
   const visible = (arr: ToolItem[]) => arr.filter((t) => !prefs.hidden.includes(t.id));
 
@@ -183,6 +202,7 @@ export function MobileBottomBar() {
     { id: "find-care", label: isChinese ? "寻找护理服务" : "Find Care", items: findCareItems },
     { id: "find-work", label: isChinese ? "寻找护理工作" : "Find Work", items: findWorkItems },
     { id: "community", label: isChinese ? "社区" : "Community", items: communityItems },
+    { id: "account", label: isChinese ? "账户与设置" : "Account & Settings", items: accountItems },
   ].filter((g) => g.items.length > 0);
 
   const togglePref = (id: string, show: boolean) => {
@@ -330,6 +350,18 @@ export function MobileBottomBar() {
                     </h3>
                     <div className="grid grid-cols-4 gap-2">
                       {visible(communityItems).map(renderToolButton)}
+                    </div>
+                  </div>
+                )}
+
+                {/* Account & Settings */}
+                {visible(accountItems).length > 0 && (
+                  <div>
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 px-1">
+                      {isChinese ? "账户与设置" : "Account & Settings"}
+                    </h3>
+                    <div className="grid grid-cols-4 gap-2">
+                      {visible(accountItems).map(renderToolButton)}
                     </div>
                   </div>
                 )}
