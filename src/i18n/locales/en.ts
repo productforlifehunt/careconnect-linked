@@ -469,6 +469,9 @@ const en = {
 
   // ═══ PROFILE ═══
   profile: {
+    roleHelp: "Turn on everything that describes you. This decides which care tools you see.",
+    roleCaredOne: "I receive care",
+    roleCaringOne: "I care for someone",
     myProfile: "My Profile",
     personalInfo: "Personal Information",
     avatar: "Avatar",

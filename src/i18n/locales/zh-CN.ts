@@ -1,5 +1,6 @@
 const zhCN = {
   common: {
+    role: "身份",
     signIn: "登录", signUp: "注册", signOut: "退出登录", getStarted: "立即开始",
     search: "搜索", save: "保存", cancel: "取消", delete: "删除", edit: "编辑",
     back: "返回", next: "下一步", submit: "提交", confirm: "确认", send: "发送",
