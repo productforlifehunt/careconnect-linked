@@ -137,7 +137,7 @@ export function buildSidebarNav({ site, t, isChinese }: Opts): NavItem[] {
     { title: L("预约", "Appointments"), url: "/bookings", icon: CalendarDays },
     { title: L("消息", "Messages"), url: "/inbox?tab=messages", icon: MessageSquare },
     { title: L(isChallenged ? "护理群组" : "照护小组", site.navLabels.careGroups), url: "/care-circle", icon: Users },
-    { title: L("需要帮手的任务", "Tasks Needing Help"), url: "/shared-tasks", icon: HeartHandshake },
+    { title: L("需要帮手的任务", "Tasks Needing Help"), url: "/tasks", icon: HeartHandshake },
     { title: L(isChallenged ? "寻求帮助" : "寻找护理", site.navLabels.findCare || "Find Care"), url: "/search", icon: Search },
     { title: L(isChallenged ? "定位" : "定位追踪", site.navLabels.gpsTracking || "GPS"), url: "/find", icon: MapPin },
     { title: L("收藏", "Favorites"), url: "/favorites", icon: Heart },

@@ -73,7 +73,7 @@ const queryClient = new QueryClient({
 });
 
 // Dashboard routes that always get sidebar
-const baseDashboardPaths = ["/dashboard", "/bookings", "/care-circle", "/find", "/favorites", "/profile", "/cared-ones", "/shared-tasks", "/provider-dashboard", "/community", "/articles", "/cart", "/order-confirmation", "/awared", "/cared", "/coped", "/safed", "/accompanied", "/calendar", "/resources", "/inbox"];
+const baseDashboardPaths = ["/dashboard", "/bookings", "/care-circle", "/find", "/favorites", "/profile", "/cared-ones", "/tasks", "/provider-dashboard", "/community", "/articles", "/cart", "/order-confirmation", "/awared", "/cared", "/coped", "/safed", "/accompanied", "/calendar", "/resources", "/inbox"];
 // Routes that get sidebar only when authenticated
 const authDashboardPaths = ["/search", "/caregiver"];
 
@@ -140,7 +140,7 @@ function AppRoutes() {
       <Route path="/cared-ones" element={<RequireAuth><CaredOnes /></RequireAuth>} />
       <Route path="/cared-ones/:personId" element={<RequireAuth><CaredOnes /></RequireAuth>} />
       <Route path="/cared-ones/:personId/:card" element={<RequireAuth><CaredOnes /></RequireAuth>} />
-      <Route path="/shared-tasks" element={<RequireAuth><SharedTasks /></RequireAuth>} />
+      <Route path="/tasks" element={<RequireAuth><SharedTasks /></RequireAuth>} />
       <Route path="/provider-dashboard" element={<RequireAuth><ProviderDashboard /></RequireAuth>} />
       <Route path="/cart" element={<RequireAuth><Cart /></RequireAuth>} />
       <Route path="/order-confirmation" element={<RequireAuth><OrderConfirmation /></RequireAuth>} />
