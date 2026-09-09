@@ -51,6 +51,9 @@ export function AICompanionChat({
   });
   const [speakingIndex, setSpeakingIndex] = useState<number | null>(null);
   const voiceRef = useRef<StreamControls | null>(null);
+  const readAloudRef = useRef(readAloud);
+  readAloudRef.current = readAloud;
+
 
   const stopSpeaking = () => {
     voiceRef.current?.stop();
@@ -126,7 +129,10 @@ export function AICompanionChat({
       onError: () => setMessages([{ role: "assistant", content: request.starterFallback || aiGreeting(!!isZh, site.id) }]),
     });
     abortRef.current = { abort };
-    void result.catch(() => undefined).finally(() => { setLoading(false); abortRef.current = null; });
+    void result
+      .then((full) => { if (readAloudRef.current && full.trim()) speak(full, 0); })
+      .catch(() => undefined)
+      .finally(() => { setLoading(false); abortRef.current = null; });
     });
   }, [active, request, isZh]);
 
@@ -165,6 +171,7 @@ export function AICompanionChat({
       });
       abortRef.current = { abort };
       const reply = await result;
+      if (readAloudRef.current && reply.trim()) speak(reply, next.length - 1);
       const parsed = parseAIJson<{ done?: boolean; summary?: string; status?: string }>(reply);
       if (parsed?.done && parsed.summary && request.onComplete) {
         const allowed = request.completionStatuses || [];
