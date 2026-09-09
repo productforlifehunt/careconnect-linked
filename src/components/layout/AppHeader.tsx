@@ -16,7 +16,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { NavLink } from "@/components/NavLink";
-import { Menu, User, LogOut, LayoutDashboard, Bell, Heart, Search, HelpCircle, CalendarDays, Users, MapPin, MessageSquare, Sun, Moon, Newspaper, Bot, Building2, Settings, ChevronDown } from "lucide-react";
+import { Menu, User, LogOut, LayoutDashboard, Bell, Heart, Search, HelpCircle, CalendarDays, Users, MapPin, MessageSquare, Sun, Moon, Newspaper, Bot, Building2, Briefcase, Settings, ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { useTheme } from "next-themes";
@@ -254,20 +254,17 @@ export function AppHeader() {
                   <MessageSquare className="mr-2 h-4 w-4" /> {t("nav.messages")}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate("/profile")}>
-                  <User className="mr-2 h-4 w-4" /> {t("nav.myProfile")}
-                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/favorites")}>
                   <Heart className="mr-2 h-4 w-4" /> {t("nav.favorites")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/facilities/new")}>
                   <Building2 className="mr-2 h-4 w-4" /> {isChinese ? "提交养老院" : "Submit Facility"}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/inbox?tab=notifications")}>
-                  <Bell className="mr-2 h-4 w-4" /> {t("nav.notifications")}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/profile?tab=settings")}>
+                <DropdownMenuItem onClick={() => navigate("/profile")}>
                   <Settings className="mr-2 h-4 w-4" /> {isChinese ? "设置" : "Settings"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/provider-dashboard?tab=profile")}>
+                  <Briefcase className="mr-2 h-4 w-4" /> {isChinese ? "护理者设置" : "Caregiver Settings"}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/how-it-works")}>
                   <HelpCircle className="mr-2 h-4 w-4" /> {isChinese ? "帮助" : "Help"}
