@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, SkipForward } from "lucide-react";
+import { Check, SkipForward, Volume2, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { useTranslation } from "react-i18next";
-import { parseAIJson, streamChatTextOnly, trimMessagesToCharLimit } from "@/lib/ai";
+import { parseAIJson, speakTextStreaming, streamChatTextOnly, trimMessagesToCharLimit, type StreamControls } from "@/lib/ai";
 import { aiGreeting } from "../../../supabase/functions/_shared/ai-prompts";
 import type { AssistantRequest } from "@/contexts/AIAssistantContext";
 import { resolveAssistantContext } from "@/lib/ai-dynamic-knowledge";
@@ -13,6 +15,12 @@ import { PromptInput, PromptInputBody, PromptInputFooter, PromptInputSubmit, Pro
 import { Shimmer } from "@/components/ai-elements/shimmer";
 
 type Msg = { role: "user" | "assistant"; content: string };
+
+/** Read-aloud preference: one switch, remembered between visits. */
+const READ_ALOUD_KEY = "ai-read-aloud";
+const READ_ALOUD_VOICE = "nova";
+/** gpt-audio-mini (via OpenRouter); falls back to the built-in voice server-side. */
+const READ_ALOUD_ENGINE = "openai" as const;
 
 /**
  * The one and only chat body. Every AI surface in the app (floating assistant,
@@ -36,6 +44,44 @@ export function AICompanionChat({
   const [loading, setLoading] = useState(false);
   const abortRef = useRef<{ abort: () => void } | null>(null);
   const activeRequestId = useRef<string | undefined>();
+
+  // ─── Read aloud ───
+  const [readAloud, setReadAloud] = useState(() => {
+    try { return localStorage.getItem(READ_ALOUD_KEY) === "1"; } catch { return false; }
+  });
+  const [speakingIndex, setSpeakingIndex] = useState<number | null>(null);
+  const voiceRef = useRef<StreamControls | null>(null);
+  const readAloudRef = useRef(readAloud);
+  readAloudRef.current = readAloud;
+
+
+  const stopSpeaking = () => {
+    voiceRef.current?.stop();
+    voiceRef.current = null;
+    setSpeakingIndex(null);
+  };
+
+  const speak = (text: string, index: number) => {
+    stopSpeaking();
+    const clean = text.replace(/^✅\s*/, "").trim();
+    if (!clean) return;
+    setSpeakingIndex(index);
+    voiceRef.current = speakTextStreaming(clean, READ_ALOUD_VOICE, {
+      engine: READ_ALOUD_ENGINE,
+      onAllAudioEnd: () => setSpeakingIndex(null),
+      onError: (e) => { console.error("Read aloud failed:", e); setSpeakingIndex(null); },
+    });
+  };
+
+  const toggleReadAloud = (on: boolean) => {
+    setReadAloud(on);
+    try { localStorage.setItem(READ_ALOUD_KEY, on ? "1" : "0"); } catch { /* ignore */ }
+    if (!on) stopSpeaking();
+  };
+
+  // Stop any playback as soon as the assistant is closed.
+  useEffect(() => { if (!active) stopSpeaking(); }, [active]);
+  useEffect(() => () => stopSpeaking(), []);
 
   /**
    * On-demand context: the static snippets that match this question plus only
@@ -83,7 +129,10 @@ export function AICompanionChat({
       onError: () => setMessages([{ role: "assistant", content: request.starterFallback || aiGreeting(!!isZh, site.id) }]),
     });
     abortRef.current = { abort };
-    void result.catch(() => undefined).finally(() => { setLoading(false); abortRef.current = null; });
+    void result
+      .then((full) => { if (readAloudRef.current && full.trim()) speak(full, 0); })
+      .catch(() => undefined)
+      .finally(() => { setLoading(false); abortRef.current = null; });
     });
   }, [active, request, isZh]);
 
@@ -122,6 +171,7 @@ export function AICompanionChat({
       });
       abortRef.current = { abort };
       const reply = await result;
+      if (readAloudRef.current && reply.trim()) speak(reply, next.length - 1);
       const parsed = parseAIJson<{ done?: boolean; summary?: string; status?: string }>(reply);
       if (parsed?.done && parsed.summary && request.onComplete) {
         const allowed = request.completionStatuses || [];
@@ -147,17 +197,38 @@ export function AICompanionChat({
       <Conversation className="min-h-0">
         <ConversationContent className="gap-4 px-4 py-4">
           {messages.map((m, i) => (
-            <Message from={m.role} key={`${m.role}-${i}`}>
-              <MessageContent>
-                {m.content ? <MessageResponse>{m.content}</MessageResponse> : <Shimmer>{isZh ? "正在思考…" : "Thinking…"}</Shimmer>}
-              </MessageContent>
-            </Message>
+            <div key={`${m.role}-${i}`} className="space-y-1">
+              <Message from={m.role}>
+                <MessageContent>
+                  {m.content ? <MessageResponse>{m.content}</MessageResponse> : <Shimmer>{isZh ? "正在思考…" : "Thinking…"}</Shimmer>}
+                </MessageContent>
+              </Message>
+              {m.role === "assistant" && m.content && (
+                <button
+                  type="button"
+                  onClick={() => (speakingIndex === i ? stopSpeaking() : speak(m.content, i))}
+                  className="ml-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                  aria-label={speakingIndex === i ? (isZh ? "停止朗读" : "Stop reading") : (isZh ? "朗读这段" : "Read this aloud")}
+                >
+                  {speakingIndex === i
+                    ? <><Square className="h-3 w-3" />{isZh ? "停止" : "Stop"}</>
+                    : <><Volume2 className="h-3 w-3" />{isZh ? "朗读" : "Listen"}</>}
+                </button>
+              )}
+            </div>
           ))}
         </ConversationContent>
         <ConversationScrollButton />
       </Conversation>
 
       <div className="border-t p-3 space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <Label htmlFor="ai-read-aloud" className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Volume2 className="h-3.5 w-3.5" />
+            {isZh ? "自动朗读回复" : "Read replies aloud"}
+          </Label>
+          <Switch id="ai-read-aloud" checked={readAloud} onCheckedChange={toggleReadAloud} />
+        </div>
         {request.onComplete && (
           <div className="flex justify-end gap-2">
             {(request.completionStatuses || []).includes("skipped") && (
