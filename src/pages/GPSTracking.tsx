@@ -184,13 +184,32 @@ export default function GPSTracking() {
   }, [userId, effectiveSubjectId]);
 
   // ─── Build people list from location shares ─────────────────
+  // A location snapshot only carries coordinates, so the name has to come from
+  // whoever we already know: the care team, the linked cared ones, or yourself.
+  // Without this every marker and every breach toast said "Unknown".
+  const nameByUserId = (() => {
+    const map: Record<string, string> = {};
+    const put = (uid: any, name?: string | null) => {
+      const key = String(uid ?? "").replace(/^wp-/, "");
+      if (!key || !name || map[key]) return;
+      map[key] = String(name);
+    };
+    (groupMembers || []).forEach((m: any) =>
+      put(m.user_id ?? m.id, m.display_name || m.profile?.full_name || m.profile?.email),
+    );
+    caredOneOptions.forEach((c) => put(c.id, c.name));
+    put(selfKey, (user as any)?.user_metadata?.full_name || (user as any)?.email);
+    return map;
+  })();
+
   const people = (locationShares || []).map((ls: any) => {
     const lat = parseFloat(ls.latitude) || 0;
     const lng = parseFloat(ls.longitude) || 0;
+    const key = String(ls.user_id ?? "").replace(/^wp-/, "");
     return {
       id: ls.id,
       userId: ls.user_id,
-      name: ls.profile?.full_name || t("common.unknown"),
+      name: ls.profile?.full_name || nameByUserId[key] || t("common.unknown"),
       avatar_url: ls.profile?.avatar_url || ls.user_avatar,
       lastLocation: ls.address_text || `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
       coordinates: { lat, lng },
@@ -201,6 +220,7 @@ export default function GPSTracking() {
       isSharing: ls.sharing_status !== "off" && ls.is_sharing_enabled !== false,
     };
   });
+
 
   const sharingPeople = people.filter(p => p.isSharing && p.coordinates.lat && p.coordinates.lng);
 
