@@ -390,3 +390,12 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Leaflet paints its panes at z-index 400–1000, which used to cover dialogs,
+   drawers and the AI chat. Contain it in its own stacking context. */
+@layer base {
+  .leaflet-container {
+    isolation: isolate;
+    z-index: 0;
+  }
+}
