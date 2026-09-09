@@ -28,6 +28,11 @@ import {
   Smile,
   Brain,
   HandHeart,
+  User,
+  Settings,
+  ShoppingCart,
+  HelpCircle,
+
 } from "lucide-react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Switch } from "@/components/ui/switch";
