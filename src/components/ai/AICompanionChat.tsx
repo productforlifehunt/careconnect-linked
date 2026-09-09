@@ -190,11 +190,25 @@ export function AICompanionChat({
       <Conversation className="min-h-0">
         <ConversationContent className="gap-4 px-4 py-4">
           {messages.map((m, i) => (
-            <Message from={m.role} key={`${m.role}-${i}`}>
-              <MessageContent>
-                {m.content ? <MessageResponse>{m.content}</MessageResponse> : <Shimmer>{isZh ? "正在思考…" : "Thinking…"}</Shimmer>}
-              </MessageContent>
-            </Message>
+            <div key={`${m.role}-${i}`} className="space-y-1">
+              <Message from={m.role}>
+                <MessageContent>
+                  {m.content ? <MessageResponse>{m.content}</MessageResponse> : <Shimmer>{isZh ? "正在思考…" : "Thinking…"}</Shimmer>}
+                </MessageContent>
+              </Message>
+              {m.role === "assistant" && m.content && (
+                <button
+                  type="button"
+                  onClick={() => (speakingIndex === i ? stopSpeaking() : speak(m.content, i))}
+                  className="ml-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                  aria-label={speakingIndex === i ? (isZh ? "停止朗读" : "Stop reading") : (isZh ? "朗读这段" : "Read this aloud")}
+                >
+                  {speakingIndex === i
+                    ? <><Square className="h-3 w-3" />{isZh ? "停止" : "Stop"}</>
+                    : <><Volume2 className="h-3 w-3" />{isZh ? "朗读" : "Listen"}</>}
+                </button>
+              )}
+            </div>
           ))}
         </ConversationContent>
         <ConversationScrollButton />
