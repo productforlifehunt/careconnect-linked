@@ -1056,7 +1056,7 @@ type AITask = typeof TASKS[number];
 function parseTasks(url: URL): AITask[] {
   const raw = (url.searchParams.get("task") || "").toLowerCase();
   return raw
-    .split(/[,+|]/)
+    .split(/[,+|\s]+/)
     .map((t) => t.trim())
     .filter((t): t is AITask => (TASKS as readonly string[]).includes(t));
 }
