@@ -146,6 +146,20 @@ export function MobileBottomBar() {
     ? [{ id: "community-community", title: isChinese ? "社区" : "Community", url: "/community", icon: Newspaper }]
     : [];
 
+  // Account & settings — everything the desktop avatar menu offers, so a phone
+  // user can reach the same places without a keyboard-sized header.
+  const accountItems: ToolItem[] = [
+    { id: "acct-profile", title: isChinese ? "我的资料" : "My Profile", url: "/profile", icon: User },
+    { id: "acct-settings", title: isChinese ? "设置" : "Settings", url: "/profile?tab=notifications", icon: Settings },
+    { id: "acct-provider-settings", title: isChinese ? "护理者设置" : "Caregiver Settings", url: "/provider-dashboard?tab=profile", icon: Briefcase },
+    { id: "acct-favorites", title: isChinese ? "收藏" : "Favorites", url: "/favorites", icon: HeartIcon },
+    { id: "acct-cart", title: isChinese ? "购物车" : "Cart", url: "/cart", icon: ShoppingCart },
+    { id: "acct-submit-facility", title: isChinese ? "提交机构" : "Submit Facility", url: "/facilities/new", icon: Building2 },
+    { id: "acct-help", title: isChinese ? "使用指南" : "How It Works", url: "/how-it-works", icon: HelpCircle },
+  ];
+
+
+
   // Filter by user prefs
   const visible = (arr: ToolItem[]) => arr.filter((t) => !prefs.hidden.includes(t.id));
 
