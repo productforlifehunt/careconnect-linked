@@ -1562,7 +1562,7 @@ export function useUpsertProviderAvailability() {
 // ─── Shared care tasks (the task IS the job) ─────────────────
 export function useSharedTasks(filters?: { paid?: boolean; status?: "open" | "filled" }) {
   return useQuery({
-    queryKey: ["sharedTasks", filters],
+    queryKey: ["tasksNeedingHelp", filters],
     queryFn: () => fetchSharedTasksWordPress(filters),
   });
 }
@@ -1594,7 +1594,7 @@ export function useApplyToSharedTask() {
   return useMutation({
     mutationFn: ({ taskId, message }: { taskId: string; message?: string }) => applyToSharedTaskWordPress(taskId, message),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["sharedTasks"] });
+      qc.invalidateQueries({ queryKey: ["tasksNeedingHelp"] });
       qc.invalidateQueries({ queryKey: ["myTaskApplications"] });
       qc.invalidateQueries({ queryKey: ["taskApplicants"] });
     },
@@ -1607,7 +1607,7 @@ export function useDecideTaskApplicant() {
     mutationFn: ({ id, status }: { id: string; status: "accepted" | "rejected" }) => decideTaskApplicantWordPress(id, status),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["taskApplicants"] });
-      qc.invalidateQueries({ queryKey: ["sharedTasks"] });
+      qc.invalidateQueries({ queryKey: ["tasksNeedingHelp"] });
       qc.invalidateQueries({ queryKey: ["mySharedTasks"] });
     },
   });
@@ -1619,7 +1619,7 @@ export function useShareTask() {
     mutationFn: ({ taskId, needs_payment, price }: { taskId: string; needs_payment?: boolean; price?: string }) =>
       shareTaskWordPress(taskId, { needs_payment, price }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["sharedTasks"] });
+      qc.invalidateQueries({ queryKey: ["tasksNeedingHelp"] });
       qc.invalidateQueries({ queryKey: ["mySharedTasks"] });
       qc.invalidateQueries({ queryKey: ["careTasks"] });
     },
@@ -1631,7 +1631,7 @@ export function useUnshareTask() {
   return useMutation({
     mutationFn: (taskId: string) => unshareTaskWordPress(taskId),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["sharedTasks"] });
+      qc.invalidateQueries({ queryKey: ["tasksNeedingHelp"] });
       qc.invalidateQueries({ queryKey: ["mySharedTasks"] });
       qc.invalidateQueries({ queryKey: ["careTasks"] });
     },
