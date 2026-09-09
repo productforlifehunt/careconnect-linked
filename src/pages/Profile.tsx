@@ -201,11 +201,16 @@ export default function Profile() {
               <div><Label>{t("profile.aboutMe")}</Label><Textarea value={bio} onChange={e => setBio(e.target.value)} rows={3} /></div>
               <div className="space-y-3">
                 <Label>{t("common.role", "Role")}</Label>
-                <p className="text-xs text-muted-foreground">{t("profile.roleHelp", "Select every role that applies. These exact values are saved to A58.")}</p>
-                {(["cared one", "caring one"] as const).map((role) => (
-                  <div key={role} className="flex items-center justify-between rounded-lg border p-3">
-                    <span className="text-sm font-medium">{role}</span>
-                    <Switch checked={roles.includes(role)} onCheckedChange={(checked) => toggleRole(role, checked)} aria-label={role} />
+                <p className="text-xs text-muted-foreground">
+                  {t("profile.roleHelp", "Turn on everything that describes you. This decides which care tools you see.")}
+                </p>
+                {([
+                  { value: "cared one" as const, label: t("profile.roleCaredOne", "I receive care") },
+                  { value: "caring one" as const, label: t("profile.roleCaringOne", "I care for someone") },
+                ]).map((role) => (
+                  <div key={role.value} className="flex items-center justify-between rounded-lg border p-3">
+                    <span className="text-sm font-medium">{role.label}</span>
+                    <Switch checked={roles.includes(role.value)} onCheckedChange={(checked) => toggleRole(role.value, checked)} aria-label={role.label} />
                   </div>
                 ))}
               </div>
