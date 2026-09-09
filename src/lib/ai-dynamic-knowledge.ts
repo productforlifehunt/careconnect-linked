@@ -1246,3 +1246,201 @@ export function resolveWriteSkill(
     invalidateKeys: [["careTips"]],
   };
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * NOTIFICATION SKILLS — the single executor for every push/inbox read & write
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Where things live (do not duplicate them anywhere else):
+ *  - `src/features/notifications/notify-events.ts` stores ONLY the automatic
+ *    trigger conditions (which business event notifies whom, with what wording).
+ *    It holds no data structure, no column code, no per-app branch.
+ *  - THIS file holds the data structure: CCT `notification` (185), the radio
+ *    type column, title/content, `a58` = action url, read flag, and the
+ *    JetEngine user→notification relation. Every read and write — triggered by
+ *    an event, by a page, or (later) by the AI floating chat — goes through the
+ *    skills below and is selected BY SKILL NAME.
+ *  - Pages only render. They call a skill; they never know a column code.
+ *
+ * App scope: the browser never passes an app name. Each skill resolves it with
+ * `currentAppScope()` (preview `?__site=` param or the live sub-app domain) and
+ * the feature layer stamps the row via `appScopeBody("notification")`. All three
+ * sub-apps (challenged / carecnc / notchsafety) currently share ONE storage
+ * shape, so the per-app branch below is a single shared target; if one app ever
+ * stores a notification in a different column or CCT, add its branch HERE,
+ * inside the same skill — never a second skill and never a second file.
+ * Edge calls must carry the lowercase slug and are validated by
+ * `appScopeFromEdge()`, which throws instead of defaulting to "challenged".
+ */
+
+export type NotificationSkillName =
+  | "send-notification"
+  | "list-notifications"
+  | "mark-notification-read"
+  | "mark-all-notifications-read";
+
+export const NOTIFICATION_SKILL_NAMES: NotificationSkillName[] = [
+  "send-notification",
+  "list-notifications",
+  "mark-notification-read",
+  "mark-all-notifications-read",
+];
+
+/** Semantic notification types the radio column accepts (aliases normalised). */
+export const NOTIFICATION_TYPES = [
+  "chat",
+  "task",
+  "booking",
+  "system",
+  "location",
+  "check_in",
+  "medicine",
+] as const;
+export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
+
+const NOTIFICATION_TYPE_ALIASES: Record<string, NotificationType> = {
+  message: "chat",
+  job: "system",
+  community: "system",
+  shared_task: "task",
+  safe_zone: "location",
+  safe_zone_breach: "location",
+  location_alert: "location",
+  location_request: "location",
+  emergency_location_request: "location",
+  sos: "location",
+  checkin: "check_in",
+};
+
+export function normalizeNotificationType(type: string | undefined): NotificationType {
+  const raw = String(type || "").trim();
+  if ((NOTIFICATION_TYPES as readonly string[]).includes(raw)) return raw as NotificationType;
+  return NOTIFICATION_TYPE_ALIASES[raw] ?? "system";
+}
+
+/** Which CCT / columns this app writes a notification to. */
+export interface NotificationTarget {
+  app: AppScope;
+  /** JetEngine CCT slug (dictionary #185). */
+  cct: "notification";
+  /** Column purpose → live column code, as documented in the data dictionary. */
+  columns: { type: string; title: string; content: string; actionUrl: string; isRead: string };
+  /** JetEngine relation: parent = user, child = notification. */
+  relation: "user→notification";
+}
+
+export function notificationTarget(scope: AppScope = currentAppScope()): NotificationTarget {
+  // challenged / carecnc / notchsafety share one shape today.
+  return {
+    app: scope,
+    cct: "notification",
+    columns: { type: "a55", title: "a56", content: "a57", actionUrl: "a58", isRead: "a59" },
+    relation: "user→notification",
+  };
+}
+
+export interface SendNotificationParams {
+  /** Recipient user ids; the actor is removed and duplicates dropped. */
+  userIds: Array<string | number | null | undefined>;
+  type: string;
+  title: string;
+  message: string;
+  actionUrl?: string | null;
+}
+
+export interface NotificationRow {
+  id: string;
+  type: string;
+  title: string | null;
+  message: string | null;
+  is_read: boolean;
+  action_url: string | null;
+  created_at: string | null;
+}
+
+const stripWp = (id: string | number | null | undefined): string =>
+  id == null ? "" : String(id).replace(/^wp-/, "");
+
+/** Recipients minus the signed-in actor, de-duplicated, blanks dropped. */
+export async function notificationRecipients(
+  ids: Array<string | number | null | undefined>
+): Promise<string[]> {
+  let me = "";
+  try {
+    const { getStoredWPUser } = await import("@/services/wp-auth");
+    me = stripWp(getStoredWPUser()?.user_id);
+  } catch {
+    /* not signed in — keep every recipient */
+  }
+  return [...new Set(ids.map(stripWp).filter(Boolean))].filter((id) => id !== me);
+}
+
+/**
+ * The one dispatcher. AI and non-AI callers both land here, by skill name.
+ * Sending is best-effort: a notification failure never fails the write that
+ * already succeeded.
+ */
+export async function runNotificationSkill(
+  name: "send-notification",
+  params: SendNotificationParams
+): Promise<number>;
+export async function runNotificationSkill(
+  name: "list-notifications",
+  params?: { type?: string; unreadOnly?: boolean }
+): Promise<NotificationRow[]>;
+export async function runNotificationSkill(
+  name: "mark-notification-read",
+  params: { id: string }
+): Promise<void>;
+export async function runNotificationSkill(
+  name: "mark-all-notifications-read",
+  params?: undefined
+): Promise<void>;
+export async function runNotificationSkill(
+  name: NotificationSkillName,
+  params?: any
+): Promise<any> {
+  if (!NOTIFICATION_SKILL_NAMES.includes(name)) {
+    throw new Error(`Unknown notification skill: ${name}`);
+  }
+  const source = await import("@/features/notifications/source.wordpress");
+
+  if (name === "send-notification") {
+    const p = params as SendNotificationParams;
+    const targets = await notificationRecipients(p?.userIds ?? []);
+    if (targets.length === 0) return 0;
+    const type = normalizeNotificationType(p.type);
+    const title = String(p.title || "").trim();
+    if (!title) throw new Error("send-notification requires a title");
+    await Promise.all(
+      targets.map((user_id) =>
+        source
+          .createNotificationWordPress({
+            user_id,
+            type,
+            title,
+            message: String(p.message || ""),
+            action_url: p.actionUrl ?? null,
+          })
+          .catch(() => undefined)
+      )
+    );
+    return targets.length;
+  }
+
+  if (name === "list-notifications") {
+    const rows = (await source.fetchNotificationsWordPress()) as NotificationRow[];
+    const wanted = params?.type ? normalizeNotificationType(params.type) : null;
+    return rows.filter(
+      (r) => (!wanted || r.type === wanted) && (!params?.unreadOnly || !r.is_read)
+    );
+  }
+
+  if (name === "mark-notification-read") {
+    const id = String(params?.id || "");
+    if (!id) throw new Error("mark-notification-read requires an id");
+    return source.markNotificationReadWordPress(id);
+  }
+
+  return source.markAllNotificationsReadWordPress();
+}
