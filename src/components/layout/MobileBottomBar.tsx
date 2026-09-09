@@ -353,6 +353,18 @@ export function MobileBottomBar() {
                     </div>
                   </div>
                 )}
+
+                {/* Account & Settings */}
+                {visible(accountItems).length > 0 && (
+                  <div>
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 px-1">
+                      {isChinese ? "账户与设置" : "Account & Settings"}
+                    </h3>
+                    <div className="grid grid-cols-4 gap-2">
+                      {visible(accountItems).map(renderToolButton)}
+                    </div>
+                  </div>
+                )}
               </div>
             </DialogPrimitive.Content>
           </DialogPrimitive.Portal>
