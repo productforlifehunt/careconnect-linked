@@ -45,6 +45,41 @@ export function AICompanionChat({
   const abortRef = useRef<{ abort: () => void } | null>(null);
   const activeRequestId = useRef<string | undefined>();
 
+  // ─── Read aloud ───
+  const [readAloud, setReadAloud] = useState(() => {
+    try { return localStorage.getItem(READ_ALOUD_KEY) === "1"; } catch { return false; }
+  });
+  const [speakingIndex, setSpeakingIndex] = useState<number | null>(null);
+  const voiceRef = useRef<StreamControls | null>(null);
+
+  const stopSpeaking = () => {
+    voiceRef.current?.stop();
+    voiceRef.current = null;
+    setSpeakingIndex(null);
+  };
+
+  const speak = (text: string, index: number) => {
+    stopSpeaking();
+    const clean = text.replace(/^✅\s*/, "").trim();
+    if (!clean) return;
+    setSpeakingIndex(index);
+    voiceRef.current = speakTextStreaming(clean, READ_ALOUD_VOICE, {
+      engine: READ_ALOUD_ENGINE,
+      onAllAudioEnd: () => setSpeakingIndex(null),
+      onError: (e) => { console.error("Read aloud failed:", e); setSpeakingIndex(null); },
+    });
+  };
+
+  const toggleReadAloud = (on: boolean) => {
+    setReadAloud(on);
+    try { localStorage.setItem(READ_ALOUD_KEY, on ? "1" : "0"); } catch { /* ignore */ }
+    if (!on) stopSpeaking();
+  };
+
+  // Stop any playback as soon as the assistant is closed.
+  useEffect(() => { if (!active) stopSpeaking(); }, [active]);
+  useEffect(() => () => stopSpeaking(), []);
+
   /**
    * On-demand context: the static snippets that match this question plus only
    * the permitted dynamic facts it needs. See src/lib/ai-dynamic-knowledge.ts.
