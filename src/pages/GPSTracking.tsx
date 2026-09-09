@@ -941,7 +941,160 @@ export default function GPSTracking() {
 
 
 
+      {locatorMode ? (
+        locatorPlaces ? (
+          /* Places — its own screen: the list of saved areas, no map beside it. */
+          <div className="px-4 py-4 space-y-3">
+            <h1 className="text-xl font-bold tracking-tight">{Z("地点", "Places")}</h1>
+            <p className="text-xs text-muted-foreground">
+              {Z("家人到达或离开这些地点时，你会收到提醒。", "You get a push when family arrive at or leave these places.")}
+            </p>
+            {zonesPanel}
+          </div>
+        ) : (
+          /* Map — full screen, people sheet on top of it. */
+          <div className="relative">
+            <div
+              ref={(node) => { mapRef.current = node; setMapNode(node); }}
+              className="h-[calc(100dvh-11.5rem)] w-full md:h-[calc(100dvh-9rem)]"
+            />
+
+            {/* Floating controls */}
+            <div className="pointer-events-none absolute right-3 top-3 z-[500] flex flex-col gap-2">
+              <Button
+                variant="secondary"
+                size="icon"
+                className="pointer-events-auto shadow-lg"
+                onClick={handleRefresh}
+                aria-label={t("common.refresh")}
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="secondary"
+                size="icon"
+                className="pointer-events-auto shadow-lg"
+                onClick={async () => {
+                  const pos = await getCurrentPosition({ timeout: 8000 }).catch(() => null);
+                  if (pos && leafletMap.current) leafletMap.current.setView([pos.latitude, pos.longitude], 15);
+                }}
+                aria-label={Z("回到我的位置", "Centre on me")}
+              >
+                <Crosshair className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="destructive"
+                size="icon"
+                className="pointer-events-auto shadow-lg"
+                onClick={() => setSosDialogOpen(true)}
+                aria-label={t("gps.sos")}
+              >
+                <AlertTriangle className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* People sheet — every fact we already store per person */}
+            <div className="absolute inset-x-0 bottom-0 z-[500] max-h-[52%] overflow-y-auto rounded-t-2xl border-t bg-background/95 backdrop-blur px-3 pb-3 pt-2 shadow-[0_-8px_24px_rgba(0,0,0,0.12)]">
+              <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-muted-foreground/30" />
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <p className="text-sm font-semibold">{t("gps.trackedPeople")}</p>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="locator-share" className="text-xs text-muted-foreground">
+                    {t("gps.shareMyLocation")}
+                  </Label>
+                  <Switch
+                    id="locator-share"
+                    aria-label={t("gps.shareMyLocation")}
+                    checked={shareMyLocation}
+                    onCheckedChange={handleToggleShare}
+                    disabled={updatingShare}
+                  />
+                </div>
+              </div>
+
+              {isLoading ? (
+                <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+              ) : people.length === 0 ? (
+                <p className="py-6 text-center text-sm text-muted-foreground">{t("gps.noLocationShares")}</p>
+              ) : (
+                <ul className="space-y-1.5">
+                  {people.map((p: any) => {
+                    const active = selectedPerson?.id === p.id;
+                    const trailPoints = trailData[p.userId]?.length || 0;
+                    return (
+                      <li key={p.id}>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPerson(p)}
+                          aria-current={active ? "true" : undefined}
+                          className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2 text-left transition-colors ${
+                            active ? "border-primary/40 bg-accent" : "border-transparent bg-muted/50 hover:bg-accent/60"
+                          }`}
+                        >
+                          <div className="relative shrink-0">
+                            {p.avatar_url ? (
+                              <img src={p.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
+                            ) : (
+                              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                                {p.name.charAt(0)}
+                              </div>
+                            )}
+                            <span className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background ${p.isSharing ? "bg-success" : "bg-muted-foreground/40"}`} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <p className="truncate text-sm font-medium">{p.name}</p>
+                              {!p.isSharing && (
+                                <Badge variant="secondary" className="text-[10px]">{t("gps.notSharing")}</Badge>
+                              )}
+                            </div>
+                            <p className="truncate text-xs text-muted-foreground">{p.lastLocation}</p>
+                            <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
+                              <span className="inline-flex items-center gap-1">
+                                <Clock className="h-3 w-3" />{lastSeenLabel(p.lastSeenMs)}
+                              </span>
+                              {p.battery != null && (
+                                <span className={`inline-flex items-center gap-1 ${p.battery <= 15 && !p.isCharging ? "text-destructive" : ""}`}>
+                                  {p.isCharging ? <Zap className="h-3 w-3" /> : <BatteryMedium className="h-3 w-3" />}
+                                  {p.battery}%
+                                </span>
+                              )}
+                              {movingLabel(p.movingType) && (
+                                <span className="inline-flex items-center gap-1">
+                                  <Navigation className="h-3 w-3" />{movingLabel(p.movingType)}
+                                </span>
+                              )}
+                              {trailPoints > 1 && (
+                                <span className="inline-flex items-center gap-1">
+                                  <Route className="h-3 w-3" />{Z(`${trailPoints} 个轨迹点`, `${trailPoints} trail points`)}
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                          {p.coordinates?.lat ? (
+                            <span
+                              role="link"
+                              tabIndex={0}
+                              onClick={(e) => { e.stopPropagation(); window.open(`https://www.google.com/maps/dir/?api=1&destination=${p.coordinates.lat},${p.coordinates.lng}`, "_blank", "noopener"); }}
+                              onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); window.open(`https://www.google.com/maps/dir/?api=1&destination=${p.coordinates.lat},${p.coordinates.lng}`, "_blank", "noopener"); } }}
+                              aria-label={`${t("common.directions")} — ${p.name}`}
+                              className="shrink-0 rounded-md p-2 text-muted-foreground hover:bg-background hover:text-foreground"
+                            >
+                              <Navigation className="h-4 w-4" />
+                            </span>
+                          ) : null}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </div>
+        )
+      ) : (
       <div className="grid lg:grid-cols-3 gap-6">
+
         {/* Map + Tabs */}
         <div className="lg:col-span-2">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
