@@ -58,8 +58,8 @@ export default function SafetyApp() {
           <Route path="/dashboard" element={<Navigate to="/map" replace />} />
           <Route path="/find" element={<Navigate to="/map" replace />} />
           <Route path="/care-circle" element={<Navigate to="/circle" replace />} />
-          <Route path="/notifications" element={<Navigate to="/alerts" replace />} />
-          <Route path="/messages" element={<Navigate to="/chat" replace />} />
+          <Route path="/notifications" element={<Navigate to="/inbox?tab=notifications" replace />} />
+          <Route path="/messages" element={<Navigate to="/inbox?tab=messages" replace />} />
           <Route path="/ai-companion" element={<Navigate to="/assistant" replace />} />
           <Route path="/profile" element={<Navigate to="/me" replace />} />
           <Route path="/drives" element={<Navigate to="/map" replace />} />
