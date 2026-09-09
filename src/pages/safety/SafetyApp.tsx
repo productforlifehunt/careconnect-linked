@@ -8,8 +8,7 @@ import JoinGroup from "@/pages/JoinGroup";
 import NotFound from "@/pages/NotFound";
 import GPSTracking from "@/pages/GPSTracking";
 import CareCircle from "@/pages/CareCircle";
-import Messages from "@/pages/Messages";
-import Notifications from "@/pages/Notifications";
+import Inbox from "@/pages/Inbox";
 import Profile from "@/pages/Profile";
 import AICompanion from "@/pages/AICompanion";
 import { SafetyShell } from "./SafetyShell";
@@ -46,11 +45,12 @@ export default function SafetyApp() {
           {/* Same GPSTracking file — path selects the tab (map / zones / alerts). */}
           <Route path="/map" element={<RequireAuth><GPSTracking /></RequireAuth>} />
           <Route path="/places" element={<RequireAuth><GPSTracking /></RequireAuth>} />
-          <Route path="/alerts" element={<RequireAuth><GPSTracking /></RequireAuth>} />
           <Route path="/circle" element={<RequireAuth><CareCircle /></RequireAuth>} />
-          <Route path="/chat" element={<RequireAuth><Messages /></RequireAuth>} />
           <Route path="/assistant" element={<RequireAuth><AICompanion /></RequireAuth>} />
-          <Route path="/inbox" element={<RequireAuth><Notifications /></RequireAuth>} />
+          {/* One shared inbox for messages + alerts — same file the care app uses. */}
+          <Route path="/inbox" element={<RequireAuth><Inbox /></RequireAuth>} />
+          <Route path="/alerts" element={<Navigate to="/inbox?tab=notifications" replace />} />
+          <Route path="/chat" element={<Navigate to="/inbox?tab=messages" replace />} />
           <Route path="/me" element={<RequireAuth><Profile /></RequireAuth>} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/join/:code" element={<JoinGroup />} />
