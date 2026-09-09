@@ -47,7 +47,7 @@ import {
   fetchHelpTasksWordPress, fetchMyHelpTasksWordPress, fetchTaskApplicantsWordPress,
   applyToSharedTaskWordPress, fetchMyTaskApplicationsWordPress, decideTaskApplicantWordPress,
   shareTaskWordPress, unshareTaskWordPress,
-} from "@/features/care-tasks/tasks";
+} from "@/features/care-tasks/tasks-needing-help";
 import {
   fetchPostsWordPress, fetchPostByIdWordPress, createPostWordPress, updatePostWordPress, deletePostWordPress,
 } from "@/features/posts/source.wordpress";

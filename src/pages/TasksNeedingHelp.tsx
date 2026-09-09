@@ -14,7 +14,7 @@ import {
   Check, X, Clock, Tag, Coins,
 } from "lucide-react";
 import {
-  useTasksNeedingHelp, useMyTasksNeedingHelp, useMyTaskApplications, useTaskApplicants,
+  useHelpTasks, useMyHelpTasks, useMyTaskApplications, useTaskApplicants,
   useApplyToSharedTask, useDecideTaskApplicant, useUnshareTask, useStartConversation,
 } from "@/hooks/use-care-data";
 import { useAuth } from "@/contexts/AuthContext";
@@ -38,11 +38,11 @@ export default function TasksNeedingHelp() {
   const [applyOpen, setApplyOpen] = useState<string | null>(null);
   const [message, setMessage] = useState("");
 
-  const { data: tasks, isLoading } = useTasksNeedingHelp(
+  const { data: tasks, isLoading } = useHelpTasks(
     payFilter === "all" ? undefined : { paid: payFilter === "paid" },
   );
   const { data: myApps } = useMyTaskApplications();
-  const { data: myShared, isLoading: mySharedLoading } = useMyTasksNeedingHelp();
+  const { data: myShared, isLoading: mySharedLoading } = useMyHelpTasks();
   const applyToTask = useApplyToSharedTask();
 
   const handleApply = (taskId: string) => {
