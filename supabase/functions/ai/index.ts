@@ -662,7 +662,7 @@ async function handleVoice(req: Request): Promise<Response> {
       ? requestedFormat
       : "mp3";
 
-    const selectedEngine =
+    let selectedEngine =
       engine === "openai" ? "openai"
       : engine === "openai-full" ? "openai-full"
       : engine === "qwen-tts" ? "qwen-tts"
@@ -672,6 +672,12 @@ async function handleVoice(req: Request): Promise<Response> {
       // No engine requested (or SiliconFlow key absent) → built-in Lovable AI voice
       : Deno.env.get("SILICONFLOW_API_KEY") ? "siliconflow"
       : "lovable";
+
+    // gpt-audio-mini / gpt-audio run through OpenRouter. Without that key the
+    // read-aloud button must still speak, so fall back to the built-in voice.
+    if ((selectedEngine === "openai" || selectedEngine === "openai-full") && !Deno.env.get("OPENROUTER_API_KEY")) {
+      selectedEngine = "lovable";
+    }
 
     let response: Response;
     let providerLabel: string;
