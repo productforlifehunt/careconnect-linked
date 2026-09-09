@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useLocation as useRouterLocation } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSite } from "@/contexts/SiteContext";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Navigation, Clock, Shield, AlertTriangle, RefreshCw, Loader2, Radio, Route, Bell, Hexagon, Plus, Trash2, Pencil, Crosshair } from "lucide-react";
+import { MapPin, Navigation, Clock, Shield, AlertTriangle, RefreshCw, Loader2, Radio, Route, Bell, Hexagon, Plus, Trash2, Pencil, Crosshair, Zap, BatteryMedium } from "lucide-react";
 import { useLocationShares, useCareGroups, useCareGroupMembers, useUserCaredOnes } from "@/hooks/use-care-data";
 import {
   shareMyLocationWordPress, disableMyLocationSharingWordPress,
@@ -52,6 +53,7 @@ export default function GPSTracking() {
   const isCN = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (isCN ? cn : en);
   const { toast } = useToast();
+  const routerLocation = useRouterLocation();
   const site = useSite();
   const { data: locationShares, isLoading, refetch } = useLocationShares(POLL_INTERVAL);
   const [selectedPerson, setSelectedPerson] = useState<any>(null);
@@ -206,6 +208,9 @@ export default function GPSTracking() {
     const lat = parseFloat(ls.latitude) || 0;
     const lng = parseFloat(ls.longitude) || 0;
     const key = String(ls.user_id ?? "").replace(/^wp-/, "");
+    const stampMs = ls.updated_at
+      ? (typeof ls.updated_at === "number" ? ls.updated_at * 1000 : new Date(ls.updated_at).getTime())
+      : 0;
     return {
       id: ls.id,
       userId: ls.user_id,
@@ -216,6 +221,11 @@ export default function GPSTracking() {
       lastUpdated: ls.updated_at
         ? formatTime(typeof ls.updated_at === "number" ? ls.updated_at * 1000 : ls.updated_at, "en", { hour: "numeric", minute: "2-digit" })
         : "",
+      // Phone + movement facts already stored on every location snapshot.
+      lastSeenMs: Number.isFinite(stampMs) ? stampMs : 0,
+      battery: ls.battery_level != null ? Math.round(Number(ls.battery_level)) : null,
+      isCharging: ls.phone_is_charging === "Yes" || ls.phone_is_charging === true,
+      movingType: ls.moving_type || null,
       status: "active" as const,
       isSharing: ls.sharing_status !== "off" && ls.is_sharing_enabled !== false,
     };
@@ -646,10 +656,113 @@ export default function GPSTracking() {
 
   const unreadAlerts = alerts.filter(a => !a.is_read);
 
+  // ─── Family-locator layout (NotchSafety) ────────────────────
+  // Same data, same handlers, same file: only the arrangement changes to the
+  // full-screen map + people sheet people expect from a family locator, and
+  // Places becomes its own screen instead of a tab beside the map.
+  const locatorMode = site.id === "notchsafety";
+  const locatorPlaces = locatorMode && routerLocation.pathname.startsWith("/places");
+
+  const lastSeenLabel = (ms: number) => {
+    if (!ms) return Z("暂无位置", "No location yet");
+    const mins = Math.max(0, Math.round((Date.now() - ms) / 60000));
+    if (mins < 1) return Z("刚刚", "Just now");
+    if (mins < 60) return Z(`${mins} 分钟前`, `${mins} min ago`);
+    const hrs = Math.round(mins / 60);
+    if (hrs < 24) return Z(`${hrs} 小时前`, `${hrs} h ago`);
+    return Z(`${Math.round(hrs / 24)} 天前`, `${Math.round(hrs / 24)} d ago`);
+  };
+  const movingLabel = (word?: string | null) => {
+    if (!word || word === "unknown") return "";
+    const cn: Record<string, string> = { stationary: "静止", walking: "步行", running: "跑步", cycling: "骑行", automotive: "乘车" };
+    return Z(cn[word] || "", word);
+  };
+
+  const zonesPanel = (
+    <Card className="border-transparent card-elevated">
+      <CardContent className="py-4 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs text-muted-foreground">
+            {Z("在此创建和管理安全区域与危险区域。", "Create and manage safe and danger zones here.")}
+          </p>
+          <Button size="sm" onClick={openNewZone} className="shrink-0">
+            <Plus className="h-4 w-4 mr-1" />
+            {Z("新建区域", "New zone")}
+          </Button>
+        </div>
+        {caredOneOptions.length > 0 && (
+          <div className="flex items-center gap-2">
+            <Label className="text-xs text-muted-foreground shrink-0">
+              {Z("区域属于", "Areas for")}
+            </Label>
+            <Select value={effectiveSubjectId} onValueChange={setSubjectId}>
+              <SelectTrigger className="h-9 max-w-[240px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={selfKey}>{Z("我自己", "Myself")}</SelectItem>
+                {caredOneOptions.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        {zones.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-8">{t("gps.noZones", "No areas set up yet")}</p>
+        ) : (
+          zones.map((zone: any) => {
+            const isDanger = isDangerZone(String(zone.zone_type));
+            const isPolygon = String(zone.shape_type).toLowerCase() === "polygon";
+            return (
+              <div key={zone.id} className="p-3 rounded-lg bg-muted/50 border border-border">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className={`w-3 h-3 rounded-full shrink-0 ${isDanger ? "bg-destructive" : "bg-success"}`} />
+                    <p className="text-sm font-medium text-foreground truncate">{zoneLabel(String(zone.zone_type), zone.zone_name)}</p>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Switch
+                      checked={!!zone.is_active}
+                      onCheckedChange={(v) => handleToggleZoneActive(zone, v)}
+                      aria-label={Z("启用区域", "Zone active")}
+                    />
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditZone(zone)} aria-label={Z("编辑", "Edit")}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive"
+                      onClick={() => handleDeleteZone(zone)}
+                      disabled={zoneDeletingId === String(zone.id)}
+                      aria-label={Z("删除", "Delete")}
+                    >
+                      {zoneDeletingId === String(zone.id)
+                        ? <Loader2 className="h-4 w-4 animate-spin" />
+                        : <Trash2 className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {isPolygon ? `${Z("手绘范围", "Drawn area")} (${zone.polygon_points?.length || 0} ${Z("个点", "points")})` : `${Z("半径", "Radius")}: ${zone.radius_meters || 100}m`}
+                  {" · "}{isDanger ? Z("⚠️ 危险", "⚠️ Danger") : zoneLabel(String(zone.zone_type), zone.zone_name)}
+                  {" · "}{zone.is_active ? t("common.active", "Active") : t("common.inactive", "Inactive")}
+                  {" · "}{zone.notify_on_enter ? Z("到达提醒", "Arrival alerts") : Z("不提醒到达", "No arrival alerts")}
+                  {" · "}{zone.notify_on_exit ? Z("离开提醒", "Leaving alerts") : Z("不提醒离开", "No leaving alerts")}
+                </p>
+              </div>
+            );
+          })
+        )}
+      </CardContent>
+    </Card>
+  );
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-5">
+    <div className={locatorMode ? "" : "max-w-6xl mx-auto px-4 py-5"}>
       {/* Header */}
+      {!locatorMode && (
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
         <div className="min-w-0">
           <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">{t("gps.gpsTracking")}</h1>
@@ -670,6 +783,8 @@ export default function GPSTracking() {
           </Button>
         </div>
       </div>
+      )}
+
 
       {/* SOS Dialog */}
       <Dialog open={sosDialogOpen} onOpenChange={setSosDialogOpen}>
@@ -828,7 +943,160 @@ export default function GPSTracking() {
 
 
 
+      {locatorMode ? (
+        locatorPlaces ? (
+          /* Places — its own screen: the list of saved areas, no map beside it. */
+          <div className="px-4 py-4 space-y-3">
+            <h1 className="text-xl font-bold tracking-tight">{Z("地点", "Places")}</h1>
+            <p className="text-xs text-muted-foreground">
+              {Z("家人到达或离开这些地点时，你会收到提醒。", "You get a push when family arrive at or leave these places.")}
+            </p>
+            {zonesPanel}
+          </div>
+        ) : (
+          /* Map — full screen, people sheet on top of it. */
+          <div className="relative">
+            <div
+              ref={(node) => { mapRef.current = node; setMapNode(node); }}
+              className="h-[calc(100dvh-11.5rem)] w-full md:h-[calc(100dvh-9rem)]"
+            />
+
+            {/* Floating controls */}
+            <div className="pointer-events-none absolute right-3 top-3 z-[500] flex flex-col gap-2">
+              <Button
+                variant="secondary"
+                size="icon"
+                className="pointer-events-auto shadow-lg"
+                onClick={handleRefresh}
+                aria-label={t("common.refresh")}
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="secondary"
+                size="icon"
+                className="pointer-events-auto shadow-lg"
+                onClick={async () => {
+                  const pos = await getCurrentPosition({ timeout: 8000 }).catch(() => null);
+                  if (pos && leafletMap.current) leafletMap.current.setView([pos.latitude, pos.longitude], 15);
+                }}
+                aria-label={Z("回到我的位置", "Centre on me")}
+              >
+                <Crosshair className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="destructive"
+                size="icon"
+                className="pointer-events-auto shadow-lg"
+                onClick={() => setSosDialogOpen(true)}
+                aria-label={t("gps.sos")}
+              >
+                <AlertTriangle className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* People sheet — every fact we already store per person */}
+            <div className="absolute inset-x-0 bottom-0 z-[500] max-h-[52%] overflow-y-auto rounded-t-2xl border-t bg-background/95 backdrop-blur px-3 pb-3 pt-2 shadow-[0_-8px_24px_rgba(0,0,0,0.12)]">
+              <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-muted-foreground/30" />
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <p className="text-sm font-semibold">{t("gps.trackedPeople")}</p>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="locator-share" className="text-xs text-muted-foreground">
+                    {t("gps.shareMyLocation")}
+                  </Label>
+                  <Switch
+                    id="locator-share"
+                    aria-label={t("gps.shareMyLocation")}
+                    checked={shareMyLocation}
+                    onCheckedChange={handleToggleShare}
+                    disabled={updatingShare}
+                  />
+                </div>
+              </div>
+
+              {isLoading ? (
+                <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+              ) : people.length === 0 ? (
+                <p className="py-6 text-center text-sm text-muted-foreground">{t("gps.noLocationShares")}</p>
+              ) : (
+                <ul className="space-y-1.5">
+                  {people.map((p: any) => {
+                    const active = selectedPerson?.id === p.id;
+                    const trailPoints = trailData[p.userId]?.length || 0;
+                    return (
+                      <li key={p.id}>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPerson(p)}
+                          aria-current={active ? "true" : undefined}
+                          className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2 text-left transition-colors ${
+                            active ? "border-primary/40 bg-accent" : "border-transparent bg-muted/50 hover:bg-accent/60"
+                          }`}
+                        >
+                          <div className="relative shrink-0">
+                            {p.avatar_url ? (
+                              <img src={p.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
+                            ) : (
+                              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                                {p.name.charAt(0)}
+                              </div>
+                            )}
+                            <span className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background ${p.isSharing ? "bg-success" : "bg-muted-foreground/40"}`} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <p className="truncate text-sm font-medium">{p.name}</p>
+                              {!p.isSharing && (
+                                <Badge variant="secondary" className="text-[10px]">{t("gps.notSharing")}</Badge>
+                              )}
+                            </div>
+                            <p className="truncate text-xs text-muted-foreground">{p.lastLocation}</p>
+                            <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
+                              <span className="inline-flex items-center gap-1">
+                                <Clock className="h-3 w-3" />{lastSeenLabel(p.lastSeenMs)}
+                              </span>
+                              {p.battery != null && (
+                                <span className={`inline-flex items-center gap-1 ${p.battery <= 15 && !p.isCharging ? "text-destructive" : ""}`}>
+                                  {p.isCharging ? <Zap className="h-3 w-3" /> : <BatteryMedium className="h-3 w-3" />}
+                                  {p.battery}%
+                                </span>
+                              )}
+                              {movingLabel(p.movingType) && (
+                                <span className="inline-flex items-center gap-1">
+                                  <Navigation className="h-3 w-3" />{movingLabel(p.movingType)}
+                                </span>
+                              )}
+                              {trailPoints > 1 && (
+                                <span className="inline-flex items-center gap-1">
+                                  <Route className="h-3 w-3" />{Z(`${trailPoints} 个轨迹点`, `${trailPoints} trail points`)}
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                          {p.coordinates?.lat ? (
+                            <span
+                              role="link"
+                              tabIndex={0}
+                              onClick={(e) => { e.stopPropagation(); window.open(`https://www.google.com/maps/dir/?api=1&destination=${p.coordinates.lat},${p.coordinates.lng}`, "_blank", "noopener"); }}
+                              onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); window.open(`https://www.google.com/maps/dir/?api=1&destination=${p.coordinates.lat},${p.coordinates.lng}`, "_blank", "noopener"); } }}
+                              aria-label={`${t("common.directions")} — ${p.name}`}
+                              className="shrink-0 rounded-md p-2 text-muted-foreground hover:bg-background hover:text-foreground"
+                            >
+                              <Navigation className="h-4 w-4" />
+                            </span>
+                          ) : null}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </div>
+        )
+      ) : (
       <div className="grid lg:grid-cols-3 gap-6">
+
         {/* Map + Tabs */}
         <div className="lg:col-span-2">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -892,82 +1160,7 @@ export default function GPSTracking() {
             </TabsContent>
 
             <TabsContent value="zones" className="mt-0">
-              <Card className="border-transparent card-elevated">
-                <CardContent className="py-4 space-y-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-xs text-muted-foreground">
-                      {Z("在此创建和管理安全区域与危险区域。", "Create and manage safe and danger zones here.")}
-                    </p>
-                    <Button size="sm" onClick={openNewZone} className="shrink-0">
-                      <Plus className="h-4 w-4 mr-1" />
-                      {Z("新建区域", "New zone")}
-                    </Button>
-                  </div>
-                  {caredOneOptions.length > 0 && (
-                    <div className="flex items-center gap-2">
-                      <Label className="text-xs text-muted-foreground shrink-0">
-                        {Z("区域属于", "Areas for")}
-                      </Label>
-                      <Select value={effectiveSubjectId} onValueChange={setSubjectId}>
-                        <SelectTrigger className="h-9 max-w-[240px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value={selfKey}>{Z("我自己", "Myself")}</SelectItem>
-                          {caredOneOptions.map((c) => (
-                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                  {zones.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-8">{t("gps.noZones", "No areas set up yet")}</p>
-                  ) : (
-                    zones.map((zone: any) => {
-                      const isDanger = isDangerZone(String(zone.zone_type));
-                      const isPolygon = String(zone.shape_type).toLowerCase() === "polygon";
-                      return (
-                        <div key={zone.id} className="p-3 rounded-lg bg-muted/50 border border-border">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <div className={`w-3 h-3 rounded-full shrink-0 ${isDanger ? "bg-destructive" : "bg-success"}`} />
-                              <p className="text-sm font-medium text-foreground truncate">{zoneLabel(String(zone.zone_type), zone.zone_name)}</p>
-                            </div>
-                            <div className="flex items-center gap-1 shrink-0">
-                              <Switch
-                                checked={!!zone.is_active}
-                                onCheckedChange={(v) => handleToggleZoneActive(zone, v)}
-                                aria-label={Z("启用区域", "Zone active")}
-                              />
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditZone(zone)} aria-label={Z("编辑", "Edit")}>
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-destructive"
-                                onClick={() => handleDeleteZone(zone)}
-                                disabled={zoneDeletingId === String(zone.id)}
-                                aria-label={Z("删除", "Delete")}
-                              >
-                                {zoneDeletingId === String(zone.id)
-                                  ? <Loader2 className="h-4 w-4 animate-spin" />
-                                  : <Trash2 className="h-4 w-4" />}
-                              </Button>
-                            </div>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {isPolygon ? `Polygon (${zone.polygon_points?.length || 0} points)` : `${Z("半径", "Radius")}: ${zone.radius_meters || 100}m`}
-                            {" · "}{isDanger ? Z("⚠️ 危险", "⚠️ Danger") : zoneLabel(String(zone.zone_type), zone.zone_name)}
-                            {" · "}{zone.is_active ? t("common.active", "Active") : t("common.inactive", "Inactive")}
-                          </p>
-                        </div>
-                      );
-                    })
-                  )}
-                </CardContent>
-              </Card>
+              {zonesPanel}
             </TabsContent>
 
           </Tabs>
@@ -1077,6 +1270,7 @@ export default function GPSTracking() {
           </Card>
         </div>
       </div>
+      )}
     </div>
   );
 }
