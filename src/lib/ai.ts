@@ -2,8 +2,10 @@
  * SINGLE FRONTEND AI MODULE — every AI call from the app goes through this file.
  * Part 1: invokeAI / conversation memory (non-streaming; no modes anywhere).
  * Part 2: streaming voice pipeline (SSE text + sentence-level TTS playback).
- * Backend: the single `ai` edge function (/ai/chat, /ai/stream, /ai/voice, /ai/note).
- * System prompts: supabase/functions/_shared/ai-prompts.ts (single registry).
+ * Backend: the single `ai` edge function, routed by task only:
+ *   ?task=chat-chat (text→text, SSE; stream:false for one-shot JSON)
+ *   ?task=chat-voice (text→audio)
+ * Persona: supabase/functions/_shared/ai-prompts.ts (single registry).
  */
 import { wordpressCCTFetch, wordpressFetch, isNetworkAbort } from "@/features/shared/wordpress-client";
 import { T, R } from "@/integrations/wp-schema";
@@ -117,8 +119,8 @@ async function touchConversation(conversationId: string) {
 
 /** Call the single `ai` edge function (Lovable AI Gateway) */
 async function callAI(messages: AIChatMessage[], contextPrompt?: string, language?: string): Promise<string> {
-  const { data, error } = await supabase.functions.invoke("ai/chat", {
-    body: { messages, site: detectSite(), ...(contextPrompt ? { contextPrompt } : {}), ...(language ? { language } : {}) },
+  const { data, error } = await supabase.functions.invoke("ai?task=chat-chat", {
+    body: { messages, stream: false, site: detectSite(), ...(contextPrompt ? { contextPrompt } : {}), ...(language ? { language } : {}) },
   });
   if (error) {
     console.error("AI edge function error:", error);
@@ -178,7 +180,7 @@ export function parseAIJson<T = any>(reply: string): T | null {
 
 
 // ═════════ STREAMING VOICE PIPELINE ═════════
-const STREAM_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai/stream`;
+const STREAM_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai?task=chat-chat`;
 
 export interface StreamHandlers {
   onTextDelta: (delta: string, fullText: string) => void;
@@ -368,7 +370,7 @@ async function fetchTTSBlobURL(
   const trimmed = text.trim();
   if (!trimmed) return null;
   try {
-    const { data, error } = await supabase.functions.invoke("ai/voice", {
+    const { data, error } = await supabase.functions.invoke("ai?task=chat-voice", {
       body: { text: trimmed, voice, format: "mp3", engine },
     });
     if (error || data?.error || !data?.audio) {
