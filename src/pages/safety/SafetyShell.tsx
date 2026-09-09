@@ -38,7 +38,8 @@ export function SafetyShell({ children }: { children: ReactNode }) {
   const tabs = [
     { url: "/map", label: L("地图", "Map"), icon: MapPin },
     { url: "/places", label: L("地点", "Places"), icon: Home },
-    { url: "/chat", label: L("聊天", "Chat"), icon: MessageCircle },
+    { url: "/inbox", label: L("收件箱", "Inbox"), icon: MessageCircle },
+
     
     { url: "/circle", label: L("圈子", "Circle"), icon: Users },
     { url: "/me", label: L("我的", "Me"), icon: UserIcon },
@@ -101,7 +102,7 @@ export function SafetyShell({ children }: { children: ReactNode }) {
                 variant="ghost"
                 size="icon"
                 className="relative"
-                onClick={() => navigate("/alerts")}
+                onClick={() => navigate("/inbox?tab=notifications")}
                 aria-label={L("提醒", "Alerts")}
               >
                 <Bell className="h-5 w-5" />
