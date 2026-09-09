@@ -120,7 +120,7 @@ export function MobileBottomBar() {
   const findWorkItems: ToolItem[] = [
     { id: "tasks", title: isChinese ? "需要帮手的任务" : "Tasks Needing Help", url: "/tasks", icon: HeartHandshake },
     { id: "work-become", title: isChinese ? "成为护理者" : "Become Caregiver", url: "/become-caregiver", icon: UserPlus },
-    { id: "work-provider", title: isChinese ? "护理者面板" : "Caregiver Dashboard", url: "/provider-dashboard", icon: LayoutDashboard },
+    { id: "work-provider", title: isChinese ? "护理者面板" : "Caregiver Dashboard", url: "/caregiver-setting", icon: LayoutDashboard },
   ];
 
   const dailyCareItems: ToolItem[] = isChallenged
