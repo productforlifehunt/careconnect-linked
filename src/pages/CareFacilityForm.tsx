@@ -165,13 +165,6 @@ export default function CareFacilityForm() {
         toast({ title: isZh ? "机构已更新" : "Facility updated" });
         navigate(`/facility/${updated.id}`);
       } else {
-        const created = await createFacility.mutateAsync({
-          ...(payload as any),
-          isOwner,
-          ownerRole: ownerRole.trim() || null,
-          ownershipClaim: ownershipClaim.trim() || null,
-          ownershipAttachmentUrls: ownershipAttachmentUrls.trim() || null,
-        });
         await createFacility.mutateAsync({
           ...(payload as any),
           isOwner,
