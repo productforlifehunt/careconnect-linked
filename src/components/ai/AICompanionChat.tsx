@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, SkipForward } from "lucide-react";
+import { Check, SkipForward, Volume2, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { useTranslation } from "react-i18next";
-import { parseAIJson, streamChatTextOnly, trimMessagesToCharLimit } from "@/lib/ai";
+import { parseAIJson, speakTextStreaming, streamChatTextOnly, trimMessagesToCharLimit, type StreamControls } from "@/lib/ai";
 import { aiGreeting } from "../../../supabase/functions/_shared/ai-prompts";
 import type { AssistantRequest } from "@/contexts/AIAssistantContext";
 import { resolveAssistantContext } from "@/lib/ai-dynamic-knowledge";
@@ -13,6 +15,12 @@ import { PromptInput, PromptInputBody, PromptInputFooter, PromptInputSubmit, Pro
 import { Shimmer } from "@/components/ai-elements/shimmer";
 
 type Msg = { role: "user" | "assistant"; content: string };
+
+/** Read-aloud preference: one switch, remembered between visits. */
+const READ_ALOUD_KEY = "ai-read-aloud";
+const READ_ALOUD_VOICE = "nova";
+/** gpt-audio-mini (via OpenRouter); falls back to the built-in voice server-side. */
+const READ_ALOUD_ENGINE = "openai" as const;
 
 /**
  * The one and only chat body. Every AI surface in the app (floating assistant,
