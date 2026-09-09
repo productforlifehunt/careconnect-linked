@@ -1,26 +1,37 @@
 /**
- * DYNAMIC context — the single place where AI features read the database and
- * where "who may see what" is decided.
+ * ---
+ * name: care-dynamic-knowledge
+ * description: >-
+ *   Dynamic skill for ChallengeD / CareCNC / NotchSafety. Use whenever a request
+ *   needs this user's own data or changes it: cared ones, medicines, check-ins,
+ *   care groups, tasks, bookings, locations and safe zones, notifications, and
+ *   every app setting. Owns the data model (CCT + column codes), the per-sub-app
+ *   write differences, view permissions, and the actual reads and writes.
+ * keywords: [cared one, medicine, 用药, check-in, 签到, care group, 群组, task, 任务,
+ *   booking, 预约, location, 定位, safe zone, 安全区, notification, 推送, setting, 设置]
+ * entrypoints: [resolveAssistantContext(), resolveBriefingFacts(), resolveWriteSkill(),
+ *   readSettingSkill(), runSettingSkill(), runNotificationSkill()]
+ * ---
+ *
+ * Anthropic Agent Skills layout, expressed as an executable TypeScript module so
+ * ordinary non-AI screens call the very same skills with zero token cost.
  *
  * Design rules (do not break these):
- *  1. The AI never queries anything. It only ever receives finished text.
+ *  1. The AI never queries anything. It only ever receives finished text, and it
+ *     may only write by naming a skill declared here.
  *  2. Permissions are ordinary code here, never instructions in a prompt.
- *  3. Resolvers run on demand (when a panel opens, or per question), and they
- *     return small AGGREGATED summaries, never raw rows — so cost stays flat
- *     whether a person has 20 records or 20,000.
+ *  3. Resolvers run on demand and return small AGGREGATED summaries, never raw
+ *     rows — so cost stays flat whether a person has 20 records or 20,000.
  *  4. Field codes stay inside the feature/service layer; only plain language
  *     leaves this file.
+ *  5. Sub-app is decided by currentAppScope() inside the skill; callers never
+ *     pass it. Edge callers must send the lowercase sub-app id explicitly.
  *
  * When the data model, business rules, or view permissions change, this file is
  * the only one that changes.
  */
 
 import { retrieveStaticKnowledge, type KnowledgeTopic } from "@/lib/ai-static-knowledge";
-import {
-  buildCheckInContext,
-  buildMedicineDoseContext,
-  buildMedicineDoseStarter,
-} from "../../supabase/functions/_shared/ai-prompts";
 type Lang = { isChinese: boolean };
 
 const Z = (isChinese: boolean, zh: string, en: string) => (isChinese ? zh : en);
@@ -32,6 +43,79 @@ function line(label: string, value: string | number | null | undefined): string 
 
 function join(parts: Array<string | undefined | null>): string {
   return parts.filter(Boolean).join("\n");
+}
+
+// ─────────────────── Facts → request text (context builders) ───────────────
+// These belong to this file, not to the persona registry: they format facts
+// that came out of the database above into the one-off context prompt.
+
+export type InfoSheetPromptContext = {
+  sheetName?: string;
+  caredOneName?: string;
+  description?: string;
+  situationDetails?: string;
+  contacts?: Array<{ name?: string; phone?: string; relationship?: string; note?: string }>;
+  locationText?: string | null;
+  knowledge?: string;
+};
+
+export function buildInfoSheetContext(ctx: InfoSheetPromptContext, isChinese: boolean): string {
+  const facts = [
+    ctx.sheetName ? `${isChinese ? "说明标题" : "Sheet"}: ${ctx.sheetName}` : "",
+    ctx.caredOneName ? `${isChinese ? "被护理者" : "Person"}: ${ctx.caredOneName}` : "",
+    ctx.description ? `${isChinese ? "基本情况" : "Background"}: ${ctx.description}` : "",
+    ctx.situationDetails ? `${isChinese ? "本次护理安排" : "This situation"}: ${ctx.situationDetails}` : "",
+    ctx.locationText ? `${isChinese ? "最近位置" : "Last known location"}: ${ctx.locationText}` : "",
+    ctx.contacts?.length ? `${isChinese ? "紧急联系人" : "Emergency contacts"}: ${ctx.contacts.map((c) => [c.name, c.relationship, c.phone, c.note].filter(Boolean).join(" / ")).join(" | ")}` : "",
+    ctx.knowledge || "",
+  ].filter(Boolean).join("\n");
+  const rule = isChinese
+    ? "以下是这张信息卡的全部内容。只根据这些内容回答，缺少的信息就说卡片上没有写，并建议联系上面列出的联系人。对方通常是自愿帮忙的邻居、朋友或亲戚，语气温和、客气、感谢。"
+    : "The facts below are everything on this information card. Answer only from them; when something is missing, say it is not written on the card and suggest contacting a listed contact. The reader is usually a neighbour, friend, or relative who volunteered to help, so be warm and appreciative.";
+  return `${rule}\n\n${isChinese ? "信息卡内容" : "Card facts"}:\n${facts || (isChinese ? "（暂无更多信息）" : "(no further details provided)")}`;
+}
+
+export function buildInfoSheetIntroduction(task: string, caredOneName: string | undefined, isChinese: boolean): string {
+  return isChinese
+    ? `${caredOneName || "这位家人"}的家人正在请人帮忙。用两三句温和、感谢的话说明这次帮忙内容：${task}。不要使用命令句，最后邀请对方随时提问。`
+    : `A family is asking a neighbour or friend for a favour. In two or three warm, appreciative, non-commanding sentences, explain this favour: ${task}. End by inviting questions.`;
+}
+
+export function buildCheckInContext(checkinName: string, instructions: string, caredOneName: string, isChinese: boolean): string {
+  return isChinese
+    ? `你正在为“${caredOneName}”进行“${checkinName}”每日探望签到。${instructions ? `附加说明：${instructions}。` : ""}\n逐个询问 3–5 个简短友好的问题，涵盖心情、睡眠、食欲、疼痛或不适、今日特别情况。每次不超过两句。信息足够后只返回 JSON：{"done":true,"summary":"用 2–3 句总结今天状态","status":"checked"}。明确跳过则返回：{"done":true,"summary":"用户选择跳过。","status":"skipped"}。`
+    : `Conduct the “${checkinName}” daily check-in for “${caredOneName}”. ${instructions ? `Additional instructions: ${instructions}.` : ""}\nAsk 3–5 short, friendly questions one at a time about mood, sleep, appetite, pain or discomfort, and anything notable today. Keep each turn under two sentences. Once enough is known, return only JSON: {"done":true,"summary":"2–3 sentence summary","status":"checked"}. If they clearly skip, return: {"done":true,"summary":"User chose to skip.","status":"skipped"}.`;
+}
+
+export function buildMedicineDoseContext(dose: string, isChinese: boolean): string {
+  return isChinese
+    ? `这是已从用药日程精确读取的本次提醒：${dose}。只确认本次是否服用或跳过，不更改剂量。确认后只返回 JSON：{"done":true,"summary":"一句说明","status":"taken"} 或 status 为 "skipped"。`
+    : `This reminder was read directly from the medicine schedule: ${dose}. Confirm only whether this dose was taken or skipped; never change dosage. When confirmed, return only JSON: {"done":true,"summary":"one sentence","status":"taken"} or status "skipped".`;
+}
+
+export function buildMedicineDoseStarter(dose: string, isChinese: boolean): string {
+  return isChinese
+    ? `现在提醒用户确认这次用药：${dose}。`
+    : `Prompt the user to confirm this scheduled dose now: ${dose}.`;
+}
+
+export function buildSafetyContext(circleFacts: string, isChinese: boolean): string {
+  const rule = isChinese
+    ? "以下是这个圈子的位置与安全区事实。回答位置相关问题时只用这些事实，不要编造；缺失就直接说明。"
+    : "The facts below are this circle's location and safe-zone data. For location questions use only these facts, never invent them, and say plainly when something is missing.";
+  return `${rule}\n\n${isChinese ? "圈子事实" : "Circle facts"}:\n${circleFacts}`;
+}
+
+export function buildCareGroupHelpRequest(question: string, groupName: string | undefined, isChinese: boolean): string {
+  return isChinese
+    ? `用户正在使用护理群组${groupName ? `“${groupName}”` : ""}。可以解释群组内的首页、日历、任务、被护理者位置、对话、公告、祝福、相册、群组被护理者、成员、邀请成员、子群组和群组设置怎么用；不确定就直接说明。${question ? `问题：${question}` : ""}`
+    : `The user is using their care group${groupName ? ` “${groupName}”` : ""}. You may explain how its Home, Calendar, Tasks, Cared One's Location, Messages, Announcements, Well Wishes, Gallery, Group Cared Ones, Members, Invite Members, Member Groups, and Group Setting features work, and say plainly when unsure.${question ? ` Question: ${question}` : ""}`;
+}
+
+export function buildBriefingRequest(data: string, isChinese: boolean): string {
+  return isChinese
+    ? `只根据数据写今日家庭护理简报，不编造安排。没有用药或签到安排时直接说明；有安排则说明时间和事项；任务仅在存在时提及。严格返回 JSON：{"alerts":[{"level":"high|medium|low","text":"..."}],"summary":"2-3 句中文，直接说今天几点做什么","suggestions":[{"title":"...","detail":"..."}]}\n数据：${data}`
+    : `Write today's family-care briefing only from the data; never invent a schedule. State plainly when no medicine or check-in is scheduled; otherwise give each time and item. Mention tasks only when present. Return strict JSON: {"alerts":[{"level":"high|medium|low","text":"..."}],"summary":"2–3 sentences saying what is due and when","suggestions":[{"title":"...","detail":"..."}]}\nData: ${data}`;
 }
 
 // ───────────────────────────── Permission layer ─────────────────────────────

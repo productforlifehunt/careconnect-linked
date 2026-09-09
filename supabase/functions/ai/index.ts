@@ -1,11 +1,19 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // SINGLE AI EDGE FUNCTION — every AI capability of the app lives in this file.
-//   POST /ai/chat    non-streaming chat / one-shot generation (no modes at all)
-//   POST /ai/stream  Server-Sent-Events token stream (voice assistant)
-//   POST /ai/note    note-writing assist (Notch)
-//   POST /ai/voice   text-to-speech (multi-provider)
-// System prompts are NOT here: they are the single registry in
-// ../_shared/ai-prompts.ts, imported by both this function and the frontend.
+//
+// Routing is by TASK ONLY: POST /ai?task=<modality-in>-<modality-out>
+//   chat-chat    text in  → text out (SSE stream; body.stream=false for one-shot)
+//   chat-voice   text in  → audio out (text-to-speech)
+//   chat-vision  text in  → image out            (not implemented yet → 501)
+//   vision-chat  image in → text out             (not implemented yet → 501)
+//   vision-vision / vision-voice / voice-chat / voice-vision  (→ 501)
+// Several tasks at once: ?task=chat-chat,chat-vision (also + or | as separator).
+//
+// This function decides input/output modality and calls the model. It stores NO
+// data model and NO business logic: those live in src/lib/ai-dynamic-knowledge.ts
+// (dynamic reads/writes + permissions) and src/lib/ai-static-knowledge.ts.
+// The persona registry is ../_shared/ai-prompts.ts.
+// Every text call uses openai/gpt-5-nano with reasoning_effort "none".
 // ─────────────────────────────────────────────────────────────────────────────
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import {
@@ -21,8 +29,9 @@ const corsHeaders = {
 };
 
 // ═══ 1. CHAT (non-streaming) ═══
-// Cheapest capable model first; only escalate if it fails to answer.
-const AI_MODELS = ["openai/gpt-5-nano", "google/gemini-3.1-flash-lite"] as const;
+// One model for the whole product: cheapest capable, zero reasoning tokens.
+const CHAT_MODEL = "openai/gpt-5-nano";
+const AI_MODELS = [CHAT_MODEL] as const;
 async function requestAIReply(apiKey: string, messages: Array<{ role: string; content: string }>) {
   for (const model of AI_MODELS) {
     try {
@@ -36,8 +45,7 @@ async function requestAIReply(apiKey: string, messages: Array<{ role: string; co
           model,
           messages,
           stream: false,
-          // Cheapest possible: no reasoning tokens.
-          ...(model.startsWith("openai/") ? { reasoning_effort: "none" } : {}),
+          reasoning_effort: "none",
         }),
       });
 
@@ -1035,13 +1043,55 @@ async function handleVoice(req: Request): Promise<Response> {
   }
 }
 
-// ─── Router: tolerant path matching, no exact-name whitelist ───
-// Anything that merely *looks* like a stream / voice route goes there;
-// everything else (including typos and unknown paths) is a normal chat call.
+// ─── Router: task-based only ───
+// ?task=<in>-<out>, several separated by , + or |. Unknown / missing task is
+// rejected, so a typo can never silently become a different modality.
+const TASKS = [
+  "chat-chat", "chat-vision", "chat-voice",
+  "vision-chat", "vision-vision", "vision-voice",
+  "voice-chat", "voice-vision",
+] as const;
+type AITask = typeof TASKS[number];
+
+function parseTasks(url: URL): AITask[] {
+  const raw = (url.searchParams.get("task") || "").toLowerCase();
+  return raw
+    .split(/[,+|\s]+/)
+    .map((t) => t.trim())
+    .filter((t): t is AITask => (TASKS as readonly string[]).includes(t));
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
-  const path = new URL(req.url).pathname.toLowerCase();
-  if (path.includes("stream")) return handleStream(req);
-  if (path.includes("voice") || path.includes("tts") || path.includes("speech")) return handleVoice(req);
-  return handleChat(req);
+
+  const url = new URL(req.url);
+  const tasks = parseTasks(url);
+
+  if (tasks.length === 0) {
+    return new Response(
+      JSON.stringify({ error: `task is required: ?task=${TASKS.join(" | ")}` }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
+
+  // Audio out wins when combined (e.g. ?task=chat-chat,chat-voice on a spoken reply).
+  if (tasks.includes("chat-voice")) return handleVoice(req);
+
+  if (tasks.includes("chat-chat")) {
+    // Streaming is the default; body.stream === false gives a single JSON reply.
+    const stream = url.searchParams.get("stream");
+    if (stream === "false") return handleChat(req);
+    const cloned = req.clone();
+    let wantsStream = true;
+    try {
+      const body = await cloned.json();
+      wantsStream = body?.stream !== false;
+    } catch { /* keep default */ }
+    return wantsStream ? handleStream(req) : handleChat(req);
+  }
+
+  return new Response(
+    JSON.stringify({ error: `task not implemented yet: ${tasks.join(",")}` }),
+    { status: 501, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+  );
 });

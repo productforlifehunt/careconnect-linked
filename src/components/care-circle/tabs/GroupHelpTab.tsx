@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { HelpCircle, Bot } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAIAssistant } from "@/contexts/AIAssistantContext";
-import { buildCareGroupHelpRequest } from "../../../../supabase/functions/_shared/ai-prompts";
+import { buildCareGroupHelpRequest } from "@/lib/ai-dynamic-knowledge";
 import { KNOWLEDGE } from "@/lib/ai-static-knowledge";
 
 interface GroupHelpTabProps {

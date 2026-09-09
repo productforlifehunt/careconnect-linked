@@ -14,7 +14,7 @@ import {
   Check, X, Clock, Tag, Coins,
 } from "lucide-react";
 import {
-  useSharedTasks, useMySharedTasks, useMyTaskApplications, useTaskApplicants,
+  useHelpTasks, useMyHelpTasks, useMyTaskApplications, useTaskApplicants,
   useApplyToSharedTask, useDecideTaskApplicant, useUnshareTask, useStartConversation,
 } from "@/hooks/use-care-data";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,7 +23,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { formatDate } from "@/lib/locale";
 
-export default function SharedTasks() {
+export default function TasksNeedingHelp() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { i18n } = useTranslation();
@@ -38,11 +38,11 @@ export default function SharedTasks() {
   const [applyOpen, setApplyOpen] = useState<string | null>(null);
   const [message, setMessage] = useState("");
 
-  const { data: tasks, isLoading } = useSharedTasks(
+  const { data: tasks, isLoading } = useHelpTasks(
     payFilter === "all" ? undefined : { paid: payFilter === "paid" },
   );
   const { data: myApps } = useMyTaskApplications();
-  const { data: myShared, isLoading: mySharedLoading } = useMySharedTasks();
+  const { data: myShared, isLoading: mySharedLoading } = useMyHelpTasks();
   const applyToTask = useApplyToSharedTask();
 
   const handleApply = (taskId: string) => {

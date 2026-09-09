@@ -119,7 +119,7 @@ export function notifyTaskHelpOffer(
     message: who
       ? Z(`${who} 想帮你完成「${clip(taskTitle, 80)}」`, `${who} offered to help with ${clip(taskTitle, 80)}`)
       : Z(`有人想帮你完成「${clip(taskTitle, 80)}」`, `Someone offered to help with ${clip(taskTitle, 80)}`),
-    action_url: `/shared-tasks?id=${taskId}`,
+    action_url: `/tasks?id=${taskId}`,
   }));
 }
 

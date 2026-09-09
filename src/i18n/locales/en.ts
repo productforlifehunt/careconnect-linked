@@ -152,7 +152,7 @@ const en = {
     becomeCaregiver: "Become a Caregiver",
     joinAsCaregiver: "Join as Caregiver",
     jobsBoard: "Jobs Board",
-    sharedTasks: "Tasks Needing Help",
+    tasksNeedingHelp: "Tasks Needing Help",
     providerDashboard: "Provider Dashboard",
     community: "Community",
     articles: "Articles",
@@ -726,7 +726,7 @@ const en = {
   // ═══ JOBS ═══
   jobs: {
     jobsBoard: "Jobs Board",
-    sharedTasks: "Tasks Needing Help",
+    tasksNeedingHelp: "Tasks Needing Help",
     findOrPost: "Find care jobs or post opportunities",
     postJob: "Post Job",
     searchJobs: "Search jobs...",

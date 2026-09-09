@@ -44,10 +44,10 @@ import {
   fetchCaredOneLocationSettingsWordPress,
 } from "@/features/location/source.wordpress-extended";
 import {
-  fetchSharedTasksWordPress, fetchMySharedTasksWordPress, fetchTaskApplicantsWordPress,
+  fetchHelpTasksWordPress, fetchMyHelpTasksWordPress, fetchTaskApplicantsWordPress,
   applyToSharedTaskWordPress, fetchMyTaskApplicationsWordPress, decideTaskApplicantWordPress,
   shareTaskWordPress, unshareTaskWordPress,
-} from "@/features/care-tasks/shared-tasks";
+} from "@/features/care-tasks/tasks-needing-help";
 import {
   fetchPostsWordPress, fetchPostByIdWordPress, createPostWordPress, updatePostWordPress, deletePostWordPress,
 } from "@/features/posts/source.wordpress";
@@ -1560,17 +1560,17 @@ export function useUpsertProviderAvailability() {
 
 
 // ─── Shared care tasks (the task IS the job) ─────────────────
-export function useSharedTasks(filters?: { paid?: boolean; status?: "open" | "filled" }) {
+export function useHelpTasks(filters?: { paid?: boolean; status?: "open" | "filled" }) {
   return useQuery({
-    queryKey: ["sharedTasks", filters],
-    queryFn: () => fetchSharedTasksWordPress(filters),
+    queryKey: ["tasksNeedingHelp", filters],
+    queryFn: () => fetchHelpTasksWordPress(filters),
   });
 }
 
-export function useMySharedTasks() {
+export function useMyHelpTasks() {
   return useQuery({
-    queryKey: ["mySharedTasks"],
-    queryFn: () => fetchMySharedTasksWordPress(),
+    queryKey: ["myHelpTasks"],
+    queryFn: () => fetchMyHelpTasksWordPress(),
   });
 }
 
@@ -1594,7 +1594,7 @@ export function useApplyToSharedTask() {
   return useMutation({
     mutationFn: ({ taskId, message }: { taskId: string; message?: string }) => applyToSharedTaskWordPress(taskId, message),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["sharedTasks"] });
+      qc.invalidateQueries({ queryKey: ["tasksNeedingHelp"] });
       qc.invalidateQueries({ queryKey: ["myTaskApplications"] });
       qc.invalidateQueries({ queryKey: ["taskApplicants"] });
     },
@@ -1607,8 +1607,8 @@ export function useDecideTaskApplicant() {
     mutationFn: ({ id, status }: { id: string; status: "accepted" | "rejected" }) => decideTaskApplicantWordPress(id, status),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["taskApplicants"] });
-      qc.invalidateQueries({ queryKey: ["sharedTasks"] });
-      qc.invalidateQueries({ queryKey: ["mySharedTasks"] });
+      qc.invalidateQueries({ queryKey: ["tasksNeedingHelp"] });
+      qc.invalidateQueries({ queryKey: ["myHelpTasks"] });
     },
   });
 }
@@ -1619,8 +1619,8 @@ export function useShareTask() {
     mutationFn: ({ taskId, needs_payment, price }: { taskId: string; needs_payment?: boolean; price?: string }) =>
       shareTaskWordPress(taskId, { needs_payment, price }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["sharedTasks"] });
-      qc.invalidateQueries({ queryKey: ["mySharedTasks"] });
+      qc.invalidateQueries({ queryKey: ["tasksNeedingHelp"] });
+      qc.invalidateQueries({ queryKey: ["myHelpTasks"] });
       qc.invalidateQueries({ queryKey: ["careTasks"] });
     },
   });
@@ -1631,8 +1631,8 @@ export function useUnshareTask() {
   return useMutation({
     mutationFn: (taskId: string) => unshareTaskWordPress(taskId),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["sharedTasks"] });
-      qc.invalidateQueries({ queryKey: ["mySharedTasks"] });
+      qc.invalidateQueries({ queryKey: ["tasksNeedingHelp"] });
+      qc.invalidateQueries({ queryKey: ["myHelpTasks"] });
       qc.invalidateQueries({ queryKey: ["careTasks"] });
     },
   });

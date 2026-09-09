@@ -58,7 +58,7 @@ function mapShared(t: any) {
 }
 
 /** Every task its owner shared out for help (a65 = b56 or b57). */
-export async function fetchSharedTasksWordPress(filters?: { paid?: boolean; status?: "open" | "filled" }): Promise<any[]> {
+export async function fetchHelpTasksWordPress(filters?: { paid?: boolean; status?: "open" | "filled" }): Promise<any[]> {
   const rows = await wordpressCCTFetch<any[]>(SLUG, { params: { _limit: 100 } });
   if (!Array.isArray(rows)) throw new Error("Care tasks returned an invalid response");
   const shared = rows
@@ -85,11 +85,11 @@ export async function fetchSharedTasksWordPress(filters?: { paid?: boolean; stat
 }
 
 /** Shared tasks I posted. */
-export async function fetchMySharedTasksWordPress(): Promise<any[]> {
+export async function fetchMyHelpTasksWordPress(): Promise<any[]> {
   const stored = getStoredWPUser();
   if (!stored?.user_id) throw new Error("Not authenticated");
   const me = Number(stored.user_id);
-  const all = await fetchSharedTasksWordPress();
+  const all = await fetchHelpTasksWordPress();
   return all.filter((t: any) => numId(t.posted_by) === me);
 }
 

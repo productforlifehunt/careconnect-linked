@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkles, RefreshCw, AlertTriangle } from "lucide-react";
 import { invokeAI, parseAIJson } from "@/lib/ai";
-import { buildBriefingRequest } from "../../../supabase/functions/_shared/ai-prompts";
+import { buildBriefingRequest } from "@/lib/ai-dynamic-knowledge";
 import { resolveBriefingFacts } from "@/lib/ai-dynamic-knowledge";
 import i18n from "@/i18n/config";
 import { formatDate } from "@/lib/locale";
