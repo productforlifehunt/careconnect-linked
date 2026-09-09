@@ -654,10 +654,113 @@ export default function GPSTracking() {
 
   const unreadAlerts = alerts.filter(a => !a.is_read);
 
+  // ─── Family-locator layout (NotchSafety) ────────────────────
+  // Same data, same handlers, same file: only the arrangement changes to the
+  // full-screen map + people sheet people expect from a family locator, and
+  // Places becomes its own screen instead of a tab beside the map.
+  const locatorMode = site.id === "notchsafety";
+  const locatorPlaces = locatorMode && routerLocation.pathname.startsWith("/places");
+
+  const lastSeenLabel = (ms: number) => {
+    if (!ms) return Z("暂无位置", "No location yet");
+    const mins = Math.max(0, Math.round((Date.now() - ms) / 60000));
+    if (mins < 1) return Z("刚刚", "Just now");
+    if (mins < 60) return Z(`${mins} 分钟前`, `${mins} min ago`);
+    const hrs = Math.round(mins / 60);
+    if (hrs < 24) return Z(`${hrs} 小时前`, `${hrs} h ago`);
+    return Z(`${Math.round(hrs / 24)} 天前`, `${Math.round(hrs / 24)} d ago`);
+  };
+  const movingLabel = (word?: string | null) => {
+    if (!word || word === "unknown") return "";
+    const cn: Record<string, string> = { stationary: "静止", walking: "步行", running: "跑步", cycling: "骑行", automotive: "乘车" };
+    return Z(cn[word] || "", word);
+  };
+
+  const zonesPanel = (
+    <Card className="border-transparent card-elevated">
+      <CardContent className="py-4 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs text-muted-foreground">
+            {Z("在此创建和管理安全区域与危险区域。", "Create and manage safe and danger zones here.")}
+          </p>
+          <Button size="sm" onClick={openNewZone} className="shrink-0">
+            <Plus className="h-4 w-4 mr-1" />
+            {Z("新建区域", "New zone")}
+          </Button>
+        </div>
+        {caredOneOptions.length > 0 && (
+          <div className="flex items-center gap-2">
+            <Label className="text-xs text-muted-foreground shrink-0">
+              {Z("区域属于", "Areas for")}
+            </Label>
+            <Select value={effectiveSubjectId} onValueChange={setSubjectId}>
+              <SelectTrigger className="h-9 max-w-[240px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={selfKey}>{Z("我自己", "Myself")}</SelectItem>
+                {caredOneOptions.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        {zones.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-8">{t("gps.noZones", "No areas set up yet")}</p>
+        ) : (
+          zones.map((zone: any) => {
+            const isDanger = isDangerZone(String(zone.zone_type));
+            const isPolygon = String(zone.shape_type).toLowerCase() === "polygon";
+            return (
+              <div key={zone.id} className="p-3 rounded-lg bg-muted/50 border border-border">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className={`w-3 h-3 rounded-full shrink-0 ${isDanger ? "bg-destructive" : "bg-success"}`} />
+                    <p className="text-sm font-medium text-foreground truncate">{zoneLabel(String(zone.zone_type), zone.zone_name)}</p>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Switch
+                      checked={!!zone.is_active}
+                      onCheckedChange={(v) => handleToggleZoneActive(zone, v)}
+                      aria-label={Z("启用区域", "Zone active")}
+                    />
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditZone(zone)} aria-label={Z("编辑", "Edit")}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive"
+                      onClick={() => handleDeleteZone(zone)}
+                      disabled={zoneDeletingId === String(zone.id)}
+                      aria-label={Z("删除", "Delete")}
+                    >
+                      {zoneDeletingId === String(zone.id)
+                        ? <Loader2 className="h-4 w-4 animate-spin" />
+                        : <Trash2 className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {isPolygon ? `${Z("手绘范围", "Drawn area")} (${zone.polygon_points?.length || 0} ${Z("个点", "points")})` : `${Z("半径", "Radius")}: ${zone.radius_meters || 100}m`}
+                  {" · "}{isDanger ? Z("⚠️ 危险", "⚠️ Danger") : zoneLabel(String(zone.zone_type), zone.zone_name)}
+                  {" · "}{zone.is_active ? t("common.active", "Active") : t("common.inactive", "Inactive")}
+                  {" · "}{zone.notify_on_enter ? Z("到达提醒", "Arrival alerts") : Z("不提醒到达", "No arrival alerts")}
+                  {" · "}{zone.notify_on_exit ? Z("离开提醒", "Leaving alerts") : Z("不提醒离开", "No leaving alerts")}
+                </p>
+              </div>
+            );
+          })
+        )}
+      </CardContent>
+    </Card>
+  );
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-5">
+    <div className={locatorMode ? "" : "max-w-6xl mx-auto px-4 py-5"}>
       {/* Header */}
+      {!locatorMode && (
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
         <div className="min-w-0">
           <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">{t("gps.gpsTracking")}</h1>
@@ -678,6 +781,8 @@ export default function GPSTracking() {
           </Button>
         </div>
       </div>
+      )}
+
 
       {/* SOS Dialog */}
       <Dialog open={sosDialogOpen} onOpenChange={setSosDialogOpen}>
