@@ -1,14 +1,26 @@
 /**
- * STATIC knowledge — the "skill library" that never touches the database.
+ * ---
+ * name: care-static-knowledge
+ * description: >-
+ *   Static skill library for ChallengeD / CareCNC / NotchSafety. Use when the
+ *   user asks how the app works, how to use a care group, or for general care,
+ *   companionship, or dementia know-how that does not depend on their own data.
+ *   Retrieval is per entry: only the best-matching snippets are attached.
+ * keywords: [app basics, how to, care group, 群组, 使用方法, care tips, 护理常识, dementia, 失智症]
+ * entrypoint: retrieveStaticKnowledge()
+ * ---
+ *
+ * Anthropic Agent Skills layout, expressed as an executable TypeScript module so
+ * non-AI code (UI help pages) can import the same entries directly.
  *
  * Every entry is a small, self-contained snippet with keywords. At request time
  * we score the user's question against the keywords and attach ONLY the few
- * best-matching snippets, never the whole library. That keeps token cost flat
- * as the library grows from 20 entries to 2,000.
+ * best-matching snippets, never the whole library, so token cost stays flat as
+ * the library grows from 20 entries to 2,000.
  *
  * Rules:
  *  - No live care data here (that belongs in ai-dynamic-knowledge.ts).
- *  - No persona or tone rules here (those live in ai-prompts.ts).
+ *  - No persona or tone rules here (those live in _shared/ai-prompts.ts).
  *  - Adding knowledge = adding an entry to KNOWLEDGE below. Nothing else changes.
  */
 

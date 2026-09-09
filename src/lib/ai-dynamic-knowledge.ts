@@ -1,15 +1,31 @@
 /**
- * DYNAMIC context — the single place where AI features read the database and
- * where "who may see what" is decided.
+ * ---
+ * name: care-dynamic-knowledge
+ * description: >-
+ *   Dynamic skill for ChallengeD / CareCNC / NotchSafety. Use whenever a request
+ *   needs this user's own data or changes it: cared ones, medicines, check-ins,
+ *   care groups, tasks, bookings, locations and safe zones, notifications, and
+ *   every app setting. Owns the data model (CCT + column codes), the per-sub-app
+ *   write differences, view permissions, and the actual reads and writes.
+ * keywords: [cared one, medicine, 用药, check-in, 签到, care group, 群组, task, 任务,
+ *   booking, 预约, location, 定位, safe zone, 安全区, notification, 推送, setting, 设置]
+ * entrypoints: [resolveAssistantContext(), resolveBriefingFacts(), resolveWriteSkill(),
+ *   readSettingSkill(), runSettingSkill(), runNotificationSkill()]
+ * ---
+ *
+ * Anthropic Agent Skills layout, expressed as an executable TypeScript module so
+ * ordinary non-AI screens call the very same skills with zero token cost.
  *
  * Design rules (do not break these):
- *  1. The AI never queries anything. It only ever receives finished text.
+ *  1. The AI never queries anything. It only ever receives finished text, and it
+ *     may only write by naming a skill declared here.
  *  2. Permissions are ordinary code here, never instructions in a prompt.
- *  3. Resolvers run on demand (when a panel opens, or per question), and they
- *     return small AGGREGATED summaries, never raw rows — so cost stays flat
- *     whether a person has 20 records or 20,000.
+ *  3. Resolvers run on demand and return small AGGREGATED summaries, never raw
+ *     rows — so cost stays flat whether a person has 20 records or 20,000.
  *  4. Field codes stay inside the feature/service layer; only plain language
  *     leaves this file.
+ *  5. Sub-app is decided by currentAppScope() inside the skill; callers never
+ *     pass it. Edge callers must send the lowercase sub-app id explicitly.
  *
  * When the data model, business rules, or view permissions change, this file is
  * the only one that changes.
