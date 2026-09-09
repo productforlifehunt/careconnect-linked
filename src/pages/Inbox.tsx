@@ -129,14 +129,14 @@ export default function Inbox() {
       </div>
 
       <Tabs value={tab} onValueChange={(v) => switchTab(v)} className="w-full">
-        <div className="max-w-3xl mx-auto px-4 flex items-center gap-2">
-          <TabsList className="grid grid-cols-3 flex-1 min-w-0 h-11 bg-muted/50 rounded-xl p-1">
+        <div className="max-w-3xl mx-auto px-4 space-y-2">
+          <TabsList className="grid w-full grid-cols-3 h-11 bg-muted/50 rounded-xl p-1">
             <TabsTrigger
               value="all"
-              className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5 px-1"
+              className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5 px-1 text-xs sm:text-sm"
             >
               <InboxIcon className="h-4 w-4 shrink-0" />
-              <span className="truncate">{Z("全部", "All")}</span>
+              <span>{Z("全部", "All")}</span>
               {unreadAll > 0 && (
                 <Badge className="h-5 min-w-5 px-1.5 bg-coral text-coral-foreground text-[10px]">
                   {unreadAll}
@@ -145,22 +145,22 @@ export default function Inbox() {
             </TabsTrigger>
             <TabsTrigger
               value="notifications"
-              className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5 px-1"
+              className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5 px-1 text-xs sm:text-sm"
             >
               <Bell className="h-4 w-4 shrink-0" />
-              <span className="truncate">{Z("通知", "Notifications")}</span>
+              <span>{Z("通知", "Notifications")}</span>
             </TabsTrigger>
             <TabsTrigger
               value="messages"
-              className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5 px-1"
+              className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5 px-1 text-xs sm:text-sm"
             >
               <MessageSquare className="h-4 w-4 shrink-0" />
-              <span className="truncate">{Z("消息", "Messages")}</span>
+              <span>{Z("消息", "Messages")}</span>
             </TabsTrigger>
           </TabsList>
 
-          {/* Read-state filter, macOS Mail style: same row, right-aligned. */}
-          <div className="flex h-11 shrink-0 items-center gap-1 rounded-xl bg-muted/50 p-1">
+          {/* Read-state filter on its own row so nothing gets cut off. */}
+          <div className="grid w-full grid-cols-3 items-center gap-1 rounded-xl bg-muted/50 p-1">
             {([
               ["all", Z("全部", "All")],
               ["unread", Z("未读", "Unread")],
@@ -171,7 +171,7 @@ export default function Inbox() {
                 type="button"
                 onClick={() => setReadFilter(key)}
                 aria-pressed={readFilter === key}
-                className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                className={`rounded-lg px-2 py-1.5 text-xs font-medium transition-colors ${
                   readFilter === key
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
@@ -182,6 +182,7 @@ export default function Inbox() {
             ))}
           </div>
         </div>
+
 
         <TabsContent value="all" className="mt-0 focus-visible:outline-none">
           <div className="max-w-3xl mx-auto px-4 py-4">
