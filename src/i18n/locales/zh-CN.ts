@@ -186,6 +186,9 @@ const zhCN = {
     informationCards: "被照护者信息卡", informationCardsSubtitle: "可分享的信息卡", careInfoSheets: "被照护者信息卡", careInfoSheetsSubtitle: "把帮忙的人需要知道的写清楚",
   },
   profile: {
+    roleHelp: "打开所有符合你情况的选项。这决定你看到哪些护理工具。",
+    roleCaredOne: "我需要被照护",
+    roleCaringOne: "我在照护他人",
     myProfile: "我的资料", personalInfo: "个人信息", avatar: "头像",
     avatarUrlPlaceholder: "https://... 或在上方上传", aboutMe: "关于我",
     notificationPrefs: "通知偏好", emailNotifications: "邮件通知", pushNotifications: "推送通知",
