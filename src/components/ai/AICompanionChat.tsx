@@ -222,6 +222,13 @@ export function AICompanionChat({
       </Conversation>
 
       <div className="border-t p-3 space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <Label htmlFor="ai-read-aloud" className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Volume2 className="h-3.5 w-3.5" />
+            {isZh ? "自动朗读回复" : "Read replies aloud"}
+          </Label>
+          <Switch id="ai-read-aloud" checked={readAloud} onCheckedChange={toggleReadAloud} />
+        </div>
         {request.onComplete && (
           <div className="flex justify-end gap-2">
             {(request.completionStatuses || []).includes("skipped") && (
