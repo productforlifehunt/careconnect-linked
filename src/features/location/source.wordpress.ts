@@ -244,6 +244,10 @@ export async function fetchLocationSharesWordPress(): Promise<any[]> {
             longitude: snapshot.longitude,
             accuracy_meters: snapshot.accuracy_meters,
             battery_level: snapshot.battery_level,
+            // Phone status the locator view shows next to each person.
+            phone_is_charging: snapshot.phone_is_charging,
+            moving_type: snapshot.moving_type,
+            speed: snapshot.speed,
             address_text: snapshot.address_text,
             is_sharing_enabled: true,
             user_name: null, // will be enriched by caller
