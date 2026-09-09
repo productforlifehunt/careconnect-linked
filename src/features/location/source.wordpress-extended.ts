@@ -11,8 +11,7 @@ import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-c
 import { fetchMyAppUserName } from "@/features/profile/app-user-name";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { T, R } from "@/integrations/wp-schema";
-import {
-} from "@/features/notifications/source.wordpress";
+import { runNotificationSkill } from "@/lib/ai-dynamic-knowledge";
 import { fetchCurrentLocation, fetchLocationHistory, writeLocationAndCheckZones } from "@/features/location/source.wordpress";
 import {
   ZONE_TYPE,
@@ -433,12 +432,12 @@ export async function createSafeZoneAlertsForLocation(userId: string, lat: numbe
                                                     `Entered zone: ${zone.zone_type_label}`;
 
       {
-        await createNotificationWordPress({
-          user_id: userId,
+        await runNotificationSkill("send-notification", {
+          userIds: [userId],
           type: "safe_zone_breach",
           title: result.alertType === "entered_danger_zone" ? "⚠️ Danger Zone Alert" : "📍 Safe Zone Alert",
           message: msg,
-          action_url: `/find?zone=${zone.id}`,
+          actionUrl: `/find?zone=${zone.id}`,
         });
         // Fan out to the cared one's configured receivers (Relation 290).
         const receivers: string[] = Array.isArray(zone.receiver_ids)
@@ -447,12 +446,12 @@ export async function createSafeZoneAlertsForLocation(userId: string, lat: numbe
         await Promise.all(
           receivers
             .filter((rid) => normalizeWpUserId(rid) !== normalizeWpUserId(userId))
-            .map((rid) => createNotificationWordPress({
-              user_id: rid,
+            .map((rid) => runNotificationSkill("send-notification", {
+              userIds: [rid],
               type: "safe_zone_breach",
               title: result.alertType === "entered_danger_zone" ? "⚠️ Danger Zone Alert" : "📍 Safe Zone Alert",
               message: msg,
-              action_url: `/find?zone=${zone.id}`,
+              actionUrl: `/find?zone=${zone.id}`,
             })),
         );
       }
@@ -504,12 +503,12 @@ export async function sendLocationRequestWordPress(input: { caredOneId: string; 
   {
     // Name comes ONLY from CCT 151; no WordPress account name fallback.
     const askerName = await fetchMyAppUserName().catch(() => "");
-    await createNotificationWordPress({
-      user_id: caredOneUserId,
+    await runNotificationSkill("send-notification", {
+      userIds: [caredOneUserId],
       type: input.isEmergency ? "emergency_location_request" : "location_request",
       title: input.isEmergency ? "🚨 Emergency Location Request" : "📍 Location Request",
       message: `${askerName || "A care circle member"} ${input.isEmergency ? "urgently needs" : "is requesting"} your location.${input.message ? ` "${input.message}"` : ""}`,
-      action_url: `/find?request_from=${storedUser.user_id}`,
+      actionUrl: `/find?request_from=${storedUser.user_id}`,
     });
   }
 }
