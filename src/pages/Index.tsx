@@ -274,7 +274,7 @@ const Index = () => {
               { title: t("home.forCaregivers"), links: [
                 { label: t("home.joinAsCaregiver"), href: "/become-caregiver" },
                 { label: t("nav.tasksNeedingHelp"), href: "/tasks" },
-                { label: t("nav.providerDashboard"), href: "/provider-dashboard" },
+                { label: t("nav.providerDashboard"), href: "/caregiver-setting" },
                 { label: t("nav.trustSafety"), href: "/trust-safety" },
               ] },
               { title: t("home.company"), links: [

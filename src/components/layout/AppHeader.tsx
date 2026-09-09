@@ -254,16 +254,16 @@ export function AppHeader() {
                   <MessageSquare className="mr-2 h-4 w-4" /> {t("nav.messages")}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate("/favorites")}>
+                <DropdownMenuItem onClick={() => navigate("/favorite-caregiver")}>
                   <Heart className="mr-2 h-4 w-4" /> {t("nav.favorites")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/facilities/new")}>
                   <Building2 className="mr-2 h-4 w-4" /> {isChinese ? "提交养老院" : "Submit Facility"}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/profile")}>
+                <DropdownMenuItem onClick={() => navigate("/settings")}>
                   <Settings className="mr-2 h-4 w-4" /> {isChinese ? "设置" : "Settings"}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/provider-dashboard?tab=profile")}>
+                <DropdownMenuItem onClick={() => navigate("/caregiver-setting?tab=profile")}>
                   <Briefcase className="mr-2 h-4 w-4" /> {isChinese ? "护理者设置" : "Caregiver Settings"}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/how-it-works")}>

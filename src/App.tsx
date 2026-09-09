@@ -73,7 +73,7 @@ const queryClient = new QueryClient({
 });
 
 // Dashboard routes that always get sidebar
-const baseDashboardPaths = ["/dashboard", "/bookings", "/care-circle", "/find", "/favorites", "/profile", "/cared-ones", "/tasks", "/provider-dashboard", "/community", "/articles", "/cart", "/order-confirmation", "/awared", "/cared", "/coped", "/safed", "/accompanied", "/calendar", "/resources", "/inbox"];
+const baseDashboardPaths = ["/dashboard", "/bookings", "/care-circle", "/find", "/favorite-caregiver", "/settings", "/cared-ones", "/tasks", "/caregiver-setting", "/community", "/articles", "/cart", "/order-confirmation", "/awared", "/cared", "/coped", "/safed", "/accompanied", "/calendar", "/resources", "/inbox"];
 // Routes that get sidebar only when authenticated
 const authDashboardPaths = ["/search", "/caregiver"];
 
@@ -134,14 +134,14 @@ function AppRoutes() {
       <Route path="/bookings" element={<RequireAuth><Bookings /></RequireAuth>} />
       {/* Inbox is the ONLY messages/notifications surface — no standalone
           routes and no redirects. All entry points link to /inbox?tab=... */}
-      <Route path="/favorites" element={<RequireAuth><Favorites /></RequireAuth>} />
-      <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
+      <Route path="/favorite-caregiver" element={<RequireAuth><Favorites /></RequireAuth>} />
+      <Route path="/settings" element={<RequireAuth><Profile /></RequireAuth>} />
       <Route path="/inbox" element={<RequireAuth><Inbox /></RequireAuth>} />
       <Route path="/cared-ones" element={<RequireAuth><CaredOnes /></RequireAuth>} />
       <Route path="/cared-ones/:personId" element={<RequireAuth><CaredOnes /></RequireAuth>} />
       <Route path="/cared-ones/:personId/:card" element={<RequireAuth><CaredOnes /></RequireAuth>} />
       <Route path="/tasks" element={<RequireAuth><TasksNeedingHelp /></RequireAuth>} />
-      <Route path="/provider-dashboard" element={<RequireAuth><ProviderDashboard /></RequireAuth>} />
+      <Route path="/caregiver-setting" element={<RequireAuth><ProviderDashboard /></RequireAuth>} />
       <Route path="/cart" element={<RequireAuth><Cart /></RequireAuth>} />
       <Route path="/order-confirmation" element={<RequireAuth><OrderConfirmation /></RequireAuth>} />
       {/* /consultation route removed — see compliance decision */}
