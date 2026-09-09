@@ -21,7 +21,7 @@ import { isDangerZone, isSafeZone, isCustomZone, zoneTypeLabel } from "@/feature
 import { fetchCareTipsWordPress, fetchCarePlansWordPress, fetchCareNotesWordPress } from "@/features/cared-ones/source.wordpress-extended";
 import { fetchMedicinesWordPress } from "@/features/medicine/source.medicine";
 import type { InfoSheetAIContext } from "@/components/cared-ones/InfoSheetAIDialog";
-import { buildInfoSheetContext, buildInfoSheetIntroduction } from "../../../supabase/functions/_shared/ai-prompts";
+import { buildInfoSheetContext, buildInfoSheetIntroduction } from "@/lib/ai-dynamic-knowledge";
 import { AICompanionChat } from "@/components/ai/AICompanionChat";
 
 // Leaflet stylesheet, loaded once (same source as the main location hub).

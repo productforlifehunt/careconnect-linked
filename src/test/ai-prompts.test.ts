@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   aiBrand,
   buildFallbackReply,
-  buildInfoSheetContext,
   buildSystemPrompt,
 } from "../../supabase/functions/_shared/ai-prompts";
+import { buildInfoSheetContext } from "@/lib/ai-dynamic-knowledge";
 
 describe("central AI prompt registry", () => {
   it("names the assistant per site and language", () => {
