@@ -43,40 +43,44 @@ function currentUserId(): string {
   return strip(stored?.user_id);
 }
 
-/** Recipients minus the actor, de-duplicated, empty entries dropped. */
-export function recipientsExcludingSelf(ids: Array<string | number | null | undefined>): string[] {
-  const me = currentUserId();
-  return [...new Set(ids.map(strip).filter(Boolean))].filter((id) => id !== me);
+/**
+ * Recipients minus the actor, de-duplicated, empty entries dropped.
+ * Kept as a thin re-export: the rule itself lives in the notification skill.
+ */
+export async function recipientsExcludingSelf(
+  ids: Array<string | number | null | undefined>,
+): Promise<string[]> {
+  const { notificationRecipients } = await import("@/lib/ai-dynamic-knowledge");
+  return notificationRecipients(ids);
 }
 
 /**
  * Fire notifications to a list of recipients. Never throws.
- * Returns the number of recipients the dispatch was attempted for.
+ *
+ * This file stores ONLY trigger conditions and wording. The data structure
+ * (CCT 185, a55–a59, action url a58, user→notification relation, per-app
+ * branch) and the actual read/write live in the `send-notification` skill in
+ * `src/lib/ai-dynamic-knowledge.ts`, which AI and non-AI callers share.
  */
 export async function notifyUsers(
   userIds: Array<string | number | null | undefined>,
   payload: { type: string; title: string; message: string; action_url?: string },
 ): Promise<number> {
-  const targets = recipientsExcludingSelf(userIds);
-  if (targets.length === 0) return 0;
   try {
-    const { createNotificationWordPress } = await import("./source.wordpress");
-    await Promise.all(
-      targets.map((user_id) =>
-        createNotificationWordPress({
-          user_id,
-          type: payload.type,
-          title: payload.title,
-          message: payload.message,
-          action_url: payload.action_url ?? null,
-        }).catch(() => undefined),
-      ),
-    );
+    const { runNotificationSkill } = await import("@/lib/ai-dynamic-knowledge");
+    return await runNotificationSkill("send-notification", {
+      userIds,
+      type: payload.type,
+      title: payload.title,
+      message: payload.message,
+      actionUrl: payload.action_url ?? null,
+    });
   } catch {
     /* notifications are best-effort — the primary write already succeeded */
+    return 0;
   }
-  return targets.length;
 }
+
 
 const clip = (s: string, n = 140) =>
   (s || "").length > n ? `${(s || "").slice(0, n - 1)}…` : s || "";
