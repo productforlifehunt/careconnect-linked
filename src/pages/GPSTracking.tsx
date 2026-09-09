@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useLocation as useRouterLocation } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSite } from "@/contexts/SiteContext";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Navigation, Clock, Shield, AlertTriangle, RefreshCw, Loader2, Radio, Route, Bell, Hexagon, Plus, Trash2, Pencil, Crosshair } from "lucide-react";
+import { MapPin, Navigation, Clock, Shield, AlertTriangle, RefreshCw, Loader2, Radio, Route, Bell, Hexagon, Plus, Trash2, Pencil, Crosshair, Zap, BatteryMedium } from "lucide-react";
 import { useLocationShares, useCareGroups, useCareGroupMembers, useUserCaredOnes } from "@/hooks/use-care-data";
 import {
   shareMyLocationWordPress, disableMyLocationSharingWordPress,
@@ -52,6 +53,7 @@ export default function GPSTracking() {
   const isCN = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (isCN ? cn : en);
   const { toast } = useToast();
+  const routerLocation = useRouterLocation();
   const site = useSite();
   const { data: locationShares, isLoading, refetch } = useLocationShares(POLL_INTERVAL);
   const [selectedPerson, setSelectedPerson] = useState<any>(null);
@@ -1268,6 +1270,7 @@ export default function GPSTracking() {
           </Card>
         </div>
       </div>
+      )}
     </div>
   );
 }
