@@ -81,6 +81,15 @@ export default function CommunityPost() {
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
 
+  // Forum name for this app only (CCT 151 a56).
+  const { data: forumNames } = useQuery({
+    queryKey: ["forumNames", [post?.author_id]],
+    queryFn: () => fetchForumNames([post!.author_id]),
+    enabled: !!post?.author_id,
+    staleTime: 10 * 60 * 1000,
+  });
+  const authorForumName = post?.author_id ? forumNames?.get(Number(post.author_id)) || "" : "";
+
   const handleStartEdit = () => {
     if (!post) return;
     setEditTitle(post.title || "");
