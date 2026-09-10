@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Building2, Globe, Loader2, Mail, MapPin, Phone, Star, Layers3, MessageSquareText, Users } from "lucide-react";
+import { ArrowLeft, Building2, Loader2, Mail, MapPin, Phone, Star, Layers3, MessageSquareText, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
