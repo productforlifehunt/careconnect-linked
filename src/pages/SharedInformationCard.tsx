@@ -4,8 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchInformationCardContactIdsWordPress, fetchInformationCardCaredOneIdWordPress } from "@/features/cared-ones/source.information-cards";
 import { fetchEmergencyContactsWordPress } from "@/features/cared-ones/source.wordpress-extended";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { IdCard, Phone, Loader2, ShieldOff, Home, FileText } from "lucide-react";
+import { IdCard, Phone, Loader2, ShieldOff, FileText } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { SheetAIPanel, SheetLocationTag, useInfoSheetKnowledge } from "@/components/cared-ones/info-sheet-parts";
 
@@ -80,7 +79,6 @@ export default function SharedInformationCard() {
                 {card.cared_ones_name && <p className="text-sm text-muted-foreground mt-0.5">{card.cared_ones_name}</p>}
                 <div className="flex items-center gap-1 mt-1.5 flex-wrap">
                   {card.displays_location === "Yes" && <SheetLocationTag caredOneId={caredOneId ? String(caredOneId) : null} />}
-                  <Badge variant="outline" className="text-[10px]"><Home className="h-2.5 w-2.5 mr-1" />{Z("共享信息卡", "Shared information card")}</Badge>
                 </div>
               </div>
             </div>
