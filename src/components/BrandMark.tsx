@@ -36,11 +36,17 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
     icon = (
       <div
         style={box}
-        className="rounded-xl bg-primary flex items-center justify-center leading-none shadow-sm px-1 overflow-hidden"
+        className="rounded-[24%] bg-primary flex flex-col items-center justify-center leading-none shadow-sm overflow-hidden"
       >
         <span
-          className="text-primary-foreground font-bold tracking-normal whitespace-nowrap"
-          style={{ fontSize: Math.max(6, Math.round(size * 0.145)) }}
+          className="text-primary-foreground font-semibold tracking-tight"
+          style={{ fontSize: Math.round(size * 0.42), marginBottom: Math.round(size * 0.04) }}
+        >
+          D
+        </span>
+        <span
+          className="text-primary-foreground/90 font-medium tracking-wide whitespace-nowrap"
+          style={{ fontSize: Math.max(5, Math.round(size * 0.115)) }}
         >
           ChallengeD
         </span>
