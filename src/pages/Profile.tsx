@@ -45,6 +45,25 @@ export default function Profile() {
   const [emailNotifs, setEmailNotifs] = useState(true);
   const [pushNotifs, setPushNotifs] = useState(true);
 
+  // Second, silent check: this app must have exactly one settings record for
+  // this user. Missing → created; duplicated → merged. The user sees nothing.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    ensureAppProfile()
+      .then((res) => {
+        if (cancelled || !res?.grantedCredits) return;
+        toast({
+          title: t("settings.creditsGrantedTitle", { defaultValue: "10 AI credits added" }),
+          description: t("settings.creditsGrantedBody", {
+            defaultValue: "You have 10 AI credits to try the assistant in this app.",
+          }),
+        });
+      })
+      .catch(() => null);
+    return () => { cancelled = true; };
+  }, [user, toast, t]);
+
   useEffect(() => {
     if (profile) {
       setName(profile.full_name || "");

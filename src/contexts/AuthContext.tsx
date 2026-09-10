@@ -10,6 +10,7 @@ import {
   type WPAuthResult,
 } from "@/services/wp-auth";
 import { fetchMyAppUserName, saveMyAppUserName } from "@/features/profile/app-user-name";
+import { ensureAppProfile } from "@/features/shared/app-profile";
 
 export type AuthSource = "wordpress" | null;
 
@@ -139,6 +140,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       user_login: result.user_login,
       user_display_name: result.user_display_name,
     };
+    // One CCT 151 row per user per app: created here when it is missing.
+    await ensureAppProfile().catch(() => null);
     setUser(wpUserToProfile(wpUser, await fetchMyAppUserName().catch(() => "")));
     setAuthSource("wordpress");
     setIsLoading(false);
@@ -152,6 +155,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       user_login: result.user_login,
       user_display_name: result.user_display_name,
     };
+    // One CCT 151 row per user per app: created here when it is missing.
+    await ensureAppProfile().catch(() => null);
     setUser(wpUserToProfile(wpUser, await fetchMyAppUserName().catch(() => "")));
     setAuthSource("wordpress");
     setIsLoading(false);
@@ -165,7 +170,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       user_login: result.user_login,
       user_display_name: result.user_display_name,
     };
-    // The name the user typed at signup belongs to this app's own column.
+    // The name the user typed at signup belongs to this app's own row (a55).
+    await ensureAppProfile().catch(() => null);
     await saveMyAppUserName(name);
     setUser(wpUserToProfile(wpUser, name));
     setAuthSource("wordpress");
