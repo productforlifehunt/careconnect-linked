@@ -1,81 +1,57 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Building2, Loader2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useCareFacility, useCreateCareFacility, useUpdateCareFacility } from "@/hooks/use-care-data";
+import {
+  FACILITY_TYPE_OPTIONS,
+  FACILITY_STAGE_OPTIONS,
+  FACILITY_ROOM_TYPE_OPTIONS,
+  FACILITY_ROOM_FACILITY_OPTIONS,
+  FACILITY_COMMUNITY_FACILITY_OPTIONS,
+  FACILITY_PEOPLE_NUMBER_OPTIONS,
+  toCodeList,
+  type FacilityOption,
+} from "@/lib/facility-options";
 
-const FACILITY_TYPES = ["care_home", "nursing_home", "memory_care", "assisted_living"];
-const SERVICE_OPTIONS = [
-  "memory_care",
-  "nursing_care",
-  "rehabilitation",
-  "respite_care",
-  "day_care",
-  "dementia_support",
-  "family_support",
-  "long_term_care",
-  "assisted_living",
-  "senior_living",
-  "daily_support",
-  "wellness_programs",
-  "residential_care",
-  "short_stay",
-];
+type MultiField = "type" | "dementia_stage" | "room_type" | "room_facility" | "community_facility";
 
 type FacilityFormState = {
   name: string;
   description: string;
-  type: string;
-  service_category: string[];
-  service_type: string[];
-  country: string;
-  c_province: string;
-  c_city: string;
-  c_district: string;
-  c_town: string;
-  c_village: string;
-  address: string;
+  type: string[];
+  dementia_stage: string[];
+  room_type: string[];
+  room_facility: string[];
+  community_facility: string[];
+  people_number: string;
   location: string;
+  address: string;
   phone: string;
-  phone_number: string;
   email: string;
-  website_url: string;
-  avatar_url: string;
-  image_url: string;
 };
 
 const emptyForm: FacilityFormState = {
   name: "",
   description: "",
-  type: "",
-  service_category: [],
-  service_type: [],
-  country: "",
-  c_province: "",
-  c_city: "",
-  c_district: "",
-  c_town: "",
-  c_village: "",
-  address: "",
+  type: [],
+  dementia_stage: [],
+  room_type: [],
+  room_facility: [],
+  community_facility: [],
+  people_number: "",
   location: "",
+  address: "",
   phone: "",
-  phone_number: "",
   email: "",
-  website_url: "",
-  avatar_url: "",
-  image_url: "",
 };
-
-function formatToken(value: string) {
-  return value.replace(/_/g, " ");
-}
 
 export default function CareFacilityForm() {
   const { id } = useParams();
@@ -98,38 +74,43 @@ export default function CareFacilityForm() {
     setForm({
       name: facility.name || "",
       description: facility.description || "",
-      type: facility.type || "",
-      service_category: Array.isArray(facility.service_category) ? facility.service_category : facility.service_category ? [facility.service_category] : [],
-      service_type: Array.isArray(facility.service_type) ? facility.service_type : facility.service_type ? [facility.service_type] : [],
-      country: facility.country || "",
-      c_province: facility.c_province || "",
-      c_city: facility.c_city || "",
-      c_district: facility.c_district || "",
-      c_town: facility.c_town || "",
-      c_village: facility.c_village || "",
-      address: facility.address || "",
+      type: toCodeList(facility.type),
+      dementia_stage: toCodeList(facility.dementia_stage),
+      room_type: toCodeList(facility.room_type),
+      room_facility: toCodeList(facility.room_facility),
+      community_facility: toCodeList(facility.community_facility),
+      people_number: String(facility.people_number || ""),
       location: facility.location || "",
+      address: facility.address || "",
       phone: facility.phone || "",
-      phone_number: facility.phone_number || "",
       email: facility.email || "",
-      website_url: facility.website_url || "",
-      avatar_url: facility.avatar_url || "",
-      image_url: facility.image_url || "",
     });
   }, [facility]);
 
-  const isChinaMode = useMemo(() => {
-    return form.country.includes("中国") || isZh;
-  }, [form.country, isZh]);
-
-  const toggleMulti = (field: "service_category" | "service_type", value: string) => {
+  const toggleMulti = (field: MultiField, code: string) => {
     setForm((prev) => ({
       ...prev,
-      [field]: prev[field].includes(value)
-        ? prev[field].filter((item) => item !== value)
-        : [...prev[field], value],
+      [field]: prev[field].includes(code) ? prev[field].filter((item) => item !== code) : [...prev[field], code],
     }));
   };
+
+  const CheckboxGroup = ({ label, field, options }: { label: string; field: MultiField; options: FacilityOption[] }) => (
+    <div>
+      <Label className="mb-2 block">{label}</Label>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {options.map((opt) => (
+          <label key={`${field}-${opt.code}`} className="flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer">
+            <Checkbox
+              aria-label={`${label}: ${isZh ? opt.zh : opt.en}`}
+              checked={form[field].includes(opt.code)}
+              onCheckedChange={() => toggleMulti(field, opt.code)}
+            />
+            <span className="text-sm">{isZh ? opt.zh : opt.en}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
 
   const handleSubmit = async () => {
     if (!form.name.trim()) {
@@ -141,23 +122,16 @@ export default function CareFacilityForm() {
       const payload = {
         name: form.name.trim(),
         description: form.description.trim() || null,
-        type: form.type || null,
-        service_category: form.service_category.length ? form.service_category : null,
-        service_type: form.service_type.length ? form.service_type : null,
-        country: form.country.trim() || null,
-        c_province: form.c_province.trim() || null,
-        c_city: form.c_city.trim() || null,
-        c_district: form.c_district.trim() || null,
-        c_town: form.c_town.trim() || null,
-        c_village: form.c_village.trim() || null,
-        address: form.address.trim() || null,
+        type: form.type,
+        dementia_stage: form.dementia_stage,
+        room_type: form.room_type,
+        room_facility: form.room_facility,
+        community_facility: form.community_facility,
+        people_number: form.people_number || null,
         location: form.location.trim() || null,
+        address: form.address.trim() || null,
         phone: form.phone.trim() || null,
-        phone_number: form.phone_number.trim() || null,
         email: form.email.trim() || null,
-        website_url: form.website_url.trim() || null,
-        avatar_url: form.avatar_url.trim() || null,
-        image_url: form.image_url.trim() || null,
       };
 
       if (isEditMode && id) {
@@ -172,9 +146,6 @@ export default function CareFacilityForm() {
           ownershipClaim: ownershipClaim.trim() || null,
           ownershipAttachmentUrls: ownershipAttachmentUrls.trim() || null,
         });
-        // A new listing is checked by our team before it goes public, so we
-        // land the person back on the facility list with a plain explanation
-        // instead of an empty "not found" page.
         toast({
           title: isZh ? "已提交，我们会先审核" : "Submitted — we'll check it first",
           description: isZh
@@ -211,22 +182,9 @@ export default function CareFacilityForm() {
           </h1>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <Label>{isZh ? "机构名称" : "Facility name"}</Label>
-              <Input value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} className="mt-1" />
-            </div>
-            <div>
-              <Label>{isZh ? "机构类型" : "Facility type"}</Label>
-              <div className="grid grid-cols-2 gap-2 mt-2">
-                {FACILITY_TYPES.map((item) => (
-                  <label key={item} className="flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer">
-                    <input type="radio" name="facility-type" checked={form.type === item} onChange={() => setForm((p) => ({ ...p, type: item }))} />
-                    <span className="text-sm">{formatToken(item)}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
+          <div>
+            <Label>{isZh ? "机构名称" : "Facility name"}</Label>
+            <Input value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} className="mt-1" />
           </div>
 
           <div>
@@ -235,95 +193,50 @@ export default function CareFacilityForm() {
           </div>
 
           <div className="grid lg:grid-cols-2 gap-6">
+            <CheckboxGroup label={isZh ? "机构类型" : "Facility type"} field="type" options={FACILITY_TYPE_OPTIONS} />
+            <CheckboxGroup label={isZh ? "可照护的失智症阶段" : "Dementia stages cared for"} field="dementia_stage" options={FACILITY_STAGE_OPTIONS} />
+            <CheckboxGroup label={isZh ? "房型" : "Room types"} field="room_type" options={FACILITY_ROOM_TYPE_OPTIONS} />
+            <CheckboxGroup label={isZh ? "房间设施" : "Room facilities"} field="room_facility" options={FACILITY_ROOM_FACILITY_OPTIONS} />
+            <CheckboxGroup label={isZh ? "公共设施" : "Community facilities"} field="community_facility" options={FACILITY_COMMUNITY_FACILITY_OPTIONS} />
             <div>
-              <Label className="mb-3 block">{isZh ? "服务分类" : "Service categories"}</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {SERVICE_OPTIONS.map((item) => (
-                  <label key={`category-${item}`} className="flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer">
-                    <Checkbox aria-label={`${isZh ? "服务分类" : "Service category"}: ${formatToken(item)}`} checked={form.service_category.includes(item)} onCheckedChange={() => toggleMulti("service_category", item)} />
-                    <span className="text-sm">{formatToken(item)}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div>
-              <Label className="mb-3 block">{isZh ? "服务项目" : "Service types"}</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {SERVICE_OPTIONS.map((item) => (
-                  <label key={`type-${item}`} className="flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer">
-                    <Checkbox aria-label={`${isZh ? "服务项目" : "Service type"}: ${formatToken(item)}`} checked={form.service_type.includes(item)} onCheckedChange={() => toggleMulti("service_type", item)} />
-                    <span className="text-sm">{formatToken(item)}</span>
+              <Label className="mb-2 block">{isZh ? "入住人数规模" : "Number of residents"}</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {FACILITY_PEOPLE_NUMBER_OPTIONS.map((opt) => (
+                  <label key={opt.code} className="flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="people-number"
+                      checked={form.people_number === opt.code}
+                      onChange={() => setForm((p) => ({ ...p, people_number: opt.code }))}
+                    />
+                    <span className="text-sm">{isZh ? opt.zh : opt.en}</span>
                   </label>
                 ))}
               </div>
             </div>
           </div>
 
-          <Card className="bg-muted/20">
-            <CardContent className="p-4 space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <Label>{isZh ? "国家/地区" : "Country / region"}</Label>
-                  <Input value={form.country} onChange={(e) => setForm((p) => ({ ...p, country: e.target.value }))} placeholder={isZh ? "如：中国、新加坡" : "e.g. China, Singapore"} className="mt-1" />
-                </div>
-                <div>
-                  <Label>{isZh ? "国际地区字段" : "Global locality field"}</Label>
-                  <Input value={form.location} onChange={(e) => setForm((p) => ({ ...p, location: e.target.value }))} placeholder={isZh ? "如：Beijing / Central Region" : "e.g. Central Region"} className="mt-1" />
-                </div>
-              </div>
-
-              {isChinaMode && (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div>
-                    <Label>{isZh ? "省份" : "Province"}</Label>
-                    <Input value={form.c_province} onChange={(e) => setForm((p) => ({ ...p, c_province: e.target.value }))} className="mt-1" />
-                  </div>
-                  <div>
-                    <Label>{isZh ? "城市" : "City"}</Label>
-                    <Input value={form.c_city} onChange={(e) => setForm((p) => ({ ...p, c_city: e.target.value }))} className="mt-1" />
-                  </div>
-                  <div>
-                    <Label>{isZh ? "区/县" : "District"}</Label>
-                    <Input value={form.c_district} onChange={(e) => setForm((p) => ({ ...p, c_district: e.target.value }))} className="mt-1" />
-                  </div>
-                  <div>
-                    <Label>{isZh ? "镇/街道" : "Town"}</Label>
-                    <Input value={form.c_town} onChange={(e) => setForm((p) => ({ ...p, c_town: e.target.value }))} className="mt-1" />
-                  </div>
-                  <div>
-                    <Label>{isZh ? "村/社区" : "Village / community"}</Label>
-                    <Input value={form.c_village} onChange={(e) => setForm((p) => ({ ...p, c_village: e.target.value }))} className="mt-1" />
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <Label>{isZh ? "详细地址" : "Address"}</Label>
-                <Input value={form.address} onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))} className="mt-1" />
-              </div>
-            </CardContent>
-          </Card>
-
           <div className="grid md:grid-cols-2 gap-4">
             <div>
+              <Label>{isZh ? "所在地区" : "Location"}</Label>
+              <Input
+                value={form.location}
+                onChange={(e) => setForm((p) => ({ ...p, location: e.target.value }))}
+                placeholder={isZh ? "如：北京市朝阳区" : "e.g. Central Region"}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label>{isZh ? "详细地址" : "Address"}</Label>
+              <Input value={form.address} onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))} className="mt-1" />
+            </div>
+            <div>
               <Label>{isZh ? "联系电话" : "Phone"}</Label>
-              <Input value={form.phone_number} onChange={(e) => setForm((p) => ({ ...p, phone_number: e.target.value, phone: e.target.value }))} className="mt-1" />
+              <Input value={form.phone} onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))} className="mt-1" />
             </div>
             <div>
               <Label>{isZh ? "邮箱" : "Email"}</Label>
               <Input value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} className="mt-1" />
-            </div>
-            <div>
-              <Label>{isZh ? "官网网址" : "Website address"}</Label>
-              <Input value={form.website_url} onChange={(e) => setForm((p) => ({ ...p, website_url: e.target.value }))} className="mt-1" />
-            </div>
-            <div>
-              <Label>{isZh ? "封面照片链接" : "Cover photo link"}</Label>
-              <Input value={form.image_url} onChange={(e) => setForm((p) => ({ ...p, image_url: e.target.value }))} className="mt-1" />
-            </div>
-            <div className="md:col-span-2">
-              <Label>{isZh ? "小图片（头像）链接" : "Small photo link"}</Label>
-              <Input value={form.avatar_url} onChange={(e) => setForm((p) => ({ ...p, avatar_url: e.target.value }))} className="mt-1" />
             </div>
           </div>
 

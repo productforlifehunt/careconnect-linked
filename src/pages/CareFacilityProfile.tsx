@@ -23,25 +23,22 @@ import {
   useCreateFacilityOwnershipClaim,
   useUpdateFacilityOwnershipClaim,
 } from "@/hooks/use-care-data";
-
-function normalizeList(value: string[] | string | null | undefined) {
-  if (Array.isArray(value)) return value.filter(Boolean);
-  if (typeof value === "string" && value.trim()) return [value];
-  return [] as string[];
-}
-
-function formatFacilityToken(value: string) {
-  return value.replace(/_/g, " ");
-}
+import {
+  FACILITY_TYPE_OPTIONS,
+  FACILITY_STAGE_OPTIONS,
+  FACILITY_ROOM_TYPE_OPTIONS,
+  FACILITY_ROOM_FACILITY_OPTIONS,
+  FACILITY_COMMUNITY_FACILITY_OPTIONS,
+  FACILITY_PEOPLE_NUMBER_OPTIONS,
+  facilityLabel,
+  facilityLabels,
+} from "@/lib/facility-options";
 
 function getFacilityAddress(facility: any, isZh: boolean) {
-  if (isZh) {
-    return [facility.country, facility.c_province, facility.c_city, facility.c_district, facility.c_town, facility.c_village, facility.address]
-      .filter(Boolean)
-      .join(" ");
-  }
-  return [facility.location, facility.address, facility.country].filter(Boolean).join(", ");
+  return [facility.location, facility.address].filter(Boolean).join(isZh ? " " : ", ");
 }
+
+
 
 export default function CareFacilityProfile() {
   const { id } = useParams();
@@ -100,13 +97,14 @@ export default function CareFacilityProfile() {
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
 
-  const services = useMemo(() => {
-    if (!facility) return [];
-    return [...normalizeList(facility.service_category), ...normalizeList(facility.service_type)];
-  }, [facility]);
+  const typeLabels = useMemo(() => facilityLabels(FACILITY_TYPE_OPTIONS, facility?.type, !!isZh), [facility, isZh]);
+  const stageLabels = useMemo(() => facilityLabels(FACILITY_STAGE_OPTIONS, facility?.dementia_stage, !!isZh), [facility, isZh]);
+  const roomTypeLabels = useMemo(() => facilityLabels(FACILITY_ROOM_TYPE_OPTIONS, facility?.room_type, !!isZh), [facility, isZh]);
+  const roomFacilityLabels = useMemo(() => facilityLabels(FACILITY_ROOM_FACILITY_OPTIONS, facility?.room_facility, !!isZh), [facility, isZh]);
+  const communityFacilityLabels = useMemo(() => facilityLabels(FACILITY_COMMUNITY_FACILITY_OPTIONS, facility?.community_facility, !!isZh), [facility, isZh]);
+  const peopleNumberLabel = facility?.people_number ? facilityLabel(FACILITY_PEOPLE_NUMBER_OPTIONS, facility.people_number, !!isZh) : "";
+  const services = useMemo(() => [...typeLabels, ...stageLabels], [typeLabels, stageLabels]);
 
-  const serviceCategories = useMemo(() => normalizeList(facility?.service_category), [facility]);
-  const serviceTypes = useMemo(() => normalizeList(facility?.service_type), [facility]);
   const reviewStats = useMemo(() => {
     const list = reviews || [];
     const counts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 } as Record<number, number>;
@@ -160,9 +158,6 @@ export default function CareFacilityProfile() {
       <div className="grid lg:grid-cols-3 gap-5">
         <div className="lg:col-span-2 space-y-5">
           <Card className="border-transparent card-elevated overflow-hidden">
-            <div className="h-48 sm:h-56 bg-muted overflow-hidden">
-              <img src={facility.image_url || facility.avatar_url || "/placeholder.svg"} alt={facility.name} className="w-full h-full object-cover" />
-            </div>
             <CardContent className="p-5">
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-4 flex-1 min-w-0">
@@ -174,14 +169,15 @@ export default function CareFacilityProfile() {
                     <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1"><Star className="h-4 w-4 text-warning fill-warning" /> {reviewSummary.average?.toFixed(1) || t("common.new")} ({reviewSummary.count} {t("common.reviews")})</span>
                       {fullAddress && <span className="flex items-center gap-1"><MapPin className="h-4 w-4" /> {fullAddress}</span>}
-                      <span className="flex items-center gap-1"><Globe className="h-4 w-4" /> {facility.country || (isZh ? "中国" : "Global")}</span>
                     </div>
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-                    {facility.type && <Badge variant="outline">{formatFacilityToken(facility.type)}</Badge>}
-                    {services.map((service) => (
-                      <Badge key={service} variant="secondary" className="bg-accent text-accent-foreground">{formatFacilityToken(service)}</Badge>
+                    {typeLabels.map((label) => (
+                      <Badge key={`type-${label}`} variant="outline">{label}</Badge>
+                    ))}
+                    {stageLabels.map((label) => (
+                      <Badge key={`stage-${label}`} variant="secondary" className="bg-accent text-accent-foreground">{label}</Badge>
                     ))}
                   </div>
 
@@ -209,13 +205,13 @@ export default function CareFacilityProfile() {
             <Card className="border-transparent card-elevated">
               <CardContent className="p-4">
                 <div className="text-xs text-muted-foreground mb-1">{isZh ? "机构类型" : "Facility type"}</div>
-                <div className="text-base font-semibold text-foreground">{facility.type ? formatFacilityToken(facility.type) : (isZh ? "未填写" : "Not specified")}</div>
+                <div className="text-base font-semibold text-foreground">{typeLabels.length ? typeLabels.join(isZh ? "、" : ", ") : (isZh ? "未填写" : "Not specified")}</div>
               </CardContent>
             </Card>
             <Card className="border-transparent card-elevated">
               <CardContent className="p-4">
-                <div className="text-xs text-muted-foreground mb-1">{isZh ? "服务标签" : "Service tags"}</div>
-                <div className="text-2xl font-bold text-foreground">{services.length}</div>
+                <div className="text-xs text-muted-foreground mb-1">{isZh ? "入住人数规模" : "Residents"}</div>
+                <div className="text-base font-semibold text-foreground">{peopleNumberLabel || (isZh ? "未填写" : "Not specified")}</div>
               </CardContent>
             </Card>
           </div>
@@ -229,15 +225,27 @@ export default function CareFacilityProfile() {
               <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
                 <div className="rounded-xl border p-4">
                   <div className="font-medium text-foreground mb-2">{isZh ? "机构类型" : "Facility type"}</div>
-                  <div>{facility.type ? formatFacilityToken(facility.type) : (isZh ? "未填写" : "Not specified")}</div>
+                  <div>{typeLabels.length ? typeLabels.join(isZh ? "、" : ", ") : (isZh ? "未填写" : "Not specified")}</div>
                 </div>
                 <div className="rounded-xl border p-4">
-                  <div className="font-medium text-foreground mb-2 flex items-center gap-2"><Layers3 className="h-4 w-4" />{isZh ? "服务分类" : "Service categories"}</div>
-                  <div>{serviceCategories.length > 0 ? serviceCategories.map((item) => formatFacilityToken(item)).join(isZh ? "、" : ", ") : (isZh ? "未填写" : "Not specified")}</div>
+                  <div className="font-medium text-foreground mb-2 flex items-center gap-2"><Layers3 className="h-4 w-4" />{isZh ? "可照护的失智症阶段" : "Dementia stages cared for"}</div>
+                  <div>{stageLabels.length ? stageLabels.join(isZh ? "、" : ", ") : (isZh ? "未填写" : "Not specified")}</div>
                 </div>
                 <div className="rounded-xl border p-4">
-                  <div className="font-medium text-foreground mb-2">{isZh ? "服务项目" : "Service types"}</div>
-                  <div>{serviceTypes.length > 0 ? serviceTypes.map((item) => formatFacilityToken(item)).join(isZh ? "、" : ", ") : (isZh ? "未填写" : "Not specified")}</div>
+                  <div className="font-medium text-foreground mb-2">{isZh ? "房型" : "Room types"}</div>
+                  <div>{roomTypeLabels.length ? roomTypeLabels.join(isZh ? "、" : ", ") : (isZh ? "未填写" : "Not specified")}</div>
+                </div>
+                <div className="rounded-xl border p-4">
+                  <div className="font-medium text-foreground mb-2">{isZh ? "房间设施" : "Room facilities"}</div>
+                  <div>{roomFacilityLabels.length ? roomFacilityLabels.join(isZh ? "、" : ", ") : (isZh ? "未填写" : "Not specified")}</div>
+                </div>
+                <div className="rounded-xl border p-4">
+                  <div className="font-medium text-foreground mb-2">{isZh ? "公共设施" : "Community facilities"}</div>
+                  <div>{communityFacilityLabels.length ? communityFacilityLabels.join(isZh ? "、" : ", ") : (isZh ? "未填写" : "Not specified")}</div>
+                </div>
+                <div className="rounded-xl border p-4">
+                  <div className="font-medium text-foreground mb-2">{isZh ? "入住人数规模" : "Number of residents"}</div>
+                  <div>{peopleNumberLabel || (isZh ? "未填写" : "Not specified")}</div>
                 </div>
               </div>
             </CardContent>
@@ -245,54 +253,20 @@ export default function CareFacilityProfile() {
 
           <Card className="border-transparent card-elevated">
             <CardHeader>
-              <CardTitle>{isZh ? "地址与服务范围" : "Location & coverage"}</CardTitle>
+              <CardTitle>{isZh ? "地址" : "Location"}</CardTitle>
             </CardHeader>
             <CardContent className="grid sm:grid-cols-2 gap-4 text-sm text-muted-foreground">
-              {isZh ? (
-                <>
-                  <div className="rounded-xl border p-4">
-                    <div className="font-medium text-foreground mb-2">{isZh ? "国家/地区" : "Country"}</div>
-                    <div>{facility.country || (isZh ? "未填写" : "Not specified")}</div>
-                  </div>
-                  <div className="rounded-xl border p-4">
-                    <div className="font-medium text-foreground mb-2">{isZh ? "省份" : "Province"}</div>
-                    <div>{facility.c_province || (isZh ? "未填写" : "Not specified")}</div>
-                  </div>
-                  <div className="rounded-xl border p-4">
-                    <div className="font-medium text-foreground mb-2">{isZh ? "城市" : "City"}</div>
-                    <div>{facility.c_city || (isZh ? "未填写" : "Not specified")}</div>
-                  </div>
-                  <div className="rounded-xl border p-4">
-                    <div className="font-medium text-foreground mb-2">{isZh ? "区/县" : "District"}</div>
-                    <div>{facility.c_district || (isZh ? "未填写" : "Not specified")}</div>
-                  </div>
-                  <div className="rounded-xl border p-4">
-                    <div className="font-medium text-foreground mb-2">{isZh ? "镇/街道" : "Town"}</div>
-                    <div>{facility.c_town || (isZh ? "未填写" : "Not specified")}</div>
-                  </div>
-                  <div className="rounded-xl border p-4">
-                    <div className="font-medium text-foreground mb-2">{isZh ? "村/社区与详细地址" : "Village / address"}</div>
-                    <div>{[facility.c_village, facility.address].filter(Boolean).join(" ") || (isZh ? "未填写" : "Not specified")}</div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="rounded-xl border p-4">
-                    <div className="font-medium text-foreground mb-2">{isZh ? "国家" : "Country"}</div>
-                    <div>{facility.country || (isZh ? "未填写" : "Not specified")}</div>
-                  </div>
-                  <div className="rounded-xl border p-4">
-                    <div className="font-medium text-foreground mb-2">{isZh ? "地区" : "Region / locality"}</div>
-                    <div>{facility.location || (isZh ? "未填写" : "Not specified")}</div>
-                  </div>
-                  <div className="rounded-xl border p-4 sm:col-span-2">
-                    <div className="font-medium text-foreground mb-2">{isZh ? "详细地址" : "Address"}</div>
-                    <div>{facility.address || (isZh ? "未填写" : "Not specified")}</div>
-                  </div>
-                </>
-              )}
+              <div className="rounded-xl border p-4">
+                <div className="font-medium text-foreground mb-2">{isZh ? "所在地区" : "Region / locality"}</div>
+                <div>{facility.location || (isZh ? "未填写" : "Not specified")}</div>
+              </div>
+              <div className="rounded-xl border p-4">
+                <div className="font-medium text-foreground mb-2">{isZh ? "详细地址" : "Address"}</div>
+                <div>{facility.address || (isZh ? "未填写" : "Not specified")}</div>
+              </div>
             </CardContent>
           </Card>
+
 
           <Card className="border-transparent card-elevated">
             <CardHeader>
