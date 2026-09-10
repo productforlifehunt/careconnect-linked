@@ -1,16 +1,16 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useMemo } from "react";
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AIAssistantProvider } from "@/contexts/AIAssistantContext";
 import { useApplyDisplaySettings } from "@/features/settings/display";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { SiteProvider, useSite } from "@/contexts/SiteContext";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
+
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
@@ -72,21 +72,9 @@ const queryClient = new QueryClient({
   },
 });
 
-// Dashboard routes that always get sidebar
-const baseDashboardPaths = ["/dashboard", "/bookings", "/care-circle", "/find", "/favorite-caregiver", "/settings", "/cared-ones", "/tasks", "/caregiver-setting", "/community", "/articles", "/cart", "/order-confirmation", "/awared", "/cared", "/coped", "/safed", "/accompanied", "/calendar", "/resources", "/inbox"];
-// Routes that get sidebar only when authenticated
-const authDashboardPaths = ["/search", "/caregiver"];
-
+// One interface everywhere: the phone layout (header + bottom bar) is the only
+// shell, on phones and on desktop alike. No desktop-only sidebar.
 function AppRoutes() {
-  const location = useLocation();
-  const { isAuthenticated } = useAuth();
-
-  const isDashboard = useMemo(() => {
-    const allPaths = isAuthenticated
-      ? [...baseDashboardPaths, ...authDashboardPaths]
-      : baseDashboardPaths;
-    return allPaths.some((p) => location.pathname.startsWith(p));
-  }, [location.pathname, isAuthenticated]);
 
   const routes = (
     <Routes>
@@ -152,7 +140,7 @@ function AppRoutes() {
     </Routes>
   );
 
-  return isDashboard ? <DashboardLayout>{routes}</DashboardLayout> : routes;
+  return routes;
 }
 
 function RootRouter() {

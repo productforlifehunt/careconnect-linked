@@ -51,7 +51,7 @@ export function SafetyShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col bg-background">
       <header className="sticky top-0 z-50 border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-        <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-3 px-4 md:h-16">
+        <div className="flex h-14 w-full items-center gap-3 px-4 md:h-16">
           <button
             type="button"
             onClick={() => navigate(isAuthenticated ? "/map" : "/")}
@@ -66,25 +66,6 @@ export function SafetyShell({ children }: { children: ReactNode }) {
             </span>
           </button>
 
-          {isAuthenticated && (
-            <nav className="ml-4 hidden items-center gap-1 md:flex" aria-label={L("主导航", "Main navigation")}>
-              {tabs
-                .filter((t) => t.url !== "/me")
-                .map((t) => (
-                  <Button
-                    key={t.url}
-                    variant={isActive(t.url) ? "secondary" : "ghost"}
-                    size="sm"
-                    className="gap-2"
-                    onClick={() => navigate(t.url)}
-                    aria-current={isActive(t.url) ? "page" : undefined}
-                  >
-                    <t.icon className="h-4 w-4" />
-                    {t.label}
-                  </Button>
-                ))}
-            </nav>
-          )}
 
           <div className="ml-auto flex items-center gap-1">
             {isAuthenticated && (
@@ -140,16 +121,16 @@ export function SafetyShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main className={`mx-auto w-full flex-1 ${bare ? "" : "max-w-6xl px-0 pb-20 md:px-4 md:pb-8"}`}>
+      <main className={`w-full flex-1 ${bare ? "" : "px-0 pb-20 md:px-4"}`}>
         {children}
       </main>
 
       {isAuthenticated && !bare && (
         <nav
-          className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background pb-[env(safe-area-inset-bottom)] md:hidden"
+          className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background pb-[env(safe-area-inset-bottom)]"
           aria-label={L("底部导航", "Bottom navigation")}
         >
-          <div className="mx-auto flex max-w-3xl">
+          <div className="flex w-full">
             {tabs.map((tab) => {
               const active = isActive(tab.url);
               const Icon = tab.icon;

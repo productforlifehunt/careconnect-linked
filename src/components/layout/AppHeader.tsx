@@ -124,7 +124,9 @@ export function AppHeader() {
 
         {/* Desktop horizontal nav — primary links inline, the rest in a More menu
             so items never wrap below the header border. */}
+        {!isAuthenticated && (
         <nav className="hidden lg:flex items-center gap-0.5 ml-3 min-w-0 flex-nowrap">
+
 
           {primaryNav.map(item => (
             <Link
@@ -165,6 +167,7 @@ export function AppHeader() {
             </DropdownMenu>
           )}
         </nav>
+        )}
 
         <div className="flex-1" />
 
@@ -194,13 +197,6 @@ export function AppHeader() {
         {/* Auth section */}
         {isAuthenticated ? (
           <div className="flex items-center gap-1">
-            <NavLink
-              to="/dashboard"
-              className="hidden md:inline-flex px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
-              activeClassName="bg-primary text-primary-foreground rounded-lg"
-            >
-              {t("nav.dashboard")}
-            </NavLink>
 
             <Button
               variant="ghost"
