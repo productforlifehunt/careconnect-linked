@@ -475,24 +475,14 @@ export function MobileBottomBar() {
             <Bot className="h-5 w-5" />
           </button>
           {showHelpBubble && (
-            <div className="fixed right-4 bottom-20 z-40">
-              <button
-                type="button"
-                onClick={openHelp}
-                aria-label={isChinese ? "使用帮助" : "App help"}
-                className="h-12 w-12 rounded-full bg-card border text-foreground shadow-lg hover:scale-105 active:scale-95 transition-transform flex items-center justify-center"
-              >
-                <HelpCircle className="h-5 w-5" />
-              </button>
-              <button
-                type="button"
-                onClick={hideHelpBubble}
-                aria-label={isChinese ? "隐藏帮助按钮" : "Hide help button"}
-                className="absolute -top-1 -left-1 h-4 w-4 rounded-full bg-muted text-muted-foreground border flex items-center justify-center"
-              >
-                <X className="h-2.5 w-2.5" />
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={openHelp}
+              aria-label={isChinese ? "使用帮助" : "App guide"}
+              className="fixed right-4 bottom-20 z-40 h-12 w-12 rounded-full bg-card border text-foreground shadow-lg hover:scale-105 active:scale-95 transition-transform flex items-center justify-center"
+            >
+              <HelpCircle className="h-5 w-5" />
+            </button>
           )}
         </>
       )}
