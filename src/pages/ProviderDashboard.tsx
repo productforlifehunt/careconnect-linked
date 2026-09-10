@@ -375,11 +375,8 @@ export default function ProviderDashboard() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="earnings" className="mt-4">
-          <div className="grid sm:grid-cols-2 gap-4 mb-6">
-            <Card className="border-transparent card-elevated"><CardContent className="p-5 text-center"><p className="text-3xl font-bold text-foreground">{isZh ? "¥" : "$"}{totalEarnings.toFixed(2)}</p><p className="text-sm text-muted-foreground mt-1">{isZh ? "已完成订单总额" : "Completed Bookings Total"}</p></CardContent></Card>
-            <Card className="border-transparent card-elevated"><CardContent className="p-5 text-center"><p className="text-3xl font-bold text-foreground">{completedBookings.length}</p><p className="text-sm text-muted-foreground mt-1">{isZh ? "已完成预约" : "Completed Bookings"}</p></CardContent></Card>
-          </div>
+        {/* Where the money should be sent, and how to withdraw it. */}
+        <TabsContent value="payment" className="mt-4">
           <Card className="border-transparent card-elevated mb-4">
             <CardContent className="p-5 text-sm text-muted-foreground leading-relaxed">
               {isZh
@@ -387,10 +384,16 @@ export default function ProviderDashboard() {
                 : "Clients pay online when they place the booking, and each amount is recorded to your payout account. Once you mark the service complete the amount becomes withdrawable — request a payout right below. Refunds and disputes are handled per order. The platform takes no commission."}
             </CardContent>
           </Card>
+          <PayoutAccountsCard section="account" />
+        </TabsContent>
 
-          {/* Money lives in one place: balance, payout details and withdrawals. */}
-          <PayoutAccountsCard />
-
+        {/* What has been earned and paid out already. */}
+        <TabsContent value="earnings" className="mt-4">
+          <div className="grid sm:grid-cols-2 gap-4 mb-6">
+            <Card className="border-transparent card-elevated"><CardContent className="p-5 text-center"><p className="text-3xl font-bold text-foreground">{isZh ? "¥" : "$"}{totalEarnings.toFixed(2)}</p><p className="text-sm text-muted-foreground mt-1">{isZh ? "已完成订单总额" : "Completed Bookings Total"}</p></CardContent></Card>
+            <Card className="border-transparent card-elevated"><CardContent className="p-5 text-center"><p className="text-3xl font-bold text-foreground">{completedBookings.length}</p><p className="text-sm text-muted-foreground mt-1">{isZh ? "已完成预约" : "Completed Bookings"}</p></CardContent></Card>
+          </div>
+          <PayoutAccountsCard section="history" />
         </TabsContent>
 
         <TabsContent value="settings" className="mt-4">
