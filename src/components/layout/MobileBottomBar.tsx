@@ -131,8 +131,10 @@ export function MobileBottomBar() {
   useEffect(() => { setFindTab(prefs.defaultFindTab); }, [prefs.defaultFindTab]);
 
   const isChallenged = site.family === "challenged";
-  // challenged-v1 is the early-launch trim: search-only, no Resources & Help.
-  const isV1 = site.id === "challenged-v1";
+  // Release builds (beta / public) drop the compliance-heavy areas.
+  const paidCare = site.features.paidCaregivers;
+  const facilitiesOn = site.features.facilities;
+  const communityOn = site.features.community;
   const moreActive = open;
 
   const careGroupLabel = isChinese
@@ -147,19 +149,23 @@ export function MobileBottomBar() {
   const openAi = () => { setOpen(false); openAssistant(); };
 
   // ── Build tool item registry ──
-  const findCareItems: ToolItem[] = isChallenged
+  const findCareItems: ToolItem[] = !paidCare
+    ? []
+    : isChallenged
     ? [
         { id: "find-care", title: isChinese ? "找护理者" : "Hire Caregivers", url: "/search?service_category=care", icon: Search },
         { id: "find-local-comp", title: isChinese ? "本地陪伴" : "Local Companion", url: "/search?service_type=local&service_category=companionship", icon: HeartIcon },
         { id: "find-remote-comp", title: isChinese ? "远程陪伴" : "Remote Companion", url: "/search?service_type=remote&service_category=companionship", icon: MessageSquare },
-        { id: "find-facilities", title: isChinese ? "养老机构" : "Facilities", url: "/search?service_category=facility", icon: Building2 },
+        ...(facilitiesOn ? [{ id: "find-facilities", title: isChinese ? "养老机构" : "Facilities", url: "/search?service_category=facility", icon: Building2 }] : []),
       ]
     : [
         { id: "find-care", title: isChinese ? "找护理者" : "Hire Caregivers", url: "/search", icon: Search },
-        { id: "find-facilities", title: isChinese ? "养老机构" : "Facilities", url: "/search?service_category=facility", icon: Building2 },
+        ...(facilitiesOn ? [{ id: "find-facilities", title: isChinese ? "养老机构" : "Facilities", url: "/search?service_category=facility", icon: Building2 }] : []),
       ];
 
-  const findWorkItems: ToolItem[] = [
+  const findWorkItems: ToolItem[] = !paidCare
+    ? [{ id: "tasks", title: isChinese ? "需要帮手的任务" : "Tasks Needing Help", url: "/tasks", icon: HeartHandshake }]
+    : [
     { id: "tasks", title: isChinese ? "需要帮手的任务" : "Tasks Needing Help", url: "/tasks", icon: HeartHandshake },
     { id: "work-become", title: isChinese ? "成为护理者" : "Become Caregiver", url: "/become-caregiver", icon: UserPlus },
     { id: "work-provider", title: isChinese ? "护理者面板" : "Caregiver Dashboard", url: "/caregiver-setting", icon: LayoutDashboard },
@@ -168,17 +174,17 @@ export function MobileBottomBar() {
   const dailyCareItems: ToolItem[] = isChallenged
     ? [
         { id: "daily-calendar", title: isChinese ? "日历" : "Calendar", url: "/calendar", icon: CalendarDays },
-        { id: "daily-bookings", title: isChinese ? "预约" : "Bookings", url: "/bookings", icon: ClipboardList },
+        ...(paidCare ? [{ id: "daily-bookings", title: isChinese ? "预约" : "Bookings", url: "/bookings", icon: ClipboardList }] : []),
         { id: "daily-gps", title: isChinese ? "定位" : "GPS", url: "/find", icon: MapPin },
         { id: "daily-ai", title: aiBrand(isChinese ? "zh" : "en", site.id), icon: Bot, onClick: openAi },
       ]
     : [
-        { id: "daily-bookings", title: isChinese ? "预约" : "Bookings", url: "/bookings", icon: ClipboardList },
+        ...(paidCare ? [{ id: "daily-bookings", title: isChinese ? "预约" : "Bookings", url: "/bookings", icon: ClipboardList }] : []),
         { id: "daily-gps", title: isChinese ? "定位" : "GPS", url: "/find", icon: MapPin },
         { id: "daily-ai", title: isChinese ? "AI 助手" : "AI Assistant", icon: Bot, onClick: openAi },
       ];
 
-  const resourceItems: ToolItem[] = isChallenged && !isV1
+  const resourceItems: ToolItem[] = isChallenged
     ? [
         { id: "community-resources", title: isChinese ? "资源与帮助" : "Resources & Help", url: "/resources", icon: BookOpen },
         { id: "res-cared", title: isChinese ? "护理篇" : "CareD", url: "/cared", icon: HeartHandshake },
@@ -189,7 +195,7 @@ export function MobileBottomBar() {
       ]
     : [];
 
-  const communityItems: ToolItem[] = isChallenged
+  const communityItems: ToolItem[] = isChallenged && communityOn
     ? [{ id: "community-community", title: isChinese ? "社区" : "Community", url: "/community", icon: Newspaper }]
     : [];
 
