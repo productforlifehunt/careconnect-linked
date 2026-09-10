@@ -168,7 +168,9 @@ export default function PayoutAccountsCard({
             </p>
           </div>
         </div>
+        )}
 
+        {showAccount && (<>
         <div className="flex gap-2 p-3 rounded-lg bg-muted/40 border border-border/50">
           <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
           <p className="text-sm text-muted-foreground leading-relaxed">
