@@ -97,13 +97,14 @@ export default function CareFacilityProfile() {
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
 
-  const services = useMemo(() => {
-    if (!facility) return [];
-    return [...normalizeList(facility.service_category), ...normalizeList(facility.service_type)];
-  }, [facility]);
+  const typeLabels = useMemo(() => facilityLabels(FACILITY_TYPE_OPTIONS, facility?.type, !!isZh), [facility, isZh]);
+  const stageLabels = useMemo(() => facilityLabels(FACILITY_STAGE_OPTIONS, facility?.dementia_stage, !!isZh), [facility, isZh]);
+  const roomTypeLabels = useMemo(() => facilityLabels(FACILITY_ROOM_TYPE_OPTIONS, facility?.room_type, !!isZh), [facility, isZh]);
+  const roomFacilityLabels = useMemo(() => facilityLabels(FACILITY_ROOM_FACILITY_OPTIONS, facility?.room_facility, !!isZh), [facility, isZh]);
+  const communityFacilityLabels = useMemo(() => facilityLabels(FACILITY_COMMUNITY_FACILITY_OPTIONS, facility?.community_facility, !!isZh), [facility, isZh]);
+  const peopleNumberLabel = facility?.people_number ? facilityLabel(FACILITY_PEOPLE_NUMBER_OPTIONS, facility.people_number, !!isZh) : "";
+  const services = useMemo(() => [...typeLabels, ...stageLabels], [typeLabels, stageLabels]);
 
-  const serviceCategories = useMemo(() => normalizeList(facility?.service_category), [facility]);
-  const serviceTypes = useMemo(() => normalizeList(facility?.service_type), [facility]);
   const reviewStats = useMemo(() => {
     const list = reviews || [];
     const counts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 } as Record<number, number>;
