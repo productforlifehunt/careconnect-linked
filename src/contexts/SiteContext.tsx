@@ -2,7 +2,23 @@ import React, { createContext, useContext, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n/config";
 
-export type SiteId = "carecnc" | "challenged" | "challenged-v1" | "notchsafety";
+export type SiteId = "carecnc" | "challenged" | "notchsafety";
+
+/** b = beta, p = public release, t = internal test, none = internal full build. */
+export type ReleaseChannel = "internal" | "beta" | "public" | "test";
+
+/**
+ * Compliance-sensitive areas that release builds drop. Release builds are a
+ * subset of the internal build; nothing here is ever a separate codebase.
+ */
+export interface SiteFeatures {
+  /** Paid caregiver marketplace: search, profiles, reviews, bookings, payment. */
+  paidCaregivers: boolean;
+  /** Senior / care facilities: directory, search, reviews, add & claim. */
+  facilities: boolean;
+  /** Open discussion community (forum). */
+  community: boolean;
+}
 
 export interface SiteConfig {
   id: SiteId;
