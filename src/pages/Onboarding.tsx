@@ -104,7 +104,9 @@ export default function Onboarding() {
           <span className="text-foreground">{site.logoText}</span>
           <span className="text-primary">{site.logoAccent}</span>
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">{site.tagline}</p>
+        {site.tagline && (
+          <p className="text-sm text-muted-foreground mt-1">{site.tagline}</p>
+        )}
       </div>
 
       <Card className="border-transparent card-elevated">

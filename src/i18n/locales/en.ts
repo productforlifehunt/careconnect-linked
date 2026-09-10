@@ -194,7 +194,7 @@ const en = {
   site: {
     challenged: {
       name: "ChallengeD",
-      tagline: "Challenge dementia, together",
+      tagline: "",
       heroTitle: "Challenge Dementia,",
       heroHighlight: "Together",
       heroSubtitle: "Your all-in-one dementia care platform — knowledge guides, care coordination, GPS safety, AI companionship, and professional support.",
@@ -205,7 +205,7 @@ const en = {
       howItWorksTitle: "How ChallengeD Works",
       footerBrand: "ChallengeD",
       footerTagline: "Dementia care knowledge, coordination and location safety.",
-      authSubtitle: "Challenge dementia, together",
+      authSubtitle: "",
       dashboardSubtitle: "Your dementia care overview",
       caredOneSingular: "Cared One",
       careGroupSingular: "Care Team",

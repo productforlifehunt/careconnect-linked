@@ -36,20 +36,21 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
     icon = (
       <div
         style={box}
-        className="rounded-[24%] bg-primary flex flex-col items-center justify-center leading-none shadow-sm overflow-hidden"
+        className="rounded-[24%] bg-primary flex items-center justify-center leading-none shadow-sm overflow-hidden"
       >
-        <span
-          className="text-primary-foreground font-semibold tracking-tight"
-          style={{ fontSize: Math.round(size * 0.42), marginBottom: Math.round(size * 0.04) }}
+        {/* App-style bold D mark — single clean shape, no tiny text inside the icon */}
+        <svg
+          viewBox="0 0 48 48"
+          role="img"
+          aria-label="ChallengeD"
+          className="text-primary-foreground"
+          style={{ width: size * 0.62, height: size * 0.62 }}
         >
-          D
-        </span>
-        <span
-          className="text-primary-foreground/90 font-medium tracking-wide whitespace-nowrap"
-          style={{ fontSize: Math.max(5, Math.round(size * 0.115)) }}
-        >
-          ChallengeD
-        </span>
+          <path
+            fill="currentColor"
+            d="M14 9 h14 c7.7 0 12 5.8 12 13.5 s-4.3 13.5 -12 13.5 h-14 c-2 0 -3 -1 -3 -3 v-21 c0 -2 1 -3 3 -3 z"
+          />
+        </svg>
       </div>
     );
   } else if (site.family === "notchsafety") {
@@ -105,17 +106,19 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
 
   const wordmark = isCareCNC
     ? (isChinese ? "护畅" : "Care cnc")
-    : site.family === "notchsafety" && isChinese
-      ? "诺驰安全"
-      : null;
+    : brand === "challenged"
+      ? "ChallengeD"
+      : site.family === "notchsafety" && isChinese
+        ? "诺驰安全"
+        : null;
 
   return (
     <span className={`flex items-center gap-2 ${className}`}>
       {icon}
-      {showWordmark && brand !== "challenged" && brand !== "carecnc" && (
-        <span className="font-bold text-lg">
+      {showWordmark && brand !== "carecnc" && (
+        <span className="font-bold text-lg tracking-tight">
           {wordmark ? (
-            <span className="text-primary">{wordmark}</span>
+            <span className="text-foreground">{wordmark}</span>
           ) : (
             <>
               <span className="text-primary">{site.logoText}</span>
