@@ -282,12 +282,12 @@ export default function Community() {
               <CardHeader className="pb-2">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary shrink-0">
-                    {(post.author?.full_name || "?")[0]}
+                    {(forumName(post.author_id) || post.author?.full_name || "?")[0]}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-medium text-sm text-foreground">
-                        {post.author?.full_name || (isZh ? "未填姓名" : "No name")}
+                        {forumName(post.author_id) || post.author?.full_name || (isZh ? "未填姓名" : "No name")}
                       </span>
                       <span className="text-[11px] text-muted-foreground ml-auto shrink-0">
                         {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: dateLocale })}
