@@ -154,8 +154,8 @@ export default function ProviderDashboard() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-5">
       <div className="mb-5">
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">{isZh ? "服务者中心" : "Provider Dashboard"}</h1>
-        <p className="text-sm text-muted-foreground">{isZh ? "管理预约、排班与收入" : "Manage your bookings, schedule, and earnings"}</p>
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">{isZh ? "照护者设置" : "Caregiver Settings"}</h1>
+        <p className="text-sm text-muted-foreground">{isZh ? "管理预约、排班、收款与你的资料" : "Manage your bookings, schedule, payments, and your details"}</p>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
@@ -187,9 +187,10 @@ export default function ProviderDashboard() {
             {isZh ? "退款与问题" : "Refunds & issues"}{refundRequests.length > 0 ? ` (${refundRequests.length})` : ""}
           </TabsTrigger>
           <TabsTrigger value="availability" className="text-xs sm:text-sm">{isZh ? "可约时间" : "Availability"}</TabsTrigger>
-          <TabsTrigger value="earnings" className="text-xs sm:text-sm">{isZh ? "收入" : "Earnings"}</TabsTrigger>
-          <TabsTrigger value="services" className="text-xs sm:text-sm">{isZh ? "我的服务" : "My Services & Rates"}</TabsTrigger>
-          <TabsTrigger value="settings" className="text-xs sm:text-sm"><Settings className="h-3.5 w-3.5 mr-1" />{isZh ? "我的" : "Profile"}</TabsTrigger>
+          <TabsTrigger value="services" className="text-xs sm:text-sm">{isZh ? "我的服务与价格" : "My Services & Rates"}</TabsTrigger>
+          <TabsTrigger value="payment" className="text-xs sm:text-sm">{isZh ? "收款账户" : "Payment Account"}</TabsTrigger>
+          <TabsTrigger value="earnings" className="text-xs sm:text-sm">{isZh ? "收款记录" : "Payment History"}</TabsTrigger>
+          <TabsTrigger value="settings" className="text-xs sm:text-sm"><Settings className="h-3.5 w-3.5 mr-1" />{isZh ? "基本资料" : "Basic Information"}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="refunds" className="mt-4 space-y-4">
