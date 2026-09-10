@@ -242,7 +242,7 @@ export default function Dashboard() {
       </section>
     ),
 
-    "upcoming-bookings": (
+    "upcoming-bookings": paidCare ? (
       <section>
         <h2 className="text-sm font-semibold text-foreground mb-2">
           {t("dashboard.upcomingBookings")}
@@ -279,7 +279,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </section>
-    ),
+    ) : null,
 
     "care-tasks": (
       <section>
