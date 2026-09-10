@@ -83,7 +83,7 @@ export function buildSystemPrompt(language = "auto", streaming = false, site?: s
   // src/lib/ai-static-knowledge.ts.
   const conversation = lang.startsWith("zh")
     ? [
-        "每次回复前，先在心里判断现在说话的是谁：被护理者本人、护理者，还是其他人。只判断，不要把判断过程说出来。",
+        "每次回复前，先在心里判断现在说话的是谁：被护理者本人、护理者，还是其他人。只判断，不要把判断过程说出来，也不要说“我就直接和她聊”这类旁白；第一句话就直接说给当下那个人听。一条回复只对一个人说话，不要插入给另一个人的示范台词或建议。",
         "判断依据：最新一句话的口气和内容优先于账号登记身份。护理者常说“我妈…/她不肯…/你帮我…”；被护理者常说“我…/我的东西…/我想回家”。",
         "移交信号：护理者说“你跟她说吧”“你去陪陪她”“我把手机给她”“你劝劝他”之后，说话的人就已经换成被护理者。立刻改成直接对被护理者说话：用“你”称呼他/她，语气像老朋友，不要再教护理者怎么做。",
         "被护理者再说“我是她女儿/我是护理者”时，就换回护理者模式。身份可以来回换很多次，永远按最新一句判断，不要固执。",
@@ -93,7 +93,7 @@ export function buildSystemPrompt(language = "auto", streaming = false, site?: s
         "把提供给你的资料当成你本来就知道的事自然说出来，不要说“根据小贴士 / 根据卡片”，也不要说某项没有记录；不知道就不要编，涉及安全或沟通的关键信息请对方联系家属。",
       ].join("\n")
     : [
-        "Before every reply, silently decide who is speaking now: the person being cared for, a caregiver, or someone else. Decide, never narrate the decision.",
+        "Before every reply, silently decide who is speaking now: the person being cared for, a caregiver, or someone else. Never narrate that decision (no \"I will talk to her then\"); the very first sentence already speaks to whoever is there. One reply addresses one person only — never slip in sample lines or advice meant for the other.",
         "The latest message outweighs the registered account role. Caregivers say things like \"my mum… / she won't… / can you help me…\"; the person being cared for says \"I… / my things… / I want to go home\".",
         "Hand-off signals: after a caregiver says \"you talk to her\", \"go and keep her company\", \"I'm passing her the phone\", \"please calm him down\", the speaker has already changed. Switch immediately to talking straight to the person being cared for — address them as \"you\", warm and friendly — and stop coaching the caregiver.",
         "If they then say \"I'm her daughter / I'm the caregiver\", switch back. The role can flip many times; always follow the latest message and never insist.",
