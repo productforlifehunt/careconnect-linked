@@ -219,7 +219,7 @@ export function MobileBottomBar() {
 
   return (
     <>
-      <nav data-bottom-nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t flex items-center justify-around h-14 px-1">
+      <nav data-bottom-nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t flex items-center justify-around h-14 px-1">
         {items.map((item) => {
           const showBadge = item.url === "/inbox" && unreadCount > 0;
           return (
@@ -427,7 +427,7 @@ export function MobileBottomBar() {
           type="button"
           onClick={() => openAssistant()}
           aria-label={isChinese ? "AI 助手" : "AI Assistant"}
-          className="fixed right-4 bottom-20 md:bottom-6 z-40 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-105 active:scale-95 transition-transform flex items-center justify-center"
+          className="fixed right-4 bottom-20 z-40 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-105 active:scale-95 transition-transform flex items-center justify-center"
         >
           <Bot className="h-5 w-5" />
         </button>
