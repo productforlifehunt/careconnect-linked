@@ -470,7 +470,7 @@ export function MobileBottomBar() {
             type="button"
             onClick={() => openAssistant()}
             aria-label={isChinese ? "AI 助手" : "AI Assistant"}
-            className="fixed right-4 bottom-36 z-40 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-105 active:scale-95 transition-transform flex items-center justify-center"
+            className="fixed right-4 bottom-[8rem] z-40 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-105 active:scale-95 transition-transform flex items-center justify-center"
           >
             <Bot className="h-5 w-5" />
           </button>
@@ -479,7 +479,7 @@ export function MobileBottomBar() {
               type="button"
               onClick={openHelp}
               aria-label={isChinese ? "使用帮助" : "App guide"}
-              className="fixed right-4 bottom-20 z-40 h-12 w-12 rounded-full bg-card border text-foreground shadow-lg hover:scale-105 active:scale-95 transition-transform flex items-center justify-center"
+              className="fixed right-4 bottom-[4.75rem] z-40 h-12 w-12 rounded-full bg-card border text-foreground shadow-lg hover:scale-105 active:scale-95 transition-transform flex items-center justify-center"
             >
               <HelpCircle className="h-5 w-5" />
             </button>
