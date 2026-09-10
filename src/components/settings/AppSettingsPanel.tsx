@@ -48,7 +48,12 @@ function stateBadge(state: PermissionState | undefined, Z: Z) {
   return <Badge variant={m.variant}>{m.text}</Badge>;
 }
 
-export function AppSettingsPanel() {
+type SectionId = "channels" | "categories" | "quiet" | "display" | "permissions";
+
+export function AppSettingsPanel({
+  sections = ["channels", "categories", "quiet", "display", "permissions"],
+}: { sections?: SectionId[] } = {}) {
+  const show = (id: SectionId) => sections.includes(id);
   const { i18n } = useTranslation();
   const isCN = !!i18n.language?.startsWith("zh");
   const Z: Z = (cn, en) => (isCN ? cn : en);
