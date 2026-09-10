@@ -67,7 +67,15 @@ export interface BrandConfig {
   trustBadges: string[];
 }
 
-const careCNCConfig: SiteConfig = {
+/** A brand plus the release that is running (internal, beta, public or test). */
+export type SiteConfig = BrandConfig & {
+  release: SiteRelease;
+  features: SiteFeatures;
+  /** True when the UI must visibly mark this build as "Beta". */
+  showBetaLabel: boolean;
+};
+
+const careCNCConfig: BrandConfig = {
   id: "carecnc",
   family: "carecnc",
   name: "CareCNC",
