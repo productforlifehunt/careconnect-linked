@@ -1,4 +1,8 @@
 const zhCN = {
+  settings: {
+    creditsGrantedTitle: "已赠送 10 个 AI 点数",
+    creditsGrantedBody: "您已获得 10 个 AI 点数，可以先试用本应用的智能助手。",
+  },
   common: {
     role: "身份",
     signIn: "登录", signUp: "注册", signOut: "退出登录", getStarted: "立即开始",
