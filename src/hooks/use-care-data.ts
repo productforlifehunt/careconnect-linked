@@ -163,8 +163,10 @@ export function useCareFacilities(filters?: {
   location?: string;
   minRating?: number;
   sortBy?: string;
-  serviceTypes?: string[];
+  /** CCT 215 a57 option codes */
   facilityTypes?: string[];
+  /** CCT 215 a58 option codes */
+  dementiaStages?: string[];
   area?: "china" | "global";
 }) {
   return useQuery({
@@ -180,10 +182,17 @@ export function useCareFacilities(filters?: {
         const loc = filters.location.toLowerCase();
         results = results.filter((f) => (f as any).location?.toLowerCase().includes(loc) || (f as any).address?.toLowerCase().includes(loc));
       }
+      if (filters?.facilityTypes?.length) {
+        results = results.filter((f) => toCodeList((f as any).type).some((code) => filters.facilityTypes!.includes(code)));
+      }
+      if (filters?.dementiaStages?.length) {
+        results = results.filter((f) => toCodeList((f as any).dementia_stage).some((code) => filters.dementiaStages!.includes(code)));
+      }
       return results;
     },
   });
 }
+
 
 export function useCareFacility(id: string | undefined) {
   return useQuery({
