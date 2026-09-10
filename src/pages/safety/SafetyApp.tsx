@@ -10,6 +10,7 @@ import GPSTracking from "@/pages/GPSTracking";
 import CareCircle from "@/pages/CareCircle";
 import Inbox from "@/pages/Inbox";
 import Profile from "@/pages/Profile";
+import Onboarding from "@/pages/Onboarding";
 import AICompanion from "@/pages/AICompanion";
 import { SafetyShell } from "./SafetyShell";
 import SafetyLanding from "./SafetyLanding";
@@ -43,6 +44,7 @@ export default function SafetyApp() {
             element={!isLoading && isAuthenticated ? <Navigate to="/map" replace /> : <SafetyLanding />}
           />
           {/* Same GPSTracking file — path selects the tab (map / zones / alerts). */}
+          <Route path="/onboarding" element={<RequireAuth><Onboarding /></RequireAuth>} />
           <Route path="/map" element={<RequireAuth><GPSTracking /></RequireAuth>} />
           <Route path="/places" element={<RequireAuth><GPSTracking /></RequireAuth>} />
           <Route path="/circle" element={<RequireAuth><CareCircle /></RequireAuth>} />
