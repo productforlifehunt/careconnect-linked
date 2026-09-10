@@ -19,7 +19,11 @@ import { useTranslation } from "react-i18next";
  * caregiver save where the money should be sent (PayPal or bank), and submits a
  * payout request once a completed booking has matured.
  */
-export default function PayoutAccountsCard() {
+export default function PayoutAccountsCard({
+  section = "all",
+}: { section?: "all" | "account" | "history" } = {}) {
+  const showAccount = section === "all" || section === "account";
+  const showHistory = section === "all" || section === "history";
   const { i18n } = useTranslation();
   const isZh = i18n.language?.startsWith("zh");
   const { toast } = useToast();

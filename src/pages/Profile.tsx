@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { wpUploadMedia } from "@/services/wp-auth";
 import { runSettingSkill } from "@/lib/ai-dynamic-knowledge";
-import { User, Bell, Shield, MapPin, Loader2, Upload, Camera, Download, Trash2 } from "lucide-react";
+import { User, Bell, Shield, MapPin, Loader2, Upload, Camera, Download, Trash2, Monitor } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSite } from "@/contexts/SiteContext";
 import { useTranslation } from "react-i18next";
@@ -223,8 +223,12 @@ export default function Profile() {
           </Button>
         </TabsContent>
 
+        <TabsContent value="display" className="space-y-6">
+          <AppSettingsPanel sections={["display"]} />
+        </TabsContent>
+
         <TabsContent value="notifications" className="space-y-6">
-          <AppSettingsPanel />
+          <AppSettingsPanel sections={["channels", "categories", "quiet", "permissions"]} />
         </TabsContent>
 
         <TabsContent value="privacy" className="space-y-6">
