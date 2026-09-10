@@ -20,8 +20,10 @@ describe("central AI prompt registry", () => {
     const prompt = buildSystemPrompt("en", false, "carecnc");
     expect(prompt).toContain("CareCNC AI Assistant");
     expect(prompt).toContain("Never refuse");
-    // Persona + tone + the shared role/no-fabrication rules only.
-    expect(prompt.length).toBeLessThan(1400);
+    // Persona + tone + the shared role-switch / no-fabrication checklist only.
+    expect(prompt).toContain("who is speaking now");
+    expect(prompt).toContain("Hand-off signals");
+    expect(prompt.length).toBeLessThan(2600);
   });
 
   it("keeps dynamic care facts in request context", () => {
