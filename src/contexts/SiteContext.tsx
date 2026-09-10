@@ -135,22 +135,10 @@ const challengedConfig: SiteConfig = {
   trustBadges: ["badge1", "badge2", "badge3", "badge4"],
 };
 
-// 忆畅 early-launch variant.
-// Same Chinese brand as `challenged`, but trimmed feature set.
-// Use ?__site=challenged-v1 (or its dedicated domain) to load this build.
-const challengedV1Config: SiteConfig = {
-  ...challengedConfig,
-  id: "challenged-v1",
-  name: "忆畅",
-  metaTitle: "忆畅 — 失智症护理支持",
-  footerBrand: "忆畅",
-  brandSlug: "challenged-v1",
-};
-
 // All brands keep the user's explicit language choice; never auto-overwrite it.
 
-/** Map hostnames to site IDs */
-const DOMAIN_MAP: Record<string, SiteId> = {
+/** Map hostnames to site slugs */
+const DOMAIN_MAP: Record<string, string> = {
   "challenged.com": "challenged",
   "www.challenged.com": "challenged",
   "carecnc.com": "carecnc",
@@ -158,7 +146,75 @@ const DOMAIN_MAP: Record<string, SiteId> = {
   "localhost:5174": "challenged",
 };
 
-export function detectSite(): SiteId {
+/** Legacy / friendly aliases → canonical slug. */
+const SLUG_ALIASES: Record<string, string> = {
+  careconnected: "carecnc",
+  safety: "notchsafety",
+};
+
+/**
+ * Release slug grammar: `<brand>[-<channel><n>]-v<version>[-<region>]`
+ *   challenged                → internal full build (superset of everything)
+ *   challenged-b1-v1          → beta, "Beta" shown
+ *   challenged-b2-v1          → beta, no "Beta" label
+ *   challenged-p1-v1          → public release (international)
+ *   challenged-p1-v1-cn       → public release, mainland China
+ *   challenged-t1-v1          → internal test build
+ * Public / beta builds are always a SUBSET of the internal build — never a
+ * second codebase.
+ */
+const SLUG_RE = /^(challenged|carecnc|notchsafety)(?:-([bpt])(\d+))?(?:-v(\d+))?(?:-([a-z]{2}))?$/;
+
+export interface SiteRelease {
+  /** The slug exactly as requested, e.g. "challenged-b1-v1". */
+  slug: string;
+  channel: ReleaseChannel;
+  /** The channel number, e.g. 1 for b1 / p1 / t1. */
+  channelNumber: number;
+  version: number;
+  region?: string;
+}
+
+function parseSlug(raw: string): { brand: SiteId; release: SiteRelease } | null {
+  const slug = SLUG_ALIASES[raw] || raw;
+  const m = SLUG_RE.exec(slug);
+  if (!m) return null;
+  const [, brand, letter, num, version, region] = m;
+  const channel: ReleaseChannel =
+    letter === "b" ? "beta" : letter === "p" ? "public" : letter === "t" ? "test" : "internal";
+  return {
+    brand: brand as SiteId,
+    release: {
+      slug,
+      channel,
+      channelNumber: num ? parseInt(num, 10) : 0,
+      version: version ? parseInt(version, 10) : 0,
+      region: region || undefined,
+    },
+  };
+}
+
+/**
+ * Feature set for a release. Beta and public builds drop the three
+ * compliance-heavy areas: the paid caregiver marketplace, senior facilities
+ * and the open discussion community.
+ */
+function featuresFor(release: SiteRelease): SiteFeatures {
+  const trimmed = release.channel === "beta" || release.channel === "public";
+  return {
+    paidCaregivers: !trimmed,
+    facilities: !trimmed,
+    community: !trimmed,
+  };
+}
+
+/** Only b1 carries a visible "Beta" label; b2 is the same build without it. */
+function showsBetaLabel(release: SiteRelease): boolean {
+  return release.channel === "beta" && release.channelNumber === 1;
+}
+
+/** The raw release slug for this tab (query param → domain → stored choice). */
+export function detectSiteSlug(): string {
   if (typeof window === "undefined") return "challenged";
 
   const host = window.location.host;
@@ -166,20 +222,16 @@ export function detectSite(): SiteId {
   const storageKey = `__site_id:${host}`;
 
   const params = new URLSearchParams(window.location.search);
-  const siteParam = params.get("__site");
-  const paramSite: SiteId | null =
-    siteParam === "challenged" ? "challenged" :
-    siteParam === "challenged-v1" || siteParam === "challenged-1.0" || siteParam === "yichang-v1" ? "challenged-v1" :
-    siteParam === "carecnc" || siteParam === "careconnected" ? "carecnc" :
-    siteParam === "notchsafety" || siteParam === "safety" ? "notchsafety" : null;
+  const siteParam = (params.get("__site") || "").trim().toLowerCase();
+  const parsed = siteParam ? parseSlug(siteParam) : null;
 
   // The query override is used to preview separate sub-apps on one host. Keep
   // that explicit choice for this tab so an internal Link followed by refresh
   // cannot silently fall back to another brand. The key is host-scoped to
   // prevent identity leaking between real domains.
-  if (paramSite) {
-    try { sessionStorage.setItem(storageKey, paramSite); } catch {}
-    return paramSite;
+  if (parsed) {
+    try { sessionStorage.setItem(storageKey, parsed.release.slug); } catch {}
+    return parsed.release.slug;
   }
 
   const mappedSite = DOMAIN_MAP[host] || DOMAIN_MAP[hostname];
@@ -189,12 +241,17 @@ export function detectSite(): SiteId {
   }
 
   try {
-    const storedSite = sessionStorage.getItem(storageKey);
-    if (storedSite && storedSite in SITE_CONFIGS) return storedSite as SiteId;
+    const stored = sessionStorage.getItem(storageKey);
+    if (stored && parseSlug(stored)) return stored;
   } catch {}
 
   // Default to challenged (忆畅) when nothing else matches.
   return "challenged";
+}
+
+/** The brand behind the running release. */
+export function detectSite(): SiteId {
+  return parseSlug(detectSiteSlug())?.brand ?? "challenged";
 }
 
 const notchSafetyConfig: SiteConfig = {
