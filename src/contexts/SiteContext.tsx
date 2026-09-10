@@ -114,7 +114,7 @@ const careCNCConfig: BrandConfig = {
   trustBadges: ["badge1", "badge2", "badge3"],
 };
 
-const challengedConfig: SiteConfig = {
+const challengedConfig: BrandConfig = {
   id: "challenged",
   family: "challenged",
   name: "ChallengeD",
@@ -278,7 +278,7 @@ export function detectSite(): SiteId {
   return parseSlug(detectSiteSlug())?.brand ?? "challenged";
 }
 
-const notchSafetyConfig: SiteConfig = {
+const notchSafetyConfig: BrandConfig = {
   ...careCNCConfig,
   id: "notchsafety", family: "notchsafety", name: "NotchSafety",
   tagline: "Know everyone is safe.",
@@ -290,20 +290,32 @@ const notchSafetyConfig: SiteConfig = {
   navLabels: { ...careCNCConfig.navLabels, gpsTracking: "Map" },
 };
 
-const SITE_CONFIGS: Record<SiteId, SiteConfig> = {
+const BRAND_CONFIGS: Record<SiteId, BrandConfig> = {
   challenged: challengedConfig,
-  "challenged-v1": challengedV1Config,
   carecnc: careCNCConfig,
   notchsafety: notchSafetyConfig,
 };
 
-const SiteContext = createContext<SiteConfig>(challengedConfig);
+const INTERNAL_RELEASE: SiteRelease = { slug: "challenged", channel: "internal", channelNumber: 0, version: 0 };
+
+/** Brand config + the running release, with its trimmed feature set. */
+export function resolveSite(slug: string = detectSiteSlug()): SiteConfig {
+  const parsed = parseSlug(slug) ?? { brand: "challenged" as SiteId, release: INTERNAL_RELEASE };
+  const brand = BRAND_CONFIGS[parsed.brand];
+  const showBetaLabel = showsBetaLabel(parsed.release);
+  return {
+    ...brand,
+    metaTitle: showBetaLabel ? `${brand.metaTitle} (Beta)` : brand.metaTitle,
+    release: parsed.release,
+    features: featuresFor(parsed.release),
+    showBetaLabel,
+  };
+}
+
+const SiteContext = createContext<SiteConfig>(resolveSite("challenged"));
 
 export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const config = useMemo(() => {
-    const id = detectSite();
-    return SITE_CONFIGS[id];
-  }, []);
+  const config = useMemo(() => resolveSite(), []);
 
   // Apply CSS class to <html> for theme override
   useEffect(() => {
