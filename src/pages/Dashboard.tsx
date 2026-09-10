@@ -127,12 +127,13 @@ export default function Dashboard() {
     in_progress: "bg-primary text-primary-foreground",
   };
 
+  const paidCare = site.features.paidCaregivers;
   const quickTools = [
-    { icon: ShoppingBag, label: t("nav.findHelp", { defaultValue: "Marketplace" }), to: "/search", color: "text-coral" },
+    ...(paidCare ? [{ icon: ShoppingBag, label: t("nav.findHelp", { defaultValue: "Marketplace" }), to: "/search", color: "text-coral" }] : []),
     { icon: MapPin,      label: t("dashboard.gpsTrack", { defaultValue: "GPS" }),    to: "/find", color: "text-primary" },
     { icon: CalIcon,     label: t("nav.calendar", { defaultValue: "Calendar" }),     to: "/calendar", color: "text-success" },
     { icon: MessageSquare, label: t("nav.messages", { defaultValue: "Messages" }),   to: "/inbox?tab=messages", color: "text-coral" },
-    { icon: Briefcase,   label: t("nav.bookings", { defaultValue: "Bookings" }),     to: "/bookings", color: "text-primary" },
+    ...(paidCare ? [{ icon: Briefcase, label: t("nav.bookings", { defaultValue: "Bookings" }), to: "/bookings", color: "text-primary" }] : []),
     { icon: Users,       label: careGroupsLabel,                                        to: "/care-circle", color: "text-success" },
     ...(isChallenged
       ? [{ icon: BookOpen, label: t("nav.resources", { defaultValue: "Resources" }), to: "/resources", color: "text-primary" }]
@@ -201,7 +202,7 @@ export default function Dashboard() {
     "stats": (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
         {[
-          { label: t("dashboard.upcomingBookings"), value: myUpcomingBookings.length, icon: CalendarDays, color: "text-primary", to: "/bookings" },
+          ...(paidCare ? [{ label: t("dashboard.upcomingBookings"), value: myUpcomingBookings.length, icon: CalendarDays, color: "text-primary", to: "/bookings" }] : []),
           { label: careGroupsLabel, value: myCareGroupCount, icon: Users, color: "text-success", to: "/care-circle" },
           { label: t("dashboard.pendingTasks"), value: myPendingTasks.length, icon: AlertCircle, color: "text-warning", to: "/care-circle" },
           { label: t("dashboard.unreadMessages"), value: myUnreadMessages, icon: MessageSquare, color: "text-coral", to: "/inbox?tab=messages" },
@@ -352,7 +353,7 @@ export default function Dashboard() {
     ) : caredOnesLoading ? slotSkeleton(t("dashboard.timeline", { defaultValue: "Today's Events" }), "h-32") : null,
 
 
-    "community-feed": recentPosts.length > 0 ? (
+    "community-feed": site.features.community && recentPosts.length > 0 ? (
       <section>
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-sm font-semibold text-foreground">

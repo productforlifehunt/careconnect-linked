@@ -28,6 +28,8 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [locationQuery, setLocationQuery] = useState("");
 
+  // Release builds hide the paid caregiver marketplace entirely.
+  const paidCare = site.features.paidCaregivers;
   const { data: topProviders, isLoading } = useProviders({ sortBy: "rating" });
   const featuredProviders = (topProviders || []).slice(0, 3);
 
@@ -75,6 +77,7 @@ const Index = () => {
               {t(`site.${site.id}.heroSubtitle`)}
             </p>
 
+            {paidCare && (
             <div className="bg-card rounded-xl p-2 shadow-xl animate-fade-in max-w-4xl" style={{ animationDelay: "0.2s" }}>
               <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-2">
                 <div className="relative min-w-0">
@@ -111,6 +114,7 @@ const Index = () => {
                 </Button>
               </div>
             </div>
+            )}
 
             <div className="flex flex-wrap gap-x-4 gap-y-2 mt-6 animate-fade-in" style={{ animationDelay: "0.3s" }}>
               {site.trustBadges.map((badgeKey) => (
@@ -129,6 +133,7 @@ const Index = () => {
 
 
       {/* Featured Caregivers */}
+      {paidCare && (
       <section className="bg-muted/50 py-10 sm:py-16">
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex items-center justify-between mb-6 sm:mb-8 gap-3">
@@ -203,6 +208,7 @@ const Index = () => {
           </div>
         </div>
       </section>
+      )}
 
       {/* How It Works */}
       <section className="max-w-6xl mx-auto px-4 py-10 sm:py-16">
@@ -226,9 +232,11 @@ const Index = () => {
           <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-primary-foreground mb-3 sm:mb-4 tracking-tight">{t(`site.${site.id}.ctaTitle`)}</h2>
           <p className="text-primary-foreground/80 mb-8 max-w-xl mx-auto">{t(`site.${site.id}.ctaSubtitle`)}</p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button variant="coral" size="lg" onClick={() => navigate("/search")}>
-              {t(`site.${site.id}.ctaButton`)}
-            </Button>
+            {paidCare && (
+              <Button variant="coral" size="lg" onClick={() => navigate("/search")}>
+                {t(`site.${site.id}.ctaButton`)}
+              </Button>
+            )}
             <Button variant="secondary" size="lg" onClick={() => navigate("/auth?mode=signup")}>
               {t("home.createFreeAccount")}
             </Button>
@@ -266,15 +274,18 @@ const Index = () => {
             </div>
             {[
               { title: t("home.forFamilies"), links: [
-                { label: t("home.findCaregivers"), href: "/search" },
+                ...(paidCare ? [{ label: t("home.findCaregivers"), href: "/search" }] : []),
                 { label: t("nav.howItWorks"), href: "/how-it-works" },
                 { label: t("nav.trustSafety"), href: "/trust-safety" },
                 { label: t(site.family === "challenged" ? "nav.careTeams" : "nav.careGroups"), href: "/care-circle" },
               ] },
-              { title: t("home.forCaregivers"), links: [
+              { title: t("home.forCaregivers"), links: paidCare ? [
                 { label: t("home.joinAsCaregiver"), href: "/become-caregiver" },
                 { label: t("nav.tasksNeedingHelp"), href: "/tasks" },
                 { label: t("nav.providerDashboard"), href: "/caregiver-setting" },
+                { label: t("nav.trustSafety"), href: "/trust-safety" },
+              ] : [
+                { label: t("nav.tasksNeedingHelp"), href: "/tasks" },
                 { label: t("nav.trustSafety"), href: "/trust-safety" },
               ] },
               { title: t("home.company"), links: [
