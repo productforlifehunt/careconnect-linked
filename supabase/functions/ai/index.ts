@@ -172,7 +172,8 @@ async function handleChat(req: Request): Promise<Response> {
       ...messages.filter((m) => m.role !== "system"),
     ];
 
-    const reply = await requestAIReply(LOVABLE_API_KEY, aiMessages);
+    const raw = await requestAIReply(LOVABLE_API_KEY, aiMessages);
+    const reply = raw ? stripFillerOpening(raw) : raw;
 
     return new Response(
       JSON.stringify({ reply: reply || buildFallbackReply(payload?.language), degraded: !reply }),
@@ -268,8 +269,8 @@ async function handleStream(req: Request): Promise<Response> {
       );
     }
 
-    // Pass the gateway SSE stream straight through to the client.
-    return new Response(upstream.body, {
+    // Stream through, cutting the model's greeting boilerplate off the head.
+    return new Response(stripOpeningFromSSE(upstream.body), {
       headers: {
         ...corsHeaders,
         "Content-Type": "text/event-stream",
