@@ -20,10 +20,10 @@ export interface SiteFeatures {
   community: boolean;
 }
 
-export interface SiteConfig {
+export interface BrandConfig {
   id: SiteId;
-  /** Brand family — versioned variants (e.g. challenged-v1) share the
-   *  same family as their parent so id-based UI checks keep working. */
+  /** Brand family — every release of a brand shares the same family so
+   *  id-based UI checks keep working. */
   family?: "challenged" | "carecnc" | "notchsafety";
   name: string;
   tagline: string;
