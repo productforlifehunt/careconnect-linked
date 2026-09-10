@@ -149,6 +149,7 @@ export default function PayoutAccountsCard({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
+        {showAccount && (
         <div className="grid sm:grid-cols-2 gap-3">
           <div className="rounded-lg bg-muted/40 border border-border/50 p-4 text-center">
             <p className="text-2xl font-bold text-foreground">
