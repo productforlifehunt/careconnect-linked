@@ -136,8 +136,11 @@ export default function PayoutAccountsCard({
     <Card className="border-transparent card-elevated">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Wallet className="h-5 w-5" /> {isZh ? "收款与提现" : "Payouts"}
-          {hasPayoutDetails && (
+          <Wallet className="h-5 w-5" />{" "}
+          {section === "history"
+            ? (isZh ? "收款记录" : "Payment history")
+            : (isZh ? "收款账户与提现" : "Payment account")}
+          {showAccount && hasPayoutDetails && (
             <Badge variant="default" className="ml-2">
               <CheckCircle2 className="h-3 w-3 mr-1" />
               {isZh ? "已配置" : "Configured"}
