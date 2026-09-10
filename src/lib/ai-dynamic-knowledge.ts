@@ -70,8 +70,8 @@ export function buildInfoSheetContext(ctx: InfoSheetPromptContext, isChinese: bo
     ctx.knowledge || "",
   ].filter(Boolean).join("\n");
   const rule = isChinese
-    ? "以下是这张信息卡的全部内容。只根据这些内容回答，缺少的信息就说卡片上没有写，并建议联系上面列出的联系人。对方通常是自愿帮忙的邻居、朋友或亲戚，语气温和、客气、感谢。"
-    : "The facts below are everything on this information card. Answer only from them; when something is missing, say it is not written on the card and suggest contacting a listed contact. The reader is usually a neighbour, friend, or relative who volunteered to help, so be warm and appreciative.";
+    ? "以下是你关于这位家人已经知道的情况。像自己熟悉这家人一样自然地说，不要提到“卡片”“须知”这类字眼。对方通常是自愿帮忙的邻居、朋友或亲戚，语气温和、客气、感谢；也可以回答一般照顾常识、陪对方聊天。不知道的不要编，涉及安全或沟通的关键信息请对方联系下面的联系人。"
+    : "Below is what you already know about this family. Speak as someone familiar with them — never mention a \"card\" or \"sheet\". The reader is usually a neighbour, friend, or relative who volunteered, so be warm and appreciative; general care know-how and plain conversation are fine too. Never invent anything, and when a missing detail could affect safety or understanding, ask them to call a contact listed below.";
   return `${rule}\n\n${isChinese ? "信息卡内容" : "Card facts"}:\n${facts || (isChinese ? "（暂无更多信息）" : "(no further details provided)")}`;
 }
 
