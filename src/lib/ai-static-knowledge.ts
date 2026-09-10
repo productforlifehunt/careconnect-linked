@@ -253,6 +253,46 @@ export const KNOWLEDGE: KnowledgeEntry[] = [
     },
   },
   {
+    id: "tips.theft-belief",
+    topic: "care-tips",
+    keywords: ["steal", "stolen", "theft", "accuse", "missing money", "偷", "被偷", "拿走", "怀疑", "丢了", "钱不见"],
+    title: { zh: "怀疑东西被偷", en: "Believing something was stolen" },
+    body: {
+      zh: "不要否认或讲道理，先认同感受：“找不到确实很着急，我陪你一起找。”常见的是自己收起来忘了，先看熟悉的藏东西的位置；找到后不要强调是他记错了；可以准备备用的钱包、钥匙。若要转移话题，接着聊他喜欢的事或一起做点小事。反复而强烈时告诉家属，必要时看医生。",
+      en: "Do not deny or argue — validate the feeling first (\"that's upsetting, let's look together\"). Items are usually put away and forgotten, so check their usual hiding places, and don't point out that they misremembered. Keep spare wallets or keys. To move on, shift to a topic or small activity they enjoy. Tell the family if it is frequent or intense.",
+    },
+  },
+  {
+    id: "tips.wants-to-go-home",
+    topic: "care-tips",
+    keywords: ["go home", "want to leave", "won't go home", "回家", "想出门", "不肯回家", "要走", "出去"],
+    title: { zh: "想出门或不肯回家", en: "Wanting to leave, or refusing to go home" },
+    body: {
+      zh: "“想回家”往往表达的是不安或想找熟悉的人，不是地址。先接住情绪：“想家了是吧，跟我说说家里什么样。”再给一件当下的事做过渡（喝水、吃点东西、一起走一段、看老照片）；不要说“这里就是你家”或直接拦住。天黑前后更常见，提前安排活动会减少。反复要出门有走失风险时告知家属并开启安全区提醒。",
+      en: "\"I want to go home\" usually means unease or missing a familiar person, not an address. Meet the feeling first (\"tell me about home\"), then bridge into something concrete — a drink, a snack, a short walk together, old photos. Don't say \"this is your home\" or physically block them. It peaks around dusk, so plan activity earlier. If they repeatedly try to leave, tell the family and turn on safe-zone alerts.",
+    },
+  },
+  {
+    id: "tips.companionship",
+    topic: "care-tips",
+    keywords: ["chat", "story", "lonely", "reminisce", "accompany", "陪", "聊天", "讲故事", "孤单", "回忆", "无聊"],
+    title: { zh: "陪聊、讲故事与回忆往事", en: "Chatting, stories, and reminiscing" },
+    body: {
+      zh: "从久远、愉快的记忆入手（老家、年轻时的工作、孩子小时候、爱吃的菜、老歌）；用开放但简单的问题，允许长时间停顿，不纠正细节、不测试记忆。可以讲短小、温和、结局明确的故事，一次两三分钟；配合老照片、老歌效果更好。对方情绪低落时先陪着，不急于转移。",
+      en: "Start from old, happy memories — hometown, early work, the children as babies, favourite food, old songs. Ask simple open questions, allow long pauses, never correct details or test memory. Short, gentle stories with a clear ending work well, two or three minutes at a time, and old photos or music help. If they are low, stay with the feeling before changing the subject.",
+    },
+  },
+  {
+    id: "tips.restlessness",
+    topic: "care-tips",
+    keywords: ["restless", "won't sit", "pacing", "keeps getting up", "坐不住", "走动", "来回", "起来", "不听劝"],
+    title: { zh: "坐不住、反复起身走动", en: "Restlessness and pacing" },
+    body: {
+      zh: "先排除需要：如厕、口渴、饿、疼、太热或太吵。不要反复命令“坐下”，改成邀请：“陪我一起叠这些毛巾好吗”“我们走到窗边看看”。给手上有事做（折毛巾、择菜、摸熟悉的物件），并把走动路线上的障碍和地毯清掉，防止跌倒。突然明显加重要考虑疼痛、感染或用药影响。",
+      en: "Rule out needs first: toilet, thirst, hunger, pain, heat, noise. Instead of repeating \"sit down\", invite them — \"help me fold these towels\", \"let's look out the window\". Give their hands something to do and clear obstacles and loose rugs along their walking route to prevent falls. A sudden increase warrants checking pain, infection, or medication.",
+    },
+  },
+  {
     id: "tips.caregiver-burnout",
     topic: "care-tips",
     keywords: ["burnout", "stress", "tired", "累", "压力", "崩溃", "喘息"],
