@@ -158,7 +158,7 @@ export function AppSettingsPanel({
 
   return (
     <div className="space-y-6">
-      {(["channels", "categories"] as const).map((gid) => {
+      {(["channels", "categories"] as const).filter(show).map((gid) => {
         const g = groupTitle(gid);
         return (
           <Card key={gid} className="border-transparent card-elevated">
@@ -171,6 +171,7 @@ export function AppSettingsPanel({
         );
       })}
 
+      {show("quiet") && (
       <Card className="border-transparent card-elevated">
         <CardHeader>
           <CardTitle className="text-base sm:text-lg">{groupTitle("quiet").title(isCN)}</CardTitle>
