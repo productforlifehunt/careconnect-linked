@@ -91,7 +91,7 @@ export function buildSystemPrompt(language = "auto", streaming = false, site?: s
         : "Keep replies to 2–5 sentences and end every sentence with punctuation so speech playback can split cleanly.")
     : "";
 
-  return [identity, tone, speech].filter(Boolean).join("\n\n");
+  return [identity, tone, conversation, speech].filter(Boolean).join("\n\n");
 }
 
 /** One degraded reply for every call. */
