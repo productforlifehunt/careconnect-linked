@@ -198,6 +198,26 @@ export function AICompanionChat({
   const abortRef = useRef<{ abort: () => void } | null>(null);
   const activeRequestId = useRef<string | undefined>();
 
+  // ─── App guide (fixed answers, no AI call) ───
+  const guide = guideEntries(site.family);
+  const [guideOpen, setGuideOpen] = useState(true);
+  const [guideShowAll, setGuideShowAll] = useState(false);
+  const [hideConfirm, setHideConfirm] = useState(false);
+  const visibleGuide = guideShowAll ? guide : guide.slice(0, 4);
+
+  const answerFromGuide = (entry: GuideEntry) => {
+    const answer = isZh ? entry.a.zh : entry.a.en;
+    setMessages((prev) => {
+      const next: Msg[] = [
+        ...prev,
+        { role: "user", content: isZh ? entry.q.zh : entry.q.en },
+        { role: "assistant", content: answer },
+      ];
+      if (readAloudRef.current) speak(answer, next.length - 1);
+      return next;
+    });
+  };
+
   // ─── Read aloud ───
   const [readAloud, setReadAloud] = useState(() => {
     try { return localStorage.getItem(READ_ALOUD_KEY) === "1"; } catch { return false; }
@@ -268,6 +288,14 @@ export function AICompanionChat({
     activeRequestId.current = request.id;
     setInput("");
     const starter = request.starterPrompt?.trim();
+    if (request.appGuide) {
+      // The guide itself is the welcome — nothing to generate, nothing to wait for.
+      setMessages([]);
+      setGuideOpen(true);
+      setGuideShowAll(false);
+      setHideConfirm(false);
+      return;
+    }
     if (!starter) {
       setMessages([{ role: "assistant", content: aiGreeting(!!isZh, site.id) }]);
       return;
