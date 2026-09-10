@@ -11,16 +11,13 @@ import { useCareTips, useCreateCareTip, useUpdateCareTip, useDeleteCareTip } fro
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 
+// Backend (CCT 209 "Cared one's care tip", field a57) only stores two options:
+// b55 = "tip", b56 = "avoid". The UI must offer exactly these.
 const TIP_CATEGORIES = [
-  { value: "General", labelEn: "General", labelZh: "通用" },
-  { value: "Nutrition", labelEn: "Nutrition", labelZh: "营养" },
-  { value: "Exercise", labelEn: "Exercise", labelZh: "运动" },
-  { value: "Mental Health", labelEn: "Mental Health", labelZh: "心理健康" },
-  { value: "Safety", labelEn: "Safety", labelZh: "安全" },
-  { value: "Communication", labelEn: "Communication", labelZh: "沟通" },
-  { value: "Sleep", labelEn: "Sleep", labelZh: "睡眠" },
-  { value: "Hygiene", labelEn: "Hygiene", labelZh: "卫生" },
+  { value: "tip", labelEn: "Do this (tip)", labelZh: "这样做（方法）" },
+  { value: "avoid", labelEn: "Avoid this", labelZh: "避免这样做" },
 ];
+
 
 export function TipsCard({ caredOneId }: { caredOneId: string }) {
   const { toast } = useToast();
@@ -31,7 +28,7 @@ export function TipsCard({ caredOneId }: { caredOneId: string }) {
   const create = useCreateCareTip();
   const update = useUpdateCareTip();
   const del = useDeleteCareTip();
-  const [form, setForm] = useState({ title: "", content: "", category: "General" });
+  const [form, setForm] = useState({ title: "", content: "", category: "tip" });
   const [editId, setEditId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ title: "", content: "", category: "" });
   const [tab, setTab] = useState("view");
@@ -41,7 +38,7 @@ export function TipsCard({ caredOneId }: { caredOneId: string }) {
     return opt ? (isCN ? opt.labelZh : opt.labelEn) : val;
   };
 
-  const startEdit = (t: any) => { setEditId(t.id); setEditForm({ title: t.title, content: t.content, category: t.category || "General" }); };
+  const startEdit = (t: any) => { setEditId(t.id); setEditForm({ title: t.title, content: t.content, category: t.category || "tip" }); };
   const cancelEdit = () => setEditId(null);
   const saveEdit = () => {
     if (!editId || !editForm.title || !editForm.content) return;
@@ -106,7 +103,7 @@ export function TipsCard({ caredOneId }: { caredOneId: string }) {
             <Button variant="coral" className="w-full" onClick={() => {
               if (!form.title || !form.content) return;
               create.mutate({ user_id: caredOneId, title: form.title, content: form.content, category: form.category }, {
-                onSuccess: () => { setForm({ title: "", content: "", category: "General" }); setTab("view"); toast({ title: Z("提示已添加", "Tip added") }); }
+                onSuccess: () => { setForm({ title: "", content: "", category: "tip" }); setTab("view"); toast({ title: Z("提示已添加", "Tip added") }); }
               });
             }} disabled={create.isPending || !form.title || !form.content}>{Z("添加提示", "Add Tip")}</Button>
           </CardContent></Card>
