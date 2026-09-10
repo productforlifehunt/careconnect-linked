@@ -385,7 +385,7 @@ export const useSite = (): SiteConfig => {
 
 /** Returns { area, language } for CCT content filtering based on current site. */
 export function getContentLocale(siteId: SiteId = detectSite()): { area: string; language: string } {
-  if (siteId === "challenged" || siteId === "challenged-v1") {
+  if (siteId === "challenged") {
     // Chinese site uses China + zh-CN
     return { area: "china", language: "zh-CN" };
   }
