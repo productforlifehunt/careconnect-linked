@@ -11,6 +11,8 @@ import { fetchMyProfileWordPress, updateProfileWordPress } from "@/features/prof
 import { runNotificationSkill } from "@/lib/ai-dynamic-knowledge";
 import { notifySubgroupApproved } from "@/features/notifications/notify-events";
 import { fetchCareFacilitiesWordPress, fetchCareFacilityByIdWordPress } from "@/features/facilities/source.wordpress";
+import { toCodeList } from "@/lib/facility-options";
+
 import {
   createCareFacilityWordPress, updateCareFacilityWordPress,
   fetchFacilityMembersWordPress, getMyFacilityPermissionWordPress,
@@ -163,8 +165,10 @@ export function useCareFacilities(filters?: {
   location?: string;
   minRating?: number;
   sortBy?: string;
-  serviceTypes?: string[];
+  /** CCT 215 a57 option codes */
   facilityTypes?: string[];
+  /** CCT 215 a58 option codes */
+  dementiaStages?: string[];
   area?: "china" | "global";
 }) {
   return useQuery({
@@ -180,10 +184,17 @@ export function useCareFacilities(filters?: {
         const loc = filters.location.toLowerCase();
         results = results.filter((f) => (f as any).location?.toLowerCase().includes(loc) || (f as any).address?.toLowerCase().includes(loc));
       }
+      if (filters?.facilityTypes?.length) {
+        results = results.filter((f) => toCodeList((f as any).type).some((code) => filters.facilityTypes!.includes(code)));
+      }
+      if (filters?.dementiaStages?.length) {
+        results = results.filter((f) => toCodeList((f as any).dementia_stage).some((code) => filters.dementiaStages!.includes(code)));
+      }
       return results;
     },
   });
 }
+
 
 export function useCareFacility(id: string | undefined) {
   return useQuery({
@@ -849,7 +860,7 @@ export function useAddCaredOneToGroup() {
 export function useCreateUserCaredOne() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (caredOne: { caredOneId: string; relationship?: string; isPrimary?: boolean }) => createUserCaredOneWordPress(caredOne),
+    mutationFn: (caredOne: { caredOneId: string }) => createUserCaredOneWordPress(caredOne),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["userCaredOnes"] }); },
   });
 }
@@ -1292,7 +1303,7 @@ export function useCareNotes(caredOneId: string | null) {
 export function useCreateCareNote() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (note: { user_id: string; title?: string; content: string; category?: string }) => createCareNoteWordPress(note),
+    mutationFn: (note: { user_id: string; title?: string; content: string }) => createCareNoteWordPress(note),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["careNotes"] }); },
   });
 }

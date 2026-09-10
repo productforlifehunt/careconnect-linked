@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Star, MapPin, Shield, Clock, Search, SlidersHorizontal, X, ChevronLeft, ChevronRight, Building2, Globe } from "lucide-react";
+import { Star, MapPin, Shield, Clock, Search, SlidersHorizontal, X, ChevronLeft, ChevronRight, Building2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
@@ -17,23 +17,16 @@ import { useTranslation } from "react-i18next";
 import { useServiceTypes } from "@/hooks/use-service-types";
 import { SERVICE_DELIVERY_MODES, careServiceTypeLabel } from "@/lib/care-service-types";
 import { useAuth } from "@/contexts/AuthContext";
-function normalizeList(value: string[] | string | null | undefined) {
-  if (Array.isArray(value)) return value.filter(Boolean);
-  if (typeof value === "string" && value.trim()) return [value];
-  return [] as string[];
-}
-
-function formatFacilityToken(value: string) {
-  return value.replace(/_/g, " ");
-}
-
+import {
+  FACILITY_TYPE_OPTIONS,
+  FACILITY_STAGE_OPTIONS,
+  FACILITY_ROOM_TYPE_OPTIONS,
+  FACILITY_PEOPLE_NUMBER_OPTIONS,
+  facilityLabel,
+  facilityLabels,
+} from "@/lib/facility-options";
 function getFacilityAddress(facility: CareFacility, isZh: boolean) {
-  if (isZh) {
-    return [facility.country, facility.c_province, facility.c_city, facility.c_district, facility.c_town, facility.c_village, facility.address]
-      .filter(Boolean)
-      .join(" ");
-  }
-  return [facility.location, facility.address, facility.country].filter(Boolean).join(", ");
+  return [facility.location, facility.address].filter(Boolean).join(isZh ? " " : ", ");
 }
 
 export default function SearchResults() {
@@ -78,7 +71,7 @@ export default function SearchResults() {
 
   const [priceRange, setPriceRange] = useState([0, 100]);
   const [selectedFacilityTypes, setSelectedFacilityTypes] = useState<string[]>([]);
-  const [selectedServiceTypes, setSelectedServiceTypes] = useState<string[]>([]);
+  const [selectedStages, setSelectedStages] = useState<string[]>([]);
   const [selectedLocations, setSelectedLocations] = useState<string[]>(initialServiceLocations);
   const [selectedServiceTypeSlugs, setSelectedServiceTypeSlugs] = useState<string[]>(initialServiceTypeSlugs);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
@@ -98,30 +91,20 @@ export default function SearchResults() {
     query: debouncedQuery || undefined,
     location: debouncedLocation || undefined,
     sortBy,
-    serviceTypes: selectedServiceTypes.length > 0 ? selectedServiceTypes : undefined,
+    dementiaStages: selectedStages.length > 0 ? selectedStages : undefined,
     facilityTypes: selectedFacilityTypes.length > 0 ? selectedFacilityTypes : undefined,
     area: facilityArea,
   });
 
-  const { data: facilityFacets } = useCareFacilities({ area: facilityArea });
 
   const toggleFacilityType = (s: string) => setSelectedFacilityTypes(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
-  const toggleServiceType = (s: string) => setSelectedServiceTypes(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
+  const toggleStage = (s: string) => setSelectedStages(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
   const toggleLocation = (s: string) => setSelectedLocations(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
   const toggleServiceTypeSlug = (s: string) => setSelectedServiceTypeSlugs(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
 
   // Delivery-mode options = CCT 258 a65 (b55 In person / b56 Remote).
   const LOCATION_OPTIONS = SERVICE_DELIVERY_MODES;
 
-  const facilityTypeOptions = Array.from(new Set((facilityFacets || []).map((item) => item.type).filter(Boolean) as string[]));
-  const facilityServiceOptions = Array.from(
-    new Set(
-      (facilityFacets || []).flatMap((item) => [
-        ...normalizeList(item.service_category),
-        ...normalizeList(item.service_type),
-      ])
-    )
-  );
 
   const FilterPanel = () => (
     <div className="space-y-6">
@@ -137,21 +120,21 @@ export default function SearchResults() {
           <div>
             <Label className="text-sm font-semibold mb-3 block">{isZh ? "机构类型" : "Facility type"}</Label>
             <div className="space-y-2 max-h-44 overflow-auto pr-1">
-              {facilityTypeOptions.map(s => (
-                <label key={s} className="flex items-center gap-2 cursor-pointer">
-                  <Checkbox aria-label={`${isZh ? "机构类型" : "Facility type"}: ${formatFacilityToken(s)}`} checked={selectedFacilityTypes.includes(s)} onCheckedChange={() => toggleFacilityType(s)} />
-                  <span className="text-sm">{formatFacilityToken(s)}</span>
+              {FACILITY_TYPE_OPTIONS.map(opt => (
+                <label key={opt.code} className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox aria-label={`${isZh ? "机构类型" : "Facility type"}: ${isZh ? opt.zh : opt.en}`} checked={selectedFacilityTypes.includes(opt.code)} onCheckedChange={() => toggleFacilityType(opt.code)} />
+                  <span className="text-sm">{isZh ? opt.zh : opt.en}</span>
                 </label>
               ))}
             </div>
           </div>
           <div>
-            <Label className="text-sm font-semibold mb-3 block">{isZh ? "服务分类" : "Services"}</Label>
-            <div className="space-y-2 max-h-52 overflow-auto pr-1">
-              {facilityServiceOptions.map(s => (
-                <label key={s} className="flex items-center gap-2 cursor-pointer">
-                  <Checkbox aria-label={`${isZh ? "服务分类" : "Service"}: ${formatFacilityToken(s)}`} checked={selectedServiceTypes.includes(s)} onCheckedChange={() => toggleServiceType(s)} />
-                  <span className="text-sm">{formatFacilityToken(s)}</span>
+            <Label className="text-sm font-semibold mb-3 block">{isZh ? "可照护的失智症阶段" : "Dementia stage"}</Label>
+            <div className="space-y-2">
+              {FACILITY_STAGE_OPTIONS.map(opt => (
+                <label key={opt.code} className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox aria-label={`${isZh ? "失智症阶段" : "Dementia stage"}: ${isZh ? opt.zh : opt.en}`} checked={selectedStages.includes(opt.code)} onCheckedChange={() => toggleStage(opt.code)} />
+                  <span className="text-sm">{isZh ? opt.zh : opt.en}</span>
                 </label>
               ))}
             </div>
@@ -283,17 +266,18 @@ export default function SearchResults() {
         </div>
       )}
 
-      {isFacilityMode && selectedFacilityTypes.length > 0 && (
+      {isFacilityMode && (selectedFacilityTypes.length > 0 || selectedStages.length > 0) && (
         <div className="flex flex-wrap gap-2 mb-4">
-          {selectedFacilityTypes.map(s => (
-            <Badge key={s} variant="secondary" className="gap-1 cursor-pointer" onClick={() => toggleFacilityType(s)}>{formatFacilityToken(s)} <X className="h-3 w-3" /></Badge>
+          {selectedFacilityTypes.map(code => (
+            <Badge key={code} variant="secondary" className="gap-1 cursor-pointer" onClick={() => toggleFacilityType(code)}>{facilityLabel(FACILITY_TYPE_OPTIONS, code, !!isZh)} <X className="h-3 w-3" /></Badge>
           ))}
-          {selectedServiceTypes.map(s => (
-            <Badge key={s} variant="secondary" className="gap-1 cursor-pointer" onClick={() => toggleServiceType(s)}>{formatFacilityToken(s)} <X className="h-3 w-3" /></Badge>
+          {selectedStages.map(code => (
+            <Badge key={code} variant="secondary" className="gap-1 cursor-pointer" onClick={() => toggleStage(code)}>{facilityLabel(FACILITY_STAGE_OPTIONS, code, !!isZh)} <X className="h-3 w-3" /></Badge>
           ))}
-          <Button variant="ghost" size="sm" onClick={() => setSelectedFacilityTypes([])}>{t("common.clearAll")}</Button>
+          <Button variant="ghost" size="sm" onClick={() => { setSelectedFacilityTypes([]); setSelectedStages([]); }}>{t("common.clearAll")}</Button>
         </div>
       )}
+
 
       <div className="flex gap-8">
         <aside className="hidden lg:block w-64 shrink-0">
@@ -332,15 +316,17 @@ export default function SearchResults() {
               <div className="space-y-4">
                 {isFacilityMode ? (
                   (paged as CareFacility[]).map((facility) => {
-                    const serviceCategories = normalizeList(facility.service_category);
-                    const serviceTypes = normalizeList(facility.service_type);
-                    const facilityServices = serviceCategories.concat(serviceTypes);
+                    const typeLabels = facilityLabels(FACILITY_TYPE_OPTIONS, (facility as any).type, !!isZh);
+                    const stageLabels = facilityLabels(FACILITY_STAGE_OPTIONS, (facility as any).dementia_stage, !!isZh);
+                    const roomTypeLabels = facilityLabels(FACILITY_ROOM_TYPE_OPTIONS, (facility as any).room_type, !!isZh);
+                    const peopleNumberLabel = (facility as any).people_number
+                      ? facilityLabel(FACILITY_PEOPLE_NUMBER_OPTIONS, (facility as any).people_number, !!isZh)
+                      : "";
                     const reviewSummary = facilityReviewSummaries?.[facility.id] || { average: null, count: 0 };
                     return (
                       <Card key={facility.id} className="card-elevated cursor-pointer border-transparent" onClick={() => navigate(`/facility/${facility.id}`)}>
                         <CardContent className="p-5">
                           <div className="flex flex-col sm:flex-row gap-4">
-                            <img src={facility.image_url || facility.avatar_url || "/placeholder.svg"} alt={facility.name || ""} className="w-24 h-24 rounded-xl object-cover shrink-0" />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1">
                                 <h3 className="font-semibold text-lg text-foreground">{facility.name}</h3>
@@ -353,19 +339,16 @@ export default function SearchResults() {
                               {facility.description && <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{facility.description}</p>}
                               <div className="space-y-2">
                                 <div className="flex flex-wrap gap-1.5">
-                                  {facility.type && <Badge variant="outline" className="text-xs">{formatFacilityToken(facility.type)}</Badge>}
-                                  {serviceCategories.slice(0, 3).map((s) => (<Badge key={s} variant="secondary" className="bg-primary/10 text-primary text-xs">{formatFacilityToken(s)}</Badge>))}
-                                  {serviceTypes.slice(0, 3).map((s) => (<Badge key={s} variant="secondary" className="bg-accent text-accent-foreground text-xs">{formatFacilityToken(s)}</Badge>))}
+                                  {typeLabels.map((label) => (<Badge key={`type-${label}`} variant="outline" className="text-xs">{label}</Badge>))}
+                                  {stageLabels.map((label) => (<Badge key={`stage-${label}`} variant="secondary" className="bg-primary/10 text-primary text-xs">{label}</Badge>))}
+                                  {roomTypeLabels.map((label) => (<Badge key={`room-${label}`} variant="secondary" className="bg-accent text-accent-foreground text-xs">{label}</Badge>))}
                                 </div>
-                                <div className="text-xs text-muted-foreground">
-                                  {isZh
-                                    ? `共 ${facilityServices.length} 项服务标签`
-                                    : `${facilityServices.length} service tags`}
-                                </div>
+                                {peopleNumberLabel && (
+                                  <div className="text-xs text-muted-foreground">{peopleNumberLabel}</div>
+                                )}
                               </div>
                             </div>
                             <div className="sm:text-right shrink-0 flex sm:flex-col items-start sm:items-end gap-3">
-                              <div className="text-sm text-muted-foreground flex items-center gap-1"><Globe className="h-4 w-4" /> {facility.country || (isZh ? "中国" : "Global")}</div>
                               <Button variant="coral" size="sm">{isZh ? "查看详情" : "View details"}</Button>
                             </div>
                           </div>
@@ -449,7 +432,7 @@ export default function SearchResults() {
                 {allResults.length === 0 && (
                   <div className="text-center py-16">
                     <p className="text-lg text-muted-foreground">{isFacilityMode ? (isZh ? "没有符合条件的养老机构。" : "No facilities matched your filters.") : t("search.noMatch")}</p>
-                    <Button variant="outline" className="mt-4" onClick={() => { setQuery(""); setLocationFilter(""); setSelectedServiceTypeSlugs([]); setSelectedFacilityTypes([]); setSelectedServiceTypes([]); setSelectedLocations([]); setMinRating(0); setPriceRange([0, 100]); setCurrentPage(1); }}>{t("common.clearFilters")}</Button>
+                    <Button variant="outline" className="mt-4" onClick={() => { setQuery(""); setLocationFilter(""); setSelectedServiceTypeSlugs([]); setSelectedFacilityTypes([]); setSelectedStages([]); setSelectedLocations([]); setMinRating(0); setPriceRange([0, 100]); setCurrentPage(1); }}>{t("common.clearFilters")}</Button>
                   </div>
                 )}
               </div>

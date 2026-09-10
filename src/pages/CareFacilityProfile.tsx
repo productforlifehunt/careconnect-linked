@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Building2, Globe, Loader2, Mail, MapPin, Phone, Star, Layers3, MessageSquareText, Users } from "lucide-react";
+import { ArrowLeft, Building2, Loader2, Mail, MapPin, Phone, Star, Layers3, MessageSquareText, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -400,10 +400,10 @@ export default function CareFacilityProfile() {
                   <span>{fullAddress}</span>
                 </div>
               )}
-              {(facility.phone_number || facility.phone) && (
+              {facility.phone && (
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Phone className="h-4 w-4 shrink-0" />
-                  <span>{facility.phone_number || facility.phone}</span>
+                  <span>{facility.phone}</span>
                 </div>
               )}
               {facility.email && (
@@ -413,9 +413,9 @@ export default function CareFacilityProfile() {
                 </div>
               )}
 
-              {(facility.phone_number || facility.phone) && (
+              {facility.phone && (
                 <Button className="w-full" asChild>
-                  <a href={`tel:${facility.phone_number || facility.phone}`}>
+                  <a href={`tel:${facility.phone}`}>
                     <Phone className="mr-2 h-4 w-4" /> {isZh ? "拨打电话" : "Call facility"}
                   </a>
                 </Button>
@@ -425,13 +425,7 @@ export default function CareFacilityProfile() {
                   <Building2 className="mr-2 h-4 w-4" /> {isZh ? "编辑机构资料" : "Edit facility profile"}
                 </Button>
               )}
-              {facility.website_url && (
-                <Button variant="outline" className="w-full" asChild>
-                  <a href={facility.website_url} target="_blank" rel="noreferrer">
-                    <Globe className="mr-2 h-4 w-4" /> {isZh ? "访问网站" : "Visit website"}
-                  </a>
-                </Button>
-              )}
+
               {fullAddress && (
                 <Button variant="outline" className="w-full" asChild>
                   <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`} target="_blank" rel="noreferrer">

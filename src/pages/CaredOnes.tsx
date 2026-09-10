@@ -82,8 +82,6 @@ export default function CaredOnes() {
   const [addOpen, setAddOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPerson, setSelectedPerson] = useState<any>(null);
-  const [relationship, setRelationship] = useState("");
-  const [isPrimary, setIsPrimary] = useState(false);
   const { data: searchResultsRaw } = useSearchProfiles(searchQuery);
   const [detailCaredOne, setDetailCaredOne] = useState<any>(null);
 
@@ -118,8 +116,8 @@ export default function CaredOnes() {
 
   const handleAddCaredOne = () => {
     if (!selectedPerson) return;
-    createUserCaredOne.mutate({ caredOneId: selectedPerson.id, relationship: relationship || undefined, isPrimary }, {
-      onSuccess: () => { setAddOpen(false); setSelectedPerson(null); setSearchQuery(""); setRelationship(""); setIsPrimary(false); toast({ title: t("caredOnes.added", { caredOne: site.caredOneSingular }) }); },
+    createUserCaredOne.mutate({ caredOneId: selectedPerson.id }, {
+      onSuccess: () => { setAddOpen(false); setSelectedPerson(null); setSearchQuery(""); toast({ title: t("caredOnes.added", { caredOne: site.caredOneSingular }) }); },
       onError: (err: any) => toast({ title: t("caredOnes.failedToAdd", "Failed"), description: err.message, variant: "destructive" }),
     });
   };
@@ -175,18 +173,6 @@ export default function CaredOnes() {
                 <Button variant="ghost" size="icon" className="min-h-11 min-w-11" aria-label={t("common.remove")} onClick={() => setSelectedPerson(null)}><X className="h-3.5 w-3.5" /></Button>
               </div>
             )}
-            <div>
-              <Label>{t("caredOnes.relationship")}</Label>
-              <Select value={relationship} onValueChange={setRelationship}>
-                <SelectTrigger><SelectValue placeholder={t("caredOnes.selectRelationship")} /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="mother">{t("caredOnes.mother")}</SelectItem><SelectItem value="father">{t("caredOnes.father")}</SelectItem>
-                  <SelectItem value="grandmother">{t("caredOnes.grandmother")}</SelectItem><SelectItem value="grandfather">{t("caredOnes.grandfather")}</SelectItem>
-                  <SelectItem value="spouse">{t("caredOnes.spouse")}</SelectItem><SelectItem value="child">{t("caredOnes.child")}</SelectItem>
-                  <SelectItem value="sibling">{t("caredOnes.sibling")}</SelectItem><SelectItem value="other">{t("caredOnes.other")}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
             <Button variant="coral" className="w-full" onClick={handleAddCaredOne} disabled={!selectedPerson || createUserCaredOne.isPending}>
               {createUserCaredOne.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <HeartPulse className="h-4 w-4 mr-2" />}
               {t("caredOnes.addCaredOne", { caredOne: site.caredOneSingular })}
@@ -204,7 +190,7 @@ export default function CaredOnes() {
               return (
                 <div key={co.user_id} className={`flex items-center rounded-lg border transition-colors ${isActive ? "bg-card border-primary shadow-sm" : "bg-transparent border-border hover:bg-accent/50"}`}>
                   <button type="button" onClick={() => setActiveTab(co.user_id)} className="min-h-11 px-4 py-2 text-sm font-medium">
-                    {name}{co.relationship && <span className="text-xs text-muted-foreground ml-1">({co.relationship})</span>}
+                    {name}
                   </button>
                   <button
                     type="button"
@@ -242,11 +228,6 @@ export default function CaredOnes() {
                           {person.email && <p className="text-xs text-muted-foreground truncate">{person.email}</p>}
                         </div>
                       </div>
-                      {detailCaredOne.relationship && (
-                        <p className="text-sm text-muted-foreground">
-                          {t("caredOnes.relationship")}: {detailCaredOne.relationship}
-                        </p>
-                      )}
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="outline" className="w-full text-destructive hover:text-destructive">
