@@ -24,24 +24,14 @@ import {
   useUpdateFacilityOwnershipClaim,
 } from "@/hooks/use-care-data";
 
-function normalizeList(value: string[] | string | null | undefined) {
-  if (Array.isArray(value)) return value.filter(Boolean);
-  if (typeof value === "string" && value.trim()) return [value];
-  return [] as string[];
+function getFacilityAddress(facility: any) {
+  return [facility.location, facility.address].filter(Boolean).join(isZhJoin(facility) ? " " : ", ");
 }
 
-function formatFacilityToken(value: string) {
-  return value.replace(/_/g, " ");
+function isZhJoin(_f: any) {
+  return false;
 }
 
-function getFacilityAddress(facility: any, isZh: boolean) {
-  if (isZh) {
-    return [facility.country, facility.c_province, facility.c_city, facility.c_district, facility.c_town, facility.c_village, facility.address]
-      .filter(Boolean)
-      .join(" ");
-  }
-  return [facility.location, facility.address, facility.country].filter(Boolean).join(", ");
-}
 
 export default function CareFacilityProfile() {
   const { id } = useParams();
