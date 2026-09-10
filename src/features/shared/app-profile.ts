@@ -10,7 +10,9 @@
  *   a70  Onboarding state              (b55 = done/skipped)
  *   a87  App settings (JSON textarea)
  *   a91  AI credits for this app
- *   a92  AI help ("?") button hidden    (b55 = hidden, b56 = shown)
+ *   a92  AI help ("?") button hidden    (1 = hidden, 0/empty = shown;
+ *                                       the live column is numeric, so the
+ *                                       yes/no codes are not accepted there)
  *
  * The row is linked to the WordPress user through JetEngine Relation 152 only —
  * no custom id, no foreign key. Core identity stays on the WordPress user; the
@@ -221,11 +223,11 @@ export async function fetchMyAiCredits(app: AppId = currentAppId()): Promise<num
 
 export async function fetchHelpBubbleVisible(app: AppId = currentAppId()): Promise<boolean> {
   const row = await getAppProfileRow(app);
-  return String(row?.[APP_PROFILE_F.HELP_HIDDEN] ?? "") !== YES;
+  return parseFloat(String(row?.[APP_PROFILE_F.HELP_HIDDEN] ?? "0")) !== 1;
 }
 
 export async function saveHelpBubbleVisible(visible: boolean, app: AppId = currentAppId()): Promise<void> {
-  await patchAppProfile({ [APP_PROFILE_F.HELP_HIDDEN]: visible ? NO : YES }, app);
+  await patchAppProfile({ [APP_PROFILE_F.HELP_HIDDEN]: visible ? "0" : "1" }, app);
 }
 
 /* ── settings JSON (a87) ───────────────────────────────────────────────── */
