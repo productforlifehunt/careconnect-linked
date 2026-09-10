@@ -48,7 +48,12 @@ function stateBadge(state: PermissionState | undefined, Z: Z) {
   return <Badge variant={m.variant}>{m.text}</Badge>;
 }
 
-export function AppSettingsPanel() {
+type SectionId = "channels" | "categories" | "quiet" | "display" | "permissions";
+
+export function AppSettingsPanel({
+  sections = ["channels", "categories", "quiet", "display", "permissions"],
+}: { sections?: SectionId[] } = {}) {
+  const show = (id: SectionId) => sections.includes(id);
   const { i18n } = useTranslation();
   const isCN = !!i18n.language?.startsWith("zh");
   const Z: Z = (cn, en) => (isCN ? cn : en);
@@ -153,7 +158,7 @@ export function AppSettingsPanel() {
 
   return (
     <div className="space-y-6">
-      {(["channels", "categories"] as const).map((gid) => {
+      {(["channels", "categories"] as const).filter(show).map((gid) => {
         const g = groupTitle(gid);
         return (
           <Card key={gid} className="border-transparent card-elevated">
@@ -166,6 +171,7 @@ export function AppSettingsPanel() {
         );
       })}
 
+      {show("quiet") && (
       <Card className="border-transparent card-elevated">
         <CardHeader>
           <CardTitle className="text-base sm:text-lg">{groupTitle("quiet").title(isCN)}</CardTitle>
@@ -191,7 +197,9 @@ export function AppSettingsPanel() {
           )}
         </CardContent>
       </Card>
+      )}
 
+      {show("display") && (
       <Card className="border-transparent card-elevated">
         <CardHeader>
           <CardTitle className="text-base sm:text-lg">{groupTitle("display").title(isCN)}</CardTitle>
@@ -203,7 +211,9 @@ export function AppSettingsPanel() {
           )}
         </CardContent>
       </Card>
+      )}
 
+      {show("permissions") && (
       <Card className="border-transparent card-elevated">
         <CardHeader>
           <CardTitle className="text-base sm:text-lg">{groupTitle("permissions").title(isCN)}</CardTitle>
@@ -258,6 +268,7 @@ export function AppSettingsPanel() {
           )}
         </CardContent>
       </Card>
+      )}
     </div>
   );
 }

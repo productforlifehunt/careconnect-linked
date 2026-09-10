@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { wpUploadMedia } from "@/services/wp-auth";
 import { runSettingSkill } from "@/lib/ai-dynamic-knowledge";
-import { User, Bell, Shield, MapPin, Loader2, Upload, Camera, Download, Trash2 } from "lucide-react";
+import { User, Bell, Shield, MapPin, Loader2, Upload, Camera, Download, Trash2, Monitor } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSite } from "@/contexts/SiteContext";
 import { useTranslation } from "react-i18next";
@@ -132,11 +132,12 @@ export default function Profile() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-5">
-      <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight mb-5">{t("profile.myProfile")}</h1>
+      <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight mb-5">{t("nav.settings", "Settings")}</h1>
 
       <Tabs defaultValue="personal">
-        <TabsList className="mb-6">
+        <TabsList className="mb-6 flex flex-wrap h-auto">
           <TabsTrigger value="personal" className="gap-2"><User className="h-4 w-4" /> {t("common.personal")}</TabsTrigger>
+          <TabsTrigger value="display" className="gap-2"><Monitor className="h-4 w-4" /> {t("common.display", "Display")}</TabsTrigger>
           <TabsTrigger value="notifications" className="gap-2"><Bell className="h-4 w-4" /> {t("common.notifications")}</TabsTrigger>
           <TabsTrigger value="privacy" className="gap-2"><Shield className="h-4 w-4" /> {t("common.privacy")}</TabsTrigger>
         </TabsList>
@@ -222,8 +223,12 @@ export default function Profile() {
           </Button>
         </TabsContent>
 
+        <TabsContent value="display" className="space-y-6">
+          <AppSettingsPanel sections={["display"]} />
+        </TabsContent>
+
         <TabsContent value="notifications" className="space-y-6">
-          <AppSettingsPanel />
+          <AppSettingsPanel sections={["channels", "categories", "quiet", "permissions"]} />
         </TabsContent>
 
         <TabsContent value="privacy" className="space-y-6">

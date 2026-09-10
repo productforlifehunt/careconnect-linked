@@ -19,7 +19,11 @@ import { useTranslation } from "react-i18next";
  * caregiver save where the money should be sent (PayPal or bank), and submits a
  * payout request once a completed booking has matured.
  */
-export default function PayoutAccountsCard() {
+export default function PayoutAccountsCard({
+  section = "all",
+}: { section?: "all" | "account" | "history" } = {}) {
+  const showAccount = section === "all" || section === "account";
+  const showHistory = section === "all" || section === "history";
   const { i18n } = useTranslation();
   const isZh = i18n.language?.startsWith("zh");
   const { toast } = useToast();
@@ -132,8 +136,11 @@ export default function PayoutAccountsCard() {
     <Card className="border-transparent card-elevated">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Wallet className="h-5 w-5" /> {isZh ? "收款与提现" : "Payouts"}
-          {hasPayoutDetails && (
+          <Wallet className="h-5 w-5" />{" "}
+          {section === "history"
+            ? (isZh ? "收款记录" : "Payment history")
+            : (isZh ? "收款账户与提现" : "Payment account")}
+          {showAccount && hasPayoutDetails && (
             <Badge variant="default" className="ml-2">
               <CheckCircle2 className="h-3 w-3 mr-1" />
               {isZh ? "已配置" : "Configured"}
@@ -142,6 +149,7 @@ export default function PayoutAccountsCard() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
+        {showAccount && (
         <div className="grid sm:grid-cols-2 gap-3">
           <div className="rounded-lg bg-muted/40 border border-border/50 p-4 text-center">
             <p className="text-2xl font-bold text-foreground">
@@ -160,7 +168,9 @@ export default function PayoutAccountsCard() {
             </p>
           </div>
         </div>
+        )}
 
+        {showAccount && (<>
         <div className="flex gap-2 p-3 rounded-lg bg-muted/40 border border-border/50">
           <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
           <p className="text-sm text-muted-foreground leading-relaxed">
@@ -261,8 +271,15 @@ export default function PayoutAccountsCard() {
           )}
 
         </div>
+        </>)}
 
-        {!!data?.withdrawals?.length && (
+        {showHistory && !data?.withdrawals?.length && (
+          <p className="text-sm text-muted-foreground text-center py-4">
+            {isZh ? "还没有收款记录。" : "No payments yet."}
+          </p>
+        )}
+
+        {showHistory && !!data?.withdrawals?.length && (
           <div className="space-y-2">
             <p className="text-sm font-semibold text-foreground">
               {isZh ? "提现记录" : "Payout history"}
