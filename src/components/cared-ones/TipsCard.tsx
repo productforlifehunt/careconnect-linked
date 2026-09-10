@@ -11,16 +11,13 @@ import { useCareTips, useCreateCareTip, useUpdateCareTip, useDeleteCareTip } fro
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 
+// Backend (CCT 209 "Cared one's care tip", field a57) only stores two options:
+// b55 = "tip", b56 = "avoid". The UI must offer exactly these.
 const TIP_CATEGORIES = [
-  { value: "General", labelEn: "General", labelZh: "通用" },
-  { value: "Nutrition", labelEn: "Nutrition", labelZh: "营养" },
-  { value: "Exercise", labelEn: "Exercise", labelZh: "运动" },
-  { value: "Mental Health", labelEn: "Mental Health", labelZh: "心理健康" },
-  { value: "Safety", labelEn: "Safety", labelZh: "安全" },
-  { value: "Communication", labelEn: "Communication", labelZh: "沟通" },
-  { value: "Sleep", labelEn: "Sleep", labelZh: "睡眠" },
-  { value: "Hygiene", labelEn: "Hygiene", labelZh: "卫生" },
+  { value: "tip", labelEn: "Do this (tip)", labelZh: "这样做（方法）" },
+  { value: "avoid", labelEn: "Avoid this", labelZh: "避免这样做" },
 ];
+
 
 export function TipsCard({ caredOneId }: { caredOneId: string }) {
   const { toast } = useToast();
