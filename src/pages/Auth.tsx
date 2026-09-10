@@ -102,7 +102,9 @@ export default function Auth() {
             <BrandMark size={56} />
           </div>
           <h1 className="text-2xl font-semibold leading-none tracking-tight">{site.name}</h1>
-          <CardDescription>{t(`site.${site.id}.authSubtitle`)}</CardDescription>
+          {t(`site.${site.id}.authSubtitle`) && (
+            <CardDescription>{t(`site.${site.id}.authSubtitle`)}</CardDescription>
+          )}
         </CardHeader>
         <CardContent>
           <Tabs defaultValue={initialMode}>
