@@ -120,6 +120,11 @@ export function AppHeader() {
         {/* Logo — always the first element on the left (standard convention) */}
         <Link to="/" className="flex items-center gap-2 shrink-0" aria-label={logoWordmarkText}>
           <BrandMark size={40} showWordmark />
+          {site.showBetaLabel && (
+            <span className="px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide text-coral bg-coral/10 border border-coral/30 rounded-full leading-tight">
+              Beta
+            </span>
+          )}
         </Link>
 
         {/* Desktop horizontal nav — primary links inline, the rest in a More menu
