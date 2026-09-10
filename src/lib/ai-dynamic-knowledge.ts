@@ -560,16 +560,15 @@ export async function resolveAssistantContext(input: AssistantContextInput): Pro
  *   local  → this device only (localStorage / i18next)
  *   device → an OS permission; we only record that we asked
  */
-import { wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getCurrentUserIdNumber } from "@/features/shared/current-user";
-import { T, R } from "@/integrations/wp-schema";
+import {
+  fetchAppSettingsJson,
+  saveAppSettingsJson,
+  fetchHelpBubbleVisible,
+  saveHelpBubbleVisible,
+} from "@/features/shared/app-profile";
 import { currentAppScope, type AppScope } from "@/features/shared/app-scope";
-import { findOwnRow, linkOwnRow } from "@/features/shared/own-profile-row";
 import { checkPermission, requestPermission, type PermissionKind } from "@/features/settings/permissions";
-
-const PROFILE_SLUG = T.userProfile.slug;
-const PROFILE_F = T.userProfile.f;
-const REL_USER_PROFILE = R.userProfileRel;
 
 /** The three sub-apps this backend serves. */
 export const KNOWN_APPS = ["challenged", "carecnc", "notchsafety"] as const;
@@ -584,11 +583,7 @@ export function appScopeFromEdge(appName: string): AppScope {
 }
 
 /** Per-sub-app column on CCT 151 that holds the settings JSON. */
-function settingsColumn(scope: AppScope = currentAppScope()): string {
-  return scope === "carecnc"
-    ? PROFILE_F.USER_S_APP_SETTING_FOR_CARECNC
-    : PROFILE_F.USER_S_APP_SETTING_FOR_CHALLENGED;
-}
+/* Settings live on CCT 151 column a87 of THIS app's row (a01), see app-profile. */
 
 export interface AppSettings {
   notifications: {
@@ -624,36 +619,28 @@ function mergeSettings(raw: any): AppSettings {
   };
 }
 
-// Resolved through Relation 152 — a cct_author_id query filter is ignored by
-// JetEngine on this route and would return another user's row.
-const ownProfileRow = () => findOwnRow(REL_USER_PROFILE, PROFILE_SLUG);
-
-export async function fetchAppSettings(scope: AppScope = currentAppScope()): Promise<AppSettings> {
-  const row = await ownProfileRow();
-  const raw = row?.[settingsColumn(scope)];
-  if (!raw) return DEFAULT_APP_SETTINGS;
-  try {
-    return mergeSettings(typeof raw === "string" ? JSON.parse(raw) : raw);
-  } catch {
-    return DEFAULT_APP_SETTINGS;
-  }
+/**
+ * Read / write of this app's settings. The JSON blob lives on column a87 of the
+ * user's single row for this app (a01), and the "?" help button state lives on
+ * its own column a92 — see features/shared/app-profile.ts.
+ */
+export async function fetchAppSettings(_scope: AppScope = currentAppScope()): Promise<AppSettings> {
+  const [json, helpVisible] = await Promise.all([
+    fetchAppSettingsJson().catch(() => null),
+    fetchHelpBubbleVisible().catch(() => true),
+  ]);
+  const merged = mergeSettings(json);
+  merged.display.help_bubble = helpVisible;
+  return merged;
 }
 
-async function saveAppSettings(patch: Partial<AppSettings>, scope: AppScope = currentAppScope()): Promise<AppSettings> {
-  const userId = getCurrentUserIdNumber();
-  const current = await fetchAppSettings(scope);
+async function saveAppSettings(patch: Partial<AppSettings>, _scope: AppScope = currentAppScope()): Promise<AppSettings> {
+  const current = await fetchAppSettings();
   const next = mergeSettings({ ...current, ...patch });
-  const body = { [settingsColumn(scope)]: JSON.stringify(next) };
-
-  const row = await ownProfileRow();
-  if (row) {
-    await wordpressCCTFetch(PROFILE_SLUG, { id: String(row.id ?? row._ID), method: "PUT", body });
-    return next;
+  if (next.display.help_bubble !== current.display.help_bubble) {
+    await saveHelpBubbleVisible(next.display.help_bubble);
   }
-  const created: any = await wordpressCCTFetch(PROFILE_SLUG, { method: "POST", body });
-  const newId = created?.item_id ?? created?._ID ?? created?.id;
-  if (!newId || !userId) throw new Error("Could not create the extended profile row for app settings");
-  await linkOwnRow(REL_USER_PROFILE, newId);
+  await saveAppSettingsJson(next);
   return next;
 }
 

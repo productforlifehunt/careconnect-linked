@@ -1,4 +1,8 @@
 const en = {
+  settings: {
+    creditsGrantedTitle: "10 AI credits added",
+    creditsGrantedBody: "You have 10 AI credits to try the assistant in this app.",
+  },
   // ═══ COMMON ═══
   common: {
     signIn: "Sign In",

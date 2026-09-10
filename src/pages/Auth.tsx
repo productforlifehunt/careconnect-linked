@@ -81,7 +81,12 @@ export default function Auth() {
     setLoading(true);
     try {
       await signup(signupName, signupEmail, signupPassword, "care-seeker");
-      toast({ title: t("auth.accountCreated") });
+      toast({
+        title: t("auth.accountCreated"),
+        description: t("settings.creditsGrantedBody", {
+          defaultValue: "You have 10 AI credits to try the assistant in this app.",
+        }),
+      });
     } catch (err: any) {
       toast({ title: t("auth.signupFailed"), description: err.message, variant: "destructive" });
     } finally {
