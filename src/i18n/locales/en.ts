@@ -3,6 +3,21 @@ const en = {
     creditsGrantedTitle: "10 AI credits added",
     creditsGrantedBody: "You have 10 AI credits to try the assistant in this app.",
   },
+  onboarding: {
+    welcome: "Welcome",
+    introChallenged: "Learn about dementia care, keep daily routines in one place, and share the care with your family.",
+    introCare: "Find caregivers you can trust and keep everyone caring for your loved one on the same page.",
+    introSafety: "See where your family is, get told when they arrive home, and call for help fast.",
+    nameLabel: "Your name here",
+    namePlaceholder: "How your family sees you",
+    communityLabel: "Your name on the forum",
+    communityPlaceholder: "Shown on posts and replies",
+    communityHelp: "This forum name is only used here, so you can pick a different one in each app.",
+    creditsHint: "You get 10 free AI credits to try the assistant.",
+    continue: "Save and continue",
+    skip: "Skip for now",
+    saveFailed: "Could not save",
+  },
   // ═══ COMMON ═══
   common: {
     signIn: "Sign In",
@@ -473,6 +488,9 @@ const en = {
 
   // ═══ PROFILE ═══
   profile: {
+    communityName: "Your name on the forum",
+    communityNamePlaceholder: "Shown on posts and replies",
+    communityNameHelp: "Only used on this forum, so you can pick a different one in each app.",
     roleHelp: "Turn on everything that describes you. This decides which care tools you see.",
     roleCaredOne: "I receive care",
     roleCaringOne: "I care for someone",
