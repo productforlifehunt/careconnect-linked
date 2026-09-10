@@ -32,7 +32,7 @@ import {
   Settings,
   ShoppingCart,
   HelpCircle,
-  X,
+
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
