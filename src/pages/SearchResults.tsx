@@ -432,7 +432,7 @@ export default function SearchResults() {
                 {allResults.length === 0 && (
                   <div className="text-center py-16">
                     <p className="text-lg text-muted-foreground">{isFacilityMode ? (isZh ? "没有符合条件的养老机构。" : "No facilities matched your filters.") : t("search.noMatch")}</p>
-                    <Button variant="outline" className="mt-4" onClick={() => { setQuery(""); setLocationFilter(""); setSelectedServiceTypeSlugs([]); setSelectedFacilityTypes([]); setSelectedServiceTypes([]); setSelectedLocations([]); setMinRating(0); setPriceRange([0, 100]); setCurrentPage(1); }}>{t("common.clearFilters")}</Button>
+                    <Button variant="outline" className="mt-4" onClick={() => { setQuery(""); setLocationFilter(""); setSelectedServiceTypeSlugs([]); setSelectedFacilityTypes([]); setSelectedStages([]); setSelectedLocations([]); setMinRating(0); setPriceRange([0, 100]); setCurrentPage(1); }}>{t("common.clearFilters")}</Button>
                   </div>
                 )}
               </div>
