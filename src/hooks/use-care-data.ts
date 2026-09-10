@@ -1303,7 +1303,7 @@ export function useCareNotes(caredOneId: string | null) {
 export function useCreateCareNote() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (note: { user_id: string; title?: string; content: string; category?: string }) => createCareNoteWordPress(note),
+    mutationFn: (note: { user_id: string; title?: string; content: string }) => createCareNoteWordPress(note),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["careNotes"] }); },
   });
 }
