@@ -11,6 +11,8 @@ import { fetchMyProfileWordPress, updateProfileWordPress } from "@/features/prof
 import { runNotificationSkill } from "@/lib/ai-dynamic-knowledge";
 import { notifySubgroupApproved } from "@/features/notifications/notify-events";
 import { fetchCareFacilitiesWordPress, fetchCareFacilityByIdWordPress } from "@/features/facilities/source.wordpress";
+import { toCodeList } from "@/lib/facility-options";
+
 import {
   createCareFacilityWordPress, updateCareFacilityWordPress,
   fetchFacilityMembersWordPress, getMyFacilityPermissionWordPress,
