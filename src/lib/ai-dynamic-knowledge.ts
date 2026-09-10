@@ -177,12 +177,23 @@ export async function resolveGroupAccess(groupId: string | undefined): Promise<A
 export async function resolveViewerFacts({ isChinese }: Lang): Promise<string> {
   try {
     const { wpFetchCaredOnes, wpFetchCareGroups } = await import("@/services/wp-data");
-    const [caredOnes, groups] = await Promise.all([
+    const { fetchMyProfileWordPress } = await import("@/features/profile/source.wordpress");
+    const [caredOnes, groups, profile] = await Promise.all([
       wpFetchCaredOnes().catch(() => []),
       wpFetchCareGroups().catch(() => []),
+      fetchMyProfileWordPress().catch(() => null as any),
     ]);
+    // Role is a FACT, not a rule: the stored role is only the starting
+    // assumption; the shared system prompt already allows switching when the
+    // person speaking says otherwise.
+    const roles = ([] as string[]).concat((profile?.general_user_role as any) || []).map((r) => String(r).toLowerCase());
+    const caredOne = roles.some((r) => r.includes("cared"));
+    const role = caredOne
+      ? Z(isChinese, "账号登记为被护理者本人（只是起始假设，可随对话改变）", "account is registered as the person being cared for (starting assumption only; it may change during the conversation)")
+      : Z(isChinese, "账号登记为护理者（只是起始假设，可随对话改变）", "account is registered as a caregiver (starting assumption only; it may change during the conversation)");
     return join([
       line(Z(isChinese, "今天日期", "Today"), new Date().toISOString().slice(0, 10)),
+      line(Z(isChinese, "当前用户身份", "Who is signed in"), role),
       line(
         Z(isChinese, "我照护的人", "People I care for"),
         caredOnes.map((c: any) => c.cared_one?.full_name).filter(Boolean).join("、") ||
