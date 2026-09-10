@@ -17,23 +17,8 @@ import { useTranslation } from "react-i18next";
 import { useServiceTypes } from "@/hooks/use-service-types";
 import { SERVICE_DELIVERY_MODES, careServiceTypeLabel } from "@/lib/care-service-types";
 import { useAuth } from "@/contexts/AuthContext";
-function normalizeList(value: string[] | string | null | undefined) {
-  if (Array.isArray(value)) return value.filter(Boolean);
-  if (typeof value === "string" && value.trim()) return [value];
-  return [] as string[];
-}
-
-function formatFacilityToken(value: string) {
-  return value.replace(/_/g, " ");
-}
-
 function getFacilityAddress(facility: CareFacility, isZh: boolean) {
-  if (isZh) {
-    return [facility.country, facility.c_province, facility.c_city, facility.c_district, facility.c_town, facility.c_village, facility.address]
-      .filter(Boolean)
-      .join(" ");
-  }
-  return [facility.location, facility.address, facility.country].filter(Boolean).join(", ");
+  return [facility.location, facility.address].filter(Boolean).join(isZh ? " " : ", ");
 }
 
 export default function SearchResults() {
@@ -332,15 +317,17 @@ export default function SearchResults() {
               <div className="space-y-4">
                 {isFacilityMode ? (
                   (paged as CareFacility[]).map((facility) => {
-                    const serviceCategories = normalizeList(facility.service_category);
-                    const serviceTypes = normalizeList(facility.service_type);
-                    const facilityServices = serviceCategories.concat(serviceTypes);
+                    const typeLabels = facilityLabels(FACILITY_TYPE_OPTIONS, (facility as any).type, !!isZh);
+                    const stageLabels = facilityLabels(FACILITY_STAGE_OPTIONS, (facility as any).dementia_stage, !!isZh);
+                    const roomTypeLabels = facilityLabels(FACILITY_ROOM_TYPE_OPTIONS, (facility as any).room_type, !!isZh);
+                    const peopleNumberLabel = (facility as any).people_number
+                      ? facilityLabel(FACILITY_PEOPLE_NUMBER_OPTIONS, (facility as any).people_number, !!isZh)
+                      : "";
                     const reviewSummary = facilityReviewSummaries?.[facility.id] || { average: null, count: 0 };
                     return (
                       <Card key={facility.id} className="card-elevated cursor-pointer border-transparent" onClick={() => navigate(`/facility/${facility.id}`)}>
                         <CardContent className="p-5">
                           <div className="flex flex-col sm:flex-row gap-4">
-                            <img src={facility.image_url || facility.avatar_url || "/placeholder.svg"} alt={facility.name || ""} className="w-24 h-24 rounded-xl object-cover shrink-0" />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1">
                                 <h3 className="font-semibold text-lg text-foreground">{facility.name}</h3>
@@ -353,19 +340,16 @@ export default function SearchResults() {
                               {facility.description && <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{facility.description}</p>}
                               <div className="space-y-2">
                                 <div className="flex flex-wrap gap-1.5">
-                                  {facility.type && <Badge variant="outline" className="text-xs">{formatFacilityToken(facility.type)}</Badge>}
-                                  {serviceCategories.slice(0, 3).map((s) => (<Badge key={s} variant="secondary" className="bg-primary/10 text-primary text-xs">{formatFacilityToken(s)}</Badge>))}
-                                  {serviceTypes.slice(0, 3).map((s) => (<Badge key={s} variant="secondary" className="bg-accent text-accent-foreground text-xs">{formatFacilityToken(s)}</Badge>))}
+                                  {typeLabels.map((label) => (<Badge key={`type-${label}`} variant="outline" className="text-xs">{label}</Badge>))}
+                                  {stageLabels.map((label) => (<Badge key={`stage-${label}`} variant="secondary" className="bg-primary/10 text-primary text-xs">{label}</Badge>))}
+                                  {roomTypeLabels.map((label) => (<Badge key={`room-${label}`} variant="secondary" className="bg-accent text-accent-foreground text-xs">{label}</Badge>))}
                                 </div>
-                                <div className="text-xs text-muted-foreground">
-                                  {isZh
-                                    ? `共 ${facilityServices.length} 项服务标签`
-                                    : `${facilityServices.length} service tags`}
-                                </div>
+                                {peopleNumberLabel && (
+                                  <div className="text-xs text-muted-foreground">{peopleNumberLabel}</div>
+                                )}
                               </div>
                             </div>
                             <div className="sm:text-right shrink-0 flex sm:flex-col items-start sm:items-end gap-3">
-                              <div className="text-sm text-muted-foreground flex items-center gap-1"><Globe className="h-4 w-4" /> {facility.country || (isZh ? "中国" : "Global")}</div>
                               <Button variant="coral" size="sm">{isZh ? "查看详情" : "View details"}</Button>
                             </div>
                           </div>
