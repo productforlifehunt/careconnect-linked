@@ -23,14 +23,21 @@ import {
   useCreateFacilityOwnershipClaim,
   useUpdateFacilityOwnershipClaim,
 } from "@/hooks/use-care-data";
+import {
+  FACILITY_TYPE_OPTIONS,
+  FACILITY_STAGE_OPTIONS,
+  FACILITY_ROOM_TYPE_OPTIONS,
+  FACILITY_ROOM_FACILITY_OPTIONS,
+  FACILITY_COMMUNITY_FACILITY_OPTIONS,
+  FACILITY_PEOPLE_NUMBER_OPTIONS,
+  facilityLabel,
+  facilityLabels,
+} from "@/lib/facility-options";
 
-function getFacilityAddress(facility: any) {
-  return [facility.location, facility.address].filter(Boolean).join(isZhJoin(facility) ? " " : ", ");
+function getFacilityAddress(facility: any, isZh: boolean) {
+  return [facility.location, facility.address].filter(Boolean).join(isZh ? " " : ", ");
 }
 
-function isZhJoin(_f: any) {
-  return false;
-}
 
 
 export default function CareFacilityProfile() {
