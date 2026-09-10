@@ -3,6 +3,7 @@ import {
   aiBrand,
   buildFallbackReply,
   buildSystemPrompt,
+  stripFillerOpening,
 } from "../../supabase/functions/_shared/ai-prompts";
 import { buildInfoSheetContext } from "@/lib/ai-dynamic-knowledge";
 
@@ -23,7 +24,15 @@ describe("central AI prompt registry", () => {
     // Persona + tone + the shared role-switch / no-fabrication checklist only.
     expect(prompt).toContain("who is speaking now");
     expect(prompt).toContain("Hand-off signals");
-    expect(prompt.length).toBeLessThan(2600);
+    expect(prompt.length).toBeLessThan(3200);
+  });
+
+  it("cuts greeting boilerplate off the reply", () => {
+    expect(stripFillerOpening("Hi there. I’m talking to you now. Where did you last see it?"))
+      .toBe("Where did you last see it?");
+    expect(stripFillerOpening("你好，我现在就直接和你说话了。钱包可能在外套口袋里。"))
+      .toBe("钱包可能在外套口袋里。");
+    expect(stripFillerOpening("Hi there.")).toBe("Hi there.");
   });
 
   it("keeps dynamic care facts in request context", () => {

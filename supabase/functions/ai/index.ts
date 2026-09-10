@@ -19,8 +19,71 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import {
   buildFallbackReply,
   buildSystemPrompt,
+  stripFillerOpening,
   TTS_READER_SYSTEM_PROMPT,
 } from "../_shared/ai-prompts.ts";
+
+/**
+ * Rewrites the gateway SSE stream so the reply never starts with the model's
+ * greeting boilerplate. Only the head of the reply is buffered (first sentence
+ * or ~160 chars); everything after it streams through untouched.
+ */
+function stripOpeningFromSSE(body: ReadableStream<Uint8Array>): ReadableStream<Uint8Array> {
+  const decoder = new TextDecoder();
+  const encoder = new TextEncoder();
+  let sseBuffer = "";
+  let head = "";
+  let headFlushed = false;
+
+  const emit = (controller: TransformStreamDefaultController<Uint8Array>, content: string) => {
+    if (!content) return;
+    controller.enqueue(encoder.encode(
+      `data: ${JSON.stringify({ choices: [{ index: 0, delta: { content }, finish_reason: null }] })}\n\n`,
+    ));
+  };
+
+  return body.pipeThrough(new TransformStream<Uint8Array, Uint8Array>({
+    transform(chunk, controller) {
+      sseBuffer += decoder.decode(chunk, { stream: true });
+      const lines = sseBuffer.split("\n");
+      sseBuffer = lines.pop() ?? "";
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith("data:")) continue;
+        const payload = trimmed.slice(5).trim();
+        if (!payload) continue;
+        if (payload === "[DONE]") {
+          if (!headFlushed) {
+            emit(controller, stripFillerOpening(head));
+            headFlushed = true;
+          }
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+          continue;
+        }
+        let parsed: any;
+        try { parsed = JSON.parse(payload); } catch { continue; }
+        const content = parsed?.choices?.[0]?.delta?.content;
+        if (typeof content !== "string" || !content) {
+          controller.enqueue(encoder.encode(`data: ${payload}\n\n`));
+          continue;
+        }
+        if (headFlushed) {
+          emit(controller, content);
+          continue;
+        }
+        head += content;
+        if (head.length >= 160 || /[.!?。！？]\s*\S/.test(head)) {
+          emit(controller, stripFillerOpening(head));
+          headFlushed = true;
+          head = "";
+        }
+      }
+    },
+    flush(controller) {
+      if (!headFlushed && head) emit(controller, stripFillerOpening(head));
+    },
+  }));
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -109,7 +172,8 @@ async function handleChat(req: Request): Promise<Response> {
       ...messages.filter((m) => m.role !== "system"),
     ];
 
-    const reply = await requestAIReply(LOVABLE_API_KEY, aiMessages);
+    const raw = await requestAIReply(LOVABLE_API_KEY, aiMessages);
+    const reply = raw ? stripFillerOpening(raw) : raw;
 
     return new Response(
       JSON.stringify({ reply: reply || buildFallbackReply(payload?.language), degraded: !reply }),
@@ -205,8 +269,8 @@ async function handleStream(req: Request): Promise<Response> {
       );
     }
 
-    // Pass the gateway SSE stream straight through to the client.
-    return new Response(upstream.body, {
+    // Stream through, cutting the model's greeting boilerplate off the head.
+    return new Response(stripOpeningFromSSE(upstream.body), {
       headers: {
         ...corsHeaders,
         "Content-Type": "text/event-stream",
