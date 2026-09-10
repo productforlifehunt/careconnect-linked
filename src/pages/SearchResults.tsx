@@ -267,17 +267,18 @@ export default function SearchResults() {
         </div>
       )}
 
-      {isFacilityMode && selectedFacilityTypes.length > 0 && (
+      {isFacilityMode && (selectedFacilityTypes.length > 0 || selectedStages.length > 0) && (
         <div className="flex flex-wrap gap-2 mb-4">
-          {selectedFacilityTypes.map(s => (
-            <Badge key={s} variant="secondary" className="gap-1 cursor-pointer" onClick={() => toggleFacilityType(s)}>{formatFacilityToken(s)} <X className="h-3 w-3" /></Badge>
+          {selectedFacilityTypes.map(code => (
+            <Badge key={code} variant="secondary" className="gap-1 cursor-pointer" onClick={() => toggleFacilityType(code)}>{facilityLabel(FACILITY_TYPE_OPTIONS, code, !!isZh)} <X className="h-3 w-3" /></Badge>
           ))}
-          {selectedServiceTypes.map(s => (
-            <Badge key={s} variant="secondary" className="gap-1 cursor-pointer" onClick={() => toggleServiceType(s)}>{formatFacilityToken(s)} <X className="h-3 w-3" /></Badge>
+          {selectedStages.map(code => (
+            <Badge key={code} variant="secondary" className="gap-1 cursor-pointer" onClick={() => toggleStage(code)}>{facilityLabel(FACILITY_STAGE_OPTIONS, code, !!isZh)} <X className="h-3 w-3" /></Badge>
           ))}
-          <Button variant="ghost" size="sm" onClick={() => setSelectedFacilityTypes([])}>{t("common.clearAll")}</Button>
+          <Button variant="ghost" size="sm" onClick={() => { setSelectedFacilityTypes([]); setSelectedStages([]); }}>{t("common.clearAll")}</Button>
         </div>
       )}
+
 
       <div className="flex gap-8">
         <aside className="hidden lg:block w-64 shrink-0">
