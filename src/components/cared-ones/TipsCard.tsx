@@ -28,7 +28,7 @@ export function TipsCard({ caredOneId }: { caredOneId: string }) {
   const create = useCreateCareTip();
   const update = useUpdateCareTip();
   const del = useDeleteCareTip();
-  const [form, setForm] = useState({ title: "", content: "", category: "General" });
+  const [form, setForm] = useState({ title: "", content: "", category: "tip" });
   const [editId, setEditId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ title: "", content: "", category: "" });
   const [tab, setTab] = useState("view");
@@ -38,7 +38,7 @@ export function TipsCard({ caredOneId }: { caredOneId: string }) {
     return opt ? (isCN ? opt.labelZh : opt.labelEn) : val;
   };
 
-  const startEdit = (t: any) => { setEditId(t.id); setEditForm({ title: t.title, content: t.content, category: t.category || "General" }); };
+  const startEdit = (t: any) => { setEditId(t.id); setEditForm({ title: t.title, content: t.content, category: t.category || "tip" }); };
   const cancelEdit = () => setEditId(null);
   const saveEdit = () => {
     if (!editId || !editForm.title || !editForm.content) return;
@@ -103,7 +103,7 @@ export function TipsCard({ caredOneId }: { caredOneId: string }) {
             <Button variant="coral" className="w-full" onClick={() => {
               if (!form.title || !form.content) return;
               create.mutate({ user_id: caredOneId, title: form.title, content: form.content, category: form.category }, {
-                onSuccess: () => { setForm({ title: "", content: "", category: "General" }); setTab("view"); toast({ title: Z("提示已添加", "Tip added") }); }
+                onSuccess: () => { setForm({ title: "", content: "", category: "tip" }); setTab("view"); toast({ title: Z("提示已添加", "Tip added") }); }
               });
             }} disabled={create.isPending || !form.title || !form.content}>{Z("添加提示", "Add Tip")}</Button>
           </CardContent></Card>
