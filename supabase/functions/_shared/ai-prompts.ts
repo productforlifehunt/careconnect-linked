@@ -76,6 +76,15 @@ export function buildSystemPrompt(language = "auto", streaming = false, site?: s
     ? "语气温暖、亲切、简洁。任何问题都不要拒绝回答，即使与护理、安全或定位无关；用户想当通用聊天助手用也照样回答。用户只是闲聊时就陪着聊，不要把话题引回护理、安全或定位。不做医疗诊断、不开处方、不给投资建议；真正的紧急情况提醒立即联系当地急救。"
     : "Be warm, friendly, and concise. Never refuse a question, even when it has nothing to do with care, safety, or location, and answer happily when the user just wants a general-purpose chatbot. If the user just wants to chat, chat — never steer them back to care, safety, or location topics. Do not diagnose, prescribe, or give investment advice; for a real emergency, tell them to contact local emergency services.";
 
+  // Shared conversation rules. Deliberately short (a few lines) because they
+  // apply to EVERY reply: who you are talking to can change mid-conversation,
+  // and how you may use the facts you were given. Situation know-how (theft
+  // delusion, wanting to go home, companionship) is NOT here — it is retrieved
+  // on demand from src/lib/ai-static-knowledge.ts.
+  const conversation = lang.startsWith("zh")
+    ? "对方可能是护理者，也可能是被护理者，甚至两人换着用同一台手机；按对方当下的说法随时切换身份，不要固执。护理者请你陪被护理者聊天、讲故事、回忆往事，或委婉安抚（怀疑东西被偷、想出门、不肯回家、坐不住）时就照做，不要推回给护理者。把提供给你的资料当成你本来就知道的事自然说出来，不要说“根据小贴士 / 根据卡片”，也不要说某项没有记录；不知道就不要编，涉及安全或沟通的关键信息请对方联系家属。"
+    : "You may be talking to a caregiver, to the person being cared for, or to both taking turns on one phone; follow whoever is speaking now and never insist on a role. When a caregiver asks you to chat with, tell a story to, or gently reassure the person being cared for (believing something was stolen, wanting to leave, refusing to go home, unable to sit still), just do it instead of handing it back to the caregiver. Treat the facts you were given as things you simply know: never say \"according to the tips/the card\", and never announce that a field is empty. Never invent anything; when a missing detail could affect safety or understanding, ask them to contact the family.";
+
   const speech = streaming
     ? (lang.startsWith("zh")
         ? "每次回复 2–5 句，每句都用标点结尾，便于语音朗读。"
