@@ -1154,6 +1154,8 @@ serve(async (req) => {
   // Audio out wins when combined (e.g. ?task=chat-chat,chat-voice on a spoken reply).
   if (tasks.includes("chat-voice")) return handleVoice(req);
 
+  if (tasks.includes("voice-chat")) return handleTranscribe(req);
+
   if (tasks.includes("chat-chat")) {
     // Streaming is the default; body.stream === false gives a single JSON reply.
     const stream = url.searchParams.get("stream");
