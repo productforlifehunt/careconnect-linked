@@ -677,8 +677,6 @@ export async function fetchCaredOneDocumentsWordPress(caredOneId: string): Promi
         content: d[F_DOC.CONTENT] || null,
         attachment_ids: parseMediaIds(rawIds),
         attachments,
-        file_url: attachments[0]?.url || null,
-        document_type: null,
         created_at: d.created_at,
         updated_at: d.updated_at || d.created_at,
       };
@@ -686,22 +684,20 @@ export async function fetchCaredOneDocumentsWordPress(caredOneId: string): Promi
   } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
-export async function createCaredOneDocumentWordPress(doc: { user_id: string; title: string; description?: string; file_url?: string; document_type?: string; attachment_ids?: Array<number | string> }): Promise<void> {
-  const contentParts = [doc.description || ""];
-  if (doc.file_url) contentParts.push(`URL: ${doc.file_url}`);
-  if (doc.document_type) contentParts.push(`Type: ${doc.document_type}`);
+export async function createCaredOneDocumentWordPress(doc: { user_id: string; title: string; description?: string; attachment_ids?: Array<number | string> }): Promise<void> {
   const { serializeMediaIds } = await import("@/lib/wp-media");
   const created = await wordpressCCTFetch<any>(T.careDocument.slug, {
     method: "POST",
     body: {
       [F_DOC.NAME]: doc.title,
-      [F_DOC.CONTENT]: contentParts.filter(Boolean).join("\n"),
+      [F_DOC.CONTENT]: doc.description || "",
       [F_DOC.ATTACHMENTS]: serializeMediaIds(doc.attachment_ids || []),
     },
   });
   const newId = normalizeWpObjectId(created?.item_id || created?._ID || created?.id);
   await linkRel(REL_USER_CARE_DOCUMENT, normalizeWpObjectId(doc.user_id), newId);
 }
+
 
 export async function updateCaredOneDocumentWordPress(id: string, updates: Record<string, any>): Promise<void> {
   const body: Record<string, any> = {};
