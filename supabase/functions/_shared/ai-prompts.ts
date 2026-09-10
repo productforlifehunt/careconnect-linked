@@ -115,6 +115,39 @@ export function buildSystemPrompt(language = "auto", streaming = false, site?: s
   return [identity, tone, conversation, speech].filter(Boolean).join("\n\n");
 }
 
+/**
+ * Deterministic cleanup of the model's opening filler. The cheap model keeps
+ * starting with "Hi there. I'm talking to you now." no matter what the prompt
+ * says, so the boilerplate is cut from the text itself.
+ */
+const OPENER_PATTERNS: RegExp[] = [
+  /^(hi|hey|hello)\b[^.!?\n]*[.!?,]?\s*/i,
+  /^i(?:'|’)?m (?:talking|speaking) (?:to|with) you(?: now)?[^.!?\n]*[.!?]?\s*/i,
+  /^i(?:'|’)?m (?:right )?here (?:with|for) you[^.!?\n]*[.!?]?\s*/i,
+  /^i(?:'|’)?m glad you (?:asked|reached out)[^.!?\n]*[.!?]?\s*/i,
+  /^(?:so )?let(?:'|’)?s (?:take|start with)[^.!?\n]*(?:one (?:small )?step at a time|calming breath)[^.!?\n]*[.!?]?\s*/i,
+  /^(?:好的?|你好|您好|哈喽|嗨)[，。!！,\s]*/,
+  /^我(?:现在)?(?:就)?(?:在)?(?:直接)?(?:和|跟)(?:你|您|她|他)(?:说话|聊|聊天|说)(?:了|吧)?[，。!！,\s]*/,
+  /^我(?:就)?在(?:这里)?(?:陪着|陪)(?:你|您)[^。！？\n]*[，。!！]?\s*/,
+  /^(?:咱们|我们)(?:就)?一步一步(?:来|地来)[^。！？\n]*[，。!！]?\s*/,
+];
+
+export function stripFillerOpening(text: string): string {
+  let out = String(text ?? "").replace(/^\s+/, "");
+  for (let pass = 0; pass < 4; pass++) {
+    let changed = false;
+    for (const re of OPENER_PATTERNS) {
+      const next = out.replace(re, "");
+      if (next !== out && next.trim()) {
+        out = next.replace(/^\s+/, "");
+        changed = true;
+      }
+    }
+    if (!changed) break;
+  }
+  return out.trim() ? out : String(text ?? "").trim();
+}
+
 /** One degraded reply for every call. */
 export function buildFallbackReply(language = "auto"): string {
   return isZhLang(language)
