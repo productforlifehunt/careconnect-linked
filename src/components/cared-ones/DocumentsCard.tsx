@@ -1,50 +1,58 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Pencil, Trash2, X, Check, Plus, FileText, Loader2 } from "lucide-react";
 import { useCaredOneDocuments, useCreateCaredOneDocument, useUpdateCaredOneDocument, useDeleteCaredOneDocument } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
-import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
+import { formatDate } from "@/lib/locale";
 import { MediaAttachments, MediaAttachmentList } from "@/components/shared/MediaAttachments";
 
-const DOC_VALUES = ["Medical Record", "Insurance", "Prescription", "Lab Result", "Legal", "ID", "Emergency Plan", "Other"];
-const DOC_ZH: Record<string,string> = { "Medical Record":"病历", Insurance:"保险", Prescription:"处方", "Lab Result":"化验结果", Legal:"法律文件", ID:"身份证件", "Emergency Plan":"应急预案", Other:"其他" };
-
+/**
+ * Cared one's care document — CCT 212 only:
+ * a55 name, a56 content, a57 attachments (gallery).
+ * Linked to the cared one through its JetEngine relation.
+ */
 export function DocumentsCard({ caredOneId }: { caredOneId: string }) {
   const { toast } = useToast();
   const { i18n } = useTranslation();
   const isCN = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (isCN ? cn : en);
-  const docLabel = (d: string) => isCN ? (DOC_ZH[d] || d) : d;
 
   const { data: docs, isLoading } = useCaredOneDocuments(caredOneId);
   const create = useCreateCaredOneDocument();
   const update = useUpdateCaredOneDocument();
   const del = useDeleteCaredOneDocument();
   const [addOpen, setAddOpen] = useState(false);
-  const [form, setForm] = useState({ title: "", document_type: "Medical Record", file_url: "", notes: "", attachment_ids: [] as number[] });
+  const [form, setForm] = useState({ title: "", description: "", attachment_ids: [] as number[] });
   const [editId, setEditId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ title: "", document_type: "", file_url: "", notes: "", attachment_ids: [] as number[] });
+  const [editForm, setEditForm] = useState({ title: "", description: "", attachment_ids: [] as number[] });
 
-  const startEdit = (d: any) => { setEditId(d.id); setEditForm({ title: d.title || "", document_type: d.document_type || "Other", file_url: d.file_url || "", notes: d.notes || "", attachment_ids: Array.isArray(d.attachment_ids) ? d.attachment_ids : [] }); };
+  const startEdit = (d: any) => {
+    setEditId(d.id);
+    setEditForm({
+      title: d.title || "",
+      description: d.description || "",
+      attachment_ids: Array.isArray(d.attachment_ids) ? d.attachment_ids : [],
+    });
+  };
   const cancelEdit = () => setEditId(null);
   const saveEdit = () => {
     if (!editId || !editForm.title) return;
-    update.mutate({ id: editId, title: editForm.title, document_type: editForm.document_type, file_url: editForm.file_url || undefined, notes: editForm.notes || undefined, attachment_ids: editForm.attachment_ids }, {
-      onSuccess: () => { setEditId(null); toast({ title: Z("文件已更新", "Document updated") }); }
+    update.mutate({ id: editId, title: editForm.title, description: editForm.description, attachment_ids: editForm.attachment_ids }, {
+      onSuccess: () => { setEditId(null); toast({ title: Z("文件已更新", "Document updated") }); },
+      onError: (e: any) => toast({ title: Z("保存失败", "Couldn't save"), description: e?.message, variant: "destructive" }),
     });
   };
 
   const handleAdd = () => {
     if (!form.title) return;
-    create.mutate({ user_id: caredOneId, title: form.title, document_type: form.document_type, file_url: form.file_url || "", description: form.notes || undefined, attachment_ids: form.attachment_ids }, {
-      onSuccess: () => { setForm({ title: "", document_type: "Medical Record", file_url: "", notes: "", attachment_ids: [] }); setAddOpen(false); toast({ title: Z("文件已添加", "Document added") }); }
+    create.mutate({ user_id: caredOneId, title: form.title, description: form.description || undefined, attachment_ids: form.attachment_ids }, {
+      onSuccess: () => { setForm({ title: "", description: "", attachment_ids: [] }); setAddOpen(false); toast({ title: Z("文件已添加", "Document added") }); },
+      onError: (e: any) => toast({ title: Z("添加失败", "Couldn't add"), description: e?.message, variant: "destructive" }),
     });
   };
 
@@ -63,15 +71,6 @@ export function DocumentsCard({ caredOneId }: { caredOneId: string }) {
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <div><Label>{Z("标题", "Title")} <span className="text-destructive">*</span></Label><Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder={Z("文件标题", "Document title")} className="mt-1" /></div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>{Z("类型", "Type")}</Label>
-                <Select value={form.document_type} onValueChange={v => setForm(p => ({ ...p, document_type: v }))}>
-                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                  <SelectContent>{DOC_VALUES.map(t => <SelectItem key={t} value={t}>{docLabel(t)}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div><Label>{Z("链接地址", "Link URL")}</Label><Input value={form.file_url} onChange={e => setForm(p => ({ ...p, file_url: e.target.value }))} placeholder="https://..." className="mt-1" /></div>
-            </div>
             <div>
               <Label>{Z("附件（PDF / TXT / 图片）", "Attachments (PDF / TXT / images)")}</Label>
               <div className="mt-1">
@@ -83,7 +82,7 @@ export function DocumentsCard({ caredOneId }: { caredOneId: string }) {
                 />
               </div>
             </div>
-            <div><Label>{Z("备注", "Notes")}</Label><Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder={Z("可选备注", "Optional notes")} className="mt-1" /></div>
+            <div><Label>{Z("说明", "Description")}</Label><Input value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder={Z("可选说明", "Optional description")} className="mt-1" /></div>
             <Button variant="coral" className="w-full" onClick={handleAdd} disabled={create.isPending || !form.title}>
               {create.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />} {Z("添加文件", "Add Document")}
             </Button>
@@ -107,14 +106,7 @@ export function DocumentsCard({ caredOneId }: { caredOneId: string }) {
                 {editId === d.id ? (
                   <div className="space-y-2">
                     <Input value={editForm.title} onChange={e => setEditForm(p => ({ ...p, title: e.target.value }))} placeholder={Z("标题", "Title")} />
-                    <div className="grid grid-cols-2 gap-2">
-                      <Select value={editForm.document_type} onValueChange={v => setEditForm(p => ({ ...p, document_type: v }))}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>{DOC_VALUES.map(t => <SelectItem key={t} value={t}>{docLabel(t)}</SelectItem>)}</SelectContent>
-                      </Select>
-                      <Input value={editForm.file_url} onChange={e => setEditForm(p => ({ ...p, file_url: e.target.value }))} placeholder={Z("链接地址", "Link URL")} />
-                    </div>
-                    <Input value={editForm.notes} onChange={e => setEditForm(p => ({ ...p, notes: e.target.value }))} placeholder={Z("备注", "Notes")} />
+                    <Input value={editForm.description} onChange={e => setEditForm(p => ({ ...p, description: e.target.value }))} placeholder={Z("说明", "Description")} />
                     <MediaAttachments
                       value={editForm.attachment_ids}
                       onChange={(ids) => setEditForm(p => ({ ...p, attachment_ids: ids }))}
@@ -129,18 +121,14 @@ export function DocumentsCard({ caredOneId }: { caredOneId: string }) {
                 ) : (
                   <div className="flex justify-between items-center gap-2">
                     <div className="min-w-0">
-                      <h4 className="font-medium text-foreground text-sm">{d.title || d.file_name || Z("文件", "Document")}</h4>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <Badge variant="secondary" className="text-[10px]">{docLabel(d.document_type || "Other")}</Badge>
-                        <span className="text-[10px] text-muted-foreground">{formatDate(d.created_at, isCN ? "zh-CN" : undefined)}</span>
-                      </div>
-                      {d.notes && <p className="text-xs text-muted-foreground mt-0.5">{d.notes}</p>}
+                      <h4 className="font-medium text-foreground text-sm">{d.title || Z("文件", "Document")}</h4>
+                      <span className="text-[10px] text-muted-foreground">{formatDate(d.created_at, isCN ? "zh-CN" : undefined)}</span>
+                      {d.description && <p className="text-xs text-muted-foreground mt-0.5 whitespace-pre-wrap">{d.description}</p>}
                       {Array.isArray(d.attachment_ids) && d.attachment_ids.length > 0 && <MediaAttachmentList ids={d.attachment_ids} />}
                     </div>
                     <div className="flex gap-1 shrink-0">
-                      {d.file_url && <Button variant="outline" size="sm" asChild><a href={d.file_url} target="_blank" rel="noopener">{Z("查看", "View")}</a></Button>}
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEdit(d)}><Pencil className="h-3 w-3" /></Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => del.mutate(d.id)}><Trash2 className="h-3 w-3" /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" aria-label={Z("编辑文件", "Edit document")} onClick={() => startEdit(d)}><Pencil className="h-3 w-3" /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" aria-label={Z("删除文件", "Delete document")} onClick={() => del.mutate(d.id)}><Trash2 className="h-3 w-3" /></Button>
                     </div>
                   </div>
                 )}
