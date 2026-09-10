@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, SkipForward, Volume2, Square, ChevronDown } from "lucide-react";
+import { Check, SkipForward, Volume2, Square, ChevronDown, Mic, Loader2, MessageSquare, Radio } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useTranslation } from "react-i18next";
-import { parseAIJson, speakTextStreaming, streamChatTextOnly, trimMessagesToCharLimit, type StreamControls } from "@/lib/ai";
+import { parseAIJson, speakTextStreaming, streamChatTextOnly, streamChatWithVoice, trimMessagesToCharLimit, transcribeAudio, VoiceRecorder, type StreamControls } from "@/lib/ai";
 import { aiGreeting } from "../../../supabase/functions/_shared/ai-prompts";
 import type { AssistantRequest } from "@/contexts/AIAssistantContext";
 import { resolveAssistantContext } from "@/lib/ai-dynamic-knowledge";
@@ -169,8 +169,18 @@ function guideEntries(family: string | undefined): GuideEntry[] {
   return [...GUIDE_BY_FAMILY[key], ...GUIDE_SHARED];
 }
 
-/** Read-aloud preference: one switch, remembered between visits. */
+/** Reply mode: text only / read aloud / live back-and-forth talk. Remembered. */
 const READ_ALOUD_KEY = "ai-read-aloud";
+const MODE_KEY = "ai-reply-mode";
+export type ReplyMode = "text" | "read" | "live";
+/**
+ * Live mode instruction. Kept here (not in the shared persona prompt) so the
+ * few extra words are only paid for while the user is actually talking.
+ */
+const LIVE_STYLE = {
+  zh: "现在是即时语音对话：每次只回 1–2 句短话，像面对面聊天一样自然，不要列清单、不要长段落。对方情绪不好、怀疑东西被偷或想出门时，先安抚，再自然地把话题引到轻松的事情上（老照片、以前的工作、爱吃的饭菜、天气），陪着聊下去。",
+  en: "This is a live spoken conversation: reply with 1–2 short sentences at a time, like talking face to face — no lists, no long paragraphs. If they are upset, believe something was stolen, or want to leave, reassure them first and then gently move on to something easy (old photos, their old job, favourite food, the weather) and keep the chat going.",
+} as const;
 const READ_ALOUD_VOICE = "nova";
 /** gpt-audio-mini (via OpenRouter); falls back to the built-in voice server-side. */
 const READ_ALOUD_ENGINE = "openai" as const;
@@ -218,10 +228,18 @@ export function AICompanionChat({
     });
   };
 
-  // ─── Read aloud ───
-  const [readAloud, setReadAloud] = useState(() => {
-    try { return localStorage.getItem(READ_ALOUD_KEY) === "1"; } catch { return false; }
+  // ─── Reply mode: text / read aloud / live talk ───
+  const [mode, setMode] = useState<ReplyMode>(() => {
+    try {
+      const saved = localStorage.getItem(MODE_KEY);
+      if (saved === "text" || saved === "read" || saved === "live") return saved;
+      return localStorage.getItem(READ_ALOUD_KEY) === "1" ? "read" : "text";
+    } catch { return "text"; }
   });
+  const readAloud = mode === "read";
+  const liveMode = mode === "live";
+  const liveRef = useRef(liveMode);
+  liveRef.current = liveMode;
   const [speakingIndex, setSpeakingIndex] = useState<number | null>(null);
   const voiceRef = useRef<StreamControls | null>(null);
   const readAloudRef = useRef(readAloud);
@@ -246,15 +264,66 @@ export function AICompanionChat({
     });
   };
 
-  const toggleReadAloud = (on: boolean) => {
-    setReadAloud(on);
-    try { localStorage.setItem(READ_ALOUD_KEY, on ? "1" : "0"); } catch { /* ignore */ }
-    if (!on) stopSpeaking();
+  const changeMode = (next: ReplyMode) => {
+    setMode(next);
+    try {
+      localStorage.setItem(MODE_KEY, next);
+      localStorage.setItem(READ_ALOUD_KEY, next === "text" ? "0" : "1");
+    } catch { /* ignore */ }
+    if (next === "text") stopSpeaking();
+  };
+
+  // ─── Voice input (speech → text) ───
+  const recorderRef = useRef<VoiceRecorder | null>(null);
+  const [recording, setRecording] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
+  const [micError, setMicError] = useState<string | null>(null);
+
+  const startRecording = async () => {
+    if (recording || transcribing || loading) return;
+    stopSpeaking();
+    setMicError(null);
+    const rec = new VoiceRecorder();
+    try {
+      await rec.start();
+      recorderRef.current = rec;
+      setRecording(true);
+    } catch {
+      setMicError(isZh ? "打不开麦克风，请在系统里允许使用麦克风。" : "Can't reach the microphone — allow microphone access and try again.");
+    }
+  };
+
+  const finishRecording = async (send_ = true) => {
+    const rec = recorderRef.current;
+    recorderRef.current = null;
+    setRecording(false);
+    if (!rec) return;
+    const blob = await rec.stop();
+    if (!send_) return;
+    if (!blob) {
+      setMicError(isZh ? "没有录到声音，请再说一次。" : "Nothing was recorded — please try again.");
+      return;
+    }
+    setTranscribing(true);
+    try {
+      const text = await transcribeAudio(blob, isZh ? "zh" : "en");
+      if (!text) {
+        setMicError(isZh ? "没听清，请再说一次。" : "Didn't catch that — please try again.");
+        return;
+      }
+      if (liveRef.current) await send(text);
+      else setInput((prev) => (prev ? `${prev} ${text}` : text));
+    } catch (e) {
+      console.error("Transcription failed:", e);
+      setMicError(isZh ? "语音识别暂时不可用，请打字。" : "Voice input isn't available right now — please type.");
+    } finally {
+      setTranscribing(false);
+    }
   };
 
   // Stop any playback as soon as the assistant is closed.
-  useEffect(() => { if (!active) stopSpeaking(); }, [active]);
-  useEffect(() => () => stopSpeaking(), []);
+  useEffect(() => { if (!active) { stopSpeaking(); recorderRef.current?.cancel(); recorderRef.current = null; setRecording(false); } }, [active]);
+  useEffect(() => () => { stopSpeaking(); recorderRef.current?.cancel(); }, []);
 
   /**
    * On-demand context: the static snippets that match this question plus only
@@ -280,7 +349,8 @@ export function AICompanionChat({
     } catch (e) {
       console.warn("AI context resolution failed, continuing without facts:", e);
     }
-    return [request.contextPrompt, resolved].filter(Boolean).join("\n\n") || undefined;
+    const live = liveRef.current ? (isZh ? LIVE_STYLE.zh : LIVE_STYLE.en) : "";
+    return [request.contextPrompt, resolved, live].filter(Boolean).join("\n\n") || undefined;
   };
 
   useEffect(() => {
