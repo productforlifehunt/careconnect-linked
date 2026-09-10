@@ -222,11 +222,21 @@ const SENTENCE_RE = /([。！？!?.;；]+["'”’)\\]）】]?)\s*/;
 /** Minimum chars before we ship a fragment without seeing a terminator. */
 const MIN_FRAGMENT_LEN = 80;
 
+/** 1-frame silent wav — played during the click so Safari/iOS unlock playback. */
+const SILENT_WAV =
+  "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
+
 class AudioQueue {
   private queue: QueueItem[] = [];
   private playing = false;
   private paused = false;
   private nextExpectedIndex = 0;
+  /**
+   * ONE element for the whole queue. Browsers only allow playback on an element
+   * that was started inside a user gesture, and our audio arrives later (after
+   * the TTS request), so we create and unlock this element synchronously on the
+   * click and then just swap its `src` per chunk.
+   */
   private audio: HTMLAudioElement | null = null;
   private aborted = false;
   private onStart?: () => void;
@@ -246,11 +256,24 @@ class AudioQueue {
     this.onPlayStateChange = opts.onPlayStateChange;
   }
 
+  /**
+   * Must be called synchronously inside the user's click: creates the element
+   * and starts a silent frame so later `src` swaps are allowed to play.
+   */
+  unlock() {
+    if (this.audio || typeof Audio === "undefined") return;
+    const el = new Audio(SILENT_WAV);
+    el.preload = "auto";
+    this.audio = el;
+    el.play().catch(() => {});
+  }
+
   abort() {
     this.aborted = true;
     if (this.audio) {
-      try { this.audio.pause(); this.audio.src = ""; } catch {}
-      this.audio = null;
+      try { this.audio.pause(); } catch {}
+      this.audio.onended = null;
+      this.audio.onerror = null;
     }
     for (const item of this.queue) {
       try { if (item.url) URL.revokeObjectURL(item.url); } catch {}
@@ -318,31 +341,30 @@ class AudioQueue {
     }
 
     this.playing = true;
-    const audio = new Audio(next.url);
-    this.audio = audio;
+    // Reuse the unlocked element; a fresh one would be blocked by autoplay rules.
+    if (!this.audio) this.audio = new Audio();
+    const audio = this.audio;
     if (!this.startedOnce) {
       this.startedOnce = true;
       this.onStart?.();
     }
     this.onPlayStateChange?.("playing");
-    audio.onended = () => {
+    const advance = () => {
       try { URL.revokeObjectURL(next.url); } catch {}
-      this.audio = null;
+      audio.onended = null;
+      audio.onerror = null;
       this.playing = false;
       this.tryPlayNext();
     };
+    audio.onended = advance;
     audio.onerror = () => {
       console.error("Audio playback error in queue");
-      try { URL.revokeObjectURL(next.url); } catch {}
-      this.audio = null;
-      this.playing = false;
-      this.tryPlayNext();
+      advance();
     };
+    audio.src = next.url;
     audio.play().catch((err) => {
       console.error("audio.play() failed:", err);
-      this.audio = null;
-      this.playing = false;
-      this.tryPlayNext();
+      advance();
     });
   }
 
@@ -408,6 +430,8 @@ export function streamChatWithVoice(
     onEnd: handlers.onAllAudioEnd,
     onPlayStateChange: handlers.onPlayStateChange,
   });
+  // Runs inside the send click — required for playback.
+  audioQueue.unlock();
 
   if (handlers.signal) {
     handlers.signal.addEventListener("abort", () => audioQueue.abort(), { once: true });
@@ -561,6 +585,8 @@ export function speakTextStreaming(
     onEnd: handlers.onAllAudioEnd,
     onPlayStateChange: handlers.onPlayStateChange,
   });
+  // Runs inside the click that pressed "Listen" — required for playback.
+  audioQueue.unlock();
 
   if (handlers.signal) {
     handlers.signal.addEventListener("abort", () => audioQueue.abort(), { once: true });
