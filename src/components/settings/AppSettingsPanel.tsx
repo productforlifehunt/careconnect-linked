@@ -268,6 +268,7 @@ export function AppSettingsPanel({
           )}
         </CardContent>
       </Card>
+      )}
     </div>
   );
 }
