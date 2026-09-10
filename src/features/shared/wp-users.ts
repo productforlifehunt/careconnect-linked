@@ -208,6 +208,30 @@ async function fetchAppProfileChild(userId: number): Promise<any | null> {
 
 
 
+/**
+ * Forum display names for this app only (CCT 151 a56, Relation 152).
+ * Falls back to the app name (a55) when the person never picked a forum name.
+ */
+export async function fetchForumNames(ids: Array<number | string>): Promise<Map<number, string>> {
+  const numeric = Array.from(
+    new Set(
+      ids
+        .map((id) => Number(String(id ?? "").replace(/^wp-/, "")))
+        .filter((n) => Number.isFinite(n) && n > 0),
+    ),
+  );
+  const out = new Map<number, string>();
+  await Promise.all(
+    numeric.map(async (id) => {
+      const row = await fetchAppProfileChild(id).catch(() => null);
+      const forum = String(row?.[APP_PROFILE_F.COMMUNITY_NAME] ?? "").trim();
+      const name = forum || String(row?.[APP_PROFILE_F.NAME] ?? "").trim();
+      if (name) out.set(id, name);
+    }),
+  );
+  return out;
+}
+
 export interface WPUserProfile extends WPUserRecord {
   /** 151. User's extended profile (Relation 152) */
   profile: any | null;
