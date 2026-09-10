@@ -34,18 +34,35 @@ function normalizeWpObjectId(value: string | number | null | undefined): number 
 }
 
 // ─── Facility CRUD ──────────────────────────────────────────
+// CCT 215 only: a55 name, a56 detail, a57 type, a58 dementia stage,
+// a59 room type, a60 room facility, a61 community facility, a62 people number,
+// a63 location, a64 address, a65 approved, a66 phone, a67 email.
 export async function createCareFacilityWordPress(input: {
   title?: string; name?: string; content?: string; description?: string | null;
   address?: string | null; location?: string | null;
-  latitude?: number; longitude?: number; phone?: string | null; email?: string | null; website?: string;
+  phone?: string | null; email?: string | null;
+  type?: string[] | string | null;
+  dementia_stage?: string[] | string | null;
+  room_type?: string[] | string | null;
+  room_facility?: string[] | string | null;
+  community_facility?: string[] | string | null;
+  people_number?: string | null;
   isOwner?: boolean; ownerRole?: string | null;
   ownershipClaim?: string | null; ownershipAttachmentUrls?: string | string[] | null;
 }): Promise<any> {
+  const list = (v: string[] | string | null | undefined) =>
+    Array.isArray(v) ? v.filter(Boolean) : v ? [String(v)] : [];
   const result = await wordpressCCTFetch(CCT_SLUG, {
     method: "POST",
     body: {
       [F.NAME]: input.title ?? input.name ?? "",
       [F.DETAIL]: input.content ?? input.description ?? "",
+      [F.CARE_FACILITY_TYPE]: list(input.type),
+      [F.CARE_FACILITY_CAN_CARE_FOR_DEMENTIA_STAGE]: list(input.dementia_stage),
+      [F.CARE_FACILITY_ROOM_TYPE]: list(input.room_type),
+      [F.CARE_FACILITY_PROVIDES_ROOM_FACILITY]: list(input.room_facility),
+      [F.CARE_FACILITY_PROVIDES_COMMUNITY_FACILITY]: list(input.community_facility),
+      [F.CARE_FACILITY_PEOPLE_NUMBER]: input.people_number || "",
       [F.LOCATION]: input.location || "",
       [F.ADDRESS]: input.address || "",
       [F.PHONE]: input.phone || "",
@@ -53,6 +70,7 @@ export async function createCareFacilityWordPress(input: {
       [F.FACILITY_IS_APPROVED]: T.careFacility.opt.FACILITY_IS_APPROVED.NO,
     },
   }) as any;
+
   const facilityId = String(normalizeWpObjectId(result?.item_id || result?._ID || result?.id) || "");
   if (!facilityId) throw new Error("Care facility was not created");
   if (input.isOwner) {
