@@ -171,13 +171,13 @@ export async function ensureAppProfile(app: AppId = currentAppId()): Promise<Ens
   const existing = await getAppProfileRow(app);
   if (existing) return { row: existing, created: false, grantedCredits: 0 };
 
-  const grant = PAID_APPS.includes(app) ? 10 : 0;
+  // The row exists from the first sign-in, but onboarding (a70) and the
+  // welcome credits (a91) are only stamped when the user finishes or skips the
+  // onboarding screen — see completeOnboarding().
   const body: Record<string, any> = {
     [APP_PROFILE_F.APP]: app,
-    [APP_PROFILE_F.ONBOARDING]: YES,
     cct_author_id: String(userId),
   };
-  if (grant) body[APP_PROFILE_F.AI_CREDITS] = String(grant);
   try {
     body[APP_PROFILE_F.TIMEZONE] = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
   } catch {
@@ -189,7 +189,55 @@ export async function ensureAppProfile(app: AppId = currentAppId()): Promise<Ens
   const newId = created?.item_id ?? created?._ID ?? created?.id;
   if (!newId) throw new Error("Could not create the app settings record");
   await linkOwnRow(REL, newId);
-  return { row: { ...body, _ID: newId }, created: true, grantedCredits: grant };
+  return { row: { ...body, _ID: newId }, created: true, grantedCredits: 0 };
+}
+
+/* ── onboarding (a70) + welcome credits (a91) ───────────────────────────── */
+
+/** True once the user finished or skipped this app's onboarding. */
+export async function fetchOnboardingDone(app: AppId = currentAppId()): Promise<boolean> {
+  const row = await getAppProfileRow(app);
+  return isFilled(row?.[APP_PROFILE_F.ONBOARDING]);
+}
+
+/**
+ * Marks this app's onboarding as finished or skipped, saves whatever basic
+ * information was entered, and grants the 10 welcome AI credits once, on paid
+ * apps only. Returns the credits granted by this call.
+ */
+export async function completeOnboarding(
+  values: { name?: string; communityName?: string } = {},
+  app: AppId = currentAppId(),
+): Promise<number> {
+  const ensured = await ensureAppProfile(app);
+  if (!ensured) throw new Error("No signed-in user");
+  const row = ensured.row;
+
+  const alreadyDone = isFilled(row?.[APP_PROFILE_F.ONBOARDING]);
+  const grant = !alreadyDone && PAID_APPS.includes(app) ? 10 : 0;
+
+  const body: Record<string, any> = { [APP_PROFILE_F.ONBOARDING]: YES };
+  if (isFilled(values.name)) body[APP_PROFILE_F.NAME] = values.name!.trim();
+  if (isFilled(values.communityName)) body[APP_PROFILE_F.COMMUNITY_NAME] = values.communityName!.trim();
+  if (grant) {
+    const current = parseFloat(String(row?.[APP_PROFILE_F.AI_CREDITS] ?? "0"));
+    body[APP_PROFILE_F.AI_CREDITS] = String((Number.isFinite(current) ? current : 0) + grant);
+  }
+  await wordpressCCTFetch(SLUG, { id: rowId(row), method: "PUT", body });
+  return grant;
+}
+
+/* ── community / forum name (a56) ───────────────────────────────────────── */
+
+/** The name shown on this app's forum only — every app has its own. */
+export async function fetchMyCommunityName(app: AppId = currentAppId()): Promise<string> {
+  const row = await getAppProfileRow(app);
+  const raw = row?.[APP_PROFILE_F.COMMUNITY_NAME];
+  return typeof raw === "string" ? raw.trim() : "";
+}
+
+export async function saveMyCommunityName(name: string, app: AppId = currentAppId()): Promise<void> {
+  await patchAppProfile({ [APP_PROFILE_F.COMMUNITY_NAME]: name }, app);
 }
 
 /** Writes columns onto this app's row, creating it first when needed. */
