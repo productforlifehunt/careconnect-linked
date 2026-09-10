@@ -375,6 +375,68 @@ export function AICompanionChat({
 
   return (
     <div className={className ?? "flex min-h-0 flex-1 flex-col"}>
+      {request.appGuide && guideOpen && (
+        <div className="mx-4 mt-3 rounded-2xl border bg-muted/40 p-3">
+          <h3 className="text-sm font-semibold text-foreground">
+            {isZh ? "你想了解哪一项？" : "What would you like help with?"}
+          </h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {isZh
+              ? "点一个问题，或者用自己的话问。下面这些答案直接来自应用本身，点了马上就有。"
+              : "Choose a question or ask in your own words. Answers to these come straight from the app — no waiting."}
+          </p>
+          <div className="mt-3 space-y-2">
+            {visibleGuide.map((entry) => (
+              <button
+                key={entry.q.en}
+                type="button"
+                onClick={() => answerFromGuide(entry)}
+                className="w-full rounded-xl bg-background px-3 py-2.5 text-left text-sm text-foreground shadow-sm transition-colors hover:bg-accent"
+              >
+                {isZh ? entry.q.zh : entry.q.en}
+              </button>
+            ))}
+          </div>
+          <div className="mt-3 flex items-center justify-between gap-2">
+            {guide.length > 4 ? (
+              <button
+                type="button"
+                onClick={() => setGuideShowAll((v) => !v)}
+                className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+              >
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${guideShowAll ? "rotate-180" : ""}`} />
+                {guideShowAll ? (isZh ? "收起" : "Show less") : (isZh ? "更多问题" : "Show more")}
+              </button>
+            ) : <span />}
+            <button
+              type="button"
+              onClick={() => (request.onHideGuide ? setHideConfirm((v) => !v) : setGuideOpen(false))}
+              className="inline-flex items-center gap-1 rounded-lg border bg-background px-2.5 py-1.5 text-xs text-foreground"
+            >
+              {isZh ? "隐藏使用帮助" : "Hide app guide"}
+              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${hideConfirm ? "rotate-180" : ""}`} />
+            </button>
+          </div>
+          {hideConfirm && request.onHideGuide && (
+            <div className="mt-2 rounded-xl border bg-background p-3">
+              <Button
+                className="w-full"
+                onClick={async () => {
+                  setHideConfirm(false);
+                  setGuideOpen(false);
+                  await request.onHideGuide?.();
+                }}
+              >
+                {isZh ? "隐藏帮助按钮" : "Hide the help button"}
+              </Button>
+              <p className="mt-2 text-xs text-muted-foreground">
+                {isZh ? "以后想再看到它，在“设置”里随时可以重新打开。" : "You can turn the app guide back on any time in your settings."}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
       <Conversation className="min-h-0">
         <ConversationContent className="gap-4 px-4 py-4">
           {messages.map((m, i) => (
