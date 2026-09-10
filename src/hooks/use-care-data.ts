@@ -860,7 +860,7 @@ export function useAddCaredOneToGroup() {
 export function useCreateUserCaredOne() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (caredOne: { caredOneId: string; relationship?: string; isPrimary?: boolean }) => createUserCaredOneWordPress(caredOne),
+    mutationFn: (caredOne: { caredOneId: string }) => createUserCaredOneWordPress(caredOne),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["userCaredOnes"] }); },
   });
 }

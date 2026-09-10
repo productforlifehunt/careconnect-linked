@@ -145,7 +145,9 @@ async function linkRel(relId: number, parentId: number, childId: number) {
 }
 
 // ─── Cared Ones (Relation 219, Users → Users, many-to-many) ──
-export async function createUserCaredOneWordPress(caredOne: { caredOneId: string; relationship?: string; isPrimary?: boolean }): Promise<void> {
+// Relation 219 (Users -> Users) carries no meta, so there is nothing to store
+// beyond the link itself.
+export async function createUserCaredOneWordPress(caredOne: { caredOneId: string }): Promise<void> {
   const stored = getStoredWPUser();
   if (!stored?.user_id) throw new Error("Not authenticated");
   const childId = normalizeWpObjectId(caredOne.caredOneId);
@@ -580,7 +582,7 @@ export async function fetchCareNotesWordPress(caredOneId: string): Promise<any[]
   } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
-export async function createCareNoteWordPress(note: { user_id: string; title?: string; content: string; category?: string }): Promise<void> {
+export async function createCareNoteWordPress(note: { user_id: string; title?: string; content: string }): Promise<void> {
   const created = await wordpressCCTFetch<any>(T.careNote.slug, {
     method: "POST",
     body: {
