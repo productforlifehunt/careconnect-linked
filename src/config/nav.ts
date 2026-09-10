@@ -48,6 +48,8 @@ export type NavItem = {
 type SiteLike = {
   id: string;
   family?: string;
+  /** Release feature switches; missing means the full internal build. */
+  features?: { paidCaregivers: boolean; facilities: boolean; community: boolean };
   navLabels: {
     careGroups: string;
     caredOnes: string;
@@ -75,37 +77,31 @@ type Opts = {
 /** Public entries: visible to everyone, signed in or not. */
 export function buildPublicNav({ site, t, isChinese, withHome }: Opts): NavItem[] {
   const isChallenged = site.family === "challenged";
-  const isV1 = site.id === "challenged-v1";
   const isCareCNC = site.id === "carecnc";
+  const paidCare = site.features?.paidCaregivers !== false;
+  const facilities = site.features?.facilities !== false;
+  const community = site.features?.community !== false;
   const home: NavItem[] = withHome ? [{ title: t("nav.dashboard"), url: "/", icon: Home }] : [];
 
   if (isChallenged) {
     return [
       ...home,
-      ...(isV1
-        ? []
-        : [
-            { title: t("nav.awareD"), url: "/awared", icon: Search },
-            { title: t("nav.careD"), url: "/cared", icon: Heart },
-            { title: t("nav.copeD"), url: "/coped", icon: Heart },
-            { title: t("nav.safeD"), url: "/safed", icon: Heart },
-            { title: t("nav.accompanieD"), url: "/accompanied", icon: Heart },
-          ]),
-      { title: t("nav.findCaregivers"), url: "/search-caregiver", icon: Search },
-      {
-        title: t("nav.findLocalCompanion"),
-        url: "/search-local-caregiver",
-        icon: Heart,
-      },
-      {
-        title: t("nav.findRemoteCompanion"),
-        url: "/search-remote-caregiver",
-        icon: MessageSquare,
-      },
+      { title: t("nav.awareD"), url: "/awared", icon: Search },
+      { title: t("nav.careD"), url: "/cared", icon: Heart },
+      { title: t("nav.copeD"), url: "/coped", icon: Heart },
+      { title: t("nav.safeD"), url: "/safed", icon: Heart },
+      { title: t("nav.accompanieD"), url: "/accompanied", icon: Heart },
+      ...(paidCare
+        ? [
+            { title: t("nav.findCaregivers"), url: "/search-caregiver", icon: Search },
+            { title: t("nav.findLocalCompanion"), url: "/search-local-caregiver", icon: Heart },
+            { title: t("nav.findRemoteCompanion"), url: "/search-remote-caregiver", icon: MessageSquare },
+          ]
+        : []),
       { title: t("nav.aiCompanion"), url: "/ai-companion", icon: Bot, badge: aiBrand(isChinese ? "zh" : "en") },
-      { title: t("nav.seniorFacilities"), url: "/search-care-facility", icon: Building2 },
+      ...(facilities ? [{ title: t("nav.seniorFacilities"), url: "/search-care-facility", icon: Building2 }] : []),
       { title: isChinese ? t("nav.united") : site.navLabels.careGroups, url: "/care-circle", icon: Users },
-      { title: t("nav.community"), url: "/community", icon: Newspaper },
+      ...(community ? [{ title: t("nav.community"), url: "/community", icon: Newspaper }] : []),
       { title: t("nav.howItWorks"), url: "/how-it-works", icon: HelpCircle },
     ];
   }
@@ -113,11 +109,11 @@ export function buildPublicNav({ site, t, isChinese, withHome }: Opts): NavItem[
   return [
     ...home,
     { title: t("nav.careGroups"), url: "/care-circle", icon: Users },
-    { title: t("nav.findCare"), url: "/search", icon: Search },
-    ...(isCareCNC ? [] : [{ title: t("nav.community"), url: "/community", icon: Newspaper }]),
+    ...(paidCare ? [{ title: t("nav.findCare"), url: "/search", icon: Search }] : []),
+    ...(isCareCNC || !community ? [] : [{ title: t("nav.community"), url: "/community", icon: Newspaper }]),
     { title: t("nav.articles"), url: "/articles", icon: Newspaper },
     { title: t("nav.howItWorks"), url: "/how-it-works", icon: HelpCircle },
-    { title: t("nav.becomeCaregiver"), url: "/become-caregiver", icon: UserPlus },
+    ...(paidCare ? [{ title: t("nav.becomeCaregiver"), url: "/become-caregiver", icon: UserPlus }] : []),
   ];
 }
 

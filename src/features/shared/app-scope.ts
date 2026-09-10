@@ -49,10 +49,10 @@ export function currentAppScope(): AppScope {
   try {
     const params = new URLSearchParams(window.location.search);
     const p = params.get("__site");
-    if (p === "carecnc" || p === "careconnected") return "carecnc";
+    if (p === "careconnected" || (p && p.startsWith("carecnc"))) return "carecnc";
     // NotchSafety is a front-end skin over the main care data model.
-    if (p === "notchsafety" || p === "safety") return "challenged";
-    if (p === "challenged" || p === "challenged-v1" || p === "challenged-1.0" || p === "yichang-v1") return "challenged";
+    if (p === "safety" || (p && p.startsWith("notchsafety"))) return "challenged";
+    if (p && p.startsWith("challenged")) return "challenged";
 
     const host = window.location.host;
     const hostname = window.location.hostname;

@@ -43,7 +43,7 @@ export function AppHeader() {
   const dashboardLabel = isStandalone ? t("nav.dashboard") : t("nav.enterApp");
   const isChallenged = site.family === "challenged";
   const isCareCNC = site.id === "carecnc";
-  const isV1 = site.id === "challenged-v1";
+  const paidCare = site.features.paidCaregivers;
   const logoWordmarkText = isCareCNC
     ? (isChinese ? "护畅" : "Care cnc")
     : (isChinese ? "忆畅" : "ChallengeD");
@@ -120,6 +120,11 @@ export function AppHeader() {
         {/* Logo — always the first element on the left (standard convention) */}
         <Link to="/" className="flex items-center gap-2 shrink-0" aria-label={logoWordmarkText}>
           <BrandMark size={40} showWordmark />
+          {site.showBetaLabel && (
+            <span className="px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide text-coral bg-coral/10 border border-coral/30 rounded-full leading-tight">
+              Beta
+            </span>
+          )}
         </Link>
 
         {/* Desktop horizontal nav — primary links inline, the rest in a More menu
@@ -237,9 +242,11 @@ export function AppHeader() {
                 <DropdownMenuItem onClick={() => navigate("/dashboard")}>
                   <LayoutDashboard className="mr-2 h-4 w-4" /> {dashboardLabel}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/bookings")}>
-                  <CalendarDays className="mr-2 h-4 w-4" /> {t("nav.myBookings")}
-                </DropdownMenuItem>
+                {paidCare && (
+                  <DropdownMenuItem onClick={() => navigate("/bookings")}>
+                    <CalendarDays className="mr-2 h-4 w-4" /> {t("nav.myBookings")}
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={() => navigate("/care-circle")}>
                   <Users className="mr-2 h-4 w-4" /> {isChallenged ? t("nav.united") : t(site.family === "challenged" ? "nav.careTeams" : "nav.careGroups")}
                 </DropdownMenuItem>
@@ -250,18 +257,24 @@ export function AppHeader() {
                   <MessageSquare className="mr-2 h-4 w-4" /> {t("nav.messages")}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate("/favorite-caregiver")}>
-                  <Heart className="mr-2 h-4 w-4" /> {t("nav.favorites")}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/facilities/new")}>
-                  <Building2 className="mr-2 h-4 w-4" /> {isChinese ? "提交养老院" : "Submit Facility"}
-                </DropdownMenuItem>
+                {paidCare && (
+                  <DropdownMenuItem onClick={() => navigate("/favorite-caregiver")}>
+                    <Heart className="mr-2 h-4 w-4" /> {t("nav.favorites")}
+                  </DropdownMenuItem>
+                )}
+                {site.features.facilities && (
+                  <DropdownMenuItem onClick={() => navigate("/facilities/new")}>
+                    <Building2 className="mr-2 h-4 w-4" /> {isChinese ? "提交养老院" : "Submit Facility"}
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={() => navigate("/settings")}>
                   <Settings className="mr-2 h-4 w-4" /> {isChinese ? "设置" : "Settings"}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/caregiver-setting?tab=profile")}>
-                  <Briefcase className="mr-2 h-4 w-4" /> {isChinese ? "护理者设置" : "Caregiver Settings"}
-                </DropdownMenuItem>
+                {paidCare && (
+                  <DropdownMenuItem onClick={() => navigate("/caregiver-setting?tab=profile")}>
+                    <Briefcase className="mr-2 h-4 w-4" /> {isChinese ? "护理者设置" : "Caregiver Settings"}
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={() => navigate("/how-it-works")}>
                   <HelpCircle className="mr-2 h-4 w-4" /> {isChinese ? "帮助" : "Help"}
                 </DropdownMenuItem>
