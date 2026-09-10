@@ -97,21 +97,20 @@ export function MobileBottomBar() {
   });
   const showHelpBubble = appSettings?.display.help_bubble !== false;
 
-  /** Same AI chat as the main bubble — this is only a shortcut into it. */
+  /**
+   * Same AI chat component as the main bubble — this shortcut just switches on
+   * the built-in app guide (fixed common questions, answered with no AI call).
+   */
   const openHelp = () =>
     openAssistant({
       id: "app-help",
-      title: isChinese ? "使用帮助" : "App Help",
+      title: isChinese ? "使用帮助" : "App guide",
+      appGuide: true,
+      onHideGuide: hideHelpBubble,
       contextScope: { topics: ["app-basics"] },
       contextPrompt: isChinese
-        ? "用户正在问“怎么使用这个应用”的问题。只用应用功能本身回答，一步一步说，句子短，不用专业词。不知道就说不知道，并建议用户问上方的 AI 助手或联系家人。不要给医疗或财务建议。"
-        : "The user is asking how to use this app. Answer only with the app's own features, step by step, in short plain sentences, no jargon. If you don't know, say so and suggest asking the AI assistant above or a family member. No medical or financial advice.",
-      starterPrompt: isChinese
-        ? "用一两句打招呼，告诉用户你可以教他怎么用这个应用（比如：怎么发消息、怎么预约、怎么设提醒），然后列出 3 个可以点来提问的示例问题。提醒：不需要我时可以点我左上角的小 × 把我藏起来，以后在“设置”里还能再打开。"
-        : "Greet the user in one or two sentences, say you can show them how to use this app (e.g. how to send a message, book a visit, set a reminder), then list 3 example questions they can tap. Mention they can tap the small × on the bubble to hide it, and turn it back on in Settings anytime.",
-      starterFallback: isChinese
-        ? "你好！我是使用帮助。不知道怎么操作时问我就行，比如：\n1. 怎么给家人发消息？\n2. 怎么预约护理者？\n3. 怎么设置提醒？\n不需要我时，点我左上角的小 × 可以把我藏起来，以后在“设置”里还能再打开。"
-        : "Hi! I'm the app helper. Ask me how anything works, for example:\n1. How do I message my family?\n2. How do I book a caregiver?\n3. How do I set a reminder?\nTap the small × on my bubble to hide me — you can turn me back on in Settings anytime.",
+        ? "用户正在问“怎么使用这个应用”的问题。只用应用功能本身回答，一步一步说，句子短，不用专业词。不知道就说不知道，并建议用户问 AI 助手或联系家人。不要给医疗或财务建议。"
+        : "The user is asking how to use this app. Answer only with the app's own features, step by step, in short plain sentences, no jargon. If you don't know, say so and suggest asking the AI assistant or a family member. No medical or financial advice.",
     });
 
   const hideHelpBubble = async () => {

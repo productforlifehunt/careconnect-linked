@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, SkipForward, Volume2, Square } from "lucide-react";
+import { Check, SkipForward, Volume2, Square, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
