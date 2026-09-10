@@ -197,7 +197,9 @@ export function AppSettingsPanel({
           )}
         </CardContent>
       </Card>
+      )}
 
+      {show("display") && (
       <Card className="border-transparent card-elevated">
         <CardHeader>
           <CardTitle className="text-base sm:text-lg">{groupTitle("display").title(isCN)}</CardTitle>
@@ -209,7 +211,9 @@ export function AppSettingsPanel({
           )}
         </CardContent>
       </Card>
+      )}
 
+      {show("permissions") && (
       <Card className="border-transparent card-elevated">
         <CardHeader>
           <CardTitle className="text-base sm:text-lg">{groupTitle("permissions").title(isCN)}</CardTitle>
