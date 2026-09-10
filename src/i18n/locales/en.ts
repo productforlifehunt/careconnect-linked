@@ -195,8 +195,8 @@ const en = {
     challenged: {
       name: "ChallengeD",
       tagline: "",
-      heroTitle: "Challenge Dementia,",
-      heroHighlight: "Together",
+      heroTitle: "Dementia care,",
+      heroHighlight: "made simpler",
       heroSubtitle: "Your all-in-one dementia care platform — knowledge guides, care coordination, GPS safety, AI companionship, and professional support.",
       ctaTitle: "Your dementia care journey starts here",
       ctaSubtitle: "Join families who trust ChallengeD to coordinate compassionate dementia care.",
