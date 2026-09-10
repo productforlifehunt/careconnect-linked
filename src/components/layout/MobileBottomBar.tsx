@@ -32,8 +32,11 @@ import {
   Settings,
   ShoppingCart,
   HelpCircle,
-
+  X,
 } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { fetchAppSettings, runSettingSkill } from "@/lib/ai-dynamic-knowledge";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Switch } from "@/components/ui/switch";
 import { useStandaloneMode } from "@/hooks/useStandaloneMode";
@@ -85,6 +88,46 @@ export function MobileBottomBar() {
   const [prefs, setPrefs] = useState<Prefs>(() => loadPrefs());
   const [findTab, setFindTab] = useState<"care" | "work">(prefs.defaultFindTab);
   const location = useLocation();
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const { data: appSettings } = useQuery({
+    queryKey: ["appSettings"],
+    queryFn: () => fetchAppSettings(),
+    enabled: isAuthenticated,
+  });
+  const showHelpBubble = appSettings?.display.help_bubble !== false;
+
+  /** Same AI chat as the main bubble — this is only a shortcut into it. */
+  const openHelp = () =>
+    openAssistant({
+      id: "app-help",
+      title: isChinese ? "使用帮助" : "App Help",
+      contextScope: { topics: ["app-basics"] },
+      contextPrompt: isChinese
+        ? "用户正在问“怎么使用这个应用”的问题。只用应用功能本身回答，一步一步说，句子短，不用专业词。不知道就说不知道，并建议用户问上方的 AI 助手或联系家人。不要给医疗或财务建议。"
+        : "The user is asking how to use this app. Answer only with the app's own features, step by step, in short plain sentences, no jargon. If you don't know, say so and suggest asking the AI assistant above or a family member. No medical or financial advice.",
+      starterPrompt: isChinese
+        ? "用一两句打招呼，告诉用户你可以教他怎么用这个应用（比如：怎么发消息、怎么预约、怎么设提醒），然后列出 3 个可以点来提问的示例问题。提醒：不需要我时可以点我左上角的小 × 把我藏起来，以后在“设置”里还能再打开。"
+        : "Greet the user in one or two sentences, say you can show them how to use this app (e.g. how to send a message, book a visit, set a reminder), then list 3 example questions they can tap. Mention they can tap the small × on the bubble to hide it, and turn it back on in Settings anytime.",
+      starterFallback: isChinese
+        ? "你好！我是使用帮助。不知道怎么操作时问我就行，比如：\n1. 怎么给家人发消息？\n2. 怎么预约护理者？\n3. 怎么设置提醒？\n不需要我时，点我左上角的小 × 可以把我藏起来，以后在“设置”里还能再打开。"
+        : "Hi! I'm the app helper. Ask me how anything works, for example:\n1. How do I message my family?\n2. How do I book a caregiver?\n3. How do I set a reminder?\nTap the small × on my bubble to hide me — you can turn me back on in Settings anytime.",
+    });
+
+  const hideHelpBubble = async () => {
+    try {
+      const next = await runSettingSkill("set-help-bubble", false, { settings: appSettings });
+      qc.setQueryData(["appSettings"], next);
+      toast({
+        title: isChinese ? "已藏起来" : "Hidden",
+        description: isChinese
+          ? "想再看到小问号时，到“设置”里打开“显示问号帮助按钮”就好。"
+          : "To bring the “?” back, turn on “Show the help button” in Settings.",
+      });
+    } catch {
+      toast({ title: isChinese ? "没能保存，请再试一次" : "Could not save — please try again", variant: "destructive" });
+    }
+  };
 
   useEffect(() => { setFindTab(prefs.defaultFindTab); }, [prefs.defaultFindTab]);
 
@@ -423,14 +466,36 @@ export function MobileBottomBar() {
       </DialogPrimitive.Root>
 
       {isAuthenticated && (
-        <button
-          type="button"
-          onClick={() => openAssistant()}
-          aria-label={isChinese ? "AI 助手" : "AI Assistant"}
-          className="fixed right-4 bottom-20 z-40 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-105 active:scale-95 transition-transform flex items-center justify-center"
-        >
-          <Bot className="h-5 w-5" />
-        </button>
+        <>
+          <button
+            type="button"
+            onClick={() => openAssistant()}
+            aria-label={isChinese ? "AI 助手" : "AI Assistant"}
+            className="fixed right-4 bottom-36 z-40 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-105 active:scale-95 transition-transform flex items-center justify-center"
+          >
+            <Bot className="h-5 w-5" />
+          </button>
+          {showHelpBubble && (
+            <div className="fixed right-4 bottom-20 z-40">
+              <button
+                type="button"
+                onClick={openHelp}
+                aria-label={isChinese ? "使用帮助" : "App help"}
+                className="h-12 w-12 rounded-full bg-card border text-foreground shadow-lg hover:scale-105 active:scale-95 transition-transform flex items-center justify-center"
+              >
+                <HelpCircle className="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                onClick={hideHelpBubble}
+                aria-label={isChinese ? "隐藏帮助按钮" : "Hide help button"}
+                className="absolute -top-1 -left-1 h-4 w-4 rounded-full bg-muted text-muted-foreground border flex items-center justify-center"
+              >
+                <X className="h-2.5 w-2.5" />
+              </button>
+            </div>
+          )}
+        </>
       )}
 
     </>

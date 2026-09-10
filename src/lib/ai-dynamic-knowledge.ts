@@ -603,13 +603,15 @@ export interface AppSettings {
     theme: "system" | "light" | "dark";
     text_size: "default" | "large" | "xlarge";
     reduce_motion: boolean;
+    /** Show the floating "?" app-help bubble. */
+    help_bubble: boolean;
   };
   permissions_asked: { push?: boolean; location?: boolean; calendar?: boolean };
 }
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
   notifications: { push: true, email: true, sms: false, muted_types: [] },
-  display: { theme: "system", text_size: "default", reduce_motion: false },
+  display: { theme: "system", text_size: "default", reduce_motion: false, help_bubble: true },
   permissions_asked: {},
 };
 
@@ -866,6 +868,17 @@ export const SETTING_SKILLS: SettingSkill[] = [
     hint: (cn) => Z(cn, "关掉画面的滑动和淡入淡出，看着更稳。", "Turns off sliding and fading, which can feel steadier."),
     readFrom: (s) => s.display.reduce_motion,
     patch: (s, value) => ({ display: { ...s.display, reduce_motion: value } }),
+  },
+  {
+    name: "set-help-bubble",
+    group: "display",
+    kind: "switch",
+    storage: "backend",
+    apps: "all",
+    label: (cn) => Z(cn, "显示“问号”帮助按钮", "Show the “?” help button"),
+    hint: (cn) => Z(cn, "右下角的小问号。不知道怎么用这个应用时，点它问一句就行。", "The small “?” in the corner. Tap it to ask how to use this app."),
+    readFrom: (s) => s.display.help_bubble,
+    patch: (s, value) => ({ display: { ...s.display, help_bubble: value } }),
   },
 
   /* 7 — language: this device only, so a shared account can be read in two languages */
