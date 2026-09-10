@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -30,6 +31,7 @@ export default function Onboarding() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const qc = useQueryClient();
 
   const app = currentAppId();
   const isSafety = app === "notchsafety";
@@ -69,6 +71,8 @@ export default function Onboarding() {
           }),
         });
       }
+      // The gate cached "not onboarded" — refresh it before leaving.
+      await qc.invalidateQueries({ queryKey: ["appOnboarding"] });
       navigate(home, { replace: true });
     } catch (err: any) {
       toast({
