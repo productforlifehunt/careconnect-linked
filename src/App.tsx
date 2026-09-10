@@ -76,26 +76,49 @@ const queryClient = new QueryClient({
 // One interface everywhere: the phone layout (header + bottom bar) is the only
 // shell, on phones and on desktop alike. No desktop-only sidebar.
 function AppRoutes() {
+  // Release builds (beta / public) are a strict subset of the internal build:
+  // the paid caregiver marketplace, facilities and the open community are gone,
+  // routes included, so no direct URL can reach them.
+  const { paidCaregivers, facilities, community } = useSite().features;
 
   const routes = (
     <Routes>
       {/* Public routes */}
       <Route path="/" element={<Index />} />
-      <Route path="/search" element={<SearchResults />} />
-      <Route path="/search-caregiver" element={<SearchResults />} />
-      <Route path="/search-local-caregiver" element={<SearchResults />} />
-      <Route path="/search-remote-caregiver" element={<SearchResults />} />
-      <Route path="/search-care-facility" element={<SearchResults />} />
-      <Route path="/caregiver/:id" element={<CaregiverProfile />} />
-      <Route path="/facility/:id" element={<CareFacilityProfile />} />
+      {paidCaregivers && (
+        <>
+          <Route path="/search" element={<SearchResults />} />
+          <Route path="/search-caregiver" element={<SearchResults />} />
+          <Route path="/search-local-caregiver" element={<SearchResults />} />
+          <Route path="/search-remote-caregiver" element={<SearchResults />} />
+          <Route path="/caregiver/:id" element={<CaregiverProfile />} />
+          <Route path="/become-caregiver" element={<BecomeCaregiver />} />
+          <Route path="/bookings" element={<RequireAuth><Bookings /></RequireAuth>} />
+          <Route path="/favorite-caregiver" element={<RequireAuth><Favorites /></RequireAuth>} />
+          <Route path="/caregiver-setting" element={<RequireAuth><ProviderDashboard /></RequireAuth>} />
+          <Route path="/cart" element={<RequireAuth><Cart /></RequireAuth>} />
+          <Route path="/order-confirmation" element={<RequireAuth><OrderConfirmation /></RequireAuth>} />
+        </>
+      )}
+      {facilities && (
+        <>
+          <Route path="/search-care-facility" element={<SearchResults />} />
+          <Route path="/facility/:id" element={<CareFacilityProfile />} />
+          <Route path="/facilities/new" element={<RequireAuth><CareFacilityForm /></RequireAuth>} />
+          <Route path="/facilities/:id/edit" element={<RequireAuth><CareFacilityForm /></RequireAuth>} />
+        </>
+      )}
+      {community && (
+        <>
+          <Route path="/community" element={<Community />} />
+          <Route path="/community/:id" element={<CommunityPost />} />
+        </>
+      )}
       <Route path="/auth" element={<Auth />} />
       <Route path="/join/:code" element={<JoinGroup />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/how-it-works" element={<HowItWorks />} />
       <Route path="/trust-safety" element={<TrustSafety />} />
-      <Route path="/become-caregiver" element={<BecomeCaregiver />} />
-      <Route path="/community" element={<Community />} />
-      <Route path="/community/:id" element={<CommunityPost />} />
       <Route path="/articles" element={<Articles />} />
       <Route path="/articles/:id" element={<ArticlePost />} />
       <Route path="/ai-companion" element={<AICompanion />} />
@@ -113,27 +136,20 @@ function AppRoutes() {
       <Route path="/safed/:id" element={<ChallengedArticleDetail />} />
       <Route path="/accompanied" element={<AccompanieD />} />
       <Route path="/accompanied/:id" element={<ChallengedArticleDetail />} />
-      <Route path="/facilities/new" element={<RequireAuth><CareFacilityForm /></RequireAuth>} />
-      <Route path="/facilities/:id/edit" element={<RequireAuth><CareFacilityForm /></RequireAuth>} />
 
       {/* Protected routes */}
       <Route path="/onboarding" element={<RequireAuth><Onboarding /></RequireAuth>} />
       <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
       <Route path="/care-circle" element={<RequireAuth><CareCircle /></RequireAuth>} />
       <Route path="/find" element={<RequireAuth><GPSTracking /></RequireAuth>} />
-      <Route path="/bookings" element={<RequireAuth><Bookings /></RequireAuth>} />
       {/* Inbox is the ONLY messages/notifications surface — no standalone
           routes and no redirects. All entry points link to /inbox?tab=... */}
-      <Route path="/favorite-caregiver" element={<RequireAuth><Favorites /></RequireAuth>} />
       <Route path="/settings" element={<RequireAuth><Profile /></RequireAuth>} />
       <Route path="/inbox" element={<RequireAuth><Inbox /></RequireAuth>} />
       <Route path="/cared-ones" element={<RequireAuth><CaredOnes /></RequireAuth>} />
       <Route path="/cared-ones/:personId" element={<RequireAuth><CaredOnes /></RequireAuth>} />
       <Route path="/cared-ones/:personId/:card" element={<RequireAuth><CaredOnes /></RequireAuth>} />
       <Route path="/tasks" element={<RequireAuth><TasksNeedingHelp /></RequireAuth>} />
-      <Route path="/caregiver-setting" element={<RequireAuth><ProviderDashboard /></RequireAuth>} />
-      <Route path="/cart" element={<RequireAuth><Cart /></RequireAuth>} />
-      <Route path="/order-confirmation" element={<RequireAuth><OrderConfirmation /></RequireAuth>} />
       {/* /consultation route removed — see compliance decision */}
       <Route path="/calendar" element={<RequireAuth><Calendar /></RequireAuth>} />
       <Route path="/resources" element={<Resources />} />
