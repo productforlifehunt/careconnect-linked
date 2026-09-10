@@ -1,10 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, SkipForward, Volume2, Square, ChevronDown } from "lucide-react";
+import { Check, SkipForward, Volume2, Square, ChevronDown, Mic, Loader2, MessageSquare, Radio } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { useTranslation } from "react-i18next";
-import { parseAIJson, speakTextStreaming, streamChatTextOnly, trimMessagesToCharLimit, type StreamControls } from "@/lib/ai";
+import { parseAIJson, speakTextStreaming, streamChatTextOnly, streamChatWithVoice, trimMessagesToCharLimit, transcribeAudio, VoiceRecorder, type StreamControls } from "@/lib/ai";
 import { aiGreeting } from "../../../supabase/functions/_shared/ai-prompts";
 import type { AssistantRequest } from "@/contexts/AIAssistantContext";
 import { resolveAssistantContext } from "@/lib/ai-dynamic-knowledge";
@@ -169,8 +167,18 @@ function guideEntries(family: string | undefined): GuideEntry[] {
   return [...GUIDE_BY_FAMILY[key], ...GUIDE_SHARED];
 }
 
-/** Read-aloud preference: one switch, remembered between visits. */
+/** Reply mode: text only / read aloud / live back-and-forth talk. Remembered. */
 const READ_ALOUD_KEY = "ai-read-aloud";
+const MODE_KEY = "ai-reply-mode";
+export type ReplyMode = "text" | "read" | "live";
+/**
+ * Live mode instruction. Kept here (not in the shared persona prompt) so the
+ * few extra words are only paid for while the user is actually talking.
+ */
+const LIVE_STYLE = {
+  zh: "现在是即时语音对话：每次只回 1–2 句短话，像面对面聊天一样自然，不要列清单、不要长段落。对方情绪不好、怀疑东西被偷或想出门时，先安抚，再自然地把话题引到轻松的事情上（老照片、以前的工作、爱吃的饭菜、天气），陪着聊下去。",
+  en: "This is a live spoken conversation: reply with 1–2 short sentences at a time, like talking face to face — no lists, no long paragraphs. If they are upset, believe something was stolen, or want to leave, reassure them first and then gently move on to something easy (old photos, their old job, favourite food, the weather) and keep the chat going.",
+} as const;
 const READ_ALOUD_VOICE = "nova";
 /** gpt-audio-mini (via OpenRouter); falls back to the built-in voice server-side. */
 const READ_ALOUD_ENGINE = "openai" as const;
@@ -218,10 +226,18 @@ export function AICompanionChat({
     });
   };
 
-  // ─── Read aloud ───
-  const [readAloud, setReadAloud] = useState(() => {
-    try { return localStorage.getItem(READ_ALOUD_KEY) === "1"; } catch { return false; }
+  // ─── Reply mode: text / read aloud / live talk ───
+  const [mode, setMode] = useState<ReplyMode>(() => {
+    try {
+      const saved = localStorage.getItem(MODE_KEY);
+      if (saved === "text" || saved === "read" || saved === "live") return saved;
+      return localStorage.getItem(READ_ALOUD_KEY) === "1" ? "read" : "text";
+    } catch { return "text"; }
   });
+  const readAloud = mode === "read";
+  const liveMode = mode === "live";
+  const liveRef = useRef(liveMode);
+  liveRef.current = liveMode;
   const [speakingIndex, setSpeakingIndex] = useState<number | null>(null);
   const voiceRef = useRef<StreamControls | null>(null);
   const readAloudRef = useRef(readAloud);
@@ -246,15 +262,66 @@ export function AICompanionChat({
     });
   };
 
-  const toggleReadAloud = (on: boolean) => {
-    setReadAloud(on);
-    try { localStorage.setItem(READ_ALOUD_KEY, on ? "1" : "0"); } catch { /* ignore */ }
-    if (!on) stopSpeaking();
+  const changeMode = (next: ReplyMode) => {
+    setMode(next);
+    try {
+      localStorage.setItem(MODE_KEY, next);
+      localStorage.setItem(READ_ALOUD_KEY, next === "text" ? "0" : "1");
+    } catch { /* ignore */ }
+    if (next === "text") stopSpeaking();
+  };
+
+  // ─── Voice input (speech → text) ───
+  const recorderRef = useRef<VoiceRecorder | null>(null);
+  const [recording, setRecording] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
+  const [micError, setMicError] = useState<string | null>(null);
+
+  const startRecording = async () => {
+    if (recording || transcribing || loading) return;
+    stopSpeaking();
+    setMicError(null);
+    const rec = new VoiceRecorder();
+    try {
+      await rec.start();
+      recorderRef.current = rec;
+      setRecording(true);
+    } catch {
+      setMicError(isZh ? "打不开麦克风，请在系统里允许使用麦克风。" : "Can't reach the microphone — allow microphone access and try again.");
+    }
+  };
+
+  const finishRecording = async (send_ = true) => {
+    const rec = recorderRef.current;
+    recorderRef.current = null;
+    setRecording(false);
+    if (!rec) return;
+    const blob = await rec.stop();
+    if (!send_) return;
+    if (!blob) {
+      setMicError(isZh ? "没有录到声音，请再说一次。" : "Nothing was recorded — please try again.");
+      return;
+    }
+    setTranscribing(true);
+    try {
+      const text = await transcribeAudio(blob, isZh ? "zh" : "en");
+      if (!text) {
+        setMicError(isZh ? "没听清，请再说一次。" : "Didn't catch that — please try again.");
+        return;
+      }
+      if (liveRef.current) await send(text);
+      else setInput((prev) => (prev ? `${prev} ${text}` : text));
+    } catch (e) {
+      console.error("Transcription failed:", e);
+      setMicError(isZh ? "语音识别暂时不可用，请打字。" : "Voice input isn't available right now — please type.");
+    } finally {
+      setTranscribing(false);
+    }
   };
 
   // Stop any playback as soon as the assistant is closed.
-  useEffect(() => { if (!active) stopSpeaking(); }, [active]);
-  useEffect(() => () => stopSpeaking(), []);
+  useEffect(() => { if (!active) { stopSpeaking(); recorderRef.current?.cancel(); recorderRef.current = null; setRecording(false); } }, [active]);
+  useEffect(() => () => { stopSpeaking(); recorderRef.current?.cancel(); }, []);
 
   /**
    * On-demand context: the static snippets that match this question plus only
@@ -265,7 +332,10 @@ export function AICompanionChat({
     // how-to and care-tip libraries, still retrieved per question.
     const scope = request.contextScope
       ?? (request.contextPrompt ? undefined : { topics: ["app-basics", "care-tips"] as const });
-    if (!scope) return request.contextPrompt;
+    if (!scope) {
+      const liveOnly = liveRef.current ? (isZh ? LIVE_STYLE.zh : LIVE_STYLE.en) : "";
+      return [request.contextPrompt, liveOnly].filter(Boolean).join("\n\n") || undefined;
+    }
     let resolved = "";
     try {
       resolved = await resolveAssistantContext({
@@ -280,7 +350,8 @@ export function AICompanionChat({
     } catch (e) {
       console.warn("AI context resolution failed, continuing without facts:", e);
     }
-    return [request.contextPrompt, resolved].filter(Boolean).join("\n\n") || undefined;
+    const live = liveRef.current ? (isZh ? LIVE_STYLE.zh : LIVE_STYLE.en) : "";
+    return [request.contextPrompt, resolved, live].filter(Boolean).join("\n\n") || undefined;
   };
 
   useEffect(() => {
@@ -338,21 +409,41 @@ export function AICompanionChat({
         next.slice(0, -1).map((m) => ({ role: m.role, content: m.content }))
       );
       const contextPrompt = await buildContext(text);
-      const { abort, result } = streamChatTextOnly(history, {
-        language: isZh ? "zh" : "en",
-        contextPrompt,
-        onTextDelta: (_d, full) => {
-          setMessages((prev) => {
-            const copy = [...prev];
-            copy[copy.length - 1] = { role: "assistant", content: full };
-            return copy;
-          });
-        },
-        onError: (e) => console.error("AI chat error:", e),
-      });
-      abortRef.current = { abort };
-      const reply = await result;
-      if (readAloudRef.current && reply.trim()) speak(reply, next.length - 1);
+      const onDelta = (full: string) =>
+        setMessages((prev) => {
+          const copy = [...prev];
+          copy[copy.length - 1] = { role: "assistant", content: full };
+          return copy;
+        });
+
+      let reply = "";
+      if (liveRef.current) {
+        // Live talk: each finished sentence is spoken while the rest still
+        // streams, so the answer starts coming back almost immediately.
+        stopSpeaking();
+        const { controls, result } = streamChatWithVoice(history, READ_ALOUD_VOICE, {
+          engine: READ_ALOUD_ENGINE,
+          language: isZh ? "zh" : "en",
+          contextPrompt,
+          onTextDelta: (_d, full) => onDelta(full),
+          onAudioStart: () => setSpeakingIndex(next.length - 1),
+          onAllAudioEnd: () => setSpeakingIndex(null),
+          onError: (e) => console.error("AI live chat error:", e),
+        });
+        voiceRef.current = controls;
+        abortRef.current = { abort: () => controls.stop() };
+        reply = await result;
+      } else {
+        const { abort, result } = streamChatTextOnly(history, {
+          language: isZh ? "zh" : "en",
+          contextPrompt,
+          onTextDelta: (_d, full) => onDelta(full),
+          onError: (e) => console.error("AI chat error:", e),
+        });
+        abortRef.current = { abort };
+        reply = await result;
+        if (readAloudRef.current && reply.trim()) speak(reply, next.length - 1);
+      }
       const parsed = parseAIJson<{ done?: boolean; summary?: string; status?: string }>(reply);
       if (parsed?.done && parsed.summary && request.onComplete) {
         const allowed = request.completionStatuses || [];
@@ -465,13 +556,34 @@ export function AICompanionChat({
       </Conversation>
 
       <div className="border-t p-3 space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <Label htmlFor="ai-read-aloud" className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Volume2 className="h-3.5 w-3.5" />
-            {isZh ? "自动朗读回复" : "Read replies aloud"}
-          </Label>
-          <Switch id="ai-read-aloud" checked={readAloud} onCheckedChange={toggleReadAloud} />
+        <div className="flex items-center gap-1 rounded-xl bg-muted p-1" role="group" aria-label={isZh ? "回复方式" : "Reply mode"}>
+          {([
+            { id: "text" as const, icon: MessageSquare, zh: "文字", en: "Text" },
+            { id: "read" as const, icon: Volume2, zh: "朗读", en: "Read aloud" },
+            { id: "live" as const, icon: Radio, zh: "即时对话", en: "Live talk" },
+          ]).map((opt) => {
+            const Icon = opt.icon;
+            const on = mode === opt.id;
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                aria-pressed={on}
+                onClick={() => changeMode(opt.id)}
+                className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition-colors ${on ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {isZh ? opt.zh : opt.en}
+              </button>
+            );
+          })}
         </div>
+        {liveMode && (
+          <p className="text-xs text-muted-foreground">
+            {isZh ? "按住麦克风说话，松手就会马上回答，一句一句读出来。" : "Hold the microphone and talk — the reply comes back spoken, sentence by sentence."}
+          </p>
+        )}
+        {micError && <p className="text-xs text-destructive">{micError}</p>}
         {request.onComplete && (
           <div className="flex justify-end gap-2">
             {(request.completionStatuses || []).includes("skipped") && (
@@ -488,7 +600,23 @@ export function AICompanionChat({
           <PromptInputBody>
             <PromptInputTextarea value={input} onChange={(e) => setInput(e.target.value)} placeholder={isZh ? "说点什么…" : "Type a message…"} />
           </PromptInputBody>
-          <PromptInputFooter className="justify-end">
+          <PromptInputFooter className="justify-between">
+            <Button
+              type="button"
+              size="sm"
+              variant={recording ? "destructive" : "outline"}
+              disabled={transcribing || loading}
+              aria-label={recording ? (isZh ? "停止说话并发送" : "Stop talking and send") : (isZh ? "按住说话" : "Hold to talk")}
+              onPointerDown={(e) => { e.preventDefault(); void startRecording(); }}
+              onPointerUp={(e) => { e.preventDefault(); void finishRecording(true); }}
+              onPointerLeave={() => { if (recording) void finishRecording(true); }}
+            >
+              {transcribing
+                ? <><Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />{isZh ? "识别中…" : "Transcribing…"}</>
+                : recording
+                  ? <><Square className="mr-1 h-3.5 w-3.5" />{isZh ? "松手发送" : "Release to send"}</>
+                  : <><Mic className="mr-1 h-3.5 w-3.5" />{isZh ? "按住说话" : "Hold to talk"}</>}
+            </Button>
             <PromptInputSubmit status={loading ? "streaming" : "ready"} disabled={loading || !input.trim()} onStop={() => abortRef.current?.abort()} />
           </PromptInputFooter>
         </PromptInput>

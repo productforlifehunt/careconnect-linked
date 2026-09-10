@@ -1049,6 +1049,77 @@ async function handleVoice(req: Request): Promise<Response> {
   }
 }
 
+// ═══ 3. TRANSCRIBE (voice in → text out) ═══
+// Cheapest capable speech-to-text on the gateway. Body: { audio: base64, mime?, language? }
+const STT_MODEL = "google/gemini-3.5-transcribe";
+
+async function handleTranscribe(req: Request): Promise<Response> {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  try {
+    const { audio, mime, language } = await req.json() as {
+      audio?: string;
+      mime?: string;
+      language?: string;
+    };
+    if (!audio || typeof audio !== "string") {
+      return new Response(JSON.stringify({ error: "audio (base64) is required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const apiKey = Deno.env.get("LOVABLE_API_KEY");
+    if (!apiKey) {
+      return new Response(JSON.stringify({ error: "LOVABLE_API_KEY missing" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const binary = atob(audio);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    if (bytes.length < 2048) {
+      // Header-only / silent recording — never worth a paid request.
+      return new Response(JSON.stringify({ text: "", empty: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const type = mime || "audio/wav";
+    const ext = type.includes("mp4") ? "mp4" : type.includes("webm") ? "webm" : type.includes("mpeg") ? "mp3" : "wav";
+    const form = new FormData();
+    form.append("model", STT_MODEL);
+    form.append("file", new Blob([bytes], { type }), `recording.${ext}`);
+    // Omit language when unknown so 85+ languages auto-detect.
+    const lang = String(language || "").slice(0, 2).toLowerCase();
+    if (lang === "zh" || lang === "en") form.append("language", lang);
+
+    const resp = await fetch("https://ai.gateway.lovable.dev/v1/audio/transcriptions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}` },
+      body: form,
+    });
+    if (!resp.ok) {
+      const detail = await resp.text().catch(() => "");
+      console.error("STT failed:", resp.status, detail);
+      return new Response(JSON.stringify({ error: `transcription failed [${resp.status}]`, detail: detail.slice(0, 300) }), {
+        status: resp.status,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const data = await resp.json().catch(() => ({}));
+    return new Response(JSON.stringify({ text: String(data?.text || "").trim() }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (e) {
+    console.error("ai transcribe error:", e);
+    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+}
+
 // ─── Router: task-based only ───
 // ?task=<in>-<out>, several separated by , + or |. Unknown / missing task is
 // rejected, so a typo can never silently become a different modality.
@@ -1082,6 +1153,8 @@ serve(async (req) => {
 
   // Audio out wins when combined (e.g. ?task=chat-chat,chat-voice on a spoken reply).
   if (tasks.includes("chat-voice")) return handleVoice(req);
+
+  if (tasks.includes("voice-chat")) return handleTranscribe(req);
 
   if (tasks.includes("chat-chat")) {
     // Streaming is the default; body.stream === false gives a single JSON reply.
