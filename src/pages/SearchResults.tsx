@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Star, MapPin, Shield, Clock, Search, SlidersHorizontal, X, ChevronLeft, ChevronRight, Building2, Globe } from "lucide-react";
+import { Star, MapPin, Shield, Clock, Search, SlidersHorizontal, X, ChevronLeft, ChevronRight, Building2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
@@ -96,7 +96,6 @@ export default function SearchResults() {
     area: facilityArea,
   });
 
-  const { data: facilityFacets } = useCareFacilities({ area: facilityArea });
 
   const toggleFacilityType = (s: string) => setSelectedFacilityTypes(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
   const toggleStage = (s: string) => setSelectedStages(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
