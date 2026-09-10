@@ -27,6 +27,7 @@ import Bookings from "./pages/Bookings";
 import HowItWorks from "./pages/HowItWorks";
 import Favorites from "./pages/Favorites";
 import Profile from "./pages/Profile";
+import Onboarding from "./pages/Onboarding";
 import TrustSafety from "./pages/TrustSafety";
 import BecomeCaregiver from "./pages/BecomeCaregiver";
 import Inbox from "./pages/Inbox";
@@ -116,6 +117,7 @@ function AppRoutes() {
       <Route path="/facilities/:id/edit" element={<RequireAuth><CareFacilityForm /></RequireAuth>} />
 
       {/* Protected routes */}
+      <Route path="/onboarding" element={<RequireAuth><Onboarding /></RequireAuth>} />
       <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
       <Route path="/care-circle" element={<RequireAuth><CareCircle /></RequireAuth>} />
       <Route path="/find" element={<RequireAuth><GPSTracking /></RequireAuth>} />

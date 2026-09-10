@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { fetchForumNames } from "@/features/shared/wp-users";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
@@ -125,6 +127,20 @@ export default function Community() {
   });
   const postIds = useMemo(() => (filteredPosts || []).map((p: any) => p.id), [filteredPosts]);
   const { data: voteSummary = {} } = useVoteSummary("post", postIds);
+
+  // Forum names are per app (CCT 151 a56) — never the shared account name.
+  const authorIds = useMemo(
+    () => Array.from(new Set((filteredPosts || []).map((p: any) => p.author_id).filter(Boolean))),
+    [filteredPosts],
+  );
+  const { data: forumNames } = useQuery({
+    queryKey: ["forumNames", authorIds],
+    queryFn: () => fetchForumNames(authorIds as any[]),
+    enabled: authorIds.length > 0,
+    staleTime: 10 * 60 * 1000,
+  });
+  const forumName = (authorId: any) => forumNames?.get(Number(authorId)) || "";
+
 
   const handleStartEdit = (post: any) => {
     setEditingPost(post);
@@ -266,12 +282,12 @@ export default function Community() {
               <CardHeader className="pb-2">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary shrink-0">
-                    {(post.author?.full_name || "?")[0]}
+                    {(forumName(post.author_id) || post.author?.full_name || "?")[0]}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-medium text-sm text-foreground">
-                        {post.author?.full_name || (isZh ? "未填姓名" : "No name")}
+                        {forumName(post.author_id) || post.author?.full_name || (isZh ? "未填姓名" : "No name")}
                       </span>
                       <span className="text-[11px] text-muted-foreground ml-auto shrink-0">
                         {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: dateLocale })}

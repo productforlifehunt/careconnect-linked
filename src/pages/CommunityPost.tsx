@@ -17,6 +17,8 @@ import { ArrowLeft, Loader2, MoreHorizontal, Pencil, ThumbsDown, ThumbsUp, Trash
 import { formatDistanceToNow } from "date-fns";
 import { enUS, zhCN } from "date-fns/locale";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { fetchForumNames } from "@/features/shared/wp-users";
 
 function PostEditorDialog({
   open,
@@ -78,6 +80,15 @@ export default function CommunityPost() {
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
+
+  // Forum name for this app only (CCT 151 a56).
+  const { data: forumNames } = useQuery({
+    queryKey: ["forumNames", [post?.author_id]],
+    queryFn: () => fetchForumNames([post!.author_id]),
+    enabled: !!post?.author_id,
+    staleTime: 10 * 60 * 1000,
+  });
+  const authorForumName = post?.author_id ? forumNames?.get(Number(post.author_id)) || "" : "";
 
   const handleStartEdit = () => {
     if (!post) return;
@@ -181,11 +192,11 @@ export default function CommunityPost() {
           <CardHeader className="pb-3">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary shrink-0">
-                {(post.author?.full_name || "?")[0]}
+                {(authorForumName || post.author?.full_name || "?")[0]}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-medium text-sm text-foreground">{post.author?.full_name || (isZh ? "未填姓名" : "No name")}</span>
+                  <span className="font-medium text-sm text-foreground">{authorForumName || post.author?.full_name || (isZh ? "未填姓名" : "No name")}</span>
                   <span className="text-[11px] text-muted-foreground ml-auto shrink-0">
                     {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: dateLocale })}
                   </span>

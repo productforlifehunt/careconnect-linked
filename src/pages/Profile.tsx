@@ -19,7 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useSite } from "@/contexts/SiteContext";
 import { useTranslation } from "react-i18next";
 import { AppSettingsPanel } from "@/components/settings/AppSettingsPanel";
-import { ensureAppProfile } from "@/features/shared/app-profile";
+import { ensureAppProfile, fetchMyCommunityName, saveMyCommunityName } from "@/features/shared/app-profile";
 
 export default function Profile() {
   const { t } = useTranslation();
@@ -43,6 +43,8 @@ export default function Profile() {
   const [savingProfile, setSavingProfile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [communityName, setCommunityName] = useState("");
+
   const [emailNotifs, setEmailNotifs] = useState(true);
   const [pushNotifs, setPushNotifs] = useState(true);
 
@@ -64,6 +66,16 @@ export default function Profile() {
       .catch(() => null);
     return () => { cancelled = true; };
   }, [user, toast, t]);
+
+  // This app's forum name (a56) — separate in every sub-app.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    fetchMyCommunityName()
+      .then((value) => { if (!cancelled) setCommunityName(value); })
+      .catch(() => null);
+    return () => { cancelled = true; };
+  }, [user]);
 
   useEffect(() => {
     if (profile) {
@@ -91,6 +103,7 @@ export default function Profile() {
         avatar_url: avatarUrl || null,
         general_user_role: roles,
       });
+      await saveMyCommunityName(communityName);
       await qc.invalidateQueries({ queryKey: ["myProfile"] });
       toast({ title: t("profile.profileUpdated") });
     } catch (err: any) {
@@ -218,6 +231,11 @@ export default function Profile() {
               <div>
                 <Label>{t("common.address")}</Label>
                 <div className="relative"><MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input value={address} onChange={e => setAddress(e.target.value)} className="pl-9" /></div>
+              </div>
+              <div>
+                <Label htmlFor="community-name">{t("profile.communityName", "Your name on the forum")}</Label>
+                <Input id="community-name" value={communityName} onChange={e => setCommunityName(e.target.value)} placeholder={t("profile.communityNamePlaceholder", "Shown on posts and replies")} />
+                <p className="text-xs text-muted-foreground mt-1">{t("profile.communityNameHelp", "Only used on this forum, so you can pick a different one in each app.")}</p>
               </div>
               <div><Label>{t("profile.aboutMe")}</Label><Textarea value={bio} onChange={e => setBio(e.target.value)} rows={3} /></div>
               <div className="space-y-3">
