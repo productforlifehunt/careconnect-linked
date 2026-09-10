@@ -750,3 +750,94 @@ export function trimMessagesToCharLimit<T extends { role: string; content?: stri
   }
   return messages.slice(start);
 }
+
+// ═════════ VOICE INPUT (speech → text) ═════════
+/**
+ * Records the microphone as PCM and encodes a complete 16 kHz mono WAV, then
+ * transcribes it through the same `ai` edge function (?task=voice-chat).
+ * WAV avoids MediaRecorder's headerless fragments and iOS Safari's mp4.
+ */
+function encodeWav(chunks: Float32Array[], sampleRate: number, targetRate = 16000): Blob {
+  const total = chunks.reduce((n, c) => n + c.length, 0);
+  const merged = new Float32Array(total);
+  let offset = 0;
+  for (const c of chunks) { merged.set(c, offset); offset += c.length; }
+
+  const ratio = sampleRate / targetRate;
+  const outLength = ratio > 1 ? Math.floor(merged.length / ratio) : merged.length;
+  const samples = new Int16Array(outLength);
+  for (let i = 0; i < outLength; i++) {
+    const v = merged[ratio > 1 ? Math.floor(i * ratio) : i] ?? 0;
+    const clamped = Math.max(-1, Math.min(1, v));
+    samples[i] = clamped < 0 ? clamped * 0x8000 : clamped * 0x7fff;
+  }
+  const rate = ratio > 1 ? targetRate : sampleRate;
+
+  const buffer = new ArrayBuffer(44 + samples.length * 2);
+  const view = new DataView(buffer);
+  const writeStr = (pos: number, s: string) => { for (let i = 0; i < s.length; i++) view.setUint8(pos + i, s.charCodeAt(i)); };
+  writeStr(0, "RIFF");
+  view.setUint32(4, 36 + samples.length * 2, true);
+  writeStr(8, "WAVEfmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, rate, true);
+  view.setUint32(28, rate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeStr(36, "data");
+  view.setUint32(40, samples.length * 2, true);
+  new Int16Array(buffer, 44).set(samples);
+  return new Blob([buffer], { type: "audio/wav" });
+}
+
+export class VoiceRecorder {
+  private stream: MediaStream | null = null;
+  private ctx: AudioContext | null = null;
+  private node: ScriptProcessorNode | null = null;
+  private source: MediaStreamAudioSourceNode | null = null;
+  private chunks: Float32Array[] = [];
+
+  async start(): Promise<void> {
+    this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const Ctor: typeof AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
+    this.ctx = new Ctor();
+    this.chunks = [];
+    this.source = this.ctx.createMediaStreamSource(this.stream);
+    this.node = this.ctx.createScriptProcessor(4096, 1, 1);
+    this.node.onaudioprocess = (e) => this.chunks.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+    this.source.connect(this.node);
+    this.node.connect(this.ctx.destination);
+  }
+
+  /** Stops recording and returns a complete WAV blob (null when nothing usable). */
+  async stop(): Promise<Blob | null> {
+    try { this.stream?.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
+    try { this.node?.disconnect(); this.source?.disconnect(); } catch { /* ignore */ }
+    const rate = this.ctx?.sampleRate || 44100;
+    const chunks = this.chunks;
+    this.chunks = [];
+    try { await this.ctx?.close(); } catch { /* ignore */ }
+    this.ctx = null; this.node = null; this.source = null; this.stream = null;
+    if (!chunks.length) return null;
+    const blob = encodeWav(chunks, rate);
+    return blob.size < 2048 ? null : blob;
+  }
+
+  cancel() { void this.stop(); }
+}
+
+/** Send a recorded clip to the shared `ai` function and get the text back. */
+export async function transcribeAudio(blob: Blob, language?: string): Promise<string> {
+  const buf = new Uint8Array(await blob.arrayBuffer());
+  let binary = "";
+  for (let i = 0; i < buf.length; i += 0x8000) {
+    binary += String.fromCharCode.apply(null, Array.from(buf.subarray(i, i + 0x8000)) as any);
+  }
+  const { data, error } = await supabase.functions.invoke("ai?task=voice-chat", {
+    body: { audio: btoa(binary), mime: blob.type || "audio/wav", language },
+  });
+  if (error || data?.error) throw new Error(String(error?.message || data?.error || "transcription failed"));
+  return String(data?.text || "").trim();
+}
