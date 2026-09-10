@@ -271,8 +271,15 @@ export default function PayoutAccountsCard({
           )}
 
         </div>
+        </>)}
 
-        {!!data?.withdrawals?.length && (
+        {showHistory && !data?.withdrawals?.length && (
+          <p className="text-sm text-muted-foreground text-center py-4">
+            {isZh ? "还没有收款记录。" : "No payments yet."}
+          </p>
+        )}
+
+        {showHistory && !!data?.withdrawals?.length && (
           <div className="space-y-2">
             <p className="text-sm font-semibold text-foreground">
               {isZh ? "提现记录" : "Payout history"}
