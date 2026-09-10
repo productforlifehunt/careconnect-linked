@@ -19,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useSite } from "@/contexts/SiteContext";
 import { useTranslation } from "react-i18next";
 import { AppSettingsPanel } from "@/components/settings/AppSettingsPanel";
+import { ensureAppProfile } from "@/features/shared/app-profile";
 
 export default function Profile() {
   const { t } = useTranslation();
