@@ -17,6 +17,14 @@ import { useTranslation } from "react-i18next";
 import { useServiceTypes } from "@/hooks/use-service-types";
 import { SERVICE_DELIVERY_MODES, careServiceTypeLabel } from "@/lib/care-service-types";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  FACILITY_TYPE_OPTIONS,
+  FACILITY_STAGE_OPTIONS,
+  FACILITY_ROOM_TYPE_OPTIONS,
+  FACILITY_PEOPLE_NUMBER_OPTIONS,
+  facilityLabel,
+  facilityLabels,
+} from "@/lib/facility-options";
 function getFacilityAddress(facility: CareFacility, isZh: boolean) {
   return [facility.location, facility.address].filter(Boolean).join(isZh ? " " : ", ");
 }
@@ -63,7 +71,7 @@ export default function SearchResults() {
 
   const [priceRange, setPriceRange] = useState([0, 100]);
   const [selectedFacilityTypes, setSelectedFacilityTypes] = useState<string[]>([]);
-  const [selectedServiceTypes, setSelectedServiceTypes] = useState<string[]>([]);
+  const [selectedStages, setSelectedStages] = useState<string[]>([]);
   const [selectedLocations, setSelectedLocations] = useState<string[]>(initialServiceLocations);
   const [selectedServiceTypeSlugs, setSelectedServiceTypeSlugs] = useState<string[]>(initialServiceTypeSlugs);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
@@ -83,7 +91,7 @@ export default function SearchResults() {
     query: debouncedQuery || undefined,
     location: debouncedLocation || undefined,
     sortBy,
-    serviceTypes: selectedServiceTypes.length > 0 ? selectedServiceTypes : undefined,
+    dementiaStages: selectedStages.length > 0 ? selectedStages : undefined,
     facilityTypes: selectedFacilityTypes.length > 0 ? selectedFacilityTypes : undefined,
     area: facilityArea,
   });
@@ -91,22 +99,13 @@ export default function SearchResults() {
   const { data: facilityFacets } = useCareFacilities({ area: facilityArea });
 
   const toggleFacilityType = (s: string) => setSelectedFacilityTypes(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
-  const toggleServiceType = (s: string) => setSelectedServiceTypes(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
+  const toggleStage = (s: string) => setSelectedStages(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
   const toggleLocation = (s: string) => setSelectedLocations(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
   const toggleServiceTypeSlug = (s: string) => setSelectedServiceTypeSlugs(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
 
   // Delivery-mode options = CCT 258 a65 (b55 In person / b56 Remote).
   const LOCATION_OPTIONS = SERVICE_DELIVERY_MODES;
 
-  const facilityTypeOptions = Array.from(new Set((facilityFacets || []).map((item) => item.type).filter(Boolean) as string[]));
-  const facilityServiceOptions = Array.from(
-    new Set(
-      (facilityFacets || []).flatMap((item) => [
-        ...normalizeList(item.service_category),
-        ...normalizeList(item.service_type),
-      ])
-    )
-  );
 
   const FilterPanel = () => (
     <div className="space-y-6">
@@ -122,21 +121,21 @@ export default function SearchResults() {
           <div>
             <Label className="text-sm font-semibold mb-3 block">{isZh ? "机构类型" : "Facility type"}</Label>
             <div className="space-y-2 max-h-44 overflow-auto pr-1">
-              {facilityTypeOptions.map(s => (
-                <label key={s} className="flex items-center gap-2 cursor-pointer">
-                  <Checkbox aria-label={`${isZh ? "机构类型" : "Facility type"}: ${formatFacilityToken(s)}`} checked={selectedFacilityTypes.includes(s)} onCheckedChange={() => toggleFacilityType(s)} />
-                  <span className="text-sm">{formatFacilityToken(s)}</span>
+              {FACILITY_TYPE_OPTIONS.map(opt => (
+                <label key={opt.code} className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox aria-label={`${isZh ? "机构类型" : "Facility type"}: ${isZh ? opt.zh : opt.en}`} checked={selectedFacilityTypes.includes(opt.code)} onCheckedChange={() => toggleFacilityType(opt.code)} />
+                  <span className="text-sm">{isZh ? opt.zh : opt.en}</span>
                 </label>
               ))}
             </div>
           </div>
           <div>
-            <Label className="text-sm font-semibold mb-3 block">{isZh ? "服务分类" : "Services"}</Label>
-            <div className="space-y-2 max-h-52 overflow-auto pr-1">
-              {facilityServiceOptions.map(s => (
-                <label key={s} className="flex items-center gap-2 cursor-pointer">
-                  <Checkbox aria-label={`${isZh ? "服务分类" : "Service"}: ${formatFacilityToken(s)}`} checked={selectedServiceTypes.includes(s)} onCheckedChange={() => toggleServiceType(s)} />
-                  <span className="text-sm">{formatFacilityToken(s)}</span>
+            <Label className="text-sm font-semibold mb-3 block">{isZh ? "可照护的失智症阶段" : "Dementia stage"}</Label>
+            <div className="space-y-2">
+              {FACILITY_STAGE_OPTIONS.map(opt => (
+                <label key={opt.code} className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox aria-label={`${isZh ? "失智症阶段" : "Dementia stage"}: ${isZh ? opt.zh : opt.en}`} checked={selectedStages.includes(opt.code)} onCheckedChange={() => toggleStage(opt.code)} />
+                  <span className="text-sm">{isZh ? opt.zh : opt.en}</span>
                 </label>
               ))}
             </div>
