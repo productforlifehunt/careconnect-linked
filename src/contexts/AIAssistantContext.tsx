@@ -27,6 +27,10 @@ export type AssistantRequest = {
   starterFallback?: string;
   completionStatuses?: string[];
   onComplete?: (result: AssistantResult) => void | Promise<void>;
+  /** Show the built-in, instant app guide (common questions answered offline). */
+  appGuide?: boolean;
+  /** Called when the user chooses to hide the app guide shortcut. */
+  onHideGuide?: () => void | Promise<void>;
 };
 
 
