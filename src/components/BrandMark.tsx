@@ -106,17 +106,19 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
 
   const wordmark = isCareCNC
     ? (isChinese ? "护畅" : "Care cnc")
-    : site.family === "notchsafety" && isChinese
-      ? "诺驰安全"
-      : null;
+    : brand === "challenged"
+      ? "ChallengeD"
+      : site.family === "notchsafety" && isChinese
+        ? "诺驰安全"
+        : null;
 
   return (
     <span className={`flex items-center gap-2 ${className}`}>
       {icon}
-      {showWordmark && brand !== "challenged" && brand !== "carecnc" && (
-        <span className="font-bold text-lg">
+      {showWordmark && brand !== "carecnc" && (
+        <span className="font-bold text-lg tracking-tight">
           {wordmark ? (
-            <span className="text-primary">{wordmark}</span>
+            <span className="text-foreground">{wordmark}</span>
           ) : (
             <>
               <span className="text-primary">{site.logoText}</span>
