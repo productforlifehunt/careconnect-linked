@@ -4,12 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Pencil, Trash2, X, Check, Plus, FileText, Loader2 } from "lucide-react";
+import { X, Check, Plus, FileText, Loader2, ChevronRight, Paperclip } from "lucide-react";
 import { useCaredOneDocuments, useCreateCaredOneDocument, useUpdateCaredOneDocument, useDeleteCaredOneDocument } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { formatDate } from "@/lib/locale";
 import { MediaAttachments, MediaAttachmentList } from "@/components/shared/MediaAttachments";
+import { RecordDetailDialog } from "./RecordDetailDialog";
 
 /**
  * Cared one's care document — CCT 212 only:
@@ -30,8 +31,11 @@ export function DocumentsCard({ caredOneId }: { caredOneId: string }) {
   const [form, setForm] = useState({ title: "", description: "", attachment_ids: [] as number[] });
   const [editId, setEditId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ title: "", description: "", attachment_ids: [] as number[] });
+  const [openId, setOpenId] = useState<string | null>(null);
+  const open = (docs || []).find((d: any) => String(d.id) === String(openId));
 
   const startEdit = (d: any) => {
+    setOpenId(null);
     setEditId(d.id);
     setEditForm({
       title: d.title || "",
@@ -119,23 +123,48 @@ export function DocumentsCard({ caredOneId }: { caredOneId: string }) {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex justify-between items-center gap-2">
-                    <div className="min-w-0">
-                      <h4 className="font-medium text-foreground text-sm">{d.title || Z("文件", "Document")}</h4>
-                      <span className="text-[10px] text-muted-foreground">{formatDate(d.created_at, isCN ? "zh-CN" : undefined)}</span>
-                      {d.description && <p className="text-xs text-muted-foreground mt-0.5 whitespace-pre-wrap">{d.description}</p>}
-                      {Array.isArray(d.attachment_ids) && d.attachment_ids.length > 0 && <MediaAttachmentList ids={d.attachment_ids} />}
-                    </div>
-                    <div className="flex gap-1 shrink-0">
-                      <Button variant="ghost" size="icon" className="h-7 w-7" aria-label={Z("编辑文件", "Edit document")} onClick={() => startEdit(d)}><Pencil className="h-3 w-3" /></Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" aria-label={Z("删除文件", "Delete document")} onClick={() => del.mutate(d.id)}><Trash2 className="h-3 w-3" /></Button>
-                    </div>
-                  </div>
+                  <button type="button" className="w-full text-left flex justify-between items-start gap-2" onClick={() => setOpenId(String(d.id))}>
+                    <span className="min-w-0">
+                      <span className="block font-medium text-foreground text-sm">{d.title || Z("文件", "Document")}</span>
+                      <span className="block text-[10px] text-muted-foreground">{formatDate(d.created_at, isCN ? "zh-CN" : undefined)}</span>
+                      {d.description && <span className="block text-xs text-muted-foreground mt-0.5 line-clamp-2">{d.description}</span>}
+                      {Array.isArray(d.attachment_ids) && d.attachment_ids.length > 0 && (
+                        <span className="flex items-center gap-1 text-[11px] text-muted-foreground mt-1">
+                          <Paperclip className="h-3 w-3" /> {Z(`${d.attachment_ids.length} 个附件`, `${d.attachment_ids.length} attachment(s)`)}
+                        </span>
+                      )}
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                  </button>
                 )}
               </CardContent>
             </Card>
           ))}
         </div>
+      )}
+
+      {open && (
+        <RecordDetailDialog
+          open={!!openId}
+          onOpenChange={(v) => !v && setOpenId(null)}
+          title={open.title || Z("文件", "Document")}
+          rows={[
+            { label: Z("说明", "Description"), value: open.description },
+            { label: Z("添加时间", "Added"), value: open.created_at ? formatDate(open.created_at, isCN ? "zh-CN" : undefined) : undefined },
+            {
+              label: Z("附件", "Attachments"),
+              value: Array.isArray(open.attachment_ids) && open.attachment_ids.length > 0
+                ? <MediaAttachmentList ids={open.attachment_ids} />
+                : undefined,
+            },
+          ]}
+          onEdit={() => startEdit(open)}
+          onDelete={() => del.mutate(open.id, {
+            onSuccess: () => { setOpenId(null); toast({ title: Z("文件已删除", "Document deleted") }); },
+            onError: (e: any) => toast({ title: Z("没能删除", "Couldn't delete"), description: e?.message, variant: "destructive" }),
+          })}
+          isDeleting={del.isPending}
+        />
       )}
     </div>
   );

@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Plus, Check, Pencil, Trash2, X, ClipboardList, Loader2 } from "lucide-react";
+import { Plus, Check, X, ClipboardList, Loader2, ChevronRight } from "lucide-react";
 import { useCarePlans, useCreateCarePlan, useUpdateCarePlan, useDeleteCarePlan } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { RecordDetailDialog } from "./RecordDetailDialog";
 
 function useZ() {
   const { i18n } = useTranslation();
@@ -28,8 +28,10 @@ export function CarePlanCard({ caredOneId }: { caredOneId: string }) {
   const [form, setForm] = useState({ title: "", description: "" });
   const [editId, setEditId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ title: "", description: "" });
+  const [openId, setOpenId] = useState<string | null>(null);
+  const open = (plans || []).find((p: any) => String(p.id) === String(openId));
 
-  const startEdit = (p: any) => { setEditId(p.id); setEditForm({ title: p.title, description: p.description || "" }); };
+  const startEdit = (p: any) => { setOpenId(null); setEditId(p.id); setEditForm({ title: p.title, description: p.description || "" }); };
   const cancelEdit = () => setEditId(null);
   const saveEdit = () => {
     if (!editId || !editForm.title) return;
@@ -95,7 +97,7 @@ export function CarePlanCard({ caredOneId }: { caredOneId: string }) {
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor={`edit-detail-${p.id}`}>{Z("方案内容", "Plan details")}</Label>
-                      <Textarea id={`edit-detail-${p.id}`} value={editForm.description} onChange={e => setEditForm(prev => ({ ...prev, description: e.target.value }))} rows={2} placeholder={Z("要做什么、什么时候做、由谁来做…", "What to do, when, and who helps...")} />
+                      <Textarea id={`edit-detail-${p.id}`} value={editForm.description} onChange={e => setEditForm(prev => ({ ...prev, description: e.target.value }))} rows={3} placeholder={Z("要做什么、什么时候做、由谁来做…", "What to do, when, and who helps...")} />
                     </div>
                     <div className="flex gap-2 justify-end">
                       <Button variant="ghost" size="sm" onClick={cancelEdit}><X className="h-3.5 w-3.5 mr-1" /> {Z("取消", "Cancel")}</Button>
@@ -103,23 +105,33 @@ export function CarePlanCard({ caredOneId }: { caredOneId: string }) {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex justify-between items-start gap-2">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{Z("方案名称", "Plan name")}</p>
-                      <h4 className="font-medium text-foreground">{p.title || Z("未命名方案", "Untitled plan")}</h4>
-                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground mt-2">{Z("方案内容", "Plan details")}</p>
-                      <p className="text-xs text-muted-foreground">{p.description || Z("暂无内容", "No details added yet")}</p>
-                    </div>
-                    <div className="flex gap-1 shrink-0">
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); startEdit(p); }}><Pencil className="h-3 w-3" /></Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={(e) => { e.stopPropagation(); del.mutate(p.id); }}><Trash2 className="h-3 w-3" /></Button>
-                    </div>
-                  </div>
+                  <button type="button" className="w-full text-left flex justify-between items-start gap-2" onClick={() => setOpenId(String(p.id))}>
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-medium text-foreground">{p.title || Z("未命名方案", "Untitled plan")}</span>
+                      <span className="block text-xs text-muted-foreground mt-1 line-clamp-2">{p.description || Z("暂无内容", "No details added yet")}</span>
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                  </button>
                 )}
               </CardContent>
             </Card>
           ))}
         </div>
+      )}
+
+      {open && (
+        <RecordDetailDialog
+          open={!!openId}
+          onOpenChange={(v) => !v && setOpenId(null)}
+          title={open.title || Z("未命名方案", "Untitled plan")}
+          rows={[{ label: Z("方案内容", "Plan details"), value: open.description || Z("暂无内容", "No details added yet") }]}
+          onEdit={() => startEdit(open)}
+          onDelete={() => del.mutate(open.id, {
+            onSuccess: () => { setOpenId(null); toast({ title: Z("方案已删除", "Plan deleted") }); },
+            onError: (e: any) => toast({ title: Z("没能删除", "Couldn't delete"), description: e?.message, variant: "destructive" }),
+          })}
+          isDeleting={del.isPending}
+        />
       )}
     </div>
   );

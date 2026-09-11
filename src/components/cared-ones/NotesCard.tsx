@@ -4,11 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Pencil, Trash2, X, Check, Plus, StickyNote, Loader2 } from "lucide-react";
+import { X, Check, Plus, StickyNote, Loader2, ChevronRight } from "lucide-react";
 import { useCareNotes, useCreateCareNote, useUpdateCareNote, useDeleteCareNote } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { formatDate } from "@/lib/locale";
+import { RecordDetailDialog } from "./RecordDetailDialog";
 
 // Backend (CCT 197 "Cared one's care note") stores ONLY a55 Title and a56 Content.
 // There is no category column — never collect or send one.
@@ -25,8 +26,10 @@ export function NotesCard({ caredOneId }: { caredOneId: string }) {
   const [form, setForm] = useState({ title: "", content: "" });
   const [editId, setEditId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ title: "", content: "" });
+  const [openId, setOpenId] = useState<string | null>(null);
+  const open = (notes || []).find((n: any) => String(n.id) === String(openId));
 
-  const startEdit = (n: any) => { setEditId(n.id); setEditForm({ title: n.title || "", content: n.content }); };
+  const startEdit = (n: any) => { setOpenId(null); setEditId(n.id); setEditForm({ title: n.title || "", content: n.content }); };
   const cancelEdit = () => setEditId(null);
   const saveEdit = () => {
     if (!editId || !editForm.content) return;
@@ -81,29 +84,44 @@ export function NotesCard({ caredOneId }: { caredOneId: string }) {
                 {editId === n.id ? (
                   <div className="space-y-2">
                     <Input value={editForm.title} onChange={e => setEditForm(p => ({ ...p, title: e.target.value }))} placeholder={Z("标题（可选）", "Title (optional)")} />
-                    <Textarea value={editForm.content} onChange={e => setEditForm(p => ({ ...p, content: e.target.value }))} rows={3} />
+                    <Textarea value={editForm.content} onChange={e => setEditForm(p => ({ ...p, content: e.target.value }))} rows={4} />
                     <div className="flex gap-2 justify-end">
                       <Button variant="ghost" size="sm" onClick={cancelEdit}><X className="h-3.5 w-3.5 mr-1" /> {Z("取消", "Cancel")}</Button>
                       <Button variant="coral" size="sm" onClick={saveEdit} disabled={update.isPending}><Check className="h-3.5 w-3.5 mr-1" /> {Z("保存", "Save")}</Button>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex justify-between items-start gap-2">
-                    <div className="min-w-0">
-                      {n.title && <h4 className="font-medium text-foreground text-sm">{n.title}</h4>}
-                      <p className="text-xs text-muted-foreground whitespace-pre-wrap">{n.content}</p>
-                      <span className="text-[10px] text-muted-foreground">{formatDate(n.created_at, isCN ? "zh-CN" : "en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
-                    </div>
-                    <div className="flex gap-1 shrink-0">
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEdit(n)}><Pencil className="h-3 w-3" /></Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => del.mutate(n.id)}><Trash2 className="h-3 w-3" /></Button>
-                    </div>
-                  </div>
+                  <button type="button" className="w-full text-left flex justify-between items-start gap-2" onClick={() => setOpenId(String(n.id))}>
+                    <span className="min-w-0">
+                      {n.title && <span className="block font-medium text-foreground text-sm">{n.title}</span>}
+                      <span className="block text-xs text-muted-foreground line-clamp-2">{n.content}</span>
+                      <span className="block text-[10px] text-muted-foreground mt-1">{formatDate(n.created_at, isCN ? "zh-CN" : "en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                  </button>
                 )}
               </CardContent>
             </Card>
           ))}
         </div>
+      )}
+
+      {open && (
+        <RecordDetailDialog
+          open={!!openId}
+          onOpenChange={(v) => !v && setOpenId(null)}
+          title={open.title || Z("护理笔记", "Care note")}
+          rows={[
+            { label: Z("内容", "Content"), value: open.content },
+            { label: Z("记录时间", "Written"), value: open.created_at ? formatDate(open.created_at, isCN ? "zh-CN" : "en", { year: "numeric", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : undefined },
+          ]}
+          onEdit={() => startEdit(open)}
+          onDelete={() => del.mutate(open.id, {
+            onSuccess: () => { setOpenId(null); toast({ title: Z("笔记已删除", "Note deleted") }); },
+            onError: (e: any) => toast({ title: Z("没能删除", "Couldn't delete"), description: e?.message, variant: "destructive" }),
+          })}
+          isDeleting={del.isPending}
+        />
       )}
     </div>
   );
