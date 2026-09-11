@@ -6,10 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Pencil, Trash2, X, Check } from "lucide-react";
+import { X, Check, ChevronRight } from "lucide-react";
 import { useCareTips, useCreateCareTip, useUpdateCareTip, useDeleteCareTip } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { RecordDetailDialog } from "./RecordDetailDialog";
 
 // Backend (CCT 209 "Cared one's care tip", field a57) only stores two options:
 // b55 = "tip", b56 = "avoid". The UI must offer exactly these.
@@ -32,13 +33,15 @@ export function TipsCard({ caredOneId }: { caredOneId: string }) {
   const [editId, setEditId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ title: "", content: "", category: "" });
   const [tab, setTab] = useState("view");
+  const [openId, setOpenId] = useState<string | null>(null);
+  const open = (tips || []).find((t: any) => String(t.id) === String(openId));
 
   const catLabel = (val: string) => {
     const opt = TIP_CATEGORIES.find(c => c.value === val);
     return opt ? (isCN ? opt.labelZh : opt.labelEn) : val;
   };
 
-  const startEdit = (t: any) => { setEditId(t.id); setEditForm({ title: t.title, content: t.content, category: t.category || "tip" }); };
+  const startEdit = (t: any) => { setOpenId(null); setEditId(t.id); setEditForm({ title: t.title, content: t.content, category: t.category || "tip" }); };
   const cancelEdit = () => setEditId(null);
   const saveEdit = () => {
     if (!editId || !editForm.title || !editForm.content) return;
@@ -61,7 +64,7 @@ export function TipsCard({ caredOneId }: { caredOneId: string }) {
                   {editId === t.id ? (
                     <div className="space-y-2">
                       <Input value={editForm.title} onChange={e => setEditForm(p => ({ ...p, title: e.target.value }))} placeholder={Z("标题", "Title")} />
-                      <Textarea value={editForm.content} onChange={e => setEditForm(p => ({ ...p, content: e.target.value }))} rows={2} />
+                      <Textarea value={editForm.content} onChange={e => setEditForm(p => ({ ...p, content: e.target.value }))} rows={3} />
                       <Select value={editForm.category} onValueChange={v => setEditForm(p => ({ ...p, category: v }))}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>{TIP_CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{isCN ? c.labelZh : c.labelEn}</SelectItem>)}</SelectContent>
@@ -72,19 +75,16 @@ export function TipsCard({ caredOneId }: { caredOneId: string }) {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex justify-between items-start gap-2">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-medium text-foreground text-sm">{t.title}</h4>
+                    <button type="button" className="w-full text-left flex justify-between items-start gap-2" onClick={() => setOpenId(String(t.id))}>
+                      <span className="min-w-0">
+                        <span className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-foreground text-sm">{t.title}</span>
                           {t.category && <Badge variant="secondary" className="text-[10px]">{catLabel(t.category)}</Badge>}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">{t.content}</p>
-                      </div>
-                      <div className="flex gap-1 shrink-0">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEdit(t)}><Pencil className="h-3 w-3" /></Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => del.mutate(t.id)}><Trash2 className="h-3 w-3" /></Button>
-                      </div>
-                    </div>
+                        </span>
+                        <span className="block text-xs text-muted-foreground mt-1 line-clamp-2">{t.content}</span>
+                      </span>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                    </button>
                   )}
                 </CardContent>
               </Card>
@@ -109,6 +109,24 @@ export function TipsCard({ caredOneId }: { caredOneId: string }) {
           </CardContent></Card>
         </TabsContent>
       </Tabs>
+
+      {open && (
+        <RecordDetailDialog
+          open={!!openId}
+          onOpenChange={(v) => !v && setOpenId(null)}
+          title={open.title}
+          rows={[
+            { label: Z("类型", "Type"), value: open.category ? catLabel(open.category) : undefined },
+            { label: Z("内容", "Content"), value: open.content },
+          ]}
+          onEdit={() => startEdit(open)}
+          onDelete={() => del.mutate(open.id, {
+            onSuccess: () => { setOpenId(null); toast({ title: Z("提示已删除", "Tip deleted") }); },
+            onError: (e: any) => toast({ title: Z("没能删除", "Couldn't delete"), description: e?.message, variant: "destructive" }),
+          })}
+          isDeleting={del.isPending}
+        />
+      )}
     </div>
   );
 }
