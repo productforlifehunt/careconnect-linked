@@ -717,41 +717,6 @@ export async function deleteCaredOneDocumentWordPress(id: string): Promise<void>
 
 
 // ─── Dementia Stage ─────────────────────────────────────────
-export async function updateDementiaStageWordPress(caredOneId: string, stage: string): Promise<void> {
-  const userId = normalizeWpObjectId(caredOneId);
-  await wordpressFetch(`wp/v2/users/${userId}`, {
-    method: "PUT",
-    body: { meta: { dementia_stage: stage } },
-  });
-}
-
-// ─── Visit Log → the check-in system, CCT 208 (checkin_log) ───
-// A visit is a check-in entry: status a55 = b55 "Checked", details in the
-// note field a56. Entries hang off the cared one's check-in schedule
-// (CCT 207) through REL 240; the schedule itself hangs off the cared one
-// through REL 239. No extra table, no extra fields.
-const VISIT_SCHEDULE_NAME = "Visit log";
-
-async function findVisitSchedule(caredOneId: string): Promise<any | null> {
-  const list = await fetchCheckinsWordPress(caredOneId);
-  return list.find((c: any) => String(c.name) === VISIT_SCHEDULE_NAME) || null;
-}
-
-async function getOrCreateVisitSchedule(caredOneId: string): Promise<any> {
-  const existing = await findVisitSchedule(caredOneId);
-  if (existing) return existing;
-  await createCheckinWordPress({
-    user_id: caredOneId,
-    name: VISIT_SCHEDULE_NAME,
-    detail: "Visits logged by the care circle",
-    frequency: "As it happens",
-    time_slot: [],
-  });
-  const created = await findVisitSchedule(caredOneId);
-  if (!created) throw new Error("Could not open the visit log");
-  return created;
-}
-
 export async function fetchVisitLogWordPress(caredOneId: string): Promise<any[]> {
   try {
     const schedule = await findVisitSchedule(caredOneId);
