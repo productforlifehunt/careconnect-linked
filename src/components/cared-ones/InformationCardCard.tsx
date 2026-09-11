@@ -180,6 +180,32 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
         </div>
       )}
 
+      {/* Delete confirmation */}
+      <Dialog open={!!deleteCard} onOpenChange={(o) => !o && setDeleteCard(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{Z("删除这张信息卡？", "Delete this information card?")}</DialogTitle>
+            <DialogDescription>
+              {Z("删除后无法恢复，已分享的链接也会失效。", "This cannot be undone, and any shared link will stop working.")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-2 justify-end mt-2">
+            <Button variant="ghost" onClick={() => setDeleteCard(null)}>{Z("取消", "Cancel")}</Button>
+            <Button
+              variant="destructive"
+              disabled={del.isPending}
+              onClick={() => del.mutate(String(deleteCard.id), {
+                onSuccess: () => { setDeleteCard(null); toast({ title: Z("信息卡已删除", "Information card deleted") }); },
+                onError: (e: any) => toast({ title: Z("没能删除", "Couldn't delete"), description: e?.message, variant: "destructive" }),
+              })}
+            >
+              {del.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Trash2 className="h-4 w-4 mr-1" />}
+              {Z("确认删除", "Yes, delete")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
 
       {/* Create / Edit dialog */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
