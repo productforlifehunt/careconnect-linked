@@ -5,11 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CheckCircle, Circle, Clock, Loader2, MapPin, Trash2 } from "lucide-react";
+import { CheckCircle, Circle, Clock, Loader2, MapPin, ChevronRight, RotateCcw } from "lucide-react";
 import { useCareTasks, useCreateTask, useUpdateTaskStatus, useDeleteTask } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { formatDate } from "@/lib/locale";
+import { RecordDetailDialog } from "./RecordDetailDialog";
 
 const numId = (v: any) => String(v ?? "").replace(/^wp-/, "");
 
@@ -26,6 +27,9 @@ export function CareTasksCard({ caredOneId }: { caredOneId: string }) {
   const del = useDeleteTask();
   const [tab, setTab] = useState("view");
   const [form, setForm] = useState({ ...EMPTY });
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({ ...EMPTY });
 
   // Tasks belong to this cared one through the task → cared one relation only.
   const tasks = useMemo(
@@ -34,13 +38,48 @@ export function CareTasksCard({ caredOneId }: { caredOneId: string }) {
   );
   const pending = tasks.filter((t: any) => String(t.finish_status) !== "b56");
   const done = tasks.filter((t: any) => String(t.finish_status) === "b56");
+  const open = tasks.find((t: any) => String(t.id) === String(openId));
 
-  const toggle = (t: any) => {
-    const next = String(t.finish_status) === "b56" ? "b55" : "b56";
-    updateTask.mutate({
-      id: t.id,
-      updates: { finish_status: next, completed_at: next === "b56" ? new Date().toISOString() : "" },
+  const setStatus = (t: any, next: "b55" | "b56") => {
+    updateTask.mutate(
+      { id: t.id, updates: { finish_status: next, completed_at: next === "b56" ? new Date().toISOString() : "" } },
+      {
+        onSuccess: () => toast({ title: next === "b56" ? Z("已标记完成", "Marked as done") : Z("已改回未完成", "Marked as not done") }),
+        onError: () => toast({ title: Z("没能更新这个任务，请再试一次。", "Couldn't update that task. Please try again."), variant: "destructive" }),
+      },
+    );
+  };
+
+  const startEdit = (t: any) => {
+    setEditId(String(t.id));
+    setEditForm({
+      title: t.title || "",
+      description: t.description || "",
+      task_date: t.task_date ? String(t.task_date).slice(0, 10) : "",
+      start_time: t.start_time ? String(t.start_time).slice(0, 5) : "",
+      location: t.location || "",
     });
+    setOpenId(null);
+  };
+
+  const saveEdit = () => {
+    if (!editId || !editForm.title) return;
+    updateTask.mutate(
+      {
+        id: editId,
+        updates: {
+          title: editForm.title,
+          description: editForm.description,
+          task_date: editForm.task_date,
+          start_time: editForm.start_time,
+          location: editForm.location,
+        } as any,
+      },
+      {
+        onSuccess: () => { setEditId(null); toast({ title: Z("任务已更新", "Task updated") }); },
+        onError: () => toast({ title: Z("没能保存修改，请再试一次。", "Couldn't save the changes. Please try again."), variant: "destructive" }),
+      },
+    );
   };
 
   const submit = () => {
@@ -58,33 +97,53 @@ export function CareTasksCard({ caredOneId }: { caredOneId: string }) {
     });
   };
 
+  const editFields = (
+    <div className="space-y-3">
+      <Input value={editForm.title} onChange={e => setEditForm(p => ({ ...p, title: e.target.value }))} placeholder={Z("任务名称", "Task name")} />
+      <Textarea value={editForm.description} onChange={e => setEditForm(p => ({ ...p, description: e.target.value }))} rows={2} placeholder={Z("需要做什么？", "What needs to be done?")} />
+      <div className="grid grid-cols-2 gap-3">
+        <Input type="date" value={editForm.task_date} onChange={e => setEditForm(p => ({ ...p, task_date: e.target.value }))} />
+        <Input type="time" value={editForm.start_time} onChange={e => setEditForm(p => ({ ...p, start_time: e.target.value }))} />
+      </div>
+      <Input value={editForm.location} onChange={e => setEditForm(p => ({ ...p, location: e.target.value }))} placeholder={Z("地点（可留空）", "Place (optional)")} />
+      <div className="flex gap-2 justify-end">
+        <Button variant="ghost" size="sm" onClick={() => setEditId(null)}>{Z("取消", "Cancel")}</Button>
+        <Button variant="coral" size="sm" onClick={saveEdit} disabled={updateTask.isPending || !editForm.title}>{Z("保存", "Save")}</Button>
+      </div>
+    </div>
+  );
+
   const row = (t: any) => (
     <Card key={t.id} className="border-transparent card-elevated">
       <CardContent className="p-4">
-        <div className="flex items-start gap-3">
-          <button type="button" className="mt-0.5 shrink-0" onClick={() => toggle(t)} aria-label={Z("切换完成", "Toggle done")}>
-            {String(t.finish_status) === "b56"
-              ? <CheckCircle className="h-5 w-5 text-success" />
-              : <Circle className="h-5 w-5 text-muted-foreground" />}
+        {editId === String(t.id) ? editFields : (
+          <button
+            type="button"
+            className="w-full text-left flex items-start gap-3"
+            onClick={() => setOpenId(String(t.id))}
+            aria-label={Z(`打开任务 ${t.title}`, `Open task ${t.title}`) as string}
+          >
+            <span className="mt-0.5 shrink-0">
+              {String(t.finish_status) === "b56"
+                ? <CheckCircle className="h-5 w-5 text-success" />
+                : <Circle className="h-5 w-5 text-muted-foreground" />}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="flex items-center gap-2 flex-wrap">
+                <span className={`font-medium text-sm ${String(t.finish_status) === "b56" ? "line-through text-muted-foreground" : "text-foreground"}`}>{t.title}</span>
+                {t.help_status_label && String(t.help_status) !== "b55" && (
+                  <Badge variant="secondary" className="text-[10px]">{t.help_status_label}</Badge>
+                )}
+              </span>
+              {t.description && <span className="block text-xs text-muted-foreground mt-1 line-clamp-2">{t.description}</span>}
+              <span className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground flex-wrap">
+                {t.task_date && <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {formatDate(t.task_date)}{t.start_time ? ` · ${String(t.start_time).slice(0, 5)}` : ""}</span>}
+                {t.location && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {t.location}</span>}
+              </span>
+            </span>
+            <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />
           </button>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h4 className={`font-medium text-sm ${String(t.finish_status) === "b56" ? "line-through text-muted-foreground" : "text-foreground"}`}>{t.title}</h4>
-              {t.help_status_label && String(t.help_status) !== "b55" && (
-                <Badge variant="secondary" className="text-[10px]">{t.help_status_label}</Badge>
-              )}
-            </div>
-            {t.description && <p className="text-xs text-muted-foreground mt-1">{t.description}</p>}
-            <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground flex-wrap">
-              {t.task_date && <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {formatDate(t.task_date)}{t.start_time ? ` · ${String(t.start_time).slice(0, 5)}` : ""}</span>}
-              {t.location && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {t.location}</span>}
-            </div>
-          </div>
-          <Button variant="ghost" size="icon" aria-label={Z(`删除 ${t.title}`, `Delete ${t.title}`) as string} className="h-7 w-7 text-destructive shrink-0" onClick={() => del.mutate(t.id)}>
-            <Trash2 className="h-3 w-3" />
-          </Button>
-
-        </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -129,6 +188,37 @@ export function CareTasksCard({ caredOneId }: { caredOneId: string }) {
           </CardContent></Card>
         </TabsContent>
       </Tabs>
+
+      {open && (
+        <RecordDetailDialog
+          open={!!openId}
+          onOpenChange={(v) => !v && setOpenId(null)}
+          title={open.title}
+          rows={[
+            { label: Z("状态", "Status"), value: String(open.finish_status) === "b56" ? Z("已完成", "Done") : Z("未完成", "Not done") },
+            { label: Z("说明", "Details"), value: open.description },
+            { label: Z("日期", "Date"), value: open.task_date ? formatDate(open.task_date) : undefined },
+            { label: Z("时间", "Time"), value: open.start_time ? String(open.start_time).slice(0, 5) : undefined },
+            { label: Z("地点", "Place"), value: open.location },
+            { label: Z("协助状态", "Help status"), value: String(open.help_status) !== "b55" ? open.help_status_label : undefined },
+          ]}
+          actions={String(open.finish_status) === "b56" ? (
+            <Button variant="outline" size="sm" onClick={() => { setStatus(open, "b55"); setOpenId(null); }} disabled={updateTask.isPending}>
+              <RotateCcw className="h-3.5 w-3.5 mr-1" /> {Z("改回未完成", "Mark as not done")}
+            </Button>
+          ) : (
+            <Button variant="coral" size="sm" onClick={() => { setStatus(open, "b56"); setOpenId(null); }} disabled={updateTask.isPending}>
+              <CheckCircle className="h-3.5 w-3.5 mr-1" /> {Z("标记完成", "Mark as done")}
+            </Button>
+          )}
+          onEdit={() => startEdit(open)}
+          onDelete={() => del.mutate(open.id, {
+            onSuccess: () => { setOpenId(null); toast({ title: Z("任务已删除", "Task deleted") }); },
+            onError: () => toast({ title: Z("没能删除这个任务", "Couldn't delete that task"), variant: "destructive" }),
+          })}
+          isDeleting={del.isPending}
+        />
+      )}
     </div>
   );
 }
