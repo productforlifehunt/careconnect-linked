@@ -47,7 +47,6 @@ export async function fetchUserCaredOnesWordPress(): Promise<any[]> {
           email: u.email,
           avatar_url: u.avatar_url,
           condition_types: u.condition_types,
-          dementia_stage: null,
         },
 
       };

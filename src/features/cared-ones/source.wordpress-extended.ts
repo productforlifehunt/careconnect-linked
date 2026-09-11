@@ -617,16 +617,14 @@ export async function fetchEmergencyContactsWordPress(caredOneId: string): Promi
       phone: c[F_EMG.PHONE] || null,
       address: c[F_EMG.ADDRESS] || null,
       content: c[F_EMG.DETAIL] || null,
-      email: null,
       relationship: c[F_EMG.RELATIONSHIP] || null,
       note: c[F_EMG.NOTE] || null,
-      is_primary: false,
       created_at: c.created_at,
     }));
   } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
-export async function createEmergencyContactWordPress(contact: { user_id: string; name: string; phone?: string; email?: string; address?: string; relationship?: string; note?: string; content?: string }): Promise<void> {
+export async function createEmergencyContactWordPress(contact: { user_id: string; name: string; phone?: string; address?: string; relationship?: string; note?: string; content?: string }): Promise<void> {
   const created = await wordpressCCTFetch<any>(T.emergencyContact.slug, {
     method: "POST",
     body: {
@@ -635,12 +633,13 @@ export async function createEmergencyContactWordPress(contact: { user_id: string
       [F_EMG.ADDRESS]: contact.address || "",
       [F_EMG.RELATIONSHIP]: contact.relationship || "",
       [F_EMG.DETAIL]: contact.content || "",
-      [F_EMG.NOTE]: contact.note || contact.email || "",
+      [F_EMG.NOTE]: contact.note || "",
     },
   });
   const newId = normalizeWpObjectId(created?.item_id || created?._ID || created?.id);
   await linkRel(REL_USER_EMERGENCY_CONTACT, normalizeWpObjectId(contact.user_id), newId);
 }
+
 
 export async function updateEmergencyContactWordPress(id: string, updates: Record<string, any>): Promise<void> {
   const body: Record<string, any> = {};
@@ -718,19 +717,10 @@ export async function deleteCaredOneDocumentWordPress(id: string): Promise<void>
 
 
 // ─── Dementia Stage ─────────────────────────────────────────
-export async function updateDementiaStageWordPress(caredOneId: string, stage: string): Promise<void> {
-  const userId = normalizeWpObjectId(caredOneId);
-  await wordpressFetch(`wp/v2/users/${userId}`, {
-    method: "PUT",
-    body: { meta: { dementia_stage: stage } },
-  });
-}
-
-// ─── Visit Log → the check-in system, CCT 208 (checkin_log) ───
-// A visit is a check-in entry: status a55 = b55 "Checked", details in the
-// note field a56. Entries hang off the cared one's check-in schedule
-// (CCT 207) through REL 240; the schedule itself hangs off the cared one
-// through REL 239. No extra table, no extra fields.
+// ─── Visit Log → the check-in system ───
+// A visit is a check-in log entry (user log event CCT 161) hanging off the
+// cared one's check-in schedule (universal calendar CCT 187) through the
+// JetEngine relations already used by check-ins. No extra table, no extra fields.
 const VISIT_SCHEDULE_NAME = "Visit log";
 
 async function findVisitSchedule(caredOneId: string): Promise<any | null> {

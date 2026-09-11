@@ -84,7 +84,6 @@ import {
   fetchVisitLogWordPress, createVisitLogWordPress, deleteVisitLogWordPress,
   fetchEmergencyContactsWordPress, createEmergencyContactWordPress, updateEmergencyContactWordPress, deleteEmergencyContactWordPress,
   fetchCaredOneDocumentsWordPress, createCaredOneDocumentWordPress, updateCaredOneDocumentWordPress, deleteCaredOneDocumentWordPress,
-  updateDementiaStageWordPress,
 } from "@/features/cared-ones/source.wordpress-extended";
 import {
   fetchInformationCardsWordPress, fetchInformationCardWordPress,
@@ -1399,7 +1398,7 @@ export function useCaredOneDocuments(caredOneId: string | null) {
 export function useCreateCaredOneDocument() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (doc: { user_id: string; title: string; description?: string; file_url?: string; document_type?: string; attachment_ids?: Array<number | string> }) => createCaredOneDocumentWordPress(doc),
+    mutationFn: (doc: { user_id: string; title: string; description?: string; attachment_ids?: Array<number | string> }) => createCaredOneDocumentWordPress(doc),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["caredOneDocuments"] }); },
   });
 }
@@ -1421,16 +1420,6 @@ export function useDeleteCaredOneDocument() {
 }
 
 // ─── Dementia Stage ─────────────────────────────────────────
-export function useUpdateDementiaStage() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ caredOneId, stage }: { caredOneId: string; stage: string }) => updateDementiaStageWordPress(caredOneId, stage),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["userCaredOnes"] }); },
-  });
-}
-
-// ─── Unified Comments ───────────────────────────────────────
-
 export function useComments(entityType: string, entityId: string | null) {
   return useQuery({
     queryKey: ["comments", entityType, entityId],
