@@ -7,10 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Phone, Pencil, Trash2, X, Check, Plus, Users, Loader2, MapPin } from "lucide-react";
+import { Phone, X, Check, Plus, Users, Loader2, ChevronRight } from "lucide-react";
 import { useEmergencyContacts, useCreateEmergencyContact, useUpdateEmergencyContact, useDeleteEmergencyContact } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { RecordDetailDialog } from "./RecordDetailDialog";
 
 const RELATIONSHIP_VALUES = ["Spouse", "Parent", "Child", "Sibling", "Doctor", "Nurse", "Caregiver", "Neighbor", "Friend", "Other"];
 const REL_ZH: Record<string,string> = { Spouse:"配偶", Parent:"父母", Child:"子女", Sibling:"兄弟姐妹", Doctor:"医生", Nurse:"护士", Caregiver:"护理者", Neighbor:"邻居", Friend:"朋友", Other:"其他" };
@@ -41,8 +42,11 @@ export function EmergencyCard({ caredOneId }: { caredOneId: string }) {
   const [form, setForm] = useState<ContactForm>(EMPTY);
   const [editId, setEditId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<ContactForm>(EMPTY);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const open = (contacts || []).find((c: any) => String(c.id) === String(openId));
 
   const startEdit = (c: any) => {
+    setOpenId(null);
     setEditId(c.id);
     setEditForm({
       name: c.name || "",
@@ -148,32 +152,47 @@ export function EmergencyCard({ caredOneId }: { caredOneId: string }) {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex justify-between items-start gap-2">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className="font-medium text-foreground text-sm">{c.name}</h4>
+                  <button type="button" className="w-full text-left flex justify-between items-start gap-2" onClick={() => setOpenId(String(c.id))}>
+                    <span className="min-w-0">
+                      <span className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-foreground text-sm">{c.name}</span>
                         {c.relationship && <Badge variant="secondary" className="text-[10px]">{relLabel(c.relationship)}</Badge>}
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">{c.phone}</p>
-                      {c.content && <p className="text-xs text-muted-foreground mt-0.5">{c.content}</p>}
-                      {c.address && (
-                        <p className="text-xs text-muted-foreground mt-0.5 flex items-start gap-1">
-                          <MapPin className="h-3 w-3 mt-0.5 shrink-0" /> <span className="min-w-0">{c.address}</span>
-                        </p>
-                      )}
-                      {c.note && <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{c.note}</p>}
-                    </div>
-                    <div className="flex gap-1 shrink-0">
-                      <Button variant="outline" size="sm" asChild><a href={`tel:${c.phone}`}><Phone className="h-3 w-3 mr-1" /> {Z("拨打", "Call")}</a></Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" aria-label={Z("编辑联系人", "Edit contact")} onClick={() => startEdit(c)}><Pencil className="h-3 w-3" /></Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" aria-label={Z("删除联系人", "Delete contact")} onClick={() => del.mutate(c.id)}><Trash2 className="h-3 w-3" /></Button>
-                    </div>
-                  </div>
+                      </span>
+                      <span className="block text-xs text-muted-foreground mt-0.5">{c.phone}</span>
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                  </button>
                 )}
               </CardContent>
             </Card>
           ))}
         </div>
+      )}
+
+      {open && (
+        <RecordDetailDialog
+          open={!!openId}
+          onOpenChange={(v) => !v && setOpenId(null)}
+          title={open.name}
+          rows={[
+            { label: Z("关系", "Relationship"), value: open.relationship ? relLabel(open.relationship) : undefined },
+            { label: Z("电话", "Phone"), value: open.phone },
+            { label: Z("详细信息", "Detail"), value: open.content },
+            { label: Z("地址", "Address"), value: open.address },
+            { label: Z("备注", "Note"), value: open.note },
+          ]}
+          actions={open.phone ? (
+            <Button variant="outline" size="sm" asChild>
+              <a href={`tel:${open.phone}`}><Phone className="h-3.5 w-3.5 mr-1" /> {Z("拨打", "Call")}</a>
+            </Button>
+          ) : undefined}
+          onEdit={() => startEdit(open)}
+          onDelete={() => del.mutate(open.id, {
+            onSuccess: () => { setOpenId(null); toast({ title: Z("联系人已删除", "Contact deleted") }); },
+            onError: (e: any) => toast({ title: Z("没能删除", "Couldn't delete"), description: e?.message, variant: "destructive" }),
+          })}
+          isDeleting={del.isPending}
+        />
       )}
     </div>
   );

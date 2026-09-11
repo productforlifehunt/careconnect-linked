@@ -71,6 +71,7 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
   const [contactsCardId, setContactsCardId] = useState<string | null>(null);
   const [shareCard, setShareCard] = useState<any | null>(null);
   const [viewCard, setViewCard] = useState<any | null>(null);
+  const [deleteCard, setDeleteCard] = useState<any | null>(null);
 
 
   const openCreate = () => {
@@ -170,7 +171,7 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setViewCard(c)} title={Z("查看", "View")}><Eye className="h-3 w-3" /></Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setContactsCardId(String(c.id))} title={Z("选择这份须知上显示的紧急联系人", "Choose emergency contacts shown on this sheet")}><Users className="h-3 w-3" /></Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(c)}><Pencil className="h-3 w-3" /></Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => del.mutate(String(c.id))}><Trash2 className="h-3 w-3" /></Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteCard(c)} title={Z("删除", "Delete")}><Trash2 className="h-3 w-3" /></Button>
                   </div>
                 </div>
               </CardContent>
@@ -178,6 +179,32 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
           ))}
         </div>
       )}
+
+      {/* Delete confirmation */}
+      <Dialog open={!!deleteCard} onOpenChange={(o) => !o && setDeleteCard(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{Z("删除这张信息卡？", "Delete this information card?")}</DialogTitle>
+            <DialogDescription>
+              {Z("删除后无法恢复，已分享的链接也会失效。", "This cannot be undone, and any shared link will stop working.")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-2 justify-end mt-2">
+            <Button variant="ghost" onClick={() => setDeleteCard(null)}>{Z("取消", "Cancel")}</Button>
+            <Button
+              variant="destructive"
+              disabled={del.isPending}
+              onClick={() => del.mutate(String(deleteCard.id), {
+                onSuccess: () => { setDeleteCard(null); toast({ title: Z("信息卡已删除", "Information card deleted") }); },
+                onError: (e: any) => toast({ title: Z("没能删除", "Couldn't delete"), description: e?.message, variant: "destructive" }),
+              })}
+            >
+              {del.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Trash2 className="h-4 w-4 mr-1" />}
+              {Z("确认删除", "Yes, delete")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
 
       {/* Create / Edit dialog */}
