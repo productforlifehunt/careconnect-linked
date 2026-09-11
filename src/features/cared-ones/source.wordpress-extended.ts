@@ -717,6 +717,32 @@ export async function deleteCaredOneDocumentWordPress(id: string): Promise<void>
 
 
 // ─── Dementia Stage ─────────────────────────────────────────
+// ─── Visit Log → the check-in system ───
+// A visit is a check-in log entry (user log event CCT 161) hanging off the
+// cared one's check-in schedule (universal calendar CCT 187) through the
+// JetEngine relations already used by check-ins. No extra table, no extra fields.
+const VISIT_SCHEDULE_NAME = "Visit log";
+
+async function findVisitSchedule(caredOneId: string): Promise<any | null> {
+  const list = await fetchCheckinsWordPress(caredOneId);
+  return list.find((c: any) => String(c.name) === VISIT_SCHEDULE_NAME) || null;
+}
+
+async function getOrCreateVisitSchedule(caredOneId: string): Promise<any> {
+  const existing = await findVisitSchedule(caredOneId);
+  if (existing) return existing;
+  await createCheckinWordPress({
+    user_id: caredOneId,
+    name: VISIT_SCHEDULE_NAME,
+    detail: "Visits logged by the care circle",
+    frequency: "As it happens",
+    time_slot: [],
+  });
+  const created = await findVisitSchedule(caredOneId);
+  if (!created) throw new Error("Could not open the visit log");
+  return created;
+}
+
 export async function fetchVisitLogWordPress(caredOneId: string): Promise<any[]> {
   try {
     const schedule = await findVisitSchedule(caredOneId);
