@@ -3,15 +3,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Trash2, Plus, CalendarDays, Loader2 } from "lucide-react";
+import { Plus, CalendarDays, Loader2, ChevronRight } from "lucide-react";
 import { useVisitLog, useCreateVisitLog, useDeleteVisitLog } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { formatDate } from "@/lib/locale";
+import { RecordDetailDialog } from "./RecordDetailDialog";
 
 /**
  * Visit Log — part of the check-in system. A logged visit is a check-in
- * entry (CCT 208) with the details written in its note field.
+ * entry with the details written in its note field.
  */
 export function VisitLogCard({ caredOneId }: { caredOneId: string }) {
   const { toast } = useToast();
@@ -24,6 +25,8 @@ export function VisitLogCard({ caredOneId }: { caredOneId: string }) {
   const del = useDeleteVisitLog();
   const [addOpen, setAddOpen] = useState(false);
   const [notes, setNotes] = useState("");
+  const [openId, setOpenId] = useState<string | null>(null);
+  const open = (logs || []).find((l: any) => String(l.id) === String(openId));
 
   const handleAdd = () => {
     create.mutate(
@@ -38,6 +41,11 @@ export function VisitLogCard({ caredOneId }: { caredOneId: string }) {
       },
     );
   };
+
+  const when = (value: any, long = false) =>
+    formatDate(value, isCN ? "zh-CN" : "en", long
+      ? { year: "numeric", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }
+      : { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 
   return (
     <div>
@@ -79,19 +87,34 @@ export function VisitLogCard({ caredOneId }: { caredOneId: string }) {
           {(logs || []).map((l: any) => (
             <Card key={l.id} className="border-transparent card-elevated">
               <CardContent className="p-4">
-                <div className="flex justify-between items-start gap-2">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs text-muted-foreground">
-                      {formatDate(l.visited_at, isCN ? "zh-CN" : "en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
-                    </p>
-                    {l.description && <p className="text-sm text-foreground mt-1 whitespace-pre-wrap">{l.description}</p>}
-                  </div>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => del.mutate(l.id)} aria-label={Z("删除这条记录", "Delete this visit")}><Trash2 className="h-3 w-3" /></Button>
-                </div>
+                <button type="button" className="w-full text-left flex justify-between items-start gap-2" onClick={() => setOpenId(String(l.id))}>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-xs text-muted-foreground">{when(l.visited_at)}</span>
+                    {l.description && <span className="block text-sm text-foreground mt-1 line-clamp-2">{l.description}</span>}
+                  </span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                </button>
               </CardContent>
             </Card>
           ))}
         </div>
+      )}
+
+      {open && (
+        <RecordDetailDialog
+          open={!!openId}
+          onOpenChange={(v) => !v && setOpenId(null)}
+          title={Z("探访记录", "Visit")}
+          rows={[
+            { label: Z("时间", "When"), value: when(open.visited_at, true) },
+            { label: Z("情况", "What happened"), value: open.description },
+          ]}
+          onDelete={() => del.mutate(open.id, {
+            onSuccess: () => { setOpenId(null); toast({ title: Z("记录已删除", "Visit deleted") }); },
+            onError: (e: any) => toast({ title: Z("没能删除", "Couldn't delete"), description: e?.message, variant: "destructive" }),
+          })}
+          isDeleting={del.isPending}
+        />
       )}
     </div>
   );
