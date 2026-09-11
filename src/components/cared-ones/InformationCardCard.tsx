@@ -71,6 +71,7 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
   const [contactsCardId, setContactsCardId] = useState<string | null>(null);
   const [shareCard, setShareCard] = useState<any | null>(null);
   const [viewCard, setViewCard] = useState<any | null>(null);
+  const [deleteCard, setDeleteCard] = useState<any | null>(null);
 
 
   const openCreate = () => {
@@ -170,7 +171,7 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setViewCard(c)} title={Z("查看", "View")}><Eye className="h-3 w-3" /></Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setContactsCardId(String(c.id))} title={Z("选择这份须知上显示的紧急联系人", "Choose emergency contacts shown on this sheet")}><Users className="h-3 w-3" /></Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(c)}><Pencil className="h-3 w-3" /></Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => del.mutate(String(c.id))}><Trash2 className="h-3 w-3" /></Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteCard(c)} title={Z("删除", "Delete")}><Trash2 className="h-3 w-3" /></Button>
                   </div>
                 </div>
               </CardContent>
