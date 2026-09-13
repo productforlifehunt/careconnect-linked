@@ -661,7 +661,141 @@ const projects: Project[] = [
     ],
     verdict: "唯一可用情报：官方研究已宣布「市面失智 App 质量普遍不足」——这句是我们 Introduction 的现成缺口论证（gap statement）。",
   },
+
+  /* ===== 第三批：本轮新捞（ACM / PubMed / JMIR，12 个，全部英文期刊）=====
+     规则同前：只收「家庭照护者软件 + 有可抄方法章节 + 英文发表」。
+     凡未读全文核实的样本量/场次/量表，一律标注「需读全文核实」，不编造。 */
+  {
+    name: "Hispanic 家庭照护者·失智功能分期 Web App（美国）★最高价值",
+    scope: "西语裔失智症家庭照护者专用教育 Web App。参与者全程只有照护者，从不招失智患者。100% 对口。",
+    method: "自称：启发式评估 + 可用性测试（Heuristic Evaluation and Usability Testing）；前序篇用说服式系统设计原则（Persuasive Systems Design）",
+    dt: "EDIPT",
+    phases: [
+      { p: "Phase 1 2018 需求评估", act: "西语裔家庭照护者的信息/沟通/工具需求调查", dt: "E", paper: "Inform Health Soc Care 2018;44(2):115（PMC6123278）", url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC6123278/" },
+      { p: "Phase 2 2019 图示开发", act: "为功能分期开发象形图（pictograms）", dt: "D+I", paper: "Stud Health Technol Inform 2019, doi 10.3233/shti190399", url: "https://doi.org/10.3233/shti190399" },
+      { p: "Phase 3 界面原则", act: "把说服式系统设计原则套到界面上", dt: "P", paper: "PMID 35178504", url: "https://pubmed.ncbi.nlm.nih.gov/35178504/" },
+      { p: "Phase 4 2023 评估", act: "启发式评估 + 照护者可用性测试（N/场次/是否用 SUS 需读全文核实）", dt: "T", paper: "J Gerontol Nurs 2023;49(7), doi 10.3928/00989134-20230615-03", url: "https://doi.org/10.3928/00989134-20230615-03" },
+    ],
+    verdict: "本批最值得整份抄的：一个想法拆成四篇，四篇的参与者全是照护者，一个失智患者都没招。招募成本几乎为零，五格全填满。",
+  },
+  {
+    name: "CareFit（英国 Strathclyde）★两篇成套",
+    scope: "失智症非正式照护者的身体活动支持 App。第一篇是泛照护者，第二篇明确转向失智照护者。100% 对口。",
+    method: "自称：共同设计与原型开发研究（Co-design and Prototype Development Study）→ 混合方法可行性与适配研究",
+    dt: "EDIPT",
+    phases: [
+      { p: "Phase 1 2021", act: "共同设计 + 原型开发（N/场次/量表需读全文核实）", dt: "E+D+I+P", paper: "JMIR Form Res 2021;5(10):e27358（PMC8489565）", url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC8489565/" },
+      { p: "Phase 2 2025", act: "失智照护者混合方法可行性 + 适配研究", dt: "T", paper: "J Med Internet Res 2025;27:e56739", url: "https://www.jmir.org/2025/1/e56739/" },
+    ],
+    verdict: "标准两段式：先发共同设计原型篇，再发可行性篇。注意第一篇的参与者可能只是泛非正式照护者、并非失智专属——需读全文核实；若是，说明「失智专属」这顶帽子第二篇才戴上，一样过审。",
+  },
+  {
+    name: "低保真原型 · 传感器交互平台（JMIR Form Res 2024）★最省钱",
+    scope: "认知障碍老人的非正式照护者用交互平台，评估对象是低保真原型（纸面/低仿真），不需要能跑的软件。100% 对口。",
+    method: "自称：形成性评估（Formative Evaluation）",
+    dt: "ED_P_",
+    phases: [
+      { p: "Phase 1 2024", act: "照护者对低保真原型做形成性评估（N/场次/量表需读全文核实）", dt: "E+D+P", paper: "JMIR Form Res 2024;8:e53402", url: "https://formative.jmir.org/2024/1/e53402" },
+    ],
+    verdict: "全批最便宜的一格：没有成品也能发。把 Figma 静态图给几个照护者看一轮，就叫形成性评估。我们随时能补这一篇。",
+  },
+  {
+    name: "Draw-Care（澳洲 Monash）",
+    scope: "多族裔家庭照护者的多语数字干预，共同设计 + 用户测试。参与者是照护者，不是患者。100% 对口。",
+    method: "自称：共同设计 + 用户测试研究（Co-Designed... User-Testing Study）",
+    dt: "ED_PT",
+    phases: [
+      { p: "Phase 1 2026", act: "族裔多元家庭照护者共同设计 + 用户测试（N/场次需读全文核实）", dt: "E+D+P+T", paper: "JMIR Form Res 2026;e81128（PMC12996899）", url: "https://formative.jmir.org/2026/1/e81128" },
+      { p: "Phase 0?", act: "疑有更早的开发/共同设计篇，未确认", dt: "—", paper: "需读全文核实" },
+    ],
+    verdict: "「多语 + 多族裔」是加分项而不是难点：语言越多，审稿人越不好意思质疑样本量。我们的中英双语正好白送这一格。",
+  },
+  {
+    name: "瑞典 tailor-made mobile app（Karolinska）★两篇成套",
+    scope: "失智症家庭照护者的定制化手机 App，纯访谈 + 主题分析。100% 对口。",
+    method: "自称：价值共创（value co-creation）+ 质性研究（主题分析框架需读全文核实）",
+    dt: "E____",
+    phases: [
+      { p: "Phase 1 2022", act: "家庭照护者质性访谈（N/时长/软件需读全文核实）", dt: "E", paper: "BMC Geriatr 2022（PMC9667833）", url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC9667833/" },
+      { p: "Phase 2 2024", act: "加入专业人员作为第二组参与者，再发一篇体验质性研究", dt: "E+T", paper: "BMC Geriatr 2024;24:554, doi 10.1186/s12877-024-05151-6", url: "https://link.springer.com/article/10.1186/s12877-024-05151-6" },
+    ],
+    verdict: "变现技巧：同一个 App、同一套访谈法，换一批受访者（照护者→专业人员）就再发一篇。我们有照护者 + 服务提供者两端，天然能拆两篇。",
+  },
+  {
+    name: "Olera.care（美国）",
+    scope: "失智照护者用的网页照护规划平台，初步评估。100% 对口。",
+    method: "自称：初步评估研究（Preliminary Evaluation Study，混合方法）；是否用 SUS 需读全文核实",
+    dt: "___PT",
+    phases: [
+      { p: "Phase 1 2024", act: "平台初步评估（N/量表需读全文核实）", dt: "P+T", paper: "JMIR Aging 2024;7:e55132", url: "https://aging.jmir.org/2024/1/e55132/" },
+    ],
+    verdict: "「初步评估」这个标题是免死金牌——样本小、结论弱都合法。我们上线后随手就能发一篇同名规格。",
+  },
+  {
+    name: "Rathnayake mHealth 共同设计（澳洲 Griffith/JCU）",
+    scope: "失智症家庭照护者应对功能性失能照护需求的 mHealth App 共同设计。100% 对口。",
+    method: "自称：共同设计（Co-design）",
+    dt: "EDIP_",
+    phases: [
+      { p: "Phase 1 2020/2021", act: "照护者共同设计工作坊（N/场次需读全文核实）", dt: "E+D+I+P", paper: "Inform Health Soc Care 2021;46(3), doi 10.1080/17538157.2020.1793347", url: "https://doi.org/10.1080/17538157.2020.1793347" },
+      { p: "配套", act: "同作者博士论文（方法章节最全）", dt: "—", paper: "Griffith Univ 2020, doi 10.25904/1912/371", url: "https://doi.org/10.25904/1912/371" },
+    ],
+    verdict: "抄方法章节时优先读博士论文而不是期刊篇——论文里被压缩掉的招募细节、访谈提纲全在论文附录里。",
+  },
+  {
+    name: "AreaAlzheimer（意大利）★两篇成套",
+    scope: "失智照护者数字平台：需求分析 + 混合方法试点 → 后续 UX/可用性篇。100% 对口。",
+    method: "自称：需求分析 + 混合方法试点评估流程；后续篇为可用性/可及性/有用性 UX 评价",
+    dt: "ED_PT",
+    phases: [
+      { p: "Phase 1 2026", act: "需求分析 + 混合方法试点（N/量表需读全文核实）", dt: "E+D+P", paper: "Front Digit Health 2026（PMC12865408）", url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC12865408/" },
+      { p: "Phase 2 2024/2025", act: "平台 UX：可用性 + 可及性 + 有用性", dt: "T", paper: "Gerontechnology 2024;24(1), doi 10.4017/gt.2025.24.1.1195.07", url: "https://doi.org/10.4017/gt.2025.24.1.1195.07" },
+    ],
+    verdict: "「可用性 + 可及性 + 有用性」三词并列是廉价扩产法：同一批问卷数据换三个小节标题，篇幅立刻够。",
+  },
+  {
+    name: "Mobile Care Ecosystem（新加坡 Duke-NUS）",
+    scope: "失智照护支持生态，开发 + 混合方法研究。100% 对口但范围偏大。",
+    method: "自称：开发与混合方法研究（Development and Mixed Methods Study）",
+    dt: "EDIPT",
+    phases: [
+      { p: "Phase 1 2025", act: "生态开发 + 混合方法评估（参与者类型/N/量表需读全文核实）", dt: "E+D+I+P+T", paper: "JMIR Aging 2025;8:e78759", url: "https://aging.jmir.org/2025/1/e78759/PDF" },
+    ],
+    verdict: "反面参考：「生态系统」意味着多方利益相关者、多轮工作坊，成本比单 App 高一个量级。规格可看，不要照抄。",
+  },
+  {
+    name: "eCoaching for Family Carers（香港大学，仅会议摘要）",
+    scope: "衰弱老人家庭照护者的 eCoaching，方法名最对口但只有摘要。",
+    method: "自称：出声思维 + 用户接受度测试（Think-Aloud and User Acceptance Testing）",
+    dt: "___PT",
+    phases: [
+      { p: "Phase 1 2025", act: "出声思维 + UAT（除方法名外一切需读全文核实；目前仅 GSA 会议摘要，无全文）", dt: "P+T", paper: "Innov Aging 2025;9(Suppl), doi 10.1093/geroni/igaf122.034", url: "https://doi.org/10.1093/geroni/igaf122.034" },
+    ],
+    verdict: "两个用途：① 「出声思维 + UAT」这个组合名可以直接借；② 提醒我们先投会议摘要占坑，全文晚一年再写也不迟。",
+  },
+  {
+    name: "家庭用药管理可用性协议（Quintana 等）",
+    scope: "家属为衰弱老人管理用药的 eHealth 可用性测试协议篇。偏衰弱老人而非失智，需确认用户是家属而非临床医生。",
+    method: "自称：可用性协议的设计与方法学（design and methodology of a usability protocol）",
+    dt: "___P_",
+    phases: [
+      { p: "Phase 1 2019", act: "只发方法设计，不发结果（N/量表按设计值，需读全文核实）", dt: "P", paper: "BMC Med Inform Decis Mak 2019;19(Suppl 4):180, doi 10.1186/s12911-019-0907-8", url: "https://doi.org/10.1186/s12911-019-0907-8" },
+      { p: "Phase 2 结果篇", act: "未找到对应结果篇（负面检索结果）", dt: "—", paper: "需读全文核实" },
+    ],
+    verdict: "整篇内容就是方法章节本身——这是最直接的抄写模板。同时印证：只写「我们打算怎么测」也能算一篇。",
+  },
+  {
+    name: "配偶照护者身体活动 App 设计（Penn State，⚠ 可能含患者本人）",
+    scope: "失智者配偶照护者的身体活动 App 设计。100% 对口，但参与者可能是「配偶 + 患者」配对。",
+    method: "自称：设计研究（方法名与分析框架需读全文核实）",
+    dt: "ED___",
+    phases: [
+      { p: "Phase 1 2024", act: "配偶照护者（可能含失智者本人）访谈/共同设计——参与者构成需读全文核实", dt: "E+D", paper: "Dementia (London) 2024, doi 10.1177/14713012241272878（PMC11915756）", url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC11915756/" },
+    ],
+    verdict: "唯一疑似真的招了失智患者的一篇。若确认是配对招募，就是本批最贵的方案——列在这里主要是当反面样本。",
+  },
 ];
+
 
 /* --------------------------------- 组件 --------------------------------- */
 
