@@ -452,7 +452,7 @@ const papers: Paper[] = [
   },
 ];
 
-/* --------------- 第二批：按「项目族谱」而非「单篇」整理（16 个项目，全英文发表） ---------------
+/* --------------- 第二批：按「项目族谱」而非「单篇」整理（28 个项目，全英文发表） ---------------
    要点：一个项目的方法从来不在一篇论文里，而是拆成 协议篇 / 开发篇 / 可用性篇 / RCT 篇。
    每个项目：宣称的方法名 → 实际动作 → 时间线（Phase 1..n）→ 每个 Phase 落在五步法哪一格。
 */
@@ -808,7 +808,7 @@ export default function DeleteAfterRead() {
           delete after read · 阅后即焚
         </div>
         <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-          以 Design Thinking 五步法为唯一坐标系：15 篇单篇 + 16 个项目族谱（全英文发表），各自套得上哪几格
+          以 Design Thinking 五步法为唯一坐标系：15 篇单篇 + 28 个项目族谱（全英文发表），各自套得上哪几格
         </h1>
         <p className="text-muted-foreground">
           你只需要懂一个标准扯淡法：<strong>Empathize 同理 → Define 定义 → Ideate 构思 → Prototype 原型 → Test 测试</strong>。
@@ -965,7 +965,7 @@ export default function DeleteAfterRead() {
       {/* 项目族谱 */}
       <section className="space-y-4">
         <h2 className="text-2xl font-semibold tracking-tight">
-          图 1.5 · 项目族谱：16 个 100% 对口 · 全英文发表项目的方法名 · 时间线 · 姊妹篇 · 逐阶段五步法归位
+          图 1.5 · 项目族谱：28 个 100% 对口 · 全英文发表项目的方法名 · 时间线 · 姊妹篇 · 逐阶段五步法归位
         </h2>
         <Box>
           <strong>为什么要按项目而不按论文看</strong>：一个项目的「方法」从来不写在一篇里，而是拆成
@@ -1028,7 +1028,7 @@ export default function DeleteAfterRead() {
         </div>
         <div className="overflow-x-auto rounded-lg border border-border bg-card p-4">
           <pre className="font-mono text-[11px] leading-5 whitespace-pre text-foreground">{`
-  ── 16 个英文项目跑完，规律只有六条 ─────────────────────────────────────────────
+  ── 28 个英文项目跑完，规律只有八条 ─────────────────────────────────────────────
   ① 单篇平均只占 2 格；凑齐五格的只有 Partner in Balance，代价是 4 篇 + 1 个 RCT + 5 年。
   ② I 构思格几乎全空。真做工作坊的（InspireD / CIRCA / CAREGIVERSPRO）都是有欧盟或
      大学经费的多年项目，那格是经费的产物，不是知识的产物。
