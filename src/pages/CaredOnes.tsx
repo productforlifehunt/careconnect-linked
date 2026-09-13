@@ -1,4 +1,5 @@
 import { maskEmail } from "@/lib/utils";
+import { PageSkeleton } from "@/components/PageSkeleton";
 import { useState, useMemo } from "react";
 import { useSearchParams, useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -130,7 +131,7 @@ export default function CaredOnes() {
     });
   };
 
-  if (isLoading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
+  if (isLoading) return <PageSkeleton />;
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-5">
