@@ -76,7 +76,7 @@ export default function TasksNeedingHelp() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">{Z("需要帮手的护理任务", "Care Tasks Needing Help")}</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">{Z("需要帮手的护理任务", "Care Tasks Needing Help")}</h1>
         <p className="text-muted-foreground text-sm">
           {Z("这些任务由家人分享出来找人帮忙，你也可以在护理圈里把自己的任务分享出来。",
              "Tasks families shared out for help. You can share your own from your care circle.")}

@@ -135,7 +135,7 @@ export default function Articles() {
 
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">{isZh ? "文章" : "Articles"}</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">{isZh ? "文章" : "Articles"}</h1>
           <p className="text-sm text-muted-foreground mt-1">{isZh ? "按类型沉淀经验、专业知识与官方内容" : "Publish user stories, expert insights, and official updates"}</p>
         </div>
         {isAuthenticated && (

@@ -288,7 +288,7 @@ export default function SearchResults() {
         </aside>
 
         <div className="flex-1">
-          <h1 className="text-2xl font-bold text-foreground mb-4">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight mb-4">
             {isFacilityMode
               ? (isZh ? "养老机构搜索结果" : "Care facility search results")
               : (isZh ? "护理者搜索结果" : "Caregiver search results")}

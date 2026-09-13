@@ -30,7 +30,7 @@ export default function XianyuListings() {
   return (
     <main className="max-w-6xl mx-auto px-4 py-10 space-y-12">
       <header className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">
           Xianyu Listings — Original & English Translation
         </h1>
         <p className="text-muted-foreground">
