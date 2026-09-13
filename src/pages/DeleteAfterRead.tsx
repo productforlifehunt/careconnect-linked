@@ -831,7 +831,7 @@ export default function DeleteAfterRead() {
       {/* 项目族谱 */}
       <section className="space-y-4">
         <h2 className="text-2xl font-semibold tracking-tight">
-          图 1.5 · 项目族谱：17 个 100% 对口项目的方法名 · 时间线 · 姊妹篇 · 逐阶段五步法归位
+          图 1.5 · 项目族谱：16 个 100% 对口 · 全英文发表项目的方法名 · 时间线 · 姊妹篇 · 逐阶段五步法归位
         </h2>
         <Box>
           <strong>为什么要按项目而不按论文看</strong>：一个项目的「方法」从来不写在一篇里，而是拆成
