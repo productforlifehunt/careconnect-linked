@@ -136,11 +136,17 @@ export async function fetchWPUserSafe(userId: number | string): Promise<any> {
 }
 
 
-async function linkRel(relId: number, parentId: number, childId: number) {
+async function linkRel(relId: number, parentId: number, childId: number, meta?: Record<string, any>) {
   if (!parentId || !childId) throw new Error(`Invalid object ID for relation ${relId}`);
   await wordpressFetch(`jet-rel/${relId}`, {
     method: "POST",
-    body: { parent_id: parentId, child_id: childId, context: "child", store_items_type: "update" },
+    body: {
+      parent_id: parentId,
+      child_id: childId,
+      context: "child",
+      store_items_type: "update",
+      ...(meta ? { meta } : {}),
+    },
   });
 }
 
