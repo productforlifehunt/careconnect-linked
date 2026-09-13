@@ -836,8 +836,16 @@ export default function DeleteAfterRead() {
         <Box>
           <strong>为什么要按项目而不按论文看</strong>：一个项目的「方法」从来不写在一篇里，而是拆成
           协议篇 → 开发篇 → 可用性篇 → RCT 篇。所以「他们做了五步法」是把 4–5 篇缝起来才看到的假象；
-          单篇永远只有一两格。全部筛选条件：<strong>失智症或衰弱老人的家庭照护者数字工具</strong>，
+          单篇永远只有一两格。全部筛选条件：<strong>失智症或衰弱老人的家庭照护者数字工具，且必须是英文发表</strong>，
           其余（戒烟、糖尿病、癌症、临床医生端、机器人）一律不收。
+          <br />
+          <strong className="text-destructive">本轮剔除（非英文/无法核实）</strong>：韩国 3 个项目（KSPHN 学会志全文韩语；
+          J Health Inform Stat 亦为韩文期刊）、Alzheimer&apos;s &amp; Dementia 2022 alz.067407（DOI 被反爬拦截，
+          标题作者均无法确认，不写进来）、日本 Mimamoriai（只有 UMIN 注册号，无英文论文）。
+          <br />
+          <strong className="text-primary">本轮核实并更正 3 处</strong>：mWITH ME 已读到方法与样本量（18+20）；
+          CIRCA-BC 真实出处是 Am J Alzheimers Dis Other Demen 2015;30(1):101（2014 在线首发，PMID 24928817），
+          与之前标注不同；微信 WECARE 干预**确实有后续篇**（2023 试点 + NCT05992467），上一版说「没找到」是错的。
         </Box>
         <div className="space-y-5">
           {projects.map((pr) => (
