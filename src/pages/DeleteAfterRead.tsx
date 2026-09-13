@@ -835,6 +835,78 @@ export default function DeleteAfterRead() {
         ))}
       </section>
 
+      {/* 项目族谱 */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold tracking-tight">
+          图 1.5 · 项目族谱：17 个 100% 对口项目的方法名 · 时间线 · 姊妹篇 · 逐阶段五步法归位
+        </h2>
+        <Box>
+          <strong>为什么要按项目而不按论文看</strong>：一个项目的「方法」从来不写在一篇里，而是拆成
+          协议篇 → 开发篇 → 可用性篇 → RCT 篇。所以「他们做了五步法」是把 4–5 篇缝起来才看到的假象；
+          单篇永远只有一两格。全部筛选条件：<strong>失智症或衰弱老人的家庭照护者数字工具</strong>，
+          其余（戒烟、糖尿病、癌症、临床医生端、机器人）一律不收。
+        </Box>
+        <div className="space-y-5">
+          {projects.map((pr) => (
+            <article key={pr.name} className="rounded-xl border border-border bg-card p-5 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h3 className="text-lg font-semibold">{pr.name}</h3>
+                <DTStrip hits={pr.dt} />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-lg bg-muted/50 p-3 text-sm">
+                  <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">对口程度</div>
+                  {pr.scope}
+                </div>
+                <div className="rounded-lg bg-muted/50 p-3 text-sm">
+                  <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">它自称的方法名</div>
+                  {pr.method}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  时间线（阶段 → 实际动作 → 落在五步法哪一格 → 出处）
+                </div>
+                <ul className="space-y-1.5">
+                  {pr.phases.map((ph, i) => (
+                    <li key={i} className="grid gap-1 rounded-lg border border-border/60 p-2.5 text-sm sm:grid-cols-[9rem_1fr_6rem_11rem] sm:gap-3">
+                      <span className="font-semibold">{ph.p}</span>
+                      <span>{ph.act}</span>
+                      <span className="font-mono text-primary">{ph.dt}</span>
+                      {ph.url ? (
+                        <a href={ph.url} target="_blank" rel="noreferrer" className="text-xs underline underline-offset-4 text-muted-foreground hover:text-foreground">
+                          {ph.paper}
+                        </a>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">{ph.paper}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="rounded-lg bg-primary/5 p-3 text-sm">
+                <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">我们能拿走什么</div>
+                {pr.verdict}
+              </div>
+            </article>
+          ))}
+        </div>
+        <div className="overflow-x-auto rounded-lg border border-border bg-card p-4">
+          <pre className="font-mono text-[11px] leading-5 whitespace-pre text-foreground">{`
+  ── 17 个项目跑完，规律只有五条 ────────────────────────────────────────────────
+  ① 单篇平均只占 2 格；凑齐五格的只有 Partner in Balance，代价是 4 篇 + 1 个 RCT + 5 年。
+  ② I 构思格几乎全空。真做工作坊的（InspireD / CIRCA / CAREGIVERSPRO）都是有欧盟或
+     大学经费的多年项目，那格是经费的产物，不是知识的产物。
+  ③ 顺序是排版顺序，不是工作顺序。Care Me Too 的「共同设计篇」比「可用性篇」晚发四年。
+  ④ 最便宜的三条发表路线，全部无需新招募：
+       a) 只写协议（华人微信干预 e40171）——零参与者。
+       b) 换一种语言/国家再测一遍（iSupport 葡/瑞/日；CIRCA-BC 加拿大）。
+       c) 换一个价值观镜头重写同一批数据（魁北克「社会正义设计」）。
+  ⑤ 方法名可以不报。韩国三个项目只写「App 开发 + 可用性测试」就见刊。
+`}</pre>
+        </div>
+      </section>
+
       {/* 我们的四步映射到五步法 */}
       <section className="space-y-4">
         <h2 className="text-2xl font-semibold tracking-tight">图 2 · 我们的最小编舞 = 五步法里的哪几格</h2>
