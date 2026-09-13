@@ -152,7 +152,30 @@ export async function createUserCaredOneWordPress(caredOne: { caredOneId: string
   if (!stored?.user_id) throw new Error("Not authenticated");
   const childId = normalizeWpObjectId(caredOne.caredOneId);
   if (!childId) throw new Error("Invalid cared one user");
+  // Nobody is their own cared one — a self link would hand the account a
+  // second, confusing copy of itself in every list.
+  if (String(childId) === String(normalizeWpObjectId(String(stored.user_id)))) {
+    throw new Error("You cannot add yourself");
+  }
   await linkRel(REL_USER_CARED_ONE, Number(stored.user_id), childId);
+
+  // The other person must always learn that someone can now see their
+  // medicines, check-ins and location. Best effort: a failed notice never
+  // silently rolls back the link, it is reported by the caller instead.
+  try {
+    const { sendNotification } = await import("@/features/notifications/dispatch");
+    const me = await fetchWPUserSafe(Number(stored.user_id));
+    const myName = (me as any)?.full_name || (me as any)?.name || "Someone";
+    await sendNotification({
+      user_id: childId,
+      type: "system",
+      title: `${myName} is now listed as your caregiver`,
+      message: `${myName} added you as the person they care for. They can now see the care information kept about you — medicines, check-ins, notes and location sharing. If this is wrong, open the people caring for you in Settings and remove them.`,
+      action_url: "/settings",
+    });
+  } catch {
+    /* the link stands; the notice is best effort */
+  }
 }
 
 export async function deleteUserCaredOneWordPress(id: string): Promise<void> {
