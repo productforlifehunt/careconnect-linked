@@ -137,9 +137,11 @@ export default function Inbox() {
             >
               <InboxIcon className="h-4 w-4 shrink-0" />
               <span>{Z("全部", "All")}</span>
-              {unreadAll > 0 && (
-                <Badge className="h-5 min-w-5 px-1.5 bg-coral text-coral-foreground text-[10px]">
-                  {unreadAll}
+              {/* This tab holds everything, so the badge is the total, not the
+                  unread count — unread lives on its own filter. */}
+              {feed.length > 0 && (
+                <Badge variant="secondary" className="h-5 min-w-5 px-1.5 text-[10px]">
+                  {feed.length}
                 </Badge>
               )}
             </TabsTrigger>

@@ -1,3 +1,4 @@
+import { maskEmail } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -229,7 +230,7 @@ export function AddCaredOneDialog({
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">{name}</p>
-                        <p className="text-xs text-muted-foreground truncate">{person.email || ""}</p>
+                        <p className="text-xs text-muted-foreground truncate">{maskEmail(person.email)}</p>
                       </div>
                     </label>
                   );
@@ -255,7 +256,7 @@ export function AddCaredOneDialog({
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{p.full_name || Z("未填姓名", "No name")}</p>
-                    <p className="text-xs text-muted-foreground truncate">{p.email || p.user_name || ""}</p>
+                    <p className="text-xs text-muted-foreground truncate">{maskEmail(p.email) || p.user_name || ""}</p>
                   </div>
                 </button>
               )) : <p className="p-3 text-sm text-muted-foreground text-center">{Z("未找到结果", "No results found")}</p>}
@@ -268,7 +269,7 @@ export function AddCaredOneDialog({
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-foreground">{selectedPerson.full_name || Z("未填姓名", "No name")}</p>
-                <p className="text-xs text-muted-foreground">{selectedPerson.email || ""}</p>
+                <p className="text-xs text-muted-foreground">{maskEmail(selectedPerson.email)}</p>
               </div>
               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelectedPerson(null)}><X className="h-3.5 w-3.5" /></Button>
             </div>

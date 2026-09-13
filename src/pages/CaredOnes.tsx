@@ -1,3 +1,4 @@
+import { maskEmail } from "@/lib/utils";
 import { useState, useMemo } from "react";
 import { useSearchParams, useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -159,7 +160,7 @@ export default function CaredOnes() {
                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                       {p.avatar_url ? <img src={p.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" /> : <span className="text-primary text-xs font-medium">{(p.full_name || p.email || "?")[0]}</span>}
                     </div>
-                    <div className="min-w-0"><p className="text-sm font-medium text-foreground truncate">{p.full_name || ""}</p><p className="text-xs text-muted-foreground truncate">{p.email || ""}</p></div>
+                    <div className="min-w-0"><p className="text-sm font-medium text-foreground truncate">{p.full_name || ""}</p><p className="text-xs text-muted-foreground truncate">{maskEmail(p.email)}</p></div>
                   </button>
                 )) : <p className="p-3 text-sm text-muted-foreground text-center">{t("common.noResults")}</p>}
               </div>
@@ -169,7 +170,7 @@ export default function CaredOnes() {
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                   {selectedPerson.avatar_url ? <img src={selectedPerson.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" /> : <span className="text-primary font-medium">{(selectedPerson.full_name || "?")[0]}</span>}
                 </div>
-                <div className="flex-1 min-w-0"><p className="font-medium text-foreground">{selectedPerson.full_name || ""}</p><p className="text-xs text-muted-foreground">{selectedPerson.email || ""}</p></div>
+                <div className="flex-1 min-w-0"><p className="font-medium text-foreground">{selectedPerson.full_name || ""}</p><p className="text-xs text-muted-foreground">{maskEmail(selectedPerson.email)}</p></div>
                 <Button variant="ghost" size="icon" className="min-h-11 min-w-11" aria-label={t("common.remove")} onClick={() => setSelectedPerson(null)}><X className="h-3.5 w-3.5" /></Button>
               </div>
             )}
@@ -225,7 +226,7 @@ export default function CaredOnes() {
                         </div>
                         <div className="min-w-0">
                           <p className="font-medium text-foreground truncate">{name}</p>
-                          {person.email && <p className="text-xs text-muted-foreground truncate">{person.email}</p>}
+                          {person.email && <p className="text-xs text-muted-foreground truncate">{maskEmail(person.email)}</p>}
                         </div>
                       </div>
                       <AlertDialog>

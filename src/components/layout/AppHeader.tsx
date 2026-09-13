@@ -59,7 +59,10 @@ export function AppHeader() {
   const isNavActive = (url: string) =>
     url.includes("?") ? currentUrl === url : location.pathname === url;
 
-  const displayName = user?.full_name || user?.email || t("common.anonymous");
+  // Never put an email address in the header — it is on screen all day and in
+  // every screenshot. Name first, then username, then a neutral label.
+  const displayName =
+    user?.full_name || (user as any)?.username || (user as any)?.user_login || t("common.anonymous");
   const initials = displayName.charAt(0).toUpperCase();
 
   const handleLogout = async () => {
