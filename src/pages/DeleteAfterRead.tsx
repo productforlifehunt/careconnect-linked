@@ -894,16 +894,19 @@ export default function DeleteAfterRead() {
         </div>
         <div className="overflow-x-auto rounded-lg border border-border bg-card p-4">
           <pre className="font-mono text-[11px] leading-5 whitespace-pre text-foreground">{`
-  ── 17 个项目跑完，规律只有五条 ────────────────────────────────────────────────
+  ── 16 个英文项目跑完，规律只有六条 ─────────────────────────────────────────────
   ① 单篇平均只占 2 格；凑齐五格的只有 Partner in Balance，代价是 4 篇 + 1 个 RCT + 5 年。
   ② I 构思格几乎全空。真做工作坊的（InspireD / CIRCA / CAREGIVERSPRO）都是有欧盟或
      大学经费的多年项目，那格是经费的产物，不是知识的产物。
   ③ 顺序是排版顺序，不是工作顺序。Care Me Too 的「共同设计篇」比「可用性篇」晚发四年。
   ④ 最便宜的三条发表路线，全部无需新招募：
-       a) 只写协议（华人微信干预 e40171）——零参与者。
-       b) 换一种语言/国家再测一遍（iSupport 葡/瑞/日；CIRCA-BC 加拿大）。
+       a) 只写协议（WECARE 微信干预 e40171）——零参与者，且它后来还发了试点篇。
+       b) 换一种语言/国家再测一遍（iSupport 葡/瑞/日；CIRCA-BC 不列颠哥伦比亚版）。
        c) 换一个价值观镜头重写同一批数据（魁北克「社会正义设计」）。
-  ⑤ 方法名可以不报。韩国三个项目只写「App 开发 + 可用性测试」就见刊。
+  ⑤ 招募可以找替身。CIRCA-BC 的 39 位「共同设计者」全是无失智的普通老人，
+     真正的失智患者只在最后试点里出现 3 位。招募成本砍九成，方法名一字不改。
+  ⑥ 已核实的最低成本完整样本（mWITH ME 2026）：理论拼装 + 18 人访谈 + 20 人用 3 周
+     + 一份李克特问卷 = 一篇 SCI。这就是我们要复制的规格，不多做一格。
 `}</pre>
         </div>
       </section>
