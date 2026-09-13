@@ -463,12 +463,12 @@ export default function DeleteAfterRead() {
           delete after read · 阅后即焚
         </div>
         <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-          以 Design Thinking 五步法为唯一坐标系：8 篇论文各自套得上哪几格
+          以 Design Thinking 五步法为唯一坐标系：15 篇论文各自套得上哪几格
         </h1>
         <p className="text-muted-foreground">
           你只需要懂一个标准扯淡法：<strong>Empathize 同理 → Define 定义 → Ideate 构思 → Prototype 原型 → Test 测试</strong>。
           下面每篇论文都只做一件事——标出它覆盖了五格中的哪几格、哪几格完全缺席。
-          结论先行：<strong>没有任何一篇凑齐五格；最多的一篇覆盖四格；两篇只做一格半照样发表。</strong>
+          结论先行：<strong>没有任何一篇凑齐五格；最多的一篇覆盖四格；好几篇只做一两格照样发表。</strong>
         </p>
         <Box>
           <strong>删除方法</strong>：删 <Mono>src/pages/DeleteAfterRead.tsx</Mono>，
