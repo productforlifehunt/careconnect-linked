@@ -77,7 +77,7 @@ type Paper = {
 const papers: Paper[] = [
   {
     tag: "e60566",
-    title: "生成式 AI 照护工具的认知走查评估（JMIR Aging 2025）",
+    title: "生成式 AI 照护工具的认知走查评估（JMIR Aging 2025;8:e60566）",
     url: "https://aging.jmir.org/2025/1/e60566",
     nature: "定性可用性评估。产品已经存在，作者一行代码没写。",
     n: "个位数专家/照护者，单场 60 分钟左右",
@@ -230,7 +230,7 @@ const papers: Paper[] = [
   },
   {
     tag: "e79975",
-    title: "用 LLM 赋能早期失智照护者：混合方法评估（JMIR Form Res 2025）",
+    title: "用 LLM 赋能早期失智照护者：混合方法评估（JMIR Form Res 2026;10:e79975）",
     url: "https://doi.org/10.2196/79975",
     nature: "直接就是 LLM 主题。证明这个题材正密集出现，跟风安全。",
     n: "混合方法，小样本",
@@ -303,7 +303,7 @@ const papers: Paper[] = [
   },
   {
     tag: "e19543",
-    title: "Co-designing an Adaption of a Mobile App for Early-Stage Dementia（JMIR Res Protoc 2020）",
+    title: "Co-designing an Adaption of a Mobile App for Early-Stage Dementia（JMIR Res Protoc 2021;10(12):e19543）",
     url: "https://doi.org/10.2196/19543",
     nature: "协议论文：早期失智患者居家 co-design，聚焦沟通、安全与福祉。",
     n: "多案例探索性研究，患者+照护者共同参与",
