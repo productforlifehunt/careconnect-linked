@@ -136,17 +136,26 @@ export async function fetchWPUserSafe(userId: number | string): Promise<any> {
 }
 
 
-async function linkRel(relId: number, parentId: number, childId: number) {
+async function linkRel(relId: number, parentId: number, childId: number, meta?: Record<string, any>) {
   if (!parentId || !childId) throw new Error(`Invalid object ID for relation ${relId}`);
   await wordpressFetch(`jet-rel/${relId}`, {
     method: "POST",
-    body: { parent_id: parentId, child_id: childId, context: "child", store_items_type: "update" },
+    body: {
+      parent_id: parentId,
+      child_id: childId,
+      context: "child",
+      store_items_type: "update",
+      ...(meta ? { meta } : {}),
+    },
   });
 }
 
 // ─── Cared Ones (Relation 219, Users → Users, many-to-many) ──
-// Relation 219 (Users -> Users) carries no meta, so there is nothing to store
-// beyond the link itself.
+// Relation 219 carries one meta field, a55 "User type": b55 = nothing special,
+// b56 = cared one. Every link the app makes here IS a cared-one link, so the
+// code writes b56 instead of leaving the column blank.
+const REL219_TYPE_CARED_ONE = { a55: "b56" };
+
 export async function createUserCaredOneWordPress(caredOne: { caredOneId: string }): Promise<void> {
   const stored = getStoredWPUser();
   if (!stored?.user_id) throw new Error("Not authenticated");
@@ -157,7 +166,7 @@ export async function createUserCaredOneWordPress(caredOne: { caredOneId: string
   if (String(childId) === String(normalizeWpObjectId(String(stored.user_id)))) {
     throw new Error("You cannot add yourself");
   }
-  await linkRel(REL_USER_CARED_ONE, Number(stored.user_id), childId);
+  await linkRel(REL_USER_CARED_ONE, Number(stored.user_id), childId, REL219_TYPE_CARED_ONE);
 
   // The other person must always learn that someone can now see their
   // medicines, check-ins and location. Best effort: a failed notice never

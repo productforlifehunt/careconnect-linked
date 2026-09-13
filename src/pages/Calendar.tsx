@@ -121,7 +121,7 @@ export default function CalendarPage() {
             <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
               <CalendarIcon className="h-5 w-5 text-primary" />
             </div>
-            <h1 className="text-[22px] sm:text-3xl font-semibold tracking-tight">{isZh ? "日历" : "Calendar"}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">{isZh ? "日历" : "Calendar"}</h1>
           </div>
           <Button size="sm" className="rounded-full shrink-0" onClick={openCreate}>
             <Plus className="h-4 w-4 mr-1.5" />
