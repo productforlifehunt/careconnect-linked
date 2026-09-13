@@ -681,7 +681,7 @@ export default function DeleteAfterRead() {
           delete after read · 阅后即焚
         </div>
         <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-          以 Design Thinking 五步法为唯一坐标系：15 篇论文各自套得上哪几格
+          以 Design Thinking 五步法为唯一坐标系：15 篇单篇 + 17 个项目族谱，各自套得上哪几格
         </h1>
         <p className="text-muted-foreground">
           你只需要懂一个标准扯淡法：<strong>Empathize 同理 → Define 定义 → Ideate 构思 → Prototype 原型 → Test 测试</strong>。
