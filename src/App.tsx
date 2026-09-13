@@ -56,6 +56,8 @@ import Resources from "./pages/Resources";
 import JoinGroup from "./pages/JoinGroup";
 import XianyuListings from "./pages/XianyuListings";
 import SafetyApp from "./pages/safety/SafetyApp";
+// TEMP — delete after read (throwaway page, remove this import + its Route)
+import DeleteAfterRead from "./pages/DeleteAfterRead";
 
 // Static-first defaults: no auto refetch on focus/mount/reconnect.
 // Data only fetches on first mount or explicit invalidation (after a mutation).
@@ -124,6 +126,8 @@ function AppRoutes() {
       <Route path="/ai-companion" element={<AICompanion />} />
       <Route path="/brand-compare" element={<BrandCompare />} />
       <Route path="/xianyu-listings" element={<XianyuListings />} />
+      {/* TEMP — delete after read */}
+      <Route path="/delete-after-read" element={<DeleteAfterRead />} />
       <Route path="/share/card/:token" element={<SharedInformationCard />} />
       {/* ChallengeD content sections */}
       <Route path="/awared" element={<AwareD />} />
