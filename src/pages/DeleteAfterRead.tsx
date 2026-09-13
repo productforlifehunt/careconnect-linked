@@ -582,14 +582,16 @@ const projects: Project[] = [
     verdict: "E/D 两格全空，只靠 P+T 发了三篇。证明「零访谈」路线完全可行——但我们仍做访谈，因为便宜且能多占一格。",
   },
   {
-    name: "华人照护者社交媒体干预（微信）",
-    scope: "美国华人失智照护者，微信投递。100% 对口，且中文语境最贴我们。",
-    method: "自称：intervention mapping / 协议开发",
-    dt: "ED___",
+    name: "WECARE（华人照护者微信干预）✅已核实：有后续篇",
+    scope: "美国华人失智照护者，微信投递。100% 对口，中文语境最贴我们。英文发表（JMIR Aging）。",
+    method: "自称：协议开发 → 试点可行性/可接受性/初步效果 → 注册临床试验",
+    dt: "ED_PT",
     phases: [
-      { p: "Phase 1 2022", act: "需求评估 + 文化定制 + 协议设计（只发协议，不发结果）", dt: "E+D", paper: "JMIR Aging 2022;3:e40171", url: "https://aging.jmir.org/2022/3/e40171" },
+      { p: "Phase 1 2022", act: "需求评估 + 文化定制 + 协议设计（只发协议，零结果）", dt: "E+D", paper: "JMIR Aging 2022;3:e40171（Hong、Shen、Lu 等）", url: "https://aging.jmir.org/2022/3/e40171/" },
+      { p: "Phase 2 2023", act: "WECARE 试点：可行性 + 可接受性 + 初步效果", dt: "P+T", paper: "JMIR Aging 2023;6:e42972", url: "https://aging.jmir.org/2023/1/e42972" },
+      { p: "Phase 3 2023–24", act: "注册试点试验（乔治梅森大学，n=48，已完成）", dt: "T", paper: "NCT05992467", url: "https://clinicaltrials.gov/study/NCT05992467" },
     ],
-    verdict: "关键情报：**只写协议就能发一篇**，一个用户都不用招。这是我们成本最低的一篇，且中文文化定制是我们的天然壁垒。",
+    verdict: "两条情报：① **只写协议就能先发一篇**，一个用户都不用招；② 同一个微信干预随后又发试点篇 + 注册试验，一个想法三次变现。上一版我说「没找到后续」是错的，已更正。",
   },
   {
     name: "Care Me Too（华人移民照护者 App）",
