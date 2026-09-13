@@ -14,3 +14,4 @@
 - [x] Replace the invented “Care Seeker” label with the real A58 cared-one/caring-one choice and make it editable in Profile settings.
 - [ ] Update the current app/page/interaction inventory with the verified implementation only.
 - [ ] Verify the changed flows in the running app and check current errors.
+- [ ] Expand every retained English journal paper/project into a self-contained factual methods dossier (purpose, sample, procedure, measures, analysis, results, limitations), while preserving source links.
