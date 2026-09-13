@@ -616,7 +616,10 @@ export interface AppSettings {
 }
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
-  notifications: { push: true, email: true, sms: false, muted_types: [] },
+  // Push starts OFF: it only becomes true once this device has actually
+  // registered a token, so the switch can never promise alerts that
+  // physically cannot arrive.
+  notifications: { push: false, email: true, sms: false, muted_types: [] },
   display: { theme: "system", text_size: "default", reduce_motion: false, help_bubble: true },
   permissions_asked: {},
 };

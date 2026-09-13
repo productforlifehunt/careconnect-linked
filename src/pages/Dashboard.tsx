@@ -84,7 +84,7 @@ export default function Dashboard() {
   const show = (id: string) =>
     visibility[id] !== false && availableWidgets.some((w) => w.id === id);
 
-  const displayName = user?.full_name || (isChinese ? "朋友" : "there");
+  const displayName = user?.full_name || (isChinese ? "朋友" : "friend");
   // Only this user's own bookings, and only ones still ahead of us, sorted by
   // when they start. Nothing from other people's calendars.
   const bookingStart = (b: any) => new Date(b.appointment_date || b.start_time || b.created_at).getTime();

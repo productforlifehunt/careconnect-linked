@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { wpRequestPasswordReset } from "@/services/wp-auth";
 import { BrandMark } from "@/components/BrandMark";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
@@ -27,6 +28,8 @@ export default function Auth() {
   const [signupName, setSignupName] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
+  const [signupPassword2, setSignupPassword2] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
@@ -74,6 +77,14 @@ export default function Auth() {
       toast({ title: t("auth.passwordTooShort"), description: t("auth.passwordTooShortDesc"), variant: "destructive" });
       return;
     }
+    if (signupPassword !== signupPassword2) {
+      toast({ title: t("auth.passwordsDoNotMatch", { defaultValue: "Passwords do not match" }), variant: "destructive" });
+      return;
+    }
+    if (!termsAccepted) {
+      toast({ title: t("auth.mustAcceptTerms", { defaultValue: "Please accept the terms and privacy notice first" }), variant: "destructive" });
+      return;
+    }
     if (pwStrength.score < 2) {
       toast({ title: t("auth.passwordTooWeak"), description: t("auth.passwordTooWeakDesc"), variant: "destructive" });
       return;
@@ -87,6 +98,9 @@ export default function Auth() {
           defaultValue: "You have 10 AI credits to try the assistant in this app.",
         }),
       });
+      // Signing up already signed you in, so land on the setup screen instead
+      // of leaving the sign-up form on screen.
+      navigate("/onboarding");
     } catch (err: any) {
       toast({ title: t("auth.signupFailed"), description: err.message, variant: "destructive" });
     } finally {
@@ -172,6 +186,29 @@ export default function Auth() {
                   </div>
                 )}
               </div>
+              <div>
+                <Label>{t("auth.confirmPassword", { defaultValue: "Confirm password" })}</Label>
+                <PasswordInput
+                  value={signupPassword2}
+                  onChange={e => setSignupPassword2(e.target.value)}
+                  placeholder={t("auth.confirmPasswordPlaceholder", { defaultValue: "Type your password again" })}
+                  onKeyDown={e => e.key === "Enter" && handleSignup()}
+                />
+                {signupPassword2 && signupPassword2 !== signupPassword && (
+                  <p className="text-xs text-destructive mt-1">
+                    {t("auth.passwordsDoNotMatch", { defaultValue: "Passwords do not match" })}
+                  </p>
+                )}
+              </div>
+              <label className="flex items-start gap-2 text-xs text-muted-foreground cursor-pointer">
+                <Checkbox
+                  checked={termsAccepted}
+                  onCheckedChange={v => setTermsAccepted(v === true)}
+                  className="mt-0.5"
+                  aria-label={t("auth.acceptTerms", { defaultValue: "I accept the terms and the privacy notice" })}
+                />
+                <span>{t("auth.acceptTerms", { defaultValue: "I accept the terms and the privacy notice, including the storage of health and location information I choose to add." })}</span>
+              </label>
               <Button variant="coral" className="w-full" onClick={handleSignup} disabled={loading}>
                 {loading ? t("auth.creatingAccount") : t("common.signUp")}
               </Button>

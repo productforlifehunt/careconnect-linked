@@ -19,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useSite } from "@/contexts/SiteContext";
 import { useTranslation } from "react-i18next";
 import { AppSettingsPanel } from "@/components/settings/AppSettingsPanel";
+import { WhoCaresForMePanel } from "@/components/settings/WhoCaresForMePanel";
 import { ensureAppProfile, fetchMyCommunityName, saveMyCommunityName } from "@/features/shared/app-profile";
 
 export default function Profile() {
@@ -270,6 +271,7 @@ export default function Profile() {
         </TabsContent>
 
         <TabsContent value="privacy" className="space-y-6">
+          <WhoCaresForMePanel />
           <Card className="border-transparent card-elevated">
             <CardHeader><CardTitle>{t("profile.yourData")}</CardTitle></CardHeader>
             <CardContent className="space-y-3">

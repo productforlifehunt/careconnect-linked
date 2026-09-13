@@ -286,7 +286,7 @@ export function MobileBottomBar() {
                   </span>
                 )}
               </div>
-              <span className="text-[10px] leading-tight truncate">{item.title}</span>
+              <span className="text-[11px] leading-tight truncate">{item.title}</span>
             </NavLink>
           );
         })}

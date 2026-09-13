@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Bell, Inbox as InboxIcon, Loader2 } from "lucide-react";
@@ -137,9 +138,11 @@ export default function Inbox() {
             >
               <InboxIcon className="h-4 w-4 shrink-0" />
               <span>{Z("全部", "All")}</span>
-              {unreadAll > 0 && (
-                <Badge className="h-5 min-w-5 px-1.5 bg-coral text-coral-foreground text-[10px]">
-                  {unreadAll}
+              {/* This tab holds everything, so the badge is the total, not the
+                  unread count — unread lives on its own filter. */}
+              {feed.length > 0 && (
+                <Badge variant="secondary" className="h-5 min-w-5 px-1.5 text-[10px]">
+                  {feed.length}
                 </Badge>
               )}
             </TabsTrigger>
@@ -187,8 +190,8 @@ export default function Inbox() {
         <TabsContent value="all" className="mt-0 focus-visible:outline-none">
           <div className="max-w-3xl mx-auto px-4 py-4">
             {notifsLoading || convosLoading ? (
-              <div className="flex justify-center py-20">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <div className="space-y-3 py-2">
+                {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-20 rounded-xl" />)}
               </div>
             ) : feed.length === 0 ? (
               <div className="text-center py-16">
