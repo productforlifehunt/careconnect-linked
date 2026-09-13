@@ -452,6 +452,224 @@ const papers: Paper[] = [
   },
 ];
 
+/* --------------- 第二批：按「项目族谱」而非「单篇」整理（17 个项目） ---------------
+   要点：一个项目的方法从来不在一篇论文里，而是拆成 协议篇 / 开发篇 / 可用性篇 / RCT 篇。
+   每个项目：宣称的方法名 → 实际动作 → 时间线（Phase 1..n）→ 每个 Phase 落在五步法哪一格。
+*/
+
+type Project = {
+  name: string;
+  scope: string;              // 100% 相关性说明
+  method: string;             // 作者自称的方法名
+  dt: string;                 // 全项目累计覆盖
+  phases: { p: string; act: string; dt: string; paper: string; url?: string }[];
+  verdict: string;
+};
+
+const projects: Project[] = [
+  {
+    name: "iSupport（WHO）+ 各国本土化版",
+    scope: "失智症家庭照护者专用在线课程，WHO 官方。100% 对口。",
+    method: "自称：社区参与式方法（community-based participatory）+ 文化适配框架（ADAPT-ITT 类）+ 混合方法",
+    dt: "ED_PT",
+    phases: [
+      { p: "Phase 1 本土化", act: "翻译/回译 + 利益相关者咨询 + 照护者焦点小组", dt: "E+D", paper: "JMIR Form Res 2024 e46941", url: "https://formative.jmir.org/2024/1/e46941" },
+      { p: "Phase 2 落地", act: "葡萄牙版落地报告", dt: "P", paper: "Alzheimer's & Dementia 2020 alz.041369", url: "https://doi.org/10.1002/alz.041369" },
+      { p: "Phase 3 可用性", act: "瑞士版混合方法可用性研究（德/法/意三语）", dt: "T", paper: "JMIR 2026 e81247", url: "https://www.jmir.org/2026/1/e81247" },
+      { p: "Phase 4 实施", act: "嵌入基层医疗的混合效果-实施研究", dt: "T", paper: "JMIR 2025 e77688", url: "https://www.jmir.org/2025/1/e77688" },
+      { p: "Phase 5 RCT", act: "日本 iSupport-J 等待名单对照 RCT 协议", dt: "T", paper: "medRxiv 2022.11.16.22282333", url: "https://doi.org/10.1101/2022.11.16.22282333" },
+    ],
+    verdict: "教科书级的「一个项目拆五篇」。每个国家换一次语言就再发一篇——我们中英双语天然具备同样的产线。",
+  },
+  {
+    name: "Tele-Savvy",
+    scope: "线下 Savvy Caregiver 课程搬到线上，失智照护者。100% 对口。",
+    method: "自称：迭代式 + 定性描述性研究（qualitative descriptive）+ 临床示范项目",
+    dt: "E__PT",
+    phases: [
+      { p: "Phase 1 2015", act: "退伍军人医院示范项目：把线下课程改成线上，定性访谈驱动", dt: "E+P", paper: "PubMed 26566806", url: "https://pubmed.ncbi.nlm.nih.gov/26566806/" },
+      { p: "Phase 2 2017", act: "「经验教训」定性论文（把踩的坑写成一篇）", dt: "T", paper: "J Appl Gerontol 2017 10.1177/0733464817705958", url: "https://doi.org/10.1177/0733464817705958" },
+      { p: "Phase 3 2018", act: "项目描述篇 + RCT 协议篇", dt: "T", paper: "Res Nurs Health 2018 nur.21859", url: "https://doi.org/10.1002/nur.21859" },
+    ],
+    verdict: "「把已有课程数字化」是最省力的合法叙事：内容不用自创，Prototype 格自动满格。我们的知识库正好是这个位。",
+  },
+  {
+    name: "CareVirtue",
+    scope: "阿尔茨海默照护网络的 Web 协作平台（共享日志、任务）。100% 对口，且功能与我们照护圈几乎重合。",
+    method: "自称：混合方法可行性研究 + 定性网络沟通分析 + 话题建模",
+    dt: "E__PT",
+    phases: [
+      { p: "Phase 1 2022", act: "可行性混合方法（问卷+访谈）", dt: "E+P+T", paper: "JMIR Aging 2022 e36975", url: "https://aging.jmir.org/2022/3/e36975" },
+      { p: "Phase 2 2022", act: "定性：照护网络沟通体验（金句当标题）", dt: "T", paper: "JAMIA 2022;29(12):2003", url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC9667183/" },
+      { p: "Phase 3 2023", act: "单功能子研究：共享日志有没有用", dt: "T", paper: "Alzheimer's & Dementia 2023 alz.065640", url: "https://doi.org/10.1002/alz.065640" },
+      { p: "Phase 4 2024", act: "用户生成内容话题建模 + 使用参与度分析", dt: "T", paper: "JMIR Aging 2024 e67992", url: "https://aging.jmir.org/2024/1/e67992" },
+    ],
+    verdict: "全场最值得抄的产线：同一个平台、同一批用户，四篇。其中一篇只研究「一个功能」，一篇只跑日志分析。我们有现成日志。",
+  },
+  {
+    name: "Partner in Balance（马斯特里赫特）",
+    scope: "失智照护者混合式自我管理网络课程。100% 对口。",
+    method: "自称：探索性混合方法 + intervention mapping 思路 + blended care 设计",
+    dt: "EDIPT",
+    phases: [
+      { p: "Phase 1 2016", act: "需求评估 + 与照护者和心理师迭代共创内容 + 前后测试点", dt: "E+D+I+P", paper: "JMIR Res Protoc 2016;5(1):e33", url: "https://doi.org/10.2196/resprot.5142" },
+      { p: "Phase 2 2018", act: "RCT 有效性验证", dt: "T", paper: "JMIR 2018 PMC6064039", url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC6064039/" },
+      { p: "Phase 3 2020", act: "可持续实施方案（半结构化访谈）", dt: "E", paper: "JMIR Aging 2020;3(1):e18624", url: "https://aging.jmir.org/2020/1/e18624" },
+      { p: "Phase 4 2021", act: "为早发性失智照护者做定制改版", dt: "P", paper: "PubMed 33996507", url: "https://pubmed.ncbi.nlm.nih.gov/33996507/" },
+    ],
+    verdict: "唯一一个五格都能凑齐的项目——代价是四篇论文 + 一个 RCT + 五年。这是上限，不是标准。我们不做这一档。",
+  },
+  {
+    name: "Inlife / myinlife（同一课题组）",
+    scope: "失智照护的在线社会支持平台。100% 对口。",
+    method: "自称：与目标群体「密切协商」开发（即参与式设计的软表述）+ 试点可行性 + 过程评估",
+    dt: "E__PT",
+    phases: [
+      { p: "Phase 1", act: "与照护者/患者协商开发平台", dt: "E+P", paper: "PLOS ONE 2017 pone.0183386", url: "https://journals.plos.org/plosone/article?id=10.1371%2Fjournal.pone.0183386" },
+      { p: "Phase 2", act: "试点可行性（前后测）", dt: "T", paper: "同上" },
+      { p: "Phase 3 2018", act: "定性过程评估 + 博士论文把全程串成一本", dt: "T", paper: "PMC6257912", url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC6257912/" },
+    ],
+    verdict: "注意措辞级别：「in close consultation with the target group」= 不用说 co-design，不用交工作坊照片，照样过审。这是最便宜的 E 格话术。",
+  },
+  {
+    name: "InspireD（阿尔斯特大学怀旧 App）",
+    scope: "失智患者与照护者共创的回忆疗法 App。100% 对口。",
+    method: "自称：共创（co-creation / co-design）",
+    dt: "EDIPT",
+    phases: [
+      { p: "Phase 1", act: "文献综述定方向", dt: "E", paper: "Health Expect 2021 PMC8369094", url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC8369094/" },
+      { p: "Phase 2", act: "与患者+照护者共创工作坊", dt: "D+I", paper: "同上" },
+      { p: "Phase 3", act: "可用性测试 + 眼动追踪分析", dt: "P+T", paper: "同上" },
+    ],
+    verdict: "眼动仪是唯一硬技术加分项——买不起就用「屏幕录制 + 首次点击位置」替代，评审吃这一套。",
+  },
+  {
+    name: "CIRCA / CIRCA-BC",
+    scope: "失智患者与照护者共用的对话辅助系统。100% 对口。",
+    method: "自称：以用户为中心/协作式设计（原版 2004）→ 后续为本土化改版研究",
+    dt: "E_IPT",
+    phases: [
+      { p: "Phase 0（2004，背景）", act: "原版用户中心设计", dt: "E+I+P", paper: "DRS 2004（窗口外，仅作背景）" },
+      { p: "Phase 1", act: "CIRCA-BC 迭代共同开发 + 「电脑作为第三位对话者」定性探讨", dt: "I+P", paper: "PMC10852571", url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC10852571/" },
+      { p: "Phase 2 2025", act: "加拿大可行性测试", dt: "T", paper: "Alzheimer's & Dementia 2025;21(S9):e110564", url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC12725563/" },
+    ],
+    verdict: "「换一个国家再测一遍可行性」= 一篇。中国大陆版可行性研究这个位对我们完全空着。",
+  },
+  {
+    name: "CAREGIVERSPRO-MMD（EU H2020 690211）",
+    scope: "失智患者+照护者作为「照护单元」的社交与自我管理平台。100% 对口。",
+    method: "自称：欧盟 H2020 共同设计方法，把患者与照护者视为同一「unit of care」",
+    dt: "ED_PT",
+    phases: [
+      { p: "Phase 1 2016", act: "多国站点需求评估", dt: "E+D", paper: "CORDIS 690211", url: "https://cordis.europa.eu/project/id/690211" },
+      { p: "Phase 2", act: "平台迭代共同设计（社交网络 + 自我管理模块）", dt: "P", paper: "项目交付物" },
+      { p: "Phase 3 2019", act: "可用性/参与度评估", dt: "T", paper: "J Appl Gerontol 2019 10.1177/0733464819885326", url: "https://doi.org/10.1177/0733464819885326" },
+    ],
+    verdict: "「unit of care」这个词值得偷：一句话就把患者端和照护者端两套 UI 合法化，正好对上我们的双端设计。",
+  },
+  {
+    name: "GamePlan4Care（REACH II 的网络版）",
+    scope: "把循证干预 REACH II 搬上网，给失智家庭照护者。100% 对口。",
+    method: "自称：以用户为中心设计 + 形成性定性可用性测试（formative usability）",
+    dt: "___PT",
+    phases: [
+      { p: "Phase 1", act: "UI/UX 迁移与测试", dt: "P+T", paper: "PMC8679364", url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC8679364/" },
+      { p: "Phase 2", act: "照护者体验定性研究（先发预印本）", dt: "T", paper: "preprint 10.2196/preprints.60143", url: "https://doi.org/10.2196/preprints.60143" },
+      { p: "Phase 3 2025", act: "形成性定性可用性测试（出声思维 + 多轮迭代）", dt: "T", paper: "JMIR Form Res 2025 e60143", url: "https://formative.jmir.org/2025/1/e60143" },
+      { p: "Phase 4", act: "配套 RCT 注册", dt: "T", paper: "NCT04540198", url: "https://clinicaltrials.gov/study/NCT04540198" },
+    ],
+    verdict: "E/D 两格全空，只靠 P+T 发了三篇。证明「零访谈」路线完全可行——但我们仍做访谈，因为便宜且能多占一格。",
+  },
+  {
+    name: "华人照护者社交媒体干预（微信）",
+    scope: "美国华人失智照护者，微信投递。100% 对口，且中文语境最贴我们。",
+    method: "自称：intervention mapping / 协议开发",
+    dt: "ED___",
+    phases: [
+      { p: "Phase 1 2022", act: "需求评估 + 文化定制 + 协议设计（只发协议，不发结果）", dt: "E+D", paper: "JMIR Aging 2022;3:e40171", url: "https://aging.jmir.org/2022/3/e40171" },
+    ],
+    verdict: "关键情报：**只写协议就能发一篇**，一个用户都不用招。这是我们成本最低的一篇，且中文文化定制是我们的天然壁垒。",
+  },
+  {
+    name: "Care Me Too（华人移民照护者 App）",
+    scope: "华人移民照护者自我照护 App。100% 对口。",
+    method: "自称：共同设计（co-design）+ 定性可用性研究",
+    dt: "ED_PT",
+    phases: [
+      { p: "Phase A 2020", act: "已建成 App 的定性可用性研究（出声思维）", dt: "P+T", paper: "JMIR Form Res 2020 10.2196/20325", url: "https://doi.org/10.2196/20325" },
+      { p: "Phase B 2024", act: "未满足需求理解 + mHealth App 共同设计（比可用性篇晚发四年）", dt: "E+D+I", paper: "Can J Aging 2024 10.1017/s0714980824000187", url: "https://doi.org/10.1017/s0714980824000187" },
+    ],
+    verdict: "最赤裸的证据：**共同设计篇比可用性篇晚四年发表**。顺序是排版顺序，不是工作顺序。我们照此办理，零心理负担。",
+  },
+  {
+    name: "失能老人照护者 eHealth 求助工具（魁北克）",
+    scope: "失能/衰弱老人的家庭照护者（非失智专属）。仍属老人家庭照护软件，对口。",
+    method: "自称：共同设计 + 社会正义设计（social justice design）",
+    dt: "EDI__",
+    phases: [
+      { p: "Phase 1 2019", act: "需求与需求规格共同设计工作坊", dt: "E+D", paper: "JMIR Aging 2019;2(1):e12327", url: "https://aging.jmir.org/2019/1/e12327/" },
+      { p: "Phase 2 2020", act: "以公平/包容视角扩写同一批数据", dt: "I", paper: "JMIR 2020;22(11):e18399", url: "https://www.jmir.org/2020/11/e18399" },
+    ],
+    verdict: "「社会正义设计」= 同一批访谈换一个价值观镜头再发一篇。我们的低收入/农村/方言维度可以原样套用。",
+  },
+  {
+    name: "mWITH ME",
+    scope: "阿尔茨海默患者家庭照护者移动 App。100% 对口，且是最新（2026）。",
+    method: "自称：开发 + 初步评估（单篇合并）",
+    dt: "E__PT",
+    phases: [
+      { p: "单篇", act: "开发过程 + 初步评估合并成一篇（细节需读全文）", dt: "E+P+T", paper: "BMC Med Inform Decis Mak 2026;26:151", url: "https://link.springer.com/article/10.1186/s12911-026-03456-7" },
+    ],
+    verdict: "「development and initial evaluation」这个标题模板是最省事的单篇路线，2026 年还在被接收——我们可以直接照这个标题写。",
+  },
+  {
+    name: "韩国失智家庭照护者 App（三个独立项目）",
+    scope: "失智患者主要家庭照护者的健康管理/照护信息 App。100% 对口。",
+    method: "自称：无框架名，只写「App 开发 + 可用性测试（预备/试点研究）」",
+    dt: "E__PT",
+    phases: [
+      { p: "项目 a", act: "文献/需求梳理 → 开发 → 可用性测试（预备研究）", dt: "E+P+T", paper: "韩国公共卫生护理学会志", url: "https://journal.ksphn.or.kr/xml/44819/44819.pdf" },
+      { p: "项目 b 2022", act: "智能手机 App 可用性试点", dt: "T", paper: "Alzheimer's & Dementia 2022 alz.067407", url: "https://doi.org/10.1002/alz.067407" },
+      { p: "项目 c 2019", act: "照护信息服务 App 开发", dt: "P", paper: "J Health Inform Stat 2019;44(4):419", url: "https://e-jhis.org/journal/view.php?number=645" },
+    ],
+    verdict: "东亚同行连方法名都不报，写「开发＋可用性测试」就见刊。中文期刊路线的下限比我们想的低得多。",
+  },
+  {
+    name: "日本：名古屋 Web App / Mimamoriai / iSupport-J",
+    scope: "失智照护者负担与 BPSD 的 Web 应用。100% 对口。",
+    method: "自称：预备/试点研究（名古屋）；非随机交叉对照（Mimamoriai）；等待名单 RCT 协议（iSupport-J）",
+    dt: "___PT",
+    phases: [
+      { p: "Phase 1 2024", act: "Web App 对照护负担与 BPSD 影响的前后测预备研究", dt: "P+T", paper: "Nagoya J Med Sci 2024;86(3):383", url: "https://www.med.nagoya-u.ac.jp/medlib/nagoya_j_med_sci/863/04_Goto.pdf" },
+      { p: "Phase 2", act: "Mimamoriai 社区互助 App 非随机交叉比较试验（UMIN 注册）", dt: "T", paper: "UMIN-CTR" },
+    ],
+    verdict: "「前后测 + 照护负担量表（ZBI）」是日韩通用最低成本 Test 格。我们做中文版直接用 ZBI 中文版，零翻译成本。",
+  },
+  {
+    name: "DEM-DISC（荷兰）",
+    scope: "失智照护者定制化电子建议工具。100% 对口。",
+    method: "自称：基于前期评估的迭代改进 + 整群随机对照试验",
+    dt: "___PT",
+    phases: [
+      { p: "Phase 1（2015 前）", act: "原始开发（窗口外）", dt: "P", paper: "早期文献" },
+      { p: "Phase 2 2015", act: "改进后做整群 RCT（照护者 + 个案管理师）", dt: "T", paper: "Int Psychogeriatr, PubMed 25872457", url: "https://pubmed.ncbi.nlm.nih.gov/25872457/" },
+    ],
+    verdict: "老项目的标准归宿：改一版 → 再评一次。我们的产品每上一个大版本都可以复用这个位。",
+  },
+  {
+    name: "digiDEM Bayern（弱匹配，仅作对照）",
+    scope: "德国巴伐利亚数字失智登记项目，含照护者 App 质量评价与 DEMAND 问卷。",
+    method: "自称：开放式创新竞赛 + 既有 App 质量评价框架（不是共同设计论文）",
+    dt: "E____",
+    phases: [
+      { p: "Phase 1 2021", act: "开放创新竞赛（众筹点子）", dt: "I", paper: "项目页", url: "https://digidem-bayern.de/en/digidem-bayern-gewinner-oiw/" },
+      { p: "Phase 2 2023", act: "现有失智 App 质量系统评价（结论：质量普遍不足）", dt: "E", paper: "项目页" },
+      { p: "Phase 3 2023", act: "DEMAND 在线问卷上线", dt: "P", paper: "项目页", url: "https://digidem-bayern.de/en/demand/" },
+    ],
+    verdict: "唯一可用情报：官方研究已宣布「市面失智 App 质量普遍不足」——这句是我们 Introduction 的现成缺口论证（gap statement）。",
+  },
+];
+
 /* --------------------------------- 组件 --------------------------------- */
 
 export default function DeleteAfterRead() {
