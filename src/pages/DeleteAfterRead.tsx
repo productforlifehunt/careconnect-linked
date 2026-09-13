@@ -452,7 +452,7 @@ const papers: Paper[] = [
   },
 ];
 
-/* --------------- 第二批：按「项目族谱」而非「单篇」整理（17 个项目） ---------------
+/* --------------- 第二批：按「项目族谱」而非「单篇」整理（16 个项目，全英文发表） ---------------
    要点：一个项目的方法从来不在一篇论文里，而是拆成 协议篇 / 开发篇 / 可用性篇 / RCT 篇。
    每个项目：宣称的方法名 → 实际动作 → 时间线（Phase 1..n）→ 每个 Phase 落在五步法哪一格。
 */
@@ -544,16 +544,17 @@ const projects: Project[] = [
     verdict: "眼动仪是唯一硬技术加分项——买不起就用「屏幕录制 + 首次点击位置」替代，评审吃这一套。",
   },
   {
-    name: "CIRCA / CIRCA-BC",
-    scope: "失智患者与照护者共用的对话辅助系统。100% 对口。",
-    method: "自称：以用户为中心/协作式设计（原版 2004）→ 后续为本土化改版研究",
+    name: "CIRCA / CIRCA-BC ✅已核实",
+    scope: "失智患者与照护者共用的对话辅助系统。100% 对口。全部英文发表。",
+    method: "自称：两阶段迭代式参与式设计（把已有 CIRCA 改造成不列颠哥伦比亚版）+ 主题分析/恒定比较法",
     dt: "E_IPT",
     phases: [
-      { p: "Phase 0（2004，背景）", act: "原版用户中心设计", dt: "E+I+P", paper: "DRS 2004（窗口外，仅作背景）" },
-      { p: "Phase 1", act: "CIRCA-BC 迭代共同开发 + 「电脑作为第三位对话者」定性探讨", dt: "I+P", paper: "PMC10852571", url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC10852571/" },
-      { p: "Phase 2 2025", act: "加拿大可行性测试", dt: "T", paper: "Alzheimer's & Dementia 2025;21(S9):e110564", url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC12725563/" },
+      { p: "Phase 0（2004，背景）", act: "原版用户中心设计（窗口外，仅作背景）", dt: "E+I+P", paper: "DRS 2004" },
+      { p: "Phase 1 内容共创", act: "6 场焦点小组（3 城市/2 农村/1 独立生活机构），39 位 64–87 岁无失智老人，含 7 位日裔加拿大人 + 4 位原住民长者；每场约 2 小时，每组最多 3 轮迭代。产出素材库 475 图 + 58 视频 + 105 音乐，7 个主题", dt: "E+I+P", paper: "Am J Alzheimers Dis Other Demen 2015;30(1):101（2014 在线，PMID 24928817）", url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC10852571/" },
+      { p: "Phase 2 试点", act: "3 组配对：3 位 81–90 岁中度失智女性住户 × 同一位护理助手，每组 1 场约 30 分钟，录像录音后做互动分析（定性试点，非量化可用性）", dt: "T", paper: "同上" },
+      { p: "Phase 3 2025", act: "加拿大可行性测试", dt: "T", paper: "Alzheimer's & Dementia 2025;21(S9):e110564", url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC12725563/" },
     ],
-    verdict: "「换一个国家再测一遍可行性」= 一篇。中国大陆版可行性研究这个位对我们完全空着。",
+    verdict: "核实后最有用的一条：Phase 1 的 39 人**全部不是失智患者**，是普通老人——招募难度直接砍掉九成，却照样写成「参与式设计」。这个替身招募法我们可以直接用。另外「换一个省/国家再做一版」= 又一篇。",
   },
   {
     name: "CAREGIVERSPRO-MMD（EU H2020 690211）",
@@ -581,14 +582,16 @@ const projects: Project[] = [
     verdict: "E/D 两格全空，只靠 P+T 发了三篇。证明「零访谈」路线完全可行——但我们仍做访谈，因为便宜且能多占一格。",
   },
   {
-    name: "华人照护者社交媒体干预（微信）",
-    scope: "美国华人失智照护者，微信投递。100% 对口，且中文语境最贴我们。",
-    method: "自称：intervention mapping / 协议开发",
-    dt: "ED___",
+    name: "WECARE（华人照护者微信干预）✅已核实：有后续篇",
+    scope: "美国华人失智照护者，微信投递。100% 对口，中文语境最贴我们。英文发表（JMIR Aging）。",
+    method: "自称：协议开发 → 试点可行性/可接受性/初步效果 → 注册临床试验",
+    dt: "ED_PT",
     phases: [
-      { p: "Phase 1 2022", act: "需求评估 + 文化定制 + 协议设计（只发协议，不发结果）", dt: "E+D", paper: "JMIR Aging 2022;3:e40171", url: "https://aging.jmir.org/2022/3/e40171" },
+      { p: "Phase 1 2022", act: "需求评估 + 文化定制 + 协议设计（只发协议，零结果）", dt: "E+D", paper: "JMIR Aging 2022;3:e40171（Hong、Shen、Lu 等）", url: "https://aging.jmir.org/2022/3/e40171/" },
+      { p: "Phase 2 2023", act: "WECARE 试点：可行性 + 可接受性 + 初步效果", dt: "P+T", paper: "JMIR Aging 2023;6:e42972", url: "https://aging.jmir.org/2023/1/e42972" },
+      { p: "Phase 3 2023–24", act: "注册试点试验（乔治梅森大学，n=48，已完成）", dt: "T", paper: "NCT05992467", url: "https://clinicaltrials.gov/study/NCT05992467" },
     ],
-    verdict: "关键情报：**只写协议就能发一篇**，一个用户都不用招。这是我们成本最低的一篇，且中文文化定制是我们的天然壁垒。",
+    verdict: "两条情报：① **只写协议就能先发一篇**，一个用户都不用招；② 同一个微信干预随后又发试点篇 + 注册试验，一个想法三次变现。上一版我说「没找到后续」是错的，已更正。",
   },
   {
     name: "Care Me Too（华人移民照护者 App）",
@@ -613,37 +616,27 @@ const projects: Project[] = [
     verdict: "「社会正义设计」= 同一批访谈换一个价值观镜头再发一篇。我们的低收入/农村/方言维度可以原样套用。",
   },
   {
-    name: "mWITH ME",
-    scope: "阿尔茨海默患者家庭照护者移动 App。100% 对口，且是最新（2026）。",
-    method: "自称：开发 + 初步评估（单篇合并）",
-    dt: "E__PT",
+    name: "mWITH ME ✅已核实全文",
+    scope: "阿尔茨海默患者家庭照护者移动 App，中国某大学附属医院。100% 对口，最新（2026-03-23 刊出），英文发表。",
+    method: "自称：三阶段流程 =（1）理论奠基：叙事循证医学 NEBM + 马斯洛需求层次；（2）以用户为中心设计（引用 Schnall 的消费级 mHealth UCD 模型），定性研究实现；（3）目标用户评估。定性部分遵循 COREQ",
+    dt: "ED_PT",
     phases: [
-      { p: "单篇", act: "开发过程 + 初步评估合并成一篇（细节需读全文）", dt: "E+P+T", paper: "BMC Med Inform Decis Mak 2026;26:151", url: "https://link.springer.com/article/10.1186/s12911-026-03456-7" },
+      { p: "Stage 1 理论", act: "用 NEBM + 马斯洛需求层次搭理论框架（不招人，纯写作）", dt: "E+D", paper: "BMC Med Inform Decis Mak 2026;26:151（Yang、Hu、Ye、Zhang、Yu、Yin）", url: "https://link.springer.com/article/10.1186/s12911-026-03456-7" },
+      { p: "Stage 2 定性", act: "目的抽样 18 位阿尔茨海默患者家庭照护者（老年科/神经科两院区），半结构化访谈每人 20–40 分钟，2024 年 9–12 月，伦理号 JNU202412RB016", dt: "E+D", paper: "同上" },
+      { p: "Stage 3 评估", act: "另招 20 位照护者，使用 App 3 周（第 1 周电话回访），填四部分李克特问卷（人口学/App 影响/易用性/开放反馈），SPSS 26 分析", dt: "P+T", paper: "同上" },
+      { p: "姊妹篇", act: "无。PubMed / Springer / 作者著作列表均未见协议篇、可用性篇或试验篇（负面检索结果，未查 CNKI）", dt: "—", paper: "—" },
     ],
-    verdict: "「development and initial evaluation」这个标题模板是最省事的单篇路线，2026 年还在被接收——我们可以直接照这个标题写。",
+    verdict: "全场性价比最高的模板，已核实到样本量：**18 人访谈 + 20 人 3 周试用 + 一份李克特问卷 = 一篇 2026 年 SCI**。理论那一格是纯写作（挑两个现成理论拼一下），零成本却填满 E+D。我们照抄这个结构，连标题句式一起抄。",
   },
   {
-    name: "韩国失智家庭照护者 App（三个独立项目）",
-    scope: "失智患者主要家庭照护者的健康管理/照护信息 App。100% 对口。",
-    method: "自称：无框架名，只写「App 开发 + 可用性测试（预备/试点研究）」",
-    dt: "E__PT",
-    phases: [
-      { p: "项目 a", act: "文献/需求梳理 → 开发 → 可用性测试（预备研究）", dt: "E+P+T", paper: "韩国公共卫生护理学会志", url: "https://journal.ksphn.or.kr/xml/44819/44819.pdf" },
-      { p: "项目 b 2022", act: "智能手机 App 可用性试点", dt: "T", paper: "Alzheimer's & Dementia 2022 alz.067407", url: "https://doi.org/10.1002/alz.067407" },
-      { p: "项目 c 2019", act: "照护信息服务 App 开发", dt: "P", paper: "J Health Inform Stat 2019;44(4):419", url: "https://e-jhis.org/journal/view.php?number=645" },
-    ],
-    verdict: "东亚同行连方法名都不报，写「开发＋可用性测试」就见刊。中文期刊路线的下限比我们想的低得多。",
-  },
-  {
-    name: "日本：名古屋 Web App / Mimamoriai / iSupport-J",
-    scope: "失智照护者负担与 BPSD 的 Web 应用。100% 对口。",
-    method: "自称：预备/试点研究（名古屋）；非随机交叉对照（Mimamoriai）；等待名单 RCT 协议（iSupport-J）",
+    name: "日本：名古屋 Web App（英文发表）",
+    scope: "失智照护者负担与 BPSD 的 Web 应用。100% 对口。Nagoya J Med Sci 全刊英文，已核实。",
+    method: "自称：预备/试点研究（前后测）",
     dt: "___PT",
     phases: [
-      { p: "Phase 1 2024", act: "Web App 对照护负担与 BPSD 影响的前后测预备研究", dt: "P+T", paper: "Nagoya J Med Sci 2024;86(3):383", url: "https://www.med.nagoya-u.ac.jp/medlib/nagoya_j_med_sci/863/04_Goto.pdf" },
-      { p: "Phase 2", act: "Mimamoriai 社区互助 App 非随机交叉比较试验（UMIN 注册）", dt: "T", paper: "UMIN-CTR" },
+      { p: "Phase 1 2024", act: "Web App 对照护负担与 BPSD 影响的前后测预备研究（Goto、Suematsu、Imaizumi、Suzuki，名古屋大学）", dt: "P+T", paper: "Nagoya J Med Sci 2024;86(3):383, doi 10.18999/nagjms.86.3.383", url: "https://doi.org/10.18999/nagjms.86.3.383" },
     ],
-    verdict: "「前后测 + 照护负担量表（ZBI）」是日韩通用最低成本 Test 格。我们做中文版直接用 ZBI 中文版，零翻译成本。",
+    verdict: "「前后测 + 照护负担量表 ZBI」是最低成本的 Test 格，一篇论文一个量表就够。ZBI 中文版现成，零翻译成本。（同项目的 Mimamoriai 交叉试验只有 UMIN 注册号、无英文论文，已剔除。）",
   },
   {
     name: "DEM-DISC（荷兰）",
@@ -681,7 +674,7 @@ export default function DeleteAfterRead() {
           delete after read · 阅后即焚
         </div>
         <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-          以 Design Thinking 五步法为唯一坐标系：15 篇单篇 + 17 个项目族谱，各自套得上哪几格
+          以 Design Thinking 五步法为唯一坐标系：15 篇单篇 + 16 个项目族谱（全英文发表），各自套得上哪几格
         </h1>
         <p className="text-muted-foreground">
           你只需要懂一个标准扯淡法：<strong>Empathize 同理 → Define 定义 → Ideate 构思 → Prototype 原型 → Test 测试</strong>。
@@ -838,13 +831,21 @@ export default function DeleteAfterRead() {
       {/* 项目族谱 */}
       <section className="space-y-4">
         <h2 className="text-2xl font-semibold tracking-tight">
-          图 1.5 · 项目族谱：17 个 100% 对口项目的方法名 · 时间线 · 姊妹篇 · 逐阶段五步法归位
+          图 1.5 · 项目族谱：16 个 100% 对口 · 全英文发表项目的方法名 · 时间线 · 姊妹篇 · 逐阶段五步法归位
         </h2>
         <Box>
           <strong>为什么要按项目而不按论文看</strong>：一个项目的「方法」从来不写在一篇里，而是拆成
           协议篇 → 开发篇 → 可用性篇 → RCT 篇。所以「他们做了五步法」是把 4–5 篇缝起来才看到的假象；
-          单篇永远只有一两格。全部筛选条件：<strong>失智症或衰弱老人的家庭照护者数字工具</strong>，
+          单篇永远只有一两格。全部筛选条件：<strong>失智症或衰弱老人的家庭照护者数字工具，且必须是英文发表</strong>，
           其余（戒烟、糖尿病、癌症、临床医生端、机器人）一律不收。
+          <br />
+          <strong className="text-destructive">本轮剔除（非英文/无法核实）</strong>：韩国 3 个项目（KSPHN 学会志全文韩语；
+          J Health Inform Stat 亦为韩文期刊）、Alzheimer&apos;s &amp; Dementia 2022 alz.067407（DOI 被反爬拦截，
+          标题作者均无法确认，不写进来）、日本 Mimamoriai（只有 UMIN 注册号，无英文论文）。
+          <br />
+          <strong className="text-primary">本轮核实并更正 3 处</strong>：mWITH ME 已读到方法与样本量（18+20）；
+          CIRCA-BC 真实出处是 Am J Alzheimers Dis Other Demen 2015;30(1):101（2014 在线首发，PMID 24928817），
+          与之前标注不同；微信 WECARE 干预**确实有后续篇**（2023 试点 + NCT05992467），上一版说「没找到」是错的。
         </Box>
         <div className="space-y-5">
           {projects.map((pr) => (
@@ -893,16 +894,19 @@ export default function DeleteAfterRead() {
         </div>
         <div className="overflow-x-auto rounded-lg border border-border bg-card p-4">
           <pre className="font-mono text-[11px] leading-5 whitespace-pre text-foreground">{`
-  ── 17 个项目跑完，规律只有五条 ────────────────────────────────────────────────
+  ── 16 个英文项目跑完，规律只有六条 ─────────────────────────────────────────────
   ① 单篇平均只占 2 格；凑齐五格的只有 Partner in Balance，代价是 4 篇 + 1 个 RCT + 5 年。
   ② I 构思格几乎全空。真做工作坊的（InspireD / CIRCA / CAREGIVERSPRO）都是有欧盟或
      大学经费的多年项目，那格是经费的产物，不是知识的产物。
   ③ 顺序是排版顺序，不是工作顺序。Care Me Too 的「共同设计篇」比「可用性篇」晚发四年。
   ④ 最便宜的三条发表路线，全部无需新招募：
-       a) 只写协议（华人微信干预 e40171）——零参与者。
-       b) 换一种语言/国家再测一遍（iSupport 葡/瑞/日；CIRCA-BC 加拿大）。
+       a) 只写协议（WECARE 微信干预 e40171）——零参与者，且它后来还发了试点篇。
+       b) 换一种语言/国家再测一遍（iSupport 葡/瑞/日；CIRCA-BC 不列颠哥伦比亚版）。
        c) 换一个价值观镜头重写同一批数据（魁北克「社会正义设计」）。
-  ⑤ 方法名可以不报。韩国三个项目只写「App 开发 + 可用性测试」就见刊。
+  ⑤ 招募可以找替身。CIRCA-BC 的 39 位「共同设计者」全是无失智的普通老人，
+     真正的失智患者只在最后试点里出现 3 位。招募成本砍九成，方法名一字不改。
+  ⑥ 已核实的最低成本完整样本（mWITH ME 2026）：理论拼装 + 18 人访谈 + 20 人用 3 周
+     + 一份李克特问卷 = 一篇 SCI。这就是我们要复制的规格，不多做一格。
 `}</pre>
         </div>
       </section>
