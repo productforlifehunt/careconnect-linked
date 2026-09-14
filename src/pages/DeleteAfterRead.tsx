@@ -1138,7 +1138,7 @@ type Derivation = {
   url: string;
   cite: string;
   n: string;
-  dt: string[];
+  dt: string;
   device: string;
   procedure: string[];
   output: string;
@@ -1153,7 +1153,7 @@ const derivations: Derivation[] = [
     url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC10632915/",
     cite: "JMIR Aging 2023;6:e49319 · PMID 37878353 · PMC10632915 · 英文期刊、同行评审",
     n: "问卷 464 名家庭照护者；从中抽 10 人做深度半结构化访谈（原文明确写 10/464）",
-    dt: ["E 同理", "D 定义"],
+    dt: "ED",
     device:
       "说服式系统设计模型（Persuasive System Design, Oinas-Kukkonen & Harjumaa）。他们把访谈里归纳出的需求逐条挂到 PSD 的固定词条上——reduction（减少步骤）、tailoring（按人群定制）、personalization（个人化）、reminders（提醒）、suggestions（建议）、trustworthiness（可信度）、social learning（社会学习）。这是全类里最漂亮的一台装置：设计其实是从一张现成词表里挑出来的，读起来却像从数据里长出来的。",
     procedure: [
@@ -1177,7 +1177,7 @@ const derivations: Derivation[] = [
     url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC4419890/",
     cite: "AMIA Annu Symp Proc 2014:1960–1969 · PMC4419890 · 英文、同行评审会议论文集（注：这是 proceedings，不是期刊，收进来只作方法参考）",
     n: "摘要写 10 名远距家庭照护者，正文招募段写 11 名——原文自己不一致，此处照实标注，不替它选一个数字",
-    dt: ["E 同理", "P 原型"],
+    dt: "EP",
     device:
       "把原型当访谈刺激物。他们先用四种来源（既有文献、既有智能家居项目数据、临床顾问意见、团队设想）拼出一个 PowerPoint 做的可点击假界面，访谈时给受访者边点边说，需求于是不是凭空回忆，而是对着具体屏幕提出来的。一份 PPT 同时占住 P 原型格和 E 同理格。",
     procedure: [
@@ -1200,7 +1200,7 @@ const derivations: Derivation[] = [
     url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC6453092/",
     cite: "J Rehabil Assist Technol Eng 2017;4:2055668317710593 · doi 10.1177/2055668317710593 · PMID 31186930 · 英文期刊、同行评审",
     n: "研究一：8 位轻度失智者 + 10 位家庭照护者（4 组焦点小组）；研究二：5 位轻度失智者（编号 1–5），两次相隔约两周的小组",
-    dt: ["E 同理", "D 定义", "T 测试"],
+    dt: "EDT",
     device:
       "借用一个已有名字的访谈工具当提纲：职业表现史访谈荷兰版（OPHI-II-NL）。它本来是作业治疗的评估工具，被拿来结构化「过去有意义的活动 / 现在的活动 / 自我管理」这三个问题域。省掉自己设计提纲的活，方法段还多一个带引用的方法名。",
     procedure: [
@@ -1225,7 +1225,7 @@ const derivations: Derivation[] = [
     url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC13134223/",
     cite: "BMC Med Inform Decis Mak 2026;26:151 · PMC13134223 · 英文期刊、同行评审",
     n: "第二阶段半结构化访谈 18 人；第三阶段初步评估 20 人、使用 3 周",
-    dt: ["E 同理", "D 定义", "P 原型", "T 测试"],
+    dt: "EDPT",
     device:
       "理论框架先行。先搭好理论骨架（需求导向的循证医学思路 + 马斯洛需求层次），访谈资料再往这个骨架上归类，于是「五大主题」几乎必然对应到四个功能模块。结论在访谈之前就大致确定了——这是全类里最省的一台装置。",
     procedure: [
@@ -1247,7 +1247,7 @@ const derivations: Derivation[] = [
     url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC12424210/",
     cite: "BMC Nursing 2025;24 · doi 10.1186/s12912-025-03868-2 · PMC12424210 · 英文期刊、同行评审",
     n: "7 名家庭照护者（5 男 2 女，24–58 岁，均值 38.3）；访谈 35.0–77.8 分钟，其中出声思维段 6.9–27.3 分钟",
-    dt: ["E 同理", "D 定义", "P 原型", "T 测试"],
+    dt: "EDPT",
     device:
       "设计科学研究（Design Science Research）的阶段模板：问题识别 → 需求 → 设计与实例化 → 演示与评估 → 沟通。最后一阶段「沟通」的产出物被写成「N 条设计原则」——这是 DSR 独有的便宜之处：7 个人就能合法产出 7 条原则，而「原则」听起来比「7 人访谈结论」重得多。理论支撑用家庭韧性框架（Family Resilience Framework）与「反学习（unlearning）」概念。",
     procedure: [
