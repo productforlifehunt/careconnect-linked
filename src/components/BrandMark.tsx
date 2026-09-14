@@ -38,7 +38,7 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
         style={box}
         className="rounded-[24%] bg-primary flex items-center justify-center leading-none shadow-sm overflow-hidden"
       >
-        {/* App-style bold D mark — single clean shape, no tiny text inside the icon */}
+        {/* App-style bold D mark with small wordmark inside the icon border */}
         <svg
           viewBox="0 0 48 48"
           role="img"
@@ -50,6 +50,18 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
             fill="currentColor"
             d="M14 9 h14 c7.7 0 12 5.8 12 13.5 s-4.3 13.5 -12 13.5 h-14 c-2 0 -3 -1 -3 -3 v-21 c0 -2 1 -3 3 -3 z"
           />
+          <text
+            x="24"
+            y="42"
+            textAnchor="middle"
+            fill="currentColor"
+            fontSize="5"
+            fontWeight="800"
+            fontFamily="system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+            letterSpacing="-0.3"
+          >
+            ChallengeD
+          </text>
         </svg>
       </div>
     );
