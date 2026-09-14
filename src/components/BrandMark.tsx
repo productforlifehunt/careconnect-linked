@@ -57,7 +57,7 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
           </g>
           <text
             x="24"
-            y="40.5"
+            y="38.5"
             textAnchor="middle"
             dominantBaseline="middle"
             fill="currentColor"
