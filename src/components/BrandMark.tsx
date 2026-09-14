@@ -46,8 +46,8 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
           className="text-primary-foreground"
           style={{ width: size * 0.62, height: size * 0.62 }}
         >
-          {/* D mark — scaled down and raised so the wordmark below is readable */}
-          <g transform="translate(5, 1) scale(0.78)">
+          {/* D mark — shrunk and raised to make room for the wordmark */}
+          <g transform="translate(8, 0) scale(0.6)">
             <path
               fill="currentColor"
               d="M14 9 h14 c7.7 0 12 5.8 12 13.5 s-4.3 13.5 -12 13.5 h-14 c-2 0 -3 -1 -3 -3 v-21 c0 -2 1 -3 3 -3 z"
@@ -55,13 +55,13 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
           </g>
           <text
             x="24"
-            y="40"
+            y="42"
             textAnchor="middle"
             fill="currentColor"
-            fontSize="8"
+            fontSize="11"
             fontWeight="800"
-            fontFamily="system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
-            letterSpacing="-0.7"
+            fontFamily="'Arial Narrow', Impact, 'Helvetica Condensed', system-ui, sans-serif"
+            letterSpacing="-0.8"
           >
             ChallengeD
           </text>
