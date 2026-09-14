@@ -1266,7 +1266,7 @@ export default function DeleteAfterRead() {
               <div className="space-y-3 rounded-lg border border-border/60 p-4">
                 <div><div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">研究目的</div><p className="text-sm">{p.purpose}</p></div>
                 <div><div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">招募与参与者</div><p className="text-sm">{p.recruitment}</p></div>
-                <div><div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">实际执行：按时间顺序</div><ol className="list-decimal space-y-1 pl-5 text-sm">{p.procedure?.map((step, i) => <li key={i}>{step}</li>)}</ol></div>
+                <div><div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">实际执行：按时间顺序（每步已归入五步法的哪一格）</div><StepList steps={p.procedure ?? []} /></div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="rounded-lg bg-muted/40 p-3 text-sm"><div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">工具与测量</div>{p.measures}</div>
                   <div className="rounded-lg bg-muted/40 p-3 text-sm"><div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">分析方法</div>{p.analysis}</div>
