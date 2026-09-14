@@ -46,19 +46,22 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
           className="text-primary-foreground"
           style={{ width: size * 0.62, height: size * 0.62 }}
         >
-          <path
-            fill="currentColor"
-            d="M14 9 h14 c7.7 0 12 5.8 12 13.5 s-4.3 13.5 -12 13.5 h-14 c-2 0 -3 -1 -3 -3 v-21 c0 -2 1 -3 3 -3 z"
-          />
+          {/* D mark — scaled down and raised so the wordmark below is readable */}
+          <g transform="translate(5, 1) scale(0.78)">
+            <path
+              fill="currentColor"
+              d="M14 9 h14 c7.7 0 12 5.8 12 13.5 s-4.3 13.5 -12 13.5 h-14 c-2 0 -3 -1 -3 -3 v-21 c0 -2 1 -3 3 -3 z"
+            />
+          </g>
           <text
             x="24"
-            y="42"
+            y="40"
             textAnchor="middle"
             fill="currentColor"
-            fontSize="5"
+            fontSize="8"
             fontWeight="800"
             fontFamily="system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
-            letterSpacing="-0.3"
+            letterSpacing="-0.7"
           >
             ChallengeD
           </text>
