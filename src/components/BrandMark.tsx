@@ -38,48 +38,36 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
         style={box}
         className="rounded-[24%] bg-primary flex items-center justify-center leading-none shadow-sm overflow-hidden"
       >
-        {/* Hollow D with "ChallengeD" filling the counter between the letter and its border */}
+        {/* Keep the original D centered; place the wordmark beneath it inside the icon border. */}
         <svg
           viewBox="0 0 48 48"
           role="img"
           aria-label="ChallengeD"
           className="text-primary-foreground"
-          style={{ width: size * 0.62, height: size * 0.62 }}
+          style={box}
         >
-          {/* Thick D outline — the interior counter stays empty so the wordmark sits inside it */}
-          <path
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="4.5"
-            strokeLinejoin="round"
-            d="M14 9 h14 c7.7 0 12 5.8 12 13.5 s-4.3 13.5 -12 13.5 h-14 c-2 0 -3 -1 -3 -3 v-21 c0 -2 1 -3 3 -3 z"
-          />
-          {/* Wordmark stacked inside the hollow D, large enough to read */}
+          <g transform="translate(9.12 9.12) scale(0.62)">
+            <path
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="4.5"
+              strokeLinejoin="round"
+              d="M14 9 h14 c7.7 0 12 5.8 12 13.5 s-4.3 13.5 -12 13.5 h-14 c-2 0 -3 -1 -3 -3 v-21 c0 -2 1 -3 3 -3 z"
+            />
+          </g>
           <text
             x="24"
-            y="20.5"
+            y="42.5"
             textAnchor="middle"
             dominantBaseline="middle"
             fill="currentColor"
-            fontSize="7"
-            fontWeight="800"
+            fontSize="8.5"
+            fontWeight="900"
             fontFamily="'Arial Narrow', Impact, 'Helvetica Condensed', system-ui, sans-serif"
-            letterSpacing="-0.15"
+            textLength="42"
+            lengthAdjust="spacingAndGlyphs"
           >
-            Chall
-          </text>
-          <text
-            x="24"
-            y="30.5"
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fill="currentColor"
-            fontSize="7"
-            fontWeight="800"
-            fontFamily="'Arial Narrow', Impact, 'Helvetica Condensed', system-ui, sans-serif"
-            letterSpacing="-0.15"
-          >
-            engeD
+            ChallengeD
           </text>
         </svg>
       </div>
