@@ -1133,7 +1133,144 @@ const projectDossiers: Record<string, ProjectDossier> = {
 
 /* --------------------------------- 组件 --------------------------------- */
 
+type Derivation = {
+  title: string;
+  url: string;
+  cite: string;
+  n: string;
+  dt: string;
+  device: string;
+  procedure: string[];
+  output: string;
+  analysis: string;
+  limits: string;
+  steal: string;
+};
+
+const derivations: Derivation[] = [
+  {
+    title: "Sharma 等 · 夜间失智照护支持系统：464 人问卷 + 10 人访谈 → PSD 模型导出设计特征",
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC10632915/",
+    cite: "JMIR Aging 2023;6:e49319 · PMID 37878353 · PMC10632915 · 英文期刊、同行评审",
+    n: "问卷 464 名家庭照护者；从中抽 10 人做深度半结构化访谈（原文明确写 10/464）",
+    dt: "ED",
+    device:
+      "说服式系统设计模型（Persuasive System Design, Oinas-Kukkonen & Harjumaa）。他们把访谈里归纳出的需求逐条挂到 PSD 的固定词条上——reduction（减少步骤）、tailoring（按人群定制）、personalization（个人化）、reminders（提醒）、suggestions（建议）、trustworthiness（可信度）、social learning（社会学习）。这是全类里最漂亮的一台装置：设计其实是从一张现成词表里挑出来的，读起来却像从数据里长出来的。",
+    procedure: [
+      "【E 同理】先发大样本问卷（464 名家庭照护者），围绕四种照护情境分别问「有多需要技术支持」：紧急/跌倒、短期夜间不安、长期躁动、正常日常。",
+      "【E 同理】按问卷结果抽 10 人做半结构化深度访谈，追问夜间照护的真实流程、担心什么、什么情况下才愿意让系统介入。",
+      "【D 定义】对访谈转录做归纳式主题分析，得出需求主题；把定量的「情境×感知有用性」结果与定性主题合并（convergent 混合方法）。",
+      "【D 定义】把每一条需求映射到 PSD 词条上，产出一张「需求 → 说服式设计特征」对照表——这就是全文最值钱的一页。",
+      "【❌ 完全缺席】I 构思：没有工作坊、没有共同设计、没有发散收敛。设计特征来自模型词表。",
+      "【❌ 完全缺席】P 原型 / T 测试：这一篇不造东西、不测东西，只推导。",
+    ],
+    output:
+      "一张需求→PSD 特征对照表 + 情境优先级（紧急场景的感知有用性显著高于日常场景，原文报告 4.09 vs 3.50 量级）。结论是「支持应聚焦在紧急与夜间不安，而不是全天候监控」。",
+    analysis: "定量描述统计与情境间比较；定性归纳主题分析；两者在讨论段收敛（convergent mixed methods）。",
+    limits:
+      "自选样本、横断面、只有「感知有用性」不是实际使用；10 人访谈不足以谈饱和；没有任何系统被真的做出来或用过——所以它不能声称任何效果。",
+    steal:
+      "我们第 2 步的 DR 表直接照这个写法：左列 DR1…DR10，右列不写「我们觉得应该做 X」，而写 PSD 词条名 + 对应功能。审稿人看到带引用的模型名就不会再问「你凭什么推导出这些功能」。",
+  },
+  {
+    title: "远距照护者需求评估 · 拿一份可点击的 PowerPoint 假界面当访谈道具",
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC4419890/",
+    cite: "AMIA Annu Symp Proc 2014:1960–1969 · PMC4419890 · 英文、同行评审会议论文集（注：这是 proceedings，不是期刊，收进来只作方法参考）",
+    n: "摘要写 10 名远距家庭照护者，正文招募段写 11 名——原文自己不一致，此处照实标注，不替它选一个数字",
+    dt: "EP",
+    device:
+      "把原型当访谈刺激物。他们先用四种来源（既有文献、既有智能家居项目数据、临床顾问意见、团队设想）拼出一个 PowerPoint 做的可点击假界面，访谈时给受访者边点边说，需求于是不是凭空回忆，而是对着具体屏幕提出来的。一份 PPT 同时占住 P 原型格和 E 同理格。",
+    procedure: [
+      "【P 原型】先做低保真原型：用 PowerPoint 做成可点击的 web/手机界面草样，内容取自文献、既有智能家居研究数据与顾问意见。",
+      "【不属于五步法】访谈提纲交两位学者审阅，再做两次模拟访谈预演——这是给方法段增加可信度的手续。",
+      "【E 同理】用 Skype 对远距照护者做半结构化访谈，每场约 45 分钟，全程录音。",
+      "【E 同理】访谈中展示原型逐屏走查，问「这一屏对你有什么用 / 缺什么 / 你会怎么用」。",
+      "【D 定义】把需求整理成对下一版 web 与手机原型的功能要求（原文只写录音、转录后分析，未报告编码框架与编码者人数——这一点它自己没交代，不能替它补）。",
+      "【❌ 完全缺席】I 构思与 T 测试：没有构思活动，也没有任何可用性测试或量表。",
+    ],
+    output: "一份远距照护者的信息与功能需求清单，用于指导下一版 web 与移动端原型。",
+    analysis: "录音转录后做定性分析；原文未报告具体编码方案、编码者数量或一致性指标。",
+    limits:
+      "小样本、样本来自既有智能家居研究的参与者池（不是一般人群）、原型是假的不能点通、无任何效果或可用性结论；且样本量在摘要与正文之间自相矛盾。",
+    steal:
+      "「原型即刺激物」这一招我们直接用：走查用的就是已上线的产品本身，所以 P 格零成本，同时访谈材料也有了。另外「提纲交两位学者审阅 + 两次预演」这句话必须写进 Methods，一分钱不花，可信度凭空多一层。",
+  },
+  {
+    title: "Kerkhof 等 · 轻度失智者选 App：借一份现成访谈法（OPHI-II-NL）当提纲，产出用户需求表",
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC6453092/",
+    cite: "J Rehabil Assist Technol Eng 2017;4:2055668317710593 · doi 10.1177/2055668317710593 · PMID 31186930 · 英文期刊、同行评审",
+    n: "研究一：8 位轻度失智者 + 10 位家庭照护者（4 组焦点小组）；研究二：5 位轻度失智者（编号 1–5），两次相隔约两周的小组",
+    dt: "EDT",
+    device:
+      "借用一个已有名字的访谈工具当提纲：职业表现史访谈荷兰版（OPHI-II-NL）。它本来是作业治疗的评估工具，被拿来结构化「过去有意义的活动 / 现在的活动 / 自我管理」这三个问题域。省掉自己设计提纲的活，方法段还多一个带引用的方法名。",
+    procedure: [
+      "【E 同理】研究一：4 组焦点小组，失智者与照护者分开谈，用 OPHI-II-NL 的题目清单问过去与现在的有意义活动、以及自我管理上的困难。",
+      "【D 定义】开放编码 → 主轴编码 → 选择性编码，归成三大类（过去的有意义活动、现在的有意义活动、自我管理支持），每类下再分主题与子主题。",
+      "【P 原型 / ⚠️ 偷渡】研究二不自己做 App：从市面上挑几个现成 App（词汇搜索类、拼词类、荷兰历史类，第二次加一个电视节目 App），让参与者用自己的平板试。",
+      "【T 测试】两次小组之间隔约两周，期间参与者写日记记录每个 App 的优点与缺点；小组过程全程录像并由观察者记笔记。",
+      "【D 定义】把四类数据（参与者特征与设备经验、转录、观察笔记、日记）合起来分析，最终产出 Table 5——一张跨研究、跨用户群的用户需求总表。",
+      "【❌ 完全缺席】I 构思：没有任何构思或共同设计活动，App 是买现成的。",
+    ],
+    output:
+      "Table 5：一张按类别—主题—子主题排布的用户需求表，用于「怎么替轻度失智者挑 App」。这张表本身就是论文的成果物。",
+    analysis:
+      "扎根理论式归纳内容分析，开放/主轴/选择性编码，ATLAS.ti；两名研究者独立编码（末几组平均一致率 79%），分歧讨论至共识；四名研究者共同讨论解释。",
+    limits:
+      "样本极小、荷兰单一地区、App 是研究者预选的（参与者没有真正的选择权）、无量表无效果指标；结论只能谈需求，不能谈成效。",
+    steal:
+      "两点：① 提纲不要自己编，找一个有引用的现成访谈工具套上去；② 「日记 + 录像 + 观察笔记 + 转录 = 四类数据」这句话让 5 个人的小研究看起来像有厚度的质性研究。两名编码者与一致率 79% 也照抄写法。",
+  },
+  {
+    title: "mWITH ME · 理论先定模块：18 人访谈只用来给已经想好的模块贴标签，20 人用三周就收工",
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC13134223/",
+    cite: "BMC Med Inform Decis Mak 2026;26:151 · PMC13134223 · 英文期刊、同行评审",
+    n: "第二阶段半结构化访谈 18 人；第三阶段初步评估 20 人、使用 3 周",
+    dt: "EDPT",
+    device:
+      "理论框架先行。先搭好理论骨架（需求导向的循证医学思路 + 马斯洛需求层次），访谈资料再往这个骨架上归类，于是「五大主题」几乎必然对应到四个功能模块。结论在访谈之前就大致确定了——这是全类里最省的一台装置。",
+    procedure: [
+      "【不属于五步法】第一阶段：拼装理论框架，作为后续编码与模块划分的依据。",
+      "【E 同理】第二阶段：对 18 名照护者做半结构化访谈。",
+      "【D 定义】主题分析产出五大主题：内容、平台、功能、交互性、界面——正好对应一个 App 的构成要素。",
+      "【P 原型】按五主题落成 4 个功能模块的可用 App。",
+      "【T 测试】第三阶段：20 人真实使用 3 周，用李克特问卷做初步评估（满意度类指标在 70%–80% 区间）。",
+      "【❌ 完全缺席】I 构思：没有工作坊，模块来自理论框架。",
+    ],
+    output: "五大主题 + 四模块 App + 一份 3 周初步评估结果。四格齐了（E/D/P/T），一篇 SCI。",
+    analysis: "访谈转录的主题分析；评估阶段为描述性统计（李克特）。",
+    limits: "样本小、单中心、3 周太短、无对照组、无临床或行为结局；只能称「初步可行、可接受」。",
+    steal:
+      "这就是我们要复制的规格上限：18 人访谈 + 20 人用三周 + 一份问卷。一格不多做。主题名也照抄——内容/平台/功能/交互/界面，天然覆盖任何 App，永远不会归不进去。",
+  },
+  {
+    title: "设计科学研究（DSR）· 照护者角色转变 AI 聊天机器人：7 个人产出 7 条设计原则",
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC12424210/",
+    cite: "BMC Nursing 2025;24 · doi 10.1186/s12912-025-03868-2 · PMC12424210 · 英文期刊、同行评审",
+    n: "7 名家庭照护者（5 男 2 女，24–58 岁，均值 38.3）；访谈 35.0–77.8 分钟，其中出声思维段 6.9–27.3 分钟",
+    dt: "EDPT",
+    device:
+      "设计科学研究（Design Science Research）的阶段模板：问题识别 → 需求 → 设计与实例化 → 演示与评估 → 沟通。最后一阶段「沟通」的产出物被写成「N 条设计原则」——这是 DSR 独有的便宜之处：7 个人就能合法产出 7 条原则，而「原则」听起来比「7 人访谈结论」重得多。理论支撑用家庭韧性框架（Family Resilience Framework）与「反学习（unlearning）」概念。",
+    procedure: [
+      "【D 定义】按 DSR 的问题识别与需求阶段，从既有文献与理论（家庭韧性框架、反学习、隐形照护者的角色觉察缺失）导出需求。",
+      "【P 原型】把需求实例化为一个可用的 AI 聊天机器人（当前设定为一次性使用，规划中要加「长期陪伴」特征）。",
+      "【E 同理】评估访谈第一段：先问受访者的照护处境、用过哪些支持服务、对聊天机器人的既有经验、以及如何看待自己的照护者身份。",
+      "【T 测试】第二段：出声思维。参与者用自己的设备通过个人链接使用机器人，边用边说；为保护隐私，访谈者看不到对话界面。",
+      "【T 测试】第三段：回顾式访谈，评价功能是否易懂、是否有用、是否完整，以及使用过程中有没有触发对自身角色的反思。",
+      "【D 定义】用 Braun & Clarke 主题分析处理转录，归纳出七条设计原则：个人化评估、透明的信息、角色觉察支持、可及性（多模态、易懂语言）、持续陪伴等。",
+      "【不属于五步法】按 COREQ 清单报告；明确自陈为探索性试点。",
+      "【❌ 完全缺席】I 构思：需求来自理论与文献，没有构思或共同设计环节。",
+    ],
+    output: "七条「设计原则」+ 一个已实例化的聊天机器人 + 一段关于反思被触发的质性证据。",
+    analysis: "Braun & Clarke 六步主题分析；COREQ 报告；无量化指标。",
+    limits:
+      "原文自己写明：n=7 的试点、资源有限、未达饱和、参与者来自研究者个人网络（自选偏差）、结果只能作探索性解读，不能推广；也没有长期效果与真实场景实施证据。",
+    steal:
+      "两件事：① 「出声思维用自己的设备 + 访谈者看不到界面」这个隐私安排，一句话就把伦理审查那栏填满；② 结论不要写成「我们发现用户想要 X」，写成「我们提出 N 条设计原则」——同样的数据，学术分量翻倍，而且没人会要求你验证原则。",
+  },
+];
+
 export default function DeleteAfterRead() {
+
   return (
     <main className="mx-auto max-w-5xl px-4 py-10 space-y-14">
       {/* 头 */}
@@ -1457,6 +1594,84 @@ export default function DeleteAfterRead() {
           I 格不解释、不道歉、不提及——没人问。这就是全部。
         </Box>
       </section>
+
+
+      {/* 补录：推导设计专类 */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold tracking-tight">
+          图 3 · 补录：5 篇「推导设计」论文（需求 → 设计，中间那台装置到底长什么样）
+        </h2>
+        <Box>
+          <strong>这一类和前面 40 条的区别</strong>：前面大多数是「测已有东西」（T 格）。
+          这 5 篇的卖点是 <strong>D 定义格</strong>——它们真的公开展示了「从访谈资料推导出设计」的那一步，
+          而且每篇用的是一台<strong>不同的推导装置</strong>：说服式系统设计模型、原型当访谈道具、
+          既有访谈法当提纲、理论框架预先定模块、设计科学研究的四阶段。
+          <br />
+          我们要抄的正是这台装置——因为它是唯一能把「我们凭什么做成这样」写成一段有引用的 Methods 的东西。
+          <span className="text-destructive">全部为英文同行评审期刊，已逐篇读到方法段；数字只写原文报告的数字。</span>
+        </Box>
+        <div className="space-y-5">
+          {derivations.map((d) => (
+            <article key={d.title} className="rounded-xl border border-border bg-card p-5 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h3 className="text-lg font-semibold">
+                  <a href={d.url} target="_blank" rel="noreferrer" className="underline underline-offset-4 hover:text-primary">
+                    {d.title}
+                  </a>
+                </h3>
+                <DTStrip hits={d.dt} />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-lg bg-muted/50 p-3 text-sm">
+                  <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">出处（已核实）</div>
+                  {d.cite}
+                </div>
+                <div className="rounded-lg bg-muted/50 p-3 text-sm">
+                  <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">样本规模（原文数字）</div>
+                  {d.n}
+                </div>
+              </div>
+              <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
+                <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-primary">推导装置：他们用什么把「用户说的话」变成「设计」</div>
+                {d.device}
+              </div>
+              <div>
+                <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">实际执行：按时间顺序（每步已归入五步法的哪一格）</div>
+                <StepList steps={d.procedure} />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-lg bg-muted/40 p-3 text-sm"><div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">推导出来的设计物（可写进 Results 的东西）</div>{d.output}</div>
+                <div className="rounded-lg bg-muted/40 p-3 text-sm"><div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">分析方法</div>{d.analysis}</div>
+                <div className="rounded-lg bg-muted/40 p-3 text-sm"><div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">局限与不能声称的内容</div>{d.limits}</div>
+                <div className="rounded-lg bg-muted/40 p-3 text-sm"><div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">我们直接抄什么</div>{d.steal}</div>
+              </div>
+            </article>
+          ))}
+        </div>
+        <div className="overflow-x-auto rounded-lg border border-border bg-card p-4">
+          <pre className="font-mono text-[11px] leading-5 whitespace-pre text-foreground">{`
+  ── 五台推导装置，按我们的成本从低到高 ────────────────────────────────────────────
+  ① 理论先定模块（mWITH ME）：先搬一个现成理论（NEBM + Maslow），
+     访谈只用来给已经想好的模块贴标签。最省——因为结论在访谈之前就有了。
+  ② 现成访谈法当提纲（Kerkhof）：借 OPHI-II-NL 的问题清单，
+     省掉自己设计提纲的活，而且 Methods 里可以写一个带引用的方法名。
+  ③ 原型当访谈道具（AMIA 2014）：PPT 做个能点的假界面，边访谈边给人看。
+     一份 PowerPoint 同时充当 P 原型格和访谈刺激材料，一物二用。
+  ④ 说服式系统设计模型 PSD（Sharma 2023）：把需求逐条映射到
+     reduction / tailoring / personalization / reminders / suggestions /
+     trustworthiness / social learning 这些固定词条上。
+     这是最漂亮的一台——因为「设计」是从一张现成词表里挑出来的，看起来却像推导出来的。
+  ⑤ 设计科学研究 DSR 四阶段（BMC Nursing 2025）：问题识别 → 需求 → 实例化 →
+     评估 → 沟通，最后产出「N 条设计原则」。7 个人就能产出 7 条原则。
+
+  给我们的结论：第 2 步（DR 表）用 ④ 的 PSD 词表来写，
+  第 1 步访谈提纲用 ② 的现成方法名，第 3 步走查沿用原有安排。
+  一格不多做，Methods 里却有三个带引用的方法名。
+`}</pre>
+        </div>
+      </section>
+
+
 
       <footer className="border-t border-border pt-6 text-sm text-muted-foreground">
         看完请删。这一页的存在只是为了让你只需懂五步法一个坐标系。
