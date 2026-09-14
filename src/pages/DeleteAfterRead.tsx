@@ -1386,10 +1386,8 @@ export default function DeleteAfterRead() {
                     <p className="text-sm">{projectDossiers[pr.name].participants}</p>
                   </div>
                   <div>
-                    <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">具体怎么做：完整时间顺序</div>
-                    <ol className="list-decimal space-y-1 pl-5 text-sm">
-                      {projectDossiers[pr.name].procedure.map((step, i) => <li key={i}>{step}</li>)}
-                    </ol>
+                    <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">具体怎么做：完整时间顺序（每步已归入五步法的哪一格）</div>
+                    <StepList steps={projectDossiers[pr.name].procedure} />
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="rounded-lg bg-muted/40 p-3 text-sm"><div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">工具与测量</div>{projectDossiers[pr.name].measures}</div>
