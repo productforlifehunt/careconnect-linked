@@ -50,21 +50,21 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
             <path
               fill="none"
               stroke="currentColor"
-              strokeWidth="4.5"
+              strokeWidth="6.5"
               strokeLinejoin="round"
               d="M14 9 h14 c7.7 0 12 5.8 12 13.5 s-4.3 13.5 -12 13.5 h-14 c-2 0 -3 -1 -3 -3 v-21 c0 -2 1 -3 3 -3 z"
             />
           </g>
           <text
             x="24"
-            y="42.5"
+            y="41.5"
             textAnchor="middle"
             dominantBaseline="middle"
             fill="currentColor"
-            fontSize="8.5"
+            fontSize="8"
             fontWeight="900"
             fontFamily="'Arial Narrow', Impact, 'Helvetica Condensed', system-ui, sans-serif"
-            textLength="42"
+            textLength="38"
             lengthAdjust="spacingAndGlyphs"
           >
             ChallengeD
