@@ -58,6 +58,36 @@ const DTStrip = ({ hits }: { hits: string }) => (
   </div>
 );
 
+/* 每一步都带 Design Thinking 归格标签：字符串写成「【E 同理】具体做了什么」 */
+const StepList = ({ steps }: { steps: string[] }) => (
+  <ol className="space-y-2 text-sm">
+    {steps.map((raw, i) => {
+      const m = raw.match(/^【([^】]+)】\s*(.*)$/s);
+      const tag = m?.[1] ?? "未归格";
+      const body = m?.[2] ?? raw;
+      const dead = tag.includes("不属于") || tag.includes("未归格");
+      return (
+        <li key={i} className="flex gap-2">
+          <span className="mt-0.5 font-mono text-xs text-muted-foreground">{String(i + 1).padStart(2, "0")}</span>
+          <span>
+            <span
+              className={
+                "mr-2 inline-block rounded border px-1.5 py-0.5 align-[1px] text-[11px] font-bold " +
+                (dead
+                  ? "border-dashed border-border text-muted-foreground"
+                  : "border-primary/40 bg-primary/10 text-primary")
+              }
+            >
+              {tag}
+            </span>
+            {body}
+          </span>
+        </li>
+      );
+    })}
+  </ol>
+);
+
 /* ---------------------------------- 数据 ---------------------------------- */
 
 type Paper = {
