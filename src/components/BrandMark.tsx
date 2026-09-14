@@ -46,25 +46,24 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
           className="text-primary-foreground"
           style={{ width: size * 0.62, height: size * 0.62 }}
         >
-          {/* D mark — shrunk and raised to make room for the wordmark */}
-          <g transform="translate(8, 0) scale(0.6)">
-            <path
-              fill="currentColor"
-              d="M14 9 h14 c7.7 0 12 5.8 12 13.5 s-4.3 13.5 -12 13.5 h-14 c-2 0 -3 -1 -3 -3 v-21 c0 -2 1 -3 3 -3 z"
-            />
-          </g>
+          {/* Large wordmark behind the D; D stays centered at original size on top */}
           <text
             x="24"
-            y="42"
+            y="31"
             textAnchor="middle"
             fill="currentColor"
-            fontSize="11"
+            fontSize="10"
             fontWeight="800"
             fontFamily="'Arial Narrow', Impact, 'Helvetica Condensed', system-ui, sans-serif"
-            letterSpacing="-0.8"
+            letterSpacing="0.6"
+            opacity="0.95"
           >
             ChallengeD
           </text>
+          <path
+            fill="currentColor"
+            d="M14 9 h14 c7.7 0 12 5.8 12 13.5 s-4.3 13.5 -12 13.5 h-14 c-2 0 -3 -1 -3 -3 v-21 c0 -2 1 -3 3 -3 z"
+          />
         </svg>
       </div>
     );
