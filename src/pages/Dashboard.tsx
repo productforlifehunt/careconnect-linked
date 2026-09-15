@@ -270,7 +270,7 @@ export default function Dashboard() {
               <button
                 key={tk.id}
                 type="button"
-                onClick={() => navigate("/care-circle?tab=tasks")}
+                onClick={() => navigate("/care-circle")}
                 className="w-full text-left flex items-center gap-3 p-2 rounded-lg bg-muted/40 hover:bg-muted transition-colors"
               >
                 <CheckCircle className={`h-4 w-4 shrink-0 ${tk.status === "completed" ? "text-success" : "text-muted-foreground"}`} />
