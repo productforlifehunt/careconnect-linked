@@ -128,19 +128,6 @@ export default function Dashboard() {
   };
 
   const paidCare = site.features.paidCaregivers;
-  const quickTools = [
-    ...(paidCare ? [{ icon: ShoppingBag, label: t("nav.findHelp", { defaultValue: "Marketplace" }), to: "/search", color: "text-coral" }] : []),
-    { icon: MapPin,      label: t("dashboard.gpsTrack", { defaultValue: "GPS" }),    to: "/find", color: "text-primary" },
-    { icon: CalIcon,     label: t("nav.calendar", { defaultValue: "Calendar" }),     to: "/calendar", color: "text-success" },
-    { icon: MessageSquare, label: t("nav.messages", { defaultValue: "Messages" }),   to: "/inbox?tab=messages", color: "text-coral" },
-    ...(paidCare ? [{ icon: Briefcase, label: t("nav.bookings", { defaultValue: "Bookings" }), to: "/bookings", color: "text-primary" }] : []),
-    { icon: Users,       label: careGroupsLabel,                                        to: "/care-circle", color: "text-success" },
-    ...(isChallenged
-      ? [{ icon: BookOpen, label: t("nav.resources", { defaultValue: "Resources" }), to: "/resources", color: "text-primary" }]
-      : []),
-    { icon: Bell,        label: t("nav.notifications", { defaultValue: "Alerts" }), to: "/inbox?tab=notifications", color: "text-warning" },
-    { icon: Wand2,    label: isChallenged ? t("nav.aiCompanion", { defaultValue: "AI Companion" }) : (isChinese ? "AI助手" : "AI Assistant"), to: "/ai-companion", color: "text-primary" },
-  ];
 
   // Placeholder that holds a widget's slot while its data loads, so the
   // dashboard never re-shuffles blocks as requests finish at different times.
@@ -237,7 +224,11 @@ export default function Dashboard() {
                 </div>
               ))
             ) : upcomingBookings.length > 0 ? upcomingBookings.map((b: any) => (
-              <div key={b.id} className="flex items-center gap-3 p-2 rounded-lg bg-muted/40">
+              <button
+                key={b.id}
+                type="button"
+                onClick={() => navigate("/bookings")}
+                className="w-full text-left flex items-center gap-3 p-2 rounded-lg bg-muted/40 hover:bg-muted transition-colors">
                 <div className="text-center shrink-0 w-10">
                   <p className="text-[10px] text-muted-foreground">{formatDate(b.appointment_date || b.start_time || b.created_at, i18n.language, { month: "short" })}</p>
                   <p className="text-base font-bold text-foreground leading-none">{new Date(b.appointment_date || b.start_time || b.created_at).getDate()}</p>
@@ -247,7 +238,7 @@ export default function Dashboard() {
                   <p className="text-[11px] text-muted-foreground truncate">{[b.appointment_time, b.service_type].filter(Boolean).join(" · ")}</p>
                 </div>
                 <Badge className={`${statusColors[b.status] || "bg-muted text-muted-foreground"} text-[10px]`}>{t(`bookings.status.${b.status}`, { defaultValue: String(b.status ?? "") })}</Badge>
-              </div>
+              </button>
             )) : (
               <p className="text-sm text-muted-foreground text-center py-6">{t("dashboard.noUpcomingBookings")}</p>
             )}
@@ -276,7 +267,12 @@ export default function Dashboard() {
                 </div>
               ))
             ) : pendingTasks.length > 0 ? pendingTasks.map((tk: any) => (
-              <div key={tk.id} className="flex items-center gap-3 p-2 rounded-lg bg-muted/40">
+              <button
+                key={tk.id}
+                type="button"
+                onClick={() => navigate("/care-circle?tab=tasks")}
+                className="w-full text-left flex items-center gap-3 p-2 rounded-lg bg-muted/40 hover:bg-muted transition-colors"
+              >
                 <CheckCircle className={`h-4 w-4 shrink-0 ${tk.status === "completed" ? "text-success" : "text-muted-foreground"}`} />
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm text-foreground truncate">{tk.title}</p>
@@ -285,7 +281,8 @@ export default function Dashboard() {
                     {tk.due_date && ` · ${formatDate(tk.due_date, i18n.language, { month: "short", day: "numeric" })}`}
                   </p>
                 </div>
-              </div>
+                <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              </button>
             )) : (
               <p className="text-sm text-muted-foreground text-center py-6">{t("dashboard.noPendingTasks")}</p>
             )}
