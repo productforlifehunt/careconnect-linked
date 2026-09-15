@@ -219,28 +219,6 @@ export default function Dashboard() {
       </div>
     ),
 
-    "quick-actions": (
-      <section>
-        <h2 className="text-sm font-semibold text-foreground mb-2">
-          {t("dashboard.quickActions", { defaultValue: "Quick Tools" })}
-        </h2>
-        <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-1
-          [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-          {quickTools.map((q) => (
-            <button key={q.label} onClick={() => navigate(q.to)}
-              className="shrink-0 w-[72px] flex flex-col items-center gap-1.5 p-2 rounded-xl
-                card-elevated border border-transparent hover:border-primary/30 transition-colors">
-              <div className={`h-9 w-9 rounded-full bg-muted/60 flex items-center justify-center ${q.color}`}>
-                <q.icon className="h-4 w-4" />
-              </div>
-              <span className="text-[10px] text-foreground text-center leading-tight line-clamp-2">
-                {q.label}
-              </span>
-            </button>
-          ))}
-        </div>
-      </section>
-    ),
 
     "upcoming-bookings": paidCare ? (
       <section>
