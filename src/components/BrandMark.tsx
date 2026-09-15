@@ -57,15 +57,14 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
           </g>
           <text
             x="24"
-            y="40"
+            y="40.5"
             textAnchor="middle"
             dominantBaseline="middle"
             fill="currentColor"
-            fontSize="6.25"
-            fontWeight="900"
-            fontFamily="'Arial Narrow', Impact, 'Helvetica Condensed', system-ui, sans-serif"
-            textLength="31"
-            lengthAdjust="spacingAndGlyphs"
+            fontSize="5.25"
+            fontWeight="700"
+            fontFamily="system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+            letterSpacing="0.15"
           >
             ChallengeD
           </text>
