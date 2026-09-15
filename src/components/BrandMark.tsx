@@ -46,7 +46,7 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
           className="text-primary-foreground"
           style={box}
         >
-          <g transform="translate(9.12 7.5) scale(0.62)">
+          <g transform="translate(9.12 5.25) scale(0.62)">
             <path
               fill="none"
               stroke="currentColor"
@@ -57,7 +57,7 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
           </g>
           <text
             x="24"
-            y="38"
+            y="37.25"
             textAnchor="middle"
             dominantBaseline="middle"
             fill="currentColor"
