@@ -56,7 +56,6 @@ const ZH_WIDGET_LABELS: Record<string, string> = {
   "patient-summaries": "被护理者概览",
   "daily-timeline": "每日时间线",
   "stats": "统计概览",
-  "quick-actions": "快捷操作",
   "upcoming-bookings": "即将到来的预约",
   "care-tasks": "护理任务",
   "community-feed": "社区动态",
