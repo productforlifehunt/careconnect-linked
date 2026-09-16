@@ -37,12 +37,13 @@ export async function fetchUserCaredOnesWordPress(): Promise<any[]> {
 
 
   const caredOnes = await Promise.all(
-    caredOneIds.map(async (userId: string) => {
+    rows.map(async (row) => {
 
-      const u = await fetchWPUserProfile(userId);
+      const u = await fetchWPUserProfile(row.id);
       return {
         user_id: `wp-${u.id}`,
         relationship: null,
+        invitation_status: row.status,
         cared_one: {
           id: `wp-${u.id}`,
           // The ONLY name source is this app's own column on CCT 151. The shared
