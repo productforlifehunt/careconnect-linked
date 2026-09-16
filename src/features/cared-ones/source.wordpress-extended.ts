@@ -151,10 +151,10 @@ async function linkRel(relId: number, parentId: number, childId: number, meta?: 
 }
 
 // ─── Cared Ones (Relation 219, Users → Users, many-to-many) ──
-// Relation 219 carries one meta field, a55 "User type": b55 = nothing special,
-// b56 = cared one. Every link the app makes here IS a cared-one link, so the
-// code writes b56 instead of leaving the column blank.
-const REL219_TYPE_CARED_ONE = { a55: "b56" };
+// Relation 219 carries one meta field per the dictionary: a58 "cared one
+// invitation status" (accepted / pending / declined). A caregiver adding
+// somebody writes "pending" — the other person decides, nobody is linked
+// without saying yes.
 
 export async function createUserCaredOneWordPress(caredOne: { caredOneId: string }): Promise<void> {
   const stored = getStoredWPUser();
