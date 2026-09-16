@@ -10,6 +10,8 @@ export interface MyCaregiver {
   full_name: string | null;
   email: string | null;
   avatar_url: string | null;
+  /** Relation 219 · a58 — accepted / pending / declined */
+  invitation_status: CaredOneInvitationStatus;
 }
 
 /** Everyone who has listed the signed-in user as the person they care for. */
