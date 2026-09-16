@@ -105,7 +105,34 @@ export function WhoCaresForMePanel() {
                     {c.full_name || Z("未填写姓名", "No name set")}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">{maskEmail(c.email)}</p>
+                  {c.invitation_status === "pending" && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {Z(
+                        "还在等你同意，现在他看不到你的任何信息。",
+                        "Waiting for your answer — they cannot see anything yet.",
+                      )}
+                    </p>
+                  )}
                 </div>
+                {c.invitation_status === "pending" ? (
+                  <div className="flex gap-2 shrink-0">
+                    <Button
+                      size="sm"
+                      disabled={respond.isPending}
+                      onClick={() => respond.mutate({ userId: c.user_id, answer: "accepted" })}
+                    >
+                      {Z("同意", "Accept")}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={respond.isPending}
+                      onClick={() => respond.mutate({ userId: c.user_id, answer: "declined" })}
+                    >
+                      {Z("拒绝", "Decline")}
+                    </Button>
+                  </div>
+                ) : (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="outline" size="sm" className="gap-1.5 shrink-0">
