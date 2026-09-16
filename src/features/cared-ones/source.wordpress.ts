@@ -21,10 +21,15 @@ export async function fetchUserCaredOnesWordPress(): Promise<any[]> {
   const selfId = String(storedUser.user_id).replace(/^wp-/, "");
   // A user is never their own cared one — Relation 219 rows pointing back at the
   // caller are ignored so the dashboard never lists the signed-in user.
-  const caredOneIds = rels
-    .map((r: any) => String(r.child_object_id))
-    .filter(Boolean)
-    .filter((id: string) => id.replace(/^wp-/, "") !== selfId);
+  // Declined requests disappear; pending ones stay visible but are marked, so
+  // the caregiver can see they are still waiting for an answer.
+  const rows = rels
+    .filter((r: any) => decodeRel219Status(r?.meta) !== "declined")
+    .map((r: any) => ({
+      id: String(r.child_object_id ?? ""),
+      status: decodeRel219Status(r?.meta),
+    }))
+    .filter((r) => r.id && r.id.replace(/^wp-/, "") !== selfId);
 
   // No blocking pre-fetch: every person read below joins the same 25ms
   // micro-batch inside fetchWPUsers, so the user records and the profile
