@@ -158,6 +158,7 @@ export function WhoCaresForMePanel() {
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
+                )}
               </li>
             ))}
           </ul>
