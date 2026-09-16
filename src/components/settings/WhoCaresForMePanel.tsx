@@ -46,6 +46,22 @@ export function WhoCaresForMePanel() {
       toast({ title: Z("解除失败", "Could not remove"), description: err?.message, variant: "destructive" }),
   });
 
+  const respond = useMutation({
+    mutationFn: (v: { userId: string; answer: "accepted" | "declined" }) =>
+      respondToCaregiverRequestWordPress(v.userId, v.answer),
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ["myCaregivers"] });
+      toast({
+        title:
+          v.answer === "accepted"
+            ? Z("已同意，对方现在可以看到你的信息", "Accepted — they can now see your information")
+            : Z("已拒绝，对方看不到你的任何信息", "Declined — they cannot see any of your information"),
+      });
+    },
+    onError: (err: any) =>
+      toast({ title: Z("操作失败", "Could not save"), description: err?.message, variant: "destructive" }),
+  });
+
   return (
     <Card>
       <CardHeader>
