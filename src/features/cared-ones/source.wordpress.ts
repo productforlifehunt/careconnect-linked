@@ -2,6 +2,7 @@ import { wordpressFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { R } from "@/integrations/wp-schema";
 import { fetchWPUserProfile } from "@/features/shared/wp-users";
+import { decodeRel219Status } from "./rel219-meta";
 
 const REL_USER_CARED_ONE = R.userCaredOnes;
 
@@ -21,10 +22,15 @@ export async function fetchUserCaredOnesWordPress(): Promise<any[]> {
   const selfId = String(storedUser.user_id).replace(/^wp-/, "");
   // A user is never their own cared one — Relation 219 rows pointing back at the
   // caller are ignored so the dashboard never lists the signed-in user.
-  const caredOneIds = rels
-    .map((r: any) => String(r.child_object_id))
-    .filter(Boolean)
-    .filter((id: string) => id.replace(/^wp-/, "") !== selfId);
+  // Declined requests disappear; pending ones stay visible but are marked, so
+  // the caregiver can see they are still waiting for an answer.
+  const rows = rels
+    .filter((r: any) => decodeRel219Status(r?.meta) !== "declined")
+    .map((r: any) => ({
+      id: String(r.child_object_id ?? ""),
+      status: decodeRel219Status(r?.meta),
+    }))
+    .filter((r) => r.id && r.id.replace(/^wp-/, "") !== selfId);
 
   // No blocking pre-fetch: every person read below joins the same 25ms
   // micro-batch inside fetchWPUsers, so the user records and the profile
@@ -32,12 +38,13 @@ export async function fetchUserCaredOnesWordPress(): Promise<any[]> {
 
 
   const caredOnes = await Promise.all(
-    caredOneIds.map(async (userId: string) => {
+    rows.map(async (row) => {
 
-      const u = await fetchWPUserProfile(userId);
+      const u = await fetchWPUserProfile(row.id);
       return {
         user_id: `wp-${u.id}`,
         relationship: null,
+        invitation_status: row.status,
         cared_one: {
           id: `wp-${u.id}`,
           // The ONLY name source is this app's own column on CCT 151. The shared

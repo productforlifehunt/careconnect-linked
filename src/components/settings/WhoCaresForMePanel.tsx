@@ -14,6 +14,7 @@ import { maskEmail } from "@/lib/utils";
 import {
   fetchMyCaregiversWordPress,
   removeMyCaregiverWordPress,
+  respondToCaregiverRequestWordPress,
 } from "@/features/cared-ones/my-caregivers";
 
 /**
@@ -43,6 +44,22 @@ export function WhoCaresForMePanel() {
     },
     onError: (err: any) =>
       toast({ title: Z("解除失败", "Could not remove"), description: err?.message, variant: "destructive" }),
+  });
+
+  const respond = useMutation({
+    mutationFn: (v: { userId: string; answer: "accepted" | "declined" }) =>
+      respondToCaregiverRequestWordPress(v.userId, v.answer),
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ["myCaregivers"] });
+      toast({
+        title:
+          v.answer === "accepted"
+            ? Z("已同意，对方现在可以看到你的信息", "Accepted — they can now see your information")
+            : Z("已拒绝，对方看不到你的任何信息", "Declined — they cannot see any of your information"),
+      });
+    },
+    onError: (err: any) =>
+      toast({ title: Z("操作失败", "Could not save"), description: err?.message, variant: "destructive" }),
   });
 
   return (
@@ -88,7 +105,34 @@ export function WhoCaresForMePanel() {
                     {c.full_name || Z("未填写姓名", "No name set")}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">{maskEmail(c.email)}</p>
+                  {c.invitation_status === "pending" && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {Z(
+                        "还在等你同意，现在他看不到你的任何信息。",
+                        "Waiting for your answer — they cannot see anything yet.",
+                      )}
+                    </p>
+                  )}
                 </div>
+                {c.invitation_status === "pending" ? (
+                  <div className="flex gap-2 shrink-0">
+                    <Button
+                      size="sm"
+                      disabled={respond.isPending}
+                      onClick={() => respond.mutate({ userId: c.user_id, answer: "accepted" })}
+                    >
+                      {Z("同意", "Accept")}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={respond.isPending}
+                      onClick={() => respond.mutate({ userId: c.user_id, answer: "declined" })}
+                    >
+                      {Z("拒绝", "Decline")}
+                    </Button>
+                  </div>
+                ) : (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="outline" size="sm" className="gap-1.5 shrink-0">
@@ -114,6 +158,7 @@ export function WhoCaresForMePanel() {
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
+                )}
               </li>
             ))}
           </ul>

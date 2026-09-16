@@ -66,6 +66,7 @@
 - [Honesty Protocol](mem://constraints/honesty-completion-protocol)
 - [Safe Zone Model 214](mem://data/safe-zone-model-214) — a55 three types (Safe/Danger/Custom), name in a57; app settings JSON in CCT 151 a95/a96
 - [Opaque Naming Convention](mem://constraints/opaque-data-naming)
+- [Relation 219 Cared-One Consent](mem://data/rel219-cared-one-consent) — a58 invitation status b55 accepted / b56 pending / b57 declined; adding writes pending, accept/decline updates the same row
 - [Unreadable Artifact / Shame Doctrine](mem://constraints/unreadable-artifact-shame-doctrine) — Miro Post-it walls and productivity-guru templates as deliberately unfollowable demos; illegibility = unauditable rigour; our Track B artifacts stay legible-and-sufficient
 - [Paper Ridicule Register](mem://constraints/paper-ridicule-tone) — mandatory ridiculing tone for all paper/method explanations, bezel-polisher hierarchy, HCI reality check
 - [Productivity Industry Receipts](mem://constraints/productivity-industry-receipts) — Taylorism-turned-inward (1911 System Company), Gregg's Counterproductive, "Make Time" = the Design Sprint authors, perpetually-behind business model, IDEO denominator rule, no-shame/no-anger/no-curiosity protocol, win-first-preach-second sequencing

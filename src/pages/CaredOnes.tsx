@@ -191,8 +191,13 @@ export default function CaredOnes() {
               const isActive = selectedId === co.user_id;
               return (
                 <div key={co.user_id} className={`flex items-center rounded-lg border transition-colors ${isActive ? "bg-card border-primary shadow-sm" : "bg-transparent border-border hover:bg-accent/50"}`}>
-                  <button type="button" onClick={() => setActiveTab(co.user_id)} className="min-h-11 px-4 py-2 text-sm font-medium">
+                  <button type="button" onClick={() => setActiveTab(co.user_id)} className="min-h-11 px-4 py-2 text-sm font-medium flex items-center gap-2">
                     {name}
+                    {co.invitation_status === "pending" && (
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-normal text-muted-foreground">
+                        {t("caredOnes.awaitingConsent", { defaultValue: "Waiting for consent" })}
+                      </span>
+                    )}
                   </button>
                   <button
                     type="button"

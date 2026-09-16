@@ -151,10 +151,10 @@ async function linkRel(relId: number, parentId: number, childId: number, meta?: 
 }
 
 // ─── Cared Ones (Relation 219, Users → Users, many-to-many) ──
-// Relation 219 carries one meta field, a55 "User type": b55 = nothing special,
-// b56 = cared one. Every link the app makes here IS a cared-one link, so the
-// code writes b56 instead of leaving the column blank.
-const REL219_TYPE_CARED_ONE = { a55: "b56" };
+// Relation 219 carries one meta field per the dictionary: a58 "cared one
+// invitation status" (accepted / pending / declined). A caregiver adding
+// somebody writes "pending" — the other person decides, nobody is linked
+// without saying yes.
 
 export async function createUserCaredOneWordPress(caredOne: { caredOneId: string }): Promise<void> {
   const stored = getStoredWPUser();
@@ -166,11 +166,12 @@ export async function createUserCaredOneWordPress(caredOne: { caredOneId: string
   if (String(childId) === String(normalizeWpObjectId(String(stored.user_id)))) {
     throw new Error("You cannot add yourself");
   }
-  await linkRel(REL_USER_CARED_ONE, Number(stored.user_id), childId, REL219_TYPE_CARED_ONE);
+  const { encodeRel219Meta } = await import("./rel219-meta");
+  await linkRel(REL_USER_CARED_ONE, Number(stored.user_id), childId, encodeRel219Meta("pending"));
 
-  // The other person must always learn that someone can now see their
-  // medicines, check-ins and location. Best effort: a failed notice never
-  // silently rolls back the link, it is reported by the caller instead.
+  // The other person must always learn that somebody asked to care for them and
+  // that nothing is shared until they say yes. Best effort: a failed notice
+  // never silently rolls back the request, it is reported by the caller instead.
   try {
     const { sendNotification } = await import("@/features/notifications/dispatch");
     const me = await fetchWPUserSafe(Number(stored.user_id));
@@ -178,8 +179,8 @@ export async function createUserCaredOneWordPress(caredOne: { caredOneId: string
     await sendNotification({
       user_id: childId,
       type: "system",
-      title: `${myName} is now listed as your caregiver`,
-      message: `${myName} added you as the person they care for. They can now see the care information kept about you — medicines, check-ins, notes and location sharing. If this is wrong, open the people caring for you in Settings and remove them.`,
+      title: `${myName} asked to be listed as your caregiver`,
+      message: `${myName} would like to be listed as the person caring for you. Nothing is shared until you agree. Open the people caring for you in Settings to accept or decline.`,
       action_url: "/settings",
     });
   } catch {
