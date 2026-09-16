@@ -14,6 +14,7 @@ import { maskEmail } from "@/lib/utils";
 import {
   fetchMyCaregiversWordPress,
   removeMyCaregiverWordPress,
+  respondToCaregiverRequestWordPress,
 } from "@/features/cared-ones/my-caregivers";
 
 /**
