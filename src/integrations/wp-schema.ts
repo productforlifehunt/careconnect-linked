@@ -1225,7 +1225,7 @@ export const WP = {
     /** 195. One user can have many related 193. User's ai credit — Users -> 193. User's ai credit (One to Many) */
     "195": { id: 195, parent: "Users", child: "193. User's ai credit", type: "One to Many" },
     /** 219. One user can have many related cared ones — Users -> Users (Many to Many) */
-    "219": { id: 219, parent: "Users", child: "Users", type: "Many to Many" },
+    "219": { id: 219, parent: "Users", child: "Users", type: "Many to Many", f: { "CARED_ONE_INVITATION_STATUS": "a58" }, opt: { "CARED_ONE_INVITATION_STATUS": { "ACCEPTED": "b55", "PENDING": "b56", "DECLINED": "b57" } } },
     /** 220. One cared one can have many related 198. cared one's information cards — Users -> 198. Cared one's information card (One to Many) */
     "220": { id: 220, parent: "Users", child: "198. Cared one's information card", type: "One to Many" },
     /** 221. One cared one's information card can have many related cared one's emergency contact persons — 198. Cared one's information card -> Users (One to Many) */
