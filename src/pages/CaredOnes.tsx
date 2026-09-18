@@ -46,7 +46,10 @@ import { InformationCardCard } from "@/components/cared-ones/InformationCardCard
 function FeatureDetail({ cardKey, caredOneId, caredOneName }: { cardKey: string; caredOneId: string; caredOneName: string }) {
   switch (cardKey) {
     case "medicine": return <MedicineCard caredOneId={caredOneId} />;
-    case "checkin": return <CheckInCard caredOneId={caredOneId} />;
+    case "checkin":
+    case "check-in":
+    case "check_in":
+    case "check-ins": return <CheckInCard caredOneId={caredOneId} />;
     case "tips": return <TipsCard caredOneId={caredOneId} />;
     case "tasks": return <CareTasksCard caredOneId={caredOneId} />;
     case "plan": return <CarePlanCard caredOneId={caredOneId} />;
