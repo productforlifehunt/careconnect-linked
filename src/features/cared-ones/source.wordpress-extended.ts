@@ -473,11 +473,18 @@ export async function logCheckinWordPress(log: { medicine_id?: string; checkin_i
       [F_LOGEVT.LOG_CHECKIN_NOTE]: log.note || "",
       [F_LOGEVT.CHECKED_BY_AI]: log.checked_by_ai ? YES : NO,
       [F_LOGEVT.LOG_EVENT_TIME]: stamp,
+      [F_LOGEVT.FOR_APP]: "challenged",
     },
   });
   const newLogId = normalizeWpObjectId(result?.item_id || result?._ID || result?.id);
   const parentId = normalizeWpObjectId(log.checkin_id || log.medicine_id);
+  // Relation 240 attaches the log to its CCT 187 check-in schedule; Relation 173
+  // attaches it to the cared one whose log event it is.
   await linkRel(REL_CHECKIN_LOG, parentId, newLogId);
+  if (log.cared_one_id) {
+    try { await linkRel(R.userLogEvents, normalizeWpObjectId(log.cared_one_id), newLogId); }
+    catch { /* the log itself is saved */ }
+  }
 
   // Notify the check-in's configured receivers (Relation 260). Non-blocking;
   // the tap-through target is a plain route in action_url, so no extra
@@ -498,8 +505,8 @@ export async function logCheckinWordPress(log: { medicine_id?: string; checkin_i
 }
 
 // ─── Medicine schedules & logs ───────────────────────────────
-// CCT 187 calendar event (a60 = b55) + CCT 206 (Apple-shaped dose log).
-// Relation 190 links the cared one to the schedule; Relation 238 links logs.
+// CCT 187 calendar event (a60 = b55) + CCT 161 (Apple-shaped dose log, a57 = b69).
+// Relation 190 links the cared one to the schedule; Relation 240 links logs.
 export {
   fetchMedicinesWordPress, createMedicineWordPress, updateMedicineWordPress,
   deleteMedicineWordPress, fetchMedicineLogsWordPress, fetchTodayMedicineLogsWordPress,
