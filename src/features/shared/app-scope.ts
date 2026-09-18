@@ -92,11 +92,17 @@ export function appScopeParams(cct: ScopedCct, scope: AppScope = currentAppScope
  * True when a raw CCT row belongs to the current app. Rows with an empty scope
  * are treated as in-scope (legacy rows written before scoping existed), rows
  * stamped for another app are always rejected.
+ *
+ * CCT 187's "App" column is a plain TEXT column on the live backend (verified
+ * 2026-09-18), so rows exist with BOTH the opaque radio code (b59) and the
+ * standard lowercase app name ("challenged"). Both mean the same app, so both
+ * are accepted; any other app's code or name is still rejected.
  */
 export function isInAppScope(cct: ScopedCct, raw: Record<string, any>, scope: AppScope = currentAppScope()): boolean {
   const value = raw?.[APP_FIELD[cct]];
   if (value === undefined || value === null || value === "") return true;
-  return String(value) === appScopeCode(cct, scope);
+  const v = String(value).trim().toLowerCase();
+  return v === String(appScopeCode(cct, scope)).toLowerCase() || v === scope;
 }
 
 /** Filter a raw CCT list down to rows belonging to the current app. */
