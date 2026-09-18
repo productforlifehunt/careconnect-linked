@@ -5,9 +5,11 @@
  *             ("Medicine schedule"), owned through JetEngine Relation 190
  *             (Users → 187) with the cared one as parent.
  *             CCT 205 no longer exists — the calendar event replaced it.
- * LOG       → JetEngine CCT 206 `medicine_log` (a55–a68), a field-for-field
- *             mirror of Apple HKMedicationDoseEvent, linked to its schedule
- *             through JetEngine Relation 238 (187 → 206).
+ * LOG       → JetEngine CCT 161 `users_log_event` (a83–a95 + a97/a99/a100), a
+ *             field-for-field mirror of Apple HKMedicationDoseEvent, marked
+ *             a57 = b69 "Custom medicine", linked to its schedule through
+ *             JetEngine Relation 240 (187 → 161) and to the cared one through
+ *             Relation 173 (Users → 161). CCT 206 is retired.
  *
  * Recurrence uses the RFC 5545 columns of the calendar (a66 RRULE, a73 VALARM);
  * values the calendar has no Apple/iCal column for (exact time slots, UI
@@ -26,12 +28,12 @@ import {
   fetchEventsOfType, createEvent, updateEvent, deleteEvent, readEvent,
 } from "@/features/schedules/calendar-schedule";
 
-const LOG = T.medicineLog;           // 206
+const LOG = T.userLogEvent;          // 161 user's other log event
 const FL = LOG.f;
 const OL = LOG.opt as Record<string, Record<string, string>>;
 const OC = CAL.opt as Record<string, Record<string, string>>;
 
-const REL_SCHEDULE_LOG = R.medicineScheduleLogs;       // 238 187 → 206
+const REL_SCHEDULE_LOG = R.medicineScheduleLogs;       // 240 187 → 161
 
 const RXNORM_SYSTEM = "http://www.nlm.nih.gov/research/umls/rxnorm";
 
@@ -253,9 +255,7 @@ const LOG_STATUS_CODE: Record<string, string> = {
   missed: OL.DOSE_EVENT_LOG_STATUS.NOT_INTERACTED,
   snoozed: OL.DOSE_EVENT_LOG_STATUS.SNOOZED,
   not_logged: OL.DOSE_EVENT_LOG_STATUS.NOT_LOGGED,
-  notification_not_sent: OL.DOSE_EVENT_LOG_STATUS.NOT_LOGGED === OL.DOSE_EVENT_LOG_STATUS.NOTIFICATION_NOT_SENT
-    ? OL.DOSE_EVENT_LOG_STATUS.NOTIFICATION_NOT_SENT
-    : OL.DOSE_EVENT_LOG_STATUS.NOTIFICATION_NOT_SENT,
+  notification_not_sent: OL.DOSE_EVENT_LOG_STATUS.NOTIFICATION_NOT_SENT,
 };
 const LOG_STATUS_LABEL: Record<string, string> = Object.fromEntries(
   Object.entries(LOG_STATUS_CODE).map(([k, v]) => [v, k]),
