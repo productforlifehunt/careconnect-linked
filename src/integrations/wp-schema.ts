@@ -500,14 +500,27 @@ export const WP = {
         "CUSTOM_RECIPE_DETAIL": "a80",  // Textarea
         "CUSTOM_WORKOUT_DETAIL": "a81",  // Textarea
         "CUSTOM_MEDICINE_DETAIL": "a82",  // Textarea
-        "CHECK_TYPE": "a83",  // Radio
-        "LOG_MEDICINE_NOTE": "a84",  // Text
-        "LOG_CHECKIN_NOTE": "a85",  // Text
-        "CHECKED_BY_AI": "a86",  // Radio
-        "FOR_APP": "a87",  // Radio
+        "DOSE_EVENT_LOG_STATUS": "a83",  // Radio (Apple HKMedicationDoseEvent.LogStatus)
+        "DOSE_EVENT_NOTE": "a84",  // Textarea
+        "DOSE_QUANTITY": "a85",  // Number (Apple doseQuantity)
+        "SCHEDULED_DOSE_QUANTITY": "a86",  // Number (Apple scheduledDoseQuantity)
+        "DOSE_UNIT": "a87",  // Text (UCUM)
+        "SCHEDULED_DATE": "a88",  // Datetime (Apple scheduledDate)
+        "SCHEDULE_TYPE": "a89",  // Radio (Apple ScheduleType)
+        "CONCEPT_IDENTIFIER": "a90",  // Text (Apple HKMedicationConcept.identifier)
+        "CONCEPT_DISPLAY_TEXT": "a91",  // Text
+        "CONCEPT_GENERAL_FORM": "a92",  // Text
+        "CLINICAL_CODING_SYSTEM": "a93",  // Text
+        "CLINICAL_CODING_CODE": "a94",  // Text (RxCUI)
+        "CLINICAL_CODING_VERSION": "a95",  // Text
+        "CHECK_TYPE": "a96",  // Radio
+        "LOG_MEDICINE_NOTE": "a97",  // Text
+        "LOG_CHECKIN_NOTE": "a98",  // Text
+        "CHECKED_BY_AI": "a99",  // Radio
+        "FOR_APP": "a100",  // Text (lowercase app name)
       },
       opt: {
-        "LOG_EVENT_TYPE": { "SMOKING": "b55", "DRINKING_ALCOHOL": "b56", "PORN": "b57", "WATER": "b58", "FOOD": "b59", "BREATHING_EXERCISE": "b60", "WORKOUT": "b61", "MOTIVATION": "b62", "PLEDGE": "b63", "MEMORY": "b64", "SLEEP": "b65", "MOOD": "b66", "APPLE_HEALTH_SYMPTOMS": "b67", "CUSTOM_HEALTH_SYMPTOMS": "b68", "CUSTOM_MEDICINE": "b69" },
+        "LOG_EVENT_TYPE": { "SMOKING": "b55", "DRINKING_ALCOHOL": "b56", "PORN": "b57", "WATER": "b58", "FOOD": "b59", "BREATHING_EXERCISE": "b60", "WORKOUT": "b61", "MOTIVATION": "b62", "PLEDGE": "b63", "MEMORY": "b64", "SLEEP": "b65", "MOOD": "b66", "APPLE_HEALTH_SYMPTOMS": "b67", "CUSTOM_HEALTH_SYMPTOMS": "b68", "CUSTOM_MEDICINE": "b69", "AI_MEMORY": "b70", "NOTE": "b71", "FASTING": "b72" },
         "LOG_SMOKING_TYPE": { "SMOKED": "b55", "RESISTED": "b56" },
         "LOG_DRINKING_ALCOHOL_TYPE": { "DRANK": "b55", "RESISTED": "b56" },
         "LOG_PORN_TYPE": { "WATCHED": "b55", "RESISTED": "b56" },
@@ -515,8 +528,11 @@ export const WP = {
         "CRAVING_SMOKINGTRIGGER_CATEGORY": { "STRESS": "b55", "SOCIAL": "b56", "BOREDOM": "b57", "ALCOHOL": "b58", "COFFEE": "b59", "MEAL": "b60", "EMOTION": "b61", "HABIT": "b62", "OTHER": "b63" },
         "LOCATION_CATEGORY": { "HOME": "b55", "WORK": "b56", "BAR": "b57", "RESTAURANT": "b58", "CAR": "b59", "OUTDOOR": "b60" },
         "MEAL_TYPE": { "BREAKFAST": "b55", "LUNCH": "b56", "DINNER": "b57", "SNACK": "b58" },
+        "DOSE_EVENT_LOG_STATUS": { "NOT_INTERACTED": "b55", "NOT_LOGGED": "b56", "NOTIFICATION_NOT_SENT": "b57", "SKIPPED": "b58", "SNOOZED": "b59", "TAKEN": "b60" },
+        "SCHEDULE_TYPE": { "ASNEEDED": "b55", "SCHEDULE": "b56" },
         "CHECK_TYPE": { "TAKEN": "b55", "SKIPPED": "b56", "MISSED": "b57" },
         "CHECKED_BY_AI": { "YES": "b55", "NO": "b56" },
+
       },
     },
     /** 177. User’s custom workout */
