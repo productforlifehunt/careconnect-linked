@@ -1292,7 +1292,7 @@ export const WP = {
     "238": { id: 238, parent: "187. Cared one’s medicine schedule", child: "206. Care one's medicine log", type: "One to Many" },
     /** 241. One check in schedule can have many related asigned check-in persons — 207. Checkin schedule -> Users (One to Many) [verified live 2026-09-18] */
     "241": { id: 241, parent: "207. Checkin schedule", child: "Users", type: "One to Many" },
-    /** 260. One 207. check in schedule can have many related asigned check-in persons — 207. Checkin schedule -> Users (One to Many) */
+    /** 260. One checkin notification can have many related receivers — 207. Checkin schedule -> Users (One to Many) [verified live 2026-09-18: GET/POST 200 as app user] */
     "260": { id: 260, parent: "207. Checkin schedule", child: "Users", type: "One to Many" },
     /** 242. One cared one can have many related 197. cared one's care notes — Users -> 197. Cared one's care note (One to Many) */
     "242": { id: 242, parent: "Users", child: "197. Cared one's care note", type: "One to Many" },
