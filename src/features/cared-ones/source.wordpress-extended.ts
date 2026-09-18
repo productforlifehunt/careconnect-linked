@@ -19,8 +19,8 @@ const REL_USER_CARED_ONE_CARD = R.caredOneInfoCards;    // user → cared_ones_i
 const REL_CARED_CARD_EMERGENCY = R.infoCardEmergencyContacts;   // cared_ones_informat → emergency_contact
 const REL_GROUP_MEMBER = R.careGroupMembers;            // care_group → users
 // Checkin schedules live in the universal calendar (CCT 187, a60 = b56) since
-// the 2026-09-04 bible; ownership is Relation 190, logs are Relation 240 → CCT 161.
-const REL_CHECKIN_LOG = R.checkinScheduleLogs;   // 240 (187 → 161)
+// the 2026-09-04 bible; ownership is Relation 190, logs are Relation 191 → CCT 161.
+const REL_CHECKIN_LOG = R.checkinScheduleLogs;   // 191 (187 → 161)
 const REL_USER_CARE_TIP = R.caredOneCareTips;
 const REL_USER_EMERGENCY_CONTACT = R.caredOneEmergencyContacts;
 const REL_USER_CARE_NOTE = R.caredOneCareNotes;
@@ -414,7 +414,7 @@ export async function deleteCheckinWordPress(id: string): Promise<void> {
 
 // ─── Check-in log — CCT 161 user's other log event ────────────
 // a83 Check type (b55 Taken / b56 Skipped / b57 Missed), a85 Log checkin note,
-// a86 Checked by AI, a61 Log event time. Attached to its schedule by Relation 240.
+// a86 Checked by AI, a61 Log event time. Attached to its schedule by Relation 191.
 const CHK_STATUS_CODE: Record<string, string> = { checked: "b55", skipped: "b56", missed: "b57" };
 const CHK_STATUS_LABEL: Record<string, string> = { b55: "checked", b56: "skipped", b57: "missed" };
 
@@ -478,7 +478,7 @@ export async function logCheckinWordPress(log: { medicine_id?: string; checkin_i
   });
   const newLogId = normalizeWpObjectId(result?.item_id || result?._ID || result?.id);
   const parentId = normalizeWpObjectId(log.checkin_id || log.medicine_id);
-  // Relation 240 attaches the log to its CCT 187 check-in schedule; Relation 173
+  // Relation 191 attaches the log to its CCT 187 check-in schedule; Relation 173
   // attaches it to the cared one whose log event it is.
   await linkRel(REL_CHECKIN_LOG, parentId, newLogId);
   if (log.cared_one_id) {
@@ -506,7 +506,7 @@ export async function logCheckinWordPress(log: { medicine_id?: string; checkin_i
 
 // ─── Medicine schedules & logs ───────────────────────────────
 // CCT 187 calendar event (a60 = b55) + CCT 161 (Apple-shaped dose log, a57 = b69).
-// Relation 190 links the cared one to the schedule; Relation 240 links logs.
+// Relation 190 links the cared one to the schedule; Relation 191 links logs.
 export {
   fetchMedicinesWordPress, createMedicineWordPress, updateMedicineWordPress,
   deleteMedicineWordPress, fetchMedicineLogsWordPress, fetchTodayMedicineLogsWordPress,

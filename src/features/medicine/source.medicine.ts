@@ -8,7 +8,7 @@
  * LOG       → JetEngine CCT 161 `users_log_event` (a83–a95 + a97/a99/a100), a
  *             field-for-field mirror of Apple HKMedicationDoseEvent, marked
  *             a57 = b69 "Custom medicine", linked to its schedule through
- *             JetEngine Relation 240 (187 → 161) and to the cared one through
+ *             JetEngine Relation 191 (187 → 161) and to the cared one through
  *             Relation 173 (Users → 161). CCT 206 is retired.
  *
  * Recurrence uses the RFC 5545 columns of the calendar (a66 RRULE, a73 VALARM);
@@ -33,7 +33,7 @@ const FL = LOG.f;
 const OL = LOG.opt as Record<string, Record<string, string>>;
 const OC = CAL.opt as Record<string, Record<string, string>>;
 
-const REL_SCHEDULE_LOG = R.medicineScheduleLogs;       // 240 187 → 161
+const REL_SCHEDULE_LOG = R.medicineScheduleLogs;       // 191 187 → 161 (240 is the retired 207→208 pair)
 
 const RXNORM_SYSTEM = "http://www.nlm.nih.gov/research/umls/rxnorm";
 
@@ -368,7 +368,7 @@ export async function logMedicineWordPress(log: MedicineLogInput): Promise<void>
   const created = await wordpressCCTFetch<any>(LOG.slug, { method: "POST", body });
   const newId = numId(created?.item_id || created?._ID || created?.id);
   if (!newId) throw new Error("Dose log was not saved");
-  // Relation 240 attaches the log to its CCT 187 schedule; Relation 173 attaches
+  // Relation 191 attaches the log to its CCT 187 schedule; Relation 173 attaches
   // it to the cared one whose log event it is.
   await linkRel(REL_SCHEDULE_LOG, numId(log.medicine_id), newId);
   if (log.user_id) {
