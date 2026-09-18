@@ -245,7 +245,7 @@ export async function deleteMedicineWordPress(id: string): Promise<void> {
   await deleteEvent(id);
 }
 
-// ─── Logs (CCT 206, Apple HKMedicationDoseEvent) ─────────────
+// ─── Logs (CCT 161 user's other log event, Apple HKMedicationDoseEvent) ─────
 /** UI status → Apple LogStatus code. "missed" = notInteracted (Apple has no missed). */
 const LOG_STATUS_CODE: Record<string, string> = {
   taken: OL.DOSE_EVENT_LOG_STATUS.TAKEN,
@@ -253,20 +253,23 @@ const LOG_STATUS_CODE: Record<string, string> = {
   missed: OL.DOSE_EVENT_LOG_STATUS.NOT_INTERACTED,
   snoozed: OL.DOSE_EVENT_LOG_STATUS.SNOOZED,
   not_logged: OL.DOSE_EVENT_LOG_STATUS.NOT_LOGGED,
-  notification_not_sent: OL.DOSE_EVENT_LOG_STATUS.NOTIFICATION_NOT_SENT,
+  notification_not_sent: OL.DOSE_EVENT_LOG_STATUS.NOT_LOGGED === OL.DOSE_EVENT_LOG_STATUS.NOTIFICATION_NOT_SENT
+    ? OL.DOSE_EVENT_LOG_STATUS.NOTIFICATION_NOT_SENT
+    : OL.DOSE_EVENT_LOG_STATUS.NOTIFICATION_NOT_SENT,
 };
 const LOG_STATUS_LABEL: Record<string, string> = Object.fromEntries(
   Object.entries(LOG_STATUS_CODE).map(([k, v]) => [v, k]),
 );
 
 function mapLog(row: any, medicineId: string, fallbackId?: string): any {
-  const at = row[FL.DOSE_LOGGED_TIME] || row.cct_created || row.created_at;
+  const at = row[FL.LOG_EVENT_TIME] || row.cct_created || row.created_at;
+  const note = row[FL.DOSE_EVENT_NOTE] || row[FL.LOG_MEDICINE_NOTE] || null;
   return {
     id: String(row.id || row._ID || fallbackId),
     medicine_id: medicineId,
     status: LOG_STATUS_LABEL[String(row[FL.DOSE_EVENT_LOG_STATUS] || "")] || "taken",
-    note: row[FL.DOSE_EVENT_NOTE] || null,
-    notes: row[FL.DOSE_EVENT_NOTE] || null,
+    note,
+    notes: note,
     dose_quantity: numOrNull(row[FL.DOSE_QUANTITY]),
     scheduled_dose_quantity: numOrNull(row[FL.SCHEDULED_DOSE_QUANTITY]),
     dose_unit: row[FL.DOSE_UNIT] || null,
@@ -282,14 +285,21 @@ function mapLog(row: any, medicineId: string, fallbackId?: string): any {
   };
 }
 
+/** Only the medicine rows of CCT 161 (a57 = b69 Custom medicine). */
+function isMedicineLogRow(row: any): boolean {
+  const type = String(row?.[FL.LOG_EVENT_TYPE] ?? "");
+  if (!type) return !!row?.[FL.DOSE_EVENT_LOG_STATUS];
+  return type === OL.LOG_EVENT_TYPE.CUSTOM_MEDICINE;
+}
+
 export async function fetchMedicineLogsWordPress(medicineId: string): Promise<any[]> {
   const rels = await wordpressFetch<any[]>(`jet-rel/${REL_SCHEDULE_LOG}/children/${numId(medicineId)}`);
   const ids = (Array.isArray(rels) ? rels : [])
     .map((r: any) => String(r?.child_object_id ?? "").replace(/^wp-/, ""))
     .filter(Boolean);
   const rows = await Promise.all(ids.map((id) =>
-    wordpressCCTFetch<any>(LOG.slug, { id }).then((r) => mapLog(r, medicineId, id))));
-  return rows.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    wordpressCCTFetch<any>(LOG.slug, { id }).then((r) => (isMedicineLogRow(r) ? mapLog(r, medicineId, id) : null))));
+  return rows.filter(Boolean).sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 }
 
 export async function fetchTodayMedicineLogsWordPress(caredOneId: string): Promise<any[]> {
@@ -303,12 +313,12 @@ export async function fetchTodayMedicineLogsWordPress(caredOneId: string): Promi
   await Promise.all(rows.map(async (row: any) => {
     const mid = String(row.id || row._ID);
     const logs = logMap.loaded
-      ? await Promise.all((logMap.get(mid) || []).map(async (c) => {
+      ? (await Promise.all((logMap.get(mid) || []).map(async (c) => {
           const l = await wordpressCCTFetch<any>(LOG.slug, { id: c.childId });
-          return mapLog(l, mid, c.childId);
-        }))
+          return isMedicineLogRow(l) ? mapLog(l, mid, c.childId) : null;
+        }))).filter(Boolean)
       : await fetchMedicineLogsWordPress(mid);
-    logs.forEach((l) => { if (l.created_at && new Date(l.created_at) >= today) out.push(l); });
+    logs.forEach((l: any) => { if (l.created_at && new Date(l.created_at) >= today) out.push(l); });
   }));
   return out;
 }
@@ -318,6 +328,7 @@ export interface MedicineLogInput {
   status?: string;
   note?: string;
   user_id?: string;
+  logged_by_ai?: boolean;
   /** Apple-aligned dose context, taken from the schedule row. */
   dose_quantity?: number | null;
   scheduled_dose_quantity?: number | null;
@@ -335,8 +346,11 @@ export async function logMedicineWordPress(log: MedicineLogInput): Promise<void>
   const now = new Date();
   const stamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
   const body: Record<string, any> = {
+    [FL.LOG_EVENT_NAME]: log.concept_display_text || "Medication",
+    [FL.LOG_EVENT_TYPE]: OL.LOG_EVENT_TYPE.CUSTOM_MEDICINE,
     [FL.DOSE_EVENT_LOG_STATUS]: status,
     [FL.DOSE_EVENT_NOTE]: log.note || "",
+    [FL.LOG_MEDICINE_NOTE]: log.note || "",
     [FL.DOSE_QUANTITY]: log.status === "taken" ? wpStr(log.dose_quantity ?? log.scheduled_dose_quantity) : "",
     [FL.SCHEDULED_DOSE_QUANTITY]: wpStr(log.scheduled_dose_quantity),
     [FL.DOSE_UNIT]: log.dose_unit || "",
@@ -347,12 +361,19 @@ export async function logMedicineWordPress(log: MedicineLogInput): Promise<void>
     [FL.CONCEPT_GENERAL_FORM]: log.concept_general_form || "",
     [FL.CLINICAL_CODING_SYSTEM]: log.rxcui ? RXNORM_SYSTEM : "",
     [FL.CLINICAL_CODING_CODE]: log.rxcui || "",
-    [FL.DOSE_LOGGED_TIME]: stamp,
+    [FL.CHECKED_BY_AI]: log.logged_by_ai ? OL.CHECKED_BY_AI.YES : OL.CHECKED_BY_AI.NO,
+    [FL.LOG_EVENT_TIME]: stamp,
+    [FL.FOR_APP]: "challenged",
   };
   const created = await wordpressCCTFetch<any>(LOG.slug, { method: "POST", body });
   const newId = numId(created?.item_id || created?._ID || created?.id);
   if (!newId) throw new Error("Dose log was not saved");
+  // Relation 240 attaches the log to its CCT 187 schedule; Relation 173 attaches
+  // it to the cared one whose log event it is.
   await linkRel(REL_SCHEDULE_LOG, numId(log.medicine_id), newId);
+  if (log.user_id) {
+    try { await linkRel(R.userLogEvents, numId(log.user_id), newId); } catch { /* the log itself is saved */ }
+  }
 
   // Tell the cared one's caregivers. Non-blocking: the dose log is already
   // saved, and the tap-through target is just a route string in action_url —
@@ -373,3 +394,4 @@ export async function logMedicineWordPress(log: MedicineLogInput): Promise<void>
     } catch { /* notifications never block a saved log */ }
   }
 }
+
