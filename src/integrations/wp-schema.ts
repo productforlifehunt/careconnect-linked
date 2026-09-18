@@ -492,6 +492,7 @@ export const WP = {
         "LOCATION_CATEGORY": "a71",  // Radio
         "LOCATION_DETAIL": "a72",  // Textarea
         "CBT_THOUGHT_RECORD": "a73",  // Textarea
+        "CBT_COGNITIVE_DISTORTION_TYPE": "a74",  // Textarea
         "CBT_REFRAMED_THOUGHT": "a75",  // Textarea
         "CRAVING_INTENSITY_AFTER_CRAVING_SMOKING_OR_WHATEVER_SHIT": "a76",  // Number
         "NOTE_CONTENT": "a77",  // Textarea
@@ -518,6 +519,8 @@ export const WP = {
         "LOG_CHECKIN_NOTE": "a98",  // Text
         "CHECKED_BY_AI": "a99",  // Radio
         "FOR_APP": "a100",  // Text (lowercase app name)
+        "AI_MEMORY_STATUS": "a101",  // Radio
+        "AI_MEMORY_SOURCE": "a102",  // Radio
       },
       opt: {
         "LOG_EVENT_TYPE": { "SMOKING": "b55", "DRINKING_ALCOHOL": "b56", "PORN": "b57", "WATER": "b58", "FOOD": "b59", "BREATHING_EXERCISE": "b60", "WORKOUT": "b61", "MOTIVATION": "b62", "PLEDGE": "b63", "MEMORY": "b64", "SLEEP": "b65", "MOOD": "b66", "APPLE_HEALTH_SYMPTOMS": "b67", "CUSTOM_HEALTH_SYMPTOMS": "b68", "CUSTOM_MEDICINE": "b69", "AI_MEMORY": "b70", "NOTE": "b71", "FASTING": "b72" },
@@ -532,7 +535,8 @@ export const WP = {
         "SCHEDULE_TYPE": { "ASNEEDED": "b55", "SCHEDULE": "b56" },
         "CHECK_TYPE": { "TAKEN": "b55", "SKIPPED": "b56", "MISSED": "b57" },
         "CHECKED_BY_AI": { "YES": "b55", "NO": "b56" },
-
+        "AI_MEMORY_STATUS": { "DRAFT": "b55", "PENDING_APPROVAL": "b56", "ACTIVE": "b57", "ARCHIVED": "b58" },
+        "AI_MEMORY_SOURCE": { "USER_WRITTEN": "b55", "AI_SUGGESTED": "b56" },
       },
     },
     /** 177. User’s custom workout */
