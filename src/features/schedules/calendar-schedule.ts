@@ -29,9 +29,13 @@ export const EVENT_TYPE = {
 
 export const STATUS_CONFIRMED = OC.STATUS.CONFIRMED;
 export const STATUS_CANCELLED = OC.STATUS.CANCELLED;
-export const APP_CHALLENGED = OC.APP.CHALLENGED;
-export const LOG_TYPE_AI = OC.MEDICINE_LOG_TYPE.AI;
-export const LOG_TYPE_HUMAN = OC.MEDICINE_LOG_TYPE.HUMAN;
+// a91 "App" is a plain TEXT column in the live CCT 187 (verified 2026-09-18),
+// so it stores the lowercase standard app name, not a bNN option code.
+export const APP_CHALLENGED = "challenged";
+// a96/a97 radios in the live CCT 187 store the literal words "AI"/"Human"
+// (verified 2026-09-18 — the option value/label pair is entered that way).
+export const LOG_TYPE_AI = "AI";
+export const LOG_TYPE_HUMAN = "Human";
 
 export const REL_USER_EVENT = R.userCalendarEvents; // 190 Users → 187
 

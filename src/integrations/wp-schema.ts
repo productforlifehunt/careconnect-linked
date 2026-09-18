@@ -1583,7 +1583,7 @@ export const R = {
    * medicine and check-in logs share the same relation. (Old CCT 206 + Relation
    * 238 are retired.)
    */
-  medicineScheduleLogs: 240,
+  medicineScheduleLogs: 191,
 
   /** 241. One check in schedule can have many related asigned check-in persons */
   checkinScheduleAssignees: 241,
@@ -1615,8 +1615,8 @@ export const R = {
   contentStudyNotes: 256,
   /** 257. One Challenged App Content can have many related cared one's care tips */
   contentCareTips: 257,
-  /** 240. One 187. cared one's checkin schedule can have many related 161. care one's checkin logs */
-  checkinScheduleLogs: 240,
+  /** 191. One 187. user's calendar event can have many related 161. user's log events */
+  checkinScheduleLogs: 191,
 } as const;
 
 /** Dictionary CCT number -> live JetEngine REST slug. */
