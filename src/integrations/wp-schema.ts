@@ -1577,8 +1577,14 @@ export const R = {
   careTaskComments: 236,
   /** 253. One 204 care task can have many related 204. care tasks */
   careTaskSubTasks: 253,
-  /** 238. One 187 cared one's medicine schedule can have many related care one's medicine logs */
-  medicineScheduleLogs: 238,
+  /**
+   * 240. One 187. cared one's medicine/checkin schedule can have many related
+   * 161. care one's logs — schedules live in CCT 187, logs in CCT 161, so
+   * medicine and check-in logs share the same relation. (Old CCT 206 + Relation
+   * 238 are retired.)
+   */
+  medicineScheduleLogs: 240,
+
   /** 241. One check in schedule can have many related asigned check-in persons */
   checkinScheduleAssignees: 241,
   /** 260. One 207. check in schedule can have many related asigned check-in persons */
