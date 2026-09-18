@@ -1591,7 +1591,7 @@ export const R = {
 
   /** 241. One check in schedule can have many related asigned check-in persons */
   checkinScheduleAssignees: 241,
-  /** 260. One 207. check in schedule can have many related asigned check-in persons */
+  /** 260. One checkin notification can have many related receivers */
   checkinNotificationReceivers: 260,
   /** 242. One cared one can have many related 197. cared one's care notes */
   caredOneCareNotes: 242,
