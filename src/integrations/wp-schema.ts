@@ -1286,8 +1286,8 @@ export const WP = {
     "253": { id: 253, parent: "204. Care Task", child: "204. Care Task", type: "Many to Many" },
     /** 238. One 187 cared one's medicine schedule can have many related care one's medicine logs — 187. Cared one’s medicine schedule -> 206. Care one's medicine log (One to Many) */
     "238": { id: 238, parent: "187. Cared one’s medicine schedule", child: "206. Care one's medicine log", type: "One to Many" },
-    /** 241. One check in schedule can have many related asigned check-in persons — 187. Checkin schedule -> Users (One to Many) */
-    "241": { id: 241, parent: "187. Checkin schedule", child: "Users", type: "One to Many" },
+    /** 241. One check in schedule can have many related asigned check-in persons — 207. Checkin schedule -> Users (One to Many) [verified live 2026-09-18] */
+    "241": { id: 241, parent: "207. Checkin schedule", child: "Users", type: "One to Many" },
     /** 260. One 207. check in schedule can have many related asigned check-in persons — 207. Checkin schedule -> Users (One to Many) */
     "260": { id: 260, parent: "207. Checkin schedule", child: "Users", type: "One to Many" },
     /** 242. One cared one can have many related 197. cared one's care notes — Users -> 197. Cared one's care note (One to Many) */
@@ -1316,8 +1316,8 @@ export const WP = {
     "256": { id: 256, parent: "217. Challenged App Content", child: "218. User's study notes", type: "One to Many" },
     /** 257. One Challenged App Content can have many related cared one's care tips — 217. Challenged App Content -> 209. Cared one's care tip (One to Many) */
     "257": { id: 257, parent: "217. Challenged App Content", child: "209. Cared one's care tip", type: "One to Many" },
-    /** 240. One 187. cared one's checkin schedule can have many related 161. care one's checkin logs — 187. User's calendar event -> 161. user's log events (One to Many) */
-    "240": { id: 240, parent: "187. User's calendar event", child: "161. user's log events", type: "One to Many" },
+    /** 240. RETIRED — live backend has it as 207. Checkin schedule -> 208. Checkin log (old dedicated tables). Use 191 for 187 -> 161. [verified live 2026-09-18] */
+    "240": { id: 240, parent: "207. Checkin schedule", child: "208. Checkin log", type: "One to Many" },
   },
 } as const;
 
