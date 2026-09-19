@@ -253,23 +253,20 @@ export async function wpFetchCareTasks(): Promise<any[]> {
 }
 
 // ─── Cared Ones ─────────────────────────────────────────────
+/**
+ * Cared ones come from JetEngine Relation 219 only. The old `cared_one` CPT
+ * never existed on this install (wp/v2/cared_one returns 404), so it is not used.
+ */
 export async function wpFetchCaredOnes(): Promise<any[]> {
   try {
-    const items = await wpFetchCPT("cared_one");
-    if (!Array.isArray(items)) return [];
-    return items.map((c: any) => ({
-      user_id: String(c.id),
-      relationship: c.acf?.relationship || null,
-      cared_one: {
-        full_name: c.title?.rendered || "Cared One",
-        first_name: c.title?.rendered?.split(" ")[0] || null,
-        avatar_url: c.acf?.avatar_url || null,
-        dementia_stage: c.acf?.dementia_stage || null,
-      },
-    }));
+    const { fetchUserCaredOnesWordPress } = await import("@/features/cared-ones/source.wordpress");
+    const rows = await fetchUserCaredOnesWordPress();
+    if (!Array.isArray(rows)) return [];
+    return rows;
   } catch {
     return [];
   }
+
 }
 
 // ─── Providers (Dokan stores) ───────────────────────────────

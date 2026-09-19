@@ -1589,8 +1589,11 @@ export const R = {
    */
   medicineScheduleLogs: 191,
 
-  /** 241. One check in schedule can have many related asigned check-in persons */
-  checkinScheduleAssignees: 241,
+  /**
+   * Assigned check-in persons. Schedules moved to CCT 187, so the assignee link
+   * is Relation 262 (187 → Users). Relation 241 is retired with CCT 207.
+   */
+  checkinScheduleAssignees: 262,
   /** 260. One 187. checkin schedule can have many related caregivers who will receive notification */
   checkinNotificationReceivers: 260,
   /** 242. One cared one can have many related 197. cared one's care notes */

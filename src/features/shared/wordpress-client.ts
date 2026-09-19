@@ -98,6 +98,16 @@ export async function wordpressFetchRaw(endpoint: string, options: WordPressFetc
     throw e;
   }
 
+  // Clearing the caches before the write only drops what was cached until then;
+  // reads that fly while the write is in flight would otherwise stay cached for
+  // their full TTL and make the refetch right after a save look unchanged. So
+  // the caches are dropped again once the write has actually landed.
+  if (method !== "GET" && typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("wp-write"));
+  }
+
+
+
 
 
   if (!response.ok) {
