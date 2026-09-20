@@ -18,4 +18,4 @@
 
 # Scoping review protocol editorial revision
 
-- [ ] Replace the over-written editorial audit with a conservative, local-only revision that preserves the author's wording and changes only genuine language or logic problems.
+- [x] Replace the over-written editorial audit with a conservative, local-only revision that preserves the author's wording and changes only genuine language or logic problems.
