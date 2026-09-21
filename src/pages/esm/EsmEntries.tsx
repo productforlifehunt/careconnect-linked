@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { deleteRecord, exportJson, getRecords } from "@/features/esm/store";
+import { pushPendingRecords } from "@/features/esm/backend";
 
 const KIND_LABEL: Record<string, string> = {
   primary_screening: "Entry survey (main caregiver)",
