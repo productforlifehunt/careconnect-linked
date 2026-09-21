@@ -35,8 +35,12 @@ export interface EsmRecord {
   /** The hourly slot this entry answers, e.g. "2026-09-21T14" — logs only. */
   slot?: string;
   answers: AnswerMap;
+  /** Spoken answers as transcribed, keyed by question id. */
+  voice?: Record<string, string>;
   /** False until the study backend has accepted it. */
   synced: boolean;
+  /** Row id in the study table once uploaded. */
+  remoteId?: string;
 }
 
 function read<T>(key: string, fallback: T): T {
