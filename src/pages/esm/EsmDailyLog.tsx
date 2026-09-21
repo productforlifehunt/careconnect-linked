@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SurveyRunner } from "@/components/esm/SurveyRunner";
 import { dailyLog } from "@/features/esm/questionnaires";
-import { addRecord, missedSlots } from "@/features/esm/store";
+import { missedSlots } from "@/features/esm/store";
+import { submitRecord } from "@/features/esm/backend";
 
 /** The 10 PM end-of-day log, with a shortcut to fill in missed hourly slots. */
 export default function EsmDailyLog() {
