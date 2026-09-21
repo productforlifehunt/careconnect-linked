@@ -35,8 +35,12 @@ export interface EsmRecord {
   /** The hourly slot this entry answers, e.g. "2026-09-21T14" — logs only. */
   slot?: string;
   answers: AnswerMap;
+  /** Spoken answers as transcribed, keyed by question id. */
+  voice?: Record<string, string>;
   /** False until the study backend has accepted it. */
   synced: boolean;
+  /** Row id in the study table once uploaded. */
+  remoteId?: string;
 }
 
 function read<T>(key: string, fallback: T): T {
@@ -83,17 +87,31 @@ export const clearDraft = (id: string) => {
 
 export const getRecords = (): EsmRecord[] => read<EsmRecord[]>(KEY.records, []);
 
-export function addRecord(kind: RecordKind, answers: AnswerMap, slot?: string): EsmRecord {
+export function addRecord(
+  kind: RecordKind,
+  answers: AnswerMap,
+  slot?: string,
+  voice?: Record<string, string>,
+): EsmRecord {
   const record: EsmRecord = {
     id: `${kind}_${Date.now()}`,
     kind,
     submittedAt: new Date().toISOString(),
     slot,
     answers,
+    voice,
     synced: false,
   };
   write(KEY.records, [record, ...getRecords()]);
   return record;
+}
+
+/** Marks a record as accepted by the study backend. */
+export function markSynced(id: string, remoteId: string) {
+  write(
+    KEY.records,
+    getRecords().map((r) => (r.id === id ? { ...r, synced: true, remoteId } : r)),
+  );
 }
 
 export function deleteRecord(id: string) {

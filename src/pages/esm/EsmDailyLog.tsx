@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SurveyRunner } from "@/components/esm/SurveyRunner";
 import { dailyLog } from "@/features/esm/questionnaires";
-import { addRecord, missedSlots } from "@/features/esm/store";
+import { missedSlots } from "@/features/esm/store";
+import { submitRecord } from "@/features/esm/backend";
 
 /** The 10 PM end-of-day log, with a shortcut to fill in missed hourly slots. */
 export default function EsmDailyLog() {
@@ -37,9 +38,10 @@ export default function EsmDailyLog() {
         draftId={`daily:${new Date().toISOString().slice(0, 10)}`}
         submitLabel="Finish today"
         onCancel={() => navigate("/")}
-        onSubmit={(answers) => {
-          addRecord("daily_log", answers);
-          toast.success("Thank you — today is complete.");
+        onSubmit={async (answers) => {
+          const result = await submitRecord("daily_log", answers);
+          if (result.uploaded) toast.success("Thank you — today is complete.");
+          else toast.warning(`Saved on this device only — ${result.error}`);
           navigate("/", { replace: true });
         }}
       />
