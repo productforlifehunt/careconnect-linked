@@ -37,9 +37,10 @@ export default function EsmDailyLog() {
         draftId={`daily:${new Date().toISOString().slice(0, 10)}`}
         submitLabel="Finish today"
         onCancel={() => navigate("/")}
-        onSubmit={(answers) => {
-          addRecord("daily_log", answers);
-          toast.success("Thank you — today is complete.");
+        onSubmit={async (answers) => {
+          const result = await submitRecord("daily_log", answers);
+          if (result.uploaded) toast.success("Thank you — today is complete.");
+          else toast.warning(`Saved on this device only — ${result.error}`);
           navigate("/", { replace: true });
         }}
       />
