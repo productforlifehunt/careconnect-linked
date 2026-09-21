@@ -10,7 +10,7 @@ interface Props {
   /** Draft key — answers are kept under this key until the survey is submitted. */
   draftId: string;
   extraOptionsByQuestion?: Record<string, { value: string; label: string }[]>;
-  onSubmit: (answers: AnswerMap) => void;
+  onSubmit: (answers: AnswerMap) => void | Promise<void>;
   submitLabel?: string;
   onCancel?: () => void;
 }
