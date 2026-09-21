@@ -87,17 +87,31 @@ export const clearDraft = (id: string) => {
 
 export const getRecords = (): EsmRecord[] => read<EsmRecord[]>(KEY.records, []);
 
-export function addRecord(kind: RecordKind, answers: AnswerMap, slot?: string): EsmRecord {
+export function addRecord(
+  kind: RecordKind,
+  answers: AnswerMap,
+  slot?: string,
+  voice?: Record<string, string>,
+): EsmRecord {
   const record: EsmRecord = {
     id: `${kind}_${Date.now()}`,
     kind,
     submittedAt: new Date().toISOString(),
     slot,
     answers,
+    voice,
     synced: false,
   };
   write(KEY.records, [record, ...getRecords()]);
   return record;
+}
+
+/** Marks a record as accepted by the study backend. */
+export function markSynced(id: string, remoteId: string) {
+  write(
+    KEY.records,
+    getRecords().map((r) => (r.id === id ? { ...r, synced: true, remoteId } : r)),
+  );
 }
 
 export function deleteRecord(id: string) {
