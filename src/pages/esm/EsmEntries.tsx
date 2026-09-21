@@ -29,11 +29,27 @@ export default function EsmEntries() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-3 px-4 py-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <h1 className="text-2xl font-semibold text-foreground">My entries</h1>
-        <Button variant="outline" size="sm" onClick={download} disabled={!records.length}>
-          Export
-        </Button>
+        <div className="flex gap-2">
+          {records.some((r) => !r.synced) && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                const { sent, failed } = await pushPendingRecords(getRecords());
+                setRecords(getRecords());
+                if (failed) toast.warning(`${sent} uploaded, ${failed} still waiting.`);
+                else toast.success(`${sent} entr${sent === 1 ? "y" : "ies"} uploaded.`);
+              }}
+            >
+              Upload
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={download} disabled={!records.length}>
+            Export
+          </Button>
+        </div>
       </div>
 
       {!records.length && (
