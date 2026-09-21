@@ -2,7 +2,8 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { SurveyRunner } from "@/components/esm/SurveyRunner";
 import { otherScreening, primaryScreening } from "@/features/esm/questionnaires";
-import { addRecord, getProfile, saveProfile } from "@/features/esm/store";
+import { getProfile, saveProfile } from "@/features/esm/store";
+import { submitRecord } from "@/features/esm/backend";
 
 /** The one-time entry survey, chosen by the participant's role. */
 export default function EsmScreening() {
@@ -23,14 +24,15 @@ export default function EsmScreening() {
       draftId={questionnaire.id}
       submitLabel="Finish the entry survey"
       onCancel={() => navigate("/")}
-      onSubmit={(answers) => {
-        addRecord(isPrimary ? "primary_screening" : "other_screening", answers);
+      onSubmit={async (answers) => {
+        const result = await submitRecord(isPrimary ? "primary_screening" : "other_screening", answers);
         saveProfile({
           ...profile,
           screeningDone: true,
           name: typeof answers.p_full_name === "string" ? answers.p_full_name : profile.name,
         });
-        toast.success("Entry survey saved. The weekly logging starts now.");
+        if (result.uploaded) toast.success("Entry survey saved. The weekly logging starts now.");
+        else toast.warning(`Saved on this device only — ${result.error}`);
         navigate("/", { replace: true });
       }}
     />
