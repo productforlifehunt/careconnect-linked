@@ -84,7 +84,9 @@ export default function EsmEntries() {
               </Button>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">{answered} answers recorded</p>
+              <p className="text-sm text-muted-foreground">
+                {answered} answers recorded · {record.synced ? "sent to the study" : "on this device only"}
+              </p>
             </CardContent>
           </Card>
         );
