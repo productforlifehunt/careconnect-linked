@@ -44,6 +44,13 @@ const INJECT_AFTER: Record<string, { text: string; type: string; note: string }[
   ],
 };
 
+/** Extra trailing columns per questionnaire id. */
+const TRAILING: Record<string, { text: string; type: string; note: string }[]> = {
+  daily_log: [
+    { text: "日志日期（哪一天的晚间记录）", type: "Date", note: "此处修改：新增，晚间日志必须能按天查，所以单独一列" },
+  ],
+};
+
 function build(q: Questionnaire, cct: string, startAt = 1) {
   const rows: Row[] = [];
   let n = startAt;
@@ -62,6 +69,9 @@ function build(q: Questionnaire, cct: string, startAt = 1) {
         rows.push({ code: "", text: extra.text, column: col(n++), type: extra.type, note: extra.note });
       }
     }
+  }
+  for (const extra of TRAILING[q.id] ?? []) {
+    rows.push({ code: "", text: extra.text, column: col(n++), type: extra.type, note: extra.note });
   }
   rows.push({
     code: "",
