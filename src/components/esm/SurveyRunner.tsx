@@ -56,7 +56,7 @@ export function SurveyRunner({
     if (missing.length) {
       const first = missing[0];
       toast.error(
-        `${missing.length} question${missing.length > 1 ? "s" : ""} still need an answer — start with "${first.code ? `${first.code} ` : ""}${first.label}".`,
+        `${missing.length} question${missing.length > 1 ? "s" : ""} still need an answer — start with "${first.code ? `${first.code} ` : ""}${first.text}".`,
       );
       document
         .getElementById(`esm-q-${first.id}`)
