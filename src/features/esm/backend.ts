@@ -3,10 +3,10 @@
  *
  * All tables were built through the JetEngine GUI on /afresh, one column per
  * question, exactly as the study document specifies:
- *   CCT 311 esm_screening    — 146 columns (Sections 1 and 2)
- *   CCT 312 esm_hourly_log   — 34 columns (Section 3)
- *   CCT 313 esm_daily_log    — 5 columns (Section 4)
- *   CCT 314 esm_log_person   — 4 columns (the people named in an hourly log)
+ *   CCT 318 esm_screening   (slug esm_screening_v2)   — 146 columns (Sections 1 and 2)
+ *   CCT 319 esm_hourly_log  (slug esm_hourly_log_v2)  — 34 columns (Section 3)
+ *   CCT 317 esm_daily_log   (slug esm_daily_log_v2)   — 5 columns (Section 4)
+ *   CCT 320 esm_log_person  (slug esm_log_person_v2)  — 4 columns (people named in an hourly log)
  *
  * Every row belongs to its participant through a JetEngine relation only —
  * never a hand-made id column:
@@ -21,14 +21,11 @@ import { ESM_SPEC } from "./spec.generated";
 import { linkPeopleToLog, personName } from "./people";
 import { addRecord, markSynced, type EsmRecord, type RecordKind } from "./store";
 
-/**
- * The REST slugs JetEngine actually registered when the tables were built in the
- * GUI — they read oddly but they are the live endpoints, so never "tidy" them.
- */
+/** The REST slugs JetEngine registered for the rebuilt tables. */
 export const ESM_CCT = {
-  screening: "esm_screening_responesm_screening",
-  hourly: "esm_hourly_logesm_hourly_log",
-  daily: "esm_daily_logesm_daily_log",
+  screening: "esm_screening_v2",
+  hourly: "esm_hourly_log_v2",
+  daily: "esm_daily_log_v2",
 } as const;
 
 export const ESM_REL = {

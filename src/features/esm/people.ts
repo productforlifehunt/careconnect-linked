@@ -1,7 +1,7 @@
 /**
  * The people a participant mentions in their hourly logs.
  *
- * Each person is one row in the JetEngine table esm_log_person (CCT 314):
+ * Each person is one row in the JetEngine table esm_log_person (CCT 320, slug esm_log_person_v2):
  *   a01 person name, a02 relationship to caregiver, a03 what this person does,
  *   a04 notes.
  *
@@ -12,8 +12,8 @@
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getCurrentUserIdNumber } from "@/features/shared/current-user";
 
-/** The REST slug JetEngine registered in the GUI — odd looking, but live. */
-export const PERSON_CCT = "esm_log_personesm_log_person";
+/** The REST slug JetEngine registered for the rebuilt people table. */
+export const PERSON_CCT = "esm_log_person_v2";
 export const PERSON_REL = { user: 316, hourlyLog: 308 } as const;
 
 export interface EsmPerson {
