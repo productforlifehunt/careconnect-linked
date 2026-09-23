@@ -54,7 +54,13 @@ export function SurveyRunner({
 
   const next = () => {
     if (missing.length) {
-      toast.error(`${missing.length} question${missing.length > 1 ? "s" : ""} still need an answer on this page.`);
+      const first = missing[0];
+      toast.error(
+        `${missing.length} question${missing.length > 1 ? "s" : ""} still need an answer — start with "${first.code ? `${first.code} ` : ""}${first.text}".`,
+      );
+      document
+        .getElementById(`esm-q-${first.id}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
     if (isLast) {

@@ -91,7 +91,7 @@ export function QuestionField({ question, value, onChange, extraOptions }: Props
     : [];
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
+    <div id={`esm-q-${question.id}`} className="rounded-lg border border-border bg-card p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           {question.code && (
