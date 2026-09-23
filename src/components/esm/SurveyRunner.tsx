@@ -17,7 +17,9 @@ interface Props {
 
 function visible(question: Question, answers: AnswerMap): boolean {
   if (!question.showIf) return true;
-  return question.showIf.equals.includes(answers[question.showIf.id] ?? null);
+  const given = answers[question.showIf.id] ?? null;
+  if (Array.isArray(given)) return given.some((v) => question.showIf!.equals.includes(v));
+  return question.showIf.equals.includes(given);
 }
 
 /** Walks a questionnaire one group at a time, saving a draft as you go. */

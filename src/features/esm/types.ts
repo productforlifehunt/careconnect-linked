@@ -14,6 +14,7 @@ export type QuestionType =
   | "single"
   | "multi"
   | "scale"
+  | "datetime"
   | "yesno";
 
 export interface QuestionOption {
@@ -46,6 +47,8 @@ export interface Question {
   optional?: boolean;
   /** Only show when this other question has one of these values. */
   showIf?: { id: string; equals: AnswerValue[] };
+  /** Rendered by a purpose-built editor instead of a plain field. */
+  custom?: "people";
 }
 
 export interface QuestionGroup {
