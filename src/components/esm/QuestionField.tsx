@@ -4,6 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { VoiceAnswerButton } from "./VoiceAnswerButton";
+import { PeopleAnswer } from "./PeopleAnswer";
 import { AnswerValue, Question } from "@/features/esm/types";
 import {
   matchSpokenOption,
@@ -106,7 +107,23 @@ export function QuestionField({ question, value, onChange, extraOptions }: Props
       </div>
 
       <div className="mt-3">
-        {question.type === "text" && (
+        {question.custom === "people" && (
+          <PeopleAnswer
+            value={Array.isArray(value) ? (value as string[]) : []}
+            onChange={(people) => onChange(people)}
+          />
+        )}
+
+        {question.type === "datetime" && !question.custom && (
+          <Input
+            type="datetime-local"
+            className="max-w-[16rem]"
+            value={typeof value === "string" ? value : ""}
+            onChange={(e) => onChange(e.target.value)}
+          />
+        )}
+
+        {question.type === "text" && !question.custom && (
           <Input
             value={typeof value === "string" ? value : ""}
             onChange={(e) => onChange(e.target.value)}

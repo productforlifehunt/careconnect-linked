@@ -29,7 +29,7 @@ export default function EsmScreening() {
         saveProfile({
           ...profile,
           screeningDone: true,
-          name: typeof answers.p_full_name === "string" ? answers.p_full_name : profile.name,
+          name: typeof answers.c302_a01 === "string" ? answers.c302_a01 : profile.name,
         });
         if (result.uploaded) toast.success("Entry survey saved. The weekly logging starts now.");
         else toast.warning(`Saved on this device only — ${result.error}`);
