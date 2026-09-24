@@ -501,7 +501,7 @@ function LessonView({
               const body = isZh ? section.bodyZh : section.body;
               const paragraphs = body
                 .split(/\n+/)
-                .map((part) => part.trim())
+                .map((part) => part.replace(/\*\*/g, "").trim())
                 .filter(Boolean);
 
               return (
@@ -575,10 +575,11 @@ function LessonView({
         )}
 
         {/* Self-check Quiz */}
-        {lesson.quiz?.question?.trim() &&
-          lesson.quiz.options.some((option) => option.trim()) && (
-            <QuizCard quiz={lesson.quiz} isZh={isZh} />
-          )}
+        {(lesson.quizzes ?? (lesson.quiz ? [lesson.quiz] : []))
+          .filter((q) => q.question?.trim() && q.options.some((o) => o.trim()))
+          .map((q, qi) => (
+            <QuizCard key={`${lesson.key}-q${qi}`} quiz={q} isZh={isZh} />
+          ))}
 
         {/* Tool CTA */}
         {lesson.toolPath && lesson.toolLabel && (
