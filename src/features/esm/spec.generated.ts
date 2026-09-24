@@ -3004,7 +3004,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c303_a01",
+    "id": "c319_a01",
     "cct": "303",
     "slug": "esm_hourly_log",
     "column": "a01",
@@ -3029,7 +3029,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c303_a02",
+    "id": "c319_a02",
     "cct": "303",
     "slug": "esm_hourly_log",
     "column": "a02",
@@ -3040,7 +3040,7 @@ export const ESM_SPEC: SpecItem[] = [
     "type": "datetime"
   },
   {
-    "id": "c303_a03",
+    "id": "c319_a03",
     "cct": "303",
     "slug": "esm_hourly_log",
     "column": "a03",
@@ -3049,10 +3049,10 @@ export const ESM_SPEC: SpecItem[] = [
     "block": "",
     "label": "Other time",
     "type": "datetime",
-    "otherFor": "c303_a02"
+    "otherFor": "c319_a02"
   },
   {
-    "id": "c303_a04",
+    "id": "c319_a04",
     "cct": "303",
     "slug": "esm_hourly_log",
     "column": "a04",
@@ -3121,7 +3121,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c303_a05",
+    "id": "c319_a05",
     "cct": "303",
     "slug": "esm_hourly_log",
     "column": "a05",
@@ -3131,10 +3131,10 @@ export const ESM_SPEC: SpecItem[] = [
     "label": "Other",
     "type": "text",
     "help": "The prefix \"ADL\" and \"IADL\" which not appear on the actual survey question handled to participants",
-    "otherFor": "c303_a04"
+    "otherFor": "c319_a04"
   },
   {
-    "id": "c303_a06",
+    "id": "c319_a06",
     "cct": "303",
     "slug": "esm_hourly_log",
     "column": "a06",
@@ -3146,11 +3146,11 @@ export const ESM_SPEC: SpecItem[] = [
     "scale": {
       "min": -3,
       "max": 3,
-      "labels": "Very Unpleasant to Very Pleasant)   Saves to (CCT303 column ID: a06 type: number"
+      "labels": "Very Unpleasant to Very Pleasant)   Saves to (CCT319 column ID: a06 type: number"
     }
   },
   {
-    "id": "c303_a07",
+    "id": "c319_a07",
     "cct": "303",
     "slug": "esm_hourly_log",
     "column": "a07",
@@ -3162,7 +3162,7 @@ export const ESM_SPEC: SpecItem[] = [
     "help": "Format: Free text with Voice Input and AI Support AI support is on the frontend to offer voice transcription, AI enhance support, etc, but the AI can’t click on form submission, it will only help to fill the form on the frontend, the user can then adjust, let the AI offer a better draft/enhance, which AI will show in the dropdown support chatbot with a copy to form button, only clicking on it will the enhanced answer be copied to the form"
   },
   {
-    "id": "c303_a08",
+    "id": "c319_a08",
     "cct": "303",
     "slug": "esm_hourly_log",
     "column": "a08",
@@ -3183,7 +3183,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c303_a09",
+    "id": "c319_a09",
     "cct": "303",
     "slug": "esm_hourly_log",
     "column": "a09",
@@ -3204,7 +3204,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c303_a10",
+    "id": "c319_a10",
     "cct": "303",
     "slug": "esm_hourly_log",
     "column": "a10",
@@ -3225,7 +3225,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c303_a11",
+    "id": "c319_a11",
     "cct": "303",
     "slug": "esm_hourly_log",
     "column": "a11",
@@ -3242,7 +3242,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c303_a12",
+    "id": "c319_a12",
     "cct": "303",
     "slug": "esm_hourly_log",
     "column": "a12",
@@ -3254,7 +3254,7 @@ export const ESM_SPEC: SpecItem[] = [
     "help": "Format: Free text with Voice Input and AI Support"
   },
   {
-    "id": "c303_a13",
+    "id": "c319_a13",
     "cct": "303",
     "slug": "esm_hourly_log",
     "column": "a13",
@@ -3266,7 +3266,7 @@ export const ESM_SPEC: SpecItem[] = [
     "help": "Format: Free text with Voice Input and AI Support"
   },
   {
-    "id": "c303_a14",
+    "id": "c319_a14",
     "cct": "303",
     "slug": "esm_hourly_log",
     "column": "a14",
@@ -3278,7 +3278,7 @@ export const ESM_SPEC: SpecItem[] = [
     "help": "Format: Numeric input"
   },
   {
-    "id": "c303_a15",
+    "id": "c319_a15",
     "cct": "303",
     "slug": "esm_hourly_log",
     "column": "a15",
@@ -3294,7 +3294,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c303_a16",
+    "id": "c319_a16",
     "cct": "303",
     "slug": "esm_hourly_log",
     "column": "a16",
@@ -3310,7 +3310,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c303_a17",
+    "id": "c319_a17",
     "cct": "303",
     "slug": "esm_hourly_log",
     "column": "a17",
@@ -3326,7 +3326,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c303_a18",
+    "id": "c319_a18",
     "cct": "303",
     "slug": "esm_hourly_log",
     "column": "a18",
@@ -3343,7 +3343,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c303_a19",
+    "id": "c319_a19",
     "cct": "303",
     "slug": "esm_hourly_log",
     "column": "a19",
@@ -3359,7 +3359,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c303_a20",
+    "id": "c319_a20",
     "cct": "303",
     "slug": "esm_hourly_log",
     "column": "a20",
@@ -3375,7 +3375,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c303_a21",
+    "id": "c319_a21",
     "cct": "303",
     "slug": "esm_hourly_log",
     "column": "a21",
@@ -3391,7 +3391,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c303_a22",
+    "id": "c319_a22",
     "cct": "303",
     "slug": "esm_hourly_log",
     "column": "a22",
@@ -3407,7 +3407,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c303_a23",
+    "id": "c319_a23",
     "cct": "303",
     "slug": "esm_hourly_log",
     "column": "a23",
@@ -3423,7 +3423,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c303_a24",
+    "id": "c319_a24",
     "cct": "303",
     "slug": "esm_hourly_log",
     "column": "a24",
@@ -3439,7 +3439,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c303_a25",
+    "id": "c319_a25",
     "cct": "303",
     "slug": "esm_hourly_log",
     "column": "a25",
@@ -3455,7 +3455,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c303_a26",
+    "id": "c319_a26",
     "cct": "303",
     "slug": "esm_hourly_log",
     "column": "a26",
@@ -3473,7 +3473,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c303_a28",
+    "id": "c319_a28",
     "cct": "303",
     "slug": "esm_hourly_log",
     "column": "a28",
@@ -3485,7 +3485,7 @@ export const ESM_SPEC: SpecItem[] = [
     "help": "Format: Free text with Voice Input and AI Support"
   },
   {
-    "id": "c303_a29",
+    "id": "c319_a29",
     "cct": "303",
     "slug": "esm_hourly_log",
     "column": "a29",
@@ -3497,7 +3497,7 @@ export const ESM_SPEC: SpecItem[] = [
     "help": "Format: Free text with Voice Input and AI Support"
   },
   {
-    "id": "c303_a30",
+    "id": "c319_a30",
     "cct": "303",
     "slug": "esm_hourly_log",
     "column": "a30",
@@ -3513,7 +3513,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c303_a31",
+    "id": "c319_a31",
     "cct": "303",
     "slug": "esm_hourly_log",
     "column": "a31",
@@ -3571,7 +3571,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c303_a311",
+    "id": "c319_a311",
     "cct": "303",
     "slug": "esm_hourly_log",
     "column": "a311",
@@ -3580,10 +3580,10 @@ export const ESM_SPEC: SpecItem[] = [
     "block": "",
     "label": "Other detail",
     "type": "text",
-    "otherFor": "c303_a31"
+    "otherFor": "c319_a31"
   },
   {
-    "id": "c303_a32",
+    "id": "c319_a32",
     "cct": "303",
     "slug": "esm_hourly_log",
     "column": "a32",
@@ -3595,7 +3595,7 @@ export const ESM_SPEC: SpecItem[] = [
     "help": "Format: Free text with Voice Input and AI Support"
   },
   {
-    "id": "c303_a33",
+    "id": "c319_a33",
     "cct": "303",
     "slug": "esm_hourly_log",
     "column": "a33",
@@ -3607,7 +3607,7 @@ export const ESM_SPEC: SpecItem[] = [
     "help": "Format: Free text with Voice Input and AI Support"
   },
   {
-    "id": "c303_a34",
+    "id": "c319_a34",
     "cct": "303",
     "slug": "esm_hourly_log",
     "column": "a34",
@@ -3619,7 +3619,7 @@ export const ESM_SPEC: SpecItem[] = [
     "help": "Format: Free text with Voice Input and AI Support"
   },
   {
-    "id": "c304_a01",
+    "id": "c317_a01",
     "cct": "304",
     "slug": "esm_daily_log",
     "column": "a01",
@@ -3631,7 +3631,7 @@ export const ESM_SPEC: SpecItem[] = [
     "help": "Format: Free text with Voice Input and AI Support"
   },
   {
-    "id": "c304_a02",
+    "id": "c317_a02",
     "cct": "304",
     "slug": "esm_daily_log",
     "column": "a02",
@@ -3647,7 +3647,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c304_a03",
+    "id": "c317_a03",
     "cct": "304",
     "slug": "esm_daily_log",
     "column": "a03",
@@ -3663,7 +3663,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c304_a04",
+    "id": "c317_a04",
     "cct": "304",
     "slug": "esm_daily_log",
     "column": "a04",
@@ -3679,7 +3679,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c304_a05",
+    "id": "c317_a05",
     "cct": "304",
     "slug": "esm_daily_log",
     "column": "a05",

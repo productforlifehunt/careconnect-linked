@@ -57,15 +57,15 @@ function toQuestion(item: SpecItem): Question {
   };
 
   if (/\(optional\)/i.test(item.label) || item.otherFor) question.optional = true;
-  if (item.id === "c303_a26") {
+  if (item.id === "c319_a26") {
     question.custom = "people";
     question.optional = true;
     question.text = "Who was involved?";
     question.help =
       "Add the people who took part. Each person is saved once and can be picked again in later entries.";
   }
-  if (item.id === "c303_a03") {
-    question.showIf = { id: "c303_a01", equals: ["b02"] };
+  if (item.id === "c319_a03") {
+    question.showIf = { id: "c319_a01", equals: ["b02"] };
     question.optional = true;
   }
   if (/^c318_a(?:29|30|32|33|35|36|38|39|41|42|44|45|47|48|50|51|53|54|56|57|59|60|62|63)$/.test(item.id)) {
@@ -98,7 +98,7 @@ function groupsOf(items: SpecItem[]): QuestionGroup[] {
 const startsWith = (item: SpecItem, prefix: string) => item.code.startsWith(prefix);
 
 /** Columns a02–a05 of the hourly table are filled in by the app, not typed. */
-const HIDDEN = new Set(["c303_a02"]);
+const HIDDEN = new Set(["c319_a02"]);
 
 const screeningItems = ESM_SPEC.filter((i) => i.cct === "318");
 const sharedInstrumentItems = screeningItems.filter((i) => startsWith(i, "1.7"));
@@ -126,14 +126,14 @@ export const hourlyLog: Questionnaire = {
   id: "esm_hourly_log",
   title: "Hourly log",
   intro: "Tell us about this hour: what happened, who was involved, what was hard.",
-  groups: groupsOf(ESM_SPEC.filter((i) => i.cct === "303" && !HIDDEN.has(i.id))),
+  groups: groupsOf(ESM_SPEC.filter((i) => i.cct === "319" && !HIDDEN.has(i.id))),
 };
 
 export const dailyLog: Questionnaire = {
   id: "esm_daily_log",
   title: "End-of-day log",
   intro: "Close the day: anything you did not log, and how today felt overall.",
-  groups: groupsOf(ESM_SPEC.filter((i) => i.cct === "304")),
+  groups: groupsOf(ESM_SPEC.filter((i) => i.cct === "317")),
 };
 
 export const QUESTIONNAIRES = { primaryScreening, otherScreening, hourlyLog, dailyLog };
@@ -148,4 +148,4 @@ export const personDetailQuestions: Question[] = screeningItems
 
 /** The activity families, still exported for the entry list summaries. */
 export const ACTIVITY_CATEGORIES =
-  byId.get("c303_a04")?.options?.map((o) => ({ value: o.value, label: o.label })) ?? [];
+  byId.get("c319_a04")?.options?.map((o) => ({ value: o.value, label: o.label })) ?? [];
