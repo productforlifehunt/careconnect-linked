@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SurveyRunner } from "@/components/esm/SurveyRunner";
 import { dailyLog } from "@/features/esm/questionnaires";
-import { missedSlots } from "@/features/esm/store";
+import { localDay, missedSlots } from "@/features/esm/store";
 import { submitRecord } from "@/features/esm/backend";
 import { useTranslation } from "react-i18next";
 import { isChineseLanguage, uiText } from "@/features/esm/i18n";
@@ -39,7 +39,7 @@ export default function EsmDailyLog() {
 
       <SurveyRunner
         questionnaire={dailyLog}
-        draftId={`daily:${new Date().toISOString().slice(0, 10)}`}
+        draftId={`daily:${localDay(new Date())}`}
          submitLabel={uiText(zh, "Finish today", "完成今日记录")}
         onCancel={() => navigate("/log")}
         onSubmit={async (answers) => {

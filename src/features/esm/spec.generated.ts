@@ -3146,7 +3146,7 @@ export const ESM_SPEC: SpecItem[] = [
     "scale": {
       "min": -3,
       "max": 3,
-      "labels": "Very Unpleasant to Very Pleasant)   Saves to (CCT319 column ID: a06 type: number"
+      "labels": "Very Unpleasant to Very Pleasant"
     }
   },
   {
