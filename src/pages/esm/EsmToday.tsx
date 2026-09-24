@@ -18,6 +18,7 @@ export default function EsmToday() {
   const currentHour = new Date().getHours();
   const eveningDone = dailyLogDone();
   const currentSlot = useMemo(() => slots.find((slot) => slot.hour === currentHour), [slots, currentHour]);
+  const slotLabel = (slot: (typeof slots)[number]) => zh ? `${String(slot.hour).padStart(2, "0")}:00` : slot.label;
 
   useEffect(() => {
     currentRef.current?.scrollIntoView({ behavior: settings.reducedMotion ? "auto" : "smooth", block: "nearest", inline: "center" });
@@ -56,7 +57,7 @@ export default function EsmToday() {
 
       {settings.hourlyReminders && currentSlot && (
         <div className="mt-5 border-l-4 border-primary bg-primary/5 px-4 py-3">
-           <p className="font-semibold text-foreground">{uiText(zh, "Now", "现在")} · {currentSlot.label}</p>
+            <p className="font-semibold text-foreground">{uiText(zh, "Now", "现在")} · {slotLabel(currentSlot)}</p>
            <p className="mt-1 text-sm text-muted-foreground">{currentSlot.count ? uiText(zh, `${currentSlot.count} recorded. Add another event if needed.`, `已记录 ${currentSlot.count} 条；如有需要可继续添加。`) : uiText(zh, "No care event recorded yet.", "尚未记录照护事件。")}</p>
            <Button className="mt-3" size="sm" onClick={() => navigate(`/log/hourly?slot=${currentSlot.id}`)}>{uiText(zh, "Log this hour", "记录这个小时")}</Button>
         </div>
@@ -85,7 +86,7 @@ export default function EsmToday() {
                     slot.done && !current && "border-success/60 bg-success/5",
                   )}
                 >
-                  <span className="text-sm font-semibold">{slot.label}</span>
+                   <span className="text-sm font-semibold">{slotLabel(slot)}</span>
                   {slot.done ? <Check className="h-4 w-4 text-success" /> : <Clock3 className="h-4 w-4 text-muted-foreground" />}
                    <span className="text-xs font-normal text-muted-foreground">{slot.count ? uiText(zh, `${slot.count} recorded`, `已记录 ${slot.count} 条`) : uiText(zh, "Not recorded", "未记录")}</span>
                 </Button>

@@ -24,11 +24,6 @@ interface Props {
   extraOptions?: { value: string; label: string }[];
 }
 
-const YESNO = [
-  { value: "yes", label: "Yes" },
-  { value: "no", label: "No" },
-];
-
 export function QuestionField({ question, value, onChange, extraOptions }: Props) {
   const { i18n } = useTranslation();
   const isChinese = isChineseLanguage(i18n.language);

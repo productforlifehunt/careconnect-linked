@@ -32,10 +32,10 @@ export function EsmShell({ children }: { children: React.ReactNode }) {
               size="sm"
               className="gap-1 px-2"
               onClick={() => void i18n.changeLanguage(isChinese ? "en" : "zh-CN")}
-              aria-label={uiText(isChinese, "Switch to English", "切换到中文")}
+              aria-label={uiText(isChinese, "Switch to Chinese", "切换到英文")}
             >
               <Languages className="h-4 w-4" />
-              <span>{isChinese ? "EN" : "中文"}</span>
+              <span>{uiText(isChinese, "Chinese", "英文")}</span>
             </Button>
             <Button asChild variant="ghost" size="sm" className="max-w-32 gap-1.5 px-2" aria-label={profile?.name || uiText(isChinese, "Me", "我")}>
               <Link to="/me"><UserRound className="h-5 w-5 shrink-0" /><span className="truncate">{profile?.name || uiText(isChinese, "Me", "我")}</span></Link>

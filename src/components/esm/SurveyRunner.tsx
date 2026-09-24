@@ -84,9 +84,7 @@ export function SurveyRunner({
   return (
     <div className="mx-auto w-full max-w-2xl px-4 pb-24 pt-4">
       <div className="mb-4">
-        <p className="text-xs uppercase tracking-wide text-muted-foreground">
-          {displayQuestionnaire.title} · {uiText(isChinese, `Step ${step + 1} of ${displayQuestionnaire.groups.length}`, `第 ${step + 1} 步，共 ${displayQuestionnaire.groups.length} 步`)}
-        </p>
+        <p className="text-xs uppercase tracking-wide text-muted-foreground">{displayQuestionnaire.title}</p>
         <h1 className="mt-1 text-2xl font-semibold text-foreground">
           {group.title}
         </h1>
