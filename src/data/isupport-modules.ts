@@ -825,3 +825,12 @@ export const ISUPPORT_SOURCE_ATTRIBUTION = {
   zh: "改编自世界卫生组织《iSupport 失智症照护：失智症患者护理者培训与支持手册》（WHO, 2019）。",
   url: "https://www.who.int/publications/i/item/9789241515863",
 };
+
+// Append WHO full-text extension sections (additive only — nothing removed).
+import { ISUPPORT_EXTENDED } from "./isupport-extended";
+for (const mod of ISUPPORT_MODULES) {
+  for (const lesson of mod.lessons) {
+    const extra = ISUPPORT_EXTENDED[lesson.key];
+    if (extra?.length) lesson.sections = [...lesson.sections, ...extra];
+  }
+}
