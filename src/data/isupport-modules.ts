@@ -45,6 +45,8 @@ export interface ISupportLesson {
   reflectQuestion: string;
   reflectQuestionZh: string;
   quiz?: ISupportQuiz;
+  /** All WHO \"Check your understanding\" items, in order */
+  quizzes?: ISupportQuiz[];
   readMinutes?: number;
   /** Optional: link to challenged_content category for related deep-dive articles */
   contentCategory?: string;
@@ -826,11 +828,18 @@ export const ISUPPORT_SOURCE_ATTRIBUTION = {
   url: "https://www.who.int/publications/i/item/9789241515863",
 };
 
-// Append WHO full-text extension sections (additive only — nothing removed).
-import { ISUPPORT_EXTENDED } from "./isupport-extended";
+// Lesson body = WHO iSupport manual content only (converted lesson by lesson from the WHO PDF).
+// Every section, activity, example and every "Check your understanding" with WHO answers.
+import WHO_CONTENT from "./isupport-who-content.json";
 for (const mod of ISUPPORT_MODULES) {
   for (const lesson of mod.lessons) {
-    const extra = ISUPPORT_EXTENDED[lesson.key];
-    if (extra?.length) lesson.sections = [...lesson.sections, ...extra];
+    const w = (WHO_CONTENT as Record<string, any>)[lesson.key];
+    if (!w) continue;
+    lesson.summary = w.summary; lesson.summaryZh = w.summaryZh;
+    lesson.sections = w.sections;
+    lesson.keyActions = w.keyActions ?? []; lesson.keyActionsZh = w.keyActionsZh ?? [];
+    lesson.reflectQuestion = w.reflectQuestion ?? ""; lesson.reflectQuestionZh = w.reflectQuestionZh ?? "";
+    lesson.quizzes = w.quizzes ?? [];
+    lesson.quiz = lesson.quizzes[0];
   }
 }
