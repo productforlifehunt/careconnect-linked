@@ -120,9 +120,9 @@ export function deleteRecord(id: string) {
 
 /* ------------------------------------------------------------ reminders */
 
-/** Hourly prompts run 8 AM to 10 PM; 10 PM is also the end-of-day prompt. */
+/** Hourly prompts run 8 AM to 9 PM; 10 PM is the end-of-day (daily log) prompt. */
 export const FIRST_HOUR = 8;
-export const LAST_HOUR = 22;
+export const LAST_HOUR = 21;
 
 export const slotId = (date: Date, hour: number) =>
   `${date.toISOString().slice(0, 10)}T${String(hour).padStart(2, "0")}`;

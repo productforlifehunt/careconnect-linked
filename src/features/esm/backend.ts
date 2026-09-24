@@ -63,7 +63,8 @@ function buildBody(record: EsmRecord): Record<string, string> {
     if (item.cct !== cct) continue;
     const value = record.answers?.[item.id];
     if (item.id === "c303_a26") {
-      body[item.column] = pickedPeople(record).map(personName).join(", ");
+      // CCT319 a26 stores only "Just Me" (b01); other people go through REL308.
+      body[item.column] = pickedPeople(record).includes("just_me") ? "b01" : "";
       continue;
     }
     body[item.column] = asWPString(value);
