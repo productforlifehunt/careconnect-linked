@@ -1,22 +1,4 @@
-and evaluation. More research is needed to evaluate the
-effectiveness of local adaptions and implementations.
-
-ix
-
-
-1. Introduction
-Module 1.Module
-Introduction
-to dementia to dementia
-
-MODULE
-
-1
-
-INTRODUCTION TO DEMENTIA
-
-
-1
+1
 
 Introduction to dementia
 
@@ -53,8 +35,7 @@ Manual
 
 2
 
-
-MODULE
+MODULE
 
 Introduction to dementia
 
@@ -105,8 +86,7 @@ responsible for storing memories.
 
 3
 
-
-MODULE
+MODULE
 
 Introduction to dementia
 
@@ -148,8 +128,7 @@ Manual
 
 4
 
-
-MODULE
+MODULE
 
 Introduction to dementia
 
@@ -184,8 +163,7 @@ daily activities such as shopping, dressing, and washing.
 
 5
 
-
-MODULE
+MODULE
 
 Introduction to dementia
 
@@ -269,8 +247,7 @@ zz Becoming more anxious than before
 
 6
 
-
-MODULE
+MODULE
 
 Introduction to dementia
 
@@ -314,8 +291,7 @@ diagnosed with dementia.
 
 7
 
-
-MODULE
+MODULE
 
 Introduction to dementia
 
@@ -360,8 +336,7 @@ respond to such situations.
 
 8
 
-
-iSupport
+iSupport
 Intervention
 Manual
 Introduction to dementia
@@ -374,8 +349,7 @@ You finished this lesson, well done!
 
 9
 
-
-1
+1
 
 ANSWERS - INTRODUCTION TO DEMENTIA
 
@@ -421,3 +395,28 @@ a medical exam given by a certified medical doctor.
 
 While this manual provides information and support, it cannot
 replace a medical exam given by a certified medical doctor.
+
+99
+
+Call a medical doctor’s office and make an appointment
+This is the best first step if you have not done so already.
+
+99
+
+The person has been to a medical doctor already and has been
+diagnosed with dementia
+You have already completed the first important step.
+
+10
+
+MODULE
+
+Module 2. Being a caregiver
+
+2
+
+BEING A CARER
+Lesson 1. The journey together
+Lesson 2. Improving communication
+Lesson 3. Supported decision-making
+Lesson 4. Involving others

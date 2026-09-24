@@ -1,32 +1,4 @@
-
-99
-
-Call a medical doctor’s office and make an appointment
-This is the best first step if you have not done so already.
-
-99
-
-The person has been to a medical doctor already and has been
-diagnosed with dementia
-You have already completed the first important step.
-
-10
-
-
-MODULE
-
-Module 2. Being a caregiver
-
-2
-
-BEING A CARER
-Lesson 1. The journey together
-Lesson 2. Improving communication
-Lesson 3. Supported decision-making
-Lesson 4. Involving others
-
-
-2
+2
 
 Lesson 1. The journey together
 
@@ -83,8 +55,7 @@ and dressing.
 
 12
 
-
-MODULE
+MODULE
 
 Lesson 1. The journey together
 
@@ -117,8 +88,7 @@ together with her each time prior to shopping.
 
 13
 
-
-MODULE
+MODULE
 
 Lesson 1. The journey together
 
@@ -155,8 +125,7 @@ together.
 
 14
 
-
-MODULE
+MODULE
 
 Lesson 1. The journey together
 
@@ -187,8 +156,7 @@ Lesson 2. Making time for pleasant activities in Module 3.
 
 15
 
-
-MODULE
+MODULE
 
 Lesson 1. The journey together
 
@@ -231,8 +199,7 @@ with Jess until the paid in-home helper arrives.
 
 16
 
-
-MODULE
+MODULE
 
 Lesson 1. The journey together
 
@@ -267,8 +234,7 @@ What does the person you care for want to do themselves for as long as possible?
 
 17
 
-
-MODULE
+MODULE
 
 Lesson 1. The journey together
 
@@ -287,8 +253,7 @@ If you find it helpful, please write down the questions that you might want to d
 
 18
 
-
-MODULE
+MODULE
 
 Lesson 1. The journey together
 
@@ -321,8 +286,7 @@ Think about it before reading on.
 
 19
 
-
-MODULE
+MODULE
 
 Lesson 1. The journey together
 
@@ -366,8 +330,7 @@ communicate with you.
 
 20
 
-
-MODULE
+MODULE
 
 Lesson 1. The journey together
 
@@ -410,8 +373,7 @@ everyday life in Module 3.
 
 21
 
-
-2
+2
 
 ANSWERS - BEING A CARER
 
@@ -461,8 +423,7 @@ Olivia purpose in life and a feeling of dignity.
 
 22
 
-
-MODULE
+MODULE
 
 ANSWERS - BEING A CARER • Lesson 1
 
@@ -470,3 +431,41 @@ ANSWERS - BEING A CARER • Lesson 1
 
 2. Check your understanding
 Feeling stressed due to conflicting duties.
+How could Molly deal with the situation?
+99
+
+Ask a neighbour to come visit Jess until the paid inhome helper arrives.
+This is helpful because it ensures Jess’ safety. Molly
+can do her work and also gets a short break from
+caregiving.
+
+99
+
+Ask her husband to go into work late so that he can be
+with Jess until the paid in-home helper arrives.
+
+iSupport
+Intervention
+Manual
+
+This is a good response. It shows that Molly is trying
+to involve her family members for support and gives
+her the break that she needs.
+
+99
+
+Ask the paid-in home helper to come in early.
+This is a good response but it may not be possible
+because of the short notice.
+
+88 Leave Jess alone and see what happens.
+This is not a good response, because it potentially puts
+Jess in danger and Molly will not be able to perform well
+at work with the added stress of leaving Jess.
+
+88 Ask Jess to ‘take care of herself’.
+This is not a good response because her dependence
+on others is part of living with dementia and unlikely
+to change.
+
+23
