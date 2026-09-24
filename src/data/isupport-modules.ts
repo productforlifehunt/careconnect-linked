@@ -841,5 +841,6 @@ for (const mod of ISUPPORT_MODULES) {
     lesson.reflectQuestion = w.reflectQuestion ?? ""; lesson.reflectQuestionZh = w.reflectQuestionZh ?? "";
     lesson.quizzes = w.quizzes ?? [];
     lesson.quiz = lesson.quizzes[0];
+    lesson.toolPath = undefined; // not part of WHO iSupport
   }
 }
