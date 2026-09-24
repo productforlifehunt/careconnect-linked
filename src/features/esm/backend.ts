@@ -1,12 +1,12 @@
 /**
  * ESM study storage on the headless WordPress backend.
  *
- * All tables were built through the JetEngine GUI on /afresh, one column per
+ * The fixed JetEngine tables use one column per
  * question, exactly as the study document specifies:
- *   CCT 318 esm_screening   (slug esm_screening_v2)   — 146 columns (Sections 1 and 2)
- *   CCT 319 esm_hourly_log  (slug esm_hourly_log_v2)  — 34 columns (Section 3)
- *   CCT 317 esm_daily_log   (slug esm_daily_log_v2)   — 5 columns (Section 4)
- *   CCT 320 esm_log_person  (slug esm_log_person_v2)  — 4 columns (people named in an hourly log)
+  *   CCT 318 esm_screening   — 146 fields (Sections 1 and 2)
+  *   CCT 319 esm_hourly_log  — 34 fields (Section 3)
+  *   CCT 317 esm_daily_log   — 5 fields (Section 4)
+  *   CCT 320 esm_log_person  — 4 fields (people named in an hourly log)
  *
  * Every row belongs to its participant through a JetEngine relation only —
  * never a hand-made id column:
@@ -21,7 +21,7 @@ import { ESM_SPEC } from "./spec.generated";
 import { linkPeopleToLog, personName } from "./people";
 import { addRecord, markSynced, type EsmRecord, type RecordKind } from "./store";
 
-/** The REST slugs JetEngine registered for the rebuilt tables. */
+/** REST slugs currently registered by JetEngine for the fixed tables. */
 export const ESM_CCT = {
   screening: "esm_screening_v2",
   hourly: "esm_hourly_log_v2",
@@ -43,14 +43,14 @@ const asWPString = (value: unknown): string => {
 };
 
 function targetFor(kind: RecordKind) {
-  if (kind === "hourly_log") return { cct: "303", slug: ESM_CCT.hourly, rel: ESM_REL.hourly };
-  if (kind === "daily_log") return { cct: "304", slug: ESM_CCT.daily, rel: ESM_REL.daily };
-  return { cct: "302", slug: ESM_CCT.screening, rel: ESM_REL.screening };
+  if (kind === "hourly_log") return { cct: "319", slug: ESM_CCT.hourly, rel: ESM_REL.hourly };
+  if (kind === "daily_log") return { cct: "317", slug: ESM_CCT.daily, rel: ESM_REL.daily };
+  return { cct: "318", slug: ESM_CCT.screening, rel: ESM_REL.screening };
 }
 
 /** Which people the participant picked on an hourly log. */
 const pickedPeople = (record: EsmRecord): string[] => {
-  const value = record.answers?.c303_a26;
+  const value = record.answers?.c319_a26;
   return Array.isArray(value) ? value.map(String) : [];
 };
 
@@ -62,7 +62,7 @@ function buildBody(record: EsmRecord): Record<string, string> {
   for (const item of ESM_SPEC) {
     if (item.cct !== cct) continue;
     const value = record.answers?.[item.id];
-    if (item.id === "c303_a26") {
+    if (item.id === "c319_a26") {
       // CCT319 a26 stores only "Just Me" (b01); other people go through REL308.
       body[item.column] = pickedPeople(record).includes("just_me") ? "b01" : "";
       continue;
@@ -72,7 +72,7 @@ function buildBody(record: EsmRecord): Record<string, string> {
 
   if (record.kind === "hourly_log") {
     // "NOW" stamps the moment the entry was written; "other time" uses what was typed.
-    body.a02 = record.answers?.c303_a01 === "b01" ? record.submittedAt : "";
+    body.a02 = record.answers?.c319_a01 === "b01" ? record.submittedAt : "";
   }
 
   return body;

@@ -45,6 +45,10 @@ export function SurveyRunner({
     saveDraft(draftId, answers);
   }, [draftId, answers]);
 
+  useEffect(() => {
+    setStep(Math.min(Math.max(initialStep, 0), displayQuestionnaire.groups.length - 1));
+  }, [displayQuestionnaire.groups.length, initialStep]);
+
   const group = displayQuestionnaire.groups[step];
   const questions = useMemo(
     () => group.questions.filter((q) => visible(q, answers)),

@@ -34,7 +34,7 @@ export function EsmShell({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-2xl items-center justify-between gap-3 px-4">
           <Link to="/" className="truncate text-sm font-semibold text-foreground">
-            {uiText(isChinese, "A Week in the Life of Dementia Caregivers", "失智症护理者的一周")}
+            {uiText(isChinese, "A Week in the Life of Dementia Caregivers Study", "失智症护理者的一周")}
           </Link>
           <div className="flex shrink-0 items-center gap-1">
             <Button

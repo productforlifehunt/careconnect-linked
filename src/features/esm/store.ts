@@ -28,13 +28,23 @@ export interface EsmProfile {
 
 export interface EsmSettings {
   hourlyReminders: boolean;
-  dailyReminder: boolean;
+  reminderStart: string;
+  reminderEnd: string;
+  quietPeriods: QuietPeriod[];
   reducedMotion: boolean;
+}
+
+export interface QuietPeriod {
+  id: string;
+  start: string;
+  end: string;
 }
 
 const DEFAULT_SETTINGS: EsmSettings = {
   hourlyReminders: true,
-  dailyReminder: true,
+  reminderStart: "08:00",
+  reminderEnd: "22:00",
+  quietPeriods: [],
   reducedMotion: false,
 };
 
@@ -75,7 +85,14 @@ function write(key: string, value: unknown) {
 
 export const getProfile = (): EsmProfile | null => read<EsmProfile | null>(KEY.profile, null);
 
-export const getSettings = (): EsmSettings => read<EsmSettings>(KEY.settings, DEFAULT_SETTINGS);
+export const getSettings = (): EsmSettings => {
+  const saved = read<Partial<EsmSettings>>(KEY.settings, {});
+  return {
+    ...DEFAULT_SETTINGS,
+    ...saved,
+    quietPeriods: Array.isArray(saved.quietPeriods) ? saved.quietPeriods : [],
+  };
+};
 
 export function saveSettings(settings: EsmSettings) {
   write(KEY.settings, settings);
@@ -95,7 +112,19 @@ export function startProfile(role: ParticipantRole): EsmProfile {
   return profile;
 }
 
-export const getDraft = (id: string): AnswerMap => read<AnswerMap>(KEY.draft(id), {});
+const currentAnswerKeys = (answers: AnswerMap): AnswerMap => {
+  const migrated: AnswerMap = {};
+  for (const [key, value] of Object.entries(answers)) {
+    const currentKey = key
+      .replace(/^c302_/, "c318_")
+      .replace(/^c303_/, "c319_")
+      .replace(/^c304_/, "c317_");
+    migrated[currentKey] = value;
+  }
+  return migrated;
+};
+
+export const getDraft = (id: string): AnswerMap => currentAnswerKeys(read<AnswerMap>(KEY.draft(id), {}));
 export const saveDraft = (id: string, answers: AnswerMap) => write(KEY.draft(id), answers);
 export const clearDraft = (id: string) => {
   try {
@@ -105,7 +134,10 @@ export const clearDraft = (id: string) => {
   }
 };
 
-export const getRecords = (): EsmRecord[] => read<EsmRecord[]>(KEY.records, []);
+export const getRecords = (): EsmRecord[] => read<EsmRecord[]>(KEY.records, []).map((record) => ({
+  ...record,
+  answers: currentAnswerKeys(record.answers),
+}));
 
 export function addRecord(
   kind: RecordKind,
@@ -184,8 +216,34 @@ export function todaySlots(now = new Date()): Slot[] {
 }
 
 export function dailyLogDone(now = new Date()): boolean {
-  const day = now.toISOString().slice(0, 10);
-  return getRecords().some((r) => r.kind === "daily_log" && r.submittedAt.slice(0, 10) === day);
+  const day = localDay(now);
+  return getRecords().some((r) => r.kind === "daily_log" && localDay(new Date(r.submittedAt)) === day);
+}
+
+const localDay = (date: Date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
+export function yesterdayDailyLogDone(now = new Date()): boolean {
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  return dailyLogDone(yesterday);
+}
+
+const minutesOf = (value: string) => {
+  const [hour = 0, minute = 0] = value.split(":").map(Number);
+  return hour * 60 + minute;
+};
+
+/** Device-only reminder eligibility. The 24-hour timeline itself remains available. */
+export function hourlyReminderActive(now = new Date(), settings = getSettings()): boolean {
+  if (!settings.hourlyReminders) return false;
+  const minute = now.getHours() * 60 + now.getMinutes();
+  if (minute < minutesOf(settings.reminderStart) || minute > minutesOf(settings.reminderEnd)) return false;
+  return !settings.quietPeriods.some((period) => {
+    const start = minutesOf(period.start);
+    const end = minutesOf(period.end);
+    return start <= end ? minute >= start && minute <= end : minute >= start || minute <= end;
+  });
 }
 
 /** Missed hourly slots earlier today, for the end-of-day supplement. */

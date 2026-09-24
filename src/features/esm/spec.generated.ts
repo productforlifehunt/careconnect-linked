@@ -4,8 +4,8 @@
  * Every entry names the exact JetEngine CCT column its answer is written to,
  * so answer keys and storage stay in lock-step. Do not hand-edit: regenerate.
  *
- * Tables: esm_screening (CCT311, 146 columns), esm_hourly_log (CCT312, 34),
- * esm_daily_log (CCT313, 5), esm_log_person (CCT314, 4).
+ * Tables: esm_screening (CCT318, 146 fields), esm_hourly_log (CCT319, 34),
+ * esm_daily_log (CCT317, 5), esm_log_person (CCT320, 4).
  */
 
 export type SpecType = "text" | "longtext" | "number" | "scale" | "single" | "multi" | "datetime" | "date";
@@ -30,8 +30,8 @@ export interface SpecItem {
 
 export const ESM_SPEC: SpecItem[] = [
   {
-    "id": "c302_a01",
-    "cct": "302",
+    "id": "c318_a01",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a01",
     "code": "1.1.1",
@@ -41,8 +41,8 @@ export const ESM_SPEC: SpecItem[] = [
     "type": "text"
   },
   {
-    "id": "c302_a02",
-    "cct": "302",
+    "id": "c318_a02",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a02",
     "code": "1.1.2",
@@ -52,8 +52,8 @@ export const ESM_SPEC: SpecItem[] = [
     "type": "number"
   },
   {
-    "id": "c302_a03",
-    "cct": "302",
+    "id": "c318_a03",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a03",
     "code": "1.1.3",
@@ -74,8 +74,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a04",
-    "cct": "302",
+    "id": "c318_a04",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a04",
     "code": "1.1.4",
@@ -116,8 +116,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a05",
-    "cct": "302",
+    "id": "c318_a05",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a05",
     "code": "1.1.5",
@@ -154,8 +154,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a06",
-    "cct": "302",
+    "id": "c318_a06",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a06",
     "code": "1.1.6",
@@ -184,8 +184,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a07",
-    "cct": "302",
+    "id": "c318_a07",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a07",
     "code": "1.1.7",
@@ -200,8 +200,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a08",
-    "cct": "302",
+    "id": "c318_a08",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a08",
     "code": "1.1.8",
@@ -246,8 +246,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a081",
-    "cct": "302",
+    "id": "c318_a081",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a081",
     "code": "1.1.8",
@@ -255,11 +255,11 @@ export const ESM_SPEC: SpecItem[] = [
     "block": "",
     "label": "Other detail",
     "type": "text",
-    "otherFor": "c302_a08"
+    "otherFor": "c318_a08"
   },
   {
-    "id": "c302_a09",
-    "cct": "302",
+    "id": "c318_a09",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a09",
     "code": "1.1.9",
@@ -292,8 +292,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a10",
-    "cct": "302",
+    "id": "c318_a10",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a10",
     "code": "1.1.10",
@@ -303,8 +303,8 @@ export const ESM_SPEC: SpecItem[] = [
     "type": "number"
   },
   {
-    "id": "c302_a11",
-    "cct": "302",
+    "id": "c318_a11",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a11",
     "code": "1.1.11",
@@ -341,8 +341,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a12",
-    "cct": "302",
+    "id": "c318_a12",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a12",
     "code": "1.2.1",
@@ -353,8 +353,8 @@ export const ESM_SPEC: SpecItem[] = [
     "help": "Format: Numeric input"
   },
   {
-    "id": "c302_a13",
-    "cct": "302",
+    "id": "c318_a13",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a13",
     "code": "1.2.2",
@@ -375,8 +375,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a14",
-    "cct": "302",
+    "id": "c318_a14",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a14",
     "code": "1.2.3",
@@ -417,8 +417,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a141",
-    "cct": "302",
+    "id": "c318_a141",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a141",
     "code": "1.2.3",
@@ -426,11 +426,11 @@ export const ESM_SPEC: SpecItem[] = [
     "block": "",
     "label": "Other detail",
     "type": "text",
-    "otherFor": "c302_a14"
+    "otherFor": "c318_a14"
   },
   {
-    "id": "c302_a15",
-    "cct": "302",
+    "id": "c318_a15",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a15",
     "code": "1.2.4",
@@ -441,8 +441,8 @@ export const ESM_SPEC: SpecItem[] = [
     "help": "Options: Numeric input"
   },
   {
-    "id": "c302_a16",
-    "cct": "302",
+    "id": "c318_a16",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a16",
     "code": "1.2.5",
@@ -475,8 +475,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a17",
-    "cct": "302",
+    "id": "c318_a17",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a17",
     "code": "1.2.6",
@@ -517,13 +517,13 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a18",
-    "cct": "302",
+    "id": "c318_a18",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a18",
     "code": "1.2.6",
     "group": "1.2 CARE RECIPIENT INFORMATION",
-    "block": "",
+    "block": "1.2.7 ACTIVITIES OF DAILY LIVING (ADL) ASSESSMENT",
     "label": "Eating",
     "type": "single",
     "options": [
@@ -542,13 +542,13 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a19",
-    "cct": "302",
+    "id": "c318_a19",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a19",
     "code": "1.2.6",
     "group": "1.2 CARE RECIPIENT INFORMATION",
-    "block": "",
+    "block": "1.2.7 ACTIVITIES OF DAILY LIVING (ADL) ASSESSMENT",
     "label": "Bathing",
     "type": "single",
     "options": [
@@ -567,13 +567,13 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a20",
-    "cct": "302",
+    "id": "c318_a20",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a20",
     "code": "1.2.6",
     "group": "1.2 CARE RECIPIENT INFORMATION",
-    "block": "",
+    "block": "1.2.7 ACTIVITIES OF DAILY LIVING (ADL) ASSESSMENT",
     "label": "Dressing",
     "type": "single",
     "options": [
@@ -592,13 +592,13 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a21",
-    "cct": "302",
+    "id": "c318_a21",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a21",
     "code": "1.2.6",
     "group": "1.2 CARE RECIPIENT INFORMATION",
-    "block": "",
+    "block": "1.2.7 ACTIVITIES OF DAILY LIVING (ADL) ASSESSMENT",
     "label": "Toileting",
     "type": "single",
     "options": [
@@ -617,13 +617,13 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a22",
-    "cct": "302",
+    "id": "c318_a22",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a22",
     "code": "1.2.6",
     "group": "1.2 CARE RECIPIENT INFORMATION",
-    "block": "",
+    "block": "1.2.7 ACTIVITIES OF DAILY LIVING (ADL) ASSESSMENT",
     "label": "Moving around",
     "type": "single",
     "options": [
@@ -642,13 +642,13 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a23",
-    "cct": "302",
+    "id": "c318_a23",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a23",
     "code": "1.2.6",
     "group": "1.2 CARE RECIPIENT INFORMATION",
-    "block": "",
+    "block": "1.2.8 INSTRUMENTAL ACTIVITIES OF DAILY LIVING (IADL) ASSESSMENT",
     "label": "Managing medications",
     "type": "single",
     "options": [
@@ -667,13 +667,13 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a24",
-    "cct": "302",
+    "id": "c318_a24",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a24",
     "code": "1.2.6",
     "group": "1.2 CARE RECIPIENT INFORMATION",
-    "block": "",
+    "block": "1.2.8 INSTRUMENTAL ACTIVITIES OF DAILY LIVING (IADL) ASSESSMENT",
     "label": "Handling finances",
     "type": "single",
     "options": [
@@ -692,13 +692,13 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a25",
-    "cct": "302",
+    "id": "c318_a25",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a25",
     "code": "1.2.6",
     "group": "1.2 CARE RECIPIENT INFORMATION",
-    "block": "",
+    "block": "1.2.8 INSTRUMENTAL ACTIVITIES OF DAILY LIVING (IADL) ASSESSMENT",
     "label": "Shopping",
     "type": "single",
     "options": [
@@ -717,13 +717,13 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a26",
-    "cct": "302",
+    "id": "c318_a26",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a26",
     "code": "1.2.6",
     "group": "1.2 CARE RECIPIENT INFORMATION",
-    "block": "",
+    "block": "1.2.8 INSTRUMENTAL ACTIVITIES OF DAILY LIVING (IADL) ASSESSMENT",
     "label": "Preparing meals",
     "type": "single",
     "options": [
@@ -742,13 +742,13 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a27",
-    "cct": "302",
+    "id": "c318_a27",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a27",
     "code": "1.2.6",
     "group": "1.2 CARE RECIPIENT INFORMATION",
-    "block": "",
+    "block": "1.2.8 INSTRUMENTAL ACTIVITIES OF DAILY LIVING (IADL) ASSESSMENT",
     "label": "Housework",
     "type": "single",
     "options": [
@@ -767,8 +767,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a28",
-    "cct": "302",
+    "id": "c318_a28",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a28",
     "code": "1.3.1",
@@ -788,8 +788,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a29",
-    "cct": "302",
+    "id": "c318_a29",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a29",
     "code": "1.3.1",
@@ -804,8 +804,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a30",
-    "cct": "302",
+    "id": "c318_a30",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a30",
     "code": "1.3.1",
@@ -814,14 +814,14 @@ export const ESM_SPEC: SpecItem[] = [
     "label": "Delusions caregiver distress",
     "type": "scale",
     "scale": {
-      "min": 1,
-      "max": 3,
-      "labels": "1=Mild, 2=Moderate, 3=Severe"
+      "min": 0,
+      "max": 5,
+      "labels": "0=Not distressing at all, 5=Extreme"
     }
   },
   {
-    "id": "c302_a31",
-    "cct": "302",
+    "id": "c318_a31",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a31",
     "code": "1.3.2",
@@ -841,8 +841,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a32",
-    "cct": "302",
+    "id": "c318_a32",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a32",
     "code": "1.3.2",
@@ -857,8 +857,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a33",
-    "cct": "302",
+    "id": "c318_a33",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a33",
     "code": "1.3.2",
@@ -867,14 +867,14 @@ export const ESM_SPEC: SpecItem[] = [
     "label": "Hallucinations caregiver distress",
     "type": "scale",
     "scale": {
-      "min": 1,
-      "max": 3,
-      "labels": "1=Mild, 2=Moderate, 3=Severe"
+      "min": 0,
+      "max": 5,
+      "labels": "0=Not distressing at all, 5=Extreme"
     }
   },
   {
-    "id": "c302_a34",
-    "cct": "302",
+    "id": "c318_a34",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a34",
     "code": "1.3.3",
@@ -894,8 +894,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a35",
-    "cct": "302",
+    "id": "c318_a35",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a35",
     "code": "1.3.3",
@@ -910,8 +910,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a36",
-    "cct": "302",
+    "id": "c318_a36",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a36",
     "code": "1.3.3",
@@ -920,14 +920,14 @@ export const ESM_SPEC: SpecItem[] = [
     "label": "Agitation / Aggression caregiver distress",
     "type": "scale",
     "scale": {
-      "min": 1,
-      "max": 3,
-      "labels": "1=Mild, 2=Moderate, 3=Severe"
+      "min": 0,
+      "max": 5,
+      "labels": "0=Not distressing at all, 5=Extreme"
     }
   },
   {
-    "id": "c302_a37",
-    "cct": "302",
+    "id": "c318_a37",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a37",
     "code": "1.3.4",
@@ -947,8 +947,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a38",
-    "cct": "302",
+    "id": "c318_a38",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a38",
     "code": "1.3.4",
@@ -963,8 +963,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a39",
-    "cct": "302",
+    "id": "c318_a39",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a39",
     "code": "1.3.4",
@@ -973,14 +973,14 @@ export const ESM_SPEC: SpecItem[] = [
     "label": "Depression / Dysphoria caregiver distress",
     "type": "scale",
     "scale": {
-      "min": 1,
-      "max": 3,
-      "labels": "1=Mild, 2=Moderate, 3=Severe"
+      "min": 0,
+      "max": 5,
+      "labels": "0=Not distressing at all, 5=Extreme"
     }
   },
   {
-    "id": "c302_a40",
-    "cct": "302",
+    "id": "c318_a40",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a40",
     "code": "1.3.5",
@@ -1000,8 +1000,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a41",
-    "cct": "302",
+    "id": "c318_a41",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a41",
     "code": "1.3.5",
@@ -1016,8 +1016,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a42",
-    "cct": "302",
+    "id": "c318_a42",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a42",
     "code": "1.3.5",
@@ -1026,14 +1026,14 @@ export const ESM_SPEC: SpecItem[] = [
     "label": "Anxiety caregiver distress",
     "type": "scale",
     "scale": {
-      "min": 1,
-      "max": 3,
-      "labels": "1=Mild, 2=Moderate, 3=Severe"
+      "min": 0,
+      "max": 5,
+      "labels": "0=Not distressing at all, 5=Extreme"
     }
   },
   {
-    "id": "c302_a43",
-    "cct": "302",
+    "id": "c318_a43",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a43",
     "code": "1.3.6",
@@ -1053,8 +1053,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a44",
-    "cct": "302",
+    "id": "c318_a44",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a44",
     "code": "1.3.6",
@@ -1069,8 +1069,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a45",
-    "cct": "302",
+    "id": "c318_a45",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a45",
     "code": "1.3.6",
@@ -1079,14 +1079,14 @@ export const ESM_SPEC: SpecItem[] = [
     "label": "Elation / Euphoria caregiver distress",
     "type": "scale",
     "scale": {
-      "min": 1,
-      "max": 3,
-      "labels": "1=Mild, 2=Moderate, 3=Severe"
+      "min": 0,
+      "max": 5,
+      "labels": "0=Not distressing at all, 5=Extreme"
     }
   },
   {
-    "id": "c302_a46",
-    "cct": "302",
+    "id": "c318_a46",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a46",
     "code": "1.3.7",
@@ -1106,8 +1106,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a47",
-    "cct": "302",
+    "id": "c318_a47",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a47",
     "code": "1.3.7",
@@ -1122,8 +1122,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a48",
-    "cct": "302",
+    "id": "c318_a48",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a48",
     "code": "1.3.7",
@@ -1132,14 +1132,14 @@ export const ESM_SPEC: SpecItem[] = [
     "label": "Apathy / Indifference caregiver distress",
     "type": "scale",
     "scale": {
-      "min": 1,
-      "max": 3,
-      "labels": "1=Mild, 2=Moderate, 3=Severe"
+      "min": 0,
+      "max": 5,
+      "labels": "0=Not distressing at all, 5=Extreme"
     }
   },
   {
-    "id": "c302_a49",
-    "cct": "302",
+    "id": "c318_a49",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a49",
     "code": "1.3.8",
@@ -1159,8 +1159,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a50",
-    "cct": "302",
+    "id": "c318_a50",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a50",
     "code": "1.3.8",
@@ -1175,8 +1175,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a51",
-    "cct": "302",
+    "id": "c318_a51",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a51",
     "code": "1.3.8",
@@ -1185,14 +1185,14 @@ export const ESM_SPEC: SpecItem[] = [
     "label": "Disinhibition caregiver distress",
     "type": "scale",
     "scale": {
-      "min": 1,
-      "max": 3,
-      "labels": "1=Mild, 2=Moderate, 3=Severe"
+      "min": 0,
+      "max": 5,
+      "labels": "0=Not distressing at all, 5=Extreme"
     }
   },
   {
-    "id": "c302_a52",
-    "cct": "302",
+    "id": "c318_a52",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a52",
     "code": "1.3.9",
@@ -1212,8 +1212,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a53",
-    "cct": "302",
+    "id": "c318_a53",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a53",
     "code": "1.3.9",
@@ -1228,8 +1228,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a54",
-    "cct": "302",
+    "id": "c318_a54",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a54",
     "code": "1.3.9",
@@ -1238,14 +1238,14 @@ export const ESM_SPEC: SpecItem[] = [
     "label": "Irritability / Lability caregiver distress",
     "type": "scale",
     "scale": {
-      "min": 1,
-      "max": 3,
-      "labels": "1=Mild, 2=Moderate, 3=Severe"
+      "min": 0,
+      "max": 5,
+      "labels": "0=Not distressing at all, 5=Extreme"
     }
   },
   {
-    "id": "c302_a55",
-    "cct": "302",
+    "id": "c318_a55",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a55",
     "code": "1.3.10",
@@ -1265,8 +1265,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a56",
-    "cct": "302",
+    "id": "c318_a56",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a56",
     "code": "1.3.10",
@@ -1281,8 +1281,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a57",
-    "cct": "302",
+    "id": "c318_a57",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a57",
     "code": "1.3.10",
@@ -1291,14 +1291,14 @@ export const ESM_SPEC: SpecItem[] = [
     "label": "Motor disturbance caregiver distress",
     "type": "scale",
     "scale": {
-      "min": 1,
-      "max": 3,
-      "labels": "1=Mild, 2=Moderate, 3=Severe"
+      "min": 0,
+      "max": 5,
+      "labels": "0=Not distressing at all, 5=Extreme"
     }
   },
   {
-    "id": "c302_a58",
-    "cct": "302",
+    "id": "c318_a58",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a58",
     "code": "1.3.11",
@@ -1318,8 +1318,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a59",
-    "cct": "302",
+    "id": "c318_a59",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a59",
     "code": "1.3.11",
@@ -1334,8 +1334,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a60",
-    "cct": "302",
+    "id": "c318_a60",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a60",
     "code": "1.3.11",
@@ -1344,14 +1344,14 @@ export const ESM_SPEC: SpecItem[] = [
     "label": "Nighttime behaviours caregiver distress",
     "type": "scale",
     "scale": {
-      "min": 1,
-      "max": 3,
-      "labels": "1=Mild, 2=Moderate, 3=Severe"
+      "min": 0,
+      "max": 5,
+      "labels": "0=Not distressing at all, 5=Extreme"
     }
   },
   {
-    "id": "c302_a61",
-    "cct": "302",
+    "id": "c318_a61",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a61",
     "code": "1.3.12",
@@ -1371,8 +1371,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a62",
-    "cct": "302",
+    "id": "c318_a62",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a62",
     "code": "1.3.12",
@@ -1387,8 +1387,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a63",
-    "cct": "302",
+    "id": "c318_a63",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a63",
     "code": "1.3.12",
@@ -1397,14 +1397,14 @@ export const ESM_SPEC: SpecItem[] = [
     "label": "Appetite / Eating caregiver distress",
     "type": "scale",
     "scale": {
-      "min": 1,
-      "max": 3,
-      "labels": "1=Mild, 2=Moderate, 3=Severe"
+      "min": 0,
+      "max": 5,
+      "labels": "0=Not distressing at all, 5=Extreme"
     }
   },
   {
-    "id": "c302_a64",
-    "cct": "302",
+    "id": "c318_a64",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a64",
     "code": "1.4.1",
@@ -1419,8 +1419,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a65",
-    "cct": "302",
+    "id": "c318_a65",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a65",
     "code": "1.4.2",
@@ -1435,8 +1435,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a66",
-    "cct": "302",
+    "id": "c318_a66",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a66",
     "code": "1.4.3",
@@ -1451,8 +1451,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a67",
-    "cct": "302",
+    "id": "c318_a67",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a67",
     "code": "1.4.4",
@@ -1467,8 +1467,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a68",
-    "cct": "302",
+    "id": "c318_a68",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a68",
     "code": "1.4.5",
@@ -1483,8 +1483,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a69",
-    "cct": "302",
+    "id": "c318_a69",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a69",
     "code": "1.4.6",
@@ -1499,8 +1499,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a70",
-    "cct": "302",
+    "id": "c318_a70",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a70",
     "code": "1.4.7",
@@ -1515,8 +1515,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a71",
-    "cct": "302",
+    "id": "c318_a71",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a71",
     "code": "1.5.1",
@@ -1531,8 +1531,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a72",
-    "cct": "302",
+    "id": "c318_a72",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a72",
     "code": "1.5.2",
@@ -1547,8 +1547,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a73",
-    "cct": "302",
+    "id": "c318_a73",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a73",
     "code": "1.5.3",
@@ -1563,8 +1563,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a74",
-    "cct": "302",
+    "id": "c318_a74",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a74",
     "code": "1.5.4",
@@ -1579,8 +1579,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a75",
-    "cct": "302",
+    "id": "c318_a75",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a75",
     "code": "1.5.5",
@@ -1595,8 +1595,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a76",
-    "cct": "302",
+    "id": "c318_a76",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a76",
     "code": "1.5.6",
@@ -1611,8 +1611,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a77",
-    "cct": "302",
+    "id": "c318_a77",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a77",
     "code": "1.5.7",
@@ -1627,8 +1627,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a78",
-    "cct": "302",
+    "id": "c318_a78",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a78",
     "code": "1.5.8",
@@ -1643,8 +1643,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a79",
-    "cct": "302",
+    "id": "c318_a79",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a79",
     "code": "1.5.9",
@@ -1659,8 +1659,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a80",
-    "cct": "302",
+    "id": "c318_a80",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a80",
     "code": "1.5.10",
@@ -1675,8 +1675,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a81",
-    "cct": "302",
+    "id": "c318_a81",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a81",
     "code": "1.5.11",
@@ -1691,8 +1691,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a82",
-    "cct": "302",
+    "id": "c318_a82",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a82",
     "code": "1.5.12",
@@ -1707,16 +1707,15 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a83",
-    "cct": "302",
+    "id": "c318_a83",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a83",
-    "code": "1.5.12",
+    "code": "1.6",
     "group": "1.6 PERSEVERANCE TIME",
     "block": "",
-    "label": "for your care recipient given the current situation?\"",
+    "label": "How much longer do you think you can continue providing care for your care recipient given the current situation?",
     "type": "single",
-    "help": "Full 30-item scale administered. Format: True/False.",
     "options": [
       {
         "value": "b01",
@@ -1745,8 +1744,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a84",
-    "cct": "302",
+    "id": "c318_a84",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a84",
     "code": "1.7.1.1",
@@ -1766,8 +1765,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a85",
-    "cct": "302",
+    "id": "c318_a85",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a85",
     "code": "1.7.1.2",
@@ -1787,8 +1786,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a86",
-    "cct": "302",
+    "id": "c318_a86",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a86",
     "code": "1.7.1.3",
@@ -1808,8 +1807,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a87",
-    "cct": "302",
+    "id": "c318_a87",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a87",
     "code": "1.7.1.4",
@@ -1829,8 +1828,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a88",
-    "cct": "302",
+    "id": "c318_a88",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a88",
     "code": "1.7.1.5",
@@ -1850,8 +1849,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a89",
-    "cct": "302",
+    "id": "c318_a89",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a89",
     "code": "1.7.1.6",
@@ -1871,8 +1870,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a90",
-    "cct": "302",
+    "id": "c318_a90",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a90",
     "code": "1.7.1.7",
@@ -1892,8 +1891,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a91",
-    "cct": "302",
+    "id": "c318_a91",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a91",
     "code": "1.7.1.8",
@@ -1913,8 +1912,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a92",
-    "cct": "302",
+    "id": "c318_a92",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a92",
     "code": "1.7.1.9",
@@ -1934,8 +1933,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a93",
-    "cct": "302",
+    "id": "c318_a93",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a93",
     "code": "1.7.1.10",
@@ -1955,8 +1954,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a94",
-    "cct": "302",
+    "id": "c318_a94",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a94",
     "code": "1.7.1.11",
@@ -1976,8 +1975,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a95",
-    "cct": "302",
+    "id": "c318_a95",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a95",
     "code": "1.7.1.12",
@@ -1997,8 +1996,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a96",
-    "cct": "302",
+    "id": "c318_a96",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a96",
     "code": "1.7.1.13",
@@ -2018,8 +2017,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a97",
-    "cct": "302",
+    "id": "c318_a97",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a97",
     "code": "1.7.1.14",
@@ -2039,8 +2038,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a98",
-    "cct": "302",
+    "id": "c318_a98",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a98",
     "code": "1.7.1.15",
@@ -2060,8 +2059,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a99",
-    "cct": "302",
+    "id": "c318_a99",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a99",
     "code": "1.7.1.16",
@@ -2081,8 +2080,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a100",
-    "cct": "302",
+    "id": "c318_a100",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a100",
     "code": "1.7.1.17",
@@ -2102,8 +2101,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a101",
-    "cct": "302",
+    "id": "c318_a101",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a101",
     "code": "1.7.1.18",
@@ -2123,8 +2122,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a102",
-    "cct": "302",
+    "id": "c318_a102",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a102",
     "code": "1.7.1.19",
@@ -2144,8 +2143,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a103",
-    "cct": "302",
+    "id": "c318_a103",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a103",
     "code": "1.7.1.20",
@@ -2165,8 +2164,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a104",
-    "cct": "302",
+    "id": "c318_a104",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a104",
     "code": "1.7.1.21",
@@ -2186,8 +2185,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a105",
-    "cct": "302",
+    "id": "c318_a105",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a105",
     "code": "1.7.1.22",
@@ -2207,8 +2206,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a106",
-    "cct": "302",
+    "id": "c318_a106",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a106",
     "code": "1.7.1.23",
@@ -2228,8 +2227,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a107",
-    "cct": "302",
+    "id": "c318_a107",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a107",
     "code": "1.7.1.24",
@@ -2249,8 +2248,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a108",
-    "cct": "302",
+    "id": "c318_a108",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a108",
     "code": "1.7.1.25",
@@ -2270,8 +2269,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a109",
-    "cct": "302",
+    "id": "c318_a109",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a109",
     "code": "1.7.1.26",
@@ -2291,8 +2290,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a110",
-    "cct": "302",
+    "id": "c318_a110",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a110",
     "code": "1.7.1.27",
@@ -2312,8 +2311,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a111",
-    "cct": "302",
+    "id": "c318_a111",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a111",
     "code": "1.7.1.28",
@@ -2333,8 +2332,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a112",
-    "cct": "302",
+    "id": "c318_a112",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a112",
     "code": "1.7.1.29",
@@ -2354,8 +2353,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a113",
-    "cct": "302",
+    "id": "c318_a113",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a113",
     "code": "1.7.1.30",
@@ -2363,7 +2362,6 @@ export const ESM_SPEC: SpecItem[] = [
     "block": "1.7.1 Alzheimer's Disease Knowledge Scale (ADKS)",
     "label": "Difficulty with the ability to walk is common in people who are in the later stages of Alzheimer's disease.",
     "type": "single",
-    "help": "Full 20-item scale administered. Scale.",
     "options": [
       {
         "value": "b01",
@@ -2376,8 +2374,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a114",
-    "cct": "302",
+    "id": "c318_a114",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a114",
     "code": "1.7.2.1",
@@ -2392,8 +2390,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a115",
-    "cct": "302",
+    "id": "c318_a115",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a115",
     "code": "1.7.2.2",
@@ -2408,8 +2406,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a116",
-    "cct": "302",
+    "id": "c318_a116",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a116",
     "code": "1.7.2.3",
@@ -2424,8 +2422,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a117",
-    "cct": "302",
+    "id": "c318_a117",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a117",
     "code": "1.7.2.4",
@@ -2440,8 +2438,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a118",
-    "cct": "302",
+    "id": "c318_a118",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a118",
     "code": "1.7.2.5",
@@ -2456,8 +2454,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a119",
-    "cct": "302",
+    "id": "c318_a119",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a119",
     "code": "1.7.2.6",
@@ -2472,8 +2470,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a120",
-    "cct": "302",
+    "id": "c318_a120",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a120",
     "code": "1.7.2.7",
@@ -2488,8 +2486,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a121",
-    "cct": "302",
+    "id": "c318_a121",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a121",
     "code": "1.7.2.8",
@@ -2504,8 +2502,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a122",
-    "cct": "302",
+    "id": "c318_a122",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a122",
     "code": "1.7.2.9",
@@ -2520,8 +2518,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a123",
-    "cct": "302",
+    "id": "c318_a123",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a123",
     "code": "1.7.2.10",
@@ -2536,8 +2534,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a124",
-    "cct": "302",
+    "id": "c318_a124",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a124",
     "code": "1.7.2.11",
@@ -2552,8 +2550,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a125",
-    "cct": "302",
+    "id": "c318_a125",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a125",
     "code": "1.7.2.12",
@@ -2568,8 +2566,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a126",
-    "cct": "302",
+    "id": "c318_a126",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a126",
     "code": "1.7.2.13",
@@ -2584,8 +2582,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a127",
-    "cct": "302",
+    "id": "c318_a127",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a127",
     "code": "1.7.2.14",
@@ -2600,8 +2598,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a128",
-    "cct": "302",
+    "id": "c318_a128",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a128",
     "code": "1.7.2.15",
@@ -2616,8 +2614,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a129",
-    "cct": "302",
+    "id": "c318_a129",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a129",
     "code": "1.7.2.16",
@@ -2632,8 +2630,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a130",
-    "cct": "302",
+    "id": "c318_a130",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a130",
     "code": "1.7.2.17",
@@ -2648,8 +2646,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a131",
-    "cct": "302",
+    "id": "c318_a131",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a131",
     "code": "1.7.2.18",
@@ -2664,8 +2662,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a132",
-    "cct": "302",
+    "id": "c318_a132",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a132",
     "code": "1.7.2.19",
@@ -2680,8 +2678,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a133",
-    "cct": "302",
+    "id": "c318_a133",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a133",
     "code": "1.7.2.20",
@@ -2696,8 +2694,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a134",
-    "cct": "302",
+    "id": "c318_a134",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a134",
     "code": "2.1.1",
@@ -2708,8 +2706,8 @@ export const ESM_SPEC: SpecItem[] = [
     "help": "Format: Numeric input"
   },
   {
-    "id": "c302_a135",
-    "cct": "302",
+    "id": "c318_a135",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a135",
     "code": "2.1.2",
@@ -2730,8 +2728,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a136",
-    "cct": "302",
+    "id": "c318_a136",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a136",
     "code": "2.1.2",
@@ -2772,8 +2770,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a137",
-    "cct": "302",
+    "id": "c318_a137",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a137",
     "code": "2.1.3",
@@ -2814,8 +2812,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a1371",
-    "cct": "302",
+    "id": "c318_a1371",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a1371",
     "code": "2.1.3",
@@ -2823,11 +2821,11 @@ export const ESM_SPEC: SpecItem[] = [
     "block": "",
     "label": "Other detail",
     "type": "text",
-    "otherFor": "c302_a137"
+    "otherFor": "c318_a137"
   },
   {
-    "id": "c302_a138",
-    "cct": "302",
+    "id": "c318_a138",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a138",
     "code": "2.1.4",
@@ -2872,8 +2870,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a1381",
-    "cct": "302",
+    "id": "c318_a1381",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a1381",
     "code": "2.1.4",
@@ -2881,11 +2879,11 @@ export const ESM_SPEC: SpecItem[] = [
     "block": "",
     "label": "Other detail",
     "type": "text",
-    "otherFor": "c302_a138"
+    "otherFor": "c318_a138"
   },
   {
-    "id": "c302_a139",
-    "cct": "302",
+    "id": "c318_a139",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a139",
     "code": "2.1.5",
@@ -2918,8 +2916,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a140",
-    "cct": "302",
+    "id": "c318_a140",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a140",
     "code": "2.1.6",
@@ -2930,8 +2928,8 @@ export const ESM_SPEC: SpecItem[] = [
     "help": "Format: Numeric input"
   },
   {
-    "id": "c302_a142",
-    "cct": "302",
+    "id": "c318_a142",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a142",
     "code": "2.1.7",
@@ -2968,8 +2966,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a143",
-    "cct": "302",
+    "id": "c318_a143",
+    "cct": "318",
     "slug": "esm_screening",
     "column": "a143",
     "code": "2.1.8",
@@ -3006,8 +3004,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c303_a01",
-    "cct": "303",
+    "id": "c319_a01",
+    "cct": "319",
     "slug": "esm_hourly_log",
     "column": "a01",
     "code": "3.1.1",
@@ -3031,8 +3029,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c303_a02",
-    "cct": "303",
+    "id": "c319_a02",
+    "cct": "319",
     "slug": "esm_hourly_log",
     "column": "a02",
     "code": "3.1.1",
@@ -3042,8 +3040,8 @@ export const ESM_SPEC: SpecItem[] = [
     "type": "datetime"
   },
   {
-    "id": "c303_a03",
-    "cct": "303",
+    "id": "c319_a03",
+    "cct": "319",
     "slug": "esm_hourly_log",
     "column": "a03",
     "code": "3.1.1",
@@ -3051,11 +3049,11 @@ export const ESM_SPEC: SpecItem[] = [
     "block": "",
     "label": "Other time",
     "type": "datetime",
-    "otherFor": "c303_a02"
+    "otherFor": "c319_a02"
   },
   {
-    "id": "c303_a04",
-    "cct": "303",
+    "id": "c319_a04",
+    "cct": "319",
     "slug": "esm_hourly_log",
     "column": "a04",
     "code": "3.1.2",
@@ -3123,8 +3121,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c303_a05",
-    "cct": "303",
+    "id": "c319_a05",
+    "cct": "319",
     "slug": "esm_hourly_log",
     "column": "a05",
     "code": "3.1.2",
@@ -3133,11 +3131,11 @@ export const ESM_SPEC: SpecItem[] = [
     "label": "Other",
     "type": "text",
     "help": "The prefix \"ADL\" and \"IADL\" which not appear on the actual survey question handled to participants",
-    "otherFor": "c303_a04"
+    "otherFor": "c319_a04"
   },
   {
-    "id": "c303_a06",
-    "cct": "303",
+    "id": "c319_a06",
+    "cct": "319",
     "slug": "esm_hourly_log",
     "column": "a06",
     "code": "3.1.3",
@@ -3148,12 +3146,12 @@ export const ESM_SPEC: SpecItem[] = [
     "scale": {
       "min": -3,
       "max": 3,
-      "labels": "Very Unpleasant to Very Pleasant)   Saves to (CCT303 column ID: a06 type: number"
+      "labels": "Very Unpleasant to Very Pleasant)   Saves to (CCT319 column ID: a06 type: number"
     }
   },
   {
-    "id": "c303_a07",
-    "cct": "303",
+    "id": "c319_a07",
+    "cct": "319",
     "slug": "esm_hourly_log",
     "column": "a07",
     "code": "3.1.4",
@@ -3164,8 +3162,8 @@ export const ESM_SPEC: SpecItem[] = [
     "help": "Format: Free text with Voice Input and AI Support AI support is on the frontend to offer voice transcription, AI enhance support, etc, but the AI can’t click on form submission, it will only help to fill the form on the frontend, the user can then adjust, let the AI offer a better draft/enhance, which AI will show in the dropdown support chatbot with a copy to form button, only clicking on it will the enhanced answer be copied to the form"
   },
   {
-    "id": "c303_a08",
-    "cct": "303",
+    "id": "c319_a08",
+    "cct": "319",
     "slug": "esm_hourly_log",
     "column": "a08",
     "code": "3.1.4",
@@ -3185,8 +3183,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c303_a09",
-    "cct": "303",
+    "id": "c319_a09",
+    "cct": "319",
     "slug": "esm_hourly_log",
     "column": "a09",
     "code": "3.1.4",
@@ -3206,8 +3204,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c303_a10",
-    "cct": "303",
+    "id": "c319_a10",
+    "cct": "319",
     "slug": "esm_hourly_log",
     "column": "a10",
     "code": "3.1.4",
@@ -3227,8 +3225,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c303_a11",
-    "cct": "303",
+    "id": "c319_a11",
+    "cct": "319",
     "slug": "esm_hourly_log",
     "column": "a11",
     "code": "3.1.6",
@@ -3244,8 +3242,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c303_a12",
-    "cct": "303",
+    "id": "c319_a12",
+    "cct": "319",
     "slug": "esm_hourly_log",
     "column": "a12",
     "code": "3.1.7",
@@ -3256,8 +3254,8 @@ export const ESM_SPEC: SpecItem[] = [
     "help": "Format: Free text with Voice Input and AI Support"
   },
   {
-    "id": "c303_a13",
-    "cct": "303",
+    "id": "c319_a13",
+    "cct": "319",
     "slug": "esm_hourly_log",
     "column": "a13",
     "code": "3.1.8",
@@ -3268,8 +3266,8 @@ export const ESM_SPEC: SpecItem[] = [
     "help": "Format: Free text with Voice Input and AI Support"
   },
   {
-    "id": "c303_a14",
-    "cct": "303",
+    "id": "c319_a14",
+    "cct": "319",
     "slug": "esm_hourly_log",
     "column": "a14",
     "code": "3.1.9",
@@ -3280,8 +3278,8 @@ export const ESM_SPEC: SpecItem[] = [
     "help": "Format: Numeric input"
   },
   {
-    "id": "c303_a15",
-    "cct": "303",
+    "id": "c319_a15",
+    "cct": "319",
     "slug": "esm_hourly_log",
     "column": "a15",
     "code": "3.1.9",
@@ -3296,8 +3294,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c303_a16",
-    "cct": "303",
+    "id": "c319_a16",
+    "cct": "319",
     "slug": "esm_hourly_log",
     "column": "a16",
     "code": "3.1.9",
@@ -3312,8 +3310,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c303_a17",
-    "cct": "303",
+    "id": "c319_a17",
+    "cct": "319",
     "slug": "esm_hourly_log",
     "column": "a17",
     "code": "3.1.9",
@@ -3328,8 +3326,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c303_a18",
-    "cct": "303",
+    "id": "c319_a18",
+    "cct": "319",
     "slug": "esm_hourly_log",
     "column": "a18",
     "code": "3.1.9",
@@ -3345,8 +3343,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c303_a19",
-    "cct": "303",
+    "id": "c319_a19",
+    "cct": "319",
     "slug": "esm_hourly_log",
     "column": "a19",
     "code": "3.1.9",
@@ -3361,8 +3359,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c303_a20",
-    "cct": "303",
+    "id": "c319_a20",
+    "cct": "319",
     "slug": "esm_hourly_log",
     "column": "a20",
     "code": "3.1.9",
@@ -3377,8 +3375,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c303_a21",
-    "cct": "303",
+    "id": "c319_a21",
+    "cct": "319",
     "slug": "esm_hourly_log",
     "column": "a21",
     "code": "3.1.9",
@@ -3393,8 +3391,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c303_a22",
-    "cct": "303",
+    "id": "c319_a22",
+    "cct": "319",
     "slug": "esm_hourly_log",
     "column": "a22",
     "code": "3.1.9",
@@ -3409,8 +3407,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c303_a23",
-    "cct": "303",
+    "id": "c319_a23",
+    "cct": "319",
     "slug": "esm_hourly_log",
     "column": "a23",
     "code": "3.1.9",
@@ -3425,8 +3423,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c303_a24",
-    "cct": "303",
+    "id": "c319_a24",
+    "cct": "319",
     "slug": "esm_hourly_log",
     "column": "a24",
     "code": "3.1.9",
@@ -3441,8 +3439,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c303_a25",
-    "cct": "303",
+    "id": "c319_a25",
+    "cct": "319",
     "slug": "esm_hourly_log",
     "column": "a25",
     "code": "3.1.9",
@@ -3457,8 +3455,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c303_a26",
-    "cct": "303",
+    "id": "c319_a26",
+    "cct": "319",
     "slug": "esm_hourly_log",
     "column": "a26",
     "code": "3.2.1",
@@ -3475,8 +3473,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c303_a28",
-    "cct": "303",
+    "id": "c319_a28",
+    "cct": "319",
     "slug": "esm_hourly_log",
     "column": "a28",
     "code": "3.2.3",
@@ -3487,8 +3485,8 @@ export const ESM_SPEC: SpecItem[] = [
     "help": "Format: Free text with Voice Input and AI Support"
   },
   {
-    "id": "c303_a29",
-    "cct": "303",
+    "id": "c319_a29",
+    "cct": "319",
     "slug": "esm_hourly_log",
     "column": "a29",
     "code": "3.2.4",
@@ -3499,8 +3497,8 @@ export const ESM_SPEC: SpecItem[] = [
     "help": "Format: Free text with Voice Input and AI Support"
   },
   {
-    "id": "c303_a30",
-    "cct": "303",
+    "id": "c319_a30",
+    "cct": "319",
     "slug": "esm_hourly_log",
     "column": "a30",
     "code": "3.3.1",
@@ -3515,8 +3513,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c303_a31",
-    "cct": "303",
+    "id": "c319_a31",
+    "cct": "319",
     "slug": "esm_hourly_log",
     "column": "a31",
     "code": "3.3.2",
@@ -3573,8 +3571,8 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c303_a311",
-    "cct": "303",
+    "id": "c319_a311",
+    "cct": "319",
     "slug": "esm_hourly_log",
     "column": "a311",
     "code": "3.3.2",
@@ -3582,11 +3580,11 @@ export const ESM_SPEC: SpecItem[] = [
     "block": "",
     "label": "Other detail",
     "type": "text",
-    "otherFor": "c303_a31"
+    "otherFor": "c319_a31"
   },
   {
-    "id": "c303_a32",
-    "cct": "303",
+    "id": "c319_a32",
+    "cct": "319",
     "slug": "esm_hourly_log",
     "column": "a32",
     "code": "3.3.3",
@@ -3597,8 +3595,8 @@ export const ESM_SPEC: SpecItem[] = [
     "help": "Format: Free text with Voice Input and AI Support"
   },
   {
-    "id": "c303_a33",
-    "cct": "303",
+    "id": "c319_a33",
+    "cct": "319",
     "slug": "esm_hourly_log",
     "column": "a33",
     "code": "3.3.4",
@@ -3609,8 +3607,8 @@ export const ESM_SPEC: SpecItem[] = [
     "help": "Format: Free text with Voice Input and AI Support"
   },
   {
-    "id": "c303_a34",
-    "cct": "303",
+    "id": "c319_a34",
+    "cct": "319",
     "slug": "esm_hourly_log",
     "column": "a34",
     "code": "3.3.5",
@@ -3621,8 +3619,8 @@ export const ESM_SPEC: SpecItem[] = [
     "help": "Format: Free text with Voice Input and AI Support"
   },
   {
-    "id": "c304_a01",
-    "cct": "304",
+    "id": "c317_a01",
+    "cct": "317",
     "slug": "esm_daily_log",
     "column": "a01",
     "code": "4.1.1",
@@ -3633,8 +3631,8 @@ export const ESM_SPEC: SpecItem[] = [
     "help": "Format: Free text with Voice Input and AI Support"
   },
   {
-    "id": "c304_a02",
-    "cct": "304",
+    "id": "c317_a02",
+    "cct": "317",
     "slug": "esm_daily_log",
     "column": "a02",
     "code": "4.2.1",
@@ -3649,8 +3647,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c304_a03",
-    "cct": "304",
+    "id": "c317_a03",
+    "cct": "317",
     "slug": "esm_daily_log",
     "column": "a03",
     "code": "4.2.2",
@@ -3665,8 +3663,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c304_a04",
-    "cct": "304",
+    "id": "c317_a04",
+    "cct": "317",
     "slug": "esm_daily_log",
     "column": "a04",
     "code": "4.2.3",
@@ -3681,8 +3679,8 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c304_a05",
-    "cct": "304",
+    "id": "c317_a05",
+    "cct": "317",
     "slug": "esm_daily_log",
     "column": "a05",
     "code": "4.2.3",

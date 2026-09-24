@@ -102,7 +102,7 @@ export async function createPerson(name: string): Promise<EsmPerson> {
 export async function savePersonDetails(personId: string, answers: Record<string, unknown>): Promise<string> {
   const body: Record<string, string> = {};
   for (const item of ESM_SPEC) {
-    if (item.cct !== "302" || !item.code.startsWith("2.1")) continue;
+    if (item.cct !== "318" || !item.code.startsWith("2.1")) continue;
     const value = answers[item.id];
     if (value === undefined || value === null || value === "") continue;
     body[item.column] = Array.isArray(value) ? value.join(",") : String(value);

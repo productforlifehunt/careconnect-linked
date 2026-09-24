@@ -28,3 +28,11 @@
 - [x] Split My entries into hourly events and daily summaries.
 - [x] Add study Help and AI assistant entry.
 - [x] Verify Primary and Secondary flows, persistence, responsive layouts, and runtime health.
+
+# ESM screening completeness and English logo
+
+- [ ] Verify and expose every primary screening section from 1.1 through 1.7.
+- [ ] Verify and expose every secondary screening field plus shared ADKS and DAS.
+- [ ] Implement the exact device-only reminder schedule and multiple do-not-disturb periods.
+- [ ] Replace only the English ChallengeD icon with a flat purple block CD logo.
+- [ ] Verify English/Chinese desktop/mobile flows, persistence, submissions, and logo variants.

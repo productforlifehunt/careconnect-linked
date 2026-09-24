@@ -1,13 +1,13 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { CheckCircle2, Circle, ChevronRight } from "lucide-react";
+import { CheckCircle2, Circle, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getDraft, getProfile, getSettings, saveDraft, saveProfile, saveSettings, startProfile, type ParticipantRole } from "@/features/esm/store";
+import { getDraft, getProfile, getSettings, saveDraft, saveProfile, saveSettings, startProfile, type ParticipantRole, type QuietPeriod } from "@/features/esm/store";
 import { otherScreening, primaryScreening } from "@/features/esm/questionnaires";
 import { useTranslation } from "react-i18next";
 import { isChineseLanguage, localizeQuestionnaire, uiText } from "@/features/esm/i18n";
@@ -25,6 +25,7 @@ export default function EsmMe() {
   const zh = isChineseLanguage(i18n.language);
 
   const questionnaire = profile?.role === "other" ? otherScreening : primaryScreening;
+  const displayedQuestionnaire = localizeQuestionnaire(questionnaire, zh);
   const draft = getDraft(questionnaire.id);
   const introduction = questionnaire.groups[0];
   const introductionDone = useMemo(
@@ -45,11 +46,23 @@ export default function EsmMe() {
     }
     const next = { ...profile, name: name.trim() };
     saveProfile(next);
-    const nextDraft = { ...getDraft(questionnaire.id), c302_a01: name.trim() };
+    const nextDraft = { ...getDraft(questionnaire.id), c318_a01: name.trim() };
     saveDraft(questionnaire.id, nextDraft);
     saveSettings(settings);
     setProfile(next);
     toast.success(uiText(zh, "Profile and settings saved.", "个人资料和设置已保存。"));
+  };
+
+  const updateQuietPeriod = (id: string, key: "start" | "end", value: string) => {
+    setSettingsState((current) => ({
+      ...current,
+      quietPeriods: current.quietPeriods.map((period) => period.id === id ? { ...period, [key]: value } : period),
+    }));
+  };
+
+  const addQuietPeriod = () => {
+    const period: QuietPeriod = { id: `quiet-${Date.now()}`, start: "12:00", end: "13:00" };
+    setSettingsState((current) => ({ ...current, quietPeriods: [...current.quietPeriods, period] }));
   };
 
   return (
@@ -78,12 +91,33 @@ export default function EsmMe() {
               checked={settings.hourlyReminders}
               onCheckedChange={(checked) => setSettingsState((current) => ({ ...current, hourlyReminders: checked }))}
             />
-            <SettingRow
-               label={uiText(zh, "Daily summary reminder", "每日总结提醒")}
-               detail={uiText(zh, "Remind me to complete the daily questionnaire", "提醒我完成每日照护总结")}
-              checked={settings.dailyReminder}
-              onCheckedChange={(checked) => setSettingsState((current) => ({ ...current, dailyReminder: checked }))}
-            />
+            <div className="space-y-3 py-4">
+              <div>
+                <p className="text-sm font-medium text-foreground">{uiText(zh, "Hourly reminder times", "每小时提醒时段")}</p>
+                <p className="text-xs text-muted-foreground">{uiText(zh, "One reminder each hour during this period.", "在此时段内每小时提醒一次。")}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1"><Label htmlFor="reminder-start">{uiText(zh, "Start", "开始")}</Label><Input id="reminder-start" type="time" value={settings.reminderStart} min="08:00" max="22:00" onChange={(event) => setSettingsState((current) => ({ ...current, reminderStart: event.target.value }))} /></div>
+                <div className="space-y-1"><Label htmlFor="reminder-end">{uiText(zh, "End", "结束")}</Label><Input id="reminder-end" type="time" value={settings.reminderEnd} min="08:00" max="22:00" onChange={(event) => setSettingsState((current) => ({ ...current, reminderEnd: event.target.value }))} /></div>
+              </div>
+            </div>
+            <div className="space-y-3 py-4">
+              <div className="flex items-center justify-between gap-3">
+                <div><p className="text-sm font-medium text-foreground">{uiText(zh, "Do not disturb", "免打扰时段")}</p><p className="text-xs text-muted-foreground">{uiText(zh, "Add more than one quiet period if needed.", "可按需要添加多个免打扰时段。")}</p></div>
+                <Button type="button" variant="outline" size="icon" onClick={addQuietPeriod} aria-label={uiText(zh, "Add quiet period", "添加免打扰时段")}><Plus className="h-4 w-4" /></Button>
+              </div>
+              {settings.quietPeriods.map((period) => (
+                <div key={period.id} className="grid grid-cols-[1fr_1fr_auto] items-end gap-2">
+                  <div className="space-y-1"><Label htmlFor={`${period.id}-start`}>{uiText(zh, "From", "从")}</Label><Input id={`${period.id}-start`} type="time" value={period.start} onChange={(event) => updateQuietPeriod(period.id, "start", event.target.value)} /></div>
+                  <div className="space-y-1"><Label htmlFor={`${period.id}-end`}>{uiText(zh, "To", "到")}</Label><Input id={`${period.id}-end`} type="time" value={period.end} onChange={(event) => updateQuietPeriod(period.id, "end", event.target.value)} /></div>
+                  <Button type="button" variant="ghost" size="icon" onClick={() => setSettingsState((current) => ({ ...current, quietPeriods: current.quietPeriods.filter((item) => item.id !== period.id) }))} aria-label={uiText(zh, "Remove quiet period", "删除免打扰时段")}><Trash2 className="h-4 w-4" /></Button>
+                </div>
+              ))}
+            </div>
+            <div className="py-4">
+              <p className="text-sm font-medium text-foreground">{uiText(zh, "Daily care summary reminder · 10:00 PM", "每日照护总结提醒 · 晚上10:00")}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{uiText(zh, "Always on. If yesterday is incomplete, reminders appear with the first morning reminder, at noon, and again at 10:00 PM.", "始终开启。若昨天未完成，将在今早第一条提醒、中午12点及晚上10点再次提醒。")}</p>
+            </div>
             <SettingRow
                label={uiText(zh, "Reduce motion", "减少动态效果")}
                detail={uiText(zh, "Use less movement when navigating", "浏览页面时减少动画")}
@@ -121,10 +155,28 @@ export default function EsmMe() {
                 {profile.screeningDone ? <CheckCircle2 className="h-5 w-5 shrink-0 text-success" /> : <Circle className="h-5 w-5 shrink-0 text-muted-foreground" />}
                 <span className="min-w-0 flex-1">
                    <span className="block font-semibold text-foreground">{profile.screeningDone ? uiText(zh, "Screening questions complete", "初始问卷已完成") : uiText(zh, "Continue screening questions", "继续填写初始问卷")}</span>
-                   <span className="mt-0.5 block text-sm text-muted-foreground">{localizeQuestionnaire(questionnaire, zh).title}</span>
+                    <span className="mt-0.5 block text-sm text-muted-foreground">{displayedQuestionnaire.title}</span>
                 </span>
                 <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
               </button>
+              {displayedQuestionnaire.groups.map((group, index) => {
+                const required = group.questions.filter((question) => !question.optional);
+                const completed = required.length > 0 && required.every((question) => answered(draft[question.id]));
+                return (
+                  <button
+                    key={group.id}
+                    className="flex w-full items-center gap-3 border-t border-border py-3 text-left"
+                    onClick={() => navigate(`/screening?step=${index}`)}
+                  >
+                    {completed ? <CheckCircle2 className="h-5 w-5 shrink-0 text-success" /> : <Circle className="h-5 w-5 shrink-0 text-muted-foreground" />}
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-medium text-foreground">{group.title}</span>
+                      <span className="mt-0.5 block text-xs text-muted-foreground">{uiText(zh, `${group.questions.length} questions`, `${group.questions.length} 个问题`)}</span>
+                    </span>
+                    <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  </button>
+                );
+              })}
             </div>
           )}
         </TabsContent>

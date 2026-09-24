@@ -150,7 +150,12 @@ const NUMBER_WORDS: Record<string, number> = {
   sixty: 60, ninety: 90,
 };
 
-const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9\s-]/g, " ").replace(/\s+/g, " ").trim();
+const CHINESE_NUMBERS: Record<string, number> = {
+  零: 0, 一: 1, 二: 2, 两: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7,
+  八: 8, 九: 9, 十: 10,
+};
+
+const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9\u3400-\u9fff\s.-]/g, " ").replace(/\s+/g, " ").trim();
 
 /** Pull a number out of speech, handling "minus two", "negative 3", "five". */
 export function parseSpokenNumber(transcript: string): number | null {
@@ -164,12 +169,17 @@ export function parseSpokenNumber(transcript: string): number | null {
   for (const [word, value] of Object.entries(NUMBER_WORDS)) {
     if (new RegExp(`\\b${word}\\b`).test(t)) return negative ? -value : value;
   }
+  for (const [word, value] of Object.entries(CHINESE_NUMBERS)) {
+    if (t.includes(word)) return /负/.test(t) ? -value : value;
+  }
   return null;
 }
 
 /** Yes / no from speech. */
 export function parseSpokenYesNo(transcript: string): "yes" | "no" | null {
   const t = norm(transcript);
+  if (/(不是|没有|并非|否|错误)/.test(t)) return "no";
+  if (/(是的|有|正确|对)/.test(t)) return "yes";
   if (/\b(no|nope|none|negative|didn t|did not|never)\b/.test(t)) return "no";
   if (/\b(yes|yeah|yep|yup|correct|true|it did|there was)\b/.test(t)) return "yes";
   return null;
