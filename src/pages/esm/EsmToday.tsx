@@ -1,132 +1,109 @@
+import { useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { Check, Clock3, Mic, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check, Clock, Mic } from "lucide-react";
-import { dailyLogDone, getProfile, startProfile, todaySlots } from "@/features/esm/store";
+import { dailyLogDone, getProfile, getSettings, todaySlots } from "@/features/esm/store";
 import { cn } from "@/lib/utils";
 
-/** Home screen: consent-free study status, the hourly reminder list, and entry points. */
 export default function EsmToday() {
   const navigate = useNavigate();
+  const currentRef = useRef<HTMLButtonElement>(null);
   const profile = getProfile();
+  const settings = getSettings();
   const slots = todaySlots();
+  const currentHour = new Date().getHours();
   const eveningDone = dailyLogDone();
-  const dueSlot = slots.find((s) => s.due && !s.done);
+  const currentSlot = useMemo(() => slots.find((slot) => slot.hour === currentHour), [slots, currentHour]);
+
+  useEffect(() => {
+    currentRef.current?.scrollIntoView({ behavior: settings.reducedMotion ? "auto" : "smooth", block: "nearest", inline: "center" });
+  }, [settings.reducedMotion]);
 
   if (!profile) {
     return (
-      <div className="mx-auto max-w-2xl space-y-4 px-4 py-8">
-        <h1 className="text-2xl font-semibold text-foreground">
-          A Week in the Life of Dementia Caregivers
-        </h1>
-        <p className="text-muted-foreground">
-          For one week you will get a short prompt every hour from 8 AM to 10 PM to record what care
-          you were doing, plus one look back at the whole day at 10 PM.
-        </p>
-        <p className="flex items-center gap-2 rounded-md bg-muted p-3 text-sm text-muted-foreground">
-          <Mic className="h-4 w-4 shrink-0" />
-          Every question can be answered by speaking — nothing has to be typed.
-        </p>
-        <h2 className="pt-2 text-lg font-medium text-foreground">Which describes you?</h2>
-        <div className="grid gap-3">
-          <Button
-            size="lg"
-            onClick={() => {
-              startProfile("primary");
-              navigate("/screening");
-            }}
-          >
-            I am the main caregiver
-          </Button>
-          <Button
-            size="lg"
-            variant="outline"
-            onClick={() => {
-              startProfile("other");
-              navigate("/screening");
-            }}
-          >
-            I help with care alongside someone else
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!profile.screeningDone) {
-    return (
-      <div className="mx-auto max-w-2xl space-y-4 px-4 py-8">
-        <h1 className="text-2xl font-semibold text-foreground">One survey first</h1>
-        <p className="text-muted-foreground">
-          Before the week starts, please finish the entry survey. You can stop part way and come
-          back — your answers are kept on this device.
-        </p>
-        <Button size="lg" onClick={() => navigate("/screening")}>Continue the entry survey</Button>
+      <div className="mx-auto max-w-2xl px-4 py-8">
+        <h1 className="text-2xl font-semibold text-foreground">A Week in the Life of Dementia Caregivers</h1>
+        <p className="mt-3 text-muted-foreground">Set your caregiver role first. Then the matching screening questions and daily study timeline will appear here.</p>
+        <p className="mt-4 flex items-center gap-2 border-y border-border py-3 text-sm text-muted-foreground"><Mic className="h-4 w-4 shrink-0" />Every question can be answered by voice.</p>
+        <Button className="mt-5 w-full" size="lg" onClick={() => navigate("/me?tab=screening")}>Set up my study profile</Button>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 px-4 py-6">
-      <h1 className="text-2xl font-semibold text-foreground">Today</h1>
+    <div className="mx-auto max-w-2xl px-4 py-6">
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <p className="text-sm text-muted-foreground">{new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}</p>
+          <h1 className="text-2xl font-semibold text-foreground">Today</h1>
+        </div>
+        <Button variant="outline" size="sm" onClick={() => navigate("/me?tab=screening")}>{profile.screeningDone ? "Screening" : "Finish screening"}</Button>
+      </div>
 
-      {dueSlot && (
-        <Card className="border-primary">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">It is {dueSlot.label} — what care were you doing?</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Button className="w-full" onClick={() => navigate(`/log?slot=${dueSlot.id}`)}>
-              Record this hour
-            </Button>
-          </CardContent>
-        </Card>
+      {!profile.screeningDone && (
+        <button className="mt-5 flex w-full items-center justify-between gap-3 border-y border-primary py-4 text-left" onClick={() => navigate("/screening?section=introduction")}> 
+          <span>
+            <span className="block font-semibold text-foreground">Finish your self-introduction questions</span>
+            <span className="mt-1 block text-sm text-muted-foreground">Your answers are saved as you go.</span>
+          </span>
+          <Plus className="h-5 w-5 shrink-0 text-primary" />
+        </button>
       )}
 
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Hourly prompts, 8 AM to 10 PM</CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-          {slots.map((slot) => (
-            <button
-              key={slot.id}
-              onClick={() => navigate(`/log?slot=${slot.id}`)}
-              className={cn(
-                "flex flex-col items-center gap-1 rounded-md border p-2 text-xs",
-                slot.done
-                  ? "border-primary bg-primary/10 text-primary"
-                  : slot.future
-                    ? "border-border text-muted-foreground"
-                    : "border-destructive/40 text-foreground",
-              )}
-            >
-              {slot.done ? <Check className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
-              {slot.label}
-            </button>
-          ))}
-        </CardContent>
-      </Card>
+      {settings.hourlyReminders && currentSlot && (
+        <div className="mt-5 border-l-4 border-primary bg-primary/5 px-4 py-3">
+          <p className="font-semibold text-foreground">Now · {currentSlot.label}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{currentSlot.count ? `${currentSlot.count} recorded. Add another event if needed.` : "No care event recorded yet."}</p>
+          <Button className="mt-3" size="sm" onClick={() => navigate(`/log/hourly?slot=${currentSlot.id}`)}>Log this hour</Button>
+        </div>
+      )}
 
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">End of day, 10 PM</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <p className="text-sm text-muted-foreground">
-            {eveningDone
-              ? "Done for today — thank you."
-              : "Add anything you missed, then rate the day as a whole."}
-          </p>
-          <Button variant={eveningDone ? "outline" : "default"} className="w-full" onClick={() => navigate("/evening")}>
-            {eveningDone ? "Review today's end-of-day log" : "Start the end-of-day log"}
-          </Button>
-        </CardContent>
-      </Card>
+      <section className="mt-7">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">24-hour timeline</h2>
+            <p className="text-sm text-muted-foreground">Tap any hour to add an event. Multiple entries are allowed.</p>
+          </div>
+        </div>
+        <div className="-mx-4 mt-4 overflow-x-auto px-4 pb-3 scrollbar-none">
+          <div className="flex w-max gap-2">
+            {slots.map((slot) => {
+              const current = slot.hour === currentHour;
+              return (
+                <Button
+                  key={slot.id}
+                  ref={current ? currentRef : undefined}
+                  variant="outline"
+                  onClick={() => navigate(`/log/hourly?slot=${slot.id}`)}
+                  className={cn(
+                    "h-24 w-24 shrink-0 flex-col gap-1 border-2",
+                    current && "border-primary bg-primary/10 text-foreground",
+                    slot.done && !current && "border-success/60 bg-success/5",
+                  )}
+                >
+                  <span className="text-sm font-semibold">{slot.label}</span>
+                  {slot.done ? <Check className="h-4 w-4 text-success" /> : <Clock3 className="h-4 w-4 text-muted-foreground" />}
+                  <span className="text-xs font-normal text-muted-foreground">{slot.count ? `${slot.count} recorded` : "Not recorded"}</span>
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+      </section>
 
-      <Button variant="outline" className="w-full" onClick={() => navigate("/log")}>
-        Add an entry for another time
-      </Button>
+      <section className="mt-6 border-y border-border py-4">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="font-semibold text-foreground">Daily care summary</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {currentHour >= 22
+                ? "Please complete the daily questionnaire tomorrow morning."
+                : eveningDone ? "Today’s summary is recorded." : "Complete this after the day’s care events."}
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => navigate("/log/daily")}>{eveningDone ? "View" : "Log"}</Button>
+        </div>
+      </section>
     </div>
   );
 }

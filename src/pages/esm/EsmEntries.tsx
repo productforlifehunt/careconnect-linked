@@ -5,6 +5,7 @@ import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { deleteRecord, exportJson, getRecords } from "@/features/esm/store";
 import { pushPendingRecords } from "@/features/esm/backend";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const KIND_LABEL: Record<string, string> = {
   primary_screening: "Entry survey (main caregiver)",
@@ -52,10 +53,26 @@ export default function EsmEntries() {
         </div>
       </div>
 
-      {!records.length && (
-        <p className="text-muted-foreground">Nothing recorded yet. Entries appear here as you add them.</p>
-      )}
+      <Tabs defaultValue="hourly" className="pt-2">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="hourly">Hourly care events</TabsTrigger>
+          <TabsTrigger value="daily">Daily care summaries</TabsTrigger>
+        </TabsList>
+        <TabsContent value="hourly" className="mt-4 space-y-3">
+          <RecordList records={records.filter((record) => record.kind === "hourly_log")} onDelete={() => setRecords(getRecords())} />
+        </TabsContent>
+        <TabsContent value="daily" className="mt-4 space-y-3">
+          <RecordList records={records.filter((record) => record.kind === "daily_log")} onDelete={() => setRecords(getRecords())} />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
 
+function RecordList({ records, onDelete }: { records: ReturnType<typeof getRecords>; onDelete: () => void }) {
+  if (!records.length) return <p className="text-muted-foreground">Nothing recorded yet.</p>;
+  return (
+    <>
       {records.map((record) => {
         const answered = Object.values(record.answers).filter(
           (v) => v !== null && v !== "" && !(Array.isArray(v) && v.length === 0),
@@ -76,7 +93,7 @@ export default function EsmEntries() {
                 aria-label="Delete entry"
                 onClick={() => {
                   deleteRecord(record.id);
-                  setRecords(getRecords());
+                   onDelete();
                   toast.success("Entry deleted.");
                 }}
               >
@@ -91,6 +108,6 @@ export default function EsmEntries() {
           </Card>
         );
       })}
-    </div>
+    </>
   );
 }

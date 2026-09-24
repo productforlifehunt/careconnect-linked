@@ -7,6 +7,9 @@ import EsmScreening from "./EsmScreening";
 import EsmHourlyLog from "./EsmHourlyLog";
 import EsmDailyLog from "./EsmDailyLog";
 import EsmEntries from "./EsmEntries";
+import EsmLogEntry from "./EsmLogEntry";
+import EsmHelp from "./EsmHelp";
+import EsmMe from "./EsmMe";
 
 /**
  * ESM Survey — "A Week in the Life of Dementia Caregivers".
@@ -30,9 +33,13 @@ export default function EsmApp() {
         <Routes>
           <Route path="/" element={<EsmToday />} />
           <Route path="/screening" element={<EsmScreening />} />
-          <Route path="/log" element={<EsmHourlyLog />} />
-          <Route path="/evening" element={<EsmDailyLog />} />
+          <Route path="/log" element={<EsmLogEntry />} />
+          <Route path="/log/hourly" element={<EsmHourlyLog />} />
+          <Route path="/log/daily" element={<EsmDailyLog />} />
+          <Route path="/evening" element={<Navigate to="/log/daily" replace />} />
           <Route path="/entries" element={<EsmEntries />} />
+          <Route path="/help" element={<EsmHelp />} />
+          <Route path="/me" element={<EsmMe />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </ErrorBoundary>

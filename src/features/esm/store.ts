@@ -9,6 +9,7 @@ import { AnswerMap } from "./types";
 
 const KEY = {
   profile: "esm:profile",
+  settings: "esm:settings",
   draft: (id: string) => `esm:draft:${id}`,
   records: "esm:records",
 } as const;
@@ -24,6 +25,18 @@ export interface EsmProfile {
   screeningDone: boolean;
   startedAt: string;
 }
+
+export interface EsmSettings {
+  hourlyReminders: boolean;
+  dailyReminder: boolean;
+  reducedMotion: boolean;
+}
+
+const DEFAULT_SETTINGS: EsmSettings = {
+  hourlyReminders: true,
+  dailyReminder: true,
+  reducedMotion: false,
+};
 
 export type RecordKind = "primary_screening" | "other_screening" | "hourly_log" | "daily_log";
 
@@ -61,6 +74,12 @@ function write(key: string, value: unknown) {
 }
 
 export const getProfile = (): EsmProfile | null => read<EsmProfile | null>(KEY.profile, null);
+
+export const getSettings = (): EsmSettings => read<EsmSettings>(KEY.settings, DEFAULT_SETTINGS);
+
+export function saveSettings(settings: EsmSettings) {
+  write(KEY.settings, settings);
+}
 
 export function saveProfile(profile: EsmProfile) {
   write(KEY.profile, profile);
@@ -120,9 +139,9 @@ export function deleteRecord(id: string) {
 
 /* ------------------------------------------------------------ reminders */
 
-/** Hourly prompts run 8 AM to 9 PM; 10 PM is the end-of-day (daily log) prompt. */
-export const FIRST_HOUR = 8;
-export const LAST_HOUR = 21;
+/** The timeline covers the complete day; reminder settings determine when prompts appear. */
+export const FIRST_HOUR = 0;
+export const LAST_HOUR = 23;
 
 export const slotId = (date: Date, hour: number) =>
   `${date.toISOString().slice(0, 10)}T${String(hour).padStart(2, "0")}`;
@@ -132,13 +151,20 @@ export interface Slot {
   id: string;
   label: string;
   done: boolean;
+  count: number;
   due: boolean;
   future: boolean;
 }
 
 export function todaySlots(now = new Date()): Slot[] {
   const records = getRecords();
-  const done = new Set(records.filter((r) => r.kind === "hourly_log").map((r) => r.slot));
+  const counts = records
+    .filter((r) => r.kind === "hourly_log" && r.slot)
+    .reduce<Record<string, number>>((all, record) => {
+      const key = String(record.slot);
+      all[key] = (all[key] ?? 0) + 1;
+      return all;
+    }, {});
   const slots: Slot[] = [];
   for (let hour = FIRST_HOUR; hour <= LAST_HOUR; hour++) {
     const id = slotId(now, hour);
@@ -147,7 +173,8 @@ export function todaySlots(now = new Date()): Slot[] {
       hour,
       id,
       label,
-      done: done.has(id),
+      done: (counts[id] ?? 0) > 0,
+      count: counts[id] ?? 0,
       due: hour === now.getHours(),
       future: hour > now.getHours(),
     });

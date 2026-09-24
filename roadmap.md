@@ -19,3 +19,12 @@
 # Scoping review protocol editorial revision
 
 - [x] Replace the over-written editorial audit with a conservative, local-only revision that preserves the author's wording and changes only genuine language or logic problems.
+
+# ESM survey participant flow
+
+- [x] Add Me with Profile & settings and Screening questions tabs.
+- [x] Add the 24-hour Today timeline with current-hour emphasis and multiple-entry counts.
+- [x] Merge hourly and daily entry choices under Log entry.
+- [x] Split My entries into hourly events and daily summaries.
+- [x] Add study Help and AI assistant entry.
+- [x] Verify Primary and Secondary flows, persistence, responsive layouts, and runtime health.

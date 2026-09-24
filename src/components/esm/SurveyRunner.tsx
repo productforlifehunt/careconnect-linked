@@ -13,6 +13,7 @@ interface Props {
   onSubmit: (answers: AnswerMap) => void | Promise<void>;
   submitLabel?: string;
   onCancel?: () => void;
+  initialStep?: number;
 }
 
 function visible(question: Question, answers: AnswerMap): boolean {
@@ -30,9 +31,10 @@ export function SurveyRunner({
   onSubmit,
   submitLabel = "Submit",
   onCancel,
+  initialStep = 0,
 }: Props) {
   const [answers, setAnswers] = useState<AnswerMap>(() => getDraft(draftId));
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(() => Math.min(Math.max(initialStep, 0), questionnaire.groups.length - 1));
 
   useEffect(() => {
     saveDraft(draftId, answers);

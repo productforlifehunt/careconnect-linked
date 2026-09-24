@@ -108,9 +108,9 @@ export const primaryScreening: Questionnaire = {
 
 export const otherScreening: Questionnaire = {
   id: "esm_other_screening",
-  title: "Other caregiver entry survey",
+  title: "Secondary caregiver entry survey",
   intro:
-    "This one-time survey is for caregivers who help out alongside the main caregiver. Every question can be answered by voice.",
+    "This one-time survey is for secondary caregivers who help alongside the primary caregiver. Every question can be answered by voice.",
   groups: groupsOf([
     ...screeningItems.filter((i) => startsWith(i, "2.")),
     ...sharedInstrumentItems,

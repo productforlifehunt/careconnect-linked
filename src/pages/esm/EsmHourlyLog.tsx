@@ -16,7 +16,7 @@ export default function EsmHourlyLog() {
       questionnaire={hourlyLog}
       draftId={`hourly:${slot}`}
       submitLabel="Save this entry"
-      onCancel={() => navigate("/")}
+      onCancel={() => navigate("/log")}
       onSubmit={async (answers) => {
         const result = await submitRecord("hourly_log", answers, { slot });
         if (result.uploaded) toast.success("Entry saved.");
