@@ -623,6 +623,14 @@ function LessonView({
           )}
         </Button>
 
+        {/* Study notes — anchored to this lesson's CCT 217 title row */}
+        {getCurrentUserIdNumber() != null && LESSON_CONTENT_IDS[lesson.key] && (
+          <StudyNotesPanel
+            articleId={LESSON_CONTENT_IDS[lesson.key]}
+            showFinishedToggle
+          />
+        )}
+
       </div>
     </div>
   );
