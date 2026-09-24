@@ -835,7 +835,7 @@ for (const mod of ISUPPORT_MODULES) {
   for (const lesson of mod.lessons) {
     const w = (WHO_CONTENT as Record<string, any>)[lesson.key];
     if (!w) continue;
-    lesson.summary = w.summary; lesson.summaryZh = w.summaryZh;
+    lesson.summary = w.summary ?? ""; lesson.summaryZh = w.summaryZh ?? "";
     lesson.sections = w.sections;
     lesson.keyActions = w.keyActions ?? []; lesson.keyActionsZh = w.keyActionsZh ?? [];
     lesson.reflectQuestion = w.reflectQuestion ?? ""; lesson.reflectQuestionZh = w.reflectQuestionZh ?? "";
