@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { CircleHelp, ClipboardList, Home, Languages, ListChecks, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,16 @@ export function EsmShell({ children }: { children: React.ReactNode }) {
   const { pathname } = useLocation();
   const { i18n } = useTranslation();
   const isChinese = isChineseLanguage(i18n.language);
-  const profile = getProfile();
+  const [profile, setProfile] = useState(getProfile());
+  useEffect(() => {
+    const refresh = () => setProfile(getProfile());
+    window.addEventListener("esm-profile-changed", refresh);
+    window.addEventListener("storage", refresh);
+    return () => {
+      window.removeEventListener("esm-profile-changed", refresh);
+      window.removeEventListener("storage", refresh);
+    };
+  }, []);
   const tabs = [
     { to: "/", label: uiText(isChinese, "Today", "今天"), icon: Home },
     { to: "/log", label: uiText(isChinese, "Log entry", "记录"), icon: ClipboardList },
