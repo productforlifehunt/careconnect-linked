@@ -33,22 +33,20 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
   if (brand === "challenged" && isChinese) {
     icon = <img src={yichangIcon} alt="忆畅" width={size} height={size} style={box} decoding="sync" loading="eager" fetchPriority="high" className="rounded-xl object-cover" />;
   } else if (brand === "challenged") {
-    // iOS app-icon squircle (continuous corners, superellipse n=5) with a
-    // one-stroke connected "CD" ligature. Single flat purple, no gradient.
+    // iOS app-icon squircle with an Inter-like bold CD: rounded outer edges,
+    // compact rectangular proportions, and one perfectly flat shared baseline.
     icon = (
       <svg viewBox="0 0 48 48" role="img" aria-label="ChallengeD" style={box}>
         <path
           fill="hsl(var(--primary))"
           d="M48 24 L47.95 33.73 L47.79 36.8 L47.52 39 L47.15 40.75 L46.66 42.19 L46.05 43.4 L45.31 44.44 L44.44 45.31 L43.4 46.05 L42.19 46.66 L40.75 47.15 L39 47.52 L36.8 47.79 L33.73 47.95 L24 48 L14.27 47.95 L11.2 47.79 L9 47.52 L7.25 47.15 L5.81 46.66 L4.6 46.05 L3.56 45.31 L2.69 44.44 L1.95 43.4 L1.34 42.19 L0.85 40.75 L0.48 39 L0.21 36.8 L0.05 33.73 L0 24 L0.05 14.27 L0.21 11.2 L0.48 9 L0.85 7.25 L1.34 5.81 L1.95 4.6 L2.69 3.56 L3.56 2.69 L4.6 1.95 L5.81 1.34 L7.25 0.85 L9 0.48 L11.2 0.21 L14.27 0.05 L24 0 L33.73 0.05 L36.8 0.21 L39 0.48 L40.75 0.85 L42.19 1.34 L43.4 1.95 L44.44 2.69 L45.31 3.56 L46.05 4.6 L46.66 5.81 L47.15 7.25 L47.52 9 L47.79 11.2 L47.95 14.27Z"
         />
-        {/* Squared C and D sharing one flat baseline. */}
+        {/* C keeps its round left edge; D keeps its round right edge. Their
+            lower stems overlap to form one uninterrupted horizontal base. */}
         <path
-          d="M21 15 H13 V33 H31 Q35 33 35 29 V19 Q35 15 31 15 H25 V33"
-          fill="none"
-          stroke="hsl(var(--primary-foreground))"
-          strokeWidth="3.6"
-          strokeLinecap="butt"
-          strokeLinejoin="miter"
+          fill="hsl(var(--primary-foreground))"
+          fillRule="evenodd"
+          d="M21.5 14H16C9.9 14 7 18.2 7 24s2.9 10 9 10h10v-5H16c-2.8 0-4-2.1-4-5s1.2-5 4-5h5.5v-5ZM24 14h7c6.2 0 10 3.8 10 10s-3.8 10-10 10h-7V14Zm5 5v10h2c3.2 0 5-1.8 5-5s-1.8-5-5-5h-2Z"
         />
       </svg>
     );
