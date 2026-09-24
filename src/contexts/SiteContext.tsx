@@ -2,7 +2,7 @@ import React, { createContext, useContext, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n/config";
 
-export type SiteId = "carecnc" | "challenged" | "notchsafety" | "esm_survey";
+export type SiteId = "carecnc" | "challenged" | "notchsafety" | "esm_survey" | "researcher";
 
 /** b = beta, p = public release, t = internal test, none = internal full build. */
 export type ReleaseChannel = "internal" | "beta" | "public" | "test";
@@ -24,7 +24,7 @@ export interface BrandConfig {
   id: SiteId;
   /** Brand family — every release of a brand shares the same family so
    *  id-based UI checks keep working. */
-  family?: "challenged" | "carecnc" | "notchsafety" | "esm_survey";
+  family?: "challenged" | "carecnc" | "notchsafety" | "esm_survey" | "researcher";
   name: string;
   tagline: string;
   logoText: string;
@@ -187,7 +187,7 @@ const SLUG_ALIASES: Record<string, string> = {
  * Public / beta builds are always a SUBSET of the internal build — never a
  * second codebase.
  */
-const SLUG_RE = /^(challenged|carecnc|notchsafety|esm_survey)(?:-([bpt])(\d+))?(?:-v(\d+))?(?:-([a-z]{2}))?$/;
+const SLUG_RE = /^(challenged|carecnc|notchsafety|esm_survey|researcher)(?:-([bpt])(\d+))?(?:-v(\d+))?(?:-([a-z]{2}))?$/;
 
 export interface SiteRelease {
   /** The slug exactly as requested, e.g. "challenged-b1-v1". */
@@ -312,6 +312,7 @@ const BRAND_CONFIGS: Record<SiteId, BrandConfig> = {
   carecnc: careCNCConfig,
   notchsafety: notchSafetyConfig,
   esm_survey: esmSurveyConfig,
+  researcher: { ...esmSurveyConfig, id: "researcher", family: "researcher", name: "Study Researcher", brandSlug: "researcher", metaTitle: "Researcher dashboard — A Week in the Life study" },
 };
 
 const INTERNAL_RELEASE: SiteRelease = { slug: "challenged", channel: "internal", channelNumber: 0, version: 0 };
