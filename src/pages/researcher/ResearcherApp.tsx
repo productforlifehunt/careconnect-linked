@@ -104,8 +104,11 @@ async function loadAll(): Promise<Participant[]> {
   });
   const ids = [...map.keys()];
   if (ids.length) {
-    const users = await wordpressFetch<{ id: number; name: string }[]>(`wp/v2/users?per_page=100&include=${ids.join(",")}`).catch(() => []);
-    (users || []).forEach((u) => { const p = map.get(String(u.id)); if (p) p.name = u.name; });
+    await Promise.all(ids.map(async (id) => {
+      const u = await wordpressFetch<{ name?: string }>(`wp/v2/users/${id}`).catch(() => null);
+      const p = map.get(id);
+      if (p && u?.name) p.name = u.name;
+    }));
   }
   map.forEach((p) => kinds.forEach((k) => p.rows[k].sort((a, b) => String(a.cct_created).localeCompare(String(b.cct_created)))));
   return [...map.values()].sort((a, b) => Number(a.id) - Number(b.id));
