@@ -1860,8 +1860,8 @@
       "尝试不同的应对方式和方法，因为第一个不一定总能奏效。",
       "如果您无法处理某个情况，请寻求专业帮助。"
     ],
-    "reflectQuestion": "",
-    "reflectQuestionZh": "",
+    "reflectQuestion": "What is the behaviour that was the most distressing or upsetting to you in the past month?\nWhat could you do to change what happened before the behaviour in order to reduce or prevent it?\nHow could you respond in that situation?",
+    "reflectQuestionZh": "过去一个月里，哪种行为最让您感到痛苦或不安？\n您可以怎样改变该行为发生前的情况，以减少或预防它？\n在那种情况下，您可以怎样回应？",
     "quizzes": [
       {
         "question": "Based on the scenario with Kayla and Howard, which of the following are valid examples provided in the manual's answer key for what happens *before* Kayla gets agitated?",
@@ -2340,8 +2340,8 @@
       {
         "heading": "Let’s review what you have learned",
         "headingZh": "让我们回顾一下您学到的内容",
-        "body": "Memory loss is a common part of dementia, but there are many ways to respond and help. Review the key actions from this lesson.",
-        "bodyZh": "记忆力减退是失智症的常见部分，但有很多方法可以应对和提供帮助。请回顾本课程的关键行动。"
+        "body": "• Memory loss is very common for people with dementia.\n• Remind yourself that memory loss is part of the disease.\n• Memory loss can be stressful to deal with.\n• In case of memory loss, try a memory aid like a note, pillbox, reminder/alarm, etc.\n• Take a deep breath and think about the best ways to respond that will be the least distressing to you and the person you care for in the case of memory loss.\n• If possible, involve the person you care for to find the best way to support them in case of memory problems.\n• It is important to remember that the person living with dementia is not to blame, because he/she can’t help that they forget.\n• When one approach doesn’t work, try another one.\n• Realize there may be good and bad days.\n\nYou finished this lesson, well done!",
+        "bodyZh": "• 记忆力减退对于失智症者来说非常普遍。\n• 提醒自己，记忆力减退是失智症的一部分。\n• 应对记忆力减退可能会带来压力。\n• 如果出现记忆力减退的情况，尝试使用记忆辅助工具，如便条、药盒、提醒/闹钟等。\n• 深呼吸，思考对您和您所护理的失智症者来说最不痛苦的最佳应对方式。\n• 如果可能，让您所护理的失智症者参与进来，共同寻找在记忆问题上支持他们的最佳方式。\n• 重要的是要记住，失智症者不应受到责备，因为他们无法控制自己的遗忘。\n• 当一种方法不起作用时，尝试另一种。\n• 要认识到情况会有好有坏。\n\n您已完成本课，做得很好！"
       }
     ],
     "keyActions": [
@@ -2492,8 +2492,8 @@
       {
         "heading": "What will I learn?",
         "headingZh": "我将学到什么？",
-        "body": "Difficulty sleeping can be a problem for people with dementia and their families. People with dementia can have difficulty falling asleep, may wake up in the middle of the night, or wake up too early in the morning. Carers may have their sleep disrupted as a result, which can make it harder to provide care. In this lesson, you will practice how to promote good sleep for the person living with dementia.\n\nYou will learn:\n• How to deal with sleeping problems in a person with dementia?\n• How to deal with a person with dementia who wakes up in the middle of the night?",
-        "bodyZh": "睡眠困难对于失智症患者及其家人来说可能是一个问题。失智症患者可能难以入睡，可能在半夜醒来，或者早上醒得太早。结果，护理者的睡眠可能会受到干扰，这会使提供护理变得更加困难。在本节课中，您将练习如何促进失智症患者的良好睡眠。\n\n您将学到：\n• 如何处理失智症患者的睡眠问题？\n• 如何应对在半夜醒来的失智症患者？"
+        "body": "Why is this lesson important?\nPeople with dementia may have difficulty sleeping which can impact the carer’s sleep as well.\n\nHow will this lesson help me?\nThis lesson will provide examples and practice to promote good sleep.\n\nDifficulty sleeping can be a problem for people with dementia and their families. People with dementia can have difficulty falling asleep, may wake up in the middle of the night, or wake up too early in the morning. Carers may have their sleep disrupted as a result, which can make it harder to provide care. In this lesson, you will practice how to promote good sleep for the person living with dementia.\n\nYou will learn:\n• How to deal with sleeping problems in a person with dementia?\n• How to deal with a person with dementia who wakes up in the middle of the night?",
+        "bodyZh": "为什么本课很重要？\n失智症人士可能难以入睡，这也会影响护理者的睡眠。\n\n本课将如何帮助我？\n本课将通过示例和练习帮助促进良好睡眠。\n\n睡眠困难对于失智症患者及其家人来说可能是一个问题。失智症患者可能难以入睡，可能在半夜醒来，或者早上醒得太早。结果，护理者的睡眠可能会受到干扰，这会使提供护理变得更加困难。在本节课中，您将练习如何促进失智症患者的良好睡眠。\n\n您将学到：\n• 如何处理失智症患者的睡眠问题？\n• 如何应对在半夜醒来的失智症患者？"
       },
       {
         "heading": "1. How to deal with sleeping problems in a person with dementia?",
@@ -3212,8 +3212,8 @@
       {
         "heading": "Remember",
         "headingZh": "请记住",
-        "body": "It is important to recognize when things get serious. If the person you care for has serious and constant mood changes or you think that they are in danger of harming themselves, it is important to seek medical advice right away.",
-        "bodyZh": "重要的是要认识到情况何时变得严重。如果您护理的人有严重且持续的情绪变化，或者您认为他们有伤害自己的危险，请务必立即寻求医疗建议。"
+        "body": "It is important to recognize when things get serious. If the person you care for has serious and constant mood changes or you think that they are in danger of harming themselves, it is important to seek medical advice right away.\n\nYou finished this lesson, well done!",
+        "bodyZh": "重要的是要认识到情况何时变得严重。如果您护理的人有严重且持续的情绪变化，或者您认为他们有伤害自己的危险，请务必立即寻求医疗建议。\n\n您已完成本课，做得很好！"
       }
     ],
     "keyActions": [
