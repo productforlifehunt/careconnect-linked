@@ -52,7 +52,8 @@ export const personName = (id: string): string =>
 const link = (rel: number, parent: string, child: string) =>
   wordpressFetch(`jet-rel/${rel}`, {
     method: "POST",
-    body: { parent_id: parent, child_id: child, context: "child_object", store_items_type: "update" },
+    // "append" keeps existing links: one log can list many people, one person many logs.
+    body: { parent_id: parent, child_id: child, context: "child_object", store_items_type: "append" },
   });
 
 const rowIdOf = (created: any) => created?.item_id ?? created?.id ?? created?._ID;
