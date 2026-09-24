@@ -28,7 +28,7 @@ function scaleOf(item: SpecItem): ScaleSpec | undefined {
     min: item.scale.min,
     max: item.scale.max,
     minLabel: minLabel?.trim() || String(item.scale.min),
-    maxLabel: maxLabel?.trim() || String(item.scale.max),
+    maxLabel: maxLabel?.replace(/\).*$/s, "").trim() || String(item.scale.max),
   };
 }
 

@@ -83,6 +83,7 @@ export function saveSettings(settings: EsmSettings) {
 
 export function saveProfile(profile: EsmProfile) {
   write(KEY.profile, profile);
+  window.dispatchEvent(new CustomEvent("esm-profile-changed", { detail: profile }));
 }
 
 export function startProfile(role: ParticipantRole): EsmProfile {
