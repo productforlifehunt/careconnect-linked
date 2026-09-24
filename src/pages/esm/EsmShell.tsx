@@ -1,29 +1,46 @@
 import { Link, useLocation } from "react-router-dom";
-import { CircleHelp, ClipboardList, Home, ListChecks, UserRound } from "lucide-react";
+import { CircleHelp, ClipboardList, Home, Languages, ListChecks, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-
-const TABS = [
-  { to: "/", label: "Today", icon: Home },
-  { to: "/log", label: "Log entry", icon: ClipboardList },
-  { to: "/entries", label: "My entries", icon: ListChecks },
-  { to: "/help", label: "Help", icon: CircleHelp },
-];
+import { useTranslation } from "react-i18next";
+import { getProfile } from "@/features/esm/store";
+import { isChineseLanguage, uiText } from "@/features/esm/i18n";
 
 /** The study's own shell — no care-app menus, just the four study screens. */
 export function EsmShell({ children }: { children: React.ReactNode }) {
   const { pathname } = useLocation();
+  const { i18n } = useTranslation();
+  const isChinese = isChineseLanguage(i18n.language);
+  const profile = getProfile();
+  const tabs = [
+    { to: "/", label: uiText(isChinese, "Today", "今天"), icon: Home },
+    { to: "/log", label: uiText(isChinese, "Log entry", "记录"), icon: ClipboardList },
+    { to: "/entries", label: uiText(isChinese, "My entries", "我的记录"), icon: ListChecks },
+    { to: "/help", label: uiText(isChinese, "Help", "帮助"), icon: CircleHelp },
+  ];
 
   return (
     <div className="flex min-h-dvh w-full flex-col overflow-x-hidden bg-background">
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-2xl items-center justify-between gap-3 px-4">
           <Link to="/" className="truncate text-sm font-semibold text-foreground">
-            A Week in the Life of Dementia Caregivers
+            {uiText(isChinese, "A Week in the Life of Dementia Caregivers", "失智症护理者的一周")}
           </Link>
-          <Button asChild variant="ghost" size="icon" className="shrink-0" aria-label="Me">
-            <Link to="/me"><UserRound className="h-5 w-5" /></Link>
-          </Button>
+          <div className="flex shrink-0 items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1 px-2"
+              onClick={() => void i18n.changeLanguage(isChinese ? "en" : "zh-CN")}
+              aria-label={uiText(isChinese, "Switch to English", "切换到中文")}
+            >
+              <Languages className="h-4 w-4" />
+              <span>{isChinese ? "EN" : "中文"}</span>
+            </Button>
+            <Button asChild variant="ghost" size="sm" className="max-w-32 gap-1.5 px-2" aria-label={profile?.name || uiText(isChinese, "Me", "我")}>
+              <Link to="/me"><UserRound className="h-5 w-5 shrink-0" /><span className="truncate">{profile?.name || uiText(isChinese, "Me", "我")}</span></Link>
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -31,7 +48,7 @@ export function EsmShell({ children }: { children: React.ReactNode }) {
 
       <nav className="fixed bottom-0 z-40 w-full border-t border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-2xl">
-          {TABS.map(({ to, label, icon: Icon }) => {
+          {tabs.map(({ to, label, icon: Icon }) => {
             const active = to === "/" ? pathname === "/" : pathname === to || pathname.startsWith(`${to}/`);
             return (
               <Link

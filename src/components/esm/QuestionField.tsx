@@ -13,6 +13,8 @@ import {
   parseSpokenYesNo,
 } from "@/features/esm/voice";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
+import { isChineseLanguage, uiText } from "@/features/esm/i18n";
 
 interface Props {
   question: Question;
@@ -28,6 +30,8 @@ const YESNO = [
 ];
 
 export function QuestionField({ question, value, onChange, extraOptions }: Props) {
+  const { i18n } = useTranslation();
+  const isChinese = isChineseLanguage(i18n.language);
   const [heard, setHeard] = useState<string | null>(null);
   const [unmatched, setUnmatched] = useState(false);
   const options = [...(question.options ?? []), ...(extraOptions ?? [])];
@@ -94,12 +98,9 @@ export function QuestionField({ question, value, onChange, extraOptions }: Props
     <div id={`esm-q-${question.id}`} className="rounded-lg border border-border bg-card p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          {question.code && (
-            <p className="text-xs font-medium text-muted-foreground">{question.code}</p>
-          )}
           <p className="text-base font-medium leading-snug text-foreground">
             {question.text}
-            {question.optional && <span className="ml-1 text-xs text-muted-foreground">(optional)</span>}
+             {question.optional && <span className="ml-1 text-xs text-muted-foreground">{uiText(isChinese, "(optional)", "（选填）")}</span>}
           </p>
           {question.help && <p className="mt-1 text-sm text-muted-foreground">{question.help}</p>}
         </div>
@@ -127,7 +128,7 @@ export function QuestionField({ question, value, onChange, extraOptions }: Props
           <Input
             value={typeof value === "string" ? value : ""}
             onChange={(e) => onChange(e.target.value)}
-            placeholder="Type or speak your answer"
+            placeholder={uiText(isChinese, "Type or speak your answer", "请输入或使用语音回答")}
           />
         )}
 
@@ -136,7 +137,7 @@ export function QuestionField({ question, value, onChange, extraOptions }: Props
             rows={4}
             value={typeof value === "string" ? value : ""}
             onChange={(e) => onChange(e.target.value)}
-            placeholder="Type or speak your answer"
+            placeholder={uiText(isChinese, "Type or speak your answer", "请输入或使用语音回答")}
           />
         )}
 
@@ -225,10 +226,10 @@ export function QuestionField({ question, value, onChange, extraOptions }: Props
 
       {heard && (
         <p className="mt-2 text-xs text-muted-foreground">
-          Heard: “{heard}”
+            {uiText(isChinese, "Heard", "识别到")}：“{heard}”
           {unmatched && (
             <span className="ml-1 text-destructive">
-              — I could not match that to an answer, please choose or speak again.
+              {uiText(isChinese, "— I could not match that to an answer. Please choose or speak again.", "— 无法匹配到选项，请手动选择或重新说一遍。")}
             </span>
           )}
         </p>
