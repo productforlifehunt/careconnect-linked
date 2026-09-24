@@ -30,6 +30,9 @@ import {
   type ISupportLesson,
   type ISupportQuiz,
 } from "@/data/isupport-modules";
+import { LESSON_CONTENT_IDS } from "@/data/lesson-content-ids";
+import { StudyNotesPanel } from "@/components/challenged/StudyNotesPanel";
+import { getCurrentUserIdNumber } from "@/features/shared/current-user";
 
 const PROGRESS_KEY = "isupport_completed_lessons";
 
