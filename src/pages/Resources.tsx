@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
   ChevronRight,
@@ -22,7 +21,6 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   ISUPPORT_MODULES,
   getModule,
@@ -32,8 +30,6 @@ import {
   type ISupportLesson,
   type ISupportQuiz,
 } from "@/data/isupport-modules";
-import { fetchChallengedContent } from "@/features/challenged-content/source.wordpress";
-import { stripHtml } from "@/features/shared/wordpress-client";
 
 const PROGRESS_KEY = "isupport_completed_lessons";
 
@@ -438,33 +434,6 @@ function LessonView({
   onToggleComplete: () => void;
   onBack: () => void;
 }) {
-  // Pull related deep-dive articles (if any)
-  const { data: articles, isLoading } = useQuery({
-    queryKey: [
-      "isupport-related",
-      lesson.contentCategory,
-      lesson.contentSubcategory,
-    ],
-    queryFn: () =>
-      lesson.contentCategory
-        ? fetchChallengedContent(
-            lesson.contentCategory,
-            lesson.contentSubcategory
-          )
-        : Promise.resolve([]),
-    enabled: !!lesson.contentCategory,
-  });
-
-  const articleBasePath =
-    lesson.contentCategory === "aware"
-      ? "/awared"
-      : lesson.contentCategory === "care"
-        ? "/cared"
-        : lesson.contentCategory === "coping"
-          ? "/coped"
-          : lesson.contentCategory === "safe"
-            ? "/safed"
-            : "/accompanied";
 
   const lessonSections = lesson.sections ?? [];
   const introText = isZh ? lesson.summaryZh : lesson.summary;
@@ -651,52 +620,6 @@ function LessonView({
           )}
         </Button>
 
-        {/* Deep dive articles */}
-        {lesson.contentCategory && (
-          <div>
-            <h2 className="text-lg font-semibold mb-3">
-              {isZh ? "深入阅读" : "Go deeper"}
-            </h2>
-            {isLoading ? (
-              <div className="space-y-2">
-                <Skeleton className="h-20 w-full" />
-                <Skeleton className="h-20 w-full" />
-              </div>
-            ) : articles && articles.length > 0 ? (
-              <div className="space-y-2">
-                {articles.slice(0, 6).map((a) => {
-                  const excerpt = a.excerpt
-                    ? stripHtml(a.excerpt)
-                    : stripHtml(a.content || "").slice(0, 140);
-                  return (
-                    <Link
-                      key={a.id}
-                      to={`${articleBasePath}/${a.id}`}
-                      className="block p-4 rounded-lg border bg-card hover:border-primary/40 hover:shadow-sm transition-all"
-                    >
-                      <div className="font-semibold mb-1 line-clamp-1">
-                        {a.title}
-                      </div>
-                      <div className="text-sm text-muted-foreground line-clamp-2 mb-2">
-                        {excerpt}
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        {a.reading_time || (isZh ? "3 分钟" : "3 min read")}
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                {isZh
-                  ? "暂无更多深入文章。"
-                  : "No additional articles yet."}
-              </p>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );
