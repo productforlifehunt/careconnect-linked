@@ -48,6 +48,8 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
           fillRule="evenodd"
           d="M21.5 14H16C9.9 14 7 18.2 7 24s2.9 10 9 10h10v-5H16c-2.8 0-4-2.1-4-5s1.2-5 4-5h5.5v-5ZM24 14h7c6.2 0 10 3.8 10 10s-3.8 10-10 10h-7V14Zm5 5v10h2c3.2 0 5-1.8 5-5s-1.8-5-5-5h-2Z"
         />
+        {/* Covers the even-odd overlap seam without entering the D counter. */}
+        <path fill="hsl(var(--primary-foreground))" d="M20.5 29H29V34H20.5Z" />
       </svg>
     );
   } else if (site.family === "notchsafety") {
