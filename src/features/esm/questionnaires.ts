@@ -3,7 +3,7 @@
  * item bank (`spec.generated.ts`) so every question keeps its exact wording,
  * order, options and storage column.
  *
- * Answer keys are the storage keys: `c302_a01` is written to column a01 of the
+ * Answer keys are the storage keys: `c318_a01` is written to column a01 of the
  * screening table, and nothing in between needs a translation table.
  */
 import { ESM_SPEC, SpecItem } from "./spec.generated";
@@ -68,10 +68,10 @@ function toQuestion(item: SpecItem): Question {
     question.showIf = { id: "c303_a01", equals: ["b02"] };
     question.optional = true;
   }
-  if (/^c302_a(?:29|30|32|33|35|36|38|39|41|42|44|45|47|48|50|51|53|54|56|57|59|60|62|63)$/.test(item.id)) {
+  if (/^c318_a(?:29|30|32|33|35|36|38|39|41|42|44|45|47|48|50|51|53|54|56|57|59|60|62|63)$/.test(item.id)) {
     const column = Number(item.column.slice(1));
     const presenceColumn = column - ((column - 28) % 3);
-    question.showIf = { id: `c302_a${String(presenceColumn).padStart(2, "0")}`, equals: ["b01"] };
+    question.showIf = { id: `c318_a${String(presenceColumn).padStart(2, "0")}`, equals: ["b01"] };
   }
   if (item.otherFor) {
     const values = otherValues(byId.get(item.otherFor));
@@ -100,7 +100,7 @@ const startsWith = (item: SpecItem, prefix: string) => item.code.startsWith(pref
 /** Columns a02–a05 of the hourly table are filled in by the app, not typed. */
 const HIDDEN = new Set(["c303_a02"]);
 
-const screeningItems = ESM_SPEC.filter((i) => i.cct === "302");
+const screeningItems = ESM_SPEC.filter((i) => i.cct === "318");
 const sharedInstrumentItems = screeningItems.filter((i) => startsWith(i, "1.7"));
 
 export const primaryScreening: Questionnaire = {

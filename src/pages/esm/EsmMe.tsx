@@ -46,7 +46,7 @@ export default function EsmMe() {
     }
     const next = { ...profile, name: name.trim() };
     saveProfile(next);
-    const nextDraft = { ...getDraft(questionnaire.id), c302_a01: name.trim() };
+    const nextDraft = { ...getDraft(questionnaire.id), c318_a01: name.trim() };
     saveDraft(questionnaire.id, nextDraft);
     saveSettings(settings);
     setProfile(next);

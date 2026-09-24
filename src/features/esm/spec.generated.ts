@@ -30,7 +30,7 @@ export interface SpecItem {
 
 export const ESM_SPEC: SpecItem[] = [
   {
-    "id": "c302_a01",
+    "id": "c318_a01",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a01",
@@ -41,7 +41,7 @@ export const ESM_SPEC: SpecItem[] = [
     "type": "text"
   },
   {
-    "id": "c302_a02",
+    "id": "c318_a02",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a02",
@@ -52,7 +52,7 @@ export const ESM_SPEC: SpecItem[] = [
     "type": "number"
   },
   {
-    "id": "c302_a03",
+    "id": "c318_a03",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a03",
@@ -74,7 +74,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a04",
+    "id": "c318_a04",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a04",
@@ -116,7 +116,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a05",
+    "id": "c318_a05",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a05",
@@ -154,7 +154,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a06",
+    "id": "c318_a06",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a06",
@@ -184,7 +184,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a07",
+    "id": "c318_a07",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a07",
@@ -200,7 +200,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a08",
+    "id": "c318_a08",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a08",
@@ -246,7 +246,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a081",
+    "id": "c318_a081",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a081",
@@ -255,10 +255,10 @@ export const ESM_SPEC: SpecItem[] = [
     "block": "",
     "label": "Other detail",
     "type": "text",
-    "otherFor": "c302_a08"
+    "otherFor": "c318_a08"
   },
   {
-    "id": "c302_a09",
+    "id": "c318_a09",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a09",
@@ -292,7 +292,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a10",
+    "id": "c318_a10",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a10",
@@ -303,7 +303,7 @@ export const ESM_SPEC: SpecItem[] = [
     "type": "number"
   },
   {
-    "id": "c302_a11",
+    "id": "c318_a11",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a11",
@@ -341,7 +341,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a12",
+    "id": "c318_a12",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a12",
@@ -353,7 +353,7 @@ export const ESM_SPEC: SpecItem[] = [
     "help": "Format: Numeric input"
   },
   {
-    "id": "c302_a13",
+    "id": "c318_a13",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a13",
@@ -375,7 +375,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a14",
+    "id": "c318_a14",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a14",
@@ -417,7 +417,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a141",
+    "id": "c318_a141",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a141",
@@ -426,10 +426,10 @@ export const ESM_SPEC: SpecItem[] = [
     "block": "",
     "label": "Other detail",
     "type": "text",
-    "otherFor": "c302_a14"
+    "otherFor": "c318_a14"
   },
   {
-    "id": "c302_a15",
+    "id": "c318_a15",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a15",
@@ -441,7 +441,7 @@ export const ESM_SPEC: SpecItem[] = [
     "help": "Options: Numeric input"
   },
   {
-    "id": "c302_a16",
+    "id": "c318_a16",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a16",
@@ -475,7 +475,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a17",
+    "id": "c318_a17",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a17",
@@ -517,7 +517,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a18",
+    "id": "c318_a18",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a18",
@@ -542,7 +542,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a19",
+    "id": "c318_a19",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a19",
@@ -567,7 +567,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a20",
+    "id": "c318_a20",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a20",
@@ -592,7 +592,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a21",
+    "id": "c318_a21",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a21",
@@ -617,7 +617,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a22",
+    "id": "c318_a22",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a22",
@@ -642,7 +642,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a23",
+    "id": "c318_a23",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a23",
@@ -667,7 +667,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a24",
+    "id": "c318_a24",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a24",
@@ -692,7 +692,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a25",
+    "id": "c318_a25",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a25",
@@ -717,7 +717,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a26",
+    "id": "c318_a26",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a26",
@@ -742,7 +742,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a27",
+    "id": "c318_a27",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a27",
@@ -767,7 +767,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a28",
+    "id": "c318_a28",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a28",
@@ -788,7 +788,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a29",
+    "id": "c318_a29",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a29",
@@ -804,7 +804,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a30",
+    "id": "c318_a30",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a30",
@@ -820,7 +820,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a31",
+    "id": "c318_a31",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a31",
@@ -841,7 +841,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a32",
+    "id": "c318_a32",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a32",
@@ -857,7 +857,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a33",
+    "id": "c318_a33",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a33",
@@ -873,7 +873,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a34",
+    "id": "c318_a34",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a34",
@@ -894,7 +894,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a35",
+    "id": "c318_a35",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a35",
@@ -910,7 +910,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a36",
+    "id": "c318_a36",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a36",
@@ -926,7 +926,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a37",
+    "id": "c318_a37",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a37",
@@ -947,7 +947,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a38",
+    "id": "c318_a38",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a38",
@@ -963,7 +963,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a39",
+    "id": "c318_a39",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a39",
@@ -979,7 +979,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a40",
+    "id": "c318_a40",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a40",
@@ -1000,7 +1000,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a41",
+    "id": "c318_a41",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a41",
@@ -1016,7 +1016,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a42",
+    "id": "c318_a42",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a42",
@@ -1032,7 +1032,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a43",
+    "id": "c318_a43",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a43",
@@ -1053,7 +1053,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a44",
+    "id": "c318_a44",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a44",
@@ -1069,7 +1069,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a45",
+    "id": "c318_a45",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a45",
@@ -1085,7 +1085,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a46",
+    "id": "c318_a46",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a46",
@@ -1106,7 +1106,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a47",
+    "id": "c318_a47",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a47",
@@ -1122,7 +1122,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a48",
+    "id": "c318_a48",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a48",
@@ -1138,7 +1138,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a49",
+    "id": "c318_a49",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a49",
@@ -1159,7 +1159,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a50",
+    "id": "c318_a50",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a50",
@@ -1175,7 +1175,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a51",
+    "id": "c318_a51",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a51",
@@ -1191,7 +1191,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a52",
+    "id": "c318_a52",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a52",
@@ -1212,7 +1212,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a53",
+    "id": "c318_a53",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a53",
@@ -1228,7 +1228,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a54",
+    "id": "c318_a54",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a54",
@@ -1244,7 +1244,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a55",
+    "id": "c318_a55",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a55",
@@ -1265,7 +1265,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a56",
+    "id": "c318_a56",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a56",
@@ -1281,7 +1281,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a57",
+    "id": "c318_a57",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a57",
@@ -1297,7 +1297,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a58",
+    "id": "c318_a58",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a58",
@@ -1318,7 +1318,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a59",
+    "id": "c318_a59",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a59",
@@ -1334,7 +1334,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a60",
+    "id": "c318_a60",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a60",
@@ -1350,7 +1350,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a61",
+    "id": "c318_a61",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a61",
@@ -1371,7 +1371,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a62",
+    "id": "c318_a62",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a62",
@@ -1387,7 +1387,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a63",
+    "id": "c318_a63",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a63",
@@ -1403,7 +1403,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a64",
+    "id": "c318_a64",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a64",
@@ -1419,7 +1419,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a65",
+    "id": "c318_a65",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a65",
@@ -1435,7 +1435,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a66",
+    "id": "c318_a66",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a66",
@@ -1451,7 +1451,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a67",
+    "id": "c318_a67",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a67",
@@ -1467,7 +1467,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a68",
+    "id": "c318_a68",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a68",
@@ -1483,7 +1483,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a69",
+    "id": "c318_a69",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a69",
@@ -1499,7 +1499,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a70",
+    "id": "c318_a70",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a70",
@@ -1515,7 +1515,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a71",
+    "id": "c318_a71",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a71",
@@ -1531,7 +1531,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a72",
+    "id": "c318_a72",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a72",
@@ -1547,7 +1547,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a73",
+    "id": "c318_a73",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a73",
@@ -1563,7 +1563,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a74",
+    "id": "c318_a74",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a74",
@@ -1579,7 +1579,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a75",
+    "id": "c318_a75",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a75",
@@ -1595,7 +1595,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a76",
+    "id": "c318_a76",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a76",
@@ -1611,7 +1611,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a77",
+    "id": "c318_a77",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a77",
@@ -1627,7 +1627,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a78",
+    "id": "c318_a78",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a78",
@@ -1643,7 +1643,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a79",
+    "id": "c318_a79",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a79",
@@ -1659,7 +1659,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a80",
+    "id": "c318_a80",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a80",
@@ -1675,7 +1675,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a81",
+    "id": "c318_a81",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a81",
@@ -1691,7 +1691,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a82",
+    "id": "c318_a82",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a82",
@@ -1707,7 +1707,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a83",
+    "id": "c318_a83",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a83",
@@ -1744,7 +1744,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a84",
+    "id": "c318_a84",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a84",
@@ -1765,7 +1765,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a85",
+    "id": "c318_a85",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a85",
@@ -1786,7 +1786,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a86",
+    "id": "c318_a86",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a86",
@@ -1807,7 +1807,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a87",
+    "id": "c318_a87",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a87",
@@ -1828,7 +1828,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a88",
+    "id": "c318_a88",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a88",
@@ -1849,7 +1849,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a89",
+    "id": "c318_a89",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a89",
@@ -1870,7 +1870,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a90",
+    "id": "c318_a90",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a90",
@@ -1891,7 +1891,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a91",
+    "id": "c318_a91",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a91",
@@ -1912,7 +1912,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a92",
+    "id": "c318_a92",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a92",
@@ -1933,7 +1933,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a93",
+    "id": "c318_a93",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a93",
@@ -1954,7 +1954,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a94",
+    "id": "c318_a94",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a94",
@@ -1975,7 +1975,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a95",
+    "id": "c318_a95",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a95",
@@ -1996,7 +1996,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a96",
+    "id": "c318_a96",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a96",
@@ -2017,7 +2017,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a97",
+    "id": "c318_a97",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a97",
@@ -2038,7 +2038,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a98",
+    "id": "c318_a98",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a98",
@@ -2059,7 +2059,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a99",
+    "id": "c318_a99",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a99",
@@ -2080,7 +2080,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a100",
+    "id": "c318_a100",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a100",
@@ -2101,7 +2101,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a101",
+    "id": "c318_a101",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a101",
@@ -2122,7 +2122,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a102",
+    "id": "c318_a102",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a102",
@@ -2143,7 +2143,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a103",
+    "id": "c318_a103",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a103",
@@ -2164,7 +2164,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a104",
+    "id": "c318_a104",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a104",
@@ -2185,7 +2185,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a105",
+    "id": "c318_a105",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a105",
@@ -2206,7 +2206,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a106",
+    "id": "c318_a106",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a106",
@@ -2227,7 +2227,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a107",
+    "id": "c318_a107",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a107",
@@ -2248,7 +2248,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a108",
+    "id": "c318_a108",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a108",
@@ -2269,7 +2269,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a109",
+    "id": "c318_a109",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a109",
@@ -2290,7 +2290,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a110",
+    "id": "c318_a110",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a110",
@@ -2311,7 +2311,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a111",
+    "id": "c318_a111",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a111",
@@ -2332,7 +2332,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a112",
+    "id": "c318_a112",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a112",
@@ -2353,7 +2353,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a113",
+    "id": "c318_a113",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a113",
@@ -2374,7 +2374,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a114",
+    "id": "c318_a114",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a114",
@@ -2390,7 +2390,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a115",
+    "id": "c318_a115",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a115",
@@ -2406,7 +2406,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a116",
+    "id": "c318_a116",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a116",
@@ -2422,7 +2422,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a117",
+    "id": "c318_a117",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a117",
@@ -2438,7 +2438,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a118",
+    "id": "c318_a118",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a118",
@@ -2454,7 +2454,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a119",
+    "id": "c318_a119",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a119",
@@ -2470,7 +2470,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a120",
+    "id": "c318_a120",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a120",
@@ -2486,7 +2486,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a121",
+    "id": "c318_a121",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a121",
@@ -2502,7 +2502,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a122",
+    "id": "c318_a122",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a122",
@@ -2518,7 +2518,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a123",
+    "id": "c318_a123",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a123",
@@ -2534,7 +2534,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a124",
+    "id": "c318_a124",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a124",
@@ -2550,7 +2550,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a125",
+    "id": "c318_a125",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a125",
@@ -2566,7 +2566,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a126",
+    "id": "c318_a126",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a126",
@@ -2582,7 +2582,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a127",
+    "id": "c318_a127",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a127",
@@ -2598,7 +2598,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a128",
+    "id": "c318_a128",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a128",
@@ -2614,7 +2614,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a129",
+    "id": "c318_a129",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a129",
@@ -2630,7 +2630,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a130",
+    "id": "c318_a130",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a130",
@@ -2646,7 +2646,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a131",
+    "id": "c318_a131",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a131",
@@ -2662,7 +2662,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a132",
+    "id": "c318_a132",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a132",
@@ -2678,7 +2678,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a133",
+    "id": "c318_a133",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a133",
@@ -2694,7 +2694,7 @@ export const ESM_SPEC: SpecItem[] = [
     }
   },
   {
-    "id": "c302_a134",
+    "id": "c318_a134",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a134",
@@ -2706,7 +2706,7 @@ export const ESM_SPEC: SpecItem[] = [
     "help": "Format: Numeric input"
   },
   {
-    "id": "c302_a135",
+    "id": "c318_a135",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a135",
@@ -2728,7 +2728,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a136",
+    "id": "c318_a136",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a136",
@@ -2770,7 +2770,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a137",
+    "id": "c318_a137",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a137",
@@ -2812,7 +2812,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a1371",
+    "id": "c318_a1371",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a1371",
@@ -2821,10 +2821,10 @@ export const ESM_SPEC: SpecItem[] = [
     "block": "",
     "label": "Other detail",
     "type": "text",
-    "otherFor": "c302_a137"
+    "otherFor": "c318_a137"
   },
   {
-    "id": "c302_a138",
+    "id": "c318_a138",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a138",
@@ -2870,7 +2870,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a1381",
+    "id": "c318_a1381",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a1381",
@@ -2879,10 +2879,10 @@ export const ESM_SPEC: SpecItem[] = [
     "block": "",
     "label": "Other detail",
     "type": "text",
-    "otherFor": "c302_a138"
+    "otherFor": "c318_a138"
   },
   {
-    "id": "c302_a139",
+    "id": "c318_a139",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a139",
@@ -2916,7 +2916,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a140",
+    "id": "c318_a140",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a140",
@@ -2928,7 +2928,7 @@ export const ESM_SPEC: SpecItem[] = [
     "help": "Format: Numeric input"
   },
   {
-    "id": "c302_a142",
+    "id": "c318_a142",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a142",
@@ -2966,7 +2966,7 @@ export const ESM_SPEC: SpecItem[] = [
     ]
   },
   {
-    "id": "c302_a143",
+    "id": "c318_a143",
     "cct": "302",
     "slug": "esm_screening",
     "column": "a143",

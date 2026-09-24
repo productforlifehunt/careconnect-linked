@@ -45,7 +45,7 @@ const asWPString = (value: unknown): string => {
 function targetFor(kind: RecordKind) {
   if (kind === "hourly_log") return { cct: "303", slug: ESM_CCT.hourly, rel: ESM_REL.hourly };
   if (kind === "daily_log") return { cct: "304", slug: ESM_CCT.daily, rel: ESM_REL.daily };
-  return { cct: "302", slug: ESM_CCT.screening, rel: ESM_REL.screening };
+  return { cct: "318", slug: ESM_CCT.screening, rel: ESM_REL.screening };
 }
 
 /** Which people the participant picked on an hourly log. */
