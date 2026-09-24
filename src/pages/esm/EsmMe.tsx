@@ -25,6 +25,7 @@ export default function EsmMe() {
   const zh = isChineseLanguage(i18n.language);
 
   const questionnaire = profile?.role === "other" ? otherScreening : primaryScreening;
+  const displayedQuestionnaire = localizeQuestionnaire(questionnaire, zh);
   const draft = getDraft(questionnaire.id);
   const introduction = questionnaire.groups[0];
   const introductionDone = useMemo(
@@ -154,10 +155,28 @@ export default function EsmMe() {
                 {profile.screeningDone ? <CheckCircle2 className="h-5 w-5 shrink-0 text-success" /> : <Circle className="h-5 w-5 shrink-0 text-muted-foreground" />}
                 <span className="min-w-0 flex-1">
                    <span className="block font-semibold text-foreground">{profile.screeningDone ? uiText(zh, "Screening questions complete", "初始问卷已完成") : uiText(zh, "Continue screening questions", "继续填写初始问卷")}</span>
-                   <span className="mt-0.5 block text-sm text-muted-foreground">{localizeQuestionnaire(questionnaire, zh).title}</span>
+                    <span className="mt-0.5 block text-sm text-muted-foreground">{displayedQuestionnaire.title}</span>
                 </span>
                 <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
               </button>
+              {displayedQuestionnaire.groups.map((group, index) => {
+                const required = group.questions.filter((question) => !question.optional);
+                const completed = required.length > 0 && required.every((question) => answered(draft[question.id]));
+                return (
+                  <button
+                    key={group.id}
+                    className="flex w-full items-center gap-3 border-t border-border py-3 text-left"
+                    onClick={() => navigate(`/screening?step=${index}`)}
+                  >
+                    {completed ? <CheckCircle2 className="h-5 w-5 shrink-0 text-success" /> : <Circle className="h-5 w-5 shrink-0 text-muted-foreground" />}
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-medium text-foreground">{group.title}</span>
+                      <span className="mt-0.5 block text-xs text-muted-foreground">{uiText(zh, `${group.questions.length} questions`, `${group.questions.length} 个问题`)}</span>
+                    </span>
+                    <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  </button>
+                );
+              })}
             </div>
           )}
         </TabsContent>

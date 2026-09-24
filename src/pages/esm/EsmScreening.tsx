@@ -22,12 +22,16 @@ export default function EsmScreening() {
 
   const isPrimary = profile.role === "primary";
   const questionnaire = isPrimary ? primaryScreening : otherScreening;
+  const requestedStep = Number(params.get("step"));
+  const initialStep = Number.isInteger(requestedStep) && requestedStep >= 0
+    ? requestedStep
+    : params.get("section") === "introduction" ? 0 : undefined;
 
   return (
     <SurveyRunner
       questionnaire={questionnaire}
       draftId={questionnaire.id}
-      initialStep={params.get("section") === "introduction" ? 0 : undefined}
+      initialStep={initialStep}
        submitLabel={uiText(zh, "Finish the entry survey", "完成初始问卷")}
       onCancel={() => navigate("/me?tab=screening")}
       onSubmit={async (answers) => {

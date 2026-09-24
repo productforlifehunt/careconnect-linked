@@ -68,9 +68,10 @@ function toQuestion(item: SpecItem): Question {
     question.showIf = { id: "c303_a01", equals: ["b02"] };
     question.optional = true;
   }
-  if (/^c302_a(?:28|31|34|37|40|43|46|49|52|55|58|61)$/.test(item.id)) {
+  if (/^c302_a(?:29|30|32|33|35|36|38|39|41|42|44|45|47|48|50|51|53|54|56|57|59|60|62|63)$/.test(item.id)) {
     const column = Number(item.column.slice(1));
-    question.showIf = { id: `c302_a${String(column - 2).padStart(2, "0")}`, equals: ["b01"] };
+    const presenceColumn = column - ((column - 28) % 3);
+    question.showIf = { id: `c302_a${String(presenceColumn).padStart(2, "0")}`, equals: ["b01"] };
   }
   if (item.otherFor) {
     const values = otherValues(byId.get(item.otherFor));
