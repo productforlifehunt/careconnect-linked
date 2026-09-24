@@ -68,6 +68,10 @@ function toQuestion(item: SpecItem): Question {
     question.showIf = { id: "c303_a01", equals: ["b02"] };
     question.optional = true;
   }
+  if (/^c302_a(?:28|31|34|37|40|43|46|49|52|55|58|61)$/.test(item.id)) {
+    const column = Number(item.column.slice(1));
+    question.showIf = { id: `c302_a${String(column - 2).padStart(2, "0")}`, equals: ["b01"] };
+  }
   if (item.otherFor) {
     const values = otherValues(byId.get(item.otherFor));
     if (values.length) question.showIf = { id: item.otherFor, equals: values };

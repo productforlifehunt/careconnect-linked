@@ -16,6 +16,8 @@ const ZH: Record<string, string> = {
   "Close the day: anything you did not log, and how today felt overall.": "回顾今天：补充尚未记录的事情，并记录您今天的整体感受。",
   "CAREGIVER PERSONAL INFORMATION": "护理者个人信息",
   "CARE RECIPIENT INFORMATION": "被护理者信息",
+  "ACTIVITIES OF DAILY LIVING (ADL) ASSESSMENT": "日常生活活动能力评估",
+  "INSTRUMENTAL ACTIVITIES OF DAILY LIVING (IADL) ASSESSMENT": "工具性日常生活活动能力评估",
   "NEUROPSYCHIATRIC INVENTORY QUESTIONNAIRE (NPI-Q)": "神经精神症状问卷",
   "SHORT SENSE OF COMPETENCE QUESTIONNAIRE (SSCQ)": "照护胜任感简表",
   "MULTIDIMENSIONAL SCALE OF PERCEIVED SOCIAL SUPPORT (MSPSS)": "领悟社会支持量表",
@@ -124,7 +126,8 @@ const ZH: Record<string, string> = {
   "Significant Other: \"There is a special person in my life who cares about my feelings.\"": "我的生活中有一位重要的人关心我的感受。",
   "Family: \"My family is willing to help me make decisions.\"": "我的家人愿意帮助我作决定。",
   "Friends: \"I can talk about my problems with my friends.\"": "我可以和朋友谈论自己的问题。",
-  "for your care recipient given the current situation?\"": "按照目前的情况，您认为自己还能继续照护被护理者多久？",
+  "How much longer do you think you can continue providing care for your care recipient given the current situation?": "按照目前的情况，您认为自己还能继续照护被护理者多久？",
+  "0=Not distressing at all, 5=Extreme": "完全没有困扰至极度困扰",
 };
 
 const SYMPTOMS: Record<string, string> = {

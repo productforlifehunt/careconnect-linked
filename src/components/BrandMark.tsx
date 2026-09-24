@@ -36,9 +36,8 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
     icon = (
       <div
         style={box}
-        className="rounded-[24%] bg-primary flex items-center justify-center leading-none shadow-sm overflow-hidden"
+        className="bg-primary flex items-center justify-center overflow-hidden leading-none"
       >
-        {/* Keep the original D centered; place the wordmark beneath it inside the icon border. */}
         <svg
           viewBox="0 0 48 48"
           role="img"
@@ -46,28 +45,7 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
           className="text-primary-foreground"
           style={box}
         >
-          <g transform="translate(9.12 5.25) scale(0.62)">
-            <path
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="8.5"
-              strokeLinejoin="round"
-              d="M14 9 h14 c7.7 0 12 5.8 12 13.5 s-4.3 13.5 -12 13.5 h-14 c-2 0 -3 -1 -3 -3 v-21 c0 -2 1 -3 3 -3 z"
-            />
-          </g>
-          <text
-            x="24"
-            y="37.25"
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fill="currentColor"
-            fontSize="5.25"
-            fontWeight="700"
-            fontFamily="system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
-            letterSpacing="0.15"
-          >
-            ChallengeD
-          </text>
+          <text x="24" y="24" textAnchor="middle" dominantBaseline="central" fill="currentColor" fontSize="25" fontWeight="900" fontFamily="Arial Black, Arial, sans-serif">CD</text>
         </svg>
       </div>
     );

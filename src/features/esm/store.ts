@@ -28,13 +28,23 @@ export interface EsmProfile {
 
 export interface EsmSettings {
   hourlyReminders: boolean;
-  dailyReminder: boolean;
+  reminderStart: string;
+  reminderEnd: string;
+  quietPeriods: QuietPeriod[];
   reducedMotion: boolean;
+}
+
+export interface QuietPeriod {
+  id: string;
+  start: string;
+  end: string;
 }
 
 const DEFAULT_SETTINGS: EsmSettings = {
   hourlyReminders: true,
-  dailyReminder: true,
+  reminderStart: "08:00",
+  reminderEnd: "22:00",
+  quietPeriods: [],
   reducedMotion: false,
 };
 
@@ -75,7 +85,14 @@ function write(key: string, value: unknown) {
 
 export const getProfile = (): EsmProfile | null => read<EsmProfile | null>(KEY.profile, null);
 
-export const getSettings = (): EsmSettings => read<EsmSettings>(KEY.settings, DEFAULT_SETTINGS);
+export const getSettings = (): EsmSettings => {
+  const saved = read<Partial<EsmSettings>>(KEY.settings, {});
+  return {
+    ...DEFAULT_SETTINGS,
+    ...saved,
+    quietPeriods: Array.isArray(saved.quietPeriods) ? saved.quietPeriods : [],
+  };
+};
 
 export function saveSettings(settings: EsmSettings) {
   write(KEY.settings, settings);
