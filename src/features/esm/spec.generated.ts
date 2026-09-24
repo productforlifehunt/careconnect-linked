@@ -4,8 +4,8 @@
  * Every entry names the exact JetEngine CCT column its answer is written to,
  * so answer keys and storage stay in lock-step. Do not hand-edit: regenerate.
  *
- * Tables: esm_screening (CCT311, 146 columns), esm_hourly_log (CCT312, 34),
- * esm_daily_log (CCT313, 5), esm_log_person (CCT314, 4).
+ * Tables: esm_screening (CCT318, 146 fields), esm_hourly_log (CCT319, 34),
+ * esm_daily_log (CCT317, 5), esm_log_person (CCT320, 4).
  */
 
 export type SpecType = "text" | "longtext" | "number" | "scale" | "single" | "multi" | "datetime" | "date";
@@ -523,7 +523,7 @@ export const ESM_SPEC: SpecItem[] = [
     "column": "a18",
     "code": "1.2.6",
     "group": "1.2 CARE RECIPIENT INFORMATION",
-    "block": "",
+    "block": "1.2.7 ACTIVITIES OF DAILY LIVING (ADL) ASSESSMENT",
     "label": "Eating",
     "type": "single",
     "options": [
@@ -548,7 +548,7 @@ export const ESM_SPEC: SpecItem[] = [
     "column": "a19",
     "code": "1.2.6",
     "group": "1.2 CARE RECIPIENT INFORMATION",
-    "block": "",
+    "block": "1.2.7 ACTIVITIES OF DAILY LIVING (ADL) ASSESSMENT",
     "label": "Bathing",
     "type": "single",
     "options": [
@@ -573,7 +573,7 @@ export const ESM_SPEC: SpecItem[] = [
     "column": "a20",
     "code": "1.2.6",
     "group": "1.2 CARE RECIPIENT INFORMATION",
-    "block": "",
+    "block": "1.2.7 ACTIVITIES OF DAILY LIVING (ADL) ASSESSMENT",
     "label": "Dressing",
     "type": "single",
     "options": [
@@ -598,7 +598,7 @@ export const ESM_SPEC: SpecItem[] = [
     "column": "a21",
     "code": "1.2.6",
     "group": "1.2 CARE RECIPIENT INFORMATION",
-    "block": "",
+    "block": "1.2.7 ACTIVITIES OF DAILY LIVING (ADL) ASSESSMENT",
     "label": "Toileting",
     "type": "single",
     "options": [
@@ -623,7 +623,7 @@ export const ESM_SPEC: SpecItem[] = [
     "column": "a22",
     "code": "1.2.6",
     "group": "1.2 CARE RECIPIENT INFORMATION",
-    "block": "",
+    "block": "1.2.7 ACTIVITIES OF DAILY LIVING (ADL) ASSESSMENT",
     "label": "Moving around",
     "type": "single",
     "options": [
@@ -648,7 +648,7 @@ export const ESM_SPEC: SpecItem[] = [
     "column": "a23",
     "code": "1.2.6",
     "group": "1.2 CARE RECIPIENT INFORMATION",
-    "block": "",
+    "block": "1.2.8 INSTRUMENTAL ACTIVITIES OF DAILY LIVING (IADL) ASSESSMENT",
     "label": "Managing medications",
     "type": "single",
     "options": [
@@ -673,7 +673,7 @@ export const ESM_SPEC: SpecItem[] = [
     "column": "a24",
     "code": "1.2.6",
     "group": "1.2 CARE RECIPIENT INFORMATION",
-    "block": "",
+    "block": "1.2.8 INSTRUMENTAL ACTIVITIES OF DAILY LIVING (IADL) ASSESSMENT",
     "label": "Handling finances",
     "type": "single",
     "options": [
@@ -698,7 +698,7 @@ export const ESM_SPEC: SpecItem[] = [
     "column": "a25",
     "code": "1.2.6",
     "group": "1.2 CARE RECIPIENT INFORMATION",
-    "block": "",
+    "block": "1.2.8 INSTRUMENTAL ACTIVITIES OF DAILY LIVING (IADL) ASSESSMENT",
     "label": "Shopping",
     "type": "single",
     "options": [
@@ -723,7 +723,7 @@ export const ESM_SPEC: SpecItem[] = [
     "column": "a26",
     "code": "1.2.6",
     "group": "1.2 CARE RECIPIENT INFORMATION",
-    "block": "",
+    "block": "1.2.8 INSTRUMENTAL ACTIVITIES OF DAILY LIVING (IADL) ASSESSMENT",
     "label": "Preparing meals",
     "type": "single",
     "options": [
@@ -748,7 +748,7 @@ export const ESM_SPEC: SpecItem[] = [
     "column": "a27",
     "code": "1.2.6",
     "group": "1.2 CARE RECIPIENT INFORMATION",
-    "block": "",
+    "block": "1.2.8 INSTRUMENTAL ACTIVITIES OF DAILY LIVING (IADL) ASSESSMENT",
     "label": "Housework",
     "type": "single",
     "options": [
@@ -814,9 +814,9 @@ export const ESM_SPEC: SpecItem[] = [
     "label": "Delusions caregiver distress",
     "type": "scale",
     "scale": {
-      "min": 1,
-      "max": 3,
-      "labels": "1=Mild, 2=Moderate, 3=Severe"
+      "min": 0,
+      "max": 5,
+      "labels": "0=Not distressing at all, 5=Extreme"
     }
   },
   {
@@ -867,9 +867,9 @@ export const ESM_SPEC: SpecItem[] = [
     "label": "Hallucinations caregiver distress",
     "type": "scale",
     "scale": {
-      "min": 1,
-      "max": 3,
-      "labels": "1=Mild, 2=Moderate, 3=Severe"
+      "min": 0,
+      "max": 5,
+      "labels": "0=Not distressing at all, 5=Extreme"
     }
   },
   {
@@ -920,9 +920,9 @@ export const ESM_SPEC: SpecItem[] = [
     "label": "Agitation / Aggression caregiver distress",
     "type": "scale",
     "scale": {
-      "min": 1,
-      "max": 3,
-      "labels": "1=Mild, 2=Moderate, 3=Severe"
+      "min": 0,
+      "max": 5,
+      "labels": "0=Not distressing at all, 5=Extreme"
     }
   },
   {
@@ -973,9 +973,9 @@ export const ESM_SPEC: SpecItem[] = [
     "label": "Depression / Dysphoria caregiver distress",
     "type": "scale",
     "scale": {
-      "min": 1,
-      "max": 3,
-      "labels": "1=Mild, 2=Moderate, 3=Severe"
+      "min": 0,
+      "max": 5,
+      "labels": "0=Not distressing at all, 5=Extreme"
     }
   },
   {
@@ -1026,9 +1026,9 @@ export const ESM_SPEC: SpecItem[] = [
     "label": "Anxiety caregiver distress",
     "type": "scale",
     "scale": {
-      "min": 1,
-      "max": 3,
-      "labels": "1=Mild, 2=Moderate, 3=Severe"
+      "min": 0,
+      "max": 5,
+      "labels": "0=Not distressing at all, 5=Extreme"
     }
   },
   {
@@ -1079,9 +1079,9 @@ export const ESM_SPEC: SpecItem[] = [
     "label": "Elation / Euphoria caregiver distress",
     "type": "scale",
     "scale": {
-      "min": 1,
-      "max": 3,
-      "labels": "1=Mild, 2=Moderate, 3=Severe"
+      "min": 0,
+      "max": 5,
+      "labels": "0=Not distressing at all, 5=Extreme"
     }
   },
   {
@@ -1132,9 +1132,9 @@ export const ESM_SPEC: SpecItem[] = [
     "label": "Apathy / Indifference caregiver distress",
     "type": "scale",
     "scale": {
-      "min": 1,
-      "max": 3,
-      "labels": "1=Mild, 2=Moderate, 3=Severe"
+      "min": 0,
+      "max": 5,
+      "labels": "0=Not distressing at all, 5=Extreme"
     }
   },
   {
@@ -1185,9 +1185,9 @@ export const ESM_SPEC: SpecItem[] = [
     "label": "Disinhibition caregiver distress",
     "type": "scale",
     "scale": {
-      "min": 1,
-      "max": 3,
-      "labels": "1=Mild, 2=Moderate, 3=Severe"
+      "min": 0,
+      "max": 5,
+      "labels": "0=Not distressing at all, 5=Extreme"
     }
   },
   {
@@ -1238,9 +1238,9 @@ export const ESM_SPEC: SpecItem[] = [
     "label": "Irritability / Lability caregiver distress",
     "type": "scale",
     "scale": {
-      "min": 1,
-      "max": 3,
-      "labels": "1=Mild, 2=Moderate, 3=Severe"
+      "min": 0,
+      "max": 5,
+      "labels": "0=Not distressing at all, 5=Extreme"
     }
   },
   {
@@ -1291,9 +1291,9 @@ export const ESM_SPEC: SpecItem[] = [
     "label": "Motor disturbance caregiver distress",
     "type": "scale",
     "scale": {
-      "min": 1,
-      "max": 3,
-      "labels": "1=Mild, 2=Moderate, 3=Severe"
+      "min": 0,
+      "max": 5,
+      "labels": "0=Not distressing at all, 5=Extreme"
     }
   },
   {
@@ -1344,9 +1344,9 @@ export const ESM_SPEC: SpecItem[] = [
     "label": "Nighttime behaviours caregiver distress",
     "type": "scale",
     "scale": {
-      "min": 1,
-      "max": 3,
-      "labels": "1=Mild, 2=Moderate, 3=Severe"
+      "min": 0,
+      "max": 5,
+      "labels": "0=Not distressing at all, 5=Extreme"
     }
   },
   {
@@ -1397,9 +1397,9 @@ export const ESM_SPEC: SpecItem[] = [
     "label": "Appetite / Eating caregiver distress",
     "type": "scale",
     "scale": {
-      "min": 1,
-      "max": 3,
-      "labels": "1=Mild, 2=Moderate, 3=Severe"
+      "min": 0,
+      "max": 5,
+      "labels": "0=Not distressing at all, 5=Extreme"
     }
   },
   {
@@ -1711,12 +1711,11 @@ export const ESM_SPEC: SpecItem[] = [
     "cct": "302",
     "slug": "esm_screening",
     "column": "a83",
-    "code": "1.5.12",
+    "code": "1.6",
     "group": "1.6 PERSEVERANCE TIME",
     "block": "",
-    "label": "for your care recipient given the current situation?\"",
+    "label": "How much longer do you think you can continue providing care for your care recipient given the current situation?",
     "type": "single",
-    "help": "Full 30-item scale administered. Format: True/False.",
     "options": [
       {
         "value": "b01",
@@ -2363,7 +2362,6 @@ export const ESM_SPEC: SpecItem[] = [
     "block": "1.7.1 Alzheimer's Disease Knowledge Scale (ADKS)",
     "label": "Difficulty with the ability to walk is common in people who are in the later stages of Alzheimer's disease.",
     "type": "single",
-    "help": "Full 20-item scale administered. Scale.",
     "options": [
       {
         "value": "b01",
