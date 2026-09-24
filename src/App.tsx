@@ -58,6 +58,7 @@ import JoinGroup from "./pages/JoinGroup";
 import XianyuListings from "./pages/XianyuListings";
 import SafetyApp from "./pages/safety/SafetyApp";
 import EsmApp from "./pages/esm/EsmApp";
+import ResearcherApp from "./pages/researcher/ResearcherApp";
 // TEMP — delete after read (throwaway page, remove this import + its Route)
 import DeleteAfterRead from "./pages/DeleteAfterRead";
 
@@ -200,6 +201,9 @@ function RootRouter() {
     return <SafetyApp />;
   }
   // ESM Survey — standalone diary-study app, its own shell and screens only.
+  if (site.id === "researcher") {
+    return <ResearcherApp />;
+  }
   if (site.id === "esm_survey") {
     return <EsmApp />;
   }
