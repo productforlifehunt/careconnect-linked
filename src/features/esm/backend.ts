@@ -3,10 +3,10 @@
  *
  * The fixed JetEngine tables use one column per
  * question, exactly as the study document specifies:
- *   CCT 318 esm_screening   (slug esm_screening_v2)   — 146 columns (Sections 1 and 2)
- *   CCT 319 esm_hourly_log  (slug esm_hourly_log_v2)  — 34 columns (Section 3)
- *   CCT 317 esm_daily_log   (slug esm_daily_log_v2)   — 5 columns (Section 4)
- *   CCT 320 esm_log_person  (slug esm_log_person_v2)  — 4 columns (people named in an hourly log)
+  *   CCT 318 esm_screening   — 146 fields (Sections 1 and 2)
+  *   CCT 319 esm_hourly_log  — 34 fields (Section 3)
+  *   CCT 317 esm_daily_log   — 5 fields (Section 4)
+  *   CCT 320 esm_log_person  — 4 fields (people named in an hourly log)
  *
  * Every row belongs to its participant through a JetEngine relation only —
  * never a hand-made id column:

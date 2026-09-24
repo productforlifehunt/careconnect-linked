@@ -112,7 +112,19 @@ export function startProfile(role: ParticipantRole): EsmProfile {
   return profile;
 }
 
-export const getDraft = (id: string): AnswerMap => read<AnswerMap>(KEY.draft(id), {});
+const currentAnswerKeys = (answers: AnswerMap): AnswerMap => {
+  const migrated: AnswerMap = {};
+  for (const [key, value] of Object.entries(answers)) {
+    const currentKey = key
+      .replace(/^c302_/, "c318_")
+      .replace(/^c303_/, "c319_")
+      .replace(/^c304_/, "c317_");
+    migrated[currentKey] = value;
+  }
+  return migrated;
+};
+
+export const getDraft = (id: string): AnswerMap => currentAnswerKeys(read<AnswerMap>(KEY.draft(id), {}));
 export const saveDraft = (id: string, answers: AnswerMap) => write(KEY.draft(id), answers);
 export const clearDraft = (id: string) => {
   try {
@@ -122,7 +134,10 @@ export const clearDraft = (id: string) => {
   }
 };
 
-export const getRecords = (): EsmRecord[] => read<EsmRecord[]>(KEY.records, []);
+export const getRecords = (): EsmRecord[] => read<EsmRecord[]>(KEY.records, []).map((record) => ({
+  ...record,
+  answers: currentAnswerKeys(record.answers),
+}));
 
 export function addRecord(
   kind: RecordKind,
