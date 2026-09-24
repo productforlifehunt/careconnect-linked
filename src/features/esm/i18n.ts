@@ -46,6 +46,8 @@ const ZH: Record<string, string> = {
   "Time Spent (minutes)": "花费时间（分钟）", "Cheerful": "愉快", "Relaxed": "放松", "Enthusiastic": "有活力",
   "Satisfied": "满意", "Insecure": "不安", "Lonely": "孤独", "Anxious": "焦虑", "Irritated": "烦躁",
   "Down": "低落", "Desperate": "绝望", "Tensed": "紧张", "People involved (from your care network)": "有哪些人参与？",
+  "Who was involved?": "有哪些人参与？",
+  "Add the people who took part. Each person is saved once and can be picked again in later entries.": "请选择参与的人。每个人只需添加一次，以后的记录中可以再次选择。",
   "Who Else Do You Wish Could Help": "您还希望谁能来帮忙？", "Challenges in Reaching People You Wish Could Help": "联系这些人时遇到了什么困难？",
   "Challenges in Undertaking This Task": "完成这项照护任务有多困难？", "Challenge Types": "遇到的困难类型",
   "Challenges Faced (Description)": "请描述遇到的困难", "Resources Currently Using & Challenges": "目前使用的资源及其问题",

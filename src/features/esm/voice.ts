@@ -7,6 +7,9 @@
  */
 import { useCallback, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import i18next from "i18next";
+
+const voiceText = (english: string, chinese: string) => i18next.language?.startsWith("zh") ? chinese : english;
 
 function encodeWav(chunks: Float32Array[], sampleRate: number, target = 16000): Blob {
   const total = chunks.reduce((n, c) => n + c.length, 0);
@@ -90,7 +93,7 @@ export function useVoiceRecorder(): VoiceRecorder {
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch {
-      setError("Microphone access is needed to answer by voice.");
+      setError(voiceText("Microphone access is needed to answer by voice.", "使用语音回答需要开启麦克风权限。"));
       return;
     }
     const ctx = new AudioContext();
@@ -112,7 +115,7 @@ export function useVoiceRecorder(): VoiceRecorder {
     teardown();
     const blob = encodeWav(chunks, sampleRate);
     if (blob.size < 2048) {
-      setError("That recording was empty — please try again.");
+      setError(voiceText("That recording was empty — please try again.", "录音内容为空，请重试。"));
       return null;
     }
     setIsTranscribing(true);
@@ -121,12 +124,12 @@ export function useVoiceRecorder(): VoiceRecorder {
       form.append("file", blob, "recording.wav");
       const { data, error: fnError } = await supabase.functions.invoke("esm-transcribe", { body: form });
       if (fnError) {
-        setError("Could not turn that recording into text. Please try again.");
+        setError(voiceText("Could not turn that recording into text. Please try again.", "无法将录音转成文字，请重试。"));
         return null;
       }
       const text = (data as { text?: string; error?: string } | null)?.text?.trim();
       if (!text) {
-        setError((data as { error?: string } | null)?.error || "Nothing was recognised — please try again.");
+        setError(voiceText("Nothing was recognised — please try again.", "没有识别到内容，请重试。"));
         return null;
       }
       return text;

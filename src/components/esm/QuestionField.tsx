@@ -35,6 +35,10 @@ export function QuestionField({ question, value, onChange, extraOptions }: Props
   const [heard, setHeard] = useState<string | null>(null);
   const [unmatched, setUnmatched] = useState(false);
   const options = [...(question.options ?? []), ...(extraOptions ?? [])];
+  const yesNoOptions = [
+    { value: "yes", label: uiText(isChinese, "Yes", "是") },
+    { value: "no", label: uiText(isChinese, "No", "否") },
+  ];
   const scale = question.scale;
 
   const handleTranscript = (text: string) => {
@@ -150,13 +154,13 @@ export function QuestionField({ question, value, onChange, extraOptions }: Props
               value={typeof value === "number" ? value : ""}
               onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
             />
-            {question.unit && <span className="text-sm text-muted-foreground">{question.unit}</span>}
+             {question.unit && <span className="text-sm text-muted-foreground">{isChinese ? ({ years: "年", hours: "小时", minutes: "分钟" }[question.unit] ?? "") : question.unit}</span>}
           </div>
         )}
 
         {(question.type === "single" || question.type === "yesno") && (
           <div className="flex flex-wrap gap-2">
-            {(question.type === "yesno" ? YESNO : options).map((option) => (
+             {(question.type === "yesno" ? yesNoOptions : options).map((option) => (
               <Button
                 key={option.value}
                 type="button"
