@@ -6,6 +6,14 @@ export const uiText = (isChinese: boolean, english: string, chinese: string) =>
   isChinese ? chinese : english;
 
 const ZH: Record<string, string> = {
+  "Primary caregiver entry survey": "主要护理者初始问卷",
+  "Secondary caregiver entry survey": "协助护理者初始问卷",
+  "Hourly log": "每小时照护事件",
+  "End-of-day log": "每日照护总结",
+  "This one-time survey sets the baseline for your week. Every question can be answered by voice — tap the microphone.": "这份一次性问卷用于了解您开始本周记录时的情况。每道题都可以点击麦克风，用语音回答。",
+  "This one-time survey is for secondary caregivers who help alongside the primary caregiver. Every question can be answered by voice.": "这份一次性问卷面向协助主要护理者提供照护的人。每道题都可以使用语音回答。",
+  "Tell us about this hour: what happened, who was involved, what was hard.": "请告诉我们这个小时发生了什么、有哪些人参与，以及遇到了什么困难。",
+  "Close the day: anything you did not log, and how today felt overall.": "回顾今天：补充尚未记录的事情，并记录您今天的整体感受。",
   "CAREGIVER PERSONAL INFORMATION": "护理者个人信息",
   "CARE RECIPIENT INFORMATION": "被护理者信息",
   "NEUROPSYCHIATRIC INVENTORY QUESTIONNAIRE (NPI-Q)": "神经精神症状问卷",
@@ -83,6 +91,26 @@ const ZH: Record<string, string> = {
   "\"Today I felt stressed due to my care responsibilities\"": "今天我因照护责任而感到压力。",
   "\"Today I felt that the situation with my care recipient did not allow me as much privacy as I would have liked\"": "今天，被护理者的情况使我没有获得希望拥有的私人空间。",
   "\"Today I felt strained in the interactions with my care recipient\"": "今天，我在与被护理者互动时感到紧张和吃力。",
+  "\"I feel my care recipient asks for more help than he or she needs.\"": "我觉得被护理者要求的帮助超过了实际需要。",
+  "\"I feel I do not have enough time for myself because of the time I spend with my care recipient.\"": "因为照护被护理者，我觉得没有足够的时间留给自己。",
+  "\"I feel stressed between caring for my care recipient and meeting other responsibilities.\"": "在照护被护理者和承担其他责任之间，我感到压力。",
+  "\"I feel embarrassed by my care recipient's behaviour.\"": "被护理者的行为有时让我感到尴尬。",
+  "\"I feel angry when I am with my care recipient.\"": "与被护理者相处时，我有时会生气。",
+  "\"I feel my care recipient's present situation does not allow me as much privacy as I would like.\"": "我觉得被护理者目前的情况使我没有足够的私人空间。",
+  "\"I feel strained in the interactions with my care recipient.\"": "与被护理者互动时，我感到紧张和吃力。",
+  "Significant Other: \"There is a special person who is around when I am in need.\"": "当我需要帮助时，有一位重要的人会陪在我身边。",
+  "Significant Other: \"There is a special person with whom I can share my joys and sorrows.\"": "我有一位重要的人，可以与其分享快乐和忧愁。",
+  "Family: \"My family really tries to help me.\"": "我的家人确实尽力帮助我。",
+  "Family: \"I get the emotional help and support I need from my family.\"": "我能从家人那里得到所需的情感帮助和支持。",
+  "Significant Other: \"I have a special person who is a real source of comfort to me.\"": "我有一位重要的人，能真正带给我安慰。",
+  "Friends: \"My friends really try to help me.\"": "我的朋友确实尽力帮助我。",
+  "Friends: \"I can count on my friends when things go wrong.\"": "遇到困难时，我可以依靠朋友。",
+  "Family: \"I can talk about my problems with my family.\"": "我可以和家人谈论自己的问题。",
+  "Friends: \"I have friends with whom I can share my joys and sorrows.\"": "我有可以分享快乐和忧愁的朋友。",
+  "Significant Other: \"There is a special person in my life who cares about my feelings.\"": "我的生活中有一位重要的人关心我的感受。",
+  "Family: \"My family is willing to help me make decisions.\"": "我的家人愿意帮助我作决定。",
+  "Friends: \"I can talk about my problems with my friends.\"": "我可以和朋友谈论自己的问题。",
+  "for your care recipient given the current situation?\"": "按照目前的情况，您认为自己还能继续照护被护理者多久？",
 };
 
 const SYMPTOMS: Record<string, string> = {
@@ -150,6 +178,8 @@ export function translateSurveyText(text: string | undefined, isChinese: boolean
   if (!text || !isChinese) return text;
   const clean = text.replace(/^\d+(?:\.\d+)*\s+/, "").trim();
   if (ZH[clean]) return ZH[clean];
+  const caseInsensitive = Object.entries(ZH).find(([english]) => english.toLocaleLowerCase() === clean.toLocaleLowerCase());
+  if (caseInsensitive) return caseInsensitive[1];
   const symptom = Object.entries(SYMPTOMS).find(([english]) => clean.startsWith(english));
   if (symptom) {
     if (clean.includes(" severity")) return `${symptom[1]}的严重程度`;
