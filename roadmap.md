@@ -43,3 +43,11 @@
 - [ ] Add Li Shufen from the supplied screenshots through the WordPress/JetEngine GUI only, including profile, caregiving details, and all 16 interview answers.
 - [ ] Redistribute every participant's hourly entries to varied 0–4-entry days without deleting records or changing any CCT/REL number.
 - [ ] Verify Li Shufen appears in the researcher dashboard and audit every participant's daily hourly counts and timeline consistency.
+
+# WHO iSupport course fidelity audit
+
+- [ ] Verify all 23 lessons individually against the official 2019 WHO iSupport manual.
+- [ ] Restore every missing WHO lesson element and correct every altered fact, example, activity, answer, and feedback item.
+- [ ] Remove content that cannot be traced to the WHO lesson; keep only optional readability edits or clearly faithful expansion.
+- [ ] Verify all 23 lessons in English and Chinese in the running Resources page, including every quiz interaction.
+- [ ] Produce a 23-lesson evidence matrix with source ranges, corrections, and final pass/fail results.
