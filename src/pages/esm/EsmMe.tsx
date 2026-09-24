@@ -9,6 +9,8 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getDraft, getProfile, getSettings, saveDraft, saveProfile, saveSettings, startProfile, type ParticipantRole } from "@/features/esm/store";
 import { otherScreening, primaryScreening } from "@/features/esm/questionnaires";
+import { useTranslation } from "react-i18next";
+import { isChineseLanguage, localizeQuestionnaire, uiText } from "@/features/esm/i18n";
 
 const answered = (value: unknown) => value !== undefined && value !== null && value !== "" && (!Array.isArray(value) || value.length > 0);
 
@@ -19,6 +21,8 @@ export default function EsmMe() {
   const [profile, setProfile] = useState(getProfile());
   const [name, setName] = useState(profile?.name ?? "");
   const [settings, setSettingsState] = useState(getSettings());
+  const { i18n } = useTranslation();
+  const zh = isChineseLanguage(i18n.language);
 
   const questionnaire = profile?.role === "other" ? otherScreening : primaryScreening;
   const draft = getDraft(questionnaire.id);
@@ -36,7 +40,7 @@ export default function EsmMe() {
 
   const persistProfile = () => {
     if (!profile) {
-      toast.error("Choose Primary or Secondary caregiver first.");
+      toast.error(uiText(zh, "Choose Primary or Secondary caregiver first.", "请先选择主要护理者或协助护理者。"));
       return;
     }
     const next = { ...profile, name: name.trim() };
@@ -45,59 +49,59 @@ export default function EsmMe() {
     saveDraft(questionnaire.id, nextDraft);
     saveSettings(settings);
     setProfile(next);
-    toast.success("Profile and settings saved.");
+    toast.success(uiText(zh, "Profile and settings saved.", "个人资料和设置已保存。"));
   };
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
-      <h1 className="text-2xl font-semibold text-foreground">Me</h1>
+       <h1 className="text-2xl font-semibold text-foreground">{name || uiText(zh, "Me", "我")}</h1>
       <Tabs
         defaultValue={initialTab}
         className="mt-4"
         onValueChange={(tab) => setParams(tab === "screening" ? { tab: "screening" } : {})}
       >
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="profile">Profile & settings</TabsTrigger>
-          <TabsTrigger value="screening">Screening questions</TabsTrigger>
+           <TabsTrigger value="profile">{uiText(zh, "Profile & settings", "个人资料与设置")}</TabsTrigger>
+           <TabsTrigger value="screening">{uiText(zh, "Screening questions", "初始问卷")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="mt-5 space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="esm-name">Name</Label>
-            <Input id="esm-name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Your name" />
-            <p className="text-xs text-muted-foreground">Saved with your screening information.</p>
+             <Label htmlFor="esm-name">{uiText(zh, "Name", "姓名")}</Label>
+             <Input id="esm-name" value={name} onChange={(event) => setName(event.target.value)} placeholder={uiText(zh, "Your name", "您的姓名")} />
+             <p className="text-xs text-muted-foreground">{uiText(zh, "Saved with your screening information.", "姓名会保存在您的初始问卷信息中。")}</p>
           </div>
           <div className="divide-y divide-border border-y border-border">
             <SettingRow
-              label="Hourly reminders"
-              detail="Prompt me during the study day"
+               label={uiText(zh, "Hourly reminders", "每小时提醒")}
+               detail={uiText(zh, "Prompt me during the study day", "在研究记录期间提醒我填写")}
               checked={settings.hourlyReminders}
               onCheckedChange={(checked) => setSettingsState((current) => ({ ...current, hourlyReminders: checked }))}
             />
             <SettingRow
-              label="Daily summary reminder"
-              detail="Remind me to complete the daily questionnaire"
+               label={uiText(zh, "Daily summary reminder", "每日总结提醒")}
+               detail={uiText(zh, "Remind me to complete the daily questionnaire", "提醒我完成每日照护总结")}
               checked={settings.dailyReminder}
               onCheckedChange={(checked) => setSettingsState((current) => ({ ...current, dailyReminder: checked }))}
             />
             <SettingRow
-              label="Reduce motion"
-              detail="Use less movement when navigating"
+               label={uiText(zh, "Reduce motion", "减少动态效果")}
+               detail={uiText(zh, "Use less movement when navigating", "浏览页面时减少动画")}
               checked={settings.reducedMotion}
               onCheckedChange={(checked) => setSettingsState((current) => ({ ...current, reducedMotion: checked }))}
             />
           </div>
-          <Button className="w-full" size="lg" onClick={persistProfile}>Save</Button>
+           <Button className="w-full" size="lg" onClick={persistProfile}>{uiText(zh, "Save", "保存")}</Button>
         </TabsContent>
 
         <TabsContent value="screening" className="mt-5 space-y-5">
           <div>
-            <h2 className="font-semibold text-foreground">Which describes you?</h2>
+             <h2 className="font-semibold text-foreground">{uiText(zh, "Which describes you?", "哪一种身份更符合您的情况？")}</h2>
             <div className="mt-3 grid grid-cols-2 gap-2">
-              <Button variant={profile?.role === "primary" ? "default" : "outline"} className="h-auto py-3" onClick={() => chooseRole("primary")}>Primary caregiver</Button>
-              <Button variant={profile?.role === "other" ? "default" : "outline"} className="h-auto py-3" onClick={() => chooseRole("other")}>Secondary caregiver</Button>
+               <Button variant={profile?.role === "primary" ? "default" : "outline"} className="h-auto py-3" onClick={() => chooseRole("primary")}>{uiText(zh, "Primary caregiver", "主要护理者")}</Button>
+               <Button variant={profile?.role === "other" ? "default" : "outline"} className="h-auto py-3" onClick={() => chooseRole("other")}>{uiText(zh, "Secondary caregiver", "协助护理者")}</Button>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">This choice stays on this device and selects the matching questionnaire.</p>
+             <p className="mt-2 text-xs text-muted-foreground">{uiText(zh, "This choice stays on this device and selects the matching questionnaire.", "此选择只保存在本设备，用于显示与您身份相符的问卷。")}</p>
           </div>
 
           {profile && (
@@ -108,16 +112,16 @@ export default function EsmMe() {
               >
                 {introductionDone ? <CheckCircle2 className="h-5 w-5 shrink-0 text-success" /> : <Circle className="h-5 w-5 shrink-0 text-muted-foreground" />}
                 <span className="min-w-0 flex-1">
-                  <span className="block font-semibold text-foreground">{introductionDone ? "Self-introduction questions complete" : "Finish your self-introduction questions"}</span>
-                  <span className="mt-0.5 block text-sm text-muted-foreground">{introduction?.title}</span>
+                   <span className="block font-semibold text-foreground">{introductionDone ? uiText(zh, "Self-introduction questions complete", "个人基本信息已完成") : uiText(zh, "Finish your self-introduction questions", "完成个人基本信息")}</span>
+                   <span className="mt-0.5 block text-sm text-muted-foreground">{localizeQuestionnaire(questionnaire, zh).groups[0]?.title}</span>
                 </span>
                 <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
               </button>
               <button className="flex w-full items-center gap-3 border-t border-border py-4 text-left" onClick={() => navigate("/screening")}> 
                 {profile.screeningDone ? <CheckCircle2 className="h-5 w-5 shrink-0 text-success" /> : <Circle className="h-5 w-5 shrink-0 text-muted-foreground" />}
                 <span className="min-w-0 flex-1">
-                  <span className="block font-semibold text-foreground">{profile.screeningDone ? "Screening questions complete" : "Continue screening questions"}</span>
-                  <span className="mt-0.5 block text-sm text-muted-foreground">{questionnaire.title}</span>
+                   <span className="block font-semibold text-foreground">{profile.screeningDone ? uiText(zh, "Screening questions complete", "初始问卷已完成") : uiText(zh, "Continue screening questions", "继续填写初始问卷")}</span>
+                   <span className="mt-0.5 block text-sm text-muted-foreground">{localizeQuestionnaire(questionnaire, zh).title}</span>
                 </span>
                 <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
               </button>
