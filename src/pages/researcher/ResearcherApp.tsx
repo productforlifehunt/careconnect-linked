@@ -109,7 +109,7 @@ async function loadAll(): Promise<Participant[]> {
     (users || []).forEach((u) => { const p = map.get(String(u.id)); if (p) p.name = u.name || u.email || p.name; });
   }
   map.forEach((p) => kinds.forEach((k) => p.rows[k].sort((a, b) => String(a.cct_created).localeCompare(String(b.cct_created)))));
-  return [...map.values()].sort((a, b) => Number(a.id) - Number(b.id));
+  return [...map.values()].filter((p) => p.rows.screening.length + p.rows.hourly.length + p.rows.daily.length > 0).sort((a, b) => Number(a.id) - Number(b.id));
 }
 
 function Dashboard() {
