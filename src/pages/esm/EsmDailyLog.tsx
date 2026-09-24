@@ -24,7 +24,7 @@ export default function EsmDailyLog() {
             </CardHeader>
             <CardContent className="flex flex-wrap gap-2">
               {missed.map((slot) => (
-                <Button key={slot.id} size="sm" variant="outline" onClick={() => navigate(`/log?slot=${slot.id}`)}>
+                <Button key={slot.id} size="sm" variant="outline" onClick={() => navigate(`/log/hourly?slot=${slot.id}`)}>
                   {slot.label}
                 </Button>
               ))}
@@ -37,7 +37,7 @@ export default function EsmDailyLog() {
         questionnaire={dailyLog}
         draftId={`daily:${new Date().toISOString().slice(0, 10)}`}
         submitLabel="Finish today"
-        onCancel={() => navigate("/")}
+        onCancel={() => navigate("/log")}
         onSubmit={async (answers) => {
           const result = await submitRecord("daily_log", answers);
           if (result.uploaded) toast.success("Thank you — today is complete.");
