@@ -6,11 +6,15 @@ import { SurveyRunner } from "@/components/esm/SurveyRunner";
 import { dailyLog } from "@/features/esm/questionnaires";
 import { missedSlots } from "@/features/esm/store";
 import { submitRecord } from "@/features/esm/backend";
+import { useTranslation } from "react-i18next";
+import { isChineseLanguage, uiText } from "@/features/esm/i18n";
 
 /** The 10 PM end-of-day log, with a shortcut to fill in missed hourly slots. */
 export default function EsmDailyLog() {
   const navigate = useNavigate();
   const missed = missedSlots();
+  const { i18n } = useTranslation();
+  const zh = isChineseLanguage(i18n.language);
 
   return (
     <div>
@@ -19,7 +23,7 @@ export default function EsmDailyLog() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base">
-                {missed.length} hour{missed.length > 1 ? "s" : ""} not recorded today
+                 {uiText(zh, `${missed.length} hour${missed.length > 1 ? "s" : ""} not recorded today`, `今天有 ${missed.length} 个小时尚未记录`)}
               </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-2">
@@ -36,12 +40,12 @@ export default function EsmDailyLog() {
       <SurveyRunner
         questionnaire={dailyLog}
         draftId={`daily:${new Date().toISOString().slice(0, 10)}`}
-        submitLabel="Finish today"
+         submitLabel={uiText(zh, "Finish today", "完成今日记录")}
         onCancel={() => navigate("/log")}
         onSubmit={async (answers) => {
           const result = await submitRecord("daily_log", answers);
-          if (result.uploaded) toast.success("Thank you — today is complete.");
-          else toast.warning(`Saved on this device only — ${result.error}`);
+           if (result.uploaded) toast.success(uiText(zh, "Thank you — today is complete.", "谢谢，今天的记录已完成。"));
+           else toast.warning(uiText(zh, `Saved on this device only — ${result.error}`, "已保存在本设备，暂未上传。"));
           navigate("/", { replace: true });
         }}
       />
