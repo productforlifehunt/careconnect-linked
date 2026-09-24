@@ -177,7 +177,7 @@ export const FIRST_HOUR = 0;
 export const LAST_HOUR = 23;
 
 export const slotId = (date: Date, hour: number) =>
-  `${date.toISOString().slice(0, 10)}T${String(hour).padStart(2, "0")}`;
+  `${localDay(date)}T${String(hour).padStart(2, "0")}`;
 
 export interface Slot {
   hour: number;
@@ -220,8 +220,12 @@ export function dailyLogDone(now = new Date()): boolean {
   return getRecords().some((r) => r.kind === "daily_log" && localDay(new Date(r.submittedAt)) === day);
 }
 
-const localDay = (date: Date) =>
-  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+/** Calendar day in the participant's own time zone (not UTC). */
+export function localDay(date: Date): string {
+  return (
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+  );
+}
 
 export function yesterdayDailyLogDone(now = new Date()): boolean {
   const yesterday = new Date(now);
