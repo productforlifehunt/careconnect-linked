@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Check, Clock3, Mic, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { dailyLogDone, getProfile, getSettings, todaySlots } from "@/features/esm/store";
+import { dailyLogDone, getProfile, getSettings, hourlyReminderActive, todaySlots, yesterdayDailyLogDone } from "@/features/esm/store";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { isChineseLanguage, uiText } from "@/features/esm/i18n";
@@ -17,6 +17,8 @@ export default function EsmToday() {
   const slots = todaySlots();
   const currentHour = new Date().getHours();
   const eveningDone = dailyLogDone();
+  const yesterdayDone = yesterdayDailyLogDone();
+  const reminderActive = hourlyReminderActive(new Date(), settings);
   const currentSlot = useMemo(() => slots.find((slot) => slot.hour === currentHour), [slots, currentHour]);
   const slotLabel = (slot: (typeof slots)[number]) => zh ? `${String(slot.hour).padStart(2, "0")}:00` : slot.label;
 
@@ -27,7 +29,7 @@ export default function EsmToday() {
   if (!profile) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-8">
-         <h1 className="text-2xl font-semibold text-foreground">{uiText(zh, "A Week in the Life of Dementia Caregivers", "失智症护理者的一周")}</h1>
+         <h1 className="text-2xl font-semibold text-foreground">{uiText(zh, "A Week in the Life of Dementia Caregivers Study", "失智症护理者的一周")}</h1>
          <p className="mt-3 text-muted-foreground">{uiText(zh, "Choose your caregiver role first. Your questions and daily timeline will then appear here.", "请先选择您的护理者身份，随后这里会显示相应问卷和每日时间线。")}</p>
          <p className="mt-4 flex items-center gap-2 border-y border-border py-3 text-sm text-muted-foreground"><Mic className="h-4 w-4 shrink-0" />{uiText(zh, "Every question can be answered by voice.", "每道题都可以使用语音回答。")}</p>
          <Button className="mt-5 w-full" size="lg" onClick={() => navigate("/me?tab=screening")}>{uiText(zh, "Set up my profile", "设置我的资料")}</Button>
@@ -55,7 +57,15 @@ export default function EsmToday() {
         </button>
       )}
 
-      {settings.hourlyReminders && currentSlot && (
+      {!yesterdayDone && (
+        <div className="mt-5 border-l-4 border-amber-500 bg-amber-500/5 px-4 py-3">
+          <p className="font-semibold text-foreground">{uiText(zh, "Yesterday’s daily care summary is incomplete", "昨天的每日照护总结尚未完成")}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{uiText(zh, "Please complete it now. If it remains incomplete, we will remind you again at noon and 10:00 PM.", "请现在补填；若仍未完成，我们将在中午12点和晚上10点再次提醒。")}</p>
+          <Button className="mt-3" size="sm" onClick={() => navigate("/log/daily?day=yesterday")}>{uiText(zh, "Complete yesterday’s summary", "补填昨天的总结")}</Button>
+        </div>
+      )}
+
+      {reminderActive && currentSlot && (
         <div className="mt-5 border-l-4 border-primary bg-primary/5 px-4 py-3">
             <p className="font-semibold text-foreground">{uiText(zh, "Now", "现在")} · {slotLabel(currentSlot)}</p>
            <p className="mt-1 text-sm text-muted-foreground">{currentSlot.count ? uiText(zh, `${currentSlot.count} recorded. Add another event if needed.`, `已记录 ${currentSlot.count} 条；如有需要可继续添加。`) : uiText(zh, "No care event recorded yet.", "尚未记录照护事件。")}</p>
@@ -101,9 +111,11 @@ export default function EsmToday() {
           <div>
              <h2 className="font-semibold text-foreground">{uiText(zh, "Daily care summary", "每日照护总结")}</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              {currentHour >= 22
-                 ? uiText(zh, "Please complete the daily questionnaire tomorrow morning.", "请于明天上午填写每日照护总结。")
-                 : eveningDone ? uiText(zh, "Today’s summary is recorded.", "今天的总结已记录。") : uiText(zh, "Complete this after the day’s care events.", "请在当天照护活动结束后填写。")}
+              {eveningDone
+                ? uiText(zh, "Today’s summary is recorded.", "今天的总结已记录。")
+                : currentHour >= 22
+                  ? uiText(zh, "Please complete today’s daily care summary now.", "请现在完成今天的每日照护总结。")
+                  : uiText(zh, "Complete this at 10:00 PM after the day’s care events.", "请于晚上10点在当天照护活动结束后填写。")}
             </p>
           </div>
            <Button variant="outline" size="sm" onClick={() => navigate("/log/daily")}>{eveningDone ? uiText(zh, "View", "查看") : uiText(zh, "Log", "记录")}</Button>

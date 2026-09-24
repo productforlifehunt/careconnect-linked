@@ -201,8 +201,34 @@ export function todaySlots(now = new Date()): Slot[] {
 }
 
 export function dailyLogDone(now = new Date()): boolean {
-  const day = now.toISOString().slice(0, 10);
-  return getRecords().some((r) => r.kind === "daily_log" && r.submittedAt.slice(0, 10) === day);
+  const day = localDay(now);
+  return getRecords().some((r) => r.kind === "daily_log" && localDay(new Date(r.submittedAt)) === day);
+}
+
+const localDay = (date: Date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
+export function yesterdayDailyLogDone(now = new Date()): boolean {
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  return dailyLogDone(yesterday);
+}
+
+const minutesOf = (value: string) => {
+  const [hour = 0, minute = 0] = value.split(":").map(Number);
+  return hour * 60 + minute;
+};
+
+/** Device-only reminder eligibility. The 24-hour timeline itself remains available. */
+export function hourlyReminderActive(now = new Date(), settings = getSettings()): boolean {
+  if (!settings.hourlyReminders) return false;
+  const minute = now.getHours() * 60 + now.getMinutes();
+  if (minute < minutesOf(settings.reminderStart) || minute > minutesOf(settings.reminderEnd)) return false;
+  return !settings.quietPeriods.some((period) => {
+    const start = minutesOf(period.start);
+    const end = minutesOf(period.end);
+    return start <= end ? minute >= start && minute <= end : minute >= start || minute <= end;
+  });
 }
 
 /** Missed hourly slots earlier today, for the end-of-day supplement. */
