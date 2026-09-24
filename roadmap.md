@@ -36,3 +36,10 @@
 - [ ] Implement the exact device-only reminder schedule and multiple do-not-disturb periods.
 - [ ] Replace only the English ChallengeD icon with a flat purple block CD logo.
 - [ ] Verify English/Chinese desktop/mobile flows, persistence, submissions, and logo variants.
+
+# ESM participant continuation
+
+- [ ] Replace the English CD artwork with one continuous flat baseline and verify it at header and favicon sizes.
+- [ ] Add Li Shufen from the supplied screenshots through the WordPress/JetEngine GUI only, including profile, caregiving details, and all 16 interview answers.
+- [ ] Redistribute every participant's hourly entries to varied 0–4-entry days without deleting records or changing any CCT/REL number.
+- [ ] Verify Li Shufen appears in the researcher dashboard and audit every participant's daily hourly counts and timeline consistency.
