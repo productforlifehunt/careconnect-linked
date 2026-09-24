@@ -7,6 +7,7 @@ import { wpLogin, wpLogout, getStoredWPUser } from "@/services/wp-auth";
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { ESM_SPEC } from "@/features/esm/spec.generated";
 import { ESM_CCT, ESM_REL } from "@/features/esm/backend";
+import { wpAdminOps } from "@/services/woocommerce-api";
 
 const RESEARCHER = "researcher";
 type Kind = "screening" | "hourly" | "daily";
@@ -98,17 +99,14 @@ async function loadAll(): Promise<Participant[]> {
   kinds.forEach((k, i) => {
     Object.entries(rels[i] || {}).forEach(([userId, links]) => {
       const p = map.get(userId) ?? { id: userId, name: `User ${userId}`, rows: { screening: [], hourly: [], daily: [] } };
-      (links || []).forEach((l) => { const row = byId[i].get(String(l.child_object_id)); if (row) p.rows[k].push(row); });
+      ((links as { child_object_id: string }[]) || []).forEach((l) => { const row = byId[i].get(String(l.child_object_id)); if (row) p.rows[k].push(row); });
       map.set(userId, p);
     });
   });
   const ids = [...map.keys()];
   if (ids.length) {
-    await Promise.all(ids.map(async (id) => {
-      const u = await wordpressFetch<{ name?: string }>(`wp/v2/users/${id}`).catch(() => null);
-      const p = map.get(id);
-      if (p && u?.name) p.name = u.name;
-    }));
+    const users = await wpAdminOps<{ id: number; name: string; email?: string }[]>("get_user_names", { ids }).catch(() => null);
+    (users || []).forEach((u) => { const p = map.get(String(u.id)); if (p) p.name = u.name || u.email || p.name; });
   }
   map.forEach((p) => kinds.forEach((k) => p.rows[k].sort((a, b) => String(a.cct_created).localeCompare(String(b.cct_created)))));
   return [...map.values()].sort((a, b) => Number(a.id) - Number(b.id));
