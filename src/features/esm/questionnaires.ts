@@ -133,6 +133,14 @@ export const dailyLog: Questionnaire = {
 
 export const QUESTIONNAIRES = { primaryScreening, otherScreening, hourlyLog, dailyLog };
 
+/**
+ * Optional details about a person named in an hourly log: the 2.1 questions
+ * (CCT318 a134–a143), saved into a new CCT318 row linked to the person by REL321.
+ */
+export const personDetailQuestions: Question[] = screeningItems
+  .filter((i) => startsWith(i, "2.1"))
+  .map((i) => ({ ...toQuestion(i), optional: true }));
+
 /** The activity families, still exported for the entry list summaries. */
 export const ACTIVITY_CATEGORIES =
   byId.get("c303_a04")?.options?.map((o) => ({ value: o.value, label: o.label })) ?? [];
