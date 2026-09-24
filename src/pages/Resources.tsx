@@ -30,6 +30,9 @@ import {
   type ISupportLesson,
   type ISupportQuiz,
 } from "@/data/isupport-modules";
+import { LESSON_CONTENT_IDS } from "@/data/lesson-content-ids";
+import { StudyNotesPanel } from "@/components/challenged/StudyNotesPanel";
+import { getCurrentUserIdNumber } from "@/features/shared/current-user";
 
 const PROGRESS_KEY = "isupport_completed_lessons";
 
@@ -619,6 +622,14 @@ function LessonView({
             </>
           )}
         </Button>
+
+        {/* Study notes — anchored to this lesson's CCT 217 title row */}
+        {getCurrentUserIdNumber() != null && LESSON_CONTENT_IDS[lesson.key] && (
+          <StudyNotesPanel
+            articleId={LESSON_CONTENT_IDS[lesson.key]}
+            showFinishedToggle
+          />
+        )}
 
       </div>
     </div>
