@@ -501,7 +501,7 @@ function LessonView({
               const body = isZh ? section.bodyZh : section.body;
               const paragraphs = body
                 .split(/\n+/)
-                .map((part) => part.trim())
+                .map((part) => part.replace(/\*\*/g, "").trim())
                 .filter(Boolean);
 
               return (
