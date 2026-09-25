@@ -4,7 +4,7 @@
 
 - [x] Increase the upper C–D spacing while preserving the continuous flat lower connection.
 - [x] Replace stale footer and onboarding Logo implementations with the shared Logo.
-- [ ] Regenerate both ChallengeD favicon files and verify all branded surfaces on desktop and mobile.
+- [x] Regenerate both ChallengeD favicon files and verify all branded surfaces on desktop and mobile.
 
 - [x] Eliminate brand/logo and homepage configuration flicker across reload, language, and site variants.
 - [x] Verify public routes for both ChallengeD/忆畅 and CareCNC/护畅 at desktop and mobile widths.
