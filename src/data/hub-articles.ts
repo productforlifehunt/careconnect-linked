@@ -132,7 +132,7 @@ export const HUB_ARTICLES: HubArticle[] = [
     ]),
   a("care", "nutrition", "Making meals easier", "让吃饭更容易",
     [
-      "People with dementia may forget to eat, lose interest in food, struggle with cutlerly or find a busy plate confusing.",
+      "People with dementia may forget to eat, lose interest in food, struggle with cutlery or find a busy plate confusing.",
       "Serve one or two foods at a time on a plain plate that contrasts with the table. Offer finger foods if cutlery is hard. Eat together — people often copy what they see.",
       "Offer drinks regularly through the day, as thirst is often not noticed. Watch for weight loss, coughing while eating or pocketing food in the cheeks, and mention these to a doctor.",
       "Allow plenty of time, keep the room quiet, and let the person do as much as they can themselves, even if it is messy.",
