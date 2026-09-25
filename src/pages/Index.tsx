@@ -14,8 +14,7 @@ import { useTranslation } from "react-i18next";
 import heroImage from "@/assets/hero-image.jpg";
 import heroImageCn from "@/assets/hero-image-cn.jpg";
 import heroImageCarecnc from "@/assets/hero-image-carecnc.jpg";
-import yichangIcon from "@/assets/yichang-icon-128.webp";
-import huchangIcon from "@/assets/huchang-icon-128.webp";
+import { BrandMark } from "@/components/BrandMark";
 import type { Profile } from "@/types/care-connector";
 import { searchCnCities } from "@/data/china-cities";
 import { careServiceTypeLabel } from "@/lib/care-service-types";
@@ -249,26 +248,8 @@ const Index = () => {
         <div className="max-w-6xl mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div>
-              <div className="flex items-center gap-2 mb-4">
-                {site.family === "challenged" && isChinese ? (
-                  <img src={yichangIcon} alt="忆畅" className="w-12 h-12 rounded-xl" loading="lazy" />
-                ) : site.id === "carecnc" && isChinese ? (
-                  <img src={huchangIcon} alt="护畅" className="w-12 h-12 rounded-xl" loading="lazy" />
-                ) : site.id === "carecnc" ? (
-                  <div className="w-12 h-12 rounded-[22%] hero-gradient flex flex-col items-center justify-center leading-none shadow-sm">
-                    <span className="text-primary-foreground font-bold text-[13px] tracking-tight">Care</span>
-                    <span className="text-primary-foreground font-bold text-[13px] tracking-tight">cnc</span>
-                  </div>
-                ) : (
-                  <>
-                    <div className="w-8 h-8 rounded-lg hero-gradient flex items-center justify-center">
-                      <span className="text-primary-foreground font-bold text-xs">
-                        {site.logoText}
-                      </span>
-                    </div>
-                    <span className="font-bold text-foreground">{t(`site.${site.id}.footerBrand`)}</span>
-                  </>
-                )}
+              <div className="mb-4">
+                <BrandMark size={48} showWordmark />
               </div>
               <p className="text-sm text-muted-foreground">{t(`site.${site.id}.footerTagline`)}</p>
             </div>

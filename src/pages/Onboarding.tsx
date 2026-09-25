@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Sparkles } from "lucide-react";
+import { BrandMark } from "@/components/BrandMark";
 import { useSite } from "@/contexts/SiteContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -100,9 +101,8 @@ export default function Onboarding() {
   return (
     <div className="max-w-md mx-auto px-4 py-8">
       <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">
-          <span className="text-foreground">{site.logoText}</span>
-          <span className="text-primary">{site.logoAccent}</span>
+        <h1 className="flex justify-center">
+          <BrandMark size={48} showWordmark />
         </h1>
         {site.tagline && (
           <p className="text-sm text-muted-foreground mt-1">{site.tagline}</p>

@@ -33,8 +33,8 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
   if (brand === "challenged" && isChinese) {
     icon = <img src={yichangIcon} alt="忆畅" width={size} height={size} style={box} decoding="sync" loading="eager" fetchPriority="high" className="rounded-xl object-cover" />;
   } else if (brand === "challenged") {
-    // iOS app-icon squircle with an Inter-like bold CD: rounded outer edges,
-    // compact rectangular proportions, and one perfectly flat shared baseline.
+    // iOS app-icon squircle with an Inter-like bold CD: a normal letter gap at
+    // the top, rounded outer edges, and one perfectly flat shared baseline.
     icon = (
       <svg viewBox="0 0 48 48" role="img" aria-label="ChallengeD" style={box}>
         <path
@@ -46,7 +46,7 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
         <path
           fill="hsl(var(--primary-foreground))"
           fillRule="evenodd"
-          d="M22 14H16C9.9 14 7 18.2 7 24S9.9 34 16 34H31C37.2 34 41 30.2 41 24S37.2 14 31 14H24V29H16C13.2 29 12 26.9 12 24S13.2 19 16 19H22V14ZM29 19H31C34.2 19 36 20.8 36 24S34.2 29 31 29H29V19Z"
+          d="M20.5 14H16C9.9 14 7 18.2 7 24S9.9 34 16 34H31C37.2 34 41 30.2 41 24S37.2 14 31 14H25.5V29H16C13.2 29 12 26.9 12 24S13.2 19 16 19H20.5V14ZM30.5 19H31C34.2 19 36 20.8 36 24S34.2 29 31 29H30.5V19Z"
         />
       </svg>
     );
