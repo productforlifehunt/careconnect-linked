@@ -503,7 +503,9 @@ export const HUB_ARTICLES: HubArticle[] = [
 ];
 
 /** hub-article key → CCT 217 title-anchor row ID (created via JetEngine GUI). */
-export const HUB_ARTICLE_CONTENT_IDS: Record<string, number> = {};
+export const HUB_ARTICLE_CONTENT_IDS: Record<string, number> = Object.fromEntries(
+  HUB_ARTICLES.map((x, i) => [x.key, 29 + i]),
+); // rows 29–64, added in HUB_ARTICLES order
 
 export function getHubArticle(key: string) {
   return HUB_ARTICLES.find((x) => x.key === key);
