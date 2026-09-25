@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Clock, BookOpen, ChevronRight } from "lucide-react";
-import { fetchChallengedContent, type ChallengedContentItem } from "@/features/challenged-content/source.wordpress";
+import { HUB_ARTICLES } from "@/data/hub-articles";
 import { useTranslation } from "react-i18next";
-import { stripHtml } from "@/features/shared/wordpress-client";
+
+interface CardArticle { id: string; title: string; excerpt: string; subcategory: string; reading_time: string }
 
 export interface ContentHubSubcategory {
   key: string;
@@ -48,14 +48,20 @@ export function ContentHub({
   const [activeSubcategory, setActiveSubcategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { data: articles, isLoading } = useQuery({
-    queryKey: ["challenged-content", category, activeSubcategory],
-    queryFn: () =>
-      fetchChallengedContent(
-        category,
-        activeSubcategory === "all" ? undefined : activeSubcategory
-      ),
-  });
+  const isLoading = false;
+  const subLabel = (k: string) => {
+    const sc = subcategories.find((x) => x.key === k);
+    return sc ? (isChinese ? sc.labelZh : sc.label) : k;
+  };
+  const articles: CardArticle[] = HUB_ARTICLES
+    .filter((x) => x.hub === category && (activeSubcategory === "all" || x.sub === activeSubcategory))
+    .map((x) => ({
+      id: x.key,
+      title: isChinese ? x.title.zh : x.title.en,
+      excerpt: (isChinese ? x.body.zh : x.body.en)[0],
+      subcategory: subLabel(x.sub),
+      reading_time: isChinese ? `${x.minutes}分钟` : `${x.minutes} min read`,
+    }));
 
   const filtered = (articles || []).filter((a) => {
     if (!searchQuery) return true;
@@ -183,33 +189,21 @@ function ContentCard({
   basePath,
   isChinese,
 }: {
-  article: ChallengedContentItem;
+  article: CardArticle;
   basePath: string;
   isChinese: boolean;
 }) {
-  const excerpt = article.excerpt
-    ? stripHtml(article.excerpt)
-    : stripHtml(article.content || "").slice(0, 150);
+  const excerpt = article.excerpt;
 
   const readTime = article.reading_time || (isChinese ? "3分钟" : "3 min read");
 
   return (
     <Link to={`${basePath}/${article.id}`}>
       <Card className="group h-full hover:shadow-lg transition-all duration-300 overflow-hidden border hover:border-primary/30">
-        {article.featured_image && (
-          <div className="aspect-video overflow-hidden">
-            <img
-              src={article.featured_image}
-              alt={article.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              loading="lazy"
-            />
-          </div>
-        )}
         <CardContent className="p-5">
           <div className="flex items-center gap-2 mb-3">
             <Badge variant="outline" className="text-xs capitalize">
-              {article.subcategory || article.category}
+              {article.subcategory}
             </Badge>
             <span className="text-xs text-muted-foreground flex items-center gap-1">
               <Clock className="h-3 w-3" />
