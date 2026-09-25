@@ -6,7 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Pencil, Trash2, Plus, BookOpenCheck } from "lucide-react";
+import { Pencil, Trash2, Plus, BookOpenCheck, Share2 } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+import { encodeSharedNote } from "@/lib/shared-note";
+import { getCurrentUserIdNumber } from "@/features/shared/current-user";
 import { useTranslation } from "react-i18next";
 import {
   fetchStudyNotesForArticle,
@@ -22,9 +25,26 @@ interface Props {
   articleId: string | number;
   /** Show the "Mark as finished" toggle (only meaningful for Learn lessons). */
   showFinishedToggle?: boolean;
+  /** Title of the lesson/article, shown on the shared-note page. */
+  sourceTitle?: string;
 }
 
-export function StudyNotesPanel({ articleId, showFinishedToggle = false }: Props) {
+export function StudyNotesPanel(props: Props) {
+  const { i18n } = useTranslation();
+  const isZh = i18n.language?.startsWith("zh");
+  if (getCurrentUserIdNumber() == null) {
+    return (
+      <Card className="p-4 text-sm text-muted-foreground">
+        {isZh ? "登录后可以在这里写学习笔记。" : "Sign in to write study notes here."}{" "}
+        <Link to="/auth" className="text-primary underline">{isZh ? "登录" : "Sign in"}</Link>
+      </Card>
+    );
+  }
+  return <StudyNotesInner {...props} />;
+}
+
+function StudyNotesInner({ articleId, showFinishedToggle = false, sourceTitle }: Props) {
+  const location = useLocation();
   const { i18n } = useTranslation();
   const isChinese = i18n.language?.startsWith("zh");
   const qc = useQueryClient();
@@ -146,12 +166,19 @@ export function StudyNotesPanel({ articleId, showFinishedToggle = false }: Props
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <h4 className="font-medium">{n.title}</h4>
                     <div className="flex gap-1">
-                      <Button size="icon" variant="ghost" onClick={() => {
+                      <Button size="icon" variant="ghost" aria-label={isChinese ? "分享笔记" : "Share note"} onClick={async () => {
+                        const url = encodeSharedNote({ t: n.title, c: n.content, s: sourceTitle, p: location.pathname });
+                        try { await navigator.clipboard.writeText(url); } catch { /* clipboard blocked */ }
+                        toast({ title: isChinese ? "分享链接已复制" : "Share link copied", description: url.slice(0, 80) + "…" });
+                      }}>
+                        <Share2 className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button size="icon" variant="ghost" aria-label={isChinese ? "编辑笔记" : "Edit note"} onClick={() => {
                         setEditingId(n.id); setEditTitle(n.title); setEditContent(n.content);
                       }}>
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
-                      <Button size="icon" variant="ghost" onClick={() => deleteMut.mutate(n.id)}>
+                      <Button size="icon" variant="ghost" aria-label={isChinese ? "删除笔记" : "Delete note"} onClick={() => deleteMut.mutate(n.id)}>
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </div>
