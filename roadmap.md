@@ -1,5 +1,12 @@
 # UI/UX verification roadmap
 
+## Interview-authoritative participant survey correction
+
+- [ ] Audit every supplied interview transcript line by line; treat interview answers as authoritative and exclude conflicting preamble details.
+- [ ] Match each interviewee to the correct existing participant and screening row without deleting, recreating, or renumbering any CCT/Relation.
+- [ ] Update the supported questionnaire fields through the WordPress/JetEngine interface only; leave unsupported or unasked answers unchanged only when clearly unrelated, otherwise blank them through the interface.
+- [ ] Verify every corrected participant and every changed answer in the researcher dashboard against the interview transcript.
+
 ## ChallengeD Logo consistency
 
 - [x] Increase the upper C–D spacing while preserving the continuous flat lower connection.
