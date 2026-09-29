@@ -171,10 +171,22 @@ function AnswerCard({ kind, row }: { kind: Kind; row: Record<string, any> }) {
           {items.map((item) => {
             const v = row[item.column];
             if (v === undefined || v === null || v === "") return null;
+            // JetEngine stores a cleared number as 0; hide it where 0 is not a valid answer.
+            const zeroIsBlank = item.type === "number" || (item.scale ? item.scale.min > 0 : false);
+            if (zeroIsBlank && String(v) === "0") return null;
+            // NPI-Q severity/distress are only asked when the symptom is marked present.
+            if (/ (severity|caregiver distress)$/.test(item.label)) {
+              const symptom = item.label.replace(/ (severity|caregiver distress)$/, "");
+              const present = items.find((p) => p.label.startsWith(`${symptom} present:`));
+              if (present && row[present.column] !== "b01") return null;
+            }
+            const shown = item.options
+              ? String(v).split(",").map((c) => item.options!.find((o) => o.value === c.trim())?.label ?? c).join(", ")
+              : String(v);
             return (
               <div key={item.id}>
                 <dt className="text-muted-foreground">{item.label}</dt>
-                <dd className="text-foreground whitespace-pre-wrap">{String(v)}</dd>
+                <dd className="text-foreground whitespace-pre-wrap">{shown}</dd>
               </div>
             );
           })}
