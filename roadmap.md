@@ -5,6 +5,7 @@
 - [x] Audit every supplied interview transcript line by line; treat interview answers as authoritative and exclude conflicting preamble details.
 - [x] Match each interviewee to the correct existing participant and screening row without deleting, recreating, or renumbering any CCT/Relation.
 - [x] Update the supported questionnaire fields through the WordPress/JetEngine interface only; blank unsupported or unasked answers through the interface.
+- [x] Second batch (梁静, 钱建华, 陈志明, 林小梅; re-sent 孙志强/孙思敏/王慧兰/赵桂兰/王海涛 identical) corrected and re-read in WordPress.
 - [ ] Verify every corrected participant and every changed answer in the researcher dashboard against the interview transcript.
 
 ## ChallengeD Logo consistency
