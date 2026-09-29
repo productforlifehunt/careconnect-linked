@@ -6,7 +6,8 @@
 - [x] Match each interviewee to the correct existing participant and screening row without deleting, recreating, or renumbering any CCT/Relation.
 - [x] Update the supported questionnaire fields through the WordPress/JetEngine interface only; blank unsupported or unasked answers through the interface.
 - [x] Second batch (梁静, 钱建华, 陈志明, 林小梅; re-sent 孙志强/孙思敏/王慧兰/赵桂兰/王海涛 identical) corrected and re-read in WordPress.
-- [ ] Verify every corrected participant and every changed answer in the researcher dashboard against the interview transcript.
+- [x] Verify every corrected participant and every changed answer in the researcher dashboard against the interview transcript (15/15 read).
+- [ ] Waiting on user: should 梁国强/赵桂兰/孙志强 primary records keep the secondary-member section answers? Symptom distress shown as 0 where the interview gave no rating.
 
 ## ChallengeD Logo consistency
 
