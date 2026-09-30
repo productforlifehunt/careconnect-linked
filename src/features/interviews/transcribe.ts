@@ -7,7 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { getWPToken } from "@/services/wp-auth";
 
 const FN_BASE = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1`;
-const SEGMENT_SECONDS = 180;
+// Keep each base64 WAV request below common browser/edge gateway body limits.
+const SEGMENT_SECONDS = 30;
 const RATE = 16000;
 
 export interface Meta { title: string; notes: string; instructions: string }
