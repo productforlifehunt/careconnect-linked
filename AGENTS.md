@@ -1,2 +1,2 @@
 
-- Interview audio lives in the private Cloud bucket `interview-audio`, accessed only via the `interview-audio`/`interview-transcribe` functions after a WP researcher check; transcripts are never stored (user wants a fresh generation on every click).
+- Interview audio and researcher-approved transcript archives live in the private `interview-audio` bucket; fresh generation never reads the archive, while the researcher may overwrite the public read-only archive after a complete run.

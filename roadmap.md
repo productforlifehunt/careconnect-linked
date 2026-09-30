@@ -70,4 +70,7 @@
 # Interview recordings
 
 - [x] Researcher Interviews tab: upload long recordings (≤500 MB), Generate button re-transcribes A/B sentence by sentence in Chinese + English.
+- [x] Hide all recording and sentence times, remove the native download menu, and rename the Generate action and explanatory text.
+- [x] Let only the researcher overwrite a completed transcript archive; let every viewer read that archive in a separate view.
+- [x] Fix interrupted requests with buffered responses and bounded retries; verified 21/21 sections, 114 fresh and archived lines as researcher and guest.
 - [ ] Participants viewing their own interviews — waiting on user: recordings are not linked to participants yet ("先不关联").

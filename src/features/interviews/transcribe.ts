@@ -14,6 +14,7 @@ const RATE = 16000;
 export interface Meta { title: string; notes: string; instructions: string }
 export interface Recording { path: string; size: number; type: string; created: string; meta: Meta }
 export interface Line { s: "A" | "B"; zh: string; en: string; t: number }
+export interface TranscriptArchive { lines: Line[]; savedAt: string }
 
 function authHeaders() {
   return {
@@ -36,6 +37,8 @@ export const playUrl = (path: string) => audioFn<{ url: string }>({ action: "pla
 
 export const saveMeta = (path: string, meta: Meta) => audioFn<{ meta: Meta }>({ action: "save_meta", path, meta }).then((d) => d.meta);
 export const deleteRecording = (path: string) => audioFn<{ ok: boolean }>({ action: "delete", path });
+export const loadTranscriptArchive = (path: string) => audioFn<{ archive: TranscriptArchive | null }>({ action: "load_archive", path }).then((d) => d.archive);
+export const saveTranscriptArchive = (path: string, lines: Line[]) => audioFn<{ archive: TranscriptArchive }>({ action: "save_archive", path, lines }).then((d) => d.archive);
 
 export async function uploadRecording(file: File): Promise<string> {
   const { path, token } = await audioFn<{ path: string; token: string }>({ action: "upload_url", name: file.name });
@@ -68,10 +71,20 @@ function wavBase64(samples: Float32Array): string {
 
 async function transcribeSegment(path: string, audio: string, previous: Line[], signal: AbortSignal): Promise<Omit<Line, "t">[]> {
   for (let attempt = 0; ; attempt++) {
-    const res = await fetch(`${FN_BASE}/interview-transcribe`, {
-      method: "POST", headers: authHeaders(), signal,
-      body: JSON.stringify({ path, audio, previous: previous.map(({ s, zh }) => ({ s, zh })) }),
-    });
+    let res: Response;
+    try {
+      res = await fetch(`${FN_BASE}/interview-transcribe`, {
+        method: "POST", headers: authHeaders(), signal,
+        body: JSON.stringify({ path, audio, previous: previous.map(({ s, zh }) => ({ s, zh })) }),
+      });
+    } catch (error) {
+      if (signal.aborted) throw error;
+      if (attempt < 3) {
+        await new Promise((r) => setTimeout(r, 2000 * 2 ** attempt + Math.random() * 1000));
+        continue;
+      }
+      throw new Error("The connection was interrupted after several retries. Please generate again.");
+    }
     if (!res.ok || !res.body) {
       const data = await res.json().catch(() => ({}));
       if ((res.status === 429 || res.status >= 500) && attempt < 3) {
@@ -80,23 +93,8 @@ async function transcribeSegment(path: string, audio: string, previous: Line[], 
       }
       throw new Error(data?.error || `Transcription failed (${res.status})`);
     }
-    const reader = res.body.getReader();
-    const dec = new TextDecoder();
-    let buffer = "", text = "";
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += dec.decode(value, { stream: true });
-      const parts = buffer.split("\n");
-      buffer = parts.pop() || "";
-      for (const p of parts) {
-        const d = p.trim();
-        if (!d.startsWith("data:")) continue;
-        const payload = d.slice(5).trim();
-        if (payload === "[DONE]") continue;
-        try { text += JSON.parse(payload)?.choices?.[0]?.delta?.content ?? ""; } catch { /* partial */ }
-      }
-    }
+    const payload = await res.json().catch(() => ({}));
+    const text = String(payload?.content || "");
     const match = text.match(/\{[\s\S]*\}/);
     try {
       const lines = (JSON.parse(match ? match[0] : text)?.lines ?? []) as any[];
@@ -115,7 +113,7 @@ export async function generateTranscript(
   onProgress: (done: number, total: number) => void,
   onLines: (lines: Line[]) => void,
   signal: AbortSignal,
-): Promise<void> {
+): Promise<Line[]> {
   const url = await playUrl(path);
   const bytes = await (await fetch(url, { signal })).arrayBuffer();
   const ctx = new AudioContext({ sampleRate: RATE });
@@ -137,12 +135,14 @@ export async function generateTranscript(
   const step = SEGMENT_SECONDS * RATE;
   const total = Math.ceil(pcm.length / step);
   let previous: Line[] = [];
+  const complete: Line[] = [];
   onProgress(0, total);
   for (let i = 0; i < total; i++) {
     if (signal.aborted) throw new DOMException("Stopped", "AbortError");
     const lines = (await transcribeSegment(path, wavBase64(pcm.subarray(i * step, (i + 1) * step)), previous, signal))
       .map((l) => ({ ...l, t: i * SEGMENT_SECONDS }));
-    if (lines.length) { onLines(lines); previous = lines; }
+    if (lines.length) { onLines(lines); complete.push(...lines); previous = lines; }
     onProgress(i + 1, total);
   }
+  return complete;
 }
