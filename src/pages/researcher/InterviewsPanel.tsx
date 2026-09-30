@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
+import { Slider } from "@/components/ui/slider";
 import { Archive, Loader2, Pause, Play, Plus, Save, Square, Link2, Trash2 } from "lucide-react";
 import {
   listRecordings, uploadRecording, generateTranscript, playUrl, displayName, saveMeta, deleteRecording,
@@ -89,6 +90,8 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
   const [archive, setArchive] = useState<TranscriptArchive | null>(null);
   const [showArchive, setShowArchive] = useState(false);
   const [playing, setPlaying] = useState(false);
+  const [position, setPosition] = useState(0);
+  const [duration, setDuration] = useState(0);
   const abort = useRef<AbortController | null>(null);
   const player = useRef<HTMLAudioElement | null>(null);
 
@@ -165,7 +168,10 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
           )}
           {audio && (
             <div className="flex items-center gap-3 rounded-md bg-muted px-3 py-2">
-              <audio ref={player} src={audio} preload="none" controlsList="nodownload noplaybackrate" onContextMenu={(event) => event.preventDefault()} onEnded={() => setPlaying(false)} />
+              <audio ref={player} src={audio} preload="metadata" controlsList="nodownload noplaybackrate" onContextMenu={(event) => event.preventDefault()}
+                onLoadedMetadata={(event) => setDuration(Number.isFinite(event.currentTarget.duration) ? event.currentTarget.duration : 0)}
+                onTimeUpdate={(event) => setPosition(event.currentTarget.currentTime)}
+                onEnded={() => { setPlaying(false); setPosition(0); }} />
               <Button variant="ghost" size="icon" aria-label={playing ? "Pause recording" : "Play recording"} title={playing ? "Pause / 暂停" : "Play / 播放"} onClick={() => {
                 const element = player.current;
                 if (!element) return;
@@ -175,6 +181,13 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
                 {playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
               </Button>
               <span className="text-sm text-foreground">Play recording / 播放录音</span>
+              <Slider className="min-w-0 flex-1" min={0} max={duration || 1} step={0.1} value={[Math.min(position, duration || 1)]}
+                aria-label="Recording position / 录音位置" onValueChange={([next]) => {
+                  const element = player.current;
+                  if (!element || typeof next !== "number") return;
+                  element.currentTime = next;
+                  setPosition(next);
+                }} />
             </div>
           )}
           <div className="flex flex-wrap items-center gap-2">
