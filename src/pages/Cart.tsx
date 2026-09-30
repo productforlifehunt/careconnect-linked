@@ -167,7 +167,7 @@ export default function Cart() {
                   <div className="flex justify-between"><span className="text-muted-foreground">{cn ? "小计" : "Subtotal"}</span><span>{sym}{money(totals.total_items)}</span></div>
                 )}
                 {Number(totals.total_discount || 0) > 0 && (
-                  <div className="flex justify-between text-emerald-600"><span>{cn ? "优惠" : "Discount"}</span><span>−{sym}{money(totals.total_discount)}</span></div>
+                  <div className="flex justify-between text-primary"><span>{cn ? "优惠" : "Discount"}</span><span>−{sym}{money(totals.total_discount)}</span></div>
                 )}
                 {Number(totals.total_fees || 0) > 0 && (
                   <div className="flex justify-between"><span className="text-muted-foreground">{cn ? "服务费" : "Fees"}</span><span>{sym}{money(totals.total_fees)}</span></div>

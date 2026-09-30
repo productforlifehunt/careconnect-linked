@@ -278,7 +278,7 @@ export const ISUPPORT_MODULES: ISupportModule[] = [
     description: "Reduce stress, make time for pleasant activities, and learn to think differently.",
     descriptionZh: "减轻压力、为愉快的活动留出时间，并学会换一种方式思考。",
     icon: Heart,
-    accent: "from-emerald-500 to-teal-600",
+    accent: "from-primary to-primary",
     lessons: [
       {
         key: "reducing-stress",

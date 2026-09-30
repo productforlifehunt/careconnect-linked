@@ -23,7 +23,7 @@ export default function CopeD() {
       subtitle="You matter too. Guides for managing stress, preventing burnout, and maintaining your own wellbeing as a caregiver."
       subtitleZh="您同样重要。帮助照护者管理压力、预防倦怠、维护自身健康的指南。"
       icon={<Wand2 className="h-6 w-6 text-white" />}
-      accentColor="from-teal-500 to-cyan-600"
+      accentColor="from-primary to-primary"
       subcategories={SUBCATEGORIES}
       basePath="/coped"
     />
