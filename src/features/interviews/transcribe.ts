@@ -69,6 +69,88 @@ function wavBase64(samples: Float32Array): string {
   return btoa(bin);
 }
 
+interface WavInfo {
+  audioFormat: number;
+  channels: number;
+  sampleRate: number;
+  bitsPerSample: number;
+  blockAlign: number;
+  dataOffset: number;
+  dataSize: number;
+}
+
+async function fetchBytes(url: string, start: number, end: number, signal: AbortSignal): Promise<ArrayBuffer> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const response = await fetch(url, { headers: { Range: `bytes=${start}-${end}` }, signal });
+      if (!response.ok && response.status !== 206) throw new Error(`Recording download failed (${response.status})`);
+      return await response.arrayBuffer();
+    } catch (error) {
+      if (signal.aborted) throw error;
+      if (attempt >= 3) throw new Error("The recording connection was interrupted after several retries. Please generate again.");
+      await new Promise((resolve) => setTimeout(resolve, 2000 * 2 ** attempt + Math.random() * 1000));
+    }
+  }
+}
+
+function readWavInfo(buffer: ArrayBuffer): WavInfo | null {
+  const view = new DataView(buffer);
+  if (view.byteLength < 44 || view.getUint32(0, false) !== 0x52494646 || view.getUint32(8, false) !== 0x57415645) return null;
+  let offset = 12;
+  let format: Omit<WavInfo, "dataOffset" | "dataSize"> | null = null;
+  while (offset + 8 <= view.byteLength) {
+    const id = String.fromCharCode(view.getUint8(offset), view.getUint8(offset + 1), view.getUint8(offset + 2), view.getUint8(offset + 3));
+    const size = view.getUint32(offset + 4, true);
+    if (id === "fmt " && size >= 16 && offset + 8 + size <= view.byteLength) {
+      format = {
+        audioFormat: view.getUint16(offset + 8, true),
+        channels: view.getUint16(offset + 10, true),
+        sampleRate: view.getUint32(offset + 12, true),
+        blockAlign: view.getUint16(offset + 20, true),
+        bitsPerSample: view.getUint16(offset + 22, true),
+      };
+    }
+    if (id === "data" && format) return { ...format, dataOffset: offset + 8, dataSize: size };
+    offset += 8 + size + (size % 2);
+  }
+  return null;
+}
+
+function wavChunkToMono(buffer: ArrayBuffer, info: WavInfo): Float32Array {
+  const view = new DataView(buffer);
+  const frames = Math.floor(view.byteLength / info.blockAlign);
+  const output = new Float32Array(frames);
+  const bytesPerSample = info.bitsPerSample / 8;
+  const sample = (offset: number) => {
+    if (info.audioFormat === 3 && info.bitsPerSample === 32) return view.getFloat32(offset, true);
+    if (info.audioFormat !== 1) throw new Error("This WAV encoding is not supported. Please use PCM WAV, MP3 or M4A.");
+    if (info.bitsPerSample === 8) return (view.getUint8(offset) - 128) / 128;
+    if (info.bitsPerSample === 16) return view.getInt16(offset, true) / 32768;
+    if (info.bitsPerSample === 24) {
+      let value = view.getUint8(offset) | (view.getUint8(offset + 1) << 8) | (view.getUint8(offset + 2) << 16);
+      if (value & 0x800000) value |= ~0xffffff;
+      return value / 8388608;
+    }
+    if (info.bitsPerSample === 32) return view.getInt32(offset, true) / 2147483648;
+    throw new Error("This WAV bit depth is not supported.");
+  };
+  for (let frame = 0; frame < frames; frame++) {
+    let sum = 0;
+    for (let channel = 0; channel < info.channels; channel++) sum += sample(frame * info.blockAlign + channel * bytesPerSample);
+    output[frame] = sum / info.channels;
+  }
+  if (info.sampleRate === RATE) return output;
+  const resampled = new Float32Array(Math.floor(output.length * RATE / info.sampleRate));
+  for (let i = 0; i < resampled.length; i++) {
+    const source = i * info.sampleRate / RATE;
+    const left = Math.floor(source);
+    const right = Math.min(left + 1, output.length - 1);
+    const fraction = source - left;
+    resampled[i] = output[left] * (1 - fraction) + output[right] * fraction;
+  }
+  return resampled;
+}
+
 async function transcribeSegment(path: string, audio: string, previous: Line[], signal: AbortSignal): Promise<Omit<Line, "t">[]> {
   for (let attempt = 0; ; attempt++) {
     let res: Response;
@@ -115,6 +197,31 @@ export async function generateTranscript(
   signal: AbortSignal,
 ): Promise<Line[]> {
   const url = await playUrl(path);
+  // Large PCM WAV files are read in short byte ranges. This avoids a fragile
+  // 100–500 MB browser download before the first transcript request starts.
+  if (/\.wav$/i.test(path)) {
+    const header = await fetchBytes(url, 0, 65535, signal);
+    const info = readWavInfo(header);
+    if (info && info.channels > 0 && info.blockAlign > 0 && info.sampleRate > 0) {
+      const sourceFramesPerSegment = SEGMENT_SECONDS * info.sampleRate;
+      const bytesPerSegment = sourceFramesPerSegment * info.blockAlign;
+      const total = Math.ceil(info.dataSize / bytesPerSegment);
+      const complete: Line[] = [];
+      let previous: Line[] = [];
+      onProgress(0, total);
+      for (let i = 0; i < total; i++) {
+        if (signal.aborted) throw new DOMException("Stopped", "AbortError");
+        const start = info.dataOffset + i * bytesPerSegment;
+        const end = Math.min(info.dataOffset + info.dataSize - 1, start + bytesPerSegment - 1);
+        const pcm = wavChunkToMono(await fetchBytes(url, start, end, signal), info);
+        const lines = (await transcribeSegment(path, wavBase64(pcm), previous, signal))
+          .map((line) => ({ ...line, t: i * SEGMENT_SECONDS }));
+        if (lines.length) { onLines(lines); complete.push(...lines); previous = lines; }
+        onProgress(i + 1, total);
+      }
+      return complete;
+    }
+  }
   const bytes = await (await fetch(url, { signal })).arrayBuffer();
   const ctx = new AudioContext({ sampleRate: RATE });
   let pcm: Float32Array;
