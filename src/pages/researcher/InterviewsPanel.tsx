@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
-import { Loader2, Plus, Save, Sparkles, Square, Link2, Trash2 } from "lucide-react";
+import { Loader2, Plus, Save, Square, Link2, Trash2 } from "lucide-react";
 import {
   listRecordings, uploadRecording, generateTranscript, playUrl, displayName, saveMeta, deleteRecording,
   type Recording, type Line, type Meta,
@@ -154,18 +154,18 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
           {audio && <audio controls src={audio} className="w-full" preload="metadata" />}
           <div className="flex flex-wrap items-center gap-2">
             <Button onClick={generate} disabled={running} variant={canEdit ? "secondary" : "default"}>
-              {running ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+              {running && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Generate transcript / 生成转录
             </Button>
             {running && <Button variant="outline" onClick={() => abort.current?.abort()}><Square className="mr-2 h-4 w-4" />Stop / 停止</Button>}
           </div>
           <p className="text-xs text-muted-foreground">
-            Each click transcribes the whole recording again from the audio; nothing is pre-written. A = interviewer, B = interviewee. / 每次点击都会直接从录音重新转录，没有预先写好的文字。A = 访谈者，B = 受访者。
+            each click makes a fresh transcript and translation using the latest gemini flash model / 每次点击都会使用最新的 Gemini Flash 模型重新生成转录和翻译
           </p>
           {progress && (
             <div className="space-y-1">
               <Progress value={progress.total ? (progress.done / progress.total) * 100 : 0} />
-              <p className="text-xs text-muted-foreground">{`${progress.done} / ${progress.total} segments (3 min each) · ${lines.length} sentences`}</p>
+              <p className="text-xs text-muted-foreground">{`${progress.done} / ${progress.total} segments (30 sec each) · ${lines.length} sentences`}</p>
             </div>
           )}
           {running && !progress && <p className="text-xs text-muted-foreground">Downloading and reading audio… / 下载并读取录音…</p>}
