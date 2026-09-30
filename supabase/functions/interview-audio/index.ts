@@ -59,8 +59,11 @@ Deno.serve(async (req) => {
   if (body.action === "upload_url") {
     const name = String(body.name || "").trim();
     if (!name || name.length > 200) return json({ error: "A file name is required." }, 400);
-    const safe = name.replace(/[^\p{L}\p{N}._-]+/gu, "_");
-    const path = `${Date.now()}_${safe}`;
+    // Storage keys must be ASCII: strip non-ASCII chars, keep extension.
+    const ext = (name.match(/\.[A-Za-z0-9]{1,8}$/) || [""])[0];
+    let safe = name.replace(/\.[^.]+$/, "").replace(/[^A-Za-z0-9._-]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 80);
+    if (!safe) safe = "recording";
+    const path = `${Date.now()}_${safe}${ext}`;
     const { data, error } = await store.createSignedUploadUrl(path);
     if (error) return json({ error: error.message }, 500);
     return json({ path, token: data.token });
