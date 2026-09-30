@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
-import { Archive, Loader2, Pause, Play, Plus, Save, Square, Link2, Trash2 } from "lucide-react";
+import { Archive, ChevronDown, Loader2, Pause, Play, Plus, Save, Square, Link2, Trash2 } from "lucide-react";
 import {
   listRecordings, uploadRecording, generateTranscript, playUrl, displayName, saveMeta, deleteRecording,
   loadTranscriptArchive, saveTranscriptArchive, type Recording, type Line, type Meta, type TranscriptArchive,
@@ -89,6 +89,7 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
   const [error, setError] = useState("");
   const [archive, setArchive] = useState<TranscriptArchive | null>(null);
   const [showArchive, setShowArchive] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -162,7 +163,30 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
               <p className="font-medium text-foreground">{rec.meta.title || displayName(path)}</p>
               {rec.meta.notes && <p className="whitespace-pre-wrap text-sm text-muted-foreground">{rec.meta.notes}</p>}
               {rec.meta.instructions && (
-                <p className="whitespace-pre-wrap text-xs text-muted-foreground">Transcription instructions / 转录指令: {rec.meta.instructions}</p>
+                <div className="space-y-2 pt-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-auto w-full justify-between whitespace-normal py-2 text-left"
+                    aria-expanded={showInstructions}
+                    onClick={() => setShowInstructions((value) => !value)}
+                  >
+                    <span>Transcription and translation instructions / 转录与翻译指导</span>
+                    <ChevronDown className={`ml-2 h-4 w-4 shrink-0 transition-transform ${showInstructions ? "rotate-180" : ""}`} />
+                  </Button>
+                  {showInstructions && (
+                    <div className="space-y-3 rounded-md border border-border bg-muted p-3 text-sm">
+                      <div className="space-y-1 text-muted-foreground">
+                        <p>If you want to download the recording and translate it yourself, you can copy the instructions below into your transcription or translation tool.</p>
+                        <p>如果你想下载录音自行翻译，可以把以下指导复制给你的转录或翻译工具。</p>
+                        <p>These instructions identify dialect, informal expressions, homophones with different meanings, and similarly pronounced phrases that may be misheard in this interview.</p>
+                        <p>这些指导说明了访谈中容易出错的方言、非正式说法、中文同音异义词，以及发音近似、可能被听错的表述。</p>
+                      </div>
+                      <div className="whitespace-pre-wrap border-t border-border pt-3 text-foreground">{rec.meta.instructions}</div>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           )}
