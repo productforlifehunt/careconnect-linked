@@ -165,7 +165,7 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
           )}
           {audio && (
             <div className="flex items-center gap-3 rounded-md bg-muted px-3 py-2">
-              <audio ref={player} src={audio} preload="none" controlsList="nodownload noplaybackrate" onEnded={() => setPlaying(false)} />
+              <audio ref={player} src={audio} preload="none" controlsList="nodownload noplaybackrate" onContextMenu={(event) => event.preventDefault()} onEnded={() => setPlaying(false)} />
               <Button variant="ghost" size="icon" aria-label={playing ? "Pause recording" : "Play recording"} title={playing ? "Pause / 暂停" : "Play / 播放"} onClick={() => {
                 const element = player.current;
                 if (!element) return;
