@@ -1,7 +1,7 @@
 /**
  * Interview recordings (private file storage).
  * Public (anyone with the page): list, play_url.
- * Researcher only: upload_url, save_meta. Nothing is ever deleted here.
+ * Researcher only: upload_url, save_meta, delete.
  * Each recording's title / notes / transcription instructions live in meta/<path>.json.
  */
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
@@ -64,6 +64,14 @@ Deno.serve(async (req) => {
     const { data, error } = await store.createSignedUploadUrl(path);
     if (error) return json({ error: error.message }, 500);
     return json({ path, token: data.token });
+  }
+
+  if (body.action === "delete") {
+    const path = String(body.path || "");
+    if (!validPath(path)) return json({ error: "Invalid recording" }, 400);
+    const { error } = await store.remove([path, `meta/${path}.json`]);
+    if (error) return json({ error: error.message }, 500);
+    return json({ ok: true });
   }
 
   if (body.action === "save_meta") {

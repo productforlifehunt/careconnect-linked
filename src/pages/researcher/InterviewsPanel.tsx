@@ -4,9 +4,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
-import { Loader2, Plus, Save, Sparkles, Square, Link2 } from "lucide-react";
+import { Loader2, Plus, Save, Sparkles, Square, Link2, Trash2 } from "lucide-react";
 import {
-  listRecordings, uploadRecording, generateTranscript, playUrl, displayName, saveMeta,
+  listRecordings, uploadRecording, generateTranscript, playUrl, displayName, saveMeta, deleteRecording,
   type Recording, type Line, type Meta,
 } from "@/features/interviews/transcribe";
 
@@ -72,12 +72,12 @@ export default function InterviewsPanel({ canEdit }: { canEdit: boolean }) {
           </button>
         ))}
       </aside>
-      {current ? <Transcript key={current.path} rec={current} canEdit={canEdit} onSaved={refresh} /> : null}
+      {current ? <Transcript key={current.path} rec={current} canEdit={canEdit} onSaved={refresh} onDeleted={() => { setSelected(""); refresh(); }} /> : null}
     </div>
   );
 }
 
-function Transcript({ rec, canEdit, onSaved }: { rec: Recording; canEdit: boolean; onSaved: () => void }) {
+function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canEdit: boolean; onSaved: () => void; onDeleted: () => void }) {
   const path = rec.path;
   const [audio, setAudio] = useState("");
   const [meta, setMeta] = useState<Meta>(rec.meta);
@@ -133,6 +133,12 @@ function Transcript({ rec, canEdit, onSaved }: { rec: Recording; canEdit: boolea
                   {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}Save / 保存
                 </Button>
                 <Button variant="outline" onClick={share}><Link2 className="mr-2 h-4 w-4" />Copy link / 复制链接</Button>
+                <Button variant="destructive" disabled={saving} onClick={async () => {
+                  if (!window.confirm("Delete this recording and its notes? This cannot be undone. / 删除这条录音和备注？不可恢复。")) return;
+                  setSaving(true); setError("");
+                  try { await deleteRecording(path); onDeleted(); }
+                  catch (e) { setError(e instanceof Error ? e.message : String(e)); setSaving(false); }
+                }}><Trash2 className="mr-2 h-4 w-4" />Delete / 删除</Button>
                 {saved && <span className="text-sm text-muted-foreground">{saved}</span>}
               </div>
             </div>

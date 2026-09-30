@@ -34,6 +34,7 @@ export const listRecordings = () => audioFn<{ items: Recording[] }>({ action: "l
 export const playUrl = (path: string) => audioFn<{ url: string }>({ action: "play_url", path }).then((d) => d.url);
 
 export const saveMeta = (path: string, meta: Meta) => audioFn<{ meta: Meta }>({ action: "save_meta", path, meta }).then((d) => d.meta);
+export const deleteRecording = (path: string) => audioFn<{ ok: boolean }>({ action: "delete", path });
 
 export async function uploadRecording(file: File): Promise<string> {
   const { path, token } = await audioFn<{ path: string; token: string }>({ action: "upload_url", name: file.name });
