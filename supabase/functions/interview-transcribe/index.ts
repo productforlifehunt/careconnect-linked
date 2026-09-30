@@ -1,6 +1,7 @@
 /**
  * Transcribes one short WAV segment of an interview into speaker-labelled
- * sentences (A / B) with Chinese and English text. Streams the model output.
+ * sentences (A / B) with Chinese and English text. Buffers the model response
+ * so an edge stream closing cannot interrupt a completed model request.
  * Open to anyone viewing the interview page; the researcher's saved
  * instructions for that recording are loaded server-side (never from the caller).
  */
@@ -52,7 +53,6 @@ Deno.serve(async (req) => {
     headers: { "Content-Type": "application/json", "Lovable-API-Key": key, Authorization: `Bearer ${key}`, "X-Lovable-AIG-SDK": "fetch" },
     body: JSON.stringify({
       model: MODEL,
-      stream: true,
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: system },
@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
     }),
   });
 
-  if (!res.ok || !res.body) {
+  if (!res.ok) {
     const detail = await res.text().catch(() => "");
     console.error(`Transcribe failed [${res.status}]: ${detail}`);
     let message = "Transcription failed.";
@@ -77,7 +77,8 @@ Deno.serve(async (req) => {
     return json({ error: message }, res.status);
   }
 
-  const out = new Headers({ ...headers, "Content-Type": "text/event-stream" });
-  res.headers.forEach((v, k) => { if (k.toLowerCase().startsWith("x-lovable-aig-")) out.set(k, v); });
-  return new Response(res.body, { headers: out });
+  const result = await res.json().catch(() => null);
+  const content = result?.choices?.[0]?.message?.content;
+  if (typeof content !== "string") return json({ error: "The transcription response was incomplete." }, 502);
+  return json({ content });
 });

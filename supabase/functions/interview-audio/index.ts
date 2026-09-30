@@ -1,7 +1,7 @@
 /**
  * Interview recordings (private file storage).
- * Public (anyone with the page): list, play_url.
- * Researcher only: upload_url, save_meta, delete.
+ * Public (anyone with the page): list, play_url, load_archive.
+ * Researcher only: upload_url, save_meta, save_archive, delete.
  * Each recording's title / notes / transcription instructions live in meta/<path>.json.
  */
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
@@ -13,13 +13,14 @@ const headers = { ...corsHeaders, "Access-Control-Allow-Headers": `${corsHeaders
 const validPath = (p: string) => !!p && !p.includes("/") && !p.includes("..") && p.length < 300;
 
 export interface Meta { title: string; notes: string; instructions: string }
+interface Line { s: "A" | "B"; zh: string; en: string; t: number }
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers });
   const json = (b: unknown, status = 200) =>
     new Response(JSON.stringify(b), { status, headers: { ...headers, "Content-Type": "application/json" } });
 
-  let body: { action?: string; name?: string; path?: string; meta?: Partial<Meta> };
+  let body: { action?: string; name?: string; path?: string; meta?: Partial<Meta>; lines?: unknown[] };
   try { body = await req.json(); } catch { return json({ error: "Invalid request" }, 400); }
 
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
@@ -54,6 +55,15 @@ Deno.serve(async (req) => {
     return json({ url: data.signedUrl });
   }
 
+  if (body.action === "load_archive") {
+    const path = String(body.path || "");
+    if (!validPath(path)) return json({ error: "Invalid recording" }, 400);
+    const { data, error } = await store.download(`archive/${path}.json`);
+    if (error || !data) return json({ archive: null });
+    const archive = await data.text().then((text) => JSON.parse(text)).catch(() => null);
+    return json({ archive });
+  }
+
   if (!(await isResearcher(req))) return json({ error: "Only the researcher can add or edit recordings." }, 403);
 
   if (body.action === "upload_url") {
@@ -72,7 +82,7 @@ Deno.serve(async (req) => {
   if (body.action === "delete") {
     const path = String(body.path || "");
     if (!validPath(path)) return json({ error: "Invalid recording" }, 400);
-    const { error } = await store.remove([path, `meta/${path}.json`]);
+    const { error } = await store.remove([path, `meta/${path}.json`, `archive/${path}.json`]);
     if (error) return json({ error: error.message }, 500);
     return json({ ok: true });
   }
@@ -90,6 +100,26 @@ Deno.serve(async (req) => {
     const { error } = await store.upload(`meta/${path}.json`, blob, { upsert: true, contentType: "application/json" });
     if (error) return json({ error: error.message }, 500);
     return json({ ok: true, meta });
+  }
+
+  if (body.action === "save_archive") {
+    const path = String(body.path || "");
+    if (!validPath(path)) return json({ error: "Invalid recording" }, 400);
+    if (!Array.isArray(body.lines) || body.lines.length > 20_000) return json({ error: "Invalid transcript archive" }, 400);
+    const lines: Line[] = body.lines.map((item) => {
+      const line = item && typeof item === "object" ? item as Record<string, unknown> : {};
+      return {
+        s: line.s === "B" ? "B" : "A",
+        zh: String(line.zh || "").slice(0, 5000),
+        en: String(line.en || "").slice(0, 5000),
+        t: Math.max(0, Number(line.t) || 0),
+      };
+    }).filter((line) => line.zh || line.en);
+    const archive = { lines, savedAt: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(archive)], { type: "application/json" });
+    const { error } = await store.upload(`archive/${path}.json`, blob, { upsert: true, contentType: "application/json" });
+    if (error) return json({ error: error.message }, 500);
+    return json({ archive });
   }
 
   return json({ error: "Unknown action" }, 400);
