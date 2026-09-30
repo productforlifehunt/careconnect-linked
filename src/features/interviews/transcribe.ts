@@ -93,23 +93,8 @@ async function transcribeSegment(path: string, audio: string, previous: Line[], 
       }
       throw new Error(data?.error || `Transcription failed (${res.status})`);
     }
-    const reader = res.body.getReader();
-    const dec = new TextDecoder();
-    let buffer = "", text = "";
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += dec.decode(value, { stream: true });
-      const parts = buffer.split("\n");
-      buffer = parts.pop() || "";
-      for (const p of parts) {
-        const d = p.trim();
-        if (!d.startsWith("data:")) continue;
-        const payload = d.slice(5).trim();
-        if (payload === "[DONE]") continue;
-        try { text += JSON.parse(payload)?.choices?.[0]?.delta?.content ?? ""; } catch { /* partial */ }
-      }
-    }
+    const payload = await res.json().catch(() => ({}));
+    const text = String(payload?.content || "");
     const match = text.match(/\{[\s\S]*\}/);
     try {
       const lines = (JSON.parse(match ? match[0] : text)?.lines ?? []) as any[];

@@ -4,14 +4,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
-import { Loader2, Plus, Save, Square, Link2, Trash2 } from "lucide-react";
+import { Archive, Loader2, Pause, Play, Plus, Save, Square, Link2, Trash2 } from "lucide-react";
 import {
   listRecordings, uploadRecording, generateTranscript, playUrl, displayName, saveMeta, deleteRecording,
-  type Recording, type Line, type Meta,
+  loadTranscriptArchive, saveTranscriptArchive, type Recording, type Line, type Meta, type TranscriptArchive,
 } from "@/features/interviews/transcribe";
 
 const mb = (n: number) => `${(n / 1024 / 1024).toFixed(1)} MB`;
-const clock = (s: number) => `${String(Math.floor(s / 3600)).padStart(2, "0")}:${String(Math.floor((s % 3600) / 60)).padStart(2, "0")}`;
 const titleOf = (r: Recording) => r.meta?.title || displayName(r.path);
 
 /**
@@ -68,7 +67,7 @@ export default function InterviewsPanel({ canEdit }: { canEdit: boolean }) {
           <button key={r.path} onClick={() => setSelected(r.path)}
             className={`w-full rounded-md px-3 py-2 text-left text-sm ${r.path === selected ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"}`}>
             <div className="truncate font-medium">{titleOf(r)}</div>
-            <div className="text-xs opacity-80">{mb(r.size)} · {new Date(r.created).toLocaleDateString()}</div>
+            <div className="text-xs opacity-80">{mb(r.size)}</div>
           </button>
         ))}
       </aside>
@@ -87,9 +86,17 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState("");
+  const [archive, setArchive] = useState<TranscriptArchive | null>(null);
+  const [showArchive, setShowArchive] = useState(false);
+  const [playing, setPlaying] = useState(false);
   const abort = useRef<AbortController | null>(null);
+  const player = useRef<HTMLAudioElement | null>(null);
 
-  useEffect(() => { playUrl(path).then(setAudio).catch(() => undefined); return () => abort.current?.abort(); }, [path]);
+  useEffect(() => {
+    playUrl(path).then(setAudio).catch(() => undefined);
+    loadTranscriptArchive(path).then(setArchive).catch(() => setArchive(null));
+    return () => abort.current?.abort();
+  }, [path]);
 
   const save = async () => {
     setSaving(true); setSaved(""); setError("");
@@ -102,9 +109,14 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
     abort.current?.abort();
     const ctrl = new AbortController();
     abort.current = ctrl;
-    setLines([]); setError(""); setRunning(true); setProgress(null);
+    setLines([]); setShowArchive(false); setError(""); setRunning(true); setProgress(null);
     try {
-      await generateTranscript(path, (done, total) => setProgress({ done, total }), (l) => setLines((p) => [...p, ...l]), ctrl.signal);
+      const complete = await generateTranscript(path, (done, total) => setProgress({ done, total }), (l) => setLines((p) => [...p, ...l]), ctrl.signal);
+      if (canEdit) {
+        const savedArchive = await saveTranscriptArchive(path, complete);
+        setArchive(savedArchive);
+        setSaved("Transcript archive updated / 转录归档已更新");
+      }
     } catch (e) {
       if ((e as Error)?.name !== "AbortError") setError(e instanceof Error ? e.message : String(e));
     } finally { setRunning(false); }
@@ -151,33 +163,53 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
               )}
             </div>
           )}
-          {audio && <audio controls src={audio} className="w-full" preload="metadata" />}
+          {audio && (
+            <div className="flex items-center gap-3 rounded-md bg-muted px-3 py-2">
+              <audio ref={player} src={audio} preload="none" controlsList="nodownload noplaybackrate" onEnded={() => setPlaying(false)} />
+              <Button variant="ghost" size="icon" aria-label={playing ? "Pause recording" : "Play recording"} title={playing ? "Pause / 暂停" : "Play / 播放"} onClick={() => {
+                const element = player.current;
+                if (!element) return;
+                if (element.paused) { void element.play(); setPlaying(true); }
+                else { element.pause(); setPlaying(false); }
+              }}>
+                {playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+              </Button>
+              <span className="text-sm text-foreground">Play recording / 播放录音</span>
+            </div>
+          )}
           <div className="flex flex-wrap items-center gap-2">
             <Button onClick={generate} disabled={running} variant={canEdit ? "secondary" : "default"}>
               {running && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Generate transcript / 生成转录
+              Generate transcript and translation / 生成转录与翻译
+            </Button>
+            <Button variant={showArchive ? "secondary" : "outline"} onClick={() => setShowArchive(true)} disabled={!archive}>
+              <Archive className="mr-2 h-4 w-4" />Transcript archive / 转录归档
             </Button>
             {running && <Button variant="outline" onClick={() => abort.current?.abort()}><Square className="mr-2 h-4 w-4" />Stop / 停止</Button>}
           </div>
-          <p className="text-xs text-muted-foreground">
-            each click makes a fresh transcript and translation using the latest gemini flash model
-          </p>
+          <div className="space-y-1 text-xs text-muted-foreground">
+            <p>each click makes a fresh transcript and translation using the latest gemini flash model</p>
+            <p>the transcript and translation will appear gradually</p>
+            <p>It can take up to 10 minutes for the whole transcription and translation.</p>
+            <p>You can view the previously saved transcript and translation in Transcript archive.</p>
+          </div>
           {progress && (
             <div className="space-y-1">
               <Progress value={progress.total ? (progress.done / progress.total) * 100 : 0} />
-              <p className="text-xs text-muted-foreground">{`${progress.done} / ${progress.total} segments (30 sec each) · ${lines.length} sentences`}</p>
+              <p className="text-xs text-muted-foreground">{`${progress.done} / ${progress.total} sections · ${lines.length} sentences`}</p>
             </div>
           )}
           {running && !progress && <p className="text-xs text-muted-foreground">Downloading and reading audio… / 下载并读取录音…</p>}
           {error && <p className="text-sm text-destructive">{error}</p>}
         </CardContent>
       </Card>
+      {showArchive && !archive && <p className="text-sm text-muted-foreground">No transcript archive has been saved yet. / 暂无已保存的转录归档</p>}
       <ol className="space-y-2">
-        {lines.map((l, i) => (
+        {(showArchive ? archive?.lines || [] : lines).map((l, i) => (
           <li key={i} className="flex gap-3 rounded-md border border-border bg-card p-3">
             <span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${l.s === "A" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>{l.s}</span>
             <div className="min-w-0 space-y-1">
-              <p className="text-xs text-muted-foreground">#{i + 1} · ~{clock(l.t)}</p>
+              <p className="text-xs text-muted-foreground">#{i + 1}</p>
               <p className="text-foreground">{l.zh}</p>
               {l.en && <p className="text-sm text-muted-foreground">{l.en}</p>}
             </div>
