@@ -1,9 +1,11 @@
 /**
  * Transcribes one short WAV segment of an interview into speaker-labelled
  * sentences (A / B) with Chinese and English text. Streams the model output.
+ * Open to anyone viewing the interview page; the researcher's saved
+ * instructions for that recording are loaded server-side (never from the caller).
  */
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
-import { isResearcher } from "../_shared/wp-researcher.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const MODEL = "google/gemini-3.8-flash";
 const headers = { ...corsHeaders, "Access-Control-Allow-Headers": `${corsHeaders["Access-Control-Allow-Headers"]}, x-wp-token` };
@@ -20,17 +22,29 @@ Deno.serve(async (req) => {
   const json = (b: unknown, status = 200) =>
     new Response(JSON.stringify(b), { status, headers: { ...headers, "Content-Type": "application/json" } });
 
-  if (!(await isResearcher(req))) return json({ error: "Only the researcher account can transcribe interviews." }, 403);
   const key = Deno.env.get("LOVABLE_API_KEY");
   if (!key) return json({ error: "Transcription is not configured." }, 500);
 
-  let body: { audio?: string; previous?: { s: string; zh: string }[] };
+  let body: { audio?: string; path?: string; previous?: { s: string; zh: string }[] };
   try { body = await req.json(); } catch { return json({ error: "Invalid request" }, 400); }
   const audio = String(body.audio || "");
   if (audio.length < 3000) return json({ error: "Empty audio segment." }, 400);
   if (audio.length > 18_000_000) return json({ error: "Audio segment too large." }, 400);
+  const path = String(body.path || "");
+  if (!path || path.includes("/") || path.includes("..")) return json({ error: "Invalid recording" }, 400);
+
+  const store = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!).storage.from("interview-audio");
+  const { data: exists } = await store.list("", { search: path, limit: 1 });
+  if (!exists?.some((f) => f.name === path)) return json({ error: "Recording not found." }, 404);
+  let instructions = "";
+  const { data: metaFile } = await store.download(`meta/${path}.json`);
+  if (metaFile) { try { instructions = String(JSON.parse(await metaFile.text())?.instructions || "").slice(0, 5000); } catch { /* none */ } }
+
   const previous = (Array.isArray(body.previous) ? body.previous : []).slice(-8)
     .map((l) => `${l.s === "B" ? "B" : "A"}: ${String(l.zh || "").slice(0, 300)}`).join("\n");
+  const system = instructions
+    ? `${PROMPT}\n\nAdditional instructions from the researcher for this recording (follow them, but never invent content):\n${instructions}`
+    : PROMPT;
 
   const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
@@ -41,7 +55,7 @@ Deno.serve(async (req) => {
       stream: true,
       response_format: { type: "json_object" },
       messages: [
-        { role: "system", content: PROMPT },
+        { role: "system", content: system },
         {
           role: "user",
           content: [

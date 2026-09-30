@@ -36,20 +36,25 @@ export default function ResearcherApp() {
     }
   }, []);
 
+  const [showLogin, setShowLogin] = useState(false);
+  const initialTab = new URL(window.location.href).searchParams.get("tab") === "interviews" || !signedIn ? "interviews" : "participants";
+
   return (
     <div className="min-h-dvh bg-background">
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-          <span className="font-semibold text-foreground">Researcher dashboard</span>
-          {signedIn && (
-            <Button variant="ghost" size="sm" onClick={() => { wpLogout(); setSignedIn(false); }}>
-              Sign out
-            </Button>
+          <span className="font-semibold text-foreground">{signedIn ? "Researcher dashboard" : "Interview records / 访谈记录"}</span>
+          {signedIn ? (
+            <Button variant="ghost" size="sm" onClick={() => { wpLogout(); setSignedIn(false); }}>Sign out</Button>
+          ) : (
+            <Button variant="ghost" size="sm" onClick={() => setShowLogin((v) => !v)}>Researcher sign in / 研究者登录</Button>
           )}
         </div>
       </header>
-      {signedIn ? (
-        <Tabs defaultValue="participants">
+      {showLogin && !signedIn ? (
+        <Login onDone={() => { setSignedIn(true); setShowLogin(false); }} />
+      ) : signedIn ? (
+        <Tabs defaultValue={initialTab}>
           <div className="mx-auto max-w-5xl px-4 pt-4">
             <TabsList>
               <TabsTrigger value="participants">Participants / 参与者</TabsTrigger>
@@ -57,9 +62,11 @@ export default function ResearcherApp() {
             </TabsList>
           </div>
           <TabsContent value="participants"><Dashboard /></TabsContent>
-          <TabsContent value="interviews"><InterviewsPanel /></TabsContent>
+          <TabsContent value="interviews"><InterviewsPanel canEdit /></TabsContent>
         </Tabs>
-      ) : <Login onDone={() => setSignedIn(true)} />}
+      ) : (
+        <InterviewsPanel canEdit={false} />
+      )}
     </div>
   );
 }

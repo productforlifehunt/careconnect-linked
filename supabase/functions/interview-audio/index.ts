@@ -1,6 +1,8 @@
 /**
- * Interview recordings (private file storage). Researcher only.
- * Actions: list, upload_url, play_url. Nothing is ever deleted here.
+ * Interview recordings (private file storage).
+ * Public (anyone with the page): list, play_url.
+ * Researcher only: upload_url, save_meta. Nothing is ever deleted here.
+ * Each recording's title / notes / transcription instructions live in meta/<path>.json.
  */
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -8,32 +10,51 @@ import { isResearcher } from "../_shared/wp-researcher.ts";
 
 const BUCKET = "interview-audio";
 const headers = { ...corsHeaders, "Access-Control-Allow-Headers": `${corsHeaders["Access-Control-Allow-Headers"]}, x-wp-token` };
+const validPath = (p: string) => !!p && !p.includes("/") && !p.includes("..") && p.length < 300;
+
+export interface Meta { title: string; notes: string; instructions: string }
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers });
   const json = (b: unknown, status = 200) =>
     new Response(JSON.stringify(b), { status, headers: { ...headers, "Content-Type": "application/json" } });
 
-  if (!(await isResearcher(req))) return json({ error: "Only the researcher account can use interview recordings." }, 403);
-
-  let body: { action?: string; name?: string; path?: string };
+  let body: { action?: string; name?: string; path?: string; meta?: Partial<Meta> };
   try { body = await req.json(); } catch { return json({ error: "Invalid request" }, 400); }
 
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   const store = admin.storage.from(BUCKET);
+  const readMeta = async (path: string): Promise<Meta> => {
+    const { data } = await store.download(`meta/${path}.json`);
+    const m = data ? await data.text().then((t) => JSON.parse(t)).catch(() => ({})) : {};
+    return { title: String(m.title || ""), notes: String(m.notes || ""), instructions: String(m.instructions || "") };
+  };
 
   if (body.action === "list") {
     const { data, error } = await store.list("", { limit: 1000, sortBy: { column: "created_at", order: "desc" } });
     if (error) return json({ error: error.message }, 500);
+    const files = (data || []).filter((f) => f.id);
+    const metas = await Promise.all(files.map((f) => readMeta(f.name)));
     return json({
-      items: (data || []).filter((f) => f.id).map((f) => ({
+      items: files.map((f, i) => ({
         path: f.name,
         size: (f.metadata as any)?.size ?? 0,
         type: (f.metadata as any)?.mimetype ?? "",
         created: f.created_at,
+        meta: metas[i],
       })),
     });
   }
+
+  if (body.action === "play_url") {
+    const path = String(body.path || "");
+    if (!validPath(path)) return json({ error: "Invalid recording" }, 400);
+    const { data, error } = await store.createSignedUrl(path, 60 * 60 * 6);
+    if (error) return json({ error: error.message }, 404);
+    return json({ url: data.signedUrl });
+  }
+
+  if (!(await isResearcher(req))) return json({ error: "Only the researcher can add or edit recordings." }, 403);
 
   if (body.action === "upload_url") {
     const name = String(body.name || "").trim();
@@ -45,12 +66,19 @@ Deno.serve(async (req) => {
     return json({ path, token: data.token });
   }
 
-  if (body.action === "play_url") {
+  if (body.action === "save_meta") {
     const path = String(body.path || "");
-    if (!path || path.includes("/")) return json({ error: "Invalid recording" }, 400);
-    const { data, error } = await store.createSignedUrl(path, 60 * 60 * 6);
-    if (error) return json({ error: error.message }, 404);
-    return json({ url: data.signedUrl });
+    if (!validPath(path)) return json({ error: "Invalid recording" }, 400);
+    const m = body.meta || {};
+    const meta: Meta = {
+      title: String(m.title ?? "").slice(0, 200),
+      notes: String(m.notes ?? "").slice(0, 5000),
+      instructions: String(m.instructions ?? "").slice(0, 5000),
+    };
+    const blob = new Blob([JSON.stringify(meta)], { type: "application/json" });
+    const { error } = await store.upload(`meta/${path}.json`, blob, { upsert: true, contentType: "application/json" });
+    if (error) return json({ error: error.message }, 500);
+    return json({ ok: true, meta });
   }
 
   return json({ error: "Unknown action" }, 400);
