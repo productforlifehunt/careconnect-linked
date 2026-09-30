@@ -8,6 +8,7 @@ import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-c
 import { ESM_SPEC } from "@/features/esm/spec.generated";
 import { ESM_CCT, ESM_REL } from "@/features/esm/backend";
 import { wpAdminOps } from "@/services/woocommerce-api";
+import InterviewsPanel from "./InterviewsPanel";
 
 const RESEARCHER = "researcher";
 type Kind = "screening" | "hourly" | "daily";
@@ -47,7 +48,18 @@ export default function ResearcherApp() {
           )}
         </div>
       </header>
-      {signedIn ? <Dashboard /> : <Login onDone={() => setSignedIn(true)} />}
+      {signedIn ? (
+        <Tabs defaultValue="participants">
+          <div className="mx-auto max-w-5xl px-4 pt-4">
+            <TabsList>
+              <TabsTrigger value="participants">Participants / 参与者</TabsTrigger>
+              <TabsTrigger value="interviews">Interviews / 访谈记录</TabsTrigger>
+            </TabsList>
+          </div>
+          <TabsContent value="participants"><Dashboard /></TabsContent>
+          <TabsContent value="interviews"><InterviewsPanel /></TabsContent>
+        </Tabs>
+      ) : <Login onDone={() => setSignedIn(true)} />}
     </div>
   );
 }
