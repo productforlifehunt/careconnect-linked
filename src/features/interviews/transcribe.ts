@@ -10,7 +10,8 @@ const FN_BASE = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co
 const SEGMENT_SECONDS = 180;
 const RATE = 16000;
 
-export interface Recording { path: string; size: number; type: string; created: string }
+export interface Meta { title: string; notes: string; instructions: string }
+export interface Recording { path: string; size: number; type: string; created: string; meta: Meta }
 export interface Line { s: "A" | "B"; zh: string; en: string; t: number }
 
 function authHeaders() {
@@ -32,12 +33,15 @@ async function audioFn<T>(body: Record<string, unknown>): Promise<T> {
 export const listRecordings = () => audioFn<{ items: Recording[] }>({ action: "list" }).then((d) => d.items);
 export const playUrl = (path: string) => audioFn<{ url: string }>({ action: "play_url", path }).then((d) => d.url);
 
-export async function uploadRecording(file: File): Promise<void> {
+export const saveMeta = (path: string, meta: Meta) => audioFn<{ meta: Meta }>({ action: "save_meta", path, meta }).then((d) => d.meta);
+
+export async function uploadRecording(file: File): Promise<string> {
   const { path, token } = await audioFn<{ path: string; token: string }>({ action: "upload_url", name: file.name });
   const { error } = await supabase.storage.from("interview-audio").uploadToSignedUrl(path, token, file, {
     contentType: file.type || "audio/mpeg",
   });
   if (error) throw new Error(error.message);
+  return path;
 }
 
 export const displayName = (path: string) => path.replace(/^\d+_/, "");
@@ -60,11 +64,11 @@ function wavBase64(samples: Float32Array): string {
   return btoa(bin);
 }
 
-async function transcribeSegment(audio: string, previous: Line[], signal: AbortSignal): Promise<Omit<Line, "t">[]> {
+async function transcribeSegment(path: string, audio: string, previous: Line[], signal: AbortSignal): Promise<Omit<Line, "t">[]> {
   for (let attempt = 0; ; attempt++) {
     const res = await fetch(`${FN_BASE}/interview-transcribe`, {
       method: "POST", headers: authHeaders(), signal,
-      body: JSON.stringify({ audio, previous: previous.map(({ s, zh }) => ({ s, zh })) }),
+      body: JSON.stringify({ path, audio, previous: previous.map(({ s, zh }) => ({ s, zh })) }),
     });
     if (!res.ok || !res.body) {
       const data = await res.json().catch(() => ({}));
@@ -134,7 +138,7 @@ export async function generateTranscript(
   onProgress(0, total);
   for (let i = 0; i < total; i++) {
     if (signal.aborted) throw new DOMException("Stopped", "AbortError");
-    const lines = (await transcribeSegment(wavBase64(pcm.subarray(i * step, (i + 1) * step)), previous, signal))
+    const lines = (await transcribeSegment(path, wavBase64(pcm.subarray(i * step, (i + 1) * step)), previous, signal))
       .map((l) => ({ ...l, t: i * SEGMENT_SECONDS }));
     if (lines.length) { onLines(lines); previous = lines; }
     onProgress(i + 1, total);
