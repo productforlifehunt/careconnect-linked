@@ -66,3 +66,8 @@
 - [ ] Remove content that cannot be traced to the WHO lesson; keep only optional readability edits or clearly faithful expansion.
 - [ ] Verify all 23 lessons in English and Chinese in the running Resources page, including every quiz interaction.
 - [ ] Produce a 23-lesson evidence matrix with source ranges, corrections, and final pass/fail results.
+
+# Interview recordings
+
+- [x] Researcher Interviews tab: upload long recordings (≤500 MB), Generate button re-transcribes A/B sentence by sentence in Chinese + English.
+- [ ] Participants viewing their own interviews — waiting on user: recordings are not linked to participants yet ("先不关联").
