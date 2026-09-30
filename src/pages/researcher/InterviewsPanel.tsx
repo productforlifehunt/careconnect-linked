@@ -160,7 +160,7 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
             {running && <Button variant="outline" onClick={() => abort.current?.abort()}><Square className="mr-2 h-4 w-4" />Stop / 停止</Button>}
           </div>
           <p className="text-xs text-muted-foreground">
-            each click makes a fresh transcript and translation using the latest gemini flash model / 每次点击都会使用最新的 Gemini Flash 模型重新生成转录和翻译
+            each click makes a fresh transcript and translation using the latest gemini flash model
           </p>
           {progress && (
             <div className="space-y-1">
