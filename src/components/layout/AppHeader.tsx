@@ -104,6 +104,13 @@ export function AppHeader() {
             >
               {t("common.signIn")}
             </Button>
+            <Button
+              variant="coral"
+              className="w-full"
+              onClick={() => { setMobileOpen(false); navigate("/auth?mode=signup"); }}
+            >
+              {t("common.getStarted")}
+            </Button>
           </div>
         </nav>
       </SheetContent>
@@ -119,7 +126,7 @@ export function AppHeader() {
       <div className="mx-auto flex h-[72px] w-full max-w-6xl items-center gap-2 px-4 sm:gap-3">
         {/* Logo — always the first element on the left (standard convention) */}
         <Link to="/" className="flex shrink-0 items-center" aria-label={logoWordmarkText}>
-          <BrandMark size={42} showWordmark className="sm:[&>span:first-child]:h-11 sm:[&>span:first-child]:w-11" />
+          <BrandMark size={42} showWordmark className="[&>span:last-child]:text-xl" />
           {site.showBetaLabel && (
             <span className="px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide text-coral bg-coral/10 border border-coral/30 rounded-full leading-tight">
               Beta
@@ -270,7 +277,7 @@ export function AppHeader() {
             <Button variant="ghost" onClick={() => navigate("/auth")} className="hidden h-10 px-3 sm:inline-flex">
               {t("common.signIn")}
             </Button>
-            <Button variant="coral" className="h-10 shrink-0 px-4 shadow-sm sm:px-5" onClick={() => navigate("/auth?mode=signup")}>
+            <Button variant="coral" className="hidden h-10 shrink-0 px-4 shadow-sm sm:inline-flex sm:px-5" onClick={() => navigate("/auth?mode=signup")}>
               {t("common.getStarted")}
             </Button>
           </div>
