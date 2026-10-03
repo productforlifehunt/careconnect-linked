@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { appendAiMessage, loadAiThreadMessages, touchAiThread } from "@/lib/ai-threads";
 import { Check, SkipForward, Volume2, Square, ChevronDown, Mic, Loader2, MessageSquare, Radio } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
@@ -192,10 +193,15 @@ export function AICompanionChat({
   active,
   request = {},
   className,
+  threadId,
+  onThreadUpdated,
 }: {
   active: boolean;
   request?: AssistantRequest;
   className?: string;
+  /** Saved assistant thread (CCT121). Omit for one-off, unsaved chats. */
+  threadId?: string;
+  onThreadUpdated?: () => void;
 }) {
   const { i18n } = useTranslation();
   const site = useSite();
@@ -354,7 +360,33 @@ export function AICompanionChat({
     return [request.contextPrompt, resolved, live].filter(Boolean).join("\n\n") || undefined;
   };
 
+  // Saved thread: restore its messages once.
+  const [saveError, setSaveError] = useState<string | null>(null);
   useEffect(() => {
+    if (!threadId) return;
+    let alive = true;
+    loadAiThreadMessages(threadId)
+      .then((rows) => { if (alive) setMessages(rows.length ? rows : [{ role: "assistant", content: aiGreeting(!!isZh, site.id) }]); })
+      .catch(() => { if (alive) setSaveError(isZh ? "无法读取这段对话。" : "Couldn't load this conversation."); });
+    return () => { alive = false; };
+  }, [threadId]);
+
+  const persistTurn = async (userText: string, reply: string, firstTurn: boolean) => {
+    if (!threadId || !reply.trim()) return;
+    try {
+      await appendAiMessage(threadId, "user", userText);
+      await appendAiMessage(threadId, "assistant", reply);
+      await touchAiThread(threadId, firstTurn ? userText.slice(0, 40) : undefined);
+      setSaveError(null);
+      onThreadUpdated?.();
+    } catch (e) {
+      console.error("Saving AI thread failed:", e);
+      setSaveError(isZh ? "这条对话没能保存。" : "This message couldn't be saved.");
+    }
+  };
+
+  useEffect(() => {
+    if (threadId) return;
     if (!active || activeRequestId.current === request.id) return;
     activeRequestId.current = request.id;
     setInput("");
@@ -444,6 +476,7 @@ export function AICompanionChat({
         reply = await result;
         if (readAloudRef.current && reply.trim()) speak(reply, next.length - 1);
       }
+      await persistTurn(text, reply, !messages.some((m) => m.role === "user"));
       const parsed = parseAIJson<{ done?: boolean; summary?: string; status?: string }>(reply);
       if (parsed?.done && parsed.summary && request.onComplete) {
         const allowed = request.completionStatuses || [];
