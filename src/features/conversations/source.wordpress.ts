@@ -274,6 +274,8 @@ export async function fetchConversationsWordPress(currentUserId?: string): Promi
     const myId = numId(currentUserId);
 
     const rows = (await Promise.all(filterAppScope("chatConversation", convos).map(async (c: any) => {
+      // AI assistant threads have their own list in the assistant page.
+      if (c[CF.CHAT_TYPE] === CT.AI) return null;
       const id = String(c.id || c._ID);
       const memberIds = memberMap.loaded
         ? (memberMap.get(id) || [])
