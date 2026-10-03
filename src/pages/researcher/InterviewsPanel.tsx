@@ -115,15 +115,24 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
     abort.current = ctrl;
     setLines([]); setShowArchive(false); setError(""); setRunning(true); setProgress(null);
     try {
-      const complete = await generateTranscript(path, (done, total) => setProgress({ done, total }), (l) => setLines((p) => [...p, ...l]), ctrl.signal);
-      if (canEdit) {
-        const savedArchive = await saveTranscriptArchive(path, complete);
-        setArchive(savedArchive);
-        setSaved("Transcript archive updated / 转录归档已更新");
-      }
+      await generateTranscript(path, (done, total) => setProgress({ done, total }), (l) => setLines((p) => [...p, ...l]), ctrl.signal);
     } catch (e) {
       if ((e as Error)?.name !== "AbortError") setError(e instanceof Error ? e.message : String(e));
     } finally { setRunning(false); }
+  };
+
+  const storeArchive = async () => {
+    if (!lines.length) return;
+    if (archive && !window.confirm("A transcript archive already exists. Saving will overwrite it. Confirm? / 已有转录归档，保存将覆盖原有归档，确认覆盖？")) return;
+    setSaving(true); setError("");
+    try {
+      const savedArchive = await saveTranscriptArchive(path, lines);
+      const check = await loadTranscriptArchive(path);
+      if (!check || check.lines.length !== savedArchive.lines.length) throw new Error("Archive could not be verified after saving. / 归档保存后校验失败");
+      setArchive(check);
+      setSaved(`Transcript archive saved (${check.lines.length} sentences) / 转录归档已保存（${check.lines.length} 句）`);
+    } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    finally { setSaving(false); }
   };
 
   const share = () => {
@@ -223,7 +232,13 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
               <Archive className="mr-2 h-4 w-4" />Transcript archive / 转录归档
             </Button>
             {running && <Button variant="outline" onClick={() => abort.current?.abort()}><Square className="mr-2 h-4 w-4" />Stop / 停止</Button>}
+            {canEdit && !running && lines.length > 0 && !showArchive && (
+              <Button onClick={storeArchive} disabled={saving}>
+                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}Save to transcript archive / 存入转录归档
+              </Button>
+            )}
           </div>
+          {saved && !canEdit ? null : saved && <p className="text-sm text-muted-foreground">{saved}</p>}
           <div className="space-y-1 text-xs text-muted-foreground">
             <p>each click makes a fresh transcript and translation using the latest gemini flash model</p>
             <p>the transcript and translation will appear gradually</p>
