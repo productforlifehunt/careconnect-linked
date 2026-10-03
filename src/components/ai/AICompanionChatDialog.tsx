@@ -35,6 +35,9 @@ export function AICompanionChatDialog({
   const [activeThread, setActiveThread] = useState<string | undefined>();
   const [listOpen, setListOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  // True once the thread bootstrap finished, so the chat never mounts with a
+  // temporary key and gets remounted (wiping an in-flight message) afterwards.
+  const [booted, setBooted] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -69,17 +72,22 @@ export function AICompanionChatDialog({
     let alive = true;
     void (async () => {
       const list = await refresh();
-      if (!alive || !list) return;
-      let saved: string | null = null;
-      try { saved = localStorage.getItem(ACTIVE_THREAD_KEY); } catch { /* ignore */ }
-      if (saved && list.some((t) => t.id === saved)) { setActiveThread(saved); return; }
-      if (list[0]) { pick(list[0].id); return; }
-      try {
-        const id = await createAiThread();
-        if (!alive) return;
-        await refresh();
-        pick(id);
-      } catch { /* unsaved chat still works */ }
+      if (!alive) return;
+      if (list) {
+        let saved: string | null = null;
+        try { saved = localStorage.getItem(ACTIVE_THREAD_KEY); } catch { /* ignore */ }
+        if (saved && list.some((t) => t.id === saved)) setActiveThread(saved);
+        else if (list[0]) pick(list[0].id);
+        else {
+          try {
+            const id = await createAiThread();
+            if (!alive) return;
+            await refresh();
+            pick(id);
+          } catch { /* unsaved chat still works */ }
+        }
+      }
+      if (alive) setBooted(true);
     })();
     return () => { alive = false; };
   }, [open, threaded, refresh, pick]);
@@ -152,13 +160,15 @@ export function AICompanionChatDialog({
             </div>
           )}
 
-          <AICompanionChat
-            key={threaded ? activeThread ?? "new" : request.id}
-            active={open}
-            request={request}
-            threadId={threaded ? activeThread : undefined}
-            onThreadUpdated={() => void refresh()}
-          />
+          {(!threaded || booted) && (
+            <AICompanionChat
+              key={threaded ? activeThread ?? "unsaved" : request.id}
+              active={open}
+              request={request}
+              threadId={threaded ? activeThread : undefined}
+              onThreadUpdated={() => void refresh()}
+            />
+          )}
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>
