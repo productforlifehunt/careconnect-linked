@@ -560,6 +560,7 @@ export function AICompanionChat({
           )}
         </div>
       )}
+      {saveError && <p role="alert" className="mx-4 mt-2 text-sm text-destructive">{saveError}</p>}
 
       <Conversation className="min-h-0">
         <ConversationContent className="gap-4 px-4 py-4">
