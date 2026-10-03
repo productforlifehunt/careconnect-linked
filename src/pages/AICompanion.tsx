@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAIAssistant } from "@/contexts/AIAssistantContext";
 import { useTranslation } from "react-i18next";
 import {
   Shield, Heart, Wand2, MessageCircle, Lock, AlertTriangle,
@@ -12,6 +13,9 @@ import {
 const AICompanion = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const { openAssistant } = useAIAssistant();
+  // The floating assistant is the single AI entry point — open it directly.
+  const openAi = () => (isAuthenticated ? openAssistant() : navigate("/auth?mode=signup"));
   const { t, i18n } = useTranslation();
   const isChinese = i18n.language?.startsWith("zh");
 
@@ -31,7 +35,7 @@ const AICompanion = () => {
             {t("aiCompanion.heroSubtitle")}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button variant="coral" size="lg" onClick={() => navigate(isAuthenticated ? "/ai-companion/chat" : "/auth?mode=signup")}>
+<Button variant="coral" size="lg" onClick={openAi}>
               {t("aiCompanion.tryNow")}
             </Button>
             <Button variant="secondary" size="lg" onClick={() => navigate("/how-it-works")}>
@@ -170,7 +174,7 @@ const AICompanion = () => {
           <p className="text-primary-foreground/80 mb-8 max-w-xl mx-auto">
             {t("aiCompanion.ctaSubtitle")}
           </p>
-          <Button variant="coral" size="lg" onClick={() => navigate(isAuthenticated ? "/ai-companion/chat" : "/auth?mode=signup")}>
+<Button variant="coral" size="lg" onClick={openAi}>
             {t("aiCompanion.tryNow")} <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>

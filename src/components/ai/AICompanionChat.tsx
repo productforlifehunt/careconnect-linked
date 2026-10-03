@@ -366,7 +366,15 @@ export function AICompanionChat({
     if (!threadId) return;
     let alive = true;
     loadAiThreadMessages(threadId)
-      .then((rows) => { if (alive) setMessages(rows.length ? rows : [{ role: "assistant", content: aiGreeting(!!isZh, site.id) }]); })
+      .then((rows) => {
+        if (!alive) return;
+        // Never wipe messages the user already sent while the history loaded.
+        setMessages((prev) =>
+          prev.some((m) => m.role === "user")
+            ? prev
+            : rows.length ? rows : [{ role: "assistant", content: aiGreeting(!!isZh, site.id) }]
+        );
+      })
       .catch(() => { if (alive) setSaveError(isZh ? "无法读取这段对话。" : "Couldn't load this conversation."); });
     return () => { alive = false; };
   }, [threadId]);
