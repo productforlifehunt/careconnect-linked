@@ -35,7 +35,7 @@ const AICompanion = () => {
             {t("aiCompanion.heroSubtitle")}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button variant="coral" size="lg" onClick={() => navigate(isAuthenticated ? "/ai-companion/chat" : "/auth?mode=signup")}>
+<Button variant="coral" size="lg" onClick={openAi}>
               {t("aiCompanion.tryNow")}
             </Button>
             <Button variant="secondary" size="lg" onClick={() => navigate("/how-it-works")}>
@@ -174,7 +174,7 @@ const AICompanion = () => {
           <p className="text-primary-foreground/80 mb-8 max-w-xl mx-auto">
             {t("aiCompanion.ctaSubtitle")}
           </p>
-          <Button variant="coral" size="lg" onClick={() => navigate(isAuthenticated ? "/ai-companion/chat" : "/auth?mode=signup")}>
+<Button variant="coral" size="lg" onClick={openAi}>
             {t("aiCompanion.tryNow")} <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
