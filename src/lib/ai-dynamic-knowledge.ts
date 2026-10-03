@@ -845,21 +845,6 @@ export const SETTING_SKILLS: SettingSkill[] = [
     patch: (s, value) => ({ display: { ...s.display, text_size: value } }),
   },
   {
-    name: "set-light-or-dark",
-    group: "display",
-    kind: "choice",
-    storage: "backend",
-    apps: "all",
-    label: (cn) => Z(cn, "亮色或暗色", "Light or dark"),
-    options: (cn) => [
-      { value: "system", label: Z(cn, "跟手机一样", "Match my device") },
-      { value: "light", label: Z(cn, "亮色", "Light") },
-      { value: "dark", label: Z(cn, "暗色", "Dark") },
-    ],
-    readFrom: (s) => s.display.theme,
-    patch: (s, value) => ({ display: { ...s.display, theme: value } }),
-  },
-  {
     name: "set-reduce-motion",
     group: "display",
     kind: "switch",

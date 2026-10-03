@@ -42,8 +42,8 @@ const GUIDE_SHARED: GuideEntry[] = [
     a: { zh: "点右上角的头像 → 设置 → 语言，选“中文”或“English”，马上生效。", en: "Tap your avatar at the top right → Settings → Language, then pick English or 中文. It changes right away." },
   },
   {
-    q: { zh: "怎么改成深色模式或放大字？", en: "How do I switch to dark mode?" },
-    a: { zh: "点顶部的月亮图标就能在浅色和深色之间切换。字体大小请用手机系统里的“显示与字体大小”设置。", en: "Tap the moon icon in the top bar to switch between light and dark. For bigger text, use your phone's own display/text-size setting." },
+    q: { zh: "怎么放大字？", en: "How do I make the text bigger?" },
+    a: { zh: "可以在“设置”里调整字的大小，也可以使用手机系统里的“显示与字体大小”设置。", en: "You can adjust text size in Settings or use your phone's display and text-size settings." },
   },
   {
     q: { zh: "我的资料和账号在哪里改？", en: "Where do I edit my profile and account?" },
