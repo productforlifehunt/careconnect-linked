@@ -167,6 +167,7 @@ function AppRoutes() {
       <Route path="/calendar" element={<RequireAuth><Calendar /></RequireAuth>} />
       <Route path="/resources" element={<Resources />} />
       <Route path="/ai-companion/chat" element={<RequireAuth><AICompanionChatPage /></RequireAuth>} />
+      <Route path="/ai-companion/chat/:threadId" element={<RequireAuth><AICompanionChatPage /></RequireAuth>} />
 
       {/* Old / guessable paths people and older links still use: send them to
           the real page instead of a dead end. */}
