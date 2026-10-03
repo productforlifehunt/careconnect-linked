@@ -28,6 +28,10 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
     site.family === "challenged" || site.brandSlug.startsWith("challenged") ? "challenged" : site.id;
 
   const box: React.CSSProperties = { width: size, height: size };
+  const wordmarkStyle: React.CSSProperties = {
+    fontSize: Math.max(18, Math.round(size * 0.48)),
+    lineHeight: 1,
+  };
 
   let icon: React.ReactNode;
   if (brand === "challenged" && isChinese) {
@@ -110,10 +114,10 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
         : null;
 
   return (
-    <span className={`flex items-center gap-2 ${className}`}>
-      {icon}
+    <span className={`inline-flex min-w-0 items-center gap-2.5 ${className}`}>
+      <span className="inline-flex shrink-0">{icon}</span>
       {showWordmark && brand !== "carecnc" && (
-        <span className="font-bold text-lg tracking-tight">
+        <span className="whitespace-nowrap font-bold tracking-normal" style={wordmarkStyle}>
           {wordmark ? (
             <span className="text-foreground">{wordmark}</span>
           ) : (

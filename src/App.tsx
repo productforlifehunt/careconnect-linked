@@ -225,7 +225,7 @@ function RootRouter() {
 const App = () => (
   <AuthProvider>
     <SiteProvider>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+      <ThemeProvider attribute="class" forcedTheme="light" enableSystem={false} disableTransitionOnChange>
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
             <Toaster />

@@ -1,5 +1,11 @@
 # UI/UX verification roadmap
 
+## Shared page header correction
+
+- [ ] Correct only the shared page header: logo scale, navigation spacing, control sizing, and one aligned inner grid.
+- [ ] Remove the night-mode control and force the application to use the light appearance.
+- [ ] Verify the corrected header at desktop and mobile widths without changing homepage content or footer.
+
 ## Interview-authoritative participant survey correction
 
 - [x] Audit every supplied interview transcript line by line; treat interview answers as authoritative and exclude conflicting preamble details.
